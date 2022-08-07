@@ -2629,6 +2629,7 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 	}
 	RzListIter *iter;
 	char *line;
+	char *switchcmp = NULL;
 	rz_list_foreach (lines, iter, line) {
 		ut64 addr = UT64_MAX;
 		const char *ox = strstr(line, "0x");
@@ -2727,7 +2728,6 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 		}
 #endif
 		if (str) {
-			str = strdup(str);
 			char *qoe = NULL;
 			if (!qoe) {
 				qoe = strchr(str + 1, '\x1b');
@@ -2759,17 +2759,16 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 				str = strstr(line, "fcn.");
 			}
 		}
+		bool mark_malloc = false;
 		if (str) {
-			str = strdup(str);
 			char *qoe = strchr(str, ';');
 			if (qoe) {
-				char *t = str;
 				str = rz_str_ndup(str, qoe - str);
-				free(t);
+				mark_malloc = true;
 			}
 		}
 		if (str) {
-			string2 = strdup(str);
+			string2 = mark_malloc ? str : strdup(str);
 			linecolor = RZ_CONS_COLOR(call);
 		}
 		if (!string && string2) {
@@ -2779,7 +2778,6 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 		if (strstr(line, "XREF")) {
 			addr = UT64_MAX;
 		}
-		char *switchcmp = NULL;
 		if (addr != UT64_MAX) {
 			if (show_comments) {
 				char *comment = rz_core_analysis_get_comments(core, addr);
@@ -2798,6 +2796,7 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 						rz_cons_printf("%s%s\n", use_color ? pal->comment : "", comment);
 					}
 					if (rz_str_startswith(comment, "switch table")) {
+						free(switchcmp);
 						switchcmp = strdup(comment);
 					}
 					RZ_FREE(comment);
@@ -2885,6 +2884,8 @@ static void rz_core_print_disasm_strings(RzCore *core, const char *input, RzAnal
 				}
 			}
 		}
+		free(string);
+		free(string2);
 	}
 restore_conf:
 	free(dump_string);
