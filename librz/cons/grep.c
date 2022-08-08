@@ -521,14 +521,17 @@ RZ_API void rz_cons_grepbuf(void) {
 				char *u = rz_json_as_string(excerpt, false);
 				if (!u) {
 					RZ_FREE(grep->json_path);
+					rz_json_free(json);
 					return;
 				}
+				free(cons->context->buffer);
 				cons->context->buffer = u;
 				cons->context->buffer_len = strlen(u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = 0;
 				rz_cons_newline();
 			}
+			rz_json_free(json);
 			RZ_FREE(grep->json_path);
 		} else {
 			const char *palette[] = {
