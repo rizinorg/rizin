@@ -91,10 +91,6 @@ Files: test/notworking_db/*
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: test/Makefile
-Copyright: 2009 RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
 Files: test/.gitignore
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
@@ -163,10 +159,6 @@ Files: librz/syscall/d2/*
 Copyright: 2018 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
-Files: pkgcfg/*.pc.acr
-Copyright: 2009 RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
 Files: subprojects/*.wrap
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
@@ -179,37 +171,13 @@ Files: test/unit/rz_test_cmd_test
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
-Files: librz/asm/arch/avr/README
-Copyright: RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
-Files: librz/asm/arch/ppc/README
-Copyright: RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
 Files: librz/asm/arch/*/gnu/*
 Copyright: 1989-2021 Free Software Foundation, Inc.
 License: GPL-2.0-or-later
 
-Files: librz/bp/README
-Copyright: RadareOrg <pancake@nopcode.org>
-License: LGPL-3.0-only
-
-Files: librz/egg/README
-Copyright: pancake <pancake@nopcode.org>
-License: LGPL-3.0-only
-
 Files: librz/include/sflib/*
 Copyright: 2004 Philippe Biondi <phil@secdev.org>
 License: GPL-2.0-only
-
-Files: librz/io/README
-Copyright: pancake <pancake@nopcode.org>
-License: LGPL-3.0-only
-
-Files: librz/magic/README
-Copyright: pancake <pancake@nopcode.org>
-License: LGPL-3.0-only
 
 Files: librz/magic/*
 Copyright: 1986-1995 Ian F. Darwin
