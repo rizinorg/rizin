@@ -532,7 +532,9 @@ static void core_handle_call(RzCore *core, char *line, char **str) {
 
 /**
  * \brief Get string in disassembly line for \p mode
- * \param n_bytes Number of bytes to disassemble, just used for RZ_CORE_DISASM_STRINGS_MODE_BYTES
+ * \param mode RzCorePrintDisasmStringsMode RZ_CORE_DISASM_STRINGS_MODE_{BYTES,INST,BLOCK,FUNCTION}
+ * \param n_bytes Number of bytes to disassemble, only used for RZ_CORE_DISASM_STRINGS_MODE_BYTES
+ * \param fcn RzAnalysisFunction pointer, only used for RZ_CORE_DISASM_STRINGS_MODE_FUNCTION
  */
 // TODO: this is just a PoC, the disasm loop should be rewritten
 // TODO: this is based on string matching, it should be written upon RzAnalysisOp to know
