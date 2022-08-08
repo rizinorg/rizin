@@ -594,10 +594,13 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		}
 		break;
 	}
+	case RZ_CORE_DISASM_STRINGS_MODE_INST: {
+		dump_string = rz_core_cmd_str(core, "pd");
+		break;
+	}
 	case RZ_CORE_DISASM_STRINGS_MODE_BYTES:
 	default:
-		dump_string = n_bytes != UT64_MAX ? rz_core_cmd_strf(core, "pD %" PFMT64d, n_bytes)
-						  : rz_core_cmd_str(core, "pd");
+		dump_string = rz_core_cmd_strf(core, "pD %" PFMT64d, n_bytes);
 		break;
 	}
 	rz_config_hold_restore(hc);
@@ -826,7 +829,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 						RZ_FREE(string2);
 					}
 				}
-				if (addr != UT32_MAX) {
+				if (string && addr != UT32_MAX) {
 					rz_str_trim(string);
 					if (string2) {
 						rz_str_trim(string2);

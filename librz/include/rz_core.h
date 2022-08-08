@@ -1077,8 +1077,9 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 
 typedef enum {
 	RZ_CORE_DISASM_STRINGS_MODE_BYTES = 0,
+	RZ_CORE_DISASM_STRINGS_MODE_INST,
 	RZ_CORE_DISASM_STRINGS_MODE_BLOCK,
-	RZ_CORE_DISASM_STRINGS_MODE_FUNCTION
+	RZ_CORE_DISASM_STRINGS_MODE_FUNCTION,
 } RzCorePrintDisasmStringsMode;
 RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCorePrintDisasmStringsMode mode, ut64 n_bytes, RZ_NULLABLE RzAnalysisFunction *fcn);
 
