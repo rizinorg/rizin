@@ -175,20 +175,22 @@ typedef enum {
 #define FUNC_ATTR_ALWAYS_INLINE         __attribute__((always_inline))
 
 #if defined(__clang__) && defined(__BLOCKS__)
-	static inline void rz_dummy(void (^*block)(void)) {
-		(*block)();
+static inline void rz_dummy(void (^*block)(void)) {
+	(*block)();
+}
+#define FUNC_BLOCK_CONCAT(line, block) \
+	__attribute__((unused, cleanup(rz_dummy))) void (^rz_func_block_cleanup_##line)(void) = ^{ \
+		block \
 	}
-#define FUNC_BLOCK_CONCAT(line, block)				\
-	__attribute__((unused, cleanup(rz_dummy))) void (^rz_func_block_cleanup_ ## line)(void) = ^{block}
 #else
-#define FUNC_BLOCK_CONCAT(line, block)				\
-	void rz_func_block_cleanup_ ## line () {		\
-		block						\
-	}							\
-	int __attribute__((unused)) rz_dummy_ ## line __attribute__((__cleanup__(rz_func_block_cleanup_ ## line))) = 0
+#define FUNC_BLOCK_CONCAT(line, block) \
+	void rz_func_block_cleanup_##line() { \
+		block \
+	} \
+	int __attribute__((unused)) rz_dummy_##line __attribute__((__cleanup__(rz_func_block_cleanup_##line))) = 0
 #endif
 #define FUNC_BLOCK_CONCAT2(block, line) FUNC_BLOCK_CONCAT(line, block)
-#define rz_block_cleanup(block) FUNC_BLOCK_CONCAT2(block, __LINE__)
+#define rz_block_cleanup(block)         FUNC_BLOCK_CONCAT2(block, __LINE__)
 #else
 #define FUNC_ATTR_MALLOC
 #define FUNC_ATTR_ALLOC_SIZE(x)
