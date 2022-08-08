@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-08-06 14:16:01-04:00
+// Date of code generation: 2022-08-08 06:48:12-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -34142,6 +34142,27 @@ static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *stat
 	}
 }
 
+/**
+ * \brief Sets a duplex HexInsnContainer and it's sub-instructions to invalid.
+ *
+ * \param hi_u32 The instruction opcode.
+ * \param hic The duplex HexInsnContainer
+ */
+static void hex_set_invalid_duplex(const ut32 hi_u32, RZ_INOUT RZ_NONNULL HexInsnContainer *hic) {
+	HexInsn *hi_high = hic->bin.sub[0];
+	HexInsn *hi_low = hic->bin.sub[1];
+	rz_return_if_fail(hi_high && hi_low);
+	hic->identifier = HEX_INS_INVALID_DECODE;
+	hic->opcode = hi_u32;
+	hi_high->opcode = (hi_u32 >> 16) & 0x1fff;
+	hi_low->opcode = hi_u32 & 0x1fff;
+	hi_high->identifier = HEX_INS_INVALID_DECODE;
+	hi_low->identifier = HEX_INS_INVALID_DECODE;
+	hic->ana_op.type = RZ_ANALYSIS_OP_TYPE_ILL;
+	snprintf(hi_high->text_infix, sizeof(hi_high->text_infix), "invalid");
+	snprintf(hi_low->text_infix, sizeof(hi_low->text_infix), "invalid");
+}
+
 int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsnContainer *hic, HexPkt *pkt) {
 	ut32 addr = hic->addr;
 	if (hic->pkt_info.last_insn) {
@@ -34179,8 +34200,15 @@ int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexI
 				RZ_LOG_WARN("Reserved duplex instruction class used at: 0x%" PFMT32x ".\n", addr);
 			}
 
-			hex_disasm_with_templates(get_sub_template_table(iclass, true), state, opcode_high, hi_high, hic, addr, pkt);
-			hex_disasm_with_templates(get_sub_template_table(iclass, false), state, opcode_low, hi_low, hic, addr + 2, pkt);
+			const HexInsnTemplate *tmp_high = get_sub_template_table(iclass, true);
+			const HexInsnTemplate *tmp_low = get_sub_template_table(iclass, false);
+			if (!(tmp_high && tmp_low)) {
+				hex_set_invalid_duplex(hi_u32, hic);
+				hex_set_hic_text(hic);
+				return 4;
+			}
+			hex_disasm_with_templates(tmp_high, state, opcode_high, hi_high, hic, addr, pkt);
+			hex_disasm_with_templates(tmp_low, state, opcode_low, hi_low, hic, addr + 2, pkt);
 
 			hic->identifier = (hi_high->identifier << 16) | (hi_low->identifier & 0xffff);
 			hic->ana_op.id = hic->identifier;
