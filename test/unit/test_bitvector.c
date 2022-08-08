@@ -970,33 +970,53 @@ static bool test_rz_bv_len_bytes(void) {
 	mu_end;
 }
 
-bool test_rz_bv_set_all(void) {
+bool test_rz_bv_set_operations(void) {
 	RzBitVector *bv = rz_bv_new(43);
 	rz_bv_set_all(bv, true);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x7ffffffffff", "set all 1");
+	mu_assert_true(rz_bv_is_all_one(bv), "all bits are 1");
 	rz_bv_set_all(bv, false);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	mu_assert_false(rz_bv_is_all_one(bv), "not all 1");
 	rz_bv_free(bv);
 
 	bv = rz_bv_new(64);
 	rz_bv_set_all(bv, true);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xffffffffffffffff", "set all 1");
+	mu_assert_true(rz_bv_is_all_one(bv), "all bits are 1");
 	rz_bv_set_all(bv, false);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	mu_assert_false(rz_bv_is_all_one(bv), "not all 1");
 	rz_bv_free(bv);
 
 	bv = rz_bv_new(73);
 	rz_bv_set_all(bv, true);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1ffffffffffffffffff", "set all 1");
+	mu_assert_true(rz_bv_is_all_one(bv), "all bits are 1");
 	rz_bv_set_all(bv, false);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	mu_assert_false(rz_bv_is_all_one(bv), "not all 1");
 	rz_bv_free(bv);
 
 	bv = rz_bv_new(80);
 	rz_bv_set_all(bv, true);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xffffffffffffffffffff", "set all 1");
+	mu_assert_true(rz_bv_is_all_one(bv), "all bits are 1");
 	rz_bv_set_all(bv, false);
 	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "set all 0");
+	mu_assert_false(rz_bv_is_all_one(bv), "not all 1");
+	rz_bv_free(bv);
+
+	bv = rz_bv_new(42);
+	rz_bv_set_range(bv, 0, bv->len - 1, true);
+	mu_assert_true(rz_bv_is_all_one(bv), "set all 1 by set_range");
+	// 11 1111 1111 1111 1100 0000 0011 1111 1111 1111 1111
+	rz_bv_set_range(bv, 18, 25, false);
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x3fffc03ffff", "range set 18~25 to 0");
+	rz_bv_free(bv);
+
+	bv = rz_bv_new(16);
+	mu_assert_false(rz_bv_set_range(bv, 16, 20, true), "set out of range");
 	rz_bv_free(bv);
 	mu_end;
 }
@@ -1104,6 +1124,7 @@ bool test_rz_bv_copy_nbits(void) {
 	mu_end;
 }
 
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -1125,7 +1146,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_div);
 	mu_run_test(test_rz_bv_mod);
 	mu_run_test(test_rz_bv_len_bytes);
-	mu_run_test(test_rz_bv_set_all);
+	mu_run_test(test_rz_bv_set_operations);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
 	mu_run_test(test_rz_bv_copy_nbits);
 
