@@ -222,7 +222,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	case PPC_INS_DCBZ:;
+	case PPC_INS_DCBZ: {
 		ut32 r = ppc_log_2(DCACHE_LINE_SIZE);
 		rA = cs_reg_name(handle, INSOP(0).reg);
 		rB = cs_reg_name(handle, INSOP(1).reg);
@@ -233,6 +233,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		//! DCACHE_LINE_SIZE is currently hard coded. Should be replaced by config option.
 		store = STOREW(ea, UN(DCACHE_LINE_SIZE * 8, 0));
 		break;
+	}
 	case PPC_INS_STB:
 	case PPC_INS_STH:
 	case PPC_INS_STW:
@@ -543,7 +544,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
 	// Compare bytes
-	case PPC_INS_CMPB:;
+	case PPC_INS_CMPB: {
 		//	do n = 0 to (64BIT_CPU ? 7 : 3)
 		//		if RS[8×n:8×n+7] = RB[8×n:8×n+7] then
 		// 			RA[8×n:8×n+7] ← 0b1111_1111
@@ -573,6 +574,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 				SETL("bitmask_n_n7", DUP(bitmask_n_n7))));
 
 		return SEQ5(SETL("res", UA(0)), init_n, init_bitmask, loop, SETG(rA, VARL("res")));
+	}
 	case PPC_INS_EQV:
 		op0 = VARG(rS);
 		op1 = VARG(rB);
@@ -590,7 +592,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		break;
 	// Count leading zeros
 	case PPC_INS_CNTLZD:
-	case PPC_INS_CNTLZW:;
+	case PPC_INS_CNTLZW: {
 		RzILOpEffect *n, *set_m;
 		if ((id == PPC_INS_CNTLZW) && IN_64BIT_MODE) {
 			n = SETL("n", UA(32));
@@ -602,6 +604,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		RzILOpPure *cond = AND(ULT(VARL("n"), UA(PPC_ARCH_BITS)), INV(BIT_IS_SET(VARG(rS), PPC_ARCH_BITS, VARL("n"))));
 		RzILOpEffect *cloop = REPEAT(cond, SETL("n", ADD(VARL("n"), UA(1))));
 		return SEQ4(set_m, n, cloop, SETG(rA, SUB(VARL("n"), VARL("m"))));
+	}
 	// Population count
 	case PPC_INS_POPCNTD:
 	case PPC_INS_POPCNTW:
@@ -762,7 +765,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTMSRD:
 		NOT_IMPLEMENTED;
 	case PPC_INS_MTCR:
-	case PPC_INS_MTCRF:;
+	case PPC_INS_MTCRF: {
 		ut32 mask = 0xffffffff;
 		if (id == PPC_INS_MTCRF) {
 			ut8 fxm = INSOP(0).imm;
@@ -771,7 +774,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		}
 		RzILOpEffect *set_cr = SETL("cr", LOGAND(UNSIGNED(32, VARG(rS)), U32(mask)));
 		return SEQ2(set_cr, ppc_sync_crx_cr(false, mask));
-
+	}
 	case PPC_INS_MFCR:
 		return SEQ2(ppc_sync_crx_cr(true, 0x0), SETG(rT, EXTZ(VARL("cr"))));
 
@@ -796,7 +799,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		spr_name = "ctr";
 		break;
 	case PPC_INS_MFSPR:
-	case PPC_INS_MTSPR:;
+	case PPC_INS_MTSPR: {
 		ut32 spr = INSOP(1).imm;
 		switch (spr) {
 		default:
@@ -898,6 +901,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			break;
 		}
 		break;
+	}
 	// WRITE/READ only
 	case PPC_INS_MTFSB0:
 	case PPC_INS_MTFSB1:
@@ -1028,7 +1032,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_ROTLWI:
 	case PPC_INS_RLWIMI:
 	case PPC_INS_RLWINM:
-	case PPC_INS_RLWNM:;
+	case PPC_INS_RLWNM:
 		if (id == PPC_INS_RLWNM || id == PPC_INS_ROTLW) {
 			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x1f)));
 		} else {
@@ -1055,7 +1059,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	case PPC_INS_RLDIC:
 	case PPC_INS_RLDICL:
 	case PPC_INS_RLDICR:
-	case PPC_INS_RLDIMI:;
+	case PPC_INS_RLDIMI:
 		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL || id == PPC_INS_ROTLD) {
 			// For these instruction ME is the third operand, not MB.
 			mE = INSOP(3).imm;

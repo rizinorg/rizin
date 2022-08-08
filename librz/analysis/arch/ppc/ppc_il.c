@@ -641,7 +641,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 
 		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
 	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:;
+	case PPC_INS_BCCTRL:
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
@@ -667,12 +667,12 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
-	case PPC_INS_BDNZTLA:;
+	case PPC_INS_BDNZTLA:
 	// ctr == 0 && cr_bi == 1
 	case PPC_INS_BDZT:
 	case PPC_INS_BDZTL:
 	case PPC_INS_BDZTA:
-	case PPC_INS_BDZTLA:;
+	case PPC_INS_BDZTLA:
 		if (insn->detail->ppc.op_count == 1) {
 			// If Capstone doesn't provide a CR register it means that the LT bit in cr0 is checked.
 			cr = VARG("cr0");
@@ -691,12 +691,12 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BDNZF:
 	case PPC_INS_BDNZFL:
 	case PPC_INS_BDNZFA:
-	case PPC_INS_BDNZFLA:;
+	case PPC_INS_BDNZFLA:
 	// ctr == 0 && cr_bi == 0
 	case PPC_INS_BDZF:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFA:
-	case PPC_INS_BDZFLA:;
+	case PPC_INS_BDZFLA:
 		if (insn->detail->ppc.op_count == 1) {
 			cr = VARG("cr0");
 			cr_bit = UN(4, 8);

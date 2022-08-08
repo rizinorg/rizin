@@ -229,7 +229,7 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 	case 8:
 		rz_write_ble8(src, (ut8)(value & UT8_MAX));
 		break;
-	case 4:;
+	case 4: {
 		// Example: 4bit Register is located at bit 1 of a byte.
 		// Example byte = 0b101xxxx1
 		// 'xxxx' are the bits where the new 'value' is set.
@@ -243,6 +243,7 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		ut8 new_val = (reg_byte & ~mask_xxxx) | xxxx;
 		rz_mem_copybits(buf, &new_val, 8); // Write byte back.
 		return true;
+	}
 	case 1:
 		if (value) {
 			ut8 *buf = arena->bytes + (item->offset / 8);
