@@ -807,7 +807,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_question_V);
 			break;
 		case 0: { // "?V"
-			char *v = rz_str_version(NULL);
+			char *v = rz_version_str(NULL);
 			rz_cons_printf("%s\n", v);
 			free(v);
 			break;

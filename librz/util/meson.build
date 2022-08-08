@@ -78,6 +78,7 @@ rz_util_sources = [
   'utf32.c',
   'utf8.c',
   'vector.c',
+  'version.c',
   'w32-sys.c',
   'x509.c',
 ]

@@ -47,7 +47,7 @@ RZ_API int rz_main_run(RzMain *m, int argc, const char **argv) {
 }
 
 RZ_API int rz_main_version_print(const char *progname) {
-	char *s = rz_str_version(progname);
+	char *s = rz_version_str(progname);
 	printf("%s\n", s);
 	free(s);
 	return 0;
