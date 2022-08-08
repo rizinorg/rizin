@@ -16,7 +16,7 @@
  * \param b Value b.
  * \param c Value c. Is optional and can be NULL
  * \param mode Capstone mode.
- * \return RZ_OWN* Effect which sets the carry bits.
+ * \return RzILOpEffect* Effect which sets the carry bits.
  */
 RZ_IPI RZ_OWN RzILOpEffect *ppc_set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode) {
 	rz_return_val_if_fail(a && b, NULL);
