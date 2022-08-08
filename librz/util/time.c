@@ -23,10 +23,10 @@
  * information.
  *
  * \param p Pointer to a \p timeval structure that will be filled by this function
- * \param tz Pointer to a \p timezone structure that will be filled by this function
+ * \param tz Pointer to a \p rz_timezone structure that will be filled by this function
  * \return 0 if the function succeeds, -1 on error
  */
-RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
 	// ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
@@ -72,10 +72,10 @@ RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
  * information.
  *
  * \param p Pointer to a \p timeval structure that will be filled by this function
- * \param tz Pointer to a \p timezone structure that will be filled by this function
+ * \param tz Pointer to a \p rz_timezone structure that will be filled by this function
  * \return 0 if the function succeeds, -1 on error
  */
-RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz) {
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz) {
 	return gettimeofday(p, tz);
 }
 #endif

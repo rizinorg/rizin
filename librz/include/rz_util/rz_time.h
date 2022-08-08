@@ -12,16 +12,22 @@
 
 #define ASCTIME_BUF_MINLEN 26
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _MSC_VER
 struct timeval;
 
-struct timezone {
+struct rz_timezone {
 	int tz_minuteswest; /* minutes W of Greenwich */
 	int tz_dsttime; /* type of dst correction */
 };
+#else
+#define rz_timezone timezone
 #endif
 
-RZ_API int rz_time_gettimeofday(struct timeval *p, struct timezone *tz);
+RZ_API int rz_time_gettimeofday(struct timeval *p, struct rz_timezone *tz);
 
 // wall clock time in microseconds
 RZ_API ut64 rz_time_now(void);
@@ -56,6 +62,10 @@ RZ_API struct tm *rz_gmtime_r(RZ_NONNULL const time_t *time, RZ_NONNULL struct t
 #define RZ_TIME_PROFILE_END \
 	do { \
 	} while (0)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
