@@ -73,6 +73,7 @@
 #include "rz_util/rz_big.h"
 #include "rz_util/rz_subprocess.h"
 #include "rz_util/rz_luhn.h"
+#include "rz_util/rz_version.h"
 #include "rz_util/rz_lang_byte_array.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 
