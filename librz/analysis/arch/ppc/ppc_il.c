@@ -582,12 +582,6 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 		(fmx & 0x01 ? x : 0));
 }
 
-// This function is a prerequisite for a broken insruciton implementation.
-// It has been already implemented.
-// For the implementation see: https://github.com/Rot127/rizin/tree/ppc-rzil-broken-insn-impl
-//
-// RZ_IPI ut8 ppc_translate_cs_cr_flag(const char *flag);
-
 /**
  * \brief Get the branch condition for a given instruction.
  * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
