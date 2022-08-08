@@ -54,3 +54,5 @@ d "?   R1:0 = S79:78" 00404e6f 0x0
 d "?   R1:0 = combine(##0x1b,#0x3)" 6063017c 0x0
 d "?   if (!P0) R5:4 = memd(R0+R2<<#0x0)" 04c2c031 0x0
 d "?   if (!P0.new) R2 = add(R2,##0x8)" 02618274 0x0
+d "?   invalid" ffffffff 0x0
+d "?   invalid ; invalid" ff3fffff 0x0
