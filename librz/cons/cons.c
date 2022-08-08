@@ -474,11 +474,17 @@ void resizeWin(void) {
 	}
 }
 
-RZ_API void rz_cons_set_click(int x, int y) {
+/**
+ * \brief Set the property of the click event
+ * \param x The x coordinate of the position
+ * \param y The y coordinate of the position
+ * \param event The type of the click
+ */
+RZ_API void rz_cons_set_click(int x, int y, MouseEvent event) {
 	I.click_x = x;
 	I.click_y = y;
 	I.click_set = true;
-	I.mouse_event = 1;
+	I.mouse_event = event;
 }
 
 RZ_API bool rz_cons_get_click(int *x, int *y) {
@@ -600,7 +606,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.teefile = NULL;
 	I.fix_columns = 0;
 	I.fix_rows = 0;
-	I.mouse_event = 0;
+	I.mouse_event = MOUSE_NONE;
 	I.force_rows = 0;
 	I.force_columns = 0;
 	I.event_resize = NULL;

@@ -529,6 +529,7 @@ static void __rotate_function_cb(void *user, bool rev);
 
 /* print callback */
 static void __print_default_cb(void *user, void *p);
+static void __print_default_noreset_cb(void *user, void *p);
 static void __print_disassembly_cb(void *user, void *p);
 static void __print_disasmsummary_cb(void *user, void *p);
 static void __print_graph_cb(void *user, void *p);
@@ -1954,6 +1955,9 @@ static bool __handle_mouse_on_X(RzCore *core, int x, int y) {
 }
 
 static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, int *key) {
+	if (core->cons->mouse_event != LEFT_PRESS) {
+		return false;
+	}
 	RzPanels *panels = core->panels;
 	int h;
 	(void)rz_cons_get_size(&h);
@@ -3068,6 +3072,14 @@ void __set_pcb(RzPanel *p) {
 		p->model->print_cb = __print_disasmsummary_cb;
 		return;
 	}
+	if (__check_panel_type(p, PANEL_CMD_FUNCTION)) {
+		p->model->print_cb = __print_default_noreset_cb;
+		return;
+	}
+	if (__check_panel_type(p, PANEL_CMD_SYMBOLS)) {
+		p->model->print_cb = __print_default_noreset_cb;
+		return;
+	}
 	p->model->print_cb = __print_default_cb;
 }
 
@@ -3927,6 +3939,17 @@ void __print_default_cb(void *user, void *p) {
 		if (panel->model->cache && panel->model->cmdStrCache) {
 			__reset_scroll_pos(panel);
 		}
+	}
+	__update_panel_contents(core, panel, cmdstr);
+}
+
+void __print_default_noreset_cb(void *user, void *p) {
+	RzCore *core = (RzCore *)user;
+	RzPanel *panel = (RzPanel *)p;
+	bool update = core->panels->autoUpdate && __check_func_diff(core, panel);
+	char *cmdstr = __find_cmd_str_cache(core, panel);
+	if (update || !cmdstr) {
+		cmdstr = __handle_cmd_str_cache(core, panel, false);
 	}
 	__update_panel_contents(core, panel, cmdstr);
 }
