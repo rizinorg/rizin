@@ -498,6 +498,19 @@ typedef struct rz_cons_context_t {
 
 #define HUD_BUF_SIZE 512
 
+typedef enum {
+	MOUSE_NONE = 0,
+	MOUSE_DEFAULT, // indicate an event with no consideration of specific type
+	LEFT_PRESS,
+	LEFT_RELEASE,
+	WHEEL_PRESS,
+	WHEEL_RELEASE,
+	RIGHT_PRESS,
+	RIGHT_RELEASE,
+	WHEEL_UP,
+	WHEEL_DOWN,
+} MouseEvent;
+
 typedef struct rz_cons_t {
 	RzConsContext *context;
 	RzConsInputContext *input;
@@ -521,7 +534,7 @@ typedef struct rz_cons_t {
 	void *user_fgets_user;
 	RzConsEvent event_resize;
 	void *event_data;
-	int mouse_event;
+	MouseEvent mouse_event;
 
 	RzConsEditorCallback cb_editor;
 	RzConsBreakCallback cb_break;
@@ -827,7 +840,7 @@ RZ_API RzCons *rz_cons_singleton(void);
 RZ_API RzCons *rz_cons_free(void);
 RZ_API char *rz_cons_lastline(int *size);
 RZ_API char *rz_cons_lastline_utf8_ansi_len(int *len);
-RZ_API void rz_cons_set_click(int x, int y);
+RZ_API void rz_cons_set_click(int x, int y, MouseEvent event);
 RZ_API bool rz_cons_get_click(int *x, int *y);
 
 typedef void (*RzConsBreak)(void *);

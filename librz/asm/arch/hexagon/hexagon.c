@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-04-11 18:58:34+02:00
+// Date of code generation: 2022-07-19 05:08:09-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -873,7 +873,7 @@ char *hex_get_reg_in_class(HexRegClass cls, int opcode_reg, bool get_alias) {
  * \param addr The address of the current instruction.
  * \param reg_num Bits of Nt.new reg.
  * \param p The current packet.
- * \return int The number of the general register. Or UT32_MAX if any error occured.
+ * \return int The number of the general register. Or UT32_MAX if any error occurred.
  */
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 	// .new values are documented in Programmers Reference Manual
@@ -888,14 +888,14 @@ int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 	}
 
 	ut8 prod_i = i; // Producer index
-	HexInsn *hi;
+	HexInsnContainer *hic;
 	RzListIter *it;
-	rz_list_foreach_prev(p->insn, it, hi) {
+	rz_list_foreach_prev(p->bin, it, hic) {
 		if (ahead == 0) {
 			break;
 		}
-		if (hi->addr < addr) {
-			if (hi->instruction == HEX_INS_A4_EXT) {
+		if (hic->addr < addr) {
+			if (hic->identifier == HEX_INS_A4_EXT) {
 				--prod_i;
 				continue;
 			}
@@ -904,18 +904,20 @@ int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p) {
 		}
 	}
 
-	hi = rz_list_get_n(p->insn, prod_i);
+	hic = rz_list_get_n(p->bin, prod_i);
 
-	if (!hi) {
+	if (!hic || !hic->bin.insn || (hic->is_duplex && (!hic->bin.sub[0] || !hic->bin.sub[1]))) {
+		// This case happens if the current instruction (with the .new register)
+		// is yet the only one in the packet.
 		return UT32_MAX;
 	}
-	if (hi->instruction == HEX_INS_A4_EXT) {
+	if (hic->identifier == HEX_INS_A4_EXT) {
 		return UT32_MAX;
 	}
-
-	for (ut8 i = 0; i < 6; ++i) {
-		if (hi->ops[i].attr & HEX_OP_REG_OUT) {
-			return hi->ops[i].op.reg;
+	HexInsn *hi = !hic->is_duplex ? hic->bin.insn : (hic->bin.sub[0]->addr == addr ? hic->bin.sub[0] : hic->bin.sub[1]);
+	for (ut8 k = 0; k < hi->op_count; ++k) {
+		if (hi->ops[k].attr & HEX_OP_REG_OUT) {
+			return hi->ops[k].op.reg;
 		}
 	}
 	return UT32_MAX;

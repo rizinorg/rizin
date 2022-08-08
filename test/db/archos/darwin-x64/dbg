@@ -12,6 +12,7 @@ EOF
 EXPECT=<<EOF
 /usr/lib/dyld
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=dcu + read
@@ -31,6 +32,10 @@ lea rax, reloc.objc_msgSend_fixup
 mov rax, qword [rax]
 lea rsi, reloc.objc_msgSend_fixup
 EOF
+EXPECT_ERR=<<EOF
+Continue until 0x100000bf8
+hit breakpoint at: 0x100000bf8
+EOF
 RUN
 
 NAME=maps
@@ -45,6 +50,7 @@ EXPECT=<<EOF
 0x0000000100001000 - 0x0000000100002000 - usr     4K u rw- hello-objc-osx hello-objc-osx hello_objc_osx.rw
 0x0000000100002000 - 0x0000000100003000 - usr     4K u r-- hello-objc-osx hello-objc-osx hello_objc_osx.r
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=maps as flags
@@ -65,5 +71,54 @@ f+ map.hello_objc_osx.r_x 0x00001000 @ 0x100000000
 f+ map.hello_objc_osx.rw 0x00001000 @ 0x100001000
 f+ map.hello_objc_osx.r 0x00001000 @ 0x100002000
 fss-
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=step and check regs
+FILE=bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+3 ds
+dr rip
+dr rdi
+ps @ rdi
+dk 9
+EOF
+EXPECT=<<EOF
+rip = 0x100000f17
+rdi = 0x100000f30
+Hello World
+EOF
+EXPECT_ERR=<<EOF
+Continue until 0x100000f0c
+hit breakpoint at: 0x100000f0c
+EOF
+RUN
+
+NAME=break multiple times and check regs
+FILE=bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ 0x100000f17
+dc
+dr rip
+?e --
+dc
+dr rip
+dr rdi
+dk 9
+EOF
+EXPECT=<<EOF
+rip = 0x100000f0c
+--
+rip = 0x100000f17
+rdi = 0x100000f30
+EOF
+EXPECT_ERR=<<EOF
+hit breakpoint at: 0x100000f0c
+hit breakpoint at: 0x100000f17
 EOF
 RUN

@@ -54,7 +54,7 @@ static int __parseMouseEvent(void) {
 			ypos[i] = ch;
 		}
 		ypos[i] = 0;
-		rz_cons_set_click(atoi(xpos), atoi(ypos));
+		rz_cons_set_click(atoi(xpos), atoi(ypos), MOUSE_DEFAULT);
 		(void)rz_cons_readchar();
 		// ignored
 		int ch = rz_cons_readchar();
@@ -103,7 +103,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		return I->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
 	}
 #endif
-	I->mouse_event = 0;
+	I->mouse_event = MOUSE_NONE;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3:
@@ -148,6 +148,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 #endif
 		switch (ch) {
 		case '<': {
+			// https://tintin.mudhalla.net/info/xterm/ CSI < flag ; x ; y M/m
 			char pos[8] = { 0 };
 			int p = 0;
 			int x = 0;
@@ -158,8 +159,6 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			int vn = 0;
 			do {
 				ch = rz_cons_readchar();
-				// just for debugging
-				// eprintf ( "%c", ch);
 				if (sc > 0) {
 					if (ch >= '0' && ch <= '9') {
 						pos[p++] = ch;
@@ -178,7 +177,11 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 				}
 			} while (ch != 'M' && ch != 'm');
 			int nvel = atoi(vel);
+			MouseEvent event = MOUSE_DEFAULT;
 			switch (nvel) {
+			case 0:
+				event = ch == 'M' ? LEFT_PRESS : LEFT_RELEASE;
+				break;
 			case 2: // right click
 				if (ch == 'M') {
 					return INT8_MAX;
@@ -189,9 +192,10 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			case 65: // wheel down
 				return 'j';
 			}
+			// setup click
 			pos[p++] = 0;
 			y = atoi(pos);
-			rz_cons_set_click(x, y);
+			rz_cons_set_click(x, y, event);
 		}
 			return 0;
 		case '[':
@@ -210,7 +214,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			ch = rz_cons_readchar();
 			// 6 is up
 			// 7 is down
-			I->mouse_event = 1;
+			I->mouse_event = MOUSE_DEFAULT;
 			if (ch == '6') {
 				ch = 'k';
 			} else if (ch == '7') {
@@ -416,7 +420,7 @@ static int __cons_readchar_w32(ut32 usec) {
 	bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
 	void *bed;
-	I->mouse_event = 0;
+	I->mouse_event = MOUSE_NONE;
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &mode);
 	DWORD newmode = ENABLE_WINDOW_INPUT;
@@ -463,20 +467,20 @@ static int __cons_readchar_w32(ut32 usec) {
 					} else {
 						ch = bCtrl ? 'K' : 'k';
 					}
-					I->mouse_event = 1;
+					I->mouse_event = MOUSE_DEFAULT;
 				}
 				switch (irInBuf.Event.MouseEvent.dwButtonState) {
 				case FROM_LEFT_1ST_BUTTON_PRESSED:
 					GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 					int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
-					rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1);
+					rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, LEFT_PRESS);
 					ch = UT8_MAX;
 					break;
 				} // TODO: Handle more buttons?
 			}
 
 			if (click_n_drag) {
-				rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1);
+				rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1, MOUSE_DEFAULT);
 				ch = UT8_MAX;
 			}
 
