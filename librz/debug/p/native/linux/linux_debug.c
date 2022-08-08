@@ -1332,8 +1332,8 @@ RzList *linux_desc_list(int pid) {
 		return NULL;
 	}
 	ret = rz_list_newf((RzListFree)rz_debug_desc_free);
+	rz_block_cleanup({closedir(dd);});
 	if (!ret) {
-		closedir(dd);
 		return NULL;
 	}
 	while ((de = (struct dirent *)readdir(dd))) {
@@ -1379,11 +1379,9 @@ RzList *linux_desc_list(int pid) {
 		}
 		rz_list_append(ret, desc);
 	}
-	closedir(dd);
 	return ret;
 
 fail:
 	rz_list_free(ret);
-	closedir(dd);
 	return NULL;
 }
