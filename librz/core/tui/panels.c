@@ -3598,7 +3598,7 @@ int __license_cb(void *user) {
 }
 
 int __version_cb(void *user) {
-	char *v = rz_str_version(NULL);
+	char *v = rz_version_str(NULL);
 	rz_cons_message(v);
 	free(v);
 	return 0;

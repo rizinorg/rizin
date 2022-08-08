@@ -19,7 +19,7 @@
  *
  * \return The saved git commit hash as a string, or NULL if it's not available.
  */
-RZ_API RZ_OWN char *rz_str_gittip() {
+RZ_API RZ_OWN char *rz_version_gittip() {
 	char *gittip_pathname = rz_str_newf("%s" RZ_SYS_DIR "gittip", rz_path_bindir());
 	if (!gittip_pathname) {
 		return NULL;
@@ -33,7 +33,7 @@ RZ_API RZ_OWN char *rz_str_gittip() {
 	return gittip;
 }
 
-RZ_API char *rz_str_version(const char *program) {
+RZ_API char *rz_version_str(const char *program) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (program) {
 		rz_strbuf_appendf(sb, "%s ", program);
@@ -43,7 +43,7 @@ RZ_API char *rz_str_version(const char *program) {
 	if (RZ_STR_ISNOTEMPTY(RZ_STR_PKG_VERSION_STRING)) {
 		rz_strbuf_append(sb, RZ_STR_PKG_VERSION_STRING);
 	}
-	char *gittip = rz_str_gittip();
+	char *gittip = rz_version_gittip();
 	if (gittip) {
 		rz_strbuf_append(sb, "\n");
 		rz_strbuf_appendf(sb, "commit: %s", gittip);
