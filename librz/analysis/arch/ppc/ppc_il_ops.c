@@ -173,6 +173,22 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	return SEQ2(res, update);
 }
 
+/**
+ * \brief Determine log_2( \p v ). \p v Should be a multiple of 2.
+ * See: https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
+ *
+ * \param v Value to determine log_2(v) for.
+ * \return ut32 lg(v)
+ */
+static inline ut32 ppc_log_2(const ut32 v) {
+	ut32 x = v;
+	ut32 r = 0; // r will be lg(v)
+	while (x >>= 1) {
+		r++;
+	}
+	return r;
+}
+
 static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
@@ -207,13 +223,7 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	default:
 		NOT_IMPLEMENTED;
 	case PPC_INS_DCBZ:;
-		// Determine log_2(dcache_line_size)
-		// See: https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
-		ut32 v = DCACHE_LINE_SIZE;
-		ut32 r = 0; // r will be lg(v)
-		while (v >>= 1) {
-			r++;
-		}
+		ut32 r = ppc_log_2(DCACHE_LINE_SIZE);
 		rA = cs_reg_name(handle, INSOP(0).reg);
 		rB = cs_reg_name(handle, INSOP(1).reg);
 
