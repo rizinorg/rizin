@@ -443,34 +443,34 @@ static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
 		RZ_LOG_WARN("Undefined access into CR register.\n");
 		return IL_FALSE;
 	}
-	RzILOpPure *field_bit;
+	ut8 field_bit;
 	RzILOpPure *cr_field;
 	if (pos < 36) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 32));
+		field_bit = 0b1000 >> (pos - 32);
 		cr_field = VARG("cr0");
 	} else if (pos < 40) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 36));
+		field_bit = 0b1000 >> (pos - 36);
 		cr_field = VARG("cr1");
 	} else if (pos < 44) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 40));
+		field_bit = 0b1000 >> (pos - 40);
 		cr_field = VARG("cr2");
 	} else if (pos < 48) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 44));
+		field_bit = 0b1000 >> (pos - 44);
 		cr_field = VARG("cr3");
 	} else if (pos < 52) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 48));
+		field_bit = 0b1000 >> (pos - 48);
 		cr_field = VARG("cr4");
 	} else if (pos < 56) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 52));
+		field_bit = 0b1000 >> (pos - 52);
 		cr_field = VARG("cr5");
 	} else if (pos < 60) {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 56));
+		field_bit = 0b1000 >> (pos - 56);
 		cr_field = VARG("cr6");
 	} else {
-		field_bit = SHIFTR0(UN(4, 0b1000), UN(4, pos - 60));
+		field_bit = 0b1000 >> (pos - 60);
 		cr_field = VARG("cr7");
 	}
-	return NON_ZERO(LOGAND(cr_field, field_bit));
+	return NON_ZERO(LOGAND(cr_field, UN(4, field_bit)));
 }
 
 /**
