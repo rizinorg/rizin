@@ -548,7 +548,7 @@ static RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits) {
 	RzILOpPure *ret = NULL;
 	if (mem.segment != X86_REG_INVALID) {
 		// TODO: Implement segmentation soon
-		RZ_LOG_WARN("X86: RzIL: No support for segmentation\n");
+		RZ_LOG_WARN("x86: RzIL: No support for segmentation\n");
 	} else {
 		ret = offset;
 	}
@@ -564,17 +564,17 @@ static RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits) 
 
 #define x86_il_set_mem(mem, val) x86_il_set_mem_bits(mem, val, analysis->bits)
 
-static RzILOpPure *x86_il_get_operand(X86Op op, int bits) {
+static RzILOpPure *x86_il_get_operand_bits(X86Op op, int bits) {
 	RzILOpPure *ret = NULL;
 	switch (op.type) {
 	case X86_OP_INVALID:
-		RZ_LOG_ERROR("X86: RzIL: Invalid param type encountered\n");
+		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
 		break;
 	case X86_OP_REG:
 		ret = x86_il_get_reg_bits(op.reg, bits);
 		break;
 	case X86_OP_IMM:
-		ret = S64(op.imm);
+		ret = SN(bits, op.imm);
 		break;
 	case X86_OP_MEM:
 		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, bits));
@@ -582,7 +582,7 @@ static RzILOpPure *x86_il_get_operand(X86Op op, int bits) {
 	return ret;
 }
 
-#define x86_il_get_operand(op) x86_il_get_operand(op, analysis->bits)
+#define x86_il_get_operand(op) x86_il_get_operand_bits(op, analysis->bits)
 
 static RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits) {
 	RzILOpEffect *ret = NULL;
