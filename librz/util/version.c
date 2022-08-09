@@ -33,7 +33,17 @@ RZ_API RZ_OWN char *rz_version_gittip() {
 	return gittip;
 }
 
-RZ_API char *rz_version_str(const char *program) {
+/**
+ * \brief Returns a version string.
+ *
+ * Returns a version string containing the program version and the OS that the
+ * program is compiled against, and the program name, packager information and
+ * git commit hash if available.
+ *
+ * \param program The program name, or NULL if it's not needed.
+ * \return The version string.
+ */
+RZ_API RZ_OWN char *rz_version_str(const char *program) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (program) {
 		rz_strbuf_appendf(sb, "%s ", program);
