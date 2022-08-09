@@ -803,13 +803,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		ut32 spr = INSOP(1).imm;
 		switch (spr) {
 		default:
-			if (spr & 1) {
-				// TODO
-				// Invoke system privileged instruction error handler
-			} else {
-				// TODO
-				// Invoke illegal instruction handler
-			}
+			// TODO Invoke different exception handlers. But they are not implemented yet.
 			NOT_IMPLEMENTED;
 		case 808:
 		case 809:
