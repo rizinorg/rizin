@@ -1124,7 +1124,6 @@ bool test_rz_bv_copy_nbits(void) {
 	mu_end;
 }
 
-
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);

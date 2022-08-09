@@ -1502,4 +1502,3 @@ RZ_API bool rz_bv_is_all_one(RZ_NONNULL const RzBitVector *x) {
 	}
 	return true;
 }
-
