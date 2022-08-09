@@ -380,41 +380,55 @@ static bool x86_il_is_gpr(X86Reg reg) {
 	return false;
 }
 
-static RzILOpPure *x86_il_get_gprh(X86Reg reg) {
+static RzILOpPure *x86_il_get_gprh(X86Reg reg, int bits) {
 	return UNSIGNED(8, SHIFTR0(VARG(x86_registers[reg]), U8(8)));
 }
-static RzILOpPure *x86_il_get_gprl(X86Reg reg) {
+static RzILOpPure *x86_il_get_gprl(X86Reg reg, int bits) {
 	return UNSIGNED(8, VARG(x86_registers[reg]));
 }
-static RzILOpPure *x86_il_get_gpr16(X86Reg reg) {
+static RzILOpPure *x86_il_get_gpr16(X86Reg reg, int bits) {
+	if (bits == 16) {
+		// Don't perform unnecessary casting
+		return VARG(x86_registers[reg]);
+	}
 	return UNSIGNED(16, VARG(x86_registers[reg]));
 }
-static RzILOpPure *x86_il_get_gpr32(X86Reg reg) {
+static RzILOpPure *x86_il_get_gpr32(X86Reg reg, int bits) {
+	if (bits == 32) {
+		return VARG(x86_registers[reg]);
+	}
 	return UNSIGNED(32, VARG(x86_registers[reg]));
 }
-static RzILOpPure *x86_il_get_gpr64(X86Reg reg) {
+static RzILOpPure *x86_il_get_gpr64(X86Reg reg, int bits) {
 	return VARG(x86_registers[reg]);
 }
 
-static RzILOpEffect *x86_il_set_gprh(X86Reg reg, RzILOpPure *val, int bits) {
+static RzILOpEffect *x86_il_set_gprh(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xff00));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
 	RzILOpPure *final_reg = LOGOR(masked_reg, SHIFTL0(UNSIGNED(bits, val), U8(8)));
 	return SETG(x86_registers[reg], final_reg);
 }
-static RzILOpEffect *x86_il_set_gprl(X86Reg reg, RzILOpPure *val, int bits) {
+static RzILOpEffect *x86_il_set_gprl(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xff));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
-static RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RzILOpPure *val, int bits) {
+static RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
+	if (bits == 16) {
+		// Don't perform unnecessary casting
+		return SETG(x86_registers[reg], val);
+	}
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xffff));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
-static RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RzILOpPure *val, int bits) {
+static RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
+	if (bits == 32) {
+		return SETG(x86_registers[reg], val);
+	}
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xffffffff));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
@@ -439,7 +453,7 @@ static X86Reg get_bitness_reg(unsigned int index, int bits) {
 
 struct gpr_lookup_helper_t {
 	unsigned int index;
-	RzILOpPure *(*get_handler)(X86Reg);
+	RzILOpPure *(*get_handler)(X86Reg, int);
 	RzILOpEffect *(*set_handler)(X86Reg, RzILOpPure *, int);
 };
 
@@ -496,7 +510,7 @@ static RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits) {
 	are available in the IL in any particular bitness
 	(For example, "rax" is not a valid IL variable in 32-bit mode)
 	So, we need to use the max width register available */
-	return entry.get_handler(get_bitness_reg(entry.index, bits));
+	return entry.get_handler(get_bitness_reg(entry.index, bits), bits);
 }
 
 #define x86_il_get_reg(reg) x86_il_get_reg_bits(reg, analysis->bits)

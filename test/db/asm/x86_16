@@ -1,3 +1,4 @@
+ad "aaa" 37 0x0 (seq (branch (|| (! (ule (& (cast 8 false (var ax)) (bv 8 0xf)) (bv 8 0x9))) (var af)) (seq (set ax (+ (var ax) (bv 16 0x106))) (set af true) (set cf true)) (seq (set af false) (set cf false))) (set ax (| (& (var ax) (~ (bv 16 0xff))) (cast 16 false (& (cast 8 false (var ax)) (bv 8 0xf))))))
 d "call 0" e8fdff
 a "jmp 0x0" ebfe
 a "jmp 0x10" eb0e

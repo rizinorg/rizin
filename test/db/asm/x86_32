@@ -1,5 +1,5 @@
 ad "lea edx, [0x2c4b]" 8d154b2c0000
-d "aaa" 37
+ad "aaa" 37 0x0 (seq (branch (|| (! (ule (& (cast 8 false (var eax)) (bv 8 0xf)) (bv 8 0x9))) (var af)) (seq (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (+ (cast 16 false (var eax)) (bv 16 0x106))))) (set af true) (set cf true)) (seq (set af false) (set cf false))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (& (cast 8 false (var eax)) (bv 8 0xf))))))
 d "aad" d50a
 d "aam" d40a
 d "aas" 3F
@@ -2316,6 +2316,3 @@ a "dec ebx" 4b
 a "dec ecx" 49
 a "dec edi" 4f
 a "dec edx" 4a
-
-# RzIL asm tests
-ad "aaa" 37 0x0 (seq (branch (|| (! (ule (& (cast 8 false (var eax)) (bv 8 0xf)) (bv 8 0x9))) (var af)) (seq (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (+ (cast 16 false (var eax)) (bv 16 0x106))))) (set af true) (set cf true)) (seq (set af false) (set cf false))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (& (cast 8 false (var eax)) (bv 8 0xf))))))
