@@ -270,6 +270,7 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
+	free(arg->fmt);
 	free(arg);
 }
 
