@@ -1466,7 +1466,8 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL const RzBitVector *x) {
 }
 
 /**
- * set a range of bits to bool value `b`
+ * set a range of bits to bool value `b`, the range is inclusive
+ * pos_end element is also included
  * \param bv RzBitVector
  * \param pos_start start index of range
  * \param pos_end end index of range
