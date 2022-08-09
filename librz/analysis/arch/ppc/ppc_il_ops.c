@@ -174,18 +174,20 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 }
 
 /**
- * \brief Determine log_2( \p v ). \p v Should be a multiple of 2.
- * See: https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious
+ * \brief Determine log_2( \p v ). \p v must be a multiple of 2.
+ * See: https://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
  *
- * \param v Value to determine log_2(v) for.
+ * \param v Value to determine lg(v) for.
  * \return ut32 lg(v)
  */
 static inline ut32 ppc_log_2(const ut32 v) {
-	ut32 x = v;
-	ut32 r = 0; // r will be lg(v)
-	while (x >>= 1) {
-		r++;
-	}
+	static const ut32 b[] = { 0xAAAAAAAA, 0xCCCCCCCC, 0xF0F0F0F0,
+		0xFF00FF00, 0xFFFF0000 };
+	register ut32 r = (v & b[0]) != 0;
+	r |= ((v & b[4]) != 0) << 4;
+	r |= ((v & b[3]) != 0) << 3;
+	r |= ((v & b[2]) != 0) << 2;
+	r |= ((v & b[1]) != 0) << 1;
 	return r;
 }
 
