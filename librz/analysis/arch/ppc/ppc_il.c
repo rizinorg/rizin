@@ -543,12 +543,12 @@ RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
  * \return RzILOpEffect* Sequence of effects to sync the CR/CRx registers.
  */
 RZ_IPI RZ_OWN RzILOpEffect *ppc_sync_crx_cr(const bool crx_to_cr, const ut32 cr_mask) {
-	RzILOpEffect *sync;
+	RzILOpEffect *effect;
 	if (crx_to_cr) {
-		sync = SETL("cr", LOGOR(UNSIGNED(32, VARG("cr7")), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr6")), U8(0x4)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr5")), U8(0x8)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr4")), U8(0xc)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr3")), U8(0x10)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr2")), U8(0x14)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr1")), U8(0x18)), SHIFTL0(UNSIGNED(32, VARG("cr0")), U8(0x1c))))))))));
-		return sync;
+		effect = SETL("cr", LOGOR(UNSIGNED(32, VARG("cr7")), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr6")), U8(0x4)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr5")), U8(0x8)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr4")), U8(0xc)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr3")), U8(0x10)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr2")), U8(0x14)), LOGOR(SHIFTL0(UNSIGNED(32, VARG("cr1")), U8(0x18)), SHIFTL0(UNSIGNED(32, VARG("cr0")), U8(0x1c))))))))));
+		return effect;
 	}
-	sync = SEQN(10,
+	effect = SEQN(10,
 		SETL("cr_mask", U32(cr_mask)),
 		SETL("crm", LOGAND(VARL("cr"), U32(cr_mask))),
 		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf))), EMPTY(), SETG("cr7", UNSIGNED(4, VARL("crm")))),
@@ -559,7 +559,7 @@ RZ_IPI RZ_OWN RzILOpEffect *ppc_sync_crx_cr(const bool crx_to_cr, const ut32 cr_
 		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf00000))), EMPTY(), SETG("cr2", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x14))))),
 		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf000000))), EMPTY(), SETG("cr1", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x18))))),
 		BRANCH(IS_ZERO(LOGAND(VARL("cr_mask"), U32(0xf0000000))), EMPTY(), SETG("cr0", UNSIGNED(4, SHIFTR0(VARL("crm"), U8(0x1c))))));
-	return sync;
+	return effect;
 }
 
 /**

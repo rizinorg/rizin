@@ -752,7 +752,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-	// ???
 	case PPC_INS_MTDCR:
 	case PPC_INS_MFDCR:
 		NOT_IMPLEMENTED;
