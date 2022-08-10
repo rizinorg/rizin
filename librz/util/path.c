@@ -8,10 +8,6 @@
 #include <rz_util/rz_utf8.h>
 #include <rz_windows.h>
 
-#if __WINDOWS__
-#include <rz_windows.h>
-#endif
-
 #if RZ_IS_PORTABLE
 #include <rz_constructor.h>
 #include <rz_th.h>
