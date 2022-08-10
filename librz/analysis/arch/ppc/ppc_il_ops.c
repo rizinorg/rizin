@@ -1069,7 +1069,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			n = U8(sH);
 		}
 		n = LOGAND(U8(0x3f), n);
-		r = LET("n", n, ITE(EQ(VARLP("n"), U8(0)), VARG(rS), ROTL64(VARG(rS), VARLP("n"))));
+		r = ROTL64(VARG(rS), n);
 		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR || id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
 			b = 0;
 			if (id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
