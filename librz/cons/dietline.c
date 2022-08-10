@@ -239,7 +239,7 @@ static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the 
 	}
 do_it_again:
 	bed = rz_cons_sleep_begin();
-	if (rz_cons_singleton()->term_xterm || !is_console) {
+	if (rz_cons_singleton()->term_pty || !is_console) {
 		ret = ReadFile(h, buf, 1, &out, NULL);
 	} else {
 		ret = ReadConsoleInputW(h, &irInBuf, 1, &out);

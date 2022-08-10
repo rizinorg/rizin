@@ -548,7 +548,7 @@ typedef struct rz_cons_t {
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
-	unsigned long term_raw, term_buf, term_xterm;
+	unsigned long term_raw, term_buf, term_pty;
 	unsigned long old_input_mode, old_output_mode;
 	ut32 old_cp;
 	ut32 old_ocp;
