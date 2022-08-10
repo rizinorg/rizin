@@ -1464,3 +1464,42 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL const RzBitVector *x) {
 	}
 	return ret;
 }
+
+/**
+ * set a range of bits to bool value `b`, the range is inclusive
+ * pos_end element is also included
+ * \param bv RzBitVector
+ * \param pos_start start index of range
+ * \param pos_end end index of range
+ * \param b bool value
+ * \return return true if success, else return false
+ */
+RZ_API bool rz_bv_set_range(RZ_NONNULL RzBitVector *bv, ut32 pos_start, ut32 pos_end, bool b) {
+	rz_return_val_if_fail(bv, false);
+	if (pos_start > bv->len - 1 || pos_end > bv->len - 1) {
+		return false;
+	}
+
+	for (ut32 i = pos_start; i <= pos_end; ++i) {
+		rz_bv_set(bv, i, b);
+	}
+
+	return true;
+}
+
+/**
+ * check if bitvector's bits are all set to bit 1
+ * \param x RzBitVector
+ * \return true if all bits of bv `x` are set to 1
+ */
+RZ_API bool rz_bv_is_all_one(RZ_NONNULL const RzBitVector *x) {
+	rz_return_val_if_fail(x, false);
+	// could not use ~0 as full-vector when bits < 64
+
+	for (ut32 i = 0; i < x->len; ++i) {
+		if (rz_bv_get(x, i) == 0) {
+			return false;
+		}
+	}
+	return true;
+}

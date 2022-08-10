@@ -40,6 +40,7 @@ RZ_API void rz_bv_free(RZ_NULLABLE RzBitVector *bv);
 // read and write to a bit
 RZ_API bool rz_bv_set(RZ_NONNULL RzBitVector *bv, ut32 pos, bool b);
 RZ_API bool rz_bv_set_all(RZ_NONNULL RzBitVector *bv, bool b);
+RZ_API bool rz_bv_set_range(RZ_NONNULL RzBitVector *bv, ut32 pos_start, ut32 pos_end, bool b);
 RZ_API bool rz_bv_toggle(RZ_NONNULL RzBitVector *bv, ut32 pos);
 RZ_API bool rz_bv_toggle_all(RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzBitVector *rz_bv_append_zero(RZ_NONNULL RzBitVector *bv, ut32 delta_len);
@@ -85,6 +86,7 @@ RZ_API ut32 rz_bv_to_ut32(RZ_NONNULL const RzBitVector *x);
 RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL const RzBitVector *x);
 // misc
 RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL const RzBitVector *x);
+RZ_API bool rz_bv_is_all_one(RZ_NONNULL const RzBitVector *x);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_ut64(ut32 length, ut64 value);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_st64(ut32 length, st64 value);
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
