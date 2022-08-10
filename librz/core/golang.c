@@ -1616,7 +1616,7 @@ static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
 // the first offset is always the pointer to the squashed strings and the next word
 // is the size of the string
 static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRecover *ctx) {
-	rz_core_notify_begin(core, "Recovering go strings from the data sections");
+	rz_core_notify_begin(core, "Recovering go strings from bin maps");
 
 	RzAnalysis *analysis = core->analysis;
 	const ut32 word_size = analysis->bits / 8;
@@ -1677,7 +1677,7 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 
 end:
 	free(buffer);
-	rz_core_notify_done(core, "Recovering go strings from the data sections");
+	rz_core_notify_done(core, "Recovering go strings from bin maps");
 }
 
 /**
