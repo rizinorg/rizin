@@ -1370,7 +1370,8 @@ RZ_API bool rz_cons_isatty(void) {
 #elif __WINDOWS__
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (GetFileType(hOut) == FILE_TYPE_CHAR) {
-		return true;
+		DWORD unused;
+		return GetConsoleMode(hOut, &unused);
 	}
 #endif
 	/* non-UNIX do not have ttys */
