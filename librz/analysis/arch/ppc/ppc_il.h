@@ -169,8 +169,6 @@ RZ_IPI bool ppc_is_mul_div_d(const ut32 id, const cs_mode mode);
 RZ_IPI bool ppc_is_mul_div_u(const ut32 id);
 RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx);
-RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x);
-RZ_IPI const char *ppc_get_cr_name(const ut8 x);
 
 RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
 RZ_IPI RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode);

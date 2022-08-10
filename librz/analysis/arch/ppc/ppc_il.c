@@ -474,66 +474,6 @@ static RZ_OWN RzILOpBool *get_cr_bit(const ut8 pos) {
 }
 
 /**
- * \brief Get the CRx register.
- *
- * \param x The number of the CR register.
- * \return RzILOpPure* The CR register. Or NULL on failure.
- */
-RZ_IPI RZ_OWN RzILOpPure *ppc_get_cr(const ut8 x) {
-	switch (x) {
-	default:
-		RZ_LOG_WARN("Cannot return CR%" PFMT32d ". THere exists no such register.", x);
-		return NULL;
-	case 0:
-		return VARG("cr0");
-	case 1:
-		return VARG("cr1");
-	case 2:
-		return VARG("cr2");
-	case 3:
-		return VARG("cr3");
-	case 4:
-		return VARG("cr4");
-	case 5:
-		return VARG("cr5");
-	case 6:
-		return VARG("cr6");
-	case 7:
-		return VARG("cr7");
-	}
-}
-
-/**
- * \brief Get the CRx register name.
- *
- * \param x The number of the CR register.
- * \return const char* The CRx register name. Or NULL on failure.
- */
-RZ_IPI const char *ppc_get_cr_name(const ut8 x) {
-	switch (x) {
-	default:
-		RZ_LOG_WARN("Cannot return cr%" PFMT32d ". There exists no such register.\n", x);
-		return NULL;
-	case 0:
-		return "cr0";
-	case 1:
-		return "cr1";
-	case 2:
-		return "cr2";
-	case 3:
-		return "cr3";
-	case 4:
-		return "cr4";
-	case 5:
-		return "cr5";
-	case 6:
-		return "cr6";
-	case 7:
-		return "cr7";
-	}
-}
-
-/**
  * \brief Synchronizes the CR register with the CR0-CR7 registers.
  * Since CR contains CR0-CR7 but are separated in the register profile
  * this function should be called before CR as a whole is read and after it was written.
