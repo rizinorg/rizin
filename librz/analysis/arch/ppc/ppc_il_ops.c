@@ -809,86 +809,31 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 			RZ_LOG_WARN("Reserved SPR instruction encountered at 0x%" PFMT64x "\n", (ut64)insn->address);
 			return EMPTY();
 		case 1:
-			if (id == PPC_INS_MTSPR) {
-				return ppc_set_xer(VARG(rS), mode);
-			}
-			spr_name = "xer";
-			set_val = SETL("val", ppc_get_xer(mode));
-			break;
 		case 3:
-			spr_name = "dscr";
-			break;
 		case 8:
-			spr_name = "lr";
-			break;
 		case 9:
-			spr_name = "ctr";
-			break;
 		case 13:
-			spr_name = "amr";
-			break;
 		case 256:
-			size = 32;
-			spr_name = "vrsave";
-			break;
 		case 769:
-			spr_name = "mmcr2";
-			break;
 		case 770:
-			spr_name = "mmcra";
-			break;
 		case 771:
-			spr_name = "pmc1";
-			break;
 		case 772:
-			spr_name = "pmc2";
-			break;
 		case 773:
-			spr_name = "pmc3";
-			break;
 		case 774:
-			spr_name = "pmc4";
-			break;
 		case 775:
-			spr_name = "pmc5";
-			break;
 		case 776:
-			spr_name = "pmc6";
-			break;
 		case 779:
-			spr_name = "mmcr0";
-			break;
 		case 800:
-			spr_name = "bescrs";
-			break;
 		case 801:
-			spr_name = "bescrsu";
-			break;
 		case 802:
-			spr_name = "bescrr";
-			break;
 		case 803:
-			spr_name = "bescrru";
-			break;
 		case 804:
-			spr_name = "ebbhr";
-			break;
 		case 805:
-			spr_name = "ebbrr";
-			break;
 		case 806:
-			spr_name = "bescr";
-			break;
-		case 815:
-			spr_name = "tar";
-			break;
-		case 896:
-			spr_name = "ppr";
-			break;
 		case 898:
-			size = 32;
-			spr_name = "ppr32";
-			break;
+		case 815:
+		case 896:
+			NOT_IMPLEMENTED;
 		}
 		break;
 	}
@@ -925,7 +870,9 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		if (id == PPC_INS_MTXER) {
 			return ppc_set_xer(VARG(rS), mode);
 		}
-		NOT_IMPLEMENTED;
+		spr_name = "xer";
+		set_val = SETL("val", ppc_get_xer(mode));
+		break;
 	case PPC_INS_MFDSCR:
 	case PPC_INS_MTDSCR:
 		NOT_IMPLEMENTED;

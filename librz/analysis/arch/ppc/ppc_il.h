@@ -170,8 +170,8 @@ RZ_IPI bool ppc_is_mul_div_u(const ut32 id);
 RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx);
 
-RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
 RZ_IPI RZ_OWN RzILOpEffect *ppc_set_xer(RzILOpPure *val, cs_mode mode);
+RZ_IPI RZ_OWN RzILOpPure *ppc_get_xer(cs_mode mode);
 RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
 RZ_IPI RZ_OWN RzILOpEffect *ppc_sync_crx_cr(const bool to_cr, const ut32 cr_mask);
