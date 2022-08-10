@@ -1,7 +1,7 @@
 #ifndef RZ_CONFIGURE_H
 #define RZ_CONFIGURE_H
 
-#include "rz_version.h"
+#include "rz_build_version.h"
 
 // clang-format off
 #define RZ_CHECKS_LEVEL             @RZ_CHECKS_LEVEL@
