@@ -214,6 +214,7 @@ static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the 
 		}
 		return 1;
 	}
+	const bool is_console = rz_cons_isatty();
 	INPUT_RECORD irInBuf = { 0 };
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
@@ -238,7 +239,7 @@ static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the 
 	}
 do_it_again:
 	bed = rz_cons_sleep_begin();
-	if (rz_cons_singleton()->term_xterm) {
+	if (rz_cons_singleton()->term_xterm || !is_console) {
 		ret = ReadFile(h, buf, 1, &out, NULL);
 	} else {
 		ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
@@ -256,7 +257,7 @@ do_it_again:
 				}
 				strncpy_s(buf, sizeof(buf), tmp, strlen(tmp));
 				free(tmp);
-			} else {
+			} else if (I.vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 				int idx = 0;
 				buf[idx++] = 27;
 				buf[idx++] = '['; // Simulate escaping
