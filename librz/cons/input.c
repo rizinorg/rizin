@@ -438,7 +438,10 @@ static int __cons_readchar_w32(ut32 usec) {
 				return -1;
 			}
 		}
-		if (I->term_xterm || !is_console) {
+		if (I->term_pty || !is_console) {
+			if (I->term_pty) {
+				rz_cons_enable_mouse(I->mouse);
+			}
 			ret = ReadFile(h, &ch, 1, &out, NULL);
 			if (ret) {
 				rz_cons_sleep_end(bed);

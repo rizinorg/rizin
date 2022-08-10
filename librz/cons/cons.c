@@ -1378,7 +1378,7 @@ RZ_API bool rz_cons_isatty(void) {
 }
 
 #if __WINDOWS__
-static int __xterm_get_cur_pos(int *xpos) {
+static int __pty_get_cur_pos(int *xpos) {
 	int ypos = 0;
 	const char *get_pos = RZ_CONS_GET_CURSOR_POSITION;
 	if (write(I.fdout, get_pos, sizeof(get_pos)) < 1) {
@@ -1431,13 +1431,13 @@ static int __xterm_get_cur_pos(int *xpos) {
 	return ypos;
 }
 
-static bool __xterm_get_size(void) {
+static bool __pty_get_size(void) {
 	if (write(I.fdout, RZ_CONS_CURSOR_SAVE, sizeof(RZ_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
 	int rows, columns;
 	rz_xwrite(I.fdout, "\x1b[999;999H", sizeof("\x1b[999;999H"));
-	rows = __xterm_get_cur_pos(&columns);
+	rows = __pty_get_cur_pos(&columns);
 	if (rows) {
 		I.rows = rows;
 		I.columns = columns;
@@ -1457,8 +1457,8 @@ RZ_API int rz_cons_get_size(int *rows) {
 		I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 		I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	} else {
-		if (I.term_xterm) {
-			ret = __xterm_get_size();
+		if (I.term_pty) {
+			ret = __pty_get_size();
 		}
 		if (!ret || (I.columns == -1 && I.rows == 0)) {
 			// Stdout is probably redirected so we set default values
@@ -1536,6 +1536,19 @@ RZ_API int rz_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
+
+typedef DWORD(WINAPI *GetFileInformationByHandleEx_t)(
+	_In_ HANDLE hFile,
+	_In_ FILE_INFO_BY_HANDLE_CLASS FileInformationClass,
+	_Out_writes_bytes_(dwBufferSize) LPVOID lpFileInformation,
+	_In_ DWORD dwBufferSize);
+
+static GetFileInformationByHandleEx_t w32_GetFileInformationByHandleEx;
+
+static inline bool is_win_10_creators_or_above(DWORD major, DWORD minor, DWORD release) {
+	return major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703);
+}
+
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 	DWORD major;
 	DWORD minor;
@@ -1550,15 +1563,31 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 		free(alacritty);
 		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
-	char *term = rz_sys_getenv("TERM");
-	if (term) {
-		if (strstr(term, "xterm")) {
-			I.term_xterm = 1;
-			free(term);
-			return 2;
+	const bool is_console = rz_cons_isatty();
+	HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+	if (!is_console) {
+#if NTDDI_VERSION >= NTDDI_VISTA
+		if (!w32_GetFileInformationByHandleEx) {
+			HMODULE k32 = GetModuleHandleA("kernel32");
+			if (k32) {
+				w32_GetFileInformationByHandleEx = (GetFileInformationByHandleEx_t)GetProcAddress(k32, "GetFileInformationByHandleEx");
+			}
 		}
-		I.term_xterm = 0;
-		free(term);
+		if (w32_GetFileInformationByHandleEx) {
+			struct {
+				FILE_NAME_INFO fi;
+				wchar_t buf[MAX_PATH];
+			} buf;
+			if (w32_GetFileInformationByHandleEx(in, FileNameInfo, &buf, sizeof(buf))) {
+				buf.fi.FileName[buf.fi.FileNameLength / sizeof(WCHAR)] = 0;
+				if ((wcsstr(buf.fi.FileName, L"msys-") || wcsstr(buf.fi.FileName, L"cygwin-")) &&
+					wcsstr(buf.fi.FileName, L"-pty")) {
+					I.term_pty = 1;
+				}
+			}
+		}
+#endif
+		return RZ_VIRT_TERM_MODE_COMPLETE;
 	}
 	char *ansicon = rz_sys_getenv("ANSICON");
 	if (ansicon) {
@@ -1575,8 +1604,18 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 		if (info->release) {
 			release = atoi(info->release);
 		}
-		if (major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703)) {
+		// VT output processing was first introduced in Windows 10 Creators Update
+		if (ENABLE_VIRTUAL_TERMINAL_PROCESSING && is_win_10_creators_or_above(major, minor, release)) {
 			win_support = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
+			if (ENABLE_VIRTUAL_TERMINAL_INPUT && is_console) {
+				DWORD mode;
+				if (GetConsoleMode(in, &mode)) {
+					if (SetConsoleMode(in, mode | ENABLE_VIRTUAL_TERMINAL_INPUT)) {
+						win_support = RZ_VIRT_TERM_MODE_COMPLETE;
+					}
+					SetConsoleMode(in, mode);
+				}
+			}
 		}
 	}
 	rz_sys_info_free(info);
@@ -1642,13 +1681,13 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &mode);
 	if (is_raw) {
-		if (I.term_xterm) {
+		if (I.term_pty) {
 			rz_sys_xsystem("stty raw -echo");
 		} else {
 			SetConsoleMode(h, mode & I.term_raw);
 		}
 	} else {
-		if (I.term_xterm) {
+		if (I.term_pty) {
 			rz_sys_xsystem("stty -raw echo");
 		} else {
 			SetConsoleMode(h, mode | I.term_buf);

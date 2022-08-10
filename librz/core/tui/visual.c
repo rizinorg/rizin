@@ -3833,7 +3833,7 @@ RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols) {
 #ifdef __WINDOWS__
 
 static bool is_mintty(RzCons *cons) {
-	return cons->term_xterm;
+	return cons->term_pty;
 }
 
 static void flush_stdin(void) {
