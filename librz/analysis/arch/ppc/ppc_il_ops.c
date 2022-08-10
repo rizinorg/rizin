@@ -53,12 +53,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		update_ra = false;
 		break;
 	case PPC_INS_LA: // RT = EA
-		base = VARG(rA);
-		disp = EXTEND(PPC_ARCH_BITS, SN(16, d));
-		ea = ADD(base, disp);
-		into_rt = ea;
-		update_ra = false;
-		break;
+		NOT_IMPLEMENTED;
 	case PPC_INS_LBZ:
 	case PPC_INS_LBZX:
 	case PPC_INS_LBZU:
