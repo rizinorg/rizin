@@ -1424,7 +1424,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		if (I.echo) {
 			rz_cons_clear_line(0);
 		}
-		(void)rz_cons_get_size(&rows);
 		switch (*buf) {
 		case 0: // control-space
 			/* ignore atm */
@@ -1707,6 +1706,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							buf[1] = rz_cons_readchar();
 						}
 						if (I.hud) {
+							rz_cons_get_size(&rows);
 							I.hud->top_entry_n -= (rows - 1);
 							if (I.hud->top_entry_n < 0) {
 								I.hud->top_entry_n = 0;
@@ -1722,6 +1722,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							buf[1] = rz_cons_readchar();
 						}
 						if (I.hud) {
+							rz_cons_get_size(&rows);
 							I.hud->top_entry_n += (rows - 1);
 							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
 								I.hud->top_entry_n = I.hud->current_entry_n - 1;
