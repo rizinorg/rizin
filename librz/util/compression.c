@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#if HAVE_ZLIB
 #include <zlib.h>
+#else
+#define MAX_WBITS 15
+#endif
 
 #if HAVE_LZMA
 #include <lzma.h>
