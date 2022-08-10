@@ -419,6 +419,7 @@ static int __cons_readchar_w32(ut32 usec) {
 	CONSOLE_SCREEN_BUFFER_INFO info = { 0 };
 	bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
+	const bool is_console = rz_cons_isatty();
 	void *bed;
 	I->mouse_event = MOUSE_NONE;
 	h = GetStdHandle(STD_INPUT_HANDLE);
@@ -437,7 +438,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				return -1;
 			}
 		}
-		if (I->term_xterm) {
+		if (I->term_xterm || !is_console) {
 			ret = ReadFile(h, &ch, 1, &out, NULL);
 			if (ret) {
 				rz_cons_sleep_end(bed);
@@ -454,7 +455,7 @@ static int __cons_readchar_w32(ut32 usec) {
 			if (mouse_enabled) {
 				rz_cons_enable_mouse(true);
 			}
-			if (irInBuf.EventType == MOUSE_EVENT) {
+			if (irInBuf.EventType == MOUSE_EVENT && I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
 					if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
 						click_n_drag = true;
@@ -494,7 +495,7 @@ static int __cons_readchar_w32(ut32 usec) {
 							memcpy(&ch, tmp, RZ_MIN(len, sizeof(ch)));
 							free(tmp);
 						}
-					} else {
+					} else if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
 						case VK_DOWN: // key down
 						case VK_RIGHT: // key right
