@@ -120,7 +120,7 @@ static void _6502_analysis_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8 *d
 		break;
 	case 0x01: // op ($ff,x)
 		op->cycles = 6;
-		imm = data[1];
+		imm = (len > 1) ? data[1] : 0;
 		if (esiladdr_out) {
 			snprintf(esiladdr_out, esiladdr_size, "x,0x%02x,+,[2]", (unsigned int)imm);
 		}
