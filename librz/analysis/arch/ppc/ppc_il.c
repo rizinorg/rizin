@@ -400,7 +400,6 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
-	case PPC_INS_BCT:
 		return !(0x4 & PPC_READ_BO_FIELD); // not BO_2
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
