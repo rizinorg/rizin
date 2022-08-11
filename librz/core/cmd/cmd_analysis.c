@@ -915,19 +915,7 @@ repeat:
 		}
 	}
 	rz_asm_set_pc(core->rasm, addr);
-	// run esil pin command here
-	int dataAlign = rz_analysis_archinfo(esil->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
-	if (dataAlign > 1) {
-		if (addr % dataAlign) {
-			if (esil->cmd && esil->cmd_trap) {
-				esil->cmd(esil, esil->cmd_trap, addr, RZ_ANALYSIS_TRAP_UNALIGNED);
-			}
-			if (breakoninvalid) {
-				rz_cons_printf("[ESIL] Stopped execution in an unaligned instruction (see e??esil.breakoninvalid)\n");
-				return_tail(0);
-			}
-		}
-	}
+
 	(void)rz_io_read_at_mapped(core->io, addr, code, sizeof(code));
 	// TODO: sometimes this is dupe
 	ret = rz_analysis_op(core->analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
