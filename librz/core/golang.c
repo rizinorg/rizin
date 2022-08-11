@@ -1651,7 +1651,7 @@ static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRe
 				break;
 			}
 
-			if (0 > rz_io_nread_at(core->io, current, buffer, length)) {
+			if (rz_io_nread_at(core->io, current, buffer, length) < 0) {
 				RZ_LOG_ERROR("Failed to read map at address %" PFMT64x "\n", current);
 				break;
 			}
