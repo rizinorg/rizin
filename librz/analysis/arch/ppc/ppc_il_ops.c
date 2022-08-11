@@ -841,7 +841,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTFSB0:
 	case PPC_INS_MTFSB1:
 	case PPC_INS_MTFSF:
-	case PPC_INS_MTFSFI:
 	case PPC_INS_MFFS:
 	case PPC_INS_MFTB:
 	case PPC_INS_MFRTCU:
@@ -1371,7 +1370,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		break;
 	// These instruction are not in the ISA manual v3.1B.
 	case PPC_INS_BRINC:
-	case PPC_INS_BCT:
 	case PPC_INS_ATTN:
 		NOT_IMPLEMENTED;
 	case PPC_INS_MFCR:
@@ -1392,7 +1390,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTFSB0:
 	case PPC_INS_MTFSB1:
 	case PPC_INS_MTFSF:
-	case PPC_INS_MTFSFI:
 	case PPC_INS_MTLR:
 	case PPC_INS_MTMSR:
 	case PPC_INS_MTMSRD:
