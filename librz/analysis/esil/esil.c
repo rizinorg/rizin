@@ -197,20 +197,10 @@ static ut8 esil_internal_sizeof_reg(RzAnalysisEsil *esil, const char *r) {
 	return ri ? ri->size : 0;
 }
 
-static bool alignCheck(RzAnalysisEsil *esil, ut64 addr) {
-	int dataAlign = rz_analysis_archinfo(esil->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
-	return !(dataAlign > 0 && addr % dataAlign);
-}
-
 static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->iob.io, 0);
 
 	addr &= esil->addrmask;
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	if (esil->cmd_mdev && esil->mdev_range) {
 		if (rz_str_range_in(esil->mdev_range, addr)) {
 			if (esil->cmd(esil, esil->cmd_mdev, addr, 0)) {
@@ -238,11 +228,6 @@ static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *
 	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->iob.io, 0);
 
 	addr &= esil->addrmask;
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)esil->analysis->iob.read_at(esil->analysis->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
@@ -263,11 +248,6 @@ RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, 
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read(esil, addr, buf, len);
 	}
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 		if (ret != len) {
@@ -286,11 +266,6 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 		return 0;
 	}
 	addr &= esil->addrmask;
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	if (esil->cmd_mdev && esil->mdev_range) {
 		if (rz_str_range_in(esil->mdev_range, addr)) {
 			if (esil->cmd(esil, esil->cmd_mdev, addr, 1)) {
