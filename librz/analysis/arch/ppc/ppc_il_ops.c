@@ -77,10 +77,12 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWA:
 	case PPC_INS_LWAX:
 	case PPC_INS_LWAUX:
+#if CS_API_MAJOR > 3
 	case PPC_INS_LBZCIX:
 	case PPC_INS_LHZCIX:
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
+#endif
 		base = VARG(rA);
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -247,10 +249,12 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STHUX:
 	case PPC_INS_STWUX:
 	case PPC_INS_STDUX:
+#if CS_API_MAJOR > 3
 	case PPC_INS_STBCIX:
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
+#endif
 		base = VARG(rA);
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
@@ -1207,14 +1211,12 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_LIS:
 	case PPC_INS_LA:
 	case PPC_INS_LBZ:
-	case PPC_INS_LBZCIX:
 	case PPC_INS_LBZU:
 	case PPC_INS_LBZUX:
 	case PPC_INS_LBZX:
 	case PPC_INS_LD:
 	case PPC_INS_LDARX:
 	case PPC_INS_LDBRX:
-	case PPC_INS_LDCIX:
 	case PPC_INS_LDU:
 	case PPC_INS_LDUX:
 	case PPC_INS_LDX:
@@ -1224,7 +1226,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_LHAX:
 	case PPC_INS_LHBRX:
 	case PPC_INS_LHZ:
-	case PPC_INS_LHZCIX:
 	case PPC_INS_LHZU:
 	case PPC_INS_LHZUX:
 	case PPC_INS_LHZX:
@@ -1234,20 +1235,23 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_LWAX:
 	case PPC_INS_LWBRX:
 	case PPC_INS_LWZ:
-	case PPC_INS_LWZCIX:
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
+#if CS_API_MAJOR > 3
+	case PPC_INS_LBZCIX:
+	case PPC_INS_LHZCIX:
+	case PPC_INS_LWZCIX:
+	case PPC_INS_LDCIX:
+#endif
 		lop = load_op(handle, insn, mode);
 		break;
 	case PPC_INS_STB:
-	case PPC_INS_STBCIX:
 	case PPC_INS_STBU:
 	case PPC_INS_STBUX:
 	case PPC_INS_STBX:
 	case PPC_INS_STD:
 	case PPC_INS_STDBRX:
-	case PPC_INS_STDCIX:
 	case PPC_INS_STDCX:
 	case PPC_INS_STDU:
 	case PPC_INS_STDUX:
@@ -1263,7 +1267,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STFSX:
 	case PPC_INS_STH:
 	case PPC_INS_STHBRX:
-	case PPC_INS_STHCIX:
 	case PPC_INS_STHU:
 	case PPC_INS_STHUX:
 	case PPC_INS_STHX:
@@ -1276,7 +1279,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STVXL:
 	case PPC_INS_STW:
 	case PPC_INS_STWBRX:
-	case PPC_INS_STWCIX:
 	case PPC_INS_STWCX:
 	case PPC_INS_STWU:
 	case PPC_INS_STWUX:
@@ -1285,6 +1287,12 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_STXVD2X:
 	case PPC_INS_STXVW4X:
 	case PPC_INS_DCBZ:
+#if CS_API_MAJOR > 3
+	case PPC_INS_STHCIX:
+	case PPC_INS_STWCIX:
+	case PPC_INS_STBCIX:
+	case PPC_INS_STDCIX:
+#endif
 		lop = store_op(handle, insn, mode);
 		break;
 	case PPC_INS_MR:
