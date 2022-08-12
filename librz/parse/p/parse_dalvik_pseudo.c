@@ -13,7 +13,7 @@
 
 #include "parse_common.c"
 
-static RzList *dalvik_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *dalvik_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar dalvik_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("+iget-wide-volatile", "1 = (wide-volatile) 2 [3]"),
@@ -203,7 +203,7 @@ static const RzPseudoReplace dalvik_replace[] = {
 
 static const RzPseudoConfig dalvik_config = RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(dalvik_lexicon, dalvik_replace, 4, dalvik_tokenize);
 
-RzList *dalvik_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *dalvik_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	RzList *tokens = NULL;

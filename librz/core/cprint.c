@@ -192,7 +192,7 @@ RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL c
 /**
  * \brief Print hexdump diff between \p aa and \p ba with \p len
  */
-RZ_API char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
+RZ_API RZ_OWN char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba, ut64 len) {
 	rz_return_val_if_fail(core && core->cons && len > 0, false);
 	ut8 *a = malloc(len);
 	if (!a) {
@@ -278,7 +278,7 @@ static inline void len_fixup(RzCore *core, ut64 *addr, int *len) {
  * \param len Dump bytes length
  * \param format Print format, such as RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL
  */
-RZ_API char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode,
+RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode,
 	ut64 addr, ut8 n, int len, RzCorePrintFormatType format) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {
@@ -335,7 +335,7 @@ RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode,
  * \brief Print hexdump at \p addr, but maybe print hexdiff if (diff.from or diff.to), \see "el diff"
  * \param len Dump bytes length
  */
-RZ_API char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len,
+RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len,
 	bool use_comment) {
 	rz_return_val_if_fail(core, false);
 	if (!len) {

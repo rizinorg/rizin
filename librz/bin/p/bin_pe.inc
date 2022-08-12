@@ -60,7 +60,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static void add_tls_callbacks(RzBinFile *bf, RzList *list) {
+static void add_tls_callbacks(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *list) {
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
 	RzBinAddr *ptr = NULL;
@@ -96,7 +96,7 @@ static void add_tls_callbacks(RzBinFile *bf, RzList *list) {
 	} while (vaddr);
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
 	RzList *ret;
@@ -139,7 +139,7 @@ static ut32 perm_of_section_perm(ut64 perm) {
 	return r;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = NULL;
 	if (!bin || !(sections = bin->sections)) {
@@ -194,7 +194,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_pe_section_t *sections = NULL;
@@ -307,7 +307,7 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	return 0;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	ut64 go_pclntab_paddr = 0;
 	ut64 go_pclntab_vaddr = 0;
@@ -405,7 +405,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzList *relocs = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel = NULL;
@@ -473,7 +473,7 @@ static RzList *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (obj) {
 		return obj->relocs;
@@ -481,7 +481,7 @@ static RzList *relocs(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	RzList *ret = NULL;
 	char *ptr = NULL;
@@ -502,7 +502,7 @@ static RzList *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *resources(RzBinFile *bf) {
+static RzList /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (!obj) {
 		return NULL;
@@ -711,7 +711,7 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 
-static RzList *compute_hashes(RzBinFile *bf) {
+static RzList /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
 	RzList *file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_get_authentihash)(bf->o->bin_obj);
 	if (authentihash) {
@@ -726,7 +726,7 @@ static RzList *compute_hashes(RzBinFile *bf) {
 	return file_hashes;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 4, false);
 }
 

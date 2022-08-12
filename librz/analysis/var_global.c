@@ -193,7 +193,7 @@ RZ_API RZ_BORROW RzAnalysisVarGlobal *rz_analysis_var_global_get_byname(RzAnalys
 }
 
 struct list_addr {
-	RzList /* <RzAnalysisVarGlobal> */ *list;
+	RzList /*<RzAnalysisVarGlobal *>*/ *list;
 	ut64 addr;
 };
 

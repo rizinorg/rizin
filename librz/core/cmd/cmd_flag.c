@@ -22,7 +22,7 @@ static size_t countMatching(const char *a, const char *b) {
 	return matches;
 }
 
-static const char *__isOnlySon(RzCore *core, RzList *flags, const char *kw) {
+static const char *__isOnlySon(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *kw) {
 	RzListIter *iter;
 	RzFlagItem *f;
 
@@ -40,7 +40,7 @@ static const char *__isOnlySon(RzCore *core, RzList *flags, const char *kw) {
 	return fname;
 }
 
-static RzList *__childrenFlagsOf(RzCore *core, RzList *flags, const char *prefix) {
+static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *prefix) {
 	RzList *list = rz_list_newf(free);
 	RzListIter *iter, *iter2;
 	RzFlagItem *f, *f2;
@@ -129,9 +129,7 @@ static RzList *__childrenFlagsOf(RzCore *core, RzList *flags, const char *prefix
 	return list;
 }
 
-static void __printRecursive(RzCore *core, RzList *list, const char *name, RzOutputMode mode, int depth);
-
-static void __printRecursive(RzCore *core, RzList *flags, const char *name, RzOutputMode mode, int depth) {
+static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *name, RzOutputMode mode, int depth) {
 	char *fn;
 	RzListIter *iter;
 	if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISEMPTY(name)) {

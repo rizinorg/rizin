@@ -68,7 +68,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bf->sdb;
 }
 
-static RzList *classes(RzBinFile *bf) {
+static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -77,7 +77,7 @@ static RzList *classes(RzBinFile *bf) {
 	return rz_bin_dex_classes(dex);
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -86,7 +86,7 @@ static RzList *imports(RzBinFile *bf) {
 	return rz_bin_dex_imports(dex);
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -95,7 +95,7 @@ static RzList *sections(RzBinFile *bf) {
 	return rz_bin_dex_sections(dex);
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -104,7 +104,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return rz_bin_dex_symbols(dex);
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -113,7 +113,7 @@ static RzList *fields(RzBinFile *bf) {
 	return rz_bin_dex_fields(dex);
 }
 
-static RzList *libraries(RzBinFile *bf) {
+static RzList /*<char *>*/ *libraries(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -131,7 +131,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_dex_resolve_symbol(dex, sym);
 }
 
-static RzList *entrypoints(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -140,7 +140,7 @@ static RzList *entrypoints(RzBinFile *bf) {
 	return rz_bin_dex_entrypoints(dex);
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -149,7 +149,7 @@ static RzList *strings(RzBinFile *bf) {
 	return rz_bin_dex_strings(dex);
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
+static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
@@ -223,7 +223,7 @@ static ut64 get_offset(RzBinFile *bf, int type, int index) {
 	}
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzList *maps = rz_bin_maps_of_file_sections(bf);
 	RzListIter *iter;
 	RzBinMap *map;

@@ -128,7 +128,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RzList *ret, const char *name, ut64 addr) {
+static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (!ptr) {
 		return;
@@ -146,7 +146,7 @@ static void showstr(const char *str, const ut8 *s, int len) {
 	free(msg);
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	const char *name = NULL;
 	int i;
@@ -252,7 +252,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	if (!(ret = rz_list_new())) {
 		return NULL;
@@ -293,7 +293,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new())) {
@@ -315,7 +315,7 @@ static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, R
 	return ret;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 0, false);
 }
 

@@ -5,7 +5,7 @@
 /* Helpers for handling lines */
 #define DIFF_IS_LINES_METHOD(x) (x.elem_at == methods_lines.elem_at)
 
-static RzList *tokenize_lines(const char *string) {
+static RzList /*<char *>*/ *tokenize_lines(const char *string) {
 	RzList *lines = NULL;
 	size_t last = 0;
 	size_t size = 0;
@@ -46,7 +46,7 @@ tokenize_newlines_fail:
 	return NULL;
 }
 
-static const void *line_elem_at(const RzList *array, ut32 index) {
+static const void *line_elem_at(const RzList /*<char *>*/ *array, ut32 index) {
 	return rz_list_get_n(array, index);
 }
 
@@ -63,7 +63,7 @@ static void line_stringify(const char *a_elem, RzStrBuf *sb) {
 	rz_strbuf_set(sb, a_elem);
 }
 
-static void line_free(RzList *array) {
+static void line_free(RzList /*<char *>*/ *array) {
 	rz_list_free(array);
 }
 

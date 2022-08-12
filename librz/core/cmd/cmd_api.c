@@ -1686,7 +1686,7 @@ static bool macros_to_list(void *user, const void *key, const void *value) {
  * \param cmd Reference to RzCmd
  * \return List of macros
  */
-RZ_API RZ_OWN RzList /*<RzCmdMacro>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd) {
+RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd) {
 	rz_return_val_if_fail(cmd, NULL);
 
 	RzList *res = rz_list_new();

@@ -21,7 +21,7 @@ typedef struct rz_demangler_plugin_t {
 } RzDemanglerPlugin;
 
 typedef struct rz_demangler_t {
-	RzList *plugins;
+	RzList /*<RzDemanglerPlugin *>*/ *plugins;
 } RzDemangler;
 
 typedef bool (*RzDemanglerIter)(const RzDemanglerPlugin *plugin, void *data);

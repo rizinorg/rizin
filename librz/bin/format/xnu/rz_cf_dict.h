@@ -30,12 +30,12 @@ typedef struct _CFKeyValue {
 
 typedef struct _CFValueDict {
 	RCFValueType type;
-	RzList *pairs; //_CFKeyValue
+	RzList /*<RCFKeyValue *>*/ *pairs;
 } RCFValueDict;
 
 typedef struct _CFValueArray {
 	RCFValueType type;
-	RzList *values; //_CFValue
+	RzList /*<RCFValue *>*/ *values;
 } RCFValueArray;
 
 typedef struct _CFValueString {

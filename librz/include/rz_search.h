@@ -62,14 +62,14 @@ typedef struct rz_search_t {
 	RzSearchCallback callback;
 	ut64 nhits;
 	ut64 maxhits; // search.maxhits
-	RzList *hits;
+	RzList /*<RzSearchHit *>*/ *hits;
 	int distance;
 	int inverse;
 	bool overlap; // whether two matches can overlap
 	int contiguous;
 	int align;
 	int (*update)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
-	RzList *kws; // TODO: Use rz_search_kw_new ()
+	RzList /*<RzSearchKeyword *>*/ *kws; // TODO: Use rz_search_kw_new ()
 	RzIOBind iob;
 	char bckwrds;
 } RzSearch;
@@ -83,7 +83,7 @@ RZ_API int rz_search_set_mode(RzSearch *s, int mode);
 RZ_API RzSearch *rz_search_free(RzSearch *s);
 
 /* keyword management */
-RZ_API RzList *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
+RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
 RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len);
 RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len);
 

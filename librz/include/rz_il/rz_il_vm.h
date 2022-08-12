@@ -38,7 +38,7 @@ struct rz_il_vm_t {
 	RzILVarSet global_vars; ///< All global variables (usually bound to registers)
 	RzILVarSet local_vars; ///< All local variables, created by local set ops
 	RzILVarSet local_pure_vars; ///< All local variables, during execution temporarily bound by let, only usable in pure expressions and immutable
-	RzPVector /*<RzILMem>*/ vm_memory; ///< Memories available in the VM, by their index. May be sparse (contain NULLs).
+	RzPVector /*<RzILMem *>*/ vm_memory; ///< Memories available in the VM, by their index. May be sparse (contain NULLs).
 	ut32 val_count, lab_count; ///< count for VM predefined things
 	ut32 addr_size; ///< size of address space
 	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
@@ -46,7 +46,7 @@ struct rz_il_vm_t {
 	RzBitVector *pc; ///< Program Counter of VM
 	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
-	RzList *events; ///< List of events that has happened in the last step
+	RzList /*<RzILEvent *>*/ *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
 };
 

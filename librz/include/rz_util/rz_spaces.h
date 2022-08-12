@@ -57,7 +57,7 @@ typedef struct rz_spaces_t {
 	const char *name;
 	RzSpace *current;
 	RBTree spaces;
-	RzList *spacestack;
+	RzList /*<char *>*/ *spacestack;
 	RzEvent *event;
 } RzSpaces;
 

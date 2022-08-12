@@ -82,7 +82,7 @@ typedef struct diff_context_t {
 	const char *file_a;
 	const char *file_b;
 	DiffScreen screen;
-	RzList *evars;
+	RzList /*<char *>*/ *evars;
 } DiffContext;
 
 typedef struct diff_io_t {
@@ -551,7 +551,7 @@ static inline RzBinFile *core_get_file(RzCoreFile *cfile) {
 	return rz_pvector_at(&cfile->binfiles, 0);
 }
 
-static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList *evars, bool colors) {
+static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits, RzList /*<char *>*/ *evars, bool colors) {
 	RzCore *core = NULL;
 	RzCoreFile *cfile = NULL;
 	RzBinFile *bfile = NULL;
@@ -669,7 +669,7 @@ static void rz_diff_file_close(DiffFile *file) {
 
 /**************************************** rzlists ***************************************/
 
-static const void *rz_diff_list_elem_at(const RzList *array, ut32 index) {
+static const void *rz_diff_list_elem_at(const RzList /*<void *>*/ *array, ut32 index) {
 	return rz_list_get_n(array, index);
 }
 

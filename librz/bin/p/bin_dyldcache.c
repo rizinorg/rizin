@@ -81,7 +81,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return true;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
 	RzList *ret = rz_list_newf(free);
 	if (!ret) {
@@ -133,7 +133,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzDyldCache *cache, RzList *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
+void symbols_from_bin(RzDyldCache *cache, RzList /*<RzBinSymbol *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin, SetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -190,7 +190,7 @@ static bool __is_data_section(const char *name) {
 	return false;
 }
 
-static void sections_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin) {
+static void sections_from_bin(RzList /*<RzBinSection *>*/ *ret, RzBinFile *bf, RzDyldBinImage *bin) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return;
@@ -237,7 +237,7 @@ static void sections_from_bin(RzList *ret, RzBinFile *bf, RzDyldBinImage *bin) {
 	(mach0);
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
+static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
 	if (!ret) {
 		return NULL;
@@ -270,7 +270,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -300,7 +300,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -324,7 +324,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -364,7 +364,7 @@ static void destroy(RzBinFile *bf) {
 	rz_dyldcache_free(cache);
 }
 
-static RzList *classes(RzBinFile *bf) {
+static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzDyldCache *cache = (RzDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;

@@ -16,7 +16,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
 	RzList *ret;
 	RzBinAddr *ptr;
@@ -33,7 +33,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!ret) {
@@ -71,7 +71,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!ret) {
@@ -164,7 +164,7 @@ beach:
 	return NULL;
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
+static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzBfltObj *obj = bf->o->bin_obj;
 	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
 	if (!r) {
@@ -182,7 +182,7 @@ static RzList *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static void convert_relocs(RzBfltObj *bin, RzList *out, RzVector /*<RzBfltReloc>*/ *relocs) {
+static void convert_relocs(RzBfltObj *bin, RzList /*<RzBinReloc *>*/ *out, RzVector /*<RzBfltReloc>*/ *relocs) {
 	RzBfltReloc *br;
 	rz_vector_foreach(relocs, br) {
 		RzBinReloc *r = RZ_NEW0(RzBinReloc);
@@ -200,7 +200,7 @@ static void convert_relocs(RzBfltObj *bin, RzList *out, RzVector /*<RzBfltReloc>
 	}
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	RzBfltObj *obj = (RzBfltObj *)bf->o->bin_obj;
 	RzList *list = rz_list_newf((RzListFree)free);
 	if (!list || !obj) {
@@ -248,7 +248,7 @@ static void destroy(RzBinFile *bf) {
 	rz_bflt_free(bf->o->bin_obj);
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 0, false);
 }
 

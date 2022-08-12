@@ -11,7 +11,7 @@ static ut64 read_ptr(RzDebug *dbg, ut64 at) {
 	return rz_read_ble(buf, dbg->analysis->big_endian, dbg->bits * 8);
 }
 
-static RzList *backtrace_generic(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
+static RzList /*<RzDebugFrame *>*/ *backtrace_generic(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 	rz_return_val_if_fail(dbg, NULL);
 	const size_t pointer_size = dbg->bits;
 	RzList *ret = rz_list_newf(free);

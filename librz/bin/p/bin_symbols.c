@@ -300,7 +300,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj != NULL;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *res = rz_list_newf((RzListFree)rz_bin_section_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
@@ -353,7 +353,7 @@ static bool check_buffer(RzBuffer *b) {
 	return !memcmp(buf, "\x02\xff\x01\xff", 4);
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *res = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;

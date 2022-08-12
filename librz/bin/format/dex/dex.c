@@ -217,7 +217,7 @@ static DexEncodedField *dex_new_encoded_field(RzBuffer *buf, ut64 base, ut64 *di
 	return encoded_field;
 }
 
-static DexEncodedMethod *dex_new_encoded_method(RzBuffer *buf, ut64 base, ut64 *diff_value_prev, bool first, RzPVector *method_ids) {
+static DexEncodedMethod *dex_new_encoded_method(RzBuffer *buf, ut64 base, ut64 *diff_value_prev, bool first, RzPVector /*<DexMethodId *>*/ *method_ids) {
 	DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
 	if (!encoded_method) {
 		return NULL;
@@ -263,7 +263,7 @@ dex_new_encoded_method_fail:
 	return NULL;
 }
 
-static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzPVector *method_ids) {
+static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzPVector /*<DexMethodId *>*/ *method_ids) {
 	DexClassDef *class_def = RZ_NEW0(DexClassDef);
 	if (!class_def) {
 		return NULL;

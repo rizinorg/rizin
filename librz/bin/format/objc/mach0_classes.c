@@ -113,7 +113,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *class_name, RzBinClass *klass, bool is_static, objc_cache_opt_info *oi);
 static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, objc_cache_opt_info *oi);
 static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_meta_class, RzBinClass *klass, objc_cache_opt_info *oi);
-static RzList *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi);
+static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RzBinFile *bf, RzBuffer *buf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RzBinFile *bf, RzBuffer *buf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RzBinFile *bf, RzBuffer *buf, mach0_ut p, ut32 *offset, ut32 *left);
@@ -1240,8 +1240,8 @@ static RzList *parse_swift_classes(RzBinFile *bf) {
 }
 #endif
 
-RZ_API RzList *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
-	RzList /*<RzBinClass>*/ *ret = NULL;
+RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
+	RzList /*<RzBinClass *>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RzBinClass *klass = NULL;
 	ut32 i = 0, size = 0;
@@ -1365,7 +1365,7 @@ get_classes_error:
 	return NULL;
 }
 
-static RzList *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi) {
+static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
 
 	RzList /*<RzBinClass>*/ *ret = NULL;

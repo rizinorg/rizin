@@ -324,7 +324,7 @@ RZ_API RZ_BORROW const void *rz_diff_get_b(RZ_NONNULL RzDiff *diff) {
 	return diff->b;
 }
 
-static inline bool stack_append_block(RzList *stack, ut32 a_low, ut32 a_hi, ut32 b_low, ut32 b_hi) {
+static inline bool stack_append_block(RzList /*<RzDiffOp *>*/ *stack, ut32 a_low, ut32 a_hi, ut32 b_low, ut32 b_hi) {
 	Block *block = RZ_NEW0(Block);
 	if (!block) {
 		return false;
@@ -698,7 +698,7 @@ rz_diff_opcodes_new_fail:
 	return NULL;
 }
 
-static void group_op_free(RzList *ops) {
+static void group_op_free(RzList /*<RzDiffOp *>*/ *ops) {
 	rz_list_free(ops);
 }
 

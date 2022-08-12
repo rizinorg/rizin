@@ -301,7 +301,7 @@ static void serialize_memory(Sdb *db, HtUP *memory) {
 	ht_up_foreach(memory, serialize_memory_cb, db);
 }
 
-static void serialize_checkpoints(Sdb *db, RzVector *checkpoints) {
+static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *checkpoints) {
 	size_t i;
 	RzDebugCheckpoint *chkpt;
 	RzDebugSnap *snap;
@@ -660,7 +660,7 @@ end:
 	return true;
 }
 
-static void deserialize_checkpoints(Sdb *db, RzVector *checkpoints) {
+static void deserialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *checkpoints) {
 	sdb_foreach(db, deserialize_checkpoints_cb, checkpoints);
 }
 

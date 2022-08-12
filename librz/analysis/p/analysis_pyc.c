@@ -39,7 +39,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	);
 }
 
-static RzList *get_pyc_code_obj(RzAnalysis *analysis) {
+static RzList /*<RzList<void *> *>*/ *get_pyc_code_obj(RzAnalysis *analysis) {
 	RzBin *b = analysis->binb.bin;
 	RzBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	bool is_pyc = (plugin && strcmp(plugin->name, "pyc") == 0);

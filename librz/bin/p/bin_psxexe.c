@@ -44,7 +44,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *sect = NULL;
 	psxexe_header psxheader;
@@ -80,7 +80,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinAddr *addr = NULL;
 	psxexe_header psxheader;
@@ -108,7 +108,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	// hardcode minstrlen = 20
 	return rz_bin_file_strings(bf, 20, true);
 }

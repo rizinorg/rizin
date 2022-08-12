@@ -59,7 +59,7 @@ static RzBinSection *rz_bin_mz_init_section(const struct rz_bin_mz_obj_t *bin,
 	return section;
 }
 
-RzList *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
+RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
 	RzList *seg_list;
 	RzListIter *iter;
 	RzBinSection *section;

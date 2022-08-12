@@ -416,7 +416,7 @@ typedef struct rz_cmd_desc_t {
 	/**
 	 * Vector of childrens command descriptors.
 	 */
-	RzPVector children;
+	RzPVector /*<RzCmdDesc *>*/ children;
 	/**
 	 * Reference to the help structure of this command descriptor.
 	 */
@@ -583,7 +583,7 @@ RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name,
 RZ_API bool rz_cmd_macro_update(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, const char **args, RZ_NONNULL const char *code);
 RZ_API bool rz_cmd_macro_rm(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name);
 RZ_API const RzCmdMacro *rz_cmd_macro_get(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name);
-RZ_API RZ_OWN RzList /*<RzCmdMacro>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd);
+RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd);
 RZ_API RzCmdStatus rz_cmd_macro_call(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv);
 RZ_API RzCmdStatus rz_cmd_macro_call_multiple(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv);
 RZ_API void rz_cmd_macro_foreach(RZ_NONNULL RzCmd *cmd, RzCmdForeachMacroCb cb, void *user);

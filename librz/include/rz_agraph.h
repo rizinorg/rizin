@@ -31,7 +31,7 @@ typedef struct rz_ascii_node_t {
 
 typedef struct rz_core_graph_hits_t {
 	char *old_word;
-	RzVector word_list;
+	RzVector /*<struct struct rz_agraph_location>*/ word_list;
 	int word_nth;
 } RzAGraphHits;
 
@@ -48,12 +48,12 @@ typedef void (*RAEdgeCallback)(RzANode *from, RzANode *to, void *user);
 
 typedef struct rz_ascii_graph_t {
 	RzConsCanvas *can;
-	RzGraph *graph;
+	RzGraph /*<RzANode *>*/ *graph;
 	const RzGraphNode *curnode;
 	char *title;
 	Sdb *db;
 	HtPP *nodes; // HT with title(key)=RzANode*(value)
-	RzList *dummy_nodes;
+	RzList /*<RzANode *>*/ *dummy_nodes;
 
 	int layout;
 	int is_instep;
@@ -84,12 +84,12 @@ typedef struct rz_ascii_graph_t {
 	int w, h;
 
 	/* layout algorithm info */
-	RzList *back_edges;
-	RzList *long_edges;
+	RzList /*<RzGraphEdge *>*/ *back_edges;
+	RzList /*<RzGraphEdge *>*/ *long_edges;
 	struct layer_t *layers;
 	unsigned int n_layers;
-	RzList *dists; /* RzList<struct dist_t> */
-	RzList *edges; /* RzList<AEdge> */
+	RzList /*<struct dist_t *>*/ *dists;
+	RzList /*<AEdge *>*/ *edges;
 	RzAGraphHits ghits;
 } RzAGraph;
 

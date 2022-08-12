@@ -36,7 +36,7 @@ RZ_API void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 	bstr->type = RZ_STRING_ENC_BASE64;
 }
 
-static void bin_object_decode_all_base64_strings(RzList *strings) {
+static void bin_object_decode_all_base64_strings(RzList /*<RzBinString *>*/ *strings) {
 	rz_return_if_fail(strings);
 
 	RzBinString *bstr;
@@ -240,7 +240,7 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
-static RzList *classes_from_symbols(RzBinFile *bf) {
+static RzList /*<RzBinClass *>*/ *classes_from_symbols(RzBinFile *bf) {
 	RzBinSymbol *sym;
 	RzListIter *iter;
 	rz_list_foreach (bf->o->symbols, iter, sym) {
@@ -334,7 +334,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	return o;
 }
 
-static void filter_classes(RzBinFile *bf, RzList *list) {
+static void filter_classes(RzBinFile *bf, RzList /*<RzBinClass *>*/ *list) {
 	HtPU *db = ht_pu_new0();
 	HtPP *ht = ht_pp_new0();
 	RzListIter *iter, *iter2;
@@ -751,7 +751,7 @@ RZ_API const RzList /*<RzBinSection *>*/ *rz_bin_object_get_sections_all(RZ_NONN
 	return obj->sections;
 }
 
-static RzList *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
+static RzList /*<RzBinSection *>*/ *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
 	RzList *res = rz_list_new();
 	if (!res) {
 		return NULL;

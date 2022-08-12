@@ -102,7 +102,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	return strdup(val);
 }
 
-RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
+RZ_API RzPVector /*<RzCmdTest *>*/ *rz_test_load_cmd_test_file(const char *file) {
 	char *contents = rz_file_slurp(file, NULL);
 	if (!contents) {
 		eprintf("Failed to open file \"%s\"\n", file);
@@ -310,7 +310,7 @@ static bool parse_asm_path(const char *path, RzStrConstPool *strpool, const char
 	return true;
 }
 
-RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char *file) {
+RZ_API RzPVector /*<RzAsmTest *>*/ *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char *file) {
 	const char *arch;
 	const char *cpu;
 	int bits;
@@ -479,7 +479,7 @@ RZ_API void rz_test_json_test_free(RzJsonTest *test) {
 	free(test);
 }
 
-RZ_API RzPVector *rz_test_load_json_test_file(const char *file) {
+RZ_API RzPVector /*<RzJsonTest *>*/ *rz_test_load_json_test_file(const char *file) {
 	char *contents = rz_file_slurp(file, NULL);
 	if (!contents) {
 		eprintf("Failed to open file \"%s\"\n", file);

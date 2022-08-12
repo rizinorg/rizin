@@ -556,7 +556,7 @@ static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, 
  * \param tasks The task list to append the new task items to.
  * \return RzAnalysisBBEndCause Cause a basic block ended.
  */
-static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
+static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector /*<RzAnalysisTaskItem>*/ *tasks) {
 	rz_return_val_if_fail(item && tasks, RZ_ANALYSIS_RET_ERROR);
 	RzAnalysis *analysis = item->fcn->analysis;
 	RzAnalysisFunction *fcn = item->fcn;
@@ -2334,7 +2334,7 @@ static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 fro
 	}
 }
 
-static void update_analysis(RzAnalysis *analysis, RzList *fcns, HtUP *reachable) {
+static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns, HtUP *reachable) {
 	RzListIter *it, *it2, *tmp;
 	RzAnalysisFunction *fcn;
 	bool old_jmpmid = analysis->opt.jmpmid;
@@ -2378,7 +2378,7 @@ static void update_analysis(RzAnalysis *analysis, RzList *fcns, HtUP *reachable)
 	analysis->opt.jmpmid = old_jmpmid;
 }
 
-static void calc_reachable_and_remove_block(RzList *fcns, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, HtUP *reachable) {
+static void calc_reachable_and_remove_block(RzList /*<RzAnalysisFunction *>*/ *fcns, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, HtUP *reachable) {
 	clear_bb_vars(fcn, bb, bb->addr, bb->addr + bb->size);
 	if (!rz_list_contains(fcns, fcn)) {
 		rz_list_append(fcns, fcn);

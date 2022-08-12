@@ -924,7 +924,7 @@ RZ_API RZ_OWN RzBinAddr *rz_bin_java_class_resolve_symbol(RZ_NONNULL RzBinJavaCl
 /**
  * \brief Returns a RzList<RzBinAddr*> containing the entrypoints
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf(free);
@@ -983,7 +983,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_entrypoints(RZ_NONNULL RzBinJavaClass *b
 /**
  * \brief Returns a RzList<RzBinString*> containing the strings
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_java_class_strings(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf(rz_bin_string_free);
@@ -1049,7 +1049,7 @@ static char *add_class_name_to_name(char *name, char *classname) {
 /**
  * \brief Returns a RzList<RzBinSymbol*> containing the class methods
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
@@ -1224,7 +1224,7 @@ RZ_API void rz_bin_java_class_methods_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ
 /**
  * \brief Returns a RzList<RzBinSymbol*> containing the class fields
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
@@ -1274,7 +1274,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaCl
 /**
  * \brief Returns a RzList<RzBinField*> containing the class fields
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_field_free);
@@ -1432,7 +1432,7 @@ static char *import_type(const ConstPool *cpool) {
 /**
  * \brief Returns a RzList<RzBinSymbol*> containing the class const pool
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
@@ -1506,7 +1506,7 @@ RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJa
 /**
  * \brief Returns a RzList<RzBinImport*> containing the class const pool
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_java_class_const_pool_as_imports(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
@@ -1715,7 +1715,7 @@ static int compare_section_names(const void *a, const void *b) {
 /**
  * \brief Returns a RzList<RzBinSection*> containing the class sections
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *sections = rz_list_newf(section_free);
@@ -1843,7 +1843,7 @@ static int compare_strings(const void *a, const void *b) {
 /**
  * \brief Returns a RzList<char*> containing the class libraries
  */
-RZ_API RZ_OWN RzList *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzList *list = rz_list_newf(free);

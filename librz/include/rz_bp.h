@@ -83,14 +83,14 @@ typedef struct rz_bp_t {
 	bool bpinmaps; /* Only enable breakpoints inside a valid map */
 	RzIOBind iob; // compile time dependency
 	RzBreakpointPlugin *cur;
-	RzList *traces; // XXX
-	RzList *plugins;
+	RzList /*<RzBreakpointTrace *>*/ *traces; // XXX
+	RzList /*<RzBreakpointPlugin *>*/ *plugins;
 	PrintfCallback cb_printf;
 	RzBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;
 	int nhwbps;
-	RzList *bps; // list of breakpoints
+	RzList /*<RzBreakpointItem *>*/ *bps; // list of breakpoints
 	RzBreakpointItem **bps_idx;
 	int bps_idx_count;
 	ut64 baddr;
@@ -160,7 +160,7 @@ RZ_API int rz_bp_traptrace_add(RzBreakpoint *bp, ut64 from, ut64 to);
 RZ_API int rz_bp_traptrace_free_at(RzBreakpoint *bp, ut64 from);
 RZ_API void rz_bp_traptrace_list(RzBreakpoint *bp);
 RZ_API int rz_bp_traptrace_at(RzBreakpoint *bp, ut64 from, int len);
-RZ_API RzList *rz_bp_traptrace_new(void);
+RZ_API RzList /*<RzBreakpointTrace *>*/ *rz_bp_traptrace_new(void);
 
 /* watchpoint */
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_watch_add(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int hw, int perm);

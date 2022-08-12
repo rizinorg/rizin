@@ -95,16 +95,16 @@ static RzXNUKernelCacheRebaseInfo *rz_rebase_info_new_from_mach0(RzBuffer *cache
 static void rz_rebase_info_free(RzXNUKernelCacheRebaseInfo *info);
 
 static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * mach0);
-static RzList *filter_kexts(RzXNUKernelCacheObj *obj);
-static RzList *carve_kexts(RzXNUKernelCacheObj *obj);
-static RzList *kexts_from_load_commands(RzXNUKernelCacheObj *obj);
+static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj);
+static RzList /*<RKext *>*/ *carve_kexts(RzXNUKernelCacheObj *obj);
+static RzList /*<RKext *>*/ *kexts_from_load_commands(RzXNUKernelCacheObj *obj);
 
-static void sections_from_mach0(RzList *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj);
+static void sections_from_mach0(RzList /*<RzBinSection *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj);
 static void handle_data_sections(RzBinSection *sect);
-static void symbols_from_mach0(RzList *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal);
-static RzList *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr);
-static RzList *resolve_mig_subsystem(RzXNUKernelCacheObj *obj);
-static void symbols_from_stubs(RzList *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
+static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal);
+static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr);
+static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *obj);
+static void symbols_from_stubs(RzList /*<RzBinSymbol *>*/ *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) * mach0, ut64 paddr, RzXNUKernelCacheObj *obj);
 static int prot2perm(int x);
 
@@ -118,13 +118,13 @@ static struct MACH0_(obj_t) * create_kext_shared_mach0(RzXNUKernelCacheObj *obj,
 	if (index) \
 		for (i = 0; i < index->length && (item = index->entries[i], 1); i++)
 
-static RKextIndex *rz_kext_index_new(RzList *kexts);
+static RKextIndex *rz_kext_index_new(RzList /*<RKext *>*/ *kexts);
 static void rz_kext_index_free(RKextIndex *index);
 static RKext *rz_kext_index_vget(RKextIndex *index, ut64 vaddr);
 
-static void process_kmod_init_term(RzXNUKernelCacheObj *obj, RKext *kext, RzList *ret, ut64 **inits, ut64 **terms);
-static void create_initterm_syms(RKext *kext, RzList *ret, int type, ut64 *pointers);
-static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
+static void process_kmod_init_term(RzXNUKernelCacheObj *obj, RKext *kext, RzList /*<RzBinSymbol *>*/ *ret, ut64 **inits, ut64 **terms);
+static void create_initterm_syms(RKext *kext, RzList /*<RzBinSymbol *>*/ *ret, int type, ut64 *pointers);
+static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix);
 static RzBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type);
 static void ensure_kexts_initialized(RzXNUKernelCacheObj *obj);
 
@@ -281,7 +281,7 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 	return prelink_range;
 }
 
-static RzList *filter_kexts(RzXNUKernelCacheObj *obj) {
+static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 	RCFValueArray *kext_array = NULL;
 	RzListIter *iter;
 	RCFKeyValue *item;
@@ -397,7 +397,7 @@ static ut64 rz_ptr(ut8 *buf, RzXNUKernelCacheObj *obj) {
 	return K_PPTR(decorated_addr);
 }
 
-static RzList *carve_kexts(RzXNUKernelCacheObj *obj) {
+static RzList /*<RKext *>*/ *carve_kexts(RzXNUKernelCacheObj *obj) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(obj->mach0))) {
 		return NULL;
@@ -541,7 +541,7 @@ beach:
 	return NULL;
 }
 
-static RzList *kexts_from_load_commands(RzXNUKernelCacheObj *obj) {
+static RzList /*<RKext *>*/ *kexts_from_load_commands(RzXNUKernelCacheObj *obj) {
 	RzList *kexts = rz_list_newf((RzListFree)&rz_kext_free);
 	if (!kexts) {
 		return NULL;
@@ -685,7 +685,7 @@ static int kexts_sort_vaddr_func(const void *a, const void *b) {
 	return vaddr_compare;
 }
 
-static RKextIndex *rz_kext_index_new(RzList *kexts) {
+static RKextIndex *rz_kext_index_new(RzList /*<RKext *>*/ *kexts) {
 	if (!kexts) {
 		return NULL;
 	}
@@ -775,7 +775,7 @@ static struct MACH0_(obj_t) * create_kext_shared_mach0(RzXNUKernelCacheObj *obj,
 	return mach0;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
@@ -798,7 +798,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static void process_kmod_init_term(RzXNUKernelCacheObj *obj, RKext *kext, RzList *ret, ut64 **inits, ut64 **terms) {
+static void process_kmod_init_term(RzXNUKernelCacheObj *obj, RKext *kext, RzList /*<RzBinSymbol *>*/ *ret, ut64 **inits, ut64 **terms) {
 	if (!*inits || !*terms) {
 		struct section_t *sections = NULL;
 		if (!(sections = MACH0_(get_sections)(obj->mach0))) {
@@ -870,7 +870,7 @@ static const char *kext_short_name(RKext *kext) {
 	return sn ? sn + 1 : kext->name;
 }
 
-static void create_initterm_syms(RKext *kext, RzList *ret, int type, ut64 *pointers) {
+static void create_initterm_syms(RKext *kext, RzList /*<RzBinSymbol *>*/ *ret, int type, ut64 *pointers) {
 	int i = 0;
 	int count = 0;
 	for (; pointers[i]; i++) {
@@ -903,7 +903,7 @@ static void create_initterm_syms(RKext *kext, RzList *ret, int type, ut64 *point
 	}
 }
 
-static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
+static void process_constructors(RzXNUKernelCacheObj *obj, struct MACH0_(obj_t) * mach0, RzList /*<void *>*/ *ret, ut64 paddr, bool is_first, int mode, const char *prefix) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(mach0))) {
 		return;
@@ -985,7 +985,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
+static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
 	if (!ret) {
@@ -1005,7 +1005,7 @@ static RzList *virtual_files(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	if (!obj || !obj->bin_obj) {
 		return NULL;
@@ -1045,7 +1045,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
@@ -1116,7 +1116,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static void sections_from_mach0(RzList *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj) {
+static void sections_from_mach0(RzList /*<RzBinSection *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, char *prefix, RzXNUKernelCacheObj *obj) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(mach0))) {
 		return;
@@ -1167,7 +1167,7 @@ static void handle_data_sections(RzBinSection *sect) {
 	}
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
@@ -1248,7 +1248,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static void symbols_from_mach0(RzList *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal) {
+static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal) {
 	const struct symbol_t *symbols = MACH0_(get_symbols)(mach0);
 	if (!symbols) {
 		return;
@@ -1303,7 +1303,7 @@ typedef struct _r_sysent {
 	ut16 sy_arg_bytes;
 } RSysEnt;
 
-static RzList *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr) {
+static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(obj->mach0))) {
 		return NULL;
@@ -1464,7 +1464,7 @@ static HtPP *mig_hash_new(void) {
 	return hash;
 }
 
-static RzList *resolve_mig_subsystem(RzXNUKernelCacheObj *obj) {
+static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *obj) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(obj->mach0))) {
 		return NULL;
@@ -1626,7 +1626,7 @@ static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
 	return addr;
 }
 
-static void symbols_from_stubs(RzList *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
+static void symbols_from_stubs(RzList /*<RzBinSymbol *>*/ *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
 	RStubsInfo *stubs_info = get_stubs_info(kext->mach0, kext->range.offset, obj);
 	if (!stubs_info) {
 		return;

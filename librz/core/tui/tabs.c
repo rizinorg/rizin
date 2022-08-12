@@ -152,7 +152,7 @@ RZ_IPI void rz_core_visual_tab_update(RzCore *core) {
 	}
 }
 
-RZ_IPI RzCoreVisualTab *rz_core_visual_newtab(RzCore *core) {
+RZ_IPI RZ_OWN RzCoreVisualTab *rz_core_visual_newtab(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		visual->tabs = rz_list_newf((RzListFree)rz_core_visual_tab_free);

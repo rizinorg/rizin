@@ -254,7 +254,7 @@ static int rz_debug_dmp_attach(RzDebug *dbg, int pid) {
 	return ctx->windctx.target.uniqueid;
 }
 
-static RzList *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_dmp_pids(RzDebug *dbg, int pid) {
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *ret = rz_list_newf((RzListFree)rz_debug_pid_free);
 	if (!ret) {
@@ -392,7 +392,7 @@ static char *rz_debug_dmp_reg_profile(RzDebug *dbg) {
 	return NULL;
 }
 
-static RzList *rz_debug_dmp_threads(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_dmp_threads(RzDebug *dbg, int pid) {
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *ret = rz_list_newf(free);
 	if (!ret) {
@@ -417,7 +417,7 @@ static RzList *rz_debug_dmp_threads(RzDebug *dbg, int pid) {
 	return ret;
 }
 
-static RzList *dmp_get_modules(DmpCtx *ctx) {
+static RzList /*<WindModule *>*/ *dmp_get_modules(DmpCtx *ctx) {
 	if (ctx->type != DMP_DUMPTYPE_TRIAGE) {
 		return winkd_list_modules(&ctx->windctx);
 	}
@@ -443,7 +443,7 @@ static RzList *dmp_get_modules(DmpCtx *ctx) {
 	return ret;
 }
 
-static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_dmp_modules(RzDebug *dbg) {
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *ret = rz_list_newf((RzListFree)rz_debug_map_free);
 	if (!ret) {
@@ -470,7 +470,7 @@ static RzList *rz_debug_dmp_modules(RzDebug *dbg) {
 	return ret;
 }
 
-static RzList *rz_debug_dmp_maps(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_dmp_maps(RzDebug *dbg) {
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *maps = winkd_list_maps(&ctx->windctx);
 	RzListIter *it;
@@ -513,7 +513,7 @@ static int is_pc_inside_windmodule(const void *value, const void *list_data) {
 
 typedef RzList *(*RzDebugFrameCallback)(RzDebug *dbg, ut64 at);
 
-RzList *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
+RzList /*<RzDebugFrame *>*/ *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
 	RzCore *core = dbg->corebind.core;
 	DmpCtx *ctx = dbg->plugin_data;
 	RzList *ret = NULL;

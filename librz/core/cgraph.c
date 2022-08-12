@@ -17,7 +17,7 @@ static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
 }
 
-static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	if (!fcn) {
 		return;
 	}
@@ -72,7 +72,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_datarefs(RZ_NONNULL
 	return graph;
 }
 
-static void core_graph_coderef(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+static void core_graph_coderef(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	if (!fcn) {
 		return;
 	}
@@ -123,7 +123,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_coderefs(RZ_NONNULL
 	return graph;
 }
 
-static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
+static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	char *me = core_flag_name(core, addr);
 	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, addr);
 	RZ_FREE(me);
@@ -174,7 +174,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONN
 /**
  * \brief Get the graph of code cross references to \p addr.
  */
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_codexrefs(RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_codexrefs(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
@@ -184,7 +184,7 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_codexrefs(RzCore *core, ut
 	return graph;
 }
 
-static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	if (!fcn) {
 		return;
 	}
@@ -266,7 +266,7 @@ static inline char *block_diff(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 	return body;
 }
 
-static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysisBlock *bb, ut64 offset, RzGraph *graph, GraphBodyFn body_fn) {
+static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysisBlock *bb, ut64 offset, RzGraph /*<RzGraphNodeInfo *>*/ *graph, GraphBodyFn body_fn) {
 	RzGraphNode *node = (RzGraphNode *)ht_up_find(cache, offset, NULL);
 	if (node) {
 		return node;
@@ -281,7 +281,7 @@ static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysi
 	return node;
 }
 
-static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph, HtUP *cache, GraphBodyFn body_fn) {
+static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph, HtUP *cache, GraphBodyFn body_fn) {
 	if (!(fcn && fcn->bbs)) {
 		return;
 	}

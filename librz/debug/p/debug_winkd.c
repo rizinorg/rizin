@@ -266,7 +266,7 @@ static bool rz_debug_winkd_init(RZ_BORROW RZ_NONNULL RzDebug *dbg, void **user) 
 	return true;
 }
 
-static RzList *rz_debug_winkd_pids(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_winkd_pids(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -323,7 +323,7 @@ static int rz_debug_winkd_select(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid, int
 	return true;
 }
 
-static RzList *rz_debug_winkd_threads(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_winkd_threads(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -355,7 +355,7 @@ static RzList *rz_debug_winkd_threads(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid
 	return ret;
 }
 
-static RzList *rz_debug_winkd_modules(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_winkd_modules(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -386,7 +386,7 @@ static RzList *rz_debug_winkd_modules(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 #include "native/bt/windows-x64.c"
 #include "native/bt/generic-all.c"
 
-static RzList *rz_debug_winkd_frames(RZ_BORROW RZ_NONNULL RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *rz_debug_winkd_frames(RZ_BORROW RZ_NONNULL RzDebug *dbg, ut64 at) {
 	if (!kdctx || !kdctx->desc || !kdctx->syncd) {
 		return NULL;
 	}
@@ -400,7 +400,7 @@ static RzList *rz_debug_winkd_frames(RZ_BORROW RZ_NONNULL RzDebug *dbg, ut64 at)
 	return ret;
 }
 
-static RzList *rz_debug_winkd_maps(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_winkd_maps(RZ_BORROW RZ_NONNULL RzDebug *dbg) {
 	RzList *maps = winkd_list_maps(&kdctx->windctx);
 	RzListIter *it;
 	WindMap *m;

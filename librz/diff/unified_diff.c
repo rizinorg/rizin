@@ -38,7 +38,7 @@ static inline ut32 count_newlines(RzDiff *diff, const void *array, st32 beg, st3
 	return count;
 }
 
-static inline void diff_unified_append_ranges(RzList *opcodes, RzStrBuf *sb, bool color) {
+static inline void diff_unified_append_ranges(RzList /*<RzDiffOp *>*/ *opcodes, RzStrBuf *sb, bool color) {
 	const char *color_beg = color ? Color_RANGE : "";
 	const char *color_end = color ? Color_RESET : "";
 
@@ -50,7 +50,7 @@ static inline void diff_unified_append_ranges(RzList *opcodes, RzStrBuf *sb, boo
 	rz_strbuf_appendf(sb, "%s@@ -%d,%d +%d,%d @@%s\n", color_beg, first->a_beg + 1, a_len, first->b_beg + 1, b_len, color_end);
 }
 
-static inline void diff_unified_json_ranges(RzList *opcodes, PJ *pj) {
+static inline void diff_unified_json_ranges(RzList /*<RzDiffOp *>*/ *opcodes, PJ *pj) {
 	RzDiffOp *first = rz_list_first(opcodes);
 	RzDiffOp *last = rz_list_last(opcodes);
 	st32 a_len = last->a_end - first->a_beg;

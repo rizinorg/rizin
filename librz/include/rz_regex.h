@@ -60,7 +60,7 @@ typedef struct rz_regmatch_t {
 
 RZ_API RzRegex *rz_regex_new(const char *pattern, const char *cflags);
 RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *text);
-RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text);
+RZ_API RzList /*<char *>*/ *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text);
 RZ_API int rz_regex_flags(const char *flags);
 RZ_API int rz_regex_comp(RzRegex *, const char *, int);
 RZ_API size_t rz_regex_error(int, const RzRegex *, char *, size_t);

@@ -92,8 +92,8 @@ typedef struct rz_lib_t {
 	/* this is checked in add_handler function */
 	char *symname;
 	char *symnamefunc;
-	RzList /*RzLibPlugin*/ *plugins;
-	RzList /*RzLibHandler*/ *handlers;
+	RzList /*<RzLibPlugin *>*/ *plugins;
+	RzList /*<RzLibHandler *>*/ *handlers;
 	HtPU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
 

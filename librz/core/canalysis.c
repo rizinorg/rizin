@@ -1630,7 +1630,7 @@ RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *cor
 
 typedef struct {
 	int count;
-	RzPVector reg_set;
+	RzPVector /*<int *>*/ reg_set;
 	bool argonly;
 	RzAnalysisFunction *fcn;
 	RzCore *core;
@@ -1722,7 +1722,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 	fcn->stack = saved_stack;
 }
 
-static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList *bbs, int depth, HtUP *state, HtUP *avoid) {
+static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList /*<RzAnalysisBlock *>*/ *bbs, int depth, HtUP *state, HtUP *avoid) {
 	rz_return_val_if_fail(bbs, false);
 	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, from);
 	RzListIter *iter = NULL;
@@ -1776,7 +1776,7 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList *bbs, 
 	return false;
 }
 
-static RzList *analysis_graph_to(RzCore *core, ut64 addr, int depth, HtUP *avoid) {
+static RzList /*<RzAnalysisBlock *>*/ *analysis_graph_to(RzCore *core, ut64 addr, int depth, HtUP *avoid) {
 	RzAnalysisFunction *cur_fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzList *list = rz_list_new();
 	HtUP *state = ht_up_new0();
@@ -3236,7 +3236,8 @@ typedef struct {
 	ut64 end_addr;
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *cur_bb;
-	RzList *bbl, *path, *switch_path;
+	RzList /*<RzAnalysisBlock *>*/ *bbl, *path;
+	RzList /*<RzAnalysisCaseOp *>*/ *switch_path;
 } IterCtx;
 
 static int find_bb(ut64 *addr, RzAnalysisBlock *bb) {
@@ -3845,7 +3846,7 @@ beach:
 
 typedef struct {
 	HtUU *visited;
-	RzList *path;
+	RzList /*<RzAnalysisBlock *>*/ *path;
 	RzCore *core;
 	ut64 from;
 	RzAnalysisBlock *fromBB;
@@ -4356,7 +4357,7 @@ static void relocation_function_process_noreturn(RzCore *core, RzAnalysisBlock *
 	rz_analysis_block_chop_noreturn(b, addr + opsize);
 }
 
-static void relocation_noreturn_process(RzCore *core, RzList *noretl, SetU *todo, RzAnalysisBlock *b, RzBinReloc *rel, ut64 opsize, ut64 addr) {
+static void relocation_noreturn_process(RzCore *core, RzList /*<char *>*/ *noretl, SetU *todo, RzAnalysisBlock *b, RzBinReloc *rel, ut64 opsize, ut64 addr) {
 	RzListIter *iter3;
 	char *noret;
 	if (rel->import) {
@@ -4378,7 +4379,7 @@ static void relocation_noreturn_process(RzCore *core, RzList *noretl, SetU *todo
 
 struct core_noretl {
 	RzCore *core;
-	RzList *noretl;
+	RzList /*<char *>*/ *noretl;
 	SetU *todo;
 };
 

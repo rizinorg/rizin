@@ -366,7 +366,7 @@ RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *types_dir) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_enum_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzList *result = rz_list_new();
@@ -384,7 +384,7 @@ RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_union_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *unions = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzList *result = rz_list_new();
@@ -402,7 +402,7 @@ RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_struct_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *structs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzList *result = rz_list_new();
@@ -420,7 +420,7 @@ RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_typedef_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *typedefs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
 	RzList *result = rz_list_new();
@@ -438,7 +438,7 @@ RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_all(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_type_db_get_base_types(typedb);
 	RzList *result = rz_list_new();
@@ -556,7 +556,7 @@ RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, RZ_NONNULL con
  * \param typedb Types Database instance
  * \param val The value to search for
  */
-RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzList *result = rz_list_newf(free);

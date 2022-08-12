@@ -124,7 +124,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	const rz_bin_xbe_obj_t *obj;
 	RzList *ret;
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
@@ -145,7 +145,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
 	RzList *ret = NULL;
@@ -232,7 +232,7 @@ static char *describe_xbe_lib_at(RzBuffer *b, ut64 off, ut64 filesz) {
 	return rz_str_newf("%s %i.%i.%i", name, lib.major, lib.minor, lib.build);
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
@@ -259,7 +259,7 @@ static RzList *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
 	xbe_header *h;
 	RzList *ret;

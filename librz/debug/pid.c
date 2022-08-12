@@ -23,7 +23,7 @@ RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid) {
 	return NULL;
 }
 
-RZ_API RzList *rz_debug_pids(RzDebug *dbg, int pid) {
+RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid) {
 	if (dbg && dbg->cur && dbg->cur->pids) {
 		return dbg->cur->pids(dbg, pid);
 	}

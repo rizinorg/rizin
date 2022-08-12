@@ -83,7 +83,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return sb.vaddr; // XXX
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf(free);
 	;
 	if (ret) {
@@ -97,7 +97,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
 	int rc;

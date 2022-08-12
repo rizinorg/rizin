@@ -1188,7 +1188,7 @@ RZ_API char *rz_asm_describe(RzAsm *a, const char *str) {
 	return (a && a->pair) ? sdb_get(a->pair, str, 0) : NULL;
 }
 
-RZ_API RzList *rz_asm_get_plugins(RzAsm *a) {
+RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a) {
 	return a->plugins;
 }
 

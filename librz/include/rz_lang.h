@@ -17,8 +17,8 @@ typedef int (*RzCoreCmdfCallback)(void *core, const char *s, ...);
 typedef struct rz_lang_t {
 	struct rz_lang_plugin_t *cur;
 	void *user;
-	RzList *defs;
-	RzList *langs;
+	RzList /*<RzLangDef *>*/ *defs;
+	RzList /*<RzLangPlugin *>*/ *langs;
 	PrintfCallback cb_printf;
 	RzCoreCmdStrCallback cmd_str;
 	RzCoreCmdfCallback cmdf;

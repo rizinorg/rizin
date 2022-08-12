@@ -52,7 +52,7 @@ typedef struct {
 	const RzPseudoGrammar *lexicon;
 	size_t lexicon_length;
 	int max_args;
-	RzList *(*tokenize)(const char *assembly, size_t length);
+	RzList /*<char *>*/ *(*tokenize)(const char *assembly, size_t length);
 } RzPseudoConfig;
 
 #define RZ_PSEUDO_DEFINE_GRAMMAR(x, y) \

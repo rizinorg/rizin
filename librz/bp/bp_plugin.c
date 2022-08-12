@@ -26,7 +26,7 @@ RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpoint
 	RzListIter *iter;
 	RzBreakpointPlugin *h;
 	/* avoid dupped plugins */
-	rz_list_foreach (bp->bps, iter, h) {
+	rz_list_foreach (bp->plugins, iter, h) {
 		if (!strcmp(h->name, plugin->name)) {
 			return false;
 		}

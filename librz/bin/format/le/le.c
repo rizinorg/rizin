@@ -94,7 +94,7 @@ static RzBinSymbol *le_get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
 	return sym;
 }
 
-RzList *le_get_entries(rz_bin_le_obj_t *bin) {
+RzList /*<char *>*/ *le_get_entries(rz_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)bin->header->enttab + bin->headerOff;
 	RzList *l = rz_list_newf(free);
 	if (!l) {
@@ -166,7 +166,7 @@ RzList *le_get_entries(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-static void le_get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, ut64 offset, ut64 end) {
+static void le_get_symbols_at(rz_bin_le_obj_t *bin, RzList /*<RzBinSymbol *>*/ *syml, RzList /*<char *>*/ *entl, ut64 offset, ut64 end) {
 	while (offset < end) {
 		RzBinSymbol *sym = le_get_symbol(bin, &offset);
 		if (!sym) {
@@ -188,7 +188,7 @@ static void le_get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, 
 	}
 }
 
-RzList *rz_bin_le_get_symbols(rz_bin_le_obj_t *bin) {
+RzList /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	RzList *entries = le_get_entries(bin);
 	LE_image_header *h = bin->header;
@@ -202,7 +202,7 @@ RzList *rz_bin_le_get_symbols(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
+RzList /*<RzBinImport *>*/ *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!l) {
 		return NULL;
@@ -226,7 +226,7 @@ RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-RzList *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin) {
+RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)free);
 	if (!l) {
 		return NULL;
@@ -242,7 +242,7 @@ RzList *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
+RzList /*<char *>*/ *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)free);
 	if (!l) {
 		return NULL;
@@ -265,7 +265,7 @@ RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
  *	page->size is the total size of iter records that describe the page
  *	TODO: Don't do this
  */
-static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
+static void __create_iter_sections(RzList /*<RzBinSection *>*/ *l, rz_bin_le_obj_t *bin, RzBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
 	rz_return_if_fail(l && bin && sec && page);
 	LE_image_header *h = bin->header;
 	ut32 offset = (h->itermap + (page->offset << (bin->is_le ? 0 : h->pageshift)));
@@ -335,7 +335,7 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection
 }
 
 // TODO: Compressed page
-RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
+RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!l) {
 		return NULL;
@@ -450,7 +450,7 @@ char *le_get_modname_by_ord(rz_bin_le_obj_t *bin, ut32 ordinal) {
 	return modname;
 }
 
-RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
+RzList /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	RzList *l = rz_list_newf((RzListFree)free);
 	if (!l) {
 		return NULL;

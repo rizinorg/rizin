@@ -18,7 +18,7 @@ struct rz_th_queue_t {
 	RzThreadLock *lock;
 	RzThreadCond *cond;
 	size_t max_size;
-	RzList *list;
+	RzList /*<void *>*/ *list;
 };
 
 /**

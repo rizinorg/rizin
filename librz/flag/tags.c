@@ -33,8 +33,8 @@ RZ_API void rz_flag_tags_reset(RzFlag *f, const char *name) {
 }
 
 struct iter_glob_flag_t {
-	RzList *res;
-	RzList *words;
+	RzList /*<RzFlagItem *>*/ *res;
+	RzList /*<char *>*/ *words;
 };
 
 static bool iter_glob_flag(RzFlagItem *fi, void *user) {

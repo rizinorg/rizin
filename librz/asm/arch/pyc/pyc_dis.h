@@ -14,6 +14,6 @@
 
 #include "../../../bin/format/pyc/marshal.h"
 
-int rz_pyc_disasm(RzAsmOp *op, const ut8 *buf, RzList *cobjs, RzList *interned_table, ut64 pc, pyc_opcodes *opcodes);
+int rz_pyc_disasm(RzAsmOp *op, const ut8 *buf, RzList /*<py_code_objects *>*/ *cobjs, ut64 pc, pyc_opcodes *opcodes);
 
 #endif

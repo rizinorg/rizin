@@ -38,7 +38,7 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 	return 0;
 }
 
-static RzList *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 	ut8 *stack, *ptr;
 	int wordsize = dbg->bits; // XXX, dbg->bits is wordsize not bits
 	ut64 sp;

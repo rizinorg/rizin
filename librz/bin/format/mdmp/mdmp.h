@@ -49,8 +49,8 @@ struct rz_bin_mdmp_obj {
 	} streams;
 
 	/* Binary memory objects */
-	RzList *pe32_bins;
-	RzList *pe64_bins;
+	RzList /*<struct Pe32_rz_bin_mdmp_pe_bin *>*/ *pe32_bins;
+	RzList /*<struct Pe64_rz_bin_mdmp_pe_bin *>*/ *pe64_bins;
 
 	RzBuffer *b;
 	size_t size;

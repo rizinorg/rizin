@@ -36,7 +36,7 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalysisRefline *re
 	return re;
 }
 
-static bool add_refline(RzList *list, RzList *sten, ut64 addr, ut64 to, int *idx) {
+static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<ReflineEnd *>*/ *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RzAnalysisRefline *item = RZ_NEW0(RzAnalysisRefline);
 	if (!item) {

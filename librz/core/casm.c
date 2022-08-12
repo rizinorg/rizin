@@ -6,12 +6,12 @@
 #include <rz_core.h>
 #include <rz_asm.h>
 
-static RzCoreAsmHit *find_addr(RzList *hits, ut64 addr);
-static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit);
+static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr);
+static int prune_hits_in_hit_range(RzList /*<RzCoreAsmHit *>*/ *hits, RzCoreAsmHit *hit);
 static int is_hit_inrange(RzCoreAsmHit *hit, ut64 start_range, ut64 end_range);
 static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range);
-static void add_hit_to_sorted_hits(RzList *hits, ut64 addr, int len, ut8 is_valid);
-static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_valid);
+static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid);
+static int prune_hits_in_addr_range(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, ut64 len, ut8 is_valid);
 
 static int rcoreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b) {
 	if (a->addr == b->addr) {
@@ -408,7 +408,7 @@ beach:
 	return hits;
 }
 
-static void add_hit_to_sorted_hits(RzList *hits, ut64 addr, int len, ut8 is_valid) {
+static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid) {
 	RzCoreAsmHit *hit = rz_core_asm_hit_new();
 	if (hit) {
 		RZ_LOG_DEBUG("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
@@ -420,7 +420,7 @@ static void add_hit_to_sorted_hits(RzList *hits, ut64 addr, int len, ut8 is_vali
 	}
 }
 
-static void add_hit_to_hits(RzList *hits, ut64 addr, int len, ut8 is_valid) {
+static void add_hit_to_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid) {
 	RzCoreAsmHit *hit = rz_core_asm_hit_new();
 	if (hit) {
 		RZ_LOG_DEBUG("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
@@ -434,7 +434,7 @@ static void add_hit_to_hits(RzList *hits, ut64 addr, int len, ut8 is_valid) {
 	}
 }
 
-static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_valid) {
+static int prune_hits_in_addr_range(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, ut64 len, ut8 is_valid) {
 	RzCoreAsmHit hit = RZ_EMPTY;
 	hit.addr = addr;
 	hit.len = len;
@@ -442,7 +442,7 @@ static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_va
 	return prune_hits_in_hit_range(hits, &hit);
 }
 
-static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit) {
+static int prune_hits_in_hit_range(RzList /*<RzCoreAsmHit *>*/ *hits, RzCoreAsmHit *hit) {
 	RzListIter *iter, *iter_tmp;
 	RzCoreAsmHit *to_check_hit;
 	int result = 0;
@@ -470,7 +470,7 @@ static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit) {
 	return result;
 }
 
-static RzCoreAsmHit *find_addr(RzList *hits, ut64 addr) {
+static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr) {
 	// Find an address in the list of hits
 	RzListIter *addr_iter = NULL;
 	RzCoreAsmHit dummy_value;
@@ -479,7 +479,7 @@ static RzCoreAsmHit *find_addr(RzList *hits, ut64 addr) {
 	return rz_list_iter_get_data(addr_iter);
 }
 
-static int handle_forward_disassemble(RzCore *core, RzList *hits, ut8 *buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {
+static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hits, ut8 *buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {
 	RzCoreAsmHit *hit = NULL, *found_addr = NULL;
 	// forward disassemble from the current instruction up to the end address
 	ut64 temp_instr_addr = current_instr_addr;
@@ -660,7 +660,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 	return hits;
 }
 
-static RzList *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding) {
+static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding) {
 	RzList *hits = rz_core_asm_hit_list_new();
 	RzCoreAsmHit dummy_value;
 	RzCoreAsmHit *hit = NULL;
@@ -717,7 +717,7 @@ static RzList *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 le
 	return hits;
 }
 
-static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
+static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
 	RzList *hits;
 	;
 	RzAsmOp op;

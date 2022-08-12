@@ -102,7 +102,7 @@ RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_type_links(RzAnalysis *analysis
 
 struct TListMeta {
 	const RzTypeDB *typedb;
-	RzList *l;
+	RzList /*<RzTypePath *>*/ *l;
 	ut64 addr;
 	ut64 offset;
 };

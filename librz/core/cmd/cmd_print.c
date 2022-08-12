@@ -869,7 +869,7 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	free(o_ab);
 }
 
-static void findMethodBounds(RzList *methods, ut64 *min, ut64 *max) {
+static void findMethodBounds(RzList /*<RzBinSymbol *>*/ *methods, ut64 *min, ut64 *max) {
 	RzBinSymbol *sym;
 	RzListIter *iter;
 	ut64 at_min = UT64_MAX;

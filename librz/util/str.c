@@ -3341,7 +3341,7 @@ RZ_API bool rz_str_endswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const c
 	return str_endswith(str, needle, false);
 }
 
-static RzList *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {
+static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {
 	rz_return_val_if_fail(str && c, NULL);
 	RzList *lst = rz_list_newf(dup ? free : NULL);
 	char *aux = str;
@@ -3367,7 +3367,7 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
 	return lst;
 }
 
-static RzList *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRegex *r, int n, bool trim, bool dup) {
+static RzList /*<char *>*/ *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRegex *r, int n, bool trim, bool dup) {
 	rz_return_val_if_fail(str && r, NULL);
 	RzList *lst = rz_list_newf(dup ? free : NULL);
 	RzRegexMatch m[1];
@@ -3426,7 +3426,7 @@ static RzList *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRege
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
  */
-RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
+RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
 	rz_return_val_if_fail(str && c, NULL);
 	return str_split_list_common(str, c, n, true, false);
 }
@@ -3442,7 +3442,7 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
  * \param r Delimiter regex used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
  */
-RZ_API RZ_OWN RzList *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
 	rz_return_val_if_fail(str && r, NULL);
 	RzRegex *regex = rz_regex_new(r, "e");
 	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
@@ -3461,7 +3461,7 @@ RZ_API RZ_OWN RzList *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL c
  * \param c Delimiter string used to split \p str
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, 0, trim, true);
@@ -3482,7 +3482,7 @@ RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) 
  * \param n If > 0 at most this number of delimiters are considered.
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, n, trim, true);
@@ -3503,7 +3503,7 @@ RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bo
  * \param n If > 0 at most this number of delimiters are considered.
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RZ_OWN RzList *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
 	rz_return_val_if_fail(_str && r, NULL);
 	char *str = strdup(_str);
 	RzRegex *regex = rz_regex_new(r, "e");
@@ -3777,7 +3777,7 @@ RZ_API void rz_str_stripLine(char *str, const char *key) {
 	}
 }
 
-RZ_API char *rz_str_list_join(RzList *str, const char *sep) {
+RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	const char *p;
 	while ((p = rz_list_pop_head(str))) {
@@ -3924,7 +3924,7 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
  * \param width the maximum size of each line. It will be respected only if
  *              possible, as the function won't split words.
  */
-RZ_API RzList *rz_str_wrap(char *str, size_t width) {
+RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width) {
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();

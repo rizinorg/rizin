@@ -560,13 +560,13 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RzList *rz_debug_native_tids(RzDebug *dbg, int pid) {
+static RzList /*<void *>*/ *rz_debug_native_tids(RzDebug *dbg, int pid) {
 	printf("TODO: Threads: \n");
 	// T
 	return NULL;
 }
 
-static RzList *rz_debug_native_pids(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -596,7 +596,7 @@ static RzList *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	return list;
 }
 
-static RzList *rz_debug_native_threads(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		eprintf("No list?\n");
@@ -986,7 +986,7 @@ static void _map_free(RzDebugMap *map) {
 }
 #endif
 
-static RzList *rz_debug_native_map_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	RzList *list = NULL;
 #if __KFBSD__
 	int ign;
@@ -1136,7 +1136,7 @@ static RzList *rz_debug_native_map_get(RzDebug *dbg) {
 	return list;
 }
 
-static RzList *rz_debug_native_modules_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 	char *lastname = NULL;
 	RzDebugMap *map;
 	RzListIter *iter, *iter2;
@@ -1501,7 +1501,7 @@ static RzList *xnu_desc_list(int pid) {
 }
 #endif
 
-static RzList *rz_debug_desc_native_list(int pid) {
+static RzList /*<RzDebugDesc *>*/ *rz_debug_desc_native_list(int pid) {
 #if __APPLE__
 	return xnu_desc_list(pid);
 #elif __WINDOWS__

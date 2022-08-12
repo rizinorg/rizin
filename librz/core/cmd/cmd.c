@@ -164,7 +164,7 @@ RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]) {
 }
 
 struct duplicate_flag_t {
-	RzList *ret;
+	RzList /*<RzFlagItem *>*/ *ret;
 	const char *word;
 };
 
@@ -3356,7 +3356,7 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	return out;
 }
 
-static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RzList *edits) {
+static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
 	TSNode inn_cmd = ts_node_child(arg, 1);
 	rz_return_if_fail(!ts_node_is_null(inn_cmd));
 	char *out = do_handle_substitution_cmd(state, inn_cmd);
@@ -3395,7 +3395,7 @@ static bool is_handled_args(TSNode args) {
 		is_ts_cmd_substitution_arg(args) || is_ts_grep_specifier(args);
 }
 
-static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RzList *edits) {
+static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
 	if (is_group_of_args(args)) {
 		uint32_t n_children = ts_node_named_child_count(args);
 		uint32_t i;
@@ -3475,7 +3475,7 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 	}
 }
 
-static TSTree *apply_edits(struct tsr2cmd_state *state, RzList *edits) {
+static TSTree *apply_edits(struct tsr2cmd_state *state, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
 	struct tsr2cmd_edit *edit;
 	RzListIter *it;
 
@@ -3511,7 +3511,7 @@ static void substitute_args_init(struct tsr2cmd_state *state, TSNode command) {
 	RZ_LOG_DEBUG("Shrinking input to '%s'\n", state->input);
 }
 
-static bool substitute_args_do(struct tsr2cmd_state *state, RzList *edits, TSNode *new_command) {
+static bool substitute_args_do(struct tsr2cmd_state *state, RzList /*<struct tsr2cmd_edit *>*/ *edits, TSNode *new_command) {
 	TSTree *new_tree = apply_edits(state, edits);
 	if (!new_tree) {
 		return false;

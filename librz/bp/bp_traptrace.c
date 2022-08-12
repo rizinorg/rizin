@@ -13,7 +13,7 @@ RZ_API void rz_bp_traptrace_free(void *ptr) {
 	free(trace);
 }
 
-RZ_API RzList *rz_bp_traptrace_new(void) {
+RZ_API RzList /*<RzBreakpointTrace *>*/ *rz_bp_traptrace_new(void) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;

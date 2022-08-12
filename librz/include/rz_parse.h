@@ -32,7 +32,7 @@ typedef struct rz_parse_t {
 	char *retleave_asm;
 	struct rz_parse_plugin_t *cur;
 	// RzAnalysis *analysis; // weak analysis ref XXX do not use. use analb.anal
-	RzList *parsers;
+	RzList /*<RzParsePlugin *>*/ *parsers;
 	RzAnalysisVarList varlist;
 	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
 	const char *(*get_reg_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);

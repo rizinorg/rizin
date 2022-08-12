@@ -42,22 +42,22 @@ typedef struct rz_test_state_t {
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
 	HtPP *path_left; // char * (path to test file) => RzTestFileCounts *
-	RzPVector completed_paths;
+	RzPVector /*<char *>*/ completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
 	ut64 br_count;
 	ut64 fx_count;
-	RzPVector queue;
-	RzPVector results;
+	RzPVector /*<RzTest *>*/ queue;
+	RzPVector /*<RzTestResultInfo *>*/ results;
 } RzTestState;
 
 static void *worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
-static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results);
-static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results);
-static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results);
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 
 static int help(bool verbose) {
 	printf("Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -1075,7 +1075,7 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 }
 
 // After editing a test, fix the line numbers previously saved for all the other tests
-static void fixup_tests(RzPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
+static void fixup_tests(RzPVector /*<RzTestResultInfo *>*/ *results, const char *edited_file, ut64 start_line, st64 delta) {
 	void **it;
 	rz_pvector_foreach (results, it) {
 		RzTestResultInfo *result = *it;
@@ -1133,7 +1133,7 @@ static void save_test_file_for_fix(const char *path, const char *newc) {
 	}
 }
 
-static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RzPVector *fixup_results) {
+static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	char *kv = format_cmd_kv(key, value);
 	if (!kv) {
 		return NULL;
@@ -1153,7 +1153,7 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 	return newc;
 }
 
-static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RzPVector *fixup_results) {
+static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	char *content = read_test_file_for_fix(path);
 	if (!content) {
 		return;
@@ -1167,7 +1167,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free(newc);
 }
 
-static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector *fixup_results) {
+static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	if (result->run_failed || result->proc_out->ret != 0) {
 		return false;
@@ -1279,7 +1279,7 @@ static bool interact_fix_asm(RzTestResultInfo *result) {
 	return true;
 }
 
-static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	switch (result->test->type) {
 	case RZ_TEST_TYPE_CMD:
 		return interact_fix_cmd(result, fixup_results);
@@ -1290,7 +1290,7 @@ static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
 	}
 }
 
-static void interact_break_cmd(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void interact_break_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	ut64 line_begin;
@@ -1311,7 +1311,7 @@ static void interact_break_asm(RzTestResultInfo *result) {
 		test->mode | RZ_ASM_TEST_MODE_BROKEN, test->disasm, test->bytes, test->bytes_size, test->offset, test->il);
 }
 
-static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	switch (result->test->type) {
 	case RZ_TEST_TYPE_CMD:
 		interact_break_cmd(result, fixup_results);
@@ -1324,7 +1324,7 @@ static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
 	}
 }
 
-static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {

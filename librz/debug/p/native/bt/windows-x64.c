@@ -14,7 +14,7 @@ static int is_pc_inside_module(const void *value, const void *list_data) {
 #define CMP(x, y)                   (st64)((st64)x - ((PE64_RUNTIME_FUNCTION *)y)->EndAddress)
 #define READ_AT(address, buf, size) dbg->iob.read_at(dbg->iob.io, address, buf, size)
 
-static inline bool init_module_runtime_functions(RzDebug *dbg, RzVector *functions, ut64 module_base) {
+static inline bool init_module_runtime_functions(RzDebug *dbg, RzVector /*<PE64_RUNTIME_FUNCTION>*/ *functions, ut64 module_base) {
 	ut8 buf[4];
 
 	const ut64 lfanew_offset = module_base + rz_offsetof(Pe64_image_dos_header, e_lfanew);
@@ -270,7 +270,7 @@ process_chained_info:
 	return true;
 }
 
-static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList **out_frames, RZ_INOUT struct context_type_amd64 *context) {
+static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList /*<RzDebugFrame *>*/ **out_frames, RZ_INOUT struct context_type_amd64 *context) {
 	RzList *frames = *out_frames ? *out_frames : rz_list_newf(free);
 	*out_frames = frames;
 	if (!frames) {

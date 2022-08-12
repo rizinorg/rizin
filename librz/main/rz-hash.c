@@ -782,7 +782,7 @@ static void hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, boo
 	}
 }
 
-static RzList *parse_hash_algorithms(RzHashContext *ctx) {
+static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 	if (!strcmp(ctx->algorithm, "all")) {
 		const RzHashPlugin *plugin;
 		RzList *list = rz_list_newf(NULL);

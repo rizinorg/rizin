@@ -1060,7 +1060,7 @@ static GHT GH(tcache_get_entry)(GH(RTcache) * tcache, int index) {
  * \param arena_base Base address of the arena
  * \return RzList of RzHeapBin pointers
  */
-RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
+RZ_API RzList /*<RzHeapBin *>*/ *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 	// check if tcache is even present in this Glibc version
 	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tc) {
@@ -1693,13 +1693,13 @@ void GH(rz_arena_list_free)(RzArenaListItem *item) {
 	free(item);
 }
 /**
- * \brief Get a list of MallocState structs for all the arenas
+ * \brief Get a list of RzArenaListItem structs for all the arenas
  * \param core RzCore pointer
  * \param m_arena Base address of MallocState struct of main arena
  * \param main_arena MallocState struct of main arena
- * \return RzList pointer for list of MallocState structs of all the arenas
+ * \return RzList pointer for list of RzArenaListItem structs of all the arenas
  */
-RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+RZ_API RzList /*<RzArenaListItem *>*/ *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzList *arena_list = rz_list_newf((RzListFree)GH(rz_arena_list_free));
 	MallocState *ta = RZ_NEW0(MallocState);
 	if (!ta) {
@@ -1752,7 +1752,7 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
  * \param top_chunk Boolean value to return the top chunk in the list or not
  * \return RzList pointer for list of all chunks in a given arena
  */
-RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state, bool top_chunk) {
 	RzList *chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 	if (!core || !core->dbg || !core->dbg->maps) {
@@ -2430,7 +2430,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int ar
  * \param core RzCore pointer
  * \return RzList of RzArenaListItem
  */
-RZ_API RzList *GH(rz_heap_arena_list_wrapper)(RzCore *core) {
+RZ_API RzList /*<RzArenaListItem *>*/ *GH(rz_heap_arena_list_wrapper)(RzCore *core) {
 	GHT m_arena;
 	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
 		return rz_list_newf(free);
@@ -2454,7 +2454,7 @@ RZ_API RzList *GH(rz_heap_arena_list_wrapper)(RzCore *core) {
  * \param m_arena Base Address of the arena
  * \return RzList of heap chunks as RzHeapChunkListItem structs
  */
-RZ_API RzList *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
 	GHT m_arena;
 	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
 		return rz_list_newf(free);

@@ -20,7 +20,7 @@ static void destroy(RzBinFile *bf) {
 	rz_bin_mdmp_free((struct rz_bin_mdmp_obj *)bf->o->bin_obj);
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -121,7 +121,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	char *ptr = NULL;
 	int i;
 	struct rz_bin_mdmp_obj *obj;
@@ -176,7 +176,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return false;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!ret) {
@@ -219,7 +219,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	struct minidump_module *module;
 	struct minidump_string *str;
 	struct rz_bin_mdmp_obj *obj;
@@ -297,7 +297,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *mem(RzBinFile *bf) {
+static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	struct minidump_location_descriptor *location = NULL;
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
@@ -368,7 +368,7 @@ static RzList *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -395,7 +395,7 @@ static RzList *relocs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -426,7 +426,7 @@ static RzList *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -460,7 +460,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 0, false);
 }
 

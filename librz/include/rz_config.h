@@ -44,7 +44,7 @@ typedef struct rz_config_node_t {
 	RzConfigCallback getter;
 	RzConfigCallback setter;
 	char *desc;
-	RzList *options;
+	RzList /*<char *>*/ *options;
 } RzConfigNode;
 
 RZ_API const char *rz_config_node_type(RzConfigNode *node);
@@ -53,7 +53,7 @@ typedef struct rz_config_t {
 	int lock;
 	void *user;
 	RzNum *num;
-	RzList *nodes;
+	RzList /*<RzConfigNode *>*/ *nodes;
 	HtPP *ht;
 } RzConfig;
 
@@ -69,8 +69,8 @@ typedef struct rz_config_hold_char_t {
 
 typedef struct rz_config_hold_t {
 	RzConfig *cfg;
-	RzList *list_num; // list of RzConfigHoldNum to hold numeric values
-	RzList *list_char; // list of RzConfigHoldChar to hold char values
+	RzList /*<RzConfigHoldNum *>*/ *list_num; // holds numeric values
+	RzList /*<RzConfigHoldChar *>*/ *list_char; // holds char values
 } RzConfigHold;
 
 #ifdef RZ_API

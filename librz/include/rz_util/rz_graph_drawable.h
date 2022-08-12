@@ -28,7 +28,7 @@ typedef struct rz_analysis_graph_node_info_t {
 
 RZ_API void rz_graph_free_node_info(void *ptr);
 RZ_API RzGraphNodeInfo *rz_graph_create_node_info(const char *title, const char *body, ut64 offset);
-RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph *graph, const char *title, const char *body, ut64 offset);
+RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset);
 
 /**
  * @brief Convert graph to Graphviz dot format.

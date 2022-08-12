@@ -39,11 +39,11 @@ typedef struct rz_hash_plugin_t {
 } RzHashPlugin;
 
 typedef struct rz_hash_t {
-	RzList *plugins;
+	RzList /*<RzHashPlugin *>*/ *plugins;
 } RzHash;
 
 typedef struct rz_hash_cfg_t {
-	RzList *configurations;
+	RzList /*<HashCfgConfig *>*/ *configurations;
 	RzHashStatus status;
 	RzHash *hash;
 } RzHashCfg;

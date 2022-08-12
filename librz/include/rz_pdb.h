@@ -58,26 +58,26 @@ typedef struct {
 
 typedef struct dbi_stream_t {
 	RzPdbRzPdbDbiStreamHdr hdr;
-	RzList /* RzPdbDbiStreamExHdr */ *ex_hdrs;
+	RzList /*<RzPdbDbiStreamExHdr *>*/ *ex_hdrs;
 	RzPdbRzPdbDbiStreamDbgHeader dbg_hdr;
 
 } RzPdbDbiStream;
 
 // GDATA
 typedef struct {
-	RzList /* GDataGlobal */ *global_list;
+	RzList /*<GDataGlobal *>*/ *global_list;
 } RzPdbGDataStream;
 
 // OMAP
 typedef struct
 {
-	RzList /* OmapEntry */ *entries;
+	RzList /*<OmapEntry *>*/ *entries;
 	ut32 *froms;
 } RzPdbOmapStream;
 
 // PE Stream
 typedef struct {
-	RzList /* PeImageSectionHeader */ *sections_hdrs;
+	RzList /*<PeImageSectionHeader *>*/ *sections_hdrs;
 } RzPdbPeStream;
 
 // TPI
@@ -154,7 +154,7 @@ typedef struct tpi_stream_t {
 	RzPdbTpiStreamHeader header;
 	RBTree types;
 	ut64 type_index_base;
-	RzList /* RzBaseType */ *print_type;
+	RzList /*<RzBaseType *>*/ *print_type;
 } RzPdbTpiStream;
 
 // PDB
@@ -241,7 +241,7 @@ typedef struct {
 typedef struct rz_pdb_t {
 	RzBuffer *buf; // mmap of file
 	RzPdbMsfSuperBlock *super_block;
-	RzList /* RzPdbMsfStream */ *streams;
+	RzList /*<RzPdbMsfStream *>*/ *streams;
 	RzPdbStream *s_pdb;
 	RzPdbDbiStream *s_dbi;
 	RzPdbTpiStream *s_tpi;
@@ -260,7 +260,7 @@ RZ_API void rz_bin_pdb_free(RzPdb *pdb);
 RZ_API RZ_BORROW RzPdbTpiType *rz_bin_pdb_get_type_by_index(RZ_NONNULL RzPdbTpiStream *stream, ut32 index);
 RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx);
 RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t);
-RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t);
+RZ_API RZ_BORROW RzList /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t);
 RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type);
 RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type);
 

@@ -125,7 +125,7 @@ static RzBinXtrData *oneshot_buffer(RzBin *bin, RzBuffer *b, int idx) {
 	return NULL;
 }
 
-static RzList *oneshotall_buffer(RzBin *bin, RzBuffer *b) {
+static RzList /*<RzBinXtrData *>*/ *oneshotall_buffer(RzBin *bin, RzBuffer *b) {
 	RzBinXtrData *data = oneshot_buffer(bin, b, 0);
 	if (data) {
 		// XXX - how do we validate a valid narch?

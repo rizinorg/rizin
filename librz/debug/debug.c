@@ -394,7 +394,6 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
 	dbg->maps_user = rz_debug_map_list_new();
-	dbg->q_regs = NULL;
 	dbg->call_frames = NULL;
 	dbg->main_arena_resolved = false;
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
@@ -1609,7 +1608,7 @@ RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return false;
 }
 
-RZ_API RzList *rz_debug_frames(RzDebug *dbg, ut64 at) {
+RZ_API RzList /*<RzDebugFrame *>*/ *rz_debug_frames(RzDebug *dbg, ut64 at) {
 	if (dbg && dbg->cur && dbg->cur->frames) {
 		return dbg->cur->frames(dbg, at);
 	}

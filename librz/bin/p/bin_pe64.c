@@ -34,7 +34,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
@@ -390,7 +390,7 @@ static inline const struct rz_bin_pe_section_t *get_section(RzBinPEObj *bin, con
 	return unwind_data_section;
 }
 
-static RzList *trycatch(RzBinFile *bf) {
+static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 	ut64 baseAddr = bf->o->opts.baseaddr;
 	ut64 offset;
 

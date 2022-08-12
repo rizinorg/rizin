@@ -30,9 +30,9 @@ typedef struct rz_type_parser_t RzTypeParser;
 
 typedef struct rz_type_db_t {
 	void *user;
-	HtPP /* <char *, RzBaseType *> */ *types; //< name -> base type
-	HtPP /* <char *, char *> */ *formats; //< name -> `pf` format
-	HtPP /* <char *, RzCallable *> */ *callables; //< name -> RzCallable (function type)
+	HtPP /*<char *, RzBaseType *>*/ *types; //< name -> base type
+	HtPP /*<char *, char *>*/ *formats; //< name -> `pf` format
+	HtPP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
 	RzTypeTarget *target;
 	RzTypeParser *parser;
 	RzNum *num;
@@ -105,7 +105,7 @@ typedef struct rz_base_type_union_t {
 } RzBaseTypeUnion;
 
 typedef struct rz_base_type_enum_t {
-	RzVector /*<RzTypeEnumCase*/ cases; // list of all the enum cases
+	RzVector /*<RzTypeEnumCase>*/ cases; // list of all the enum cases
 } RzBaseTypeEnum;
 
 typedef struct rz_base_type_t {
@@ -146,7 +146,7 @@ typedef struct rz_callable_arg_t {
 typedef struct rz_callable_at {
 	RZ_NULLABLE char *name; // optional
 	RZ_NULLABLE RzType *ret; /// optional for the time being
-	RzPVector /* RzCallableArg */ *args;
+	RzPVector /*<RzCallableArg *>*/ *args;
 	RZ_NULLABLE const char *cc; // optional
 	bool noret; // Does not return
 } RzCallable;
@@ -295,8 +295,8 @@ RZ_API bool rz_base_type_is_integral_signed(const RzTypeDB *typedb, RZ_NONNULL c
 RZ_API bool rz_type_is_integral_signed(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_base_type_is_integral_unsigned(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
 RZ_API bool rz_type_is_integral_unsigned(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
-RZ_API RZ_OWN RzList *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTypeclass typeclass);
-RZ_API RZ_OWN RzList *rz_type_typeclass_get_all_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size);
+RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTypeclass typeclass);
+RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size);
 RZ_API RZ_OWN RzBaseType *rz_type_typeclass_get_default_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size);
 
 // Type paths
@@ -335,7 +335,7 @@ RZ_API RzBaseType *rz_type_db_get_typedef(const RzTypeDB *typedb, RZ_NONNULL con
 
 RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, RZ_NONNULL const char *name, const char *member);
 RZ_API RZ_BORROW const char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val);
-RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val);
 RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val);
 
 // Type size calculation
@@ -378,7 +378,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_get_base_type(const RzTypeDB *typedb, RZ_NO
 // Type formats (`tp` and `pf` commands)
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt);
-RZ_API RZ_OWN RzList *rz_type_db_format_all(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_format_all(RzTypeDB *typedb);
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 
@@ -428,15 +428,15 @@ RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *na
 RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
-RZ_API RZ_OWN RzList *rz_type_function_names(RzTypeDB *typedb);
-RZ_API RZ_OWN RzList *rz_type_noreturn_function_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_function_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_noreturn_function_names(RzTypeDB *typedb);
 
 // Listing API
-RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb);
-RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb);
-RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb);
-RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb);
-RZ_API RZ_OWN RzList *rz_type_db_all(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_enum_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_struct_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_union_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_typedef_names(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_all(RzTypeDB *typedb);
 
 // Serialization API
 RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb);

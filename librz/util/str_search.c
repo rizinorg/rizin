@@ -359,7 +359,7 @@ static inline bool can_be_ebcdic(const ut8 *buf, ut64 size) {
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
  */
-RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
+RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
 	rz_return_val_if_fail(opt && list && buf, -1);
 
@@ -522,7 +522,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList *lis
  *
  * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
  */
-RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
+RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type) {
 	rz_return_val_if_fail(opt && list && buf_to_scan, -1);
 

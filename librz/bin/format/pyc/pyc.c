@@ -5,7 +5,7 @@
 #include "pyc.h"
 #include "marshal.h"
 
-bool pyc_get_sections_symbols(RzBinPycObj *pyc, RzList *sections, RzList *symbols, RzList *cobjs, RzBuffer *buf, ut32 magic) {
+bool pyc_get_sections_symbols(RzBinPycObj *pyc, RzList /*<RzBinSection *>*/ *sections, RzList /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *cobjs, RzBuffer *buf, ut32 magic) {
 	return get_sections_symbols_from_code_objects(pyc, buf, sections, symbols, cobjs, magic);
 }
 

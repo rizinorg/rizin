@@ -287,7 +287,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return ret;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 4, false);
 }
 

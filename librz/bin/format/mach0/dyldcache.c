@@ -482,7 +482,7 @@ beach:
 	free(cmds);
 }
 
-static RzList *create_cache_bins(RzDyldCache *cache) {
+static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 	RzList *bins = rz_list_newf((RzListFree)free_bin);
 	if (!bins) {
 		return NULL;
@@ -1117,7 +1117,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;

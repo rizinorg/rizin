@@ -44,7 +44,7 @@ RZ_API void rz_event_free(RzEvent *ev) {
 	free(ev);
 }
 
-static RzVector *get_cbs(RzEvent *ev, int type) {
+static RzVector /*<RzEventCallbackHook>*/ *get_cbs(RzEvent *ev, int type) {
 	RzVector *cbs = ht_up_find(ev->callbacks, (ut64)type, NULL);
 	if (!cbs) {
 		cbs = rz_vector_new(sizeof(RzEventCallbackHook), NULL, NULL);

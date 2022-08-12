@@ -3,7 +3,7 @@
 
 #include "luac_common.h"
 
-void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
+void luac_add_section(RzList /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
 	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
 	if (!bin_sec || !name) {
 		free(bin_sec);
@@ -30,7 +30,7 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 	}
 }
 
-void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type) {
+void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 offset, ut64 size, const char *type) {
 	RzBinSymbol *bin_sym = RZ_NEW0(RzBinSymbol);
 	if (!bin_sym) {
 		return;
@@ -44,7 +44,7 @@ void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, co
 	rz_list_append(symbol_list, bin_sym);
 }
 
-void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
+void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry_type) {
 	RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 	if (!entry) {
 		return;
@@ -57,7 +57,7 @@ void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
 	rz_list_append(entry_list, entry);
 }
 
-void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) {
+void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 size) {
 	RzBinString *bin_string = RZ_NEW0(RzBinString);
 	if (!bin_string) {
 		return;

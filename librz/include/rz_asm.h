@@ -82,7 +82,7 @@ typedef struct rz_asm_code_t {
 #else
 	RzAsmOp op; // we have those fields already inside RzAsmOp
 #endif
-	RzList *equs; // TODO: must be a hash
+	RzList /*<RzAsmEqu *>*/ *equs; // TODO: must be a hash
 	ut64 code_offset;
 	ut64 data_offset;
 	int code_align;
@@ -105,7 +105,7 @@ typedef struct rz_asm_t {
 	void *plugin_data;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
-	RzList *plugins;
+	RzList /*<RzAsmPlugin *>*/ *plugins;
 	RzBinBind binb;
 	RzParse *ifilter;
 	RzParse *ofilter;
@@ -176,7 +176,7 @@ RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
 RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
 RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
 RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
-RZ_API RzList *rz_asm_get_plugins(RzAsm *a);
+RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
 /* code.c */

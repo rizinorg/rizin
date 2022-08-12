@@ -9,7 +9,7 @@
 /* implementation */
 #include <rz_debug.h>
 
-static RzList *backtrace_x86_32(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *backtrace_x86_32(RzDebug *dbg, ut64 at) {
 	RzRegItem *ri;
 	RzReg *reg = dbg->reg;
 	ut32 i, _esp, esp, ebp2;
@@ -42,7 +42,7 @@ static RzList *backtrace_x86_32(RzDebug *dbg, ut64 at) {
 }
 
 /* TODO: Can I use this as in a coroutine? */
-static RzList *backtrace_x86_32_analysis(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *backtrace_x86_32_analysis(RzDebug *dbg, ut64 at) {
 	RzRegItem *ri;
 	RzReg *reg = dbg->reg;
 	ut32 i, _esp, esp, eip, ebp2;

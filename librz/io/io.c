@@ -198,7 +198,7 @@ RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut
 }
 
 /* opens many files, without mapping them. This should be discussed */
-RZ_API RzList *rz_io_open_many(RzIO *io, const char *uri, int perm, int mode) {
+RZ_API RzList /*<RzIODesc *>*/ *rz_io_open_many(RzIO *io, const char *uri, int perm, int mode) {
 	RzList *desc_list;
 	RzListIter *iter;
 	RzIODesc *desc;

@@ -937,7 +937,7 @@ RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarf
 }
 
 static size_t parse_opcodes(const ut8 *obuf,
-	size_t len, const RzBinDwarfLineHeader *hdr, RzVector *ops_out,
+	size_t len, const RzBinDwarfLineHeader *hdr, RzVector /*<RzBinDwarfLineOp>*/ *ops_out,
 	RzBinDwarfSMRegisters *regs, RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info,
 	RZ_NULLABLE RzBinDwarfLineFileCache fnc, bool big_endian, ut8 target_addr_size) {
 	const ut8 *buf, *buf_end;

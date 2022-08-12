@@ -113,75 +113,6 @@ typedef enum rz_analysis_arch_info_type_t {
 #define RZ_ANALYSIS_GET_NAME(x, y, z) \
 	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z) : NULL
 
-/* type = (RZ_ANALYSIS_VAR_TYPE_BYTE & RZ_ANALYSIS_VAR_TYPE_SIZE_MASK) |
- *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
- *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
- */
-typedef struct rz_analysis_type_var_t {
-	char *name;
-	int index;
-	int scope;
-	ut16 type; // contain (type || signedness || modifier)
-	ut8 size;
-	union {
-		ut8 v8;
-		ut16 v16;
-		ut32 v32;
-		ut64 v64;
-	} value;
-} RzAnalysisTypeVar;
-
-typedef struct rz_analysis_type_ptr_t {
-	char *name;
-	ut16 type; // contain (type || signedness || modifier)
-	ut8 size;
-	union {
-		ut8 v8;
-		ut16 v16;
-		ut32 v32;
-		ut64 v64;
-	} value;
-} RzAnalysisTypePtr;
-
-typedef struct rz_analysis_type_array_t {
-	char *name;
-	ut16 type; // contain (type || signedness || modifier)
-	ut8 size;
-	ut64 count;
-	union {
-		ut8 *v8;
-		ut16 *v16;
-		ut32 *v32;
-		ut64 *v64;
-	} value;
-} RzAnalysisTypeArray;
-
-typedef struct rz_analysis_type_struct_t RzAnalysisTypeStruct;
-typedef struct rz_analysis_type_t RzAnalysisType;
-
-struct rz_analysis_type_struct_t {
-	char *name;
-	ut8 type;
-	ut32 size;
-	void *parent;
-	RzAnalysisType *items;
-};
-
-typedef struct rz_analysis_type_union_t {
-	char *name;
-	ut8 type;
-	ut32 size;
-	void *parent;
-	RzAnalysisType *items;
-} RzAnalysisTypeUnion;
-
-typedef struct rz_analysis_type_alloca_t {
-	long address;
-	long size;
-	void *parent;
-	RzAnalysisType *items;
-} RzAnalysisTypeAlloca;
-
 enum {
 	RZ_ANALYSIS_FQUALIFIER_NONE = 0,
 	RZ_ANALYSIS_FQUALIFIER_STATIC = 1,
@@ -281,13 +212,6 @@ typedef struct rz_analysis_func_arg_t {
 	ut64 size;
 	ut64 src; // Function-call argument value or pointer to it
 } RzAnalysisFuncArg;
-
-struct rz_analysis_type_t {
-	char *name;
-	ut32 type;
-	ut32 size;
-	RzList *content;
-};
 
 typedef enum {
 	RZ_META_TYPE_ANY = -1,
@@ -493,7 +417,7 @@ typedef struct rz_analysis_switch_obj_t {
 	ut64 min_val;
 	ut64 def_val;
 	ut64 max_val;
-	RzList /*<RzAnalysisCaseOp>*/ *cases;
+	RzList /*<RzAnalysisCaseOp *>*/ *cases;
 	RzType *enum_type;
 } RzAnalysisSwitchOp;
 
@@ -843,7 +767,7 @@ typedef struct rz_analysis_op_t {
 	ut64 mmio_address; // mmio address
 	RzAnalysisValue *src[3];
 	RzAnalysisValue *dst;
-	RzList *access; /* RzAnalysisValue access information */
+	RzList /*<RzAnalysisValue *>*/ *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
 	RzStrBuf opex;
 	RzAnalysisLiftedILOp il_op;
@@ -888,7 +812,7 @@ typedef struct rz_analysis_bb_t {
 	const char *cmpreg;
 	ut32 bbhash; // calculated with xxhash
 
-	RzList *fcns;
+	RzList /*<RzAnalysisFunction *>*/ *fcns;
 	RzAnalysis *analysis;
 	int ref;
 } RzAnalysisBlock;
@@ -927,7 +851,7 @@ typedef struct rz_analysis_refline_t {
 
 typedef struct rz_analysis_cycle_frame_t {
 	ut64 naddr; // next addr
-	RzList *hooks;
+	RzList /*<RzAnalysisCycleHook *>*/ *hooks;
 	struct rz_analysis_cycle_frame_t *prev;
 } RzAnalysisCycleFrame;
 
@@ -1023,8 +947,7 @@ typedef struct rz_analysis_esil_trace_t {
 	ut64 stack_addr;
 	ut64 stack_size;
 	ut8 *stack_data;
-	// RzVector<RzILTraceInstruction>
-	RzPVector *instructions;
+	RzPVector /*<RzILTraceInstruction *>*/ *instructions;
 } RzAnalysisEsilTrace;
 
 typedef int (*RzAnalysisEsilHookRegWriteCB)(ANALYSIS_ESIL *esil, const char *name, ut64 *val);
@@ -1120,7 +1043,7 @@ typedef struct rz_analysis_il_init_state_var_t {
  * whatever contents the RzReg currently has).
  */
 typedef struct rz_analysis_il_init_state_t {
-	RzVector /* <RzAnalysisILInitStateVar> */ vars; ///< Contents of global variables
+	RzVector /*<RzAnalysisILInitStateVar>*/ vars; ///< Contents of global variables
 } RzAnalysisILInitState;
 
 /**
@@ -1145,7 +1068,7 @@ typedef struct rz_analysis_il_config_t {
 	 */
 	RZ_NULLABLE const char **reg_bindings;
 	ut32 mem_key_size; ///< address size for memory 0, bound against IO
-	RzPVector /* <RzILEffectLabel> */ labels; ///< global labels, primarily for syscall/hook callbacks
+	RzPVector /*<RzILEffectLabel *>*/ labels; ///< global labels, primarily for syscall/hook callbacks
 	RZ_NULLABLE RzAnalysisILInitState *init_state; ///< optional, initial contents for variables/registers, etc.
 	// more information might go in here, for example additional memories, etc.
 } RzAnalysisILConfig;
@@ -1226,7 +1149,7 @@ typedef char *(*RzAnalysisRegProfGetCallback)(RzAnalysis *a);
 typedef int (*RzAnalysisFPBBCallback)(RzAnalysis *a, RzAnalysisBlock *bb);
 typedef int (*RzAnalysisFPFcnCallback)(RzAnalysis *a, RzAnalysisFunction *fcn);
 typedef int (*RzAnalysisDiffBBCallback)(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2);
-typedef int (*RzAnalysisDiffFcnCallback)(RzAnalysis *analysis, RzList *fcns, RzList *fcns2);
+typedef int (*RzAnalysisDiffFcnCallback)(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns, RzList /*<RzAnalysisFunction *>*/ *fcns2);
 typedef int (*RzAnalysisDiffEvalCallback)(RzAnalysis *analysis);
 
 typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
@@ -1250,7 +1173,7 @@ typedef struct rz_analysis_plugin_t {
 	// int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
 	int (*archinfo)(RzAnalysis *analysis, RzAnalysisInfoType query);
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
-	RzList *(*preludes)(RzAnalysis *analysis);
+	RzList /*<RzSearchKeyword *>*/ *(*preludes)(RzAnalysis *analysis);
 
 	/**
 	 * The actual bit-size of an address for given analysis.bits.
@@ -1556,11 +1479,11 @@ typedef struct {
 	ut64 addr; ///< Address of instruction
 	ut32 stats; ///< Has write/read to reg/mem ? see RZ_IL_TRACE_INS_HAS_* enums
 
-	RzPVector *write_mem_ops; ///< Vector<RzILTraceMemOp>
-	RzPVector *read_mem_ops; ///< Vector<RzILTraceMemOp>
+	RzPVector /*<RzILTraceMemOp *>*/ *write_mem_ops; ///< Vector<RzILTraceMemOp>
+	RzPVector /*<RzILTraceMemOp *>*/ *read_mem_ops; ///< Vector<RzILTraceMemOp>
 
-	RzPVector *write_reg_ops; ///< Vector<RzILTraceRegOp>
-	RzPVector *read_reg_ops; ///< Vector<RzILTraceRegOp>
+	RzPVector /*<RzILTraceRegOp *>*/ *write_reg_ops; ///< Vector<RzILTraceRegOp>
+	RzPVector /*<RzILTraceRegOp *>*/ *read_reg_ops; ///< Vector<RzILTraceRegOp>
 } RzILTraceInstruction;
 
 /* Independent Trace Functions */
@@ -1712,9 +1635,9 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var);
 
 typedef struct rz_analysis_fcn_vars_cache {
-	RzList *bvars;
-	RzList *rvars;
-	RzList *svars;
+	RzList /*<RzAnalysisVar *>*/ *bvars;
+	RzList /*<RzAnalysisVar *>*/ *rvars;
+	RzList /*<RzAnalysisVar *>*/ *svars;
 } RzAnalysisFcnVarsCache;
 RZ_API void rz_analysis_fcn_vars_cache_init(RzAnalysis *analysis, RzAnalysisFcnVarsCache *cache, RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache);
@@ -1798,7 +1721,7 @@ typedef struct rz_jmptable_params_t {
 	ut64 entry_size; /// Size in bytes of each case entry inside the jump table
 	ut64 table_count; /// Count of cases inside the jump table
 	ut64 default_case; /// Code address of the default case of the switch
-	RzVector *tasks; /// RzVector of RzAnalysisTaskItem to add new tasks to
+	RzVector /*<RzAnalysisTaskItem>*/ *tasks; /// RzVector of RzAnalysisTaskItem to add new tasks to
 } RzAnalysisJmpTableParams;
 
 RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, ut64 jmp_address, ut64 lea_address, RZ_NONNULL RzAnalysisJmpTableParams *params);
@@ -2020,7 +1943,7 @@ typedef struct {
 
 typedef struct vtable_info_t {
 	ut64 saddr; // starting address
-	RzVector methods;
+	RzVector /*<RVTableMethodInfo>*/ methods;
 } RVTableInfo;
 
 typedef struct vtable_method_info_t {

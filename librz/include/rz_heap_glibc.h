@@ -300,7 +300,7 @@ typedef struct rz_heap_bin {
 	ut64 bk;
 	int bin_num;
 	char *type;
-	RzList *chunks; /* list of chunks in the bins */
+	RzList /*<RzHeapChunkListItem *>*/ *chunks; /* list of chunks in the bins */
 	char *message; /* indicating the list is corrupted or double free*/
 } RzHeapBin;
 
@@ -310,11 +310,11 @@ RZ_API RzHeapChunkSimple *rz_heap_chunk_wrapper_64(RzCore *core, ut64 addr);
 RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
 RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
 
-RZ_API RzList *rz_heap_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
-RZ_API RzList *rz_heap_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
 
-RZ_API RzList *rz_heap_chunks_list_64(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool top_chunk);
-RZ_API RzList *rz_heap_chunks_list_32(RzCore *core, MallocState *main_arena, ut32 m_arena, ut32 m_state, bool top_chunk);
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_64(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool top_chunk);
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_32(RzCore *core, MallocState *main_arena, ut32 m_arena, ut32 m_state, bool top_chunk);
 
 RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
 RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
@@ -325,8 +325,8 @@ RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState
 RZ_API bool rz_heap_write_heap_chunk_64(RzCore *core, RzHeapChunkSimple *chunk_simple);
 RZ_API bool rz_heap_write_heap_chunk_32(RzCore *core, RzHeapChunkSimple *chunk_simple);
 
-RZ_API RzList *rz_heap_tcache_content_64(RzCore *core, ut64 arena_base);
-RZ_API RzList *rz_heap_tcache_content_32(RzCore *core, ut32 arena_base);
+RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_64(RzCore *core, ut64 arena_base);
+RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_32(RzCore *core, ut32 arena_base);
 
 RZ_API MallocState *rz_heap_get_arena_64(RzCore *core, ut64 m_state);
 RZ_API MallocState *rz_heap_get_arena_32(RzCore *core, ut32 m_state);
@@ -337,11 +337,11 @@ RZ_API RzHeapBin *rz_heap_fastbin_content_32(RzCore *core, MallocState *main_are
 RZ_API RzHeapBin *rz_heap_bin_content_64(RzCore *core, MallocState *main_arena, int bin_num, ut64 m_arena);
 RZ_API RzHeapBin *rz_heap_bin_content_32(RzCore *core, MallocState *main_arena, int bin_num, ut32 m_arena);
 
-RZ_API RzList *rz_heap_chunks_list_wrapper_64(RzCore *core, ut64 m_state);
-RZ_API RzList *rz_heap_chunks_list_wrapper_32(RzCore *core, ut64 m_state);
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_wrapper_64(RzCore *core, ut64 m_state);
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_wrapper_32(RzCore *core, ut64 m_state);
 
-RZ_API RzList *rz_heap_arena_list_wrapper_64(RzCore *core);
-RZ_API RzList *rz_heap_arena_list_wrapper_32(RzCore *core);
+RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list_wrapper_64(RzCore *core);
+RZ_API RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list_wrapper_32(RzCore *core);
 
 RZ_IPI int rz_cmd_heap_fastbins_print_64(void *data, const char *input);
 RZ_IPI int rz_cmd_heap_fastbins_print_32(void *data, const char *input);

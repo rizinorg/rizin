@@ -53,7 +53,7 @@ static void loadGP(RzCore *core) {
 	}
 }
 
-static RZ_OWN RzList *__save_old_sections(RzCore *core) {
+static RZ_OWN RzList /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
 	RzList *sections = rz_bin_get_sections(core->bin);
 	RzListIter *it;
 	RzBinSection *sec;
@@ -81,7 +81,7 @@ static RZ_OWN RzList *__save_old_sections(RzCore *core) {
 
 struct __rebase_struct {
 	RzCore *core;
-	RzList *old_sections;
+	RzList /*<RzBinSection *>*/ *old_sections;
 	ut64 old_base;
 	ut64 diff;
 	int type;
@@ -120,7 +120,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base) {
+static void __rebase_everything(RzCore *core, RzList /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;

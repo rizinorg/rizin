@@ -41,7 +41,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_new();
 	RzBinAddr *ptr = NULL;
 
@@ -59,7 +59,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return NULL;
 	}
@@ -82,7 +82,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSymbol *ptr[13];
 	int i;
@@ -178,7 +178,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-RzList *mem(RzBinFile *bf) {
+RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	RzList *ret;
 	RzBinMem *m, *n;
 	if (!(ret = rz_list_new())) {

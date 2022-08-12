@@ -78,7 +78,7 @@ typedef struct rz_code_annotation_t {
  */
 typedef struct rz_annotated_code_t {
 	char *code; /**< Decompiled code. RzAnnotatedCode owns this string and it must free it. */
-	RzVector annotations; /**< @ref RzVector <RzCodeAnnotation> contains the list of annotations for the decompiled code. */
+	RzVector /*<RzCodeAnnotation>*/ annotations; /**< @ref RzVector <RzCodeAnnotation> contains the list of annotations for the decompiled code. */
 } RzAnnotatedCode;
 
 /**
@@ -148,7 +148,7 @@ RZ_API void rz_annotated_code_add_annotation(RzAnnotatedCode *code, RzCodeAnnota
  * @param offset Offset.
  * @return Pointer to the @ref RzPVector created.
  */
-RZ_API RzPVector *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t offset);
+RZ_API RzPVector /*<RzCodeAnnotation *>*/ *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t offset);
 /**
  * @brief Returns all annotations with range that overlap with the specified range.
  *
@@ -160,7 +160,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t
  * @param end End of the range(exclusive).
  * @return Pointer to the @ref RzPVector created.
  */
-RZ_API RzPVector *rz_annotated_code_annotations_range(RzAnnotatedCode *code, size_t start, size_t end);
+RZ_API RzPVector /*<RzCodeAnnotation *>*/ *rz_annotated_code_annotations_range(RzAnnotatedCode *code, size_t start, size_t end);
 /**
  * @brief Returns the offset for every line of decompiled code in the specified RzAnnotatedCode.
  *
@@ -171,7 +171,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_range(RzAnnotatedCode *code, siz
  * @param code Pointer to a RzAnnotatedCode.
  * @return Pointer to the @ref RzVector created.
  */
-RZ_API RzVector *rz_annotated_code_line_offsets(RzAnnotatedCode *code);
+RZ_API RzVector /*<ut64>*/ *rz_annotated_code_line_offsets(RzAnnotatedCode *code);
 
 #ifdef __cplusplus
 }

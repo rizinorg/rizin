@@ -24,8 +24,8 @@ typedef struct rz_platform_profile_t {
 	ut64 pc;
 	ut64 page_size;
 	ut64 interrupt_vector_size;
-	HtUP /* <ut64 , char *> */ *registers_mmio;
-	HtUP /* <ut64 , char *> */ *registers_extended;
+	HtUP /*<ut64 , char *>*/ *registers_mmio;
+	HtUP /*<ut64 , char *>*/ *registers_extended;
 } RzPlatformProfile;
 
 typedef struct rz_platform_target_t {
@@ -40,7 +40,7 @@ typedef struct rz_platform_item_t {
 } RzPlatformItem;
 
 typedef struct rz_platform_target_index_t {
-	HtUP /* <ut64 , RzPlatformItem> */ *platforms;
+	HtUP /*<ut64 , RzPlatformItem>*/ *platforms;
 	char *path; ///< Path used to load the platforms, used to avoid reloading
 } RzPlatformTargetIndex;
 

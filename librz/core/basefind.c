@@ -32,7 +32,7 @@ typedef struct basefind_thread_data_t {
 	ut64 io_size;
 	ut32 score_min;
 	RzThreadLock *lock;
-	RzList *scores;
+	RzList /*<RzBaseFindScore *>*/ *scores;
 	HtUU *pointers;
 	BaseFindArray *array;
 	RzAtomicBool *loop;
@@ -333,7 +333,7 @@ static inline bool create_thread_interval(RzThreadPool *pool, BaseFindThreadData
  * \param  core     RzCore struct to use.
  * \param  options  Pointer to the RzBaseFindOpt structure.
  */
-RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFindOpt *options) {
+RZ_API RZ_OWN RzList /*<RzBaseFindScore *>*/ *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFindOpt *options) {
 	rz_return_val_if_fail(core && options, NULL);
 	RzList *scores = NULL;
 	BaseFindArray *array = NULL;

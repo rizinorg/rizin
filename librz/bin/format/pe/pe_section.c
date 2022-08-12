@@ -110,7 +110,7 @@ out_function:
 	return;
 }
 
-RzList *PE_(section_flag_to_rzlist)(ut64 flag) {
+RzList /*<char *>*/ *PE_(section_flag_to_rzlist)(ut64 flag) {
 	RzList *flag_list = rz_list_new();
 	if (flag & IMAGE_SCN_TYPE_NO_PAD) {
 		rz_list_append(flag_list, "TYPE_NO_PAD");

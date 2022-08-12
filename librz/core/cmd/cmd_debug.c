@@ -179,7 +179,7 @@ static const char *help_msg_dx[] = {
 };
 
 struct dot_trace_ght {
-	RzGraph *graph;
+	RzGraph /*<struct trace_node *>*/ *graph;
 	Sdb *graphnodes;
 };
 
@@ -239,7 +239,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 	free(syscalls);
 }
 
-static RzGraphNode *get_graphtrace_node(RzGraph *g, Sdb *nodes, struct trace_node *tn) {
+static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *>*/ *g, Sdb *nodes, struct trace_node *tn) {
 	RzGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
 
@@ -467,7 +467,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static bool step_until_optype(RzCore *core, RzList *optypes_list) {
+static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
@@ -1411,7 +1411,7 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 	return RZ_CMD_STATUS_ERROR;
 }
 
-static void backtrace_vars(RzCore *core, RzList *frames) {
+static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;
 	// analysis vs debug ?
@@ -1472,7 +1472,7 @@ static void backtrace_vars(RzCore *core, RzList *frames) {
 	rz_reg_setv(r, sp, dsp);
 }
 
-static void asciiart_backtrace(RzCore *core, RzList *frames) {
+static void asciiart_backtrace(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 	// TODO: show local variables
 	// TODO: show function/flags/symbols related
 	// TODO: show contents of stack

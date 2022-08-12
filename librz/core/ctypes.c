@@ -527,7 +527,7 @@ RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 
 // Noreturn function attributes
 
-static bool nonreturn_print(RzCore *core, RzList *noretl) {
+static bool nonreturn_print(RzCore *core, RzList /*<char *>*/ *noretl) {
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (noretl, it, s) {
@@ -536,7 +536,7 @@ static bool nonreturn_print(RzCore *core, RzList *noretl) {
 	return true;
 }
 
-static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
+static bool nonreturn_print_json(RzCore *core, RzList /*<char *>*/ *noretl) {
 	RzListIter *it;
 	char *s;
 	PJ *pj = pj_new();

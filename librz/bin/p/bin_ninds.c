@@ -40,7 +40,7 @@ static ut64 boffset(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
 
@@ -76,7 +76,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_new();
 	RzBinAddr *ptr9 = NULL, *ptr7 = NULL;
 

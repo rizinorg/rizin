@@ -25,7 +25,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	return false;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *sections[4] = {
 		NULL, NULL, NULL, NULL
@@ -76,7 +76,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_new();
 	RzBinAddr *ptr9 = NULL, *ptr11 = NULL;
 

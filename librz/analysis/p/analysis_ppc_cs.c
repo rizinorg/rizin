@@ -1633,7 +1633,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static RzList *analysis_preludes(RzAnalysis *analysis) {
+static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 #define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
 	KW("\x7c\x08\x02\xa6", 4, NULL, 0);

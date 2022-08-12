@@ -94,14 +94,13 @@ typedef struct rz_egg_t {
 	RzBuffer *src;
 	RzBuffer *buf;
 	RzBuffer *bin;
-	RzList *list;
 	// RzList *shellcodes; // XXX is plugins nao?
 	RzAsm *rasm;
 	RzSyscall *syscall;
 	RzEggLang lang;
 	Sdb *db;
-	RzList *plugins;
-	RzList *patches; // <RzBuffer>
+	RzList /*<RzEggPlugin *>*/ *plugins;
+	RzList /*<struct egg_patch_t *>*/ *patches; // <RzBuffer>
 	struct rz_egg_emit_t *remit;
 	int arch;
 	int endian;

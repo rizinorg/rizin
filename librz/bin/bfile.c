@@ -368,7 +368,7 @@ RZ_API bool rz_bin_file_close(RzBin *bin, int bd) {
 	return false;
 }
 
-static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList *list) {
+static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList /*<RzBinFileHash *>*/ *list) {
 	char hash[128];
 	const ut8 *digest = NULL;
 	RzHashSize digest_size = 0;

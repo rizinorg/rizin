@@ -63,7 +63,6 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	ut64 ba = baddr(bf);
 	bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
-	bin->classes_list = rz_list_newf((RzListFree)free);
 	parseMod(b, bin, mod0, ba);
 	obj->bin_obj = bin;
 
@@ -74,7 +73,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new())) {
@@ -101,7 +100,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	RzBuffer *b = bf->buf;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!ret) {
@@ -209,7 +208,7 @@ maps_err:
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
@@ -269,7 +268,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
@@ -278,7 +277,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return bin->methods_list;
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
@@ -287,7 +286,7 @@ static RzList *imports(RzBinFile *bf) {
 	return bin->imports_list;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 

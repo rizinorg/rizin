@@ -45,7 +45,7 @@ typedef struct rz_basefind_options_t {
 	void *user; ///< User pointer to pass to the callback function for the thread info
 } RzBaseFindOpt;
 
-RZ_API RZ_OWN RzList *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFindOpt *options);
+RZ_API RZ_OWN RzList /*<RzBaseFindScore *>*/ *rz_basefind(RZ_NONNULL RzCore *core, RZ_NONNULL RzBaseFindOpt *options);
 
 #ifdef __cplusplus
 }

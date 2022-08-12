@@ -218,7 +218,7 @@ void map_free(RzDebugMap *map) {
 	free(map);
 }
 
-static RzList *rz_debug_bochs_map_get(RzDebug *dbg) { // TODO
+static RzList /*<RzDebugMap *>*/ *rz_debug_bochs_map_get(RzDebug *dbg) { // TODO
 	if (!isBochs(dbg)) {
 		return NULL;
 	}

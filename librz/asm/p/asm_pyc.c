@@ -26,11 +26,9 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	}
 
 	RzList *cobjs = NULL;
-	RzList *interned_table = NULL;
 
 	if (shared) {
 		cobjs = rz_list_get_n(shared, 0);
-		interned_table = rz_list_get_n(shared, 1);
 	}
 
 	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
@@ -41,7 +39,7 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 		}
 		opcodes_cache->bits = a->bits;
 	}
-	int r = rz_pyc_disasm(opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
+	int r = rz_pyc_disasm(opstruct, buf, cobjs, pc, opcodes_cache);
 	opstruct->size = r;
 	return r;
 }

@@ -188,7 +188,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	RzBinReloc *reloc = NULL;
@@ -235,18 +235,18 @@ static void header(RzBinFile *bf) {
 /*
  * No mention of symbols in the doc
  */
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return rz_list_clone(qo->maps);
 }
 
 // Returns the sections
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return rz_list_clone(qo->sections);
@@ -280,7 +280,7 @@ static ut64 baddr(RzBinFile *bf) {
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;

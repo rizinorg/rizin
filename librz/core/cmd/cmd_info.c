@@ -26,7 +26,7 @@ static int bin_is_executable(RzBinObject *obj) {
 	return false;
 }
 
-static bool is_equal_file_hashes(RzList *lfile_hashes, RzList *rfile_hashes, bool *equal) {
+static bool is_equal_file_hashes(RzList /*<RzBinFileHash *>*/ *lfile_hashes, RzList /*<RzBinFileHash *>*/ *rfile_hashes, bool *equal) {
 	rz_return_val_if_fail(lfile_hashes, false);
 	rz_return_val_if_fail(rfile_hashes, false);
 	rz_return_val_if_fail(equal, false);
