@@ -681,16 +681,31 @@ static inline RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN
 	return NON_ZERO(or);
 }
 
-static RzILOpBool *x86_il_get_parity(RZ_OWN RzILOpPure *val) {
+static RzILOpBitVector *x86_bool_to_bv(RzILOpBool *b, unsigned int bits) {
+	return ITE(b, UN(bits, 1), UN(bits, 0));
+}
+
+struct x86_parity_helper_t {
+	RzILOpBool *val;
+	RzILOpEffect *eff;
+};
+
+static struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 	// assumed that val is an 8-bit wide value
-	RzILOpPure *popcnt = U8(0);
+	RzILOpEffect *popcnt = SETL("_popcnt", U8(0));
+	popcnt = SEQ2(popcnt, SETL("_val", val));
 
 	for (uint8_t i = 0; i < 8; i++) {
-		popcnt = ADD(popcnt, LSB(val));
-		val = SHIFTR0(val, U8(1));
+		popcnt = SEQ2(popcnt, SETL("_popcnt", ADD(VARL("_popcnt"), x86_bool_to_bv(LSB(VARL("_val")), 8))));
+		popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
 	}
 
-	return IS_ZERO(MOD(popcnt, U8(2)));
+	struct x86_parity_helper_t ret = {
+		.val = IS_ZERO(MOD(VARL("_popcnt"), U8(2))),
+		.eff = popcnt
+	};
+
+	return ret;
 }
 
 /**
@@ -698,12 +713,12 @@ static RzILOpBool *x86_il_get_parity(RZ_OWN RzILOpPure *val) {
  */
 static RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int bits) {
 	RzILOpEffect *set = SETL("_result", result);
-	RzILOpBool *pf = x86_il_get_parity(UNSIGNED(8, VARL("_result")));
+	struct x86_parity_helper_t pf = x86_il_get_parity(UNSIGNED(8, VARL("_result")));
 	RzILOpBool *zf = IS_ZERO(VARL("_result"));
 	RzILOpBool *sf = MSB(VARL("_result"));
 
-	return SEQ4(set,
-		SETG(x86_eflags_registers[X86_EFLAGS_PF], pf),
+	return SEQ5(set, pf.eff,
+		SETG(x86_eflags_registers[X86_EFLAGS_PF], pf.val),
 		SETG(x86_eflags_registers[X86_EFLAGS_ZF], zf),
 		SETG(x86_eflags_registers[X86_EFLAGS_SF], sf));
 }
@@ -794,7 +809,14 @@ static RzILOpEffect *x86_il_aad(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *temp_ah = SETL("temp_ah", x86_il_get_reg(X86_REG_AH));
-	RzILOpPure *imm = x86_il_get_operand(ins->structure->operands[0]);
+
+	RzILOpPure *imm;
+	if (ins->structure->operands[0].type != X86_OP_INVALID) {
+		imm = x86_il_get_operand_bits(ins->structure->operands[0], 8);
+	} else {
+		// Use base 10 if none specified
+		imm = SN(8, 0x0a);
+	}
 
 	RzILOpPure *adjusted = ADD(VARL("temp_al"), MUL(VARL("temp_ah"), imm));
 	adjusted = LOGAND(adjusted, U8(0xff));
