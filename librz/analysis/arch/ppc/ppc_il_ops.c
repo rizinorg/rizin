@@ -544,6 +544,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		res = LOGNOT(
 			(id == PPC_INS_NAND) ? LOGAND(op0, op1) : LOGOR(op0, op1));
 		break;
+#if CS_API_MAJOR > 3
 	// Compare bytes
 	case PPC_INS_CMPB: {
 		//	do n = 0 to (64BIT_CPU ? 7 : 3)
@@ -576,6 +577,7 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 		return SEQ5(SETL("res", UA(0)), init_n, init_bitmask, loop, SETG(rA, VARL("res")));
 	}
+#endif
 	case PPC_INS_EQV:
 		op0 = VARG(rS);
 		op1 = VARG(rB);
@@ -1317,7 +1319,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CNTLZW:
 	case PPC_INS_POPCNTD:
 	case PPC_INS_POPCNTW:
+#if CS_API_MAJOR > 3
 	case PPC_INS_CMPB:
+#endif
 		lop = bitwise_op(handle, insn, mode);
 		break;
 	case PPC_INS_CMPD:
@@ -1378,7 +1382,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		break;
 	// These instruction are not in the ISA manual v3.1B.
 	case PPC_INS_BRINC:
-	case PPC_INS_ATTN:
 		NOT_IMPLEMENTED;
 	case PPC_INS_MFCR:
 	case PPC_INS_MFCTR:
