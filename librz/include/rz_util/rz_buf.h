@@ -231,8 +231,8 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 		return true; \
 	}
 
-#define rz_buf_read_ble8_at(b, addr, result, endian) rz_buf_read8_at(b, addr, result)
-#define rz_buf_write_ble8_at(b, addr, value, endian) rz_buf_write8_at(b, addr, value)
+#define rz_buf_read_ble8_at(b, addr, result, endian) ((void)endian, rz_buf_read8_at(b, addr, result))
+#define rz_buf_write_ble8_at(b, addr, value, endian) ((void)endian, rz_buf_write8_at(b, addr, value))
 
 /**
  * \brief Read a big endian or little endian (ut16, ut32, ut64) at the specified offset in the buffer and shifts the offset.
