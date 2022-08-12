@@ -195,6 +195,9 @@ RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL
 RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int wordsize);
 RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol);
 
+// cmd_help.c
+RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg);
+
 #if __WINDOWS__
 /* windows_heap.c */
 RZ_IPI RzList *rz_heap_blocks_list(RzCore *core);

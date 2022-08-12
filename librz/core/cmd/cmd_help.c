@@ -382,12 +382,17 @@ RZ_API void rz_core_help_vars_print(RzCore *core) {
 	}
 }
 
-RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
+/**
+ * \brief Get clippy echo string.
+ * \param msg The message to echo.
+ */
+RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const char *msg) {
+	rz_return_val_if_fail(core && msg, NULL);
 	int type = RZ_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
 		char *space = strchr(msg, ' ');
 		if (!space) {
-			return;
+			return NULL;
 		}
 		type = (*msg == '+') ? RZ_AVATAR_ORANGG : RZ_AVATAR_CYBCAT;
 		msg = space + 1;
@@ -411,9 +416,18 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
 		f = avatar_clippy[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy))];
 	}
 
-	rz_cons_printf(f, l, s, msg, s, l);
+	char *string = rz_str_newf(f, l, s, msg, s, l);
 	free(l);
 	free(s);
+	return string;
+}
+
+RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
+	char *string = rz_core_clippy(core, msg);
+	if (string) {
+		rz_cons_print(string);
+		free(string);
+	}
 }
 
 RZ_IPI int rz_cmd_help(void *data, const char *input) {
@@ -900,7 +914,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		rz_core_clippy(core, rz_str_trim_head_ro(input + 1));
+		rz_core_clippy_print(core, rz_str_trim_head_ro(input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
@@ -1062,7 +1076,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	case '?': // "??"
 		if (input[1] == '?') {
 			if (input[2] == '?') { // "???"
-				rz_core_clippy(core, "What are you doing?");
+				rz_core_clippy_print(core, "What are you doing?");
 				return 0;
 			}
 			if (input[2]) {
