@@ -2311,31 +2311,63 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn) {
 	return true;
 }
 
-RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-	if (fcn) {
-		bool found = false;
-		const char *me = fcn->name;
-		RzListIter *iter;
-		RzAnalysisXRef *xref;
-		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-		rz_list_foreach (xrefs, iter, xref) {
-			RzBinObject *obj = rz_bin_cur_object(core->bin);
-			RzBinSection *binsec = rz_bin_get_section_at(obj, xref->to, true);
-			if (binsec && binsec->is_data) {
-				if (!found) {
-					rz_cons_printf("agn %s\n", me);
-					found = true;
-				}
-				RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
-				const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->to);
-				rz_cons_printf("agn %s\n", dst);
-				rz_cons_printf("age %s %s\n", me, dst);
+static inline void core_agraph_add_node(RzCore *core, const char *title, const char *body, int color, bool is_cmd) {
+	if (is_cmd) {
+		rz_cons_printf("agn %s\n", title);
+	} else {
+		rz_core_agraph_add_node(core, title, body, color);
+	}
+}
+
+static inline void core_agraph_add_edge(RzCore *core, const char *un, const char *vn, bool is_cmd) {
+	if (is_cmd) {
+		rz_cons_printf("age %s %s\n", un, vn);
+	} else {
+		rz_core_agraph_add_edge(core, un, vn);
+	}
+}
+
+static inline void core_analysis_datarefs_fn(RzCore *core, RzAnalysisFunction *fcn, bool is_cmd) {
+	if (!fcn) {
+		eprintf("Not in a function. Use 'df' to define it.\n");
+	}
+
+	bool found = false;
+	const char *me = fcn->name;
+	RzListIter *iter;
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		RzBinSection *binsec = rz_bin_get_section_at(obj, xref->to, true);
+		if (binsec && binsec->is_data) {
+			if (!found) {
+				core_agraph_add_node(core, me, "", -1, is_cmd);
+				found = true;
+			}
+			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
+			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->to);
+			core_agraph_add_node(core, dst, "", -1, is_cmd);
+			core_agraph_add_edge(core, me, dst, is_cmd);
+		}
+	}
+	rz_list_free(xrefs);
+}
+
+RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr, bool is_global, bool is_cmd) {
+	if (is_global) {
+		ut64 from = rz_config_get_i(core->config, "graph.from");
+		ut64 to = rz_config_get_i(core->config, "graph.to");
+		RzListIter *it;
+		RzAnalysisFunction *fcn;
+		rz_list_foreach (core->analysis->fcns, it, fcn) {
+			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
+				core_analysis_datarefs_fn(core, fcn, is_cmd);
 			}
 		}
-		rz_list_free(xrefs);
 	} else {
-		eprintf("Not in a function. Use 'df' to define it.\n");
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+		core_analysis_datarefs_fn(core, fcn, is_cmd);
 	}
 }
 
@@ -2428,7 +2460,6 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	bool refgraph = rz_config_get_i(core->config, "graph.refs");
 	RzListIter *iter, *iter2;
 	int usenames = rz_config_get_i(core->config, "graph.json.usenames");
-	;
 	RzAnalysisFunction *fcni;
 	RzAnalysisXRef *fcnr;
 	PJ *pj = NULL;

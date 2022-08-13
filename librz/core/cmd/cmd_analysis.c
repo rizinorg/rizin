@@ -7,33 +7,6 @@
 
 #include "../core_private.h"
 
-typedef enum {
-	RZ_CORE_GRAPH_FORMAT_VISUAL = 'v',
-	RZ_CORE_GRAPH_FORMAT_TINY = 't',
-	RZ_CORE_GRAPH_FORMAT_SDB = 'k',
-	RZ_CORE_GRAPH_FORMAT_GML = 'g',
-	RZ_CORE_GRAPH_FORMAT_DOT = 'd',
-	RZ_CORE_GRAPH_FORMAT_JSON = 'j',
-	RZ_CORE_GRAPH_FORMAT_JSON_DISASM = 'J',
-	RZ_CORE_GRAPH_FORMAT_CMD = '*',
-	RZ_CORE_GRAPH_FORMAT_ASCII_ART = ' ',
-} RzCoreGraphFormat;
-
-typedef enum {
-	RZ_CORE_GRAPH_TYPE_DATAREF = 'a',
-	RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL = 'A',
-	RZ_CORE_GRAPH_TYPE_FUNCALL = 'c',
-	RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL = 'C',
-	RZ_CORE_GRAPH_TYPE_DIFF = 'd',
-	RZ_CORE_GRAPH_TYPE_BLOCK_FUN = 'f',
-	RZ_CORE_GRAPH_TYPE_IMPORT = 'i',
-	RZ_CORE_GRAPH_TYPE_REF = 'r',
-	RZ_CORE_GRAPH_TYPE_REF_GLOBAL = 'R',
-	RZ_CORE_GRAPH_TYPE_LINE = 'l',
-	RZ_CORE_GRAPH_TYPE_CROSS_REF = 'x',
-	RZ_CORE_GRAPH_TYPE_CUSTOM = 'g',
-} RzCoreGraphType;
-
 #define MAX_SCAN_SIZE 0x7ffffff
 
 HEAPTYPE(ut64);
@@ -5612,11 +5585,10 @@ RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, const char **argv) {
 	const char format = argv[1][0];
 	if (format == RZ_CORE_GRAPH_FORMAT_CMD) {
-		rz_core_analysis_datarefs(core, core->offset);
+		rz_core_analysis_datarefs(core, core->offset, false, true);
 	} else {
 		rz_core_agraph_reset(core);
-		// TODO: Use the API here
-		rz_core_cmdf(core, ".aga* @ %" PFMT64u ";", core->offset);
+		rz_core_analysis_datarefs(core, core->offset, false, false);
 		agraph_print(core, -1, format);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -5625,19 +5597,10 @@ RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int argc, const char **argv) {
 	const char format = argv[1][0];
 	if (format == RZ_CORE_GRAPH_FORMAT_CMD) {
-		ut64 from = rz_config_get_i(core->config, "graph.from");
-		ut64 to = rz_config_get_i(core->config, "graph.to");
-		RzListIter *it;
-		RzAnalysisFunction *fcn;
-		rz_list_foreach (core->analysis->fcns, it, fcn) {
-			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-				rz_core_analysis_datarefs(core, fcn->addr);
-			}
-		}
+		rz_core_analysis_datarefs(core, core->offset, true, true);
 	} else {
 		rz_core_agraph_reset(core);
-		// TODO: Use the API here
-		rz_core_cmdf(core, ".agA*;");
+		rz_core_analysis_datarefs(core, core->offset, true, false);
 		agraph_print(core, -1, format);
 	}
 	return RZ_CMD_STATUS_OK;

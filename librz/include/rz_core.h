@@ -774,6 +774,33 @@ typedef struct rz_core_analysis_name_t {
 	ut64 offset;
 } RzCoreAnalysisName;
 
+typedef enum {
+	RZ_CORE_GRAPH_FORMAT_VISUAL = 'v',
+	RZ_CORE_GRAPH_FORMAT_TINY = 't',
+	RZ_CORE_GRAPH_FORMAT_SDB = 'k',
+	RZ_CORE_GRAPH_FORMAT_GML = 'g',
+	RZ_CORE_GRAPH_FORMAT_DOT = 'd',
+	RZ_CORE_GRAPH_FORMAT_JSON = 'j',
+	RZ_CORE_GRAPH_FORMAT_JSON_DISASM = 'J',
+	RZ_CORE_GRAPH_FORMAT_CMD = '*',
+	RZ_CORE_GRAPH_FORMAT_ASCII_ART = ' ',
+} RzCoreGraphFormat;
+
+typedef enum {
+	RZ_CORE_GRAPH_TYPE_DATAREF = 'a',
+	RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL = 'A',
+	RZ_CORE_GRAPH_TYPE_FUNCALL = 'c',
+	RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL = 'C',
+	RZ_CORE_GRAPH_TYPE_DIFF = 'd',
+	RZ_CORE_GRAPH_TYPE_BLOCK_FUN = 'f',
+	RZ_CORE_GRAPH_TYPE_IMPORT = 'i',
+	RZ_CORE_GRAPH_TYPE_REF = 'r',
+	RZ_CORE_GRAPH_TYPE_REF_GLOBAL = 'R',
+	RZ_CORE_GRAPH_TYPE_LINE = 'l',
+	RZ_CORE_GRAPH_TYPE_CROSS_REF = 'x',
+	RZ_CORE_GRAPH_TYPE_CUSTOM = 'g',
+} RzCoreGraphType;
+
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
@@ -784,7 +811,7 @@ RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *st
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
 RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut64 to);
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);
-RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr);
+RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr, bool, bool);
 RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr);
 RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_codexrefs(RzCore *core, ut64 addr);
 RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *core);
