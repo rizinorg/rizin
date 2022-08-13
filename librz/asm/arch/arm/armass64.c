@@ -847,7 +847,9 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 		return UT32_MAX;
 	}
 
-	return rz_read_be32(&data);
+	ut8 flip[4];
+	rz_write_le32(flip, data);
+	return rz_read_be32(flip);
 }
 
 static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
@@ -950,8 +952,8 @@ static ut32 arithmetic(ArmOp *op, int k) {
 	if (op->operands[2].type & ARM_GPR) {
 		data += op->operands[2].reg << 8;
 	} else {
-		data += (op->operands[2].reg & 0x3f) << 18;
-		data += (op->operands[2].reg >> 6) << 8;
+		data += (op->operands[2].immediate & 0x3f) << 18;
+		data += (op->operands[2].immediate >> 6) << 8;
 	}
 
 	if (op->operands[2].type & ARM_CONSTANT && op->operands[3].type & ARM_SHIFT) {
