@@ -1,5 +1,5 @@
-#ifndef RZ_UTIL_VERSION_H
-#define RZ_UTIL_VERSION_H
+#ifndef RZ_VERSION_H
+#define RZ_VERSION_H
 
 #include "rz_types.h"
 
@@ -14,4 +14,4 @@ RZ_API RZ_OWN char *rz_version_str(const char *program);
 }
 #endif
 
-#endif // RZ_UTIL_VERSION_H
+#endif // RZ_VERSION_H
