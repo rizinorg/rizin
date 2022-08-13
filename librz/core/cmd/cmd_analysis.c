@@ -2543,27 +2543,26 @@ static void agraph_print(RzCore *core, int use_utf, RzCoreGraphFormat format) {
 		rz_config_set_i(core->config, "scr.utf8", use_utf);
 	}
 	switch (format) {
-	case 't': // "aggt" - tiny graph
+	case RZ_CORE_GRAPH_FORMAT_TINY: // "aggt" - tiny graph
 		rz_core_agraph_print_tiny(core);
 		break;
-	case 'k': // "aggk"
+	case RZ_CORE_GRAPH_FORMAT_SDB: // "aggk"
 		rz_core_agraph_print_sdb(core);
 		break;
-	case 'v': // "aggv"
-	case 'i': // "aggi" - open current core->graph in interactive mode
+	case RZ_CORE_GRAPH_FORMAT_VISUAL: // "aggv" "aggi" - open current core->graph in interactive mode
 		rz_core_agraph_print_interactive(core);
 		break;
-	case 'd': // "aggd" - dot format
+	case RZ_CORE_GRAPH_FORMAT_DOT: // "aggd" - dot format
 		rz_core_agraph_print_dot(core);
 		break;
-	case '*': // "agg*" -
+	case RZ_CORE_GRAPH_FORMAT_CMD: // "agg*" -
 		rz_core_agraph_print_rizin(core);
 		break;
-	case 'J': // "aggJ"
-	case 'j': // "aggj"
+	case RZ_CORE_GRAPH_FORMAT_JSON: // "aggJ"
+	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM: // "aggj"
 		rz_core_agraph_print_json(core);
 		break;
-	case 'g': // "aggg"
+	case RZ_CORE_GRAPH_FORMAT_GML: // "aggg"
 		rz_core_agraph_print_gml(core);
 		break;
 	default:
@@ -2647,8 +2646,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 			free(o);
 			break;
 		}
-		case RZ_CORE_GRAPH_FORMAT_VISUAL: // "ag_v"
-		case 'i': // "ag_i" - open current core->graph in interactive mode
+		case RZ_CORE_GRAPH_FORMAT_VISUAL: // "ag_v" "ag_i" - open current core->graph in interactive mode
 		{
 			RzANode *ran = rz_agraph_get_first_node(agraph);
 			if (ran) {
@@ -2697,6 +2695,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		break;
 	}
 	case RZ_CORE_GRAPH_FORMAT_GML: // "ag_g"
+	{
 		rz_cons_printf("graph\n[\n"
 			       "hierarchic 1\n"
 			       "label \"\"\n"
@@ -2720,14 +2719,14 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		}
 		rz_cons_print("]\n");
 		break;
+	}
 	default:
 		rz_warn_if_reached();
 		break;
 	}
 }
 
-static void graph_write(RzCore *core, RzGraph *graph, const char *filename)
-{
+static void graph_write(RzCore *core, RzGraph *graph, const char *filename) {
 	char *dot_text = print_graph_dot(core, graph);
 	if (!dot_text) {
 		return;
@@ -5655,7 +5654,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int ar
 		rz_core_agraph_reset(core);
 		// TODO: Use the API here
 		rz_core_cmdf(core, ".agA*;");
-		rz_core_agraph_print(core, -1, &format);
+		agraph_print(core, -1, format);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -5719,7 +5718,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int 
 		rz_core_agraph_reset(core);
 		// TODO: Use the API here
 		rz_core_cmdf(core, ".agC*;");
-		rz_core_agraph_print(core, -1, format);
+		agraph_print(core, -1, format);
 		core->graph->is_callgraph = false;
 		break;
 	case RZ_CORE_GRAPH_FORMAT_JSON:
@@ -5813,16 +5812,10 @@ RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc,
 		break;
 	}
 	case RZ_CORE_GRAPH_FORMAT_DOT:
-		if (input[2] == 'm') {
-			rz_core_analysis_graph(core, rz_num_math(core->num, input + 3),
-				RZ_CORE_ANALYSIS_GRAPHLINES);
-		} else {
-			rz_core_analysis_graph(core, rz_num_math(core->num, input + 2),
-				RZ_CORE_ANALYSIS_GRAPHBODY);
-		}
+		rz_core_analysis_graph(core, core->offset, RZ_CORE_ANALYSIS_GRAPHBODY);
 		break;
 	case RZ_CORE_GRAPH_FORMAT_JSON:
-		rz_core_analysis_graph(core, rz_num_math(core->num, input + 2), RZ_CORE_ANALYSIS_JSON);
+		rz_core_analysis_graph(core, core->offset, RZ_CORE_ANALYSIS_JSON);
 		break;
 	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM: {
 		// Honor asm.graph=false in json as well
@@ -5830,8 +5823,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc,
 		rz_config_hold_i(hc, "asm.offset", NULL);
 		const bool o_graph_offset = rz_config_get_i(core->config, "graph.offset");
 		rz_config_set_i(core->config, "asm.offset", o_graph_offset);
-		rz_core_analysis_graph(core, rz_num_math(core->num, input + 2),
-			RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
+		rz_core_analysis_graph(core, core->offset, RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
 		rz_config_hold_restore(hc);
 		rz_config_hold_free(hc);
 		break;
@@ -5853,8 +5845,12 @@ RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc,
 		break;
 	}
 	case RZ_CORE_GRAPH_FORMAT_FILE: {
+		if (argc < 3) {
+			break;
+		}
 		char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
-		convert_dotcmd_to_image(core, cmdargs, input + 2);
+		const char *path = argv[2];
+		convert_dotcmd_to_image(core, cmdargs, path);
 		free(cmdargs);
 		break;
 	}
@@ -5904,18 +5900,12 @@ RZ_IPI RzCmdStatus rz_analysis_graph_refs_global_handler(RzCore *core, int argc,
 				rz_core_analysis_coderefs(core, fcn->addr);
 			}
 		}
-	} else if (format == RZ_CORE_GRAPH_FORMAT_FILE) {
-		if (argc < 3) {
-			RZ_LOG_ERROR("Writing graph to a file requires file path\n");
-			return RZ_CMD_STATUS_ERROR;
-		}
-		graph_write(core, graph, argv[2]);
 	} else {
 		core->graph->is_callgraph = true;
 		rz_core_agraph_reset(core);
 		// TODO: Use the API
 		rz_core_cmdf(core, ".agR*;");
-		rz_core_agraph_print(core, -1, format);
+		agraph_print(core, -1, format);
 		core->graph->is_callgraph = false;
 	}
 	return RZ_CMD_STATUS_OK;
