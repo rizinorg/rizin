@@ -33,25 +33,21 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-	case PPC_INS_LBZCIX:
 	case PPC_INS_LBZUX:
 	case PPC_INS_LBZX:
 	case PPC_INS_LDARX:
 	case PPC_INS_LDBRX:
-	case PPC_INS_LDCIX:
 	case PPC_INS_LDUX:
 	case PPC_INS_LDX:
 	case PPC_INS_LHAUX:
 	case PPC_INS_LHAX:
 	case PPC_INS_LHBRX:
-	case PPC_INS_LHZCIX:
 	case PPC_INS_LHZUX:
 	case PPC_INS_LHZX:
 	case PPC_INS_LWARX:
 	case PPC_INS_LWAUX:
 	case PPC_INS_LWAX:
 	case PPC_INS_LWBRX:
-	case PPC_INS_LWZCIX:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
 	case PPC_INS_STBUX:
@@ -62,12 +58,18 @@ RZ_IPI bool ppc_is_x_form(ut32 insn_id) {
 	case PPC_INS_STHX:
 	case PPC_INS_STWX:
 	case PPC_INS_STDX:
+	case PPC_INS_STDCX:
+	case PPC_INS_STWCX:
+#if CS_API_MAJOR > 3
+	case PPC_INS_LBZCIX:
+	case PPC_INS_LDCIX:
+	case PPC_INS_LHZCIX:
+	case PPC_INS_LWZCIX:
 	case PPC_INS_STBCIX:
 	case PPC_INS_STHCIX:
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
-	case PPC_INS_STDCX:
-	case PPC_INS_STWCX:
+#endif
 		return true;
 	}
 }
@@ -90,15 +92,17 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 		// Doesn't read from memory.
 		return 0;
 	case PPC_INS_LBZ:
-	case PPC_INS_LBZCIX:
 	case PPC_INS_LBZU:
 	case PPC_INS_LBZUX:
 	case PPC_INS_LBZX:
 	case PPC_INS_STB:
-	case PPC_INS_STBCIX:
 	case PPC_INS_STBU:
 	case PPC_INS_STBUX:
 	case PPC_INS_STBX:
+#if CS_API_MAJOR > 3
+	case PPC_INS_STBCIX:
+	case PPC_INS_LBZCIX:
+#endif
 		return PPC_BYTE;
 	case PPC_INS_LHA:
 	case PPC_INS_LHAU:
@@ -106,16 +110,18 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LHAX:
 	case PPC_INS_LHBRX:
 	case PPC_INS_LHZ:
-	case PPC_INS_LHZCIX:
 	case PPC_INS_LHZU:
 	case PPC_INS_LHZUX:
 	case PPC_INS_LHZX:
 	case PPC_INS_STH:
 	case PPC_INS_STHBRX:
-	case PPC_INS_STHCIX:
 	case PPC_INS_STHU:
 	case PPC_INS_STHUX:
 	case PPC_INS_STHX:
+#if CS_API_MAJOR > 3
+	case PPC_INS_LHZCIX:
+	case PPC_INS_STHCIX:
+#endif
 		return PPC_HWORD;
 	case PPC_INS_LWA:
 	case PPC_INS_LWARX:
@@ -123,34 +129,38 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	case PPC_INS_LWAX:
 	case PPC_INS_LWBRX:
 	case PPC_INS_LWZ:
-	case PPC_INS_LWZCIX:
 	case PPC_INS_LWZU:
 	case PPC_INS_LWZUX:
 	case PPC_INS_LWZX:
 	case PPC_INS_LMW:
 	case PPC_INS_STW:
 	case PPC_INS_STWBRX:
-	case PPC_INS_STWCIX:
 	case PPC_INS_STWCX:
 	case PPC_INS_STWU:
 	case PPC_INS_STWUX:
 	case PPC_INS_STWX:
 	case PPC_INS_STMW:
+#if CS_API_MAJOR > 3
+	case PPC_INS_LWZCIX:
+	case PPC_INS_STWCIX:
+#endif
 		return PPC_WORD;
 	case PPC_INS_LD:
 	case PPC_INS_LDARX:
 	case PPC_INS_LDBRX:
-	case PPC_INS_LDCIX:
 	case PPC_INS_LDU:
 	case PPC_INS_LDUX:
 	case PPC_INS_LDX:
 	case PPC_INS_STD:
 	case PPC_INS_STDBRX:
-	case PPC_INS_STDCIX:
 	case PPC_INS_STDCX:
 	case PPC_INS_STDU:
 	case PPC_INS_STDUX:
 	case PPC_INS_STDX:
+#if CS_API_MAJOR > 3
+	case PPC_INS_LDCIX:
+	case PPC_INS_STDCIX:
+#endif
 		return PPC_DWORD;
 	}
 }
@@ -322,7 +332,6 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTFSB0:
 	case PPC_INS_MTFSB1:
 	case PPC_INS_MTFSF:
-	case PPC_INS_MTFSFI:
 	case PPC_INS_MTLR:
 	case PPC_INS_MTMSR:
 	case PPC_INS_MTMSRD:
