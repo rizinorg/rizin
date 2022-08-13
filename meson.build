@@ -512,7 +512,7 @@ if packager_version != ''
   endif
 endif
 rz_version_h = configure_file(
-  input: 'librz/include/rz_version.h.in',
+  input: 'librz/include/rz_build_version.h.in',
   output: 'rz_build_version.h',
   configuration: versionconf,
   install_dir: rizin_incdir
