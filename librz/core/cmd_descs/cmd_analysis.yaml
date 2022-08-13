@@ -110,7 +110,7 @@ commands:
             cname: autoname_all_functions
             args: []
           - name: aanr
-            summary: Renames all functions which does not return 
+            summary: Renames all functions which does not return
             cname: autoname_all_functions_noreturn
             args: []
       - name: aap
@@ -1017,8 +1017,6 @@ commands:
             comment: "Tiny ascii art"
           - text: "v"
             comment: "Interactive ascii art"
-          - text: "w [path]"
-            comment: "Write to path or display graph image (see graph.gv.format)"
     subcommands:
       - name: aga
         summary: Data reference graph
@@ -1026,35 +1024,35 @@ commands:
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agA
         summary: Global data references graph
         cname: analysis_graph_dataref_global
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agc
         summary: Function callgraph
         cname: analysis_graph_callgraph_function
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agC
         summary: Global callgraph
         cname: analysis_graph_callgraph_global
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agd
         summary: Diff graph
         cname: analysis_graph_diff
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
@@ -1064,48 +1062,50 @@ commands:
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agi
         summary: Imports graph
         cname: analysis_graph_imports
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agr
         summary: References graph
         cname: analysis_graph_refs
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agR
         summary: Global references graph
         cname: analysis_graph_refs_global
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: ags
         summary: Unknown graph
         cname: analysis_graph_unknown
-        args:
-          - name: num
-            type: RZ_CMD_ARG_TYPE_NUM
+        args: []
+      - name: agl
+        summary: Line graph ?
+        cname: analysis_graph_line
+        args: []
       - name: agx
         summary: Cross-references graph
         cname: analysis_graph_xrefs
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: agg
         summary: Custom graph
         cname: analysis_graph_custom
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            default_value: ' '
       - name: ag-
         summary: Clear the custom graph
         cname: analysis_graph_custom_clear
@@ -1146,7 +1146,14 @@ commands:
                 type: RZ_CMD_ARG_TYPE_STRING
               - name: title2
                 type: RZ_CMD_ARG_TYPE_STRING
-
+      - name: agw
+        summary: Write to path or display graph image (see graph.gv.format)
+        cname: analysis_graph_write
+        args:
+          - name: graphtype
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: path
+            type: RZ_CMD_ARG_TYPE_STRING
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar
@@ -1428,23 +1435,23 @@ commands:
       - name: aii
         summary: global import (like afii, but global)
         subcommands:
-        - name: aii
-          summary: list/add global import (like afii, but global)
-          type: RZ_CMD_DESC_TYPE_ARGV_STATE
-          cname: global_imports
-          modes:
-            - RZ_OUTPUT_MODE_STANDARD
-          args:
-            - name: namespace
-              type: RZ_CMD_ARG_TYPE_STRING
-              optional: true
-        - name: aii-
-          summary: delete all global imports
-          type: RZ_CMD_DESC_TYPE_ARGV_STATE
-          cname: delete_global_imports
-          modes:
-            - RZ_OUTPUT_MODE_STANDARD
-          args: []
+          - name: aii
+            summary: list/add global import (like afii, but global)
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: global_imports
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args:
+              - name: namespace
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aii-
+            summary: delete all global imports
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: delete_global_imports
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args: []
   - name: av
     summary: C++ vtables and RTTI
     subcommands:

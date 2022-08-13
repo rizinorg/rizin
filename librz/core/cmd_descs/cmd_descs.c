@@ -160,13 +160,13 @@ static const RzCmdDescArg analysis_graph_bb_function_args[2];
 static const RzCmdDescArg analysis_graph_imports_args[2];
 static const RzCmdDescArg analysis_graph_refs_args[2];
 static const RzCmdDescArg analysis_graph_refs_global_args[2];
-static const RzCmdDescArg analysis_graph_unknown_args[2];
 static const RzCmdDescArg analysis_graph_xrefs_args[2];
 static const RzCmdDescArg analysis_graph_custom_args[2];
 static const RzCmdDescArg analysis_graph_custom_node_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_node_remove_args[2];
 static const RzCmdDescArg analysis_graph_custom_edge_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_edge_remove_args[3];
+static const RzCmdDescArg analysis_graph_write_args[3];
 static const RzCmdDescArg analysis_regs_args[2];
 static const RzCmdDescArg analysis_regs_columns_args[2];
 static const RzCmdDescArg analysis_regs_references_args[2];
@@ -2995,7 +2995,6 @@ static const RzCmdDescDetailEntry ag_Formats_detail_entries[] = {
 	{ .text = "k", .arg_str = NULL, .comment = "SDB key-value" },
 	{ .text = "t", .arg_str = NULL, .comment = "Tiny ascii art" },
 	{ .text = "v", .arg_str = NULL, .comment = "Interactive ascii art" },
-	{ .text = "w [path]", .arg_str = NULL, .comment = "Write to path or display graph image (see graph.gv.format)" },
 	{ 0 },
 };
 static const RzCmdDescDetail ag_details[] = {
@@ -3011,7 +3010,7 @@ static const RzCmdDescArg analysis_graph_dataref_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3026,7 +3025,7 @@ static const RzCmdDescArg analysis_graph_dataref_global_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3041,7 +3040,7 @@ static const RzCmdDescArg analysis_graph_callgraph_function_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3056,7 +3055,7 @@ static const RzCmdDescArg analysis_graph_callgraph_global_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3070,7 +3069,7 @@ static const RzCmdDescArg analysis_graph_diff_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{
@@ -3092,7 +3091,7 @@ static const RzCmdDescArg analysis_graph_bb_function_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3107,7 +3106,7 @@ static const RzCmdDescArg analysis_graph_imports_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3122,7 +3121,7 @@ static const RzCmdDescArg analysis_graph_refs_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3137,7 +3136,7 @@ static const RzCmdDescArg analysis_graph_refs_global_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3148,11 +3147,6 @@ static const RzCmdDescHelp analysis_graph_refs_global_help = {
 };
 
 static const RzCmdDescArg analysis_graph_unknown_args[] = {
-	{
-		.name = "num",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_graph_unknown_help = {
@@ -3160,12 +3154,20 @@ static const RzCmdDescHelp analysis_graph_unknown_help = {
 	.args = analysis_graph_unknown_args,
 };
 
+static const RzCmdDescArg analysis_graph_line_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_graph_line_help = {
+	.summary = "Line graph ?",
+	.args = analysis_graph_line_args,
+};
+
 static const RzCmdDescArg analysis_graph_xrefs_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3180,7 +3182,7 @@ static const RzCmdDescArg analysis_graph_custom_args[] = {
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
+		.default_value = " ",
 
 	},
 	{ 0 },
@@ -3273,6 +3275,25 @@ static const RzCmdDescArg analysis_graph_custom_edge_remove_args[] = {
 static const RzCmdDescHelp analysis_graph_custom_edge_remove_help = {
 	.summary = "Remove an edge from the custom graph",
 	.args = analysis_graph_custom_edge_remove_args,
+};
+
+static const RzCmdDescArg analysis_graph_write_args[] = {
+	{
+		.name = "graphtype",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "path",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_graph_write_help = {
+	.summary = "Write to path or display graph image (see graph.gv.format)",
+	.args = analysis_graph_write_args,
 };
 
 static const RzCmdDescDetailEntry ar_Register_space_Filter_detail_entries[] = {
@@ -15433,6 +15454,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_graph_unknown_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "ags", rz_analysis_graph_unknown_handler, &analysis_graph_unknown_help);
 	rz_warn_if_fail(analysis_graph_unknown_cd);
 
+	RzCmdDesc *analysis_graph_line_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agl", rz_analysis_graph_line_handler, &analysis_graph_line_help);
+	rz_warn_if_fail(analysis_graph_line_cd);
+
 	RzCmdDesc *analysis_graph_xrefs_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agx", rz_analysis_graph_xrefs_handler, &analysis_graph_xrefs_help);
 	rz_warn_if_fail(analysis_graph_xrefs_cd);
 
@@ -15451,6 +15475,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(age_cd);
 	RzCmdDesc *analysis_graph_custom_edge_remove_cd = rz_cmd_desc_argv_new(core->rcmd, age_cd, "age-", rz_analysis_graph_custom_edge_remove_handler, &analysis_graph_custom_edge_remove_help);
 	rz_warn_if_fail(analysis_graph_custom_edge_remove_cd);
+
+	RzCmdDesc *analysis_graph_write_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agw", rz_analysis_graph_write_handler, &analysis_graph_write_help);
+	rz_warn_if_fail(analysis_graph_write_cd);
 
 	RzCmdDesc *ar_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ar", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_regs_handler, &analysis_regs_help, &ar_help);
 	rz_warn_if_fail(ar_cd);
