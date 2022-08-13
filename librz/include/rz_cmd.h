@@ -494,7 +494,6 @@ typedef bool (*RzCmdForeachMacroCb)(RzCmd *cmd, const RzCmdMacro *macro, void *u
 #ifdef RZ_API
 RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
-RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API void rz_cmd_batch_start(RzCmd *cmd);
 RZ_API void rz_cmd_batch_end(RzCmd *cmd);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
