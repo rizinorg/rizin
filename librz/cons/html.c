@@ -40,7 +40,6 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 	char background_color[16] = { 0 };
 	bool has_set = false;
 	bool need_to_set = false;
-	bool need_to_clear = false;
 	bool first_style;
 	int tmp;
 	if (!ptr) {
@@ -56,7 +55,7 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				rz_strbuf_append(res, "</font>");
 				has_set = false;
 			}
-			if (!need_to_clear) {
+			if (text_color[0] || background_color[0] || inv) {
 				first_style = true;
 				rz_strbuf_append(res, "<font");
 				if (text_color[0]) {
@@ -75,7 +74,6 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				rz_strbuf_append(res, first_style ? ">" : "'>");
 				has_set = true;
 			}
-			need_to_clear = false;
 			need_to_set = false;
 		}
 		if (ptr[0] == '\n') {
@@ -168,7 +166,7 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				inv = false;
 				text_color[0] = '\0';
 				background_color[0] = '\0';
-				need_to_set = need_to_clear = true;
+				need_to_set = true;
 				continue;
 				// reset color
 			} else if (!strncmp(ptr, "27m", 3)) {

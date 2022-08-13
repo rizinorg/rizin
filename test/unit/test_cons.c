@@ -165,6 +165,24 @@ bool test_cons_to_html() {
 	html = rz_cons_html_filter("\x1b[41m\x1b[31mBB\x1b[49mCC", NULL);
 	mu_assert_streq_free(html, "<font color='#f00' style='background-color:#f00'>BB</font><font color='#f00'>CC</font>", "Default background color");
 
+	html = rz_cons_html_filter("aaa" Color_RESET "bbb", NULL);
+	mu_assert_streq_free(html, "aaabbb", "Only reset");
+
+	html = rz_cons_html_filter("aaa" Color_RESET Color_RED "bbb", NULL);
+	mu_assert_streq_free(html, "aaa<font color='#f00'>bbb</font>", "Color after reset");
+
+	html = rz_cons_html_filter("aaa" Color_RESET Color_RED Color_RESET "bbb", NULL);
+	mu_assert_streq_free(html, "aaabbb", "Color after reset");
+
+	html = rz_cons_html_filter("aaa" Color_RESET Color_RED Color_RESET Color_BGGREEN "bbb", NULL);
+	mu_assert_streq_free(html, "aaa<font style='background-color:#0f0'>bbb</font>", "Reset color reset color");
+
+	html = rz_cons_html_filter(Color_RED Color_BGGREEN "aaa" Color_RESET Color_RESET_BG "bbb", NULL);
+	mu_assert_streq_free(html, "<font color='#f00' style='background-color:#0f0'>aaa</font>bbb", "Two different resets");
+
+	html = rz_cons_html_filter(Color_RED Color_BGGREEN "aaa" Color_RESET_BG Color_RESET "bbb", NULL);
+	mu_assert_streq_free(html, "<font color='#f00' style='background-color:#0f0'>aaa</font>bbb", "Two different resets opposite order");
+
 	mu_end;
 }
 
