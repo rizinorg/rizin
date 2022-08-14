@@ -458,6 +458,8 @@ RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) 
 	rz_return_val_if_fail(analysis && query < RZ_ANALYSIS_ARCHINFO_ENUM_SIZE, -1);
 	if (!analysis->cur || !analysis->cur->archinfo) {
 		switch (query) {
+		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+			return 1;
 		case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
 			return true;
 		default:
