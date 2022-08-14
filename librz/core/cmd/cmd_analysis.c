@@ -5584,49 +5584,74 @@ RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_datarefs_graph(core, core->offset, false);
+static inline RzGraph *core_graph(RzCore *core, RzCoreGraphType type) {
+	RzGraph *graph = NULL;
+	switch (type) {
+	case RZ_CORE_GRAPH_TYPE_DATAREF:
+	case RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL:
+		graph = rz_core_analysis_datarefs_graph(core, type != RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL ? core->offset : UT64_MAX);
+		break;
+	case RZ_CORE_GRAPH_TYPE_FUNCALL:
+	case RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL:
+		graph = rz_core_analysis_callgraph(core, type != RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL ? core->offset : UT64_MAX);
+		break;
+	case RZ_CORE_GRAPH_TYPE_DIFF: break;
+	case RZ_CORE_GRAPH_TYPE_BLOCK_FUN: break;
+	case RZ_CORE_GRAPH_TYPE_IMPORT:
+		graph = rz_core_analysis_importxrefs(core);
+		break;
+	case RZ_CORE_GRAPH_TYPE_REF:
+	case RZ_CORE_GRAPH_TYPE_REF_GLOBAL:
+		graph = rz_core_analysis_coderefs(core, type != RZ_CORE_GRAPH_TYPE_REF_GLOBAL ? core->offset : UT64_MAX);
+		break;
+	case RZ_CORE_GRAPH_TYPE_LINE: break;
+	case RZ_CORE_GRAPH_TYPE_XREF:
+		graph = rz_core_analysis_coderefs(core, core->offset);
+		break;
+	case RZ_CORE_GRAPH_TYPE_CUSTOM: break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return graph;
+}
+
+static inline RzCmdStatus graph_handler(RzCore *core, RzCoreGraphType type, RzCoreGraphFormat format) {
+	RzGraph *graph = core_graph(core, type);
 	if (!graph) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	graph_print(core, graph, -1, true, argv[1][0]);
+	static const bool callgraphs[256] = {
+		false,
+		[RZ_CORE_GRAPH_TYPE_FUNCALL] = true,
+		[RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL] = true,
+		[RZ_CORE_GRAPH_TYPE_REF] = true,
+		[RZ_CORE_GRAPH_TYPE_REF_GLOBAL] = true,
+		[RZ_CORE_GRAPH_TYPE_XREF] = true,
+	};
+
+	bool old_is_callgraph = core->graph->is_callgraph;
+	core->graph->is_callgraph = callgraphs[type];
+	graph_print(core, graph, -1, true, format);
 	rz_graph_free(graph);
+	core->graph->is_callgraph = old_is_callgraph;
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, const char **argv) {
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_DATAREF, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_datarefs_graph(core, core->offset, true);
-	if (!graph) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	graph_print(core, graph, -1, true, argv[1][0]);
-	rz_graph_free(graph);
-	return RZ_CMD_STATUS_OK;
-}
-
-static inline void callgraph_print(RzCore *core, RzGraph *g, RzCoreGraphFormat f) {
-	core->graph->is_callgraph = true;
-	graph_print(core, g, -1, true, f);
-	rz_graph_free(g);
-	core->graph->is_callgraph = false;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_function_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_callgraph(core, core->offset, false);
-	if (!graph) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	callgraph_print(core, graph, argv[1][0]);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_FUNCALL, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_callgraph(core, core->offset, true);
-	if (!graph) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	callgraph_print(core, graph, argv[1][0]);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const char **argv) {
@@ -5732,34 +5757,15 @@ RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc,
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_imports_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_importxrefs(core);
-	if (!graph) {
-		RZ_LOG_ERROR("Couldn't create graph\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	graph_print(core, graph, -1, true, argv[1][0]);
-	rz_graph_free(graph);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_IMPORT, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_coderefs(core, core->offset, false);
-	if (!graph) {
-		RZ_LOG_ERROR("Couldn't create graph\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	callgraph_print(core, graph, argv[1][0]);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_REF, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_global_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_coderefs(core, core->offset, true);
-	if (!graph) {
-		RZ_LOG_ERROR("Couldn't create graph\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	callgraph_print(core, graph, argv[1][0]);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_REF_GLOBAL, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_unknown_handler(RzCore *core, int argc, const char **argv) {
@@ -5773,19 +5779,11 @@ RZ_IPI RzCmdStatus rz_analysis_graph_line_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_core_analysis_codexrefs(core, core->offset);
-	if (!graph) {
-		RZ_LOG_ERROR("Couldn't create graph\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	graph_print(core, graph, -1, true, argv[1][0]);
-	rz_graph_free(graph);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_XREF, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv) {
-	agraph_print(core, -1, argv[1][0]);
-	return RZ_CMD_STATUS_OK;
+	return graph_handler(core, RZ_CORE_GRAPH_TYPE_XREF, argv[1][0]);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_write_handler(RzCore *core, int argc, const char **argv) {

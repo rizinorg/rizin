@@ -2348,12 +2348,12 @@ static inline void core_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph 
 	rz_list_free(xrefs);
 }
 
-RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is_global) {
+RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr) {
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
 	}
-	if (is_global) {
+	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
 		RzListIter *it;
@@ -2396,12 +2396,12 @@ static void core_graph_refs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *grap
 	rz_list_free(xrefs);
 }
 
-RZ_API RzGraph *rz_core_analysis_coderefs(RzCore *core, ut64 addr, bool is_global) {
+RZ_API RzGraph *rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
 	}
-	if (is_global) {
+	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
 		RzListIter *it;
@@ -2499,12 +2499,12 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *g
 	rz_list_free(calls);
 }
 
-RZ_API RzGraph *rz_core_analysis_callgraph(RzCore *core, ut64 addr, bool is_global) {
+RZ_API RzGraph *rz_core_analysis_callgraph(RzCore *core, ut64 addr) {
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
 	}
-	if (is_global) {
+	if (addr == UT64_MAX) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
 		RzListIter *it;
