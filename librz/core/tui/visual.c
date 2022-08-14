@@ -2299,14 +2299,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		}
 	} else {
 		switch (ch) {
-#if __WINDOWS__
-		case 0xf5:
-			SetWindow(81, 25);
-			break;
-		case 0xcf5:
-			SetWindow(81, 40);
-			break;
-#endif
 		case 0x0d: // "enter" "\\n" "newline"
 		{
 			RzAnalysisOp *op;
