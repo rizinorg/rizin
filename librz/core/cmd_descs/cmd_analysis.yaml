@@ -1121,6 +1121,9 @@ commands:
                 type: RZ_CMD_ARG_TYPE_STRING
               - name: body
                 type: RZ_CMD_ARG_TYPE_STRING
+              - name: color
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
           - name: agn-
             summary: Remove a node from the custom graph
             cname: analysis_graph_custom_node_remove

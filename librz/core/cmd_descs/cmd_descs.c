@@ -162,7 +162,7 @@ static const RzCmdDescArg analysis_graph_refs_args[2];
 static const RzCmdDescArg analysis_graph_refs_global_args[2];
 static const RzCmdDescArg analysis_graph_xrefs_args[2];
 static const RzCmdDescArg analysis_graph_custom_args[2];
-static const RzCmdDescArg analysis_graph_custom_node_add_args[3];
+static const RzCmdDescArg analysis_graph_custom_node_add_args[4];
 static const RzCmdDescArg analysis_graph_custom_node_remove_args[2];
 static const RzCmdDescArg analysis_graph_custom_edge_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_edge_remove_args[3];
@@ -3212,7 +3212,13 @@ static const RzCmdDescArg analysis_graph_custom_node_add_args[] = {
 	{
 		.name = "body",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "color",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },

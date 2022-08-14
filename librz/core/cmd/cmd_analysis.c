@@ -2530,6 +2530,9 @@ static void agraph_print(RzCore *core, int use_utf, RzCoreGraphFormat format) {
 		rz_config_set_i(core->config, "scr.utf8", use_utf);
 	}
 	switch (format) {
+	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
+		rz_core_agraph_print_ascii(core);
+		break;
 	case RZ_CORE_GRAPH_FORMAT_TINY: // "aggt" - tiny graph
 		rz_core_agraph_print_tiny(core);
 		break;
@@ -5781,36 +5784,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv) {
-	char format = argc > 1 ? argv[1][0] : ' ';
-	switch (format) {
-	case RZ_CORE_GRAPH_FORMAT_TINY:
-		rz_core_agraph_print_tiny(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_SDB:
-		rz_core_agraph_print_sdb(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_VISUAL:
-		rz_core_agraph_print_interactive(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_DOT:
-		rz_core_agraph_print_dot(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_CMD:
-		rz_core_agraph_print_rizin(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_JSON:
-	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM:
-		rz_core_agraph_print_json(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_GML:
-		rz_core_agraph_print_gml(core);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
-		rz_core_agraph_print_ascii(core);
-		break;
-	default:
-		rz_warn_if_reached();
-	}
+	agraph_print(core, -1, argv[1][0]);
 	return RZ_CMD_STATUS_OK;
 }
 
