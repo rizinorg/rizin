@@ -564,20 +564,20 @@ static RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits) 
 
 #define x86_il_set_mem(mem, val) x86_il_set_mem_bits(mem, val, analysis->bits)
 
-static RzILOpPure *x86_il_get_operand_bits(X86Op op, int bits) {
+static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits) {
 	RzILOpPure *ret = NULL;
 	switch (op.type) {
 	case X86_OP_INVALID:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
 		break;
 	case X86_OP_REG:
-		ret = x86_il_get_reg_bits(op.reg, bits);
+		ret = x86_il_get_reg_bits(op.reg, analysis_bits);
 		break;
 	case X86_OP_IMM:
-		ret = SN(bits, op.imm);
+		ret = SN(op.size * BITS_PER_BYTE, op.imm);
 		break;
 	case X86_OP_MEM:
-		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, bits));
+		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, op.size * BITS_PER_BYTE));
 	}
 	return ret;
 }
@@ -819,7 +819,7 @@ static RzILOpEffect *x86_il_aad(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 		// Use base 10 if none specified
 		imm = SN(8, 0x0a);
 	} else {
-		imm = x86_il_get_operand_bits(ins->structure->operands[0], 8);
+		imm = x86_il_get_operand(ins->structure->operands[0]);
 	}
 
 	RzILOpPure *adjusted = ADD(VARL("temp_al"), MUL(VARL("temp_ah"), imm));
@@ -845,7 +845,7 @@ static RzILOpEffect *x86_il_aam(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	if (ins->structure->op_count == 0) {
 		imm = SN(8, 0xa);
 	} else {
-		imm = x86_il_get_operand_bits(ins->structure->operands[0], 8);
+		imm = x86_il_get_operand(ins->structure->operands[0]);
 	}
 
 	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), imm));
