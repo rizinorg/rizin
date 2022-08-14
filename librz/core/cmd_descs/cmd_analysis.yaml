@@ -1121,6 +1121,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_STRING
               - name: body
                 type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
               - name: color
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true

@@ -5638,6 +5638,15 @@ static inline RzCmdStatus graph_handler(RzCore *core, RzCoreGraphType type, RzCo
 	return RZ_CMD_STATUS_OK;
 }
 
+static inline bool core_graph_write(RzCore *core, RzCoreGraphType type, const char *path) {
+	RzGraph *graph = core_graph(core, type);
+	if (!graph) {
+		return false;
+	}
+	graph_write(core, graph, path);
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, const char **argv) {
 	return graph_handler(core, RZ_CORE_GRAPH_TYPE_DATAREF, argv[1][0]);
 }
@@ -5783,7 +5792,8 @@ RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv) {
-	return graph_handler(core, RZ_CORE_GRAPH_TYPE_XREF, argv[1][0]);
+	agraph_print(core, -1, argv[1][0]);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_write_handler(RzCore *core, int argc, const char **argv) {
@@ -5792,43 +5802,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_write_handler(RzCore *core, int argc, const
 	}
 	const RzCoreGraphType graph_type = (ut8)argv[1][0];
 	const char *path = argv[2];
-
-	switch (graph_type) {
-	case RZ_CORE_GRAPH_TYPE_FUNCALL: /* Function callgraph */
-	case RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL: /* Global function callgraph */
-	{
-		core->graph->is_callgraph = true;
-		rz_core_agraph_reset(core);
-		// TODO: Use the API here
-		rz_core_cmdf(core, ".'ag%c *';", graph_type);
-		graph_write(core, core->graph->graph, path);
-		core->graph->is_callgraph = false;
-		break;
-	}
-	case RZ_CORE_GRAPH_TYPE_DIFF: /* Diff graph */
-	{
-		rz_core_cmdf(core, ".'agd *';");
-		graph_write(core, core->graph->graph, path);
-		break;
-	}
-	case RZ_CORE_GRAPH_TYPE_BLOCK_FUN: /* Basic blocks function graph */
-	{
-		rz_core_cmdf(core, ".'agf *';");
-		graph_write(core, core->graph->graph, path);
-		break;
-	}
-	case RZ_CORE_GRAPH_TYPE_CUSTOM: /* Custom graph */
-	{
-		rz_core_cmdf(core, ".'agg *';");
-		graph_write(core, core->graph->graph, path);
-		break;
-	}
-	default:
-		RZ_LOG_INFO("graph type %c is not support\n", graph_type);
-		rz_warn_if_reached();
-	}
-
-	return RZ_CMD_STATUS_OK;
+	return core_graph_write(core, graph_type, path);
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_clear_handler(RzCore *core, int argc, const char **argv) {
@@ -5837,8 +5811,9 @@ RZ_IPI RzCmdStatus rz_analysis_graph_custom_clear_handler(RzCore *core, int argc
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_node_add_handler(RzCore *core, int argc, const char **argv) {
-	int color = argc > 3 ? rz_num_math(NULL, argv[3]) : -1;
-	rz_core_agraph_add_node(core, argv[1], argv[2], color);
+	const char *body = argc > 2 ? argv[2] : "";
+	const int color = argc > 3 ? (int)(rz_num_math(NULL, argv[3])) : -1;
+	rz_core_agraph_add_node(core, argv[1], body, color);
 	return RZ_CMD_STATUS_OK;
 }
 

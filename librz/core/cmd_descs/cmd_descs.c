@@ -3212,6 +3212,7 @@ static const RzCmdDescArg analysis_graph_custom_node_add_args[] = {
 	{
 		.name = "body",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
 
 	},
 	{
