@@ -320,7 +320,11 @@ static int riscv_dis(RzAsm *a, RzAsmOp *rop, const ut8 *buf, ut64 len) {
 	if (len < 2) {
 		return -1;
 	}
-	memcpy (&insn, buf, RZ_MIN (sizeof (insn), len));
+	// Read <= 8 bytes into 8-byte buffer in little endian fashion
+	RZ_STATIC_ASSERT(sizeof(insn) == 8);
+	ut8 tmp[8] = { 0 };
+	memcpy(&tmp, buf, RZ_MIN(sizeof(insn), len));
+	insn = rz_read_le64(tmp);
 	int insn_len = riscv_insn_length(insn);
 	if (len < insn_len) {
 		return -1;
