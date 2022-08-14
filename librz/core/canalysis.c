@@ -2311,29 +2311,15 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn) {
 	return true;
 }
 
-static inline void core_agraph_add_node(RzCore *core, const char *title, const char *body, int color, bool is_cmd) {
-	if (is_cmd) {
-		rz_cons_printf("agn %s\n", title);
-	} else {
-		rz_core_agraph_add_node(core, title, body, color);
-	}
-}
-
-static inline void core_agraph_add_edge(RzCore *core, const char *un, const char *vn, bool is_cmd) {
-	if (is_cmd) {
-		rz_cons_printf("age %s %s\n", un, vn);
-	} else {
-		rz_core_agraph_add_edge(core, un, vn);
-	}
-}
-
-static inline void core_analysis_datarefs_fn(RzCore *core, RzAnalysisFunction *fcn, bool is_cmd) {
+static inline void core_analysis_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
-		eprintf("Not in a function. Use 'df' to define it.\n");
+		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 	}
 
-	bool found = false;
-	const char *me = fcn->name;
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
+	if (!curr_node) {
+		return;
+	}
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
@@ -2341,20 +2327,20 @@ static inline void core_analysis_datarefs_fn(RzCore *core, RzAnalysisFunction *f
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		RzBinSection *binsec = rz_bin_get_section_at(obj, xref->to, true);
 		if (binsec && binsec->is_data) {
-			if (!found) {
-				core_agraph_add_node(core, me, "", -1, is_cmd);
-				found = true;
-			}
 			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
 			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->to);
-			core_agraph_add_node(core, dst, "", -1, is_cmd);
-			core_agraph_add_edge(core, me, dst, is_cmd);
+			RzGraphNode *reference_from = rz_graph_add_node_info(graph, dst, NULL, xref->to);
+			rz_graph_add_edge(graph, reference_from, curr_node);
 		}
 	}
 	rz_list_free(xrefs);
 }
 
-RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr, bool is_global, bool is_cmd) {
+RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is_global) {
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
+	}
 	if (is_global) {
 		ut64 from = rz_config_get_i(core->config, "graph.from");
 		ut64 to = rz_config_get_i(core->config, "graph.to");
@@ -2362,13 +2348,14 @@ RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr, bool is_global, b
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (core->analysis->fcns, it, fcn) {
 			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-				core_analysis_datarefs_fn(core, fcn, is_cmd);
+				core_analysis_graph_fn(core, fcn, graph);
 			}
 		}
 	} else {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-		core_analysis_datarefs_fn(core, fcn, is_cmd);
+		core_analysis_graph_fn(core, fcn, graph);
 	}
+	return graph;
 }
 
 RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr) {

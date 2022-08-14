@@ -2558,7 +2558,7 @@ static void agraph_print(RzCore *core, int use_utf, RzCoreGraphFormat format) {
 	}
 }
 
-static void print_graph_agg(RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+static void print_graph_cmd(RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	RzGraphNodeInfo *print_node;
 	RzGraphNode *node, *target;
 	RzListIter *it, *edge_it;
@@ -2596,19 +2596,15 @@ static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *grap
 }
 
 static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, int use_utf, bool use_offset, RzCoreGraphFormat format) {
-	RzAGraph *agraph = NULL;
-	RzListIter *it;
-	RzListIter *edge_it;
-	RzGraphNode *graphNode, *target;
-	RzGraphNodeInfo *print_node;
 	if (use_utf != -1) {
 		rz_config_set_i(core->config, "scr.utf8", use_utf);
 	}
 	switch (format) {
+	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 	case RZ_CORE_GRAPH_FORMAT_TINY:
 	case RZ_CORE_GRAPH_FORMAT_SDB:
 	case RZ_CORE_GRAPH_FORMAT_VISUAL: {
-		agraph = create_agraph_from_graph(graph);
+		RzAGraph *agraph = create_agraph_from_graph(graph);
 		switch (format) {
 		case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 			agraph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
@@ -2671,7 +2667,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		break;
 	}
 	case '*': // "ag_*" -
-		print_graph_agg(graph);
+		print_graph_cmd(graph);
 		break;
 	case RZ_CORE_GRAPH_FORMAT_JSON:
 	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM: {
@@ -2689,14 +2685,17 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 			       "hierarchic 1\n"
 			       "label \"\"\n"
 			       "directed 1\n");
+		RzListIter *it;
+		RzGraphNode *graphNode, *target;
 		rz_list_foreach (graph->nodes, it, graphNode) {
-			print_node = graphNode->data;
+			RzGraphNodeInfo *print_node = graphNode->data;
 			rz_cons_printf("  node [\n"
 				       "    id  %d\n"
 				       "    label  \"%s\"\n"
 				       "  ]\n",
 				graphNode->idx, print_node->title);
 		}
+		RzListIter *edge_it;
 		rz_list_foreach (graph->nodes, it, graphNode) {
 			rz_list_foreach (graphNode->out_nodes, edge_it, target) {
 				rz_cons_printf("  edge [\n"
@@ -5583,26 +5582,22 @@ RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, const char **argv) {
-	const char format = argv[1][0];
-	if (format == RZ_CORE_GRAPH_FORMAT_CMD) {
-		rz_core_analysis_datarefs(core, core->offset, false, true);
-	} else {
-		rz_core_agraph_reset(core);
-		rz_core_analysis_datarefs(core, core->offset, false, false);
-		agraph_print(core, -1, format);
+	RzGraph *graph = rz_core_analysis_datarefs_graph(core, core->offset, false);
+	if (!graph) {
+		return RZ_CMD_STATUS_ERROR;
 	}
+	graph_print(core, graph, -1, true, argv[1][0]);
+	rz_graph_free(graph);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int argc, const char **argv) {
-	const char format = argv[1][0];
-	if (format == RZ_CORE_GRAPH_FORMAT_CMD) {
-		rz_core_analysis_datarefs(core, core->offset, true, true);
-	} else {
-		rz_core_agraph_reset(core);
-		rz_core_analysis_datarefs(core, core->offset, true, false);
-		agraph_print(core, -1, format);
+	RzGraph *graph = rz_core_analysis_datarefs_graph(core, core->offset, true);
+	if (!graph) {
+		return RZ_CMD_STATUS_ERROR;
 	}
+	graph_print(core, graph, -1, true, argv[1][0]);
+	rz_graph_free(graph);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6453,7 +6448,7 @@ RZ_IPI RzCmdStatus rz_analysis_class_graph_handler(RzCore *core, int argc, const
 		RZ_LOG_ERROR("Couldn't create graph.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	graph_print(core, graph, -1, false, ' ');
+	graph_print(core, graph, -1, false, RZ_CORE_GRAPH_FORMAT_ASCII_ART);
 	rz_graph_free(graph);
 	return RZ_CMD_STATUS_OK;
 }
