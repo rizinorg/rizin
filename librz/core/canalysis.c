@@ -2320,7 +2320,7 @@ static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
 }
 
-static inline void core_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
 		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
@@ -2362,16 +2362,16 @@ RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr) {
 			if (!is_between(from, fcn->addr, to)) {
 				continue;
 			}
-			core_graph_fn(core, fcn, graph);
+			core_graph_dataref(core, fcn, graph);
 		}
 	} else {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-		core_graph_fn(core, fcn, graph);
+		core_graph_dataref(core, fcn, graph);
 	}
 	return graph;
 }
 
-static void core_graph_refs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+static void core_graph_coderefs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
 		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
@@ -2410,11 +2410,11 @@ RZ_API RzGraph *rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
 			if (!is_between(from, fcn->addr, to)) {
 				continue;
 			}
-			core_graph_refs(core, fcn, graph);
+			core_graph_coderefs(core, fcn, graph);
 		}
 	} else {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-		core_graph_refs(core, fcn, graph);
+		core_graph_coderefs(core, fcn, graph);
 	}
 	return graph;
 }
