@@ -5602,74 +5602,22 @@ RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int ar
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_function_handler(RzCore *core, int argc, const char **argv) {
-	const char format = argv[1][0];
-	switch (format) {
-	case RZ_CORE_GRAPH_FORMAT_VISUAL:
-	case RZ_CORE_GRAPH_FORMAT_TINY:
-	case RZ_CORE_GRAPH_FORMAT_SDB: {
-		core->graph->is_callgraph = true;
-		rz_core_agraph_reset(core);
-		// TODO: Use the API here
-		rz_core_cmdf(core, ".agc* @ %" PFMT64u "; agg%s;", core->offset, &format);
-		core->graph->is_callgraph = false;
-		break;
+	RzGraph *graph = rz_core_analysis_callgraph(core, core->offset, false);
+	if (!graph) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
-		// FIXME: WHY IT IS DIFFERENT FROM PREVIOUS ONE?
-		core->graph->is_callgraph = true;
-		rz_core_agraph_reset(core);
-		rz_core_cmd0(core, ".agc* $$");
-		rz_core_agraph_print_ascii(core);
-		core->graph->is_callgraph = false;
-		break;
-	case RZ_CORE_GRAPH_FORMAT_GML:
-		rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_GMLFCN);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_DOT:
-		rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_DOT);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_JSON:
-		rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_JSON);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_CMD:
-		rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_CMD);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
+	graph_print(core, graph, -1, true, argv[1][0]);
+	rz_graph_free(graph);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int argc, const char **argv) {
-	const char format = argv[1][0];
-	switch (format) {
-	case RZ_CORE_GRAPH_FORMAT_VISUAL:
-	case RZ_CORE_GRAPH_FORMAT_TINY:
-	case RZ_CORE_GRAPH_FORMAT_SDB:
-		core->graph->is_callgraph = true;
-		rz_core_agraph_reset(core);
-		// TODO: Use the API here
-		rz_core_cmdf(core, ".agC*;");
-		agraph_print(core, -1, format);
-		core->graph->is_callgraph = false;
-		break;
-	case RZ_CORE_GRAPH_FORMAT_JSON:
-		rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_JSON);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_GML:
-		rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_GML);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_DOT:
-		rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_DOT);
-		break;
-	case RZ_CORE_GRAPH_FORMAT_CMD:
-		rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_CMD);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	RzGraph *graph = rz_core_analysis_callgraph(core, core->offset, true);
+	if (!graph) {
+		return RZ_CMD_STATUS_ERROR;
 	}
+	graph_print(core, graph, -1, true, argv[1][0]);
+	rz_graph_free(graph);
 	return RZ_CMD_STATUS_OK;
 }
 

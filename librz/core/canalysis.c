@@ -2311,9 +2311,10 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn) {
 	return true;
 }
 
-static inline void core_analysis_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+static inline void core_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
 		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
+		return;
 	}
 
 	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
@@ -2348,12 +2349,12 @@ RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (core->analysis->fcns, it, fcn) {
 			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-				core_analysis_graph_fn(core, fcn, graph);
+				core_graph_fn(core, fcn, graph);
 			}
 		}
 	} else {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-		core_analysis_graph_fn(core, fcn, graph);
+		core_graph_fn(core, fcn, graph);
 	}
 	return graph;
 }
@@ -2437,229 +2438,61 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_codexrefs(RzCore *core,
 	return graph;
 }
 
-static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *xref2) {
-	return xref1->to != xref2->to;
+static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
+	if (!fcn) {
+		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
+		return;
+	}
+
+	char *me = (fcn && RZ_STR_ISNOTEMPTY(fcn->name))
+		? rz_str_new(fcn->name)
+		: rz_str_newf("0x%" PFMT64x, fcn->addr);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
+	RZ_FREE(me);
+	if (!curr_node) {
+		return;
+	}
+
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	RzList *calls = rz_list_new();
+	RzListIter *it;
+	RzAnalysisXRef *xref;
+	// TODO: maybe fcni->calls instead ?
+	rz_list_foreach (xrefs, it, xref) {
+		//  TODO: tail calll jumps are also calls
+		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL && !rz_list_contains(calls, (const void *)xref->to)) {
+			rz_list_append(calls, (void *)xref->to);
+			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
+			char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, xref->to);
+			RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->to);
+			free(src);
+			rz_graph_add_edge(graph, reference_from, curr_node);
+		}
+	}
+	rz_list_free(calls);
+	rz_list_free(xrefs);
 }
 
-RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
-	const char *font = rz_config_get(core->config, "graph.font");
-	int is_html = rz_cons_singleton()->is_html;
-	bool refgraph = rz_config_get_i(core->config, "graph.refs");
-	RzListIter *iter, *iter2;
-	int usenames = rz_config_get_i(core->config, "graph.json.usenames");
-	RzAnalysisFunction *fcni;
-	RzAnalysisXRef *fcnr;
-	PJ *pj = NULL;
-
-	ut64 from = rz_config_get_i(core->config, "graph.from");
-	ut64 to = rz_config_get_i(core->config, "graph.to");
-
-	switch (fmt) {
-	case RZ_GRAPH_FORMAT_JSON:
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_a(pj);
-		break;
-	case RZ_GRAPH_FORMAT_GML:
-	case RZ_GRAPH_FORMAT_GMLFCN:
-		rz_cons_printf("graph\n[\n"
-			       "hierarchic  1\n"
-			       "label  \"\"\n"
-			       "directed  1\n");
-		break;
-	case RZ_GRAPH_FORMAT_DOT:
-		if (!is_html) {
-			const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
-			char *gv_node = strdup(rz_config_get(core->config, "graph.gv.node"));
-			const char *gv_grph = rz_config_get(core->config, "graph.gv.graph");
-			const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
-			if (!gv_edge || !*gv_edge) {
-				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
-			}
-			if (!gv_node || !*gv_node) {
-				free(gv_node);
-				gv_node = rz_str_newf("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
-			}
-			if (!gv_grph || !*gv_grph) {
-				gv_grph = "bgcolor=azure";
-			}
-			if (!gv_spline || !*gv_spline) {
-				// ortho for bbgraph and curved for callgraph
-				gv_spline = "splines=\"curved\"";
-			}
-			rz_cons_printf("digraph code {\n"
-				       "rankdir=LR;\n"
-				       "outputorder=edgesfirst;\n"
-				       "graph [%s fontname=\"%s\" %s];\n"
-				       "node [%s];\n"
-				       "edge [%s];\n",
-				gv_grph, font, gv_spline,
-				gv_node, gv_edge);
-			free(gv_node);
-		}
-		break;
+RZ_API RzGraph *rz_core_analysis_callgraph(RzCore *core, ut64 addr, bool is_global) {
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
 	}
-	ut64 base = UT64_MAX;
-	int iteration = 0;
-repeat:
-	rz_list_foreach (core->analysis->fcns, iter, fcni) {
-		if (base == UT64_MAX) {
-			base = fcni->addr;
-		}
-		if (from != UT64_MAX && fcni->addr < from) {
-			continue;
-		}
-		if (to != UT64_MAX && fcni->addr > to) {
-			continue;
-		}
-		if (addr != UT64_MAX && addr != fcni->addr) {
-			continue;
-		}
-		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcni);
-		RzList *calls = rz_list_new();
-		// TODO: maybe fcni->calls instead ?
-		rz_list_foreach (xrefs, iter2, fcnr) {
-			//  TODO: tail calll jumps are also calls
-			if (fcnr->type == RZ_ANALYSIS_XREF_TYPE_CALL && rz_list_find(calls, fcnr, (RzListComparator)RzAnalysisRef_cmp) == NULL) {
-				rz_list_append(calls, fcnr);
+	if (is_global) {
+		ut64 from = rz_config_get_i(core->config, "graph.from");
+		ut64 to = rz_config_get_i(core->config, "graph.to");
+		RzListIter *it;
+		RzAnalysisFunction *fcn;
+		rz_list_foreach (core->analysis->fcns, it, fcn) {
+			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
+				core_graph_fn_call(core, fcn, graph);
 			}
 		}
-		if (rz_list_empty(calls)) {
-			rz_list_free(xrefs);
-			rz_list_free(calls);
-			continue;
-		}
-		switch (fmt) {
-		case RZ_GRAPH_FORMAT_NO:
-			rz_cons_printf("0x%08" PFMT64x "\n", fcni->addr);
-			break;
-		case RZ_GRAPH_FORMAT_GML:
-		case RZ_GRAPH_FORMAT_GMLFCN: {
-			RzFlagItem *flag = rz_flag_get_i(core->flags, fcni->addr);
-			if (iteration == 0) {
-				char *msg = flag ? strdup(flag->name) : rz_str_newf("0x%08" PFMT64x, fcni->addr);
-				rz_cons_printf("  node [\n"
-					       "  id  %" PFMT64d "\n"
-					       "    label  \"%s\"\n"
-					       "  ]\n",
-					fcni->addr - base, msg);
-				free(msg);
-			}
-			break;
-		}
-		case RZ_GRAPH_FORMAT_JSON:
-			pj_o(pj);
-			if (usenames) {
-				pj_ks(pj, "name", fcni->name);
-			} else {
-				char fcni_addr[20];
-				snprintf(fcni_addr, sizeof(fcni_addr) - 1, "0x%08" PFMT64x, fcni->addr);
-				pj_ks(pj, "name", fcni_addr);
-			}
-			pj_kn(pj, "size", rz_analysis_function_linear_size(fcni));
-			pj_ka(pj, "imports");
-			break;
-		case RZ_GRAPH_FORMAT_DOT:
-			rz_cons_printf("  \"0x%08" PFMT64x "\" "
-				       "[label=\"%s\""
-				       " URL=\"%s/0x%08" PFMT64x "\"];\n",
-				fcni->addr, fcni->name,
-				fcni->name, fcni->addr);
-		}
-		rz_list_foreach (calls, iter2, fcnr) {
-			// TODO: display only code or data refs?
-			RzFlagItem *flag = rz_flag_get_i(core->flags, fcnr->to);
-			char *fcnr_name = (flag && flag->name) ? flag->name : rz_str_newf("unk.0x%" PFMT64x, fcnr->to);
-			switch (fmt) {
-			case RZ_GRAPH_FORMAT_GMLFCN:
-				if (iteration == 0) {
-					rz_cons_printf("  node [\n"
-						       "    id  %" PFMT64d "\n"
-						       "    label  \"%s\"\n"
-						       "  ]\n",
-						fcnr->to - base, fcnr_name);
-					rz_cons_printf("  edge [\n"
-						       "    source  %" PFMT64d "\n"
-						       "    target  %" PFMT64d "\n"
-						       "  ]\n",
-						fcni->addr - base, fcnr->to - base);
-				}
-				// fallthrough
-			case RZ_GRAPH_FORMAT_GML:
-				if (iteration != 0) {
-					rz_cons_printf("  edge [\n"
-						       "    source  %" PFMT64d "\n"
-						       "    target  %" PFMT64d "\n"
-						       "  ]\n",
-						fcni->addr - base, fcnr->to - base); //, "#000000"
-				}
-				break;
-			case RZ_GRAPH_FORMAT_DOT:
-				rz_cons_printf("  \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" "
-					       "[color=\"%s\" URL=\"%s/0x%08" PFMT64x "\"];\n",
-					//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-					fcni->addr, fcnr->to, //, fcnr_name,
-					"#61afef",
-					fcnr_name, fcnr->to);
-				rz_cons_printf("  \"0x%08" PFMT64x "\" "
-					       "[label=\"%s\""
-					       " URL=\"%s/0x%08" PFMT64x "\"];\n",
-					fcnr->to, fcnr_name,
-					fcnr_name, fcnr->to);
-				break;
-			case RZ_GRAPH_FORMAT_JSON:
-				if (usenames) {
-					pj_s(pj, fcnr_name);
-				} else {
-					char fcnr_addr[20];
-					snprintf(fcnr_addr, sizeof(fcnr_addr) - 1, "0x%08" PFMT64x, fcnr->to);
-					pj_s(pj, fcnr_addr);
-				}
-				break;
-			default:
-				if (refgraph || fcnr->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
-					// TODO: avoid recreating nodes unnecessarily
-					rz_cons_printf("agn %s\n", fcni->name);
-					rz_cons_printf("agn %s\n", fcnr_name);
-					rz_cons_printf("age %s %s\n", fcni->name, fcnr_name);
-				} else {
-					rz_cons_printf("# - 0x%08" PFMT64x " (%c)\n", fcnr->to, fcnr->type);
-				}
-			}
-			if (!(flag && flag->name)) {
-				free(fcnr_name);
-			}
-		}
-		rz_list_free(xrefs);
-		rz_list_free(calls);
-		if (fmt == RZ_GRAPH_FORMAT_JSON) {
-			pj_end(pj);
-			pj_end(pj);
-		}
+	} else {
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+		core_graph_fn_call(core, fcn, graph);
 	}
-	if (iteration == 0 && fmt == RZ_GRAPH_FORMAT_GML) {
-		iteration++;
-		goto repeat;
-	}
-	if (iteration == 0 && fmt == RZ_GRAPH_FORMAT_GMLFCN) {
-		iteration++;
-	}
-	switch (fmt) {
-	case RZ_GRAPH_FORMAT_GML:
-	case RZ_GRAPH_FORMAT_GMLFCN:
-		rz_cons_printf("]\n");
-		break;
-	case RZ_GRAPH_FORMAT_JSON:
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		break;
-	case RZ_GRAPH_FORMAT_DOT:
-		rz_cons_printf("}\n");
-		break;
-	}
+	return graph;
 }
 
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn) {
