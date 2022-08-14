@@ -23,6 +23,7 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Commodore 64
+minopsz  1
 os       c64
 cc       N/A
 rpath    N/A
