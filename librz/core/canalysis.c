@@ -4965,17 +4965,17 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				match = (buf[i] >= vmin && buf[i] <= vmax);
 				break;
 			case 2:
-				v16 = *(uut16 *)v;
+				v16 = rz_read_le16(v); // TODO: support big endian
 				match = (v16 >= vmin && v16 <= vmax);
 				value = v16;
 				break;
 			case 4:
-				v32 = *(uut32 *)v;
+				v32 = rz_read_le32(v); // TODO: support big endian
 				match = (v32 >= vmin && v32 <= vmax);
 				value = v32;
 				break;
 			case 8:
-				v64 = *(uut64 *)v;
+				v64 = rz_read_le64(v); // TODO: support big endian
 				match = (v64 >= vmin && v64 <= vmax);
 				value = v64;
 				break;

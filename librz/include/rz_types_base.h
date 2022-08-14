@@ -26,13 +26,6 @@ typedef intptr_t ssize_t;
 #define RZ_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
-typedef RZ_ALIGNED(1) ut16 uut16;
-typedef RZ_ALIGNED(1) ut32 uut32;
-typedef RZ_ALIGNED(1) ut64 uut64;
-typedef RZ_ALIGNED(1) st16 ust16;
-typedef RZ_ALIGNED(1) st32 ust32;
-typedef RZ_ALIGNED(1) st64 ust64;
-
 typedef union {
 	ut8 v8;
 	ut16 v16;
