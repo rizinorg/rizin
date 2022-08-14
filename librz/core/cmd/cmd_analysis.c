@@ -5802,7 +5802,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_write_handler(RzCore *core, int argc, const
 	}
 	const RzCoreGraphType graph_type = (ut8)argv[1][0];
 	const char *path = argv[2];
-	return core_graph_write(core, graph_type, path);
+	return bool2status(core_graph_write(core, graph_type, path));
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_clear_handler(RzCore *core, int argc, const char **argv) {
