@@ -866,10 +866,10 @@ static RzILOpEffect *x86_il_aas(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
-	RzILOpPure *cond = OR(al_ovf, NON_ZERO(VARG(x86_eflags_registers[X86_EFLAGS_AF])));
+	RzILOpPure *cond = OR(al_ovf, VARG(x86_eflags_registers[X86_EFLAGS_AF]));
 
 	RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, SUB(x86_il_get_reg(X86_REG_AX), U16(0x6)));
-	RzILOpEffect *set_ah = x86_il_set_reg(X86_REG_AH, SUB(x86_il_get_reg(X86_REG_AH), U16(0x1)));
+	RzILOpEffect *set_ah = x86_il_set_reg(X86_REG_AH, SUB(x86_il_get_reg(X86_REG_AH), U8(0x1)));
 	RzILOpEffect *set_af = SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE);
 	RzILOpEffect *set_cf = SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE);
 	RzILOpEffect *true_cond = SEQ4(set_ax, set_ah, set_af, set_cf);
