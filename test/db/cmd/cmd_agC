@@ -1,34 +1,34 @@
-NAME=agCj entry0 imports libc_start_main
+NAME=agC j entry0 imports libc_start_main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agC j ~{0}
+agc j
 EOF
 EXPECT=<<EOF
-{"name":"entry0","size":46,"imports":["reloc.__libc_start_main"]}
+{"nodes":[{"id":0,"title":"entry0","offset":8464,"out_nodes":[1]},{"id":1,"title":"reloc.__libc_start_main","offset":36656,"out_nodes":[]}]}
 EOF
 RUN
 
-NAME=agCd entry0 imports libc_start_main
+NAME=agC d entry0 imports libc_start_main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agC d ~2110
+agc d ~URL
 EOF
 EXPECT=<<EOF
-  "0x00002110" [label="entry0" URL="entry0/0x00002110"];
-  "0x00002110" -> "0x00008f30" [color="#61afef" URL="reloc.__libc_start_main/0x00008f30"];
+0 [URL="entry0", color="lightgray", label="entry0"]
+1 [URL="reloc.__libc_start_main", color="lightgray", label="reloc.__libc_start_main"]
 EOF
 RUN
 
-NAME=agCd contains label for main
+NAME=agC d contains label for main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
 agC d ~label="main"
 EOF
 EXPECT=<<EOF
-  "0x00002050" [label="main" URL="main/0x00002050"];
+2 [URL="main", color="lightgray", label="main"]
 EOF
 RUN
 
