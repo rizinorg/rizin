@@ -409,7 +409,7 @@ jobs:
     name: Build on gcc 12
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'gcc12') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    container: ubuntu:kinetic
+    container: ubuntu:jammy
     steps:
       - name: Set timezone to UTC
         run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
