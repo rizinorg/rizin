@@ -692,17 +692,21 @@ struct x86_parity_helper_t {
 
 static struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 	// assumed that val is an 8-bit wide value
-	RzILOpEffect *popcnt = SETL("_popcnt", U8(0));
-	popcnt = SEQ2(popcnt, SETL("_val", val));
+	RzILOpEffect *setvar = SETL("_popcnt", U8(0));
+	setvar = SEQ2(setvar, SETL("_val", val));
 
-	for (uint8_t i = 0; i < 8; i++) {
-		popcnt = SEQ2(popcnt, SETL("_popcnt", ADD(VARL("_popcnt"), x86_bool_to_bv(LSB(VARL("_val")), 8))));
-		popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
-	}
+	/* We can stop shifting the "_val" once it is zero,
+	since the value of "_popcnt" wouldn't change any further */
+	RzILOpBool *termination_cond = IS_ZERO(VARL("_val"));
+
+	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), x86_bool_to_bv(LSB(VARL("_val")), 8)));
+	popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
+
+	RzILOpEffect *repeat_eff = REPEAT(termination_cond, popcnt);
 
 	struct x86_parity_helper_t ret = {
 		.val = IS_ZERO(MOD(VARL("_popcnt"), U8(2))),
-		.eff = popcnt
+		.eff = SEQ2(setvar, repeat_eff)
 	};
 
 	return ret;
