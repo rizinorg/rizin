@@ -1,8 +1,8 @@
-NAME=agcj
+NAME=agc j
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agcj
+agc j
 EOF
 EXPECT=<<EOF
 [{"name":"entry0","size":42,"imports":["reloc.__libc_start_main"]}]
@@ -13,7 +13,7 @@ NAME=agi
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agi*
+agi *
 EOF
 EXPECT=<<EOF
 agn "sym.imp.free"
@@ -51,7 +51,7 @@ NAME=agx
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agx* @ main
+agx * @ main
 EOF
 EXPECT=<<EOF
 agn "main"
@@ -65,11 +65,11 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
 agx @ main
-agid
-agig
-agij
-agik
-agit
+agi d
+agi g
+agi j
+agi k
+agi t
 EOF
 EXPECT=<<EOF
 .--------------------.

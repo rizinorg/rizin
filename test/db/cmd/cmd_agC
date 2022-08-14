@@ -2,7 +2,7 @@ NAME=agCj entry0 imports libc_start_main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agCj~{0}
+agC j ~{0}
 EOF
 EXPECT=<<EOF
 {"name":"entry0","size":46,"imports":["reloc.__libc_start_main"]}
@@ -13,7 +13,7 @@ NAME=agCd entry0 imports libc_start_main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agCd~2110
+agC d ~2110
 EOF
 EXPECT=<<EOF
   "0x00002110" [label="entry0" URL="entry0/0x00002110"];
@@ -25,7 +25,7 @@ NAME=agCd contains label for main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agCd~label="main"
+agC d ~label="main"
 EOF
 EXPECT=<<EOF
   "0x00002050" [label="main" URL="main/0x00002050"];
@@ -36,7 +36,7 @@ NAME=agC function names are resovled properly
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agC~unk.
+agC ~unk.
 echo end
 EOF
 EXPECT=<<EOF

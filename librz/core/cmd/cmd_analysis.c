@@ -5706,6 +5706,9 @@ RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc, const char **argv) {
 	const char format = argv[1][0];
 	switch (format) {
+	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
+		rz_core_visual_graph(core, NULL, NULL, false);
+		break;
 	case RZ_CORE_GRAPH_FORMAT_VISUAL: {
 		eprintf("\rRendering graph...\n");
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);

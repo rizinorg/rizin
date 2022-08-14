@@ -2,10 +2,10 @@ NAME=one node
 FILE==
 CMDS=<<EOF
 agn title1 body1
-aggk~nodes=
-aggk~nodes.title1.body
-aggk~nodes.title1.w
-aggk~nodes.title1.h
+agg k~nodes=
+agg k~nodes.title1.body
+agg k~nodes.title1.w
+agg k~nodes.title1.h
 EOF
 EXPECT=<<EOF
 agraph.nodes=title1
@@ -20,13 +20,13 @@ FILE==
 CMDS=<<EOF
 agn "Title with super long text and space" body1
 agn title2 "SuperLongBodyWithALot Of text and spaces"
-aggk~nodes=
-aggk~nodes.Title with super long text and space.body=
-aggk~nodes.title2.body=
-aggk~nodes.Title with super long text and space.w
-aggk~nodes.Title with super long text and space.h
-aggk~nodes.title2.w
-aggk~nodes.title2.h
+agg k~nodes=
+agg k~nodes.Title with super long text and space.body=
+agg k~nodes.title2.body=
+agg k~nodes.Title with super long text and space.w
+agg k~nodes.Title with super long text and space.h
+agg k~nodes.title2.w
+agg k~nodes.title2.h
 EOF
 EXPECT=<<EOF
 agraph.nodes=Title with super long text and space,title2
@@ -43,7 +43,7 @@ NAME=base64 body
 FILE==
 CMDS=<<EOF
 agn title1 base64:aGVsbG8gd29ybGQ=
-aggk~nodes.title1.body=
+agg k~nodes.title1.body=
 EOF
 EXPECT=<<EOF
 agraph.nodes.title1.body=base64:aGVsbG8gd29ybGQ=
@@ -54,7 +54,7 @@ NAME=long base64 body
 FILE==
 CMDS=<<EOF
 agn title1 base64:dGhpcyBpcyBhIHZlcnkgbG9uZyB0ZXh0IHRoYXQgd2hlbiBlbmNvZGVkIHdpbGwgY2F1c2UgYSAKIGluIHRoZSBiYXNlNjQ=
-aggk~nodes.title1.body=
+agg k~nodes.title1.body=
 EOF
 EXPECT=<<EOF
 agraph.nodes.title1.body=base64:dGhpcyBpcyBhIHZlcnkgbG9uZyB0ZXh0IHRoYXQgd2hlbiBlbmNvZGVkIHdpbGwgY2F1c2UgYSAKIGluIHRoZSBiYXNlNjQ=
@@ -67,9 +67,9 @@ CMDS=<<EOF
 agn title1 body1
 agn title1 "Super long body with something"
 agn title1 "Super super super long body to do tests........"
-aggk~nodes=
-aggk~nodes.title1.body=
-aggk~nodes.title1.w=
+agg k~nodes=
+agg k~nodes.title1.body=
+agg k~nodes.title1.w=
 EOF
 EXPECT=<<EOF
 agraph.nodes=title1
@@ -83,8 +83,8 @@ FILE==
 CMDS=<<EOF
 agn title1 body1
 agn- title1
-aggk~nodes=
-aggk~nodes.title1
+agg k~nodes=
+agg k~nodes.title1
 EOF
 EXPECT=<<EOF
 EOF
@@ -95,8 +95,8 @@ FILE==
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn- "Title with spaces"
-aggk~nodes=
-aggk~nodes.Title with spaces
+agg k~nodes=
+agg k~nodes.Title with spaces
 EOF
 EXPECT=<<EOF
 EOF
@@ -107,8 +107,8 @@ FILE==
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn- NotValid
-aggk~nodes=
-aggk~nodes.Title with spaces.body=
+agg k~nodes=
+agg k~nodes.Title with spaces.body=
 EOF
 EXPECT=<<EOF
 agraph.nodes=Title with spaces
@@ -122,8 +122,8 @@ CMDS=<<EOF
 agn "Title with spaces" body1
 agn "Title with spaces 2" body2
 age- "Title with spaces" "Title with spaces 2"
-aggk~nodes=
-aggk~nodes.Title with spaces.neighbours=
+agg k~nodes=
+agg k~nodes.Title with spaces.neighbours=
 EOF
 EXPECT=<<EOF
 agraph.nodes=Title with spaces,Title with spaces 2
@@ -135,7 +135,7 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 BROKEN=1
 CMDS=<<EOF
 af
-aggk $$~nodes=
+agg k $$~nodes=
 EOF
 EXPECT=<<EOF
 agraph.nodes=0x400410
@@ -199,11 +199,11 @@ RUN
 NAME=graph size
 FILE==
 CMDS=<<EOF
-aggk~agraph.w=
-aggk~agraph.h=
+agg k~agraph.w=
+agg k~agraph.h=
 agn title1 body1
-aggk~agraph.w=
-aggk~agraph.h=
+agg k~agraph.w=
+agg k~agraph.h=
 EOF
 EXPECT=<<EOF
 agraph.w=0
@@ -223,7 +223,7 @@ age title1 title2
 age title2 title3
 age title1 title3
 age title3 title1
-aggk~agraph.w=0x35
+agg k~agraph.w=0x35
 agg | head -2 | tail -1 | tr -d " " | grep "=----------------="
 EOF
 EXPECT=<<EOF
@@ -235,8 +235,8 @@ FILE==
 CMDS=<<EOF
 agn title1 body1
 age title1 title1
-aggk~agraph.w=0x16
-aggk~agraph.h=0x4
+agg k~agraph.w=0x16
+agg k~agraph.h=0x4
 EOF
 EXPECT=<<EOF
 EOF
@@ -266,7 +266,7 @@ agn title2 body2
 agn title3 base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
 age title1 title2
 age title3 title1
-agg*
+agg *
 EOF
 EXPECT=<<EOF
 agn "title3" base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
