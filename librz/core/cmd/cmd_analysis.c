@@ -5601,13 +5601,19 @@ RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int ar
 	return RZ_CMD_STATUS_OK;
 }
 
+static inline void callgraph_print(RzCore *core, RzGraph *g, RzCoreGraphFormat f) {
+	core->graph->is_callgraph = true;
+	graph_print(core, g, -1, true, f);
+	rz_graph_free(g);
+	core->graph->is_callgraph = false;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_function_handler(RzCore *core, int argc, const char **argv) {
 	RzGraph *graph = rz_core_analysis_callgraph(core, core->offset, false);
 	if (!graph) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	graph_print(core, graph, -1, true, argv[1][0]);
-	rz_graph_free(graph);
+	callgraph_print(core, graph, argv[1][0]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5616,8 +5622,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int 
 	if (!graph) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	graph_print(core, graph, -1, true, argv[1][0]);
-	rz_graph_free(graph);
+	callgraph_print(core, graph, argv[1][0]);
 	return RZ_CMD_STATUS_OK;
 }
 
