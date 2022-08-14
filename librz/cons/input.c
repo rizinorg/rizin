@@ -70,39 +70,7 @@ static int __parseMouseEvent(void) {
 	return 0;
 }
 
-#if __WINDOWS__
-static bool bCtrl;
-static bool is_arrow;
-#endif
-
 RZ_API int rz_cons_arrow_to_hjkl(int ch) {
-#if __WINDOWS__
-	if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
-		if (is_arrow) {
-			switch (ch) {
-			case VK_DOWN: // key down
-				ch = bCtrl ? 'J' : 'j';
-				break;
-			case VK_RIGHT: // key right
-				ch = bCtrl ? 'L' : 'l';
-				break;
-			case VK_UP: // key up
-				ch = bCtrl ? 'K' : 'k';
-				break;
-			case VK_LEFT: // key left
-				ch = bCtrl ? 'H' : 'h';
-				break;
-			case VK_PRIOR: // key home
-				ch = 'K';
-				break;
-			case VK_NEXT: // key end
-				ch = 'J';
-				break;
-			}
-		}
-		return I->mouse_event && (ut8)ch == UT8_MAX ? 0 : ch;
-	}
-#endif
 	I->mouse_event = MOUSE_NONE;
 	/* emacs */
 	switch ((ut8)ch) {
@@ -411,14 +379,17 @@ extern void resizeWin(void);
 static int __cons_readchar_w32(ut32 usec) {
 	int ch = 0;
 	BOOL ret;
-	bCtrl = false;
-	is_arrow = false;
 	DWORD mode, out;
 	HANDLE h;
 	INPUT_RECORD irInBuf = { 0 };
 	CONSOLE_SCREEN_BUFFER_INFO info = { 0 };
-	bool mouse_enabled = I->mouse;
+	wchar_t surrogate[3] = { 0 };
+	const bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
+	bool shift = false;
+	bool alt = false;
+	bool ctrl = false;
+	bool do_break = false;
 	const bool is_console = rz_cons_isatty();
 	void *bed;
 	I->mouse_event = MOUSE_NONE;
@@ -443,123 +414,134 @@ static int __cons_readchar_w32(ut32 usec) {
 				rz_cons_enable_mouse(I->mouse);
 			}
 			ret = ReadFile(h, &ch, 1, &out, NULL);
-			if (ret) {
-				rz_cons_sleep_end(bed);
-				return ch;
-			}
 		} else {
 			ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
 		}
 		rz_cons_sleep_end(bed);
-		if (ret) {
-			if (irInBuf.EventType == MENU_EVENT || irInBuf.EventType == FOCUS_EVENT) {
+		if (!ret) {
+			ch = -1;
+			break;
+		}
+		if (irInBuf.EventType == MENU_EVENT || irInBuf.EventType == FOCUS_EVENT) {
+			continue;
+		}
+		if (mouse_enabled) {
+			rz_cons_enable_mouse(true);
+		}
+		if (irInBuf.EventType == MOUSE_EVENT && I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
+			if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
+				if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
+					click_n_drag = true;
+				}
 				continue;
 			}
-			if (mouse_enabled) {
-				rz_cons_enable_mouse(true);
-			}
-			if (irInBuf.EventType == MOUSE_EVENT && I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
-				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
-					if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
-						click_n_drag = true;
-					}
-					continue;
+			if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
+				if (irInBuf.Event.MouseEvent.dwButtonState & 0xFF000000) {
+					ch = ctrl ? 'J' : 'j';
+				} else {
+					ch = ctrl ? 'K' : 'k';
 				}
-				if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
-					if (irInBuf.Event.MouseEvent.dwButtonState & 0xFF000000) {
-						ch = bCtrl ? 'J' : 'j';
+				I->mouse_event = MOUSE_DEFAULT;
+			}
+			switch (irInBuf.Event.MouseEvent.dwButtonState) {
+			case FROM_LEFT_1ST_BUTTON_PRESSED:
+				GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+				int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
+				rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, LEFT_PRESS);
+				do_break = true;
+				break;
+			} // TODO: Handle more buttons?
+		}
+
+		if (click_n_drag) {
+			rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1, MOUSE_DEFAULT);
+			do_break = true;
+		}
+
+		if (irInBuf.EventType == KEY_EVENT) {
+			shift = irInBuf.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED;
+			alt = irInBuf.Event.KeyEvent.dwControlKeyState & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+			ctrl = irInBuf.Event.KeyEvent.dwControlKeyState & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+			int state = 1;
+			state += shift ? 1 : 0;
+			state += alt ? 2 : 0;
+			state += ctrl ? 4 : 0;
+			if (irInBuf.Event.KeyEvent.bKeyDown) {
+				if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
+					if (IS_LOW_SURROGATE(irInBuf.Event.KeyEvent.uChar.UnicodeChar)) {
+						surrogate[1] = irInBuf.Event.KeyEvent.uChar.UnicodeChar;
 					} else {
-						ch = bCtrl ? 'K' : 'k';
-					}
-					I->mouse_event = MOUSE_DEFAULT;
-				}
-				switch (irInBuf.Event.MouseEvent.dwButtonState) {
-				case FROM_LEFT_1ST_BUTTON_PRESSED:
-					GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-					int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
-					rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, LEFT_PRESS);
-					ch = UT8_MAX;
-					break;
-				} // TODO: Handle more buttons?
-			}
-
-			if (click_n_drag) {
-				rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1, MOUSE_DEFAULT);
-				ch = UT8_MAX;
-			}
-
-			if (irInBuf.EventType == KEY_EVENT) {
-				if (irInBuf.Event.KeyEvent.bKeyDown) {
-					bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & LEFT_CTRL_PRESSED;
-					if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
-						char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
-						if (tmp) {
-							int len = strlen(tmp);
-							memcpy(&ch, tmp, RZ_MIN(len, sizeof(ch)));
-							free(tmp);
+						surrogate[0] = irInBuf.Event.KeyEvent.uChar.UnicodeChar;
+						if (IS_HIGH_SURROGATE(irInBuf.Event.KeyEvent.uChar.UnicodeChar)) {
+							continue;
 						}
-					} else if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
-						switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
-						case VK_DOWN: // key down
-						case VK_RIGHT: // key right
-						case VK_UP: // key up
-						case VK_LEFT: // key left
-						case VK_PRIOR: // key home
-						case VK_NEXT: // key end
-							ch = irInBuf.Event.KeyEvent.wVirtualKeyCode;
-							is_arrow = true;
-							break;
-						case VK_F1:
-							ch = RZ_CONS_KEY_F1;
-							break;
-						case VK_F2:
-							ch = RZ_CONS_KEY_F2;
-							break;
-						case VK_F3:
-							ch = RZ_CONS_KEY_F3;
-							break;
-						case VK_F4:
-							ch = RZ_CONS_KEY_F4;
-							break;
-						case VK_F5:
-							ch = bCtrl ? 0xcf5 : RZ_CONS_KEY_F5;
-							break;
-						case VK_F6:
-							ch = RZ_CONS_KEY_F6;
-							break;
-						case VK_F7:
-							ch = RZ_CONS_KEY_F7;
-							break;
-						case VK_F8:
-							ch = RZ_CONS_KEY_F8;
-							break;
-						case VK_F9:
-							ch = RZ_CONS_KEY_F9;
-							break;
-						case VK_F10:
-							ch = RZ_CONS_KEY_F10;
-							break;
-						case VK_F11:
-							ch = RZ_CONS_KEY_F11;
-							break;
-						case VK_F12:
-							ch = RZ_CONS_KEY_F12;
-						case VK_SHIFT:
-							if (mouse_enabled) {
-								rz_cons_enable_mouse(false);
+					}
+					ut8 *tmp = rz_utf16_to_utf8(surrogate);
+					memset(surrogate, 0, sizeof(surrogate));
+					if (tmp) {
+						if (alt) {
+							ch = '\x1b';
+							rz_cons_readpush(tmp, strlen(tmp));
+						} else {
+							ch = *tmp;
+							if (tmp[1]) {
+								rz_cons_readpush(&tmp[1], strlen(&tmp[1]));
 							}
-							break;
-						default:
-							break;
+						}
+						free(tmp);
+					}
+				} else if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
+					char *c;
+					char mod[2];
+					sprintf(mod, "%d", state);
+					switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
+					case VK_UP: c = "A"; break;
+					case VK_DOWN: c = "B"; break;
+					case VK_RIGHT: c = "C"; break;
+					case VK_LEFT: c = "D"; break;
+					case VK_HOME: c = "1"; break;
+					case VK_INSERT: c = "2"; break;
+					case VK_DELETE: c = "3"; break;
+					case VK_END: c = "4"; break;
+					case VK_PRIOR: c = "5"; break;
+					case VK_NEXT: c = "6"; break;
+					case VK_F1: c = "11"; break;
+					case VK_F2: c = "12"; break;
+					case VK_F3: c = "13"; break;
+					case VK_F4: c = "14"; break;
+					case VK_F5: c = "15"; break;
+					case VK_F6: c = "17"; break;
+					case VK_F7: c = "18"; break;
+					case VK_F8: c = "19"; break;
+					case VK_F9: c = "20"; break;
+					case VK_F10: c = "21"; break;
+					case VK_F11: c = "23"; break;
+					case VK_F12: c = "24"; break;
+					default: c = NULL; break;
+					}
+					if (c) {
+						ch = '\x1b';
+						rz_cons_readpush("[[", 1);
+						if (state != 1 && isalpha((int)*c)) {
+							rz_cons_readpush("1;", 2);
+							rz_cons_readpush(mod, 1);
+						}
+						rz_cons_readpush(c, strlen(c));
+						if (!isalpha((int)*c)) {
+							if (state != 1) {
+								rz_cons_readpush(";", 1);
+								rz_cons_readpush(mod, 1);
+							}
+							rz_cons_readpush("~", 1);
 						}
 					}
 				}
-			}
-			if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
-				resizeWin();
 			}
 		}
-	} while (ch == 0);
+		if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
+			resizeWin();
+		}
+	} while (ch == 0 && !do_break);
 	SetConsoleMode(h, mode);
 	return ch;
 }
