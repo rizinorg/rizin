@@ -2608,6 +2608,9 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 	case RZ_CORE_GRAPH_FORMAT_SDB:
 	case RZ_CORE_GRAPH_FORMAT_VISUAL: {
 		RzAGraph *agraph = create_agraph_from_graph(graph);
+		if (!agraph) {
+			break;
+		}
 		switch (format) {
 		case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 			agraph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
@@ -2659,6 +2662,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		default:
 			rz_warn_if_reached();
 		}
+		rz_agraph_free(agraph);
 		break;
 	}
 	case RZ_CORE_GRAPH_FORMAT_DOT: { // "ag_d" - dot format
