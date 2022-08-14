@@ -95,10 +95,15 @@ enum {
 #define RZ_ANALYSIS_ADDR_TYPE_ASCII    1 << 10
 #define RZ_ANALYSIS_ADDR_TYPE_SEQUENCE 1 << 11
 
-#define RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE 0
-#define RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE 1
-#define RZ_ANALYSIS_ARCHINFO_ALIGN       2
-#define RZ_ANALYSIS_ARCHINFO_DATA_ALIGN  4
+typedef enum rz_analysis_arch_info_type_t {
+	RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE = 0, ///< Min opcode size
+	RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE, ///< Max opcode size
+	RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN, ///< Opcode memory alignment
+	RZ_ANALYSIS_ARCHINFO_DATA_ALIGN, ///< Data memory alignment
+	RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS, ///< Defines if the architecture has the concept of memory pointers
+	/* The value below is used for runtime checks */
+	RZ_ANALYSIS_ARCHINFO_ENUM_SIZE,
+} RzAnalysisInfoType;
 
 /* copypaste from rz_asm.h */
 
@@ -269,7 +274,7 @@ typedef struct rz_analysis_function_t {
 
 typedef struct rz_analysis_func_arg_t {
 	const char *name;
-	const char *fmt;
+	char *fmt;
 	const char *cc_source;
 	RzType *orig_c_type;
 	RzType *c_type;
@@ -1243,7 +1248,7 @@ typedef struct rz_analysis_plugin_t {
 	bool (*init)(void **user);
 	bool (*fini)(void *user);
 	// int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
-	int (*archinfo)(RzAnalysis *analysis, int query);
+	int (*archinfo)(RzAnalysis *analysis, RzAnalysisInfoType query);
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
 	RzList *(*preludes)(RzAnalysis *analysis);
 
@@ -1457,7 +1462,7 @@ RZ_API RzAnalysis *rz_analysis_new(void);
 RZ_API void rz_analysis_purge(RzAnalysis *analysis);
 RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *r);
 RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *foo);
-RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query);
+RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis);
 RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis);

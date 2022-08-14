@@ -238,7 +238,7 @@ int rz_test_main(int argc, const char **argv) {
 			if (quiet) {
 				printf(RZ_VERSION "\n");
 			} else {
-				char *s = rz_str_version("rz-test");
+				char *s = rz_version_str("rz-test");
 				printf("%s\n", s);
 				free(s);
 			}

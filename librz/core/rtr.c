@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -6,10 +7,6 @@
 #include "rz_socket.h"
 #include <libgdbr.h>
 #include <gdbserver/core.h>
-
-#if HAVE_LIBUV
-#include <uv.h>
-#endif
 
 #if 0
 SECURITY IMPLICATIONS
@@ -27,7 +24,6 @@ SECURITY IMPLICATIONS
 
 static RzSocket *s = NULL;
 static RzThread *rapthread = NULL;
-static const char *listenport = NULL;
 
 struct rz_core_rtr_host_t {
 	int proto;
@@ -105,27 +101,6 @@ static void showcursor(RzCore *core, int x) {
 		rz_cons_enable_mouse(false);
 	}
 	rz_cons_flush();
-}
-
-RZ_API int rz_core_rtr_http_stop(RzCore *u) {
-	RzCore *core = (RzCore *)u;
-	const int timeout = 1; // 1 second
-	const char *port;
-	RzSocket *sock;
-
-#if __WINDOWS__
-	rz_socket_http_server_set_breaked(&rz_cons_singleton()->context->breaked);
-#endif
-	if (((size_t)u) > 0xff) {
-		port = listenport ? listenport : rz_config_get(core->config, "http.port");
-		sock = rz_socket_new(0);
-		(void)rz_socket_connect(sock, "localhost",
-			port, RZ_SOCKET_PROTO_TCP, timeout);
-		rz_socket_free(sock);
-	}
-	rz_socket_free(s);
-	s = NULL;
-	return 0;
 }
 
 static char *rtr_dir_files(const char *path) {
@@ -1023,251 +998,88 @@ RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core) {
 	return rtr_host;
 }
 
-#if HAVE_LIBUV
-
-typedef struct rtr_cmds_context_t {
-	uv_tcp_t server;
-	RzPVector clients;
-	void *bed;
-} rtr_cmds_context;
-
-typedef struct rtr_cmds_client_context_t {
-	RzCore *core;
-	char buf[4096];
-	char *res;
-	size_t len;
-	uv_tcp_t *client;
-} rtr_cmds_client_context;
-
-static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
-	uv_loop_t *loop = client->loop;
-	rtr_cmds_context *context = loop->data;
-	if (remove) {
-		size_t i;
-		for (i = 0; i < rz_pvector_len(&context->clients); i++) {
-			if (rz_pvector_at(&context->clients, i) == client) {
-				rz_pvector_remove_at(&context->clients, i);
-				break;
-			}
-		}
-	}
-	rtr_cmds_client_context *client_context = client->data;
-	uv_close((uv_handle_t *)client, (uv_close_cb)free);
-	free(client_context->res);
-	free(client_context);
-}
-
-static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-	rtr_cmds_client_context *context = handle->data;
-	buf->base = context->buf + context->len;
-	buf->len = sizeof(context->buf) - context->len - 1;
-}
-
-static void rtr_cmds_write(uv_write_t *req, int status) {
-	rtr_cmds_client_context *context = req->data;
-
-	if (status) {
-		eprintf("Write error: %s\n", uv_strerror(status));
-	}
-
-	free(req);
-	rtr_cmds_client_close(context->client, true);
-}
-
-static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
-	rtr_cmds_context *context = client->loop->data;
-	rtr_cmds_client_context *client_context = client->data;
-
-	if (nread < 0) {
-		if (nread != UV_EOF) {
-			eprintf("Failed to read: %s\n", uv_err_name((int)nread));
-		}
-		rtr_cmds_client_close((uv_tcp_t *)client, true);
-		return;
-	} else if (nread == 0) {
+/**
+ * Command TCP Server
+ *
+ * Listen for tcp connections on the given port (respecting tcp.islocal).
+ * Once a client connects, a rizin command followed by a single \n is expected.
+ * The command will be run, the result sent to the client and the connection closed.
+ */
+RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
+	RzStopPipe *sp = rz_stop_pipe_new();
+	if (!sp) {
 		return;
 	}
-
-	buf->base[nread] = '\0';
-	char *end = strchr(buf->base, '\n');
-	if (!end) {
-		return;
+	RzSocket *s = rz_socket_new(false);
+	if (!s) {
+		goto err_sp;
 	}
-	*end = '\0';
-
-	rz_cons_sleep_end(context->bed);
-	client_context->res = rz_core_cmd_str(client_context->core, (const char *)client_context->buf);
-	context->bed = rz_cons_sleep_begin();
-
-	if (!client_context->res || !*client_context->res) {
-		free(client_context->res);
-		client_context->res = strdup("\n");
-	}
-
-	if (!client_context->res || (!rz_config_get_i(client_context->core->config, "scr.prompt") && !strcmp((char *)buf, "q!")) ||
-		!strcmp((char *)buf, ".--")) {
-		rtr_cmds_client_close((uv_tcp_t *)client, true);
-		return;
-	}
-
-	uv_write_t *req = RZ_NEW(uv_write_t);
-	if (req) {
-		req->data = client_context;
-		uv_buf_t wrbuf = uv_buf_init(client_context->res, (unsigned int)strlen(client_context->res));
-		uv_write(req, client, &wrbuf, 1, rtr_cmds_write);
-	}
-	uv_read_stop(client);
-}
-
-static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
-	if (status < 0) {
-		eprintf("New connection error: %s\n", uv_strerror(status));
-		return;
-	}
-
-	rtr_cmds_context *context = server->loop->data;
-
-	uv_tcp_t *client = RZ_NEW(uv_tcp_t);
-	if (!client) {
-		return;
-	}
-
-	uv_tcp_init(server->loop, client);
-	if (uv_accept(server, (uv_stream_t *)client) == 0) {
-		rtr_cmds_client_context *client_context = RZ_NEW(rtr_cmds_client_context);
-		if (!client_context) {
-			uv_close((uv_handle_t *)client, NULL);
-			return;
-		}
-
-		client_context->core = server->data;
-		client_context->len = 0;
-		client_context->buf[0] = '\0';
-		client_context->res = NULL;
-		client_context->client = client;
-		client->data = client_context;
-
-		uv_read_start((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
-
-		rz_pvector_push(&context->clients, client);
-	} else {
-		uv_close((uv_handle_t *)client, NULL);
-	}
-}
-
-static void rtr_cmds_stop(uv_async_t *handle) {
-	uv_close((uv_handle_t *)handle, NULL);
-
-	rtr_cmds_context *context = handle->loop->data;
-
-	uv_close((uv_handle_t *)&context->server, NULL);
-
-	void **it;
-	rz_pvector_foreach (&context->clients, it) {
-		uv_tcp_t *client = *it;
-		rtr_cmds_client_close(client, false);
-	}
-}
-
-static void rtr_cmds_break(uv_async_t *async) {
-	uv_async_send(async);
-}
-
-RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port) {
-	if (!port || port[0] == '?') {
-		rz_cons_printf("Usage: .:[tcp-port]    run rizin commands for clients\n");
-		return 0;
-	}
-
-	uv_loop_t *loop = RZ_NEW(uv_loop_t);
-	if (!loop) {
-		return 0;
-	}
-	uv_loop_init(loop);
-
-	rtr_cmds_context context;
-	rz_pvector_init(&context.clients, NULL);
-	loop->data = &context;
-
-	context.server.data = core;
-	uv_tcp_init(loop, &context.server);
-
-	struct sockaddr_in addr;
-	bool local = (bool)rz_config_get_i(core->config, "tcp.islocal");
-	int porti = rz_socket_port_by_name(port);
-	uv_ip4_addr(local ? "127.0.0.1" : "0.0.0.0", porti, &addr);
-
-	uv_tcp_bind(&context.server, (const struct sockaddr *)&addr, 0);
-	int r = uv_listen((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
-	if (r) {
-		eprintf("Failed to listen: %s\n", uv_strerror(r));
-		goto beach;
-	}
-
-	uv_async_t stop_async;
-	uv_async_init(loop, &stop_async, rtr_cmds_stop);
-
-	rz_cons_break_push((RzConsBreak)rtr_cmds_break, &stop_async);
-	context.bed = rz_cons_sleep_begin();
-	uv_run(loop, UV_RUN_DEFAULT);
-	rz_cons_sleep_end(context.bed);
-	rz_cons_break_pop();
-
-beach:
-	uv_loop_close(loop);
-	free(loop);
-	rz_pvector_clear(&context.clients);
-	return 0;
-}
-
-#else
-
-RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port) {
-	unsigned char buf[4097];
-	RzSocket *ch = NULL;
-	int i, ret;
-	char *str;
-
-	if (!port || port[0] == '?') {
-		rz_cons_printf("Usage: .:[tcp-port]    run rizin commands for clients\n");
-		return false;
-	}
-
-	RzSocket *s = rz_socket_new(0);
 	s->local = rz_config_get_i(core->config, "tcp.islocal");
 
 	if (!rz_socket_listen(s, port, NULL)) {
-		eprintf("Error listening on port %s\n", port);
-		rz_socket_free(s);
-		return false;
+		RZ_LOG_ERROR("Cannot listen on port %s\n", port);
+		goto err_socket;
 	}
 
 	eprintf("Listening for commands on port %s\n", port);
-	listenport = port;
-	rz_cons_break_push((RzConsBreak)rz_core_rtr_http_stop, core);
+	rz_cons_break_push((RzConsBreak)rz_stop_pipe_stop, sp);
 	for (;;) {
+		// wait for connection
 		if (rz_cons_is_breaked()) {
 			break;
 		}
 		void *bed = rz_cons_sleep_begin();
-		ch = rz_socket_accept(s);
-		buf[0] = 0;
-		ret = rz_socket_read(ch, buf, sizeof(buf) - 1);
-		rz_cons_sleep_end(bed);
-		if (ret > 0) {
-			buf[ret] = 0;
-			for (i = 0; buf[i]; i++) {
-				if (buf[i] == '\n') {
-					buf[i] = buf[i + 1] ? ';' : '\0';
-				}
+		RzStopPipeSelectResult spr = rz_stop_pipe_select_single(sp, s, false, UT64_MAX);
+		if (spr != RZ_STOP_PIPE_SOCKET_READY) {
+			rz_cons_sleep_end(bed);
+			if (spr == RZ_STOP_PIPE_ERROR) {
+				RZ_LOG_ERROR("Failed to select on stop pipe and listening socket");
 			}
-			if ((!rz_config_get_i(core->config, "scr.prompt") &&
-				    !strcmp((char *)buf, "q!")) ||
-				!strcmp((char *)buf, ".--")) {
+			break;
+		}
+		RzSocket *ch = rz_socket_accept(s);
+		if (!ch) {
+			rz_cons_sleep_end(bed);
+			RZ_LOG_ERROR("Failed to accept");
+			break;
+		}
+
+		// read command
+		char buf[4096];
+		size_t buf_filled = 0;
+		while (buf_filled < sizeof(buf) - 1) {
+			RzStopPipeSelectResult spr = rz_stop_pipe_select_single(sp, ch, false, UT64_MAX);
+			if (spr != RZ_STOP_PIPE_SOCKET_READY) {
+				rz_cons_sleep_end(bed);
+				if (spr == RZ_STOP_PIPE_ERROR) {
+					RZ_LOG_ERROR("Failed to select on stop pipe and child socket");
+				}
 				rz_socket_close(ch);
+				rz_socket_free(ch);
+				goto break_outer;
+			}
+			int ret = rz_socket_read(ch, (ut8 *)buf + buf_filled, sizeof(buf) - buf_filled - 1);
+			if (ret <= 0) {
+				buf_filled = 0; // If the peer has already closed or an error happened, no need to handle any command
+				if (ret < 0) {
+					RZ_LOG_ERROR("Failed to read from socket");
+				}
 				break;
 			}
-			str = rz_core_cmd_str(core, (const char *)buf);
+			// As soon as '\n' is received, the command is considered completed
+			buf[buf_filled + ret] = '\0';
+			char *end = strchr(buf + buf_filled, '\n');
+			buf_filled += ret;
+			if (end) {
+				*end = '\0';
+				break;
+			}
+		}
+		rz_cons_sleep_end(bed);
+
+		// run command and reply
+		if (buf_filled > 0) {
+			char *str = rz_core_cmd_str(core, (const char *)buf);
 			bed = rz_cons_sleep_begin();
 			if (str && *str) {
 				rz_socket_write(ch, str, strlen(str));
@@ -1279,12 +1091,11 @@ RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port) {
 		}
 		rz_socket_close(ch);
 		rz_socket_free(ch);
-		ch = NULL;
 	}
+break_outer:
 	rz_cons_break_pop();
+err_socket:
 	rz_socket_free(s);
-	rz_socket_free(ch);
-	return 0;
+err_sp:
+	rz_stop_pipe_free(sp);
 }
-
-#endif

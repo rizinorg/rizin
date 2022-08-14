@@ -1121,6 +1121,53 @@ RZ_API void rz_bin_section_free(RzBinSection *bs) {
 	}
 }
 
+static bool is_data_permission(ut32 permissions) {
+	switch (permissions) {
+	case RZ_PERM_R:
+		/* fall-thru */
+	case RZ_PERM_RX:
+		/* fall-thru */
+	case RZ_PERM_RW:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/**
+ * \brief      Checks whether the given section contains data
+ *
+ * \param      section  The section to test
+ *
+ * \return     Returns false on error or if is not a data section, otherwise true
+ */
+RZ_API bool rz_bin_section_is_data(RZ_NONNULL const RzBinSection *section) {
+	rz_return_val_if_fail(section, false);
+	if (section->size < 1) {
+		return false;
+	} else if (section->name && strstr(section->name, "data")) {
+		return true;
+	}
+	return is_data_permission(section->perm & RZ_PERM_RWX);
+}
+
+/**
+ * \brief      Checks whether the given map contains data
+ *
+ * \param      map  The map to test
+ *
+ * \return     Returns false on error or if is not a data map, otherwise true
+ */
+RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map) {
+	rz_return_val_if_fail(map, false);
+	if (map->psize < 1) {
+		return false;
+	} else if (map->name && strstr(map->name, "data")) {
+		return true;
+	}
+	return is_data_permission(map->perm & RZ_PERM_RWX);
+}
+
 /**
  * \brief Converts the RzBinSection type to the string representation
  *

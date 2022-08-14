@@ -768,6 +768,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_byte_array_c_cpp_half_word_handler(RzCore *core,
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_c_cpp_word_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_c_cpp_double_word_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_asm_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_print_byte_array_with_inst_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_bash_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_golang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_java_handler(RzCore *core, int argc, const char **argv);

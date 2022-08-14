@@ -4,6 +4,7 @@
 #include <rz_core.h>
 
 #define GO_MAX_STRING_SIZE 0x4000
+#define GO_MAX_TABLE_SIZE  0x10000
 
 #define GO_1_2  (12)
 #define GO_1_16 (116)
@@ -527,6 +528,12 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	// check that the values are acceptable.
 	if (str_size < 2 || str_size > GO_MAX_STRING_SIZE || str_addr < 1 || str_addr == UT64_MAX) {
+		return false;
+	}
+
+	// skip possible pointers that matches to symbols flags, because these are already handled.
+	RzFlagItem *fi = rz_flag_get_by_spaces(ctx->core->flags, str_addr, RZ_FLAGS_FS_SYMBOLS, NULL);
+	if (fi && !strncmp(fi->name, "sym.", 4)) {
 		return false;
 	}
 
@@ -1605,6 +1612,74 @@ static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
 	return 4;
 }
 
+// Sometimes the data-structures has strings, but these are stored in tables where
+// the first offset is always the pointer to the squashed strings and the next word
+// is the size of the string
+static void core_recover_golang_strings_from_data_pointers(RzCore *core, GoStrRecover *ctx) {
+	rz_core_notify_begin(core, "Recovering go strings from bin maps");
+
+	RzAnalysis *analysis = core->analysis;
+	const ut32 word_size = analysis->bits / 8;
+	RzListIter *iter;
+	RzBinMap *map;
+	ut8 *buffer = NULL;
+	ut64 string_addr, string_size;
+	RzBinObject *object = rz_bin_cur_object(core->bin);
+	RzList *map_list = object ? rz_bin_object_get_maps(object) : NULL;
+	if (!map_list) {
+		RZ_LOG_ERROR("Failed to get the RzBinMap list\n");
+		goto end;
+	}
+
+	buffer = malloc(GO_MAX_TABLE_SIZE);
+	if (!buffer) {
+		RZ_LOG_ERROR("Failed to allocate table buffer\n");
+		goto end;
+	}
+
+	rz_list_foreach (map_list, iter, map) {
+		if (!rz_bin_map_is_data(map) || map->psize < (word_size * 2)) {
+			continue;
+		}
+
+		ut64 current = map->vaddr;
+		ut64 end = map->vaddr + map->psize;
+
+		do {
+			size_t length = RZ_MIN((end - current), GO_MAX_TABLE_SIZE);
+			if (length < (word_size * 2)) {
+				break;
+			}
+
+			if (rz_io_nread_at(core->io, current, buffer, length) < 0) {
+				RZ_LOG_ERROR("Failed to read map at address %" PFMT64x "\n", current);
+				break;
+			}
+
+			length -= word_size;
+			for (size_t i = 0; i < length; i += word_size) {
+				string_addr = rz_read_ble(buffer + i, analysis->big_endian, analysis->bits);
+				string_size = rz_read_ble(buffer + i + word_size, analysis->big_endian, analysis->bits);
+				if (!string_addr || !string_size) {
+					continue;
+				} else if (word_size == sizeof(ut32) && string_addr == UT32_MAX) {
+					continue;
+				} else if (word_size == sizeof(ut64) && string_addr == UT64_MAX) {
+					continue;
+				}
+				if (recover_string_at(ctx, string_addr, string_size)) {
+					rz_analysis_xrefs_set(analysis, current + i, string_addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+				}
+			}
+			current += length;
+		} while (current < end);
+	}
+
+end:
+	free(buffer);
+	rz_core_notify_done(core, "Recovering go strings from bin maps");
+}
+
 /**
  * \brief      Attempts to recover all golang string
  *
@@ -1612,7 +1687,6 @@ static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
  */
 RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	rz_return_if_fail(core && core->analysis && core->analysis->fcns && core->io);
-	rz_core_notify_begin(core, "Analyze all instructions to recover all strings used in sym.go.*");
 
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
@@ -1625,6 +1699,9 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	GoStrRecover ctx = { 0 };
 	ctx.core = core;
 
+	core_recover_golang_strings_from_data_pointers(core, &ctx);
+
+	rz_core_notify_begin(core, "Analyze all instructions to recover all strings used in sym.go.*");
 	if (!strcmp(asm_arch, "x86")) {
 		switch (asm_bits) {
 		case 32:

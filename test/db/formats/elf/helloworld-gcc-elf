@@ -20,8 +20,8 @@ EXPECT=<<EOF
 mov.w fp, 0
 add ip, pc, 0, 12
 ldr r3, [0x00000460]
-ldr r0, [0x00000484]
-ldr r0, [0x000004b8]
+ldr r0, [data.00000484]
+ldr r0, [data.000004b8]
 push {r3, lr}
 add ip, pc, 0, 12
 b sym.register_tm_clones

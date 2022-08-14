@@ -51,6 +51,7 @@ include_files = [
   'rz_types_overflow.h',
   'rz_util.h',
   'rz_vector.h',
+  'rz_windows.h',
   'rz_windows_heap.h',
 ]
 install_headers(include_files, install_dir: rizin_incdir)
@@ -112,6 +113,7 @@ rz_util_files = [
   'rz_util/rz_utf16.h',
   'rz_util/rz_utf32.h',
   'rz_util/rz_utf8.h',
+  'rz_util/rz_version.h',
   'rz_util/rz_x509.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))

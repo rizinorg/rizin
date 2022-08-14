@@ -615,7 +615,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	rz_config_set(r->config, "asm.bits", str);
 	rz_config_set(r->config, "asm.dwarf",
 		(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
-	v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	if (v != -1) {
 		rz_config_set_i(r->config, "asm.pcalign", v);
 	}
@@ -3080,7 +3080,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		if (v != -1) {
 			rz_cons_printf("maxopsz %d\n", v);
 		}
-		v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		if (v != -1) {
 			rz_cons_printf("pcalign %d\n", v);
 		}
@@ -3160,7 +3160,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		if (info->default_cc) {
 			pj_ks(pj, "cc", info->default_cc);
 		}
-		uv = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		uv = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		if (uv != -1) {
 			pj_ki(pj, "pcalign", uv);
 		}
@@ -3268,7 +3268,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			table_add_row_bool(t, "overlay", info->pe_overlay);
 		}
 		rz_table_add_rowf(t, "ss", "cc", str2na(info->default_cc));
-		uv = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		uv = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 		if (uv != -1) {
 			rz_table_add_rowf(t, "sd", "pcalign", uv);
 		}

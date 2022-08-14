@@ -1056,18 +1056,20 @@ static int arc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	return op->size;
 }
 
-static int archinfo(RzAnalysis *analysis, int query) {
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 	if (analysis->bits != 16) {
 		return -1;
 	}
 	switch (query) {
-	case RZ_ANALYSIS_ARCHINFO_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		/* all ops are at least 1 word long */
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 8;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
 	default:
 		return -1;
 	}

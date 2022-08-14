@@ -40,6 +40,7 @@ NAME=mips hello ref analysis subtract
 FILE=bins/elf/analysis/busybox-mips
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
+e analysis.resolve.pointers=false
 e asm.bytes=true
 aae @ entry0
 pd 1 @ 0x00406228

@@ -72,6 +72,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_PLATFORM_PORTS          "platform.ports"
 #define RZ_FLAGS_FS_GLOBALS                 "globals"
 #define RZ_FLAGS_FS_DEBUG_MAPS              "maps"
+#define RZ_FLAGS_FS_POINTERS                "pointers"
 
 #define RZ_GRAPH_FORMAT_NO     0
 #define RZ_GRAPH_FORMAT_GMLFCN 1
@@ -1073,10 +1074,19 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64
 RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, ut8 n, int len, RzCorePrintFormatType format);
 RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core, RzOutputMode mode, ut64 addr, int len, bool use_comment);
 RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bool hex_offset, ut64 addr, int len, ut8 size);
+RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, ut64 addr, int len);
+
+typedef enum {
+	RZ_CORE_DISASM_STRINGS_MODE_BYTES = 0,
+	RZ_CORE_DISASM_STRINGS_MODE_INST,
+	RZ_CORE_DISASM_STRINGS_MODE_BLOCK,
+	RZ_CORE_DISASM_STRINGS_MODE_FUNCTION,
+} RzCorePrintDisasmStringsMode;
+RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCorePrintDisasmStringsMode mode, ut64 n_bytes, RZ_NULLABLE RzAnalysisFunction *fcn);
 
 /* rtr */
 RZ_API bool rz_core_rtr_init(RZ_NONNULL RzCore *core);
-RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
+RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
 RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_list(RzCore *core);
@@ -1085,7 +1095,6 @@ RZ_API void rz_core_rtr_remove(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_session(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
-RZ_API int rz_core_rtr_http_stop(RzCore *u);
 RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
 RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
@@ -1108,7 +1117,7 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
-RZ_API void rz_core_clippy(RzCore *core, const char *msg);
+RZ_API RZ_OWN char *rz_core_clippy(RzCore *core, const char *msg);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

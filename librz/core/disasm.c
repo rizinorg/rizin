@@ -1130,6 +1130,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 
 		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, source,
 			ds->str, sizeof(ds->str), core->print->big_endian);
+		RZ_FREE(source);
 		// subvar depends on filter
 		if (ds->subvar) {
 			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
@@ -4913,6 +4914,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 				fcn_type_str ? fcn_type_str : "", sp,
 				rz_str_get_null(key));
 			free(fcn_type_str);
+			free(key);
 			if (!nargs) {
 				ds_comment_end(ds, "void)");
 				break;
@@ -4959,8 +4961,6 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 			break;
 		} else {
 			rz_list_free(list);
-			// function name not resolved
-			rz_warn_if_fail(!key);
 			nargs = DEFAULT_NARGS;
 			if (fcn) {
 				// @TODO: fcn->nargs should be updated somewhere and used here instead

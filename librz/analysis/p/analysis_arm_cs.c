@@ -2207,26 +2207,23 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	if (q == RZ_ANALYSIS_ARCHINFO_DATA_ALIGN) {
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	bool is_16_bits = analysis && analysis->bits == 16;
+
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return is_16_bits ? 2 : 4;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
-	}
-	if (q == RZ_ANALYSIS_ARCHINFO_ALIGN) {
-		if (analysis && analysis->bits == 16) {
-			return 2;
-		}
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return is_16_bits ? 2 : 4;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
 		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	if (q == RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) {
-		return 4;
-	}
-	if (q == RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE) {
-		if (analysis && analysis->bits == 16) {
-			return 2;
-		}
-		return 4;
-	}
-	return 4; // XXX
 }
 
 static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {

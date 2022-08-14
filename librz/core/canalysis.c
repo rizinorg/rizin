@@ -5755,6 +5755,121 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 	return true;
 }
 
+static bool is_in_data_map(RzCore *core, const ut64 address) {
+	if (address < 256 || address == UT64_MAX) {
+		// prevents a lot of false positives when it comes
+		// to invalid addresses, especially in x86 arch with
+		// mov and jmp instructions.
+		return false;
+	}
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	if (!o) {
+		return false;
+	}
+
+	const RzBinMap *map = rz_bin_object_get_map_at(o, address, core->io->va);
+	return map && map->psize > 2 && rz_bin_map_is_data(map);
+}
+
+static ut32 add_data_pointer(RzCore *core, const ut8 *bytes, const ut32 size, ut64 pc, ut32 min_op_size) {
+	RzAnalysis *analysis = core->analysis;
+	RzAnalysisOp aop;
+	ut32 isize = 0;
+	ut64 pointer = 0;
+
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(analysis, &aop, pc, bytes, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+		rz_analysis_op_fini(&aop);
+		return min_op_size;
+	}
+
+	isize = aop.size;
+	pointer = aop.ptr;
+	rz_analysis_op_fini(&aop);
+
+	if (pointer == pc ||
+		!is_in_data_map(core, pointer) ||
+		rz_flag_get_list(core->flags, pointer) ||
+		rz_analysis_get_function_at(analysis, pointer)) {
+		return isize;
+	}
+
+	char *flagname = rz_str_newf("data.%08" PFMT64x, pointer);
+	if (!flagname) {
+		RZ_LOG_ERROR("Failed allocate flag name buffer for pointer to data\n");
+		return 0;
+	}
+
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_POINTERS);
+	rz_flag_set(core->flags, flagname, pointer, analysis->bits / 8);
+	rz_flag_space_pop(core->flags);
+	free(flagname);
+	rz_analysis_xrefs_set(analysis, pc, pointer, RZ_ANALYSIS_XREF_TYPE_DATA);
+	return isize;
+}
+
+/**
+ * \brief      Tries to resolve all the constant pointers and adds flags named data.XXXXXX
+ *
+ * \param      core  The RzCore to analyze
+ */
+RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core) {
+	RzAnalysis *analysis = core->analysis;
+
+	bool can_use_pointers = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS);
+	if (!can_use_pointers) {
+		// never run this for archs that does not use pointers
+		return;
+	}
+
+	RzListIter *it, *it2;
+	RzAnalysisFunction *func = NULL;
+	RzAnalysisBlock *block = NULL;
+	ut8 *bytes = NULL;
+	void *archbits = NULL;
+	ut32 isize = 0, bsize = 0;
+	ut64 pc = 0;
+	ut32 min_op_size = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+
+	// ignore any hint.
+	RZ_PTR_MOVE(archbits, analysis->coreb.archbits);
+
+	rz_list_foreach (analysis->fcns, it, func) {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		rz_list_foreach (func->bbs, it2, block) {
+			if (block->size < 1) {
+				continue;
+			}
+
+			bytes = malloc(block->size);
+			if (!bytes) {
+				RZ_LOG_ERROR("Failed allocate basic block bytes buffer\n");
+				goto end;
+			} else if (rz_io_nread_at(core->io, block->addr, bytes, block->size) < 0) {
+				free(bytes);
+				RZ_LOG_ERROR("Failed to read function basic block at address %" PFMT64x "\n", block->addr);
+				goto end;
+			}
+
+			for (ut32 i = 0; i < block->size;) {
+				pc = block->addr + i;
+				bsize = block->size - i;
+				if (!(isize = add_data_pointer(core, bytes + i, bsize, pc, min_op_size))) {
+					free(bytes);
+					goto end;
+				}
+				i += isize;
+			}
+			free(bytes);
+		}
+	}
+
+end:
+	analysis->coreb.archbits = archbits;
+}
+
 static bool is_unknown_file(RzCore *core) {
 	if (core->bin->cur && core->bin->cur->o) {
 		return (rz_list_empty(core->bin->cur->o->sections));
@@ -5937,6 +6052,14 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_notify_begin(core, "%s", notify);
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
 		rz_core_notify_done(core, "%s", notify);
+	}
+
+	if (rz_config_get_b(core->config, "analysis.resolve.pointers")) {
+		notify = "Resolve pointers to data sections";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_core_analysis_resolve_pointers_to_data(core);
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
 	}
 
 	if (experimental) {
@@ -6460,7 +6583,7 @@ static bool archIsThumbable(RzCore *core) {
 
 static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool pretend = (user && *(RzOutputMode *)user == RZ_OUTPUT_MODE_RIZIN);
-	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	int searchAlign = rz_config_get_i(core->config, "search.align");
 	int align = (searchAlign > 0) ? searchAlign : arch_align;
@@ -6504,7 +6627,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	const char *analysisin = rz_config_get(core->config, "analysis.in");
 	char *tmp = strdup(analysisin);
 	bool is_debug = rz_config_get_b(core->config, "cfg.debug");
-	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	rz_config_set_i(core->config, "search.align", archAlign);
 	rz_config_set(core->config, "analysis.in", "io.maps.x");
 	rz_core_notify_done(core, "Finding xrefs in noncode section with analysis.in=io.maps");

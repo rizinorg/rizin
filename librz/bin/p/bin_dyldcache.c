@@ -136,7 +136,6 @@ void symbols_from_bin(RzDyldCache *cache, RzList *ret, RzBinFile *bf, RzDyldBinI
 		return;
 	}
 
-	// const RzList*symbols = MACH0_(get_symbols_list) (mach0);
 	const struct symbol_t *symbols = MACH0_(get_symbols)(mach0);
 	if (!symbols) {
 		return;

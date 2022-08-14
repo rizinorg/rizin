@@ -108,7 +108,6 @@ EXPECT=<<EOF
 ;-- section..text:
 ;-- .text:
 ;-- _start:
-;-- pc:
 0x10000308      mr    r9, r1                                           ; start.S:62
 0x1000030c      rlwinm r1, r1, 0, 0, 0x1b                              ; start.S:64
 0x10000310      li    r0, 0                                            ; start.S:69

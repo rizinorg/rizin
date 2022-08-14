@@ -674,4 +674,6 @@ typedef int RzRef;
 		rz_unref(x, n##_free); \
 	}
 
+typedef struct rz_core_t RzCore;
+
 #endif // RZ_TYPES_H

@@ -1224,8 +1224,16 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 	dbg->cur->desc = rz_debug_desc_plugin_native;
 #if __WINDOWS__
 	return w32_init(dbg);
+#elif __APPLE__
+	return rz_xnu_debug_init(dbg, user);
 #else
 	return true;
+#endif
+}
+
+static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+#if __APPLE__
+	rz_xnu_debug_fini(dbg, user);
 #endif
 }
 
@@ -1645,6 +1653,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 #endif
 #endif
 	.init = &rz_debug_native_init,
+	.fini = &rz_debug_native_fini,
 	.step = &rz_debug_native_step,
 	.cont = &rz_debug_native_continue,
 	.stop = &rz_debug_native_stop,

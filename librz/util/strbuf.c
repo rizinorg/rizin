@@ -165,7 +165,7 @@ RZ_API const char *rz_strbuf_set(RzStrBuf *sb, const char *s) {
 }
 
 RZ_API const char *rz_strbuf_setf(RzStrBuf *sb, const char *fmt, ...) {
-	rz_return_val_if_fail(sb && fmt, false);
+	rz_return_val_if_fail(sb && fmt, NULL);
 
 	va_list ap;
 	va_start(ap, fmt);
@@ -175,7 +175,7 @@ RZ_API const char *rz_strbuf_setf(RzStrBuf *sb, const char *fmt, ...) {
 }
 
 RZ_API const char *rz_strbuf_vsetf(RzStrBuf *sb, const char *fmt, va_list ap) {
-	rz_return_val_if_fail(sb && fmt, false);
+	rz_return_val_if_fail(sb && fmt, NULL);
 
 	const char *ret = NULL;
 	va_list ap2;
@@ -279,7 +279,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
-	rz_return_val_if_fail(sb && fmt, -1);
+	rz_return_val_if_fail(sb && fmt, false);
 
 	va_start(ap, fmt);
 	bool ret = rz_strbuf_vappendf(sb, fmt, ap);
@@ -292,7 +292,7 @@ RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
 	char string[1024];
 
-	rz_return_val_if_fail(sb && fmt, -1);
+	rz_return_val_if_fail(sb && fmt, false);
 
 	if (sb->weakref) {
 		return false;

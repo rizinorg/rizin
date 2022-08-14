@@ -430,7 +430,7 @@ EXPECT=<<EOF
 |           0x0040189d      mov   rax, qword fs:[0x28]
 |           0x004018a6      mov   qword [var_8h], rax
 |           0x004018aa      xor   eax, eax
-|           0x004018ac      lea   rax, [0x00482004]                    ; "r"
+|           0x004018ac      lea   rax, data.00482004                   ; 0x482004 ; "r"
 |           0x004018b3      mov   rsi, rax                             ; int64_t arg2
 |           0x004018b6      lea   rax, str.test                        ; 0x482006 ; "test"
 |           0x004018bd      mov   rdi, rax                             ; int64_t arg1
@@ -483,7 +483,7 @@ EXPECT=<<EOF
 |           0x0040189d      mov   rax, qword fs:[0x28]
 |           0x004018a6      mov   qword [var_8h], rax
 |           0x004018aa      xor   eax, eax
-|           0x004018ac      lea   rax, [0x00482004]                    ; "r"
+|           0x004018ac      lea   rax, data.00482004                   ; 0x482004 ; "r"
 |           0x004018b3      mov   rsi, rax                             ; int64_t arg2
 |           0x004018b6      lea   rax, str.test                        ; 0x482006 ; "test"
 |           0x004018bd      mov   rdi, rax                             ; int64_t arg1

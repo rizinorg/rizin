@@ -46,6 +46,7 @@ RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut
 RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj);
+RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core);
 
 /* cmeta.c */
 RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state);
@@ -194,6 +195,9 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL const ut8 *buf, int len, int base, int step, size_t zoomsz);
 RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int wordsize);
 RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol);
+
+// cmd_help.c
+RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg);
 
 #if __WINDOWS__
 /* windows_heap.c */

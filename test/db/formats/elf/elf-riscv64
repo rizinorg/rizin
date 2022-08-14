@@ -422,7 +422,7 @@ laddr    0x00000000
 lang     c
 machine  RISC V
 maxopsz  6
-minopsz  2
+minopsz  4
 os       linux
 cc       N/A
 pcalign  2

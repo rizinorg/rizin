@@ -37,11 +37,14 @@
 
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)
 
-#define UN(l, val) rz_il_op_new_bitv_from_ut64(l, val)
-#define U8(val)    UN(8, val)
-#define U16(val)   UN(16, val)
-#define U32(val)   UN(32, val)
-#define U64(val)   UN(64, val)
+#define UN(l, val)       rz_il_op_new_bitv_from_ut64(l, val)
+#define U8(val)          UN(8, val)
+#define U16(val)         UN(16, val)
+#define U32(val)         UN(32, val)
+#define U48(val)         UN(48, val)
+#define U64(val)         UN(64, val)
+#define CAST(l, f, v)    rz_il_op_new_cast(l, f, v)
+#define BOOL_TO_BV(b, l) ITE(b, UN(l, 1), UN(l, 0))
 
 #define SN(l, val) rz_il_op_new_bitv_from_st64(l, val)
 #define S8(val)    SN(8, val)
@@ -66,6 +69,8 @@
 #define MUL(x, y)          rz_il_op_new_mul(x, y)
 #define DIV(x, y)          rz_il_op_new_div(x, y)
 #define SDIV(x, y)         rz_il_op_new_sdiv(x, y)
+#define MOD(x, y)          rz_il_op_new_mod(x, y)
+#define SMOD(x, y)         rz_il_op_new_smod(x, y)
 #define SHIFTL(f, v, dist) rz_il_op_new_shiftl(f, v, dist)
 #define SHIFTR(f, v, dist) rz_il_op_new_shiftr(f, v, dist)
 #define SHIFTL0(v, dist)   SHIFTL(IL_FALSE, v, dist)
@@ -111,6 +116,7 @@
 #define SEQ7(e0, e1, e2, e3, e4, e5, e6)         rz_il_op_new_seqn(7, e0, e1, e2, e3, e4, e5, e6)
 #define SEQ8(e0, e1, e2, e3, e4, e5, e6, e7)     rz_il_op_new_seqn(8, e0, e1, e2, e3, e4, e5, e6, e7)
 #define SEQ9(e0, e1, e2, e3, e4, e5, e6, e7, e8) rz_il_op_new_seqn(9, e0, e1, e2, e3, e4, e5, e6, e7, e8)
+#define SEQN(n, ...)                             rz_il_op_new_seqn(n, __VA_ARGS__)
 
 #define EMPTY()         rz_il_op_new_empty()
 #define NOP()           rz_il_op_new_nop()

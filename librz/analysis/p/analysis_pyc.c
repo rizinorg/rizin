@@ -8,16 +8,20 @@
 
 #include "../../asm/arch/pyc/pyc_dis.h"
 
-static int archinfo(RzAnalysis *analysis, int query) {
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 	if (!strcmp(analysis->cpu, "x86")) {
 		return -1;
 	}
 
+	bool is_16_bits = analysis && analysis->bits == 16;
+
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
-		return (analysis->bits == 16) ? 1 : 2;
+		return is_16_bits ? 1 : 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-		return (analysis->bits == 16) ? 3 : 2;
+		return is_16_bits ? 3 : 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return false;
 	default:
 		return -1;
 	}

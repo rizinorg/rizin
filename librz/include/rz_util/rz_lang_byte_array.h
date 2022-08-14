@@ -7,6 +7,10 @@
 
 #include <rz_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum rz_lang_byte_array_type_t {
 	RZ_LANG_BYTE_ARRAY_RIZIN = 0,
 	RZ_LANG_BYTE_ARRAY_ASM,
@@ -31,5 +35,9 @@ typedef enum rz_lang_byte_array_type_t {
 } RzLangByteArrayType;
 
 RZ_API RZ_OWN char *rz_lang_byte_array(RZ_NONNULL const ut8 *buffer, size_t size, RzLangByteArrayType type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RZ_LANG_BYTE_ARRAY_H */

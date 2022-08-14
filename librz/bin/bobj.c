@@ -785,6 +785,14 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_object_get_segments(RZ_NONNULL
 }
 
 /**
+ * \brief Get list of \p RzBinMap representing only the maps of the binary object.
+ */
+RZ_API RZ_OWN RzList /*<RzBinMap *>*/ *rz_bin_object_get_maps(RZ_NONNULL RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->maps;
+}
+
+/**
  * \brief Get list of \p RzBinClass representing the classes (e.g. C++ classes) defined in the binary object.
  */
 RZ_API const RzList /*<RzBinClass *>*/ *rz_bin_object_get_classes(RZ_NONNULL RzBinObject *obj) {
