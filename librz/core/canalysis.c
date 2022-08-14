@@ -2348,6 +2348,9 @@ static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzG
 	rz_list_free(xrefs);
 }
 
+/**
+ * \brief Get the graph of the data references from \p addr (UT64_MAX for all).
+ */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
@@ -2397,6 +2400,9 @@ static void core_graph_coderefs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *
 	rz_list_free(xrefs);
 }
 
+/**
+ * \brief Get the graph of the function references from \p addr (UT64_MAX for all).
+ */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
@@ -2440,6 +2446,9 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 	rz_list_free(list);
 }
 
+/**
+ * \brief Get the graph of all import symbols references.
+ */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_importxrefs(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
@@ -2466,6 +2475,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_importxref
 	return graph;
 }
 
+/**
+ * \brief Get the graph of code cross references to \p addr.
+ */
 RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_codexrefs(RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
@@ -2502,6 +2514,9 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *g
 	rz_list_free(calls);
 }
 
+/**
+ * \brief Get the graph of the function call references from \p addr (UT64_MAX for all).
+ */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
@@ -2541,7 +2556,9 @@ RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn) {
 	return name;
 }
 
-// for a given function returns an RzList of all functions that were called in it
+/**
+ * \brief for a given function returns an RzList of all functions that were called in it
+ */
 RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisXRef *xrefi;
 	RzListIter *iter, *iter2;
