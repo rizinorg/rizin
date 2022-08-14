@@ -54,7 +54,9 @@ aa 2> /dev/null
 agx * @ main
 EOF
 EXPECT=<<EOF
-agn "main"
+agn "sym.main"
+agn "0x000006bd"
+age "0x000006bd" "sym.main"
 EOF
 RUN
 
@@ -71,7 +73,13 @@ agi t
 EOF
 EXPECT=<<EOF
 .--------------------.
-|  main              |
+|  0x000006bd        |
+`--------------------'
+    v
+    |
+    |
+.--------------------.
+|  sym.main          |
 `--------------------'
 digraph code {
 rankdir=LR;

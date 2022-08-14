@@ -5606,7 +5606,7 @@ static inline RzGraph *core_graph(RzCore *core, RzCoreGraphType type) {
 		break;
 	case RZ_CORE_GRAPH_TYPE_LINE: break;
 	case RZ_CORE_GRAPH_TYPE_XREF:
-		graph = rz_core_analysis_coderefs(core, core->offset);
+		graph = rz_core_analysis_codexrefs(core, core->offset);
 		break;
 	case RZ_CORE_GRAPH_TYPE_CUSTOM: break;
 	default:
