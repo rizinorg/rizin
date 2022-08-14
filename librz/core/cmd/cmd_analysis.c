@@ -5589,24 +5589,24 @@ static inline RzGraph *core_graph(RzCore *core, RzCoreGraphType type) {
 	switch (type) {
 	case RZ_CORE_GRAPH_TYPE_DATAREF:
 	case RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL:
-		graph = rz_core_analysis_datarefs_graph(core, type != RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL ? core->offset : UT64_MAX);
+		graph = rz_core_analysis_graph_datarefs(core, type != RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL ? core->offset : UT64_MAX);
 		break;
 	case RZ_CORE_GRAPH_TYPE_FUNCALL:
 	case RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL:
-		graph = rz_core_analysis_callgraph(core, type != RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL ? core->offset : UT64_MAX);
+		graph = rz_core_analysis_graph_callgraph(core, type != RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL ? core->offset : UT64_MAX);
 		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF: break;
 	case RZ_CORE_GRAPH_TYPE_BLOCK_FUN: break;
 	case RZ_CORE_GRAPH_TYPE_IMPORT:
-		graph = rz_core_analysis_importxrefs(core);
+		graph = rz_core_analysis_graph_importxrefs(core);
 		break;
 	case RZ_CORE_GRAPH_TYPE_REF:
 	case RZ_CORE_GRAPH_TYPE_REF_GLOBAL:
-		graph = rz_core_analysis_coderefs(core, type != RZ_CORE_GRAPH_TYPE_REF_GLOBAL ? core->offset : UT64_MAX);
+		graph = rz_core_analysis_graph_coderefs(core, type != RZ_CORE_GRAPH_TYPE_REF_GLOBAL ? core->offset : UT64_MAX);
 		break;
 	case RZ_CORE_GRAPH_TYPE_LINE: break;
 	case RZ_CORE_GRAPH_TYPE_XREF:
-		graph = rz_core_analysis_codexrefs(core, core->offset);
+		graph = rz_core_analysis_graph_codexrefs(core, core->offset);
 		break;
 	case RZ_CORE_GRAPH_TYPE_CUSTOM: break;
 	default:

@@ -2348,7 +2348,8 @@ static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzG
 	rz_list_free(xrefs);
 }
 
-RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
@@ -2396,7 +2397,8 @@ static void core_graph_coderefs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *
 	rz_list_free(xrefs);
 }
 
-RZ_API RzGraph *rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
@@ -2420,7 +2422,6 @@ RZ_API RzGraph *rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
 }
 
 static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
-	rz_return_if_fail(graph);
 	char *me = core_flag_name(core, addr);
 	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, addr);
 	RZ_FREE(me);
@@ -2439,7 +2440,8 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 	rz_list_free(list);
 }
 
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *core) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_importxrefs(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	if (!obj) {
 		return NULL;
@@ -2464,7 +2466,8 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *cor
 	return graph;
 }
 
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_codexrefs(RzCore *core, ut64 addr) {
+RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_codexrefs(RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
@@ -2499,7 +2502,8 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *g
 	rz_list_free(calls);
 }
 
-RZ_API RzGraph *rz_core_analysis_callgraph(RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
 		return NULL;
