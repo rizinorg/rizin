@@ -3069,7 +3069,7 @@ static const RzCmdDescArg analysis_graph_diff_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.default_value = " ",
+		.optional = true,
 
 	},
 	{

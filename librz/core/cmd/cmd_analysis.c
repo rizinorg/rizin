@@ -5628,7 +5628,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int 
 
 RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const char **argv) {
 	int diff_opt = RZ_CORE_ANALYSIS_GRAPHBODY | RZ_CORE_ANALYSIS_GRAPHDIFF;
-	const char format = argv[1][0];
+	const RzCoreGraphFormat format = argc > 1 ? argv[1][0] : RZ_CORE_GRAPH_FORMAT_ASCII_ART;
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
 	switch (format) {
 	case RZ_CORE_GRAPH_FORMAT_JSON: {

@@ -1052,7 +1052,7 @@ commands:
         args:
           - name: format
             type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            optional: true
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true

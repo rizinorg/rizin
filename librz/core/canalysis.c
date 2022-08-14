@@ -1483,7 +1483,7 @@ static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int op
 			oline = line;
 		}
 	} else if (opts & RZ_CORE_ANALYSIS_STAR) {
-		snprintf(cmd, sizeof(cmd), "pdb %" PFMT64u " @ 0x%08" PFMT64x, bb->size, bb->addr);
+		snprintf(cmd, sizeof(cmd), "pdb @ 0x%08" PFMT64x, bb->addr);
 		str = rz_core_cmd_str(core, cmd);
 	} else if (opts & RZ_CORE_ANALYSIS_GRAPHBODY) {
 		const int scrColor = rz_config_get_i(core->config, "scr.color");
@@ -2337,6 +2337,10 @@ static inline void core_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph 
 	rz_list_free(xrefs);
 }
 
+static inline bool is_between(ut64 a, ut64 x, ut64 b) {
+	return (a == UT64_MAX && b == UT64_MAX) || RZ_BETWEEN(a, x, b);
+}
+
 RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is_global) {
 	RzGraph *graph = rz_graph_new();
 	if (!graph) {
@@ -2348,9 +2352,10 @@ RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is
 		RzListIter *it;
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (core->analysis->fcns, it, fcn) {
-			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-				core_graph_fn(core, fcn, graph);
+			if (!is_between(from, fcn->addr, to)) {
+				continue;
 			}
+			core_graph_fn(core, fcn, graph);
 		}
 	} else {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
@@ -2361,22 +2366,22 @@ RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is
 
 RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-	if (fcn) {
-		const char *me = fcn->name;
-		RzListIter *iter;
-		RzAnalysisXRef *xref;
-		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-		rz_cons_printf("agn %s\n", me);
-		rz_list_foreach (xrefs, iter, xref) {
-			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
-			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->from);
-			rz_cons_printf("agn %s\n", dst);
-			rz_cons_printf("age %s %s\n", me, dst);
-		}
-		rz_list_free(xrefs);
-	} else {
+	if (!fcn) {
 		eprintf("Not in a function. Use 'df' to define it.\n");
+		return;
 	}
+	const char *me = fcn->name;
+	RzListIter *iter;
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_cons_printf("agn %s\n", me);
+	rz_list_foreach (xrefs, iter, xref) {
+		RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
+		const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->from);
+		rz_cons_printf("agn %s\n", dst);
+		rz_cons_printf("age %s %s\n", me, dst);
+	}
+	rz_list_free(xrefs);
 }
 
 static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
@@ -2453,24 +2458,19 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *g
 		return;
 	}
 
-	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	RzList *calls = rz_list_new();
+	RzList *calls = rz_core_analysis_fcn_get_calls(core, fcn);
 	RzListIter *it;
 	RzAnalysisXRef *xref;
 	// TODO: maybe fcni->calls instead ?
-	rz_list_foreach (xrefs, it, xref) {
+	rz_list_foreach (calls, it, xref) {
 		//  TODO: tail calll jumps are also calls
-		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL && !rz_list_contains(calls, (const void *)xref->to)) {
-			rz_list_append(calls, (void *)xref->to);
-			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
-			char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, xref->to);
-			RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->to);
-			free(src);
-			rz_graph_add_edge(graph, reference_from, curr_node);
-		}
+		RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
+		char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, xref->to);
+		RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->to);
+		free(src);
+		rz_graph_add_edge(graph, reference_from, curr_node);
 	}
 	rz_list_free(calls);
-	rz_list_free(xrefs);
 }
 
 RZ_API RzGraph *rz_core_analysis_callgraph(RzCore *core, ut64 addr, bool is_global) {
@@ -2484,9 +2484,10 @@ RZ_API RzGraph *rz_core_analysis_callgraph(RzCore *core, ut64 addr, bool is_glob
 		RzListIter *it;
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (core->analysis->fcns, it, fcn) {
-			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-				core_graph_fn_call(core, fcn, graph);
+			if (!is_between(from, fcn->addr, to)) {
+				continue;
 			}
+			core_graph_fn_call(core, fcn, graph);
 		}
 	} else {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
