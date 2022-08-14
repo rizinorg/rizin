@@ -815,11 +815,11 @@ static RzILOpEffect *x86_il_aad(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	RzILOpEffect *temp_ah = SETL("temp_ah", x86_il_get_reg(X86_REG_AH));
 
 	RzILOpPure *imm;
-	if (ins->structure->operands[0].type != X86_OP_INVALID) {
-		imm = x86_il_get_operand_bits(ins->structure->operands[0], 8);
-	} else {
+	if (ins->structure->op_count == 0) {
 		// Use base 10 if none specified
 		imm = SN(8, 0x0a);
+	} else {
+		imm = x86_il_get_operand_bits(ins->structure->operands[0], 8);
 	}
 
 	RzILOpPure *adjusted = ADD(VARL("temp_al"), MUL(VARL("temp_ah"), imm));
@@ -840,8 +840,16 @@ static RzILOpEffect *x86_il_aam(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
-	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), x86_il_get_operand(ins->structure->operands[0])));
-	RzILOpEffect *adjusted = SETL("adjusted", MOD(VARL("temp_al"), x86_il_get_operand(ins->structure->operands[0])));
+
+	RzILOpPure *imm;
+	if (ins->structure->op_count == 0) {
+		imm = SN(8, 0xa);
+	} else {
+		imm = x86_il_get_operand_bits(ins->structure->operands[0], 8);
+	}
+
+	RzILOpEffect *ah = x86_il_set_reg(X86_REG_AH, DIV(VARL("temp_al"), imm));
+	RzILOpEffect *adjusted = SETL("adjusted", MOD(VARL("temp_al"), DUP(imm)));
 	RzILOpEffect *al = x86_il_set_reg(X86_REG_AL, VARL("adjusted"));
 	RzILOpEffect *set_flags = x86_il_set_result_flags(VARL("adjusted"));
 
