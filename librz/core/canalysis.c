@@ -2311,13 +2311,24 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn) {
 	return true;
 }
 
+static inline bool is_between(ut64 a, ut64 x, ut64 b) {
+	return (a == UT64_MAX && b == UT64_MAX) || RZ_BETWEEN(a, x, b);
+}
+
+static inline char *core_flag_name(const RzCore *core, ut64 addr) {
+	RzFlagItem *item = rz_flag_get_i(core->flags, addr);
+	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
+}
+
 static inline void core_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
 		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
 	}
 
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
+	char *me = rz_core_analysis_fcn_name(core, fcn);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
+	RZ_FREE(me);
 	if (!curr_node) {
 		return;
 	}
@@ -2328,17 +2339,13 @@ static inline void core_graph_fn(RzCore *core, RzAnalysisFunction *fcn, RzGraph 
 		RzBinObject *obj = rz_bin_cur_object(core->bin);
 		RzBinSection *binsec = rz_bin_get_section_at(obj, xref->to, true);
 		if (binsec && binsec->is_data) {
-			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
-			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->to);
-			RzGraphNode *reference_from = rz_graph_add_node_info(graph, dst, NULL, xref->to);
-			rz_graph_add_edge(graph, reference_from, curr_node);
+			char *dst = core_flag_name(core, xref->to);
+			RzGraphNode *node = rz_graph_add_node_info(graph, dst, NULL, xref->to);
+			free(dst);
+			rz_graph_add_edge(graph, curr_node, node);
 		}
 	}
 	rz_list_free(xrefs);
-}
-
-static inline bool is_between(ut64 a, ut64 x, ut64 b) {
-	return (a == UT64_MAX && b == UT64_MAX) || RZ_BETWEEN(a, x, b);
 }
 
 RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is_global) {
@@ -2364,33 +2371,57 @@ RZ_API RzGraph *rz_core_analysis_datarefs_graph(RzCore *core, ut64 addr, bool is
 	return graph;
 }
 
-RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+static void core_graph_refs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
-		eprintf("Not in a function. Use 'df' to define it.\n");
+		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
 	}
-	const char *me = fcn->name;
-	RzListIter *iter;
+
+	char *me = rz_core_analysis_fcn_name(core, fcn);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
+	RZ_FREE(me);
+	if (!curr_node) {
+		return;
+	}
+
+	RzList *xrefs = rz_analysis_xrefs_get_from(core->analysis, fcn->addr);
+	RzListIter *it;
 	RzAnalysisXRef *xref;
-	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	rz_cons_printf("agn %s\n", me);
-	rz_list_foreach (xrefs, iter, xref) {
-		RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
-		const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->from);
-		rz_cons_printf("agn %s\n", dst);
-		rz_cons_printf("age %s %s\n", me, dst);
+	rz_list_foreach (xrefs, it, xref) {
+		char *dst = core_flag_name(core, xref->to);
+		RzGraphNode *node = rz_graph_add_node_info(graph, dst, NULL, xref->to);
+		free(dst);
+		rz_graph_add_edge(graph, curr_node, node);
 	}
 	rz_list_free(xrefs);
 }
 
+RZ_API RzGraph *rz_core_analysis_coderefs(RzCore *core, ut64 addr, bool is_global) {
+	RzGraph *graph = rz_graph_new();
+	if (!graph) {
+		return NULL;
+	}
+	if (is_global) {
+		ut64 from = rz_config_get_i(core->config, "graph.from");
+		ut64 to = rz_config_get_i(core->config, "graph.to");
+		RzListIter *it;
+		RzAnalysisFunction *fcn;
+		rz_list_foreach (core->analysis->fcns, it, fcn) {
+			if (!is_between(from, fcn->addr, to)) {
+				continue;
+			}
+			core_graph_refs(core, fcn, graph);
+		}
+	} else {
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+		core_graph_refs(core, fcn, graph);
+	}
+	return graph;
+}
+
 static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 	rz_return_if_fail(graph);
-	RzFlagItem *f = rz_flag_get_at(core->flags, addr, false);
-	char *me = (f && f->offset == addr)
-		? rz_str_new(f->name)
-		: rz_str_newf("0x%" PFMT64x, addr);
-
+	char *me = core_flag_name(core, addr);
 	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, addr);
 	RZ_FREE(me);
 	if (!curr_node) {
@@ -2400,8 +2431,7 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 	RzAnalysisXRef *xref;
 	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	rz_list_foreach (list, iter, xref) {
-		RzFlagItem *item = rz_flag_get_i(core->flags, xref->from);
-		char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, xref->from);
+		char *src = core_flag_name(core, xref->from);
 		RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->from);
 		free(src);
 		rz_graph_add_edge(graph, reference_from, curr_node);
@@ -2411,10 +2441,6 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 
 RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *core) {
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	bool va = core->io->va || core->bin->is_debugger;
-
-	RzListIter *iter;
-	RzBinImport *imp;
 	if (!obj) {
 		return NULL;
 	}
@@ -2422,6 +2448,10 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_importxrefs(RzCore *cor
 	if (!graph) {
 		return NULL;
 	}
+
+	bool va = core->io->va || core->bin->is_debugger;
+	RzListIter *iter;
+	RzBinImport *imp;
 	rz_list_foreach (obj->imports, iter, imp) {
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(obj, imp);
 		ut64 addr = sym ? (va ? rz_bin_object_get_vaddr(obj, sym->paddr, sym->vaddr) : sym->paddr) : UT64_MAX;
@@ -2449,9 +2479,7 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *g
 		return;
 	}
 
-	char *me = (fcn && RZ_STR_ISNOTEMPTY(fcn->name))
-		? rz_str_new(fcn->name)
-		: rz_str_newf("0x%" PFMT64x, fcn->addr);
+	char *me = rz_core_analysis_fcn_name(core, fcn);
 	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
 	RZ_FREE(me);
 	if (!curr_node) {
@@ -2463,12 +2491,10 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *g
 	RzAnalysisXRef *xref;
 	// TODO: maybe fcni->calls instead ?
 	rz_list_foreach (calls, it, xref) {
-		//  TODO: tail calll jumps are also calls
-		RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
-		char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, xref->to);
-		RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->to);
+		char *src = core_flag_name(core, xref->to);
+		RzGraphNode *node = rz_graph_add_node_info(graph, src, NULL, xref->to);
 		free(src);
-		rz_graph_add_edge(graph, reference_from, curr_node);
+		rz_graph_add_edge(graph, curr_node, node);
 	}
 	rz_list_free(calls);
 }

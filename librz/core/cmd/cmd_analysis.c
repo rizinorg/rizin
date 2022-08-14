@@ -5740,40 +5740,22 @@ RZ_IPI RzCmdStatus rz_analysis_graph_imports_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_handler(RzCore *core, int argc, const char **argv) {
-	const char format = argv[1][0];
-	if (format == RZ_CORE_GRAPH_FORMAT_CMD) {
-		rz_core_analysis_coderefs(core, core->offset);
-	} else {
-		core->graph->is_callgraph = true;
-		rz_core_agraph_reset(core);
-		// TODO: Use the API
-		rz_core_cmdf(core, ".agr* @ %" PFMT64u ";", core->offset);
-		agraph_print(core, -1, format);
-		core->graph->is_callgraph = false;
+	RzGraph *graph = rz_core_analysis_coderefs(core, core->offset, false);
+	if (!graph) {
+		RZ_LOG_ERROR("Couldn't create graph\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
+	callgraph_print(core, graph, argv[1][0]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_global_handler(RzCore *core, int argc, const char **argv) {
-	const char format = argv[1][0];
-	if (format == RZ_CORE_GRAPH_FORMAT_CMD) {
-		ut64 from = rz_config_get_i(core->config, "graph.from");
-		ut64 to = rz_config_get_i(core->config, "graph.to");
-		RzListIter *it;
-		RzAnalysisFunction *fcn;
-		rz_list_foreach (core->analysis->fcns, it, fcn) {
-			if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-				rz_core_analysis_coderefs(core, fcn->addr);
-			}
-		}
-	} else {
-		core->graph->is_callgraph = true;
-		rz_core_agraph_reset(core);
-		// TODO: Use the API
-		rz_core_cmdf(core, ".agR*;");
-		agraph_print(core, -1, format);
-		core->graph->is_callgraph = false;
+	RzGraph *graph = rz_core_analysis_coderefs(core, core->offset, true);
+	if (!graph) {
+		RZ_LOG_ERROR("Couldn't create graph\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
+	callgraph_print(core, graph, argv[1][0]);
 	return RZ_CMD_STATUS_OK;
 }
 
