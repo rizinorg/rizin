@@ -5683,6 +5683,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const 
 		rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_STAR);
 		break;
 	}
+	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 	case RZ_CORE_GRAPH_FORMAT_TINY:
 	case RZ_CORE_GRAPH_FORMAT_SDB:
 	case RZ_CORE_GRAPH_FORMAT_VISUAL:
