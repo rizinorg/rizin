@@ -200,6 +200,10 @@ int sum = 0; // set sum to 0
 
 * Use our [shellcheck.sh](https://github.com/rizinorg/rizin/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
+### Python Scripts
+
+* Code must run under Python 3.6 (for [Debian "jessie" compatibility](https://github.com/rizinorg/rizin/pull/2870#issuecomment-1205338140)).
+
 # Manage Endianness
 
 As hackers, we need to be aware of endianness.
