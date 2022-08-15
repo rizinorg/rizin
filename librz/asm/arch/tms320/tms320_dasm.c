@@ -418,23 +418,23 @@ const char *get_relop_str(ut8 key, char *str) {
 	return table[key & 3];
 }
 
-const char *get_cond_str(ut8 key, char *str) {
+const char *get_cond_str(ut8 key, char *str, size_t str_sz) {
 	/* 000 FSSS ... 101 FSSS */
 	if ((key >> 4) <= 5) {
 		static const char *op[6] = { "==", "!=", "<", "<=", ">", ">=" };
-		sprintf(str, "%s %s 0", get_freg_str(key & 15, NULL), op[(key >> 4) & 7]);
+		snprintf(str, str_sz, "%s %s 0", get_freg_str(key & 15, NULL), op[(key >> 4) & 7]);
 		return str;
 	}
 
 	/* 110 00SS */
 	if ((key >> 2) == 0x18) {
-		sprintf(str, "overflow(ac%d)", key & 3);
+		snprintf(str, str_sz, "overflow(ac%d)", key & 3);
 		return str;
 	}
 
 	/* 111 00SS */
 	if ((key >> 2) == 0x1C) {
-		sprintf(str, "!overflow(ac%d)", key & 3);
+		snprintf(str, str_sz, "!overflow(ac%d)", key & 3);
 		return str;
 	}
 
@@ -497,14 +497,14 @@ const char *get_cmem_str(ut8 key, char *str) {
 	return table[key & 3];
 }
 
-const char *get_smem_str(ut8 key, char *str) {
+const char *get_smem_str(ut8 key, char *str, size_t str_sz) {
 	// direct memory
 
 	if ((key & 0x01) == 0) {
 #ifdef IDA_COMPATIBLE_MODE
-		sprintf(str, "*sp(#%Xh)", key >> 1);
+		snprintf(str, str_sz, "*sp(#%Xh)", key >> 1);
 #else
-		sprintf(str, "@0x%02X", key >> 1);
+		snprintf(str, str_sz, "@0x%02X", key >> 1);
 #endif
 		return str;
 	}
@@ -798,7 +798,7 @@ void decode_cond(tms320_dasm_t *dasm) {
 	char tmp[64];
 
 	if (field_valid(dasm, CCCCCCC)) {
-		substitute(dasm->syntax, "cond", "%s", get_cond_str(field_value(dasm, CCCCCCC), tmp));
+		substitute(dasm->syntax, "cond", "%s", get_cond_str(field_value(dasm, CCCCCCC), tmp, sizeof(tmp)));
 	}
 
 	substitute(dasm->syntax, "[label, ]", "");
@@ -972,7 +972,7 @@ void decode_addressing_modes(tms320_dasm_t *dasm) {
 	if (field_valid(dasm, AAAAAAAI)) {
 		char str[64], tmp[64];
 
-		snprintf(tmp, sizeof(tmp), "%s", get_smem_str(field_value(dasm, AAAAAAAI), str));
+		snprintf(tmp, sizeof(tmp), "%s", get_smem_str(field_value(dasm, AAAAAAAI), str, sizeof(str)));
 
 		if (field_value(dasm, AAAAAAAI) & 1) {
 			if (strstr(tmp, "k16")) {
