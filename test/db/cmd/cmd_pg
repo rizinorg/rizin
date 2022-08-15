@@ -13,6 +13,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test pg print gadgets with argc < 5
+FILE=--
+CMDS=<<EOF
+pg s
+pg 10 s
+pg 10 11 s
+pg 10 11 12 s
+pg 10 11 12 13 s
+pg*
+EOF
+EXPECT=<<EOF
+"pg 1 1 1 1 s"
+"pg 10 1 1 1 s"
+"pg 10 11 1 1 s"
+"pg 10 11 12 1 s"
+"pg 10 11 12 13 s"
+EOF
+RUN
+
 NAME=test pgm move gadgets
 FILE=--
 CMDS=<<EOF
