@@ -1212,12 +1212,12 @@ RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const
 	if (argc == 1) {
 		rz_core_gadget_print(core);
 	} else {
-		int x = rz_num_math(core->num, argv[1]);
-		int y = rz_num_math(core->num, argv[2]);
-		int w = rz_num_math(core->num, argv[3]);
-		int h = rz_num_math(core->num, argv[4]);
+		int x = argc > 2 ? rz_num_math(core->num, argv[1]) : 1;
+		int y = argc > 3 ? rz_num_math(core->num, argv[2]) : 1;
+		int w = argc > 4 ? rz_num_math(core->num, argv[3]) : 1;
+		int h = argc > 5 ? rz_num_math(core->num, argv[4]) : 1;
 		if (x && y && w && h) {
-			cmd = rz_str_dup(cmd, argv[5]);
+			cmd = rz_str_dup(cmd, argv[argc - 1]);
 			if (cmd) {
 				RzCoreGadget *g = RZ_NEW0(RzCoreGadget);
 				g->x = x;
