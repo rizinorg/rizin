@@ -18,22 +18,18 @@
 #define get_bits(av, af, an) (((av) >> (af)) & ((2 << (an - 1)) - 1))
 #endif
 
-static inline ut16 be16(ut16 v) {
-	ut16 value = v;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	ut8 *pv = (void *)&v;
-	value = (pv[0] << 8) | pv[1];
-#endif
-	return value;
+/**
+ * \return unsigned int to be used as "0x%04X"
+ */
+static inline unsigned int be16(ut16 v) {
+	return ((v & 0xff) << 8) | (v >> 8);
 }
 
-static inline ut32 be24(ut32 v) {
-	ut32 value = v;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	ut8 *pv = (void *)&v;
-	value = (pv[0] << 16) | (pv[1] << 8) | pv[2];
-#endif
-	return value;
+/**
+ * \return unsigned int to be used as "0x%06X"
+ */
+static inline unsigned int be24(ut32 v) {
+	return ((v & 0xff) << 16) | (v & 0xff00) | ((v & 0xff0000) >> 16);
 }
 
 /*
@@ -1123,7 +1119,9 @@ insn_head_t *lookup_insn_head(tms320_dasm_t *dasm) {
 
 static void init_dasm(tms320_dasm_t *dasm, const ut8 *stream, int len) {
 	strcpy(dasm->syntax, "invalid");
+	memset(dasm->stream, 0, sizeof(dasm->stream));
 	memcpy(dasm->stream, stream, RZ_MIN(sizeof(dasm->stream), len));
+	dasm->opcode64 = rz_read_le64(dasm->stream);
 
 	dasm->status = 0;
 	dasm->length = 0;
