@@ -179,22 +179,23 @@ static const char *help_msg_aea[] = {
 };
 
 static const char *help_msg_ag[] = {
-	"Usage:", "ag<graphtype><format> [addr]", "",
+	"Usage:", "ag<graphtype> <format> @ [addr]", "",
 	"Graph commands:", "", "",
-	"aga", "[format]", "Data references graph",
-	"agA", "[format]", "Global data references graph",
-	"agc", "[format]", "Function callgraph",
-	"agC", "[format]", "Global callgraph",
-	"agd", "[format] [fcn addr]", "Diff graph",
-	"agf", "[format]", "Basic blocks function graph",
-	"agi", "[format]", "Imports graph",
-	"agr", "[format]", "References graph",
-	"agR", "[format]", "Global references graph",
-	"agx", "[format]", "Cross references graph",
-	"agg", "[format]", "Custom graph",
+	"aga", " [format]", "Data references graph",
+	"agA", " [format]", "Global data references graph",
+	"agc", " [format]", "Function callgraph",
+	"agC", " [format]", "Global callgraph",
+	"agd", " [format] [fcn addr]", "Diff graph",
+	"agf", " [format]", "Basic blocks function graph",
+	"agi", " [format]", "Imports graph",
+	"agr", " [format]", "References graph",
+	"agR", " [format]", "Global references graph",
+	"agx", " [format]", "Cross references graph",
+	"agg", " [format]", "Custom graph",
 	"ag-", "", "Clear the custom graph",
 	"agn", "[?] title body", "Add a node to the custom graph",
 	"age", "[?] title1 title2", "Add an edge to the custom graph",
+	"agw", " <graphtype> <path>", "Write to path or display graph image (see graph.gv.format)",
 	"", "", "",
 	"Output formats:", "", "",
 	"<blank>", "", "Ascii art",
@@ -205,7 +206,6 @@ static const char *help_msg_ag[] = {
 	"k", "", "SDB key-value",
 	"t", "", "Tiny ascii art",
 	"v", "", "Interactive ascii art",
-	"w", " [path]", "Write to path or display graph image (see graph.gv.format)",
 	NULL
 };
 
@@ -2533,26 +2533,26 @@ static void agraph_print(RzCore *core, int use_utf, RzCoreGraphFormat format) {
 	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 		rz_core_agraph_print_ascii(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_TINY: // "aggt" - tiny graph
+	case RZ_CORE_GRAPH_FORMAT_TINY:
 		rz_core_agraph_print_tiny(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_SDB: // "aggk"
+	case RZ_CORE_GRAPH_FORMAT_SDB:
 		rz_core_agraph_print_sdb(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_VISUAL: // "aggv" "aggi" - open current core->graph in interactive mode
+	case RZ_CORE_GRAPH_FORMAT_VISUAL:
 		rz_core_agraph_print_interactive(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_DOT: // "aggd" - dot format
+	case RZ_CORE_GRAPH_FORMAT_DOT:
 		rz_core_agraph_print_dot(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_CMD: // "agg*" -
+	case RZ_CORE_GRAPH_FORMAT_CMD:
 		rz_core_agraph_print_rizin(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_JSON: // "aggJ"
-	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM: // "aggj"
+	case RZ_CORE_GRAPH_FORMAT_JSON:
+	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM:
 		rz_core_agraph_print_json(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_GML: // "aggg"
+	case RZ_CORE_GRAPH_FORMAT_GML:
 		rz_core_agraph_print_gml(core);
 		break;
 	default:
@@ -2619,7 +2619,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 				rz_config_get(core->config, "graph.title"));
 			rz_agraph_print(agraph);
 			break;
-		case RZ_CORE_GRAPH_FORMAT_TINY: { // "ag_t" - tiny graph
+		case RZ_CORE_GRAPH_FORMAT_TINY: {
 			agraph->is_tiny = true;
 			int e = rz_config_get_i(core->config, "graph.edges");
 			rz_config_set_i(core->config, "graph.edges", 0);
@@ -2627,16 +2627,14 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 			rz_config_set_i(core->config, "graph.edges", e);
 			break;
 		}
-		case RZ_CORE_GRAPH_FORMAT_SDB: // "ag_k
-		{
+		case RZ_CORE_GRAPH_FORMAT_SDB: {
 			Sdb *db = rz_agraph_get_sdb(agraph);
 			char *o = sdb_querys(db, "null", 0, "*");
 			rz_cons_print(o);
 			free(o);
 			break;
 		}
-		case RZ_CORE_GRAPH_FORMAT_VISUAL: // "ag_v" "ag_i" - open current core->graph in interactive mode
-		{
+		case RZ_CORE_GRAPH_FORMAT_VISUAL: {
 			RzANode *ran = rz_agraph_get_first_node(agraph);
 			if (ran) {
 				ut64 oseek = core->offset;
@@ -2665,7 +2663,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		rz_agraph_free(agraph);
 		break;
 	}
-	case RZ_CORE_GRAPH_FORMAT_DOT: { // "ag_d" - dot format
+	case RZ_CORE_GRAPH_FORMAT_DOT: {
 		char *dot_text = print_graph_dot(core, graph);
 		if (dot_text) {
 			rz_cons_print(dot_text);
@@ -2673,7 +2671,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		}
 		break;
 	}
-	case '*': // "ag_*" -
+	case RZ_CORE_GRAPH_FORMAT_CMD:
 		print_graph_cmd(graph);
 		break;
 	case RZ_CORE_GRAPH_FORMAT_JSON:
@@ -2686,8 +2684,7 @@ static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, in
 		}
 		break;
 	}
-	case RZ_CORE_GRAPH_FORMAT_GML: // "ag_g"
-	{
+	case RZ_CORE_GRAPH_FORMAT_GML: {
 		rz_cons_printf("graph\n[\n"
 			       "hierarchic 1\n"
 			       "label \"\"\n"
@@ -2734,11 +2731,11 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 	core->graph->show_node_titles = rz_config_get_i(core->config, "graph.ntitles");
 	rz_cons_enable_highlight(false);
 	switch (input[0]) {
-	case 'j': // "agj" alias for agfj
-	case 'J': // "agJ" alias for agfJ
-	case 'k': // "agk" alias for agfk
-	case 'v': // "agv" alias for "agfv"
-		rz_core_cmdf(core, "agf%s", input);
+	case 'j':
+	case 'J':
+	case 'k':
+	case 'v':
+		rz_core_cmdf(core, "agf %s", input);
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_ag);
