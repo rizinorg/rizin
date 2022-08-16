@@ -2598,7 +2598,7 @@ static char *print_graph_dot(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *grap
 	return result;
 }
 
-static void graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, int use_utf, bool use_offset, RzCoreGraphFormat format) {
+RZ_IPI void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, int use_utf, bool use_offset, RzCoreGraphFormat format) {
 	if (use_utf != -1) {
 		rz_config_set_i(core->config, "scr.utf8", use_utf);
 	}
@@ -5633,7 +5633,7 @@ static inline RzCmdStatus graph_handler(RzCore *core, RzCoreGraphType type, RzCo
 
 	bool old_is_callgraph = core->graph->is_callgraph;
 	core->graph->is_callgraph = callgraphs[type];
-	graph_print(core, graph, -1, true, format);
+	rz_core_graph_print(core, graph, -1, true, format);
 	rz_graph_free(graph);
 	core->graph->is_callgraph = old_is_callgraph;
 	return RZ_CMD_STATUS_OK;
@@ -6335,7 +6335,7 @@ RZ_IPI RzCmdStatus rz_analysis_class_graph_handler(RzCore *core, int argc, const
 		RZ_LOG_ERROR("Couldn't create graph.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	graph_print(core, graph, -1, false, RZ_CORE_GRAPH_FORMAT_ASCII_ART);
+	rz_core_graph_print(core, graph, -1, false, RZ_CORE_GRAPH_FORMAT_ASCII_ART);
 	rz_graph_free(graph);
 	return RZ_CMD_STATUS_OK;
 }
