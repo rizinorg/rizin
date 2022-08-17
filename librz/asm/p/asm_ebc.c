@@ -11,7 +11,7 @@
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ebc_command_t cmd = { { 0 }, { 0 } };
-	int ret = ebc_decode_command(buf, &cmd);
+	int ret = ebc_decode_command(buf, len, &cmd);
 	const char *buf_asm = (cmd.operands[0])
 		? sdb_fmt("%s %s", cmd.instr, cmd.operands)
 		: cmd.instr;
