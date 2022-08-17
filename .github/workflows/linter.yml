@@ -114,12 +114,12 @@ jobs:
 
     - name: Run black
       run: |
-        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/.local/bin:${PATH}
         find . -name "*.py" | grep -v "subprojects" | xargs black --check
 
     - name: Run pylint
       run: |
-        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/.local/bin:${PATH}
         find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs pylint
 
   licenses:
