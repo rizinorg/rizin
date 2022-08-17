@@ -418,7 +418,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	if (p->symbols) {
 		o->symbols = p->symbols(bf);
 		if (o->symbols) {
-			rz_warn_if_fail(o->symbols->free);
 			REBASE_PADDR(o, o->symbols, RzBinSymbol);
 			if (bin->filter) {
 				rz_bin_filter_symbols(bf, o->symbols);

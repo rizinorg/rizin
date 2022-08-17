@@ -17,22 +17,24 @@ static bool check_buffer(RzBuffer *buff) {
 }
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	ut8 MAJOR_MINOR_VERSION;
+	ut8 major_minor_version;
 	LuacBinInfo *bin_info_obj = NULL;
 	LuaProto *proto = NULL;
 	RzBinInfo *general_info = NULL;
 	st32 major;
 	st32 minor;
 
-	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
-	if ((bin_info_obj = RZ_NEW(LuacBinInfo)) == NULL) {
-		return false;
-	}
-	major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
-	minor = (MAJOR_MINOR_VERSION & 0x0F);
+	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &major_minor_version, sizeof(major_minor_version)); /* 1-byte in fact */
+	major = (major_minor_version & 0xF0) >> 4;
+	minor = (major_minor_version & 0x0F);
 
 	if (major != 5) {
 		RZ_LOG_ERROR("currently support lua 5.x only\n");
+		return false;
+	}
+
+	bin_info_obj = RZ_NEW(LuacBinInfo);
+	if (!bin_info_obj) {
 		return false;
 	}
 
@@ -47,6 +49,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		break;
 	default:
 		RZ_LOG_ERROR("lua 5.%c not support now\n", minor + '0');
+		free(bin_info_obj);
 		return false;
 	}
 
@@ -54,6 +57,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	if (bin_info_obj == NULL) {
 		lua_free_proto_entry(proto);
 		rz_bin_info_free(general_info);
+		free(bin_info_obj);
 		return false;
 	}
 	bin_info_obj->general_info = general_info;
