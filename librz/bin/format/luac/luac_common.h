@@ -193,6 +193,7 @@ void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type);
 void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size);
 
 LuacBinInfo *luac_build_info(LuaProto *proto);
+void luac_build_info_free(LuacBinInfo *bin_info);
 void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
 
 /* ========================================================
