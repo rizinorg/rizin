@@ -100,7 +100,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return bin_info_obj->symbol_list;
+	return rz_list_clone(bin_info_obj->symbol_list);
 }
 
 static RzList *entries(RzBinFile *bf) {
@@ -112,7 +112,7 @@ static RzList *entries(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return bin_info_obj->entry_list;
+	return rz_list_clone(bin_info_obj->entry_list);
 }
 
 static RzList *strings(RzBinFile *bf) {
@@ -124,7 +124,12 @@ static RzList *strings(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return bin_info_obj->string_list;
+	return rz_list_clone(bin_info_obj->string_list);
+}
+
+static void destroy(RzBinFile *bf) {
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	luac_build_info_free(bin_info_obj);
 }
 
 RzBinPlugin rz_bin_plugin_luac = {
@@ -133,6 +138,7 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.license = "LGPL3",
 	.get_sdb = NULL,
 	.load_buffer = &load_buffer,
+	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = NULL,
 	.entries = &entries,
