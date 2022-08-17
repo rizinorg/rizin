@@ -16,16 +16,16 @@ extern "C" {
 #endif
 
 typedef struct rz_bitmap_t {
-	int length;
+	size_t length;
 	RBitword *bitmap;
 } RzBitmap;
 
-RZ_API RzBitmap *rz_bitmap_new(size_t len);
-RZ_API void rz_bitmap_set_bytes(RzBitmap *b, const ut8 *buf, int len);
-RZ_API void rz_bitmap_free(RzBitmap *b);
-RZ_API void rz_bitmap_set(RzBitmap *b, size_t bit);
-RZ_API void rz_bitmap_unset(RzBitmap *b, size_t bit);
-RZ_API int rz_bitmap_test(RzBitmap *b, size_t bit);
+RZ_API RZ_OWN RzBitmap *rz_bitmap_new(size_t len);
+RZ_API void rz_bitmap_set_bytes(RZ_NONNULL RzBitmap *b, RZ_NONNULL const ut8 *buf, size_t len);
+RZ_API void rz_bitmap_free(RZ_NULLABLE RzBitmap *b);
+RZ_API void rz_bitmap_set(RZ_NONNULL RzBitmap *b, size_t bit);
+RZ_API void rz_bitmap_unset(RZ_NONNULL RzBitmap *b, size_t bit);
+RZ_API int rz_bitmap_test(RZ_NONNULL RzBitmap *b, size_t bit);
 
 #ifdef __cplusplus
 }
