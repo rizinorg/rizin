@@ -65,7 +65,6 @@
 #define RZ_BINDIR  "@BINDIR@"
 #define RZ_LIBDIR  "@LIBDIR@"
 #define RZ_INCDIR  "@INCLUDEDIR@"
-#define RZ_DATDIR  "@DATADIR@"
 #define RZ_WWWROOT "@WWWROOT@"
 
 #define RZ_PLUGINS  "@PLUGINS@"
