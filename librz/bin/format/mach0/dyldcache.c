@@ -995,7 +995,7 @@ static RzDyldRebaseInfos *get_rebase_infos(RzDyldCache *cache) {
 	}
 
 	if (!cache->hdr->slideInfoOffset || !cache->hdr->slideInfoSize) {
-		ut32 total_slide_infos = 0;
+		size_t total_slide_infos = 0;
 		ut32 n_slide_infos[MAX_N_HDR];
 
 		ut32 i;
@@ -1004,7 +1004,12 @@ static RzDyldRebaseInfos *get_rebase_infos(RzDyldCache *cache) {
 			if (!rz_buf_read_le32_at(cache->buf, 0x13c + hdr_offset, &n_slide_infos[i])) {
 				goto beach;
 			}
-			total_slide_infos += n_slide_infos[i];
+			ut32 total = total_slide_infos + n_slide_infos[i];
+			if (total < total_slide_infos) {
+				// overflow
+				goto beach;
+			}
+			total_slide_infos = total;
 		}
 
 		if (!total_slide_infos) {
