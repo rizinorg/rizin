@@ -648,12 +648,12 @@ static bool rz_pkcs7_parse_spcdata(SpcAttributeTypeAndOptionalValue *data, RASN1
 	data->type = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (!data->type) {
 		return false;
+	} else if (object->list.length < 2) {
+		return true;
 	}
 	RASN1Object *obj1 = object->list.objects[1];
-	if (object->list.length > 1) {
-		if (obj1) {
-			data->data = rz_asn1_create_binary(obj1->sector, obj1->length);
-		}
+	if (obj1) {
+		data->data = rz_asn1_create_binary(obj1->sector, obj1->length);
 	}
 	return true;
 }
@@ -692,18 +692,18 @@ RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms) {
 	RASN1Object *object = rz_asn1_create_object(content->binary, content->length, content->binary);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
-		RZ_FREE(spcinfo);
+		RZ_FREE_CUSTOM(spcinfo, rz_pkcs7_free_spcinfo);
 		goto beach;
 	}
 	if (object->list.objects[0]) {
 		if (!rz_pkcs7_parse_spcdata(&spcinfo->data, object->list.objects[0])) {
-			RZ_FREE(spcinfo);
+			RZ_FREE_CUSTOM(spcinfo, rz_pkcs7_free_spcinfo);
 			goto beach;
 		}
 	}
 	if (object->list.objects[1]) {
 		if (!rz_pkcs7_parse_spcmessagedigest(&spcinfo->messageDigest, object->list.objects[1])) {
-			RZ_FREE(spcinfo);
+			RZ_FREE_CUSTOM(spcinfo, rz_pkcs7_free_spcinfo);
 			goto beach;
 		}
 	}
