@@ -70,12 +70,6 @@ void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) 
 	rz_list_append(string_list, bin_string);
 }
 
-static void try_free_empty_list(RzList *list) {
-	if (list != NULL) {
-		rz_list_free(list);
-	}
-}
-
 static void free_rz_section(RzBinSection *section) {
 	if (!section) {
 		return;
@@ -111,6 +105,17 @@ static void free_rz_addr(RzBinAddr *addr) {
 	RZ_FREE(addr);
 }
 
+void luac_build_info_free(LuacBinInfo *bin_info) {
+	if (!bin_info) {
+		return;
+	}
+	rz_list_free(bin_info->entry_list);
+	rz_list_free(bin_info->symbol_list);
+	rz_list_free(bin_info->section_list);
+	rz_list_free(bin_info->string_list);
+	free(bin_info);
+}
+
 LuacBinInfo *luac_build_info(LuaProto *proto) {
 	if (!proto) {
 		RZ_LOG_ERROR("Invalid luac file\n");
@@ -128,10 +133,10 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 	ret->string_list = rz_list_newf((RzListFree)free_rz_string);
 
 	if (!(ret->entry_list && ret->symbol_list && ret->section_list && ret->string_list)) {
-		try_free_empty_list(ret->entry_list);
-		try_free_empty_list(ret->symbol_list);
-		try_free_empty_list(ret->section_list);
-		try_free_empty_list(ret->string_list);
+		rz_list_free(ret->entry_list);
+		rz_list_free(ret->symbol_list);
+		rz_list_free(ret->section_list);
+		rz_list_free(ret->string_list);
 	}
 
 	_luac_build_info(proto, ret);
@@ -227,12 +232,12 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	char *section_name;
 	char *symbol_name;
 	char *proto_name;
+	char **upvalue_names = NULL;
 	RzListIter *iter;
+	int i = 0; // iter
 
 	ut64 current_offset;
 	ut64 current_size;
-
-	int i = 0; // iter
 
 	// 0. check if stripped (proto name is lost)
 	if (proto->name_size == 0 || proto->proto_name == NULL) {
@@ -295,21 +300,25 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	}
 
 	// 2.2 parse debug_upvalues
-	char **upvalue_names;
-	int real_upvalue_cnt;
-	LuaDbgUpvalueEntry *debug_upv_entry;
-	real_upvalue_cnt = rz_list_length(proto->upvalue_entries);
-	upvalue_names = RZ_NEWS0(char *, real_upvalue_cnt);
-	if (!upvalue_names) {
-		return;
-	}
-	rz_list_foreach (proto->dbg_upvalue_entries, iter, debug_upv_entry) {
-		upvalue_names[i] = (char *)debug_upv_entry->upvalue_name;
-		luac_add_string(
-			info->string_list,
-			upvalue_names[i],
-			debug_upv_entry->offset,
-			debug_upv_entry->name_len);
+	size_t real_upvalue_cnt = rz_list_length(proto->upvalue_entries);
+	if (real_upvalue_cnt > 0) {
+		LuaDbgUpvalueEntry *debug_upv_entry;
+		upvalue_names = RZ_NEWS0(char *, real_upvalue_cnt);
+		if (!upvalue_names) {
+			free(proto_name);
+			return;
+		}
+
+		i = 0;
+		rz_list_foreach (proto->dbg_upvalue_entries, iter, debug_upv_entry) {
+			upvalue_names[i] = (char *)debug_upv_entry->upvalue_name;
+			luac_add_string(
+				info->string_list,
+				upvalue_names[i],
+				debug_upv_entry->offset,
+				debug_upv_entry->name_len);
+			i++;
+		}
 	}
 
 	// 3.1 construct constant symbols
@@ -352,5 +361,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 		_luac_build_info(sub_proto, info);
 	}
 
-	RZ_FREE(proto_name);
+	free(upvalue_names);
+	free(proto_name);
 }
