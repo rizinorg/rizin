@@ -4,7 +4,7 @@
 #ifndef RZ_EBC_DISAS_H
 #define RZ_EBC_DISAS_H
 
-#include <stdint.h>
+#include <rz_types.h>
 
 #define EBC_OPCODE_MASK     0x3F
 #define EBC_MODIFIER_MASK   0xC0
@@ -93,6 +93,6 @@ typedef struct ebc_command {
 	char operands[EBC_OPERANDS_MAXLEN];
 } ebc_command_t;
 
-int ebc_decode_command(const uint8_t *instr, ebc_command_t *cmd);
+RZ_IPI int ebc_decode_command(const ut8 *instr, size_t sz, ebc_command_t *cmd);
 
 #endif /* EBC_DISAS_H */
