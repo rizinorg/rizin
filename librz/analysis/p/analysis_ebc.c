@@ -69,7 +69,7 @@ static int ebc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 	op->addr = addr;
 
-	ret = op->size = ebc_decode_command(buf, &cmd);
+	ret = op->size = ebc_decode_command(buf, len, &cmd);
 
 	if (ret < 0) {
 		return ret;
