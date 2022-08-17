@@ -33,7 +33,7 @@ RZ_API RZ_OWN RzBitmap *rz_bitmap_new(size_t len) {
 }
 
 RZ_API void rz_bitmap_set_bytes(RZ_NONNULL RzBitmap *b, RZ_NONNULL const ut8 *buf, size_t len) {
-	rz_return_if_fail(b && buf);
+	rz_return_if_fail(b && buf && len >= 0);
 	if (b->length < len) {
 		len = b->length;
 	}
@@ -49,7 +49,7 @@ RZ_API void rz_bitmap_free(RZ_NULLABLE RzBitmap *b) {
 }
 
 RZ_API void rz_bitmap_set(RZ_NONNULL RzBitmap *b, size_t bit) {
-	rz_return_if_fail(b);
+	rz_return_if_fail(b && bit >= 0);
 	if (bit < b->length) {
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |=
 			((RBitword)1 << (bit & BITWORD_BITS_MASK));
@@ -57,7 +57,7 @@ RZ_API void rz_bitmap_set(RZ_NONNULL RzBitmap *b, size_t bit) {
 }
 
 RZ_API void rz_bitmap_unset(RZ_NONNULL RzBitmap *b, size_t bit) {
-	rz_return_if_fail(b);
+	rz_return_if_fail(b && bit >= 0);
 	if (bit < b->length) {
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] &=
 			~((RBitword)1 << (bit & BITWORD_BITS_MASK));
@@ -65,7 +65,7 @@ RZ_API void rz_bitmap_unset(RZ_NONNULL RzBitmap *b, size_t bit) {
 }
 
 RZ_API int rz_bitmap_test(RZ_NONNULL RzBitmap *b, size_t bit) {
-	rz_return_val_if_fail(b, -1);
+	rz_return_val_if_fail(b && bit >= 0, -1);
 	if (bit < b->length) {
 		RBitword bword = b->bitmap[(bit >> BITWORD_BITS_SHIFT)];
 		return BITWORD_TEST(bword, (bit & BITWORD_BITS_MASK));
