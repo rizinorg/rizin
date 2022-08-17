@@ -555,7 +555,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 			break;
 		}
 		rz_meta_set_with_subtype(r->analysis, RZ_META_TYPE_STRING, string->type, vaddr, string->size, string->string);
-		char *f_name = strdup(string->string);
+		char *f_name = rz_str_new(string->string);
 		rz_name_filter(f_name, -1, true);
 		char *str;
 		if (r->bin->prefix) {
