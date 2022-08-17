@@ -5,7 +5,8 @@
 
 void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
 	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
-	if (!bin_sec) {
+	if (!bin_sec || !name) {
+		free(bin_sec);
 		return;
 	}
 
@@ -16,7 +17,7 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 	bin_sec->bits = is_func ? sizeof(LUA_INSTRUCTION) * 8 : 8;
 	// bin_sec->has_strings = !is_func;
 	bin_sec->has_strings = false;
-	bin_sec->arch = rz_str_new("luac");
+	bin_sec->arch = "luac";
 
 	if (is_func) {
 		bin_sec->perm = RZ_PERM_R | RZ_PERM_X;
@@ -24,7 +25,9 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 		bin_sec->perm = RZ_PERM_R;
 	}
 
-	rz_list_append(section_list, bin_sec);
+	if (!rz_list_append(section_list, bin_sec)) {
+		rz_bin_section_free(bin_sec);
+	}
 }
 
 void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type) {
