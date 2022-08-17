@@ -175,6 +175,10 @@ bool rz_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *object
 		elems[0]->form == FORM_CONSTRUCTED &&
 		elems[0]->list.objects[0]->tag == TAG_INTEGER &&
 		elems[0]->list.objects[0]->length == 1) {
+		if (object->list.length < 7) {
+			// Always expect at least 7 elements for non-v1 certificates.
+			return false;
+		}
 		// Integer inside a CLASS_CONTEXT
 		tbsc->version = (ut32)elems[0]->list.objects[0]->sector[0];
 		shift = 1;
