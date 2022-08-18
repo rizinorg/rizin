@@ -346,3 +346,61 @@ agraph.w=0x149
 ()      () ()   ()         () ()     ()
 EOF
 RUN
+
+NAME=aga multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+aga
+aga ascii
+aga cmd
+aga dot
+aga gml
+aga json
+aga json_disasm
+aga sdb
+aga tiny
+EOF
+EXPECT=<<EOF
+.--------------------.
+|  entry0            |
+`--------------------'
+.--------------------.
+|  entry0            |
+`--------------------'
+agn "entry0"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="entry0", color="lightgray", label="entry0"]
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "entry0"
+  ]
+]
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0x6
+agraph.is_callgraph=false
+agraph.nodes=entry0
+agraph.nodes.entry0.body=base64:
+agraph.nodes.entry0.h=0x3
+agraph.nodes.entry0.w=0x16
+agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.y=0
+agraph.w=0x16
+()
+EOF
+RUN
