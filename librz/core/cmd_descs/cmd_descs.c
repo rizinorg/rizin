@@ -3157,12 +3157,12 @@ static const RzCmdDescHelp analysis_graph_refs_global_help = {
 	.args = analysis_graph_refs_global_args,
 };
 
-static const RzCmdDescArg analysis_graph_unknown_args[] = {
+static const RzCmdDescArg analysis_graph_normal_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_graph_unknown_help = {
-	.summary = "Unknown graph",
-	.args = analysis_graph_unknown_args,
+static const RzCmdDescHelp analysis_graph_normal_help = {
+	.summary = "Normal graph",
+	.args = analysis_graph_normal_args,
 };
 
 static const RzCmdDescArg analysis_graph_line_args[] = {
@@ -15474,8 +15474,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_graph_refs_global_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agR", rz_analysis_graph_refs_global_handler, &analysis_graph_refs_global_help);
 	rz_warn_if_fail(analysis_graph_refs_global_cd);
 
-	RzCmdDesc *analysis_graph_unknown_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "ags", rz_analysis_graph_unknown_handler, &analysis_graph_unknown_help);
-	rz_warn_if_fail(analysis_graph_unknown_cd);
+	RzCmdDesc *analysis_graph_normal_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "ags", rz_analysis_graph_normal_handler, &analysis_graph_normal_help);
+	rz_warn_if_fail(analysis_graph_normal_cd);
 
 	RzCmdDesc *analysis_graph_line_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agl", rz_analysis_graph_line_handler, &analysis_graph_line_help);
 	rz_warn_if_fail(analysis_graph_line_cd);

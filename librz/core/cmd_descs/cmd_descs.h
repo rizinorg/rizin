@@ -193,7 +193,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_analysis_graph_imports_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_global_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_analysis_graph_unknown_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_graph_normal_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_line_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv);

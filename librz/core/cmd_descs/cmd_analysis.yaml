@@ -1096,8 +1096,8 @@ commands:
             default_value: "ascii"
             choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: ags
-        summary: Unknown graph
-        cname: analysis_graph_unknown
+        summary: Normal graph
+        cname: analysis_graph_normal
         args: []
       - name: agl
         summary: Line graph ?
