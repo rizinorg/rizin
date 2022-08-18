@@ -1050,3 +1050,105 @@ agraph.w=0x16
 ()
 EOF
 RUN
+
+NAME=agx multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+s sym.imp.strlen
+agx ascii
+agx cmd
+agx dot
+agx gml
+agx json
+agx json_disasm
+agx sdb
+agx tiny
+EOF
+EXPECT=<<EOF
+.--------------------.    .--------------------.
+|  0x000007cf        |    |  0x000007de        |
+`--------------------'    `--------------------'
+    v                         v
+    |                         |
+    '--------------.          |
+                   | .--------'
+                   | |
+             .--------------------.
+             |  sym.imp.strlen    |
+             `--------------------'
+agn "sym.imp.strlen"
+agn "0x000007cf"
+agn "0x000007de"
+age "0x000007cf" "sym.imp.strlen"
+age "0x000007de" "sym.imp.strlen"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="sym.imp.strlen", color="lightgray", label="sym.imp.strlen"]
+1 [URL="0x000007cf", color="lightgray", label="0x000007cf"]
+1 -> 0
+2 [URL="0x000007de", color="lightgray", label="0x000007de"]
+2 -> 0
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "sym.imp.strlen"
+  ]
+  node [
+    id  1
+    label  "0x000007cf"
+  ]
+  node [
+    id  2
+    label  "0x000007de"
+  ]
+  edge [
+    source  1
+    target  0
+  ]
+  edge [
+    source  2
+    target  0
+  ]
+]
+{"nodes":[{"id":0,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":1,"title":"0x000007cf","offset":1999,"out_nodes":[0]},{"id":2,"title":"0x000007de","offset":2014,"out_nodes":[0]}]}
+{"nodes":[{"id":0,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":1,"title":"0x000007cf","offset":1999,"out_nodes":[0]},{"id":2,"title":"0x000007de","offset":2014,"out_nodes":[0]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0xf
+agraph.is_callgraph=false
+agraph.nodes=sym.imp.strlen,0x000007cf,0x000007de
+agraph.nodes.0x000007cf.body=base64:
+agraph.nodes.0x000007cf.h=0x3
+agraph.nodes.0x000007cf.neighbours=sym.imp.strlen
+agraph.nodes.0x000007cf.w=0x16
+agraph.nodes.0x000007cf.x=0x1
+agraph.nodes.0x000007cf.y=0
+agraph.nodes.0x000007de.body=base64:
+agraph.nodes.0x000007de.h=0x3
+agraph.nodes.0x000007de.neighbours=sym.imp.strlen
+agraph.nodes.0x000007de.w=0x16
+agraph.nodes.0x000007de.x=0x1b
+agraph.nodes.0x000007de.y=0
+agraph.nodes.sym.imp.strlen.body=base64:
+agraph.nodes.sym.imp.strlen.h=0x3
+agraph.nodes.sym.imp.strlen.w=0x16
+agraph.nodes.sym.imp.strlen.x=0xe
+agraph.nodes.sym.imp.strlen.y=0x8
+agraph.w=0x30
+
+
+() ()
+ ()
+EOF
+RUN
