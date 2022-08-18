@@ -5702,7 +5702,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const 
 	case RZ_CORE_GRAPH_FORMAT_VISUAL:
 	case RZ_CORE_GRAPH_FORMAT_GML: {
 		rz_core_agraph_reset(core);
-		rz_core_cmdf(core, ".agd * @ %" PFMT64u "; agg%c;", addr, format);
+		rz_core_cmdf(core, ".agd * @ %" PFMT64u "; agg %c;", addr, format);
 		break;
 	}
 	case RZ_CORE_GRAPH_FORMAT_DOT: {
