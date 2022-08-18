@@ -263,14 +263,19 @@ typedef struct rz_cmd_desc_arg_t {
 	 */
 	union {
 		/**
-		 * List of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 * Data associated with an argument of \p type RZ_CMD_ARG_TYPE_CHOICES.
 		 */
-		const char **choices;
-		/**
-		 * Callback used to generate a list of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
-		 * When this is specified, \p choices is ignored.
-		 */
-		RzCmdArgChoiceCb choices_cb;
+		struct {
+			/**
+			 * Predefined list of possible values.
+			 */
+			const char **choices;
+			/**
+			 * Callback used to generate a list of possible values.
+			 * When this is specified, \p choices is ignored.
+			 */
+			RzCmdArgChoiceCb choices_cb;
+		} choices;
 	};
 } RzCmdDescArg;
 

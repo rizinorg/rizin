@@ -75,8 +75,8 @@ DESC_HELP_DETAILS_TEMPLATE = """static const RzCmdDescDetail {cname}[] = {{
 DECL_DESC_HELP_DETAILS_TEMPLATE = "static const RzCmdDescDetail {cname}[{size}];"
 
 DESC_HELP_ARG_CHOICES = "static const char *{cname}[] = {{ {choices} }};\n"
-DESC_HELP_ARG_UNION_CHOICES = "\t\t.choices = {choices},\n"
-DESC_HELP_ARG_UNION_CHOICES_CB = "\t\t.choices_cb = {choices_cb},\n"
+DESC_HELP_ARG_UNION_CHOICES = "\t\t.choices.choices = {choices},\n"
+DESC_HELP_ARG_UNION_CHOICES_CB = "\t\t.choices.choices_cb = {choices_cb},\n"
 DESC_HELP_ARG_TEMPLATE_FLAGS = "\t\t.flags = {flags},\n"
 DESC_HELP_ARG_TEMPLATE_OPTIONAL = "\t\t.optional = {optional},\n"
 DESC_HELP_ARG_TEMPLATE_NO_SPACE = "\t\t.no_space = {no_space},\n"

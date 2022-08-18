@@ -56,7 +56,7 @@ static char **z_args_choices_cb(RzCore *core) {
 }
 
 static RzCmdDescArg z_args[] = {
-	{ .name = "v1", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices_cb = z_args_choices_cb },
+	{ .name = "v1", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices.choices_cb = z_args_choices_cb },
 	{ 0 },
 };
 

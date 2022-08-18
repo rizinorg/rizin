@@ -1410,12 +1410,12 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		}
 		if (arg->type == RZ_CMD_ARG_TYPE_CHOICES) {
 			pj_ka(j, "choices");
-			char **ochoice = arg->choices_cb ? arg->choices_cb(cmd->data) : (char **)arg->choices;
+			char **ochoice = arg->choices.choices_cb ? arg->choices.choices_cb(cmd->data) : (char **)arg->choices.choices;
 			for (char **choice = ochoice; *choice; choice++) {
 				pj_s(j, *choice);
 			}
 			pj_end(j);
-			if (arg->choices_cb) {
+			if (arg->choices.choices_cb) {
 				for (char **choice = ochoice; *choice; choice++) {
 					free(*choice);
 				}

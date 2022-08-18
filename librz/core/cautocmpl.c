@@ -519,13 +519,13 @@ static void autocmplt_cmd_arg_rznum(RzCore *core, RzLineNSCompletionResult *res,
 
 static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len, const RzCmdDescArg *arg) {
 	char **oc, **c;
-	oc = c = arg->choices_cb ? arg->choices_cb(core) : (char **)arg->choices;
+	oc = c = arg->choices.choices_cb ? arg->choices.choices_cb(core) : (char **)arg->choices.choices;
 	for (c = oc; c && *c; c++) {
 		if (!strncmp(*c, s, len)) {
 			rz_line_ns_completion_result_add(res, *c);
 		}
 	}
-	if (arg->choices_cb) {
+	if (arg->choices.choices_cb) {
 		for (c = oc; c && *c; c++) {
 			free(*c);
 		}
