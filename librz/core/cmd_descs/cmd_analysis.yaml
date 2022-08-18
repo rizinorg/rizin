@@ -1011,7 +1011,7 @@ commands:
             comment: "Graph Modelling Language"
           - text: "json"
             comment: "json"
-          - text: "json-disasm"
+          - text: "json_disasm"
             comment: "json formatted disassembly"
           - text: "sdb"
             comment: "SDB key-value"

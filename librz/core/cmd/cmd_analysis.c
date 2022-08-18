@@ -5590,25 +5590,25 @@ static inline RzCmdStatus graph_handler(RzCore *core, RzCoreGraphType type, RzCo
 }
 
 static inline RzCoreGraphFormat graph_format_from_string(const char *x) {
-	char short_opt = strlen(x) == 1 ?  x[0] : 0;
+	const char short_opt = (char)(x && strlen(x) == 1 ? x[0] : 0);
 
 	if (strncmp(x, "ascii", sizeof("ascii")) == 0 || RZ_STR_ISEMPTY(x) || short_opt == ' ') {
 		return RZ_CORE_GRAPH_FORMAT_ASCII_ART;
-	} else if (strncmp(x, "cmd", sizeof("cmd")) == 0 || x[0] == '*') {
+	} else if (strncmp(x, "cmd", sizeof("cmd")) == 0 || short_opt == '*') {
 		return RZ_CORE_GRAPH_FORMAT_CMD;
-	} else if (strncmp(x, "dot", sizeof("dot")) == 0 || x[0] == 'd') {
+	} else if (strncmp(x, "dot", sizeof("dot")) == 0 || short_opt == 'd') {
 		return RZ_CORE_GRAPH_FORMAT_DOT;
-	} else if (strncmp(x, "gml", sizeof("gml")) == 0 || x[0] == 'g') {
+	} else if (strncmp(x, "gml", sizeof("gml")) == 0 || short_opt == 'g') {
 		return RZ_CORE_GRAPH_FORMAT_GML;
-	} else if (strncmp(x, "json", sizeof("json")) == 0 || x[0] == 'j') {
-		return RZ_CORE_GRAPH_FORMAT_JSON;
-	} else if (strncmp(x, "json-disasm", sizeof("json-disasm")) == 0 || x[0] == 'J') {
+	} else if (strncmp(x, "json_disasm", sizeof("json_disasm")) == 0 || short_opt == 'J') {
 		return RZ_CORE_GRAPH_FORMAT_JSON_DISASM;
-	} else if (strncmp(x, "sdb", sizeof("sdb")) == 0 || x[0] == 'k') {
+	} else if (strncmp(x, "json", sizeof("json")) == 0 || short_opt == 'j') {
+		return RZ_CORE_GRAPH_FORMAT_JSON;
+	} else if (strncmp(x, "sdb", sizeof("sdb")) == 0 || short_opt == 'k') {
 		return RZ_CORE_GRAPH_FORMAT_SDB;
-	} else if (strncmp(x, "tiny", sizeof("tiny")) == 0 || x[0] == 't') {
+	} else if (strncmp(x, "tiny", sizeof("tiny")) == 0 || short_opt == 't') {
 		return RZ_CORE_GRAPH_FORMAT_TINY;
-	} else if (strncmp(x, "interactive", sizeof("interactive")) == 0 || x[0] == 'v') {
+	} else if (strncmp(x, "interactive", sizeof("interactive")) == 0 || short_opt == 'v') {
 		return RZ_CORE_GRAPH_FORMAT_VISUAL;
 	}
 
