@@ -1572,14 +1572,14 @@ static const RzCmdDescArg analysis_function_create_args[] = {
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = analysis_function_create_type_choices,
+		.choices.choices = analysis_function_create_type_choices,
 
 	},
 	{
 		.name = "diff",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = analysis_function_create_diff_choices,
+		.choices.choices = analysis_function_create_diff_choices,
 
 	},
 	{ 0 },
@@ -1684,7 +1684,7 @@ static const RzCmdDescArg analysis_function_blocks_add_args[] = {
 		.name = "diff",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = analysis_function_blocks_add_diff_choices,
+		.choices.choices = analysis_function_blocks_add_diff_choices,
 
 	},
 	{ 0 },
@@ -2413,7 +2413,7 @@ static const RzCmdDescArg analysis_function_opcode_stat_args[] = {
 		.name = "mode",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = analysis_function_opcode_stat_mode_choices,
+		.choices.choices = analysis_function_opcode_stat_mode_choices,
 
 	},
 	{ 0 },
@@ -2429,7 +2429,7 @@ static const RzCmdDescArg analysis_function_all_opcode_stat_args[] = {
 		.name = "mode",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = analysis_function_all_opcode_stat_mode_choices,
+		.choices.choices = analysis_function_all_opcode_stat_mode_choices,
 
 	},
 	{ 0 },
@@ -4171,7 +4171,7 @@ static const RzCmdDescArg analysis_hint_set_immbase_args[] = {
 	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices = analysis_hint_set_immbase_type_choices,
+		.choices.choices = analysis_hint_set_immbase_type_choices,
 
 	},
 	{
@@ -4920,7 +4920,7 @@ static const RzCmdDescArg basefind_compute_args[] = {
 		.name = "pointer_bits",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = basefind_compute_pointer_bits_choices,
+		.choices.choices = basefind_compute_pointer_bits_choices,
 
 	},
 	{ 0 },
@@ -6369,7 +6369,7 @@ static const RzCmdDescArg cmd_debug_add_watchpoint_args[] = {
 	{
 		.name = "perm",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices = cmd_debug_add_watchpoint_perm_choices,
+		.choices.choices = cmd_debug_add_watchpoint_perm_choices,
 
 	},
 	{ 0 },
@@ -7147,7 +7147,7 @@ static const RzCmdDescArg cmd_heap_arena_bins_print_args[] = {
 		.name = "bin_type",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = cmd_heap_arena_bins_print_bin_type_choices,
+		.choices.choices = cmd_heap_arena_bins_print_bin_type_choices,
 
 	},
 	{ 0 },
@@ -9127,7 +9127,7 @@ static const RzCmdDescArg cmd_info_demangle_args[] = {
 	{
 		.name = "lang",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices_cb = rz_cmd_info_demangle_lang_choices,
+		.choices.choices_cb = rz_cmd_info_demangle_lang_choices,
 
 	},
 	{
@@ -12054,7 +12054,7 @@ static const RzCmdDescArg seek_next_args[] = {
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = seek_next_type_choices,
+		.choices.choices = seek_next_type_choices,
 
 	},
 	{ 0 },
@@ -12071,7 +12071,7 @@ static const RzCmdDescArg seek_prev_args[] = {
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
-		.choices = seek_prev_type_choices,
+		.choices.choices = seek_prev_type_choices,
 
 	},
 	{ 0 },

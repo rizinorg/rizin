@@ -556,7 +556,7 @@ bool test_remove_cmd(void) {
 bool test_cmd_args(void) {
 	const char *x_c_choices[] = { "A", "B", "C" };
 	RzCmdDescArg x_args[] = {
-		{ .name = "c", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices = x_c_choices },
+		{ .name = "c", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices.choices = x_c_choices },
 		{ .name = "from", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM },
 		{ .name = "to", .type = RZ_CMD_ARG_TYPE_NUM },
 		{ .name = "n", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM, .default_value = "5" },
