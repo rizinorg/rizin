@@ -178,37 +178,6 @@ static const char *help_msg_aea[] = {
 	NULL
 };
 
-static const char *help_msg_ag[] = {
-	"Usage:", "ag<graphtype> <format> @ [addr]", "",
-	"Graph commands:", "", "",
-	"aga", " [format]", "Data references graph",
-	"agA", " [format]", "Global data references graph",
-	"agc", " [format]", "Function callgraph",
-	"agC", " [format]", "Global callgraph",
-	"agd", " [format] [fcn addr]", "Diff graph",
-	"agf", " [format]", "Basic blocks function graph",
-	"agi", " [format]", "Imports graph",
-	"agr", " [format]", "References graph",
-	"agR", " [format]", "Global references graph",
-	"agx", " [format]", "Cross references graph",
-	"agg", " [format]", "Custom graph",
-	"ag-", "", "Clear the custom graph",
-	"agn", "[?] title body", "Add a node to the custom graph",
-	"age", "[?] title1 title2", "Add an edge to the custom graph",
-	"agw", " <graphtype> <path>", "Write to path or display graph image (see graph.gv.format)",
-	"", "", "",
-	"Output formats:", "", "",
-	"<blank>", "", "Ascii art",
-	"*", "", "rizin commands",
-	"d", "", "Graphviz dot",
-	"g", "", "Graph Modelling Language (gml)",
-	"j", "", "json ('J' for formatted disassembly)",
-	"k", "", "SDB key-value",
-	"t", "", "Tiny ascii art",
-	"v", "", "Interactive ascii art",
-	NULL
-};
-
 /**
  * \brief Helper to get function in \p offset
  *
@@ -2727,22 +2696,6 @@ static void graph_write(RzCore *core, RzGraph *graph, const char *filename) {
 	free(dot_text);
 }
 
-static void cmd_analysis_graph(RzCore *core, const char *input) {
-	core->graph->show_node_titles = rz_config_get_i(core->config, "graph.ntitles");
-	rz_cons_enable_highlight(false);
-	switch (input[0]) {
-	case 'j':
-	case 'J':
-	case 'k':
-	case 'v':
-		rz_core_cmdf(core, "agf %s", input);
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_ag);
-		break;
-	}
-}
-
 static bool analysis_fcn_data(RzCore *core, const char *input) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ANY);
 	if (fcn) {
@@ -2956,9 +2909,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
 	case 'F': // "aF"
 		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
-		break;
-	case 'g': // "ag"
-		cmd_analysis_graph(core, input + 1);
 		break;
 	case '*': // "a*"
 		rz_core_cmd0_rzshell(core, "afl*");
