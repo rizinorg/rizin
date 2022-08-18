@@ -2987,14 +2987,15 @@ static const RzCmdDescHelp il_vm_status_help = {
 };
 
 static const RzCmdDescDetailEntry ag_Formats_detail_entries[] = {
-	{ .text = "<blank>", .arg_str = NULL, .comment = "Ascii art" },
-	{ .text = "*", .arg_str = NULL, .comment = "rizin commands" },
-	{ .text = "d", .arg_str = NULL, .comment = "Graphviz dot" },
-	{ .text = "g", .arg_str = NULL, .comment = "Graph Modelling Language (gml)" },
-	{ .text = "j", .arg_str = NULL, .comment = "json ('J' for formatted disassembly)" },
-	{ .text = "k", .arg_str = NULL, .comment = "SDB key-value" },
-	{ .text = "t", .arg_str = NULL, .comment = "Tiny ascii art" },
-	{ .text = "v", .arg_str = NULL, .comment = "Interactive ascii art" },
+	{ .text = "ascii", .arg_str = NULL, .comment = "Ascii art" },
+	{ .text = "cmd", .arg_str = NULL, .comment = "rizin commands" },
+	{ .text = "dot", .arg_str = NULL, .comment = "Graphviz dot" },
+	{ .text = "gml", .arg_str = NULL, .comment = "Graph Modelling Language" },
+	{ .text = "json", .arg_str = NULL, .comment = "json" },
+	{ .text = "json-disasm", .arg_str = NULL, .comment = "json formatted disassembly" },
+	{ .text = "sdb", .arg_str = NULL, .comment = "SDB key-value" },
+	{ .text = "tiny", .arg_str = NULL, .comment = "Tiny ascii art" },
+	{ .text = "interactive", .arg_str = NULL, .comment = "Interactive ascii art" },
 	{ 0 },
 };
 static const RzCmdDescDetail ag_details[] = {
@@ -3005,12 +3006,13 @@ static const RzCmdDescHelp ag_help = {
 	.summary = "Analysis graph commands",
 	.details = ag_details,
 };
+static const char *analysis_graph_dataref_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_dataref_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_dataref_format_choices,
 
 	},
 	{ 0 },
@@ -3020,12 +3022,13 @@ static const RzCmdDescHelp analysis_graph_dataref_help = {
 	.args = analysis_graph_dataref_args,
 };
 
+static const char *analysis_graph_dataref_global_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_dataref_global_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_dataref_global_format_choices,
 
 	},
 	{ 0 },
@@ -3035,12 +3038,13 @@ static const RzCmdDescHelp analysis_graph_dataref_global_help = {
 	.args = analysis_graph_dataref_global_args,
 };
 
+static const char *analysis_graph_callgraph_function_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_callgraph_function_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_callgraph_function_format_choices,
 
 	},
 	{ 0 },
@@ -3050,12 +3054,13 @@ static const RzCmdDescHelp analysis_graph_callgraph_function_help = {
 	.args = analysis_graph_callgraph_function_args,
 };
 
+static const char *analysis_graph_callgraph_global_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_callgraph_global_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_callgraph_global_format_choices,
 
 	},
 	{ 0 },
@@ -3065,11 +3070,13 @@ static const RzCmdDescHelp analysis_graph_callgraph_global_help = {
 	.args = analysis_graph_callgraph_global_args,
 };
 
+static const char *analysis_graph_diff_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_diff_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_diff_format_choices,
 
 	},
 	{
@@ -3086,12 +3093,13 @@ static const RzCmdDescHelp analysis_graph_diff_help = {
 	.args = analysis_graph_diff_args,
 };
 
+static const char *analysis_graph_bb_function_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_bb_function_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_bb_function_format_choices,
 
 	},
 	{ 0 },
@@ -3101,12 +3109,13 @@ static const RzCmdDescHelp analysis_graph_bb_function_help = {
 	.args = analysis_graph_bb_function_args,
 };
 
+static const char *analysis_graph_imports_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_imports_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_imports_format_choices,
 
 	},
 	{ 0 },
@@ -3116,12 +3125,13 @@ static const RzCmdDescHelp analysis_graph_imports_help = {
 	.args = analysis_graph_imports_args,
 };
 
+static const char *analysis_graph_refs_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_refs_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_refs_format_choices,
 
 	},
 	{ 0 },
@@ -3131,12 +3141,13 @@ static const RzCmdDescHelp analysis_graph_refs_help = {
 	.args = analysis_graph_refs_args,
 };
 
+static const char *analysis_graph_refs_global_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_refs_global_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_refs_global_format_choices,
 
 	},
 	{ 0 },
@@ -3162,12 +3173,13 @@ static const RzCmdDescHelp analysis_graph_line_help = {
 	.args = analysis_graph_line_args,
 };
 
+static const char *analysis_graph_xrefs_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_xrefs_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_xrefs_format_choices,
 
 	},
 	{ 0 },
@@ -3177,12 +3189,13 @@ static const RzCmdDescHelp analysis_graph_xrefs_help = {
 	.args = analysis_graph_xrefs_args,
 };
 
+static const char *analysis_graph_custom_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_custom_args[] = {
 	{
 		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.default_value = " ",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices = analysis_graph_custom_format_choices,
 
 	},
 	{ 0 },
@@ -3284,10 +3297,13 @@ static const RzCmdDescHelp analysis_graph_custom_edge_remove_help = {
 	.args = analysis_graph_custom_edge_remove_args,
 };
 
+static const char *analysis_graph_write_graphtype_choices[] = { "dataref", "dataref_global", "funcall", "funcall_global", "diff", "funblock", "import", "ref", "ref_global", "line", "xref", "custom", NULL };
 static const RzCmdDescArg analysis_graph_write_args[] = {
 	{
 		.name = "graphtype",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "dataref",
+		.choices.choices = analysis_graph_write_graphtype_choices,
 
 	},
 	{

@@ -784,6 +784,7 @@ typedef enum {
 	RZ_CORE_GRAPH_FORMAT_JSON_DISASM = 'J',
 	RZ_CORE_GRAPH_FORMAT_CMD = '*',
 	RZ_CORE_GRAPH_FORMAT_ASCII_ART = ' ',
+	RZ_CORE_GRAPH_FORMAT_UNK,
 } RzCoreGraphFormat;
 
 typedef enum {
@@ -799,6 +800,7 @@ typedef enum {
 	RZ_CORE_GRAPH_TYPE_LINE = 'l',
 	RZ_CORE_GRAPH_TYPE_XREF = 'x',
 	RZ_CORE_GRAPH_TYPE_CUSTOM = 'g',
+	RZ_CORE_GRAPH_TYPE_UNK
 } RzCoreGraphType;
 
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);

@@ -1001,21 +1001,23 @@ commands:
     details:
       - name: "Formats"
         entries:
-          - text: "<blank>"
+          - text: "ascii"
             comment: "Ascii art"
-          - text: "*"
+          - text: "cmd"
             comment: "rizin commands"
-          - text: "d"
+          - text: "dot"
             comment: "Graphviz dot"
-          - text: "g"
-            comment: "Graph Modelling Language (gml)"
-          - text: "j"
-            comment: "json ('J' for formatted disassembly)"
-          - text: "k"
+          - text: "gml"
+            comment: "Graph Modelling Language"
+          - text: "json"
+            comment: "json"
+          - text: "json-disasm"
+            comment: "json formatted disassembly"
+          - text: "sdb"
             comment: "SDB key-value"
-          - text: "t"
+          - text: "tiny"
             comment: "Tiny ascii art"
-          - text: "v"
+          - text: "interactive"
             comment: "Interactive ascii art"
     subcommands:
       - name: aga
@@ -1023,36 +1025,41 @@ commands:
         cname: analysis_graph_dataref
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agA
         summary: Global data references graph
         cname: analysis_graph_dataref_global
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agc
         summary: Function callgraph
         cname: analysis_graph_callgraph_function
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agC
         summary: Global callgraph
         cname: analysis_graph_callgraph_global
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agd
         summary: Diff graph
         cname: analysis_graph_diff
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
@@ -1061,29 +1068,33 @@ commands:
         cname: analysis_graph_bb_function
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agi
         summary: Imports graph
         cname: analysis_graph_imports
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agr
         summary: References graph
         cname: analysis_graph_refs
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agR
         summary: Global references graph
         cname: analysis_graph_refs_global
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: ags
         summary: Unknown graph
         cname: analysis_graph_unknown
@@ -1097,15 +1108,17 @@ commands:
         cname: analysis_graph_xrefs
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: agg
         summary: Custom graph
         cname: analysis_graph_custom
         args:
           - name: format
-            type: RZ_CMD_ARG_TYPE_STRING
-            default_value: ' '
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
       - name: ag-
         summary: Clear the custom graph
         cname: analysis_graph_custom_clear
@@ -1155,7 +1168,10 @@ commands:
         cname: analysis_graph_write
         args:
           - name: graphtype
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "dataref"
+            choices: ["dataref", "dataref_global", "funcall", "funcall_global", "diff", "funblock", "import", "ref",
+                      "ref_global", "line", "xref", "custom"]
           - name: path
             type: RZ_CMD_ARG_TYPE_STRING
   #####################################################
