@@ -5590,7 +5590,9 @@ static inline RzCmdStatus graph_handler(RzCore *core, RzCoreGraphType type, RzCo
 }
 
 static inline RzCoreGraphFormat graph_format_from_string(const char *x) {
-	if (strncmp(x, "ascii", sizeof("ascii")) == 0 || RZ_STR_ISEMPTY(x) || x[0] == ' ') {
+	char short_opt = strlen(x) == 1 ?  x[0] : 0;
+
+	if (strncmp(x, "ascii", sizeof("ascii")) == 0 || RZ_STR_ISEMPTY(x) || short_opt == ' ') {
 		return RZ_CORE_GRAPH_FORMAT_ASCII_ART;
 	} else if (strncmp(x, "cmd", sizeof("cmd")) == 0 || x[0] == '*') {
 		return RZ_CORE_GRAPH_FORMAT_CMD;
