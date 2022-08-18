@@ -5614,6 +5614,37 @@ static inline RzCoreGraphFormat graph_format_from_string(const char *x) {
 	return RZ_CORE_GRAPH_FORMAT_UNK;
 }
 
+static inline RzCoreGraphType graph_type_from_string(const char *x) {
+	if (strncmp(x, "dataref", sizeof("dataref")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_DATAREF;
+	} else if (strncmp(x, "dataref_global", sizeof("dataref_global")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL;
+	} else if (strncmp(x, "funcall", sizeof("funcall")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_FUNCALL;
+	} else if (strncmp(x, "funcall_global", sizeof("funcall_global")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL;
+	} else if (strncmp(x, "diff", sizeof("diff")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_DIFF;
+	} else if (strncmp(x, "funblock", sizeof("funblock")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_BLOCK_FUN;
+	} else if (strncmp(x, "import", sizeof("import")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_IMPORT;
+	} else if (strncmp(x, "ref", sizeof("ref")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_REF;
+	} else if (strncmp(x, "ref_global", sizeof("ref_global")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_REF_GLOBAL;
+	} else if (strncmp(x, "line", sizeof("line")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_LINE;
+	} else if (strncmp(x, "xref", sizeof("xref")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_XREF;
+	} else if (strncmp(x, "custom", sizeof("custom")) == 0) {
+		return RZ_CORE_GRAPH_TYPE_CUSTOM;
+	}
+
+	rz_warn_if_reached();
+	return RZ_CORE_GRAPH_TYPE_UNK;
+}
+
 static inline bool core_graph_write(RzCore *core, RzCoreGraphType type, const char *path) {
 	RzGraph *graph = core_graph(core, type);
 	if (!graph) {
@@ -5789,7 +5820,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_write_handler(RzCore *core, int argc, const
 	if (RZ_STR_ISEMPTY(argv[1]) || RZ_STR_ISEMPTY(argv[2])) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	const RzCoreGraphType graph_type = (ut8)argv[1][0];
+	const RzCoreGraphType graph_type = graph_type_from_string(argv[1]);
 	const char *path = argv[2];
 	return bool2status(core_graph_write(core, graph_type, path));
 }
