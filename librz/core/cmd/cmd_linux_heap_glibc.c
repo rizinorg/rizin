@@ -36,7 +36,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, const char **argv) {
 	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
 	RzCmdStateOutput state = { 0 };
-	if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG)) {
+	if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG_JSON)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzCmdStatus res;
