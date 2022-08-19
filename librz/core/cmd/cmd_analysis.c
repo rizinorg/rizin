@@ -2440,7 +2440,7 @@ static char *dot_executable_path(void) {
 			return NULL;
 		}
 	}
-	RzList *list = rz_str_split_duplist(dotPath, "/", true);
+	RzList *list = rz_str_split_duplist(dotPath, RZ_SYS_DIR, true);
 	if (!list) {
 		free(dotPath);
 		return NULL;
@@ -5572,7 +5572,7 @@ static inline RzCmdStatus graph_handler(RzCore *core, RzCoreGraphType type, RzCo
 	if (!graph) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	static const bool callgraphs[256] = {
+	static const bool callgraphs[] = {
 		false,
 		[RZ_CORE_GRAPH_TYPE_FUNCALL] = true,
 		[RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL] = true,
