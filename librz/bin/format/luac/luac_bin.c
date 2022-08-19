@@ -303,7 +303,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	}
 
 	// 2.2 parse debug_upvalues
-	size_t real_upvalue_cnt = rz_list_length(proto->upvalue_entries);
+	size_t real_upvalue_cnt = RZ_MAX(rz_list_length(proto->upvalue_entries), rz_list_length(proto->dbg_upvalue_entries));
 	if (real_upvalue_cnt > 0) {
 		LuaDbgUpvalueEntry *debug_upv_entry;
 		upvalue_names = RZ_NEWS0(char *, real_upvalue_cnt);
@@ -328,6 +328,9 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	LuaConstEntry *const_entry;
 	rz_list_foreach (proto->const_entries, iter, const_entry) {
 		symbol_name = get_constant_symbol_name(proto_name, const_entry);
+		if (!symbol_name) {
+			continue;
+		}
 		luac_add_symbol(
 			info->symbol_list,
 			symbol_name,
