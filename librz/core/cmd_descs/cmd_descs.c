@@ -3006,13 +3006,12 @@ static const RzCmdDescHelp ag_help = {
 	.summary = "Analysis graph commands",
 	.details = ag_details,
 };
-static const char *analysis_graph_dataref_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_dataref_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_dataref_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3022,13 +3021,12 @@ static const RzCmdDescHelp analysis_graph_dataref_help = {
 	.args = analysis_graph_dataref_args,
 };
 
-static const char *analysis_graph_dataref_global_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_dataref_global_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_dataref_global_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3038,13 +3036,12 @@ static const RzCmdDescHelp analysis_graph_dataref_global_help = {
 	.args = analysis_graph_dataref_global_args,
 };
 
-static const char *analysis_graph_callgraph_function_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_callgraph_function_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_callgraph_function_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3054,13 +3051,12 @@ static const RzCmdDescHelp analysis_graph_callgraph_function_help = {
 	.args = analysis_graph_callgraph_function_args,
 };
 
-static const char *analysis_graph_callgraph_global_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_callgraph_global_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_callgraph_global_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3070,13 +3066,12 @@ static const RzCmdDescHelp analysis_graph_callgraph_global_help = {
 	.args = analysis_graph_callgraph_global_args,
 };
 
-static const char *analysis_graph_diff_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_diff_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_diff_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{
@@ -3093,13 +3088,12 @@ static const RzCmdDescHelp analysis_graph_diff_help = {
 	.args = analysis_graph_diff_args,
 };
 
-static const char *analysis_graph_bb_function_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_bb_function_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_bb_function_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3109,13 +3103,12 @@ static const RzCmdDescHelp analysis_graph_bb_function_help = {
 	.args = analysis_graph_bb_function_args,
 };
 
-static const char *analysis_graph_imports_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_imports_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_imports_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3125,13 +3118,12 @@ static const RzCmdDescHelp analysis_graph_imports_help = {
 	.args = analysis_graph_imports_args,
 };
 
-static const char *analysis_graph_refs_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_refs_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_refs_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3141,13 +3133,12 @@ static const RzCmdDescHelp analysis_graph_refs_help = {
 	.args = analysis_graph_refs_args,
 };
 
-static const char *analysis_graph_refs_global_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_refs_global_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_refs_global_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3173,13 +3164,12 @@ static const RzCmdDescHelp analysis_graph_line_help = {
 	.args = analysis_graph_line_args,
 };
 
-static const char *analysis_graph_xrefs_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_xrefs_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_xrefs_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },
@@ -3189,13 +3179,12 @@ static const RzCmdDescHelp analysis_graph_xrefs_help = {
 	.args = analysis_graph_xrefs_args,
 };
 
-static const char *analysis_graph_custom_format_choices[] = { "ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL };
 static const RzCmdDescArg analysis_graph_custom_args[] = {
 	{
 		.name = "format",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.default_value = "ascii",
-		.choices.choices = analysis_graph_custom_format_choices,
+		.choices.choices_cb = rz_analysis_graph_format_choices,
 
 	},
 	{ 0 },

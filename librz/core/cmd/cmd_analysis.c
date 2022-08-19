@@ -5655,6 +5655,22 @@ static inline bool core_graph_write(RzCore *core, RzCoreGraphType type, const ch
 	return true;
 }
 
+RZ_IPI char **rz_analysis_graph_format_choices(RzCore *core) {
+	static const char *formats[] = {
+		"ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL
+	};
+	const ut8 sz = RZ_ARRAY_SIZE(formats);
+	char **res = malloc(sizeof(char *) * sz);
+	if (!res) {
+		return NULL;
+	}
+	for (ut8 i = 0; i < sz - 1; ++i) {
+		res[i] = strdup(formats[i]);
+	}
+	res[sz - 1] = NULL;
+	return res;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_handler(RzCore *core, int argc, const char **argv) {
 	const RzCoreGraphFormat format = graph_format_from_string(argv[1]);
 	return graph_handler(core, RZ_CORE_GRAPH_TYPE_DATAREF, format);

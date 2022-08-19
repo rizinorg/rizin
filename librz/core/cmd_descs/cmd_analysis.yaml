@@ -1027,7 +1027,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agA
         summary: Global data references graph
         cname: analysis_graph_dataref_global
@@ -1035,7 +1035,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agc
         summary: Function callgraph
         cname: analysis_graph_callgraph_function
@@ -1043,7 +1043,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agC
         summary: Global callgraph
         cname: analysis_graph_callgraph_global
@@ -1051,7 +1051,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agd
         summary: Diff graph
         cname: analysis_graph_diff
@@ -1059,7 +1059,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
@@ -1070,7 +1070,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agi
         summary: Imports graph
         cname: analysis_graph_imports
@@ -1078,7 +1078,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agr
         summary: References graph
         cname: analysis_graph_refs
@@ -1086,7 +1086,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agR
         summary: Global references graph
         cname: analysis_graph_refs_global
@@ -1094,7 +1094,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: ags
         summary: Normal graph
         cname: analysis_graph_normal
@@ -1110,7 +1110,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: agg
         summary: Custom graph
         cname: analysis_graph_custom
@@ -1118,7 +1118,7 @@ commands:
           - name: format
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
-            choices: ["ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive"]
+            choices_cb: rz_analysis_graph_format_choices
       - name: ag-
         summary: Clear the custom graph
         cname: analysis_graph_custom_clear
