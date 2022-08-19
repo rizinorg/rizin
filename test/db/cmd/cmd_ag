@@ -804,6 +804,7 @@ RUN
 
 NAME=agd multiple formats
 FILE=bins/elf/hello_world
+BROKEN=1
 CMDS=<<EOF
 aa 2> /dev/null
 agd ascii main
@@ -919,6 +920,7 @@ RUN
 
 NAME=agf multiple formats
 FILE=bins/elf/hello_world
+BROKEN=1
 CMDS=<<EOF
 aa 2> /dev/null
 agf ascii
