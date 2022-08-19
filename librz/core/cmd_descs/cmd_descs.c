@@ -6922,7 +6922,7 @@ static const RzCmdDescHelp cmd_debug_stop_trace_session_help = {
 static const RzCmdDescArg cmd_debug_save_trace_session_args[] = {
 	{
 		.name = "dir",
-		.type = RZ_CMD_ARG_TYPE_FILE,
+		.type = RZ_CMD_ARG_TYPE_DIR,
 
 	},
 	{ 0 },
@@ -6935,7 +6935,7 @@ static const RzCmdDescHelp cmd_debug_save_trace_session_help = {
 static const RzCmdDescArg cmd_debug_load_trace_session_args[] = {
 	{
 		.name = "dir",
-		.type = RZ_CMD_ARG_TYPE_FILE,
+		.type = RZ_CMD_ARG_TYPE_DIR,
 
 	},
 	{ 0 },
@@ -9110,7 +9110,7 @@ static const RzCmdDescArg cmd_pdb_extract_args[] = {
 	},
 	{
 		.name = "output_dir",
-		.type = RZ_CMD_ARG_TYPE_FILE,
+		.type = RZ_CMD_ARG_TYPE_DIR,
 
 	},
 	{ 0 },
@@ -14469,7 +14469,7 @@ static const RzCmdDescHelp cmd_shell_cp_help = {
 static const RzCmdDescArg cmd_shell_cd_args[] = {
 	{
 		.name = "dir",
-		.type = RZ_CMD_ARG_TYPE_FILE,
+		.type = RZ_CMD_ARG_TYPE_DIR,
 		.optional = true,
 
 	},

@@ -304,6 +304,10 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	free(einput);
 }
 
+static void autocmplt_cmd_arg_dir(RzLineNSCompletionResult *res, const char *s, size_t len) {
+	// TODO: implement me
+}
+
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char **env;
 	res->end_string = "";
@@ -674,6 +678,9 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 	switch (arg_type) {
 	case RZ_CMD_ARG_TYPE_FILE:
 		autocmplt_cmd_arg_file(res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_DIR:
+		autocmplt_cmd_arg_dir(res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_ENV:
 		autocmplt_cmd_arg_env(res, s, len);

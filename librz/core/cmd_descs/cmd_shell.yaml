@@ -113,7 +113,7 @@ commands:
     cname: cmd_shell_cd
     args:
       - name: dir
-        type: RZ_CMD_ARG_TYPE_FILE
+        type: RZ_CMD_ARG_TYPE_DIR
         optional: true
   - name: cat
     summary: Print contents of <file>

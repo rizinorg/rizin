@@ -11,6 +11,7 @@ static RzCmdDescArg xd_args[] = {
 	{ .name = "e3", .type = RZ_CMD_ARG_TYPE_ENV },
 	{ .name = "Z4", .type = RZ_CMD_ARG_TYPE_REG_TYPE },
 	{ .name = "E5", .type = RZ_CMD_ARG_TYPE_EVAL_FULL },
+	{ .name = "D6", .type = RZ_CMD_ARG_TYPE_DIR },
 	{ 0 },
 };
 
@@ -353,6 +354,39 @@ static bool test_autocmplt_eval(void) {
 	mu_end;
 }
 
+static bool test_autocmplt_dir(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	char *tmp_path = rz_file_tmpdir();
+	char *dir_path = rz_file_path_join(tmp_path, "mydir");
+	char *file_path = rz_file_path_join(tmp_path, "myfile");
+	char *cmp_path = rz_file_path_join(tmp_path, "my");
+	rz_file_touch(file_path);
+	rz_sys_mkdir(dir_path);
+	char *s = rz_str_newf("xd 1 2 3 4 5 %s", cmp_path);
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "r should not be null");
+	mu_assert_eq(r->start, strlen("xd 1 2 3 4 5 "), "should autocomplete the last arg");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+	mu_assert_eq(rz_pvector_len(&r->options), 1, "there is only 1 dir starting with 'my'");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "mydir", "mydir found");
+	rz_line_ns_completion_result_free(r);
+
+	rz_core_free(core);
+	free(s);
+	free(cmp_path);
+	free(file_path);
+	free(dir_path);
+	free(tmp_path);
+	mu_end;
+}
+
 static bool test_autocmplt_seek(void) {
 	RzCore *core = fake_core_new();
 	mu_assert_notnull(core, "core should be created");
@@ -643,6 +677,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_newarg);
 	mu_run_test(test_autocmplt_fcn);
 	mu_run_test(test_autocmplt_eval);
+	mu_run_test(test_autocmplt_dir);
 	mu_run_test(test_autocmplt_seek);
 	mu_run_test(test_autocmplt_global);
 	mu_run_test(test_autocmplt_tmp_operators);

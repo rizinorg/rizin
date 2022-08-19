@@ -1365,6 +1365,7 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	case (x): \
 		argtype = (y); \
 		break
+
 		switch (arg->type) {
 			CASE_TYPE(RZ_CMD_ARG_TYPE_FAKE, "fake");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_NUM, "number");
@@ -1374,15 +1375,13 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 			CASE_TYPE(RZ_CMD_ARG_TYPE_CHOICES, "choice");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_FCN, "function");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_FILE, "filename");
+			CASE_TYPE(RZ_CMD_ARG_TYPE_DIR, "directory");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_OPTION, "option");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_CMD, "command");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_MACRO, "macro");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_EVAL_KEY, "evaluable");
 			CASE_TYPE(RZ_CMD_ARG_TYPE_EVAL_FULL, "evaluable_full");
 #undef CASE_TYPE
-		default:
-			argtype = "unknown";
-			break;
 		}
 		pj_ks(j, "type", argtype);
 		pj_ks(j, "name", arg->name);

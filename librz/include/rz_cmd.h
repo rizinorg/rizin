@@ -56,6 +56,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
 	RZ_CMD_ARG_TYPE_REG_FILTER, ///< Argument is a register name, size, type or "all"
 	RZ_CMD_ARG_TYPE_REG_TYPE, ///< Argument is a register type/arena like "gpr"
+	RZ_CMD_ARG_TYPE_DIR, ///< Argument is a directory path
 } RzCmdArgType;
 
 /**

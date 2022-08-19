@@ -529,13 +529,13 @@ commands:
             summary: Save trace sessions to disk
             args:
               - name: dir
-                type: RZ_CMD_ARG_TYPE_FILE
+                type: RZ_CMD_ARG_TYPE_DIR
           - name: dtsf
             cname: cmd_debug_load_trace_session
             summary: Load trace sessions to disk
             args:
               - name: dir
-                type: RZ_CMD_ARG_TYPE_FILE
+                type: RZ_CMD_ARG_TYPE_DIR
           - name: dtsm
             cname: cmd_debug_list_trace_session_mmap
             summary: List current memory map and hash
@@ -973,8 +973,8 @@ commands:
         cname: debug_reg_roles
         details: [] # Explicitly empty to not show parent ones
         args: []
-  # ... to here
-  #####################################################
+      # ... to here
+      #####################################################
       - name: drx # this is under registers but debug-specific so should not be sync with cmd_analysis.yaml
         summary: Show hardware breakpoint registers
         details: []

@@ -143,7 +143,7 @@ commands:
               - name: file.pdb
                 type: RZ_CMD_ARG_TYPE_FILE
               - name: output_dir
-                type: RZ_CMD_ARG_TYPE_FILE
+                type: RZ_CMD_ARG_TYPE_DIR
   - name: iD
     summary: Demangle symbol for given language
     subcommands:
