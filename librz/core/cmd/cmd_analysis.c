@@ -2584,8 +2584,7 @@ RZ_IPI void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *g
 		case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 			agraph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
 			agraph->can->color = rz_config_get_i(core->config, "scr.color");
-			rz_agraph_set_title(agraph,
-				rz_config_get(core->config, "graph.title"));
+			rz_agraph_set_title(agraph, rz_config_get(core->config, "graph.title"));
 			rz_agraph_print(agraph);
 			break;
 		case RZ_CORE_GRAPH_FORMAT_TINY: {
@@ -5702,7 +5701,8 @@ RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const 
 	case RZ_CORE_GRAPH_FORMAT_VISUAL:
 	case RZ_CORE_GRAPH_FORMAT_GML: {
 		rz_core_agraph_reset(core);
-		rz_core_cmdf(core, ".agd * @ %" PFMT64u "; agg %c;", addr, format);
+		rz_core_cmdf(core, ".agd * @ %" PFMT64u, addr);
+		agraph_print(core, -1, format);
 		break;
 	}
 	case RZ_CORE_GRAPH_FORMAT_DOT: {

@@ -2839,7 +2839,7 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 		return false;
 	}
 
-	rz_config_hold_i(hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
+	rz_config_hold_i(hc, "asm.lines", "asm.bytes", "asm.dwarf", "scr.color", NULL);
 	// opts |= RZ_CORE_ANALYSIS_GRAPHBODY;
 	rz_config_set_i(core->config, "asm.lines", 0);
 	rz_config_set_i(core->config, "asm.dwarf", 0);
