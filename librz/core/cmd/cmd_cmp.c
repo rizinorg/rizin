@@ -4,17 +4,20 @@
 #include <rz_cmp.h>
 #include "../core_private.h"
 
-static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) {
+static void rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) {
+	rz_return_if_fail(core && (ws == 1 || ws == 2 || ws == 4 || ws == 8));
 	int i;
 	bool useColor = rz_config_get_i(core->config, "scr.color") != 0;
-	utAny v0, v1;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	ut64 v[2];
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	for (i = 0; i < len; i += ws) {
-		memset(&v0, 0, sizeof(v0));
-		memset(&v1, 0, sizeof(v1));
-		rz_io_nread_at(core->io, of + i, (ut8 *)&v0, ws);
-		rz_io_nread_at(core->io, od + i, (ut8 *)&v1, ws);
-		char ch = (v0.v64 == v1.v64) ? '=' : '!';
+		for (size_t j = 0; j < 2; j++) {
+			ut8 tmp[8] = { 0 };
+			rz_io_nread_at(core->io, (j ? od : of) + i, tmp, ws);
+			v[j] = rz_read_ble(tmp, big_endian, ws * 8);
+		}
+		char ch = (v[0] == v[1]) ? '=' : '!';
 		const char *color = useColor ? ch == '=' ? "" : pal->graph_false : "";
 		const char *colorEnd = useColor ? Color_RESET : "";
 
@@ -26,23 +29,22 @@ static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) 
 		switch (ws) {
 		case 1:
 			rz_cons_printf("%s0x%02x %c 0x%02x%s\n", color,
-				(ut32)(v0.v8 & 0xff), ch, (ut32)(v1.v8 & 0xff), colorEnd);
+				(ut32)(v[0] & 0xff), ch, (ut32)(v[1] & 0xff), colorEnd);
 			break;
 		case 2:
 			rz_cons_printf("%s0x%04hx %c 0x%04hx%s\n", color,
-				v0.v16, ch, v1.v16, colorEnd);
+				(ut16)v[0], ch, (ut16)v[1], colorEnd);
 			break;
 		case 4:
 			rz_cons_printf("%s0x%08" PFMT32x " %c 0x%08" PFMT32x "%s\n", color,
-				v0.v32, ch, v1.v32, colorEnd);
+				(ut32)v[0], ch, (ut32)v[1], colorEnd);
 			break;
 		case 8:
 			rz_cons_printf("%s0x%016" PFMT64x " %c 0x%016" PFMT64x "%s\n",
-				color, v0.v64, ch, v1.v64, colorEnd);
+				color, v[0], ch, v[1], colorEnd);
 			break;
 		}
 	}
-	return 0;
 }
 
 static bool rizin_compare_unified(RzCore *core, RzCompareData *cmp) {
@@ -160,11 +162,11 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 		return ret;
 	}
 
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut64 num = rz_num_math(core->num, argv[1]);
-	ut64 mask = -1;
-	mask >>= 8 - sz;
-	ut64 valid_num = num & mask;
-	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, (ut8 *)&valid_num, sz);
+	ut8 tmp[8] = { 0 };
+	rz_write_ble64(tmp, num, big_endian);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, big_endian && sz ? tmp + (8 - sz) : tmp, sz);
 	if (!cmp) {
 		goto end;
 	}
