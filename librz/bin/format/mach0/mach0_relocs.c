@@ -461,7 +461,6 @@ RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 	}
 
 	if (bin->symtab && bin->symstr && bin->sects && bin->indirectsyms) {
-		int j;
 		int amount = bin->dysymtab.nundefsym;
 		if (amount < 0) {
 			amount = 0;
@@ -472,17 +471,14 @@ RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 				return NULL;
 			}
 		}
-		for (j = 0; j < amount; j++) {
+		for (int j = 0; j < amount; j++) {
 			struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
-			if (!reloc) {
+			if (!reloc || !parse_import_ptr(bin, reloc, bin->dysymtab.iundefsym + j)) {
+				free(reloc);
 				break;
 			}
-			if (parse_import_ptr(bin, reloc, bin->dysymtab.iundefsym + j)) {
-				reloc->ord = j;
-				rz_skiplist_insert(relocs, reloc);
-			} else {
-				RZ_FREE(reloc);
-			}
+			reloc->ord = j;
+			rz_skiplist_insert(relocs, reloc);
 		}
 	}
 

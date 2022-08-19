@@ -2997,8 +2997,9 @@ static void assign_export_symbol_t(struct MACH0_(obj_t) * bin, const char *name,
 
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 	struct symbol_t *symbols;
-	int j, s, stridx, symbols_size, symbols_count;
-	ut32 to, from, i;
+	int j = 0, s = 0, stridx = 0;
+	size_t symbols_size = 0, symbols_count = 0;
+	ut64 to = 0, from = 0, i = 0;
 
 	if (bin->symbols) {
 		return bin->symbols;
@@ -3021,19 +3022,15 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 		symbols_count = (bin->dysymtab.nextdefsym +
 			bin->dysymtab.nlocalsym +
 			bin->dysymtab.nundefsym);
-		symbols_count += bin->nsymtab;
-		if (symbols_count < 0 || ((st64)symbols_count * 2) > ST32_MAX) {
-			eprintf("Symbols count overflow\n");
+		symbols_count += (bin->nsymtab + 1);
+		if (SZT_MUL_OVFCHK(symbols_count, 2)) {
+			RZ_LOG_ERROR("mach0: detected symbols count overflow\n");
 			ht_pp_free(hash);
 			return NULL;
 		}
-		symbols_size = (symbols_count + 1) * 2 * sizeof(struct symbol_t);
-
-		if (symbols_size < 1) {
-			ht_pp_free(hash);
-			return NULL;
-		}
-		if (!(symbols = calloc(1, symbols_size))) {
+		symbols_size = symbols_count * 2;
+		symbols = RZ_NEWS0(struct symbol_t, symbols_size);
+		if (!symbols) {
 			ht_pp_free(hash);
 			return NULL;
 		}
@@ -3059,13 +3056,13 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 				continue;
 			}
 
-			from = RZ_MIN(RZ_MAX(0, from), symbols_size / sizeof(struct symbol_t));
-			to = RZ_MIN(RZ_MIN(to, bin->nsymtab), symbols_size / sizeof(struct symbol_t));
+			from = RZ_MIN(RZ_MAX(0, from), symbols_size);
+			to = RZ_MIN(RZ_MIN(to, bin->nsymtab), symbols_size);
 
-			ut32 maxsymbols = symbols_size / sizeof(struct symbol_t);
+			ut32 maxsymbols = symbols_size;
 			if (symbols_count >= maxsymbols) {
 				symbols_count = maxsymbols - 1;
-				eprintf("macho warning: Symbol table truncated\n");
+				RZ_LOG_WARN("mach0: symbol table is truncated\n");
 			}
 			for (i = from; i < to && j < symbols_count; i++, j++) {
 				symbols[j].offset = MACH0_(vaddr_to_paddr)(bin, bin->symtab[i].n_value);
@@ -3132,9 +3129,9 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 				if (sym_name) {
 					symbols[j].name = sym_name;
 				} else {
-					symbols[j].name = rz_str_newf("entry%d", i);
+					symbols[j].name = rz_str_newf("entry%" PFMT64u, i);
 				}
-				symbols[j].last = 0;
+				symbols[j].last = false;
 				if (inSymtab(hash, symbols[j].name, symbols[j].addr)) {
 					RZ_FREE(symbols[j].name);
 				} else {
@@ -3157,12 +3154,12 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 		ht_pp_free(hash);
 		return NULL;
 	} else {
-		symbols_size = (symbols_count + 1) * sizeof(struct symbol_t);
-		if (symbols_size < 1) {
+		if (SZT_ADD_OVFCHK(symbols_count, 1)) {
 			ht_pp_free(hash);
 			return NULL;
 		}
-		if (!(symbols = calloc(1, symbols_size))) {
+		symbols_size = symbols_count + 1;
+		if (!(symbols = RZ_NEWS0(struct symbol_t, symbols_size))) {
 			ht_pp_free(hash);
 			return NULL;
 		}
