@@ -198,6 +198,24 @@ void *rz_bin_mz_free(struct rz_bin_mz_obj_t *bin) {
 	return NULL;
 }
 
+static bool read_mz_header(MZ_image_dos_header *mz, RzBuffer *buf) {
+	ut64 offset = 0;
+	return rz_buf_read_le16_offset(buf, &offset, &mz->signature) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->bytes_in_last_block) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->blocks_in_file) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->num_relocs) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->header_paragraphs) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->min_extra_paragraphs) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->max_extra_paragraphs) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->ss) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->sp) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->checksum) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->ip) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->cs) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->reloc_table_offset) &&
+		rz_buf_read_le16_offset(buf, &offset, &mz->overlay_number);
+}
+
 static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
 	MZ_image_dos_header *mz;
@@ -205,9 +223,7 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 		RZ_LOG_ERROR("Cannot allocate MZ_image_dos_header");
 		return false;
 	}
-	bin->dos_header = mz;
-	// TODO: read field by field to avoid endian and alignment issues
-	if (rz_buf_read_at(bin->b, 0, (ut8 *)mz, sizeof(*mz)) == -1) {
+	if (!read_mz_header(mz, bin->b)) {
 		RZ_LOG_ERROR("Cannot read MZ_image_dos_header\n");
 		return false;
 	}
@@ -224,6 +240,7 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 			mz->bytes_in_last_block;
 	}
 
+	bin->dos_header = mz;
 	bin->dos_file_size = dos_file_size;
 	if (dos_file_size > bin->size) {
 		return false;
@@ -263,14 +280,19 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 		}
 	}
 
-	if (relocations_size > 0) {
-		if (!(bin->relocation_entries = malloc(relocations_size))) {
-			RZ_LOG_ERROR("Cannot allocate dos relocation entries");
-			return false;
-		}
-		if (rz_buf_read_at(bin->b, bin->dos_header->reloc_table_offset,
-			    (ut8 *)bin->relocation_entries, relocations_size) == -1) {
-			RZ_LOG_ERROR("Cannot read dos relocation entries\n");
+	if (relocations_size == 0) {
+		return true;
+	}
+	if (!(bin->relocation_entries = malloc(relocations_size))) {
+		RZ_LOG_ERROR("Cannot allocate dos relocation entries");
+		return false;
+	}
+	ut64 offset = bin->dos_header->reloc_table_offset;
+	int i;
+	for (i = 0; i < relocations_size / sizeof(MZ_image_relocation_entry); i++) {
+		MZ_image_relocation_entry *mz_rel_entry = bin->relocation_entries + i;
+		if (!rz_buf_read_le16_offset(bin->b, &offset, &mz_rel_entry->offset) ||
+			!rz_buf_read_le16_offset(bin->b, &offset, &mz_rel_entry->segment)) {
 			RZ_FREE(bin->relocation_entries);
 			return false;
 		}
