@@ -2322,7 +2322,6 @@ static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 
 static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
-		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
 	}
 
@@ -2377,7 +2376,6 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_datarefs(R
 
 static void core_graph_coderefs(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
-		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
 	}
 
@@ -2490,7 +2488,6 @@ RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_codexrefs(RzCore 
 
 static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph *graph) {
 	if (!fcn) {
-		RZ_LOG_INFO("Not in a function. Use 'df' to define it.\n");
 		return;
 	}
 
