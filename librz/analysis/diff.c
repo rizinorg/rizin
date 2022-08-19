@@ -122,21 +122,22 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 	}
 	fcn->diff->type = fcn2->diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->diff && bb->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
+		if ((bb->diff && bb->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) || !bb->fingerprint) {
 			continue;
 		}
 		ot = 0;
 		mbb = mbb2 = NULL;
 		rz_list_foreach (fcn2->bbs, iter2, bb2) {
-			if (!bb2->diff || bb2->diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
-				rz_diff_levenstein_distance(bb->fingerprint, bb->size, bb2->fingerprint, bb2->size, NULL, &t);
-				if (t > analysis->diff_thbb && t > ot) {
-					ot = t;
-					mbb = bb;
-					mbb2 = bb2;
-					if (t == 1) {
-						break;
-					}
+			if ((bb2->diff && bb2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) || !bb2->fingerprint) {
+				continue;
+			}
+			rz_diff_levenstein_distance(bb->fingerprint, bb->size, bb2->fingerprint, bb2->size, NULL, &t);
+			if (t > analysis->diff_thbb && t > ot) {
+				ot = t;
+				mbb = bb;
+				mbb2 = bb2;
+				if (t == 1) {
+					break;
 				}
 			}
 		}
@@ -186,8 +187,11 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList /*<RzAnalysisFuncti
 	}
 	/* Compare functions with the same name */
 	rz_list_foreach (fcns1, iter, fcn) {
+		if (!fcn->fingerprint) {
+			continue;
+		}
 		rz_list_foreach (fcns2, iter2, fcn2) {
-			if (fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name)) {
+			if ((fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name) == 0) || !fcn2->fingerprint) {
 				continue;
 			}
 			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
@@ -217,21 +221,13 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList /*<RzAnalysisFuncti
 	}
 	/* Compare remaining functions */
 	rz_list_foreach (fcns1, iter, fcn) {
-		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
-			continue;
-		} else if (!fcn->fingerprint_size) {
-			continue;
-		} else if (fcn->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL || (fcn->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn->type != RZ_ANALYSIS_FCN_TYPE_SYM) || !fcn->fingerprint_size || !fcn->fingerprint) {
 			continue;
 		}
 		ot = 0.0;
 		mfcn = mfcn2 = NULL;
 		rz_list_foreach (fcns2, iter2, fcn2) {
-			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
-				continue;
-			} else if (!fcn2->fingerprint_size) {
-				continue;
-			} else if (fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL || (fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM) || !fcn2->fingerprint_size || !fcn2->fingerprint) {
 				continue;
 			}
 			if (fcn->fingerprint_size > fcn2->fingerprint_size) {
