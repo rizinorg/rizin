@@ -66,7 +66,9 @@ out:
  * - similarity: is a number that defines how similar/identical the 2 buffers are.
  * */
 RZ_API bool rz_diff_levenstein_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL const ut8 *b, ut32 lb, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity) {
-	rz_return_val_if_fail(a && b, false);
+	if (!a || !b || la <= 0 || lb <= 0) {
+		return false;
+	}
 
 	const ut32 length = RZ_MAX(la, lb);
 	const ut8 *ea = a + la, *eb = b + lb, *t;

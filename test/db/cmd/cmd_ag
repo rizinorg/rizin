@@ -838,9 +838,9 @@ EXPECT=<<EOF
        |  0x844             |
        |                    |
        `--------------------'
-agn 0x7aa base64:ICAgICA= 0
-agn 0x844 base64:G1swbSA= 0
-agn 0x806 base64:G1swbSA= 0
+agn 0x7aa base64:ICAgICA= 109
+agn 0x844 base64:G1swbSA= 109
+agn 0x806 base64:G1swbSA= 109
 age 0x7aa 0x844
 age 0x7aa 0x806
 age 0x806 0x844
@@ -848,9 +848,9 @@ digraph code {
 	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
 	node [fillcolor=gray style=filled shape=box];
 	edge [arrowhead="normal"];
- "0x000007aa" [fillcolor="orange",color="black", fontname="       ; DATA XREF from entry0 @ 0x6bd\lint main (int argc, char **argv, char **envp);\l     ; var int64_t var_20h @ rbp-0x20\l     ; var int64_t var_1ch @ rbp-0x1c\l     ; var int64_t var_18h @ rbp-0x18\l     ; var int64_t var_10h @ rbp-0x10\l     ; var int64_t var_8h @ rbp-0x8\l     push rbp\l     mov rbp, rsp\l     sub rsp, 0x20\l     ; 0x8d4\l     ; "Hello"\l     lea rax, str.Hello\l     mov qword [var_18h], rax\l     ; 0x8da\l     ; " r2-folks"\l     lea rax, str.r2_folks\l     mov qword [var_10h], rax\l     mov rax, qword [var_18h]\l     mov rdi, rax\l     ; size_t strlen(const char *s)\l     call sym.imp.strlen\l     mov dword [var_20h], eax\l     mov rax, qword [var_10h]\l     mov rdi, rax\l     ; size_t strlen(const char *s)\l     call sym.imp.strlen\l     mov dword [var_1ch], eax\l     mov edx, dword [var_20h]\l     mov eax, dword [var_1ch]\l     add eax, edx\l     add eax, 1\l     cdqe\l     mov rdi, rax\l     ; void *malloc(size_t size)\l     call sym.imp.malloc\l     mov qword [var_8h], rax\l     cmp qword [var_8h], 0\l     je 0x844\l", label="Courier", URL="main/0x000007aa"]
- "0x00000844" [fillcolor="orange",color="black", fontname="     nop\l     leave\l     ret\l", label="Courier", URL="main/0x00000844"]
- "0x00000806" [fillcolor="orange",color="black", fontname="     mov rdx, qword [var_18h]\l     mov rax, qword [var_8h]\l     mov rsi, rdx\l     mov rdi, rax\l     ; char *strcpy(char *dest, const char *src)\l     call sym.imp.strcpy\l     mov rdx, qword [var_10h]\l     mov rax, qword [var_8h]\l     mov rsi, rdx\l     mov rdi, rax\l     ; char *strcat(char *s1, const char *s2)\l     call sym.imp.strcat\l     mov rax, qword [var_8h]\l     mov rdi, rax\l     ; int puts(const char *s)\l     call sym.imp.puts\l     mov rax, qword [var_8h]\l     mov rdi, rax\l     ; void free(void *ptr)\l     call sym.imp.free\l", label="Courier", URL="main/0x00000806"]
+ "0x000007aa" [fillcolor="lightgray",color="black", fontname="       ; DATA XREF from entry0 @ 0x6bd\lint main (int argc, char **argv, char **envp);\l     ; var int64_t var_20h @ rbp-0x20\l     ; var int64_t var_1ch @ rbp-0x1c\l     ; var int64_t var_18h @ rbp-0x18\l     ; var int64_t var_10h @ rbp-0x10\l     ; var int64_t var_8h @ rbp-0x8\l     push rbp\l     mov rbp, rsp\l     sub rsp, 0x20\l     ; 0x8d4\l     ; "Hello"\l     lea rax, str.Hello\l     mov qword [var_18h], rax\l     ; 0x8da\l     ; " r2-folks"\l     lea rax, str.r2_folks\l     mov qword [var_10h], rax\l     mov rax, qword [var_18h]\l     mov rdi, rax\l     ; size_t strlen(const char *s)\l     call sym.imp.strlen\l     mov dword [var_20h], eax\l     mov rax, qword [var_10h]\l     mov rdi, rax\l     ; size_t strlen(const char *s)\l     call sym.imp.strlen\l     mov dword [var_1ch], eax\l     mov edx, dword [var_20h]\l     mov eax, dword [var_1ch]\l     add eax, edx\l     add eax, 1\l     cdqe\l     mov rdi, rax\l     ; void *malloc(size_t size)\l     call sym.imp.malloc\l     mov qword [var_8h], rax\l     cmp qword [var_8h], 0\l     je 0x844\l", label="Courier", URL="main/0x000007aa"]
+ "0x00000844" [fillcolor="lightgray",color="black", fontname="     nop\l     leave\l     ret\l", label="Courier", URL="main/0x00000844"]
+ "0x00000806" [fillcolor="lightgray",color="black", fontname="     mov rdx, qword [var_18h]\l     mov rax, qword [var_8h]\l     mov rsi, rdx\l     mov rdi, rax\l     ; char *strcpy(char *dest, const char *src)\l     call sym.imp.strcpy\l     mov rdx, qword [var_10h]\l     mov rax, qword [var_8h]\l     mov rsi, rdx\l     mov rdi, rax\l     ; char *strcat(char *s1, const char *s2)\l     call sym.imp.strcat\l     mov rax, qword [var_8h]\l     mov rdi, rax\l     ; int puts(const char *s)\l     call sym.imp.puts\l     mov rax, qword [var_8h]\l     mov rdi, rax\l     ; void free(void *ptr)\l     call sym.imp.free\l", label="Courier", URL="main/0x00000806"]
         "0x000007aa" -> "0x00000844" [color="#13a10e"];
         "0x000007aa" -> "0x00000806" [color="#c50f1f"];
         "0x00000806" -> "0x00000844" [color="#0037da"];
