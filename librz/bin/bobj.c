@@ -244,7 +244,7 @@ static RzList *classes_from_symbols(RzBinFile *bf) {
 	RzBinSymbol *sym;
 	RzListIter *iter;
 	rz_list_foreach (bf->o->symbols, iter, sym) {
-		if (sym->name[0] != '_') {
+		if (!sym->name || sym->name[0] != '_') {
 			continue;
 		}
 		const char *cn = sym->classname;
