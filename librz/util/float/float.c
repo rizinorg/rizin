@@ -406,7 +406,7 @@ RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f) {
 	RzBitVector *mantissa_squashed = get_man_squashed(f->s, f->r);
 	bool sign = get_sign(f->s, f->r);
 
-	if (rz_bv_is_full_vector(exp_squashed)) {
+	if (rz_bv_is_all_one(exp_squashed)) {
 		// full exp with 0 mantissa -> inf
 		if (rz_bv_is_zero_vector(mantissa_squashed)) {
 			ret = sign ? RZ_FLOAT_SPEC_NINF : RZ_FLOAT_SPEC_PINF;
@@ -468,9 +468,9 @@ RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign) {
 	RzBitVector *bv = ret->s;
 	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	for (ut32 i = exp_start; i < exp_end; ++i) {
-		rz_bv_set(bv, i, true);
-	}
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
 
 	// set sign bit (MSB), keep mantissa as zero-bv
 	rz_bv_set(bv, bv->len - 1, sign);
@@ -502,9 +502,10 @@ RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format) {
 	RzBitVector *bv = ret->s;
 	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	for (ut32 i = exp_start; i < exp_end; ++i) {
-		rz_bv_set(bv, i, true);
-	}
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+
 	// set is_quiet to 1
 	rz_bv_set(bv, exp_start - 1, true);
 
@@ -529,9 +530,10 @@ RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format) {
 	RzBitVector *bv = ret->s;
 	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	for (ut32 i = exp_start; i < exp_end; ++i) {
-		rz_bv_set(bv, i, true);
-	}
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+
 	// set is_quiet to 0 (msb of mantissa part)
 	rz_bv_set(bv, exp_start - 1, false);
 
@@ -555,9 +557,10 @@ static RZ_OWN RzFloat *propagate_float_nan(RZ_NONNULL RzFloat *left, RzFloatSpec
 	RzBitVector *bv = ret->s;
 	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-	for (ut32 i = exp_start; i < exp_end; ++i) {
-		rz_bv_set(bv, i, true);
-	}
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+
 	// set is_quiet to 1
 	rz_bv_set(bv, exp_start - 1, true);
 
