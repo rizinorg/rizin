@@ -42,6 +42,12 @@ cb 0xfa1e0ff2 4
 cb 0x8989898989898989 8
 cb 0x133713371337133713 9
 cb 0xf1f2fa1e0ff2 4
+cb 0x1a0ff2 3
+cb 0x33445566778899aa 8
+?e -- be
+e cfg.bigendian=1
+cb 0x1a0ff2 3
+cb 0x33445566778899aa 8
 EOF
 EXPECT=<<EOF
 0x00005ae1 (byte=02)   0f ' '  ->  f3 ' '
@@ -58,6 +64,31 @@ Compare 3/4 equal bytes (75%)
 Compare 1/8 equal bytes (12%)
 0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
 Compare 3/4 equal bytes (75%)
+0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
+0x00005ae2 (byte=03)   1e ' '  ->  1a ' '
+Compare 1/3 equal bytes (33%)
+0x00005ae0 (byte=01)   f3 ' '  ->  aa ' '
+0x00005ae1 (byte=02)   0f ' '  ->  99 ' '
+0x00005ae2 (byte=03)   1e ' '  ->  88 ' '
+0x00005ae3 (byte=04)   fa ' '  ->  77 'w'
+0x00005ae4 (byte=05)   31 '1'  ->  66 'f'
+0x00005ae5 (byte=06)   ed ' '  ->  55 'U'
+0x00005ae6 (byte=07)   49 'I'  ->  44 'D'
+0x00005ae7 (byte=08)   89 ' '  ->  33 '3'
+Compare 0/8 equal bytes (0%)
+-- be
+0x00005ae0 (byte=01)   f3 ' '  ->  1a ' '
+0x00005ae2 (byte=03)   1e ' '  ->  f2 ' '
+Compare 1/3 equal bytes (33%)
+0x00005ae0 (byte=01)   f3 ' '  ->  33 '3'
+0x00005ae1 (byte=02)   0f ' '  ->  44 'D'
+0x00005ae2 (byte=03)   1e ' '  ->  55 'U'
+0x00005ae3 (byte=04)   fa ' '  ->  66 'f'
+0x00005ae4 (byte=05)   31 '1'  ->  77 'w'
+0x00005ae5 (byte=06)   ed ' '  ->  88 ' '
+0x00005ae6 (byte=07)   49 'I'  ->  99 ' '
+0x00005ae7 (byte=08)   89 ' '  ->  aa ' '
+Compare 0/8 equal bytes (0%)
 EOF
 RUN
 

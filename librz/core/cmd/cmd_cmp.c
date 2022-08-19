@@ -162,11 +162,11 @@ RZ_IPI RzCmdStatus rz_cmd_cmp_bytes_handler(RzCore *core, int argc, const char *
 		return ret;
 	}
 
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut64 num = rz_num_math(core->num, argv[1]);
-	ut64 mask = -1;
-	mask >>= 8 - sz;
-	ut64 valid_num = num & mask;
-	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, (ut8 *)&valid_num, sz);
+	ut8 tmp[8] = { 0 };
+	rz_write_ble64(tmp, num, big_endian);
+	RzCompareData *cmp = rz_core_cmp_mem_data(core, core->offset, big_endian && sz ? tmp + (8 - sz) : tmp, sz);
 	if (!cmp) {
 		goto end;
 	}
