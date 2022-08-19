@@ -40,3 +40,4 @@ option('debugger', type: 'boolean', value: true)
 
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
 option('enable_rz_test', type: 'boolean', value: true, description: 'Build rz-test executable for regression testing')
+option('regenerate_cmds', type: 'feature', value: 'auto', description: 'Regenerate the cmd_descs.[ch] files (requires PyYAML)')
