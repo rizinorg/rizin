@@ -891,6 +891,7 @@ typedef struct {
 	char *assembly;
 	char *assembly_colored;
 } RzCoreDisasmOp;
+
 RZ_API void rz_core_disasm_op_free(RzCoreDisasmOp *x);
 RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opcodes(RZ_NONNULL RzCore *core, RZ_NONNULL ut8 *buffer, ut64 addr, ut64 n_bytes);
 
