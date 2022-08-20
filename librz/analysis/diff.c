@@ -190,7 +190,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList /*<RzAnalysisFuncti
 			continue;
 		}
 		rz_list_foreach (fcns2, iter2, fcn2) {
-			if ((fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name) == 0) || !fcn2->fingerprint) {
+			if ((fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name) != 0) || !fcn2->fingerprint) {
 				continue;
 			}
 			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
