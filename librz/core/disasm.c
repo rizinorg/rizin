@@ -6847,6 +6847,7 @@ RZ_API RZ_OWN RzPVector /*<RzCoreDisassemblyOp *>*/ *rz_core_disasm_all_possible
 			break;
 		}
 		rz_pvector_push(vec, op);
+		op->offset = offset;
 		RzAsmOp asm_op = { 0 };
 		op->size = rz_asm_disassemble(core->rasm, &asm_op, ptr, length);
 		op->hex = rz_hex_bin2strdup(ptr, RZ_MAX(op->size, 1));
