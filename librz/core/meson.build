@@ -166,62 +166,35 @@ rz_core_dep = declare_dependency(link_with: rz_core,
                                 include_directories: rz_core_inc)
 meson.override_dependency('rz_core', rz_core_dep)
 
-pkgconfig_mod.generate(
-  rz_core,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_core',
-  filebase: 'rz_core',
-  requires: pkgconfig_magic_requires + [
-    'rz_util',
-    'rz_demangler',
-    'rz_diff',
-    'rz_reg',
-    'rz_syscall',
-    'rz_search',
-    'rz_cons',
-    'rz_analysis',
-    'rz_socket',
-    'rz_type',
-    'rz_io',
-    'rz_lang',
-    'rz_hash',
-    'rz_flag',
-    'rz_parse',
-    'rz_egg',
-    'rz_debug',
-    'rz_crypto',
-    'rz_config',
-    'rz_bin',
-    'rz_asm',
-    'rz_bp',
-    'rz_sign',
-    'rz_il'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
+modules += { 'rz_core': {
+    'target': rz_core,
+    'dependencies': [
+      'rz_magic',
+      'rz_util',
+      'rz_demangler',
+      'rz_diff',
+      'rz_reg',
+      'rz_syscall',
+      'rz_search',
+      'rz_cons',
+      'rz_analysis',
+      'rz_socket',
+      'rz_type',
+      'rz_io',
+      'rz_lang',
+      'rz_hash',
+      'rz_flag',
+      'rz_parse',
+      'rz_egg',
+      'rz_debug',
+      'rz_crypto',
+      'rz_config',
+      'rz_bin',
+      'rz_asm',
+      'rz_bp',
+      'rz_sign',
+      'rz_il'
+    ],
+    'plugins': [core_plugins]
+}}
 
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_core.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_demangler', 'rz_diff', 'rz_magic',
-    'rz_socket', 'rz_flag', 'rz_cons', 'rz_lang', 'rz_hash', 'rz_crypto', 'rz_io', 'rz_reg',
-    'rz_bp', 'rz_syscall', 'rz_parse', 'rz_asm', 'rz_egg', 'rz_search', 'rz_sign', 'rz_il',
-    'rz_analysis', 'rz_type', 'rz_debug', 'rz_config', 'rz_bin']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_core.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif

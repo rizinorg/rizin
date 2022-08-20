@@ -70,39 +70,8 @@ rz_parse_dep = declare_dependency(link_with: rz_parse,
                                  include_directories: platform_inc)
 meson.override_dependency('rz_parse', rz_parse_dep)
 
-pkgconfig_mod.generate(rz_parse,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_parse',
-  filebase: 'rz_parse',
-  requires: [
-    'rz_util',
-    'rz_flag',
-    'rz_cons',
-    'rz_syscall',
-    'rz_reg'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_parse.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_flag', 'rz_syscall', 'rz_reg', 'rz_cons']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_parse.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_parse': {
+    'target': rz_parse,
+    'dependencies': ['rz_util', 'rz_flag', 'rz_syscall', 'rz_reg', 'rz_cons'],
+    'plugins': [parse_plugins]
+}}

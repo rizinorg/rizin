@@ -41,35 +41,7 @@ rz_il_dep = declare_dependency(link_with: rz_il,
                                 include_directories: rz_il_inc)
 meson.override_dependency('rz_il', rz_il_dep)
 
-pkgconfig_mod.generate(rz_il,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_il',
-  filebase: 'rz_il',
-  requires: [
-    'rz_util',
-    'rz_reg'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_il.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_il.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_il': {
+    'target': rz_il,
+    'dependencies': ['rz_util', 'rz_reg']
+}}

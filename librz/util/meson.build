@@ -179,34 +179,11 @@ else
   rz_util_native_dep = rz_util_dep
 endif
 
-pkgconfig_mod.generate(rz_util,
-  subdirs: ['librz', 'librz/sdb'],
-  version: rizin_version,
-  name: 'rz_util',
-  filebase: 'rz_util',
-  description: 'rizin foundation libraries',
-  variables: [
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_util.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join([]))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_util.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_util': {
+    'target': rz_util,
+    'dependencies': [],
+    'include_subdirs_extra': ['librz/sdb']
+}}
 
 sdb_exe = executable('sdb_native', 'sdb/src/main.c',
   dependencies: rz_util_native_dep,

@@ -1,3 +1,6 @@
+
+modules = {} # every rizin module subdir registers in here
+
 subdir('include')
 
 subdir('util')
@@ -30,30 +33,59 @@ subdir('core')
 
 subdir('main')
 
-plugins = [
-  core_plugins,
-  analysis_plugins,
-  asm_plugins,
-  bp_plugins,
-  bin_plugins,
-  bin_xtr_plugins,
-  crypto_plugins,
-  io_plugins,
-  debug_plugins,
-  egg_plugins,
-  lang_plugins,
-  hash_plugins,
-  parse_plugins,
-  demangler_plugins,
-]
-
 conf_data = configuration_data()
-foreach plugin : plugins
-  l = []
-  foreach p : plugin.get('list')
-    l += ['&' + plugin.get('base_cname') + p]
-  endforeach
-  conf_data.set(plugin.get('conf_name'), ', '.join(l))
+foreach module_name, module : modules
+  include_subdirs = ['librz']
+  if 'include_subdirs_extra' in module
+    include_subdirs += module['include_subdirs_extra']
+  endif
+
+  # pkg-config
+  pkgconfig_vars = []
+  if 'plugins' in module
+    pkgconfig_vars += ['plugindir=@0@'.format(rizin_plugins)]
+  endif
+  pkgconfig_vars += ['datdir=@0@'.format(rizin_datdir_rz)]
+
+  pkgconfig_mod.generate(module['target'],
+    subdirs: include_subdirs,
+    version: rizin_version,
+    name: module_name,
+    filebase: module_name,
+    requires: module['dependencies'],
+    description: 'rizin foundation libraries',
+    variables: pkgconfig_vars,
+  )
+
+  # cmake
+  if not is_static_libs_only
+    conf = configuration_data()
+    conf.set('RZ_VERSION', rizin_version)
+    conf.set('RIZIN_MODULE', module['target'].name())
+    conf.set('RIZIN_MODULE_DEPS', ' '.join(module['dependencies']))
+    conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+    conf.set('INSTALL_INCDIR', rizin_incdir)
+    conf.set('INSTALL_LIBDIR', rizin_libdir)
+    conf.set('INSTALL_PLUGDIR', rizin_plugins)
+    conf.set('rizin_libname', module['target'].name())
+    cmake_mod.configure_package_config_file(
+      name: conf.get('rizin_libname'),
+      input: 'RzModulesConfig.cmake.in',
+      install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+      configuration: conf,
+    )
+  endif
+
+  # plugins
+  if 'plugins' in module
+    foreach plugin : module['plugins']
+      l = []
+      foreach p : plugin.get('list')
+        l += ['&' + plugin.get('base_cname') + p]
+      endforeach
+      conf_data.set(plugin.get('conf_name'), ', '.join(l))
+    endforeach
+  endif
 endforeach
 
 config_h = configure_file(
