@@ -225,7 +225,6 @@ static void handle_posix_error(int err) {
 #endif
 
 static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
-	char *expr = NULL;
 	int i;
 	RzRunProfile *rp = rz_run_new(NULL);
 	if (!rp) {
@@ -242,30 +241,24 @@ static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 	rp->_program = strdup(argv[0]);
 
 	rp->_dodebug = true;
-	if (io->runprofile && *io->runprofile) {
+	if (RZ_STR_ISNOTEMPTY(io->runprofile)) {
 		if (!rz_run_parsefile(rp, io->runprofile)) {
-			eprintf("Can't find profile '%s'\n", io->runprofile);
+			RZ_LOG_ERROR("io_debug: can't find profile '%s'\n", io->runprofile);
 			rz_run_free(rp);
 			return NULL;
 		}
 		if (strstr(io->runprofile, RZ_SYS_DIR ".rz-run.")) {
 			(void)rz_file_rm(io->runprofile);
 		}
-	} else if (io->envprofile) {
-		if (!rz_run_parse(rp, io->envprofile)) {
-			eprintf("Can't parse default rz-run profile\n");
-			rz_run_free(rp);
-			return NULL;
-		}
+	} else if (RZ_STR_ISNOTEMPTY(io->envprofile) && !rz_run_parse(rp, io->envprofile)) {
+		RZ_LOG_ERROR("io_debug: can't parse default rz-run profile\n");
+		rz_run_free(rp);
+		return NULL;
 	}
-	if (bits == 64) {
-		rz_run_parseline(rp, expr = strdup("bits=64"));
-	} else if (bits == 32) {
-		rz_run_parseline(rp, expr = strdup("bits=32"));
-	}
-	free(expr);
+
+	rp->_bits = bits;
 	if (rz_run_config_env(rp)) {
-		eprintf("Can't config the environment.\n");
+		RZ_LOG_ERROR("io_debug: can't config the environment.\n");
 		rz_run_free(rp);
 		return NULL;
 	}
