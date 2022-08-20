@@ -291,49 +291,25 @@ rz_analysis_dep = declare_dependency(link_with: rz_analysis,
                                 include_directories: rz_analysis_inc)
 meson.override_dependency('rz_analysis', rz_analysis_dep)
 
-pkgconfig_mod.generate(rz_analysis,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_analysis',
-  filebase: 'rz_analysis',
-  requires: [
-    'rz_util',
-    'rz_crypto',
-    'rz_reg',
-    'rz_asm',
-    'rz_parse',
-    'rz_syscall',
-    'rz_search',
-    'rz_cons',
-    'rz_diff',
-    'rz_bin',
-    'rz_flag',
-    'rz_type'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_analysis.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_crypto', 'rz_reg', 'rz_asm', 'rz_parse',
-    'rz_syscall', 'rz_search', 'rz_cons', 'rz_diff', 'rz_bin', 'rz_flag', 'rz_type']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_analysis.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_analysis': {
+    'target': rz_analysis,
+    'dependencies': [
+      'rz_util',
+      'rz_crypto',
+      'rz_reg',
+      'rz_syscall',
+      'rz_search',
+      'rz_cons',
+      'rz_flag',
+      'rz_hash',
+      'rz_diff',
+      'rz_parse',
+      'rz_asm',
+      'rz_bin',
+      'rz_type',
+      'rz_il',
+    ],
+    'plugins': [analysis_plugins]
+}}
 
 subdir('d')
