@@ -5954,16 +5954,17 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCo
 	int position = 0;
 	rz_pvector_foreach (vec, p) {
 		RzCoreDisasmOp *op = *p;
+		if (op->size < 1) {
+			continue;
+		}
 		int padding = position * 2;
 		int space = 60 - padding;
-
 		if ((position + op->size) >= 30) {
 			ut32 last = (30 - position) * 2;
-			op_hex[last - 1] = '.';
-			op_hex[last] = 0;
+			op->hex[last - 1] = '.';
+			op->hex[last] = 0;
 		}
 		rz_cons_printf("0x%08" PFMT64x " %*s%*s %s\n", op->offset, padding, "", -space, op->hex, color ? op->assembly_colored : op->assembly);
-
 		position++;
 	}
 
