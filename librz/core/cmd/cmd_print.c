@@ -5928,7 +5928,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core,
 	rz_cmd_state_output_array_end(state);
 
 ret:
-		free(buffer);
+	free(buffer);
 	rz_pvector_free(vec);
 	return res;
 fail:
