@@ -884,6 +884,16 @@ RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflag
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t);
 
+typedef struct {
+	ut64 offset;
+	ut64 size;
+	char *hex;
+	char *assembly;
+	char *assembly_colored;
+} RzCoreDisasmOp;
+RZ_API void rz_core_disasm_op_free(RzCoreDisasmOp *x);
+RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opcodes(RZ_NONNULL RzCore *core, RZ_NONNULL ut8 *buffer, ut64 addr, ut64 n_bytes);
+
 /* cbin.c */
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
 RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *binfile);

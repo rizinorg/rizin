@@ -5885,65 +5885,57 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
-	bool color = rz_config_get_i(core->config, "scr.color") > 0;
-	RzAsmOp asm_op = { 0 };
-	ut32 old_blocksize = core->blocksize;
-
-	if (n_bytes > old_blocksize) {
-		rz_core_block_size(core, n_bytes);
-		rz_core_block_read(core);
+	ut8 *buffer = calloc(n_bytes, sizeof(ut8));
+	RzPVector *vec = NULL;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
+	if (!buffer) {
+		goto fail;
+	}
+	if (!rz_io_read_at(core->io, core->offset, buffer, n_bytes)) {
+		goto fail;
+	}
+	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, n_bytes);
+	if (!vec) {
+		goto fail;
 	}
 
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	void **p;
 	rz_cmd_state_output_array_start(state);
 	rz_cons_break_push(NULL, NULL);
-	for (ut64 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
-		ut64 offset = core->offset + position;
-		rz_asm_set_pc(core->rasm, offset);
-		ut8 *buffer = core->block + position;
-		ut32 length = n_bytes - position;
-		int op_size = rz_asm_disassemble(core->rasm, &asm_op, buffer, length);
-		char *op_hex = rz_hex_bin2strdup(buffer, RZ_MAX(op_size, 1));
-		char *assembly = strdup(op_size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
-		char *colored = NULL;
-
-		if (color && state->mode != RZ_OUTPUT_MODE_JSON) {
-			RzAnalysisOp aop = { 0 };
-			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
-			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
-			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asm_op.asm_toks);
-			colored = rz_strbuf_drain(colored_asm);
-		}
-
+	rz_pvector_foreach (vec, p) {
+		RzCoreDisasmOp *op = *p;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x%08" PFMT64x " %20s  %s\n", offset, op_hex, colored ? colored : assembly);
+			rz_cons_printf("0x%08" PFMT64x " %20s  %s\n", op->offset, op->hex, color ? op->assembly_colored : op->assembly);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_kn(state->d.pj, "addr", offset);
-			pj_ks(state->d.pj, "bytes", op_hex);
-			pj_ks(state->d.pj, "inst", assembly);
+			pj_kn(state->d.pj, "addr", op->offset);
+			pj_ks(state->d.pj, "bytes", op->hex);
+			pj_ks(state->d.pj, "inst", op->assembly);
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("%s\n", colored ? colored : assembly);
+			rz_cons_printf("%s\n", color ? op->assembly_colored : op->assembly);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
-		free(op_hex);
-		free(assembly);
-		free(colored);
 	}
 	rz_cons_break_pop();
 	rz_cmd_state_output_array_end(state);
 
-	if (n_bytes > old_blocksize) {
-		rz_core_block_size(core, old_blocksize);
-		rz_core_block_read(core);
+ret:
+	if (buffer) {
+		free(buffer);
 	}
-	return RZ_CMD_STATUS_OK;
+	rz_pvector_free(vec);
+	return res;
+fail:
+	res = RZ_CMD_STATUS_ERROR;
+	goto ret;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCore *core, int argc, const char **argv) {

@@ -6815,3 +6815,53 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	}
 	return buf_asm;
 }
+
+RZ_API void rz_core_disasm_op_free(RzCoreDisasmOp *x) {
+	if (!x) {
+		return;
+	}
+	free(x->assembly);
+	free(x->assembly_colored);
+	free(x->hex);
+	free(x);
+}
+
+/**
+ * \brief Disassemble all possible opcodes (byte per byte) at \p addr
+ */
+RZ_API RZ_OWN RzPVector /*<RzCoreDisassemblyOp *>*/ *rz_core_disasm_all_possible_opcodes(RZ_NONNULL RzCore *core, RZ_NONNULL ut8 *buffer, ut64 addr, ut64 n_bytes) {
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_core_disasm_op_free);
+	if (!vec) {
+		return NULL;
+	}
+	rz_pvector_reserve(vec, n_bytes);
+
+	for (ut64 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
+		ut64 offset = addr + position;
+		ut8 *ptr = buffer + position;
+		int length = (int)(n_bytes - position);
+		rz_asm_set_pc(core->rasm, offset);
+
+		RzCoreDisasmOp *op = RZ_NEW0(RzCoreDisasmOp);
+		if (!op) {
+			break;
+		}
+		rz_pvector_push(vec, op);
+		RzAsmOp asm_op = { 0 };
+		op->size = rz_asm_disassemble(core->rasm, &asm_op, ptr, length);
+		op->hex = rz_hex_bin2strdup(ptr, RZ_MAX(op->size, 1));
+		op->assembly = strdup(op->size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
+		rz_asm_op_fini(&asm_op);
+
+		RzAnalysisOp aop = { 0 };
+		rz_analysis_op(core->analysis, &aop, offset, ptr, length, RZ_ANALYSIS_OP_MASK_ALL);
+		RzStrBuf *bw_str = rz_strbuf_new(op->assembly);
+		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asm_op.asm_toks);
+		rz_strbuf_free(bw_str);
+		free(param);
+		op->assembly_colored = rz_strbuf_drain(colored_asm);
+		rz_analysis_op_fini(&aop);
+	}
+	return vec;
+}
