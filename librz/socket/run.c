@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -133,6 +134,7 @@ RZ_API void rz_run_free(RzRunProfile *r) {
 		free(r->_chroot);
 		free(r->_libpath);
 		free(r->_preload);
+		free(r->_input);
 		free(r);
 	}
 }
@@ -149,103 +151,140 @@ static void set_limit(int n, int a, ut64 b) {
 }
 #endif
 
-static char *getstr(const char *src) {
-	int len;
-	char *ret = NULL;
+static char *resolve_value(const char *src, size_t *result_len) {
+	size_t src_len = strlen(src);
+	size_t copy_len = 0;
+	if (src_len < 1) {
+		return NULL;
+	}
+	char *copy = NULL;
+	char delimiter = 0;
 
-	switch (*src) {
-	case '\'':
-		ret = strdup(src + 1);
-		if (ret) {
-			len = strlen(ret);
-			if (len > 0) {
-				len--;
-				if (ret[len] == '\'') {
-					ret[len] = 0;
-					return ret;
-				}
-				eprintf("Missing \"\n");
-			}
-			free(ret);
+	if (src[0] == '\'' || src[0] == '"') {
+		delimiter = src[0];
+		if (src_len < 2 || src[src_len - 1] != delimiter) {
+			// the quoted string must have and end.
+			RZ_LOG_ERROR("rz-run: missing `%c` at the end of the value `%s`\n", delimiter, src);
+			return NULL;
 		}
-		return NULL;
-	case '"':
-		ret = strdup(src + 1);
-		if (ret) {
-			len = strlen(ret);
-			if (len > 0) {
-				len--;
-				if (ret[len] == '"') {
-					ret[len] = 0;
-					rz_str_unescape(ret);
-					return ret;
-				}
-				eprintf("Missing \"\n");
-			}
-			free(ret);
-		}
-		return NULL;
+		copy = rz_str_ndup(src + 1, src_len - 2);
+		src_len -= 2;
+	} else {
+		copy = strdup(src);
+	}
+
+	copy_len = src_len = rz_str_unescape(copy);
+	if (src_len < 1) {
+		goto end_resolve;
+	}
+	const char *end = copy + src_len;
+
+	switch (*copy) {
 	case '@': {
-		char *pat = strchr(src + 1, '@');
-		if (pat) {
-			size_t len;
-			long i, rep;
-			*pat++ = 0;
-			rep = strtol(src + 1, NULL, 10);
-			len = strlen(pat);
-			if (rep > 0) {
-				char *buf = malloc(rep);
-				if (buf) {
-					for (i = 0; i < rep; i++) {
-						buf[i] = pat[i % len];
-					}
-				}
-				return buf;
+		char *at_end = NULL;
+		size_t at_size = strtol(copy + 1, &at_end, 10);
+		if (!at_size || *at_end != '@') {
+			RZ_LOG_ERROR("rz-run: invalid @<num>@ in `%s`\n", copy);
+			free(copy);
+			return NULL;
+		}
+		at_end++;
+		size_t suffix_len = end - at_end;
+		if (suffix_len < 1) {
+			RZ_LOG_ERROR("rz-run: invalid string after @<num>@ in `%s`\n", copy);
+			free(copy);
+			return NULL;
+		}
+		char *buf = malloc(at_size + 1);
+		if (buf) {
+			buf[at_size] = 0;
+			for (size_t i = 0; i < at_size; i++) {
+				buf[i] = at_end[i % suffix_len];
 			}
 		}
-		// slurp file
-		return rz_file_slurp(src + 1, NULL);
+		free(copy);
+		copy = buf;
+		copy_len = at_size;
+		break;
 	}
 	case '`': {
-		char *msg = strdup(src + 1);
-		int msg_len = strlen(msg);
-		if (msg_len > 0) {
-			msg[msg_len - 1] = 0;
-			char *ret = rz_sys_cmd_str(msg, NULL, NULL);
-			rz_str_trim_tail(ret);
-			free(msg);
-			return ret;
+		char *backtick_end = strchr(src + 1, '`');
+		if (!backtick_end) {
+			RZ_LOG_ERROR("rz-run: missing `\n");
+			free(copy);
+			return NULL;
 		}
-		free(msg);
-		return strdup("");
+		size_t msg_len = backtick_end - (copy + 1);
+		if (msg_len < 1) {
+			free(copy);
+			return strdup("");
+		}
+		*backtick_end = 0;
+		char *tmp = rz_sys_cmd_str(copy + 1, NULL, NULL);
+		free(copy);
+		rz_str_trim_tail(tmp);
+		copy = tmp;
+		copy_len = strlen(copy);
+		break;
 	}
 	case '!': {
-		char *a = rz_sys_cmd_str(src + 1, NULL, NULL);
-		rz_str_trim_tail(a);
-		return a;
+		char *tmp = rz_sys_cmd_str(copy + 1, NULL, NULL);
+		free(copy);
+		rz_str_trim_tail(tmp);
+		copy = tmp;
+		copy_len = strlen(copy);
+		break;
 	}
-	case ':':
-		if (src[1] == '!') {
-			ret = rz_sys_cmd_str(src + 1, NULL, NULL);
-			rz_str_trim_tail(ret); // why no head :?
+	case ':': {
+		if (copy[1] != '!') {
+			src_len--;
+			memmove(copy, copy + 1, src_len);
+			copy[src_len] = 0;
 		} else {
-			ret = strdup(src);
+			if (copy + 2 >= end) {
+				RZ_LOG_ERROR("rz-run: missing strin after `!` in `%s`\n", copy);
+				free(copy);
+				return NULL;
+			}
+			char *tmp = rz_sys_cmd_str(copy + 2, NULL, NULL);
+			free(copy);
+			rz_str_trim_tail(tmp);
+			copy = tmp;
+			src_len = strlen(copy);
 		}
-		len = rz_hex_str2bin(src + 1, (ut8 *)ret);
-		if (len > 0) {
-			ret[len] = 0;
-			return ret;
+		if (src_len < 2 || (src_len & 1)) {
+			RZ_LOG_ERROR("rz-run: invalid hexpair string `%s`\n", copy);
+			free(copy);
+			return NULL;
 		}
-		eprintf("Invalid hexpair string\n");
-		free(ret);
-		return NULL;
+		ut8 *buf = calloc(1, src_len);
+		int len = rz_hex_str2bin(copy, buf);
+		if (len < 1) {
+			RZ_LOG_ERROR("rz-run: invalid hexpair string `%s`\n", copy);
+			free(copy);
+			return NULL;
+		}
+		free(copy);
+		copy = (char *)buf;
+		copy_len = src_len >> 1;
+		break;
 	}
-	rz_str_unescape((ret = strdup(src)));
-	return ret;
+	default:
+		break;
+	}
+
+end_resolve:
+	if (result_len) {
+		*result_len = copy_len;
+	}
+	return copy;
 }
 
-static int parseBool(const char *e) {
-	return (strcmp(e, "yes") ? (strcmp(e, "on") ? (strcmp(e, "true") ? (strcmp(e, "1") ? 0 : 1) : 1) : 1) : 1);
+static bool parse_bool(const char *value) {
+	return !rz_str_casecmp(value, "yes") ||
+		!rz_str_casecmp(value, "on") ||
+		!rz_str_casecmp(value, "true") ||
+		!rz_str_casecmp(value, "1");
 }
 
 // TODO: move into rz_util? rz_run_... ? with the rest of funcs?
@@ -266,8 +305,8 @@ static void setASLR(RzRunProfile *r, int enabled) {
 		: r->_program          ? r->_program
 		: r->_args[0]          ? r->_args[0]
 				       : "/path/to/exec";
-	eprintf("To disable aslr patch mach0.hdr.flags with:\n"
-		"rizin -qwnc 'wx 000000 @ 0x18' %s\n",
+	RZ_LOG_WARN("rz-run: to disable aslr patch mach0.hdr.flags with:\n"
+		    "rizin -qwnc 'wx 000000 @ 0x18' %s\n",
 		argv0);
 	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
@@ -402,12 +441,12 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			if (rz_sys_pipe(pipes, true) != -1) {
 				size_t cmdl = strlen(cmd) - 2;
 				if (write(pipes[1], cmd + 1, cmdl) != cmdl) {
-					eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
+					RZ_LOG_ERROR("rz-run: cannot write to the pipe\n");
 					close(0);
 					return 1;
 				}
 				if (write(pipes[1], "\n", 1) != 1) {
-					eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
+					RZ_LOG_ERROR("rz-run: cannot write to the pipe\n");
 					close(0);
 					return 1;
 				}
@@ -416,7 +455,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 				rz_sys_pipe_close(pipes[0]);
 				rz_sys_pipe_close(pipes[1]);
 			} else {
-				eprintf("[ERROR] rz-run: Cannot create pipe\n");
+				RZ_LOG_ERROR("rz-run: cannot create pipe\n");
 			}
 		}
 #else
@@ -442,7 +481,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #endif
 		f = open(cmd, flag, mode);
 		if (f < 0) {
-			eprintf("[ERROR] rz-run: Cannot open: %s\n", cmd);
+			RZ_LOG_ERROR("rz-run: cannot open: %s\n", cmd);
 			return 1;
 		}
 #define DUP(x) \
@@ -476,115 +515,142 @@ RZ_API bool rz_run_parsefile(RzRunProfile *p, const char *b) {
 	return 0;
 }
 
+static bool parse_key_value(const char *input, char **key, char **value) {
+	char *s_key = NULL, *s_value = NULL;
+	size_t length = input ? strlen(input) : 0;
+	if (length < 1 || *input == '#') {
+		return false;
+	}
+
+	const char *end = input + length;
+	const char *equal = strchr(input, '=');
+	if (!equal || equal + 1 >= end) {
+		return false;
+	}
+
+	s_key = rz_str_ndup(input, equal - input);
+	if (equal[1] == '$') {
+		s_value = rz_sys_getenv(equal + 1);
+	} else {
+		s_value = rz_str_new(equal + 1);
+	}
+
+	if (!s_key || !s_value) {
+		free(s_key);
+		free(s_value);
+		return false;
+	}
+
+	*key = s_key;
+	*value = s_value;
+	return true;
+}
+
 RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
-	int must_free = false;
-	char *e = strchr(b, '=');
-	if (!e || *b == '#') {
-		return 0;
+	if (RZ_STR_ISEMPTY(b)) {
+		return true;
+	} else if (!strcmp(b, "clearenv")) {
+		rz_sys_clearenv();
+		return true;
 	}
-	*e++ = 0;
-	if (*e == '$') {
-		must_free = true;
-		e = rz_sys_getenv(e);
+
+	char *key = NULL, *value = NULL;
+	if (!parse_key_value(b, &key, &value)) {
+		return false;
 	}
-	if (!e) {
-		return 0;
-	}
-	if (!strcmp(b, "program")) {
-		p->_args[0] = p->_program = strdup(e);
-	} else if (!strcmp(b, "daemon")) {
+
+	if (!strcmp(key, "program")) {
+		p->_args[0] = p->_program = strdup(value);
+	} else if (!strcmp(key, "daemon")) {
 		p->_daemon = true;
-	} else if (!strcmp(b, "system")) {
-		p->_system = strdup(e);
-	} else if (!strcmp(b, "runlib")) {
-		p->_runlib = strdup(e);
-	} else if (!strcmp(b, "runlib.fcn")) {
-		p->_runlib_fcn = strdup(e);
-	} else if (!strcmp(b, "aslr")) {
-		p->_aslr = parseBool(e);
-	} else if (!strcmp(b, "pid")) {
-		p->_pid = parseBool(e);
-	} else if (!strcmp(b, "pidfile")) {
-		p->_pidfile = strdup(e);
-	} else if (!strcmp(b, "connect")) {
-		p->_connect = strdup(e);
-	} else if (!strcmp(b, "listen")) {
-		p->_listen = strdup(e);
-	} else if (!strcmp(b, "pty")) {
-		p->_pty = parseBool(e);
-	} else if (!strcmp(b, "stdio")) {
-		if (e[0] == '!') {
-			p->_stdio = strdup(e);
+	} else if (!strcmp(key, "system")) {
+		p->_system = strdup(value);
+	} else if (!strcmp(key, "runlib")) {
+		p->_runlib = strdup(value);
+	} else if (!strcmp(key, "runlib.fcn")) {
+		p->_runlib_fcn = strdup(value);
+	} else if (!strcmp(key, "aslr")) {
+		p->_aslr = parse_bool(value);
+	} else if (!strcmp(key, "pid")) {
+		p->_pid = parse_bool(value);
+	} else if (!strcmp(key, "pidfile")) {
+		p->_pidfile = strdup(value);
+	} else if (!strcmp(key, "connect")) {
+		p->_connect = strdup(value);
+	} else if (!strcmp(key, "listen")) {
+		p->_listen = strdup(value);
+	} else if (!strcmp(key, "pty")) {
+		p->_pty = parse_bool(value);
+	} else if (!strcmp(key, "stdio")) {
+		if (value[0] == '!') {
+			p->_stdio = strdup(value);
 		} else {
-			p->_stdout = strdup(e);
-			p->_stderr = strdup(e);
-			p->_stdin = strdup(e);
+			p->_stdout = strdup(value);
+			p->_stderr = strdup(value);
+			p->_stdin = strdup(value);
 		}
-	} else if (!strcmp(b, "stdout")) {
-		p->_stdout = strdup(e);
-	} else if (!strcmp(b, "stdin")) {
-		p->_stdin = strdup(e);
-	} else if (!strcmp(b, "stderr")) {
-		p->_stderr = strdup(e);
-	} else if (!strcmp(b, "input")) {
-		p->_input = strdup(e);
-	} else if (!strcmp(b, "chdir")) {
-		p->_chgdir = strdup(e);
-	} else if (!strcmp(b, "core")) {
-		p->_docore = parseBool(e);
-	} else if (!strcmp(b, "fork")) {
-		p->_dofork = parseBool(e);
-	} else if (!strcmp(b, "sleep")) {
-		p->_rzsleep = atoi(e);
-	} else if (!strcmp(b, "maxstack")) {
-		p->_maxstack = atoi(e);
-	} else if (!strcmp(b, "maxproc")) {
-		p->_maxproc = atoi(e);
-	} else if (!strcmp(b, "maxfd")) {
-		p->_maxfd = atoi(e);
-	} else if (!strcmp(b, "bits")) {
-		p->_bits = atoi(e);
-	} else if (!strcmp(b, "chroot")) {
-		p->_chroot = strdup(e);
-	} else if (!strcmp(b, "libpath")) {
-		p->_libpath = strdup(e);
-	} else if (!strcmp(b, "preload")) {
-		p->_preload = strdup(e);
-	} else if (!strcmp(b, "rzpreload")) {
-		p->_rzpreload = parseBool(e);
-	} else if (!strcmp(b, "rzpreweb")) {
-		rz_sys_setenv("RZ_RUN_WEB", "yes");
-	} else if (!strcmp(b, "setuid")) {
-		p->_setuid = strdup(e);
-	} else if (!strcmp(b, "seteuid")) {
-		p->_seteuid = strdup(e);
-	} else if (!strcmp(b, "setgid")) {
-		p->_setgid = strdup(e);
-	} else if (!strcmp(b, "setegid")) {
-		p->_setegid = strdup(e);
-	} else if (!strcmp(b, "nice")) {
-		p->_nice = atoi(e);
-	} else if (!strcmp(b, "timeout")) {
-		p->_timeout = atoi(e);
-	} else if (!strcmp(b, "timeoutsig")) {
-		p->_timeout_sig = rz_signal_from_string(e);
+	} else if (!strcmp(key, "stdout")) {
+		p->_stdout = strdup(value);
+	} else if (!strcmp(key, "stdin")) {
+		p->_stdin = strdup(value);
+	} else if (!strcmp(key, "stderr")) {
+		p->_stderr = strdup(value);
+	} else if (!strcmp(key, "input")) {
+		p->_input = strdup(value);
+	} else if (!strcmp(key, "chdir")) {
+		p->_chgdir = strdup(value);
+	} else if (!strcmp(key, "core")) {
+		p->_docore = parse_bool(value);
+	} else if (!strcmp(key, "fork")) {
+		p->_dofork = parse_bool(value);
+	} else if (!strcmp(key, "sleep")) {
+		p->_rzsleep = atoi(value);
+	} else if (!strcmp(key, "maxstack")) {
+		p->_maxstack = atoi(value);
+	} else if (!strcmp(key, "maxproc")) {
+		p->_maxproc = atoi(value);
+	} else if (!strcmp(key, "maxfd")) {
+		p->_maxfd = atoi(value);
+	} else if (!strcmp(key, "bits")) {
+		p->_bits = atoi(value);
+	} else if (!strcmp(key, "chroot")) {
+		p->_chroot = strdup(value);
+	} else if (!strcmp(key, "libpath")) {
+		p->_libpath = strdup(value);
+	} else if (!strcmp(key, "preload")) {
+		p->_preload = strdup(value);
+	} else if (!strcmp(key, "rzpreload")) {
+		p->_rzpreload = parse_bool(value);
+	} else if (!strcmp(key, "setuid")) {
+		p->_setuid = strdup(value);
+	} else if (!strcmp(key, "seteuid")) {
+		p->_seteuid = strdup(value);
+	} else if (!strcmp(key, "setgid")) {
+		p->_setgid = strdup(value);
+	} else if (!strcmp(key, "setegid")) {
+		p->_setegid = strdup(value);
+	} else if (!strcmp(key, "nice")) {
+		p->_nice = atoi(value);
+	} else if (!strcmp(key, "timeout")) {
+		p->_timeout = atoi(value);
+	} else if (!strcmp(key, "timeoutsig")) {
+		p->_timeout_sig = rz_signal_from_string(value);
 	} else if (!memcmp(b, "arg", 3)) {
 		int n = atoi(b + 3);
 		if (n >= 0 && n < RZ_RUN_PROFILE_NARGS) {
-			p->_args[n] = getstr(e);
+			p->_args[n] = resolve_value(value, NULL);
 			p->_argc++;
 		} else {
-			eprintf("Out of bounds args index: %d\n", n);
+			RZ_LOG_ERROR("rz-run: out of bounds args index: %d\n", n);
 		}
-	} else if (!strcmp(b, "envfile")) {
+	} else if (!strcmp(key, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
-		FILE *fd = rz_sys_fopen(e, "r");
+		FILE *fd = rz_sys_fopen(value, "r");
 		if (!fd) {
-			eprintf("Cannot open '%s'\n", e);
-			if (must_free == true) {
-				free(e);
-			}
+			RZ_LOG_ERROR("rz-run: cannot open '%s'\n", value);
+			free(key);
+			free(value);
 			return false;
 		}
 		for (;;) {
@@ -608,22 +674,25 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 			}
 		}
 		fclose(fd);
-	} else if (!strcmp(b, "unsetenv")) {
-		rz_sys_setenv(e, NULL);
-	} else if (!strcmp(b, "setenv")) {
-		char *V, *v = strchr(e, '=');
-		if (v) {
-			*v++ = 0;
-			V = getstr(v);
-			rz_sys_setenv(e, V);
+	} else if (!strcmp(key, "unsetenv")) {
+		rz_sys_setenv(value, NULL);
+	} else if (!strcmp(key, "setenv")) {
+		char *key2 = NULL, *value2 = NULL;
+		if (!parse_key_value(value, &key2, &value2)) {
+			free(key);
+			free(value);
+			return false;
+		}
+		char *V = resolve_value(value2, NULL);
+		if (V) {
+			rz_sys_setenv(key2, V);
 			free(V);
 		}
-	} else if (!strcmp(b, "clearenv")) {
-		rz_sys_clearenv();
+		free(key2);
+		free(value2);
 	}
-	if (must_free == true) {
-		free(e);
-	}
+	free(key);
+	free(value);
 	return true;
 }
 
@@ -689,7 +758,7 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 
 	char *new_buff = realloc(*buff, size);
 	if (!new_buff) {
-		eprintf("Failed to allocate buffer for redirection");
+		RZ_LOG_ERROR("rz-run: Failed to allocate buffer for redirection");
 		return -1;
 	}
 	*buff = new_buff;
@@ -742,7 +811,7 @@ static int redirect_socket_to_pty(RzSocket *sock) {
 	pid_t child_pid = rz_sys_fork();
 
 	if (child_pid == -1) {
-		eprintf("cannot fork\n");
+		RZ_LOG_ERROR("rz-run: cannot fork\n");
 		close(fdm);
 		close(fds);
 		return -1;
@@ -814,7 +883,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 #endif
 
 	if (!p->_program && !p->_system && !p->_runlib) {
-		eprintf("No program, system or runlib rule defined\n");
+		RZ_LOG_ERROR("rz-run: No program, system or runlib rule defined\n");
 		return 1;
 	}
 	// when IO is redirected to a process, handle them together
@@ -848,7 +917,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 	}
 #else
 	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack)
-		eprintf("Warning: setrlimits not supported for this platform\n");
+		RZ_LOG_WARN("rz-run: setrlimits not supported for this platform\n");
 #endif
 	if (p->_connect) {
 		char *q = strchr(p->_connect, ':');
@@ -856,12 +925,12 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 			RzSocket *fd = rz_socket_new(0);
 			*q = 0;
 			if (!rz_socket_connect_tcp(fd, p->_connect, q + 1, 30)) {
-				eprintf("Cannot connect\n");
+				RZ_LOG_ERROR("rz-run: cannot connect\n");
 				return 1;
 			}
 			if (p->_pty) {
 				if (redirect_socket_to_pty(fd) != 0) {
-					eprintf("socket redirection failed\n");
+					RZ_LOG_ERROR("rz-run: socket redirection failed\n");
 					rz_socket_free(fd);
 					return 1;
 				}
@@ -869,7 +938,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 				redirect_socket_to_stdio(fd);
 			}
 		} else {
-			eprintf("Invalid format for connect. missing ':'\n");
+			RZ_LOG_ERROR("rz-run: Invalid format for connect. missing ':'\n");
 			return 1;
 		}
 	}
@@ -877,7 +946,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		RzSocket *child, *fd = rz_socket_new(0);
 		bool is_child = false;
 		if (!rz_socket_listen(fd, p->_listen, NULL)) {
-			eprintf("rz-run: cannot listen\n");
+			RZ_LOG_ERROR("rz-run: cannot listen\n");
 			rz_socket_free(fd);
 			return 1;
 		}
@@ -889,7 +958,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = rz_sys_fork();
 					if (child_pid == -1) {
-						eprintf("rz-run: cannot fork\n");
+						RZ_LOG_ERROR("rz-run: cannot fork\n");
 						rz_socket_free(child);
 						rz_socket_free(fd);
 						return 1;
@@ -901,10 +970,10 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 
 				if (is_child) {
 					rz_socket_close_fd(fd);
-					eprintf("connected\n");
+					RZ_LOG_ERROR("rz-run: connected\n");
 					if (p->_pty) {
 						if (redirect_socket_to_pty(child) != 0) {
-							eprintf("socket redirection failed\n");
+							RZ_LOG_ERROR("rz-run: socket redirection failed\n");
 							rz_socket_free(child);
 							rz_socket_free(fd);
 							return 1;
@@ -929,21 +998,21 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 #if __UNIX__
 	if (p->_chroot) {
 		if (chdir(p->_chroot) == -1) {
-			eprintf("Cannot chdir to chroot in %s\n", p->_chroot);
+			RZ_LOG_ERROR("rz-run: cannot chdir to chroot in %s\n", p->_chroot);
 			return 1;
 		} else {
 			if (chroot(".") == -1) {
-				eprintf("Cannot chroot to %s\n", p->_chroot);
+				RZ_LOG_ERROR("rz-run: cannot chroot to %s\n", p->_chroot);
 				return 1;
 			} else {
 				// Silenting pedantic meson flags...
 				if (chdir("/") == -1) {
-					eprintf("Cannot chdir to /\n");
+					RZ_LOG_ERROR("rz-run: cannot chdir to /\n");
 					return 1;
 				}
 				if (p->_chgdir) {
 					if (chdir(p->_chgdir) == -1) {
-						eprintf("Cannot chdir after chroot to %s\n", p->_chgdir);
+						RZ_LOG_ERROR("rz-run: cannot chdir after chroot to %s\n", p->_chgdir);
 						return 1;
 					}
 				}
@@ -951,7 +1020,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		}
 	} else if (p->_chgdir) {
 		if (chdir(p->_chgdir) == -1) {
-			eprintf("Cannot chdir after chroot to %s\n", p->_chgdir);
+			RZ_LOG_ERROR("rz-run: cannot chdir after chroot to %s\n", p->_chgdir);
 			return 1;
 		}
 	}
@@ -993,31 +1062,31 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		}
 	}
 	if (p->_input) {
-		char *inp;
 		int f2[2];
 		if (rz_sys_pipe(f2, true) != -1) {
 			close(0);
 			dup2(f2[0], 0);
 		} else {
-			eprintf("[ERROR] rz-run: Cannot create pipe\n");
+			RZ_LOG_ERROR("rz-run: cannot create pipe\n");
 			return 1;
 		}
-		inp = getstr(p->_input);
+		size_t inpl = 0;
+		char *inp = resolve_value(p->_input, &inpl);
 		if (inp) {
-			size_t inpl = strlen(inp);
 			if (write(f2[1], inp, inpl) != inpl) {
-				eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
+				RZ_LOG_ERROR("rz-run: cannot write to the pipe\n");
 			}
 			rz_sys_pipe_close(f2[1]);
 			free(inp);
 		} else {
-			eprintf("Invalid input\n");
+			RZ_LOG_ERROR("rz-run: Invalid input\n");
 		}
 	}
 #endif
 	if (p->_rzpreload) {
 		if (p->_preload) {
-			eprintf("WARNING: Only one library can be opened at a time\n");
+			RZ_LOG_WARN("rz-run: only one library can be opened at a time\n");
+			free(p->_preload);
 		}
 		char *libdir = rz_path_libdir();
 		p->_preload = rz_file_path_join(libdir, "librz." RZ_LIB_EXT);
@@ -1025,7 +1094,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
-		eprintf("rz-run: libpath unsupported for this platform\n");
+		RZ_LOG_ERROR("rz-run: libpath unsupported for this platform\n");
 #elif __HAIKU__
 		char *orig = rz_sys_getenv("LIBRARY_PATH");
 		char *newlib = rz_str_newf("%s:%s", p->_libpath, orig);
@@ -1070,7 +1139,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		if (p->_timeout_sig < 1 || p->_timeout_sig == 9) {
 			rz_th_new(exit_process, (void *)p->_timeout);
 		} else {
-			eprintf("timeout with signal not supported for this platform\n");
+			RZ_LOG_ERROR("rz-run: timeout with signal not supported for this platform\n");
 		}
 #endif
 	}
@@ -1118,7 +1187,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 		case 0:
 			break;
 		default:
-			eprintf("posix_spawnp: %s\n", strerror(ret));
+			RZ_LOG_ERROR("rz-run: posix_spawnp: %s\n", strerror(ret));
 			break;
 		}
 		exit(ret);
@@ -1126,7 +1195,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #endif
 	if (p->_system) {
 		if (p->_pid) {
-			eprintf("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			RZ_LOG_ERROR("rz-run: PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 		}
 		if (p->_daemon) {
 #if __WINDOWS__
@@ -1164,7 +1233,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 					exit(0);
 				}
 #else
-				eprintf("timeout not supported for this platform\n");
+				RZ_LOG_ERROR("rz-run: timeout not supported for this platform\n");
 #endif
 			}
 #endif
@@ -1180,7 +1249,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #endif
 		} else {
 			if (p->_pidfile) {
-				eprintf("Warning: pidfile doesnt work with 'system'.\n");
+				RZ_LOG_WARN("pidfile doesnt work with 'system'.\n");
 			}
 			exit(rz_sys_system(p->_system));
 		}
@@ -1193,7 +1262,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				p->_program = progpath;
 			} else {
 				free(progpath);
-				eprintf("rz-run: %s: file not found\n", p->_program);
+				RZ_LOG_ERROR("rz-run: %s: file not found\n", p->_program);
 				return 1;
 			}
 		}
@@ -1213,7 +1282,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 			}
 		}
 		if (p->_pid) {
-			eprintf("PID: %d\n", getpid());
+			RZ_LOG_WARN("rz-run: PID: %d\n", getpid());
 		}
 		if (p->_pidfile) {
 			char pidstr[32];
@@ -1230,12 +1299,12 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				return 1;
 			}
 #else
-			eprintf("nice not supported for this platform\n");
+			RZ_LOG_ERROR("rz-run: nice not supported for this platform\n");
 #endif
 		}
 		if (p->_daemon) {
 #if __WINDOWS__
-			eprintf("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			RZ_LOG_ERROR("rz-run: PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 #else
 			pid_t child = rz_sys_fork();
 			if (child == -1) {
@@ -1264,17 +1333,17 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 	}
 	if (p->_runlib) {
 		if (!p->_runlib_fcn) {
-			eprintf("No function specified. Please set runlib.fcn\n");
+			RZ_LOG_ERROR("rz-run: no function specified. Please set runlib.fcn\n");
 			return 1;
 		}
 		void *addr = rz_lib_dl_open(p->_runlib);
 		if (!addr) {
-			eprintf("Could not load the library '%s'\n", p->_runlib);
+			RZ_LOG_ERROR("rz-run: could not load the library '%s'\n", p->_runlib);
 			return 1;
 		}
 		void (*fcn)(void) = rz_lib_dl_sym(addr, p->_runlib_fcn);
 		if (!fcn) {
-			eprintf("Could not find the function '%s'\n", p->_runlib_fcn);
+			RZ_LOG_ERROR("rz-run: could not find the function '%s'\n", p->_runlib_fcn);
 			return 1;
 		}
 		switch (p->_argc) {
@@ -1318,7 +1387,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				p->_args[5], p->_args[6], p->_args[7], p->_args[8], p->_args[9], p->_args[10]);
 			break;
 		default:
-			eprintf("Too many arguments.\n");
+			RZ_LOG_ERROR("rz-run: too many arguments.\n");
 			return 1;
 		}
 		rz_lib_dl_close(addr);
