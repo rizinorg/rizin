@@ -5938,7 +5938,7 @@ fail:
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCore *core, int argc, const char **argv) {
 	const int n_bytes = 28;
-	ut8 buffer[n_bytes];
+	ut8 buffer[28];
 	RzPVector *vec = NULL;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (!rz_io_read_at(core->io, core->offset, buffer, n_bytes)) {
