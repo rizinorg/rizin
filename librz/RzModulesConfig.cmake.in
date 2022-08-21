@@ -21,7 +21,6 @@
 set(RIZIN_MODULE_PREFIXED @RIZIN_MODULE@)
 set(@RIZIN_MODULE@_VERSION @RZ_VERSION@)
 
-# FIXME: workaround for https://github.com/mesonbuild/meson/issues/9702 (see https://github.com/rizinorg/rizin/issues/2102)
 get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/@PACKAGE_RELATIVE_PATH@" ABSOLUTE)
 
 macro(set_and_check _var _file)

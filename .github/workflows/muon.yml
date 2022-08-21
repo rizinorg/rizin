@@ -36,9 +36,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Disable CMake module (unsupported by Muon)
-      run: |
-        sed -i "s/import('cmake')/import('cmake', required: false)/" meson.build
     - name: Install dependencies
       run: |
           sudo apt-get --assume-yes update

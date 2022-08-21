@@ -68,8 +68,11 @@ foreach module_name, module : modules
     conf.set('INSTALL_LIBDIR', rizin_libdir)
     conf.set('INSTALL_PLUGDIR', rizin_plugins)
     conf.set('rizin_libname', module['target'].name())
-    cmake_mod.configure_package_config_file(
-      name: conf.get('rizin_libname'),
+    # meson's cmake module is not used on purpose due to:
+    #   https://todo.sr.ht/~lattis/muon/24
+    #   https://github.com/mesonbuild/meson/issues/9702
+    configure_file(
+      output: conf.get('rizin_libname') + 'Config.cmake',
       input: 'RzModulesConfig.cmake.in',
       install_dir: rizin_cmakedir / conf.get('rizin_libname'),
       configuration: conf,
@@ -98,8 +101,11 @@ if not is_static_libs_only
   conf = configuration_data()
   conf.set('RZ_VERSION', rizin_version)
   conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  cmake_mod.configure_package_config_file(
-    name: 'Rizin',
+  # meson's cmake module is not used on purpose due to:
+  #   https://todo.sr.ht/~lattis/muon/24
+  #   https://github.com/mesonbuild/meson/issues/9702
+  configure_file(
+    output: 'RizinConfig.cmake',
     input: 'RizinConfig.cmake.in',
     install_dir: rizin_cmakedir / 'Rizin',
     configuration: conf,
