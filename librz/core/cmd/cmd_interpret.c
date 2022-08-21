@@ -46,7 +46,7 @@ RZ_IPI RzCmdStatus rz_interpret_script_handler(RzCore *core, int argc, const cha
 		rz_core_cmd0(core, script_file);
 	} else {
 		if (!rz_core_run_script(core, script_file)) {
-			eprintf("Cannot find script '%s'\n", script_file);
+			RZ_LOG_ERROR("core: Cannot find script '%s'\n", script_file);
 			core->num->value = 1;
 		} else {
 			core->num->value = 0;

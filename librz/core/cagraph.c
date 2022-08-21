@@ -88,7 +88,7 @@ RZ_IPI void rz_core_agraph_print_sdb(RzCore *core) {
 RZ_IPI void rz_core_agraph_print_interactive(RzCore *core) {
 	RzANode *ran = rz_agraph_get_first_node(core->graph);
 	if (!ran) {
-		eprintf("This graph contains no nodes\n");
+		RZ_LOG_ERROR("core: this graph contains no nodes\n");
 		return;
 	}
 

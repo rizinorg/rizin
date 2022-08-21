@@ -828,7 +828,7 @@ RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_ex
 	rz_cons_break_push(NULL, NULL);
 repeat:
 	if (rz_cons_is_breaked()) {
-		eprintf("[+] ESIL emulation interrupted at 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_WARN("core: esil: emulation interrupted at 0x%08" PFMT64x "\n", addr);
 		return_tail(0);
 	}
 	// Break if we have exceeded esil.timeout
@@ -836,7 +836,7 @@ repeat:
 		ut64 elapsedTime = rz_time_now_mono() - startTime;
 		elapsedTime >>= 20;
 		if (elapsedTime >= esiltimeout) {
-			eprintf("[ESIL] Timeout exceeded.\n");
+			RZ_LOG_WARN("core: esil: timeout exceeded.\n");
 			return_tail(0);
 		}
 	}
@@ -858,7 +858,7 @@ repeat:
 		if (!rz_io_is_valid_offset(core->io, addr, RZ_PERM_X)) {
 			esil->trap = RZ_ANALYSIS_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
-			eprintf("[ESIL] Trap, trying to execute on non-executable memory\n");
+			RZ_LOG_ERROR("core: esil: Trap, trying to execute on non-executable memory\n");
 			return_tail(1);
 		}
 	}
@@ -875,7 +875,7 @@ repeat:
 			esil->cmd(esil, esil->cmd_trap, addr, RZ_ANALYSIS_TRAP_INVALID);
 		}
 		if (breakoninvalid) {
-			eprintf("[ESIL] Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
+			RZ_LOG_ERROR("core: esil: Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
 			return_tail(0);
 		}
 		op.size = 1; // avoid inverted stepping
@@ -943,7 +943,7 @@ repeat:
 					// branches are illegal in a delay slot
 					esil->trap = RZ_ANALYSIS_TRAP_EXEC_ERR;
 					esil->trap_code = addr;
-					eprintf("[ESIL] Trap, trying to execute a branch in a delay slot\n");
+					RZ_LOG_WARN("core: ESIL: Trap, trying to execute a branch in a delay slot\n");
 					return_tail(1);
 					break;
 				}
@@ -952,7 +952,7 @@ repeat:
 					rz_analysis_esil_parse(esil, e);
 				}
 			} else {
-				eprintf("Invalid instruction at 0x%08" PFMT64x "\n", naddr);
+				RZ_LOG_ERROR("core: Invalid instruction at 0x%08" PFMT64x "\n", naddr);
 			}
 			rz_analysis_op_fini(&op2);
 		}
@@ -989,14 +989,14 @@ repeat:
 	// check esil
 	if (esil && esil->trap) {
 		if (core->analysis->esil->verbose) {
-			eprintf("TRAP\n");
+			RZ_LOG_WARN("core: TRAP\n");
 		}
 		return_tail(0);
 	}
 	if (until_expr) {
 		if (rz_analysis_esil_condition(core->analysis->esil, until_expr)) {
 			if (core->analysis->esil->verbose) {
-				eprintf("ESIL BREAK!\n");
+				RZ_LOG_WARN("core: ESIL BREAK!\n");
 			}
 			return_tail(0);
 		}
@@ -1044,7 +1044,7 @@ RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 		bp_found = rz_bp_get_in(core->dbg->bp, reg->data, RZ_PERM_X) != NULL;
 		if (bp_found) {
 			idx = reg->idx;
-			eprintf("hit breakpoint at: 0x%" PFMT64x " idx: %d\n", reg->data, reg->idx);
+			RZ_LOG_WARN("core: hit breakpoint at: 0x%" PFMT64x " idx: %d\n", reg->data, reg->idx);
 			break;
 		}
 	}
@@ -1362,7 +1362,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 		esilstr = RZ_STRBUF_SAFEGET(&aop.esil);
 		if (RZ_STR_ISNOTEMPTY(esilstr)) {
 			if (len < 1) {
-				eprintf("Invalid 0x%08" PFMT64x " instruction %02x %02x\n",
+				RZ_LOG_ERROR("core: Invalid 0x%08" PFMT64x " instruction %02x %02x\n",
 					addr + ptr, buf[ptr], buf[ptr + 1]);
 				break;
 			}
@@ -1700,12 +1700,12 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 		if (fcn) {
 			from = fcn->addr;
 		} else {
-			eprintf("Usage: aefa [from] # if no from address is given, uses fcn.addr\n");
+			RZ_LOG_ERROR("core: Usage: aefa [from] # if no from address is given, uses fcn.addr\n");
 			return;
 		}
 	}
-	eprintf("Emulate from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n", from, to);
-	eprintf("Resolve call args for 0x%08" PFMT64x "\n", to);
+	RZ_LOG_ERROR("core: Emulate from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n", from, to);
+	RZ_LOG_ERROR("core: Resolve call args for 0x%08" PFMT64x "\n", to);
 
 	// emulate
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
@@ -1760,7 +1760,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 			RzAnalysisOp op;
 			int ret, bbs = end - pc;
 			if (bbs < 1 || bbs > 0xfffff || pc >= end) {
-				eprintf("Invalid block size\n");
+				RZ_LOG_ERROR("core: Invalid block size\n");
 				continue;
 			}
 			// eprintf ("[*] Emulating 0x%08"PFMT64x" basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\r[", fcn->addr, pc, end);
@@ -1798,7 +1798,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 			free(buf);
 		}
 	} else {
-		eprintf("Cannot find function at 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", addr);
 	}
 	rz_analysis_esil_free(core->analysis->esil);
 }
@@ -1821,7 +1821,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				ut64 pc_val = rz_num_math(core->num, rz_str_trim_head_ro(input + 3));
 				rz_core_analysis_set_reg(core, "PC", pc_val);
 			} else {
-				eprintf("Missing argument\n");
+				RZ_LOG_ERROR("core: Missing argument\n");
 			}
 			break;
 		default:
@@ -1835,7 +1835,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_cons_printf("trap: %d\n", core->analysis->esil->trap);
 			rz_cons_printf("trap-code: %d\n", core->analysis->esil->trap_code);
 		} else {
-			eprintf("esil vm not initialized. run `aei`\n");
+			RZ_LOG_ERROR("core: esil vm not initialized. run `aei`\n");
 		}
 		break;
 	case ' ': // "ae "
@@ -1862,7 +1862,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 					free(out);
 				}
 			} else {
-				eprintf("esil.stats is empty. Run 'aei'\n");
+				RZ_LOG_ERROR("core: esil.stats is empty. Run 'aei'\n");
 			}
 			break;
 		case '-': // "aek-"
@@ -1878,7 +1878,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			switch (input[2]) {
 			case ' ': // "aeli" with arguments
 				if (!rz_analysis_esil_load_interrupts_from_lib(esil, input + 3)) {
-					eprintf("Failed to load interrupts from '%s'.", input + 3);
+					RZ_LOG_ERROR("core: Failed to load interrupts from '%s'.", input + 3);
 				}
 				break;
 			case 0: // "aeli" with no args
@@ -2141,7 +2141,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 	ut8 *block0 = calloc(1, bsz);
 	ut8 *block1 = malloc(bsz);
 	if (!buf || !block0 || !block1) {
-		eprintf("Error: cannot allocate buf or block\n");
+		RZ_LOG_ERROR("core: cannot allocate buf or block\n");
 		free(buf);
 		free(block0);
 		free(block1);
@@ -2455,7 +2455,7 @@ static bool convert_dot_to_image(RzCore *core, const char *dot_file, const char 
 	char *dot = dot_executable_path();
 	bool result = false;
 	if (!dot) {
-		eprintf("Graphviz not found\n");
+		RZ_LOG_ERROR("core: Graphviz not found\n");
 		return false;
 	}
 	const char *ext = rz_config_get(core->config, "graph.gv.format");
@@ -2471,7 +2471,7 @@ static bool convert_dot_to_image(RzCore *core, const char *dot_file, const char 
 				dot, ext, ext, viewer, ext);
 			free(viewer);
 		} else {
-			eprintf("Cannot find a valid picture viewer\n");
+			RZ_LOG_ERROR("core: Cannot find a valid picture viewer\n");
 			goto end;
 		}
 	}
@@ -2621,7 +2621,7 @@ RZ_IPI void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *g
 					rz_core_seek(core, oseek, false);
 				}
 			} else {
-				eprintf("This graph contains no nodes\n");
+				RZ_LOG_ERROR("core: This graph contains no nodes\n");
 			}
 			break;
 		}
@@ -2897,11 +2897,11 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		const ut8 *pos = rz_mem_mem(buf, bufsz, prelude, prelude_sz);
 		if (pos) {
 			int delta = (size_t)(pos - buf);
-			eprintf("POS = %d\n", delta);
-			eprintf("HIT = 0x%" PFMT64x "\n", off - delta);
+			RZ_LOG_DEBUG("core: POS = %d\n", delta);
+			RZ_LOG_DEBUG("core: HIT = 0x%" PFMT64x "\n", off - delta);
 			rz_cons_printf("0x%08" PFMT64x "\n", off - delta);
 		} else {
-			eprintf("Cannot find prelude\n");
+			RZ_LOG_ERROR("core: Cannot find prelude\n");
 		}
 		free(buf);
 	} break;
@@ -2985,7 +2985,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int ar
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 	if (!b) {
-		eprintf("Cannot find basic block\n");
+		RZ_LOG_ERROR("core: Cannot find basic block\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisFunction *fcn = rz_list_first(b->fcns);
@@ -3062,7 +3062,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, in
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 	if (!bb) {
-		eprintf("No basic block at 0x%" PFMT64x, core->offset);
+		RZ_LOG_ERROR("core: No basic block at 0x%" PFMT64x, core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_analysis_bb_info_print(core, bb, core->offset, state);
@@ -3083,11 +3083,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_add_handler(RzCore *core, int arg
 	}
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcn_addr);
 	if (!fcn) {
-		eprintf("Cannot find function at 0x%" PFMT64x "\n", fcn_addr);
+		RZ_LOG_ERROR("core: Cannot find function at 0x%" PFMT64x "\n", fcn_addr);
 		goto err;
 	}
 	if (!rz_analysis_fcn_add_bb(core->analysis, fcn, addr, size, jump, fail, diff)) {
-		eprintf("Cannot add basic block at 0x%" PFMT64x " to fcn at 0x%" PFMT64x "\n", addr, fcn_addr);
+		RZ_LOG_ERROR("core: Cannot add basic block at 0x%" PFMT64x " to fcn at 0x%" PFMT64x "\n", addr, fcn_addr);
 		goto err;
 	}
 	res = RZ_CMD_STATUS_OK;
@@ -3101,7 +3101,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int a
 	ut32 color = (ut32)rz_num_math(core->num, argv[2]);
 	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
 	if (!block) {
-		eprintf("No basic block at 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("core: No basic block at 0x%08" PFMT64x "\n", addr);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	block->colorize = color;
@@ -3168,12 +3168,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 	char *error_msg = NULL;
 	RzType *ret_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[1], &error_msg);
 	if (!ret_type || error_msg) {
-		eprintf("Cannot parse type \"%s\":\n%s\n", argv[1], error_msg);
+		RZ_LOG_ERROR("core: Cannot parse type \"%s\":\n%s\n", argv[1], error_msg);
 		free(error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, ret_type)) {
-		eprintf("Cannot find type %s\n", argv[1]);
+		RZ_LOG_ERROR("core: Cannot find type %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	fcn->ret_type = ret_type;
@@ -3297,7 +3297,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_address_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_analysis_function_until_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr_end = rz_num_math(core->num, argv[1]);
 	if (addr_end < core->offset) {
-		eprintf("Invalid address ranges\n");
+		RZ_LOG_ERROR("core: Invalid address ranges\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_analysis_function_until(core, addr_end);
@@ -3566,7 +3566,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_display_handler(RzCore *core, int a
 	case 2:
 		v = rz_analysis_function_get_var_byname(fcn, argv[1]);
 		if (!v) {
-			eprintf("Cannot find variable '%s' in current function\n", argv[1]);
+			RZ_LOG_ERROR("core: Cannot find variable '%s' in current function\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		r = rz_core_analysis_var_display(core, v, true);
@@ -3650,7 +3650,7 @@ static RzCmdStatus analysis_function_vars_accesses(RzCore *core, int access_type
 	} else {
 		RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, varname);
 		if (!var) {
-			eprintf("Cannot find variable %s\n", varname);
+			RZ_LOG_ERROR("core: Cannot find variable %s\n", varname);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		var_accesses_list(fcn, var, NULL, access_type, var->name);
@@ -3674,13 +3674,13 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 
 	RzAnalysisVar *v = rz_analysis_function_get_var_byname(fcn, argv[1]);
 	if (!v) {
-		eprintf("Cannot find variable %s\n", argv[1]);
+		RZ_LOG_ERROR("core: Cannot find variable %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *error_msg = NULL;
 	RzType *v_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[2], &error_msg);
 	if (!v_type || error_msg) {
-		eprintf("Cannot parse type \"%s\":\n%s\n", argv[2], error_msg);
+		RZ_LOG_ERROR("core: Cannot parse type \"%s\":\n%s\n", argv[2], error_msg);
 		free(error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -3770,7 +3770,7 @@ static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, int delta, ut6
 
 	RzAnalysisVar *var = rz_analysis_function_get_var(fcn, kind, delta);
 	if (!var) {
-		eprintf("Cannot find variable with delta %d\n", delta);
+		RZ_LOG_ERROR("core: Cannot find variable with delta %d\n", delta);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -3802,7 +3802,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_handler(RzCore *core, int argc, 
 		char *error_msg = NULL;
 		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
 		if (!var_type || error_msg) {
-			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
+			RZ_LOG_ERROR("core: Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
 			free(error_msg);
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -3847,7 +3847,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 		const char *vartype = argc > 3 ? argv[3] : "int";
 		RzRegItem *i = rz_reg_get(core->analysis->reg, argv[1], -1);
 		if (!i) {
-			eprintf("Register not found");
+			RZ_LOG_ERROR("core: Register not found");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		int delta = i->index;
@@ -3855,7 +3855,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 		char *error_msg = NULL;
 		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
 		if (!var_type || error_msg) {
-			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
+			RZ_LOG_ERROR("core: Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
 			free(error_msg);
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -3876,7 +3876,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_del_all_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_getref_handler(RzCore *core, int argc, const char **argv) {
 	RzRegItem *i = rz_reg_get(core->analysis->reg, argv[1], -1);
 	if (!i) {
-		eprintf("Register not found");
+		RZ_LOG_ERROR("core: Register not found\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int delta = i->index;
@@ -3887,7 +3887,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_getref_handler(RzCore *core, i
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_setref_handler(RzCore *core, int argc, const char **argv) {
 	RzRegItem *i = rz_reg_get(core->analysis->reg, argv[1], -1);
 	if (!i) {
-		eprintf("Register not found");
+		RZ_LOG_ERROR("core: Register not found\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int delta = i->index;
@@ -3913,7 +3913,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_handler(RzCore *core, int argc, 
 		char *error_msg = NULL;
 		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
 		if (!var_type || error_msg) {
-			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
+			RZ_LOG_ERROR("core: Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
 			free(error_msg);
 			return RZ_CMD_STATUS_ERROR;
 		}

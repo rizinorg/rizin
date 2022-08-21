@@ -28,8 +28,8 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	if ((bp && !rz_reg_getv(core->analysis->reg, bp)) && (sp && !rz_reg_getv(core->analysis->reg, sp))) {
-		eprintf("Stack isn't initialized.\n");
-		eprintf("Try running aei and aeim commands before aft for default stack initialization\n");
+		RZ_LOG_ERROR("core: stack isn't initialized.\n");
+		RZ_LOG_ERROR("core: try running aei and aeim commands before aft for default stack initialization\n");
 		return false;
 	}
 	return (core->dbg->trace && core->analysis->esil->trace);
@@ -126,7 +126,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 	// Since the type could be used by something else we should clone it
 	RzType *cloned = rz_type_clone(type);
 	if (!cloned) {
-		eprintf("Cannot clone the type for the variable \"%s.%s\"\n", var->fcn->name, var->name);
+		RZ_LOG_ERROR("core: cannot clone the type for the variable \"%s.%s\"\n", var->fcn->name, var->name);
 		return;
 	}
 	// Make a pointer of the existing type
@@ -134,7 +134,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 		// By default we create non-const pointers
 		RzType *ptrtype = rz_type_pointer_of_type(typedb, cloned, false);
 		if (!ptrtype) {
-			eprintf("Cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
+			RZ_LOG_ERROR("core: cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
 			return;
 		}
 		rz_analysis_var_set_type(var, ptrtype, resolve_overlaps);
@@ -160,7 +160,7 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 	char *error_msg = NULL;
 	RzType *realtype = rz_type_parse_string_single(analysis->typedb->parser, type, &error_msg);
 	if (!realtype && error_msg) {
-		eprintf("Fail to parse type \"%s\":\n%s\n", type, error_msg);
+		RZ_LOG_ERROR("core: fail to parse type \"%s\":\n%s\n", type, error_msg);
 		free(error_msg);
 		return;
 	}
@@ -369,7 +369,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 		in_stack = true;
 	}
 	if (verbose && !strncmp(fcn_name, "sym.imp.", 8)) {
-		eprintf("%s missing function definition\n", fcn_name + 8);
+		RZ_LOG_ERROR("core: %s missing function definition\n", fcn_name + 8);
 	}
 	if (!max || max == -1) {
 		if (!in_stack) {
@@ -819,7 +819,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	rz_return_if_fail(core && core->analysis && fcn);
 
 	if (!core->analysis->esil) {
-		eprintf("Please run aeim\n");
+		RZ_LOG_ERROR("core: please run aeim first.\n");
 		return;
 	}
 

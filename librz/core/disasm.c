@@ -564,7 +564,7 @@ static void ds_print_esil_analysis_fini(RzDisasmState *ds) {
 		const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 		RzRegSet *regset = rz_reg_regset_get(ds->core->analysis->reg, RZ_REG_TYPE_GPR);
 		if (!regset) {
-			eprintf("ESIL: fail to get regset\n");
+			RZ_LOG_ERROR("core: ESIL: fail to get regset\n");
 			RZ_FREE(ds->esil_regstate);
 			return;
 		}
@@ -760,7 +760,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 		RzIOMap *map = rz_io_map_add(core->io, ds->stackFd, RZ_PERM_RW, 0LL, addr, size);
 		if (!map) {
 			rz_io_fd_close(core->io, ds->stackFd);
-			eprintf("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
+			RZ_LOG_ERROR("core: cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
 			ds->stackFd = -1;
 		} else {
 			rz_io_map_set_name(map, "fake.stack");
@@ -915,7 +915,7 @@ static void ds_free(RzDisasmState *ds) {
 	}
 	if (ds->show_emu_stack) {
 		// TODO: destroy fake stack in here
-		eprintf("Free fake stack\n");
+		RZ_LOG_ERROR("core: free fake stack\n");
 		if (ds->stackFd != -1) {
 			rz_io_fd_close(ds->core->io, ds->stackFd);
 		}
@@ -1521,7 +1521,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			RZ_FREE(name);
 			free(realname);
 		} else {
-			eprintf("Corrupted database?\n");
+			RZ_LOG_ERROR("core: corrupted database?\n");
 		}
 	}
 	rz_list_free(addrs);
@@ -2059,7 +2059,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 				case RZ_ANALYSIS_VAR_KIND_REG: {
 					RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
 					if (!i) {
-						eprintf("Register not found");
+						RZ_LOG_ERROR("core: a register could not be found");
 						break;
 					}
 					char *vartype = rz_type_as_string(analysis->typedb, var->type);
@@ -6744,7 +6744,7 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, pj);
 			free(buf);
 		} else {
-			eprintf("cannot allocate %" PFMT64u " byte(s)\n", b->size);
+			RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", b->size);
 			return false;
 		}
 	}

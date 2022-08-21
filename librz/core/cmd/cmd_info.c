@@ -166,8 +166,8 @@ RZ_IPI int rz_cmd_info_kuery(void *data, const char *input) {
 		break;
 	case '?':
 	default:
-		eprintf("Usage: ik [sdb-query]\n");
-		eprintf("Usage: ik*    # load all header information\n");
+		RZ_LOG_ERROR("core: Usage: ik [sdb-query]\n");
+		RZ_LOG_ERROR("core: Usage: ik*    # load all header information\n");
 		return 1;
 	}
 	return 0;
@@ -613,7 +613,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 	ut64 limit = rz_config_get_i(core->config, "bin.hashlimit");
 	RzBinInfo *info = rz_bin_get_info(core->bin);
 	if (!info) {
-		eprintf("Cannot get bin info\n");
+		RZ_LOG_ERROR("core: Cannot get bin info\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -624,7 +624,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 	bool equal = true;
 	if (!rz_list_empty(new_hashes) && !rz_list_empty(old_hashes)) {
 		if (!is_equal_file_hashes(new_hashes, old_hashes, &equal)) {
-			eprintf("Cannot compare file hashes\n");
+			RZ_LOG_ERROR("core: Cannot compare file hashes\n");
 			rz_list_free(old_hashes);
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -649,20 +649,19 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (!equal) {
-			eprintf("File has been modified.\n");
 			hiter_new = rz_list_iterator(new_hashes);
 			hiter_old = rz_list_iterator(old_hashes);
 			while (rz_list_iter_next(hiter_new) && rz_list_iter_next(hiter_old)) {
 				fh_new = (RzBinFileHash *)rz_list_iter_get(hiter_new);
 				fh_old = (RzBinFileHash *)rz_list_iter_get(hiter_old);
 				if (strcmp(fh_new->type, fh_old->type)) {
-					eprintf("Wrong file hashes structure");
+					RZ_LOG_ERROR("core: Wrong file hashes structure");
 				}
 				if (!strcmp(fh_new->hex, fh_old->hex)) {
-					eprintf("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
+					fprintf(stderr, "= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
 				} else {
 					// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-					eprintf("- %s %s\n+ %s %s\n",
+					fprintf(stderr, "- %s %s\n+ %s %s\n",
 						fh_old->type, fh_old->hex,
 						fh_new->type, fh_new->hex);
 				}

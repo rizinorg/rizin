@@ -9,13 +9,13 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
 
 	p = fd ? fd->data : NULL;
-	rz_config_set_i(r->config, "cfg.debug", 1);
 	if (!p) {
-		eprintf("Invalid debug io\n");
+		RZ_LOG_ERROR("core: invalid debug io descriptor\n");
 		return false;
 	}
 
-	rz_config_set(r->config, "io.ff", "true");
+	rz_config_set_b(r->config, "cfg.debug", true);
+	rz_config_set_b(r->config, "io.ff", true);
 	rz_config_set(r->config, "dbg.backend", debugbackend);
 	pid = rz_io_desc_get_pid(fd);
 	rz_debug_select(r->dbg, pid, r->dbg->tid);
@@ -59,7 +59,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		fd = rz_sys_fopen(file, "wb");
 	}
 	if (!fd) {
-		eprintf("Cannot open '%s' for writing\n", file);
+		RZ_LOG_ERROR("core: cannot open '%s' for writing\n", file);
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */
@@ -68,7 +68,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 	}
 	buf = malloc(bs);
 	if (!buf) {
-		eprintf("Cannot alloc %d byte(s)\n", bs);
+		RZ_LOG_ERROR("core: cannot alloc %d byte(s)\n", bs);
 		fclose(fd);
 		return false;
 	}
@@ -82,7 +82,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		}
 		rz_io_read_at(core->io, addr + i, buf, bs);
 		if (fwrite(buf, bs, 1, fd) < 1) {
-			eprintf("write error\n");
+			RZ_LOG_ERROR("core: cannot write to buffer\n");
 			break;
 		}
 	}
@@ -221,7 +221,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 	}
 	shift_buf = calloc(b_size, 1);
 	if (!shift_buf) {
-		eprintf("Cannot allocated %d byte(s)\n", (int)b_size);
+		RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", (int)b_size);
 		return false;
 	}
 
@@ -247,12 +247,8 @@ RZ_API int rz_core_block_read(RzCore *core) {
 	return -1;
 }
 
-RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset) {
-	if (!core) {
-		eprintf("rz_core_is_valid_offset: core is NULL\n");
-		rz_sys_backtrace();
-		return -1;
-	}
+RZ_API int rz_core_is_valid_offset(RZ_NONNULL RzCore *core, ut64 offset) {
+	rz_return_val_if_fail(core, -1);
 	return rz_io_is_valid_offset(core->io, offset, 0);
 }
 

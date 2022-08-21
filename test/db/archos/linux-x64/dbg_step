@@ -185,6 +185,21 @@ dsui mov eax
 dr rip
 EOF
 EXPECT=<<EOF
+0x00400575 7 call qword [0x600958]
+0x0040052f 10 movabs rax, 0x40053c
+0x00400539 2 call rax
+0x0040053c 10 movabs rax, 0x600968
+0x00400546 2 call qword [rax]
+0x00400549 5 call 0x40054f
+0x0040054f 10 movabs rax, 0x40055b
+0x00400559 2 jmp rax
+0x0040055b 10 movabs rax, 0x600980
+0x00400565 2 jmp qword [rax]
+0x00400567 7 jmp qword [0x600988]
+0x0040056e 5 call 0x400510
+0x00400510 10 movabs rdi, 0x600954
+0x0040051a 10 movabs rsi, 0x600948
+0x00400524 5 mov eax, 0
 rip = 0x00400524
 EOF
 RUN

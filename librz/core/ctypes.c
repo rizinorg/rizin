@@ -595,7 +595,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		}
 		free(fmt);
 	} else {
-		eprintf("Cannot find '%s' type\n", name);
+		RZ_LOG_ERROR("core: cannot find '%s' type\n", name);
 	}
 }
 
@@ -901,7 +901,7 @@ RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOu
 	case RZ_OUTPUT_MODE_LONG: {
 		char *fmt = rz_type_as_format(core->analysis->typedb, type);
 		if (!fmt) {
-			eprintf("Can't fint type %s", typestr);
+			RZ_LOG_ERROR("core: can't fint type %s", typestr);
 		}
 		rz_cons_printf("(%s)\n", typestr);
 		rz_core_cmdf(core, "pf %s @ 0x%" PFMT64x "\n", fmt, addr);
@@ -956,7 +956,8 @@ RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
 	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {
 		if (error_msg) {
-			eprintf("%s", error_msg);
+			rz_str_trim_tail(error_msg);
+			RZ_LOG_ERROR("core: %s\n", error_msg);
 		}
 		free(error_msg);
 		return;
@@ -964,7 +965,7 @@ RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
 	rz_analysis_type_set_link(core->analysis, type, addr);
 	RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_length(fcns) > 1) {
-		eprintf("Multiple functions found in here.\n");
+		RZ_LOG_ERROR("core: multiple functions found at 0x%08" PFMT64x ".\n", addr);
 	} else if (rz_list_length(fcns) == 1) {
 		RzAnalysisFunction *fcn = rz_list_first(fcns);
 		rz_core_link_stroff(core, fcn);
@@ -1038,7 +1039,8 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 	RzTypeDB *typedb = core->analysis->typedb;
 	int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 	if (result && error_msg) {
-		eprintf("%s", error_msg);
+		rz_str_trim_tail(error_msg);
+		RZ_LOG_ERROR("core: %s\n", error_msg);
 		free(error_msg);
 	}
 }
@@ -1052,7 +1054,8 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 			char *error_msg = NULL;
 			int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 			if (result && error_msg) {
-				RZ_LOG_ERROR("%s", error_msg);
+				rz_str_trim_tail(error_msg);
+				RZ_LOG_ERROR("%s\n", error_msg);
 				free(error_msg);
 			}
 			free(tmp);

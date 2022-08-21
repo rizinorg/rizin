@@ -74,7 +74,7 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 	arg->name = rz_type_func_args_name(analysis->typedb, fcn_name, arg_num);
 	arg->orig_c_type = rz_type_func_args_type(analysis->typedb, fcn_name, arg_num);
 	if (!arg->name || !arg->orig_c_type) {
-		eprintf("Missing type for function argument (%s)\n", fcn_name);
+		RZ_LOG_ERROR("core: missing type for function argument (%s)\n", fcn_name);
 		return;
 	}
 	arg->c_type = arg->orig_c_type;
@@ -122,7 +122,7 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 
 	ut8 *buf = malloc(bsize);
 	if (!buf) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", bsize);
 		free(buf);
 		return;
 	}

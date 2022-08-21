@@ -150,7 +150,8 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				RzTypeDB *typedb = core->analysis->typedb;
 				int result = rz_type_parse_string_stateless(typedb->parser, code, &error_msg);
 				if (result && error_msg) {
-					eprintf("%s", error_msg);
+					rz_str_trim_tail(error_msg);
+					RZ_LOG_ERROR("core: %s\n", error_msg);
 					free(error_msg);
 				}
 			}
@@ -202,7 +203,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 							fmtsize, v, 0, NULL, NULL);
 						free(buf);
 						if (!format) {
-							eprintf("Warning: Cannot register invalid format (%s)\n", v);
+							RZ_LOG_WARN("core: cannot register invalid format (%s)\n", v);
 						} else {
 							rz_cons_print(format);
 							free(format);
@@ -221,7 +222,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				if (fi) {
 					fi->size = rz_num_math(core->num, v);
 				} else {
-					eprintf("Cannot find flag named '%s'\n", flagname);
+					RZ_LOG_ERROR("core: cannot find flag named '%s'\n", flagname);
 				}
 			}
 		}
@@ -236,13 +237,13 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 RZ_API bool rz_core_bin_load_structs(RZ_NONNULL RzCore *core, RZ_NONNULL const char *file) {
 	rz_return_val_if_fail(core && file && core->io, false);
 	if (strchr(file, '\"')) { // TODO: escape "?
-		eprintf("Invalid char found in filename\n");
+		RZ_LOG_ERROR("core: invalid char found in filename\n");
 		return false;
 	}
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(core->bin, file, &opt);
 	if (!bf) {
-		eprintf("Cannot open bin '%s'\n", file);
+		RZ_LOG_ERROR("core: cannot open bin '%s'\n", file);
 		return false;
 	}
 	rz_core_bin_export_info(core, RZ_MODE_SET);
@@ -1520,10 +1521,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 				if (fi) {
 					rz_flag_item_set_realname(fi, n);
 					fi->demangled = (bool)(size_t)sn.demname;
-				} else {
-					if (fn) {
-						eprintf("[Warning] Can't find flag (%s)\n", fn);
-					}
+				} else if (fn) {
+					RZ_LOG_WARN("core: cannot find flag with name '%s'\n", fn);
 				}
 				free(fnp);
 			}
@@ -3460,7 +3459,7 @@ static char *objc_type_toc(const char *objc_type) {
 		return strdup("uint8_t");
 	}
 	if (strlen(objc_type) == 1) {
-		eprintf("Unknown objc type '%s'\n", objc_type);
+		RZ_LOG_ERROR("core: unknown objc type '%s'\n", objc_type);
 	}
 	if (rz_str_startswith(objc_type, "@\"")) {
 		char *s = rz_str_newf("struct %s", objc_type + 2);
@@ -4238,7 +4237,7 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 					ut8 *key_utf8 = calloc(lenkey * 2, 1);
 					ut8 *val_utf8 = calloc(lenval * 2, 1);
 					if (rz_str_utf16_to_utf8(key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0 || rz_str_utf16_to_utf8(val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
-						eprintf("Warning: Cannot decode utf16 to utf8\n");
+						RZ_LOG_WARN("core: cannot decode utf16 to utf8\n");
 					} else if (IS_MODE_JSON(mode)) {
 						pj_ks(pj, (char *)key_utf8, (char *)val_utf8);
 					} else {

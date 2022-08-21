@@ -5237,7 +5237,6 @@ crc32 b2aa7578
 entropy 0.000000
 EOF
 EXPECT_ERR=<<EOF
-File has been modified.
 - md5 bf619eac0cdf3f68d496ea9344137e8b
 + md5 afd010a5a5456c232dee59d59bd75cf6
 - sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
@@ -5265,7 +5264,6 @@ o--
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
-File has been modified.
 - md5 84144530144b53a704c84d9c65ab5f92
 + md5 9a99cca7bf3e27ee1c8964141cfad053
 - sha1 9016e215a321184c42c28ab03847554851932713

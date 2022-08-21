@@ -51,12 +51,12 @@ RZ_IPI RzCmdStatus rz_macros_handler(RzCore *core, const char *name, const char 
 	const RzCmdMacro *macro = rz_cmd_macro_get(core->rcmd, name);
 	if (!macro) {
 		if (!rz_cmd_macro_add(core->rcmd, name, args, body)) {
-			RZ_LOG_ERROR("Cannot add macro '%s'\n", name);
+			RZ_LOG_ERROR("core: Cannot add macro '%s'\n", name);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
 		if (!rz_cmd_macro_update(core->rcmd, name, args, body)) {
-			RZ_LOG_ERROR("Cannot update macro '%s'\n", name);
+			RZ_LOG_ERROR("core: Cannot update macro '%s'\n", name);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}

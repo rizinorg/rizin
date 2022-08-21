@@ -50,20 +50,20 @@ RZ_API bool rz_core_gdiff_function_2_files(RzCore *c, RzCore *c2, ut64 addr, ut6
 	RzAnalysisFunction *fa = rz_analysis_get_function_at(c->analysis, addr);
 	RzAnalysisFunction *fb = rz_analysis_get_function_at(c2->analysis, addr2);
 	if (!fa || !fb) {
-		eprintf("cannot get functions at 0x%" PFMT64x " or at 0x%" PFMT64x "\n", addr, addr2);
+		RZ_LOG_ERROR("core: cannot get functions at 0x%" PFMT64x " or at 0x%" PFMT64x "\n", addr, addr2);
 		return false;
 	}
 	RzAnalysisBlock *bb;
 	RzListIter *iter;
 	rz_list_foreach (fa->bbs, iter, bb) {
 		if (rz_analysis_diff_fingerprint_bb(c->analysis, bb) < 0) {
-			eprintf("cannot fingerprint 0x%" PFMT64x "\n", addr);
+			RZ_LOG_ERROR("core: cannot fingerprint 0x%" PFMT64x "\n", addr);
 			return false;
 		}
 	}
 	rz_list_foreach (fb->bbs, iter, bb) {
 		if (rz_analysis_diff_fingerprint_bb(c2->analysis, bb) < 0) {
-			eprintf("cannot fingerprint 0x%" PFMT64x "\n", addr2);
+			RZ_LOG_ERROR("core: cannot fingerprint 0x%" PFMT64x "\n", addr2);
 			return false;
 		}
 	}
@@ -175,7 +175,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 	if (json) {
 		pj = pj_new();
 		if (!pj) {
-			eprintf("cannot alocate json\n");
+			RZ_LOG_ERROR("core: cannot allocate json structure\n");
 			return;
 		}
 		pj_a(pj);
@@ -205,7 +205,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 
 	fcns = rz_analysis_get_fcns(c->analysis);
 	if (rz_list_empty(fcns)) {
-		eprintf("functions list is empty. analyze the binary first\n");
+		RZ_LOG_ERROR("core: functions list is empty. analyze the binary first\n");
 		pj_free(pj);
 		return;
 	}
@@ -420,7 +420,7 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 				rz_core_print_disasm_json(core, bbi->addr, buf, bbi->size, 0, pj);
 				free(buf);
 			} else {
-				eprintf("cannot allocate %" PFMT64u " byte(s)\n", bbi->size);
+				RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", bbi->size);
 			}
 			pj_end(pj);
 			pj_end(pj);
@@ -579,7 +579,7 @@ RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, 
 	PJ *pj = NULL;
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr1);
 	if (!fcn) {
-		eprintf("cannot get functions at 0x%" PFMT64x "\n", addr1);
+		RZ_LOG_ERROR("core: cannot get function at 0x%" PFMT64x "\n", addr1);
 		return false;
 	}
 

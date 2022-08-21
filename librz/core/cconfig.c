@@ -108,7 +108,7 @@ static bool cb_diff_sort(void *_core, void *_node) {
 		return true;
 	}
 fail:
-	eprintf("e diff.sort = [name, namelen, addr, type, size, dist]\n");
+	RZ_LOG_ERROR("core: diff.sort: invalid value (%s), supported only `name, namelen, addr, type, size, dist`\n", column);
 	return false;
 }
 
@@ -276,7 +276,7 @@ static bool cb_analysis_arch(void *user, void *data) {
 		}
 		const char *aa = rz_config_get(core->config, "asm.arch");
 		if (!aa || strcmp(aa, node->value)) {
-			eprintf("analysis.arch: cannot find '%s'\n", node->value);
+			RZ_LOG_ERROR("core: analysis.arch: cannot find '%s'\n", node->value);
 		}
 	}
 	return false;
@@ -505,7 +505,7 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_egg_setup(core->egg, node->value, bits, 0, RZ_SYS_OS);
 
 	if (!rz_asm_use(core->rasm, node->value)) {
-		eprintf("asm.arch: cannot find (%s)\n", node->value);
+		RZ_LOG_ERROR("core: asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
 	// we should strdup here otherwise will crash if any rz_config_set
@@ -642,10 +642,6 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	bool ret = false;
-	if (!core) {
-		eprintf("user can't be NULL\n");
-		return false;
-	}
 
 	int bits = node->i_value;
 	if (!bits) {
@@ -656,13 +652,12 @@ static bool cb_asmbits(void *user, void *data) {
 		if (!ret) {
 			RzAsmPlugin *h = core->rasm->cur;
 			if (!h) {
-				eprintf("e asm.bits: Cannot set value, no plugins defined yet\n");
+				RZ_LOG_ERROR("core: asm.bits: cannot set value, no plugins defined yet\n");
 				ret = true;
 			}
-			// else { eprintf ("Cannot set bits %d to '%s'\n", bits, h->name); }
 		}
 		if (!rz_analysis_set_bits(core->analysis, bits)) {
-			eprintf("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
+			RZ_LOG_ERROR("core: asm.arch: cannot setup '%d' bits analysis engine\n", bits);
 			ret = false;
 		}
 		core->print->bits = bits;
@@ -936,7 +931,7 @@ static bool cb_binstrenc(void *user, void *data) {
 			return true;
 		}
 	}
-	eprintf("Unknown encoding: %s\n", node->value);
+	RZ_LOG_ERROR("core: bin.str.enc: unknown encoding: %s\n", node->value);
 	free(enc);
 	return false;
 }
@@ -1338,7 +1333,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 	}
 #else
 	if (node->i_value) {
-		eprintf("Warning: dbg.execs is not supported in this platform.\n");
+		RZ_LOG_WARN("core: dbg.execs: not supported in this platform.\n");
 	}
 #endif
 	return true;
@@ -1448,7 +1443,7 @@ static bool cb_esilverbose(void *user, void *data) {
 static bool cb_esilstackdepth(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value < 3) {
-		eprintf("esil.stack.depth must be greater than 2\n");
+		RZ_LOG_ERROR("core: esil.stack.depth: value must be greater than 2\n");
 		node->i_value = 32;
 	}
 	return true;
@@ -1960,7 +1955,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf("WARNING: You may probably want to disable io.va too\n");
+		RZ_LOG_WARN("core: you may probably want to disable io.va too\n");
 	}
 	return true;
 }
@@ -2043,7 +2038,7 @@ static bool cb_pager(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (!strcmp(node->value, "?")) {
-		eprintf("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
+		RZ_LOG_ERROR("usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
 		return false;
 	}
 	/* Let cons know we have a new pager. */
@@ -2399,7 +2394,7 @@ static bool cb_zoombyte(void *user, void *data) {
 		core->print->zoom->mode = *node->value;
 		break;
 	default:
-		eprintf("Invalid zoom.byte value. See pz? for help\n");
+		RZ_LOG_ERROR("core: invalid zoom.byte value. See pz? for help\n");
 		rz_cons_printf("pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
 		return false;
 	}
@@ -2744,7 +2739,7 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 			core->analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_MSVC;
 			return true;
 		}
-		eprintf("analysis.cpp.abi: cannot find '%s'\n", node->value);
+		RZ_LOG_ERROR("core: analysis.cpp.abi: cannot find '%s'\n", node->value);
 	}
 	return false;
 }
@@ -3251,7 +3246,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("log.events", "false", &cb_log_events, "Remote HTTP server to sync events with");
 
 	/* diff */
-	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
+	n = NODECB("diff.sort", "addr", &cb_diff_sort);
+	SETDESC(n, "Specify function diff sorting column");
+	SETOPTIONS(n, "name", "namelen", "addr", "type", "size", "dist", NULL);
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
 	SETI("diff.to", 0, "Set destination diffing address for px (uses cc command)");
 	SETBPREF("diff.bare", "false", "Never show function names in diff output");
@@ -3714,7 +3711,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 	}
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
-			eprintf("USER CONFIG loaded from %s\n", homerc);
+			RZ_LOG_INFO("USER CONFIG loaded from %s\n", homerc);
 		}
 		rz_core_cmd_file(r, homerc);
 	}
@@ -3722,7 +3719,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 	homerc = rz_path_home_config_rc();
 	if (homerc && rz_file_is_regular(homerc)) {
 		if (has_debug) {
-			eprintf("USER CONFIG loaded from %s\n", homerc);
+			RZ_LOG_INFO("USER CONFIG loaded from %s\n", homerc);
 		}
 		rz_core_cmd_file(r, homerc);
 	}
@@ -3738,7 +3735,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 					char *path = rz_str_newf("%s/%s", homerc, file);
 					if (rz_file_is_regular(path)) {
 						if (has_debug) {
-							eprintf("USER CONFIG loaded from %s\n", homerc);
+							RZ_LOG_INFO("USER CONFIG loaded from %s\n", homerc);
 						}
 						rz_core_cmd_file(r, path);
 					}

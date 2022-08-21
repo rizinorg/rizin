@@ -1048,10 +1048,10 @@ static void visual_search(RzCore *core) {
 			core->print->ocur = -1;
 		}
 		rz_core_visual_showcursor(core, true);
-		eprintf("Found in offset 0x%08" PFMT64x " + %d\n", core->offset, core->print->cur);
+		rz_cons_printf("Found in offset 0x%08" PFMT64x " + %d\n", core->offset, core->print->cur);
 		rz_cons_any_key(NULL);
 	} else {
-		eprintf("Cannot find bytes.\n");
+		RZ_LOG_ERROR("core: Cannot find bytes.\n");
 		rz_cons_any_key(NULL);
 		rz_cons_clear00();
 	}
@@ -1669,7 +1669,7 @@ static void visual_comma(RzCore *core) {
 		char *cwf = rz_str_newf("%s" RZ_SYS_DIR "%s", cwd, cmtfile);
 		char *odata = rz_file_slurp(cwf, NULL);
 		if (!odata) {
-			eprintf("Could not open '%s'.\n", cwf);
+			RZ_LOG_ERROR("core: Could not open '%s'.\n", cwf);
 			free(cwf);
 			goto beach;
 		}
@@ -1679,7 +1679,7 @@ static void visual_comma(RzCore *core) {
 		free(odata);
 		free(cwf);
 	} else {
-		eprintf("No commafile found.\n");
+		RZ_LOG_ERROR("core: No commafile found.\n");
 	}
 beach:
 	free(comment);
@@ -2559,7 +2559,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 							rz_analysis_function_set_label(fcn, n + 1, core->offset + min);
 						}
 					} else {
-						eprintf("Cannot find function at 0x%08" PFMT64x "\n", core->offset + min);
+						RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset + min);
 					}
 				} else if (*n == '-') {
 					if (*n) {
@@ -3154,7 +3154,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case '>':
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
-					eprintf("No range selected. Use HJKL.\n");
+					RZ_LOG_ERROR("core: No range selected. Use HJKL.\n");
 					rz_cons_any_key(NULL);
 					break;
 				}
@@ -3881,7 +3881,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	splitPtr = UT64_MAX;
 
 	if (rz_cons_get_size(&ch) < 1 || ch < 1) {
-		eprintf("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
+		RZ_LOG_ERROR("core: Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}
 	RzCoreVisual *visual = core->visual;

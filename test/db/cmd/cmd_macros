@@ -176,7 +176,7 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo0' expects 0 args, not 1
-Error while executing command: .(foo0 1)
+ERROR: core: Error while executing command: .(foo0 1)
 EOF
 RUN
 
@@ -188,7 +188,7 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo0' expects 0 args, not 1
-Error while executing command: ..(foo0 1)
+ERROR: core: Error while executing command: ..(foo0 1)
 EOF
 RUN
 
@@ -200,7 +200,7 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo1' expects 1 args, not 0
-Error while executing command: .(foo1)
+ERROR: core: Error while executing command: .(foo1)
 EOF
 RUN
 
@@ -212,7 +212,7 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo1' expects 1 args, not 2
-Error while executing command: .(foo1 1 2)
+ERROR: core: Error while executing command: .(foo1 1 2)
 EOF
 RUN
 
@@ -224,7 +224,7 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo1' expects 1 args, not 0
-Error while executing command: ..(foo1)
+ERROR: core: Error while executing command: ..(foo1)
 EOF
 RUN
 
@@ -236,7 +236,7 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo2' expects 2 args and 1 is not a multiple of 2
-Error while executing command: ..(foo2 1)
+ERROR: core: Error while executing command: ..(foo2 1)
 EOF
 RUN
 
@@ -248,6 +248,6 @@ CMDS=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Macro 'foo2' expects 2 args, not 0
-Error while executing command: ..(foo2)
+ERROR: core: Error while executing command: ..(foo2)
 EOF
 RUN

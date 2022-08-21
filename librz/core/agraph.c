@@ -480,12 +480,6 @@ static int **get_crossing_matrix(const RzGraph *g,
 						if (ak->layer != i || at->layer != i) {
 							// this should never happen
 							// but it happens if we do graph.dummy = false, so better hide it for now
-#if 0
-							eprintf ("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
-								ak->title, ak->layer,
-								at->title, at->layer,
-								i);
-#endif
 							continue;
 						}
 						m[ak->pos_in_layer][at->pos_in_layer]++;
@@ -4113,7 +4107,7 @@ static void nextword(RzCore *core, RzAGraph *g, const char *word) {
 
 RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive) {
 	if (is_interactive && !rz_cons_is_interactive()) {
-		eprintf("Interactive graph mode requires scr.interactive=true.\n");
+		RZ_LOG_ERROR("core: interactive graph mode requires scr.interactive=true.\n");
 		return 0;
 	}
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
@@ -4141,8 +4135,8 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 		h = 25;
 		can = rz_cons_canvas_new(w, h);
 		if (!can) {
-			eprintf("Cannot create RzCons.canvas context. Invalid screen "
-				"size? See scr.columns + scr.rows\n");
+			RZ_LOG_ERROR("core: cannot create RzCons.canvas context. Invalid screen "
+				     "size? See scr.columns + scr.rows\n");
 			rz_config_hold_free(hc);
 			return false;
 		}
@@ -4494,7 +4488,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				break;
 			}
 			if (!rz_core_seek_undo(core)) {
-				eprintf("Cannot undo\n");
+				RZ_LOG_ERROR("core: cannot undo\n");
 			}
 			if (rz_config_get_i(core->config, "graph.few")) {
 				g->need_reload_nodes = true;
@@ -4506,7 +4500,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				break;
 			}
 			if (!rz_core_seek_redo(core)) {
-				eprintf("Cannot redo\n");
+				RZ_LOG_ERROR("core: cannot redo\n");
 			}
 			break;
 		}

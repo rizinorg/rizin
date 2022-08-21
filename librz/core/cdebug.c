@@ -61,7 +61,7 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
 		rz_debug_trace_pc(core->dbg, pc);
 		if (!rz_debug_step(core->dbg, times)) {
-			eprintf("Step failed\n");
+			RZ_LOG_ERROR("core: failed to step\n");
 			rz_core_reg_update_flags(core);
 			core->break_loop = true;
 			return false;
@@ -168,14 +168,14 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	if (rz_bp_add_sw(core->dbg->bp, addr, 0, RZ_PERM_X)) {
 		if (rz_debug_is_dead(core->dbg)) {
-			RZ_LOG_ERROR("Cannot continue, run ood?\n");
+			RZ_LOG_ERROR("core: cannot continue, run ood?\n");
 		} else {
 			rz_debug_continue(core->dbg);
 			rz_core_reg_update_flags(core);
 		}
 		rz_bp_del(core->dbg->bp, addr);
 	} else {
-		RZ_LOG_ERROR("Cannot set breakpoint for continuing until 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("core: cannot set breakpoint for continuing until 0x%08" PFMT64x "\n", addr);
 		return false;
 	}
 	return true;
@@ -241,7 +241,7 @@ RZ_API void rz_core_debug_breakpoint_toggle(RZ_NONNULL RzCore *core, ut64 addr) 
 		int hwbp = (int)rz_config_get_i(core->config, "dbg.hwbp");
 		bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 		if (!bpi) {
-			eprintf("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
+			RZ_LOG_ERROR("core: cannot set breakpoint at 0x%" PFMT64x "\n", addr);
 		}
 	}
 	rz_bp_enable(core->dbg->bp, addr, true, 0);

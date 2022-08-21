@@ -208,7 +208,7 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
 			next = core->offset + aop.size;
 		} else {
-			eprintf("Invalid opcode\n");
+			RZ_LOG_ERROR("core: invalid opcode\n");
 		}
 	} else if (strstr(type, "fun")) {
 		RzAnalysisFunction *fcni;
@@ -242,7 +242,7 @@ RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
 	ut64 next = 0;
 	if (strstr(type, "opc")) {
-		eprintf("TODO: rz_core_seek_prev (opc)\n");
+		RZ_LOG_WARN("core: TODO: rz_core_seek_prev (opc)\n");
 	} else if (strstr(type, "fun")) {
 		RzAnalysisFunction *fcni;
 		rz_list_foreach (core->analysis->fcns, iter, fcni) {

@@ -974,7 +974,7 @@ static void cmd_pCx(RzCore *core, const char *input, const char *xcmd) {
 	}
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	if (!c) {
-		eprintf("Couldn't allocate a canvas with %d rows\n", rows);
+		RZ_LOG_ERROR("core: Couldn't allocate a canvas with %d rows\n", rows);
 		goto err;
 	}
 
@@ -1083,7 +1083,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 				free(res);
 			}
 		} else {
-			eprintf("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 		}
 	} break;
 	case 'x': // "pFx" x509
@@ -1100,7 +1100,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 			}
 			rz_x509_free_certificate(x509);
 		} else {
-			eprintf("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 		}
 	} break;
 	case 'p': // "pFp"
@@ -1114,7 +1114,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 			}
 			rz_pkcs7_free_cms(cms);
 		} else {
-			eprintf("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 		}
 	} break;
 	case 'b': // "pFb"
@@ -1132,7 +1132,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 			rz_cons_printf("%s", s);
 			free(s);
 		} else {
-			eprintf("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 		}
 	} break;
 	default:
@@ -1249,7 +1249,7 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 			rz_cons_printf("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
 		}
 	} else if (*_input == 'b') { // "pgb"
-		eprintf("TODO: Change gadget background color\n");
+		RZ_LOG_WARN("core: change gadget background color has not been implemented\n");
 	} else if (*_input == 'm') { // "pgm"
 		int nth = atoi(_input + 1);
 		RzCoreGadget *g = rz_list_get_n(core->gadgets, nth);
@@ -1432,7 +1432,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (val) {
 				rz_cons_printf("%d\n", rz_type_format_struct_size(core->analysis->typedb, val, mode, 0));
 			} else {
-				eprintf("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				RZ_LOG_ERROR("core: Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1441,10 +1441,10 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (*_input) {
 				rz_cons_printf("%d\n", rz_type_format_struct_size(core->analysis->typedb, _input, mode, 0));
 			} else {
-				eprintf("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				RZ_LOG_ERROR("core: Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else {
-			eprintf("Usage: pfs.struct_name | pfs format\n");
+			RZ_LOG_ERROR("core: Usage: pfs.struct_name | pfs format\n");
 		}
 		return;
 	}
@@ -1469,7 +1469,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				if (val) {
 					rz_cons_printf("%s\n", val);
 				} else {
-					eprintf("Struct %s is not defined\n", _input);
+					RZ_LOG_ERROR("core: Struct %s is not defined\n", _input);
 				}
 			}
 		} else {
@@ -1501,13 +1501,13 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				if (!result) {
 					rz_core_cmd0(core, ".ts*");
 				} else {
-					eprintf("Parse error: %s\n", error_msg);
+					RZ_LOG_ERROR("core: Parse error: %s\n", error_msg);
 					free(error_msg);
 				}
 			} else {
 				if (!rz_core_cmd_file(core, home) && !rz_core_cmd_file(core, path)) {
 					if (!rz_core_cmd_file(core, _input + 3)) {
-						eprintf("pfo: cannot open format file at '%s'\n", path);
+						RZ_LOG_ERROR("core: pfo: cannot open format file at '%s'\n", path);
 					}
 				}
 			}
@@ -1601,7 +1601,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (space && (!eq || space < eq)) {
 				*space++ = 0;
 				if (strchr(name, '.')) {
-					eprintf("Struct or fields name can not contain dot symbol (.)\n");
+					RZ_LOG_ERROR("core: Struct or fields name can not contain dot symbol (.)\n");
 				} else {
 					// pf.foo=xxx
 					rz_type_db_format_set(core->analysis->typedb, name, space);
@@ -1613,7 +1613,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 
 			if (!strchr(name, '.') &&
 				!rz_type_db_format_get(core->analysis->typedb, name)) {
-				eprintf("Cannot find '%s' format.\n", name);
+				RZ_LOG_ERROR("core: Cannot find '%s' format.\n", name);
 				free(name);
 				free(input);
 				return;
@@ -1675,7 +1675,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		int size = RZ_MAX(core->blocksize, struct_sz);
 		ut8 *buf = calloc(1, size);
 		if (!buf) {
-			eprintf("cannot allocate %d byte(s)\n", size);
+			RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
 		memcpy(buf, core->block, core->blocksize);
@@ -1683,7 +1683,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		bool syntax_ok = true;
 		char *args = strdup(fmt);
 		if (!args) {
-			rz_cons_printf("Error: Mem Allocation.");
+			RZ_LOG_ERROR("core: Mem Allocation.");
 			free(args);
 			free(buf);
 			goto stage_left;
@@ -1691,7 +1691,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		const char *arg1 = strtok(args, " ");
 		if (arg1 && rz_str_isnumber(arg1)) {
 			syntax_ok = false;
-			rz_cons_printf("Usage: pf [0|cnt][format-string]\n");
+			RZ_LOG_ERROR("core: Usage: pf [0|cnt][format-string]\n");
 		}
 		free(args);
 		if (syntax_ok) {
@@ -2185,7 +2185,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 		len = datalen;
 	}
 	if (len < 0 || len > datalen) {
-		eprintf("Invalid length\n");
+		RZ_LOG_ERROR("core: Invalid length\n");
 		return false;
 	}
 	if (onechar) {
@@ -2761,7 +2761,7 @@ static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 		do {
 			repeat--;
 			if (block + 8 >= block_end) {
-				eprintf("Truncated. TODO: use rz_io_read apis insgtead of depending on blocksize\n");
+				RZ_LOG_ERROR("core: block is truncated.\n");
 				break;
 			}
 			ut64 v;
@@ -3052,7 +3052,7 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 	size_t j, i = 0;
 	ut8 *ptr = calloc(1, nblocks);
 	if (!ptr) {
-		eprintf("Error: failed to malloc memory");
+		RZ_LOG_ERROR("core: Failed to malloc memory");
 		return NULL;
 	}
 	if (type == 'A') {
@@ -3233,14 +3233,14 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 				}
 			}
 			if (totalsize == UT64_MAX) {
-				eprintf("Cannot determine file size\n");
+				RZ_LOG_ERROR("core: Cannot determine file size\n");
 				goto beach;
 			}
 		}
 	}
 	blocksize = (blocksize > 0) ? (totalsize / blocksize) : (core->blocksize);
 	if (blocksize < 1) {
-		eprintf("Invalid block size: %d\n", (int)blocksize);
+		RZ_LOG_ERROR("core: Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
@@ -3260,7 +3260,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 	} else {
 		blocksize = totalsize / nblocks;
 		if (blocksize < 1) {
-			eprintf("Invalid block size: %d\n", (int)blocksize);
+			RZ_LOG_ERROR("core: Invalid block size: %d\n", (int)blocksize);
 			goto beach;
 		}
 	}
@@ -3285,13 +3285,13 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			ut64 i, j, k;
 			ptr = calloc(1, nblocks);
 			if (!ptr) {
-				eprintf("Error: failed to malloc memory");
+				RZ_LOG_ERROR("core: failed to malloc memory");
 				goto beach;
 			}
 			ut8 *p = calloc(1, blocksize);
 			if (!p) {
 				RZ_FREE(ptr);
-				eprintf("Error: failed to malloc memory");
+				RZ_LOG_ERROR("core: failed to malloc memory");
 				goto beach;
 			}
 			int len = 0;
@@ -3374,13 +3374,13 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			int i = 0;
 			ptr = calloc(1, nblocks);
 			if (!ptr) {
-				eprintf("Error: failed to malloc memory");
+				RZ_LOG_ERROR("core: failed to malloc memory");
 				goto beach;
 			}
 			p = malloc(blocksize);
 			if (!p) {
 				RZ_FREE(ptr);
-				eprintf("Error: failed to malloc memory");
+				RZ_LOG_ERROR("core: failed to malloc memory");
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
@@ -3447,13 +3447,13 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		int j, i = 0;
 		ptr = calloc(1, nblocks);
 		if (!ptr) {
-			eprintf("Error: failed to malloc memory");
+			RZ_LOG_ERROR("core: failed to malloc memory");
 			goto beach;
 		}
 		p = malloc(blocksize);
 		if (!p) {
 			RZ_FREE(ptr);
-			eprintf("Error: failed to malloc memory");
+			RZ_LOG_ERROR("core: failed to malloc memory");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -3473,13 +3473,13 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		int i = 0;
 		ptr = calloc(1, nblocks);
 		if (!ptr) {
-			eprintf("Error: failed to malloc memory");
+			RZ_LOG_ERROR("core: failed to malloc memory");
 			goto beach;
 		}
 		p = malloc(blocksize);
 		if (!p) {
 			RZ_FREE(ptr);
-			eprintf("Error: failed to malloc memory");
+			RZ_LOG_ERROR("core: failed to malloc memory");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -3499,13 +3499,13 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		ut64 i, j, k;
 		ptr = calloc(1, nblocks);
 		if (!ptr) {
-			eprintf("Error: failed to malloc memory");
+			RZ_LOG_ERROR("core: failed to malloc memory");
 			goto beach;
 		}
 		p = calloc(1, blocksize);
 		if (!p) {
 			RZ_FREE(ptr);
-			eprintf("Error: failed to malloc memory");
+			RZ_LOG_ERROR("core: failed to malloc memory");
 			goto beach;
 		}
 		int len = 0;
@@ -3670,7 +3670,7 @@ static void __printPattern(RzCore *core, const char *_input) {
 	size_t i, j;
 	st64 len = arg ? rz_num_math(core->num, arg) : core->blocksize;
 	if (len < 1) {
-		eprintf("Invalid length\n");
+		RZ_LOG_ERROR("core: Invalid length\n");
 		return;
 	}
 	switch (input[0]) {
@@ -3953,7 +3953,7 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, char input, ch
 				rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, pj);
 				free(buf);
 			} else {
-				eprintf("cannot allocate %" PFMT64u " byte(s)\n", b->size);
+				RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", b->size);
 			}
 		}
 		pj_end(pj);
@@ -4372,8 +4372,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			i = 0;
 		}
 		if (i && l > i) {
-			eprintf("This block size is too big (0x%" PFMT64x
-				" < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
+			RZ_LOG_ERROR("core: This block size is too big (0x%" PFMT64x
+				     " < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
 				n, l, *input, input + 2);
 			goto beach;
 		}
@@ -4381,7 +4381,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	if (input[0] == 'x' || input[0] == 'D') {
 		if (l > 0 && tmpseek == UT64_MAX) {
 			if (!rz_core_block_size(core, l)) {
-				eprintf("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+				RZ_LOG_ERROR("core: This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 					*input, input + 2);
 				goto beach;
 			}
@@ -4397,7 +4397,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				len = core->blocksize;
 			}
 		} else {
-			eprintf("p: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+			RZ_LOG_ERROR("core: p: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
 			core->num->value = 0;
 			goto beach;
 		}
@@ -4422,7 +4422,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					(void)rz_io_read_at(core->io, 0, data, core->offset);
 					char *res = rz_print_json_path((const char *)data, core->offset);
 					if (res) {
-						eprintf("-> res(%s)\n", res);
+						rz_cons_printf("-> res(%s)\n", res);
 					}
 					/*
 					char *res = rz_print_json_indent ((char*)data, false, "  ", NULL);
@@ -4430,14 +4430,14 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					free (res);
 */
 				} else {
-					eprintf("Cannot allocate %d\n", (int)(core->offset));
+					RZ_LOG_ERROR("core: Cannot allocate %d\n", (int)(core->offset));
 				}
 			} else {
 				rz_core_cmdf(core, "pj %" PFMT64u " @ 0", core->offset);
 			}
 		} else {
 			if (core->blocksize < 4 || !memcmp(core->block, "\xff\xff\xff\xff", 4)) {
-				eprintf("Cannot read\n");
+				RZ_LOG_ERROR("core: Cannot read\n");
 			} else {
 				char *res = rz_print_json_indent((const char *)core->block, true, "  ", NULL);
 				rz_cons_printf("%s\n", res);
@@ -4634,7 +4634,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (f) {
 				func_walk_blocks(core, f, input[2], 'I', input[2] == '.');
 			} else {
-				eprintf("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+				RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
 		} break;
@@ -4644,7 +4644,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (b) {
 				rz_core_print_disasm_instructions(core, b->size - (core->offset - b->addr), 0);
 			} else {
-				eprintf("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+				RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
 		} break;
@@ -4888,7 +4888,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				const bool json = input[2] == 'j'; // ps+j
 				ut64 bitness = rz_config_get_i(core->config, "asm.bits");
 				if (bitness != 32 && bitness != 64) {
-					eprintf("Error: bitness of %" PFMT64u " not supported\n", bitness);
+					RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
 					break;
 				}
 				if (*core->block & 0x1) { // "long" string
@@ -4987,7 +4987,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			cmd_pCx(core, input + 2, "pc");
 			break;
 		default:
-			eprintf("Usage: pCd\n");
+			RZ_LOG_ERROR("core: Usage: pCd\n");
 			break;
 		}
 		break;
