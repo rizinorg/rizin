@@ -5937,14 +5937,14 @@ fail:
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCore *core, int argc, const char **argv) {
-	const int n_bytes = 28;
-	ut8 buffer[28];
+#define TREEVIEW_N_BYTES 28
+	ut8 buffer[TREEVIEW_N_BYTES];
 	RzPVector *vec = NULL;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (!rz_io_read_at(core->io, core->offset, buffer, n_bytes)) {
+	if (!rz_io_read_at(core->io, core->offset, buffer, TREEVIEW_N_BYTES)) {
 		goto fail;
 	}
-	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, n_bytes);
+	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, TREEVIEW_N_BYTES);
 	if (!vec) {
 		goto fail;
 	}
