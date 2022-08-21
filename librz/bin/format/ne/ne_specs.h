@@ -95,7 +95,7 @@ typedef struct {
 	ut32 FileLoadCRC; // 32-bit CRC of entire contents of file
 	ut8 ProgFlags; // Program flags, bitmapped
 	ut8 ApplFlags; // Application flags, bitmapped
-	ut8 AutoDataSegIndex; // The automatic data segment index
+	ut16 AutoDataSegIndex; // The automatic data segment index
 	ut16 InitHeapSize; // The intial local heap size
 	ut16 InitStackSize; // The inital stack size
 	ut16 ipEntryPoint; // IP entry point offset
@@ -111,7 +111,7 @@ typedef struct {
 	ut16 ImportNameTable; // Offset of imported names table (array of counted strings, terminated with string of length 00h)
 	ut32 OffStartNonResTab; // Offset from start of file to non-resident names table
 	ut16 MovEntryCount; // Count of moveable entry point listed in entry table
-	ut16 FileAlnSzShftCnt; // File alligbment size shift count (0=9(default 512 byte pages))
+	ut16 FileAlnSzShftCnt; // File alignment size shift count (0=9(default 512 byte pages))
 	ut16 nResTabEntries; // Number of resource table entries
 	ut8 targOS; // Target OS
 	ut8 OS2EXEFlags; // Other OS/2 flags
