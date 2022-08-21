@@ -32,9 +32,9 @@ typedef struct symbols_metadata_t { // 0x40
 	ut32 namelen;
 	ut32 name;
 	bool valid;
-	ut32 size;
+	ut64 size;
 	// RzList *segments;
-	ut32 addr;
+	ut64 addr;
 	int bits;
 	const char *arch;
 	const char *cpu;
@@ -59,64 +59,72 @@ static SymbolsHeader parseHeader(RzBuffer *buf) {
 	return sh;
 }
 
-static const char *typeString(ut32 n, int *bits) {
-	*bits = 32;
-	if (n == 12) { // CPU_SUBTYPE_ARM_V7) {
-		return "arm";
+static void set_arch_and_bits(SymbolsMetadata *sm) {
+	// main cpu type
+	switch (sm->cputype) {
+	case 12: // CPU_SUBTYPE_ARM_V7
+		sm->arch = "arm";
+		sm->bits = 32;
+		break;
+	case 0x0100000c: // arm64
+		/* fall-thru */
+	case 0x0200000c: // arm64-32
+		sm->arch = "arm";
+		sm->bits = 64;
+		break;
+	default:
+		sm->arch = "x86";
+		sm->bits = 32;
+		break;
 	}
-	if (n == 0x0100000c) { // arm64
-		*bits = 64;
-		return "arm";
-	}
-	if (n == 0x0200000c) { // arm64-32
-		//  TODO: must change bits
-		*bits = 64;
-		return "arm";
-	}
-	return "x86";
-}
 
-static const char *subtypeString(int n) {
-	if (n == 9) { // CPU_SUBTYPE_ARM_V7) {
-		return "armv7";
+	// sub-cpu type
+	switch (sm->subtype) {
+	case 9: // CPU_SUBTYPE_ARM_V7
+		sm->cpu = "armv7";
+		break;
+	default:
+		sm->cpu = "?";
+		break;
 	}
-	return "?";
 }
 
 // metadata section starts at offset 0x40 and ends around 0xb0 depending on filenamelength
-static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
-	SymbolsMetadata sm = { 0 };
-	ut8 b[0x100] = { 0 };
-	(void)rz_buf_read_at(buf, off, b, sizeof(b));
-	sm.addr = off;
-	sm.cputype = rz_read_le32(b);
-	sm.arch = typeString(sm.cputype, &sm.bits);
-	//  eprintf ("0x%08x  cputype  0x%x -> %s\n", 0x40, sm.cputype, typeString (sm.cputype));
-	// bits = (strstr (typeString (sm.cputype, &sm.bits), "64"))? 64: 32;
-	sm.subtype = rz_read_le32(b + 4);
-	sm.cpu = subtypeString(sm.subtype);
-	//  eprintf ("0x%08x  subtype  0x%x -> %s\n", 0x44, sm.subtype, subtypeString (sm.subtype));
-	sm.n_segments = rz_read_le32(b + 8);
-	// int count = rz_read_le32 (b + 0x48);
-	sm.namelen = rz_read_le32(b + 0xc);
-	// eprintf ("0x%08x  count    %d\n", 0x48, count);
-	// eprintf ("0x%08x  strlen   %d\n", 0x4c, sm.namelen);
-	// eprintf ("0x%08x  filename %s\n", 0x50, b + 16);
-	int delta = 16;
-	// sm.segments = parseSegments (buf, off + sm.namelen + delta, sm.n_segments);
-	sm.size = (sm.n_segments * 32) + sm.namelen + delta;
+static bool parseMetadata(RzBuffer *buf, ut64 address, SymbolsMetadata *sm) {
+	ut64 segments_size = 0, buf_size = rz_buf_size(buf);
+
+	ut64 offset = address;
+	if (!rz_buf_read_le32_offset(buf, &offset, &sm->cputype) ||
+		!rz_buf_read_le32_offset(buf, &offset, &sm->subtype) ||
+		!rz_buf_read_le32_offset(buf, &offset, &sm->n_segments) ||
+		!rz_buf_read_le32_offset(buf, &offset, &sm->namelen)) {
+		RZ_LOG_ERROR("bin_sym: cannot read symbols_metadata_t.\n");
+		return false;
+	} else if (sm->namelen >= buf_size) {
+		RZ_LOG_ERROR("bin_sym: detected symbols_metadata_t name length overflow.\n");
+		return false;
+	} else if (UT64_MUL_OVFCHK(sm->n_segments, 32)) {
+		RZ_LOG_ERROR("bin_sym: detected symbols_metadata_t segments size overflow (mul).\n");
+		return false;
+	}
+	segments_size = sm->n_segments * 32;
+	if (UT64_ADD_OVFCHK(segments_size, (sm->namelen + 16))) {
+		RZ_LOG_ERROR("bin_sym: detected symbols_metadata_t segments size overflow (mul).\n");
+		return false;
+	}
+	segments_size += (sm->namelen + 16);
+	sm->size = segments_size;
+	sm->addr = address;
+	set_arch_and_bits(sm);
 
 	// hack to detect format
-	ut32 nm, nm2, nm3;
-	rz_buf_read_at(buf, off + sm.size, (ut8 *)&nm, sizeof(nm));
-	rz_buf_read_at(buf, off + sm.size + 4, (ut8 *)&nm2, sizeof(nm2));
-	rz_buf_read_at(buf, off + sm.size + 8, (ut8 *)&nm3, sizeof(nm3));
-	// eprintf ("0x%x next %x %x %x\n", off + sm.size, nm, nm2, nm3);
-	if (rz_read_le32(&nm3) != 0xa1b22b1a) {
-		sm.size -= 8;
-		//		is64 = true;
+	ut32 unk_value;
+	if (!rz_buf_read_le32_at(buf, address + sm->size + 8, &unk_value)) {
+		return false;
+	} else if (unk_value != 0xa1b22b1a) {
+		sm->size -= 8;
 	}
-	return sm;
+	return true;
 }
 
 static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect) {
@@ -271,17 +279,18 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	// 0 - magic check, version ...
 	SymbolsHeader sh = parseHeader(buf);
 	if (!sh.valid) {
-		eprintf("Invalid headers\n");
+		RZ_LOG_ERROR("bin_sym: invalid headers\n");
 		return false;
 	}
-	SymbolsMetadata sm = parseMetadata(buf, 0x40);
+	SymbolsMetadata sm = { 0 };
+	if (!parseMetadata(buf, 0x40, &sm)) {
+		return false;
+	}
 	char *file_name = NULL;
 	if (sm.namelen) {
-		file_name = calloc(sm.namelen + 1, 1);
-		if (!file_name) {
-			return false;
-		}
-		if (rz_buf_read_at(buf, 0x50, (ut8 *)file_name, sm.namelen) != sm.namelen) {
+		file_name = calloc(1, sm.namelen + 1);
+		if (!file_name || rz_buf_read_at(buf, 0x50, (ut8 *)file_name, sm.namelen) != sm.namelen) {
+			free(file_name);
 			return false;
 		}
 	}
@@ -318,7 +327,10 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	SymbolsMetadata sm = parseMetadata(bf->buf, 0x40);
+	SymbolsMetadata sm = { 0 };
+	if (!parseMetadata(bf->buf, 0x40, &sm)) {
+		return NULL;
+	}
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
