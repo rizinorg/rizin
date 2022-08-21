@@ -12,7 +12,6 @@ project('rizin', 'c',
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
-cmake_mod = import('cmake')
 
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
