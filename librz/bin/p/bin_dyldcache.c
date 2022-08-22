@@ -46,6 +46,9 @@ static struct MACH0_(obj_t) * bin_to_mach0(RzBinFile *bf, RzDyldBinImage *bin) {
 	opts.symbols_off = bin->symbols_off;
 
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf)(buf, &opts);
+	if (!mach0) {
+		return NULL;
+	}
 
 	mach0->user = cache;
 	mach0->va2pa = &bin_obj_va2pa;
