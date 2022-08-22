@@ -1774,11 +1774,11 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
  * @return const ut8* Update buffer
  */
 static const ut8 *parse_comp_unit(RzBinDwarfDebugInfo *info, const ut8 *buf_start,
-	RzBinDwarfCompUnit *unit, const RzBinDwarfDebugAbbrev *abbrevs,
+	size_t buf_len, RzBinDwarfCompUnit *unit, const RzBinDwarfDebugAbbrev *abbrevs,
 	size_t first_abbr_idx, const ut8 *debug_str, size_t debug_str_len, bool big_endian) {
 
 	const ut8 *buf = buf_start;
-	const ut8 *buf_end = buf_start + unit->hdr.length - unit->hdr.header_size;
+	const ut8 *buf_end = buf_start + RZ_MIN(buf_len, unit->hdr.length - unit->hdr.header_size);
 
 	while (buf && buf < buf_end && buf >= buf_start) {
 		if (unit->count && unit->capacity == unit->count) {
@@ -1952,7 +1952,7 @@ static RzBinDwarfDebugInfo *parse_info_raw(RzBinDwarfDebugAbbrev *da,
 		// They point to the same array object, so should be def. behaviour
 		size_t first_abbr_idx = abbrev_start - da->decls;
 
-		buf = parse_comp_unit(info, buf, unit, da, first_abbr_idx, debug_str, debug_str_len, big_endian);
+		buf = parse_comp_unit(info, buf, buf_end - buf, unit, da, first_abbr_idx, debug_str, debug_str_len, big_endian);
 
 		if (!buf) {
 			goto cleanup;
