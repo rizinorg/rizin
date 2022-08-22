@@ -175,7 +175,12 @@ static void parse_go_build_info(RzBinFile *bf, GoBuildInfo *go_info, ut64 bi_pad
 		RZ_LOG_ERROR("goinfo: Cannot read build info header at 0x%08" PFMT64x " (phy)\n", bi_paddr);
 		return;
 	}
+
 	ut32 ptr_size = tmp32[14];
+	if (ptr_size != 4 && ptr_size != 8) {
+		return;
+	}
+
 	ut32 setting_sz = 0;
 	if (tmp32[15] & 2) {
 		ut8 *buffer = malloc(GOLANG_MAX_STRING_BUF);
