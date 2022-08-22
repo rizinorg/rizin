@@ -1074,7 +1074,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	switch (*input) {
 	case 'a': {
 		asn1_setformat(input[1] != 'q');
-		RASN1Object *asn1 = rz_asn1_create_object(data, size, data);
+		RASN1Object *asn1 = rz_asn1_create_object(data, size);
 		if (asn1) {
 			char *res = rz_asn1_to_string(asn1, 0, NULL);
 			rz_asn1_free_object(asn1);
@@ -1088,7 +1088,8 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	} break;
 	case 'x': // "pFx" x509
 	{
-		RX509Certificate *x509 = rz_x509_parse_certificate(rz_asn1_create_object(data, size, data));
+		RASN1Object *object = rz_asn1_create_object(data, size);
+		RX509Certificate *x509 = rz_x509_parse_certificate(object);
 		if (x509) {
 			RzStrBuf *sb = rz_strbuf_new("");
 			rz_x509_certificate_dump(x509, NULL, sb);

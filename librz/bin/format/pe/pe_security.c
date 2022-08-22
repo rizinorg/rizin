@@ -11,6 +11,9 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(RzBinPEObj *bin) {
 		return NULL;
 	}
 	RASN1Binary *digest = bin->spcinfo->messageDigest.digest;
+	if (!digest) {
+		return NULL;
+	}
 	return rz_hex_bin2strdup(digest->binary, digest->length);
 }
 
@@ -19,7 +22,7 @@ static ut64 buf_fwd_hash(const ut8 *buf, ut64 size, void *user) {
 }
 
 char *PE_(bin_pe_compute_authentihash)(RzBinPEObj *bin) {
-	if (!bin->spcinfo) {
+	if (!bin->spcinfo || !bin->spcinfo->messageDigest.digestAlgorithm.algorithm) {
 		return NULL;
 	}
 
@@ -131,7 +134,12 @@ int PE_(bin_pe_init_security)(RzBinPEObj *bin) {
 
 		if (!bin->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
 			bin->cms = rz_pkcs7_parse_cms(cert->bCertificate, cert->dwLength - 6);
-			bin->spcinfo = rz_pkcs7_parse_spcinfo(bin->cms);
+			bin->spcinfo = bin->cms ? rz_pkcs7_parse_spcinfo(bin->cms) : NULL;
+		}
+		if (!bin->cms || !bin->spcinfo) {
+			RZ_FREE(cert->bCertificate);
+			RZ_FREE(cert);
+			return false;
 		}
 
 		security_directory->certificates[security_directory->length] = cert;
