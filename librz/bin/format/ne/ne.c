@@ -438,26 +438,35 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 				break;
 			} else if (bundle_type == 0xFF) { // Moveable
 				off += 2;
+				if ((off + 1) >= bin->ne_header->EntryTableLength) {
+					free(entry);
+					goto end;
+				}
 				ut8 segnum = *(bin->entry_table + off);
 				off++;
-				ut16 segoff = *(ut16 *)(bin->entry_table + off);
-				if (!segnum) {
+				if ((off + 2) >= bin->ne_header->EntryTableLength) {
+					free(entry);
+					goto end;
+				}
+				ut16 segoff = rz_read_le16(bin->entry_table + off);
+				if (!segnum || segnum > bin->ne_header->SegCount) {
 					free(entry);
 					continue;
 				}
 				entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 			} else { // Fixed
-				ut16 *p = (ut16 *)(bin->entry_table + off);
-				if (off >= bin->ne_header->EntryTableLength || bundle_type > bin->ne_header->SegCount) {
+				ut8 *p = bin->entry_table + off;
+				if ((off + 2) >= bin->ne_header->EntryTableLength || bundle_type > bin->ne_header->SegCount) {
 					free(entry);
-					continue;
+					goto end;
 				}
-				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + (*p);
+				entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset * bin->alignment + rz_read_le16(p);
 			}
 			off += 2;
 			rz_list_append(entries, entry);
 		}
 	}
+end:
 	rz_list_free(segments);
 	bin->entries = entries;
 	return entries;
