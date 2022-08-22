@@ -249,8 +249,10 @@ class Arg:
 
     def decl(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES" and self.choices_cb is not None:
-            return "RZ_IPI char **%s(RzCore *core);" % (self.choices_cb,)
-        return None
+            return self.choices_cb, "RZ_IPI char **%s(RzCore *core);" % (
+                self.choices_cb,
+            )
+        return None, None
 
 
 def format_detail_entry(c):
@@ -743,37 +745,47 @@ def detail2decl(cd):
     )
 
 
-def handler2decl(cd, cd_type, handler_name):
+def remove_none(l):
+    return [x for x in l if x is not None]
+
+
+def handler2decl(cd, cd_type, handler_name, db_names):
     out = []
-    if cd_type == CD_TYPE_ARGV:
+    if cd_type == CD_TYPE_ARGV and handler_name not in db_names:
         out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);"
             % (handler_name,)
         )
-    if cd_type == CD_TYPE_ARGV_MODES:
+        db_names.add(handler_name)
+    if cd_type == CD_TYPE_ARGV_MODES and handler_name not in db_names:
         out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);"
             % (handler_name,)
         )
-    if cd_type == CD_TYPE_ARGV_STATE:
+        db_names.add(handler_name)
+    if cd_type == CD_TYPE_ARGV_STATE and handler_name not in db_names:
         out.append(
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);"
             % (handler_name,)
         )
-    if cd_type == CD_TYPE_OLDINPUT:
+        db_names.add(handler_name)
+    if cd_type == CD_TYPE_OLDINPUT and handler_name not in db_names:
         out.append("RZ_IPI int %s(void *data, const char *input);" % (handler_name,))
+        db_names.add(handler_name)
 
-    if cd.details_cb is not None:
+    if cd.details_cb is not None and cd.details_cb not in db_names:
         out.append(
             "RZ_IPI RzCmdDescDetail *%s(RzCore *core, int argc, const char **argv);"
             % (cd.details_cb,)
         )
+        db_names.add(cd.details_cb)
 
     if isinstance(cd.args, list):
         for arg in cd.args:
-            d = arg.decl()
-            if d is not None:
+            name, d = arg.decl()
+            if name not in db_names and d is not None:
                 out.append(d)
+                db_names.add(name)
 
     return "\n".join(out) if out else None
 
@@ -823,9 +835,10 @@ handlers_decls = filter(
     [(cd, cd.type, cd.get_handler_cname()) for cd in CmdDesc.c_cds.values()],
 )
 
+db = set()
 hf_text = CMDDESCS_H_TEMPLATE.format(
     handlers_declarations="\n".join(
-        [handler2decl(cd, t, h) for cd, t, h in handlers_decls]
+        remove_none([handler2decl(cd, t, h, db) for cd, t, h in handlers_decls])
     ),
 )
 with open(os.path.join(args.output_dir, "cmd_descs.h"), "w", encoding="utf8") as f:
