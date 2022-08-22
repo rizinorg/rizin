@@ -117,21 +117,14 @@ RZ_API ut64 rz_coresym_cache_element_pa2va(RzCoreSymCacheElement *element, ut64 
 
 static char *str_dup_safe(const ut8 *b, const ut8 *str, const ut8 *end) {
 	if (str >= b && str < end) {
-		int len = rz_str_nlen((const char *)str, end - str);
-		if (len) {
-			return rz_str_ndup((const char *)str, len);
-		}
+		return rz_str_ndup((const char *)str, end - str);
 	}
 	return NULL;
 }
 
-static char *str_dup_safe_fixed(const ut8 *b, const ut8 *str, ut64 len, const ut8 *end) {
+static char *str_ndup_safe(const ut8 *b, const ut8 *str, ut64 len, const ut8 *end) {
 	if (str >= b && str + len < end) {
-		char *result = calloc(1, len + 1);
-		if (result) {
-			rz_str_ncpy(result, (const char *)str, len);
-			return result;
-		}
+		return rz_str_ndup((const char *)str, len);
 	}
 	return NULL;
 }
@@ -214,7 +207,7 @@ RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuff
 			if (cursor >= end) {
 				goto beach;
 			}
-			seg->name = str_dup_safe_fixed(b, cursor, 16, end);
+			seg->name = str_ndup_safe(b, cursor, 16, end);
 			cursor += 16;
 			if (!seg->name) {
 				goto beach;
