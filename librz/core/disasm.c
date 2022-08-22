@@ -6829,7 +6829,7 @@ RZ_API void rz_core_disasm_op_free(RzCoreDisasmOp *x) {
 /**
  * \brief Disassemble all possible opcodes (byte per byte) at \p addr
  */
-RZ_API RZ_OWN RzPVector /*<RzCoreDisassemblyOp *>*/ *rz_core_disasm_all_possible_opcodes(RZ_NONNULL RzCore *core, RZ_NONNULL ut8 *buffer, ut64 addr, ut64 n_bytes) {
+RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opcodes(RZ_NONNULL RzCore *core, RZ_NONNULL ut8 *buffer, ut64 addr, ut64 n_bytes) {
 	rz_return_val_if_fail(core && buffer, NULL);
 	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_core_disasm_op_free);
 	if (!vec) {

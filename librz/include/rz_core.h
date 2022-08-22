@@ -884,6 +884,9 @@ RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflag
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t);
 
+/**
+ * \brief Use RzAsmOp if it is sufficient
+ */
 typedef struct {
 	ut64 offset;
 	ut64 size;

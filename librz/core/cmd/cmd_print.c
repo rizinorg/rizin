@@ -5885,7 +5885,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
-	ut8 *buffer = calloc(n_bytes, sizeof(ut8));
+	ut8 *buffer = RZ_NEWS0(ut8, n_bytes);
 	RzPVector *vec = NULL;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (!buffer) {
