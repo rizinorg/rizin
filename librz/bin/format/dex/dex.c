@@ -81,6 +81,10 @@ static DexString *dex_string_new(RzBuffer *buf, ut64 offset, st64 *pread) {
 	DexString *string = NULL;
 
 	read = rz_buf_uleb128(buf, &size);
+	if (UT64_ADD_OVFCHK(size, 1)) {
+		return NULL;
+	}
+
 	data = malloc(size + 1);
 	if (!data || rz_buf_read(buf, (ut8 *)data, size) != size) {
 		free(data);
@@ -905,7 +909,9 @@ static char *dex_resolve_library(const char *library) {
 	}
 	char *demangled = strdup(library + 1);
 	rz_str_replace_ch(demangled, '/', '.', 1);
-	demangled[strlen(demangled) - 1] = 0;
+	if (RZ_STR_ISNOTEMPTY(demangled)) {
+		demangled[strlen(demangled) - 1] = 0;
+	}
 	return demangled;
 }
 
