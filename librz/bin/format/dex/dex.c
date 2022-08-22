@@ -816,6 +816,9 @@ static char *dex_resolve_proto_id(RzBinDex *dex, const char *name, ut32 proto_id
 	rz_strbuf_append(sb, "(");
 	for (ut32 i = 0; i < proto_id->type_list_size; ++i) {
 		ut32 type_idx = proto_id->type_list[i];
+		if (type_idx >= dex->type_ids_size) {
+			continue;
+		}
 
 		const DexString *param = dex_resolve_string_id_native(dex, dex->types[type_idx]);
 		if (!param) {
