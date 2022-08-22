@@ -1215,7 +1215,7 @@ static int init_die(RzBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 		return -1;
 	}
 	if (attr_count) {
-		die->attr_values = calloc(sizeof(RzBinDwarfAttrValue), attr_count);
+		die->attr_values = RZ_NEWS0(RzBinDwarfAttrValue, attr_count);
 		if (!die->attr_values) {
 			return -1;
 		}
@@ -1725,7 +1725,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
 	const char *comp_dir = NULL;
 	ut64 line_info_offset = UT64_MAX;
 	if (abbrev->count) {
-		for (i = 0; i < abbrev->count - 1; i++) {
+		for (i = 0; i < abbrev->count - 1 && die->count < die->capacity; i++) {
 			memset(&die->attr_values[i], 0, sizeof(die->attr_values[i]));
 
 			buf = parse_attr_value(buf, buf_end - buf, &abbrev->defs[i],
