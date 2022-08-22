@@ -79,12 +79,10 @@ RZ_IPI RzCmdStatus rz_print_commands_after_traps_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_print_areas_no_functions_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analyze_value_to_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_analysis_function_add_recu_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_analysis_function_add_recu_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_del_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_del_all_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_analyze_jmptable_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_analysis_function_analyze_args_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_analyze_args_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_add_handler(RzCore *core, int argc, const char **argv);
@@ -746,7 +744,6 @@ RZ_IPI RzCmdStatus rz_reopen_nobin_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_reopen_nobin_write_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reopen_nobin_headers_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reopen_nobin_write_headers_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_arch_bits_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_open_binary_select_id_handler(RzCore *core, int argc, const char **argv);
@@ -1040,7 +1037,6 @@ RZ_IPI RzCmdStatus rz_yank_hexpairs_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_yank_hex_print_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_yank_paste_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_yank_string_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **argv);
@@ -1055,7 +1051,6 @@ RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_fortune_handler(RzCore *core, int argc, const char **argv);
