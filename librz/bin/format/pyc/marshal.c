@@ -313,7 +313,6 @@ static pyc_object *get_binary_float_object(RzBuffer *buffer) {
 static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 size = 0;
 	ut32 n1 = 0;
 	ut32 n2 = 0;
 
@@ -327,7 +326,7 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	} else {
 		n1 = get_st32(buffer, &error);
 	}
-	if (error) {
+	if (error || UT32_ADD_OVFCHK(n1, 1)) {
 		free(ret);
 		return NULL;
 	}
@@ -336,8 +335,7 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		return NULL;
 	}
 	/* object contain string representation of the number */
-	size = rz_buf_read(buffer, s1, n1);
-	if (size != n1) {
+	if (rz_buf_read(buffer, s1, n1) != n1) {
 		RZ_FREE(s1);
 		RZ_FREE(ret);
 		return NULL;
@@ -346,9 +344,10 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	if ((pyc->magic_int & 0xffff) <= 62061) {
 		n2 = get_ut8(buffer, &error);
-	} else
+	} else {
 		n2 = get_st32(buffer, &error);
-	if (error) {
+	}
+	if (error || UT32_ADD_OVFCHK(n2, 1)) {
 		return NULL;
 	}
 	ut8 *s2 = malloc(n2 + 1);
@@ -356,8 +355,7 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		return NULL;
 	}
 	/* object contain string representation of the number */
-	size = rz_buf_read(buffer, s2, n2);
-	if (size != n2) {
+	if (rz_buf_read(buffer, s2, n2) != n2) {
 		RZ_FREE(s1);
 		RZ_FREE(s2);
 		RZ_FREE(ret);
