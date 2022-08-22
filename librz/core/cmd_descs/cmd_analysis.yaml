@@ -110,7 +110,7 @@ commands:
             cname: autoname_all_functions
             args: []
           - name: aanr
-            summary: Renames all functions which does not return 
+            summary: Renames all functions which does not return
             cname: autoname_all_functions_noreturn
             args: []
       - name: aap
@@ -996,6 +996,184 @@ commands:
           - name: number
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+  - name: ag
+    summary: Analysis graph commands
+    details:
+      - name: "Formats"
+        entries:
+          - text: "ascii"
+            comment: "Ascii art"
+          - text: "cmd"
+            comment: "rizin commands"
+          - text: "dot"
+            comment: "Graphviz dot"
+          - text: "gml"
+            comment: "Graph Modelling Language"
+          - text: "json"
+            comment: "json"
+          - text: "json_disasm"
+            comment: "json formatted disassembly"
+          - text: "sdb"
+            comment: "SDB key-value"
+          - text: "tiny"
+            comment: "Tiny ascii art"
+          - text: "interactive"
+            comment: "Interactive ascii art"
+    subcommands:
+      - name: aga
+        summary: Data reference graph
+        cname: analysis_graph_dataref
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agA
+        summary: Global data references graph
+        cname: analysis_graph_dataref_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agc
+        summary: Function callgraph
+        cname: analysis_graph_callgraph_function
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agC
+        summary: Global callgraph
+        cname: analysis_graph_callgraph_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agd
+        summary: Diff graph
+        cname: analysis_graph_diff
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: agf
+        summary: Basic blocks function graph
+        cname: analysis_graph_bb_function
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agi
+        summary: Imports graph
+        cname: analysis_graph_imports
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agr
+        summary: References graph
+        cname: analysis_graph_refs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agR
+        summary: Global references graph
+        cname: analysis_graph_refs_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: ags
+        summary: Normal graph
+        cname: analysis_graph_normal
+        args: []
+      - name: agl
+        summary: Line graph ?
+        cname: analysis_graph_line
+        args: []
+      - name: agx
+        summary: Cross-references graph
+        cname: analysis_graph_xrefs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agg
+        summary: Custom graph
+        cname: analysis_graph_custom
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: ag-
+        summary: Clear the custom graph
+        cname: analysis_graph_custom_clear
+        args: []
+      - name: agn
+        summary: Managing custom graph nodes
+        subcommands:
+          - name: agn
+            summary: Add a node to the custom graph
+            cname: analysis_graph_custom_node_add
+            args:
+              - name: title
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: body
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+              - name: color
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: agn-
+            summary: Remove a node from the custom graph
+            cname: analysis_graph_custom_node_remove
+            args:
+              - name: title
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: age
+        summary: Managing custom graph edges
+        subcommands:
+          - name: age
+            summary: Add an edge to the custom graph
+            cname: analysis_graph_custom_edge_add
+            args:
+              - name: title1
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: title2
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: age-
+            summary: Remove an edge from the custom graph
+            cname: analysis_graph_custom_edge_remove
+            args:
+              - name: title1
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: title2
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: agw
+        summary: Write to path or display graph image (see graph.gv.format)
+        cname: analysis_graph_write
+        args:
+          - name: graphtype
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "dataref"
+            choices: ["dataref", "dataref_global", "funcall", "funcall_global", "diff", "funblock", "import", "ref",
+                      "ref_global", "line", "xref", "custom"]
+          - name: path
+            type: RZ_CMD_ARG_TYPE_STRING
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar
@@ -1277,23 +1455,23 @@ commands:
       - name: aii
         summary: global import (like afii, but global)
         subcommands:
-        - name: aii
-          summary: list/add global import (like afii, but global)
-          type: RZ_CMD_DESC_TYPE_ARGV_STATE
-          cname: global_imports
-          modes:
-            - RZ_OUTPUT_MODE_STANDARD
-          args:
-            - name: namespace
-              type: RZ_CMD_ARG_TYPE_STRING
-              optional: true
-        - name: aii-
-          summary: delete all global imports
-          type: RZ_CMD_DESC_TYPE_ARGV_STATE
-          cname: delete_global_imports
-          modes:
-            - RZ_OUTPUT_MODE_STANDARD
-          args: []
+          - name: aii
+            summary: list/add global import (like afii, but global)
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: global_imports
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args:
+              - name: namespace
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aii-
+            summary: delete all global imports
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: delete_global_imports
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args: []
   - name: av
     summary: C++ vtables and RTTI
     subcommands:

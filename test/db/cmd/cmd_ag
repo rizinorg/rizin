@@ -1,11 +1,11 @@
-NAME=agcj
+NAME=agc j
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agcj
+agc j
 EOF
 EXPECT=<<EOF
-[{"name":"entry0","size":42,"imports":["reloc.__libc_start_main"]}]
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[1]},{"id":1,"title":"reloc.__libc_start_main","offset":2101216,"out_nodes":[]}]}
 EOF
 RUN
 
@@ -13,7 +13,7 @@ NAME=agi
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agi*
+agi *
 EOF
 EXPECT=<<EOF
 agn "sym.imp.free"
@@ -33,7 +33,7 @@ agn "0x000007f6"
 agn "sym.imp.strcat"
 agn "0x00000827"
 agn "_ITM_registerTMCloneTable"
-agn "section..plt.got"
+agn "sym.imp.__cxa_finalize"
 agn "0x0000077e"
 age "0x0000083f" "sym.imp.free"
 age "0x00000814" "sym.imp.strcpy"
@@ -42,7 +42,7 @@ age "0x000007cf" "sym.imp.strlen"
 age "0x000007de" "sym.imp.strlen"
 age "0x000007f6" "sym.imp.malloc"
 age "0x00000827" "sym.imp.strcat"
-age "0x0000077e" "section..plt.got"
+age "0x0000077e" "sym.imp.__cxa_finalize"
 EOF
 RUN
 
@@ -51,12 +51,12 @@ NAME=agx
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agx* @ main
+agx * @ main
 EOF
 EXPECT=<<EOF
-agn "main"
+agn "sym.main"
 agn "0x000006bd"
-age "0x000006bd" "main"
+age "0x000006bd" "sym.main"
 EOF
 RUN
 
@@ -65,11 +65,11 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
 agx @ main
-agid
-agig
-agij
-agik
-agit
+agi d
+agi g
+agi j
+agi k
+agi t
 EOF
 EXPECT=<<EOF
 .--------------------.
@@ -79,7 +79,7 @@ EXPECT=<<EOF
     |
     |
 .--------------------.
-|  main              |
+|  sym.main          |
 `--------------------'
 digraph code {
 rankdir=LR;
@@ -111,7 +111,7 @@ node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
 15 [URL="0x00000827", color="lightgray", label="0x00000827"]
 15 -> 14
 16 [URL="_ITM_registerTMCloneTable", color="lightgray", label="_ITM_registerTMCloneTable"]
-17 [URL="section..plt.got", color="lightgray", label="section..plt.got"]
+17 [URL="sym.imp.__cxa_finalize", color="lightgray", label="sym.imp.__cxa_finalize"]
 18 [URL="0x0000077e", color="lightgray", label="0x0000077e"]
 18 -> 17
 }
@@ -190,7 +190,7 @@ directed 1
   ]
   node [
     id  17
-    label  "section..plt.got"
+    label  "sym.imp.__cxa_finalize"
   ]
   node [
     id  18
@@ -229,16 +229,16 @@ directed 1
     target  17
   ]
 ]
-{"nodes":[{"id":0,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":1,"title":"0x0000083f","offset":2111,"out_nodes":[0]},{"id":2,"title":"_ITM_deregisterTMCloneTable","offset":0,"out_nodes":[]},{"id":3,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":4,"title":"0x00000814","offset":2068,"out_nodes":[3]},{"id":5,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":6,"title":"0x00000833","offset":2099,"out_nodes":[5]},{"id":7,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":8,"title":"0x000007cf","offset":1999,"out_nodes":[7]},{"id":9,"title":"0x000007de","offset":2014,"out_nodes":[7]},{"id":10,"title":"__libc_start_main","offset":0,"out_nodes":[]},{"id":11,"title":"__gmon_start__","offset":0,"out_nodes":[]},{"id":12,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":13,"title":"0x000007f6","offset":2038,"out_nodes":[12]},{"id":14,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":15,"title":"0x00000827","offset":2087,"out_nodes":[14]},{"id":16,"title":"_ITM_registerTMCloneTable","offset":0,"out_nodes":[]},{"id":17,"title":"section..plt.got","offset":1680,"out_nodes":[]},{"id":18,"title":"0x0000077e","offset":1918,"out_nodes":[17]}]}
+{"nodes":[{"id":0,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":1,"title":"0x0000083f","offset":2111,"out_nodes":[0]},{"id":2,"title":"_ITM_deregisterTMCloneTable","offset":0,"out_nodes":[]},{"id":3,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":4,"title":"0x00000814","offset":2068,"out_nodes":[3]},{"id":5,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":6,"title":"0x00000833","offset":2099,"out_nodes":[5]},{"id":7,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":8,"title":"0x000007cf","offset":1999,"out_nodes":[7]},{"id":9,"title":"0x000007de","offset":2014,"out_nodes":[7]},{"id":10,"title":"__libc_start_main","offset":0,"out_nodes":[]},{"id":11,"title":"__gmon_start__","offset":0,"out_nodes":[]},{"id":12,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":13,"title":"0x000007f6","offset":2038,"out_nodes":[12]},{"id":14,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":15,"title":"0x00000827","offset":2087,"out_nodes":[14]},{"id":16,"title":"_ITM_registerTMCloneTable","offset":0,"out_nodes":[]},{"id":17,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":18,"title":"0x0000077e","offset":1918,"out_nodes":[17]}]}
 agraph.color_box=G1swbQ==
 agraph.delta_x=0x8a
 agraph.delta_y=0x1
-agraph.h=0xf
+agraph.h=0x10
 agraph.is_callgraph=false
-agraph.nodes=sym.imp.free,0x0000083f,_ITM_deregisterTMCloneTable,sym.imp.strcpy,0x00000814,sym.imp.puts,0x00000833,sym.imp.strlen,0x000007cf,0x000007de,__libc_start_main,__gmon_start__,sym.imp.malloc,0x000007f6,sym.imp.strcat,0x00000827,_ITM_registerTMCloneTable,section..plt.got,0x0000077e
+agraph.nodes=sym.imp.free,0x0000083f,_ITM_deregisterTMCloneTable,sym.imp.strcpy,0x00000814,sym.imp.puts,0x00000833,sym.imp.strlen,0x000007cf,0x000007de,__libc_start_main,__gmon_start__,sym.imp.malloc,0x000007f6,sym.imp.strcat,0x00000827,_ITM_registerTMCloneTable,sym.imp.__cxa_finalize,0x0000077e
 agraph.nodes.0x0000077e.body=base64:
 agraph.nodes.0x0000077e.h=0x3
-agraph.nodes.0x0000077e.neighbours=section..plt.got
+agraph.nodes.0x0000077e.neighbours=sym.imp.__cxa_finalize
 agraph.nodes.0x0000077e.w=0x16
 agraph.nodes.0x0000077e.x=0x130
 agraph.nodes.0x0000077e.y=0x8a
@@ -304,45 +304,849 @@ agraph.nodes.__libc_start_main.h=0x3
 agraph.nodes.__libc_start_main.w=0x17
 agraph.nodes.__libc_start_main.x=0xa6
 agraph.nodes.__libc_start_main.y=0x8a
-agraph.nodes.section..plt.got.body=base64:
-agraph.nodes.section..plt.got.h=0x3
-agraph.nodes.section..plt.got.w=0x16
-agraph.nodes.section..plt.got.x=0x130
-agraph.nodes.section..plt.got.y=0x92
+agraph.nodes.sym.imp.__cxa_finalize.body=base64:
+agraph.nodes.sym.imp.__cxa_finalize.h=0x3
+agraph.nodes.sym.imp.__cxa_finalize.w=0x1c
+agraph.nodes.sym.imp.__cxa_finalize.x=0x12d
+agraph.nodes.sym.imp.__cxa_finalize.y=0x93
 agraph.nodes.sym.imp.free.body=base64:
 agraph.nodes.sym.imp.free.h=0x3
 agraph.nodes.sym.imp.free.w=0x16
 agraph.nodes.sym.imp.free.x=0
-agraph.nodes.sym.imp.free.y=0x92
+agraph.nodes.sym.imp.free.y=0x93
 agraph.nodes.sym.imp.malloc.body=base64:
 agraph.nodes.sym.imp.malloc.h=0x3
 agraph.nodes.sym.imp.malloc.w=0x16
 agraph.nodes.sym.imp.malloc.x=0xda
-agraph.nodes.sym.imp.malloc.y=0x92
+agraph.nodes.sym.imp.malloc.y=0x93
 agraph.nodes.sym.imp.puts.body=base64:
 agraph.nodes.sym.imp.puts.h=0x3
 agraph.nodes.sym.imp.puts.w=0x16
 agraph.nodes.sym.imp.puts.x=0x58
-agraph.nodes.sym.imp.puts.y=0x92
+agraph.nodes.sym.imp.puts.y=0x93
 agraph.nodes.sym.imp.strcat.body=base64:
 agraph.nodes.sym.imp.strcat.h=0x3
 agraph.nodes.sym.imp.strcat.w=0x16
 agraph.nodes.sym.imp.strcat.x=0xf4
-agraph.nodes.sym.imp.strcat.y=0x92
+agraph.nodes.sym.imp.strcat.y=0x93
 agraph.nodes.sym.imp.strcpy.body=base64:
 agraph.nodes.sym.imp.strcpy.h=0x3
 agraph.nodes.sym.imp.strcpy.w=0x16
 agraph.nodes.sym.imp.strcpy.x=0x3e
-agraph.nodes.sym.imp.strcpy.y=0x92
+agraph.nodes.sym.imp.strcpy.y=0x93
 agraph.nodes.sym.imp.strlen.body=base64:
 agraph.nodes.sym.imp.strlen.h=0x3
 agraph.nodes.sym.imp.strlen.w=0x16
 agraph.nodes.sym.imp.strlen.x=0x7f
-agraph.nodes.sym.imp.strlen.y=0x92
-agraph.w=0x146
+agraph.nodes.sym.imp.strlen.y=0x93
+agraph.w=0x149
 
 
 () ()   () () () () () ()  () () ()  ()
 ()      () ()   ()         () ()     ()
+EOF
+RUN
+
+NAME=aga multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+aga
+aga ascii
+aga cmd
+aga dot
+aga gml
+aga json
+aga json_disasm
+aga sdb
+aga tiny
+EOF
+EXPECT=<<EOF
+.--------------------.
+|  entry0            |
+`--------------------'
+.--------------------.
+|  entry0            |
+`--------------------'
+agn "entry0"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="entry0", color="lightgray", label="entry0"]
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "entry0"
+  ]
+]
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0x6
+agraph.is_callgraph=false
+agraph.nodes=entry0
+agraph.nodes.entry0.body=base64:
+agraph.nodes.entry0.h=0x3
+agraph.nodes.entry0.w=0x16
+agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.y=0
+agraph.w=0x16
+()
+EOF
+RUN
+
+NAME=agA multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agA
+agA ascii
+agA cmd
+agA dot
+agA gml
+agA json
+agA json_disasm
+agA sdb
+agA tiny
+EOF
+EXPECT=<<EOF
+.--------------------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .--------------------.    .-----------------------.   .--------------------.    .-----------------------.   .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.
+|  entry0            |    |  sym.deregister_tm_clones  |    |  sym.register_tm_clones  |    |  sym.__do_global_dtors_aux  |   |  sym.imp.__cxa_finalize  |    |  entry.init0       |    |  sym.__libc_csu_fini  |   |  sym._fini         |    |  sym.__libc_csu_init  |   |  main              |    |  sym.imp.strlen    |    |  sym.imp.malloc    |    |  sym.imp.strcpy    |    |  sym.imp.strcat    |    |  sym.imp.puts      |    |  sym.imp.free      |    |  sym._init         |
+`--------------------'    `----------------------------'    `--------------------------'    `-----------------------------'   `--------------------------'    `--------------------'    `-----------------------'   `--------------------'    `-----------------------'   `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'
+                                                                                                v                                                                                                                                                                               t f
+                                                                                                |                                                                                                                                                                               | |
+                                                                                                '---.                                                                                                                                                                           | |
+                                                                                                    |                                                                                                                                                            .--------------' |
+                                                                                                    |                                                                                                                                                            |                '--------.
+                                                                                                    |                                                                                                                                                            |                         |
+                                                                                                .--------------------.                                                                                                                                       .--------------------.    .--------------------.
+                                                                                                |  obj.__dso_handle  |                                                                                                                                       |  str.Hello         |    |  str.r2_folks      |
+                                                                                                `--------------------'                                                                                                                                       `--------------------'    `--------------------'
+.--------------------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .--------------------.    .-----------------------.   .--------------------.    .-----------------------.   .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.
+|  entry0            |    |  sym.deregister_tm_clones  |    |  sym.register_tm_clones  |    |  sym.__do_global_dtors_aux  |   |  sym.imp.__cxa_finalize  |    |  entry.init0       |    |  sym.__libc_csu_fini  |   |  sym._fini         |    |  sym.__libc_csu_init  |   |  main              |    |  sym.imp.strlen    |    |  sym.imp.malloc    |    |  sym.imp.strcpy    |    |  sym.imp.strcat    |    |  sym.imp.puts      |    |  sym.imp.free      |    |  sym._init         |
+`--------------------'    `----------------------------'    `--------------------------'    `-----------------------------'   `--------------------------'    `--------------------'    `-----------------------'   `--------------------'    `-----------------------'   `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'
+                                                                                                v                                                                                                                                                                               t f
+                                                                                                |                                                                                                                                                                               | |
+                                                                                                '---.                                                                                                                                                                           | |
+                                                                                                    |                                                                                                                                                            .--------------' |
+                                                                                                    |                                                                                                                                                            |                '--------.
+                                                                                                    |                                                                                                                                                            |                         |
+                                                                                                .--------------------.                                                                                                                                       .--------------------.    .--------------------.
+                                                                                                |  obj.__dso_handle  |                                                                                                                                       |  str.Hello         |    |  str.r2_folks      |
+                                                                                                `--------------------'                                                                                                                                       `--------------------'    `--------------------'
+agn "entry0"
+agn "sym.deregister_tm_clones"
+agn "sym.register_tm_clones"
+agn "sym.__do_global_dtors_aux"
+agn "obj.__dso_handle"
+agn "sym.imp.__cxa_finalize"
+agn "entry.init0"
+agn "sym.__libc_csu_fini"
+agn "sym._fini"
+agn "sym.__libc_csu_init"
+agn "main"
+agn "str.Hello"
+agn "str.r2_folks"
+agn "sym.imp.strlen"
+agn "sym.imp.malloc"
+agn "sym.imp.strcpy"
+agn "sym.imp.strcat"
+agn "sym.imp.puts"
+agn "sym.imp.free"
+agn "sym._init"
+age "sym.__do_global_dtors_aux" "obj.__dso_handle"
+age "main" "str.Hello"
+age "main" "str.r2_folks"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="entry0", color="lightgray", label="entry0"]
+1 [URL="sym.deregister_tm_clones", color="lightgray", label="sym.deregister_tm_clones"]
+2 [URL="sym.register_tm_clones", color="lightgray", label="sym.register_tm_clones"]
+3 [URL="sym.__do_global_dtors_aux", color="lightgray", label="sym.__do_global_dtors_aux"]
+3 -> 4
+4 [URL="obj.__dso_handle", color="lightgray", label="obj.__dso_handle"]
+5 [URL="sym.imp.__cxa_finalize", color="lightgray", label="sym.imp.__cxa_finalize"]
+6 [URL="entry.init0", color="lightgray", label="entry.init0"]
+7 [URL="sym.__libc_csu_fini", color="lightgray", label="sym.__libc_csu_fini"]
+8 [URL="sym._fini", color="lightgray", label="sym._fini"]
+9 [URL="sym.__libc_csu_init", color="lightgray", label="sym.__libc_csu_init"]
+10 [URL="main", color="lightgray", label="main"]
+10 -> 11
+10 -> 12
+11 [URL="str.Hello", color="lightgray", label="str.Hello"]
+12 [URL="str.r2_folks", color="lightgray", label="str.r2_folks"]
+13 [URL="sym.imp.strlen", color="lightgray", label="sym.imp.strlen"]
+14 [URL="sym.imp.malloc", color="lightgray", label="sym.imp.malloc"]
+15 [URL="sym.imp.strcpy", color="lightgray", label="sym.imp.strcpy"]
+16 [URL="sym.imp.strcat", color="lightgray", label="sym.imp.strcat"]
+17 [URL="sym.imp.puts", color="lightgray", label="sym.imp.puts"]
+18 [URL="sym.imp.free", color="lightgray", label="sym.imp.free"]
+19 [URL="sym._init", color="lightgray", label="sym._init"]
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "entry0"
+  ]
+  node [
+    id  1
+    label  "sym.deregister_tm_clones"
+  ]
+  node [
+    id  2
+    label  "sym.register_tm_clones"
+  ]
+  node [
+    id  3
+    label  "sym.__do_global_dtors_aux"
+  ]
+  node [
+    id  4
+    label  "obj.__dso_handle"
+  ]
+  node [
+    id  5
+    label  "sym.imp.__cxa_finalize"
+  ]
+  node [
+    id  6
+    label  "entry.init0"
+  ]
+  node [
+    id  7
+    label  "sym.__libc_csu_fini"
+  ]
+  node [
+    id  8
+    label  "sym._fini"
+  ]
+  node [
+    id  9
+    label  "sym.__libc_csu_init"
+  ]
+  node [
+    id  10
+    label  "main"
+  ]
+  node [
+    id  11
+    label  "str.Hello"
+  ]
+  node [
+    id  12
+    label  "str.r2_folks"
+  ]
+  node [
+    id  13
+    label  "sym.imp.strlen"
+  ]
+  node [
+    id  14
+    label  "sym.imp.malloc"
+  ]
+  node [
+    id  15
+    label  "sym.imp.strcpy"
+  ]
+  node [
+    id  16
+    label  "sym.imp.strcat"
+  ]
+  node [
+    id  17
+    label  "sym.imp.puts"
+  ]
+  node [
+    id  18
+    label  "sym.imp.free"
+  ]
+  node [
+    id  19
+    label  "sym._init"
+  ]
+  edge [
+    source  3
+    target  4
+  ]
+  edge [
+    source  10
+    target  11
+  ]
+  edge [
+    source  10
+    target  12
+  ]
+]
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]},{"id":1,"title":"sym.deregister_tm_clones","offset":1744,"out_nodes":[]},{"id":2,"title":"sym.register_tm_clones","offset":1808,"out_nodes":[]},{"id":3,"title":"sym.__do_global_dtors_aux","offset":1888,"out_nodes":[4]},{"id":4,"title":"obj.__dso_handle","offset":2101256,"out_nodes":[]},{"id":5,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":6,"title":"entry.init0","offset":1952,"out_nodes":[]},{"id":7,"title":"sym.__libc_csu_fini","offset":2240,"out_nodes":[]},{"id":8,"title":"sym._fini","offset":2244,"out_nodes":[]},{"id":9,"title":"sym.__libc_csu_init","offset":2128,"out_nodes":[]},{"id":10,"title":"main","offset":1962,"out_nodes":[11,12]},{"id":11,"title":"str.Hello","offset":2260,"out_nodes":[]},{"id":12,"title":"str.r2_folks","offset":2266,"out_nodes":[]},{"id":13,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":14,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":15,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":16,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":17,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":18,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":19,"title":"sym._init","offset":1544,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]},{"id":1,"title":"sym.deregister_tm_clones","offset":1744,"out_nodes":[]},{"id":2,"title":"sym.register_tm_clones","offset":1808,"out_nodes":[]},{"id":3,"title":"sym.__do_global_dtors_aux","offset":1888,"out_nodes":[4]},{"id":4,"title":"obj.__dso_handle","offset":2101256,"out_nodes":[]},{"id":5,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":6,"title":"entry.init0","offset":1952,"out_nodes":[]},{"id":7,"title":"sym.__libc_csu_fini","offset":2240,"out_nodes":[]},{"id":8,"title":"sym._fini","offset":2244,"out_nodes":[]},{"id":9,"title":"sym.__libc_csu_init","offset":2128,"out_nodes":[]},{"id":10,"title":"main","offset":1962,"out_nodes":[11,12]},{"id":11,"title":"str.Hello","offset":2260,"out_nodes":[]},{"id":12,"title":"str.r2_folks","offset":2266,"out_nodes":[]},{"id":13,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":14,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":15,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":16,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":17,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":18,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":19,"title":"sym._init","offset":1544,"out_nodes":[]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0xd2
+agraph.delta_y=0x1
+agraph.h=0xf
+agraph.is_callgraph=false
+agraph.nodes=entry0,sym.deregister_tm_clones,sym.register_tm_clones,sym.__do_global_dtors_aux,obj.__dso_handle,sym.imp.__cxa_finalize,entry.init0,sym.__libc_csu_fini,sym._fini,sym.__libc_csu_init,main,str.Hello,str.r2_folks,sym.imp.strlen,sym.imp.malloc,sym.imp.strcpy,sym.imp.strcat,sym.imp.puts,sym.imp.free,sym._init
+agraph.nodes.entry.init0.body=base64:
+agraph.nodes.entry.init0.h=0x3
+agraph.nodes.entry.init0.w=0x16
+agraph.nodes.entry.init0.x=0x9e
+agraph.nodes.entry.init0.y=0xd2
+agraph.nodes.entry0.body=base64:
+agraph.nodes.entry0.h=0x3
+agraph.nodes.entry0.w=0x16
+agraph.nodes.entry0.x=0
+agraph.nodes.entry0.y=0xd2
+agraph.nodes.main.body=base64:
+agraph.nodes.main.h=0x3
+agraph.nodes.main.neighbours=str.Hello,str.r2_folks
+agraph.nodes.main.w=0x16
+agraph.nodes.main.x=0x10a
+agraph.nodes.main.y=0xd2
+agraph.nodes.obj.__dso_handle.body=base64:
+agraph.nodes.obj.__dso_handle.h=0x3
+agraph.nodes.obj.__dso_handle.w=0x16
+agraph.nodes.obj.__dso_handle.x=0x60
+agraph.nodes.obj.__dso_handle.y=0xdb
+agraph.nodes.str.Hello.body=base64:
+agraph.nodes.str.Hello.h=0x3
+agraph.nodes.str.Hello.w=0x16
+agraph.nodes.str.Hello.x=0xfd
+agraph.nodes.str.Hello.y=0xdb
+agraph.nodes.str.r2_folks.body=base64:
+agraph.nodes.str.r2_folks.h=0x3
+agraph.nodes.str.r2_folks.w=0x16
+agraph.nodes.str.r2_folks.x=0x117
+agraph.nodes.str.r2_folks.y=0xdb
+agraph.nodes.sym.__do_global_dtors_aux.body=base64:
+agraph.nodes.sym.__do_global_dtors_aux.h=0x3
+agraph.nodes.sym.__do_global_dtors_aux.neighbours=obj.__dso_handle
+agraph.nodes.sym.__do_global_dtors_aux.w=0x1f
+agraph.nodes.sym.__do_global_dtors_aux.x=0x5c
+agraph.nodes.sym.__do_global_dtors_aux.y=0xd2
+agraph.nodes.sym.__libc_csu_fini.body=base64:
+agraph.nodes.sym.__libc_csu_fini.h=0x3
+agraph.nodes.sym.__libc_csu_fini.w=0x19
+agraph.nodes.sym.__libc_csu_fini.x=0xb8
+agraph.nodes.sym.__libc_csu_fini.y=0xd2
+agraph.nodes.sym.__libc_csu_init.body=base64:
+agraph.nodes.sym.__libc_csu_init.h=0x3
+agraph.nodes.sym.__libc_csu_init.w=0x19
+agraph.nodes.sym.__libc_csu_init.x=0xee
+agraph.nodes.sym.__libc_csu_init.y=0xd2
+agraph.nodes.sym._fini.body=base64:
+agraph.nodes.sym._fini.h=0x3
+agraph.nodes.sym._fini.w=0x16
+agraph.nodes.sym._fini.x=0xd4
+agraph.nodes.sym._fini.y=0xd2
+agraph.nodes.sym._init.body=base64:
+agraph.nodes.sym._init.h=0x3
+agraph.nodes.sym._init.w=0x16
+agraph.nodes.sym._init.x=0x1c0
+agraph.nodes.sym._init.y=0xd2
+agraph.nodes.sym.deregister_tm_clones.body=base64:
+agraph.nodes.sym.deregister_tm_clones.h=0x3
+agraph.nodes.sym.deregister_tm_clones.w=0x1e
+agraph.nodes.sym.deregister_tm_clones.x=0x1a
+agraph.nodes.sym.deregister_tm_clones.y=0xd2
+agraph.nodes.sym.imp.__cxa_finalize.body=base64:
+agraph.nodes.sym.imp.__cxa_finalize.h=0x3
+agraph.nodes.sym.imp.__cxa_finalize.w=0x1c
+agraph.nodes.sym.imp.__cxa_finalize.x=0x7e
+agraph.nodes.sym.imp.__cxa_finalize.y=0xd2
+agraph.nodes.sym.imp.free.body=base64:
+agraph.nodes.sym.imp.free.h=0x3
+agraph.nodes.sym.imp.free.w=0x16
+agraph.nodes.sym.imp.free.x=0x1a6
+agraph.nodes.sym.imp.free.y=0xd2
+agraph.nodes.sym.imp.malloc.body=base64:
+agraph.nodes.sym.imp.malloc.h=0x3
+agraph.nodes.sym.imp.malloc.w=0x16
+agraph.nodes.sym.imp.malloc.x=0x13e
+agraph.nodes.sym.imp.malloc.y=0xd2
+agraph.nodes.sym.imp.puts.body=base64:
+agraph.nodes.sym.imp.puts.h=0x3
+agraph.nodes.sym.imp.puts.w=0x16
+agraph.nodes.sym.imp.puts.x=0x18c
+agraph.nodes.sym.imp.puts.y=0xd2
+agraph.nodes.sym.imp.strcat.body=base64:
+agraph.nodes.sym.imp.strcat.h=0x3
+agraph.nodes.sym.imp.strcat.w=0x16
+agraph.nodes.sym.imp.strcat.x=0x172
+agraph.nodes.sym.imp.strcat.y=0xd2
+agraph.nodes.sym.imp.strcpy.body=base64:
+agraph.nodes.sym.imp.strcpy.h=0x3
+agraph.nodes.sym.imp.strcpy.w=0x16
+agraph.nodes.sym.imp.strcpy.x=0x158
+agraph.nodes.sym.imp.strcpy.y=0xd2
+agraph.nodes.sym.imp.strlen.body=base64:
+agraph.nodes.sym.imp.strlen.h=0x3
+agraph.nodes.sym.imp.strlen.w=0x16
+agraph.nodes.sym.imp.strlen.x=0x124
+agraph.nodes.sym.imp.strlen.y=0xd2
+agraph.nodes.sym.register_tm_clones.body=base64:
+agraph.nodes.sym.register_tm_clones.h=0x3
+agraph.nodes.sym.register_tm_clones.w=0x1c
+agraph.nodes.sym.register_tm_clones.x=0x3c
+agraph.nodes.sym.register_tm_clones.y=0xd2
+agraph.w=0x1d6
+() ()   ()  ()  ()  () () () ()  () () () ()  () () () ()
+            ()                 () ()
+EOF
+RUN
+
+NAME=agc multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agc
+agc ascii
+agc cmd
+agc dot
+agc gml
+agc json
+agc json_disasm
+agc sdb
+agc tiny
+EOF
+EXPECT=<<EOF
+   .--------------------.
+   |  entry0            |
+   `--------------------'
+       v
+       |
+    .--'
+    |
+.---------------------------.
+|  reloc.__libc_start_main  |
+`---------------------------'
+   .--------------------.
+   |  entry0            |
+   `--------------------'
+       v
+       |
+    .--'
+    |
+.---------------------------.
+|  reloc.__libc_start_main  |
+`---------------------------'
+agn "entry0"
+agn "reloc.__libc_start_main"
+age "entry0" "reloc.__libc_start_main"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="entry0", color="lightgray", label="entry0"]
+0 -> 1
+1 [URL="reloc.__libc_start_main", color="lightgray", label="reloc.__libc_start_main"]
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "entry0"
+  ]
+  node [
+    id  1
+    label  "reloc.__libc_start_main"
+  ]
+  edge [
+    source  0
+    target  1
+  ]
+]
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[1]},{"id":1,"title":"reloc.__libc_start_main","offset":2101216,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[1]},{"id":1,"title":"reloc.__libc_start_main","offset":2101216,"out_nodes":[]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0xe
+agraph.is_callgraph=false
+agraph.nodes=entry0,reloc.__libc_start_main
+agraph.nodes.entry0.body=base64:
+agraph.nodes.entry0.h=0x3
+agraph.nodes.entry0.neighbours=reloc.__libc_start_main
+agraph.nodes.entry0.w=0x16
+agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.y=0
+agraph.nodes.reloc.__libc_start_main.body=base64:
+agraph.nodes.reloc.__libc_start_main.h=0x3
+agraph.nodes.reloc.__libc_start_main.w=0x1d
+agraph.nodes.reloc.__libc_start_main.x=0xb
+agraph.nodes.reloc.__libc_start_main.y=0x7
+agraph.w=0x1d
+()
+()
+EOF
+RUN
+
+NAME=agd multiple formats
+FILE=bins/elf/hello_world
+BROKEN=1
+CMDS=<<EOF
+aa 2> /dev/null
+agd ascii main
+agd cmd main
+agd dot main
+agd gml main
+agd json main
+agd json_disasm main
+agd sdb main
+agd tiny main
+EOF
+EXPECT=<<EOF
+       .--------------------.
+       |  0x7aa             |
+       |   ; D              |
+       `--------------------'
+               f t
+               | |
+               | '--------.
+    .----------'          |
+    |                     |
+.--------------------.    |
+|  0x806             |    |
+|                    |    |
+`--------------------'    |
+    v                     |
+    |                     |
+    '--------.            |
+             | .----------'
+             | |
+       .--------------------.
+       |  0x844             |
+       |                    |
+       `--------------------'
+agn 0x7aa base64:ICAgICA= 109
+agn 0x844 base64:G1swbSA= 109
+agn 0x806 base64:G1swbSA= 109
+age 0x7aa 0x844
+age 0x7aa 0x806
+age 0x806 0x844
+digraph code {
+	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
+	node [fillcolor=gray style=filled shape=box];
+	edge [arrowhead="normal"];
+ "0x000007aa" [fillcolor="lightgray",color="black", fontname="       ; DATA XREF from entry0 @ 0x6bd\lint main (int argc, char **argv, char **envp);\l     ; var int64_t var_20h @ rbp-0x20\l     ; var int64_t var_1ch @ rbp-0x1c\l     ; var int64_t var_18h @ rbp-0x18\l     ; var int64_t var_10h @ rbp-0x10\l     ; var int64_t var_8h @ rbp-0x8\l     push rbp\l     mov rbp, rsp\l     sub rsp, 0x20\l     ; 0x8d4\l     ; "Hello"\l     lea rax, str.Hello\l     mov qword [var_18h], rax\l     ; 0x8da\l     ; " r2-folks"\l     lea rax, str.r2_folks\l     mov qword [var_10h], rax\l     mov rax, qword [var_18h]\l     mov rdi, rax\l     ; size_t strlen(const char *s)\l     call sym.imp.strlen\l     mov dword [var_20h], eax\l     mov rax, qword [var_10h]\l     mov rdi, rax\l     ; size_t strlen(const char *s)\l     call sym.imp.strlen\l     mov dword [var_1ch], eax\l     mov edx, dword [var_20h]\l     mov eax, dword [var_1ch]\l     add eax, edx\l     add eax, 1\l     cdqe\l     mov rdi, rax\l     ; void *malloc(size_t size)\l     call sym.imp.malloc\l     mov qword [var_8h], rax\l     cmp qword [var_8h], 0\l     je 0x844\l", label="Courier", URL="main/0x000007aa"]
+ "0x00000844" [fillcolor="lightgray",color="black", fontname="     nop\l     leave\l     ret\l", label="Courier", URL="main/0x00000844"]
+ "0x00000806" [fillcolor="lightgray",color="black", fontname="     mov rdx, qword [var_18h]\l     mov rax, qword [var_8h]\l     mov rsi, rdx\l     mov rdi, rax\l     ; char *strcpy(char *dest, const char *src)\l     call sym.imp.strcpy\l     mov rdx, qword [var_10h]\l     mov rax, qword [var_8h]\l     mov rsi, rdx\l     mov rdi, rax\l     ; char *strcat(char *s1, const char *s2)\l     call sym.imp.strcat\l     mov rax, qword [var_8h]\l     mov rdi, rax\l     ; int puts(const char *s)\l     call sym.imp.puts\l     mov rax, qword [var_8h]\l     mov rdi, rax\l     ; void free(void *ptr)\l     call sym.imp.free\l", label="Courier", URL="main/0x00000806"]
+        "0x000007aa" -> "0x00000844" [color="#13a10e"];
+        "0x000007aa" -> "0x00000806" [color="#c50f1f"];
+        "0x00000806" -> "0x00000844" [color="#0037da"];
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  1
+    label  "0x844"
+  ]
+  node [
+    id  2
+    label  "0x806"
+  ]
+  node [
+    id  0
+    label  "0x7aa"
+  ]
+  edge [
+    source  2
+    target  1
+  ]
+  edge [
+    source  0
+    target  1
+  ]
+  edge [
+    source  0
+    target  2
+  ]
+]
+[{"name":"main","offset":1962,"ninstr":44,"nargs":0,"nlocals":5,"size":157,"stack":40,"type":"sym","blocks":[{"offset":1962,"size":92,"jump":2116,"fail":2054,"colorize":0,"ops":[{"offset":1962,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":1962,"fcn_last":2118,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"],"xrefs_to":[{"addr":1725,"type":"DATA"}]},{"offset":1963,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1966,"val":32,"esil":"32,rsp,-=,32,0x8000000000000000,-,!,63,$o,^,of,:=,63,$s,sf,:=,$z,zf,:=,$p,pf,:=,64,$b,cf,:=,3,$b,af,:=","refptr":false,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"sub rsp, 0x20","disasm":"sub rsp, 0x20","bytes":"4883ec20","family":"cpu","type":"sub","reloc":false,"type_num":18,"type2_num":0},{"offset":1970,"ptr":2260,"esil":"0x11b,rip,+,rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2112,"size":7,"opcode":"lea rax, [rip + 0x11b]","disasm":"lea rax, str.Hello","bytes":"488d051b010000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":2260,"type":"DATA"}]},{"offset":1977,"esil":"rax,0x18,rbp,-,=[8]","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov qword [rbp - 0x18], rax","disasm":"mov qword [rbp - 0x18], rax","bytes":"488945e8","family":"cpu","type":"mov","reloc":false,"type_num":268435465,"type2_num":0},{"offset":1981,"ptr":2266,"esil":"0x116,rip,+,rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2112,"size":7,"opcode":"lea rax, [rip + 0x116]","disasm":"lea rax, str.r2_folks","bytes":"488d0516010000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":2266,"type":"DATA"}]},{"offset":1988,"esil":"rax,0x10,rbp,-,=[8]","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov qword [rbp - 0x10], rax","disasm":"mov qword [rbp - 0x10], rax","bytes":"488945f0","family":"cpu","type":"mov","reloc":false,"type_num":268435465,"type2_num":0},{"offset":1992,"esil":"0x18,rbp,-,[8],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rax, qword [rbp - 0x18]","disasm":"mov rax, qword [rbp - 0x18]","bytes":"488b45e8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1996,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1999,"esil":"1632,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x660","disasm":"call sym.imp.strlen","bytes":"e88cfeffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1632,"fail":2004,"xrefs_from":[{"addr":1632,"type":"CALL"}]},{"offset":2004,"esil":"eax,0x20,rbp,-,=[4]","refptr":true,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov dword [rbp - 0x20], eax","disasm":"mov dword [rbp - 0x20], eax","bytes":"8945e0","family":"cpu","type":"mov","reloc":false,"type_num":268435465,"type2_num":0},{"offset":2007,"esil":"0x10,rbp,-,[8],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rax, qword [rbp - 0x10]","disasm":"mov rax, qword [rbp - 0x10]","bytes":"488b45f0","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2011,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2014,"esil":"1632,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x660","disasm":"call sym.imp.strlen","bytes":"e87dfeffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1632,"fail":2019,"xrefs_from":[{"addr":1632,"type":"CALL"}]},{"offset":2019,"esil":"eax,0x1c,rbp,-,=[4]","refptr":true,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov dword [rbp - 0x1c], eax","disasm":"mov dword [rbp - 0x1c], eax","bytes":"8945e4","family":"cpu","type":"mov","reloc":false,"type_num":268435465,"type2_num":0},{"offset":2022,"esil":"0x20,rbp,-,[4],rdx,=","refptr":true,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov edx, dword [rbp - 0x20]","disasm":"mov edx, dword [rbp - 0x20]","bytes":"8b55e0","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2025,"esil":"0x1c,rbp,-,[4],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov eax, dword [rbp - 0x1c]","disasm":"mov eax, dword [rbp - 0x1c]","bytes":"8b45e4","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2028,"esil":"edx,eax,+=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,31,$c,cf,:=,$p,pf,:=,3,$c,af,:=","refptr":false,"fcn_addr":1962,"fcn_last":2117,"size":2,"opcode":"add eax, edx","disasm":"add eax, edx","bytes":"01d0","family":"cpu","type":"add","reloc":false,"type_num":17,"type2_num":0},{"offset":2030,"val":1,"esil":"1,eax,+=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,31,$c,cf,:=,$p,pf,:=,3,$c,af,:=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"add eax, 1","disasm":"add eax, 1","bytes":"83c001","family":"cpu","type":"add","reloc":false,"type_num":17,"type2_num":0},{"offset":2033,"esil":"eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}","refptr":false,"fcn_addr":1962,"fcn_last":2117,"size":2,"opcode":"cdqe","disasm":"cdqe","bytes":"4898","family":"cpu","type":"null","reloc":false,"type_num":0,"type2_num":0},{"offset":2035,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2038,"esil":"1648,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x670","disasm":"call sym.imp.malloc","bytes":"e875feffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1648,"fail":2043,"xrefs_from":[{"addr":1648,"type":"CALL"}]},{"offset":2043,"esil":"rax,0x8,rbp,-,=[8]","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov qword [rbp - 8], rax","disasm":"mov qword [rbp - 8], rax","bytes":"488945f8","family":"cpu","type":"mov","reloc":false,"type_num":268435465,"type2_num":0},{"offset":2047,"val":0,"esil":"0,0x8,rbp,-,[8],==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,0,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"cmp qword [rbp - 8], 0","disasm":"cmp qword [rbp - 8], 0","bytes":"48837df800","family":"cpu","type":"cmp","reloc":false,"type_num":268435471,"type2_num":0},{"offset":2052,"esil":"zf,?{,2116,rip,=,}","refptr":false,"fcn_addr":1962,"fcn_last":2117,"size":2,"opcode":"je 0x844","disasm":"je 0x844","bytes":"743e","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":2116,"fail":2054}]},{"offset":2116,"size":3,"colorize":0,"ops":[{"offset":2116,"esil":",","refptr":false,"fcn_addr":1962,"fcn_last":2118,"size":1,"opcode":"nop","disasm":"nop","bytes":"90","family":"cpu","type":"nop","reloc":false,"type_num":8,"type2_num":0},{"offset":2117,"esil":"rbp,rsp,=,rsp,[8],rbp,=,8,rsp,+=","refptr":false,"fcn_addr":1962,"fcn_last":2118,"size":1,"opcode":"leave","disasm":"leave","bytes":"c9","family":"cpu","type":"pop","reloc":false,"type_num":14,"type2_num":0},{"offset":2118,"esil":"rsp,[8],rip,=,8,rsp,+=","refptr":false,"fcn_addr":1962,"fcn_last":2118,"size":1,"opcode":"ret","disasm":"ret","bytes":"c3","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0}]},{"offset":2054,"size":62,"jump":2116,"colorize":0,"ops":[{"offset":2054,"esil":"0x18,rbp,-,[8],rdx,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rdx, qword [rbp - 0x18]","disasm":"mov rdx, qword [rbp - 0x18]","bytes":"488b55e8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2058,"esil":"0x8,rbp,-,[8],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rax, qword [rbp - 8]","disasm":"mov rax, qword [rbp - 8]","bytes":"488b45f8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2062,"esil":"rdx,rsi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rsi, rdx","disasm":"mov rsi, rdx","bytes":"4889d6","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2065,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2068,"esil":"1600,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x640","disasm":"call sym.imp.strcpy","bytes":"e827feffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1600,"fail":2073,"xrefs_from":[{"addr":1600,"type":"CALL"}]},{"offset":2073,"esil":"0x10,rbp,-,[8],rdx,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rdx, qword [rbp - 0x10]","disasm":"mov rdx, qword [rbp - 0x10]","bytes":"488b55f0","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2077,"esil":"0x8,rbp,-,[8],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rax, qword [rbp - 8]","disasm":"mov rax, qword [rbp - 8]","bytes":"488b45f8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2081,"esil":"rdx,rsi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rsi, rdx","disasm":"mov rsi, rdx","bytes":"4889d6","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2084,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2087,"esil":"1664,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x680","disasm":"call sym.imp.strcat","bytes":"e854feffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1664,"fail":2092,"xrefs_from":[{"addr":1664,"type":"CALL"}]},{"offset":2092,"esil":"0x8,rbp,-,[8],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rax, qword [rbp - 8]","disasm":"mov rax, qword [rbp - 8]","bytes":"488b45f8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2096,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2099,"esil":"1616,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x650","disasm":"call sym.imp.puts","bytes":"e818feffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1616,"fail":2104,"xrefs_from":[{"addr":1616,"type":"CALL"}]},{"offset":2104,"esil":"0x8,rbp,-,[8],rax,=","refptr":true,"fcn_addr":1962,"fcn_last":2115,"size":4,"opcode":"mov rax, qword [rbp - 8]","disasm":"mov rax, qword [rbp - 8]","bytes":"488b45f8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2108,"esil":"rax,rdi,=","refptr":false,"fcn_addr":1962,"fcn_last":2116,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":2111,"esil":"1584,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":1962,"fcn_last":2114,"size":5,"opcode":"call 0x630","disasm":"call sym.imp.free","bytes":"e8ecfdffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":1584,"fail":2116,"xrefs_from":[{"addr":1584,"type":"CALL"}]}]}]}]
+[{"name":"main","offset":1962,"ninstr":44,"nargs":0,"nlocals":5,"size":157,"stack":40,"type":"sym","blocks":[{"offset":1962,"size":92,"jump":2116,"fail":2054,"colorize":0,"ops":[{"offset":1962,"text":"       ; DATA XREF from entry0 @ 0x6bd"},{"offset":1962,"text":"int main (int argc, char **argv, char **envp);"},{"offset":1962,"text":"     ; var int64_t var_20h @ rbp-0x20"},{"offset":1962,"text":"     ; var int64_t var_1ch @ rbp-0x1c"},{"offset":1962,"text":"     ; var int64_t var_18h @ rbp-0x18"},{"offset":1962,"text":"     ; var int64_t var_10h @ rbp-0x10"},{"offset":1962,"text":"     ; var int64_t var_8h @ rbp-0x8"},{"offset":1962,"text":"     push rbp"},{"offset":1963,"text":"     mov rbp, rsp"},{"offset":1966,"text":"     sub rsp, 0x20"},{"offset":1970,"text":"     ; 0x8d4"},{"offset":1970,"text":"     ; \"Hello\""},{"offset":1970,"text":"     lea rax, str.Hello"},{"offset":1977,"text":"     mov qword [var_18h], rax"},{"offset":1981,"text":"     ; 0x8da"},{"offset":1981,"text":"     ; \" r2-folks\""},{"offset":1981,"text":"     lea rax, str.r2_folks"},{"offset":1988,"text":"     mov qword [var_10h], rax"},{"offset":1992,"text":"     mov rax, qword [var_18h]"},{"offset":1996,"text":"     mov rdi, rax"},{"offset":1999,"text":"     ; size_t strlen(const char *s)"},{"offset":1999,"text":"     call sym.imp.strlen"},{"offset":2004,"text":"     mov dword [var_20h], eax"},{"offset":2007,"text":"     mov rax, qword [var_10h]"},{"offset":2011,"text":"     mov rdi, rax"},{"offset":2014,"text":"     ; size_t strlen(const char *s)"},{"offset":2014,"text":"     call sym.imp.strlen"},{"offset":2019,"text":"     mov dword [var_1ch], eax"},{"offset":2022,"text":"     mov edx, dword [var_20h]"},{"offset":2025,"text":"     mov eax, dword [var_1ch]"},{"offset":2028,"text":"     add eax, edx"},{"offset":2030,"text":"     add eax, 1"},{"offset":2033,"text":"     cdqe"},{"offset":2035,"text":"     mov rdi, rax"},{"offset":2038,"text":"     ; void *malloc(size_t size)"},{"offset":2038,"text":"     call sym.imp.malloc"},{"offset":2043,"text":"     mov qword [var_8h], rax"},{"offset":2047,"text":"     cmp qword [var_8h], 0"},{"offset":2052,"arrow":2116,"text":"     je 0x844"}]},{"offset":2116,"size":3,"colorize":0,"ops":[{"offset":2116,"text":"     nop"},{"offset":2117,"text":"     leave"},{"offset":2118,"text":"     ret"}]},{"offset":2054,"size":62,"jump":2116,"colorize":0,"ops":[{"offset":2054,"text":"     mov rdx, qword [var_18h]"},{"offset":2058,"text":"     mov rax, qword [var_8h]"},{"offset":2062,"text":"     mov rsi, rdx"},{"offset":2065,"text":"     mov rdi, rax"},{"offset":2068,"text":"     ; char *strcpy(char *dest, const char *src)"},{"offset":2068,"text":"     call sym.imp.strcpy"},{"offset":2073,"text":"     mov rdx, qword [var_10h]"},{"offset":2077,"text":"     mov rax, qword [var_8h]"},{"offset":2081,"text":"     mov rsi, rdx"},{"offset":2084,"text":"     mov rdi, rax"},{"offset":2087,"text":"     ; char *strcat(char *s1, const char *s2)"},{"offset":2087,"text":"     call sym.imp.strcat"},{"offset":2092,"text":"     mov rax, qword [var_8h]"},{"offset":2096,"text":"     mov rdi, rax"},{"offset":2099,"text":"     ; int puts(const char *s)"},{"offset":2099,"text":"     call sym.imp.puts"},{"offset":2104,"text":"     mov rax, qword [var_8h]"},{"offset":2108,"text":"     mov rdi, rax"},{"offset":2111,"text":"     ; void free(void *ptr)"},{"offset":2111,"text":"     call sym.imp.free"}]}]}]
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0x1a
+agraph.is_callgraph=false
+agraph.nodes=0x7aa,0x844,0x806
+agraph.nodes.0x7aa.body=base64:ICAgICA=
+agraph.nodes.0x7aa.h=0x4
+agraph.nodes.0x7aa.neighbours=,0x806
+agraph.nodes.0x7aa.w=0x16
+agraph.nodes.0x7aa.x=0xd
+agraph.nodes.0x7aa.y=0
+agraph.nodes.0x806.body=base64:G1swbSA=
+agraph.nodes.0x806.h=0x4
+agraph.nodes.0x806.neighbours=0x844
+agraph.nodes.0x806.w=0x16
+agraph.nodes.0x806.x=0x6
+agraph.nodes.0x806.y=0x9
+agraph.nodes.0x844.body=base64:G1swbSA=
+agraph.nodes.0x844.h=0x4
+agraph.nodes.0x844.w=0x16
+agraph.nodes.0x844.x=0xd
+agraph.nodes.0x844.y=0x12
+agraph.w=0x1d
+ ()
+()
+ ()
+EOF
+RUN
+
+NAME=agf multiple formats
+FILE=bins/elf/hello_world
+BROKEN=1
+CMDS=<<EOF
+aa 2> /dev/null
+agf ascii
+agf cmd
+agf dot
+agf gml
+agf json
+agf json_disasm
+agf sdb
+agf tiny
+EOF
+EXPECT=<<EOF
+[0x000006a0]>  # entry0 (int64_t arg3);
+.-----------------------------------------------------------------------.
+|  0x6a0                                                                |
+| ; [13] -r-x section size 546 named .text                              |
+|   ;-- section..text:                                                  |
+|   ;-- .text:                                                          |
+|   ;-- _start:                                                         |
+| entry0 (int64_t arg3);                                                |
+| ; arg int64_t arg3 @ rdx                                              |
+| xor ebp, ebp                                                          |
+| ; arg3                                                                |
+| mov r9, rdx                                                           |
+| pop rsi                                                               |
+| mov rdx, rsp                                                          |
+| and rsp, 0xfffffffffffffff0                                           |
+| push rax                                                              |
+| push rsp                                                              |
+| ; 0x8c0                                                               |
+| lea r8, [sym.__libc_csu_fini]                                         |
+| ; 0x850                                                               |
+| ; "AWAVA\x89\xffAUATL\x8d%.\x05 "                                     |
+| lea rcx, [sym.__libc_csu_init]                                        |
+| ; 0x7aa                                                               |
+| lea rdi, [main]                                                       |
+| ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main |
+| ; "X\x10 "                                                            |
+| call qword [reloc.__libc_start_main];[oa]                             |
+`-----------------------------------------------------------------------'
+agn 0x6a0 base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0K
+digraph code {
+	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
+	node [fillcolor=gray style=filled shape=box];
+	edge [arrowhead="normal"];
+	"0x000006a0" [URL="entry0/0x000006a0", fillcolor="white",color="#767676", fontname="Courier",label="  ;-- section..text:\l  ;-- .text:\l  ;-- _start:\lentry0 (int64_t arg3);\l; arg int64_t arg3 @ rdx\l0x000006a0      xor   ebp, ebp                                         ; [13] -r-x section size 546 named .text\l0x000006a2      mov   r9, rdx                                          ; arg3\l0x000006a5      pop   rsi\l0x000006a6      mov   rdx, rsp\l0x000006a9      and   rsp, 0xfffffffffffffff0\l0x000006ad      push  rax\l0x000006ae      push  rsp\l0x000006af      lea   r8, [sym.__libc_csu_fini]                        ; 0x8c0\l0x000006b6      lea   rcx, [sym.__libc_csu_init]                       ; 0x850 ; "AWAVA\\x89\\xffAUATL\\x8d%.\\x05 "\l0x000006bd      lea   rdi, [main]                                      ; 0x7aa\l0x000006c4      call  qword [reloc.__libc_start_main]                  ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main ; "X\\x10 "\l"]
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "sym._start"
+  ]
+]
+[{"name":"entry0","offset":1696,"ninstr":11,"nargs":1,"nlocals":0,"size":42,"stack":8,"type":"fcn","blocks":[{"offset":1696,"size":42,"colorize":0,"ops":[{"offset":1696,"esil":"ebp,rbp,^,0xffffffff,&,rbp,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":1696,"fcn_last":1736,"size":2,"opcode":"xor ebp, ebp","disasm":"xor ebp, ebp","bytes":"31ed","family":"cpu","type":"xor","reloc":false,"type_num":28,"type2_num":0,"flags":["entry0","section..text","sym..text","sym._start"],"comment":"WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA1NDYgbmFtZWQgLnRleHQ="},{"offset":1698,"esil":"rdx,r9,=","refptr":false,"fcn_addr":1696,"fcn_last":1735,"size":3,"opcode":"mov r9, rdx","disasm":"mov r9, rdx","bytes":"4989d1","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1701,"esil":"rsp,[8],rsi,=,8,rsp,+=","refptr":false,"fcn_addr":1696,"fcn_last":1737,"size":1,"opcode":"pop rsi","disasm":"pop rsi","bytes":"5e","family":"cpu","type":"pop","reloc":false,"type_num":14,"type2_num":0},{"offset":1702,"esil":"rsp,rdx,=","refptr":false,"fcn_addr":1696,"fcn_last":1735,"size":3,"opcode":"mov rdx, rsp","disasm":"mov rdx, rsp","bytes":"4889e2","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1705,"val":18446744073709551600,"esil":"18446744073709551600,rsp,&=,$z,zf,:=,$p,pf,:=,63,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":1696,"fcn_last":1734,"size":4,"opcode":"and rsp, 0xfffffffffffffff0","disasm":"and rsp, 0xfffffffffffffff0","bytes":"4883e4f0","family":"cpu","type":"and","reloc":false,"type_num":27,"type2_num":0},{"offset":1709,"esil":"rax,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":1696,"fcn_last":1737,"size":1,"opcode":"push rax","disasm":"push rax","bytes":"50","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0},{"offset":1710,"esil":"rsp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":1696,"fcn_last":1737,"size":1,"opcode":"push rsp","disasm":"push rsp","bytes":"54","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0},{"offset":1711,"ptr":2240,"esil":"0x20a,rip,+,r8,=","refptr":true,"fcn_addr":1696,"fcn_last":1731,"size":7,"opcode":"lea r8, [rip + 0x20a]","disasm":"lea r8, [sym.__libc_csu_fini]","bytes":"4c8d050a020000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":2240,"type":"DATA"}]},{"offset":1718,"ptr":2128,"esil":"0x193,rip,+,rcx,=","refptr":true,"fcn_addr":1696,"fcn_last":1731,"size":7,"opcode":"lea rcx, [rip + 0x193]","disasm":"lea rcx, [sym.__libc_csu_init]","bytes":"488d0d93010000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":2128,"type":"DATA"}]},{"offset":1725,"ptr":1962,"esil":"0xe6,rip,+,rdi,=","refptr":true,"fcn_addr":1696,"fcn_last":1731,"size":7,"opcode":"lea rdi, [rip + 0xe6]","disasm":"lea rdi, [main]","bytes":"488d3de6000000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":1962,"type":"DATA"}]},{"offset":1732,"ptr":2101216,"esil":"0x200916,rip,+,[8],rip,8,rsp,-=,rsp,=[],rip,=","refptr":true,"fcn_addr":1696,"fcn_last":1732,"size":6,"opcode":"call qword [rip + 0x200916]","disasm":"call qword [reloc.__libc_start_main]","bytes":"ff1516092000","family":"cpu","type":"ircall","reloc":false,"type_num":402653188,"type2_num":0,"xrefs_from":[{"addr":2101216,"type":"CALL"}]}]}]}]
+[{"name":"entry0","offset":1696,"ninstr":11,"nargs":1,"nlocals":0,"size":42,"stack":8,"type":"fcn","blocks":[{"offset":1696,"size":42,"colorize":0,"ops":[{"offset":1696,"text":"       ;-- section..text:"},{"offset":1696,"text":"       ;-- .text:"},{"offset":1696,"text":"       ;-- _start:"},{"offset":1696,"text":"entry0 (int64_t arg3);"},{"offset":1696,"text":"     ; arg int64_t arg3 @ rdx"},{"offset":1696,"text":"     xor   ebp, ebp                                                    ; [13] -r-x section size 546 named .text"},{"offset":1698,"text":"     mov   r9, rdx                                                     ; arg3"},{"offset":1701,"text":"     pop   rsi"},{"offset":1702,"text":"     mov   rdx, rsp"},{"offset":1705,"text":"     and   rsp, 0xfffffffffffffff0"},{"offset":1709,"text":"     push  rax"},{"offset":1710,"text":"     push  rsp"},{"offset":1711,"text":"     lea   r8, [sym.__libc_csu_fini]                                   ; 0x8c0"},{"offset":1718,"text":"     lea   rcx, [sym.__libc_csu_init]                                  ; 0x850 ; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \""},{"offset":1725,"text":"     lea   rdi, [main]                                                 ; 0x7aa"},{"offset":1732,"text":"     call  qword [reloc.__libc_start_main]                             ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main ; \"X\\x10 \""}]}]}]
+agraph.color_box=G1swbQ==
+agraph.delta_x=0xb
+agraph.delta_y=0x1
+agraph.h=0x1f
+agraph.is_callgraph=false
+agraph.nodes=0x6a0
+agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0K
+agraph.nodes.0x6a0.h=0x1c
+agraph.nodes.0x6a0.w=0x49
+agraph.nodes.0x6a0.x=0
+agraph.nodes.0x6a0.y=0xb
+agraph.w=0x49
+EOF
+RUN
+
+NAME=agr multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+agr ascii
+agr cmd
+agr dot
+agr gml
+agr json
+agr json_disasm
+agr sdb
+agr tiny
+EOF
+EXPECT=<<EOF
+.--------------------.
+|  entry0            |
+`--------------------'
+agn "entry0"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="entry0", color="lightgray", label="entry0"]
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "entry0"
+  ]
+]
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0x6
+agraph.is_callgraph=false
+agraph.nodes=entry0
+agraph.nodes.entry0.body=base64:
+agraph.nodes.entry0.h=0x3
+agraph.nodes.entry0.w=0x16
+agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.y=0
+agraph.w=0x16
+()
+EOF
+RUN
+
+NAME=agx multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+s sym.imp.strlen
+agx ascii
+agx cmd
+agx dot
+agx gml
+agx json
+agx json_disasm
+agx sdb
+agx tiny
+EOF
+EXPECT=<<EOF
+.--------------------.    .--------------------.
+|  0x000007cf        |    |  0x000007de        |
+`--------------------'    `--------------------'
+    v                         v
+    |                         |
+    '--------------.          |
+                   | .--------'
+                   | |
+             .--------------------.
+             |  sym.imp.strlen    |
+             `--------------------'
+agn "sym.imp.strlen"
+agn "0x000007cf"
+agn "0x000007de"
+age "0x000007cf" "sym.imp.strlen"
+age "0x000007de" "sym.imp.strlen"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="sym.imp.strlen", color="lightgray", label="sym.imp.strlen"]
+1 [URL="0x000007cf", color="lightgray", label="0x000007cf"]
+1 -> 0
+2 [URL="0x000007de", color="lightgray", label="0x000007de"]
+2 -> 0
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "sym.imp.strlen"
+  ]
+  node [
+    id  1
+    label  "0x000007cf"
+  ]
+  node [
+    id  2
+    label  "0x000007de"
+  ]
+  edge [
+    source  1
+    target  0
+  ]
+  edge [
+    source  2
+    target  0
+  ]
+]
+{"nodes":[{"id":0,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":1,"title":"0x000007cf","offset":1999,"out_nodes":[0]},{"id":2,"title":"0x000007de","offset":2014,"out_nodes":[0]}]}
+{"nodes":[{"id":0,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":1,"title":"0x000007cf","offset":1999,"out_nodes":[0]},{"id":2,"title":"0x000007de","offset":2014,"out_nodes":[0]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0xf
+agraph.is_callgraph=false
+agraph.nodes=sym.imp.strlen,0x000007cf,0x000007de
+agraph.nodes.0x000007cf.body=base64:
+agraph.nodes.0x000007cf.h=0x3
+agraph.nodes.0x000007cf.neighbours=sym.imp.strlen
+agraph.nodes.0x000007cf.w=0x16
+agraph.nodes.0x000007cf.x=0x1
+agraph.nodes.0x000007cf.y=0
+agraph.nodes.0x000007de.body=base64:
+agraph.nodes.0x000007de.h=0x3
+agraph.nodes.0x000007de.neighbours=sym.imp.strlen
+agraph.nodes.0x000007de.w=0x16
+agraph.nodes.0x000007de.x=0x1b
+agraph.nodes.0x000007de.y=0
+agraph.nodes.sym.imp.strlen.body=base64:
+agraph.nodes.sym.imp.strlen.h=0x3
+agraph.nodes.sym.imp.strlen.w=0x16
+agraph.nodes.sym.imp.strlen.x=0xe
+agraph.nodes.sym.imp.strlen.y=0x8
+agraph.w=0x30
+
+
+() ()
+ ()
 EOF
 RUN
