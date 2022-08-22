@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include <rz_cons.h>
 #include <rz_util/rz_graph.h>
+#include <rz_util/rz_graph_drawable.h>
 
 typedef struct rz_ascii_node_t {
 	RzGraphNode *gnode;
@@ -23,7 +24,9 @@ typedef struct rz_ascii_node_t {
 	int is_reversed;
 	int klass;
 	int difftype;
+	ut32 shortcut_w;
 	bool is_mini;
+	ut64 offset;
 } RzANode;
 
 typedef struct rz_core_graph_hits_t {
@@ -99,6 +102,7 @@ RZ_API RzANode *rz_agraph_get_first_node(const RzAGraph *g);
 RZ_API RzANode *rz_agraph_get_node(const RzAGraph *g, const char *title);
 RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const char *body);
 RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *title, const char *body, int color);
+RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info);
 RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title);
 RZ_API void rz_agraph_add_edge(const RzAGraph *g, RzANode *a, RzANode *b);
 RZ_API void rz_agraph_add_edge_at(const RzAGraph *g, RzANode *a, RzANode *b, int nth);
@@ -109,7 +113,8 @@ RZ_API Sdb *rz_agraph_get_sdb(RzAGraph *g);
 RZ_API void rz_agraph_foreach(RzAGraph *g, RzANodeCallback cb, void *user);
 RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user);
 RZ_API void rz_agraph_set_curnode(RzAGraph *g, RzANode *node);
-RZ_API RzAGraph *create_agraph_from_graph(const RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail);
+RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph);
 #endif
 
 #endif

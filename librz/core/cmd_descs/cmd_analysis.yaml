@@ -1098,11 +1098,19 @@ commands:
       - name: ags
         summary: Normal graph
         cname: analysis_graph_normal
-        args: []
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
       - name: agl
-        summary: Line graph ?
+        summary: Line graph
         cname: analysis_graph_line
-        args: []
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
       - name: agx
         summary: Cross-references graph
         cname: analysis_graph_xrefs
@@ -1170,10 +1178,13 @@ commands:
           - name: graphtype
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "dataref"
-            choices: ["dataref", "dataref_global", "funcall", "funcall_global", "diff", "funblock", "import", "ref",
-                      "ref_global", "line", "xref", "custom"]
+            choices: ["dataref", "funcall", "diff", "funblock", "import", "ref", "line", "xref", "custom"]
           - name: path
             type: RZ_CMD_ARG_TYPE_STRING
+          - name: global
+            type: RZ_CMD_ARG_TYPE_OPTION
+            flags: RZ_CMD_ARG_FLAG_OPTION
+            optional: true
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar

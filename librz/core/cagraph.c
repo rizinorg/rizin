@@ -131,17 +131,21 @@ static void agraph_print_edge(RzANode *from, RzANode *to, void *user) {
 }
 
 static void agraph_print_node(RzANode *n, void *user) {
-	char *encbody, *cmd;
+	char *cmd;
 	int len = strlen(n->body);
 
 	if (len > 0 && n->body[len - 1] == '\n') {
 		len--;
 	}
-	encbody = rz_base64_encode_dyn((const ut8 *)n->body, len);
-	cmd = rz_str_newf("agn \"%s\" base64:%s\n", n->title, encbody);
+	if (RZ_STR_ISEMPTY(n->body)) {
+		cmd = rz_str_newf("agn \"%s\"\n", n->title);
+	} else {
+		char *encbody = rz_base64_encode_dyn((const ut8 *)n->body, len);
+		cmd = rz_str_newf("agn \"%s\" base64:%s\n", n->title, encbody);
+		free(encbody);
+	}
 	rz_cons_print(cmd);
 	free(cmd);
-	free(encbody);
 }
 
 RZ_IPI void rz_core_agraph_print_dot(RzCore *core) {
@@ -200,4 +204,82 @@ RZ_IPI void rz_core_agraph_print_gml(RzCore *core) {
 	rz_agraph_foreach(core->graph, agraph_print_node_gml, NULL);
 	rz_agraph_foreach_edge(core->graph, agraph_print_edge_gml, NULL);
 	rz_cons_print("]\n");
+}
+
+RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format) {
+	switch (format) {
+	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
+		rz_core_agraph_print_ascii(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_TINY:
+		rz_core_agraph_print_tiny(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_SDB:
+		rz_core_agraph_print_sdb(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_VISUAL:
+		rz_core_agraph_print_interactive(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_DOT:
+		rz_core_agraph_print_dot(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_CMD:
+		rz_core_agraph_print_rizin(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_JSON:
+		/* fall-thru */
+	case RZ_CORE_GRAPH_FORMAT_JSON_DISASM:
+		rz_core_agraph_print_json(core);
+		break;
+	case RZ_CORE_GRAPH_FORMAT_GML:
+		rz_core_agraph_print_gml(core);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return true;
+}
+
+RZ_IPI bool rz_core_agraph_is_shortcuts(RzCore *core, RzAGraph *g) {
+	rz_return_val_if_fail(g && core, false);
+	return g->is_interactive && rz_config_get_i(core->config, "graph.nodejmps");
+}
+
+RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, ut64 addr, char *title) {
+	rz_return_val_if_fail(core && g && an && title, false);
+	char *shortcut = rz_core_add_asmqjmp(core, addr);
+	if (!shortcut) {
+		return false;
+	}
+	sdb_set(g->db, sdb_fmt("agraph.nodes.%s.shortcut", title), shortcut, 0);
+	// title + "[o{shortcut}]", so w + 3 ?
+	an->shortcut_w = strlen(shortcut) + 3;
+	free(shortcut);
+	return true;
+}
+
+RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
+	rz_return_val_if_fail(core && ag, false);
+	const RzList *nodes = rz_graph_get_nodes(ag->graph);
+	RzGraphNode *gn;
+	RzListIter *it;
+	rz_list_foreach (nodes, it, gn) {
+		RzANode *an = gn->data;
+		rz_core_agraph_add_shortcut(core, ag, an, an->offset, an->title);
+	}
+	return true;
+}
+
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph *graph) {
+	if (!(core && core->graph && graph)) {
+		return false;
+	}
+	if (!create_agraph_from_graph_at(core->graph, graph, false)) {
+		return false;
+	}
+	if (rz_core_agraph_is_shortcuts(core, core->graph)) {
+		rz_core_add_shortcuts(core, core->graph);
+	}
+	return true;
 }

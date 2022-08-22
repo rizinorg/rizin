@@ -9,6 +9,7 @@ if get_option('enable_tests')
 
   tests = [
     'analysis_global_var',
+    'analysis_graph',
     'analysis_il',
     'autocmplt',
     'basefind',

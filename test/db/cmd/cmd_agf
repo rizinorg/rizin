@@ -21,6 +21,6 @@ af
 agf J
 EOF
 EXPECT=<<EOF
-[{"name":"fcn.00000042","offset":66,"ninstr":8,"nargs":0,"nlocals":0,"size":17,"stack":0,"type":"fcn","blocks":[{"offset":66,"size":8,"jump":80,"fail":74,"colorize":0,"ops":[{"offset":66,"text":"fcn.00000042 ();"},{"offset":66,"text":"     0000           add   byte [rax], al"},{"offset":68,"text":"     4883f800       cmp   rax, 0"},{"offset":72,"arrow":80,"text":"     7406           je    0x50"}]},{"offset":80,"size":3,"colorize":0,"ops":[{"offset":80,"text":"     0000           add   byte [rax], al"},{"offset":82,"text":"     c3             ret"}]},{"offset":74,"size":6,"jump":80,"colorize":0,"ops":[{"offset":74,"text":"     0000           add   byte [rax], al"},{"offset":76,"text":"     0000           add   byte [rax], al"},{"offset":78,"text":"     0000           add   byte [rax], al"}]}]}]
+{"nodes":[{"id":0,"title":"0x42","body":"fcn.00000042 ();\nadd byte [rax], al\ncmp rax, 0\nje 0x50\n","offset":66,"out_nodes":[1,2]},{"id":1,"title":"0x50","body":"add byte [rax], al\nret\n","offset":80,"out_nodes":[]},{"id":2,"title":"0x4a","body":"add byte [rax], al\nadd byte [rax], al\nadd byte [rax], al\n","offset":74,"out_nodes":[1]}]}
 EOF
 RUN

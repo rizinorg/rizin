@@ -25,13 +25,13 @@ static const char *mousemodes[] = {
 #define GRAPH_MERGE_FEATURE 0
 
 #define BORDER                  3
-#define BORDER_WIDTH            4
+#define BORDER_WIDTH            2
 #define BORDER_HEIGHT           3
 #define MARGIN_TEXT_X           2
 #define MARGIN_TEXT_Y           2
 #define HORIZONTAL_NODE_SPACING 4
 #define VERTICAL_NODE_SPACING   2
-#define MIN_NODE_WIDTH          22
+#define MIN_NODE_WIDTH          12
 #define MIN_NODE_HEIGHT         BORDER_HEIGHT
 #define TITLE_LEN               128
 #define DEFAULT_SPEED           1
@@ -231,7 +231,7 @@ static void update_node_dimension(const RzGraph *g, int is_mini, int zoom, int e
 				n->w = len;
 			}
 			// n->w = n->w; //RZ_MIN (n->w, (int)len);
-			n->w += BORDER_WIDTH;
+			n->w += (int)(BORDER_WIDTH * 2 + RZ_MIN(n->shortcut_w, 12));
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
 			n->w = RZ_MAX(MIN_NODE_WIDTH, (n->w * zoom) / 100);
@@ -2325,8 +2325,6 @@ static bool isbbfew(RzAnalysisBlock *curbb, RzAnalysisBlock *bb) {
 static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	RzListIter *iter;
-	char *shortcut = NULL;
-	int shortcuts = 0;
 	bool emu = rz_config_get_i(core->config, "asm.emu");
 	bool few = rz_config_get_i(core->config, "graph.few");
 	int ret = false;
@@ -2356,6 +2354,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	}
 
 	core->keep_asmqjmps = false;
+	bool shortcuts = rz_core_agraph_is_shortcuts(core, g);
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
@@ -2367,14 +2366,8 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		char *title = get_title(bb->addr);
 
 		RzANode *node = rz_agraph_add_node(g, title, body);
-		shortcuts = g->is_interactive ? rz_config_get_i(core->config, "graph.nodejmps") : false;
-
 		if (shortcuts) {
-			shortcut = rz_core_add_asmqjmp(core, bb->addr);
-			if (shortcut) {
-				sdb_set(g->db, sdb_fmt("agraph.nodes.%s.shortcut", title), shortcut, 0);
-				free(shortcut);
-			}
+			rz_core_agraph_add_shortcut(core, g, node, bb->addr, title);
 		}
 		free(body);
 		free(title);
@@ -3735,6 +3728,8 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 	res->is_reversed = false;
 	res->klass = -1;
 	res->difftype = color;
+	res->offset = UT64_MAX;
+	res->shortcut_w = 0;
 	res->gnode = rz_graph_add_node(g->graph, res);
 	if (RZ_STR_ISNOTEMPTY(res->title)) {
 		ht_pp_update(g->nodes, res->title, res);
@@ -3754,6 +3749,19 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 		sdb_set_owned(g->db, sdb_fmt("agraph.nodes.%s.body", res->title), s, 0);
 	}
 	return res;
+}
+
+/**
+ * \brief Convert a RzGraphNodeInfo \p info to RzANode and add to \p g.
+ */
+RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info) {
+	rz_return_val_if_fail(g && info, NULL);
+	RzANode *an = rz_agraph_add_node_with_color(g, info->title, info->body, -1);
+	if (!an) {
+		return NULL;
+	}
+	an->offset = info->offset;
+	return an;
 }
 
 RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const char *body) {
@@ -4313,10 +4321,24 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			exit_graph = true;
 			break;
 		case '>':
-			if (fcn && rz_cons_yesno('y', "Compute function callgraph? (Y/n)")) {
+			if (rz_cons_yesno('y', "Compute function callgraph? (Y/n)")) {
+				RzAnalysisFunction *function = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+				if (!function) {
+					RZ_LOG_INFO("No function found at current address\n");
+					break;
+				}
+				RzGraph *graph = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_FUNCALL, function->addr);
+				if (!graph) {
+					RZ_LOG_INFO("failed to compute callgraph");
+					break;
+				}
 				rz_core_agraph_reset(core);
-				rz_core_cmd0(core, ".agc* @$FB;.axfg @$FB");
-				rz_core_agraph_print_interactive(core);
+				if (rz_core_agraph_apply(core, graph)) {
+					// TODO: Convert to the API
+					rz_core_cmd0(core, ".axfg @$FB");
+					rz_core_agraph_print_interactive(core);
+				}
+				rz_graph_free(graph);
 			}
 			break;
 		case '<':
@@ -4902,34 +4924,26 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 }
 
 /**
- * @brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data
- *
- * @param graph <RzGraphNodeInfo>
- * @return RzAGraph* NULL if failure
+ * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data at \p ag from \p g
+ * \return Success
  */
-RZ_API RzAGraph *create_agraph_from_graph(const RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
-	rz_return_val_if_fail(graph, NULL);
-
-	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));
-	if (!result_agraph) {
-		return NULL;
-	}
-	result_agraph->need_reload_nodes = false;
+RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail) {
+	rz_return_val_if_fail(ag && g, NULL);
+	ag->need_reload_nodes = false;
 	// Cache lookup to build edges
 	HtPPOptions pointer_options = { 0 };
 	HtPP /*<RzGraphNode *node, RzANode *anode>*/ *hashmap = ht_pp_new_opt(&pointer_options);
 
 	if (!hashmap) {
-		rz_agraph_free(result_agraph);
-		return NULL;
+		goto failure;
 	}
 	// List of the new RzANodes
 	RzListIter *iter;
 	RzGraphNode *node;
 	// Traverse the list, create new ANode for each Node
-	rz_list_foreach (graph->nodes, iter, node) {
+	rz_list_foreach (g->nodes, iter, node) {
 		RzGraphNodeInfo *info = node->data;
-		RzANode *a_node = rz_agraph_add_node(result_agraph, info->title, info->body);
+		RzANode *a_node = rz_agraph_add_node_from_node_info(ag, info);
 		if (!a_node) {
 			goto failure;
 		}
@@ -4937,7 +4951,7 @@ RZ_API RzAGraph *create_agraph_from_graph(const RzGraph /*<RzGraphNodeInfo *>*/ 
 	}
 
 	// Traverse the nodes again, now build up the edges
-	rz_list_foreach (graph->nodes, iter, node) {
+	rz_list_foreach (g->nodes, iter, node) {
 		RzANode *a_node = ht_pp_find(hashmap, node, NULL);
 		if (!a_node) {
 			goto failure; // shouldn't happen in correct graph state
@@ -4950,14 +4964,37 @@ RZ_API RzAGraph *create_agraph_from_graph(const RzGraph /*<RzGraphNodeInfo *>*/ 
 			if (!a_neighbour) {
 				goto failure;
 			}
-			rz_agraph_add_edge(result_agraph, a_neighbour, a_node);
+			rz_agraph_add_edge(ag, a_neighbour, a_node);
 		}
 	}
 
 	ht_pp_free(hashmap);
-	return result_agraph;
+	return true;
 failure:
 	ht_pp_free(hashmap);
-	rz_agraph_free(result_agraph);
-	return NULL;
+	if (free_on_fail) {
+		rz_agraph_free(ag);
+	} else {
+		rz_agraph_reset(ag);
+	}
+	return false;
+}
+
+/**
+ * \brief Create RzAGraph from generic RzGraph with RzGraphNodeInfo as node data
+ *
+ * \param graph <RzGraphNodeInfo>
+ * \return RzAGraph* NULL if failure
+ */
+RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+	rz_return_val_if_fail(graph, NULL);
+
+	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));
+	if (!result_agraph) {
+		return NULL;
+	}
+	if (!create_agraph_from_graph_at(result_agraph, graph, true)) {
+		return NULL;
+	}
+	return result_agraph;
 }
