@@ -24,24 +24,25 @@
 RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, ut64 count) {
 	rz_return_if_fail(obj && buf);
 	ut64 eob = off + count;
-	int nsegs_to_rebase = RZ_MIN(obj->nchained_starts, obj->nsegs);
+	ut64 nsegs_to_rebase = RZ_MIN(obj->nchained_starts, obj->nsegs);
 	for (int i = 0; i < nsegs_to_rebase; i++) {
 		if (!obj->chained_starts[i]) {
 			continue;
 		}
-		ut64 page_size = obj->chained_starts[i]->page_size;
+		struct rz_dyld_chained_starts_in_segment *segment = obj->chained_starts[i];
+		ut64 page_size = segment->page_size;
 		ut64 start = obj->segs[i].fileoff;
 		ut64 end = start + obj->segs[i].filesize;
-		if (end < off || start > eob) {
+		if (end < off || start > eob || page_size < 1) {
 			continue;
 		}
 		ut64 page_idx = (RZ_MAX(start, off) - start) / page_size;
 		ut64 page_end_idx = (RZ_MIN(eob, end) - start) / page_size;
 		for (; page_idx <= page_end_idx; page_idx++) {
-			if (page_idx >= obj->chained_starts[i]->page_count) {
+			if (!segment->page_start || page_idx >= segment->page_count) {
 				break;
 			}
-			ut16 page_start = obj->chained_starts[i]->page_start[page_idx];
+			ut16 page_start = segment->page_start[page_idx];
 			if (page_start == DYLD_CHAINED_PTR_START_NONE) {
 				continue;
 			}
@@ -56,7 +57,7 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				ut64 ptr_value = raw_ptr;
 				ut64 delta;
 				ut64 stride = 8;
-				switch (obj->chained_starts[i]->pointer_format) {
+				switch (segment->pointer_format) {
 				case DYLD_CHAINED_PTR_ARM64E: {
 					bool is_bind = IS_PTR_BIND(raw_ptr);
 					if (is_auth && is_bind) {
@@ -134,7 +135,7 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				}
 				default:
 					RZ_LOG_WARN("Unsupported Mach-O pointer format: %u at paddr 0x%" PFMT64x "\n",
-						obj->chained_starts[i]->pointer_format, cursor);
+						segment->pointer_format, cursor);
 					goto break_it_all;
 				}
 				ut64 in_buf = cursor - off;
