@@ -244,6 +244,7 @@ struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin) {
 	struct rz_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) * shdr;
 	int i, j, section_count = 0;
+	char sec_name[PE_IMAGE_SIZEOF_SHORT_NAME + 1];
 
 	if (!bin || !bin->nt_headers) {
 		return NULL;
@@ -270,7 +271,9 @@ struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin) {
 			free(new_name);
 		} else if (shdr[i].Name[0] == '/') {
 			// long name is something deprecated but still used
-			int idx = atoi((const char *)shdr[i].Name + 1);
+			memcpy(sec_name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+			sec_name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
+			int idx = atoi(sec_name + 1);
 			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
 			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
 			st64 off = num_symbols * COFF_SYMBOL_SIZE;
