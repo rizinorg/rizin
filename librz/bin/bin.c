@@ -1433,8 +1433,8 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 		if (!found) {
 			lib = NULL;
 		}
-		size_t len = strlen(bin->file);
-		if (!rz_str_ncasecmp(symbol, bin->file, len)) {
+		size_t len = bin ? strlen(bin->file) : 0;
+		if (bin && len > 0 && !rz_str_ncasecmp(symbol, bin->file, len)) {
 			lib = bin->file;
 			symbol += len;
 			if (*symbol == '_') {
@@ -1483,7 +1483,11 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 	case RZ_BIN_LANGUAGE_RUST: demangled = NULL; break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = NULL; break;
 #endif
-	default: rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
+	default:
+		if (bin) {
+			rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
+		}
+		break;
 	}
 	if (libs && demangled && lib) {
 		char *d = rz_str_newf("%s_%s", lib, demangled);

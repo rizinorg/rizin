@@ -185,7 +185,7 @@ RZ_API RZ_BORROW const RzDemanglerPlugin *rz_demangler_plugin_get(RZ_NONNULL RzD
  * This function fails only when the requested language is not available.
  */
 RZ_API bool rz_demangler_resolve(RZ_NONNULL RzDemangler *dem, RZ_NULLABLE const char *symbol, RZ_NONNULL const char *language, RZ_NONNULL RZ_OWN char **output) {
-	rz_return_val_if_fail(language && dem->plugins && output, false);
+	rz_return_val_if_fail(language && dem && dem->plugins && output, false);
 
 	if (RZ_STR_ISEMPTY(symbol)) {
 		*output = NULL;
