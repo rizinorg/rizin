@@ -249,7 +249,7 @@ objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *
 	RzListIter *iter;
 	RzDyldBinImage *bin;
 	rz_list_foreach (cache->bins, iter, bin) {
-		if (strcmp(bin->file, "lib/libobjc.A.dylib")) {
+		if (!bin->file || strcmp(bin->file, "lib/libobjc.A.dylib")) {
 			continue;
 		}
 
@@ -626,6 +626,8 @@ static RzList *create_cache_bins(RzDyldCache *cache) {
 					} else {
 						bin->file = strdup(file);
 					}
+				} else {
+					bin->file = rz_str_newf("unknown_image_%08" PFMT64x, symbols_off);
 				}
 				rz_list_append(bins, bin);
 				break;
