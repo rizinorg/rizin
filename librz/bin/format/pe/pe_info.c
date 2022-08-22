@@ -613,7 +613,10 @@ static inline bool read_and_follow_jump(struct rz_bin_pe_addr_t *entry, RzBuffer
 	return rz_buf_read_at(buf, entry->paddr, b, len) > 0;
 }
 
-static inline bool follow_offset(struct rz_bin_pe_addr_t *entry, RzBuffer *buf, ut8 *b, int len, bool big_endian, size_t instr_off) {
+static inline bool follow_offset(struct rz_bin_pe_addr_t *entry, RzBuffer *buf, ut8 *b, size_t len, bool big_endian, size_t instr_off) {
+	if (instr_off + 5 >= len) {
+		return false;
+	}
 	const st32 dst_offset = rz_read_ble32(b + instr_off + 1, big_endian) + instr_off + 5;
 	entry->paddr += dst_offset;
 	entry->vaddr += dst_offset;
