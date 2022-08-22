@@ -13,7 +13,7 @@ RZ_API void asn1_setformat(int fmt) {
 	ASN1_STD_FORMAT = fmt;
 }
 
-static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
+static ut64 asn1_ber_indefinite(const ut8 *buffer, ut64 length) {
 	if (!buffer || length < 3) {
 		return 0;
 	}
@@ -25,8 +25,8 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 		}
 		if (next[0] == 0x80 && (next[-1] & ASN1_FORM) == FORM_CONSTRUCTED) {
 			next--;
-			int sz = asn1_ber_indefinite(next, end - next);
-			if (sz < 1) {
+			st64 sz = (st64)asn1_ber_indefinite(next, end - next);
+			if (sz < (st64)1) {
 				break;
 			}
 			next += sz;
@@ -36,9 +36,9 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 	return (next - buffer) + 2;
 }
 
-static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 *start_pointer) {
+static RASN1Object *asn1_parse_header(const ut8 *buffer, ut64 length, const ut8 *start_pointer) {
 	ut8 head, length8, byte;
-	ut64 length64;
+	ut64 length64, remaining;
 	if (!buffer || length < 2) {
 		return NULL;
 	}
@@ -48,45 +48,53 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 
 		return NULL;
 	}
 	head = buffer[0];
-	object->offset = start_pointer ? (buffer - start_pointer) : 0;
+	object->offset = buffer - start_pointer;
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
 	length8 = buffer[1];
+	remaining = length - 2;
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
 		object->sector = buffer + 2;
-		if (length8 && length8 < length - 2) {
-			ut8 i8;
+		if (length8 && length8 < remaining) {
+			remaining -= length8;
 			// can overflow.
-			for (i8 = 0; i8 < length8; i8++) {
+			for (ut8 i8 = 0; i8 < length8; i8++) {
 				byte = buffer[2 + i8];
 				length64 <<= 8;
 				length64 |= byte;
-				if (length64 > length) {
+				if (length64 > remaining) {
+					// Malformed object - overflow from data ptr
 					goto out_error;
 				}
 			}
 			object->sector += length8;
 		} else {
-			length64 = asn1_ber_indefinite(object->sector, length - 2);
+			length64 = asn1_ber_indefinite(object->sector, remaining);
+			if (length64 > remaining) {
+				// Malformed object - overflow from data ptr
+				goto out_error;
+			}
 		}
 		object->length = (ut32)length64;
 	} else {
+		if (length8 > remaining) {
+			// Malformed object - overflow from data ptr
+			goto out_error;
+		}
 		object->length = (ut32)length8;
 		object->sector = buffer + 2;
 	}
-
-	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
-		if (object->length > 0) {
-			object->sector++; // real sector starts + 1
-			object->length--;
-		}
-	}
-	if (object->length > length) {
+	if (object->sector >= (buffer + length)) {
 		// Malformed object - overflow from data ptr
 		goto out_error;
+	}
+
+	if (object->tag == TAG_BITSTRING && !object->sector[0] && object->length > 0) {
+		object->sector++; // real sector starts + 1
+		object->length--;
 	}
 	return object;
 out_error:
@@ -94,30 +102,32 @@ out_error:
 	return NULL;
 }
 
-static ut32 rz_asn1_count_objects(const ut8 *buffer, ut32 length) {
-	if (!buffer || !length) {
+static ut32 asn1_count_objects(RASN1Object *object) {
+	if (!object) {
 		return 0;
 	}
+	const ut8 *buffer = object->sector;
+	ut64 length = object->length;
 	ut32 counter = 0;
-	RASN1Object *object = NULL;
+	RASN1Object *tmp = NULL;
 	const ut8 *next = buffer;
 	const ut8 *end = buffer + length;
 	while (next >= buffer && next < end) {
 		// i do not care about the offset now.
-		object = asn1_parse_header(next, end - next, 0);
-		if (!object || next == object->sector) {
-			RZ_FREE(object);
+		tmp = asn1_parse_header(next, end - next, buffer);
+		if (!tmp || next == tmp->sector) {
+			RZ_FREE(tmp);
 			break;
 		}
-		next = object->sector + object->length;
+		next = tmp->sector + tmp->length;
 		counter++;
-		RZ_FREE(object);
+		RZ_FREE(tmp);
 	}
-	RZ_FREE(object);
+	RZ_FREE(tmp);
 	return counter;
 }
 
-RZ_API RASN1Object *rz_asn1_create_object(const ut8 *buffer, ut32 length, const ut8 *start_pointer) {
+static RASN1Object *asn1_create_object(const ut8 *buffer, ut64 length, const ut8 *start_pointer) {
 	RASN1Object *object = asn1_parse_header(buffer, length, start_pointer);
 	if (object && (object->form == FORM_CONSTRUCTED || object->tag == TAG_BITSTRING || object->tag == TAG_OCTETSTRING)) {
 		const ut8 *next = object->sector;
@@ -126,7 +136,7 @@ RZ_API RASN1Object *rz_asn1_create_object(const ut8 *buffer, ut32 length, const 
 			free(object);
 			return NULL;
 		}
-		ut32 count = rz_asn1_count_objects(object->sector, object->length);
+		ut64 count = asn1_count_objects(object);
 		if (count > 0) {
 			object->list.length = count;
 			object->list.objects = RZ_NEWS0(RASN1Object *, count);
@@ -134,9 +144,8 @@ RZ_API RASN1Object *rz_asn1_create_object(const ut8 *buffer, ut32 length, const 
 				rz_asn1_free_object(object);
 				return NULL;
 			}
-			ut32 i;
-			for (i = 0; next >= buffer && next < end && i < count; i++) {
-				RASN1Object *inner = rz_asn1_create_object(next, end - next, start_pointer);
+			for (ut32 i = 0; next >= buffer && next < end && i < count; i++) {
+				RASN1Object *inner = asn1_create_object(next, end - next, start_pointer);
 				if (!inner || next == inner->sector) {
 					rz_asn1_free_object(inner);
 					break;
@@ -147,6 +156,11 @@ RZ_API RASN1Object *rz_asn1_create_object(const ut8 *buffer, ut32 length, const 
 		}
 	}
 	return object;
+}
+
+RZ_API RZ_OWN RASN1Object *rz_asn1_create_object(RZ_NONNULL const ut8 *buffer, ut32 length) {
+	rz_return_val_if_fail(buffer && length > 0, NULL);
+	return asn1_create_object(buffer, length, buffer);
 }
 
 RZ_API RASN1Binary *rz_asn1_create_binary(const ut8 *buffer, ut32 length) {

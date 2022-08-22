@@ -315,7 +315,7 @@ RZ_API RCMS *rz_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	if (!container) {
 		return NULL;
 	}
-	object = rz_asn1_create_object(buffer, length, buffer);
+	object = rz_asn1_create_object(buffer, length);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1] ||
 		object->list.objects[1]->list.length < 1) {
@@ -689,7 +689,7 @@ RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms) {
 		free(spcinfo);
 		return NULL;
 	}
-	RASN1Object *object = rz_asn1_create_object(content->binary, content->length, content->binary);
+	RASN1Object *object = rz_asn1_create_object(content->binary, content->length);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
 		RZ_FREE_CUSTOM(spcinfo, rz_pkcs7_free_spcinfo);
