@@ -264,6 +264,7 @@ const char *file_getbuffer(RzMagic *ms) {
 		file_oomem(ms, psize);
 		return NULL;
 	}
+	pbuf[psize - 1] = 0;
 	ms->o.pbuf = pbuf;
 
 #if 1
@@ -307,7 +308,9 @@ const char *file_getbuffer(RzMagic *ms) {
 		}
 	}
 #endif
-	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
+	const char *pbuf_end = ms->o.pbuf + psize;
+	const char *buf_end = ms->o.buf + len;
+	for (np = ms->o.pbuf, op = ms->o.buf; op < buf_end && np < pbuf_end && *op; op++) {
 		if (isprint((ut8)*op)) {
 			*np++ = *op;
 		} else {
