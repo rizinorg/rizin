@@ -1388,6 +1388,7 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
 	}
 
 	rz_vector_push(toks->tokens, t);
+	free(t);
 }
 
 /**
@@ -1740,15 +1741,12 @@ RZ_DEPRECATE RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_string(RZ_BORRO
 RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *
 rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NULLABLE const RzAsmParseParam *param, RZ_NULLABLE const RzAsmTokenString *toks) {
 	RzStrBuf *colored_asm;
-	RzAsmTokenString *ts;
 	if (toks) {
 		colored_asm = rz_print_colorize_asm_str(p, toks);
 	} else {
-		ts = rz_asm_tokenize_asm_string(asm_str, param);
+		RzAsmTokenString *ts = rz_asm_tokenize_asm_string(asm_str, param);
 		ts->op_type = param ? param->ana_op_type : 0;
 		colored_asm = rz_print_colorize_asm_str(p, ts);
-	}
-	if (!toks) {
 		rz_asm_token_string_free(ts);
 	}
 	return colored_asm;

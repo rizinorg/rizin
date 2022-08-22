@@ -5885,122 +5885,95 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 n_bytes = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
-	bool color = rz_config_get_i(core->config, "scr.color") > 0;
-	RzAsmOp asm_op = { 0 };
-	ut32 old_blocksize = core->blocksize;
-
-	if (n_bytes > old_blocksize) {
-		rz_core_block_size(core, n_bytes);
-		rz_core_block_read(core);
+	ut8 *buffer = RZ_NEWS0(ut8, n_bytes);
+	RzPVector *vec = NULL;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
+	if (!buffer) {
+		goto fail;
+	}
+	if (!rz_io_read_at(core->io, core->offset, buffer, n_bytes)) {
+		goto fail;
+	}
+	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, n_bytes);
+	if (!vec) {
+		goto fail;
 	}
 
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	void **p;
 	rz_cmd_state_output_array_start(state);
 	rz_cons_break_push(NULL, NULL);
-	for (ut64 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
-		ut64 offset = core->offset + position;
-		rz_asm_set_pc(core->rasm, offset);
-		ut8 *buffer = core->block + position;
-		ut32 length = n_bytes - position;
-		int op_size = rz_asm_disassemble(core->rasm, &asm_op, buffer, length);
-		char *op_hex = rz_hex_bin2strdup(buffer, RZ_MAX(op_size, 1));
-		char *assembly = strdup(op_size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
-		char *colored = NULL;
-
-		if (color && state->mode != RZ_OUTPUT_MODE_JSON) {
-			RzAnalysisOp aop = { 0 };
-			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
-			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
-			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asm_op.asm_toks);
-			colored = rz_strbuf_drain(colored_asm);
-		}
-
+	rz_pvector_foreach (vec, p) {
+		RzCoreDisasmOp *op = *p;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x%08" PFMT64x " %20s  %s\n", offset, op_hex, colored ? colored : assembly);
+			rz_cons_printf("0x%08" PFMT64x " %20s  %s\n", op->offset, op->hex, color ? op->assembly_colored : op->assembly);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_kn(state->d.pj, "addr", offset);
-			pj_ks(state->d.pj, "bytes", op_hex);
-			pj_ks(state->d.pj, "inst", assembly);
+			pj_kn(state->d.pj, "addr", op->offset);
+			pj_ks(state->d.pj, "bytes", op->hex);
+			pj_ks(state->d.pj, "inst", op->assembly);
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("%s\n", colored ? colored : assembly);
+			rz_cons_printf("%s\n", color ? op->assembly_colored : op->assembly);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
-		free(op_hex);
-		free(assembly);
-		free(colored);
 	}
 	rz_cons_break_pop();
 	rz_cmd_state_output_array_end(state);
 
-	if (n_bytes > old_blocksize) {
-		rz_core_block_size(core, old_blocksize);
-		rz_core_block_read(core);
-	}
-	return RZ_CMD_STATUS_OK;
+ret:
+	free(buffer);
+	rz_pvector_free(vec);
+	return res;
+fail:
+	res = RZ_CMD_STATUS_ERROR;
+	goto ret;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCore *core, int argc, const char **argv) {
-	bool color = rz_config_get_i(core->config, "scr.color") > 0;
-	RzAsmOp asm_op = { 0 };
-	const ut32 n_bytes = 28; // uses 56 chars
-	ut32 old_blocksize = core->blocksize;
-
-	if (old_blocksize < n_bytes) {
-		rz_core_block_size(core, 256);
-		rz_core_block_read(core);
+#define TREEVIEW_N_BYTES 28
+	ut8 buffer[TREEVIEW_N_BYTES];
+	RzPVector *vec = NULL;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
+	if (!rz_io_read_at(core->io, core->offset, buffer, TREEVIEW_N_BYTES)) {
+		goto fail;
+	}
+	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, TREEVIEW_N_BYTES);
+	if (!vec) {
+		goto fail;
 	}
 
-	rz_cons_break_push(NULL, NULL);
-	for (ut32 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
-		ut64 offset = core->offset + position;
-		rz_asm_set_pc(core->rasm, offset);
-		ut8 *buffer = core->block + position;
-		ut32 length = RZ_MAX(n_bytes - position, core->blocksize - position);
-		int op_size = rz_asm_disassemble(core->rasm, &asm_op, buffer, length);
-		if (op_size < 1) {
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	void **p;
+	int position = 0;
+	rz_pvector_foreach (vec, p) {
+		RzCoreDisasmOp *op = *p;
+		if (op->size < 1) {
 			continue;
 		}
-		op_size = RZ_MAX(op_size, 1);
-		char *op_hex = rz_hex_bin2strdup(buffer, op_size);
-		char *assembly = strdup(op_size > 0 ? rz_asm_op_get_asm(&asm_op) : "illegal");
-		char *colored = NULL;
-
-		if (color) {
-			RzAnalysisOp aop = { 0 };
-			rz_analysis_op(core->analysis, &aop, offset, buffer, length, RZ_ANALYSIS_OP_MASK_ALL);
-			RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(assembly);
-			colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, aop.type), asm_op.asm_toks);
-			colored = rz_strbuf_drain(colored_asm);
-		}
-
 		int padding = position * 2;
 		int space = 60 - padding;
-
-		if ((position + op_size) >= 30) {
+		if ((position + op->size) >= 30) {
 			ut32 last = (30 - position) * 2;
-			op_hex[last - 1] = '.';
-			op_hex[last] = 0;
+			op->hex[last - 1] = '.';
+			op->hex[last] = 0;
 		}
-
-		rz_cons_printf("0x%08" PFMT64x " %*s%*s %s\n", offset, padding, "", -space, op_hex, colored ? colored : assembly);
-		free(op_hex);
-		free(assembly);
-		free(colored);
+		rz_cons_printf("0x%08" PFMT64x " %*s%*s %s\n", op->offset, padding, "", -space, op->hex, color ? op->assembly_colored : op->assembly);
+		position++;
 	}
-	rz_cons_break_pop();
 
-	if (old_blocksize < n_bytes) {
-		rz_core_block_size(core, old_blocksize);
-		rz_core_block_read(core);
-	}
-	return RZ_CMD_STATUS_OK;
+ret:
+	rz_pvector_free(vec);
+	return res;
+fail:
+	res = RZ_CMD_STATUS_ERROR;
+	goto ret;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
