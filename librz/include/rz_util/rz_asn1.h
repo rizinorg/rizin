@@ -86,7 +86,7 @@ typedef struct rz_asn1_object_t {
 	ASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
 
-RZ_API RASN1Object *rz_asn1_create_object(const ut8 *buffer, ut32 length, const ut8 *start_pointer);
+RZ_API RZ_OWN RASN1Object *rz_asn1_create_object(RZ_NONNULL const ut8 *buffer, ut32 length);
 RZ_API RASN1Binary *rz_asn1_create_binary(const ut8 *buffer, ut32 length);
 RZ_API RASN1String *rz_asn1_create_string(const char *string, bool allocated, ut32 length);
 RZ_API RASN1String *rz_asn1_stringify_bits(const ut8 *buffer, ut32 length);
