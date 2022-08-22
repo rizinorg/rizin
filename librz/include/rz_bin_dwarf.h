@@ -679,8 +679,8 @@ typedef struct {
 } RzBinDwarfAttrDef;
 
 typedef struct {
-	ut64 length;
 	ut8 *data;
+	ut64 length;
 } RzBinDwarfBlock;
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
