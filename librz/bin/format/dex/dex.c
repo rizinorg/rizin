@@ -1432,7 +1432,8 @@ RZ_API RZ_OWN RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex 
 		}
 
 		char *object = dex_resolve_type_id(dex, field_id->class_idx);
-		if (!object) {
+		if (RZ_STR_ISEMPTY(object)) {
+			free(object);
 			free(import);
 			break;
 		}
@@ -1479,7 +1480,8 @@ RZ_API RZ_OWN RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex 
 		}
 
 		char *object = dex_resolve_type_id(dex, method_id->class_idx);
-		if (!object) {
+		if (RZ_STR_ISEMPTY(object)) {
+			free(object);
 			rz_bin_import_free(import);
 			break;
 		}
