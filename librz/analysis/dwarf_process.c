@@ -1239,13 +1239,15 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 					const RzBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
 					case DW_AT_name:
-						if (!get_linkage_name || !has_linkage_name) {
+						if ((!get_linkage_name || !has_linkage_name) && val->kind == DW_AT_KIND_STRING) {
 							name = val->string.content;
 						}
 						break;
 					case DW_AT_linkage_name:
 					case DW_AT_MIPS_linkage_name:
-						name = val->string.content;
+						if (val->kind == DW_AT_KIND_STRING) {
+							name = val->string.content;
+						}
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
