@@ -1514,8 +1514,9 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 			return false;
 		}
 		if (cur_seg->page_count > 0) {
-			ut16 *page_start = malloc(sizeof(ut16) * cur_seg->page_count);
+			ut16 *page_start = RZ_NEWS0(ut16, cur_seg->page_count);
 			if (!page_start) {
+				cur_seg->page_count = 0;
 				return false;
 			}
 			if (rz_buf_fread_at(bin->b, starts_at + seg_off + 22, (ut8 *)page_start, "s", cur_seg->page_count) != cur_seg->page_count * 2) {
@@ -1599,6 +1600,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
 						if (cur_seg->page_count > 0) {
 							cur_seg->page_start = RZ_NEWS0(ut16, cur_seg->page_count);
 							if (!cur_seg->page_start) {
+								cur_seg->page_count = 0;
 								break;
 							}
 							memset(cur_seg->page_start, 0xff, sizeof(ut16) * cur_seg->page_count);
