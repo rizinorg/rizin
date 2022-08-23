@@ -1436,27 +1436,23 @@ static bool arm64_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) 
  * we let the caller handle the work.
  */
 static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
-	RzDebug *dbg = bp->user;
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
 		return set
-			? drx_add(dbg, bp, b)
-			: drx_del(dbg, bp, b);
+			? drx_add((RzDebug *)bp->user, bp, b)
+			: drx_del((RzDebug *)bp->user, bp, b);
 #elif (__arm64__ || __aarch64__) && __linux__
 		return set
-			? arm64_hwbp_add(dbg, bp, b)
-			: arm64_hwbp_del(dbg, bp, b);
+			? arm64_hwbp_add((RzDebug *)bp->user, bp, b)
+			: arm64_hwbp_del((RzDebug *)bp->user, bp, b);
 #elif __WINDOWS__
 		return set
-			? w32_hwbp_arm_add(dbg, bp, b)
-			: w32_hwbp_arm_del(dbg, bp, b);
+			? w32_hwbp_arm_add((RzDebug *)bp->user, bp, b)
+			: w32_hwbp_arm_del((RzDebug *)bp->user, bp, b);
 #elif __arm__ && __linux__
 		return set
-			? arm32_hwbp_add(dbg, bp, b)
-			: arm32_hwbp_del(dbg, bp, b);
-#elif __riscv
-		dbg = NULL;
-		return false;
+			? arm32_hwbp_add((RzDebug *)bp->user, bp, b)
+			: arm32_hwbp_del((RzDebug *)bp->user, bp, b);
 #endif
 	}
 	return false;
