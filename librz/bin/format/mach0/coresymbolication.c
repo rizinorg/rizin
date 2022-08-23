@@ -199,7 +199,7 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 			RzCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = rz_read_le64(cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if ((cursor + 8) >= end) {
 				goto beach;
 			}
 			seg->size = seg->vsize = rz_read_le64(cursor);
