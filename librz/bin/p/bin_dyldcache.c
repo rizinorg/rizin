@@ -434,6 +434,11 @@ static RzList *classes(RzBinFile *bf) {
 			ut8 *pointers_end = pointers + sections[i].size;
 
 			for (; cursor < pointers_end; cursor += 8) {
+				if ((cursor + 8) > pointers_end) {
+					MACH0_(mach0_free)
+					(mach0);
+					goto beach;
+				}
 				ut64 pointer_to_class = rz_read_le64(cursor);
 
 				RzBinClass *klass;
