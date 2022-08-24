@@ -1226,15 +1226,71 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	}
 	PROC_SPECIAL_FLOAT_END
 
-	// r = fma(-trunc(f / n), n, f);
-	RzFloat *div = rz_float_div_ieee_bin(left, right, mode);
-	RzFloat *trunc = rz_float_trunc(div);
-	rz_bv_toggle(trunc->s, trunc->s->len - 1);
-	RzFloat *r = rz_float_fma_ieee_bin(trunc, right, left, mode);
+	// extract info from args
+	// left = mx * 2^(ex), right = my * 2^(ey)
+	RzBitVector *mx = rz_float_get_mantissa(left);
+	RzBitVector *my = rz_float_get_mantissa(right);
+	RzBitVector *exp_x = rz_float_get_exponent(left);
+	RzBitVector *exp_y = rz_float_get_exponent(right);
+	ut32 ex = rz_bv_to_ut32(exp_x) - rz_float_get_format_info(left->r, RZ_FLOAT_INFO_BIAS);
+	ut32 ey = rz_bv_to_ut32(exp_y) - rz_float_get_format_info(right->r, RZ_FLOAT_INFO_BIAS);
+	rz_bv_free(exp_x);
+	rz_bv_free(exp_y);
 
-	rz_float_free(div);
-	rz_float_free(trunc);
-	return r;
+	bool sign_x = rz_float_get_sign(left);
+	bool sign_y = rz_float_get_sign(right);
+	bool sign_z = (sign_x == sign_y) ? 1 : -1;
+
+	// make last bit of mantissa is 1
+	// TODO : add a scan function to bitvector lib (like clz but cnted from LSB to MSB)
+	ut32 k;
+	for (k = 0; k < my->len; ++k) {
+		if (rz_bv_get(my, k)) {
+			break;
+		}
+	}
+
+	ey += k;
+	rz_bv_rshift(my, k);
+
+	// q = x/y = mx/(my*2^(ey-ex))
+	if (ex <= ey) {
+		// detect magnitude
+		ut32 sx = mx->len - rz_bv_clz(mx);
+		ut32 sy = my->len - rz_bv_clz(my);
+		ut32 mag_level_mx = sx + ex;
+		ut32 mag_level_my = sy + ey;
+
+		if (mag_level_mx < mag_level_my) {
+			// tiny, quotient = 0, remainder = mx
+			// TODO : complete me
+		}
+		else {
+			// divide mx by my*2^(ey-ex)
+			// TODO : complete me by bitvector
+		}
+	}
+	else {
+		// ex > ey
+		// preprocess for rounding
+		if (mode == RZ_FLOAT_RMODE_RTN) {
+			// TODO : complete me
+			// let my = my * 2
+		}
+
+		// calc mod
+		// let r = (2^(ex - ey) * mx) mod my
+		// TODO : complete me
+
+		// rounding
+		if (mode == RZ_FLOAT_RMODE_RTN) {
+			// let my = my / 2
+		}
+	}
+
+	// r == 0, return 0
+
+	// 2r < y ? round(r) : round(r-my)
 }
 
 /**
