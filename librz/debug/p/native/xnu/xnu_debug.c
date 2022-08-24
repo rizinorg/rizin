@@ -716,7 +716,6 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
 	RzListIter *iter, *iter2;
 	RzDebugMap *curr_map;
-	int foffset = 0; // start_offset;
 	int hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
@@ -727,6 +726,7 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 	struct segment_command_64 *sc64;
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct segment_command *sc;
+	int foffset = 0; // start_offset;
 #endif
 	rz_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
 		eprintf("Writing section from 0x%" PFMT64x " to 0x%" PFMT64x " (%" PFMT64d ")\n",
@@ -743,7 +743,7 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		sc64->maxprot = xwrz_testwx(curr_map->user);
 		sc64->initprot = xwrz_testwx(curr_map->perm);
 		sc64->nsects = 0;
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 		sc = (struct segment_command *)(header + hoffset);
 		sc->cmd = LC_SEGMENT;
 		sc->cmdsize = sizeof(struct segment_command);
@@ -807,7 +807,9 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		}
 
 		hoffset += segment_command_sz;
+#if __i386__ || __ppc__ || __POWERPC__
 		foffset += curr_map->size;
+#endif
 		vmoffset += curr_map->size;
 	}
 
