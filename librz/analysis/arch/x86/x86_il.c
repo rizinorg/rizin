@@ -534,15 +534,17 @@ static RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits) {
 	}
 	if (mem.index != X86_REG_INVALID) {
 		if (!offset) {
-			offset = MUL(x86_il_get_reg_bits(mem.index, bits), U64(mem.scale));
+			RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits);
+			offset = MUL(reg, UN(bits, mem.scale));
 		} else {
-			offset = ADD(offset, MUL(x86_il_get_reg_bits(mem.index, bits), U64(mem.scale)));
+			RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits);
+			offset = ADD(offset, MUL(reg, UN(bits, mem.scale)));
 		}
 	}
 	if (!offset) {
-		offset = U64(mem.disp);
+		offset = UN(bits, mem.disp);
 	} else {
-		offset = ADD(offset, U64(mem.disp));
+		offset = ADD(offset, UN(bits, mem.disp));
 	}
 
 	RzILOpPure *ret = NULL;
@@ -555,8 +557,6 @@ static RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits) {
 
 	return ret;
 }
-
-#define x86_il_get_memaddr(mem) x86_il_get_memaddr_bits(mem, analysis->bits)
 
 static RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits) {
 	return STOREW(x86_il_get_memaddr_bits(mem, bits), val);
@@ -577,7 +577,7 @@ static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits) {
 		ret = SN(op.size * BITS_PER_BYTE, op.imm);
 		break;
 	case X86_OP_MEM:
-		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, op.size * BITS_PER_BYTE));
+		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, analysis_bits));
 	}
 	return ret;
 }
@@ -605,7 +605,7 @@ static RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits
 
 #define x86_il_set_operand(op, val) x86_il_set_operand_bits(op, val, analysis->bits)
 
-static inline RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -618,16 +618,16 @@ static inline RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzI
 	// !res & y
 	RzILOpBool *ry = AND(nres, DUP(ymsb));
 	// x & !res
-	RzILOpBool *xr = AND(DUP(xmsb), nres);
+	RzILOpBool *xr = AND(DUP(xmsb), DUP(nres));
 
 	// bit = xy | ry | xr
 	RzILOpBool * or = OR(xy, ry);
 	or = OR(or, xr);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
-static inline RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -640,16 +640,16 @@ static inline RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN Rz
 	// y & res
 	RzILOpBool *rny = AND(DUP(ymsb), resmsb);
 	// res & !x
-	RzILOpBool *rnx = AND(DUP(resmsb), nx);
+	RzILOpBool *rnx = AND(DUP(resmsb), DUP(nx));
 
 	// bit = nxy | rny | rnx
 	RzILOpBool * or = OR(nxy, rny);
 	or = OR(or, rnx);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
-static inline RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -662,10 +662,10 @@ static inline RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN 
 	// or = nrxy | rnxny
 	RzILOpBool * or = OR(nrxy, rnxny);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
-static inline RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
+static RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
 	RzILOpBool *ymsb = MSB(y);
@@ -678,7 +678,7 @@ static inline RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN
 	// or = nrxny | rnxy
 	RzILOpBool * or = OR(nrxny, rnxy);
 
-	return NON_ZERO(or);
+	return or ;
 }
 
 static RzILOpBitVector *x86_bool_to_bv(RzILOpBool *b, unsigned int bits) {
@@ -900,7 +900,7 @@ static RzILOpEffect *x86_il_adc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_operand(ins->structure->operands[1]));
 	RzILOpPure *cf = VARG(x86_eflags_registers[X86_EFLAGS_CF]);
 
-	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), cf));
+	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_operand(ins->structure->operands[0], VARL("sum"));
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("sum"));
 	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sum"), VARL("op1"), VARL("op2"), true);
