@@ -49,13 +49,13 @@ d "bts dword [eax], eax" 0fab00
 d "call 4" 66e80000
 d "call 5" e800000000
 d "call dword [eax]" ff10
-d "cbw" 6698
+d "cbw" 6698 0x0 (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (cast 16 false (cast 8 false (var eax))))))
 d "cdq" 99
-d "clc" F8
-d "cld" FC
+d "clc" f8 0x0 (set cf false)
+d "cld" fc 0x0 (set df false)
 d "clflush byte [eax]" 0fae38
 d "clgi" 0f01dd
-d "cli" FA
+d "cli" fa 0x0 (set if false)
 d "clts" 0f06
 d "cmc" F5
 d "cmova eax, dword [eax]" 0f4700

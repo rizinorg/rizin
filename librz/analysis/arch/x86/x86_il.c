@@ -987,6 +987,8 @@ static RzILOpEffect *x86_il_call(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
  * 98 | Valid | Valid
  */
 static RzILOpEffect *x86_il_cbw(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	/* The UNSIGNED(16, ...) cast is useless in case of 32 bits,
+	but removing it will cause issues for 16-bit */
 	return x86_il_set_reg(X86_REG_AX, UNSIGNED(16, x86_il_get_reg(X86_REG_AL)));
 }
 
