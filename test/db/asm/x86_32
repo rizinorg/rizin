@@ -25,11 +25,11 @@ d "addsd xmm0, qword [eax]" f20f5800
 d "addss xmm0, dword [eax]" f30f5800
 d "addsubpd xmm0, xmmword [eax]" 660fd000
 d "addsubps xmm0, xmmword [eax]" f20fd000
-d "and al, 0" 2400
-d "and al, byte [eax]" 2200
-d "and byte [eax], al" 2000
-d "and dword [eax], eax" 2100
-d "and eax, dword [eax]" 2300
+d "and al, 0" 2400 0x0 (seq (set and_ (& (cast 8 false (var eax)) (bv 8 0x0))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var and_)))) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "and al, byte [eax]" 2200 0x0 (seq (set and_ (& (cast 8 false (var eax)) (loadw 0 8 (+ (var eax) (bv 32 0x0))))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var and_)))) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "and byte [eax], al" 2000 0x0 (seq (set and_ (& (loadw 0 8 (+ (var eax) (bv 32 0x0))) (cast 8 false (var eax)))) (storew 0 (+ (var eax) (bv 32 0x0)) (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "and dword [eax], eax" 2100 0x0 (seq (set and_ (& (loadw 0 32 (+ (var eax) (bv 32 0x0))) (var eax))) (storew 0 (+ (var eax) (bv 32 0x0)) (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "and eax, dword [eax]" 2300 0x0 (seq (set and_ (& (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var and_)) (set of false) (set cf false) (set _result (var and_)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "arpl word [eax], ax" 6300
 d "bound eax, qword [eax]" 6200
 d "bsf eax, dword [eax]" 0fbc00
