@@ -380,6 +380,22 @@ static bool x86_il_is_gpr(X86Reg reg) {
 	return false;
 }
 
+static ut8 x86_il_get_reg_size(X86Reg reg) {
+	for (unsigned int i = 0; i < GPR_FAMILY_COUNT; i++) {
+		if (reg == gpr_hregs[i] || reg == gpr_lregs[i]) {
+			return 8;
+		} else if (reg == gpr_xregs[i]) {
+			return 16;
+		} else if (reg == gpr_eregs[i]) {
+			return 32;
+		} else if (reg == gpr_rregs[i]) {
+			return 64;
+		}
+	}
+
+	return 0;
+}
+
 static RzILOpPure *x86_il_get_gprh(X86Reg reg, int bits) {
 	return UNSIGNED(8, SHIFTR0(VARG(x86_registers[reg]), U8(8)));
 }
@@ -530,14 +546,19 @@ static RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits) {
 	if (mem.base != X86_REG_INVALID) {
 		if (!offset) {
 			offset = x86_il_get_reg_bits(mem.base, bits);
+			if (x86_il_get_reg_size(mem.base) != bits) {
+				offset = UNSIGNED(bits, offset);
+			}
 		}
 	}
 	if (mem.index != X86_REG_INVALID) {
+		RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits);
+		if (x86_il_get_reg_size(mem.index) != bits) {
+			reg = UNSIGNED(bits, reg);
+		}
 		if (!offset) {
-			RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits);
 			offset = MUL(reg, UN(bits, mem.scale));
 		} else {
-			RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits);
 			offset = ADD(offset, MUL(reg, UN(bits, mem.scale)));
 		}
 	}
