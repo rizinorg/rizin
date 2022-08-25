@@ -966,7 +966,7 @@ static RzILOpEffect *x86_il_add(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 static RzILOpEffect *x86_il_and(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
 	RzILOpPure *op1 = x86_il_get_operand(ins->structure->operands[0]);
 	RzILOpPure *op2 = x86_il_get_operand(ins->structure->operands[1]);
-	RzILOpEffect *and = SETL("and_", AND(op1, op2));
+	RzILOpEffect *and = SETL("and_", LOGAND(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_operand(ins->structure->operands[0], VARL("and_"));
 	RzILOpEffect *clear_of = SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE);
