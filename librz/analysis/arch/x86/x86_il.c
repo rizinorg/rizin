@@ -568,15 +568,21 @@ static RzILOpPure *x86_il_get_memaddr_bits(X86Mem mem, int bits) {
 		offset = ADD(offset, UN(bits, mem.disp));
 	}
 
-	RzILOpPure *ret = NULL;
 	if (mem.segment != X86_REG_INVALID) {
-		// TODO: Implement segmentation soon
-		RZ_LOG_WARN("x86: RzIL: No support for segmentation\n");
-	} else {
-		ret = offset;
+		// TODO: Implement segmentation
+		/* Currently the segmentation is only implemented for real mode
+		 Address = Segment * 0x10 + Offset */
+
+		if (bits == 32) {
+			/* Assuming real mode */
+			offset = ADD(offset, SHIFTL0(UNSIGNED(32, x86_il_get_reg_bits(mem.segment, bits)), U8(4)));
+		} else {
+			RZ_LOG_WARN("x86: RzIL: No support for segmentation\n");
+			return NULL;
+		}
 	}
 
-	return ret;
+	return offset;
 }
 
 static RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits) {
@@ -1040,9 +1046,16 @@ static RzILOpEffect *x86_il_cmc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  */
 static RzILOpEffect *x86_il_cmp(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
-	/* second operand can be an immediate value of smaller size,
-	but we need the same bitv size to use RzIL ops */
-	RzILOpEffect *op2 = SETL("op2", SIGNED(ins->structure->operands[0].size, x86_il_get_operand(ins->structure->operands[1])));
+
+	RzILOpPure *second;
+	if (ins->structure->operands[0].size != ins->structure->operands[1].size) {
+		/* second operand can be an immediate value of smaller size,
+		but we need the same bitv size to use RzIL ops */
+		second = SIGNED(ins->structure->operands[0].size, x86_il_get_operand(ins->structure->operands[1]));
+	} else {
+		second = x86_il_get_operand(ins->structure->operands[1]);
+	}
+	RzILOpEffect *op2 = SETL("op2", second);
 
 	RzILOpEffect *sub = SETL("sub", SUB(VARL("op1"), VARL("op2")));
 	RzILOpEffect *arith = x86_il_set_arithmetic_flags(VARL("sub"), VARL("op1"), VARL("op2"), false);
@@ -1057,19 +1070,21 @@ static RzILOpEffect *x86_il_cmp(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * A6 | Valid | Valid
  */
 static RzILOpEffect *x86_il_cmpsb(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
-	RzILOpPure *op1 = x86_il_get_operand(ins->structure->operands[0]);
-	RzILOpPure *op2 = x86_il_get_operand(ins->structure->operands[1]);
-	RzILOpPure *res = SUB(op1, op2);
+	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
+	RzILOpEffect *op2 = SETL("op2", x86_il_get_operand(ins->structure->operands[1]));
+	RzILOpEffect *res = SETL("res", SUB(VARL("op1"), VARL("op2")));
 
-	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(res, op1, op2, false);
-	RzILOpEffect *res_flags = x86_il_set_result_flags(res);
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("res"), VARL("op1"), VARL("op2"), false);
+	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("res"));
 
-	RzILOpEffect *add = x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), U32(1)));
-	add = SEQ2(add, x86_il_set_reg(X86_REG_RDI, ADD(x86_il_get_reg(X86_REG_RDI), U32(1))));
-	RzILOpEffect *sub = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), U32(1)));
-	sub = SEQ2(sub, x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), U32(1))));
+	/* We can directly use `RSI` adn `RDI`, because in case of 32 bits
+	they will automatically be resolved to `ESI` and `EDI` */
+	RzILOpEffect *add = x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), UN(analysis->bits, 1)));
+	add = SEQ2(add, x86_il_set_reg(X86_REG_RDI, ADD(x86_il_get_reg(X86_REG_RDI), UN(analysis->bits, 1))));
+	RzILOpEffect *sub = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(analysis->bits, 1)));
+	sub = SEQ2(sub, x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), UN(analysis->bits, 1))));
 
-	return SEQ3(arith_flags, res_flags, BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), sub, add));
+	return SEQ6(op1, op2, res, arith_flags, res_flags, BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), sub, add));
 }
 
 /**
