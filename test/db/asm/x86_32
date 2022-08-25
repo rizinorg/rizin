@@ -49,7 +49,7 @@ d "bts dword [eax], eax" 0fab00
 d "call 4" 66e80000
 d "call 5" e800000000
 d "call dword [eax]" ff10
-d "cbw" 6698 0x0 (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (cast 16 false (cast 8 false (var eax))))))
+ad "cbw" 6698 0x0 (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (cast 16 false (cast 8 false (var eax))))))
 d "cdq" 99
 d "clc" f8 0x0 (set cf false)
 d "cld" fc 0x0 (set df false)
@@ -57,7 +57,7 @@ d "clflush byte [eax]" 0fae38
 d "clgi" 0f01dd
 d "cli" fa 0x0 (set if false)
 d "clts" 0f06
-d "cmc" F5
+ad "cmc" f5 0x0 (set cf (! (var cf)))
 d "cmova eax, dword [eax]" 0f4700
 d "cmovae eax, dword [eax]" 0f4300
 d "cmovb eax, dword [eax]" 0f4200
@@ -74,11 +74,11 @@ d "cmovns eax, dword [eax]" 0f4900
 d "cmovo eax, dword [eax]" 0f4000
 d "cmovp eax, dword [eax]" 0f4a00
 d "cmovs eax, dword [eax]" 0f4800
-d "cmp al, 0" 3c00
-d "cmp al, byte [eax]" 3a00
-d "cmp byte [eax], al" 3800
-d "cmp dword [eax], eax" 3900
-d "cmp eax, dword [eax]" 3b00
+d "cmp al, 0" 3c00 0x0 (seq (set op1 (cast 8 false (var eax))) (set op2 (bv 8 0x0)) (set sub (- (var op1) (var op2))) (set _result (var sub)) (set _x (var op1)) (set _y (var op2)) (set cf (|| (|| (&& (! (msb (var _x))) (msb (var _y))) (&& (msb (var _y)) (msb (var _result)))) (&& (msb (var _result)) (! (msb (var _x)))))) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (! (msb (var _y)))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (msb (var _y))))) (set af (|| (|| (&& (! (msb (cast 4 false (var _x)))) (msb (cast 4 false (var _y)))) (&& (msb (cast 4 false (var _y))) (msb (cast 4 false (var _result))))) (&& (msb (cast 4 false (var _result))) (! (msb (cast 4 false (var _x))))))) (set _result (var sub)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "cmp al, byte [eax]" 3a00 0x0 (seq (set op1 (cast 8 false (var eax))) (set op2 (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set sub (- (var op1) (var op2))) (set _result (var sub)) (set _x (var op1)) (set _y (var op2)) (set cf (|| (|| (&& (! (msb (var _x))) (msb (var _y))) (&& (msb (var _y)) (msb (var _result)))) (&& (msb (var _result)) (! (msb (var _x)))))) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (! (msb (var _y)))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (msb (var _y))))) (set af (|| (|| (&& (! (msb (cast 4 false (var _x)))) (msb (cast 4 false (var _y)))) (&& (msb (cast 4 false (var _y))) (msb (cast 4 false (var _result))))) (&& (msb (cast 4 false (var _result))) (! (msb (cast 4 false (var _x))))))) (set _result (var sub)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "cmp byte [eax], al" 3800 0x0 (seq (set op1 (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set op2 (cast 8 false (var eax))) (set sub (- (var op1) (var op2))) (set _result (var sub)) (set _x (var op1)) (set _y (var op2)) (set cf (|| (|| (&& (! (msb (var _x))) (msb (var _y))) (&& (msb (var _y)) (msb (var _result)))) (&& (msb (var _result)) (! (msb (var _x)))))) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (! (msb (var _y)))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (msb (var _y))))) (set af (|| (|| (&& (! (msb (cast 4 false (var _x)))) (msb (cast 4 false (var _y)))) (&& (msb (cast 4 false (var _y))) (msb (cast 4 false (var _result))))) (&& (msb (cast 4 false (var _result))) (! (msb (cast 4 false (var _x))))))) (set _result (var sub)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "cmp dword [eax], eax" 3900 0x0 (seq (set op1 (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set op2 (var eax)) (set sub (- (var op1) (var op2))) (set _result (var sub)) (set _x (var op1)) (set _y (var op2)) (set cf (|| (|| (&& (! (msb (var _x))) (msb (var _y))) (&& (msb (var _y)) (msb (var _result)))) (&& (msb (var _result)) (! (msb (var _x)))))) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (! (msb (var _y)))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (msb (var _y))))) (set af (|| (|| (&& (! (msb (cast 4 false (var _x)))) (msb (cast 4 false (var _y)))) (&& (msb (cast 4 false (var _y))) (msb (cast 4 false (var _result))))) (&& (msb (cast 4 false (var _result))) (! (msb (cast 4 false (var _x))))))) (set _result (var sub)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "cmp eax, dword [eax]" 3b00 0x0 (seq (set op1 (var eax)) (set op2 (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set sub (- (var op1) (var op2))) (set _result (var sub)) (set _x (var op1)) (set _y (var op2)) (set cf (|| (|| (&& (! (msb (var _x))) (msb (var _y))) (&& (msb (var _y)) (msb (var _result)))) (&& (msb (var _result)) (! (msb (var _x)))))) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (! (msb (var _y)))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (msb (var _y))))) (set af (|| (|| (&& (! (msb (cast 4 false (var _x)))) (msb (cast 4 false (var _y)))) (&& (msb (cast 4 false (var _y))) (msb (cast 4 false (var _result))))) (&& (msb (cast 4 false (var _result))) (! (msb (cast 4 false (var _x))))))) (set _result (var sub)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "cmpeqpd xmm0, xmmword [eax]" 660fc20000
 d "cmpeqps xmm0, xmmword [eax]" 0fc20000
 d "cmpeqsd xmm0, qword [eax]" f20fc20000
@@ -107,7 +107,7 @@ d "cmpordpd xmm0, xmmword [eax]" 660fc20007
 d "cmpordps xmm0, xmmword [eax]" 0fc20007
 d "cmpordsd xmm0, qword [eax]" f20fc20007
 d "cmpordss xmm0, dword [eax]" f30fc20007
-d "cmpsb byte [esi], byte ptr es:[edi]" a6
+dB "cmpsb byte [esi], byte ptr es:[edi]" a6 0x0 (seq (set op1 (loadw 0 8 (+ (var esi) (bv 32 0x0)))) (set op2 (loadw 0 8 (+ (+ (var edi) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))) (set res (- (var op1) (var op2))) (set _result (var res)) (set _x (var op1)) (set _y (var op2)) (set cf (|| (|| (&& (! (msb (var _x))) (msb (var _y))) (&& (msb (var _y)) (msb (var _result)))) (&& (msb (var _result)) (! (msb (var _x)))))) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (! (msb (var _y)))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (msb (var _y))))) (set af (|| (|| (&& (! (msb (cast 4 false (var _x)))) (msb (cast 4 false (var _y)))) (&& (msb (cast 4 false (var _y))) (msb (cast 4 false (var _result))))) (&& (msb (cast 4 false (var _result))) (! (msb (cast 4 false (var _x))))))) (set _result (var res)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))) (branch (var df) (seq (set esi (- (var esi) (bv 32 0x1))) (set edi (- (var edi) (bv 32 0x1)))) (seq (set esi (+ (var esi) (bv 32 0x1))) (set edi (+ (var edi) (bv 32 0x1))))))
 d "cmpsd dword [esi], dword ptr es:[edi]" a7
 d "cmpunordpd xmm0, xmmword [eax]" 660fc20003
 d "cmpunordps xmm0, xmmword [eax]" 0fc20003

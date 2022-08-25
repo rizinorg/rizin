@@ -3366,6 +3366,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ip	.16	48	0\n"
 			"seg	xds	.32	28	0\n"
 			"seg	xes	.32	32	0\n"
+			"seg	es	.16	32	0\n"
 			"seg	xfs	.32	36	0\n"
 			"seg	xgs	.32	40	0\n"
 			"seg	xss	.32	64	0\n"
