@@ -66,11 +66,19 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_macro_call(&core->rcmd->macro, argv[1]);
-	return RZ_CMD_STATUS_OK;
+	RzCmdStatus res = rz_cmd_macro_call(core->rcmd, argv[1], &argv[2]);
+	if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
+		RZ_LOG_ERROR("Macro '%s' does not exist.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return res;
 }
 
 RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_macro_call_multiple(&core->rcmd->macro, argv[1]);
-	return RZ_CMD_STATUS_OK;
+	RzCmdStatus res = rz_cmd_macro_call_multiple(core->rcmd, argv[1], &argv[2]);
+	if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
+		RZ_LOG_ERROR("Macro '%s' does not exist.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return res;
 }

@@ -165,6 +165,9 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 /* cmd_debug.c */
 RZ_IPI void rz_core_static_debug_stop(void *u);
 
+/* cmd_macro.c */
+RZ_IPI RzCmdStatus rz_macros_handler(RzCore *core, const char *name, const char **args, const char *body, const char **argv);
+
 /* cmd_regs.c */
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);

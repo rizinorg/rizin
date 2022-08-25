@@ -106,6 +106,9 @@ err:
 static bool do_autocmplt_cmdidentifier(RzCmd *cmd, const RzCmdDesc *desc, void *user) {
 	struct autocmplt_cmdidentifier_t *u = (struct autocmplt_cmdidentifier_t *)user;
 	if (!strncmp(desc->name, u->s, u->len)) {
+		if (desc->help->args && desc->help->args[0].no_space) {
+			u->res->end_string = "";
+		}
 		rz_line_ns_completion_result_add(u->res, desc->name);
 	}
 	return true;
@@ -317,15 +320,28 @@ static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, 
 	}
 }
 
-static void autocmplt_cmd_arg_macro(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzCmdMacroItem *item;
-	RzListIter *iter;
-	rz_list_foreach (core->rcmd->macro.macros, iter, item) {
-		char *p = item->name;
-		if (!strncmp(p, s, len)) {
-			rz_line_ns_completion_result_add(res, p);
-		}
+struct cmd_arg_macro_t {
+	RzLineNSCompletionResult *res;
+	const char *s;
+	size_t len;
+};
+
+static bool autocmplt_cmd_arg_macro_cb(RzCmd *cmd, const RzCmdMacro *macro, void *user) {
+	struct cmd_arg_macro_t *u = (struct cmd_arg_macro_t *)user;
+	char *p = macro->name;
+	if (!strncmp(p, u->s, u->len)) {
+		rz_line_ns_completion_result_add(u->res, p);
 	}
+	return true;
+}
+
+static void autocmplt_cmd_arg_macro(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	struct cmd_arg_macro_t user = {
+		.res = res,
+		.s = s,
+		.len = len,
+	};
+	rz_cmd_macro_foreach(core->rcmd, autocmplt_cmd_arg_macro_cb, &user);
 }
 
 static void autocmplt_cmd_arg_flag(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -792,6 +808,21 @@ static bool find_autocmplt_type_newcmd_or_arg(struct autocmplt_data_t *ad, RzCor
 	return res;
 }
 
+static bool find_autocmplt_type_arg_macro(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
+	bool res = false;
+	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "a)", 0);
+	if (g) {
+		const char *node_type = ts_node_type(g->node);
+		ut32 node_start = ts_node_start_byte(g->node);
+		ut32 node_end = ts_node_end_byte(g->node);
+		if (is_arg_type(node_type)) {
+			res = fill_autocmplt_data_cmdarg(ad, node_start, node_end - 1, g->input, g->node, core);
+		}
+		guess_data_free(g);
+	}
+	return res;
+}
+
 static TSNode get_arg_parent(TSNode node) {
 	while (!ts_node_is_null(node) && is_arg_type(ts_node_type(node))) {
 		node = ts_node_parent(node);
@@ -976,7 +1007,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	const char *root_type = ts_node_type(root);
 	bool res = false;
 	RZ_LOG_DEBUG("lstart = %d, lend = %d, type = %s\n", lstart, lend, root_type);
-	if (!strcmp(root_type, "cmd_identifier") && buf->data[lend - 1] != ' ') {
+	if (!strcmp(root_type, "cmd_identifier") && buf->data[lend - 1] != ' ' && buf->data[lend - 1] != '(') {
 		res = fill_autocmplt_data_cmdid(ad, lstart, lend);
 	} else if (!strcmp(root_type, "statements") && ts_node_named_child_count(root) == 0) {
 		res = fill_autocmplt_data_cmdid(ad, lend, lend);
@@ -1002,6 +1033,8 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	// etc.). In this case we try to guess what is the correct type to
 	// autocomplete.
 	if (find_autocmplt_type_newcmd_or_arg(ad, core, buf)) {
+		return true;
+	} else if (find_autocmplt_type_arg_macro(ad, core, buf)) {
 		return true;
 	} else if (find_autocmplt_type_quoted_arg(ad, core, buf, "\"", "double_quoted_arg")) {
 		ad->res->end_string = "\" ";

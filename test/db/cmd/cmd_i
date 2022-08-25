@@ -4465,7 +4465,7 @@ NAME=izz and bin.str.enc
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e bin.str.enc=$0; izz:quiet)
+(izzenc enc; e bin.str.enc=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -4502,7 +4502,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e bin.str.enc=$0; iz:quiet)
+(izenc enc; e bin.str.enc=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--

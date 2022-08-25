@@ -86,6 +86,7 @@ module.exports = grammar({
         $.help_stmt,
         $.repeat_stmt,
         $.arged_stmt,
+        $.macro_stmt,
         $._tmp_stmt,
         $._iter_stmt,
         $._pipe_stmt,
@@ -216,6 +217,13 @@ module.exports = grammar({
           field("command", alias($._help_stmt, $.cmd_identifier))
         )
       ),
+    macro_body: ($) => seq(";", $._statement, repeat(seq(";", $._statement))),
+    macro_name: ($) => /[A-Za-z0-9_\-\.]+/,
+    macro_content: ($) =>
+      prec(1, seq(field("name", $.macro_name), field("args", optional($.args)), field("body", $.macro_body))),
+    macro_call: ($) => seq("(", field("argv", optional($.args)), ")"),
+    macro_stmt: ($) =>
+      seq(field("command", alias("(", $.cmd_identifier)), $._concat, $.macro_content, ")", optional($.macro_call)),
     arged_stmt: ($) =>
       choice(
         $._simple_arged_stmt,
@@ -230,6 +238,11 @@ module.exports = grammar({
         $._simple_arged_stmt_question
       ),
 
+    _macro_arged_stmt: ($) =>
+      choice(
+        field("command", alias(choice("(", "(-*", "(*"), $.cmd_identifier)),
+        seq(field("command", alias("(-", $.cmd_identifier)), field("args", $.args))
+      ),
     _simple_arged_stmt_question: ($) =>
       prec.left(1, seq(field("command", alias($._help_stmt, $.cmd_identifier)), field("args", $.args))),
 
@@ -249,11 +262,6 @@ module.exports = grammar({
           field("args", alias($.eq_sep_args, $.args))
         )
       ),
-    _macro_arged_stmt: ($) =>
-      prec.left(
-        1,
-        seq(field("command", alias($.macro_identifier, $.cmd_identifier)), field("args", optional($.macro_args)))
-      ),
     _system_stmt: ($) => prec.left(1, seq(field("command", $.system_identifier), optional(field("args", $.args)))),
     _interpret_stmt: ($) =>
       prec.left(
@@ -265,7 +273,7 @@ module.exports = grammar({
             optional(seq(/[ ]+/, field("args", optional($.args))))
           ),
           seq(field("command", alias(/\.[ ]+/, $.cmd_identifier)), field("args", optional($.args))),
-          seq(field("command", alias(/\.\.?\(/, $.cmd_identifier)), field("args", $.macro_call_content)),
+          seq(field("command", alias(/\.\.?\(/, $.cmd_identifier)), field("args", optional($.args)), ")"),
           seq(field("command", alias($._interpret_search_identifier, $.cmd_identifier)), field("args", $.args)),
           prec.right(1, seq(field("args", $._simple_stmt), field("command", "|.")))
         )
@@ -355,20 +363,6 @@ module.exports = grammar({
 
     pointer_identifier: ($) => "*",
     eq_sep_args: ($) => seq(alias($._eq_sep_key, $.arg), optional(seq("=", alias($._eq_sep_val, $.arg)))),
-    macro_identifier: ($) => /\([-\*]?/,
-    macro_call_content: ($) => prec.left(seq(optional($.args), ")")),
-    macro_call_full_content: ($) => seq("(", $.macro_call_content),
-    macro_content: ($) =>
-      prec(
-        1,
-        seq(
-          field("name", $.arg),
-          optional($.args),
-          optional(seq(";", $._statement, repeat(seq(";", $._statement)))),
-          ")"
-        )
-      ),
-    macro_args: ($) => seq($.macro_content, optional(seq(optional($.macro_call_full_content)))),
 
     redirect_stmt: ($) =>
       prec.right(

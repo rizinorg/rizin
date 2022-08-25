@@ -10,6 +10,7 @@
 static const RzCmdDescDetail system_details[2];
 static const RzCmdDescDetail system_to_cons_details[2];
 static const RzCmdDescDetail hash_bang_details[2];
+static const RzCmdDescDetail oparen__details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
 static const RzCmdDescDetail analysis_all_esil_details[2];
@@ -71,6 +72,7 @@ static const RzCmdDescArg tasks_output_args[2];
 static const RzCmdDescArg tasks_break_args[2];
 static const RzCmdDescArg tasks_delete_args[2];
 static const RzCmdDescArg tasks_wait_args[2];
+static const RzCmdDescArg macros_remove_args[2];
 static const RzCmdDescArg pointer_args[3];
 static const RzCmdDescArg interpret_args[2];
 static const RzCmdDescArg interpret_script_args[2];
@@ -868,8 +870,64 @@ static const RzCmdDescHelp tasks_wait_help = {
 	.args = tasks_wait_args,
 };
 
-static const RzCmdDescHelp cmd_macro_help = {
+static const RzCmdDescDetailEntry oparen__Examples_detail_entries[] = {
+	{ .text = "(", .arg_str = "", .comment = "List defined macros" },
+	{ .text = "(", .arg_str = "foo; ?e Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)", .comment = "Define a new macro 'foo', which executes `?` followed by `pd` when called." },
+	{ .text = "(", .arg_str = "foo a b; ?e Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})", .comment = "Define a new macro 'foo' with two arguments. ${a}/${b} are replaced before execution." },
+	{ .text = "(-", .arg_str = "foo", .comment = "Remove previously defined macro named 'foo'" },
+	{ 0 },
+};
+static const RzCmdDescDetail oparen__details[] = {
+	{ .name = "Examples", .entries = oparen__Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp oparen__help = {
 	.summary = "Manage scripting macros",
+	.details = oparen__details,
+};
+static const RzCmdDescArg macros_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp macros_list_help = {
+	.summary = "List all defined macros",
+	.description = "Without any arguments, ( lists defined macros. Macros can be used to execute multiple commands under one name, by replacing some arguments. The argument replacement is done before executing the command, by simply replacing ${<arg-name>} in the body of the macro with the value passed when calling the macro.",
+	.args = macros_list_args,
+};
+
+static const RzCmdDescArg macros_remove_args[] = {
+	{
+		.name = "macro-name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.no_space = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp macros_remove_help = {
+	.summary = "Remove a defined macro named <macro-name>",
+	.args = macros_remove_args,
+};
+
+static const RzCmdDescHelp macros_add_help = {
+	.summary = "Add a new macro <macro-name>",
+	.args_str = "<macro-name> [<macro-arg0> <macro-arg1> ...][; <cmds>])[([<macro-call-arg0> <macro-call-arg1> ...])]",
+};
+
+static const RzCmdDescHelp macros_add_call_help = {
+	.summary = "Define a macro <macro-name> and call it with the arguments <macro-call-args>",
+	.args_str = "<macro-name> [<macro-arg0> <macro-arg1> ...][; <cmds>])[([<macro-call-arg0> <macro-call-arg1> ...])]",
+};
+
+static const RzCmdDescHelp macros_call_help = {
+	.summary = "Call macro <macro-name> with the arguments <macro-call-args>",
+	.args_str = "<macro-name> [<macro-call-arg0> <macro-call-arg1> ...])",
+};
+
+static const RzCmdDescHelp macros_call_multiple_help = {
+	.summary = "Call macro <macro-name> multiple times with the arguments <macro-call-args>",
+	.description = "Call the same macro multiple time, based on the number of arguments provided. If a macro accepts N arguments, the first N arguments are passed to the first invocation of the macro, the second N arguments to the second invocation, and so on. An error is returned when the wrong number of arguments is passed.",
+	.args_str = "<macro-name> [<macro-call-arg0> <macro-call-arg1> ...])",
 };
 
 static const RzCmdDescDetailEntry pointer_Examples_detail_entries[] = {
@@ -14973,8 +15031,22 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *tasks_wait_cd = rz_cmd_desc_argv_new(core->rcmd, and__cd, "&&", rz_tasks_wait_handler, &tasks_wait_help);
 	rz_warn_if_fail(tasks_wait_cd);
 
-	RzCmdDesc *cmd_macro_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "(", rz_cmd_macro, &cmd_macro_help);
-	rz_warn_if_fail(cmd_macro_cd);
+	RzCmdDesc *oparen__cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "(", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_macros_list_handler, &macros_list_help, &oparen__help);
+	rz_warn_if_fail(oparen__cd);
+	RzCmdDesc *macros_remove_cd = rz_cmd_desc_argv_new(core->rcmd, oparen__cd, "(-", rz_macros_remove_handler, &macros_remove_help);
+	rz_warn_if_fail(macros_remove_cd);
+
+	RzCmdDesc *macros_add_cd = rz_cmd_desc_inner_new(core->rcmd, oparen__cd, "(", &macros_add_help);
+	rz_warn_if_fail(macros_add_cd);
+
+	RzCmdDesc *macros_add_call_cd = rz_cmd_desc_inner_new(core->rcmd, oparen__cd, "(", &macros_add_call_help);
+	rz_warn_if_fail(macros_add_call_cd);
+
+	RzCmdDesc *macros_call_cd = rz_cmd_desc_inner_new(core->rcmd, oparen__cd, ".(", &macros_call_help);
+	rz_warn_if_fail(macros_call_cd);
+
+	RzCmdDesc *macros_call_multiple_cd = rz_cmd_desc_inner_new(core->rcmd, oparen__cd, "..(", &macros_call_multiple_help);
+	rz_warn_if_fail(macros_call_multiple_cd);
 
 	RzCmdDesc *pointer_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "*", rz_pointer_handler, &pointer_help);
 	rz_warn_if_fail(pointer_cd);

@@ -2534,7 +2534,7 @@ e asm.bits=64
 e analysis.nopskip=false
 e asm.bb.middle=true
 e analysis.jmp.mid=true
-"(show_fcn bin; wx $0; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)"
+(show_fcn bin; wx ${bin}; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)
 .(show_fcn b8210000c1ebfdbb2c000000cc)
 ?e
 .(show_fcn b8210000c1ebfdbb2c000000ebf6)

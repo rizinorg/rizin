@@ -5,6 +5,7 @@
 // mark with RULE_OP every rule that you use with DEFINE_IS_TS_FCN or with its TSSymbol (e.g. ts_##name##_symbol)
 HANDLER_RULE_OP(statements)
 HANDLER_RULE_OP(arged_stmt)
+HANDLER_RULE_OP(macro_stmt)
 HANDLER_RULE_OP(legacy_quoted_stmt)
 HANDLER_RULE_OP(repeat_stmt)
 HANDLER_RULE_OP(redirect_stmt)
