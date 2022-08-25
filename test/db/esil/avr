@@ -701,7 +701,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 019f
 aei
-(mul x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(mul x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
 .(mul 42 13)
 .(mul 0xff 0xff)
 .(mul 0 42)
@@ -761,7 +761,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 0102
 aei
-(muls x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(muls x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
 .(muls 42 13)
 .(muls 0xff 0xff)
 .(muls 0 42)
@@ -821,7 +821,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 0103
 aei
-(mulsu x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(mulsu x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
 .(mulsu 42 13)
 .(mulsu 0xff 0xff)
 .(mulsu 0 42)
@@ -917,7 +917,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 0903
 aei
-(fmul x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(fmul x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
 .(fmul 42 13)
 .(fmul 0xff 0xff)
 .(fmul 0 42)
@@ -977,7 +977,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 8103
 aei
-(fmuls x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(fmuls x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
 .(fmuls 42 13)
 .(fmuls 0xff 0xff)
 .(fmuls 0 42)
@@ -1037,7 +1037,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 8903
 aei
-(fmulsu x y; ?e ======== $0 * $1 ========; ar r16 = $0; ar r17 = $1; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(fmulsu x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
 .(fmulsu 42 13)
 .(fmulsu 0xff 0xff)
 .(fmulsu 0 42)
@@ -1132,7 +1132,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
 aei
-(adiw h l x; ?e ======== $0:$1 + $2 ========; wa "adiw r27:r26, $2"; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+(adiw h l x; ?e ======== ${h}:${l} + ${x} ========; wa "adiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
 .(adiw 0xca 0xfe 0x3f)
 .(adiw 0x0a 0xfe 0x3f)
 .(adiw 0xff 0xff 0x01)
@@ -1206,7 +1206,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
 aei
-(sbiw h l x; ?e ======== $0:$1 - $2 ========; wa "sbiw r27:r26, $2"; pi 1; ar r27 = $0; ar r26 = $1; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+(sbiw h l x; ?e ======== ${h}:${l} - ${x} ========; wa "sbiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
 .(sbiw 0xca 0x21 0x3f)
 .(sbiw 0x00 0x10 0x3f)
 .(sbiw 0x80 0x00 0x01)

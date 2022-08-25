@@ -90,8 +90,6 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 	return "";
 }
 
-static int value = 0;
-
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
@@ -187,6 +185,35 @@ RZ_API void rz_cmd_alias_init(RzCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
+static void macro_fini(RzCmdMacro *macro) {
+	if (!macro) {
+		return;
+	}
+	free(macro->name);
+	free(macro->code);
+	for (size_t i = 0; i < macro->nargs; i++) {
+		free(macro->args[i]);
+	}
+	free(macro->args);
+}
+
+static void macro_free(RzCmdMacro *macro) {
+	macro_fini(macro);
+	free(macro);
+}
+
+static void free_macro_kv(HtPPKv *kv) {
+	free(kv->key);
+	macro_free(kv->value);
+}
+
+/**
+ * \brief Create a generic instance of RzCmd.
+ *
+ * \param core Reference to RzCore, passed to each command handler
+ * \param has_cons Whether RzCons is available for use or not
+ * \return New reference to RzCmd or NULL
+ */
 RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons) {
 	int i;
 	RzCmd *cmd = RZ_NEW0(RzCmd);
@@ -199,9 +226,9 @@ RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons) {
 	}
 	cmd->core = core;
 	cmd->nullcallback = NULL;
+	cmd->macros = ht_pp_new(NULL, free_macro_kv, NULL);
 	cmd->ht_cmds = ht_pp_new0();
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
-	rz_cmd_macro_init(&cmd->macro);
 	rz_cmd_alias_init(cmd);
 	return cmd;
 }
@@ -213,13 +240,13 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	}
 	ht_up_free(cmd->ts_symbols_ht);
 	rz_cmd_alias_free(cmd);
-	rz_cmd_macro_fini(&cmd->macro);
 	ht_pp_free(cmd->ht_cmds);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			RZ_FREE(cmd->cmds[i]);
 		}
 	}
+	ht_pp_free(cmd->macros);
 	cmd_desc_free(cmd->root_cmd_desc);
 	free(cmd);
 	return NULL;
@@ -1517,473 +1544,274 @@ err:
 	return res;
 }
 
-/** macro.c **/
+/* RzCmdMacro*/
 
-RZ_API RzCmdMacroItem *rz_cmd_macro_item_new(void) {
-	return RZ_NEW0(RzCmdMacroItem);
-}
+/**
+ * \brief Add a new macro named \p name, accepting the arguments \p args, that executes the rizin shell code \p code
+ *
+ * \param cmd Reference to RzCmd
+ * \param name Name of the new macro
+ * \param args Array of strings, terminated by NULL, each string representing the name of the argument
+ * \param code Body of the new macro
+ * \return True when the macro is successfully added, false otherwise
+ */
+RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, const char **args, RZ_NONNULL const char *code) {
+	rz_return_val_if_fail(cmd && name && args && code, false);
 
-RZ_API void rz_cmd_macro_item_free(RzCmdMacroItem *item) {
-	if (!item) {
-		return;
-	}
-	free(item->name);
-	free(item->args);
-	free(item->code);
-	free(item);
-}
-
-RZ_API void rz_cmd_macro_init(RzCmdMacro *mac) {
-	mac->counter = 0;
-	mac->num = NULL;
-	mac->user = NULL;
-	mac->macros = rz_list_newf((RzListFree)rz_cmd_macro_item_free);
-}
-
-RZ_API void rz_cmd_macro_fini(RzCmdMacro *mac) {
-	rz_list_free(mac->macros);
-	mac->macros = NULL;
-}
-
-// XXX add support single line function definitions
-// XXX add support for single name multiple nargs macros
-RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
-	struct rz_cmd_macro_item_t *macro;
-	char *name, *args = NULL;
-	// char buf[RZ_CMD_MAXLEN];
-	RzCmdMacroItem *m;
-	int macro_update;
-	RzListIter *iter;
-	char *pbody;
-	// char *bufp;
-	char *ptr;
-	int lidx;
-
-	if (!*oname) {
-		rz_cmd_macro_list(mac);
-		return 0;
-	}
-
-	name = strdup(oname);
-	if (!name) {
-		perror("strdup");
-		return 0;
-	}
-
-	pbody = strchr(name, ';');
-	if (!pbody) {
-		eprintf("Invalid macro body\n");
-		free(name);
-		return false;
-	}
-	*pbody = '\0';
-	pbody++;
-
-	if (*name && name[1] && name[strlen(name) - 1] == ')') {
-		eprintf("rz_cmd_macro_add: missing macro body?\n");
-		free(name);
-		return -1;
-	}
-
-	macro = NULL;
-	ptr = strchr(name, ' ');
-	if (ptr) {
-		*ptr = '\0';
-		args = ptr + 1;
-	}
-	macro_update = 0;
-	rz_list_foreach (mac->macros, iter, m) {
-		if (!strcmp(name, m->name)) {
-			macro = m;
-			free(macro->name);
-			free(macro->code);
-			free(macro->args);
-			macro_update = 1;
-			break;
-		}
-	}
-	if (ptr) {
-		*ptr = ' ';
-	}
+	RzCmdMacro *macro = RZ_NEW0(RzCmdMacro);
 	if (!macro) {
-		macro = rz_cmd_macro_item_new();
-		if (!macro) {
-			free(name);
-			return 0;
-		}
+		return false;
 	}
-
 	macro->name = strdup(name);
-	macro->codelen = (pbody[0]) ? strlen(pbody) + 2 : 4096;
-	macro->code = (char *)malloc(macro->codelen);
-	*macro->code = '\0';
-	macro->nargs = 0;
-	if (!args) {
-		args = "";
+	if (!macro->name) {
+		goto err;
 	}
-	macro->args = strdup(args);
-	ptr = strchr(macro->name, ' ');
-	if (ptr != NULL) {
-		*ptr = '\0';
-		macro->nargs = rz_str_word_set0(ptr + 1);
+	macro->code = strdup(code);
+	if (!macro->code) {
+		goto err;
 	}
-
-	for (lidx = 0; pbody[lidx]; lidx++) {
-		if (pbody[lidx] == ';') {
-			pbody[lidx] = '\n';
-		} else if (pbody[lidx] == ')' && pbody[lidx - 1] == '\n') {
-			pbody[lidx] = '\0';
+	const char **arg = args;
+	for (macro->nargs = 0; *arg; macro->nargs++, arg++) {
+	}
+	macro->args = RZ_NEWS0(char *, macro->nargs);
+	if (!macro->args) {
+		goto err;
+	}
+	for (size_t i = 0; i < macro->nargs; i++) {
+		macro->args[i] = strdup(args[i]);
+		if (!macro->args[i]) {
+			goto err;
 		}
 	}
-	strncpy(macro->code, pbody, macro->codelen);
-	macro->code[macro->codelen - 1] = 0;
-	if (macro_update == 0) {
-		rz_list_append(mac->macros, macro);
-	}
-	free(name);
-	return 0;
+	return ht_pp_insert(cmd->macros, macro->name, macro);
+
+err:
+	macro_free(macro);
+	return false;
 }
 
-RZ_API int rz_cmd_macro_rm(RzCmdMacro *mac, const char *_name) {
-	RzListIter *iter;
-	RzCmdMacroItem *m;
-	char *name = strdup(_name);
-	if (!name) {
+/**
+ * \brief Update an existing macro named \p name, accepting the arguments \p args, that executes the rizin shell code \p code
+ *
+ * \param cmd Reference to RzCmd
+ * \param name Name of the new macro
+ * \param args Array of strings, terminated by NULL, each string representing the name of the argument
+ * \param code Body of the new macro
+ * \return True when the macro is successfully added, false otherwise
+ */
+RZ_API bool rz_cmd_macro_update(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, const char **args, RZ_NONNULL const char *code) {
+	rz_return_val_if_fail(cmd && name && args && code, false);
+
+	RzCmdMacro *macro = ht_pp_find(cmd->macros, name, NULL);
+	if (!macro) {
 		return false;
 	}
-	char *ptr = strchr(name, ')');
-	if (ptr) {
-		*ptr = '\0';
+
+	char *new_name = NULL, *new_code = NULL;
+	char **new_args = NULL;
+	size_t new_nargs = 0;
+
+	new_name = strdup(name);
+	if (!new_name) {
+		goto err;
 	}
-	bool ret = false;
-	rz_list_foreach (mac->macros, iter, m) {
-		if (!strcmp(m->name, name)) {
-			rz_list_delete(mac->macros, iter);
-			eprintf("Macro '%s' removed.\n", name);
-			ret = true;
-			break;
+	new_code = strdup(code);
+	if (!new_code) {
+		goto err;
+	}
+	for (new_nargs = 0; args[new_nargs]; new_nargs++) {
+	}
+	new_args = RZ_NEWS0(char *, new_nargs);
+	if (!new_args) {
+		goto err;
+	}
+	for (size_t i = 0; i < new_nargs; i++) {
+		new_args[i] = strdup(args[i]);
+		if (!new_args[i]) {
+			goto err;
 		}
 	}
-	free(name);
-	return ret;
+
+	macro_fini(macro);
+	macro->name = new_name;
+	macro->code = new_code;
+	macro->args = new_args;
+	macro->nargs = new_nargs;
+	return true;
+
+err:
+	for (size_t i = 0; i < new_nargs; i++) {
+		free(new_args[i]);
+	}
+	free(new_code);
+	free(new_name);
+	return false;
 }
 
-RZ_API void rz_cmd_macro_list(RzCmdMacro *mac) {
-	RzCmdMacroItem *m;
-	int j, idx = 0;
-	RzListIter *iter;
-	rz_list_foreach (mac->macros, iter, m) {
-		rz_cons_printf("%d (%s %s; ", idx, m->name, m->args);
-		for (j = 0; m->code[j]; j++) {
-			if (m->code[j] == '\n') {
-				rz_cons_printf("; ");
-			} else {
-				rz_cons_printf("%c", m->code[j]);
-			}
-		}
-		rz_cons_printf(")\n");
-		idx++;
-	}
+/**
+ * \brief Remove macro named \p name
+ *
+ * \param cmd Reference to RzCmd
+ * \param name Name of the macro to remove
+ * \return True if the removal was successful, false otherwise
+ */
+RZ_API bool rz_cmd_macro_rm(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cmd && name, false);
+
+	return ht_pp_delete(cmd->macros, name);
 }
 
-RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac) {
-	RzCmdMacroItem *m;
-	int j;
-	RzListIter *iter;
-	rz_list_foreach (mac->macros, iter, m) {
-		rz_cons_printf("(%s %s, ", m->name, m->args);
-		for (j = 0; m->code[j]; j++) {
-			if (m->code[j] == '\n') {
-				rz_cons_printf("; ");
-			} else {
-				rz_cons_printf("%c", m->code[j]);
-			}
-		}
-		rz_cons_printf(")\n");
-	}
+/**
+ * \brief Get a reference to a macro named \p name
+ *
+ * \param cmd Reference to RzCmd
+ * \param name Name of the macro to retrieve
+ * \return Reference to the associated \p RzCmdMacro object
+ */
+RZ_API const RzCmdMacro *rz_cmd_macro_get(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(cmd && name, false);
+
+	return ht_pp_find(cmd->macros, name, NULL);
 }
 
-#if 0
-(define name value
-  f $0 @ $1)
-
-(define loop cmd
-  loop:
-  ? $0 == 0
-  ?? .loop:
-  )
-
-.(define patata 3)
-#endif
-
-static int cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *args, int nargs) {
-	int i, j;
-	char *pcmd, cmd[RZ_CMD_MAXLEN];
-	const char *arg = args;
-
-	for (*cmd = i = j = 0; j < RZ_CMD_MAXLEN && ptr[j]; i++, j++) {
-		if (ptr[j] == '$') {
-			if (ptr[j + 1] >= '0' && ptr[j + 1] <= '9') {
-				int wordlen;
-				int w = ptr[j + 1] - '0';
-				const char *word = rz_str_word_get0(arg, w);
-				if (word && *word) {
-					wordlen = strlen(word);
-					if ((i + wordlen + 1) >= sizeof(cmd)) {
-						return -1;
-					}
-					memcpy(cmd + i, word, wordlen + 1);
-					i += wordlen - 1;
-					j++;
-				} else {
-					eprintf("Undefined argument %d\n", w);
-				}
-			} else if (ptr[j + 1] == '@') {
-				char off[32];
-				int offlen;
-				offlen = snprintf(off, sizeof(off), "%d",
-					mac->counter);
-				if ((i + offlen + 1) >= sizeof(cmd)) {
-					return -1;
-				}
-				memcpy(cmd + i, off, offlen + 1);
-				i += offlen - 1;
-				j++;
-			} else {
-				cmd[i] = ptr[j];
-				cmd[i + 1] = '\0';
-			}
-		} else {
-			cmd[i] = ptr[j];
-			cmd[i + 1] = '\0';
-		}
-	}
-	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
-		;
-	}
-	int xx = (*pcmd == ')') ? 0 : rz_core_cmd0_rzshell(mac->user, pcmd);
-	return xx;
-}
-
-static char *cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels, int *labels_n, char *ptr) {
-	int i;
-	for (; *ptr == ' '; ptr++) {
-		;
-	}
-	if (ptr[strlen(ptr) - 1] == ':' && !strchr(ptr, ' ')) {
-		/* label detected */
-		if (ptr[0] == '.') {
-			//	eprintf("---> GOTO '%s'\n", ptr+1);
-			/* goto */
-			for (i = 0; i < *labels_n; i++) {
-				//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp(ptr + 1, labels[i].name)) {
-					return labels[i].ptr;
-				}
-			}
-			return NULL;
-		} else
-			/* conditional goto */
-			if (ptr[0] == '?' && ptr[1] == '!' && ptr[2] != '?') {
-				if (mac->num && mac->num->value != 0) {
-					char *label = ptr + 3;
-					for (; *label == ' ' || *label == '.'; label++) {
-						;
-					}
-					//		eprintf("===> GOTO %s\n", label);
-					/* goto label ptr+3 */
-					for (i = 0; i < *labels_n; i++) {
-						if (!strcmp(label, labels[i].name)) {
-							return labels[i].ptr;
-						}
-					}
-					return NULL;
-				}
-			} else
-				/* conditional goto */
-				if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
-					if (mac->num->value == 0) {
-						char *label = ptr + 3;
-						for (; label[0] == ' ' || label[0] == '.'; label++) {
-							;
-						}
-						//		eprintf("===> GOTO %s\n", label);
-						/* goto label ptr+3 */
-						for (i = 0; i < *labels_n; i++) {
-							if (!strcmp(label, labels[i].name)) {
-								return labels[i].ptr;
-							}
-						}
-						return NULL;
-					}
-				} else {
-					for (i = 0; i < *labels_n; i++) {
-						//	eprintf("---| chk '%s'\n", labels[i].name);
-						if (!strcmp(ptr + 1, labels[i].name)) {
-							i = 0;
-							break;
-						}
-					}
-					/* Add label */
-					//	eprintf("===> ADD LABEL(%s)\n", ptr);
-					if (i == 0) {
-						strncpy(labels[*labels_n].name, ptr, 64);
-						labels[*labels_n].ptr = ptr + strlen(ptr) + 1;
-						*labels_n = *labels_n + 1;
-					}
-				}
-		return ptr + strlen(ptr) + 1;
-	}
-	return ptr;
-}
-
-/* TODO: add support for spaced arguments */
-static int macro_call(RzCmdMacro *mac, const char *name, bool multiple) {
-	char *args;
-	int nargs = 0;
-	char *str, *ptr, *ptr2;
-	RzListIter *iter;
-	static int macro_level = 0;
-	RzCmdMacroItem *m;
-	/* labels */
-	int labels_n = 0;
-	struct rz_cmd_macro_label_t labels[MACRO_LABELS];
-
-	str = strdup(name);
-	if (!str) {
-		perror("strdup");
-		return false;
-	}
-	ptr = strchr(str, ')');
-	if (!ptr) {
-		RZ_LOG_ERROR("Missing end ')' parenthesis.\n");
-		free(str);
-		return false;
-	} else {
-		*ptr = '\0';
-	}
-
-	args = strchr(str, ' ');
-	if (args) {
-		*args = '\0';
-		args++;
-		nargs = rz_str_word_set0(args);
-	}
-
-	macro_level++;
-	if (macro_level > MACRO_LIMIT) {
-		RZ_LOG_ERROR("Maximum macro recursivity reached.\n");
-		macro_level--;
-		free(str);
-		return 0;
-	}
-	ptr = strchr(str, ';');
-	if (ptr) {
-		*ptr = 0;
-	}
-
-	rz_cons_break_push(NULL, NULL);
-	rz_list_foreach (mac->macros, iter, m) {
-		if (!strcmp(str, m->name)) {
-			char *ptr = m->code;
-			char *end = strchr(ptr, '\n');
-			char *init_ptr = ptr;
-			char *init_end = end;
-			if ((m->nargs == 0 && nargs != m->nargs) ||
-				(m->nargs != 0 &&
-					((multiple && (nargs % m->nargs != 0 || nargs == 0)) ||
-						(!multiple && nargs != m->nargs)))) {
-				if (!multiple || m->nargs == 0 || nargs == 0) {
-					RZ_LOG_ERROR("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
-				} else {
-					RZ_LOG_ERROR("Macro '%s' expects %d args and %d is not a multiple of %d\n",
-						m->name, m->nargs, nargs, m->nargs);
-				}
-				macro_level--;
-				free(str);
-				rz_cons_break_pop();
-				return false;
-			}
-			int brk = 0;
-			int args_processed = 0;
-			do {
-				if (end) {
-					*end = '\0';
-				}
-				if (rz_cons_is_breaked()) {
-					RZ_LOG_ERROR("Interrupted at (%s)\n", ptr);
-					if (end) {
-						*end = '\n';
-					}
-					free(str);
-					rz_cons_break_pop();
-					return false;
-				}
-				rz_cons_flush();
-				/* Label handling */
-				ptr2 = cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
-				if (!ptr2) {
-					RZ_LOG_ERROR("Oops. invalid label name\n");
-					break;
-				} else if (ptr != ptr2) {
-					ptr = ptr2;
-					if (end) {
-						*end = '\n';
-					}
-					end = strchr(ptr, '\n');
-					continue;
-				}
-				/* Command execution */
-				if (*ptr) {
-					mac->num->value = value;
-					int r = cmd_macro_cmd_args(mac, ptr, args, nargs);
-					// TODO: handle quit? r == 0??
-					// quit, exits the macro. like a break
-					value = mac->num->value;
-					if (r < 0) {
-						free(str);
-						rz_cons_break_pop();
-						return r;
-					}
-				}
-				if (end) {
-					*end = '\n';
-					ptr = end + 1;
-					/* Fetch next command */
-					end = strchr(ptr, '\n');
-				} else {
-					args_processed += m->nargs;
-					if (!multiple || args_processed >= nargs) {
-						macro_level--;
-						free(str);
-						goto out_clean;
-					}
-					args = (char *)rz_str_word_get0(args, m->nargs);
-					ptr = init_ptr;
-					end = init_end;
-				}
-			} while (!brk);
-			if (brk) {
-				macro_level--;
-				free(str);
-				goto out_clean;
-			}
-		}
-	}
-	RZ_LOG_ERROR("No macro named '%s'\n", str);
-	macro_level--;
-	free(str);
-out_clean:
-	rz_cons_break_pop();
+static bool macros_to_list(void *user, const void *key, const void *value) {
+	RzList *res = (RzList *)user;
+	rz_list_append(res, (void *)value);
 	return true;
 }
 
-RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
-	return macro_call(mac, name, false);
+/**
+ * \brief Get the list of macros currently defined
+ *
+ * \param cmd Reference to RzCmd
+ * \return List of macros
+ */
+RZ_API RZ_OWN RzList /*<RzCmdMacro>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd) {
+	rz_return_val_if_fail(cmd, NULL);
+
+	RzList *res = rz_list_new();
+	if (!res) {
+		return NULL;
+	}
+	ht_pp_foreach(cmd->macros, macros_to_list, res);
+	return res;
 }
 
-RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name) {
-	return macro_call(mac, name, true);
+static RzCmdStatus macro_call(RzCmd *cmd, const RzCmdMacro *macro, const char **argv) {
+	char *code = strdup(macro->code);
+	char key[100];
+	size_t i;
+	for (i = 0; i < macro->nargs; i++) {
+		code = rz_str_replace(code, rz_strf(key, "${%s}", macro->args[i]), argv[i], true);
+	}
+	RzCmdStatus res = rz_core_cmd_lines_rzshell(cmd->core, code);
+	rz_cons_flush();
+	free(code);
+	return res;
+}
+
+/**
+ * \brief Call a macro named \p name passing it the arguments defined in \p argv
+ *
+ * \param cmd Reference to RzCmd
+ * \param name Name of the macro to call
+ * \param argv Array of arguments, terminated by a NULL element
+ * \return Status of the execution of the macros body.
+ */
+RZ_API RzCmdStatus rz_cmd_macro_call(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv) {
+	rz_return_val_if_fail(cmd && name && argv, RZ_CMD_STATUS_INVALID);
+
+	const RzCmdMacro *macro = rz_cmd_macro_get(cmd, name);
+	if (!macro) {
+		RZ_LOG_ERROR("No macro named '%s' was found.\n", name);
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+
+	size_t nargv;
+	for (nargv = 0; argv[nargv]; nargv++) {
+	}
+
+	if (nargv != macro->nargs) {
+		RZ_LOG_ERROR("Macro '%s' expects %zu args, not %zu\n", name, macro->nargs, nargv);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	return macro_call(cmd, macro, argv);
+}
+
+/**
+ * \brief Call a macro named \p name one or more times by passing it the arguments defined in \p argv
+ *
+ * The arguments \p argv should have the number of arguments the macro accepts
+ * (n) or a multiple of it. Each invocation of the macro gets n argument.
+ *
+ * \param cmd Reference to RzCmd
+ * \param name Name of the macro to call
+ * \param argv Array of arguments, terminated by a NULL element
+ * \return Status of the execution of the macros body.
+ */
+RZ_API RzCmdStatus rz_cmd_macro_call_multiple(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv) {
+	rz_return_val_if_fail(cmd && name && argv, RZ_CMD_STATUS_INVALID);
+
+	const RzCmdMacro *macro = rz_cmd_macro_get(cmd, name);
+	if (!macro) {
+		RZ_LOG_ERROR("No macro named '%s' was found.\n", name);
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+
+	size_t nargv;
+	for (nargv = 0; argv[nargv]; nargv++) {
+	}
+
+	if ((macro->nargs == 0 || nargv == 0) && nargv != macro->nargs) {
+		RZ_LOG_ERROR("Macro '%s' expects %zu args, not %zu\n", name, macro->nargs, nargv);
+		return RZ_CMD_STATUS_INVALID;
+	}
+	if (macro->nargs != 0 && nargv % macro->nargs != 0) {
+		RZ_LOG_ERROR("Macro '%s' expects %zu args and %zu is not a multiple of %zu\n", name, macro->nargs, nargv, macro->nargs);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	size_t j = 0;
+	do {
+		res = macro_call(cmd, macro, argv + j);
+		if (res != RZ_CMD_STATUS_OK) {
+			break;
+		}
+		j += macro->nargs;
+	} while (j < nargv);
+	return res;
+}
+
+struct macro_foreach_t {
+	RzCmd *cmd;
+	RzCmdForeachMacroCb cb;
+	void *user;
+};
+
+static bool macro_foreach_cb(void *user, const void *key, const void *value) {
+	struct macro_foreach_t *u = (struct macro_foreach_t *)user;
+	RzCmdMacro *macro = (RzCmdMacro *)value;
+	return u->cb(u->cmd, macro, u->user);
+}
+
+/**
+ * \brief Calls a callback \p cb on each defined macro
+ *
+ * \param cmd Reference to RzCmd
+ * \param cb Callback called for each macro
+ * \param user Additional data passed to the callback
+ */
+RZ_API void rz_cmd_macro_foreach(RZ_NONNULL RzCmd *cmd, RzCmdForeachMacroCb cb, void *user) {
+	rz_return_if_fail(cmd && cb);
+
+	struct macro_foreach_t u = {
+		.cmd = cmd,
+		.user = user,
+		.cb = cb,
+	};
+	ht_pp_foreach(cmd->macros, macro_foreach_cb, &u);
 }
 
 /* RzCmdParsedArgs */

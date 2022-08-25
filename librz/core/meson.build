@@ -79,7 +79,7 @@ rz_core_sources = [
   'cmd/cmd_history.c',
   'cmd/cmd_info.c',
   'cmd/cmd_interpret.c',
-  #'cmd/cmd_macro.c',
+  'cmd/cmd_macro.c',
   #'cmd/cmd_magic.c',
   'cmd/cmd_meta.c',
   'cmd/cmd_open.c',

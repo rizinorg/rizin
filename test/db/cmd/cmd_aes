@@ -49,7 +49,7 @@ ar
 pd 4
 aets+
 4aes
-(ar reg; ar $0)
+(ar reg; ar ${reg})
 ..(ar rbx rdi rip rflags rsp)
 ?e qword[0x0] = `pv8 @ 0`
 ?e

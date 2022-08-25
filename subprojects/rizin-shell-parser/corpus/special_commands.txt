@@ -57,7 +57,7 @@ Macro statements
 ===============
 
 (_foo x y; p8 $0 @ $1)
-(-foo)
+(-foo
 (foo x y; p8 $0 @ $1)(10 0x10)
 .(foo 10 0x10)
 ..(foo 10 0x10 20 0x20)
@@ -65,86 +65,87 @@ Macro statements
 (foo; pd 10~this is special\))
 (
 (*
+(jump; pd 1)
+(-*
 
 ---
 
 (statements
-  (arged_stmt (cmd_identifier)
-    (macro_args
-      (macro_content
+  (macro_stmt (cmd_identifier)
+    (macro_content
+      (macro_name)
+      (args
         (arg (arg_identifier))
-	(args
-	  (arg (arg_identifier))
-	  (arg (arg_identifier)))
+        (arg (arg_identifier)))
+      (macro_body
         (tmp_seek_stmt
-	  (arged_stmt (cmd_identifier)
-	    (args (arg (arg_identifier))))
-	  (args (arg (arg_identifier)))))))
+          (arged_stmt (cmd_identifier)
+            (args (arg (arg_identifier))))
+          (args (arg (arg_identifier)))))))
   (arged_stmt (cmd_identifier)
-    (macro_args
-      (macro_content
+    (args (arg (arg_identifier))))
+  (macro_stmt (cmd_identifier)
+    (macro_content
+      (macro_name)
+      (args
+        (arg (arg_identifier))
+        (arg (arg_identifier)))
+      (macro_body
+        (tmp_seek_stmt
+          (arged_stmt (cmd_identifier)
+            (args (arg (arg_identifier))))
+          (args (arg (arg_identifier))))))
+    (macro_call
+      (args
+        (arg (arg_identifier))
         (arg (arg_identifier)))))
   (arged_stmt (cmd_identifier)
-    (macro_args
-      (macro_content
-        (arg (arg_identifier))
-	(args
-	  (arg (arg_identifier))
-	  (arg (arg_identifier)))
-        (tmp_seek_stmt
-	  (arged_stmt (cmd_identifier)
-	    (args (arg (arg_identifier))))
-	  (args (arg (arg_identifier)))))
-      (macro_call_full_content
-        (macro_call_content
-	  (args
-	    (arg (arg_identifier))
-	    (arg (arg_identifier)))))))
-  (arged_stmt (cmd_identifier)
-   (macro_call_content
     (args
      (arg (arg_identifier))
      (arg (arg_identifier))
-     (arg (arg_identifier)))))
+     (arg (arg_identifier))))
   (arged_stmt (cmd_identifier)
-   (macro_call_content
     (args
      (arg (arg_identifier))
      (arg (arg_identifier))
      (arg (arg_identifier))
      (arg (arg_identifier))
-     (arg (arg_identifier)))))
-  (arged_stmt (cmd_identifier)
-    (macro_args
-      (macro_content
-        (arg (arg_identifier))
-	(args (arg (arg_identifier)))
+     (arg (arg_identifier))))
+  (macro_stmt (cmd_identifier)
+    (macro_content
+      (macro_name)
+      (args (arg (arg_identifier)))
+      (macro_body
         (arged_stmt (cmd_identifier)
-	  (args (arg (arg_identifier))))
-	(arged_stmt (cmd_identifier)
-	  (macro_call_content
-	    (args
-	      (arg (arg_identifier))
-	      (arg (arg_identifier)))))
-	(arged_stmt (cmd_identifier)
-	  (macro_call_content
-	    (args
-	      (arg (arg_identifier))
-	      (arg (arg_identifier)))))
-	(arged_stmt (cmd_identifier)
-	  (macro_call_content
-	    (args
-	      (arg (arg_identifier))
-	      (arg (arg_identifier))))))))
-  (arged_stmt (cmd_identifier)
-    (macro_args
-      (macro_content
-        (arg (arg_identifier))
-	(grep_stmt
-	  (arged_stmt (cmd_identifier)
-	    (args (arg (arg_identifier))))
-	  (grep_specifier (grep_specifier_identifier))))))
+          (args (arg (arg_identifier))))
+        (arged_stmt (cmd_identifier)
+          (args
+            (arg (arg_identifier))
+            (arg (arg_identifier))))
+        (arged_stmt (cmd_identifier)
+          (args
+            (arg (arg_identifier))
+            (arg (arg_identifier))))
+        (arged_stmt (cmd_identifier)
+          (args
+            (arg (arg_identifier))
+            (arg (arg_identifier)))))))
+  (macro_stmt (cmd_identifier)
+    (macro_content
+      (macro_name)
+      (macro_body
+        (grep_stmt
+          (arged_stmt (cmd_identifier)
+            (args (arg (arg_identifier))))
+          (grep_specifier (grep_specifier_identifier))))))
   (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (macro_stmt (cmd_identifier)
+    (macro_content
+      (macro_name)
+      (macro_body
+          (arged_stmt (cmd_identifier)
+            (args (arg (arg_identifier)))))))
   (arged_stmt (cmd_identifier)))
 
 
@@ -213,12 +214,11 @@ pd 10 |.
                     (arg (arg_identifier)))))
   (arged_stmt
     command: (cmd_identifier)
-    args: (macro_call_content
-            (args
-	      (arg (arg_identifier))
-	      (arg (arg_identifier))
-	      (arg (arg_identifier))
-	      (arg (arg_identifier)))))
+    args: (args
+            (arg (arg_identifier))
+            (arg (arg_identifier))
+            (arg (arg_identifier))
+            (arg (arg_identifier))))
   (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier))))

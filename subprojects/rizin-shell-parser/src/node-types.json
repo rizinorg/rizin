@@ -172,11 +172,7 @@
             "named": true
           },
           {
-            "type": "macro_args",
-            "named": true
-          },
-          {
-            "type": "macro_call_content",
+            "type": "macro_stmt",
             "named": true
           },
           {
@@ -454,6 +450,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -763,6 +763,10 @@
             "named": true
           },
           {
+            "type": "macro_stmt",
+            "named": true
+          },
+          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -993,6 +997,10 @@
             "named": true
           },
           {
+            "type": "macro_stmt",
+            "named": true
+          },
+          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -1197,6 +1205,10 @@
             "named": true
           },
           {
+            "type": "macro_stmt",
+            "named": true
+          },
+          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -1398,6 +1410,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -1608,6 +1624,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -1808,6 +1828,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -2014,6 +2038,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -2217,6 +2245,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -2417,6 +2449,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -2627,6 +2663,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -2831,6 +2871,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -3041,6 +3085,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -3241,6 +3289,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -3447,6 +3499,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -3647,6 +3703,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -3853,6 +3913,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4056,6 +4120,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4256,6 +4324,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -4466,6 +4538,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4673,6 +4749,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -4873,6 +4953,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -5079,6 +5163,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -5279,6 +5367,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -5489,6 +5581,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -5689,6 +5785,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -5895,6 +5995,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -6098,6 +6202,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -6178,79 +6286,15 @@
     "fields": {}
   },
   {
-    "type": "macro_args",
+    "type": "macro_body",
     "named": true,
     "fields": {},
     "children": {
       "multiple": true,
       "required": true,
-      "types": [
-        {
-          "type": "macro_call_full_content",
-          "named": true
-        },
-        {
-          "type": "macro_content",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "macro_call_content",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "args",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "macro_call_full_content",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "macro_call_content",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "macro_content",
-    "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "arg",
-            "named": true
-          }
-        ]
-      }
-    },
-    "children": {
-      "multiple": true,
-      "required": false,
       "types": [
         {
           "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "args",
           "named": true
         },
         {
@@ -6370,6 +6414,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -6443,6 +6491,88 @@
         },
         {
           "type": "tmp_value_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "macro_call",
+    "named": true,
+    "fields": {
+      "argv": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "args",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "macro_content",
+    "named": true,
+    "fields": {
+      "args": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "args",
+            "named": true
+          }
+        ]
+      },
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "macro_body",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "macro_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "macro_stmt",
+    "named": true,
+    "fields": {
+      "command": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "cmd_identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "macro_call",
+          "named": true
+        },
+        {
+          "type": "macro_content",
           "named": true
         }
       ]
@@ -6694,6 +6824,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -6904,6 +7038,10 @@
           },
           {
             "type": "legacy_quoted_stmt",
+            "named": true
+          },
+          {
+            "type": "macro_stmt",
             "named": true
           },
           {
@@ -7143,6 +7281,10 @@
             "named": true
           },
           {
+            "type": "macro_stmt",
+            "named": true
+          },
+          {
             "type": "pipe_stmt",
             "named": true
           },
@@ -7367,6 +7509,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -7578,6 +7724,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -7782,6 +7932,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -7992,6 +8146,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -8196,6 +8354,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -8406,6 +8568,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -8610,6 +8776,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -8820,6 +8990,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -9024,6 +9198,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -9234,6 +9412,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -9438,6 +9620,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -9648,6 +9834,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -9852,6 +10042,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -10062,6 +10256,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -10266,6 +10464,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -10476,6 +10678,10 @@
           "named": true
         },
         {
+          "type": "macro_stmt",
+          "named": true
+        },
+        {
           "type": "pipe_stmt",
           "named": true
         },
@@ -10680,6 +10886,10 @@
         },
         {
           "type": "legacy_quoted_stmt",
+          "named": true
+        },
+        {
+          "type": "macro_stmt",
           "named": true
         },
         {
@@ -11015,6 +11225,10 @@
   },
   {
     "type": "html_redirect_operator",
+    "named": true
+  },
+  {
+    "type": "macro_name",
     "named": true
   },
   {

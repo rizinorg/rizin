@@ -3,7 +3,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-(pi bytes;wx $0;pi 1;pie 1)
+(pi bytes;wx ${bytes};pi 1;pie 1)
 .(pi 49f7e9)
 EOF
 EXPECT=<<EOF
@@ -17,7 +17,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-(pi bytes;wx $0;pi 1;pie 1)
+(pi bytes;wx ${bytes};pi 1;pie 1)
 .(pi 0fafc1)
 EOF
 EXPECT=<<EOF
@@ -31,7 +31,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-(pi bytes;wx $0;pi 1;pie 1)
+(pi bytes;wx ${bytes};pi 1;pie 1)
 .(pi 4969c367666633)
 EOF
 EXPECT=<<EOF

@@ -109,10 +109,24 @@ commands:
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks
-  - name: (
-    cname: cmd_macro
+  - name: "("
     summary: Manage scripting macros
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_macro
+    details:
+      - name: Examples
+        entries:
+          - text: (
+            arg_str: ""
+            comment: List defined macros
+          - text: (
+            arg_str: foo; ?e Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)
+            comment: Define a new macro 'foo', which executes `?` followed by `pd` when called.
+          - text: (
+            arg_str: foo a b; ?e Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})
+            comment: Define a new macro 'foo' with two arguments. ${a}/${b} are replaced before execution.
+          - text: (-
+            arg_str: foo
+            comment: Remove previously defined macro named 'foo'
   - name: "*"
     cname: pointer
     summary: Pointer read/write data/values

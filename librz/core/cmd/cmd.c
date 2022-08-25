@@ -75,7 +75,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 
 #include "cmd_debug.c"
 #include "cmd_analysis.c"
-#include "cmd_macro.c"
 #include "cmd_magic.c"
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
@@ -3020,32 +3019,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			}
 		}
 		break;
-	case '.': // "@@."
-	{
-		char buf[1024];
-		char cmd2[1024];
-		FILE *fd = rz_sys_fopen(each + 1, "r");
-		if (fd) {
-			core->rcmd->macro.counter = 0;
-			while (!feof(fd)) {
-				buf[0] = '\0';
-				if (!fgets(buf, sizeof(buf), fd)) {
-					break;
-				}
-				addr = rz_num_math(core->num, buf);
-				eprintf("0x%08" PFMT64x ": %s\n", addr, cmd);
-				sprintf(cmd2, "%s @ 0x%08" PFMT64x "", cmd, addr);
-				rz_core_seek(core, addr, true); // XXX
-				rz_core_cmd(core, cmd2, 0);
-				core->rcmd->macro.counter++;
-			}
-			fclose(fd);
-		} else {
-			eprintf("cannot open file '%s' to read offsets\n", each + 1);
-		}
-	} break;
 	default:
-		core->rcmd->macro.counter = 0;
 		for (; *each == ' '; each++) {
 			;
 		}
@@ -3100,7 +3074,6 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 				}
 
 				rz_list_free(match_flag_items);
-				core->rcmd->macro.counter++;
 				RZ_FREE(word);
 			}
 		}
@@ -3696,6 +3669,69 @@ err:
 	RZ_LOG_DEBUG("arged_stmt finished command: '%s'\n", command_str);
 	rz_cmd_parsed_args_free(pr_args);
 	free(command_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN_AND_SYMBOL(macro_stmt) {
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	char *macro_name_str = NULL;
+	char **args_str = NULL, **argv_str = NULL;
+	char *body_str = NULL;
+	ut32 nargs = 0;
+
+	TSNode macro_content = ts_node_named_child(node, 1);
+	rz_return_val_if_fail(!ts_node_is_null(macro_content), false);
+
+	TSNode macro_name = ts_node_child_by_field_name(macro_content, "name", strlen("name"));
+	rz_return_val_if_fail(!ts_node_is_null(macro_name), false);
+	macro_name_str = ts_node_sub_string(macro_name, state->input);
+	if (!macro_name_str) {
+		goto err;
+	}
+
+	TSNode args = ts_node_child_by_field_name(macro_content, "args", strlen("args"));
+	if (!ts_node_is_null(args)) {
+		nargs = ts_node_named_child_count(args);
+	}
+	args_str = RZ_NEWS0(char *, nargs + 1);
+	if (!args_str) {
+		goto err;
+	}
+	for (ut32 i = 0; i < nargs; i++) {
+		TSNode arg = ts_node_named_child(args, i);
+		args_str[i] = ts_node_sub_string(arg, state->input);
+		if (!args_str[i]) {
+			goto err;
+		}
+	}
+
+	TSNode body = ts_node_child_by_field_name(macro_content, "body", strlen("body"));
+	rz_return_val_if_fail(!ts_node_is_null(body), false);
+	body_str = ts_node_sub_string(body, state->input);
+
+	TSNode macro_call = ts_node_named_child(node, 2);
+	if (!ts_node_is_null(macro_call)) {
+		TSNode argv = ts_node_child_by_field_name(macro_call, "argv", strlen("argv"));
+		ut32 nargv = ts_node_is_null(argv) ? 0 : ts_node_named_child_count(argv);
+		argv_str = RZ_NEWS0(char *, nargv + 1);
+		if (!argv_str) {
+			goto err;
+		}
+		for (ut32 i = 0; i < nargv; i++) {
+			TSNode arg = ts_node_named_child(argv, i);
+			argv_str[i] = ts_node_sub_string(arg, state->input);
+			if (!argv_str[i]) {
+				goto err;
+			}
+		}
+	}
+
+	res = rz_macros_handler(state->core, macro_name_str, (const char **)args_str, body_str, (const char **)argv_str);
+err:
+	rz_str_argv_free(argv_str);
+	free(body_str);
+	rz_str_argv_free(args_str);
+	free(macro_name_str);
 	return res;
 }
 
@@ -4410,7 +4446,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_file_lines_stmt) {
 		goto arg_out;
 	}
 
-	core->rcmd->macro.counter = 0;
 	while (!feof(fd)) {
 		char buf[1024];
 		buf[0] = '\0';
@@ -4420,7 +4455,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_file_lines_stmt) {
 		ut64 addr = rz_num_math(core->num, buf);
 		rz_core_seek(core, addr, true);
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
-		core->rcmd->macro.counter++;
 		UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 	}
 err:
@@ -5196,6 +5230,9 @@ struct ts_data_symbol_map map_ts_symbols[] = {
 
 /**
  * \brief Create an instance of RzCmd for the Rizin language
+ *
+ * The new RzCmd is tied to the Rizin language specified in
+ * subprojects/rizin-shell-parser.
  */
 RZ_API RzCmd *rz_core_cmd_new(RzCore *core, bool has_cons) {
 	RzCmd *res = rz_cmd_new(core, has_cons);
@@ -5542,7 +5579,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdCb cb;
 	} cmds[] = {
 		{ "$", "alias", rz_cmd_alias },
-		{ "(", "macro", rz_cmd_macro },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
 		{ "?", "help message", rz_cmd_help },
 		{ "a", "analysis", rz_cmd_analysis },
@@ -5555,8 +5591,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	};
 
 	core->rcmd = rz_core_cmd_new(core, !!core->cons);
-	core->rcmd->macro.user = core;
-	core->rcmd->macro.num = core->num;
 	core->rcmd->nullcallback = rz_core_cmd_nullcallback;
 	core->cmd_descriptors = rz_list_newf(free);
 

@@ -157,7 +157,7 @@ FILE=bins/bf/2+5.bf
 CMDS=<<EOF
 e io.cache=1
 aezi
-(emu_pc pc; ar pc=$0; ar; aezsu $s; ?e)
+(emu_pc pc; ar pc=${pc}; ar; aezsu $s; ?e)
 .(emu_pc 1)
 wv1 0 @ ptr
 .(emu_pc 0)
@@ -176,7 +176,7 @@ NAME=double aezi with different offsets
 FILE=bins/bf/2+5.bf
 CMDS=<<EOF
 e io.cache=1
-(emu_start start; aezi @ $0; aezsu $s; ?e)
+(emu_start start; aezi @ ${start}; aezsu $s; ?e)
 .(emu_start 1)
 w0 1 @ ptr
 .(emu_start 2)
