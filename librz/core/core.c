@@ -1360,23 +1360,6 @@ static void autocomplete_functions(RzCore *core, RzLineCompletion *completion, c
 	}
 }
 
-static void autocomplete_macro(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(core && core->rcmd && completion && str);
-	RzCmdMacroItem *item;
-	RzListIter *iter;
-	size_t n = strlen(str);
-	rz_list_foreach (core->rcmd->macro.macros, iter, item) {
-		char *p = item->name;
-		if (!*str || !strncmp(str, p, n)) {
-			char *buf = rz_str_newf("%s%s)", str, p);
-			if (buf) {
-				rz_line_completion_push(completion, buf);
-				free(buf);
-			}
-		}
-	}
-}
-
 static void autocomplete_file(RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail(str);
 	char *pipe = strchr(str, '>');
@@ -1506,9 +1489,6 @@ static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLine
 		break;
 	case RZ_CORE_AUTOCMPLT_BRKP:
 		autocomplete_breakpoints(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_MACR:
-		autocomplete_macro(core, completion, p);
 		break;
 	case RZ_CORE_AUTOCMPLT_FILE:
 		autocomplete_file(completion, p);
