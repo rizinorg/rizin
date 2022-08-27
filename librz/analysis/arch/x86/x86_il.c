@@ -1110,8 +1110,8 @@ static RzILOpEffect *x86_il_cmpsw(const X86ILIns *ins, ut64 pc, RzAnalysis *anal
 
 /**
  * DAA
- * Decimal adjust after AL addition
- * 2F | Invalid | Valid
+ * Decimal adjust AL after addition
+ * 27 | Invalid | Valid
  */
 static RzILOpEffect *x86_il_daa(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
 	RET_NULL_IF_64BIT_OR_LOCK();
@@ -1126,8 +1126,8 @@ static RzILOpEffect *x86_il_daa(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *sum = SETL("_sum", ADD(VARL("_al"), UN(8, 6)));
-	RzILOpEffect *true_cond = SEQ3(set_al, sum, SETL("_al", VARL("_sum")));
-	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_add_carry(VARL("_sum"), VARL("_al"), UN(8, 6)));
+	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_sub_borrow(VARL("_sum"), VARL("_al"), UN(8, 6)));
 
 	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], new_cf), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE)), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_FALSE)));
 
@@ -1135,9 +1135,43 @@ static RzILOpEffect *x86_il_daa(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 
 	set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
 	sum = SETL("_sum", ADD(VARL("_al"), UN(8, 0x60)));
-	true_cond = SEQ3(set_al, sum, SETL("_al", VARL("_sum")));
+	true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
 
 	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE)), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE)), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
+
+	return ret;
+}
+
+/**
+ * DAS
+ * Decimal adjust AL after subtraction
+ * 2F | Invalid | Valid
+ */
+static RzILOpEffect *x86_il_das(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	RET_NULL_IF_64BIT_OR_LOCK();
+
+	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *old_cf = SETL("old_cf", VARG(x86_eflags_registers[X86_EFLAGS_CF]));
+
+	RzILOpEffect *set_cf = SETL(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+
+	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(X86_REG_AL), UN(8, 0xf)), UN(8, 9));
+	cond = OR(cond, VARG(x86_eflags_registers[X86_EFLAGS_AF]));
+
+	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
+	RzILOpEffect *sum = SETL("_sum", SUB(VARL("_al"), UN(8, 6)));
+	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_sub_borrow(VARL("_sum"), VARL("_al"), UN(8, 6)));
+
+	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], new_cf), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE)), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_FALSE)));
+
+	cond = OR(UGT(VARL("old_al"), UN(8, 0x99)), VARL("old_cf"));
+
+	set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
+	sum = SETL("_sum", SUB(VARL("_al"), UN(8, 0x60)));
+	true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
+
+	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE)), NOP()), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
 
 	return ret;
 }
@@ -1166,6 +1200,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_CMPSB] = x86_il_cmpsb,
 	[X86_INS_CMPSW] = x86_il_cmpsw,
 	[X86_INS_DAA] = x86_il_daa,
+	[X86_INS_DAS] = x86_il_das,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
