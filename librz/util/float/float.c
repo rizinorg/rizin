@@ -52,7 +52,6 @@ RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad)
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f && f->s, NULL);
 
-	printf("format %d\n", f->r);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 total = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_TOTAL_LEN);
@@ -1194,16 +1193,17 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 }
 
 /**
- * \brief calculate \p left % \p right and round the result after, return the result
+ * \brief calculate remainder of \p left % \p right and round the result after
  * \details
  * Any % 0 => NaN
  * Inf % Any => NaN, invalid
  * Any % Inf -> Any
  * 0 % Any -> 0
+ * \param quo_rnd quotient round mode, fmod use RTZ, frem use RNE
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+static RZ_OWN RzFloat *rz_float_rem_internal(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode quo_rnd, RzFloatRMode mode) {
 	PROC_SPECIAL_FLOAT_START(left, right)
 	RzFloat *spec_ret = NULL;
 
@@ -1232,14 +1232,42 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	RzBitVector *my = rz_float_get_mantissa(right);
 	RzBitVector *exp_x = rz_float_get_exponent(left);
 	RzBitVector *exp_y = rz_float_get_exponent(right);
-	ut32 ex = rz_bv_to_ut32(exp_x) - rz_float_get_format_info(left->r, RZ_FLOAT_INFO_BIAS);
-	ut32 ey = rz_bv_to_ut32(exp_y) - rz_float_get_format_info(right->r, RZ_FLOAT_INFO_BIAS);
+	ut32 bias = rz_float_get_format_info(left->r, RZ_FLOAT_INFO_BIAS);
+	st32 ex = (st32)(rz_bv_to_ut32(exp_x) - bias);
+	st32 ey = (st32)(rz_bv_to_ut32(exp_y) - bias);
 	rz_bv_free(exp_x);
 	rz_bv_free(exp_y);
 
 	bool sign_x = rz_float_get_sign(left);
-	bool sign_y = rz_float_get_sign(right);
-	bool sign_z = (sign_x == sign_y) ? 1 : -1;
+
+	/* quo(-x,-y) = quo(x,y), rem(-x,-y) = -rem(x,y)
+	 * quo(-x,y) = -quo(x,y), rem(-x,y)  = -rem(x,y)
+	 * thus quo = sign(x/y)*quo(|x|,|y|), rem = sign(x)*rem(|x|,|y|) */
+	bool sign_z = sign_x;
+
+	// reveal the hidden bit in IEEE, adjust exponent and mantissa
+	ut32 man_len = rz_float_get_format_info(left->r, RZ_FLOAT_INFO_MAN_LEN);
+
+	rz_bv_set(mx, man_len, true);
+	ex -= man_len;
+	rz_bv_set(my, man_len, true);
+	ey -= man_len;
+
+	// every mantissa would become an big integer with clz(num) = 0
+	ex -= rz_bv_clz(mx);
+	ey -= rz_bv_clz(my);
+	rz_bv_lshift(mx, rz_bv_clz(mx));
+	rz_bv_lshift(my, rz_bv_clz(my));
+
+	// help flag
+	bool tiny = 0;
+	st32 compare = false;
+	bool quo_is_odd = false;
+
+	// result of rem(x, y)
+	RzBitVector *mz;
+	ut32 ez;
+	RzFloat *z;
 
 	// make last bit of mantissa is 1
 	// TODO : add a scan function to bitvector lib (like clz but cnted from LSB to MSB)
@@ -1263,34 +1291,193 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 		if (mag_level_mx < mag_level_my) {
 			// tiny, quotient = 0, remainder = mx
-			// TODO : complete me
+			tiny = 1;
+			z = rz_float_dup(left);
+			goto clean;
+		} else {
+			// mx mod my*2^(ey-ex)
+			// construct real number real_my = 2^(ey - ex) * my
+			RzBitVector *real_my = rz_bv_prepend_zero(my, my->len);
+			rz_bv_lshift(real_my, ey - ex);
+
+			// stretch mx to have the same length for calculation
+			RzBitVector *stretched_mx = rz_bv_prepend_zero(mx, mx->len);
+			RzBitVector *stretched_mz = rz_bv_mod(stretched_mx, real_my);
+			mz = rz_bv_cut_head(stretched_mz, my->len);
+
+			rz_bv_free(real_my);
+			rz_bv_free(stretched_mx);
+			rz_bv_free(stretched_mz);
 		}
-		else {
-			// divide mx by my*2^(ey-ex)
-			// TODO : complete me by bitvector
-		}
-	}
-	else {
+	} else {
 		// ex > ey
 		// preprocess for rounding
-		if (mode == RZ_FLOAT_RMODE_RTN) {
-			// TODO : complete me
+		if (quo_rnd == RZ_FLOAT_RMODE_RTN) {
 			// let my = my * 2
+			rz_bv_lshift(my, 1);
 		}
 
-		// calc mod
-		// let r = (2^(ex - ey) * mx) mod my
-		// TODO : complete me
+		// r = mx * (2^(ex - ey) mod my) mod my
+		// 1. build 2^(ex - ey) bv
+		ut32 aligned_length = ex - ey + 1;
+
+		RzBitVector *two_exponent_fact;
+		RzBitVector *stretched_my;
+		bool is_stretched = false;
+		if (aligned_length < my->len) {
+			two_exponent_fact = rz_bv_new(my->len);
+			stretched_my = rz_bv_dup(my);
+		}
+		else
+		{
+			is_stretched = true;
+			two_exponent_fact = rz_bv_new(aligned_length);
+			stretched_my = rz_bv_prepend_zero(my, aligned_length - my->len);
+		}
+		rz_bv_set(two_exponent_fact, aligned_length - 1, true);
+
+		// 2. mod my for the 1st time
+		RzBitVector *fact_mod = rz_bv_mod(two_exponent_fact, stretched_my);
+
+		RzBitVector *mx_fact;
+		mx_fact = is_stretched ? rz_bv_cut_head(fact_mod, aligned_length - my->len) :
+				       rz_bv_dup(fact_mod);
+
+		// 3. mul with mx, and then mod my
+		// mul maybe overflow, so stretch both
+		RzBitVector *mx_ext = rz_bv_prepend_zero(mx, mx->len);
+		RzBitVector *mx_fact_ext = rz_bv_prepend_zero(mx_fact, mx_fact->len);
+		RzBitVector *my_ext = rz_bv_prepend_zero(my, my->len);
+		RzBitVector *mul_ext = rz_bv_mul(mx_ext, mx_fact_ext);
+		RzBitVector *mz_ext;
+		mz_ext = rz_bv_mod(mul_ext, my_ext);
+		mz = rz_bv_cut_head(mz_ext, my->len);
+
+		// free temp bv
+		rz_bv_free(two_exponent_fact);
+		rz_bv_free(stretched_my);
+		rz_bv_free(fact_mod);
+		rz_bv_free(mx_fact);
+		rz_bv_free(mx_ext);
+		rz_bv_free(mul_ext);
+		rz_bv_free(my_ext);
+		rz_bv_free(mz_ext);
 
 		// rounding
-		if (mode == RZ_FLOAT_RMODE_RTN) {
+		if (quo_rnd == RZ_FLOAT_RMODE_RTN) {
 			// let my = my / 2
+			rz_bv_shift_right_jammed(my, 1);
+			quo_is_odd = rz_bv_ule(my, mz);
+			if (quo_is_odd) {
+				// mz = mz - my
+				RzBitVector *tmp = rz_bv_sub(mz, my, NULL);
+				rz_bv_free(mz);
+				mz = tmp;
+				tmp = NULL;
+			}
 		}
 	}
 
 	// r == 0, return 0
+	if (rz_bv_is_zero_vector(mz)) {
+		z = rz_float_new_zero(left->r);
+		rz_bv_set(z->s, z->s->len, sign_z);
+		goto clean;
+	}
 
 	// 2r < y ? round(r) : round(r-my)
+	if (quo_rnd == RZ_FLOAT_RMODE_RTN) {
+		// r = 2 * r
+		rz_bv_lshift(mz, 1);
+
+		if (tiny) {
+			// detect magnitude
+			ut32 sz = mx->len - rz_bv_clz(mx);
+			ut32 sy = my->len - rz_bv_clz(my);
+			ut32 mag_level_mz = sz + ex;
+			ut32 mag_level_my = sy + ey;
+
+			if (mag_level_mz > mag_level_my) {
+				// equal
+				compare = 0;
+			} else {
+				// sz >= ey + sr - ex, shift is safe
+				// my * 2^(ey - ex)
+				rz_bv_lshift(my, ey - ex);
+				compare = rz_bv_cmp(mz, my);
+			}
+		} else {
+			// cmp mz with my
+			compare = rz_bv_cmp(mz, my);
+		}
+
+		rz_bv_shift_right_jammed(mz, 1);
+		if ((compare > 0) ||
+			((mode == RZ_FLOAT_RMODE_RTN) && (compare == 0) && (quo_is_odd))) {
+			// r = mz - my
+			RzBitVector *tmp = rz_bv_sub(mz, my, NULL);
+			rz_bv_free(mz);
+			mz = tmp;
+			tmp = NULL;
+		}
+	}
+
+	// result exponent
+	ez = ex > ey ? ey : ex;
+
+	// normalize
+	// make total - clz = man_len + 1, a normalized mz with hidden bit set
+	ut32 exp_len = rz_float_get_format_info(left->r, RZ_FLOAT_INFO_EXP_LEN);
+	st32 shift_dist = (st32)(rz_bv_clz(mz) - exp_len);
+	ez -= shift_dist;
+	if (shift_dist < 0) {
+		rz_bv_shift_right_jammed(mz, -shift_dist);
+	} else {
+		rz_bv_lshift(mz, shift_dist);
+	}
+
+	// recover IEEE mantissa and exponent
+	ez += man_len;
+	ez += bias;
+
+	// apply to round_float_bv required format
+	// 01 MMMM MMMM ...
+	shift_dist = (st32)(exp_len - 1);
+	rz_bv_lshift(mz, shift_dist);
+
+	z = round_float_bv(sign_z, ez - 1, mz, left->r, mode);
+clean:
+	rz_bv_free(mx);
+	rz_bv_free(my);
+	return z;
+}
+
+/**
+ * \brief calculate \p left % \p right and round the result after, return the result
+ * \details
+ * Any % 0 => NaN
+ * Inf % Any => NaN, invalid
+ * Any % Inf -> Any
+ * 0 % Any -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+	return rz_float_rem_internal(left, right, RZ_FLOAT_RMODE_RNE, mode);
+}
+
+/**
+ * \brief calculate \p left % \p right and round the result after, return the result
+ * \details
+ * Any % 0 => NaN
+ * Inf % Any => NaN, invalid
+ * Any % Inf -> Any
+ * 0 % Any -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+	return rz_float_rem_internal(left, right, RZ_FLOAT_RMODE_RTZ, mode);
 }
 
 /**

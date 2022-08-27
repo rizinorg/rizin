@@ -7,6 +7,12 @@
 #define is_equal_bv(x, y)    (!rz_bv_cmp(x, y))
 #define is_equal_float(x, y) (!rz_bv_cmp((x)->s, (y)->s))
 
+void print_float(RzFloat *f) {
+	char *str = rz_float_as_string(f);
+	puts(str);
+	free(str);
+}
+
 bool f32_ieee_format_test(void) {
 	float val = 1.5f;
 	RzFloat *f = rz_float_new_from_single(val);
@@ -567,21 +573,15 @@ bool f32_ieee_rem_test(void) {
 	rz_float_free(expect2);
 	rz_float_free(rem2);
 
-	// TODO : solve the precision problem
-	//	RzFloat *a3 = rz_float_new_from_hex_as_f32(0x3F7FFF3F);
-	//	RzFloat *b3 = rz_float_new_from_hex_as_f32(0x957CE0B6);
-	//	RzFloat *expect3 = rz_float_new_from_hex_as_f32(0x145F53B0);
-	//	RzFloat *rem3 = rz_float_rem_ieee_bin(a3, b3, RZ_FLOAT_RMODE_RNE);
-	//	puts("\n");
-	//	print_float(a3);
-	//	print_float(b3);
-	//	print_float(expect3);
-	//	print_float(rem3);
-	//	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
-	//	rz_float_free(a3);
-	//	rz_float_free(b3);
-	//	rz_float_free(expect3);
-	//	rz_float_free(rem3);
+	RzFloat *a3 = rz_float_new_from_hex_as_f32(0x3F7FFF3F);
+	RzFloat *b3 = rz_float_new_from_hex_as_f32(0x957CE0B6);
+	RzFloat *expect3 = rz_float_new_from_hex_as_f32(0x145F53B0);
+	RzFloat *rem3 = rz_float_rem_ieee_bin(a3, b3, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
+	rz_float_free(a3);
+	rz_float_free(b3);
+	rz_float_free(expect3);
+	rz_float_free(rem3);
 
 	mu_end;
 }

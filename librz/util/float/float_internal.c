@@ -62,25 +62,6 @@ static inline ut32 rz_float_info_bin128(RzFloatInfo which_info) {
 	}
 }
 
-// TODO : move this to bitvector.c in the future
-/**
- * Check if every bits of the bitvector are set to 1
- * \param x RzBitVector, pointer to bv
- * \return ret bool, return true if bv is a full bitvector, false if not
- */
-static bool rz_bv_is_full_vector(RZ_NONNULL const RzBitVector *x) {
-	rz_return_val_if_fail(x, false);
-
-	// could not use ~0 as full-vector when bits < 64
-
-	for (ut32 i = 0; i < x->len; ++i) {
-		if (rz_bv_get(x, i) == 0) {
-			return false;
-		}
-	}
-	return true;
-}
-
 /**
  * Shift right, but keeps LSB true if hit 1 during shift
  * \param x RzBitVector, pointer to bv
