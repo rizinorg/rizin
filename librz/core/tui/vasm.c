@@ -70,7 +70,7 @@ static int readline_callback(void *_a, const char *str) {
 	return 1;
 }
 
-RZ_API void rz_core_visual_asm(RzCore *core, ut64 off) {
+RZ_IPI void rz_core_visual_asm(RzCore *core, ut64 off) {
 	RzCoreVisualAsm cva = {
 		.core = core,
 		.off = off

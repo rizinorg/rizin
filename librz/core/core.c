@@ -2387,8 +2387,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->offname = rz_core_print_offname;
 	core->print->offsize = rz_core_print_offsize;
 	core->print->cb_printf = rz_cons_printf;
-	core->visual_is_inputing = false;
-	core->visual_inputing = NULL;
 #if __WINDOWS__
 	core->print->cb_eprintf = win_eprintf;
 #endif
@@ -2411,7 +2409,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->scriptstack->free = (RzListFree)free;
 	core->times = RZ_NEW0(RzCoreTimes);
 	core->vmode = false;
-	core->printidx = 0;
 	core->lastcmd = NULL;
 	core->cmdlog = NULL;
 	core->stkcmd = NULL;
@@ -2546,6 +2543,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->dbg->cb_printf = rz_cons_printf;
 	core->dbg->bp->cb_printf = rz_cons_printf;
 	core->dbg->ev = core->ev;
+	// Initialize visual modes after everything else but before config init
+	core->visual = rz_core_visual_new();
 	// initialize config before any corebind
 	rz_core_config_init(core);
 
@@ -2618,7 +2617,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->cmdqueue);
 	RZ_FREE(c->lastcmd);
 	RZ_FREE(c->stkcmd);
-	RZ_FREE_CUSTOM(c->visual.tabs, rz_list_free);
 	RZ_FREE(c->block);
 	RZ_FREE_CUSTOM(c->autocomplete, rz_core_autocomplete_free);
 
@@ -2650,7 +2648,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
 	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
 	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
-	RZ_FREE(c->visual_inputing);
 	RZ_FREE(c->asmqjmps);
 	RZ_FREE_CUSTOM(c->sdb, sdb_free);
 	RZ_FREE_CUSTOM(c->parser, rz_parse_free);
@@ -2658,6 +2655,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_seek_free(c);
 	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
+	rz_core_visual_free(c->visual);
 }
 
 RZ_API void rz_core_free(RzCore *c) {

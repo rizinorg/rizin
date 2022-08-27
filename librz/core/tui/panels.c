@@ -362,8 +362,8 @@ static void __panel_prompt(const char *prompt, char *buf, int len);
 static void __panels_layout_refresh(RzCore *core);
 static void __panels_layout(RzPanels *panels);
 static void __layout_default(RzPanels *panels);
-RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 static void __split_panel_vertical(RzCore *core, RzPanel *p, const char *name, const char *cmd);
 static void __split_panel_horizontal(RzCore *core, RzPanel *p, const char *name, const char *cmd);
 static void __panel_print(RzCore *core, RzConsCanvas *can, RzPanel *panel, int color);
@@ -5290,7 +5290,7 @@ char *__get_panels_config_file_from_dir(const char *file) {
 	return ret;
 }
 
-RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *oname) {
 	int i;
 	if (!core->panels) {
 		return;
@@ -5341,7 +5341,7 @@ void __load_config_menu(RzCore *core) {
 	}
 }
 
-RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name) {
 	if (!core->panels) {
 		return false;
 	}
@@ -5967,7 +5967,7 @@ void __rotate_asmemu(RzCore *core, RzPanel *p) {
 
 static bool fromVisual = false;
 
-RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) {
+RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) {
 	fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = RZ_NEW0(RzPanelsRoot);

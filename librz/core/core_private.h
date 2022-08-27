@@ -217,4 +217,97 @@ static inline RzCmdStatus bool2status(bool val) {
 	return val ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
+/* Visual modes */
+
+typedef enum {
+	RZ_CORE_VISUAL_MODE_PX = 0, ///< Hexadecimal view
+	RZ_CORE_VISUAL_MODE_PD = 1, ///< Disassembly view
+	RZ_CORE_VISUAL_MODE_DB = 2, ///< Debug mode
+	RZ_CORE_VISUAL_MODE_OV = 3, ///< Color blocks (entropy)
+	RZ_CORE_VISUAL_MODE_CD = 4 ///< Print in string format
+} RzCoreVisualMode;
+
+typedef struct rz_core_visual_tab_t {
+	int printidx;
+	ut64 offset;
+	bool cur_enabled;
+	int cur;
+	int ocur;
+	int cols;
+	int disMode;
+	int hexMode;
+	int asm_offset;
+	int asm_instr;
+	int asm_indent;
+	int asm_bytes;
+	int asm_cmt_col;
+	int printMode;
+	int current3format;
+	int current4format;
+	int current5format;
+	int dumpCols;
+	char name[32]; // XXX leak because no  rz_core_visual_tab_free
+	// TODO: cursor and such
+} RzCoreVisualTab;
+
+typedef struct rz_core_visual_t {
+	RzList *tabs;
+	int tab;
+	bool is_inputing; // whether the user is inputing
+	char *inputing; // for filter on the go in Vv mode
+	RzCoreVisualMode printidx;
+} RzCoreVisual;
+
+RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
+RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual);
+
+RZ_IPI void rz_core_visual_prompt_input(RzCore *core);
+RZ_IPI void rz_core_visual_toggle_hints(RzCore *core);
+RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);
+RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode);
+RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
+RZ_IPI int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
+RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
+
+RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
+RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
+RZ_IPI int rz_core_visual_classes(RzCore *core);
+RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
+RZ_IPI int rz_core_visual(RzCore *core, const char *input);
+RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
+RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
+RZ_IPI void rz_core_visual_browse(RzCore *core, const char *arg);
+RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg);
+RZ_IPI void rz_core_visual_seek_animation(RzCore *core, ut64 addr);
+RZ_IPI void rz_core_visual_seek_animation_redo(RzCore *core);
+RZ_IPI void rz_core_visual_seek_animation_undo(RzCore *core);
+RZ_IPI void rz_core_visual_asm(RzCore *core, ut64 addr);
+RZ_IPI void rz_core_visual_colors(RzCore *core);
+RZ_IPI void rz_core_visual_showcursor(RzCore *core, int x);
+RZ_IPI void rz_core_visual_offset(RzCore *core);
+RZ_IPI bool rz_core_visual_hud(RzCore *core);
+RZ_IPI void rz_core_visual_jump(RzCore *core, ut8 ch);
+RZ_IPI void rz_core_visual_disasm_up(RzCore *core, int *cols);
+RZ_IPI void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
+
+RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
+RZ_IPI void rz_core_visual_config(RzCore *core);
+RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input);
+RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input);
+RZ_IPI void rz_core_visual_define(RzCore *core, const char *arg, int distance);
+RZ_IPI int rz_core_visual_trackflags(RzCore *core);
+RZ_IPI int rz_core_visual_view_graph(RzCore *core);
+RZ_IPI int rz_core_visual_view_rop(RzCore *core);
+RZ_IPI int rz_core_visual_comments(RzCore *core);
+RZ_IPI int rz_core_visual_prompt(RzCore *core);
+RZ_IPI bool rz_core_visual_esil(RzCore *core);
+
+/* visual marks */
+RZ_IPI void rz_core_visual_mark_seek(RzCore *core, ut8 ch);
+RZ_IPI void rz_core_visual_mark(RzCore *core, ut8 ch);
+RZ_IPI void rz_core_visual_mark_set(RzCore *core, ut8 ch, ut64 addr);
+RZ_IPI void rz_core_visual_mark_del(RzCore *core, ut8 ch);
+RZ_IPI bool rz_core_visual_mark_dump(RzCore *core);
+RZ_IPI void rz_core_visual_mark_reset(RzCore *core);
+
 #endif

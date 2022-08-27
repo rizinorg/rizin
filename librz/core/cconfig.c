@@ -2374,7 +2374,7 @@ static bool cb_visual_mode(void *user, void *data) {
 		node->i_value = RZ_CORE_VISUAL_MODE_PX;
 	}
 	RzCore *core = (RzCore *)user;
-	core->printidx = node->i_value;
+	((RzCoreVisual *)core->visual)->printidx = node->i_value;
 	return true;
 }
 
