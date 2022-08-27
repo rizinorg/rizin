@@ -4111,7 +4111,7 @@ static void nextword(RzCore *core, RzAGraph *g, const char *word) {
 	nextword(core, g, word);
 }
 
-RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive) {
+RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive) {
 	if (is_interactive && !rz_cons_is_interactive()) {
 		eprintf("Interactive graph mode requires scr.interactive=true.\n");
 		return 0;

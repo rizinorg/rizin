@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+
+#include "../core_private.h"
+
 #define SORT_ADDRESS 0
 #define SORT_NAME    1
 
@@ -213,7 +216,7 @@ static void __sync_status_with_cursor(RzCoreVisualViewGraph *status) {
 	__sort(status, status->refsCol);
 }
 
-RZ_API int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *status) {
+RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *status) {
 	int h, w = rz_cons_get_size(&h);
 	const int colw = w / 4;
 	const int colh = h / 2;
@@ -252,7 +255,7 @@ RZ_API int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 	return 0;
 }
 
-RZ_API int rz_core_visual_view_graph(RzCore *core) {
+RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 	RzCoreVisualViewGraph status = { 0 };
 	status.core = core;
 	status.cur_sort = SORT_NAME;

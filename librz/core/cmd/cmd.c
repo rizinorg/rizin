@@ -22,8 +22,8 @@
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd();
 
-RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	RzCmdDescriptor *d = RZ_NEW0(RzCmdDescriptor);

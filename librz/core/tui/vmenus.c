@@ -86,7 +86,7 @@ static void showreg(RzAnalysisEsil *esil, const char *rn, const char *desc) {
 	rz_cons_printf("%s 0x%08" PFMT64x " (%d) ; %s\n", rn, nm, sz, desc);
 }
 
-RZ_API bool rz_core_visual_esil(RzCore *core) {
+RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	char *word = NULL;
 	int x = 0;
@@ -231,7 +231,7 @@ beach:
 	return true;
 }
 
-RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
+RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	bool colorBits = false;
 	int i, j, x = 0;
@@ -491,7 +491,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 	return true;
 }
 
-RZ_API bool rz_core_visual_hudclasses(RzCore *core) {
+RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 	RzListIter *iter, *iter2;
 	RzBinClass *c;
 	RzBinField *f;
@@ -536,7 +536,7 @@ static bool hudstuff_append(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-RZ_API bool rz_core_visual_hudstuff(RzCore *core) {
+RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 	ut64 addr;
 	char *res;
 	RzList *list = rz_list_new();
@@ -783,7 +783,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 	return NULL;
 }
 
-RZ_API int rz_core_visual_classes(RzCore *core) {
+RZ_IPI int rz_core_visual_classes(RzCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
 	int mode = 'c';
@@ -1074,7 +1074,7 @@ static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbL
 // Should the classes be refreshed after command execution with :
 // in case new class information would be added?
 // Add grep?
-RZ_API int rz_core_visual_analysis_classes(RzCore *core) {
+RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	int ch, index = 0;
 	char command[1024];
 	SdbList *list = rz_analysis_class_get_all(core->analysis, true);
@@ -1229,7 +1229,7 @@ static char *print_rop(void *_core, void *_item, bool selected) {
 	return rz_str_newf("%c %s\n", selected ? '>' : ' ', line);
 }
 
-RZ_API int rz_core_visual_view_rop(RzCore *core) {
+RZ_IPI int rz_core_visual_view_rop(RzCore *core) {
 	RzListIter *iter;
 	const int rows = 7;
 	int cur = 0;
@@ -1482,7 +1482,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 	return false;
 }
 
-RZ_API int rz_core_visual_trackflags(RzCore *core) {
+RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 	const char *fs = NULL, *fs2 = NULL;
 	int hit, i, j, ch;
 	int _option = 0;
@@ -1492,6 +1492,7 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 	int delta = 7;
 	int menu = 0;
 	int sort = SORT_NONE;
+	RzCoreVisual *visual = core->visual;
 
 	if (rz_flag_space_is_empty(core->flags)) {
 		menu = 1;
@@ -1543,15 +1544,15 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 				switch (format) {
 				case 0:
 					snprintf(cmd, sizeof(cmd), "px %d @ %s!64", rows * 16, fs2);
-					core->printidx = 0;
+					visual->printidx = 0;
 					break;
 				case 1:
 					snprintf(cmd, sizeof(cmd), "pd %d @ %s!64", rows, fs2);
-					core->printidx = 1;
+					visual->printidx = 1;
 					break;
 				case 2:
 					snprintf(cmd, sizeof(cmd), "ps @ %s!64", fs2);
-					core->printidx = 5;
+					visual->printidx = 5;
 					break;
 				case 3: strcpy(cmd, "f="); break;
 				default: format = 0; continue;
@@ -1790,7 +1791,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 	return true;
 }
 
-RZ_API int rz_core_visual_comments(RzCore *core) {
+RZ_IPI int rz_core_visual_comments(RzCore *core) {
+	RzCoreVisual *visual = core->visual;
 	char *str;
 	char cmd[512], *p = NULL;
 	int ch, option = 0;
@@ -1832,15 +1834,15 @@ RZ_API int rz_core_visual_comments(RzCore *core) {
 		switch (format) {
 		case 0:
 			sprintf(cmd, "px @ 0x%" PFMT64x ":64", from);
-			core->printidx = 0;
+			visual->printidx = 0;
 			break;
 		case 1:
 			sprintf(cmd, "pd 12 @ 0x%" PFMT64x ":64", from);
-			core->printidx = 1;
+			visual->printidx = 1;
 			break;
 		case 2:
 			sprintf(cmd, "ps @ 0x%" PFMT64x ":64", from);
-			core->printidx = 5;
+			visual->printidx = 5;
 			break;
 		default: format = 0; continue;
 		}
@@ -1981,7 +1983,7 @@ static void show_config_options(RzCore *core, const char *opt) {
 	}
 }
 
-RZ_API void rz_core_visual_config(RzCore *core) {
+RZ_IPI void rz_core_visual_config(RzCore *core) {
 	char *fs = NULL, *fs2 = NULL, *desc = NULL;
 	int i, j, ch, hit, show;
 	int option, _option = 0;
@@ -2206,29 +2208,28 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
 }
 
 /**
- * \brief Convert the string visual_inputing to RzPVector, with WHITESPACE as separators
+ * \brief Convert the string inputing to RzPVector, with WHITESPACE as separators
  *
- * \param visual_inputing
+ * \param inputing
  * \return return the pointer of RzPVector
  */
-static RzPVector *capture_filter_keywords(char *visual_inputing) {
-	rz_return_val_if_fail(visual_inputing, NULL);
-	char *buf, *inputing;
+static RzPVector *capture_filter_keywords(char *inputing) {
+	rz_return_val_if_fail(inputing, NULL);
 	RzPVector *keywords = rz_pvector_new(free);
 
 	if (!keywords) {
 		return NULL;
 	}
-	inputing = rz_str_trim_dup(visual_inputing);
-	buf = rz_str_new("");
-	for (int i = 0; i < strlen(visual_inputing); i++) {
-		if (IS_WHITESPACE(visual_inputing[i])) {
+	char *processing = rz_str_trim_dup(inputing);
+	char *buf = rz_str_new("");
+	for (int i = 0; i < strlen(processing); i++) {
+		if (IS_WHITESPACE(processing[i])) {
 			if (strlen(buf)) {
 				rz_pvector_push(keywords, buf);
 				buf = rz_str_new("");
 			}
 		} else {
-			buf = rz_str_appendch(buf, visual_inputing[i]);
+			buf = rz_str_appendch(buf, processing[i]);
 		}
 	}
 	if (strlen(buf)) {
@@ -2236,7 +2237,7 @@ static RzPVector *capture_filter_keywords(char *visual_inputing) {
 	} else {
 		RZ_FREE(buf);
 	}
-	RZ_FREE(inputing);
+	free(processing);
 	return keywords;
 }
 
@@ -2281,18 +2282,19 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	RzList *filter_fcn = core->analysis->fcns, *visual_filter = NULL;
 	int window, i = 0, print_full_func;
 	RzListIter *iter;
+	RzCoreVisual *visual = core->visual;
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
-	window -= core->visual_inputing ? 10 : 8; // Size of printed things
+	window -= visual->inputing ? 10 : 8; // Size of printed things
 	bool color = rz_config_get_i(core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
 
-	if (core->visual_inputing) {
+	if (visual->inputing) {
 		visual_filter = rz_list_newf(NULL);
 		if (visual_filter) {
-			RzPVector *keywords = capture_filter_keywords(core->visual_inputing);
+			RzPVector *keywords = capture_filter_keywords(visual->inputing);
 			if (keywords) {
 				filter_function(core, visual_filter, keywords);
 				RZ_FREE_CUSTOM(keywords, rz_pvector_free);
@@ -2514,9 +2516,8 @@ static void rz_core_vmenu_append_help(RzStrBuf *p, const char **help) {
 }
 
 static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
-	if (!core) {
-		return 0LL;
-	}
+	rz_return_val_if_fail(core, 0);
+	RzCoreVisual *visual = core->visual;
 	ut64 addr;
 	RzStrBuf *buf;
 	char old[1024];
@@ -2554,11 +2555,11 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		rz_cons_printf("%s", drained);
 		free(drained);
 		// hints for filtered keywords
-		if (core->visual_inputing) {
-			if (core->visual_is_inputing) {
-				rz_cons_printf("input keywords: %s\n\n", core->visual_inputing);
+		if (visual->inputing) {
+			if (visual->is_inputing) {
+				rz_cons_printf("input keywords: %s\n\n", visual->inputing);
 			} else {
-				rz_cons_printf("keywords: %s\n\n", core->visual_inputing);
+				rz_cons_printf("keywords: %s\n\n", visual->inputing);
 			}
 		}
 		addr = var_functions_show(core, option, 1, cols);
@@ -2631,7 +2632,7 @@ static void rz_core_visual_debugtraces_help(RzCore *core) {
 	rz_cons_any_key(NULL);
 }
 
-RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input) {
+RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 	int i, delta = 0;
 	for (;;) {
 		char *trace_addr_str = rz_core_cmd_strf(core, "dtdq %d", delta);
@@ -2736,10 +2737,11 @@ static void addVar(RzCore *core, int ch, const char *msg) {
 }
 
 /* Like emenu but for real */
-RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
+RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
 	int nfcns, ch, _option = 0;
 
+	RzCoreVisual *visual = core->visual;
 	RzConsEvent olde = core->cons->event_resize;
 	void *olde_user = core->cons->event_data;
 	ut64 addr = core->offset;
@@ -2754,8 +2756,8 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 	rz_config_set_i(core->config, "asm.bytes", 0);
 	for (;;) {
 		nfcns = rz_list_length(core->analysis->fcns);
-		if (core->visual_inputing) {
-			RzPVector *keywords = capture_filter_keywords(core->visual_inputing);
+		if (visual->inputing) {
+			RzPVector *keywords = capture_filter_keywords(visual->inputing);
 			if (keywords) {
 				nfcns = filter_function(core, NULL, keywords);
 			}
@@ -2764,26 +2766,26 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		addr = rz_core_visual_analysis_refresh(core);
 
 		// for filter on the go
-		if (level == 0 && core->visual_is_inputing) {
+		if (level == 0 && visual->is_inputing) {
 			int ch = rz_cons_readchar();
 			switch (ch) {
 			case 13: // CR
-				core->visual_is_inputing = false;
-				if (!strlen(core->visual_inputing)) {
-					RZ_FREE(core->visual_inputing);
+				visual->is_inputing = false;
+				if (!strlen(visual->inputing)) {
+					RZ_FREE(visual->inputing);
 				}
 				break;
 			case 127: // Backspace
 			case 8:
-				if (strlen(core->visual_inputing) > 0) {
-					core->visual_inputing[strlen(core->visual_inputing) - 1] = '\0';
+				if (strlen(visual->inputing) > 0) {
+					visual->inputing[strlen(visual->inputing) - 1] = '\0';
 				}
 				break;
 			default:
 				if (!IS_PRINTABLE(ch)) {
 					continue;
 				}
-				core->visual_inputing = rz_str_appendch(core->visual_inputing, ch);
+				visual->inputing = rz_str_appendch(visual->inputing, ch);
 				break;
 			}
 			// mute the following switch while inputing keyword
@@ -2809,9 +2811,9 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case 'f':
 			if (level == 0) {
 				// add new keyword
-				core->visual_is_inputing = true;
-				if (!core->visual_inputing) {
-					core->visual_inputing = rz_str_new("");
+				visual->is_inputing = true;
+				if (!visual->inputing) {
+					visual->inputing = rz_str_new("");
 				}
 				option = 0;
 			}
@@ -2819,7 +2821,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case 'F':
 			if (level == 0) {
 				// reset all keywords
-				RZ_FREE(core->visual_inputing);
+				RZ_FREE(visual->inputing);
 			}
 			break;
 		case '[':
@@ -3146,7 +3148,8 @@ static void handleHints(RzCore *core) {
 	}
 }
 
-RZ_API void rz_core_visual_define(RzCore *core, const char *args, int distance) {
+RZ_IPI void rz_core_visual_define(RzCore *core, const char *args, int distance) {
+	RzCoreVisual *visual = core->visual;
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -3302,7 +3305,7 @@ onemoretime:
 	case 'n': {
 		RzAnalysisOp op;
 		ut64 tgt_addr = UT64_MAX;
-		if (!isDisasmPrint(core->printidx)) {
+		if (!isDisasmPrint(visual->printidx)) {
 			break;
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
@@ -3612,7 +3615,7 @@ onemoretime:
 	}
 }
 
-RZ_API void rz_core_visual_colors(RzCore *core) {
+RZ_IPI void rz_core_visual_colors(RzCore *core) {
 	char *color = calloc(1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;

@@ -55,6 +55,9 @@ typedef struct {
 
 typedef void (*RzTableSelector)(RzTableRow *acc, RzTableRow *new_row, int nth);
 
+RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
+RZ_API void rz_listinfo_free(RzListInfo *info);
+
 RZ_API void rz_table_row_fini(RZ_NONNULL void *_row);
 RZ_API void rz_table_column_fini(RZ_NONNULL void *_col);
 RZ_API RzTableColumn *rz_table_column_clone(RzTableColumn *col);

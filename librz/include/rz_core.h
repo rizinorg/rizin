@@ -94,15 +94,6 @@ RZ_LIB_VERSION_HEADER(rz_core);
 
 #define RTR_MAX_HOSTS 255
 
-/* visual mode */
-typedef enum {
-	RZ_CORE_VISUAL_MODE_PX = 0, ///< Hexadecimal view
-	RZ_CORE_VISUAL_MODE_PD = 1, ///< Disassembly view
-	RZ_CORE_VISUAL_MODE_DB = 2, ///< Debug mode
-	RZ_CORE_VISUAL_MODE_OV = 3, ///< Color blocks (entropy)
-	RZ_CORE_VISUAL_MODE_CD = 4 ///< Print in string format
-} RzCoreVisualMode;
-
 typedef enum {
 	RZ_CORE_WRITE_OP_BYTESWAP2, ///< Swap the endianess of 2-bytes values
 	RZ_CORE_WRITE_OP_BYTESWAP4, ///< Swap the endianess of 4-bytes values
@@ -214,36 +205,6 @@ typedef struct rz_core_autocomplete_t {
 	struct rz_core_autocomplete_t **subcmds;
 } RzCoreAutocomplete;
 
-typedef struct rz_core_visual_tab_t {
-	int printidx;
-	ut64 offset;
-	bool cur_enabled;
-	int cur;
-	int ocur;
-	int cols;
-	int disMode;
-	int hexMode;
-	int asm_offset;
-	int asm_instr;
-	int asm_indent;
-	int asm_bytes;
-	int asm_cmt_col;
-	int printMode;
-	int current3format;
-	int current4format;
-	int current5format;
-	int dumpCols;
-	char name[32]; // XXX leak because no  rz_core_visual_tab_free
-	// TODO: cursor and such
-} RzCoreVisualTab;
-// #define RzCoreVisualTab Tab
-
-typedef struct rz_core_visual_t {
-	RzList *tabs;
-	int tab;
-} RzCoreVisual;
-// #define RzCoreVisual Visual
-
 typedef struct {
 	int x;
 	int y;
@@ -349,13 +310,10 @@ struct rz_core_t {
 	int asmqjmps_size;
 	bool is_asmqjmps_letter;
 	bool keep_asmqjmps;
-	RzCoreVisual visual;
-	// visual // TODO: move them into RzCoreVisual
-	bool visual_is_inputing; // whether the user is inputing
-	char *visual_inputing; // for filter on the go in Vv mode
+	/* TODO: Remove this from RzCore */
+	void *visual; /* RzCoreVisual */
 	int http_up;
 	int gdbserver_up;
-	RzCoreVisualMode printidx;
 	char *stkcmd;
 	bool in_search;
 	RzList /*<RzCoreCmpWatcher *>*/ *watchers;
@@ -525,7 +483,6 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save);
 RZ_API bool rz_core_seek_align(RzCore *core, ut64 align, bool save);
 RZ_API bool rz_core_seek_delta(RzCore *core, st64 delta, bool save);
 RZ_API bool rz_core_seek_analysis_bb(RzCore *core, ut64 addr, bool save);
-RZ_API bool rz_core_visual_bit_editor(RzCore *core);
 RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch);
 RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr);
 RZ_API int rz_core_block_read(RzCore *core);
@@ -542,34 +499,8 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_help_vars_print(RzCore *core);
-RZ_API void rz_core_visual_prompt_input(RzCore *core);
-RZ_API void rz_core_visual_toggle_hints(RzCore *core);
-RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);
-RZ_API void rz_core_visual_applyDisMode(RzCore *core, int disMode);
-RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
-RZ_API int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
-RZ_API void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
 RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr);
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
-RZ_API bool rz_core_visual_hudstuff(RzCore *core);
-RZ_API int rz_core_visual_classes(RzCore *core);
-RZ_API int rz_core_visual_analysis_classes(RzCore *core);
-RZ_API int rz_core_visual(RzCore *core, const char *input);
-RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
-RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
-RZ_API void rz_core_visual_browse(RzCore *core, const char *arg);
-RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg);
-RZ_API void rz_core_visual_seek_animation(RzCore *core, ut64 addr);
-RZ_API void rz_core_visual_seek_animation_redo(RzCore *core);
-RZ_API void rz_core_visual_seek_animation_undo(RzCore *core);
-RZ_API void rz_core_visual_asm(RzCore *core, ut64 addr);
-RZ_API void rz_core_visual_colors(RzCore *core);
-RZ_API void rz_core_visual_showcursor(RzCore *core, int x);
-RZ_API void rz_core_visual_offset(RzCore *core);
-RZ_API bool rz_core_visual_hud(RzCore *core);
-RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch);
-RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols);
-RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
 RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
 RZ_API RzBinReloc *rz_core_get_reloc_to(RzCore *core, ut64 addr);
 RZ_API ut64 rz_core_get_asmqjmps(RzCore *core, const char *str);
@@ -590,16 +521,6 @@ RZ_API bool rz_core_analysis_esil_trace_start(RzCore *core);
 RZ_API bool rz_core_analysis_esil_trace_stop(RzCore *core);
 RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
 RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops);
-
-RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
-RZ_API void rz_listinfo_free(RzListInfo *info);
-/* visual marks */
-RZ_API void rz_core_visual_mark_seek(RzCore *core, ut8 ch);
-RZ_API void rz_core_visual_mark(RzCore *core, ut8 ch);
-RZ_API void rz_core_visual_mark_set(RzCore *core, ut8 ch, ut64 addr);
-RZ_API void rz_core_visual_mark_del(RzCore *core, ut8 ch);
-RZ_API bool rz_core_visual_mark_dump(RzCore *core);
-RZ_API void rz_core_visual_mark_reset(RzCore *core);
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb);
 RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
@@ -1139,17 +1060,6 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input);
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path);
 RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
-RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
-RZ_API void rz_core_visual_config(RzCore *core);
-RZ_API void rz_core_visual_analysis(RzCore *core, const char *input);
-RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input);
-RZ_API void rz_core_visual_define(RzCore *core, const char *arg, int distance);
-RZ_API int rz_core_visual_trackflags(RzCore *core);
-RZ_API int rz_core_visual_view_graph(RzCore *core);
-RZ_API int rz_core_visual_view_rop(RzCore *core);
-RZ_API int rz_core_visual_comments(RzCore *core);
-RZ_API int rz_core_visual_prompt(RzCore *core);
-RZ_API bool rz_core_visual_esil(RzCore *core);
 RZ_API int rz_core_search_preludes(RzCore *core, bool log);
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, int protection, const char *mode, const char *prefix);

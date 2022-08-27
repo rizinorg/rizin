@@ -6,10 +6,12 @@ static void rz_core_visual_tab_free(RzCoreVisualTab *tab) {
 }
 
 static int __core_visual_tab_count(RzCore *core) {
-	return core->visual.tabs ? rz_list_length(core->visual.tabs) : 0;
+	RzCoreVisual *visual = core->visual;
+	return visual->tabs ? rz_list_length(visual->tabs) : 0;
 }
 
 static char *__core_visual_tab_string(RzCore *core, const char *kolor) {
+	RzCoreVisual *visual = core->visual;
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int scr_color = rz_config_get_i(core->config, "scr.color");
 	if (hex_cols < 4) {
@@ -17,16 +19,16 @@ static char *__core_visual_tab_string(RzCore *core, const char *kolor) {
 	}
 	int i = 0;
 	char *str = NULL;
-	int tabs = rz_list_length(core->visual.tabs);
+	int tabs = rz_list_length(visual->tabs);
 	if (scr_color > 0) {
 		// TODO: use theme
 		if (tabs > 0) {
 			str = rz_str_appendf(str, "%s-+__", kolor);
 		}
 		for (i = 0; i < tabs; i++) {
-			RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, i);
+			RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, i);
 			const char *name = (tab && *tab->name) ? tab->name : NULL;
-			if (i == core->visual.tab) {
+			if (i == visual->tab) {
 				str = rz_str_appendf(str, Color_WHITE "_/ %s \\_%s", name ? name : "t=", kolor);
 			} else {
 				str = rz_str_appendf(str, "_%s(%d)_", name ? name : "", i + 1);
@@ -38,11 +40,11 @@ static char *__core_visual_tab_string(RzCore *core, const char *kolor) {
 		}
 		for (i = 0; i < tabs; i++) {
 			const char *name = NULL;
-			RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, i);
+			RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, i);
 			if (tab && *tab->name) {
 				name = tab->name;
 			}
-			if (i == core->visual.tab) {
+			if (i == visual->tab) {
 				str = rz_str_appendf(str, "_/ %d:%s \\_", i + 1, name ? name : "'=");
 			} else {
 				str = rz_str_appendf(str, "_(t%d%s%s)__", i + 1, name ? ":" : "", name ? name : "");
@@ -63,7 +65,8 @@ static void visual_tabset(RzCore *core, RzCoreVisualTab *tab) {
 	rz_return_if_fail(core && tab);
 
 	rz_core_seek(core, tab->offset, true);
-	core->printidx = tab->printidx;
+	RzCoreVisual *visual = core->visual;
+	visual->printidx = tab->printidx;
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;
 	core->print->ocur = tab->ocur;
@@ -92,7 +95,8 @@ static void visual_tabget(RzCore *core, RzCoreVisualTab *tab) {
 	rz_return_if_fail(core && tab);
 
 	tab->offset = core->offset;
-	tab->printidx = core->printidx;
+	RzCoreVisual *visual = core->visual;
+	tab->printidx = visual->printidx;
 	tab->asm_offset = rz_config_get_i(core->config, "asm.offset");
 	tab->asm_instr = rz_config_get_i(core->config, "asm.instr");
 	tab->asm_indent = rz_config_get_i(core->config, "asm.indent");
@@ -121,104 +125,111 @@ static RzCoreVisualTab *rz_core_visual_tab_new(RzCore *core) {
 }
 
 static void rz_core_visual_tab_update(RzCore *core) {
-	if (!core->visual.tabs) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs) {
 		return;
 	}
-	RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
 		visual_tabget(core, tab);
 	}
 }
 
 static RzCoreVisualTab *visual_newtab(RzCore *core) {
-	if (!core->visual.tabs) {
-		core->visual.tabs = rz_list_newf((RzListFree)rz_core_visual_tab_free);
-		if (!core->visual.tabs) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs) {
+		visual->tabs = rz_list_newf((RzListFree)rz_core_visual_tab_free);
+		if (!visual->tabs) {
 			return NULL;
 		}
-		core->visual.tab = -1;
+		visual->tab = -1;
 		visual_newtab(core);
 	}
-	core->visual.tab++;
+	visual->tab++;
 	RzCoreVisualTab *tab = rz_core_visual_tab_new(core);
 	if (tab) {
-		rz_list_append(core->visual.tabs, tab);
+		rz_list_append(visual->tabs, tab);
 		visual_tabset(core, tab);
 	}
 	return tab;
 }
 
 static void visual_nthtab(RzCore *core, int n) {
-	if (!core->visual.tabs || n < 0 || n >= rz_list_length(core->visual.tabs)) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs || n < 0 || n >= rz_list_length(visual->tabs)) {
 		return;
 	}
-	core->visual.tab = n;
-	RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+	visual->tab = n;
+	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
 		visual_tabset(core, tab);
 	}
 }
 
 static void visual_tabname(RzCore *core) {
-	if (!core->visual.tabs) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs) {
 		return;
 	}
 	char name[32] = { 0 };
 	prompt_read("tab name: ", name, sizeof(name));
-	RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
 		strcpy(tab->name, name);
 	}
 }
 
 static void visual_nexttab(RzCore *core) {
-	if (!core->visual.tabs) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs) {
 		return;
 	}
-	if (core->visual.tab >= rz_list_length(core->visual.tabs) - 1) {
-		core->visual.tab = -1;
+	if (visual->tab >= rz_list_length(visual->tabs) - 1) {
+		visual->tab = -1;
 	}
-	core->visual.tab++;
-	RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+	visual->tab++;
+	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
 		visual_tabset(core, tab);
 	}
 }
 
 static void visual_prevtab(RzCore *core) {
-	if (!core->visual.tabs) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs) {
 		return;
 	}
-	if (core->visual.tab < 1) {
-		core->visual.tab = rz_list_length(core->visual.tabs) - 1;
+	if (visual->tab < 1) {
+		visual->tab = rz_list_length(visual->tabs) - 1;
 	} else {
-		core->visual.tab--;
+		visual->tab--;
 	}
-	RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
 		visual_tabset(core, tab);
 	}
 }
 
 static void visual_closetab(RzCore *core) {
-	if (!core->visual.tabs) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->tabs) {
 		return;
 	}
-	RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		rz_list_delete_data(core->visual.tabs, tab);
-		const int tabsCount = rz_list_length(core->visual.tabs);
+		rz_list_delete_data(visual->tabs, tab);
+		const int tabsCount = rz_list_length(visual->tabs);
 		if (tabsCount > 0) {
-			if (core->visual.tab > 0) {
-				core->visual.tab--;
+			if (visual->tab > 0) {
+				visual->tab--;
 			}
-			RzCoreVisualTab *tab = rz_list_get_n(core->visual.tabs, core->visual.tab);
+			RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 			if (tab) {
 				visual_tabset(core, tab);
 			}
 		} else {
-			rz_list_free(core->visual.tabs);
-			core->visual.tabs = NULL;
+			rz_list_free(visual->tabs);
+			visual->tabs = NULL;
 		}
 	}
 }

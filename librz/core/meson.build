@@ -59,7 +59,6 @@ rz_core_sources = [
   'seek.c',
   'serialize_core.c',
   'task.c',
-  'vmarks.c',
   'yank.c',
   'p/core_dex.c',
   'p/core_java.c',
@@ -105,6 +104,7 @@ rz_core_sources = [
   'tui/vmenus.c',
   'tui/vmenus_graph.c',
   'tui/vasm.c',
+  'tui/vmarks.c',
   'tui/panels.c'
 ]
 

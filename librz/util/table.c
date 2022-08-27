@@ -1202,6 +1202,27 @@ RZ_API void rz_table_hide_header(RzTable *t) {
 	t->showHeader = false;
 }
 
+RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra) {
+	RzListInfo *info = RZ_NEW(RzListInfo);
+	if (info) {
+		info->name = name ? strdup(name) : NULL;
+		info->pitv = pitv;
+		info->vitv = vitv;
+		info->perm = perm;
+		info->extra = extra ? strdup(extra) : NULL;
+	}
+	return info;
+}
+
+RZ_API void rz_listinfo_free(RzListInfo *info) {
+	if (!info) {
+		return;
+	}
+	free(info->name);
+	free(info->extra);
+	free(info);
+}
+
 RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 len, int width, bool va) {
 	ut64 mul, min = -1, max = -1;
 	RzListIter *iter;
