@@ -8,7 +8,7 @@
 static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
 	rz_return_if_fail(pdb && db && types);
 	if (!types) {
-		eprintf("there is nothing to print!\n");
+		RZ_LOG_ERROR("core: there is nothing to print!\n");
 	}
 	RzListIter *it;
 	RzBaseType *type;
@@ -101,7 +101,7 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 	rz_return_if_fail(db && pdb && state);
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	if (!stream) {
-		eprintf("There is no tpi stream in current pdb\n");
+		RZ_LOG_ERROR("core: there is no tpi stream in current pdb\n");
 		return;
 	}
 	switch (state->mode) {
@@ -248,7 +248,7 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	ut64 baddr = rz_bin_get_baddr(core->bin);
 	if (!baddr || baddr == UT64_MAX) {
 		baddr = rz_config_get_i(core->config, "bin.baddr");
-		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
+		RZ_LOG_WARN("core: cannot find base address, flags will probably be misplaced\n");
 	}
 
 	RzPdb *pdb = rz_bin_pdb_parse_from_file(file);
@@ -277,7 +277,7 @@ RZ_API void rz_core_pdb_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTypeDB 
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
 		baddr = core->bin->cur->o->opts.baseaddr;
 	} else {
-		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
+		RZ_LOG_WARN("core: cannot find base address, flags will probably be misplaced\n");
 	}
 
 	rz_cmd_state_output_array_start(state);

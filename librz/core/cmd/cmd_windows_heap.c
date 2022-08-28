@@ -5,7 +5,7 @@
 #include "../core_private.h"
 
 #define NOT_SUPPORTED_ERROR_MESSAGE \
-	eprintf("Windows heap parsing is not supported on this platform\n"); \
+	RZ_LOG_ERROR("core: Windows heap parsing is not supported on this platform\n"); \
 	return RZ_CMD_STATUS_ERROR;
 
 #if __WINDOWS__

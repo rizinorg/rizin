@@ -629,7 +629,7 @@ RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	}
 	RzCmdStatus r = RZ_CMD_STATUS_OK;
 	if (rz_list_empty(ritems)) {
-		eprintf("No argument roles defined.\n");
+		RZ_LOG_ERROR("core: No argument roles defined.\n");
 	} else {
 		r = references_handler(core, reg, sync_cb, ritems, mode);
 	}
@@ -702,7 +702,7 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 		if (reg->reg_profile_str) {
 			rz_cons_println(reg->reg_profile_str);
 		} else {
-			eprintf("No register profile defined.\n");
+			RZ_LOG_ERROR("core: No register profile defined.\n");
 		}
 		break;
 	case RZ_OUTPUT_MODE_JSON: {
@@ -879,7 +879,7 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 		}
 	} else {
 		/* note, that negative type forces sync to print the regs from the backend */
-		eprintf("cannot find multimedia register '%s'\n", name);
+		RZ_LOG_ERROR("core: cannot find multimedia register '%s'\n", name);
 	}
 
 error:

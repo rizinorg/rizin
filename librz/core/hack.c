@@ -39,7 +39,7 @@ RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp
 	} else if (!strcmp(op, "ret0")) {
 		rz_core_write_hexpair(core, core->offset, "12000f00"); // mov v0, 0;ret v0
 	} else {
-		eprintf("Unsupported operation '%s'\n", op);
+		RZ_LOG_ERROR("core: hack: unsupported operation '%s'\n", op);
 		return false;
 	}
 	return true;
@@ -52,20 +52,8 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 		rz_core_write_hexpair(core, core->offset, "c0035fd6t");
 	} else if (!strcmp(op, "trap")) {
 		rz_core_write_hexpair(core, core->offset, "000020d4");
-	} else if (!strcmp(op, "jz")) {
-		eprintf("ARM jz hack not supported\n");
-		return false;
 	} else if (!strcmp(op, "jinf")) {
 		rz_core_write_hexpair(core, core->offset, "00000014");
-	} else if (!strcmp(op, "jnz")) {
-		eprintf("ARM jnz hack not supported\n");
-		return false;
-	} else if (!strcmp(op, "nocj")) {
-		eprintf("ARM jnz hack not supported\n");
-		return false;
-	} else if (!strcmp(op, "recj")) {
-		eprintf("TODO: use jnz or jz\n");
-		return false;
 	} else if (!strcmp(op, "ret1")) {
 		rz_core_write_assembly(core, core->offset, "mov x0, 1,,ret");
 	} else if (!strcmp(op, "ret0")) {
@@ -73,7 +61,7 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 	} else if (!strcmp(op, "retn")) {
 		rz_core_write_assembly(core, core->offset, "mov x0, -1,,ret");
 	} else {
-		eprintf("Invalid operation '%s'\n", op);
+		RZ_LOG_ERROR("core: hack: invalid operation '%s'\n", op);
 		return false;
 	}
 	return true;
@@ -91,7 +79,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		int i;
 
 		if (len % nopsize) {
-			eprintf("Invalid nopcode size\n");
+			RZ_LOG_ERROR("core: hack: invalid nopcode size\n");
 			return false;
 		}
 
@@ -122,11 +110,11 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 				rz_core_write_hexpair(core, core->offset + 1, "d0"); // BEQ
 				break;
 			default:
-				eprintf("Current opcode is not conditional\n");
+				RZ_LOG_ERROR("core: hack: current opcode is not conditional\n");
 				return false;
 			}
 		} else {
-			eprintf("ARM jz hack not supported\n");
+			RZ_LOG_ERROR("core: hack: ARM jz hack not supported\n");
 			return false;
 		}
 	} else if (!strcmp(op, "jnz")) {
@@ -142,11 +130,11 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 				rz_core_write_hexpair(core, core->offset + 1, "d1"); // BNE
 				break;
 			default:
-				eprintf("Current opcode is not conditional\n");
+				RZ_LOG_ERROR("core: hack: Current opcode is not conditional\n");
 				return false;
 			}
 		} else {
-			eprintf("ARM jnz hack not supported\n");
+			RZ_LOG_ERROR("core: hack: ARM jnz hack not supported\n");
 			return false;
 		}
 	} else if (!strcmp(op, "nocj")) {
@@ -162,15 +150,15 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 				rz_core_write_hexpair(core, core->offset + 1, "e0"); // BEQ
 				break;
 			default:
-				eprintf("Current opcode is not conditional\n");
+				RZ_LOG_ERROR("core: hack: Current opcode is not conditional\n");
 				return false;
 			}
 		} else {
-			eprintf("ARM un-cjmp hack not supported\n");
+			RZ_LOG_ERROR("core: hack: ARM un-cjmp hack not supported\n");
 			return false;
 		}
 	} else if (!strcmp(op, "recj")) {
-		eprintf("TODO: use jnz or jz\n");
+		RZ_LOG_ERROR("core: hack: please, use jnz or jz\n");
 		return false;
 	} else if (!strcmp(op, "ret1")) {
 		if (bits == 16) {
@@ -191,7 +179,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 			rz_core_write_hexpair(core, core->offset, "ff00a0e31eff2fe1"); // movs r0, -1; bx lr
 		}
 	} else {
-		eprintf("Invalid operation\n");
+		RZ_LOG_ERROR("core: hack: invalid operation\n");
 		return false;
 	}
 	return true;
@@ -220,7 +208,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 		if (b[0] == 0x75) {
 			rz_core_write_hexpair(core, core->offset, "74");
 		} else {
-			eprintf("Current opcode is not conditional\n");
+			RZ_LOG_ERROR("core: hack: current opcode is not conditional\n");
 			return false;
 		}
 	} else if (!strcmp(op, "jinf")) {
@@ -229,7 +217,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 		if (b[0] == 0x74) {
 			rz_core_write_hexpair(core, core->offset, "75");
 		} else {
-			eprintf("Current opcode is not conditional\n");
+			RZ_LOG_ERROR("core: hack: current opcode is not conditional\n");
 			return false;
 		}
 	} else if (!strcmp(op, "nocj")) {
@@ -238,7 +226,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 		} else if (b[0] >= 0x70 && b[0] <= 0x7f) {
 			rz_core_write_hexpair(core, core->offset, "eb");
 		} else {
-			eprintf("Current opcode is not conditional\n");
+			RZ_LOG_ERROR("core: hack: current opcode is not conditional\n");
 			return false;
 		}
 	} else if (!strcmp(op, "recj")) {
@@ -252,7 +240,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 			rz_core_write_hexpair(core, core->offset, opcode);
 			free(opcode);
 		} else {
-			eprintf("Invalid conditional jump opcode\n");
+			RZ_LOG_ERROR("core: hack: invalid conditional jump opcode\n");
 			return false;
 		}
 	} else if (!strcmp(op, "ret1")) {
@@ -262,7 +250,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 	} else if (!strcmp(op, "retn")) {
 		rz_core_write_hexpair(core, core->offset, "c2ffff");
 	} else {
-		eprintf("Invalid operation '%s'\n", op);
+		RZ_LOG_ERROR("core: hack: invalid operation '%s'\n", op);
 		return false;
 	}
 	return true;
@@ -298,12 +286,12 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 			hack = rz_core_hack_arm;
 		}
 	} else {
-		eprintf("TODO: write hacks are only for x86\n");
+		RZ_LOG_ERROR("core: hack: write hacks are only supported on x86 arch\n");
 	}
 	if (hack) {
 		RzAnalysisOp analop;
 		if (rz_analysis_op(core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
-			eprintf("analysis op fail\n");
+			RZ_LOG_ERROR("core: hack: analysis op fail\n");
 			return false;
 		}
 		return hack(core, op, &analop);

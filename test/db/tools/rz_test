@@ -5,8 +5,8 @@ pf?cat_sat_on_keyboard
 pf?CAT_SAT_ON_KEYBOARD
 EOF
 EXPECT_ERR=<<EOF
-Struct cat_sat_on_keyboard is not defined
-Struct CAT_SAT_ON_KEYBOARD is not defined
+ERROR: core: Struct cat_sat_on_keyboard is not defined
+ERROR: core: Struct CAT_SAT_ON_KEYBOARD is not defined
 EOF
 RUN
 
@@ -19,8 +19,8 @@ EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-Struct cat_sat_on_keyboard is not defined
-Struct CAT_SAT_ON_KEYBOARD is not defined
+ERROR: core: Struct cat_sat_on_keyboard is not defined
+ERROR: core: Struct CAT_SAT_ON_KEYBOARD is not defined
 EOF
 RUN
 

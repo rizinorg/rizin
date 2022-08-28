@@ -299,7 +299,7 @@ EXPECT=<<EOF
 pf d int
 EOF
 EXPECT_ERR=<<EOF
-Cannot find 'int' type
+ERROR: core: cannot find 'int' type
 EOF
 RUN
 
@@ -349,7 +349,7 @@ union xoo {
 };
 EOF
 EXPECT_ERR=<<EOF
-Cannot find 'xoo' type
+ERROR: core: cannot find 'xoo' type
 ERROR: Cannot find "xoo" union type
 EOF
 RUN
@@ -2074,9 +2074,9 @@ td "stract;"
 td "struct crash __attribute__((packed)) { };"
 EOF
 EXPECT_ERR=<<EOF
-Unsupported type definition: struct
-Unsupported type definition: stract;
-Unsupported type definition: struct crash __attribute__((packed)) { }
+ERROR: core: Unsupported type definition: struct
+ERROR: core: Unsupported type definition: stract;
+ERROR: core: Unsupported type definition: struct crash __attribute__((packed)) { }
 EOF
 RUN
 

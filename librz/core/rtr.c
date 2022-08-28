@@ -109,7 +109,7 @@ static char *rtr_dir_files(const char *path) {
 	RzListIter *iter;
 	// list files
 	RzList *files = rz_sys_dir(path);
-	eprintf("Listing directory %s\n", path);
+	RZ_LOG_WARN("core: listing directory %s\n", path);
 	rz_list_foreach (files, iter, file) {
 		if (file[0] == '.') {
 			continue;
@@ -123,7 +123,7 @@ static char *rtr_dir_files(const char *path) {
 
 #if __UNIX__
 static void dietime(int sig) {
-	eprintf("It's Die Time!\n");
+	RZ_LOG_ERROR("core: it's die time!\n");
 	exit(0);
 }
 #endif
@@ -135,7 +135,7 @@ static void activateDieTime(RzCore *core) {
 		rz_sys_signal(SIGALRM, dietime);
 		alarm(dt);
 #else
-		eprintf("http.dietime only works on *nix systems\n");
+		RZ_LOG_ERROR("core: http.dietime only works on *nix systems\n");
 #endif
 	}
 }
@@ -156,7 +156,7 @@ static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendi
 			reg = rz_swap_ut64(reg);
 			break;
 		default:
-			eprintf("%s: Unsupported reg size: %d\n",
+			RZ_LOG_ERROR("core: %s: unsupported reg size: %d\n",
 				__func__, regsize);
 			return -1;
 		}
@@ -197,7 +197,7 @@ static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool b
 			rz_swap_ut64(val->v128.Low),
 			rz_swap_ut64(val->v128.High));
 	default:
-		eprintf("%s: big registers (%d byte(s)) not yet supported\n",
+		RZ_LOG_ERROR("core: %s: big registers (%d byte(s)) not yet supported\n",
 			__func__, regsize);
 		return -1;
 	}
@@ -468,20 +468,20 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 		path++;
 	}
 	if (!(path = rz_str_trim_head_ro(path)) || !*path) {
-		eprintf("gdbserver: Port not specified\n");
+		RZ_LOG_ERROR("core: gdbserver: Port not specified\n");
 		return -1;
 	}
 	if (!(p = atoi(path)) || p < 0 || p > 65535) {
-		eprintf("gdbserver: Invalid port: %s\n", port);
+		RZ_LOG_ERROR("core: gdbserver: Invalid port: %s\n", port);
 		return -1;
 	}
 	snprintf(port, sizeof(port) - 1, "%d", p);
 	if (!(file = strchr(path, ' '))) {
-		eprintf("gdbserver: File not specified\n");
+		RZ_LOG_ERROR("core: gdbserver: File not specified\n");
 		return -1;
 	}
 	if (!(file = (char *)rz_str_trim_head_ro(file)) || !*file) {
-		eprintf("gdbserver: File not specified\n");
+		RZ_LOG_ERROR("core: gdbserver: File not specified\n");
 		return -1;
 	}
 	args = strchr(file, ' ');
@@ -495,7 +495,7 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 	}
 
 	if (!rz_core_file_open(core, file, RZ_PERM_R, 0)) {
-		eprintf("Cannot open file (%s)\n", file);
+		RZ_LOG_ERROR("core: cannot open file (%s)\n", file);
 		return -1;
 	}
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
@@ -503,17 +503,17 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 	rz_core_file_reopen_debug(core, args);
 
 	if (!(sock = rz_socket_new(false))) {
-		eprintf("gdbserver: Could not open socket for listening\n");
+		RZ_LOG_ERROR("core: gdbserver: Could not open socket for listening\n");
 		return -1;
 	}
 	if (!rz_socket_listen(sock, port, NULL)) {
 		rz_socket_free(sock);
-		eprintf("gdbserver: Cannot listen on port: %s\n", port);
+		RZ_LOG_ERROR("core: gdbserver: Cannot listen on port: %s\n", port);
 		return -1;
 	}
 	if (!(g = RZ_NEW0(libgdbr_t))) {
 		rz_socket_free(sock);
-		eprintf("gdbserver: Cannot alloc libgdbr instance\n");
+		RZ_LOG_ERROR("core: gdbserver: Cannot alloc libgdbr instance\n");
 		return -1;
 	}
 	gdbr_init(g, true);
@@ -522,7 +522,7 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 	int bits = rz_config_get_i(core->config, "asm.bits");
 	gdbr_set_architecture(g, arch, bits);
 	core->gdbserver_up = 1;
-	eprintf("gdbserver started on port: %s, file: %s\n", port, file);
+	RZ_LOG_ERROR("core: gdbserver: started on port %s, file: %s\n", port, file);
 
 	for (;;) {
 		if (!(g->sock = rz_socket_accept(sock))) {
@@ -547,7 +547,7 @@ RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path) {
 	int ret;
 	// TODO: do stuff with launch
 	if (core->gdbserver_up) {
-		eprintf("gdbserver is already running\n");
+		RZ_LOG_ERROR("core: gdbserver is already running\n");
 		return -1;
 	}
 	ret = rz_core_rtr_gdb_run(core, launch, path);
@@ -565,7 +565,7 @@ RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input) {
 			}
 		}
 		if (!(cmd = strchr(input, ' '))) {
-			eprintf("Error\n");
+			RZ_LOG_ERROR("core: cannot find ' ' in the input\n");
 			return;
 		}
 	} else {
@@ -573,31 +573,31 @@ RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input) {
 	}
 
 	if (!rtr_host[rtr_n].fd || !rtr_host[rtr_n].fd->fd) {
-		eprintf("Error: Unknown host\n");
+		RZ_LOG_ERROR("core: unknown host\n");
 		return;
 	}
 
 	if (!(str = rz_core_cmd_str(core, cmd))) {
-		eprintf("Error: rizin_cmd_str returned NULL\n");
+		RZ_LOG_ERROR("core: rizin_cmd_str returned NULL\n");
 		return;
 	}
 
 	switch (rtr_host[rtr_n].proto) {
 	case RTR_PROTOCOL_RAP:
-		eprintf("Error: Cannot use '=<' to a rap connection.\n");
+		RZ_LOG_ERROR("core: Cannot use '=<' to a rap connection.\n");
 		break;
 	case RTR_PROTOCOL_UNIX:
 		rz_socket_write(rtr_host[rtr_n].fd, str, strlen(str));
 		break;
 	case RTR_PROTOCOL_HTTP:
-		eprintf("TODO\n");
+		RZ_LOG_WARN("core: RTR_PROTOCOL_HTTP has not been implemented\n");
 		break;
 	case RTR_PROTOCOL_TCP:
 	case RTR_PROTOCOL_UDP:
 		rz_socket_write(rtr_host[rtr_n].fd, str, strlen(str));
 		break;
 	default:
-		eprintf("Unknown protocol\n");
+		RZ_LOG_ERROR("core: unknown protocol\n");
 		break;
 	}
 	free(str);
@@ -680,14 +680,14 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 			// it's fine to listen without serving a file
 		} else {
 			file = "cmd/";
-			eprintf("Error: Missing '/'\n");
+			RZ_LOG_ERROR("core: Missing '/'\n");
 			// c:wreturn;
 		}
 	}
 
 	fd = rz_socket_new(false);
 	if (!fd) {
-		eprintf("Error: Cannot create new socket\n");
+		RZ_LOG_ERROR("core: Cannot create new socket\n");
 		return;
 	}
 	switch (proto) {
@@ -696,7 +696,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 		char *uri = rz_str_newf("http://%s:%s/%s", host, port, file);
 		char *str = rz_socket_http_get(uri, NULL, &len);
 		if (!str) {
-			eprintf("Cannot find peer\n");
+			RZ_LOG_ERROR("core: cannot find peer\n");
 			return;
 		}
 		core->num->value = 0;
@@ -705,43 +705,43 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 	} break;
 	case RTR_PROTOCOL_RAP:
 		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { // TODO: Use rap.ssl
-			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
+			RZ_LOG_ERROR("core: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
 			return;
 		} else {
 			int n = rz_socket_rap_client_open(fd, file, 0);
-			eprintf("opened as fd = %d\n", n);
+			RZ_LOG_INFO("core: opened as fd = %d\n", n);
 		}
 		break;
 	case RTR_PROTOCOL_UNIX:
 		if (!rz_socket_connect_unix(fd, host)) {
 			core->num->value = 1;
-			eprintf("Error: Cannot connect to 'unix://%s'\n", host);
+			RZ_LOG_ERROR("core: Cannot connect to 'unix://%s'\n", host);
 			rz_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;
-		eprintf("Connected to: 'unix://%s'\n", host);
+		RZ_LOG_INFO("core: Connected to: 'unix://%s'\n", host);
 		break;
 	case RTR_PROTOCOL_TCP:
 		if (!rz_socket_connect_tcp(fd, host, port, timeout)) { // TODO: Use rap.ssl
 			core->num->value = 1;
-			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
+			RZ_LOG_ERROR("core: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;
-		eprintf("Connected to: %s at port %s\n", host, port);
+		RZ_LOG_INFO("core: Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROTOCOL_UDP:
 		if (!rz_socket_connect_udp(fd, host, port, timeout)) { // TODO: Use rap.ssl
 			core->num->value = 1;
-			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
+			RZ_LOG_ERROR("core: Cannot connect to '%s' (%s)\n", host, port);
 			rz_socket_free(fd);
 			return;
 		}
 		core->num->value = 0;
-		eprintf("Connected to: %s at port %s\n", host, port);
+		RZ_LOG_INFO("core: Connected to: %s at port %s\n", host, port);
 		break;
 	}
 	ret = core->num->value;
@@ -843,8 +843,8 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 
 	if (*input == '&') { // "Rh&" "R&:9090"
 		if (rapthread) {
-			eprintf("RAP Thread is already running\n");
-			eprintf("This is experimental and probably buggy. Use at your own risk\n");
+			RZ_LOG_ERROR("core: RAP thread is already running\n");
+			RZ_LOG_WARN("core: This is experimental and probably buggy. Use at your own risk\n");
 		} else {
 			// TODO: use tasks
 			RapThread *rap_th = RZ_NEW0(RapThread);
@@ -882,7 +882,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 	}
 
 	if (!rtr_host[rtr_n].fd) {
-		eprintf("Error: Unknown host\n");
+		RZ_LOG_ERROR("core: Unknown host\n");
 		core->num->value = 1; // fail
 		return;
 	}
@@ -895,7 +895,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		}
 		rz_socket_close(s);
 		if (!rz_socket_connect(s, rh->host, sdb_fmt("%d", rh->port), RZ_SOCKET_PROTO_TCP, 0)) {
-			eprintf("Error: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
+			RZ_LOG_ERROR("core: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
 			rz_socket_free(s);
 			return;
 		}
@@ -904,7 +904,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		int maxlen = 4096; // rz_read_le32 (blen);
 		char *cmd_output = calloc(1, maxlen + 1);
 		if (!cmd_output) {
-			eprintf("Error: Allocating cmd output\n");
+			RZ_LOG_ERROR("core: Allocating cmd output\n");
 			return;
 		}
 		(void)rz_socket_read_block(s, (ut8 *)cmd_output, maxlen);
@@ -925,7 +925,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		char *uri = rz_str_newf("http://%s:%d/cmd/%s", rh->host, rh->port, cmd);
 		char *str = rz_socket_http_get(uri, NULL, &len);
 		if (!str) {
-			eprintf("Cannot find '%s'\n", uri);
+			RZ_LOG_ERROR("core: cannot find '%s'\n", uri);
 			free(uri);
 			return;
 		}
@@ -951,7 +951,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		free(cmd_output);
 		return;
 	}
-	eprintf("Error: Unknown protocol\n");
+	RZ_LOG_ERROR("core: unknown protocol\n");
 }
 
 // TODO: support len for binary data?
@@ -1021,7 +1021,7 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 		goto err_socket;
 	}
 
-	eprintf("Listening for commands on port %s\n", port);
+	RZ_LOG_INFO("core: listening for commands on port %s\n", port);
 	rz_cons_break_push((RzConsBreak)rz_stop_pipe_stop, sp);
 	for (;;) {
 		// wait for connection

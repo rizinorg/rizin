@@ -2937,7 +2937,7 @@ void __set_addr_by_type(RzCore *core, const char *cmd, ut64 addr) {
 RzConsCanvas *__create_new_canvas(RzCore *core, int w, int h) {
 	RzConsCanvas *can = rz_cons_canvas_new(w, h);
 	if (!can) {
-		eprintf("Cannot create RzCons.canvas context\n");
+		RZ_LOG_ERROR("core: Cannot create RzCons.canvas context\n");
 		return false;
 	}
 	rz_cons_canvas_fill(can, 0, 0, w, h, ' ');
@@ -5409,7 +5409,7 @@ RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name) {
 			}
 		}
 		if (!title || !cmd) {
-			eprintf("Malformed Visual Panels config: %s\n", _name);
+			RZ_LOG_ERROR("core: Malformed Visual Panels config: %s\n", _name);
 			rz_json_free(json);
 			free(panels_config);
 			return false;

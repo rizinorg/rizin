@@ -28,7 +28,7 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 			ut64 addr = rz_io_map_next_available(core->io, 0, yank_file_sz, load_align);
 			RzIOMap *map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
 			if (!map || map->itv.addr == -1) {
-				eprintf("Unable to map the opened file: %s", filename);
+				RZ_LOG_ERROR("core: Unable to map the opened file: %s", filename);
 				rz_io_desc_close(yankdesc);
 				yankdesc = NULL;
 			}

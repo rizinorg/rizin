@@ -178,16 +178,16 @@ RUN
 NAME=pf only one size
 FILE=malloc://1024
 CMDS=pf 16 16
-EXPECT=<<EOF
-Usage: pf [0|cnt][format-string]
+EXPECT_ERR=<<EOF
+ERROR: core: Usage: pf [0|cnt][format-string]
 EOF
 RUN
 
 NAME=pf refuse space between size and format-string
 FILE=malloc://1024
 CMDS=pf 16 16
-EXPECT=<<EOF
-Usage: pf [0|cnt][format-string]
+EXPECT_ERR=<<EOF
+ERROR: core: Usage: pf [0|cnt][format-string]
 EOF
 RUN
 
@@ -405,7 +405,7 @@ NAME=pf? struct not defined
 FILE==
 CMDS=pf?cat_sat_on_keyboard
 EXPECT_ERR=<<EOF
-Struct cat_sat_on_keyboard is not defined
+ERROR: core: Struct cat_sat_on_keyboard is not defined
 EOF
 RUN
 

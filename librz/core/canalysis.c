@@ -827,7 +827,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 		fcnpfx = "fcn";
 	}
 	if (!fcn) {
-		eprintf("Error: new (fcn)\n");
+		RZ_LOG_ERROR("core: cannot allocate RzAnalysisFunction struct.\n");
 		return false;
 	}
 	fcn->cc = rz_str_constpool_get(&core->analysis->constpool, rz_analysis_cc_default(core->analysis));
@@ -1735,7 +1735,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 				}
 				free(buf);
 			} else {
-				eprintf("cannot allocate %" PFMT64u " byte(s)\n", bbi->size);
+				RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", bbi->size);
 			}
 			pj_end(pj);
 			pj_end(pj);
@@ -2574,26 +2574,6 @@ RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *cor
 	return xrefs;
 }
 
-static RzList *recurse_bb(RzCore *core, ut64 addr, RzAnalysisBlock *dest);
-
-static RzList *recurse(RzCore *core, RzAnalysisBlock *from, RzAnalysisBlock *dest) {
-	recurse_bb(core, from->jump, dest);
-	recurse_bb(core, from->fail, dest);
-
-	/* same for all calls */
-	// TODO: RzAnalysisBlock must contain a linked list of calls
-	return NULL;
-}
-
-static RzList *recurse_bb(RzCore *core, ut64 addr, RzAnalysisBlock *dest) {
-	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
-	if (bb == dest) {
-		eprintf("path found!");
-		return NULL;
-	}
-	return recurse(core, bb, dest);
-}
-
 #define REG_SET_SIZE (RZ_ANALYSIS_CC_MAXARG + 2)
 
 typedef struct {
@@ -2697,7 +2677,7 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList *bbs, 
 	RzAnalysisXRef *xrefi;
 
 	if (depth < 1) {
-		eprintf("going too deep\n");
+		RZ_LOG_ERROR("core: maximum recursive depth reached (%d)\n", depth);
 		return false;
 	}
 
@@ -2926,7 +2906,7 @@ static int core_analysis_followptr(RzCore *core, int type, ut64 at, ut64 ptr, ut
 	int wordsize = (int)(core->analysis->bits / 8);
 	ut64 dataptr;
 	if (!rz_io_read_i(core->io, ptr, &dataptr, wordsize, false)) {
-		// eprintf ("core_analysis_followptr: Cannot read word at destination\n");
+		// RZ_LOG_ERROR("core_analysis_followptr: Cannot read word at destination\n");
 		return false;
 	}
 	return core_analysis_followptr(core, type, at, dataptr, ref, code, depth - 1);
@@ -2989,7 +2969,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 		rz_io_use_fd(core->io, core->file->fd);
 	}
 	if (!ref) {
-		eprintf("Null reference search is not supported\n");
+		RZ_LOG_ERROR("core: null reference search is not supported\n");
 		free(buf);
 		return -1;
 	}
@@ -3012,7 +2992,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 			}
 			// TODO: this can be probably enhanced
 			if (!rz_io_read_at(core->io, at, buf, core->blocksize)) {
-				eprintf("Failed to read at 0x%08" PFMT64x "\n", at);
+				RZ_LOG_ERROR("core: failed to read at 0x%08" PFMT64x "\n", at);
 				break;
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
@@ -3113,7 +3093,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 			}
 		}
 	} else {
-		eprintf("error: block size too small\n");
+		RZ_LOG_ERROR("core: block size too small\n");
 	}
 	rz_cons_break_pop();
 	free(buf);
@@ -3944,16 +3924,15 @@ RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2) {
 	RzAnalysisFunction *f1 = rz_analysis_get_function_at(core->analysis, addr);
 	RzAnalysisFunction *f2 = rz_analysis_get_function_at(core->analysis, addr2);
 	if (!f1 || !f2) {
-		eprintf("Cannot find function\n");
+		RZ_LOG_ERROR("core: cannot find function\n");
 		return;
-	}
-	if (f1 == f2) {
-		eprintf("Cannot merge the same function\n");
+	} else if (f1 == f2) {
+		RZ_LOG_ERROR("core: cannot merge the same function\n");
 		return;
 	}
 	// join all basic blocks from f1 into f2 if they are not
 	// delete f2
-	eprintf("Merge 0x%08" PFMT64x " into 0x%08" PFMT64x "\n", addr, addr2);
+	RZ_LOG_WARN("core: merging 0x%08" PFMT64x " into 0x%08" PFMT64x "\n", addr, addr2);
 	rz_list_foreach (f1->bbs, iter, bb) {
 		if (first) {
 			min = bb->addr;
@@ -4135,7 +4114,7 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 			if (ntarget == UT64_MAX || ntarget == refptr) {
 				str[0] = 0;
 				if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
-					// eprintf ("Invalid read\n");
+					// RZ_LOG_ERROR("core: invalid read\n");
 					str[0] = 0;
 					validRef = false;
 				} else {
@@ -4400,7 +4379,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	const char *pcname;
 	RzAnalysisOp op = RZ_EMPTY;
 	ut8 *buf = NULL;
-	int iend;
+	ut64 iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
 	ut64 start = addr;
@@ -4411,14 +4390,14 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	iend = end - start;
 	if (iend < 0) {
 		return;
-	}
-	if (iend > MAX_SCAN_SIZE) {
-		eprintf("Warning: Not going to analyze 0x%08" PFMT64x " bytes.\n", (ut64)iend);
+	} else if (iend > MAX_SCAN_SIZE) {
+		RZ_LOG_WARN("core: not going to analyze 0x%08" PFMT64x " bytes.\n", iend);
 		return;
 	}
+
 	buf = malloc((size_t)iend + 2);
 	if (!buf) {
-		perror("malloc");
+		RZ_LOG_ERROR("core: cannot allocate %" PFMT64u "\n", (iend + 2));
 		return;
 	}
 	esilbreak_last_read = UT64_MAX;
@@ -4430,7 +4409,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		rz_core_analysis_esil_reinit(core);
 		ESIL = core->analysis->esil;
 		if (!ESIL) {
-			eprintf("ESIL not initialized\n");
+			RZ_LOG_ERROR("core: ESIL has not been initialized\n");
 			goto out_pop_regs;
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
@@ -4451,11 +4430,11 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	if (fcn && fcn->reg_save_area) {
 		rz_reg_setv(core->analysis->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
 	}
-	// eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
+	// RZ_LOG_ERROR("core: analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	//  TODO: backup/restore register state before/after analysis
 	pcname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	if (!pcname || !*pcname) {
-		eprintf("Cannot find program counter register in the current profile.\n");
+		RZ_LOG_ERROR("core: cannot find program counter register in the current profile.\n");
 		goto out_pop_regs;
 	}
 	esil_analysis_stop = false;
@@ -4717,12 +4696,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 						: RZ_ANALYSIS_XREF_TYPE_CODE;
 					rz_analysis_xrefs_set(core->analysis, cur, dst, ref);
 					rz_core_analysis_fcn(core, dst, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
-// analyze function here
-#if 0
-						if (op.type == RZ_ANALYSIS_OP_TYPE_UCALL || op.type == RZ_ANALYSIS_OP_TYPE_RCALL) {
-							eprintf ("0x%08"PFMT64x"  RCALL TO %llx\n", cur, dst);
-						}
-#endif
 				}
 			}
 		} break;
@@ -4800,7 +4773,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {
-		eprintf("Error: from must be lower than to\n");
+		RZ_LOG_ERROR("core: `from` must be lower than `to`\n");
 		return -1;
 	}
 	bool maybeThumb = false;
@@ -4811,11 +4784,11 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	}
 
 	if (vmin >= vmax) {
-		eprintf("Error: vmin must be lower than vmax\n");
+		RZ_LOG_ERROR("core: `vmin` must be lower than `vmax`\n");
 		return -1;
 	}
 	if (to == UT64_MAX) {
-		eprintf("Error: Invalid destination boundary\n");
+		RZ_LOG_ERROR("core: invalid destination boundary\n");
 		return -1;
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -4875,7 +4848,9 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				match = (v64 >= vmin && v64 <= vmax);
 				value = v64;
 				break;
-			default: eprintf("Unknown vsize %d\n", vsize); return -1;
+			default:
+				RZ_LOG_ERROR("core: unknown vsize %d (supported only 1,2,4,8)\n", vsize);
+				return -1;
 			}
 			if (match && !vinfun) {
 				if (vinfunr) {
@@ -5019,11 +4994,11 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 	RzAnalysisBlock *b1 = rz_analysis_find_most_relevant_block_in(core->analysis, to);
 	PJ *pj = NULL;
 	if (!b0) {
-		eprintf("Cannot find basic block for 0x%08" PFMT64x "\n", from);
+		RZ_LOG_ERROR("core: cannot find basic block for 0x%08" PFMT64x "\n", from);
 		return;
 	}
 	if (!b1) {
-		eprintf("Cannot find basic block for 0x%08" PFMT64x "\n", to);
+		RZ_LOG_ERROR("core: cannot find basic block for 0x%08" PFMT64x "\n", to);
 		return;
 	}
 	RzCoreAnalPaths rcap = { 0 };
@@ -5073,7 +5048,7 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 		// get last opcode
 		RzAnalysisOp *op = rz_core_op_analysis(core, opaddr, RZ_ANALYSIS_OP_MASK_HINT);
 		if (!op) {
-			eprintf("Cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
+			RZ_LOG_ERROR("core: cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
 			return false;
 		}
 
@@ -5216,7 +5191,7 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 			RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 			rz_list_foreach (xrefs, iter, xref) {
 				if (xref->to == UT64_MAX) {
-					// eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
+					// RZ_LOG_WARN("core: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 					continue;
 				}
 				if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE && xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
@@ -5254,7 +5229,7 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 						f = rz_analysis_get_function_at(core->analysis, fcn->addr);
 					}
 					if (!f) {
-						eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
+						RZ_LOG_ERROR("core: cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
 						rz_list_free(xrefs);
 						return false;
 					}
@@ -5267,7 +5242,7 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 		}
 	}
 	if (RZ_STR_ISNOTEMPTY(name) && !rz_core_analysis_function_rename(core, addr, name)) {
-		RZ_LOG_ERROR("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
+		RZ_LOG_ERROR("core: cannot find function at 0x%08" PFMT64x "\n", addr);
 		return false;
 	}
 	rz_core_analysis_propagate_noreturn(core, addr);
@@ -5570,7 +5545,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		rz_list_foreach (xrefs, iter, xref) {
 			RzAnalysisOp *xrefop = rz_core_op_analysis(core, xref->from, RZ_ANALYSIS_OP_MASK_ALL);
 			if (!xrefop) {
-				eprintf("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->from);
+				RZ_LOG_ERROR("core: cannot analyze opcode at 0x%08" PFMT64x "\n", xref->from);
 				continue;
 			}
 			ut64 call_addr = xref->from;
@@ -5628,7 +5603,7 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 		if (var) {
 			name = var->name;
 		} else {
-			eprintf("Cannot find var @ 0x%08" PFMT64x "\n", core->offset);
+			RZ_LOG_ERROR("core: cannot find var at 0x%08" PFMT64x "\n", core->offset);
 			rz_analysis_op_free(op);
 			return false;
 		}
@@ -5639,11 +5614,11 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 		if (v1) {
 			rz_analysis_var_rename(v1, newname, true);
 		} else {
-			eprintf("Cant find var by name\n");
+			RZ_LOG_ERROR("core: cannot find var by name (%s)\n", name);
 			return false;
 		}
 	} else {
-		eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("core: cannot find function at 0x%08" PFMT64x "\n", core->offset);
 		rz_analysis_op_free(op);
 		return false;
 	}
@@ -6346,7 +6321,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	RzAnalysisFunction *fcn;
 	ut64 seek;
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		eprintf("TOFIX: aaft can't run in debugger mode.\n");
+		RZ_LOG_WARN("core: analysis propagation type can't be exectured when in debugger mode.\n");
 		return false;
 	}
 	RzConfigHold *hold = rz_config_hold_new(core->config);
@@ -6428,7 +6403,7 @@ err:
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr) {
 	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	if (!f) {
-		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("core: cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return;
 	}
 
@@ -6680,16 +6655,14 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	}
 	// same as "tcc `arcc`"
 	char *s = rz_reg_profile_to_cc(core->analysis->reg);
-	if (s) {
-		if (!rz_analysis_cc_set(core->analysis, s)) {
-			eprintf("Warning: Invalid CC from reg profile.\n");
-		}
-		free(s);
-	} else {
-		eprintf("Warning: Cannot derive CC from reg profile.\n");
+	if (s && !rz_analysis_cc_set(core->analysis, s)) {
+		RZ_LOG_ERROR("core: invalid CC from reg profile.\n");
+	} else if (!s) {
+		RZ_LOG_ERROR("core: cannot derive CC from reg profile.\n");
 	}
+	free(s);
 	if (sdb_isempty(core->analysis->sdb_cc)) {
-		eprintf("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
+		RZ_LOG_WARN("core: missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
 	}
 	free(dbpath);
 	free(dbhomepath);

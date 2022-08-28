@@ -45,7 +45,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	if (!rz_file_is_directory(root)) {
 		if (!rz_file_is_directory(homeroot)) {
-			eprintf("Cannot find http.root or http.homeroot\n");
+			RZ_LOG_ERROR("core: cannot find http.root or http.homeroot\n");
 		}
 	}
 	if (!path) {
@@ -94,7 +94,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	}
 	if (!rz_socket_listen(s, port, NULL)) {
 		rz_socket_free(s);
-		eprintf("Cannot listen on http.port\n");
+		RZ_LOG_ERROR("core: cannot listen on http.port\n");
 		return 1;
 	}
 
@@ -109,7 +109,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	if (so.httpauth) {
 		if (!httpauthfile) {
 			rz_socket_free(s);
-			eprintf("No user list set for HTTP Authentication\n");
+			RZ_LOG_ERROR("core: user list was not set for HTTP Authentication\n");
 			return 1;
 		}
 
@@ -119,7 +119,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			so.authtokens = rz_str_split_list(pfile, "\n", 0);
 		} else {
 			rz_socket_free(s);
-			eprintf("Empty list of HTTP users\n");
+			RZ_LOG_ERROR("core: the list of HTTP users is empty\n");
 			return 1;
 		}
 
@@ -132,16 +132,12 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	core->config = newcfg;
 
 	rz_config_set(core->config, "asm.cmt.right", "false");
-#if 0
-	// WHY
-	rz_config_set (core->config, "scr.html", "true");
-#endif
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "scr.interactive", "false");
-	eprintf("Starting http server...\n");
-	eprintf("open http://%s:%d/\n", host, atoi(port));
-	eprintf("rizin -C http://%s:%d/cmd/\n", host, atoi(port));
+	RZ_LOG_INFO("core: Starting http server...\n");
+	RZ_LOG_INFO("core: open http://%s:%d/\n", host, atoi(port));
+	RZ_LOG_INFO("core: rizin -C http://%s:%d/cmd/\n", host, atoi(port));
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;
@@ -515,7 +511,7 @@ RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *pa
 		return 0;
 	}
 	if (core->http_up) {
-		eprintf("http server is already running\n");
+		RZ_LOG_ERROR("core: http server is already running\n");
 		return 1;
 	}
 	if (launch == '&') {

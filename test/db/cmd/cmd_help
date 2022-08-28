@@ -57,7 +57,7 @@ CMDS=<<EOF
 ?x
 ?X
 ?l
-?t
+# ?t is used for get the execution time, thus shall be ignored.
 ?!
 ?+
 ?-

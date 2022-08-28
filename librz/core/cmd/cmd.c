@@ -365,7 +365,7 @@ RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 			free(buf);
 			return 1;
 		} else {
-			eprintf("unknown key '%s'\n", buf);
+			RZ_LOG_ERROR("core: unknown key '%s'\n", buf);
 		}
 	} else if (buf[1] == '*') {
 		/* Show aliases */
@@ -409,7 +409,7 @@ RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 			if (at != UT64_MAX) {
 				rz_core_seek(core, at, true);
 			} else {
-				eprintf("Unknown alias '%s'\n", buf + 1);
+				RZ_LOG_ERROR("core: unknown alias '%s'\n", buf + 1);
 			}
 		}
 	}
@@ -491,7 +491,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 		char *error_msg = NULL;
 		int result = rz_type_parse_file(core->analysis->typedb, file, dir, &error_msg);
 		if (error_msg) {
-			eprintf("%s", error_msg);
+			rz_str_trim_tail(error_msg);
+			RZ_LOG_ERROR("core: %s\n", error_msg);
 			free(error_msg);
 		}
 		ret = result != 0;
@@ -769,7 +770,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *fn = strdup(input + 2);
 			if (!fn) {
-				eprintf("Unable to allocate memory\n");
+				RZ_LOG_ERROR("core: Unable to allocate memory\n");
 				return 0;
 			}
 			char *ns = strchr(fn, ' ');
@@ -783,20 +784,20 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 						if (newdb) {
 							sdb_drain(db, newdb);
 						} else {
-							eprintf("Cannot open sdb '%s'\n", fn);
+							RZ_LOG_ERROR("core: Cannot open sdb '%s'\n", fn);
 						}
 					} else {
-						eprintf("Cannot find sdb '%s'\n", ns);
+						RZ_LOG_ERROR("core: Cannot find sdb '%s'\n", ns);
 					}
 				} else {
-					eprintf("Cannot open file\n");
+					RZ_LOG_ERROR("core: Cannot open file\n");
 				}
 			} else {
-				eprintf("Missing sdb namespace\n");
+				RZ_LOG_ERROR("core: Missing sdb namespace\n");
 			}
 			free(fn);
 		} else {
-			eprintf("Usage: ko [file] [namespace]\n");
+			RZ_LOG_ERROR("core: Usage: ko [file] [namespace]\n");
 		}
 		break;
 	case 'd': // "kd"
@@ -810,14 +811,14 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 					sdb_file(db, fn);
 					sdb_sync(db);
 				} else {
-					eprintf("Cannot find sdb '%s'\n", ns);
+					RZ_LOG_ERROR("core: Cannot find sdb '%s'\n", ns);
 				}
 			} else {
-				eprintf("Missing sdb namespace\n");
+				RZ_LOG_ERROR("core: Missing sdb namespace\n");
 			}
 			free(fn);
 		} else {
-			eprintf("Usage: kd [file] [namespace]\n");
+			RZ_LOG_ERROR("core: Usage: kd [file] [namespace]\n");
 		}
 		break;
 	case '?':
@@ -852,7 +853,7 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 		return false;
 	}
 	if (!rz_cons_is_interactive()) {
-		eprintf("Panel mode requires scr.interactive=true.\n");
+		RZ_LOG_ERROR("core: Panel mode requires scr.interactive=true.\n");
 		return false;
 	}
 	char *sp = strchr(input, ' ');
@@ -873,7 +874,7 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 			if (r) {
 				free(r);
 			} else {
-				eprintf("Cannot open file (%s)\n", sp + 1);
+				RZ_LOG_ERROR("core: Cannot open file (%s)\n", sp + 1);
 			}
 		}
 		////rz_sys_cmdf ("v%s", input);
@@ -893,7 +894,7 @@ RZ_IPI int rz_cmd_visual(void *data, const char *input) {
 		return false;
 	}
 	if (!rz_cons_is_interactive()) {
-		eprintf("Visual mode requires scr.interactive=true.\n");
+		RZ_LOG_ERROR("core: Visual mode requires scr.interactive=true.\n");
 		return false;
 	}
 	return rz_core_visual((RzCore *)data, input);
@@ -1090,7 +1091,7 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 		if (rz_sys_pipe(fds, true) == 0) {
 			child = rz_sys_fork();
 			if (child == -1) {
-				eprintf("Cannot fork\n");
+				RZ_LOG_ERROR("core: Cannot fork\n");
 				close(stdout_fd);
 			} else if (child) {
 				dup2(fds[1], 1);
@@ -1110,7 +1111,7 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 				close(stdout_fd);
 			}
 		} else {
-			eprintf("rz_core_cmd_pipe: Could not pipe\n");
+			RZ_LOG_ERROR("core: rz_core_cmd_pipe: Could not pipe\n");
 		}
 	}
 #elif __WINDOWS__
@@ -1121,7 +1122,7 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 #else
 #warning rz_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
 #endif
-	eprintf("rz_core_cmd_pipe: unimplemented for this platform\n");
+	RZ_LOG_ERROR("core: rz_core_cmd_pipe: unimplemented for this platform\n");
 #endif
 	if (pipecolor != -1) {
 		rz_config_set_i(core->config, "scr.color", pipecolor);
@@ -1162,7 +1163,7 @@ static char *parse_tmp_evals(RzCore *core, const char *str) {
 			rz_config_set(core->config, kv, eq + 1);
 			*eq = '=';
 		} else {
-			eprintf("Missing '=' in e: expression (%s)\n", kv);
+			RZ_LOG_ERROR("core: Missing '=' in e: expression (%s)\n", kv);
 		}
 	}
 	free(s);
@@ -1435,7 +1436,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			*$1 = '`';
 			memmove($0 + 1, $0 + 2, strlen($0 + 2) + 1);
 		} else {
-			eprintf("Unterminated $() block\n");
+			RZ_LOG_ERROR("core: Unterminated $() block\n");
 		}
 	}
 
@@ -1457,7 +1458,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				cmd++;
 				p = *cmd ? find_eoq(cmd) : NULL;
 				if (!p || !*p) {
-					eprintf("Missing \" in (%s).", cmd);
+					RZ_LOG_ERROR("core: Missing \" in (%s).", cmd);
 					rz_list_free(tmpenvs);
 					return false;
 				}
@@ -1661,7 +1662,7 @@ escape_pipe:
 		*ptr = '\0';
 		ret = rz_cmd_call(core->rcmd, cmd);
 		if (ret == -1) {
-			eprintf("command error(%s)\n", cmd);
+			RZ_LOG_ERROR("core: command error(%s)\n", cmd);
 			if (scr_html != -1) {
 				rz_config_set_i(core->config, "scr.html", scr_html);
 			}
@@ -1727,7 +1728,7 @@ escape_pipe:
 		str = ptr + 1 + (ptr[1] == '>');
 		rz_str_trim(str);
 		if (!*str) {
-			eprintf("No output?\n");
+			RZ_LOG_ERROR("core: No output?\n");
 			goto next2;
 		}
 		/* rz_cons_flush() handles interactive output (to the terminal)
@@ -1800,7 +1801,7 @@ escape_pipe:
 				rz_sys_cmdf("%s '%s'", editor, str);
 				rz_file_rm(str);
 			} else {
-				eprintf("No cfg.editor configured\n");
+				RZ_LOG_ERROR("core: No cfg.editor configured\n");
 			}
 			rz_config_set_i(core->config, "scr.color", ocolor);
 			free(str);
@@ -1837,7 +1838,7 @@ next2:
 		if (empty) {
 			/* do nothing */
 		} else if (!ptr2) {
-			eprintf("parse: Missing backtick in expression.\n");
+			RZ_LOG_ERROR("core: parse: Missing backtick in expression.\n");
 			goto fail;
 		} else {
 			int value = core->num->value;
@@ -1859,7 +1860,7 @@ next2:
 			}
 			// ignore contents if first char is pipe or comment
 			if (*str == '|' || *str == '*') {
-				eprintf("rz_core_cmd_subst_i: invalid backticked command\n");
+				RZ_LOG_ERROR("core: rz_core_cmd_subst_i: invalid backticked command\n");
 				free(str);
 				goto fail;
 			}
@@ -1983,8 +1984,7 @@ escape_backtick:
 					goto fuji;
 				}
 			} else {
-				// WAT DU
-				eprintf("TODO: what do you expect for @. import offset from file maybe?\n");
+				RZ_LOG_ERROR("core: TODO: what do you expect for @. import offset from file maybe?\n");
 			}
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			switch (ptr[0]) {
@@ -2017,7 +2017,7 @@ escape_backtick:
 						}
 					}
 				} else {
-					eprintf("cannot open '%s'\n", ptr + 3);
+					RZ_LOG_ERROR("core: cannot open '%s'\n", ptr + 3);
 				}
 				break;
 			case 'r': // "@r:" // regname
@@ -2091,7 +2091,7 @@ escape_backtick:
 						rz_core_block_read(core);
 					}
 				} else {
-					eprintf("Invalid @v: syntax\n");
+					RZ_LOG_ERROR("core: Invalid @v: syntax\n");
 				}
 				break;
 			case 'x': // "@x:" // hexpairs
@@ -2116,14 +2116,14 @@ escape_backtick:
 								rz_core_block_read(core);
 							}
 						} else {
-							eprintf("Error: Invalid hexpairs for @x:\n");
+							RZ_LOG_ERROR("core: Error: Invalid hexpairs for @x:\n");
 						}
 						free(buf);
 					} else {
-						eprintf("cannot allocate\n");
+						RZ_LOG_ERROR("core: cannot allocate\n");
 					}
 				} else {
-					eprintf("Invalid @x: syntax\n");
+					RZ_LOG_ERROR("core: Invalid @x: syntax\n");
 				}
 				break;
 			case 'k': // "@k"
@@ -2151,7 +2151,7 @@ escape_backtick:
 					}
 					is_arch_set = set_tmp_arch(core, ptr + 2, &tmpasm);
 				} else {
-					eprintf("Usage: pd 10 @a:arm:32\n");
+					RZ_LOG_ERROR("core: Usage: pd 10 @a:arm:32\n");
 				}
 				break;
 			case 's': // "@s:" // wtf syntax
@@ -2224,7 +2224,7 @@ escape_backtick:
 
 		if (isalpha((ut8)ptr[1]) && !addr) {
 			if (!rz_flag_get(core->flags, ptr + 1)) {
-				eprintf("Invalid address (%s)\n", ptr + 1);
+				RZ_LOG_ERROR("core: Invalid address (%s)\n", ptr + 1);
 				goto fail;
 			}
 		} else {
@@ -2272,9 +2272,9 @@ escape_backtick:
 				char *range = ptr + 2;
 				char *p = strchr(range, ' ');
 				if (!p) {
-					eprintf("Usage: / ABCD @{0x1000 0x3000}\n");
-					eprintf("Run command and define the following vars:\n");
-					eprintf(" (analysis|diff|graph|search|zoom).{from,to}\n");
+					RZ_LOG_ERROR("core: Usage: / ABCD @{0x1000 0x3000}\n");
+					RZ_LOG_ERROR("core: Run command and define the following vars:\n");
+					RZ_LOG_ERROR("core:  (analysis|diff|graph|search|zoom).{from,to}\n");
 					free(tmpeval);
 					free(tmpasm);
 					free(tmpbits);
@@ -2470,7 +2470,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			foreach_pairs(core, cmd, arg);
 			free(arg);
 		} else {
-			eprintf("Usage: @@@c:command   # same as @@@=`command`\n");
+			RZ_LOG_ERROR("core: Usage: @@@c:command   # same as @@@=`command`\n");
 		}
 		break;
 	case 'C': {
@@ -2864,7 +2864,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 				}
 			}
 		} else {
-			eprintf("Usage: cmd @@s:from to step\n");
+			RZ_LOG_ERROR("core: Usage: cmd @@s:from to step\n");
 		}
 		goto out_finish;
 	} break;
@@ -2985,7 +2985,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			rz_core_seek(core, oseek, false);
 			rz_list_free(list);
 		} else {
-			eprintf("Invalid for-each statement. Use @@=dbt[abs]\n");
+			RZ_LOG_ERROR("core: Invalid for-each statement. Use @@=dbt[abs]\n");
 		}
 		break;
 	case 'k': // "@@k"
@@ -3581,7 +3581,7 @@ static void get_help_wrong_cmd(RzCore *core, const char *cmdname) {
 	if (!help_msg) {
 		goto help_pra_err;
 	}
-	eprintf("%s", help_msg);
+	RZ_LOG_ERROR("core: %s", help_msg);
 	free(help_msg);
 help_pra_err:
 	rz_cmd_parsed_args_free(help_pra);
@@ -3645,19 +3645,19 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	res = rz_cmd_call_parsed_args(state->core->rcmd, pr_args);
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		eprintf("Wrong number of arguments passed to `%s`, see its help with `%s?`\n\n", cmdname, cmdname);
+		RZ_LOG_ERROR("core: Wrong number of arguments passed to `%s`, see its help with `%s?`\n\n", cmdname, cmdname);
 		get_help_wrong_cmd(state->core, cmdname);
 	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		eprintf("Command '%s' does not exist.\n", cmdname);
+		RZ_LOG_ERROR("core: Command '%s' does not exist.\n", cmdname);
 		if (rz_str_endswith(cmdname, "?") && pr_args->argc > 1) {
-			eprintf("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
+			RZ_LOG_ERROR("core: Did you want to see the help? Try `%s` without any argument.\n", cmdname);
 		} else {
 			// Let's try to find the first command/group in the ancestor chain
 			// that could provide some help
 			RzCmdDesc *hcd = rz_cmd_get_desc_best(state->core->rcmd, cmdname);
 			if (hcd) {
-				eprintf("Displaying the help of command '%s'.\n\n", hcd->name);
+				RZ_LOG_ERROR("core: Displaying the help of command '%s'.\n\n", hcd->name);
 				get_help_wrong_cmd(state->core, hcd->name);
 			}
 		}
@@ -3973,7 +3973,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_stmt) {
 	ut64 orig_offset = state->core->offset;
 	if (!offset_val && isalpha((int)offset_string[0])) {
 		if (!rz_flag_get(state->core->flags, offset_string)) {
-			eprintf("Invalid address (%s)\n", offset_string);
+			RZ_LOG_ERROR("core: Invalid address (%s)\n", offset_string);
 			free(offset_string);
 			return RZ_CMD_STATUS_INVALID;
 		}
@@ -4143,7 +4143,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_eval_stmt) {
 			rz_config_hold_s(hc, arg_str, NULL);
 			rz_config_set(core->config, arg_str, eq + 1);
 		} else {
-			eprintf("Missing '=' in e: expression (%s)\n", arg_str);
+			RZ_LOG_ERROR("core: Missing '=' in e: expression (%s)\n", arg_str);
 		}
 		free(arg_str);
 	}
@@ -4236,7 +4236,7 @@ static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const u
 	int cur_fd = rz_io_fd_get_current(core->io);
 	RzIODesc *d = rz_io_open_buffer(core->io, b, RZ_PERM_RWX, 0);
 	if (!d) {
-		eprintf("Cannot open io buffer\n");
+		RZ_LOG_ERROR("core: Cannot open io buffer\n");
 		goto out_buf;
 	}
 	if (pamode) {
@@ -4272,7 +4272,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_file_stmt) {
 
 	char *f = rz_file_slurp(arg_str, &sz);
 	if (!f) {
-		eprintf("Cannot open '%s'\n", arg_str);
+		RZ_LOG_ERROR("core: Cannot open '%s'\n", arg_str);
 		goto out;
 	}
 
@@ -4534,7 +4534,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_stmt) {
 	int bs = core->blocksize;
 	RzList *bbl = rz_analysis_get_blocks_in(core->analysis, core->offset);
 	if (!bbl || rz_list_empty(bbl)) {
-		eprintf("No basic block contains current address\n");
+		RZ_LOG_ERROR("core: No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
 	RzAnalysisBlock *bb = rz_list_get_top(bbl);
@@ -5192,7 +5192,7 @@ DEFINE_HANDLE_TS_FCN(statements) {
 		core->cons->context->cmd_depth++;
 		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string(command, state->input);
-			eprintf("Error while executing command: %s\n", command_str);
+			RZ_LOG_ERROR("core: Error while executing command: %s\n", command_str);
 			free(command_str);
 			res = cmd_res;
 			goto err;
@@ -5299,7 +5299,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	} else {
 		// TODO: print a more meaningful error message and use the ERROR
 		// tokens to indicate where, probably, the error is.
-		eprintf("Error while parsing command: `%s`\n", input);
+		RZ_LOG_ERROR("core: Error while parsing command: `%s`\n", input);
 	}
 
 	ts_tree_delete(tree);
@@ -5315,7 +5315,7 @@ static int run_cmd_depth(RzCore *core, char *cmd) {
 	int ret = false;
 
 	if (core->cons->context->cmd_depth < 1) {
-		eprintf("rz_core_cmd: That was too deep (%s)...\n", cmd);
+		RZ_LOG_ERROR("core: rz_core_cmd: That was too deep (%s)...\n", cmd);
 		return false;
 	}
 	core->cons->context->cmd_depth--;
@@ -5326,7 +5326,7 @@ static int run_cmd_depth(RzCore *core, char *cmd) {
 		}
 		ret = rz_core_cmd_subst(core, rcmd);
 		if (ret == -1) {
-			eprintf("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
+			RZ_LOG_ERROR("core: Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
 			break;
 		}
 		if (!ptr) {
@@ -5366,7 +5366,7 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
 		return false;
 	}
 	if (!rz_core_cmd_lines(core, odata)) {
-		eprintf("Failed to run script '%s'\n", file);
+		RZ_LOG_ERROR("core: Failed to run script '%s'\n", file);
 		free(odata);
 		return false;
 	}
@@ -5477,7 +5477,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 			free(_cmd);
 			return s ? s : strdup("");
 		}
-		eprintf("slurp %s fails\n", tmp);
+		RZ_LOG_ERROR("core: slurp %s fails\n", tmp);
 		rz_file_rm(tmp);
 		free(tmp);
 		free(_cmd);
@@ -5565,7 +5565,7 @@ static void cmd_descriptor_init(RzCore *core) {
 					x->sub[*p] = y;
 				}
 			} else if (!p[1]) {
-				eprintf("Command '%s' is duplicated, please check\n", y->cmd);
+				RZ_LOG_ERROR("core: Command '%s' is duplicated, please check\n", y->cmd);
 			}
 			x = x->sub[*p];
 		}

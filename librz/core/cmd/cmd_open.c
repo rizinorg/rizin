@@ -665,7 +665,7 @@ RZ_IPI RzCmdStatus rz_open_binary_select_fd_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_core_bin_raise(core, bf->id)) {
-		eprintf("Could not select the binary file for fd %d.\n", fd);
+		RZ_LOG_ERROR("core: Could not select the binary file for fd %d.\n", fd);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;

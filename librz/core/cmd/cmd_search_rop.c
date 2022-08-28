@@ -684,7 +684,7 @@ static void rop_classify(RzCore *core, Sdb *db, RzList *ropList, const char *key
 	Sdb *db_aritm_ct = sdb_ns(db, "arithm_ct", true);
 
 	if (!db_nop || !db_mov || !db_ct || !db_aritm || !db_aritm_ct) {
-		eprintf("Error: Could not create SDB 'rop' sub-namespaces\n");
+		RZ_LOG_ERROR("core: could not create SDB 'rop' sub-namespaces\n");
 		return;
 	}
 	nop = rop_classify_nops(core, ropList);

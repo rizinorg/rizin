@@ -1158,8 +1158,8 @@ utf32le
 utf32le
 EOF
 EXPECT_ERR=<<EOF
-Unknown encoding: cat_sat_on_keyboard
-Unknown encoding: CAT_SAT_ON_KEYBOARD
+ERROR: core: bin.str.enc: unknown encoding: cat_sat_on_keyboard
+ERROR: core: bin.str.enc: unknown encoding: CAT_SAT_ON_KEYBOARD
 EOF
 RUN
 

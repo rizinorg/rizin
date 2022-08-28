@@ -217,7 +217,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 			} else if (sig == 0) {
 				sig = rz_syscall_get_num(core->analysis->syscall, sysnumstr);
 				if (sig == -1) {
-					eprintf("Unknown syscall number\n");
+					RZ_LOG_ERROR("core: Unknown syscall number\n");
 					free(str);
 					free(syscalls);
 					return;
@@ -225,14 +225,14 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 				syscalls[i] = sig;
 			}
 		}
-		eprintf("Running child until syscalls:");
+		rz_cons_printf("Running child until syscalls:");
 		for (i = 0; i < count; i++) {
-			eprintf("%d ", syscalls[i]);
+			rz_cons_printf("%d ", syscalls[i]);
 		}
-		eprintf("\n");
+		rz_cons_printf("\n");
 		free(str);
 	} else {
-		eprintf("Running child until next syscall\n");
+		RZ_LOG_WARN("core: Running child until next syscall\n");
 	}
 	rz_reg_arena_swap(core->dbg->reg, true);
 	rz_debug_continue_syscalls(core->dbg, syscalls, count);
@@ -352,11 +352,11 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 static int step_until(RzCore *core, ut64 addr) {
 	ut64 off = rz_debug_reg_get(core->dbg, "PC");
 	if (!off) {
-		eprintf("Cannot 'drn PC'\n");
+		RZ_LOG_ERROR("core: Cannot 'drn PC'\n");
 		return false;
 	}
 	if (!addr) {
-		eprintf("Cannot continue until address 0\n");
+		RZ_LOG_ERROR("core: Cannot continue until address 0\n");
 		return false;
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -380,7 +380,7 @@ static int step_until(RzCore *core, ut64 addr) {
 
 static int step_until_esil(RzCore *core, const char *esilstr) {
 	if (!core || !esilstr || !core->dbg || !core->dbg->analysis || !core->dbg->analysis->esil) {
-		eprintf("Not initialized %p. Run 'aei' first.\n", core->analysis->esil);
+		RZ_LOG_ERROR("core: Not initialized %p. Run 'aei' first.\n", core->analysis->esil);
 		return false;
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -396,7 +396,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 		rz_debug_step(core->dbg, 1);
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
 		if (rz_analysis_esil_condition(core->analysis->esil, esilstr)) {
-			eprintf("ESIL BREAK!\n");
+			RZ_LOG_WARN("core: esil condition breakpoint!\n");
 			break;
 		}
 	}
@@ -446,17 +446,17 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		// TODO: speedup if instructions are in the same block as the previous
 		rz_io_read_at(core->io, pc, buf, sizeof(buf));
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));
-		eprintf("0x%08" PFMT64x " %d %s\n", pc, ret, rz_asm_op_get_asm(&asmop)); // asmop.buf_asm);
+		rz_cons_printf("0x%08" PFMT64x " %d %s\n", pc, ret, rz_asm_op_get_asm(&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
 			const char *buf_asm = rz_asm_op_get_asm(&asmop);
 			if (regex) {
 				if (rz_regex_match(instr, "e", buf_asm)) {
-					eprintf("Stop.\n");
+					RZ_LOG_ERROR("core: esil: stop.\n");
 					break;
 				}
 			} else {
 				if (strstr(buf_asm, instr)) {
-					eprintf("Stop.\n");
+					RZ_LOG_ERROR("core: esil: stop.\n");
 					break;
 				}
 			}
@@ -642,7 +642,7 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 	const char *ptr;
 	switch (input[1]) {
 	case '\0': // "dp"
-		eprintf("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
+		RZ_LOG_WARN("core: Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
 		rz_debug_pid_list(core->dbg, core->dbg->pid, 0);
 		break;
 	case '-': // "dp-"
@@ -655,7 +655,7 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 	case 'c': // "dpc"
 		if (core->dbg->forked_pid != -1) {
 			if (input[2] == '*') {
-				eprintf("dp %d\n", core->dbg->forked_pid);
+				rz_cons_printf("dp %d\n", core->dbg->forked_pid);
 			} else {
 				rz_debug_select(core->dbg, core->dbg->forked_pid, core->dbg->tid);
 				core->dbg->main_pid = core->dbg->forked_pid;
@@ -663,7 +663,7 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 				core->dbg->forked_pid = -1;
 			}
 		} else {
-			eprintf("No recently forked children\n");
+			RZ_LOG_ERROR("core: No recently forked children\n");
 		}
 		break;
 	case 'k': // "dpk"
@@ -675,13 +675,14 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 			ptr = rz_str_trim_head_ro(input + 2);
 			ptr = strchr(ptr, ' ');
 			sig = ptr ? atoi(ptr + 1) : 0;
-			eprintf("Sending signal '%d' to pid '%d'\n", sig, pid);
+			RZ_LOG_WARN("core: Sending signal '%d' to pid '%d'\n", sig, pid);
 			rz_debug_kill(core->dbg, pid, false, sig);
-		} else
-			eprintf("cmd_debug_pid: Invalid arguments (%s)\n", input);
+		} else {
+			RZ_LOG_ERROR("core: cmd_debug_pid: Invalid arguments (%s)\n", input);
+		}
 		break;
 	case 'n': // "dpn"
-		eprintf("TODO: debug_fork: %d\n", rz_debug_child_fork(core->dbg));
+		RZ_LOG_ERROR("core: debug_fork: not implemented %d\n", rz_debug_child_fork(core->dbg));
 		break;
 	case 't': // "dpt"
 		switch (input[2]) {
@@ -703,7 +704,7 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 				(int)rz_num_math(core->num, input + 3));
 			break;
 		case 'n': // "dptn"
-			eprintf("TODO: debug_clone: %d\n", rz_debug_child_clone(core->dbg));
+			RZ_LOG_ERROR("core: debug_clone: not implemented %d\n", rz_debug_child_clone(core->dbg));
 			break;
 		case '?': // "dpt?"
 		default:
@@ -778,7 +779,7 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 		rz_bp_traptrace_list(core->dbg->bp);
 	} else {
 		ut64 oaddr = 0LL;
-		eprintf("Trap tracing 0x%08" PFMT64x "-0x%08" PFMT64x "\n",
+		rz_cons_printf("Trap tracing 0x%08" PFMT64x "-0x%08" PFMT64x "\n",
 			core->offset, core->offset + len);
 		rz_reg_arena_swap(core->dbg->reg, true);
 		rz_bp_traptrace_reset(core->dbg->bp, true);
@@ -789,11 +790,11 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 			rz_debug_continue(core->dbg);
 			addr = rz_debug_reg_get(core->dbg, "PC");
 			if (!addr) {
-				eprintf("pc=0\n");
+				rz_cons_printf("pc=0\n");
 				break;
 			}
 			if (addr == oaddr) {
-				eprintf("pc=opc\n");
+				rz_cons_printf("pc=opc\n");
 				break;
 			}
 			oaddr = addr;
@@ -829,13 +830,13 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 			ut8 *buf = malloc(map->size);
 			// TODO: use mmap here. we need a portable implementation
 			if (!buf) {
-				eprintf("Cannot allocate 0x%08" PFMT64x " bytes\n", map->size);
+				RZ_LOG_ERROR("core: Cannot allocate 0x%08" PFMT64x " bytes\n", map->size);
 				free(buf);
 				/// XXX: TODO: read by blocks!!1
 				continue;
 			}
 			if (map->size > MAX_MAP_SIZE) {
-				eprintf("Do not dumping 0x%08" PFMT64x " because it's too big\n", map->addr);
+				RZ_LOG_ERROR("core: map size is too big to be dumped (0x%08" PFMT64x " > 0x%08x)\n", map->addr, MAX_MAP_SIZE);
 				free(buf);
 				continue;
 			}
@@ -845,10 +846,10 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 				: rz_str_newf("0x%08" PFMT64x "-0x%08" PFMT64x "-%s.dmp",
 					  map->addr, map->addr_end, rz_str_rwx_i(map->perm));
 			if (!rz_file_dump(file, buf, map->size, 0)) {
-				eprintf("Cannot write '%s'\n", file);
+				RZ_LOG_ERROR("core: Cannot write '%s'\n", file);
 				ret = 0;
 			} else {
-				eprintf("Dumped %d byte(s) into %s\n", (int)map->size, file);
+				RZ_LOG_WARN("core: Dumped %d byte(s) into %s\n", (int)map->size, file);
 			}
 			free(file);
 			free(buf);
@@ -1061,7 +1062,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, c
 			return RZ_CMD_STATUS_OK;
 		}
 	}
-	eprintf("The address doesn't match with any map.\n");
+	RZ_LOG_ERROR("core: The address doesn't match with any map.\n");
 	return RZ_CMD_STATUS_ERROR;
 }
 
@@ -1195,7 +1196,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 		if (libname && !addr) {
 			addr = addroflib(core, rz_file_basename(libname));
 			if (addr == UT64_MAX) {
-				eprintf("Unknown library, or not found in dm\n");
+				RZ_LOG_ERROR("core: Unknown library, or not found in dm\n");
 			}
 		}
 		map = get_closest_map(core, addr);
@@ -1218,7 +1219,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 				get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
 				if (newfile) {
 					if (!rz_file_rm(newfile)) {
-						eprintf("Error when removing %s\n", newfile);
+						RZ_LOG_ERROR("core: Error when removing %s\n", newfile);
 					}
 					free(newfile);
 				}
@@ -1383,20 +1384,21 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 			char *buf = rz_file_slurp(argv[1], &sz);
 			// TODO: use mmap here. we need a portable implementation
 			if (!buf) {
-				eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
+				RZ_LOG_ERROR("core: Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_io_write_at(core->io, map->addr, (const ut8 *)buf, sz);
-			if (sz != map->size)
-				eprintf("File size differs from region size (%" PFMT64u " vs %" PFMT64d ")\n",
+			if (sz != map->size) {
+				RZ_LOG_WARN("core: File size differs from region size (%" PFMT64u " vs %" PFMT64d ")\n",
 					(ut64)sz, map->size);
-			eprintf("Loaded %" PFMT64u " byte(s) into the map region at 0x%08" PFMT64x "\n",
+			}
+			rz_cons_printf("Loaded %" PFMT64u " byte(s) into the map region at 0x%08" PFMT64x "\n",
 				(ut64)sz, map->addr);
 			free(buf);
 			return RZ_CMD_STATUS_OK;
 		}
 	}
-	eprintf("No debug region found here\n");
+	RZ_LOG_ERROR("core: No debug region found here\n");
 	return RZ_CMD_STATUS_ERROR;
 }
 
@@ -1755,7 +1757,7 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	int t = core->dbg->trace->enabled;
 
 	if (rz_debug_is_dead(core->dbg)) {
-		eprintf("No process to debug.");
+		RZ_LOG_ERROR("core: No process to debug.");
 		return;
 	}
 	core->dbg->trace->enabled = 0;
@@ -1765,7 +1767,7 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 		bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
 		bp_final = rz_debug_bp_add(core->dbg, final_addr, hwbp, false, 0, NULL, 0);
 		if (!bp_final) {
-			eprintf("Cannot set breakpoint at final address (%" PFMT64x ")\n", final_addr);
+			RZ_LOG_ERROR("core: Cannot set breakpoint at final address (%" PFMT64x ")\n", final_addr);
 		}
 	}
 	do_debug_trace_calls(core, from, to, final_addr);
@@ -1823,7 +1825,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		break;
 	case 'c': // "dec"
 		if (rz_debug_esil_watch_empty(core->dbg)) {
-			eprintf("Error: no esil watchpoints defined\n");
+			RZ_LOG_ERROR("core: Error: no esil watchpoints defined\n");
 		} else {
 			rz_core_analysis_esil_reinit(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
@@ -1840,7 +1842,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 				rz_debug_esil_step(core->dbg, 1);
 				naddr = rz_debug_reg_get(core->dbg, "PC");
 				if (naddr == addr) {
-					eprintf("Detected loophole\n");
+					RZ_LOG_WARN("core: Detected loophole\n");
 					break;
 				}
 				addr = naddr;
@@ -1911,10 +1913,10 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 					} else if (*p == 'c') { // cont
 						rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_CONT);
 					} else {
-						eprintf("Invalid option: %s\n", p);
+						RZ_LOG_ERROR("core: Invalid option: %s\n", p);
 					}
 				} else {
-					eprintf("Invalid signal: %s\n", input + 2);
+					RZ_LOG_ERROR("core: Invalid signal: %s\n", input + 2);
 				}
 				free(name);
 				break;
@@ -1982,7 +1984,7 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 		}
 	}
 	if (core->num->nc.errors && rz_cons_is_interactive()) {
-		eprintf("Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
+		RZ_LOG_ERROR("core: Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
 		return false;
 	}
 	if (to == UT64_MAX) {
@@ -1997,7 +1999,7 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 			rz_debug_step(core->dbg, 1);
 			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
 			pc = rz_debug_reg_get(core->dbg, "PC");
-			eprintf("Continue 0x%08" PFMT64x " > 0x%08" PFMT64x " < 0x%08" PFMT64x "\n",
+			RZ_LOG_WARN("core: Continue 0x%08" PFMT64x " > 0x%08" PFMT64x " < 0x%08" PFMT64x "\n",
 				from, pc, to);
 		} while (pc < from || pc > to);
 		rz_cons_break_pop();
@@ -2335,7 +2337,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (buf) {
 					consumeBuffer(buf, "dx ", NULL);
 				} else {
-					eprintf("Cannot dup %d %d\n", fd, (int)newfd);
+					RZ_LOG_ERROR("core: Cannot dup %d %d\n", fd, (int)newfd);
 				}
 			}
 		} break;
@@ -2397,7 +2399,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'H': // "dH"
-		eprintf("TODO: transplant process\n");
+		RZ_LOG_ERROR("core: dH has not been implemented\n");
 		break;
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
@@ -2457,7 +2459,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			break;
 		case 'f': // "dif" "diff"
 			if (input[1] == '?') {
-				eprintf("Usage: dif $a $b  # diff two alias files\n");
+				RZ_LOG_ERROR("core: Usage: dif $a $b  # diff two alias files\n");
 			} else {
 				char *arg = strchr(input, ' ');
 				if (arg) {
@@ -2474,14 +2476,14 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 							rz_cons_printf("%s\n", uni);
 							free(uni);
 						} else {
-							eprintf("Cannot open those alias files\n");
+							RZ_LOG_ERROR("core: Cannot open those alias files\n");
 						}
 						free(a);
 						free(b);
 					}
 					free(arg);
 				} else {
-					eprintf("Usage: dif $a $b  # diff two alias files\n");
+					RZ_LOG_ERROR("core: Usage: dif $a $b  # diff two alias files\n");
 				}
 			}
 			break;
@@ -2551,16 +2553,16 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'g': // "dg"
 		if (core->dbg->cur && core->dbg->cur->gcore) {
 			if (core->dbg->pid == -1) {
-				eprintf("Not debugging, can't write core.\n");
+				RZ_LOG_ERROR("core: Not debugging, can't write core.\n");
 				break;
 			}
 			char *corefile = get_corefile_name(input + 1, core->dbg->pid);
-			eprintf("Writing to file '%s'\n", corefile);
+			RZ_LOG_WARN("core: Writing to file '%s'\n", corefile);
 			rz_file_rm(corefile);
 			RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
 				if (!core->dbg->cur->gcore(core->dbg, corefile, dst)) {
-					eprintf("dg: coredump failed\n");
+					RZ_LOG_ERROR("core: dg: coredump failed\n");
 				}
 				rz_buf_free(dst);
 			} else {
@@ -2600,13 +2602,15 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			ut8 bytes[4096];
 			if (strlen(input + 2) < 4096) {
 				int bytes_len = rz_hex_str2bin(input + 2, bytes);
-				if (bytes_len > 0)
+				if (bytes_len > 0) {
 					rz_debug_execute(core->dbg,
 						bytes, bytes_len, 0);
-				else
-					eprintf("Invalid hexpairs\n");
-			} else
-				eprintf("Injection opcodes so long\n");
+				} else {
+					RZ_LOG_ERROR("core: Invalid hexpairs\n");
+				}
+			} else {
+				RZ_LOG_ERROR("core: the opcodes to inject are too long (> 2048 bytes)\n");
+			}
 			break;
 		}
 		case 'a': { // "dxa"
@@ -2652,10 +2656,11 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 							bytes, bytes_len,
 							0);
 					} else {
-						eprintf("Invalid hexpairs\n");
+						RZ_LOG_ERROR("core: Invalid hexpairs\n");
 					}
-				} else
-					eprintf("Injection opcodes so long\n");
+				} else {
+					RZ_LOG_ERROR("core: Injection opcodes so long\n");
+				}
 			}
 			rz_reg_arena_pop(core->dbg->reg);
 			break;
@@ -2666,7 +2671,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				rz_core_cmdf(core, "dx %s", str); //`gs %s`", input + 2);
 				free(str);
 			} else {
-				eprintf("Missing parameter used in gs by dxs\n");
+				RZ_LOG_ERROR("core: Missing parameter used in gs by dxs\n");
 			}
 			break;
 		case '?': // "dx?"
@@ -3259,7 +3264,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_back_handler(RzCore *core, int argc, co
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 
 	if (!rz_debug_continue_back(core->dbg)) {
-		eprintf("cannot continue back\n");
+		RZ_LOG_ERROR("core: cannot continue back\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -3309,7 +3314,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_fork_handler(RzCore *core, int argc, co
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 
-	eprintf("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
+	RZ_LOG_WARN("core: Running 'dcs vfork fork clone' behind the scenes...\n");
 	// we should stop in fork, vfork, and clone syscalls
 	cmd_debug_cont_syscall(core, "vfork fork clone");
 
@@ -3357,13 +3362,14 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_mapped_io_handler(RzCore *core, int arg
 		rz_debug_step(core->dbg, 1);
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
 		pc = rz_debug_reg_get(core->dbg, "PC");
-		eprintf(" %d %" PFMT64x "\r", n++, pc);
+		rz_cons_printf(" %d %" PFMT64x "\r", n++, pc);
+		rz_cons_flush();
 		s = rz_io_map_get(core->io, pc);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
 	} while (!s);
-	eprintf("\n");
+	rz_cons_printf("\n");
 	core->dbg->trace->enabled = t;
 	rz_cons_break_pop();
 	return RZ_CMD_STATUS_OK;

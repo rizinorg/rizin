@@ -374,9 +374,9 @@ RZ_API void rz_core_help_vars_print(RzCore *core) {
 	while (vars[i]) {
 		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
 		if (wideOffsets) {
-			eprintf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
 		} else {
-			eprintf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
 		}
 		i++;
 	}
@@ -494,7 +494,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free(buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (rz_num_between(core->num, input + 3) == -1) {
-				eprintf("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
+				RZ_LOG_ERROR("core: Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
 			n = rz_num_math(core->num, input + 1);
@@ -518,7 +518,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			ut32 hash = (ut32)rz_str_djb2_hash(input + 2);
 			rz_cons_printf("0x%08x\n", hash);
 		} else {
-			eprintf("Usage: ?h [string-to-hash]\n");
+			RZ_LOG_ERROR("core: Usage: ?h [string-to-hash]\n");
 		}
 		break;
 	case 'F': // "?F"
@@ -528,7 +528,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *q, *p = strdup(input + 2);
 			if (!p) {
-				eprintf("Cannot strdup\n");
+				RZ_LOG_ERROR("core: Cannot strdup\n");
 				return 0;
 			}
 			q = strchr(p, ' ');
@@ -538,11 +538,11 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				rz_str_bits(out, (const ut8 *)&n, sizeof(n) * 8, q + 1);
 				rz_cons_println(out);
 			} else {
-				eprintf("Usage: \"?b value bitstring\"\n");
+				RZ_LOG_ERROR("core: Usage: \"?b value bitstring\"\n");
 			}
 			free(p);
 		} else {
-			eprintf("Whitespace expected after '?f'\n");
+			RZ_LOG_ERROR("core: Whitespace expected after '?f'\n");
 		}
 		break;
 	case 'o': // "?o"
@@ -587,7 +587,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 			n = rz_num_math(core->num, str);
 			if (core->num->dbz) {
-				eprintf("RzNum ERROR: Division by Zero\n");
+				RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 			}
 			asnum = rz_num_as_string(NULL, n, false);
 			/* decimal, hexa, octal */
@@ -662,7 +662,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	} break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
-			eprintf("RzNum ERROR: Division by Zero\n");
+			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		}
 		if (input[1] == '?') {
 			rz_cons_printf("|Usage: ?q [num]  # Update $? without printing anything\n"
@@ -687,7 +687,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 	}
 		if (core->num->dbz) {
-			eprintf("RzNum ERROR: Division by Zero\n");
+			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		}
 		switch (input[1]) {
 		case '?':
@@ -742,11 +742,11 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 					*e++ = 0;
 					core->num->value = strcmp(s, e);
 				} else {
-					eprintf("Missing secondary word in expression to compare\n");
+					RZ_LOG_ERROR("core: Missing secondary word in expression to compare\n");
 				}
 				free(s);
 			} else {
-				eprintf("Usage: ?== str1 str2\n");
+				RZ_LOG_ERROR("core: Usage: ?== str1 str2\n");
 			}
 		} else {
 			if (input[1]) { // ?=
@@ -892,7 +892,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 					out[len] = 0;
 					rz_cons_println((const char *)out);
 				} else {
-					eprintf("Error parsing the hexpair string\n");
+					RZ_LOG_ERROR("core: Error parsing the hexpair string\n");
 				}
 				free(out);
 			}
@@ -1010,12 +1010,12 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	case 'i': // "?i" input num
 		rz_cons_set_raw(0);
 		if (!rz_cons_is_interactive()) {
-			eprintf("Not running in interactive mode\n");
+			RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		} else {
 			switch (input[1]) {
 			case 'f': // "?if"
 				core->num->value = !rz_num_conditional(core->num, input + 2);
-				eprintf("%s\n", rz_str_bool(!core->num->value));
+				rz_cons_printf("%s\n", rz_str_bool(!core->num->value));
 				break;
 			case 'm': // "?im"
 				rz_cons_message(input + 2);
@@ -1057,7 +1057,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		ut64 addr = rz_num_math(core->num, input + 1);
 		char *rstr = core->print->hasrefs(core->print->user, addr, true);
 		if (!rstr) {
-			eprintf("Cannot get refs\n");
+			RZ_LOG_ERROR("core: Cannot get refs\n");
 			break;
 		}
 		rz_cons_println(rstr);
@@ -1070,7 +1070,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		ut64 end = rz_time_now_mono();
 		double seconds = (double)(end - start) / RZ_USEC_PER_SEC;
 		core->num->value = (ut64)seconds;
-		eprintf("%lf\n", seconds);
+		rz_cons_printf("%lf\n", seconds);
 		break;
 	}
 	case '?': // "??"
@@ -1093,7 +1093,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (core->num->dbz) {
-				eprintf("RzNum ERROR: Division by Zero\n");
+				RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 			}
 			rz_cons_printf("%" PFMT64d "\n", core->num->value);
 		}

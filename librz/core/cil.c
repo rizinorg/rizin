@@ -86,11 +86,11 @@ static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
 				if (buf) {
 					if (!rz_core_write_at(core, addr + i, buf, left)) {
-						eprintf("Couldn't write at %" PFMT64x "\n", addr + i);
+						RZ_LOG_ERROR("core: cannot write at %" PFMT64x "\n", addr + i);
 					}
 					free(buf);
 				} else {
-					eprintf("Couldn't generate pattern of length %" PFMT64d "\n", left);
+					RZ_LOG_ERROR("core: cannot generate pattern of length %" PFMT64d "\n", left);
 				}
 			} break;
 			case 's': // "seq"
@@ -152,7 +152,7 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 	rz_core_analysis_esil_init(core);
 	RzAnalysisEsil *esil = core->analysis->esil;
 	if (!esil) {
-		eprintf("Cannot initialize ESIL\n");
+		RZ_LOG_ERROR("core: cannot initialize ESIL\n");
 		return;
 	}
 	RzIOMap *stack_map;
@@ -172,7 +172,7 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 	esil->stack_fd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
 	if (!(stack_map = rz_io_map_add(core->io, esil->stack_fd, RZ_PERM_RW, 0LL, addr, size))) {
 		rz_io_fd_close(core->io, esil->stack_fd);
-		eprintf("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
+		RZ_LOG_ERROR("core: cannot create map for the stack, fd %d got closed again\n", esil->stack_fd);
 		free(stack_name);
 		esil->stack_fd = 0;
 		return;
@@ -248,7 +248,7 @@ RZ_API void rz_core_analysis_esil_init_mem_del(RZ_NONNULL RzCore *core, RZ_NULLA
 		// no need to kill the maps, rz_io_map_cleanup does that for us in the close
 		esil->stack_fd = 0;
 	} else {
-		eprintf("Cannot deinitialize %s\n", stack_name);
+		RZ_LOG_ERROR("core: cannot deinitialize %s\n", stack_name);
 	}
 	rz_flag_unset_name(core->flags, stack_name);
 	rz_flag_unset_name(core->flags, "aeim.stack");
@@ -316,7 +316,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
 
 	if (!esil) {
-		eprintf("Warning: cmd_espc: creating new esil instance\n");
+		RZ_LOG_WARN("core: cmd_espc: creating new esil instance\n");
 		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
 			return;
 		}
@@ -324,7 +324,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	}
 	buf = malloc(bsize);
 	if (!buf) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", bsize);
 		return;
 	}
 	if (addr == -1) {
@@ -340,7 +340,6 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		}
 		if (i >= (bsize - 32)) {
 			i = 0;
-			eprintf("Warning: Chomp\n");
 		}
 		if (!i) {
 			rz_io_read_at(core->io, addr, buf, bsize);
@@ -350,7 +349,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 		}
 		ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
 		if (ret < 1) {
-			eprintf("Failed analysis at 0x%08" PFMT64x "\n", addr);
+			RZ_LOG_ERROR("core: failed esil analysis at 0x%08" PFMT64x "\n", addr);
 			break;
 		}
 		// skip calls and such
@@ -380,7 +379,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
 	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
 	if (!bb) {
-		RZ_LOG_ERROR("Cannot find basic block for 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("core: cannot find basic block for 0x%08" PFMT64x "\n", core->offset);
 		return;
 	}
 	rz_core_analysis_esil_emulate(core, bb->addr, UT64_MAX, bb->ninstr);
@@ -398,7 +397,7 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 		}
 	}
 	if (!r) {
-		eprintf("ar: Unknown register '%s'\n", regname);
+		RZ_LOG_ERROR("core: unknown register '%s'\n", regname);
 		return -1;
 	}
 	rz_reg_set_value(core->analysis->reg, r, val);
@@ -419,7 +418,7 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
 		if (to > from) {
 			rz_core_analysis_esil(core, from, to - from, NULL);
 		} else {
-			eprintf("Assert: analysis.from > analysis.to\n");
+			RZ_LOG_ERROR("core: analysis.from > analysis.to\n");
 		}
 	} else {
 		rz_list_foreach (list, iter, map) {

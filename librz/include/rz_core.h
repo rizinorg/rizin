@@ -487,7 +487,7 @@ RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int
 RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr);
 RZ_API int rz_core_block_read(RzCore *core);
 RZ_API bool rz_core_block_size(RzCore *core, ut32 bsize);
-RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
+RZ_API int rz_core_is_valid_offset(RZ_NONNULL RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);
 RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions);

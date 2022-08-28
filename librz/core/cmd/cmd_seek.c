@@ -93,7 +93,7 @@ RZ_IPI int rz_core_seek_opcode(RzCore *core, int n, bool silent) {
 
 static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
 	if (input[0] == '?') {
-		eprintf("Usage: so [-][n]\n");
+		RZ_LOG_ERROR("core: Usage: so [-][n]\n");
 		return;
 	}
 	if (!strcmp(input, "-")) {
@@ -140,11 +140,11 @@ RZ_IPI int rz_seek_search(void *data, const char *input) {
 		rz_config_set_i(core->config, "search.maxhits", saved_maxhits);
 		break;
 	case '?':
-		eprintf("Usage: s/.. arg.\n");
+		RZ_LOG_ERROR("core: Usage: s/.. arg.\n");
 		rz_cons_printf("/?\n");
 		break;
 	default:
-		eprintf("unknown search method\n");
+		RZ_LOG_ERROR("core: unknown search method\n");
 		break;
 	}
 	return 0;

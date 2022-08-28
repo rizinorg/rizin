@@ -39,7 +39,7 @@ RZ_API bool rz_core_plugin_init(RzCore *core) {
 	core->plugins = rz_list_newf(NULL); // memleak or dblfree
 	for (i = 0; i < RZ_ARRAY_SIZE(core_static_plugins); i++) {
 		if (!rz_core_plugin_add(core, core_static_plugins[i])) {
-			eprintf("Error loading core plugin\n");
+			RZ_LOG_ERROR("core: error loading core plugin\n");
 			return false;
 		}
 	}

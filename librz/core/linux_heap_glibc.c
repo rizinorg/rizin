@@ -116,7 +116,7 @@ static bool GH(is_tcache)(RzCore *core) {
 		}
 	} else {
 		int tcv = rz_config_get_i(core->config, "dbg.glibc.tcache");
-		eprintf("dbg.glibc.tcache = %i\n", tcv);
+		RZ_LOG_WARN("core: dbg.glibc.tcache has been set to %i\n", tcv);
 		return tcv != 0;
 	}
 	if (fp) {
@@ -447,9 +447,9 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 
 	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
 		if (rz_config_get_b(core->config, "cfg.debug")) {
-			eprintf("Warning: Can't find glibc mapped in memory (see dm)\n");
+			RZ_LOG_WARN("core: Can't find glibc mapped in memory (see dm)\n");
 		} else {
-			eprintf("Warning: Can't find arena mapped in memory (see om)\n");
+			RZ_LOG_WARN("core: Can't find arena mapped in memory (see om)\n");
 		}
 		return false;
 	}
@@ -457,7 +457,7 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf("No Heap section\n");
+		RZ_LOG_ERROR("core: no heap section\n");
 		return false;
 	}
 
@@ -491,7 +491,7 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		}
 		addr_srch += sizeof(GHT);
 	}
-	eprintf("Warning: Can't find main_arena in mapped memory\n");
+	RZ_LOG_WARN("core: Can't find main_arena in mapped memory\n");
 	free(ta);
 	return false;
 }
@@ -781,7 +781,7 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf("No Heap section\n");
+		RZ_LOG_ERROR("core: no heap section\n");
 		return -1;
 	}
 
@@ -841,7 +841,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 	case 'g': // dmhbg [bin_num]
 		num_bin = rz_num_get(NULL, input + j);
 		if (num_bin > NBINS - 2) {
-			eprintf("Error: 0 <= bin <= %d\n", NBINS - 2);
+			RZ_LOG_ERROR("core: the number of bins is greater than %d\n", NBINS - 2);
 			break;
 		}
 		PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin);
@@ -949,7 +949,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 	case ' ':
 		bin_to_print = (int)rz_num_get(NULL, input);
 		if (bin_to_print <= 0 || bin_to_print - 1 > fastbin_count) {
-			eprintf("Error: 0 < bin <= %d\n", fastbin_count + 1);
+			RZ_LOG_ERROR("core: the number of bins is greater than %d\n", fastbin_count + 1);
 			return;
 		}
 	}
@@ -1794,7 +1794,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf("No Heap section\n");
+		RZ_LOG_ERROR("core: no heap section\n");
 		return chunks;
 	}
 
