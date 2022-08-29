@@ -162,13 +162,15 @@ static const RzCmdDescArg analysis_graph_bb_function_args[2];
 static const RzCmdDescArg analysis_graph_imports_args[2];
 static const RzCmdDescArg analysis_graph_refs_args[2];
 static const RzCmdDescArg analysis_graph_refs_global_args[2];
+static const RzCmdDescArg analysis_graph_normal_args[2];
+static const RzCmdDescArg analysis_graph_line_args[2];
 static const RzCmdDescArg analysis_graph_xrefs_args[2];
 static const RzCmdDescArg analysis_graph_custom_args[2];
 static const RzCmdDescArg analysis_graph_custom_node_add_args[4];
 static const RzCmdDescArg analysis_graph_custom_node_remove_args[2];
 static const RzCmdDescArg analysis_graph_custom_edge_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_edge_remove_args[3];
-static const RzCmdDescArg analysis_graph_write_args[3];
+static const RzCmdDescArg analysis_graph_write_args[4];
 static const RzCmdDescArg analysis_regs_args[2];
 static const RzCmdDescArg analysis_regs_columns_args[2];
 static const RzCmdDescArg analysis_regs_references_args[2];
@@ -3207,6 +3209,13 @@ static const RzCmdDescHelp analysis_graph_refs_global_help = {
 };
 
 static const RzCmdDescArg analysis_graph_normal_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices_cb = rz_analysis_graph_format_choices,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_graph_normal_help = {
@@ -3215,10 +3224,17 @@ static const RzCmdDescHelp analysis_graph_normal_help = {
 };
 
 static const RzCmdDescArg analysis_graph_line_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices_cb = rz_analysis_graph_format_choices,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_graph_line_help = {
-	.summary = "Line graph ?",
+	.summary = "Line graph",
 	.args = analysis_graph_line_args,
 };
 
@@ -3344,7 +3360,7 @@ static const RzCmdDescHelp analysis_graph_custom_edge_remove_help = {
 	.args = analysis_graph_custom_edge_remove_args,
 };
 
-static const char *analysis_graph_write_graphtype_choices[] = { "dataref", "dataref_global", "funcall", "funcall_global", "diff", "funblock", "import", "ref", "ref_global", "line", "xref", "custom", NULL };
+static const char *analysis_graph_write_graphtype_choices[] = { "dataref", "funcall", "diff", "funblock", "import", "ref", "line", "xref", "custom", NULL };
 static const RzCmdDescArg analysis_graph_write_args[] = {
 	{
 		.name = "graphtype",
@@ -3356,7 +3372,13 @@ static const RzCmdDescArg analysis_graph_write_args[] = {
 	{
 		.name = "path",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{
+		.name = "global",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
 
 	},
 	{ 0 },

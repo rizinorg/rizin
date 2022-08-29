@@ -72,15 +72,16 @@ agi k
 agi t
 EOF
 EXPECT=<<EOF
-.--------------------.
-|  0x000006bd        |
-`--------------------'
+.--------------.
+|  0x000006bd  |
+`--------------'
     v
     |
-    |
-.--------------------.
-|  sym.main          |
-`--------------------'
+    '.
+     |
+ .------------.
+ |  sym.main  |
+ `------------'
 digraph code {
 rankdir=LR;
 outputorder=edgesfirst
@@ -231,119 +232,119 @@ directed 1
 ]
 {"nodes":[{"id":0,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":1,"title":"0x0000083f","offset":2111,"out_nodes":[0]},{"id":2,"title":"_ITM_deregisterTMCloneTable","offset":0,"out_nodes":[]},{"id":3,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":4,"title":"0x00000814","offset":2068,"out_nodes":[3]},{"id":5,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":6,"title":"0x00000833","offset":2099,"out_nodes":[5]},{"id":7,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":8,"title":"0x000007cf","offset":1999,"out_nodes":[7]},{"id":9,"title":"0x000007de","offset":2014,"out_nodes":[7]},{"id":10,"title":"__libc_start_main","offset":0,"out_nodes":[]},{"id":11,"title":"__gmon_start__","offset":0,"out_nodes":[]},{"id":12,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":13,"title":"0x000007f6","offset":2038,"out_nodes":[12]},{"id":14,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":15,"title":"0x00000827","offset":2087,"out_nodes":[14]},{"id":16,"title":"_ITM_registerTMCloneTable","offset":0,"out_nodes":[]},{"id":17,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":18,"title":"0x0000077e","offset":1918,"out_nodes":[17]}]}
 agraph.color_box=G1swbQ==
-agraph.delta_x=0x8a
+agraph.delta_x=0x72
 agraph.delta_y=0x1
-agraph.h=0x10
+agraph.h=0x14
 agraph.is_callgraph=false
 agraph.nodes=sym.imp.free,0x0000083f,_ITM_deregisterTMCloneTable,sym.imp.strcpy,0x00000814,sym.imp.puts,0x00000833,sym.imp.strlen,0x000007cf,0x000007de,__libc_start_main,__gmon_start__,sym.imp.malloc,0x000007f6,sym.imp.strcat,0x00000827,_ITM_registerTMCloneTable,sym.imp.__cxa_finalize,0x0000077e
 agraph.nodes.0x0000077e.body=base64:
 agraph.nodes.0x0000077e.h=0x3
 agraph.nodes.0x0000077e.neighbours=sym.imp.__cxa_finalize
-agraph.nodes.0x0000077e.w=0x16
-agraph.nodes.0x0000077e.x=0x130
-agraph.nodes.0x0000077e.y=0x8a
+agraph.nodes.0x0000077e.w=0x10
+agraph.nodes.0x0000077e.x=0x10d
+agraph.nodes.0x0000077e.y=0x72
 agraph.nodes.0x000007cf.body=base64:
 agraph.nodes.0x000007cf.h=0x3
 agraph.nodes.0x000007cf.neighbours=sym.imp.strlen
-agraph.nodes.0x000007cf.w=0x16
-agraph.nodes.0x000007cf.x=0x72
-agraph.nodes.0x000007cf.y=0x8a
+agraph.nodes.0x000007cf.w=0x10
+agraph.nodes.0x000007cf.x=0x67
+agraph.nodes.0x000007cf.y=0x72
 agraph.nodes.0x000007de.body=base64:
 agraph.nodes.0x000007de.h=0x3
 agraph.nodes.0x000007de.neighbours=sym.imp.strlen
-agraph.nodes.0x000007de.w=0x16
-agraph.nodes.0x000007de.x=0x8c
-agraph.nodes.0x000007de.y=0x8a
+agraph.nodes.0x000007de.w=0x10
+agraph.nodes.0x000007de.x=0x7b
+agraph.nodes.0x000007de.y=0x72
 agraph.nodes.0x000007f6.body=base64:
 agraph.nodes.0x000007f6.h=0x3
 agraph.nodes.0x000007f6.neighbours=sym.imp.malloc
-agraph.nodes.0x000007f6.w=0x16
-agraph.nodes.0x000007f6.x=0xda
-agraph.nodes.0x000007f6.y=0x8a
+agraph.nodes.0x000007f6.w=0x10
+agraph.nodes.0x000007f6.x=0xc1
+agraph.nodes.0x000007f6.y=0x72
 agraph.nodes.0x00000814.body=base64:
 agraph.nodes.0x00000814.h=0x3
 agraph.nodes.0x00000814.neighbours=sym.imp.strcpy
-agraph.nodes.0x00000814.w=0x16
-agraph.nodes.0x00000814.x=0x3e
-agraph.nodes.0x00000814.y=0x8a
+agraph.nodes.0x00000814.w=0x10
+agraph.nodes.0x00000814.x=0x3d
+agraph.nodes.0x00000814.y=0x72
 agraph.nodes.0x00000827.body=base64:
 agraph.nodes.0x00000827.h=0x3
 agraph.nodes.0x00000827.neighbours=sym.imp.strcat
-agraph.nodes.0x00000827.w=0x16
-agraph.nodes.0x00000827.x=0xf4
-agraph.nodes.0x00000827.y=0x8a
+agraph.nodes.0x00000827.w=0x10
+agraph.nodes.0x00000827.x=0xd7
+agraph.nodes.0x00000827.y=0x72
 agraph.nodes.0x00000833.body=base64:
 agraph.nodes.0x00000833.h=0x3
 agraph.nodes.0x00000833.neighbours=sym.imp.puts
-agraph.nodes.0x00000833.w=0x16
-agraph.nodes.0x00000833.x=0x58
-agraph.nodes.0x00000833.y=0x8a
+agraph.nodes.0x00000833.w=0x10
+agraph.nodes.0x00000833.x=0x53
+agraph.nodes.0x00000833.y=0x72
 agraph.nodes.0x0000083f.body=base64:
 agraph.nodes.0x0000083f.h=0x3
 agraph.nodes.0x0000083f.neighbours=sym.imp.free
-agraph.nodes.0x0000083f.w=0x16
-agraph.nodes.0x0000083f.x=0
-agraph.nodes.0x0000083f.y=0x8a
+agraph.nodes.0x0000083f.w=0x10
+agraph.nodes.0x0000083f.x=0x1
+agraph.nodes.0x0000083f.y=0x72
 agraph.nodes._ITM_deregisterTMCloneTable.body=base64:
 agraph.nodes._ITM_deregisterTMCloneTable.h=0x3
 agraph.nodes._ITM_deregisterTMCloneTable.w=0x21
-agraph.nodes._ITM_deregisterTMCloneTable.x=0x1a
-agraph.nodes._ITM_deregisterTMCloneTable.y=0x8a
+agraph.nodes._ITM_deregisterTMCloneTable.x=0x15
+agraph.nodes._ITM_deregisterTMCloneTable.y=0x72
 agraph.nodes._ITM_registerTMCloneTable.body=base64:
 agraph.nodes._ITM_registerTMCloneTable.h=0x3
 agraph.nodes._ITM_registerTMCloneTable.w=0x1f
-agraph.nodes._ITM_registerTMCloneTable.x=0x10e
-agraph.nodes._ITM_registerTMCloneTable.y=0x8a
+agraph.nodes._ITM_registerTMCloneTable.x=0xeb
+agraph.nodes._ITM_registerTMCloneTable.y=0x72
 agraph.nodes.__gmon_start__.body=base64:
 agraph.nodes.__gmon_start__.h=0x3
-agraph.nodes.__gmon_start__.w=0x16
-agraph.nodes.__gmon_start__.x=0xc0
-agraph.nodes.__gmon_start__.y=0x8a
+agraph.nodes.__gmon_start__.w=0x14
+agraph.nodes.__gmon_start__.x=0xa9
+agraph.nodes.__gmon_start__.y=0x72
 agraph.nodes.__libc_start_main.body=base64:
 agraph.nodes.__libc_start_main.h=0x3
 agraph.nodes.__libc_start_main.w=0x17
-agraph.nodes.__libc_start_main.x=0xa6
-agraph.nodes.__libc_start_main.y=0x8a
+agraph.nodes.__libc_start_main.x=0x8f
+agraph.nodes.__libc_start_main.y=0x72
 agraph.nodes.sym.imp.__cxa_finalize.body=base64:
 agraph.nodes.sym.imp.__cxa_finalize.h=0x3
 agraph.nodes.sym.imp.__cxa_finalize.w=0x1c
-agraph.nodes.sym.imp.__cxa_finalize.x=0x12d
-agraph.nodes.sym.imp.__cxa_finalize.y=0x93
+agraph.nodes.sym.imp.__cxa_finalize.x=0xff
+agraph.nodes.sym.imp.__cxa_finalize.y=0x7f
 agraph.nodes.sym.imp.free.body=base64:
 agraph.nodes.sym.imp.free.h=0x3
-agraph.nodes.sym.imp.free.w=0x16
+agraph.nodes.sym.imp.free.w=0x12
 agraph.nodes.sym.imp.free.x=0
-agraph.nodes.sym.imp.free.y=0x93
+agraph.nodes.sym.imp.free.y=0x7f
 agraph.nodes.sym.imp.malloc.body=base64:
 agraph.nodes.sym.imp.malloc.h=0x3
-agraph.nodes.sym.imp.malloc.w=0x16
-agraph.nodes.sym.imp.malloc.x=0xda
-agraph.nodes.sym.imp.malloc.y=0x93
+agraph.nodes.sym.imp.malloc.w=0x14
+agraph.nodes.sym.imp.malloc.x=0xb9
+agraph.nodes.sym.imp.malloc.y=0x7f
 agraph.nodes.sym.imp.puts.body=base64:
 agraph.nodes.sym.imp.puts.h=0x3
-agraph.nodes.sym.imp.puts.w=0x16
-agraph.nodes.sym.imp.puts.x=0x58
-agraph.nodes.sym.imp.puts.y=0x93
+agraph.nodes.sym.imp.puts.w=0x12
+agraph.nodes.sym.imp.puts.x=0x53
+agraph.nodes.sym.imp.puts.y=0x7f
 agraph.nodes.sym.imp.strcat.body=base64:
 agraph.nodes.sym.imp.strcat.h=0x3
-agraph.nodes.sym.imp.strcat.w=0x16
-agraph.nodes.sym.imp.strcat.x=0xf4
-agraph.nodes.sym.imp.strcat.y=0x93
+agraph.nodes.sym.imp.strcat.w=0x14
+agraph.nodes.sym.imp.strcat.x=0xd1
+agraph.nodes.sym.imp.strcat.y=0x7f
 agraph.nodes.sym.imp.strcpy.body=base64:
 agraph.nodes.sym.imp.strcpy.h=0x3
-agraph.nodes.sym.imp.strcpy.w=0x16
-agraph.nodes.sym.imp.strcpy.x=0x3e
-agraph.nodes.sym.imp.strcpy.y=0x93
+agraph.nodes.sym.imp.strcpy.w=0x14
+agraph.nodes.sym.imp.strcpy.x=0x3b
+agraph.nodes.sym.imp.strcpy.y=0x7f
 agraph.nodes.sym.imp.strlen.body=base64:
 agraph.nodes.sym.imp.strlen.h=0x3
-agraph.nodes.sym.imp.strlen.w=0x16
-agraph.nodes.sym.imp.strlen.x=0x7f
-agraph.nodes.sym.imp.strlen.y=0x93
-agraph.w=0x149
+agraph.nodes.sym.imp.strlen.w=0x14
+agraph.nodes.sym.imp.strlen.x=0x69
+agraph.nodes.sym.imp.strlen.y=0x7f
+agraph.w=0x11d
 
 
-() ()   () () () () () ()  () () ()  ()
-()      () ()   ()         () ()     ()
+() ()   () ()()()() () () () ()  ()
+()      () ()()       () ()    ()
 EOF
 RUN
 
@@ -362,12 +363,12 @@ aga sdb
 aga tiny
 EOF
 EXPECT=<<EOF
-.--------------------.
-|  entry0            |
-`--------------------'
-.--------------------.
-|  entry0            |
-`--------------------'
+.----------.
+|  entry0  |
+`----------'
+.----------.
+|  entry0  |
+`----------'
 agn "entry0"
 digraph code {
 rankdir=LR;
@@ -397,10 +398,10 @@ agraph.is_callgraph=false
 agraph.nodes=entry0
 agraph.nodes.entry0.body=base64:
 agraph.nodes.entry0.h=0x3
-agraph.nodes.entry0.w=0x16
-agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.w=0xc
+agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
-agraph.w=0x16
+agraph.w=0xc
 ()
 EOF
 RUN
@@ -420,30 +421,30 @@ agA sdb
 agA tiny
 EOF
 EXPECT=<<EOF
-.--------------------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .--------------------.    .-----------------------.   .--------------------.    .-----------------------.   .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.
-|  entry0            |    |  sym.deregister_tm_clones  |    |  sym.register_tm_clones  |    |  sym.__do_global_dtors_aux  |   |  sym.imp.__cxa_finalize  |    |  entry.init0       |    |  sym.__libc_csu_fini  |   |  sym._fini         |    |  sym.__libc_csu_init  |   |  main              |    |  sym.imp.strlen    |    |  sym.imp.malloc    |    |  sym.imp.strcpy    |    |  sym.imp.strcat    |    |  sym.imp.puts      |    |  sym.imp.free      |    |  sym._init         |
-`--------------------'    `----------------------------'    `--------------------------'    `-----------------------------'   `--------------------------'    `--------------------'    `-----------------------'   `--------------------'    `-----------------------'   `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'
-                                                                                                v                                                                                                                                                                               t f
-                                                                                                |                                                                                                                                                                               | |
-                                                                                                '---.                                                                                                                                                                           | |
-                                                                                                    |                                                                                                                                                            .--------------' |
-                                                                                                    |                                                                                                                                                            |                '--------.
-                                                                                                    |                                                                                                                                                            |                         |
-                                                                                                .--------------------.                                                                                                                                       .--------------------.    .--------------------.
-                                                                                                |  obj.__dso_handle  |                                                                                                                                       |  str.Hello         |    |  str.r2_folks      |
-                                                                                                `--------------------'                                                                                                                                       `--------------------'    `--------------------'
-.--------------------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .--------------------.    .-----------------------.   .--------------------.    .-----------------------.   .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.    .--------------------.
-|  entry0            |    |  sym.deregister_tm_clones  |    |  sym.register_tm_clones  |    |  sym.__do_global_dtors_aux  |   |  sym.imp.__cxa_finalize  |    |  entry.init0       |    |  sym.__libc_csu_fini  |   |  sym._fini         |    |  sym.__libc_csu_init  |   |  main              |    |  sym.imp.strlen    |    |  sym.imp.malloc    |    |  sym.imp.strcpy    |    |  sym.imp.strcat    |    |  sym.imp.puts      |    |  sym.imp.free      |    |  sym._init         |
-`--------------------'    `----------------------------'    `--------------------------'    `-----------------------------'   `--------------------------'    `--------------------'    `-----------------------'   `--------------------'    `-----------------------'   `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'    `--------------------'
-                                                                                                v                                                                                                                                                                               t f
-                                                                                                |                                                                                                                                                                               | |
-                                                                                                '---.                                                                                                                                                                           | |
-                                                                                                    |                                                                                                                                                            .--------------' |
-                                                                                                    |                                                                                                                                                            |                '--------.
-                                                                                                    |                                                                                                                                                            |                         |
-                                                                                                .--------------------.                                                                                                                                       .--------------------.    .--------------------.
-                                                                                                |  obj.__dso_handle  |                                                                                                                                       |  str.Hello         |    |  str.r2_folks      |
-                                                                                                `--------------------'                                                                                                                                       `--------------------'    `--------------------'
+.----------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .---------------.   .-----------------------.   .-------------.   .-----------------------.   .-----------.   .------------------.    .------------------.    .------------------.    .------------------.    .----------------.    .----------------.    .-------------.
+|  entry0  |    |  sym.deregister_tm_clones  |    |  sym.register_tm_clones  |    |  sym.__do_global_dtors_aux  |   |  sym.imp.__cxa_finalize  |    |  entry.init0  |   |  sym.__libc_csu_fini  |   |  sym._fini  |   |  sym.__libc_csu_init  |   |  main     |   |  sym.imp.strlen  |    |  sym.imp.malloc  |    |  sym.imp.strcpy  |    |  sym.imp.strcat  |    |  sym.imp.puts  |    |  sym.imp.free  |    |  sym._init  |
+`----------'    `----------------------------'    `--------------------------'    `-----------------------------'   `--------------------------'    `---------------'   `-----------------------'   `-------------'   `-----------------------'   `-----------'   `------------------'    `------------------'    `------------------'    `------------------'    `----------------'    `----------------'    `-------------'
+                                                                                      v                                                                                                                                                                 t f
+                                                                                      |                                                                                                                                                                 | |
+                                                                                      '---.                                                                                                                                                             | |
+                                                                                          |                                                                                                                                                .------------' |
+                                                                                          |                                                                                                                                                |              '--.
+                                                                                          |                                                                                                                                                |                 |
+                                                                                      .--------------------.                                                                                                                           .-------------.   .----------------.
+                                                                                      |  obj.__dso_handle  |                                                                                                                           |  str.Hello  |   |  str.r2_folks  |
+                                                                                      `--------------------'                                                                                                                           `-------------'   `----------------'
+.----------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .---------------.   .-----------------------.   .-------------.   .-----------------------.   .-----------.   .------------------.    .------------------.    .------------------.    .------------------.    .----------------.    .----------------.    .-------------.
+|  entry0  |    |  sym.deregister_tm_clones  |    |  sym.register_tm_clones  |    |  sym.__do_global_dtors_aux  |   |  sym.imp.__cxa_finalize  |    |  entry.init0  |   |  sym.__libc_csu_fini  |   |  sym._fini  |   |  sym.__libc_csu_init  |   |  main     |   |  sym.imp.strlen  |    |  sym.imp.malloc  |    |  sym.imp.strcpy  |    |  sym.imp.strcat  |    |  sym.imp.puts  |    |  sym.imp.free  |    |  sym._init  |
+`----------'    `----------------------------'    `--------------------------'    `-----------------------------'   `--------------------------'    `---------------'   `-----------------------'   `-------------'   `-----------------------'   `-----------'   `------------------'    `------------------'    `------------------'    `------------------'    `----------------'    `----------------'    `-------------'
+                                                                                      v                                                                                                                                                                 t f
+                                                                                      |                                                                                                                                                                 | |
+                                                                                      '---.                                                                                                                                                             | |
+                                                                                          |                                                                                                                                                .------------' |
+                                                                                          |                                                                                                                                                |              '--.
+                                                                                          |                                                                                                                                                |                 |
+                                                                                      .--------------------.                                                                                                                           .-------------.   .----------------.
+                                                                                      |  obj.__dso_handle  |                                                                                                                           |  str.Hello  |   |  str.r2_folks  |
+                                                                                      `--------------------'                                                                                                                           `-------------'   `----------------'
 agn "entry0"
 agn "sym.deregister_tm_clones"
 agn "sym.register_tm_clones"
@@ -598,116 +599,116 @@ directed 1
 {"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]},{"id":1,"title":"sym.deregister_tm_clones","offset":1744,"out_nodes":[]},{"id":2,"title":"sym.register_tm_clones","offset":1808,"out_nodes":[]},{"id":3,"title":"sym.__do_global_dtors_aux","offset":1888,"out_nodes":[4]},{"id":4,"title":"obj.__dso_handle","offset":2101256,"out_nodes":[]},{"id":5,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":6,"title":"entry.init0","offset":1952,"out_nodes":[]},{"id":7,"title":"sym.__libc_csu_fini","offset":2240,"out_nodes":[]},{"id":8,"title":"sym._fini","offset":2244,"out_nodes":[]},{"id":9,"title":"sym.__libc_csu_init","offset":2128,"out_nodes":[]},{"id":10,"title":"main","offset":1962,"out_nodes":[11,12]},{"id":11,"title":"str.Hello","offset":2260,"out_nodes":[]},{"id":12,"title":"str.r2_folks","offset":2266,"out_nodes":[]},{"id":13,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":14,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":15,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":16,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":17,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":18,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":19,"title":"sym._init","offset":1544,"out_nodes":[]}]}
 {"nodes":[{"id":0,"title":"entry0","offset":1696,"out_nodes":[]},{"id":1,"title":"sym.deregister_tm_clones","offset":1744,"out_nodes":[]},{"id":2,"title":"sym.register_tm_clones","offset":1808,"out_nodes":[]},{"id":3,"title":"sym.__do_global_dtors_aux","offset":1888,"out_nodes":[4]},{"id":4,"title":"obj.__dso_handle","offset":2101256,"out_nodes":[]},{"id":5,"title":"sym.imp.__cxa_finalize","offset":1680,"out_nodes":[]},{"id":6,"title":"entry.init0","offset":1952,"out_nodes":[]},{"id":7,"title":"sym.__libc_csu_fini","offset":2240,"out_nodes":[]},{"id":8,"title":"sym._fini","offset":2244,"out_nodes":[]},{"id":9,"title":"sym.__libc_csu_init","offset":2128,"out_nodes":[]},{"id":10,"title":"main","offset":1962,"out_nodes":[11,12]},{"id":11,"title":"str.Hello","offset":2260,"out_nodes":[]},{"id":12,"title":"str.r2_folks","offset":2266,"out_nodes":[]},{"id":13,"title":"sym.imp.strlen","offset":1632,"out_nodes":[]},{"id":14,"title":"sym.imp.malloc","offset":1648,"out_nodes":[]},{"id":15,"title":"sym.imp.strcpy","offset":1600,"out_nodes":[]},{"id":16,"title":"sym.imp.strcat","offset":1664,"out_nodes":[]},{"id":17,"title":"sym.imp.puts","offset":1616,"out_nodes":[]},{"id":18,"title":"sym.imp.free","offset":1584,"out_nodes":[]},{"id":19,"title":"sym._init","offset":1544,"out_nodes":[]}]}
 agraph.color_box=G1swbQ==
-agraph.delta_x=0xd2
+agraph.delta_x=0xb4
 agraph.delta_y=0x1
 agraph.h=0xf
 agraph.is_callgraph=false
 agraph.nodes=entry0,sym.deregister_tm_clones,sym.register_tm_clones,sym.__do_global_dtors_aux,obj.__dso_handle,sym.imp.__cxa_finalize,entry.init0,sym.__libc_csu_fini,sym._fini,sym.__libc_csu_init,main,str.Hello,str.r2_folks,sym.imp.strlen,sym.imp.malloc,sym.imp.strcpy,sym.imp.strcat,sym.imp.puts,sym.imp.free,sym._init
 agraph.nodes.entry.init0.body=base64:
 agraph.nodes.entry.init0.h=0x3
-agraph.nodes.entry.init0.w=0x16
-agraph.nodes.entry.init0.x=0x9e
-agraph.nodes.entry.init0.y=0xd2
+agraph.nodes.entry.init0.w=0x11
+agraph.nodes.entry.init0.x=0x94
+agraph.nodes.entry.init0.y=0xb4
 agraph.nodes.entry0.body=base64:
 agraph.nodes.entry0.h=0x3
-agraph.nodes.entry0.w=0x16
+agraph.nodes.entry0.w=0xc
 agraph.nodes.entry0.x=0
-agraph.nodes.entry0.y=0xd2
+agraph.nodes.entry0.y=0xb4
 agraph.nodes.main.body=base64:
 agraph.nodes.main.h=0x3
 agraph.nodes.main.neighbours=str.Hello,str.r2_folks
-agraph.nodes.main.w=0x16
-agraph.nodes.main.x=0x10a
-agraph.nodes.main.y=0xd2
+agraph.nodes.main.w=0xd
+agraph.nodes.main.x=0xf2
+agraph.nodes.main.y=0xb4
 agraph.nodes.obj.__dso_handle.body=base64:
 agraph.nodes.obj.__dso_handle.h=0x3
 agraph.nodes.obj.__dso_handle.w=0x16
-agraph.nodes.obj.__dso_handle.x=0x60
-agraph.nodes.obj.__dso_handle.y=0xdb
+agraph.nodes.obj.__dso_handle.x=0x56
+agraph.nodes.obj.__dso_handle.y=0xbd
 agraph.nodes.str.Hello.body=base64:
 agraph.nodes.str.Hello.h=0x3
-agraph.nodes.str.Hello.w=0x16
-agraph.nodes.str.Hello.x=0xfd
-agraph.nodes.str.Hello.y=0xdb
+agraph.nodes.str.Hello.w=0xf
+agraph.nodes.str.Hello.x=0xe7
+agraph.nodes.str.Hello.y=0xbd
 agraph.nodes.str.r2_folks.body=base64:
 agraph.nodes.str.r2_folks.h=0x3
-agraph.nodes.str.r2_folks.w=0x16
-agraph.nodes.str.r2_folks.x=0x117
-agraph.nodes.str.r2_folks.y=0xdb
+agraph.nodes.str.r2_folks.w=0x12
+agraph.nodes.str.r2_folks.x=0xf9
+agraph.nodes.str.r2_folks.y=0xbd
 agraph.nodes.sym.__do_global_dtors_aux.body=base64:
 agraph.nodes.sym.__do_global_dtors_aux.h=0x3
 agraph.nodes.sym.__do_global_dtors_aux.neighbours=obj.__dso_handle
 agraph.nodes.sym.__do_global_dtors_aux.w=0x1f
-agraph.nodes.sym.__do_global_dtors_aux.x=0x5c
-agraph.nodes.sym.__do_global_dtors_aux.y=0xd2
+agraph.nodes.sym.__do_global_dtors_aux.x=0x52
+agraph.nodes.sym.__do_global_dtors_aux.y=0xb4
 agraph.nodes.sym.__libc_csu_fini.body=base64:
 agraph.nodes.sym.__libc_csu_fini.h=0x3
 agraph.nodes.sym.__libc_csu_fini.w=0x19
-agraph.nodes.sym.__libc_csu_fini.x=0xb8
-agraph.nodes.sym.__libc_csu_fini.y=0xd2
+agraph.nodes.sym.__libc_csu_fini.x=0xa8
+agraph.nodes.sym.__libc_csu_fini.y=0xb4
 agraph.nodes.sym.__libc_csu_init.body=base64:
 agraph.nodes.sym.__libc_csu_init.h=0x3
 agraph.nodes.sym.__libc_csu_init.w=0x19
-agraph.nodes.sym.__libc_csu_init.x=0xee
-agraph.nodes.sym.__libc_csu_init.y=0xd2
+agraph.nodes.sym.__libc_csu_init.x=0xd6
+agraph.nodes.sym.__libc_csu_init.y=0xb4
 agraph.nodes.sym._fini.body=base64:
 agraph.nodes.sym._fini.h=0x3
-agraph.nodes.sym._fini.w=0x16
-agraph.nodes.sym._fini.x=0xd4
-agraph.nodes.sym._fini.y=0xd2
+agraph.nodes.sym._fini.w=0xf
+agraph.nodes.sym._fini.x=0xc4
+agraph.nodes.sym._fini.y=0xb4
 agraph.nodes.sym._init.body=base64:
 agraph.nodes.sym._init.h=0x3
-agraph.nodes.sym._init.w=0x16
-agraph.nodes.sym._init.x=0x1c0
-agraph.nodes.sym._init.y=0xd2
+agraph.nodes.sym._init.w=0xf
+agraph.nodes.sym._init.x=0x18e
+agraph.nodes.sym._init.y=0xb4
 agraph.nodes.sym.deregister_tm_clones.body=base64:
 agraph.nodes.sym.deregister_tm_clones.h=0x3
 agraph.nodes.sym.deregister_tm_clones.w=0x1e
-agraph.nodes.sym.deregister_tm_clones.x=0x1a
-agraph.nodes.sym.deregister_tm_clones.y=0xd2
+agraph.nodes.sym.deregister_tm_clones.x=0x10
+agraph.nodes.sym.deregister_tm_clones.y=0xb4
 agraph.nodes.sym.imp.__cxa_finalize.body=base64:
 agraph.nodes.sym.imp.__cxa_finalize.h=0x3
 agraph.nodes.sym.imp.__cxa_finalize.w=0x1c
-agraph.nodes.sym.imp.__cxa_finalize.x=0x7e
-agraph.nodes.sym.imp.__cxa_finalize.y=0xd2
+agraph.nodes.sym.imp.__cxa_finalize.x=0x74
+agraph.nodes.sym.imp.__cxa_finalize.y=0xb4
 agraph.nodes.sym.imp.free.body=base64:
 agraph.nodes.sym.imp.free.h=0x3
-agraph.nodes.sym.imp.free.w=0x16
-agraph.nodes.sym.imp.free.x=0x1a6
-agraph.nodes.sym.imp.free.y=0xd2
+agraph.nodes.sym.imp.free.w=0x12
+agraph.nodes.sym.imp.free.x=0x178
+agraph.nodes.sym.imp.free.y=0xb4
 agraph.nodes.sym.imp.malloc.body=base64:
 agraph.nodes.sym.imp.malloc.h=0x3
-agraph.nodes.sym.imp.malloc.w=0x16
-agraph.nodes.sym.imp.malloc.x=0x13e
-agraph.nodes.sym.imp.malloc.y=0xd2
+agraph.nodes.sym.imp.malloc.w=0x14
+agraph.nodes.sym.imp.malloc.x=0x11a
+agraph.nodes.sym.imp.malloc.y=0xb4
 agraph.nodes.sym.imp.puts.body=base64:
 agraph.nodes.sym.imp.puts.h=0x3
-agraph.nodes.sym.imp.puts.w=0x16
-agraph.nodes.sym.imp.puts.x=0x18c
-agraph.nodes.sym.imp.puts.y=0xd2
+agraph.nodes.sym.imp.puts.w=0x12
+agraph.nodes.sym.imp.puts.x=0x162
+agraph.nodes.sym.imp.puts.y=0xb4
 agraph.nodes.sym.imp.strcat.body=base64:
 agraph.nodes.sym.imp.strcat.h=0x3
-agraph.nodes.sym.imp.strcat.w=0x16
-agraph.nodes.sym.imp.strcat.x=0x172
-agraph.nodes.sym.imp.strcat.y=0xd2
+agraph.nodes.sym.imp.strcat.w=0x14
+agraph.nodes.sym.imp.strcat.x=0x14a
+agraph.nodes.sym.imp.strcat.y=0xb4
 agraph.nodes.sym.imp.strcpy.body=base64:
 agraph.nodes.sym.imp.strcpy.h=0x3
-agraph.nodes.sym.imp.strcpy.w=0x16
-agraph.nodes.sym.imp.strcpy.x=0x158
-agraph.nodes.sym.imp.strcpy.y=0xd2
+agraph.nodes.sym.imp.strcpy.w=0x14
+agraph.nodes.sym.imp.strcpy.x=0x132
+agraph.nodes.sym.imp.strcpy.y=0xb4
 agraph.nodes.sym.imp.strlen.body=base64:
 agraph.nodes.sym.imp.strlen.h=0x3
-agraph.nodes.sym.imp.strlen.w=0x16
-agraph.nodes.sym.imp.strlen.x=0x124
-agraph.nodes.sym.imp.strlen.y=0xd2
+agraph.nodes.sym.imp.strlen.w=0x14
+agraph.nodes.sym.imp.strlen.x=0x102
+agraph.nodes.sym.imp.strlen.y=0xb4
 agraph.nodes.sym.register_tm_clones.body=base64:
 agraph.nodes.sym.register_tm_clones.h=0x3
 agraph.nodes.sym.register_tm_clones.w=0x1c
-agraph.nodes.sym.register_tm_clones.x=0x3c
-agraph.nodes.sym.register_tm_clones.y=0xd2
-agraph.w=0x1d6
-() ()   ()  ()  ()  () () () ()  () () () ()  () () () ()
-            ()                 () ()
+agraph.nodes.sym.register_tm_clones.x=0x32
+agraph.nodes.sym.register_tm_clones.y=0xb4
+agraph.w=0x19d
+()()  ()  ()  ()  () () ()() ()() () () () () () ()
+           ()               ()()
 EOF
 RUN
 
@@ -715,7 +716,6 @@ NAME=agc multiple formats
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa 2> /dev/null
-agc
 agc ascii
 agc cmd
 agc dot
@@ -726,23 +726,13 @@ agc sdb
 agc tiny
 EOF
 EXPECT=<<EOF
-   .--------------------.
-   |  entry0            |
-   `--------------------'
-       v
-       |
-    .--'
-    |
-.---------------------------.
-|  reloc.__libc_start_main  |
-`---------------------------'
-   .--------------------.
-   |  entry0            |
-   `--------------------'
-       v
-       |
-    .--'
-    |
+        .----------.
+        |  entry0  |
+        `----------'
+              t
+              |
+      .-------'
+      |
 .---------------------------.
 |  reloc.__libc_start_main  |
 `---------------------------'
@@ -783,13 +773,13 @@ agraph.color_box=G1swbQ==
 agraph.delta_x=0
 agraph.delta_y=0x1
 agraph.h=0xe
-agraph.is_callgraph=false
+agraph.is_callgraph=true
 agraph.nodes=entry0,reloc.__libc_start_main
 agraph.nodes.entry0.body=base64:
 agraph.nodes.entry0.h=0x3
 agraph.nodes.entry0.neighbours=reloc.__libc_start_main
-agraph.nodes.entry0.w=0x16
-agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.w=0xc
+agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
 agraph.nodes.reloc.__libc_start_main.body=base64:
 agraph.nodes.reloc.__libc_start_main.h=0x3
@@ -797,7 +787,7 @@ agraph.nodes.reloc.__libc_start_main.w=0x1d
 agraph.nodes.reloc.__libc_start_main.x=0xb
 agraph.nodes.reloc.__libc_start_main.y=0x7
 agraph.w=0x1d
-()
+ ()
 ()
 EOF
 RUN
@@ -920,7 +910,6 @@ RUN
 
 NAME=agf multiple formats
 FILE=bins/elf/hello_world
-BROKEN=1
 CMDS=<<EOF
 aa 2> /dev/null
 agf ascii
@@ -933,7 +922,6 @@ agf sdb
 agf tiny
 EOF
 EXPECT=<<EOF
-[0x000006a0]>  # entry0 (int64_t arg3);
 .-----------------------------------------------------------------------.
 |  0x6a0                                                                |
 | ; [13] -r-x section size 546 named .text                              |
@@ -959,14 +947,40 @@ EXPECT=<<EOF
 | lea rdi, [main]                                                       |
 | ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main |
 | ; "X\x10 "                                                            |
-| call qword [reloc.__libc_start_main];[oa]                             |
+| call qword [reloc.__libc_start_main]                                  |
 `-----------------------------------------------------------------------'
-agn 0x6a0 base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0K
+agn "0x6a0" base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0=
 digraph code {
-	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
-	node [fillcolor=gray style=filled shape=box];
-	edge [arrowhead="normal"];
-	"0x000006a0" [URL="entry0/0x000006a0", fillcolor="white",color="#767676", fontname="Courier",label="  ;-- section..text:\l  ;-- .text:\l  ;-- _start:\lentry0 (int64_t arg3);\l; arg int64_t arg3 @ rdx\l0x000006a0      xor   ebp, ebp                                         ; [13] -r-x section size 546 named .text\l0x000006a2      mov   r9, rdx                                          ; arg3\l0x000006a5      pop   rsi\l0x000006a6      mov   rdx, rsp\l0x000006a9      and   rsp, 0xfffffffffffffff0\l0x000006ad      push  rax\l0x000006ae      push  rsp\l0x000006af      lea   r8, [sym.__libc_csu_fini]                        ; 0x8c0\l0x000006b6      lea   rcx, [sym.__libc_csu_init]                       ; 0x850 ; "AWAVA\\x89\\xffAUATL\\x8d%.\\x05 "\l0x000006bd      lea   rdi, [main]                                      ; 0x7aa\l0x000006c4      call  qword [reloc.__libc_start_main]                  ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main ; "X\\x10 "\l"]
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="0x6a0", color="lightgray", label="0x6a0\n; [13] -r-x section size 546 named .text
+  ;-- section..text:
+  ;-- .text:
+  ;-- _start:
+entry0 (int64_t arg3);
+; arg int64_t arg3 @ rdx
+xor ebp, ebp
+; arg3
+mov r9, rdx
+pop rsi
+mov rdx, rsp
+and rsp, 0xfffffffffffffff0
+push rax
+push rsp
+; 0x8c0
+lea r8, [sym.__libc_csu_fini]
+; 0x850
+; "AWAVA\x89\xffAUATL\x8d%.\x05 "
+lea rcx, [sym.__libc_csu_init]
+; 0x7aa
+lea rdi, [main]
+; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main
+; "X\x10 "
+call qword [reloc.__libc_start_main]
+"]
 }
 graph
 [
@@ -975,23 +989,24 @@ label ""
 directed 1
   node [
     id  0
-    label  "sym._start"
+    label  "0x6a0"
   ]
 ]
-[{"name":"entry0","offset":1696,"ninstr":11,"nargs":1,"nlocals":0,"size":42,"stack":8,"type":"fcn","blocks":[{"offset":1696,"size":42,"colorize":0,"ops":[{"offset":1696,"esil":"ebp,rbp,^,0xffffffff,&,rbp,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":1696,"fcn_last":1736,"size":2,"opcode":"xor ebp, ebp","disasm":"xor ebp, ebp","bytes":"31ed","family":"cpu","type":"xor","reloc":false,"type_num":28,"type2_num":0,"flags":["entry0","section..text","sym..text","sym._start"],"comment":"WzEzXSAtci14IHNlY3Rpb24gc2l6ZSA1NDYgbmFtZWQgLnRleHQ="},{"offset":1698,"esil":"rdx,r9,=","refptr":false,"fcn_addr":1696,"fcn_last":1735,"size":3,"opcode":"mov r9, rdx","disasm":"mov r9, rdx","bytes":"4989d1","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1701,"esil":"rsp,[8],rsi,=,8,rsp,+=","refptr":false,"fcn_addr":1696,"fcn_last":1737,"size":1,"opcode":"pop rsi","disasm":"pop rsi","bytes":"5e","family":"cpu","type":"pop","reloc":false,"type_num":14,"type2_num":0},{"offset":1702,"esil":"rsp,rdx,=","refptr":false,"fcn_addr":1696,"fcn_last":1735,"size":3,"opcode":"mov rdx, rsp","disasm":"mov rdx, rsp","bytes":"4889e2","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":1705,"val":18446744073709551600,"esil":"18446744073709551600,rsp,&=,$z,zf,:=,$p,pf,:=,63,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":1696,"fcn_last":1734,"size":4,"opcode":"and rsp, 0xfffffffffffffff0","disasm":"and rsp, 0xfffffffffffffff0","bytes":"4883e4f0","family":"cpu","type":"and","reloc":false,"type_num":27,"type2_num":0},{"offset":1709,"esil":"rax,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":1696,"fcn_last":1737,"size":1,"opcode":"push rax","disasm":"push rax","bytes":"50","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0},{"offset":1710,"esil":"rsp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":1696,"fcn_last":1737,"size":1,"opcode":"push rsp","disasm":"push rsp","bytes":"54","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0},{"offset":1711,"ptr":2240,"esil":"0x20a,rip,+,r8,=","refptr":true,"fcn_addr":1696,"fcn_last":1731,"size":7,"opcode":"lea r8, [rip + 0x20a]","disasm":"lea r8, [sym.__libc_csu_fini]","bytes":"4c8d050a020000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":2240,"type":"DATA"}]},{"offset":1718,"ptr":2128,"esil":"0x193,rip,+,rcx,=","refptr":true,"fcn_addr":1696,"fcn_last":1731,"size":7,"opcode":"lea rcx, [rip + 0x193]","disasm":"lea rcx, [sym.__libc_csu_init]","bytes":"488d0d93010000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":2128,"type":"DATA"}]},{"offset":1725,"ptr":1962,"esil":"0xe6,rip,+,rdi,=","refptr":true,"fcn_addr":1696,"fcn_last":1731,"size":7,"opcode":"lea rdi, [rip + 0xe6]","disasm":"lea rdi, [main]","bytes":"488d3de6000000","family":"cpu","type":"lea","reloc":false,"type_num":33,"type2_num":0,"xrefs_from":[{"addr":1962,"type":"DATA"}]},{"offset":1732,"ptr":2101216,"esil":"0x200916,rip,+,[8],rip,8,rsp,-=,rsp,=[],rip,=","refptr":true,"fcn_addr":1696,"fcn_last":1732,"size":6,"opcode":"call qword [rip + 0x200916]","disasm":"call qword [reloc.__libc_start_main]","bytes":"ff1516092000","family":"cpu","type":"ircall","reloc":false,"type_num":402653188,"type2_num":0,"xrefs_from":[{"addr":2101216,"type":"CALL"}]}]}]}]
-[{"name":"entry0","offset":1696,"ninstr":11,"nargs":1,"nlocals":0,"size":42,"stack":8,"type":"fcn","blocks":[{"offset":1696,"size":42,"colorize":0,"ops":[{"offset":1696,"text":"       ;-- section..text:"},{"offset":1696,"text":"       ;-- .text:"},{"offset":1696,"text":"       ;-- _start:"},{"offset":1696,"text":"entry0 (int64_t arg3);"},{"offset":1696,"text":"     ; arg int64_t arg3 @ rdx"},{"offset":1696,"text":"     xor   ebp, ebp                                                    ; [13] -r-x section size 546 named .text"},{"offset":1698,"text":"     mov   r9, rdx                                                     ; arg3"},{"offset":1701,"text":"     pop   rsi"},{"offset":1702,"text":"     mov   rdx, rsp"},{"offset":1705,"text":"     and   rsp, 0xfffffffffffffff0"},{"offset":1709,"text":"     push  rax"},{"offset":1710,"text":"     push  rsp"},{"offset":1711,"text":"     lea   r8, [sym.__libc_csu_fini]                                   ; 0x8c0"},{"offset":1718,"text":"     lea   rcx, [sym.__libc_csu_init]                                  ; 0x850 ; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \""},{"offset":1725,"text":"     lea   rdi, [main]                                                 ; 0x7aa"},{"offset":1732,"text":"     call  qword [reloc.__libc_start_main]                             ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main ; \"X\\x10 \""}]}]}]
+{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0 (int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
+{"nodes":[{"id":0,"title":"0x6a0","body":"; [13] -r-x section size 546 named .text\n  ;-- section..text:\n  ;-- .text:\n  ;-- _start:\nentry0 (int64_t arg3);\n; arg int64_t arg3 @ rdx\nxor ebp, ebp\n; arg3\nmov r9, rdx\npop rsi\nmov rdx, rsp\nand rsp, 0xfffffffffffffff0\npush rax\npush rsp\n; 0x8c0\nlea r8, [sym.__libc_csu_fini]\n; 0x850\n; \"AWAVA\\x89\\xffAUATL\\x8d%.\\x05 \"\nlea rcx, [sym.__libc_csu_init]\n; 0x7aa\nlea rdi, [main]\n; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main\n; \"X\\x10 \"\ncall qword [reloc.__libc_start_main]\n","offset":1696,"out_nodes":[]}]}
 agraph.color_box=G1swbQ==
 agraph.delta_x=0xb
 agraph.delta_y=0x1
-agraph.h=0x1f
+agraph.h=0x1e
 agraph.is_callgraph=false
 agraph.nodes=0x6a0
-agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0K
-agraph.nodes.0x6a0.h=0x1c
+agraph.nodes.0x6a0.body=base64:OyBbMTNdIC1yLXggc2VjdGlvbiBzaXplIDU0NiBuYW1lZCAudGV4dAogIDstLSBzZWN0aW9uLi50ZXh0OgogIDstLSAudGV4dDoKICA7LS0gX3N0YXJ0OgplbnRyeTAgKGludDY0X3QgYXJnMyk7CjsgYXJnIGludDY0X3QgYXJnMyBAIHJkeAp4b3IgZWJwLCBlYnAKOyBhcmczCm1vdiByOSwgcmR4CnBvcCByc2kKbW92IHJkeCwgcnNwCmFuZCByc3AsIDB4ZmZmZmZmZmZmZmZmZmZmMApwdXNoIHJheApwdXNoIHJzcAo7IDB4OGMwCmxlYSByOCwgW3N5bS5fX2xpYmNfY3N1X2ZpbmldCjsgMHg4NTAKOyAiQVdBVkFceDg5XHhmZkFVQVRMXHg4ZCUuXHgwNSAiCmxlYSByY3gsIFtzeW0uX19saWJjX2NzdV9pbml0XQo7IDB4N2FhCmxlYSByZGksIFttYWluXQo7IFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbjo4XT0weDIwMTA1OCByZWxvYy50YXJnZXQuX19saWJjX3N0YXJ0X21haW4KOyAiWFx4MTAgIgpjYWxsIHF3b3JkIFtyZWxvYy5fX2xpYmNfc3RhcnRfbWFpbl0=
+agraph.nodes.0x6a0.h=0x1b
 agraph.nodes.0x6a0.w=0x49
 agraph.nodes.0x6a0.x=0
 agraph.nodes.0x6a0.y=0xb
 agraph.w=0x49
+()
 EOF
 RUN
 
@@ -1009,9 +1024,9 @@ agr sdb
 agr tiny
 EOF
 EXPECT=<<EOF
-.--------------------.
-|  entry0            |
-`--------------------'
+.----------.
+|  entry0  |
+`----------'
 agn "entry0"
 digraph code {
 rankdir=LR;
@@ -1041,10 +1056,10 @@ agraph.is_callgraph=false
 agraph.nodes=entry0
 agraph.nodes.entry0.body=base64:
 agraph.nodes.entry0.h=0x3
-agraph.nodes.entry0.w=0x16
-agraph.nodes.entry0.x=0xe
+agraph.nodes.entry0.w=0xc
+agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
-agraph.w=0x16
+agraph.w=0xc
 ()
 EOF
 RUN
@@ -1064,17 +1079,17 @@ agx sdb
 agx tiny
 EOF
 EXPECT=<<EOF
-.--------------------.    .--------------------.
-|  0x000007cf        |    |  0x000007de        |
-`--------------------'    `--------------------'
-    v                         v
-    |                         |
-    '--------------.          |
-                   | .--------'
-                   | |
-             .--------------------.
-             |  sym.imp.strlen    |
-             `--------------------'
+.--------------.    .--------------.
+|  0x000007cf  |    |  0x000007de  |
+`--------------'    `--------------'
+    v                   v
+    |                   |
+    '---------.         |
+              | .-------'
+              | |
+        .------------------.
+        |  sym.imp.strlen  |
+        `------------------'
 agn "sym.imp.strlen"
 agn "0x000007cf"
 agn "0x000007de"
@@ -1129,24 +1144,254 @@ agraph.nodes=sym.imp.strlen,0x000007cf,0x000007de
 agraph.nodes.0x000007cf.body=base64:
 agraph.nodes.0x000007cf.h=0x3
 agraph.nodes.0x000007cf.neighbours=sym.imp.strlen
-agraph.nodes.0x000007cf.w=0x16
-agraph.nodes.0x000007cf.x=0x1
+agraph.nodes.0x000007cf.w=0x10
+agraph.nodes.0x000007cf.x=0x7
 agraph.nodes.0x000007cf.y=0
 agraph.nodes.0x000007de.body=base64:
 agraph.nodes.0x000007de.h=0x3
 agraph.nodes.0x000007de.neighbours=sym.imp.strlen
-agraph.nodes.0x000007de.w=0x16
+agraph.nodes.0x000007de.w=0x10
 agraph.nodes.0x000007de.x=0x1b
 agraph.nodes.0x000007de.y=0
 agraph.nodes.sym.imp.strlen.body=base64:
 agraph.nodes.sym.imp.strlen.h=0x3
-agraph.nodes.sym.imp.strlen.w=0x16
-agraph.nodes.sym.imp.strlen.x=0xe
+agraph.nodes.sym.imp.strlen.w=0x14
+agraph.nodes.sym.imp.strlen.x=0xf
 agraph.nodes.sym.imp.strlen.y=0x8
-agraph.w=0x30
+agraph.w=0x24
 
 
 () ()
+ ()
+EOF
+RUN
+
+NAME=agl multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+s main
+agl ascii
+agl cmd
+agl dot
+agl gml
+agl json
+agl json_disasm
+agl sdb
+agl tiny
+EOF
+EXPECT=<<EOF
+     .-----------.
+     |  0x7aa    |
+     `-----------'
+             f t
+             | |
+             | '.
+    .--------'  |
+    |           |
+.----------.    |
+|  0x806   |    |
+`----------'    |
+    v           |
+    |           |
+    '------.    |
+           | .--'
+           | |
+     .-----------.
+     |  0x844    |
+     `-----------'
+agn "0x7aa"
+agn "0x844"
+agn "0x806"
+age "0x7aa" "0x844"
+age "0x7aa" "0x806"
+age "0x806" "0x844"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="0x7aa", color="lightgray", label="0x7aa"]
+0 -> 1
+0 -> 2
+1 [URL="0x844", color="lightgray", label="0x844"]
+2 [URL="0x806", color="lightgray", label="0x806"]
+2 -> 1
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "0x7aa"
+  ]
+  node [
+    id  1
+    label  "0x844"
+  ]
+  node [
+    id  2
+    label  "0x806"
+  ]
+  edge [
+    source  0
+    target  1
+  ]
+  edge [
+    source  0
+    target  2
+  ]
+  edge [
+    source  2
+    target  1
+  ]
+]
+{"nodes":[{"id":0,"title":"0x7aa","offset":1962,"out_nodes":[1,2]},{"id":1,"title":"0x844","offset":2116,"out_nodes":[]},{"id":2,"title":"0x806","offset":2054,"out_nodes":[1]}]}
+{"nodes":[{"id":0,"title":"0x7aa","offset":1962,"out_nodes":[1,2]},{"id":1,"title":"0x844","offset":2116,"out_nodes":[]},{"id":2,"title":"0x806","offset":2054,"out_nodes":[1]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0x17
+agraph.is_callgraph=false
+agraph.nodes=0x7aa,0x844,0x806
+agraph.nodes.0x7aa.body=base64:
+agraph.nodes.0x7aa.h=0x3
+agraph.nodes.0x7aa.neighbours=,0x806
+agraph.nodes.0x7aa.w=0xd
+agraph.nodes.0x7aa.x=0x13
+agraph.nodes.0x7aa.y=0
+agraph.nodes.0x806.body=base64:
+agraph.nodes.0x806.h=0x3
+agraph.nodes.0x806.neighbours=0x844
+agraph.nodes.0x806.w=0xc
+agraph.nodes.0x806.x=0xe
+agraph.nodes.0x806.y=0x8
+agraph.nodes.0x844.body=base64:
+agraph.nodes.0x844.h=0x3
+agraph.nodes.0x844.w=0xd
+agraph.nodes.0x844.x=0x13
+agraph.nodes.0x844.y=0x10
+agraph.w=0x12
+ ()
+()
+ ()
+EOF
+RUN
+
+NAME=ags multiple formats
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aa 2> /dev/null
+s main
+ags ascii
+ags cmd
+ags dot
+ags gml
+ags json
+ags json_disasm
+ags sdb
+ags tiny
+EOF
+EXPECT=<<EOF
+     .-----------.
+     |  0x7aa    |
+     `-----------'
+             f t
+             | |
+             | '.
+    .--------'  |
+    |           |
+.----------.    |
+|  0x806   |    |
+`----------'    |
+    v           |
+    |           |
+    '------.    |
+           | .--'
+           | |
+     .-----------.
+     |  0x844    |
+     `-----------'
+agn "0x7aa"
+agn "0x844"
+agn "0x806"
+age "0x7aa" "0x844"
+age "0x7aa" "0x806"
+age "0x806" "0x844"
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2 ];
+node [fillcolor=white, style=filled shape=box fontsize="8" fontname="Courier"];
+0 [URL="0x7aa", color="lightgray", label="0x7aa"]
+0 -> 1
+0 -> 2
+1 [URL="0x844", color="lightgray", label="0x844"]
+2 [URL="0x806", color="lightgray", label="0x806"]
+2 -> 1
+}
+graph
+[
+hierarchic 1
+label ""
+directed 1
+  node [
+    id  0
+    label  "0x7aa"
+  ]
+  node [
+    id  1
+    label  "0x844"
+  ]
+  node [
+    id  2
+    label  "0x806"
+  ]
+  edge [
+    source  0
+    target  1
+  ]
+  edge [
+    source  0
+    target  2
+  ]
+  edge [
+    source  2
+    target  1
+  ]
+]
+{"nodes":[{"id":0,"title":"0x7aa","offset":1962,"out_nodes":[1,2]},{"id":1,"title":"0x844","offset":2116,"out_nodes":[]},{"id":2,"title":"0x806","offset":2054,"out_nodes":[1]}]}
+{"nodes":[{"id":0,"title":"0x7aa","offset":1962,"out_nodes":[1,2]},{"id":1,"title":"0x844","offset":2116,"out_nodes":[]},{"id":2,"title":"0x806","offset":2054,"out_nodes":[1]}]}
+agraph.color_box=G1swbQ==
+agraph.delta_x=0
+agraph.delta_y=0x1
+agraph.h=0x17
+agraph.is_callgraph=false
+agraph.nodes=0x7aa,0x844,0x806
+agraph.nodes.0x7aa.body=base64:
+agraph.nodes.0x7aa.h=0x3
+agraph.nodes.0x7aa.neighbours=,0x806
+agraph.nodes.0x7aa.w=0xd
+agraph.nodes.0x7aa.x=0x13
+agraph.nodes.0x7aa.y=0
+agraph.nodes.0x806.body=base64:
+agraph.nodes.0x806.h=0x3
+agraph.nodes.0x806.neighbours=0x844
+agraph.nodes.0x806.w=0xc
+agraph.nodes.0x806.x=0xe
+agraph.nodes.0x806.y=0x8
+agraph.nodes.0x844.body=base64:
+agraph.nodes.0x844.h=0x3
+agraph.nodes.0x844.w=0xd
+agraph.nodes.0x844.x=0x13
+agraph.nodes.0x844.y=0x10
+agraph.w=0x12
+ ()
+()
  ()
 EOF
 RUN

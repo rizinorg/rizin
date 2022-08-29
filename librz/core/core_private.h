@@ -48,8 +48,6 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj);
 RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core);
 
-RZ_IPI void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph, int use_utf, bool use_offset, RzCoreGraphFormat format);
-
 /* cmeta.c */
 RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state);
 RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, ut64 size, bool show_full, RzCmdStateOutput *state);
@@ -112,6 +110,14 @@ RZ_IPI void rz_core_agraph_print_dot(RzCore *core);
 RZ_IPI void rz_core_agraph_print_rizin(RzCore *core);
 RZ_IPI void rz_core_agraph_print_json(RzCore *core);
 RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
+RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format);
+RZ_IPI bool rz_core_agraph_is_shortcuts(RzCore *core, RzAGraph *g);
+RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, ut64 addr, char *title);
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph *graph);
+
+/* cgraph.c */
+RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
+RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, RzCoreGraphFormat format);
 
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
@@ -309,5 +315,9 @@ RZ_IPI void rz_core_visual_mark_set(RzCore *core, ut8 ch, ut64 addr);
 RZ_IPI void rz_core_visual_mark_del(RzCore *core, ut8 ch);
 RZ_IPI bool rz_core_visual_mark_dump(RzCore *core);
 RZ_IPI void rz_core_visual_mark_reset(RzCore *core);
+
+static inline char *rz_address_str(ut64 addr) {
+	return rz_str_newf("0x%" PFMT64x, addr);
+}
 
 #endif

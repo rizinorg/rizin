@@ -10,7 +10,7 @@ EOF
 EXPECT=<<EOF
 agraph.nodes=title1
 agraph.nodes.title1.body=base64:Ym9keTE=
-agraph.nodes.title1.w=0x16
+agraph.nodes.title1.w=0xc
 agraph.nodes.title1.h=0x4
 EOF
 RUN
@@ -74,7 +74,7 @@ EOF
 EXPECT=<<EOF
 agraph.nodes=title1
 agraph.nodes.title1.body=base64:Ym9keTE=
-agraph.nodes.title1.w=0x16
+agraph.nodes.title1.w=0xc
 EOF
 RUN
 
@@ -149,10 +149,10 @@ agn title1 body1
 agg
 EOF
 EXPECT=<<EOF
-.--------------------.
-|  title1            |
-| body1              |
-`--------------------'
+.----------.
+|  title1  |
+| body1    |
+`----------'
 EOF
 RUN
 
@@ -167,15 +167,14 @@ af
 agf
 EOF
 EXPECT=<<EOF
-[0x00000000]>  # fcn.00000000 ();
-.--------------------.
-|  0x0               |
-| fcn.00000000 ();   |
-| push ebp           |
-| mov ebp, esp       |
-| pop ebp            |
-| ret                |
-`--------------------'
+.------------------.
+|  0x0             |
+| fcn.00000000 (); |
+| push ebp         |
+| mov ebp, esp     |
+| pop ebp          |
+| ret              |
+`------------------'
 EOF
 RUN
 
@@ -186,13 +185,13 @@ agn 0x0 base64:cHVzaCBlYnAKbW92IGVicCwgZXNwCnBvcCBlYnAKcmV0
 agg
 EOF
 EXPECT=<<EOF
-.--------------------.
-|  0x0               |
-| push ebp           |
-| mov ebp, esp       |
-| pop ebp            |
-| ret                |
-`--------------------'
+.--------------.
+|  0x0         |
+| push ebp     |
+| mov ebp, esp |
+| pop ebp      |
+| ret          |
+`--------------'
 EOF
 RUN
 
@@ -208,7 +207,7 @@ EOF
 EXPECT=<<EOF
 agraph.w=0
 agraph.h=0
-agraph.w=22
+agraph.w=12
 agraph.h=7
 EOF
 RUN
@@ -251,10 +250,10 @@ agg
 EOF
 EXPECT=<<EOF
 This is the graph title
-.--------------------.
-|  title1            |
-| body1              |
-`--------------------'
+.----------.
+|  title1  |
+| body1    |
+`----------'
 EOF
 RUN
 
@@ -287,10 +286,10 @@ EOF
 EXPECT=<<EOF
 .----.
 |    |
-|.--------------------.
-||  title1            |
-|| body1              |
-|`--------------------'
+|.----------.
+||  title1  |
+|| body1    |
+|`----------'
 |    v
 |    |
 `----'
@@ -324,7 +323,6 @@ e scr.strconv=asciidot
 agf
 EOF
 EXPECT=<<EOF
-[0x0008049c]>  # super_mario_fix ();
 .--------------------------------------------.
 |  0x8049c                                   |
 | super_mario_fix ();                        |
@@ -333,7 +331,6 @@ EXPECT=<<EOF
 |    ; "\u00a2\u00a2\u00a2World" sym..rodata |
 | addiu a0, v0, 0x510                        |
 `--------------------------------------------'
-[0x0008049c]>  # super_mario_fix ();
 .-----------------------------.
 |  0x8049c                    |
 | super_mario_fix ();         |

@@ -46,14 +46,6 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_CORE_BLOCKSIZE     0x100
 #define RZ_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
-#define RZ_CORE_ANALYSIS_GRAPHLINES         1
-#define RZ_CORE_ANALYSIS_GRAPHBODY          2
-#define RZ_CORE_ANALYSIS_GRAPHDIFF          4
-#define RZ_CORE_ANALYSIS_JSON               8
-#define RZ_CORE_ANALYSIS_KEYVALUE           16
-#define RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM 32
-#define RZ_CORE_ANALYSIS_STAR               64
-
 #define RZ_FLAGS_FS_CLASSES                 "classes"
 #define RZ_FLAGS_FS_FUNCTIONS               "functions"
 #define RZ_FLAGS_FS_IMPORTS                 "imports"
@@ -73,13 +65,6 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_GLOBALS                 "globals"
 #define RZ_FLAGS_FS_DEBUG_MAPS              "maps"
 #define RZ_FLAGS_FS_POINTERS                "pointers"
-
-#define RZ_GRAPH_FORMAT_NO     0
-#define RZ_GRAPH_FORMAT_GMLFCN 1
-#define RZ_GRAPH_FORMAT_JSON   2
-#define RZ_GRAPH_FORMAT_GML    3
-#define RZ_GRAPH_FORMAT_DOT    4
-#define RZ_GRAPH_FORMAT_CMD    5
 
 ///
 #define RZ_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x : def)
@@ -695,35 +680,6 @@ typedef struct rz_core_analysis_name_t {
 	ut64 offset;
 } RzCoreAnalysisName;
 
-typedef enum {
-	RZ_CORE_GRAPH_FORMAT_VISUAL = 0,
-	RZ_CORE_GRAPH_FORMAT_TINY,
-	RZ_CORE_GRAPH_FORMAT_SDB,
-	RZ_CORE_GRAPH_FORMAT_GML,
-	RZ_CORE_GRAPH_FORMAT_DOT,
-	RZ_CORE_GRAPH_FORMAT_JSON,
-	RZ_CORE_GRAPH_FORMAT_JSON_DISASM,
-	RZ_CORE_GRAPH_FORMAT_CMD,
-	RZ_CORE_GRAPH_FORMAT_ASCII_ART,
-	RZ_CORE_GRAPH_FORMAT_UNK,
-} RzCoreGraphFormat;
-
-typedef enum {
-	RZ_CORE_GRAPH_TYPE_DATAREF = 0,
-	RZ_CORE_GRAPH_TYPE_DATAREF_GLOBAL,
-	RZ_CORE_GRAPH_TYPE_FUNCALL,
-	RZ_CORE_GRAPH_TYPE_FUNCALL_GLOBAL,
-	RZ_CORE_GRAPH_TYPE_DIFF,
-	RZ_CORE_GRAPH_TYPE_BLOCK_FUN,
-	RZ_CORE_GRAPH_TYPE_IMPORT,
-	RZ_CORE_GRAPH_TYPE_REF,
-	RZ_CORE_GRAPH_TYPE_REF_GLOBAL,
-	RZ_CORE_GRAPH_TYPE_LINE,
-	RZ_CORE_GRAPH_TYPE_XREF,
-	RZ_CORE_GRAPH_TYPE_CUSTOM,
-	RZ_CORE_GRAPH_TYPE_UNK
-} RzCoreGraphType;
-
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
@@ -734,11 +690,6 @@ RZ_API void rz_core_analysis_hint_list_print(RzAnalysis *a, RzCmdStateOutput *st
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
 RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut64 to);
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_codexrefs(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_importxrefs(RZ_NONNULL RzCore *core);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_analysis_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_resolve_jumps(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes);
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
@@ -752,9 +703,6 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core);
 RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
-RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
@@ -777,6 +725,57 @@ RZ_API RZ_BORROW const char *rz_core_analysis_name_type_to_str(RzCoreAnalysisNam
 RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p);
 RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr);
+
+/* cgraph.c */
+/**
+ * \brief RzGraph format for print/convert
+ */
+typedef enum {
+	RZ_CORE_GRAPH_FORMAT_VISUAL = 0,
+	RZ_CORE_GRAPH_FORMAT_TINY,
+	RZ_CORE_GRAPH_FORMAT_SDB,
+	RZ_CORE_GRAPH_FORMAT_GML,
+	RZ_CORE_GRAPH_FORMAT_DOT,
+	RZ_CORE_GRAPH_FORMAT_JSON,
+	RZ_CORE_GRAPH_FORMAT_JSON_DISASM,
+	RZ_CORE_GRAPH_FORMAT_CMD,
+	RZ_CORE_GRAPH_FORMAT_ASCII_ART,
+	RZ_CORE_GRAPH_FORMAT_UNK,
+} RzCoreGraphFormat;
+
+/**
+ * \brief RzGraph type
+ */
+typedef enum {
+	RZ_CORE_GRAPH_TYPE_DATAREF = 0, ///< Data reference graph
+	RZ_CORE_GRAPH_TYPE_FUNCALL, ///< Function callgraph
+	RZ_CORE_GRAPH_TYPE_DIFF, ///< Diff graph
+	RZ_CORE_GRAPH_TYPE_BLOCK_FUN, ///< Basic blocks function graph
+	RZ_CORE_GRAPH_TYPE_IMPORT, ///< Imports graph
+	RZ_CORE_GRAPH_TYPE_REF, ///< References graph
+	RZ_CORE_GRAPH_TYPE_LINE, ///< Line graph
+	RZ_CORE_GRAPH_TYPE_XREF, ///< Cross-references graph
+	RZ_CORE_GRAPH_TYPE_CUSTOM, ///< Custom graph
+	RZ_CORE_GRAPH_TYPE_NORMAL, ///< Normal graph
+	RZ_CORE_GRAPH_TYPE_UNK ///< Unknown graph
+} RzCoreGraphType;
+
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_codexrefs(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONNULL RzCore *core);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function(RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_diff(RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_line(RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCoreGraphType type, ut64 addr);
+
+RZ_API RzCoreGraphFormat rz_core_graph_format_from_string(RZ_NULLABLE const char *x);
+RZ_API RzCoreGraphType rz_core_graph_type_from_string(RZ_NULLABLE const char *x);
+RZ_API bool rz_core_graph_write_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL const char *filename);
+RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphType type, RZ_NONNULL const char *path);
+RZ_API RZ_OWN char *rz_core_graph_to_dot_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);
