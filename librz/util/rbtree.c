@@ -474,3 +474,129 @@ RZ_API void rz_rbtree_cont_free(RContRBTree *tree) {
 	}
 	free(tree);
 }
+
+// All this logic was copied from analysis/block.c
+
+typedef struct {
+	RBNode _rb;
+	RzInterval itv;
+	ut64 _max_end;
+	void *user;
+} RzItvTreeNode;
+
+typedef void (*RzItvTreeCb)(void *node_user, void *user);
+
+#define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzItvTreeNode, _rb) : NULL)
+
+static void itv_max_end(RBNode *node) {
+	RzItvTreeNode *n = container_of(node, RzItvTreeNode, _rb);
+	n->_max_end = rz_itv_end(n->itv);
+	int i;
+	for (i = 0; i < 2; i++) {
+		if (node->child[i]) {
+			ut64 end = unwrap(node->child[i])->_max_end;
+			if (end > n->_max_end) {
+				n->_max_end = end;
+			}
+		}
+	}
+}
+
+static int itv_cmp_start(const void *incoming, const RBNode *in_tree, void *user) {
+	const ut64 incoming_start = *(ut64 *)incoming;
+	const RzItvTreeNode *in_tree_itv = container_of(in_tree, const RzItvTreeNode, _rb);
+	const ut64 in_tree_start = rz_itv_begin(in_tree_itv->itv);
+	if (incoming_start < in_tree_start) {
+		return -1;
+	}
+	if (incoming_start > in_tree_start) {
+		return 1;
+	}
+	return 0;
+}
+
+/*
+ * \brief Convenience function to insert new node with interval \p itv into a rbtree
+ * \param itv_tree Pointer to RBItvTree to insert new node to
+ * \param itv Interval to use when inserting the node
+ * \param user Borrowed user pointer, must live as long as \p itv_tree
+ * \return true if successfull
+ *
+ * Note: Do not use this function on a RBTree with nodes that were inserted with
+ *       non-itv version of the rbtree functions.
+ */
+RZ_API bool rz_rbtree_itv_insert(RBItvTree *itv_tree, RzInterval itv, RZ_BORROW void *user) {
+	RzItvTreeNode *node = RZ_NEW0(RzItvTreeNode);
+	if (!node) {
+		return false;
+	}
+	node->itv = itv;
+	node->user = user;
+	ut64 begin = rz_itv_begin(itv);
+	bool ret = rz_rbtree_aug_insert(itv_tree, user, &node->_rb, itv_cmp_start, &begin, itv_max_end);
+	if (!ret) {
+		free(node);
+	}
+	return ret;
+}
+
+static void all_intersect(RzItvTreeNode *node, RzInterval itv, RzItvTreeCb cb, void *user) {
+	const ut64 end = rz_itv_end(itv);
+	while (node && end <= rz_itv_begin(node->itv)) {
+		// less than the current node, but might still be contained further down
+		node = unwrap(node->_rb.child[0]);
+	}
+	if (!node) {
+		return;
+	}
+	const ut64 begin = rz_itv_begin(itv);
+	if (begin >= node->_max_end) {
+		return;
+	}
+	if (begin < rz_itv_end(node->itv)) {
+		cb(node->user, user);
+	}
+	// This can be done more efficiently by building the stack manually
+	all_intersect(unwrap(node->_rb.child[0]), itv, cb, user);
+	all_intersect(unwrap(node->_rb.child[1]), itv, cb, user);
+}
+
+static void add_to_list(void *node_user, void *user) {
+	RzList *l = user;
+	rz_list_append(l, node_user);
+}
+
+/*
+ * \brief Returns list with all nodes that intersect with interval \p itv
+ * \param itv_tree RBItvTree to search for intersecting nodes
+ * \param itv Interval to use when searching for intersecting nodes
+ * \return RzList * with intersecting nodes
+ *
+ * Note: Do not use this function on a RBTree with nodes that were inserted with
+ *       non-itv version of the rbtree functions.
+ */
+RZ_API RzList *rz_rbtree_itv_all_intersect(RBItvTree itv_tree, RzInterval itv) {
+	if (!itv_tree) {
+		return NULL;
+	}
+	RzList *l = rz_list_new();
+	all_intersect(unwrap(itv_tree->child[0]), itv, add_to_list, l);
+	all_intersect(unwrap(itv_tree->child[1]), itv, add_to_list, l);
+	return l;
+}
+
+static void free_itv_rb(RBNode *node, void *user) {
+	free(container_of(node, RzItvTreeNode, _rb));
+}
+
+/*
+ * \brief Frees \p itv_tree
+ * \param itv_tree Pointer to RBItvTree to free
+ *
+ * Note: Do not use this function on a RBTree with nodes that were inserted with
+ *       non-itv version of the rbtree functions.
+ */
+RZ_API void rz_rbtree_itv_free(RBItvTree *itv_tree) {
+	rz_rbtree_free(*itv_tree, free_itv_rb, NULL);
+	*itv_tree = NULL;
+}

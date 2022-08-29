@@ -2943,7 +2943,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.jmp.mid", "true", &cb_analysis_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
 	SETCB("analysis.refstr", "false", &cb_analysis_searchstringrefs, "Search string references in data references");
-	SETCB("analysis.trycatch", "false", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
+	SETCB("analysis.trycatch", "true", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
 	SETCB("analysis.bb.maxsize", "512K", &cb_analysis_bb_max_size, "Maximum basic block size");
 	SETCB("analysis.pushret", "false", &cb_analysis_pushret, "Analyze push+ret as jmp");
 
@@ -3452,6 +3452,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETBPREF("graph.dummy", "true", "Create dummy nodes in the graph for better layout (20% slower)");
 	SETBPREF("graph.few", "false", "Show few basic blocks in the graph");
+	SETBPREF("graph.trycatch", "true", "Draw exception handling related basic blocks in the function graph");
 	SETBPREF("graph.comments", "true", "Show disasm comments in graph");
 	SETBPREF("graph.cmtright", "false", "Show comments at right");
 	SETCB("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");

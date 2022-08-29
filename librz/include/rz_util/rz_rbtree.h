@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 #include "rz_list.h"
+#include <rz_util/rz_itv.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,8 @@ typedef struct rz_containing_rb_tree_t {
 	RContRBNode *root;
 	RContRBFree free;
 } RContRBTree;
+
+typedef RBTree RBItvTree;
 
 // Routines for augmented red-black trees. The user should provide an aggregation (monoid sum) callback `sum`
 // to calculate extra information such as size, sum, ...
@@ -117,6 +120,10 @@ RZ_API void *rz_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, 
 	for ((it) = rz_rbtree_last((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get(&it, RContRBNode, node)->data); rz_rbtree_iter_prev(&(it)))
 
 RZ_API void rz_rbtree_cont_free(RContRBTree *tree);
+
+RZ_API bool rz_rbtree_itv_insert(RBItvTree *itv_tree, RzInterval itv, RZ_BORROW void *user);
+RZ_API RZ_OWN RzList *rz_rbtree_itv_all_intersect(RBItvTree itv_tree, RzInterval itv);
+RZ_API void rz_rbtree_itv_free(RBItvTree *itv_tree);
 
 #ifdef __cplusplus
 }

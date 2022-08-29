@@ -864,6 +864,7 @@ RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va)
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_trycatch(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask);
 RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
@@ -943,7 +944,7 @@ RZ_API RZ_OWN RzList /*<RzWindowsHeapInfo *>*/ *rz_heap_windows_heap_list(RzCore
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
 #define RZ_CORE_BIN_ACC_MAPS             0x80000000
-#define RZ_CORE_BIN_ACC_ALL              0x80504FFF
+#define RZ_CORE_BIN_ACC_ALL              0xA0504FFF
 
 #define RZ_CORE_PRJ_FLAGS           0x0001
 #define RZ_CORE_PRJ_EVAL            0x0002

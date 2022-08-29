@@ -24,6 +24,10 @@ typedef struct rz_ascii_node_t {
 	int klass;
 	int difftype;
 	bool is_mini;
+	bool is_uncjmp;
+	ut64 address;
+	ut64 jump;
+	ut64 fail;
 } RzANode;
 
 typedef struct rz_core_graph_hits_t {

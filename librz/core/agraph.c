@@ -723,6 +723,10 @@ static void create_dummy_nodes(RzAGraph *g) {
 			dummy->layer = from->layer + i;
 			dummy->is_reversed = is_reversed(g, e);
 			dummy->w = 1;
+			dummy->is_uncjmp = to->is_uncjmp;
+			dummy->address = to->address;
+			dummy->jump = to->jump;
+			dummy->fail = to->fail;
 			rz_agraph_add_edge_at(g, prev, dummy, nth);
 			rz_list_append(g->dummy_nodes, dummy);
 
@@ -1730,6 +1734,9 @@ static void fix_back_edge_dummy_nodes(RzAGraph *g, RzANode *from, RzANode *to) {
 }
 
 static int get_edge_number(const RzAGraph *g, RzANode *src, RzANode *dst, bool outgoing) {
+	if (g->is_callgraph) {
+		return 0;
+	}
 	RzListIter *itn;
 	RzGraphNode *gv;
 	int cur_nth = 0;
@@ -1744,13 +1751,11 @@ static int get_edge_number(const RzAGraph *g, RzANode *src, RzANode *dst, bool o
 			? rz_graph_get_neighbours(g->graph, src->gnode)
 			: rz_graph_innodes(g->graph, dst->gnode);
 		const int exit_edges = rz_list_length(neighbours);
+		if (exit_edges == 1) {
+			return -1;
+		}
 		graph_foreach_anode (neighbours, itn, gv, v) {
 			cur_nth = nth;
-			if (g->is_callgraph) {
-				cur_nth = 0;
-			} else if (exit_edges == 1) {
-				cur_nth = -1;
-			}
 			if (outgoing && gv->idx == (dst->gnode)->idx) {
 				break;
 			}
@@ -2329,6 +2334,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	int shortcuts = 0;
 	bool emu = rz_config_get_i(core->config, "asm.emu");
 	bool few = rz_config_get_i(core->config, "graph.few");
+	bool trycatch = rz_config_get_i(core->config, "graph.trycatch");
 	int ret = false;
 	ut64 saved_gp = core->analysis->gp;
 	ut8 *saved_arena = NULL;
@@ -2367,6 +2373,9 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		char *title = get_title(bb->addr);
 
 		RzANode *node = rz_agraph_add_node(g, title, body);
+		node->address = bb->addr;
+		node->jump = bb->jump;
+		node->fail = bb->fail;
 		shortcuts = g->is_interactive ? rz_config_get_i(core->config, "graph.nodejmps") : false;
 
 		if (shortcuts) {
@@ -2382,6 +2391,13 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 			goto cleanup;
 		}
 		core->keep_asmqjmps = true;
+	}
+
+	RzList *exception_scopes = NULL;
+	if (trycatch) {
+		RzInterval itv = { rz_analysis_function_min_addr(fcn),
+			rz_analysis_function_max_addr(fcn) - rz_analysis_function_min_addr(fcn) };
+		exception_scopes = rz_rbtree_itv_all_intersect(fcn->analysis->exception_scopes_tree, itv);
 	}
 
 	rz_list_foreach (fcn->bbs, iter, bb) {
@@ -2418,8 +2434,29 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 				rz_agraph_add_edge(g, u, v);
 			}
 		}
+		RzListIter *it;
+		RzBinTrycatch *tc;
+		rz_list_foreach (exception_scopes, it, tc) {
+			if (bb->addr == tc->handler) {
+				continue;
+			}
+			if (!rz_itv_overlap2((RzInterval){ bb->addr, bb->size }, tc->from, tc->to - 1)) {
+				continue;
+			}
+			RzAnalysisBlock *catch_bb = rz_analysis_get_block_at(bb->analysis, tc->handler);
+			if (!catch_bb || catch_bb->addr == bb->jump || catch_bb->addr == bb->fail) {
+				continue;
+			}
+			title = get_title(catch_bb->addr);
+			v = rz_agraph_get_node(g, title);
+			free(title);
+			if (v) {
+				v->is_uncjmp = true;
+				rz_agraph_add_edge(g, u, v);
+			}
+		}
 	}
-
+	rz_list_free(exception_scopes);
 	delete_dup_edges(g);
 	ret = true;
 
@@ -2840,6 +2877,14 @@ static int first_x_cmp(const void *_a, const void *_b) {
 	return 0;
 }
 
+static inline bool is_true_edge(RzANode *src, RzANode *dst) {
+	return src->jump != UT64_MAX && src->jump == dst->address;
+}
+
+static inline bool is_false_edge(RzANode *src, RzANode *dst) {
+	return src->fail != UT64_MAX && src->fail == dst->address;
+}
+
 static void agraph_print_edges(RzAGraph *g) {
 	if (!g->edgemode) {
 		return;
@@ -2915,25 +2960,26 @@ static void agraph_print_edges(RzAGraph *g) {
 			rz_list_sort(neighbours, first_x_cmp);
 		}
 
+		RzANode *real_parent = a;
+		if (a->is_dummy) {
+			real_parent = (RzANode *)(((RzGraphNode *)rz_list_first(ga->in_nodes))->data);
+			while (real_parent && real_parent->is_dummy) {
+				real_parent = (RzANode *)(((RzGraphNode *)rz_list_first((real_parent->gnode)->in_nodes))->data);
+			}
+		}
+
 		graph_foreach_anode (neighbours, itn, gb, b) {
 			out_nth = get_edge_number(g, a, b, true);
 			in_nth = get_edge_number(g, a, b, false);
 
-			bool parent_many = false;
-			if (a->is_dummy) {
-				RzANode *in = (RzANode *)(((RzGraphNode *)rz_list_first(ga->in_nodes))->data);
-				while (in && in->is_dummy) {
-					in = (RzANode *)(((RzGraphNode *)rz_list_first((in->gnode)->in_nodes))->data);
-				}
-				if (in && in->gnode) {
-					parent_many = rz_list_length(in->gnode->out_nodes) > 2;
-				} else {
-					parent_many = false;
-				}
-			}
-
 			style.dot_style = DOT_STYLE_NORMAL;
-			if (many || parent_many) {
+			if (is_true_edge(real_parent, b) && out_nth != -1) {
+				style.color = LINE_TRUE;
+				style.dot_style = DOT_STYLE_CONDITIONAL;
+			} else if (is_false_edge(real_parent, b)) {
+				style.color = LINE_FALSE;
+				style.dot_style = DOT_STYLE_CONDITIONAL;
+			} else if (many || b->is_uncjmp) {
 				style.color = LINE_UNCJMP;
 			} else {
 				switch (out_nth) {
@@ -3753,6 +3799,9 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 		free(b);
 		sdb_set_owned(g->db, sdb_fmt("agraph.nodes.%s.body", res->title), s, 0);
 	}
+	res->address = UT64_MAX;
+	res->jump = UT64_MAX;
+	res->fail = UT64_MAX;
 	return res;
 }
 
