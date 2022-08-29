@@ -976,6 +976,90 @@ static RzILOpEffect *x86_il_div(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
 }
 
+// /**
+//  * ESC
+//  * Escape to coprocessor instruction set
+//  * To be used with floating-point unit
+//  */
+// static RzILOpEffect *x86_il_esc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+// 	/* Not necessary to implement for binary analysis */
+// 	return EMPTY();
+// }
+
+/**
+ * HLT
+ * Enter HALT state
+ */
+static RzILOpEffect *x86_il_hlt(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	/* Not necessary to implement for binary analysis */
+	return EMPTY();
+}
+
+/**
+ * IDIV
+ * Signed division
+ * One operand (memory address), used as the divisor
+ */
+static RzILOpEffect *x86_il_idiv(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *ret = NULL;
+
+	switch (ins->structure->operands[0].size) {
+	case 1: {
+		/* Word/Byte operation */
+		RzILOpEffect *ax = SETL("_ax", x86_il_get_reg(X86_REG_AX));
+		RzILOpEffect *temp = SETL("_temp", UNSIGNED(8, SDIV(VARL("_ax"), VARL("_src"))));
+
+		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(8, 0x7f)), SLT(VARL("_temp"), UN(8, 0x80)));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AL, VARL("_temp")), x86_il_set_reg(X86_REG_AH, SMOD(VARL("_ax"), VARL("_src"))));
+
+		ret = SEQ3(ax, temp, BRANCH(cond, NULL, else_cond));
+		break;
+	}
+	case 2: {
+		/* Doubleword/Word operation */
+		RzILOpEffect *dxax = SETL("_dxax", LOGOR(SHIFTL0(UNSIGNED(32, x86_il_get_reg(X86_REG_DX)), UN(8, 16)), UNSIGNED(32, x86_il_get_reg(X86_REG_AX))));
+		RzILOpEffect *temp = SETL("_temp", UNSIGNED(16, SDIV(VARL("_dxax"), VARL("_src"))));
+
+		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(16, 0x7fff)), SLT(VARL("_temp"), UN(16, 0x8000)));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, SMOD(VARL("_dxax"), VARL("_src"))));
+
+		ret = SEQ3(dxax, temp, BRANCH(cond, NULL, else_cond));
+		break;
+	}
+	case 4: {
+		/* Quadword/Doubleword operation */
+		RzILOpEffect *edxeax = SETL("_edxeax", LOGOR(SHIFTL0(UNSIGNED(64, x86_il_get_reg(X86_REG_EDX)), UN(8, 32)), UNSIGNED(64, x86_il_get_reg(X86_REG_EAX))));
+		RzILOpEffect *temp = SETL("_temp", UNSIGNED(32, SDIV(VARL("_edxeax"), VARL("_src"))));
+
+		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(32, 0x7fffffffULL)), SLT(VARL("_temp"), UN(32, 0x80000000ULL)));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, SMOD(VARL("_edxeax"), VARL("_src"))));
+
+		ret = SEQ3(edxeax, temp, BRANCH(cond, NULL, else_cond));
+		break;
+	}
+	case 8: {
+		/* Doublequadword/Quadword operation */
+		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(X86_REG_EDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(X86_REG_EAX))));
+		RzILOpEffect *temp = SETL("_temp", UNSIGNED(64, SDIV(VARL("_rdxrax"), VARL("_src"))));
+
+		RzILOpPure *cond = OR(SGT(VARL("_temp"), UN(64, 0x7fffffffffffffffULL)), SLT(VARL("_temp"), UN(64, 0x8000000000000000ULL)));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, SMOD(VARL("_rdxrax"), VARL("_src"))));
+
+		ret = SEQ3(rdxrax, temp, BRANCH(cond, NULL, else_cond));
+		break;
+	}
+	default:
+		RZ_LOG_ERROR("RzIL: x86: IDIV: Invalid operand size\n");
+		return NULL;
+	}
+
+	/* We need the divisor to be as wide as the operand, since the sizes of the dividend and the divisor need to match */
+	RzILOpEffect *op = SETL("_src", UNSIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_operand(ins->structure->operands[0])));
+
+	/* Check if the operand is zero, return NULL if it is (to avoid divide by zero) */
+	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1003,6 +1087,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_DAS] = x86_il_das,
 	[X86_INS_DEC] = x86_il_dec,
 	[X86_INS_DIV] = x86_il_div,
+	[X86_INS_HLT] = x86_il_hlt,
+	[X86_INS_IDIV] = x86_il_idiv,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>

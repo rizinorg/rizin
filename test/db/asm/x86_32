@@ -143,10 +143,10 @@ d "fxsave [eax]" 0fae00
 d "getsec" 0f37
 d "haddpd xmm0, xmmword [eax]" 660f7c00
 d "haddps xmm0, xmmword [eax]" f20f7c00
-d "hlt" F4
+d "hlt" f4 0x0 empty
 d "hsubpd xmm0, xmmword [eax]" 660f7d00
 d "hsubps xmm0, xmmword [eax]" f20f7d00
-d "idiv byte [eax]" f638
+d "idiv byte [eax]" f638 0x0 (seq (set _src (cast 16 false (loadw 0 8 (+ (var eax) (bv 32 0x0))))) (branch (is_zero (var _src)) nop (seq (set _ax (cast 16 false (var eax))) (set _temp (cast 8 false (sdiv (var _ax) (var _src)))) (branch (|| (! (sle (var _temp) (bv 8 0x7f))) (&& (sle (var _temp) (bv 8 0x80)) (! (== (var _temp) (bv 8 0x80))))) nop (seq (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var _temp)))) (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (mod (var _ax) (var _src))) (bv 8 0x8) false))))))))
 d "imul byte [eax]" f628
 d "imul eax, dword [eax]" 0faf00
 d "imul eax, dword [eax], 0" 690000000000
