@@ -262,6 +262,20 @@ typedef struct rz_core_visual_t {
 	bool is_inputing; // whether the user is inputing
 	char *inputing; // for filter on the go in Vv mode
 	RzCoreVisualMode printidx;
+	/* TODO: Reorganize */
+	int obs;
+	bool autoblocksize;
+	int disMode;
+	int hexMode;
+	int printMode;
+	int color;
+	int debug;
+	/* Output formats */
+	int currentFormat;
+	int current0format;
+	int current3format;
+	int current4format;
+	int current5format;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
@@ -288,6 +302,20 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
 
+/* tui/tabs.c */
+RZ_IPI void rz_core_visual_tab_free(RzCoreVisualTab *tab);
+RZ_IPI int rz_core_visual_tab_count(RzCore *core);
+RZ_IPI RZ_OWN char *rz_core_visual_tab_string(RzCore *core, const char *kolor);
+RZ_IPI void rz_core_visual_tabget(RzCore *core, RzCoreVisualTab *tab);
+RZ_IPI void rz_core_visual_tabset(RzCore *core, RzCoreVisualTab *tab);
+RZ_IPI RZ_OWN RzCoreVisualTab *rz_core_visual_tab_new(RzCore *core);
+RZ_IPI void rz_core_visual_tab_update(RzCore *core);
+RZ_IPI RZ_OWN RzCoreVisualTab *rz_core_visual_newtab(RzCore *core);
+RZ_IPI void rz_core_visual_nthtab(RzCore *core, int n);
+RZ_IPI void rz_core_visual_tabname_prompt(RzCore *core);
+RZ_IPI void rz_core_visual_nexttab(RzCore *core);
+RZ_IPI void rz_core_visual_prevtab(RzCore *core);
+RZ_IPI void rz_core_visual_closetab(RzCore *core);
 
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
 RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
