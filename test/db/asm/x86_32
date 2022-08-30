@@ -168,8 +168,8 @@ d "inc esi" 46 0x0 (seq (set _op (var esi)) (set _result (+ (var _op) (bv 32 0x1
 d "inc esp" 44 0x0 (seq (set _op (var esp)) (set _result (+ (var _op) (bv 32 0x1))) (set esp (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 32 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "insb byte es:[edi], dx" 6c
 d "insd dword es:[edi], dx" 6d
-d "int 1" CD01
-d "int 3" CD03
+d "int 1" cd01 0x0 empty
+d "int 3" cd03 0x0 empty
 d "int1" F1
 d "int3" CC
 d "into" CE
@@ -1245,11 +1245,11 @@ a "in eax, dx" ed 0x0 empty
 a "insb byte es:[edi], dx" 6c
 a "insd dword es:[edi], dx" 6d
 aB "insertps xmm0, xmm0, 0" 660f3a21c000
-a "int 0x21" cd21
-a "int 1" cd01
+a "int 0x21" cd21 0x0 empty
+a "int 1" cd01 0x0 empty
 a "int1" f1
 a "int3" cc
-a "int 3" cd03
+a "int 3" cd03 0x0 empty
 a "into" ce
 a "invd" 0f08
 aB "invlpga" 0f01df
@@ -2196,7 +2196,7 @@ aB "xrstor [eax]" 0fae28
 aB "xsave [eax]" 0fae20
 a "xsetbv" 0f01d1
 a "nop" 90
-a "int 0x80" cd80
+a "int 0x80" cd80 0x0 empty
 a "mov eax, 33" b821000000
 a "mov rax, 33" 48c7c021000000
 a "mov [ebp+4],0" c7450400000000

@@ -1485,6 +1485,16 @@ static RzILOpEffect *x86_il_inc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	return SEQ5(op, result, set_result, arith_flags, res_flags);
 }
 
+/**
+ * INT
+ * Call to interrupt procedure
+ * Encodings: I, ZO
+ */
+static RzILOpEffect *x86_il_int(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	/* TODO: Implement after interrupts implemented in IL */
+	return EMPTY();
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1517,6 +1527,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_IMUL] = x86_il_imul,
 	[X86_INS_IN] = x86_il_in,
 	[X86_INS_INC] = x86_il_inc,
+	[X86_INS_INT] = x86_il_int,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
