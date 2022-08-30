@@ -104,12 +104,14 @@ rz_core_sources = [
   'tui/biteditor.c',
   'tui/classes.c',
   'tui/hud.c',
+  'tui/modes.c',
   'tui/visual.c',
   'tui/vmenus.c',
   'tui/vmenus_graph.c',
   'tui/vasm.c',
   'tui/vmarks.c',
-  'tui/panels.c'
+  'tui/panels.c',
+  'tui/tabs.c',
 ]
 
 rz_core_inc = ['.']

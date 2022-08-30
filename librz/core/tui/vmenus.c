@@ -5,11 +5,12 @@
 
 #include <rz_core.h>
 #include <rz_util.h>
-
-#include "../core_private.h"
 #include <rz_asm.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_strbuf.h>
+
+#include "../core_private.h"
+#include "modes.h"
 
 #define MAX_FORMAT 3
 
@@ -1435,10 +1436,6 @@ static int option = 0;
 static int variable_option = 0;
 static int printMode = 0;
 static bool selectPanel = false;
-#define lastPrintMode 6
-static const char *printCmds[lastPrintMode] = {
-	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
-};
 
 static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)

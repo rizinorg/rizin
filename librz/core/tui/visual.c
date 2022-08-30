@@ -5,21 +5,9 @@
 #include <rz_cons.h>
 #include <rz_windows.h>
 #include "../core_private.h"
-
-#define NPF  5
-#define PIDX (RZ_ABS(((RzCoreVisual *)core->visual)->printidx % NPF))
+#include "modes.h"
 
 static void visual_refresh(RzCore *core);
-
-static int obs = 0;
-static int blocksize = 0;
-static bool autoblocksize = true;
-static int disMode = 0;
-static int hexMode = 0;
-static int printMode = 0;
-static int color = 1;
-static int debug = 1;
-static int zoom = 0;
 
 typedef struct {
 	int x;
@@ -28,64 +16,14 @@ typedef struct {
 
 #define KEY_ALTQ 0xc5
 
-#define CMD_REGISTERS      "?== true `e cfg.debug`; ?! dr=; ?? ar=" // select dr= or ar= depending on cfg.debug
-#define CMD_REGISTERS_REFS "?== true `e cfg.debug`; ?! drr; ?? arr" // select drr or arr depending on cfg.debug
-
-static const char *printfmtSingle[NPF] = {
-	"xc", // HEXDUMP
-	"pd $r", // ASSEMBLY
-	("pxw 64@r:SP;" CMD_REGISTERS ";pd $r"), // DEBUGGER
-	"prc", // OVERVIEW
-	"pss", // PC//  copypasteable views
-};
-
-static const char *printfmtColumns[NPF] = {
-	"pCx", // HEXDUMP // + pCw
-	"pCd $r-1", // ASSEMBLY
-	"pCD", // DEBUGGER
-	"pCA", // OVERVIEW
-	"pCc", // PC//  copypasteable views
-};
-
-// to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 10
-#define PRINT_3_FORMATS   2
-#define PRINT_4_FORMATS   7
-#define PRINT_5_FORMATS   8
-
-static int currentFormat = 0;
-static int current0format = 0;
-static const char *printHexFormats[PRINT_HEX_FORMATS] = {
-	"px",
-	"pxa",
-	"pxr",
-	"prx",
-	"pxb",
-	"pxh",
-	"pxw",
-	"pxq",
-	"pxd",
-	"pxr",
-};
-static int current3format = 0;
-static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
-	"pxw 64@r:SP;" CMD_REGISTERS ";pd $r", // DEBUGGER
-	"pCD"
-};
-static int current4format = 0;
-static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "prc=a", "pxAv", "pxx", "p=e $r-2", "pk 64"
-};
-static int current5format = 0;
-static const char *print5Formats[PRINT_5_FORMATS] = {
-	"pca", "pcA", "p8", "pcc", "pss", "pcp", "pcd", "pcj"
-};
-
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
 	RzCoreVisual *visual = RZ_NEW0(RzCoreVisual);
 	if (!visual) {
 		return NULL;
 	}
+	visual->autoblocksize = true;
+	visual->color = 1;
+	visual->debug = 1;
 	return visual;
 }
 
@@ -99,8 +37,9 @@ RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual) {
 }
 
 RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode) {
-	currentFormat = RZ_ABS(hexMode) % PRINT_HEX_FORMATS;
-	switch (currentFormat) {
+	RzCoreVisual *visual = core->visual;
+	visual->currentFormat = RZ_ABS(hexMode) % PRINT_HEX_FORMATS;
+	switch (visual->currentFormat) {
 	case 0: /* px */
 	case 3: /* prx */
 	case 6: /* pxw */
@@ -189,8 +128,9 @@ static void setcursor(RzCore *core, bool cur) {
 }
 
 RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode) {
-	currentFormat = RZ_ABS(disMode) % 5;
-	switch (currentFormat) {
+	RzCoreVisual *visual = core->visual;
+	visual->currentFormat = RZ_ABS(disMode) % 5;
+	switch (visual->currentFormat) {
 	case 0:
 		rz_config_set(core->config, "asm.pseudo", "false");
 		rz_config_set(core->config, "asm.bytes", "true");
@@ -229,22 +169,25 @@ RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode) {
 	}
 }
 
-static void nextPrintCommand(void) {
-	current0format++;
-	current0format %= PRINT_HEX_FORMATS;
-	currentFormat = current0format;
+static void nextPrintCommand(RzCore *core) {
+	RzCoreVisual *visual = core->visual;
+	visual->current0format++;
+	visual->current0format %= PRINT_HEX_FORMATS;
+	visual->currentFormat = visual->current0format;
 }
 
-static void prevPrintCommand(void) {
-	current0format--;
-	if (current0format < 0) {
-		current0format = 0;
+static void prevPrintCommand(RzCore *core) {
+	RzCoreVisual *visual = core->visual;
+	visual->current0format--;
+	if (visual->current0format < 0) {
+		visual->current0format = 0;
 	}
-	currentFormat = current0format;
+	visual->currentFormat = visual->current0format;
 }
 
 static const char *stackPrintCommand(RzCore *core) {
-	if (current0format == 0) {
+	RzCoreVisual *visual = core->visual;
+	if (visual->current0format == 0) {
 		if (rz_config_get_b(core->config, "dbg.slow")) {
 			return "pxr";
 		}
@@ -257,7 +200,7 @@ static const char *stackPrintCommand(RzCore *core) {
 		}
 		return "px";
 	}
-	return printHexFormats[current0format % PRINT_HEX_FORMATS];
+	return printHexFormats[visual->current0format % PRINT_HEX_FORMATS];
 }
 
 static const char *__core_visual_print_command(RzCore *core) {
@@ -381,7 +324,6 @@ static const char *help_msg_visual[] = {
 	"wW", "seek cursor to next/prev word",
 	"xX", "show xrefs/refs of current function from/to data/code",
 	"yY", "copy and paste selection",
-	"Z", "shift-tab rotate print modes", // ctoggle zoom mode",
 	"Enter", "follow address of jump/call",
 	NULL
 };
@@ -449,32 +391,32 @@ static void printFormat(RzCore *core, const int next) {
 	RzCoreVisual *visual = core->visual;
 	switch (visual->printidx) {
 	case RZ_CORE_VISUAL_MODE_PX: // 0 // xc
-		hexMode += next;
-		rz_core_visual_applyHexMode(core, hexMode);
-		printfmtSingle[0] = printHexFormats[RZ_ABS(hexMode) % PRINT_HEX_FORMATS];
+		visual->hexMode += next;
+		rz_core_visual_applyHexMode(core, visual->hexMode);
+		printfmtSingle[0] = printHexFormats[RZ_ABS(visual->hexMode) % PRINT_HEX_FORMATS];
 		break;
 	case RZ_CORE_VISUAL_MODE_PD: // pd
-		disMode += next;
-		rz_core_visual_applyDisMode(core, disMode);
+		visual->disMode += next;
+		rz_core_visual_applyDisMode(core, visual->disMode);
 		printfmtSingle[1] = rotateAsmemu(core);
 		break;
 	case RZ_CORE_VISUAL_MODE_DB: // debugger
-		disMode += next;
-		rz_core_visual_applyDisMode(core, disMode);
+		visual->disMode += next;
+		rz_core_visual_applyDisMode(core, visual->disMode);
 		printfmtSingle[1] = rotateAsmemu(core);
-		current3format += next;
-		currentFormat = RZ_ABS(current3format) % PRINT_3_FORMATS;
-		printfmtSingle[2] = print3Formats[currentFormat];
+		visual->current3format += next;
+		visual->currentFormat = RZ_ABS(visual->current3format) % PRINT_3_FORMATS;
+		printfmtSingle[2] = print3Formats[visual->currentFormat];
 		break;
 	case RZ_CORE_VISUAL_MODE_OV: // overview
-		current4format += next;
-		currentFormat = RZ_ABS(current4format) % PRINT_4_FORMATS;
-		printfmtSingle[3] = print4Formats[currentFormat];
+		visual->current4format += next;
+		visual->currentFormat = RZ_ABS(visual->current4format) % PRINT_4_FORMATS;
+		printfmtSingle[3] = print4Formats[visual->currentFormat];
 		break;
 	case RZ_CORE_VISUAL_MODE_CD: // code
-		current5format += next;
-		currentFormat = RZ_ABS(current5format) % PRINT_5_FORMATS;
-		printfmtSingle[4] = print5Formats[currentFormat];
+		visual->current5format += next;
+		visual->currentFormat = RZ_ABS(visual->current5format) % PRINT_5_FORMATS;
+		printfmtSingle[4] = print5Formats[visual->currentFormat];
 		break;
 	}
 }
@@ -1299,7 +1241,7 @@ RZ_IPI int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAdd
 	char cstr[32];
 	ut64 addr = core->offset;
 	bool xrefsMode = fcnInsteadOfAddr;
-	int lastPrintMode = 3;
+	RzCoreVisual *visual = core->visual;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
@@ -1413,7 +1355,7 @@ repeat:
 					// dis = rz_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, xaddr);
 					dis = NULL;
 					res = rz_str_appendf(res, "; ---------------------------\n");
-					switch (printMode) {
+					switch (visual->printMode) {
 					case 0:
 						dis = rz_core_cmd_strf(core, "pd $r-4 @ 0x%08" PFMT64x, xaddr1);
 						break;
@@ -1500,16 +1442,16 @@ repeat:
 		goto repeat;
 	} else if (ch == 'p') {
 		rz_core_visual_toggle_decompiler_disasm(core, false, true);
-		printMode++;
-		if (printMode > lastPrintMode) {
-			printMode = 0;
+		visual->printMode++;
+		if (visual->printMode > lastPrintMode) {
+			visual->printMode = 0;
 		}
 		goto repeat;
 	} else if (ch == 'P') {
 		rz_core_visual_toggle_decompiler_disasm(core, false, true);
-		printMode--;
-		if (printMode < 0) {
-			printMode = lastPrintMode;
+		visual->printMode--;
+		if (visual->printMode < 0) {
+			visual->printMode = lastPrintMode;
 		}
 		goto repeat;
 	} else if (ch == '/') {
@@ -2163,8 +2105,6 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 	}
 }
 
-#include "visual_tabs.inc"
-
 static bool isNumber(RzCore *core, int ch) {
 	if (ch > '0' && ch <= '9') {
 		return true;
@@ -2236,11 +2176,11 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				}
 			} else if (y == 2) {
 				if (x < 2) {
-					visual_closetab(core);
+					rz_core_visual_closetab(core);
 				} else if (x < 5) {
-					visual_newtab(core);
+					rz_core_visual_newtab(core);
 				} else {
-					visual_nexttab(core);
+					rz_core_visual_nexttab(core);
 				}
 				return 1;
 			} else {
@@ -2472,10 +2412,10 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			break;
 		case 'C':
-			if (++color > 3) {
-				color = 0;
+			if (++visual->color > 3) {
+				visual->color = 0;
 			}
-			rz_config_set_i(core->config, "scr.color", color);
+			rz_config_set_i(core->config, "scr.color", visual->color);
 			break;
 		case 'd': {
 			bool mouse_state = __holdMouseState(core);
@@ -2547,28 +2487,28 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_flush();
 			int ch = rz_cons_readchar();
 			if (isdigit(ch)) {
-				visual_nthtab(core, ch - '0' - 1);
+				rz_core_visual_nthtab(core, ch - '0' - 1);
 			}
 			switch (ch) {
 			case 'h':
 			case 'k':
 			case 'p':
-				visual_prevtab(core);
+				rz_core_visual_prevtab(core);
 				break;
 			case 9: // t-TAB
 			case 'l':
 			case 'j':
 			case 'n':
-				visual_nexttab(core);
+				rz_core_visual_nexttab(core);
 				break;
 			case '=':
-				visual_tabname(core);
+				rz_core_visual_tabname_prompt(core);
 				break;
 			case '-':
-				visual_closetab(core);
+				rz_core_visual_closetab(core);
 				break;
 			case ':': {
-				RzCoreVisualTab *tab = visual_newtab(core);
+				RzCoreVisualTab *tab = rz_core_visual_newtab(core);
 				if (tab) {
 					tab->name[0] = ':';
 					rz_cons_fgets(tab->name + 1, sizeof(tab->name) - 1, 0, NULL);
@@ -2577,12 +2517,12 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			case '+':
 			case 't':
 			case 'a':
-				visual_newtab(core);
+				rz_core_visual_newtab(core);
 				break;
 			}
 		} break;
 		case 'T':
-			visual_closetab(core);
+			rz_core_visual_closetab(core);
 			break;
 		case 'n':
 			rz_core_seek_next(core, rz_config_get(core->config, "scr.nkey"), true);
@@ -2832,7 +2772,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					}
 					rz_core_seek(core, addr, true);
 				} else {
-					rz_core_seek(core, core->offset + obs, true);
+					rz_core_seek(core, core->offset + visual->obs, true);
 				}
 			}
 			break;
@@ -2886,8 +2826,8 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						rz_core_seek(core, 0, true);
 					}
 				} else {
-					ut64 at = (core->offset > obs) ? core->offset - obs : 0;
-					if (core->offset > obs) {
+					ut64 at = (core->offset > visual->obs) ? core->offset - visual->obs : 0;
+					if (core->offset > visual->obs) {
 						rz_core_seek(core, at, true);
 					} else {
 						rz_core_seek(core, 0, true);
@@ -2951,14 +2891,14 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case 'p':
 			rz_core_visual_toggle_decompiler_disasm(core, false, true);
 			if (visual->printidx == RZ_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
-				nextPrintCommand();
+				nextPrintCommand(core);
 			} else {
 				setprintmode(core, 1);
 			}
 			break;
 		case 'P':
 			if (visual->printidx == RZ_CORE_VISUAL_MODE_DB && core->print->cur_enabled) {
-				prevPrintCommand();
+				prevPrintCommand(core);
 			} else {
 				setprintmode(core, -1);
 			}
@@ -2968,11 +2908,11 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				findPair(core);
 			} else {
 				/* do nothing? */
-				autoblocksize = !autoblocksize;
-				if (autoblocksize) {
-					obs = core->blocksize;
+				visual->autoblocksize = !visual->autoblocksize;
+				if (visual->autoblocksize) {
+					visual->obs = core->blocksize;
 				} else {
-					rz_core_block_size(core, obs);
+					rz_core_block_size(core, visual->obs);
 				}
 				rz_cons_clear();
 			}
@@ -3049,7 +2989,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					rz_core_cmd(core, buf, 0);
 				}
 			} else {
-				if (!autoblocksize) {
+				if (!visual->autoblocksize) {
 					rz_core_block_size(core, core->blocksize - 1);
 				}
 			}
@@ -3073,7 +3013,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					rz_core_cmd(core, buf, 0);
 				}
 			} else {
-				if (!autoblocksize) {
+				if (!visual->autoblocksize) {
 					rz_core_block_size(core, core->blocksize + 1);
 				}
 			}
@@ -3083,7 +3023,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				visual_search(core);
 			} else {
-				if (autoblocksize) {
+				if (visual->autoblocksize) {
 					rz_core_cmd0(core, "?i highlight;e scr.highlight=`yp`");
 				} else {
 					rz_core_block_size(core, core->blocksize - cols);
@@ -3104,7 +3044,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case '*':
 			if (core->print->cur_enabled) {
 				rz_core_reg_set_by_role_or_name(core, "PC", core->offset + core->print->cur);
-			} else if (!autoblocksize) {
+			} else if (!visual->autoblocksize) {
 				rz_core_block_size(core, core->blocksize + cols);
 			}
 			break;
@@ -3267,12 +3207,12 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 	}
 	/* automatic block size */
 	int pc, hexcols = rz_config_get_i(core->config, "hex.cols");
-	if (autoblocksize) {
+	if (visual->autoblocksize) {
 		switch (visual->printidx) {
 		case RZ_CORE_VISUAL_MODE_PX: // x
-			if (currentFormat == 3 || currentFormat == 9 || currentFormat == 5) { // prx
+			if (visual->currentFormat == 3 || visual->currentFormat == 9 || visual->currentFormat == 5) { // prx
 				rz_core_block_size(core, (int)(core->cons->rows * hexcols * 4));
-			} else if ((RZ_ABS(hexMode) % 3) == 0) { // prx
+			} else if ((RZ_ABS(visual->hexMode) % 3) == 0) { // prx
 				rz_core_block_size(core, (int)(core->cons->rows * hexcols));
 			} else {
 				rz_core_block_size(core, (int)(core->cons->rows * hexcols * 2));
@@ -3426,24 +3366,24 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 				if (core->print->ocur == -1) {
 					title = rz_str_newf("[%s *0x%08" PFMT64x " %s%d ($$+0x%x)]> %s %s\n",
 						address, core->offset + core->print->cur,
-						pm, currentFormat, core->print->cur,
+						pm, visual->currentFormat, core->print->cur,
 						bar, pos);
 				} else {
 					title = rz_str_newf("[%s 0x%08" PFMT64x " %s%d [0x%x..0x%x] %d]> %s %s\n",
 						address, core->offset + core->print->cur,
-						pm, currentFormat, core->print->ocur, core->print->cur,
+						pm, visual->currentFormat, core->print->ocur, core->print->cur,
 						RZ_ABS(core->print->cur - core->print->ocur) + 1,
 						bar, pos);
 				}
 			} else {
 				title = rz_str_newf("[%s %s%d %s%d %s]> %s %s\n",
-					address, pm, currentFormat, pcs, core->blocksize, filename, bar, pos);
+					address, pm, visual->currentFormat, pcs, core->blocksize, filename, bar, pos);
 			}
 		}
-		const int tabsCount = __core_visual_tab_count(core);
+		const int tabsCount = rz_core_visual_tab_count(core);
 		if (tabsCount > 0) {
 			const char *kolor = core->cons->context->pal.prompt;
-			char *tabstring = __core_visual_tab_string(core, kolor);
+			char *tabstring = rz_core_visual_tab_string(core, kolor);
 			if (tabstring) {
 				title = rz_str_append(title, tabstring);
 				free(tabstring);
@@ -3656,7 +3596,7 @@ static void visual_refresh(RzCore *core) {
 
 	int w = visual_responsive(core);
 
-	if (!autoblocksize) {
+	if (!visual->autoblocksize) {
 		rz_cons_clear();
 	}
 	rz_cons_goto_origin_reset();
@@ -3696,7 +3636,7 @@ static void visual_refresh(RzCore *core) {
 	if (vi && *vi) {
 		rz_core_cmd0(core, vi);
 	}
-	rz_core_visual_title(core, color);
+	rz_core_visual_title(core, visual->color);
 	vcmd = rz_config_get(core->config, "cmd.visual");
 	if (vcmd && *vcmd) {
 		// disable screen bounds when it's a user-defined command
@@ -3727,7 +3667,7 @@ static void visual_refresh(RzCore *core) {
 			cmd_str = debugstr;
 		} else {
 			core->print->screen_bounds = 1LL;
-			cmd_str = (zoom ? "pz" : __core_visual_print_command(core));
+			cmd_str = __core_visual_print_command(core);
 		}
 	}
 	if (cmd_str && *cmd_str) {
@@ -3746,7 +3686,6 @@ static void visual_refresh(RzCore *core) {
 			core->offset, core->print->screen_bounds);
 	}
 #endif
-	blocksize = core->num->value ? core->num->value : core->blocksize;
 
 	/* this is why there's flickering */
 	if (core->print->vflush) {
@@ -3842,7 +3781,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		return 0;
 	}
 	RzCoreVisual *visual = core->visual;
-	obs = core->blocksize;
+	visual->obs = core->blocksize;
 	// rz_cons_set_cup (true);
 
 	core->vmode = false;
@@ -3911,11 +3850,11 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		core->cons->event_data = core;
 		core->cons->event_resize = (RzConsEvent)visual_refresh_oneshot;
 		flags = core->print->flags;
-		color = rz_config_get_i(core->config, "scr.color");
-		if (color) {
+		visual->color = rz_config_get_i(core->config, "scr.color");
+		if (visual->color) {
 			flags |= RZ_PRINT_FLAGS_COLOR;
 		}
-		debug = rz_config_get_b(core->config, "cfg.debug");
+		visual->debug = rz_config_get_b(core->config, "cfg.debug");
 		flags |= RZ_PRINT_FLAGS_ADDRMOD | RZ_PRINT_FLAGS_HEADER;
 		rz_print_set_flags(core->print, flags);
 		scrseek = rz_num_math(core->num,
@@ -3923,7 +3862,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		if (scrseek != 0LL) {
 			rz_core_seek(core, scrseek, true);
 		}
-		if (debug) {
+		if (visual->debug) {
 			rz_core_reg_update_flags(core);
 		}
 		core->print->vflush = !skip;
@@ -3972,13 +3911,13 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	} while (skip || (*arg && rz_core_visual_cmd(core, arg)));
 
 	rz_cons_enable_mouse(false);
-	if (color) {
+	if (visual->color) {
 		rz_cons_strcat(Color_RESET);
 	}
-	rz_config_set_i(core->config, "scr.color", color);
+	rz_config_set_i(core->config, "scr.color", visual->color);
 	core->print->cur_enabled = false;
-	if (autoblocksize) {
-		rz_core_block_size(core, obs);
+	if (visual->autoblocksize) {
+		rz_core_block_size(core, visual->obs);
 	}
 	rz_cons_singleton()->teefile = teefile;
 	rz_cons_set_cup(false);

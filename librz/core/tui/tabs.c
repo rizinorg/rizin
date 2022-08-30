@@ -1,16 +1,33 @@
 // SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static void rz_core_visual_tab_free(RzCoreVisualTab *tab) {
+#include <rz_core.h>
+#include <rz_cons.h>
+#include <rz_windows.h>
+#include "../core_private.h"
+#include "modes.h"
+
+static void prompt_read(const char *p, char *buf, int buflen) {
+	if (!buf || buflen < 1) {
+		return;
+	}
+	*buf = 0;
+	rz_line_set_prompt(p);
+	rz_core_visual_showcursor(NULL, true);
+	rz_cons_fgets(buf, buflen, 0, NULL);
+	rz_core_visual_showcursor(NULL, false);
+}
+
+RZ_IPI void rz_core_visual_tab_free(RzCoreVisualTab *tab) {
 	free(tab);
 }
 
-static int __core_visual_tab_count(RzCore *core) {
+RZ_IPI int rz_core_visual_tab_count(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	return visual->tabs ? rz_list_length(visual->tabs) : 0;
 }
 
-static char *__core_visual_tab_string(RzCore *core, const char *kolor) {
+RZ_IPI RZ_OWN char *rz_core_visual_tab_string(RzCore *core, const char *kolor) {
 	RzCoreVisual *visual = core->visual;
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int scr_color = rz_config_get_i(core->config, "scr.color");
@@ -61,7 +78,7 @@ static char *__core_visual_tab_string(RzCore *core, const char *kolor) {
 	return str;
 }
 
-static void visual_tabset(RzCore *core, RzCoreVisualTab *tab) {
+RZ_IPI void rz_core_visual_tabset(RzCore *core, RzCoreVisualTab *tab) {
 	rz_return_if_fail(core && tab);
 
 	rz_core_seek(core, tab->offset, true);
@@ -70,14 +87,14 @@ static void visual_tabset(RzCore *core, RzCoreVisualTab *tab) {
 	core->print->cur_enabled = tab->cur_enabled;
 	core->print->cur = tab->cur;
 	core->print->ocur = tab->ocur;
-	disMode = tab->disMode;
-	hexMode = tab->hexMode;
-	printMode = tab->printMode;
-	current3format = tab->current3format;
-	current4format = tab->current4format;
-	current5format = tab->current5format;
-	rz_core_visual_applyDisMode(core, disMode);
-	rz_core_visual_applyHexMode(core, hexMode);
+	visual->disMode = tab->disMode;
+	visual->hexMode = tab->hexMode;
+	visual->printMode = tab->printMode;
+	visual->current3format = tab->current3format;
+	visual->current4format = tab->current4format;
+	visual->current5format = tab->current5format;
+	rz_core_visual_applyDisMode(core, visual->disMode);
+	rz_core_visual_applyHexMode(core, visual->hexMode);
 	rz_config_set_i(core->config, "asm.offset", tab->asm_offset);
 	rz_config_set_i(core->config, "asm.instr", tab->asm_instr);
 	rz_config_set_i(core->config, "asm.bytes", tab->asm_bytes);
@@ -85,13 +102,13 @@ static void visual_tabset(RzCore *core, RzCoreVisualTab *tab) {
 	rz_config_set_i(core->config, "asm.cmt.col", tab->asm_cmt_col);
 	rz_config_set_i(core->config, "hex.cols", tab->cols);
 	rz_config_set_i(core->config, "scr.dumpcols", tab->dumpCols);
-	printfmtSingle[0] = printHexFormats[RZ_ABS(hexMode) % PRINT_HEX_FORMATS];
-	printfmtSingle[2] = print3Formats[RZ_ABS(current3format) % PRINT_3_FORMATS];
-	printfmtSingle[3] = print4Formats[RZ_ABS(current4format) % PRINT_4_FORMATS];
-	printfmtSingle[4] = print5Formats[RZ_ABS(current5format) % PRINT_5_FORMATS];
+	printfmtSingle[0] = printHexFormats[RZ_ABS(visual->hexMode) % PRINT_HEX_FORMATS];
+	printfmtSingle[2] = print3Formats[RZ_ABS(visual->current3format) % PRINT_3_FORMATS];
+	printfmtSingle[3] = print4Formats[RZ_ABS(visual->current4format) % PRINT_4_FORMATS];
+	printfmtSingle[4] = print5Formats[RZ_ABS(visual->current5format) % PRINT_5_FORMATS];
 }
 
-static void visual_tabget(RzCore *core, RzCoreVisualTab *tab) {
+RZ_IPI void rz_core_visual_tabget(RzCore *core, RzCoreVisualTab *tab) {
 	rz_return_if_fail(core && tab);
 
 	tab->offset = core->offset;
@@ -107,35 +124,35 @@ static void visual_tabget(RzCore *core, RzCoreVisualTab *tab) {
 	tab->ocur = core->print->ocur;
 	tab->cols = rz_config_get_i(core->config, "hex.cols");
 	tab->dumpCols = rz_config_get_i(core->config, "scr.dumpcols");
-	tab->disMode = disMode;
-	tab->hexMode = hexMode;
-	tab->printMode = printMode;
-	tab->current3format = current3format;
-	tab->current4format = current4format;
-	tab->current5format = current5format;
+	tab->disMode = visual->disMode;
+	tab->hexMode = visual->hexMode;
+	tab->printMode = visual->printMode;
+	tab->current3format = visual->current3format;
+	tab->current4format = visual->current4format;
+	tab->current5format = visual->current5format;
 	// tab->cols = core->print->cols;
 }
 
-static RzCoreVisualTab *rz_core_visual_tab_new(RzCore *core) {
+RZ_IPI RZ_OWN RzCoreVisualTab *rz_core_visual_tab_new(RzCore *core) {
 	RzCoreVisualTab *tab = RZ_NEW0(RzCoreVisualTab);
 	if (tab) {
-		visual_tabget(core, tab);
+		rz_core_visual_tabget(core, tab);
 	}
 	return tab;
 }
 
-static void rz_core_visual_tab_update(RzCore *core) {
+RZ_IPI void rz_core_visual_tab_update(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		return;
 	}
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		visual_tabget(core, tab);
+		rz_core_visual_tabget(core, tab);
 	}
 }
 
-static RzCoreVisualTab *visual_newtab(RzCore *core) {
+RZ_IPI RzCoreVisualTab *rz_core_visual_newtab(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		visual->tabs = rz_list_newf((RzListFree)rz_core_visual_tab_free);
@@ -143,18 +160,18 @@ static RzCoreVisualTab *visual_newtab(RzCore *core) {
 			return NULL;
 		}
 		visual->tab = -1;
-		visual_newtab(core);
+		rz_core_visual_newtab(core);
 	}
 	visual->tab++;
 	RzCoreVisualTab *tab = rz_core_visual_tab_new(core);
 	if (tab) {
 		rz_list_append(visual->tabs, tab);
-		visual_tabset(core, tab);
+		rz_core_visual_tabset(core, tab);
 	}
 	return tab;
 }
 
-static void visual_nthtab(RzCore *core, int n) {
+RZ_IPI void rz_core_visual_nthtab(RzCore *core, int n) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs || n < 0 || n >= rz_list_length(visual->tabs)) {
 		return;
@@ -162,11 +179,11 @@ static void visual_nthtab(RzCore *core, int n) {
 	visual->tab = n;
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		visual_tabset(core, tab);
+		rz_core_visual_tabset(core, tab);
 	}
 }
 
-static void visual_tabname(RzCore *core) {
+RZ_IPI void rz_core_visual_tabname_prompt(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		return;
@@ -179,7 +196,7 @@ static void visual_tabname(RzCore *core) {
 	}
 }
 
-static void visual_nexttab(RzCore *core) {
+RZ_IPI void rz_core_visual_nexttab(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		return;
@@ -190,11 +207,11 @@ static void visual_nexttab(RzCore *core) {
 	visual->tab++;
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		visual_tabset(core, tab);
+		rz_core_visual_tabset(core, tab);
 	}
 }
 
-static void visual_prevtab(RzCore *core) {
+RZ_IPI void rz_core_visual_prevtab(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		return;
@@ -206,11 +223,11 @@ static void visual_prevtab(RzCore *core) {
 	}
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		visual_tabset(core, tab);
+		rz_core_visual_tabset(core, tab);
 	}
 }
 
-static void visual_closetab(RzCore *core) {
+RZ_IPI void rz_core_visual_closetab(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (!visual->tabs) {
 		return;
@@ -225,7 +242,7 @@ static void visual_closetab(RzCore *core) {
 			}
 			RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 			if (tab) {
-				visual_tabset(core, tab);
+				rz_core_visual_tabset(core, tab);
 			}
 		} else {
 			rz_list_free(visual->tabs);
