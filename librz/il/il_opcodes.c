@@ -457,7 +457,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_sdiv(RZ_NONNULL RzILOpBitVector *x, 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_smod(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_2(BitVector, RZ_IL_OP_MOD, RzILOpArgsSmod, smod, x, y);
+	rz_il_op_new_2(BitVector, RZ_IL_OP_SMOD, RzILOpArgsSmod, smod, x, y);
 	return ret;
 }
 
@@ -469,7 +469,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_smod(RZ_NONNULL RzILOpBitVector *x, 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_mod(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_2(BitVector, RZ_IL_OP_SMOD, RzILOpArgsMod, mod, x, y);
+	rz_il_op_new_2(BitVector, RZ_IL_OP_MOD, RzILOpArgsMod, mod, x, y);
 	return ret;
 }
 
