@@ -50,5 +50,5 @@ const char *print5Formats[PRINT_5_FORMATS] = {
 };
 
 const char *printCmds[lastPrintMode] = {
-	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
+	"pdf", "pd $r", "agf", "agl", "afi", "pxa"
 };
