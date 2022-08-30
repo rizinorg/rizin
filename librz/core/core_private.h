@@ -302,6 +302,9 @@ RZ_IPI void rz_core_visual_config(RzCore *core);
 /* tui/esil.c */
 RZ_IPI bool rz_core_visual_esil(RzCore *core);
 
+/* tui/flags.c */
+RZ_IPI int rz_core_visual_trackflags(RzCore *core);
+
 /* tui/hud.c */
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
 RZ_IPI bool rz_core_visual_hud(RzCore *core);
@@ -343,7 +346,6 @@ RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input);
 RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_IPI void rz_core_visual_define(RzCore *core, const char *arg, int distance);
-RZ_IPI int rz_core_visual_trackflags(RzCore *core);
 RZ_IPI int rz_core_visual_view_graph(RzCore *core);
 RZ_IPI int rz_core_visual_view_rop(RzCore *core);
 RZ_IPI int rz_core_visual_comments(RzCore *core);
