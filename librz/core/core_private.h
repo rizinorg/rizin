@@ -278,14 +278,17 @@ RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const cha
 /* tui/biteditor.c */
 RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
 
+/* tui/classes.c */
+RZ_IPI int rz_core_visual_classes(RzCore *core);
+RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
+
 /* tui/hud.c */
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
 RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
 
-RZ_IPI int rz_core_visual_classes(RzCore *core);
-RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
+
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
 RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
