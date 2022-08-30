@@ -296,6 +296,9 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
 RZ_IPI int rz_core_visual_classes(RzCore *core);
 RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
 
+/* tui/config.c */
+RZ_IPI void rz_core_visual_config(RzCore *core);
+
 /* tui/hud.c */
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
 RZ_IPI bool rz_core_visual_hud(RzCore *core);
@@ -334,7 +337,6 @@ RZ_IPI void rz_core_visual_disasm_up(RzCore *core, int *cols);
 RZ_IPI void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
 
 RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
-RZ_IPI void rz_core_visual_config(RzCore *core);
 RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input);
 RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_IPI void rz_core_visual_define(RzCore *core, const char *arg, int distance);

@@ -103,6 +103,7 @@ rz_core_sources = [
   'cmd/cmd_windows_heap.c',
   'tui/biteditor.c',
   'tui/classes.c',
+  'tui/config.c',
   'tui/hud.c',
   'tui/modes.c',
   'tui/visual.c',
