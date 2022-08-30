@@ -2052,7 +2052,7 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 		case 'e': // "vbe"
 			rz_core_visual_config(core);
 			break;
-		case 'E': // "vbe"
+		case 'E': // "vbE"
 			rz_core_visual_esil(core);
 			break;
 		case 'c': // "vbc"
