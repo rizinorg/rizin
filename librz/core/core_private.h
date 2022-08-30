@@ -296,6 +296,9 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
 RZ_IPI int rz_core_visual_classes(RzCore *core);
 RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
 
+/* tui/comments.c */
+RZ_IPI int rz_core_visual_comments(RzCore *core);
+
 /* tui/config.c */
 RZ_IPI void rz_core_visual_config(RzCore *core);
 
@@ -310,6 +313,9 @@ RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
 RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
+
+/* tui/rop.c */
+RZ_IPI int rz_core_visual_view_rop(RzCore *core);
 
 /* tui/tabs.c */
 RZ_IPI void rz_core_visual_tab_free(RzCoreVisualTab *tab);
@@ -347,8 +353,6 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input);
 RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_IPI void rz_core_visual_define(RzCore *core, const char *arg, int distance);
 RZ_IPI int rz_core_visual_view_graph(RzCore *core);
-RZ_IPI int rz_core_visual_view_rop(RzCore *core);
-RZ_IPI int rz_core_visual_comments(RzCore *core);
 RZ_IPI int rz_core_visual_prompt(RzCore *core);
 
 /* visual marks */
