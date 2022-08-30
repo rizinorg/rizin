@@ -105,6 +105,7 @@ rz_core_sources = [
   'tui/classes.c',
   'tui/config.c',
   'tui/esil.c',
+  'tui/flags.c',
   'tui/hud.c',
   'tui/modes.c',
   'tui/visual.c',
