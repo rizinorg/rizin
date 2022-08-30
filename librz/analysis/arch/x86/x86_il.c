@@ -782,7 +782,29 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ
 		SETG(x86_eflags_registers[X86_EFLAGS_AF], af));
 }
 
-#define x86_il_set_arithmetic_flags(res, x, y, addition) x86_il_set_arithmetic_flags_bits(res, x, y, addition, analysis->bits)
+static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
+	RzILOpBool *of = NULL;
+	RzILOpBool *af = NULL;
+
+	RzILOpEffect *result_set = SETL("_result", res);
+	RzILOpEffect *x_set = SETL("_x", x);
+	RzILOpEffect *y_set = SETL("_y", y);
+
+	if (addition) {
+		of = x86_il_is_add_overflow(VARL("_result"), VARL("_x"), VARL("_y"));
+		af = x86_il_is_add_carry(UNSIGNED(4, VARL("_result")), UNSIGNED(4, VARL("_x")), UNSIGNED(4, VARL("_y")));
+	} else {
+		of = x86_il_is_sub_underflow(VARL("_result"), VARL("_x"), VARL("_y"));
+		af = x86_il_is_sub_borrow(UNSIGNED(4, VARL("_result")), UNSIGNED(4, VARL("_x")), UNSIGNED(4, VARL("_y")));
+	}
+
+	return SEQ5(result_set, x_set, y_set,
+		SETG(x86_eflags_registers[X86_EFLAGS_OF], of),
+		SETG(x86_eflags_registers[X86_EFLAGS_AF], af));
+}
+
+#define x86_il_set_arithmetic_flags(res, x, y, addition)           x86_il_set_arithmetic_flags_bits(res, x, y, addition, analysis->bits)
+#define x86_il_set_arithmetic_flags_except_cf(res, x, y, addition) x86_il_set_arithmetic_flags_except_cf_bits(res, x, y, addition, analysis->bits)
 
 /**
  * ======== INSTRUCTION DOCUMENTATION FORMAT ========
@@ -1049,7 +1071,7 @@ static RzILOpEffect *x86_il_cmp(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	if (ins->structure->operands[0].size != ins->structure->operands[1].size) {
 		/* second operand can be an immediate value of smaller size,
 		but we need the same bitv size to use RzIL ops */
-		second = SIGNED(ins->structure->operands[0].size, x86_il_get_operand(ins->structure->operands[1]));
+		second = SIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_operand(ins->structure->operands[1]));
 	} else {
 		second = x86_il_get_operand(ins->structure->operands[1]);
 	}
@@ -1186,10 +1208,9 @@ static RzILOpEffect *x86_il_dec(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	RzILOpEffect *set_result = x86_il_set_operand(ins->structure->operands[0], VARL("_dec"));
 	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_dec"));
 
-	RzILOpEffect *of = SETG(x86_eflags_registers[X86_EFLAGS_OF], x86_il_is_sub_underflow(VARL("_dec"), VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1)));
-	RzILOpEffect *af = SETG(x86_eflags_registers[X86_EFLAGS_AF], x86_il_is_sub_borrow(UNSIGNED(4, VARL("_dec")), UNSIGNED(4, VARL("_op")), UN(4, 1)));
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags_except_cf(VARL("_dec"), VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1), false);
 
-	return SEQ6(op, dec, set_result, res_flags, of, af);
+	return SEQ5(op, dec, set_result, res_flags, arith_flags);
 }
 
 /**
@@ -1400,6 +1421,9 @@ static RzILOpEffect *x86_il_imul(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 
 			return SEQ4(tmp_xp, set_rax, set_rdx, BRANCH(cond, true_branch, false_branch));
 		}
+		default:
+			RZ_LOG_ERROR("RzIL: x86: IMUL: Invalid operand size\n");
+			return NULL;
 		}
 	}
 	case 2: {
@@ -1427,9 +1451,38 @@ static RzILOpEffect *x86_il_imul(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 
 		return SEQ4(tmp_xp, set_dest, set_operand, BRANCH(cond, true_branch, false_branch));
 	}
+	default:
+		RZ_LOG_ERROR("RzIL: x86: IMUL: Invalid operand count\n");
+		return NULL;
 	}
 
 	return NULL;
+}
+
+/**
+ * IN
+ * Input from port
+ * Encodings: I, ZO
+ */
+static RzILOpEffect *x86_il_in(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	/* TODO: Implement after I/O ports acccessing implemented in IL */
+	return EMPTY();
+}
+
+/**
+ * INC
+ * Increment by 1
+ * Encodings: M, O
+ */
+static RzILOpEffect *x86_il_inc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	RzILOpEffect *op = SETL("_op", x86_il_get_operand(ins->structure->operands[0]));
+	RzILOpEffect *result = SETL("_result", ADD(VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1)));
+	RzILOpEffect *set_result = x86_il_set_operand(ins->structure->operands[0], VARL("_result"));
+
+	RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags_except_cf(VARL("_result"), VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1), true);
+	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_result"));
+
+	return SEQ5(op, result, set_result, arith_flags, res_flags);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -1462,6 +1515,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_HLT] = x86_il_hlt,
 	[X86_INS_IDIV] = x86_il_idiv,
 	[X86_INS_IMUL] = x86_il_imul,
+	[X86_INS_IN] = x86_il_in,
+	[X86_INS_INC] = x86_il_inc,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
