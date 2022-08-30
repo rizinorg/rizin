@@ -147,10 +147,10 @@ d "hlt" f4 0x0 empty
 d "hsubpd xmm0, xmmword [eax]" 660f7d00
 d "hsubps xmm0, xmmword [eax]" f20f7d00
 d "idiv byte [eax]" f638 0x0 (seq (set _src (cast 16 false (loadw 0 8 (+ (var eax) (bv 32 0x0))))) (branch (is_zero (var _src)) nop (seq (set _ax (cast 16 false (var eax))) (set _temp (cast 8 false (sdiv (var _ax) (var _src)))) (branch (|| (! (sle (var _temp) (bv 8 0x7f))) (&& (sle (var _temp) (bv 8 0x80)) (! (== (var _temp) (bv 8 0x80))))) nop (seq (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var _temp)))) (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (mod (var _ax) (var _src))) (bv 8 0x8) false))))))))
-d "imul byte [eax]" f628
-d "imul eax, dword [eax]" 0faf00
-d "imul eax, dword [eax], 0" 690000000000
-d "imul eax, dword [eax], 0" 6b0000
+d "imul byte [eax]" f628 0x0 (seq (set _tmp_xp (* (cast 16 (msb (cast 8 false (var eax))) (cast 8 false (var eax))) (cast 16 (msb (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (loadw 0 8 (+ (var eax) (bv 32 0x0)))))) (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (var _tmp_xp)))) (branch (== (cast 16 (msb (cast 8 false (var _tmp_xp))) (cast 8 false (var _tmp_xp))) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+d "imul eax, dword [eax]" 0faf00 0x0 (seq (set _dest (var eax)) (set _tmp_xp (* (cast 64 (msb (var _dest)) (var _dest)) (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+d "imul eax, dword [eax], 0" 690000000000 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+d "imul eax, dword [eax], 0" 6b0000 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
 d "in al, 0" E400
 d "in al, dx" ec
 d "in eax, 0" E500
@@ -1215,18 +1215,18 @@ a "hlt" f4
 aB "hsubpd xmm0, xmmword [eax]" 660f7d00
 aB "hsubps xmm0, xmmword [eax]" f20f7d00
 a "idiv byte [eax]" f638
-a "imul eax" f7e8
-a "imul edx" f7ea
-a "imul edx, eax" 0fafd0
-a "imul ecx, 23" 6bc917
-a "imul edx, ecx, 34" 6bd122
-a "imul byte [eax]" f628
-a "imul dword [eax]" f728
-a "imul ebx, [edx + ecx]" 0faf1c0a
-a "imul ebx, dword [edx], 0" 6b1a00
-a "imul ebx, edx, 4" 6bda04
-a "imul eax, dword [eax]" 0faf00
-a "imul eax, [eax], 0" 6b0000
+a "imul eax" f7e8 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var eax)) (var eax)) (cast 64 (msb (var eax)) (var eax)))) (set eax (cast 32 false (var _tmp_xp))) (set edx (cast 32 false (>> (var _tmp_xp) (bv 8 0x20) false))) (branch (== (cast 64 (msb (cast 32 false (var _tmp_xp))) (cast 32 false (var _tmp_xp))) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul edx" f7ea 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var eax)) (var eax)) (cast 64 (msb (var edx)) (var edx)))) (set eax (cast 32 false (var _tmp_xp))) (set edx (cast 32 false (>> (var _tmp_xp) (bv 8 0x20) false))) (branch (== (cast 64 (msb (cast 32 false (var _tmp_xp))) (cast 32 false (var _tmp_xp))) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul edx, eax" 0fafd0 0x0 (seq (set _dest (var edx)) (set _tmp_xp (* (cast 64 (msb (var _dest)) (var _dest)) (cast 64 (msb (var eax)) (var eax)))) (set _dest (cast 32 false (var _tmp_xp))) (set edx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul ecx, 23" 6bc917 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var ecx)) (var ecx)) (cast 64 (msb (bv 32 0x17)) (bv 32 0x17)))) (set _dest (cast 32 false (var _tmp_xp))) (set ecx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul edx, ecx, 34" 6bd122 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var ecx)) (var ecx)) (cast 64 (msb (bv 32 0x22)) (bv 32 0x22)))) (set _dest (cast 32 false (var _tmp_xp))) (set edx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul byte [eax]" f628 0x0 (seq (set _tmp_xp (* (cast 16 (msb (cast 8 false (var eax))) (cast 8 false (var eax))) (cast 16 (msb (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (loadw 0 8 (+ (var eax) (bv 32 0x0)))))) (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (var _tmp_xp)))) (branch (== (cast 16 (msb (cast 8 false (var _tmp_xp))) (cast 8 false (var _tmp_xp))) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul dword [eax]" f728 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var eax)) (var eax)) (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))))) (set eax (cast 32 false (var _tmp_xp))) (set edx (cast 32 false (>> (var _tmp_xp) (bv 8 0x20) false))) (branch (== (cast 64 (msb (cast 32 false (var _tmp_xp))) (cast 32 false (var _tmp_xp))) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul ebx, [edx + ecx]" 0faf1c0a 0x0 (seq (set _dest (var ebx)) (set _tmp_xp (* (cast 64 (msb (var _dest)) (var _dest)) (cast 64 (msb (loadw 0 32 (+ (+ (var edx) (* (var ecx) (bv 32 0x1))) (bv 32 0x0)))) (loadw 0 32 (+ (+ (var edx) (* (var ecx) (bv 32 0x1))) (bv 32 0x0)))))) (set _dest (cast 32 false (var _tmp_xp))) (set ebx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul ebx, dword [edx], 0" 6b1a00 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var edx) (bv 32 0x0)))) (loadw 0 32 (+ (var edx) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set ebx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul ebx, edx, 4" 6bda04 0x0 (seq (set _tmp_xp (* (cast 64 (msb (var edx)) (var edx)) (cast 64 (msb (bv 32 0x4)) (bv 32 0x4)))) (set _dest (cast 32 false (var _tmp_xp))) (set ebx (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul eax, dword [eax]" 0faf00 0x0 (seq (set _dest (var eax)) (set _tmp_xp (* (cast 64 (msb (var _dest)) (var _dest)) (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
+a "imul eax, [eax], 0" 6b0000 0x0 (seq (set _tmp_xp (* (cast 64 (msb (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (cast 64 (msb (bv 32 0x0)) (bv 32 0x0)))) (set _dest (cast 32 false (var _tmp_xp))) (set eax (var _dest)) (branch (== (cast 64 (msb (var _dest)) (var _dest)) (var _tmp_xp)) (seq (set cf false) (set of false)) (seq (set cf true) (set of true))))
 a "in al,0" e400
 a "in al,dx" ec
 a "inc byte [eax]" fe00

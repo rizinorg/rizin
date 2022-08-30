@@ -23,7 +23,7 @@
 	}
 
 /**
- * \brief X86 registers' variable names in RzIL
+ * \brief x86 registers' variable names in RzIL
  */
 static const char *x86_registers[] = {
 	[X86_REG_AH] = "ah",
@@ -1341,6 +1341,97 @@ static RzILOpEffect *x86_il_idiv(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 	return SEQ2(op, BRANCH(IS_ZERO(VARL("_src")), NULL, ret));
 }
 
+/**
+ * IMUL
+ * Signed multiply
+ * Three different operand number:
+ *  - One operand (Encoding: M)
+ *  - Two operands (Encoding: RM)
+ *  - Three operands (Encoding: RMI)
+ */
+static RzILOpEffect *x86_il_imul(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	switch (ins->structure->op_count) {
+	case 1: {
+		switch (ins->structure->operands[0].size) {
+		case 1: {
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(16, x86_il_get_reg(X86_REG_AL)), SIGNED(16, x86_il_get_operand(ins->structure->operands[0]))));
+			RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, VARL("_tmp_xp"));
+
+			/* Check if the result fits in a byte */
+			RzILOpPure *cond = EQ(SIGNED(16, UNSIGNED(8, VARL("_tmp_xp"))), VARL("_tmp_xp"));
+			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+
+			return SEQ3(tmp_xp, set_ax, BRANCH(cond, true_branch, false_branch));
+		}
+		case 2: {
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(32, x86_il_get_reg(X86_REG_AX)), SIGNED(32, x86_il_get_operand(ins->structure->operands[0]))));
+			RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, UNSIGNED(16, VARL("_tmp_xp")));
+			RzILOpEffect *set_dx = x86_il_set_reg(X86_REG_DX, UNSIGNED(32, SHIFTR0(VARL("_tmp_xp"), UN(8, 16))));
+
+			/* Check if the result fits in a word */
+			RzILOpPure *cond = EQ(SIGNED(32, UNSIGNED(16, VARL("_tmp_xp"))), VARL("_tmp_xp"));
+			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+
+			return SEQ4(tmp_xp, set_ax, set_dx, BRANCH(cond, true_branch, false_branch));
+		}
+		case 4: {
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(64, x86_il_get_reg(X86_REG_EAX)), SIGNED(64, x86_il_get_operand(ins->structure->operands[0]))));
+			RzILOpEffect *set_eax = x86_il_set_reg(X86_REG_EAX, UNSIGNED(32, VARL("_tmp_xp")));
+			RzILOpEffect *set_edx = x86_il_set_reg(X86_REG_EDX, UNSIGNED(32, SHIFTR0(VARL("_tmp_xp"), UN(8, 32))));
+
+			/* Check if the result fits in a doubleword */
+			RzILOpPure *cond = EQ(SIGNED(64, UNSIGNED(32, VARL("_tmp_xp"))), VARL("_tmp_xp"));
+			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+
+			return SEQ4(tmp_xp, set_eax, set_edx, BRANCH(cond, true_branch, false_branch));
+		}
+		case 8: {
+			RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(128, x86_il_get_reg(X86_REG_RAX)), SIGNED(128, x86_il_get_operand(ins->structure->operands[0]))));
+			RzILOpEffect *set_rax = x86_il_set_reg(X86_REG_RAX, UNSIGNED(64, VARL("_tmp_xp")));
+			RzILOpEffect *set_rdx = x86_il_set_reg(X86_REG_RDX, UNSIGNED(64, SHIFTR0(VARL("_tmp_xp"), UN(8, 64))));
+
+			/* Check if the result fits in a quadword */
+			RzILOpPure *cond = EQ(SIGNED(128, UNSIGNED(64, VARL("_tmp_xp"))), VARL("_tmp_xp"));
+			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+
+			return SEQ4(tmp_xp, set_rax, set_rdx, BRANCH(cond, true_branch, false_branch));
+		}
+		}
+	}
+	case 2: {
+		RzILOpEffect *dest = SETL("_dest", x86_il_get_operand(ins->structure->operands[0]));
+		RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, x86_il_get_operand(ins->structure->operands[1]))));
+		RzILOpEffect *set_dest = SETL("_dest", UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, VARL("_tmp_xp")));
+		RzILOpEffect *set_operand = x86_il_set_operand(ins->structure->operands[0], VARL("_dest"));
+
+		/* Check if the result fits in the destination */
+		RzILOpPure *cond = EQ(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
+		RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
+		RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+
+		return SEQ5(dest, tmp_xp, set_dest, set_operand, BRANCH(cond, true_branch, false_branch));
+	}
+	case 3: {
+		RzILOpEffect *tmp_xp = SETL("_tmp_xp", MUL(SIGNED(ins->structure->operands[1].size * 2 * BITS_PER_BYTE, x86_il_get_operand(ins->structure->operands[1])), SIGNED(ins->structure->operands[1].size * 2 * BITS_PER_BYTE, x86_il_get_operand(ins->structure->operands[2]))));
+		RzILOpEffect *set_dest = SETL("_dest", UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, VARL("_tmp_xp")));
+		RzILOpEffect *set_operand = x86_il_set_operand(ins->structure->operands[0], VARL("_dest"));
+
+		/* Check if the result fits in the destination */
+		RzILOpPure *cond = EQ(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
+		RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
+		RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+
+		return SEQ4(tmp_xp, set_dest, set_operand, BRANCH(cond, true_branch, false_branch));
+	}
+	}
+
+	return NULL;
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1370,6 +1461,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_DIV] = x86_il_div,
 	[X86_INS_HLT] = x86_il_hlt,
 	[X86_INS_IDIV] = x86_il_idiv,
+	[X86_INS_IMUL] = x86_il_imul,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
