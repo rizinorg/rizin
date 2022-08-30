@@ -275,13 +275,15 @@ RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
 RZ_IPI int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
 RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
 
+/* tui/biteditor.c */
+RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
+
 /* tui/hud.c */
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
 RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
 
-RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
 RZ_IPI int rz_core_visual_classes(RzCore *core);
 RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
