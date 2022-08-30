@@ -104,6 +104,7 @@ rz_core_sources = [
   'tui/biteditor.c',
   'tui/classes.c',
   'tui/config.c',
+  'tui/esil.c',
   'tui/hud.c',
   'tui/modes.c',
   'tui/visual.c',
