@@ -275,8 +275,13 @@ RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
 RZ_IPI int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
 RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
 
-RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
+/* tui/hud.c */
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core);
+RZ_IPI bool rz_core_visual_hud(RzCore *core);
+RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
+RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
+
+RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);
 RZ_IPI int rz_core_visual_classes(RzCore *core);
 RZ_IPI int rz_core_visual_analysis_classes(RzCore *core);
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
@@ -291,7 +296,6 @@ RZ_IPI void rz_core_visual_asm(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_visual_colors(RzCore *core);
 RZ_IPI void rz_core_visual_showcursor(RzCore *core, int x);
 RZ_IPI void rz_core_visual_offset(RzCore *core);
-RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI void rz_core_visual_jump(RzCore *core, ut8 ch);
 RZ_IPI void rz_core_visual_disasm_up(RzCore *core, int *cols);
 RZ_IPI void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);

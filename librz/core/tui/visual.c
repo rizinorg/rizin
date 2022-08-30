@@ -487,49 +487,6 @@ static inline void prevPrintFormat(RzCore *core) {
 	printFormat(core, -1);
 }
 
-RZ_IPI bool rz_core_visual_hud(RzCore *core) {
-	const char *c = rz_config_get(core->config, "hud.path");
-	char *system_hud_dir = rz_path_system(RZ_HUD);
-	char *f = rz_file_path_join(system_hud_dir, "main");
-	free(system_hud_dir);
-	int use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *homehud = rz_path_home_prefix(RZ_HUD);
-	char *res = NULL;
-	char *p = 0;
-	rz_cons_singleton()->context->color_mode = use_color;
-
-	rz_core_visual_showcursor(core, true);
-	if (c && *c && rz_file_exists(c)) {
-		res = rz_cons_hud_file(c);
-	}
-	if (!res && homehud) {
-		res = rz_cons_hud_file(homehud);
-	}
-	if (!res && rz_file_exists(f)) {
-		res = rz_cons_hud_file(f);
-	}
-	if (!res) {
-		rz_cons_message("Cannot find hud file");
-		return false;
-	}
-
-	rz_cons_clear();
-	if (res) {
-		p = strchr(res, ';');
-		rz_cons_println(res);
-		rz_cons_flush();
-		if (p) {
-			rz_core_cmd0(core, p + 1);
-		}
-		free(res);
-	}
-	rz_core_visual_showcursor(core, false);
-	rz_cons_flush();
-	free(homehud);
-	free(f);
-	return true;
-}
-
 RZ_IPI void rz_core_visual_jump(RzCore *core, ut8 ch) {
 	char chbuf[2];
 	ut64 off;
