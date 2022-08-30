@@ -102,6 +102,7 @@ rz_core_sources = [
   'cmd/cmd_linux_heap_glibc.c',
   'cmd/cmd_windows_heap.c',
   'tui/biteditor.c',
+  'tui/classes.c',
   'tui/hud.c',
   'tui/visual.c',
   'tui/vmenus.c',
