@@ -22,6 +22,8 @@
 		return NULL; \
 	}
 
+#define IL_LIFTER(mnem) static RzILOpEffect *x86_il_##mnem(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis)
+
 /**
  * \brief x86 registers' variable names in RzIL
  */
@@ -817,7 +819,7 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPur
 /**
  * \brief Invalid instruction
  */
-static RzILOpEffect *x86_il_invalid(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(invalid) {
 	return EMPTY();
 }
 
@@ -828,7 +830,7 @@ static RzILOpEffect *x86_il_invalid(const X86ILIns *ins, ut64 pc, RzAnalysis *an
  * ASCII adjust AL after addition
  * 37 | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aaa(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(aaa) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
@@ -855,7 +857,7 @@ static RzILOpEffect *x86_il_aaa(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Adjust AX before division to number base imm8
  * D5 ib | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aad(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(aad) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
@@ -883,7 +885,7 @@ static RzILOpEffect *x86_il_aad(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Adjust AX after multiply to number base imm8
  * D4 ib | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aam(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(aam) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
@@ -908,7 +910,7 @@ static RzILOpEffect *x86_il_aam(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * ASCII adjust AL after subtraction
  * 3F | Invalid | Valid
  */
-static RzILOpEffect *x86_il_aas(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(aas) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
@@ -942,7 +944,7 @@ static RzILOpEffect *x86_il_aas(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  *  - MR
  *  - RM
  */
-static RzILOpEffect *x86_il_adc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(adc) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_operand(ins->structure->operands[1]));
 	RzILOpPure *cf = VARG(x86_eflags_registers[X86_EFLAGS_CF]);
@@ -966,7 +968,7 @@ static RzILOpEffect *x86_il_adc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  *  - MR
  *  - RM
  */
-static RzILOpEffect *x86_il_add(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(add) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_operand(ins->structure->operands[1]));
 	RzILOpEffect *sum = SETL("sum", ADD(VARL("op1"), VARL("op2")));
@@ -989,7 +991,7 @@ static RzILOpEffect *x86_il_add(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  *  - MR
  *  - RM
  */
-static RzILOpEffect *x86_il_and(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(and) {
 	RzILOpPure *op1 = x86_il_get_operand(ins->structure->operands[0]);
 	RzILOpPure *op2 = x86_il_get_operand(ins->structure->operands[1]);
 	RzILOpEffect *and = SETL("and_", LOGAND(op1, op2));
@@ -1002,7 +1004,7 @@ static RzILOpEffect *x86_il_and(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 	return SEQ5(and, set_dest, clear_of, clear_cf, set_res_flags);
 }
 
-static RzILOpEffect *x86_il_call(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(call) {
 	// TODO
 	return EMPTY();
 }
@@ -1012,7 +1014,7 @@ static RzILOpEffect *x86_il_call(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
  * Convert byte to word
  * 98 | Valid | Valid
  */
-static RzILOpEffect *x86_il_cbw(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cbw) {
 	/* The UNSIGNED(16, ...) cast is useless in case of 32 bits,
 	but removing it will cause issues for 16-bit */
 	return x86_il_set_reg(X86_REG_AX, UNSIGNED(16, x86_il_get_reg(X86_REG_AL)));
@@ -1023,7 +1025,7 @@ static RzILOpEffect *x86_il_cbw(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Clear carry flag
  * F8 | Valid | Valid
  */
-static RzILOpEffect *x86_il_clc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(clc) {
 	return SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
 }
 
@@ -1032,7 +1034,7 @@ static RzILOpEffect *x86_il_clc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Clear direction flag
  * FC | Valid | Valid
  */
-static RzILOpEffect *x86_il_cld(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cld) {
 	return SETG(x86_eflags_registers[X86_EFLAGS_DF], IL_FALSE);
 }
 
@@ -1041,7 +1043,7 @@ static RzILOpEffect *x86_il_cld(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Clear interrupt flag
  * FA | Valid | Valid
  */
-static RzILOpEffect *x86_il_cli(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cli) {
 	return SETG(x86_eflags_registers[X86_EFLAGS_IF], IL_FALSE);
 }
 
@@ -1050,7 +1052,7 @@ static RzILOpEffect *x86_il_cli(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Complement carry flag
  * F5 | Valid | Valid
  */
-static RzILOpEffect *x86_il_cmc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cmc) {
 	return SETG(x86_eflags_registers[X86_EFLAGS_CF], INV(VARG(x86_eflags_registers[X86_EFLAGS_CF])));
 }
 
@@ -1064,7 +1066,7 @@ static RzILOpEffect *x86_il_cmc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  *  - MR
  *  - RM
  */
-static RzILOpEffect *x86_il_cmp(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cmp) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
 
 	RzILOpPure *second;
@@ -1089,7 +1091,7 @@ static RzILOpEffect *x86_il_cmp(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Compare the byte at (R|E)SI and (R|E)DI
  * A6 | Valid | Valid
  */
-static RzILOpEffect *x86_il_cmpsb(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cmpsb) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_operand(ins->structure->operands[1]));
 	RzILOpEffect *res = SETL("res", SUB(VARL("op1"), VARL("op2")));
@@ -1112,7 +1114,7 @@ static RzILOpEffect *x86_il_cmpsb(const X86ILIns *ins, ut64 pc, RzAnalysis *anal
  * Compare the word at (R|E)SI and (R|E)DI
  * A7 | Valid | Valid
  */
-static RzILOpEffect *x86_il_cmpsw(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(cmpsw) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_operand(ins->structure->operands[0]));
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_operand(ins->structure->operands[1]));
 	RzILOpEffect *res = SETL("res", SUB(VARL("op1"), VARL("op2")));
@@ -1133,7 +1135,7 @@ static RzILOpEffect *x86_il_cmpsw(const X86ILIns *ins, ut64 pc, RzAnalysis *anal
  * Decimal adjust AL after addition
  * 27 | Invalid | Valid
  */
-static RzILOpEffect *x86_il_daa(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(daa) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
@@ -1167,7 +1169,7 @@ static RzILOpEffect *x86_il_daa(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Decimal adjust AL after subtraction
  * 2F | Invalid | Valid
  */
-static RzILOpEffect *x86_il_das(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(das) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
@@ -1201,7 +1203,7 @@ static RzILOpEffect *x86_il_das(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Decrement by 1
  * Operand can be a memory address or a register
  */
-static RzILOpEffect *x86_il_dec(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(dec) {
 	RzILOpEffect *op = SETL("_op", x86_il_get_operand(ins->structure->operands[0]));
 	RzILOpEffect *dec = SETL("_dec", SUB(VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1)));
 
@@ -1218,7 +1220,7 @@ static RzILOpEffect *x86_il_dec(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Unsigned division
  * One operand (memory address), used as the divisor
  */
-static RzILOpEffect *x86_il_div(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(div) {
 	RzILOpEffect *ret = NULL;
 
 	switch (ins->structure->operands[0].size) {
@@ -1283,7 +1285,7 @@ static RzILOpEffect *x86_il_div(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 //  * Escape to coprocessor instruction set
 //  * To be used with floating-point unit
 //  */
-// static RzILOpEffect *x86_il_esc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+// IL_LIFTER(esc) {
 // 	/* Not necessary to implement for binary analysis */
 // 	return EMPTY();
 // }
@@ -1292,7 +1294,7 @@ static RzILOpEffect *x86_il_div(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * HLT
  * Enter HALT state
  */
-static RzILOpEffect *x86_il_hlt(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(hlt) {
 	/* It just jumps to an empty goto label "halt" */
 	return GOTO("halt");
 }
@@ -1307,7 +1309,7 @@ static void label_halt(RzILVM *vm, RzILOpEffect *op) {
  * Signed division
  * One operand (memory address), used as the divisor
  */
-static RzILOpEffect *x86_il_idiv(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(idiv) {
 	RzILOpEffect *ret = NULL;
 
 	switch (ins->structure->operands[0].size) {
@@ -1375,7 +1377,7 @@ static RzILOpEffect *x86_il_idiv(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
  *  - Two operands (Encoding: RM)
  *  - Three operands (Encoding: RMI)
  */
-static RzILOpEffect *x86_il_imul(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(imul) {
 	switch (ins->structure->op_count) {
 	case 1: {
 		switch (ins->structure->operands[0].size) {
@@ -1469,7 +1471,7 @@ static RzILOpEffect *x86_il_imul(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
  * Input from port
  * Encodings: I, ZO
  */
-static RzILOpEffect *x86_il_in(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(in) {
 	/* TODO: Implement after I/O ports acccessing implemented in IL */
 	return EMPTY();
 }
@@ -1479,7 +1481,7 @@ static RzILOpEffect *x86_il_in(const X86ILIns *ins, ut64 pc, RzAnalysis *analysi
  * Increment by 1
  * Encodings: M, O
  */
-static RzILOpEffect *x86_il_inc(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(inc) {
 	RzILOpEffect *op = SETL("_op", x86_il_get_operand(ins->structure->operands[0]));
 	RzILOpEffect *result = SETL("_result", ADD(VARL("_op"), UN(ins->structure->operands[0].size * BITS_PER_BYTE, 1)));
 	RzILOpEffect *set_result = x86_il_set_operand(ins->structure->operands[0], VARL("_result"));
@@ -1495,7 +1497,7 @@ static RzILOpEffect *x86_il_inc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Call to interrupt procedure
  * Encodings: I, ZO
  */
-static RzILOpEffect *x86_il_int(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(int) {
 	/* For now, it just jumps to an empty goto label "int" */
 	return GOTO("int");
 }
@@ -1509,7 +1511,7 @@ static void label_int(RzILVM *vm, RzILOpEffect *op) {
  * INTO
  * Call to interrupt if overflow flag set
  */
-static RzILOpEffect *x86_il_into(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(into) {
 	return BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_OF]), GOTO("int"), NOP());
 }
 
@@ -1517,7 +1519,7 @@ static RzILOpEffect *x86_il_into(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
  * IRET
  * Return from interrupt
  */
-static RzILOpEffect *x86_il_iret(const X86ILIns *ine, ut64 pc, RzAnalysis *analysis) {
+IL_LIFTER(iret) {
 	/* TODO: Implement IRET properly */
 	return EMPTY();
 }
