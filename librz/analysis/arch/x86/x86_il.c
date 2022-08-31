@@ -1293,8 +1293,13 @@ static RzILOpEffect *x86_il_div(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Enter HALT state
  */
 static RzILOpEffect *x86_il_hlt(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
-	/* Not necessary to implement for binary analysis */
-	return EMPTY();
+	/* It just jumps to an empty goto label "halt" */
+	return GOTO("halt");
+}
+
+static void label_halt(RzILVM *vm, RzILOpEffect *op) {
+	// empty "halt" label
+	return;
 }
 
 /**
@@ -1491,8 +1496,13 @@ static RzILOpEffect *x86_il_inc(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
  * Encodings: I, ZO
  */
 static RzILOpEffect *x86_il_int(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
-	/* TODO: Implement after interrupts implemented in IL */
-	return EMPTY();
+	/* For now, it just jumps to an empty goto label "int" */
+	return GOTO("int");
+}
+
+static void label_int(RzILVM *vm, RzILOpEffect *op) {
+	// empty "int" label
+	return;
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -1550,5 +1560,13 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(analysis->bits, analysis->big_endian, analysis->bits);
+
+	RzILEffectLabel *int_label = rz_il_effect_label_new("int", EFFECT_LABEL_SYSCALL);
+	int_label->hook = label_int;
+	rz_analysis_il_config_add_label(r, int_label);
+	RzILEffectLabel *halt_label = rz_il_effect_label_new("halt", EFFECT_LABEL_SYSCALL);
+	halt_label->hook = label_halt;
+	rz_analysis_il_config_add_label(r, halt_label);
+
 	return r;
 }
