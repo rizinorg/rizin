@@ -196,7 +196,6 @@ static const char *help_msg_panels[] = {
 	".", "seek to PC or entrypoint",
 	"\"", "create a panel from the list and replace the current one",
 	"/", "highlight the keyword",
-	"(", "toggle snow",
 	"&", "toggle cache",
 	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
 	"' '", "(space) toggle graph / panels",
