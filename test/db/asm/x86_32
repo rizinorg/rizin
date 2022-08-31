@@ -172,10 +172,10 @@ d "int 1" cd01 0x0 (goto int)
 d "int 3" cd03 0x0 (goto int)
 d "int1" F1
 d "int3" CC
-d "into" CE
+d "into" ce 0x0 (branch (var of) (goto int) nop)
 d "invd" 0f08
 d "invlpg byte [eax]" 0f0138
-d "iret" 66CF
+d "iret" 66cf 0x0 empty
 d "iretd" CF
 d "ja 2" 7700
 d "ja 6" 0f8700000000
