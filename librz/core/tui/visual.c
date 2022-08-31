@@ -9,11 +9,6 @@
 
 static void visual_refresh(RzCore *core);
 
-typedef struct {
-	int x;
-	int y;
-} Snow;
-
 #define KEY_ALTQ 0xc5
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
@@ -289,7 +284,6 @@ static const char *help_msg_visual[] = {
 	"\\", "toggle visual split mode",
 	"\"", "toggle the column mode (uses pC..)",
 	"/", "in cursor mode search in current block",
-	"(", "toggle snow",
 	")", "toggle emu.str",
 	":cmd", "run rizin command",
 	";[-]cmt", "add/remove comment",
