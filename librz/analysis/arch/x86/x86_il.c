@@ -1505,6 +1505,23 @@ static void label_int(RzILVM *vm, RzILOpEffect *op) {
 	return;
 }
 
+/**
+ * INTO
+ * Call to interrupt if overflow flag set
+ */
+static RzILOpEffect *x86_il_into(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis) {
+	return BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_OF]), GOTO("int"), NOP());
+}
+
+/**
+ * IRET
+ * Return from interrupt
+ */
+static RzILOpEffect *x86_il_iret(const X86ILIns *ine, ut64 pc, RzAnalysis *analysis) {
+	/* TODO: Implement IRET properly */
+	return EMPTY();
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1538,6 +1555,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_IN] = x86_il_in,
 	[X86_INS_INC] = x86_il_inc,
 	[X86_INS_INT] = x86_il_int,
+	[X86_INS_INTO] = x86_il_into,
+	[X86_INS_IRET] = x86_il_iret,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
