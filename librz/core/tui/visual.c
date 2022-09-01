@@ -293,7 +293,7 @@ static const char *help_msg_visual[] = {
 	"/*+-[]", "change block size, [] = resize hex.cols",
 	"<,>", "seek aligned to block size (in cursor slurp or dump files)",
 	"a/A", "(a)ssemble code, visual (A)ssembler",
-	"b", "browse evals, symbols, flags, mountpoints, evals, classes, ...",
+	"b", "browse evals, symbols, flags, evals, classes, ...",
 	"B", "toggle breakpoint",
 	"c/C", "toggle (c)ursor and (C)olors",
 	"d[f?]", "define function, data, code, ..",
@@ -1997,7 +1997,6 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 		" h  history\n"
 		" i  imports\n"
 		" m  maps\n"
-		" M  mountpoints\n"
 		" p  pids/threads\n"
 		" q  quit\n"
 		" r  ROP gadgets\n"
