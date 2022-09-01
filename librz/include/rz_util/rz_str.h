@@ -197,7 +197,6 @@ RZ_API void rz_str_filter(char *str);
 RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);
 RZ_API wchar_t *rz_str_mb_to_wc(const char *buf);
 RZ_API char *rz_str_wc_to_mb(const wchar_t *buf);
-RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len);
 RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len);
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y);
 

@@ -3719,15 +3719,15 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 	return strdup(o);
 }
 
-RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len) {
+RZ_API wchar_t *rz_str_mb_to_wc(const char *buf) {
 	wchar_t *res_buf = NULL;
 	size_t sz;
 	bool fail = true;
 
-	if (!buf || len <= 0) {
+	if (!buf) {
 		return NULL;
 	}
-	sz = mbstowcs(NULL, buf, len);
+	sz = mbstowcs(NULL, buf, 0);
 	if (sz == (size_t)-1) {
 		goto err_r_str_mb_to_wc;
 	}
@@ -3779,13 +3779,6 @@ RZ_API char *rz_str_wc_to_mb(const wchar_t *buf) {
 		return NULL;
 	}
 	return rz_str_wc_to_mb_l(buf, wcslen(buf));
-}
-
-RZ_API wchar_t *rz_str_mb_to_wc(const char *buf) {
-	if (!buf) {
-		return NULL;
-	}
-	return rz_str_mb_to_wc_l(buf, strlen(buf));
 }
 
 RZ_API char *rz_str_from_ut64(ut64 val) {
