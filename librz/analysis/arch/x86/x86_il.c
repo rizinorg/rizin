@@ -1524,6 +1524,208 @@ IL_LIFTER(iret) {
 	return EMPTY();
 }
 
+#define JUMP_IL() \
+	do { \
+		RzILOpPure *jmp_addr = UN(analysis->bits, pc); \
+		jmp_addr = ADD(jmp_addr, SIGNED(analysis->bits, x86_il_get_operand(ins->structure->operands[0]))); \
+		if (ins->structure->operands[0].size == 16 && analysis->bits != 64) { \
+			jmp_addr = LOGAND(jmp_addr, UN(analysis->bits, 0x0000ffff)); \
+		} \
+		return BRANCH(cond, JMP(jmp_addr), NOP()); \
+	} while (0)
+
+/**
+ * JA
+ * Jump if above (CF = 0 and ZF = 0)
+ * Encoding: D
+ */
+IL_LIFTER(ja) {
+	RzILOpBool *cond = AND(INV(VARG(x86_eflags_registers[X86_EFLAGS_CF])), INV(VARG(x86_eflags_registers[X86_EFLAGS_ZF])));
+	JUMP_IL();
+}
+
+/**
+ * JAE
+ * Jump if above or equal (CF = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jae) {
+	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_CF]));
+	JUMP_IL();
+}
+
+/**
+ * JB
+ * Jump if below (CF = 1)
+ * Encoding: D
+ */
+IL_LIFTER(jb) {
+	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_CF]);
+	JUMP_IL();
+}
+
+/**
+ * JBE
+ * Jump if below or equal (CF = 1 or ZF = 1)
+ * Encoding: D
+ */
+IL_LIFTER(jbe) {
+	RzILOpBool *cond = OR(VARG(x86_eflags_registers[X86_EFLAGS_CF]), VARG(x86_eflags_registers[X86_EFLAGS_ZF]));
+	JUMP_IL();
+}
+
+/**
+ * JCXZ
+ * Jump if CX register is zero (CX = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jcxz) {
+	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(X86_REG_CX));
+	JUMP_IL();
+}
+
+/**
+ * JECXZ
+ * Jump if ECX register is zero (ECX = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jecxz) {
+	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(X86_REG_ECX));
+	JUMP_IL();
+}
+
+/**
+ * JRCXZ
+ * Jump if RCX register is zero (RCX = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jrcxz) {
+	RzILOpBool *cond = IS_ZERO(x86_il_get_reg(X86_REG_RCX));
+	JUMP_IL();
+}
+
+/**
+ * JE
+ * Jump if equal (ZF = 1)
+ * Encoding: D
+ */
+IL_LIFTER(je) {
+	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_ZF]);
+	JUMP_IL();
+}
+
+/**
+ * JG
+ * Jump if greater (ZF = 0 and SF = OF)
+ * Encoding: D
+ */
+IL_LIFTER(jg) {
+	RzILOpBool *cond = AND(INV(VARG(x86_eflags_registers[X86_EFLAGS_ZF])), INV(XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF]))));
+	JUMP_IL();
+}
+
+/**
+ * JGE
+ * Jump if greater or equal (SF = OF)
+ * Encoding: D
+ */
+IL_LIFTER(jge) {
+	RzILOpBool *cond = INV(XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF])));
+	JUMP_IL();
+}
+
+/**
+ * JL
+ * Jump if less or equal (SF != OF)
+ * Encoding: D
+ */
+IL_LIFTER(jl) {
+	RzILOpBool *cond = XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF]));
+	JUMP_IL();
+}
+
+/**
+ * JLE
+ * Jump if less or equal (ZF = 1 or SF != OF)
+ * Encoding: D
+ */
+IL_LIFTER(jle) {
+	RzILOpBool *cond = OR(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF])));
+	JUMP_IL();
+}
+
+/**
+ * JNE
+ * Jump if not equal (ZF = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jne) {
+	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_ZF]));
+	JUMP_IL();
+}
+
+/**
+ * JNO
+ * Jump if not overflow (OF = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jno) {
+	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_OF]));
+	JUMP_IL();
+}
+
+/**
+ * JNP
+ * Jump if not parity (PF = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jnp) {
+	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_PF]));
+	JUMP_IL();
+}
+
+/**
+ * JNS
+ * Jump if not sign (SF = 0)
+ * Encoding: D
+ */
+IL_LIFTER(jns) {
+	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_SF]));
+	JUMP_IL();
+}
+
+/**
+ * JO
+ * Jump if overflow (OF = 1)
+ * Encoding: D
+ */
+IL_LIFTER(jo) {
+	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_OF]);
+	JUMP_IL();
+}
+
+/**
+ * JP
+ * Jump if parity (PF = 1)
+ * Encoding: D
+ */
+IL_LIFTER(jp) {
+	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_PF]);
+	JUMP_IL();
+}
+
+/**
+ * JS
+ * Jump if sign (SF = 1)
+ * Encoding: D
+ */
+IL_LIFTER(js) {
+	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_SF]);
+	JUMP_IL();
+}
+
+#undef JUMP_IL
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1559,6 +1761,25 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INT] = x86_il_int,
 	[X86_INS_INTO] = x86_il_into,
 	[X86_INS_IRET] = x86_il_iret,
+	[X86_INS_JA] = x86_il_ja,
+	[X86_INS_JAE] = x86_il_jae,
+	[X86_INS_JB] = x86_il_jb,
+	[X86_INS_JBE] = x86_il_jbe,
+	[X86_INS_JCXZ] = x86_il_jcxz,
+	[X86_INS_JECXZ] = x86_il_jecxz,
+	[X86_INS_JRCXZ] = x86_il_jrcxz,
+	[X86_INS_JE] = x86_il_je,
+	[X86_INS_JG] = x86_il_jg,
+	[X86_INS_JGE] = x86_il_jge,
+	[X86_INS_JL] = x86_il_jl,
+	[X86_INS_JLE] = x86_il_jle,
+	[X86_INS_JNE] = x86_il_jne,
+	[X86_INS_JNO] = x86_il_jno,
+	[X86_INS_JNP] = x86_il_jnp,
+	[X86_INS_JNS] = x86_il_jns,
+	[X86_INS_JO] = x86_il_jo,
+	[X86_INS_JP] = x86_il_jp,
+	[X86_INS_JS] = x86_il_js,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
