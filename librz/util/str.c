@@ -3719,68 +3719,6 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 	return strdup(o);
 }
 
-RZ_API wchar_t *rz_str_mb_to_wc(const char *buf) {
-	wchar_t *res_buf = NULL;
-	size_t sz;
-	bool fail = true;
-
-	if (!buf) {
-		return NULL;
-	}
-	sz = mbstowcs(NULL, buf, 0);
-	if (sz == (size_t)-1) {
-		goto err_r_str_mb_to_wc;
-	}
-	res_buf = (wchar_t *)calloc(1, (sz + 1) * sizeof(wchar_t));
-	if (!res_buf) {
-		goto err_r_str_mb_to_wc;
-	}
-	sz = mbstowcs(res_buf, buf, sz + 1);
-	if (sz == (size_t)-1) {
-		goto err_r_str_mb_to_wc;
-	}
-	fail = false;
-err_r_str_mb_to_wc:
-	if (fail) {
-		RZ_FREE(res_buf);
-	}
-	return res_buf;
-}
-
-RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
-	char *res_buf = NULL;
-	mbstate_t mbstate = { 0 };
-	size_t sz;
-
-	if (!buf || len <= 0) {
-		return NULL;
-	}
-	sz = wcsrtombs(NULL, &buf, 0, &mbstate);
-	if (sz == (size_t)-1) {
-		goto err_r_str_wc_to_mb;
-	}
-	res_buf = RZ_NEWS0(char, sz + 1);
-	if (!res_buf) {
-		goto err_r_str_wc_to_mb;
-	}
-	sz = wcsrtombs(res_buf, &buf, sz + 1, &mbstate);
-	if (sz == (size_t)-1) {
-		goto err_r_str_wc_to_mb;
-	}
-	return res_buf;
-
-err_r_str_wc_to_mb:
-	free(res_buf);
-	return NULL;
-}
-
-RZ_API char *rz_str_wc_to_mb(const wchar_t *buf) {
-	if (!buf) {
-		return NULL;
-	}
-	return rz_str_wc_to_mb_l(buf, wcslen(buf));
-}
-
 RZ_API char *rz_str_from_ut64(ut64 val) {
 	int i = 0;
 	char *v = (char *)&val;
