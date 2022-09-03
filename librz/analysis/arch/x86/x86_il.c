@@ -618,7 +618,7 @@ static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits) {
 }
 
 #define x86_il_get_operand(op) x86_il_get_operand_bits(op, analysis->bits)
-#define x86_il_get_op(opnum) x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits)
+#define x86_il_get_op(opnum)   x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits)
 
 static RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits) {
 	RzILOpEffect *ret = NULL;
@@ -640,7 +640,7 @@ static RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits
 }
 
 #define x86_il_set_operand(op, val) x86_il_set_operand_bits(op, val, analysis->bits)
-#define x86_il_set_op(opnum, val) x86_il_set_operand_bits(ins->structure->operands[opnum], val, analysis->bits)
+#define x86_il_set_op(opnum, val)   x86_il_set_operand_bits(ins->structure->operands[opnum], val, analysis->bits)
 
 static RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
@@ -1781,6 +1781,52 @@ IL_LIFTER(lds) {
 	return x86_il_set_op(0, x86_il_get_memaddr_segment(ins->structure->operands[1].mem, X86_REG_DS));
 }
 
+/**
+ * LEA
+ * Load effective address
+ * Encoding: RM
+ * Cast the M to R in an unsigned cast
+ */
+IL_LIFTER(lea) {
+	if (ins->structure->operands[0].size == ins->structure->operands[1].size) {
+		/* if the operand sizes match, then no casting is required */
+		return x86_il_set_op(0, x86_il_get_memaddr(ins->structure->operands[1].mem));
+	} else {
+		return x86_il_set_op(0, UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(ins->structure->operands[1].mem)));
+	}
+}
+
+/**
+ * LES
+ * Load pointer using ES
+ * Encoding: RM
+ */
+IL_LIFTER(les) {
+	return x86_il_set_op(0, x86_il_get_memaddr_segment(ins->structure->operands[1].mem, X86_REG_ES));
+}
+
+/**
+ * LODSB
+ * Load string byte
+ * No operands
+ */
+IL_LIFTER(lodsb) {
+	X86Mem src_mem;
+	src_mem.base = ins->structure->addr_size == 2 ? X86_REG_SI : X86_REG_ESI;
+	src_mem.disp = 0;
+	src_mem.index = X86_REG_INVALID;
+	src_mem.scale = 1;
+	src_mem.segment = X86_REG_DS;
+	RzILOpPure *val = LOADW(8, x86_il_get_memaddr(src_mem));
+
+	X86Reg si_reg = ins->structure->addr_size == 2 ? X86_REG_SI : X86_REG_ESI;
+	RzILOpEffect *inc = x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(ins->structure->addr_size * BITS_PER_BYTE, 1)));
+	RzILOpEffect *dec = x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(ins->structure->addr_size * BITS_PER_BYTE, 1)));
+	RzILOpEffect *update_si = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+
+	return SEQ2(x86_il_set_reg(X86_REG_AL, val), update_si);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1838,6 +1884,9 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_JMP] = x86_il_jmp,
 	[X86_INS_LAHF] = x86_il_lahf,
 	[X86_INS_LDS] = x86_il_lds,
+	[X86_INS_LEA] = x86_il_lea,
+	[X86_INS_LES] = x86_il_les,
+	[X86_INS_LODSB] = x86_il_lodsb,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
