@@ -300,7 +300,7 @@ d "movntdq xmmword [eax], xmm0" 660fe700
 d "movnti dword [eax], eax" 0fc300
 d "movntq qword [eax], mm0" 0fe700
 d "movq qword [eax], xmm0" 660fd600
-d "movsb byte es:[edi], byte ptr [esi]" a4
+dB "movsb byte es:[edi], byte ptr [esi]" a4 0x0 (seq (storew 0 (+ (+ (var edi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)) (loadw 0 8 (+ (+ (var esi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))) (branch (var df) (seq (set esi (- (var esi) (bv 32 0x1))) (set edi (- (var edi) (bv 32 0x1)))) (seq (set esi (+ (var esi) (bv 32 0x1))) (set edi (+ (var edi) (bv 32 0x1))))))
 d "movsd dword es:[edi], dword ptr [esi]" a5
 d "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
 d "movshdup xmm0, xmmword [eax]" f30f1600
@@ -1578,7 +1578,7 @@ aB "movq mm0, qword [eax]" 0f6f00
 aB "movq qword [eax], mm0" 0f7f00
 aB "movq qword [eax], xmm0" 660fd600
 aB "movq xmm0, qword [eax]" f30f7e00
-a "movsb byte es:[edi], byte ptr [esi]" a4
+aB "movsb byte es:[edi], byte ptr [esi]" a4 0x0 (seq (storew 0 (+ (+ (var edi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)) (loadw 0 8 (+ (+ (var esi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))) (branch (var df) (seq (set esi (- (var esi) (bv 32 0x1))) (set edi (- (var edi) (bv 32 0x1)))) (seq (set esi (+ (var esi) (bv 32 0x1))) (set edi (+ (var edi) (bv 32 0x1))))))
 a "movsd dword es:[edi], dword ptr [esi]" a5
 aB "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
 aB "movsd qword [eax], xmm0" f20f1100
