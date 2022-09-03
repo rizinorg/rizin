@@ -1902,6 +1902,29 @@ IL_LIFTER(loopne) {
 	return EMPTY();
 }
 
+/**
+ * MOV
+ * Move
+ * Encodings:
+ *  - MR
+ *  - RM
+ *  - FD
+ *  - TD
+ *  - OI
+ *  - MI
+ */
+IL_LIFTER(mov) {
+	if (ins->structure->operands[0].size == ins->structure->operands[1].size) {
+		/* No need to cast if both the operands are of the same size */
+		return x86_il_set_op(0, x86_il_get_op(1));
+	} else if (ins->structure->operands[0].size == 64 && ins->structure->operands[1].size == 32 && ins->structure->operands[0].type == X86_OP_MEM && ins->structure->operands[1].type == X86_OP_IMM) {
+		/* Special case, where we would need signed extension (Encoding: M(64), I(32)) */
+		return x86_il_set_op(0, SN(64, ins->structure->operands[1].imm));
+	} else {
+		return x86_il_set_op(0, UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1)));
+	}
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1966,6 +1989,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LOOP] = x86_il_loop,
 	[X86_INS_LOOPE] = x86_il_loope,
 	[X86_INS_LOOPNE] = x86_il_loopne,
+	[X86_INS_MOV] = x86_il_mov,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
