@@ -1811,20 +1811,62 @@ IL_LIFTER(les) {
  * No operands
  */
 IL_LIFTER(lodsb) {
-	X86Mem src_mem;
-	src_mem.base = ins->structure->addr_size == 2 ? X86_REG_SI : X86_REG_ESI;
-	src_mem.disp = 0;
-	src_mem.index = X86_REG_INVALID;
-	src_mem.scale = 1;
-	src_mem.segment = X86_REG_DS;
-	RzILOpPure *val = LOADW(8, x86_il_get_memaddr(src_mem));
+	if (analysis->bits == 64) {
+		RzILOpPure *val = LOADW(8, x86_il_get_reg(X86_REG_RSI));
+		RzILOpEffect *inc = x86_il_set_reg(X86_REG_EAX, ADD(x86_il_get_reg(X86_REG_EAX), UN(64, 1)));
+		RzILOpEffect *dec = x86_il_set_reg(X86_REG_EAX, SUB(x86_il_get_reg(X86_REG_EAX), UN(64, 1)));
+		RzILOpEffect *update_rsi = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
 
-	X86Reg si_reg = ins->structure->addr_size == 2 ? X86_REG_SI : X86_REG_ESI;
-	RzILOpEffect *inc = x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(ins->structure->addr_size * BITS_PER_BYTE, 1)));
-	RzILOpEffect *dec = x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(ins->structure->addr_size * BITS_PER_BYTE, 1)));
-	RzILOpEffect *update_si = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		return SEQ2(x86_il_set_reg(X86_REG_AL, val), update_rsi);
 
-	return SEQ2(x86_il_set_reg(X86_REG_AL, val), update_si);
+	} else {
+		X86Mem src_mem;
+		src_mem.base = analysis->bits == 16 ? X86_REG_SI : X86_REG_ESI;
+		src_mem.disp = 0;
+		src_mem.index = X86_REG_INVALID;
+		src_mem.scale = 1;
+		src_mem.segment = X86_REG_DS;
+		RzILOpPure *val = LOADW(8, x86_il_get_memaddr(src_mem));
+
+		X86Reg si_reg = analysis->bits == 16 ? X86_REG_SI : X86_REG_ESI;
+		RzILOpEffect *inc = x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(analysis->bits, 1)));
+		RzILOpEffect *dec = x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(analysis->bits, 1)));
+		RzILOpEffect *update_si = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+
+		return SEQ2(x86_il_set_reg(X86_REG_AL, val), update_si);
+	}
+}
+
+/**
+ * LODSW
+ * Load string word
+ * No operands
+ */
+IL_LIFTER(lodsw) {
+	if (analysis->bits == 64) {
+		RzILOpPure *val = LOADW(16, x86_il_get_reg(X86_REG_RSI));
+		RzILOpEffect *inc = x86_il_set_reg(X86_REG_EAX, ADD(x86_il_get_reg(X86_REG_EAX), UN(64, 2)));
+		RzILOpEffect *dec = x86_il_set_reg(X86_REG_EAX, SUB(x86_il_get_reg(X86_REG_EAX), UN(64, 2)));
+		RzILOpEffect *update_rsi = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+
+		return SEQ2(x86_il_set_reg(X86_REG_AX, val), update_rsi);
+
+	} else {
+		X86Mem src_mem;
+		src_mem.base = analysis->bits == 16 ? X86_REG_SI : X86_REG_ESI;
+		src_mem.disp = 0;
+		src_mem.index = X86_REG_INVALID;
+		src_mem.scale = 1;
+		src_mem.segment = X86_REG_DS;
+		RzILOpPure *val = LOADW(16, x86_il_get_memaddr(src_mem));
+
+		X86Reg si_reg = analysis->bits == 16 ? X86_REG_SI : X86_REG_ESI;
+		RzILOpEffect *inc = x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(analysis->bits, 2)));
+		RzILOpEffect *dec = x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(analysis->bits, 2)));
+		RzILOpEffect *update_si = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+
+		return SEQ2(x86_il_set_reg(X86_REG_AX, val), update_si);
+	}
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -1887,6 +1929,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LEA] = x86_il_lea,
 	[X86_INS_LES] = x86_il_les,
 	[X86_INS_LODSB] = x86_il_lodsb,
+	[X86_INS_LODSW] = x86_il_lodsw,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
