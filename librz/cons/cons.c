@@ -1102,7 +1102,6 @@ static int real_strlen(const char *ptr, int len) {
 
 RZ_API void rz_cons_visual_write(char *buffer) {
 	char white[1024];
-	int cols = I.columns;
 	int alen, plen, lines = I.rows;
 	bool break_lines = I.break_lines;
 	const char *endptr;
@@ -1111,6 +1110,9 @@ RZ_API void rz_cons_visual_write(char *buffer) {
 	if (I.null) {
 		return;
 	}
+	rz_return_if_fail(I.columns > 0); // modulo by 0 is UB
+	unsigned int cols = I.columns;
+
 	memset(&white, ' ', sizeof(white));
 	while ((nl = strchr(ptr, '\n'))) {
 		int len = ((int)(size_t)(nl - ptr)) + 1;
@@ -1140,7 +1142,7 @@ RZ_API void rz_cons_visual_write(char *buffer) {
 			}
 		} else {
 			if (lines > 0) {
-				int w = cols - (alen % cols == 0 ? cols : alen % cols);
+				unsigned int w = cols - (alen % cols == 0 ? cols : alen % cols);
 				__cons_write(pptr, plen);
 				if (I.blankline && w > 0) {
 					if (w > sizeof(white) - 1) {
