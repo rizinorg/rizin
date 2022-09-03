@@ -210,13 +210,13 @@ d "jp 2" 7a00 0x0 (branch (var pf) (jmp (+ (bv 32 0x0) (bv 32 0x2))) nop)
 d "jp 6" 0f8a00000000 0x0 (branch (var pf) (jmp (+ (bv 32 0x0) (bv 32 0x6))) nop)
 d "js 2" 7800 0x0 (branch (var sf) (jmp (+ (bv 32 0x0) (bv 32 0x2))) nop)
 d "js 6" 0f8800000000 0x0 (branch (var sf) (jmp (+ (bv 32 0x0) (bv 32 0x6))) nop)
-d "lahf" 9F
+d "lahf" 9f 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (| (<< (| (<< (| (<< (| (<< (| (<< (ite (var sf) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x1) false) (ite (var zf) (bv 8 0x1) (bv 8 0x0))) (bv 8 0x2) false) (ite (var af) (bv 8 0x1) (bv 8 0x0))) (bv 8 0x2) false) (ite (var pf) (bv 8 0x1) (bv 8 0x0))) (bv 8 0x1) false) (bv 8 0x1)) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0x8) false)))
 d "lar eax, word [eax]" 0f0200
 d "lcall [0]" ff1c2500000000
 d "lcall [eax]" ff18
 d "lddqu xmm0, xmmword [eax]" f20ff000
 d "ldmxcsr dword [eax]" 0fae10
-d "lds eax, [eax]" c500
+dB "lds eax, [eax]" c500 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))
 d "lea eax, [eax]" 8d00
 d "leave" C9
 d "les eax, [eax]" c400
@@ -1353,7 +1353,7 @@ a "jp short -7" 7af7 0x0 (branch (var pf) (jmp (+ (bv 32 0x0) (bv 32 0xfffffff9)
 a "jpe short 22" 7a14 0x0 (branch (var pf) (jmp (+ (bv 32 0x0) (bv 32 0x16))) nop)
 a "jnp short 64" 7b3e 0x0 (branch (! (var pf)) (jmp (+ (bv 32 0x0) (bv 32 0x40))) nop)
 a "jpo short 88" 7b56 0x0 (branch (! (var pf)) (jmp (+ (bv 32 0x0) (bv 32 0x58))) nop)
-aB "lahf" 9e
+a "lahf" 9f
 aB "lar eax, word [eax]" 0f02
 aB "lcall 0, 0" 9a
 aB "lcall [0]" ff1c2500000000
