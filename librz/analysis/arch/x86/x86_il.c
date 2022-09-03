@@ -1527,7 +1527,7 @@ IL_LIFTER(iret) {
 #define JUMP_IL() \
 	do { \
 		RzILOpPure *jmp_addr = UN(analysis->bits, pc); \
-		jmp_addr = ADD(jmp_addr, SIGNED(analysis->bits, x86_il_get_operand(ins->structure->operands[0]))); \
+		jmp_addr = ADD(jmp_addr, SN(analysis->bits, ins->structure->operands[0].imm)); \
 		if (ins->structure->operands[0].size == 16 && analysis->bits != 64) { \
 			jmp_addr = LOGAND(jmp_addr, UN(analysis->bits, 0x0000ffff)); \
 		} \
@@ -1726,6 +1726,17 @@ IL_LIFTER(js) {
 
 #undef JUMP_IL
 
+IL_LIFTER(jmp) {
+	RzILOpPure *target;
+	if (ins->structure->operands[0].type == X86_OP_IMM) {
+		target = ADD(UN(analysis->bits, pc), SN(analysis->bits, ins->structure->operands[0].imm));
+	} else {
+		target = UNSIGNED(analysis->bits, x86_il_get_operand(ins->structure->operands[0]));
+	}
+
+	return JMP(target);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1780,6 +1791,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_JO] = x86_il_jo,
 	[X86_INS_JP] = x86_il_jp,
 	[X86_INS_JS] = x86_il_js,
+	[X86_INS_JMP] = x86_il_jmp,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
