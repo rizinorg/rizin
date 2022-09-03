@@ -25,7 +25,7 @@
 #define IL_LIFTER(mnem) static RzILOpEffect *x86_il_##mnem(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis)
 
 /**
- * \brief x86 registers' variable names in RzIL
+ * \brief x86 registers
  */
 static const char *x86_registers[] = {
 	[X86_REG_AH] = "ah",
@@ -303,6 +303,80 @@ static const char *x86_eflags_registers[] = {
 	[X86_EFLAGS_OF] = "of",
 	[X86_EFLAGS_NT] = "nt",
 	[X86_EFLAGS_VM] = "vm"
+};
+
+#define COMMON_REGS \
+	"cs", /* X86_REG_CS */ \
+	"ss", /* X86_REG_SS */ \
+	"ds", /* X86_REG_DS */ \
+	"es", /* X86_REG_ES */ \
+	"cf", /* X86_EFLAGS_CF */ \
+	"pf", /* X86_EFLAGS_PF */ \
+	"af", /* X86_EFLAGS_AF */ \
+	"zf", /* X86_EFLAGS_ZF */ \
+	"sf", /* X86_EFLAGS_SF */ \
+	"tf", /* X86_EFLAGS_TF */ \
+	"if", /* X86_EFLAGS_IF */ \
+	"df", /* X86_EFLAGS_DF */ \
+	"of" /* X86_EFLAGS_OF */
+
+/**
+ * \brief All registers bound to IL variables for x86 16-bit
+ */
+static const char *x86_bound_regs_16[] = {
+	COMMON_REGS,
+	"ax", /* X86_REG_AX */
+	"bx", /* X86_REG_BX */
+	"cx", /* X86_REG_CX */
+	"dx", /* X86_REG_DX */
+	"ip", /* X86_REG_IP */
+	"sp", /* X86_REG_SP */
+	"bp", /* X86_REG_BP */
+	"si", /* X86_REG_SI */
+	"di", /* X86_REG_DI */
+	NULL
+};
+
+/**
+ * \brief All registers bound to IL variables for x86 32-bit
+ */
+static const char *x86_bound_regs_32[] = {
+	COMMON_REGS,
+	"eax", /* X86_REG_EAX */
+	"ebx", /* X86_REG_EBX */
+	"ecx", /* X86_REG_ECX */
+	"edx", /* X86_REG_EDX */
+	"eip", /* X86_REG_EIP */
+	"esp", /* X86_REG_ESP */
+	"ebp", /* X86_REG_EBP */
+	"esi", /* X86_REG_ESI */
+	"edi", /* X86_REG_EDI */
+	"fs", /* X86_REG_FS */
+	"gs", /* X86_REG_GS */
+	"cr0", /* X86_EFLAGS_CR0 */
+	"dr0", /* X86_EFLAGS_DR0 */
+	NULL
+};
+
+/**
+ * \brief All registers bound to IL variables for x86 64-bit
+ */
+static const char *x86_bound_regs_64[] = {
+	COMMON_REGS,
+	"rax", /* X86_REG_RAX */
+	"rbx", /* X86_REG_RBX */
+	"rcx", /* X86_REG_RCX */
+	"rdx", /* X86_REG_RDX */
+	"rip", /* X86_REG_RIP */
+	"rsp", /* X86_REG_RSP */
+	"rbp", /* X86_REG_RBP */
+	"rsi", /* X86_REG_RSI */
+	"rdi", /* X86_REG_RDI */
+	"fs", /* X86_REG_FS */
+	"gs", /* X86_REG_GS */
+	"cr0", /* X86_EFLAGS_CR0 */
+	"dr0", /* X86_EFLAGS_DR0 */
+	NULL
 };
 
 static const X86Reg gpr_hregs[] = {
@@ -1877,6 +1951,9 @@ IL_LIFTER(lodsw) {
  */
 IL_LIFTER(loop) {
 	/* TODO: Unimplemented */
+	/* This is hard to implement currently, since it would require to loop the following instruction
+	and the IL currently provides no way to get the effect of another instruction */
+	/* Also, it's usage is usually very rare, so not worth all the effort. For now an `EMPTY` opcode is returned */
 	return EMPTY();
 }
 
@@ -2095,6 +2172,20 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(analysis->bits, analysis->big_endian, analysis->bits);
+
+	switch (analysis->bits) {
+		case 16:
+			r->reg_bindings = x86_bound_regs_16;
+			break;
+		case 32:
+			r->reg_bindings = x86_bound_regs_32;
+			break;
+		case 64:
+			r->reg_bindings = x86_bound_regs_64;
+			break;
+		default:
+			rz_warn_if_reached();
+	}
 
 	RzILEffectLabel *int_label = rz_il_effect_label_new("int", EFFECT_LABEL_SYSCALL);
 	int_label->hook = label_int;
