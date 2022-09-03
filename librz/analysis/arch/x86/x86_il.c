@@ -1869,6 +1869,39 @@ IL_LIFTER(lodsw) {
 	}
 }
 
+/**
+ * LOOP
+ * Loop the following instruction
+ * Encoding: D
+ * Decrement count ; jump if count != 0
+ */
+IL_LIFTER(loop) {
+	/* TODO: Unimplemented */
+	return EMPTY();
+}
+
+/**
+ * LOOPE
+ * Loop the following instruction
+ * Encoding: D
+ * Decrement count ; jump if count != 0 and ZF = 1
+ */
+IL_LIFTER(loope) {
+	/* TODO: Unimplemented */
+	return EMPTY();
+}
+
+/**
+ * LOOPNE
+ * Loop the following instruction
+ * Encoding: D
+ * Decrement count ; jump if count != 0 and ZF = 0
+ */
+IL_LIFTER(loopne) {
+	/* TODO: Unimplemented */
+	return EMPTY();
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -1930,6 +1963,9 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LES] = x86_il_les,
 	[X86_INS_LODSB] = x86_il_lodsb,
 	[X86_INS_LODSW] = x86_il_lodsw,
+	[X86_INS_LOOP] = x86_il_loop,
+	[X86_INS_LOOPE] = x86_il_loope,
+	[X86_INS_LOOPNE] = x86_il_loopne,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
