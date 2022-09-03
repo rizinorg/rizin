@@ -237,59 +237,59 @@ d "ltr word [eax]" 0f0018
 d "lzcnt eax, dword [eax]" f30fbd00
 d "mfence" 0faef0
 d "monitor" 0f01c8
-d "mov ah, 0" B400
-d "mov ah, 0" b400
-d "mov al, 0" B000
-d "mov al, 0" b000
-d "mov al, byte [0]" a000000000
-d "mov al, byte [eax]" 8a00
-d "mov bh, 0" B700
-d "mov bh, 0" b700
-d "mov bl, 0" B300
-d "mov bl, 0" b300
-d "mov byte [0], al" a200000000
-d "mov byte [eax], 0" c60000
-d "mov byte [eax], al" 8800
-d "mov ch, 0" B500
-d "mov ch, 0" b500
-d "mov cl, 0" B100
-d "mov cl, 0" b100
-d "mov dh, 0" B600
-d "mov dh, 0" b600
-d "mov dl, 0" B200
-d "mov dl, 0" b200
-d "mov dr0, eax" 0f2300
-d "mov dword [0], eax" a300000000
-d "mov dword [eax], 0" c70000000000
-d "mov dword [eax], eax" 8900
-d "mov dword cs:[eax], eax" 2e8900
-d "mov dword ds:[eax], eax" 3e8900
-d "mov dword es:[eax], eax" 268900
-d "mov dword fs:[eax], eax" 648900
-d "mov dword gs:[eax], eax" 658900
-d "mov dword ss:[eax], eax" 368900
-d "mov eax, 0" b800000000
-d "mov eax, cr0" 0f2000
-d "mov eax, dr0" 0f2100
-d "mov cr0, eax" 0f2200
-d "mov eax, dword [0]" a100000000
-d "mov eax, dword [eax]" 8b00
-d "mov eax, dword [ebp]" 8b4500
-d "mov eax, dword [esp]" 8b0424
-d "mov eax, dword fs:[ebp]" 648b4500
-d "mov ebp, 0" bd00000000
-d "mov ebx, 0" bb00000000
-d "mov ecx, 0" b900000000
-d "mov edi, 0" bf00000000
-d "mov edx, 0" ba00000000
-d "mov es, word [eax]" 8e00
-d "mov esi, 0" be00000000
-d "mov esp, 0" bc00000000
-d "mov word [eax], es" 8c00
-a "mov al, [0xbeef]" a0efbe0000
-a "mov ax, [0xbeef]" 66a1efbe0000
-a "mov eax, [0xbeef]" a1efbe0000
-a "mov eax, [0x12345678]" a178563412
+d "mov ah, 0" b400 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov ah, 0" b400 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov al, 0" b000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov al, 0" b000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov al, byte [0]" a000000000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (bv 32 0x0)))))
+d "mov al, byte [eax]" 8a00 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (+ (var eax) (bv 32 0x0))))))
+d "mov bh, 0" b700 0x0 (set ebx (| (& (var ebx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov bh, 0" b700 0x0 (set ebx (| (& (var ebx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov bl, 0" b300 0x0 (set ebx (| (& (var ebx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov bl, 0" b300 0x0 (set ebx (| (& (var ebx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov byte [0], al" a200000000 0x0 (storew 0 (bv 32 0x0) (cast 8 false (var eax)))
+d "mov byte [eax], 0" c60000 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 8 0x0))
+d "mov byte [eax], al" 8800 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (cast 8 false (var eax)))
+d "mov ch, 0" b500 0x0 (set ecx (| (& (var ecx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov ch, 0" b500 0x0 (set ecx (| (& (var ecx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov cl, 0" b100 0x0 (set ecx (| (& (var ecx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov cl, 0" b100 0x0 (set ecx (| (& (var ecx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov dh, 0" b600 0x0 (set edx (| (& (var edx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov dh, 0" b600 0x0 (set edx (| (& (var edx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+d "mov dl, 0" b200 0x0 (set edx (| (& (var edx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov dl, 0" b200 0x0 (set edx (| (& (var edx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+d "mov dr0, eax" 0f2300 0x0 (set dr0 (var eax))
+d "mov dword [0], eax" a300000000 0x0 (storew 0 (bv 32 0x0) (var eax))
+d "mov dword [eax], 0" c70000000000 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 32 0x0))
+d "mov dword [eax], eax" 8900 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var eax))
+dB "mov dword cs:[eax], eax" 2e8900 0x0 (storew 0 (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var cs)) (bv 8 0x4) false)) (var eax))
+dB "mov dword ds:[eax], eax" 3e8900 0x0 (storew 0 (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)) (var eax))
+dB "mov dword es:[eax], eax" 268900 0x0 (storew 0 (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)) (var eax))
+dB "mov dword fs:[eax], eax" 648900 0x0 (storew 0 (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var fs)) (bv 8 0x4) false)) (var eax))
+dB "mov dword gs:[eax], eax" 658900 0x0 (storew 0 (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var gs)) (bv 8 0x4) false)) (var eax))
+dB "mov dword ss:[eax], eax" 368900 0x0 (storew 0 (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)) (var eax))
+d "mov eax, 0" b800000000 0x0 (set eax (bv 32 0x0))
+dB "mov eax, cr0" 0f2000 0x0 (set eax (var cr0))
+d "mov eax, dr0" 0f2100 0x0 (set eax (var dr0))
+dB "mov cr0, eax" 0f2200 0x0 (set cr0 (var eax))
+d "mov eax, dword [0]" a100000000 0x0 (set eax (loadw 0 32 (bv 32 0x0)))
+d "mov eax, dword [eax]" 8b00 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0x0))))
+d "mov eax, dword [ebp]" 8b4500 0x0 (set eax (loadw 0 32 (+ (var ebp) (bv 32 0x0))))
+d "mov eax, dword [esp]" 8b0424 0x0 (set eax (loadw 0 32 (+ (var esp) (bv 32 0x0))))
+dB "mov eax, dword fs:[ebp]" 648b4500 0x0 (set eax (loadw 0 32 (+ (+ (var ebp) (bv 32 0x0)) (<< (cast 32 false (var fs)) (bv 8 0x4) false))))
+d "mov ebp, 0" bd00000000 0x0 (set ebp (bv 32 0x0))
+d "mov ebx, 0" bb00000000 0x0 (set ebx (bv 32 0x0))
+d "mov ecx, 0" b900000000 0x0 (set ecx (bv 32 0x0))
+d "mov edi, 0" bf00000000 0x0 (set edi (bv 32 0x0))
+d "mov edx, 0" ba00000000 0x0 (set edx (bv 32 0x0))
+dB "mov es, word [eax]" 8e00 0x0 (set es (loadw 0 16 (+ (var eax) (bv 32 0x0))))
+d "mov esi, 0" be00000000 0x0 (set esi (bv 32 0x0))
+d "mov esp, 0" bc00000000 0x0 (set esp (bv 32 0x0))
+dB "mov word [eax], es" 8c00 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var es))
+a "mov al, [0xbeef]" a0efbe0000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (bv 32 0xbeef)))))
+a "mov ax, [0xbeef]" 66a1efbe0000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (loadw 0 16 (bv 32 0xbeef)))))
+a "mov eax, [0xbeef]" a1efbe0000 0x0 (set eax (loadw 0 32 (bv 32 0xbeef)))
+a "mov eax, [0x12345678]" a178563412 0x0 (set eax (loadw 0 32 (bv 32 0x12345678)))
 d "movapd xmm0, xmmword [eax]" 660f2800
 d "movapd xmmword [eax], xmm0" 660f2900
 d "movhpd qword [eax], xmm0" 660f1700
@@ -313,9 +313,9 @@ d "movupd xmm0, xmmword [eax]" 660f1000
 d "movupd xmmword [eax], xmm0" 660f1100
 d "movzx eax, byte [eax]" 0fb600
 d "movzx eax, word [eax]" 0fb700
-ad "mov byte [esp + eax + 0xf], 0" c644040f00
-ad "mov byte [eax + ecx + 0xf], 0" c644080f00
-ad "mov byte [edx + ecx + 2], 4" c6440a0204
+ad "mov byte [esp + eax + 0xf], 0" c644040f00 0x0 (storew 0 (+ (+ (var esp) (* (var eax) (bv 32 0x1))) (bv 32 0xf)) (bv 8 0x0))
+ad "mov byte [eax + ecx + 0xf], 0" c644080f00 0x0 (storew 0 (+ (+ (var eax) (* (var ecx) (bv 32 0x1))) (bv 32 0xf)) (bv 8 0x0))
+ad "mov byte [edx + ecx + 2], 4" c6440a0204 0x0 (storew 0 (+ (+ (var edx) (* (var ecx) (bv 32 0x1))) (bv 32 0x2)) (bv 8 0x4))
 d "mul byte [eax]" f620
 d "mulsd xmm0, qword [eax]" f20f5900
 d "mulss xmm0, dword [eax]" f30f5900
@@ -1413,147 +1413,147 @@ aB "minps xmm0, xmmword [eax]" 0f5d00
 aB "minsd xmm0, qword [eax]" f20f5d00
 aB "minss xmm0, dword [eax]" f30f5d00
 a "monitor" 0f01c8
-a "mov [33], ebp" 892d21000000
-a "mov [33], ebx" 891d21000000
-a "mov [33], ecx" 890d21000000
-a "mov [33], edi" 893d21000000
-a "mov [33], edx" 891521000000
-a "mov [33], esi" 893521000000
-a "mov [33], esp" 892521000000
-a "mov ah, 0" b400
-a "mov al, 0" b000
-a "mov al, byte [0]" a000000000
-a "mov al, byte [eax]" 8a00
-a "mov al, [eax]" 8a00
+a "mov [33], ebp" 892d21000000 0x0 (storew 0 (bv 32 0x21) (var ebp))
+a "mov [33], ebx" 891d21000000 0x0 (storew 0 (bv 32 0x21) (var ebx))
+a "mov [33], ecx" 890d21000000 0x0 (storew 0 (bv 32 0x21) (var ecx))
+a "mov [33], edi" 893d21000000 0x0 (storew 0 (bv 32 0x21) (var edi))
+a "mov [33], edx" 891521000000 0x0 (storew 0 (bv 32 0x21) (var edx))
+a "mov [33], esi" 893521000000 0x0 (storew 0 (bv 32 0x21) (var esi))
+a "mov [33], esp" 892521000000 0x0 (storew 0 (bv 32 0x21) (var esp))
+a "mov ah, 0" b400 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+a "mov al, 0" b000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+a "mov al, byte [0]" a000000000 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (bv 32 0x0)))))
+a "mov al, byte [eax]" 8a00 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (+ (var eax) (bv 32 0x0))))))
+a "mov al, [eax]" 8a00 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (+ (var eax) (bv 32 0x0))))))
 aB "movapd xmm0, xmmword [eax]" 660f2800
 aB "movapd xmmword [eax], xmm0" 660f2900
 aB "movaps xmm0, xmmword [eax]" 0f2800
 aB "movaps xmmword [eax], xmm0" 0f2900
 aB "movbe dword [eax], eax" 0f38f100
 aB "movbe eax, dword [eax]" 0f38f000
-a "mov bh, 0" b700
-a "mov bl, 0" b300
-a "mov byte [0], al" 880500000000
-a "mov ch, 0" b500
-a "mov cl, 0" b100
-a "mov cr0, eax" 0f22c0
+a "mov bh, 0" b700 0x0 (set ebx (| (& (var ebx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+a "mov bl, 0" b300 0x0 (set ebx (| (& (var ebx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+a "mov byte [0], al" 880500000000 0x0 (storew 0 (bv 32 0x0) (cast 8 false (var eax)))
+a "mov ch, 0" b500 0x0 (set ecx (| (& (var ecx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+a "mov cl, 0" b100 0x0 (set ecx (| (& (var ecx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
+aB "mov cr0, eax" 0f22c0 0x0 (set cr0 (var eax))
 aB "movddup xmm0, qword [eax]" f20f1200
 aB "movd dword [eax], mm0" 0f7e00
 aB "movd dword [eax], xmm0" 660f7e00
-a "mov dh, 0" b600
-a "mov dl, 0" b200
+a "mov dh, 0" b600 0x0 (set edx (| (& (var edx) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false)))
+a "mov dl, 0" b200 0x0 (set edx (| (& (var edx) (~ (bv 32 0xff))) (cast 32 false (bv 8 0x0))))
 aB "movd mm0, dword [eax]" 0f6e00
 aB "movdq2q mm0, xmm0" f20fd6
 aB "movdqa xmm0, xmmword [eax]" 660f6f00
 aB "movdqa xmmword [eax], xmm0" 660f7f00
 aB "movdqu xmm0, xmmword [eax]" f30f6f00
 aB "movdqu xmmword [eax], xmm0" f30f7f00
-a "mov dr0, eax" 0f23c0
-a "mov dword [0], eax" 890500000000
+a "mov dr0, eax" 0f23c0 0x0 (set dr0 (var eax))
+a "mov dword [0], eax" 890500000000 0x0 (storew 0 (bv 32 0x0) (var eax))
 aB "mov dword cs:[eax], eax" 2e8900
 aB "mov dword ds:[eax], eax" 3e8900
-a "mov dword [eax], 0" c70000000000
-a "mov dword [eax], 0x6f77206f" c7006f20776f
-a "mov dword [eax+16], 0x6f77206f" c740106f20776f
-a "mov dword [eax], 3" c70003000000
-a "mov dword [eax+4], 1" c7400401000000
-a "mov dword [eax+4], 3" c7400403000000
-a "mov dword [eax+450], 0x6f77206f" c780c20100006f20776f
-a "mov dword [eax+4], 666" c740049a020000
-a "mov dword [eax-512], 421" c78000feffffa5010000
-a "mov dword [eax], 666" c7009a020000
-a "mov dword [eax], eax" 8900
-a "mov dword [ebp-12], 1" c745f401000000
-a "mov dword [ebp+16], 0x6f77206f" c745106f20776f
-a "mov dword [ebp-312], 3" c785c8feffff03000000
-a "mov dword [ebp+4], 1" c7450401000000
-a "mov dword [ebp+450], 0x6f77206f" c785c20100006f20776f
+a "mov dword [eax], 0" c70000000000 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 32 0x0))
+a "mov dword [eax], 0x6f77206f" c7006f20776f 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 32 0x6f77206f))
+a "mov dword [eax+16], 0x6f77206f" c740106f20776f 0x0 (storew 0 (+ (var eax) (bv 32 0x10)) (bv 32 0x6f77206f))
+a "mov dword [eax], 3" c70003000000 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 32 0x3))
+a "mov dword [eax+4], 1" c7400401000000 0x0 (storew 0 (+ (var eax) (bv 32 0x4)) (bv 32 0x1))
+a "mov dword [eax+4], 3" c7400403000000 0x0 (storew 0 (+ (var eax) (bv 32 0x4)) (bv 32 0x3))
+a "mov dword [eax+450], 0x6f77206f" c780c20100006f20776f 0x0 (storew 0 (+ (var eax) (bv 32 0x1c2)) (bv 32 0x6f77206f))
+a "mov dword [eax+4], 666" c740049a020000 0x0 (storew 0 (+ (var eax) (bv 32 0x4)) (bv 32 0x29a))
+a "mov dword [eax-512], 421" c78000feffffa5010000 0x0 (storew 0 (+ (var eax) (bv 32 0xfffffe00)) (bv 32 0x1a5))
+a "mov dword [eax], 666" c7009a020000 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 32 0x29a))
+a "mov dword [eax], eax" 8900 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var eax))
+a "mov dword [ebp-12], 1" c745f401000000 0x0 (storew 0 (+ (var ebp) (bv 32 0xfffffff4)) (bv 32 0x1))
+a "mov dword [ebp+16], 0x6f77206f" c745106f20776f 0x0 (storew 0 (+ (var ebp) (bv 32 0x10)) (bv 32 0x6f77206f))
+a "mov dword [ebp-312], 3" c785c8feffff03000000 0x0 (storew 0 (+ (var ebp) (bv 32 0xfffffec8)) (bv 32 0x3))
+a "mov dword [ebp+4], 1" c7450401000000 0x0 (storew 0 (+ (var ebp) (bv 32 0x4)) (bv 32 0x1))
+a "mov dword [ebp+450], 0x6f77206f" c785c20100006f20776f 0x0 (storew 0 (+ (var ebp) (bv 32 0x1c2)) (bv 32 0x6f77206f))
 aB "mov dword es:[eax], eax" 268900
-a "mov dword [esi+4], 33" c7460421000000
-a "mov dword [esp-312], 321" c78424c8feffff41010000
-a "mov dword [esp], 3" c7042403000000
-a "mov dword [esp+4], 1" c744240401000000
+a "mov dword [esi+4], 33" c7460421000000 0x0 (storew 0 (+ (var esi) (bv 32 0x4)) (bv 32 0x21))
+a "mov dword [esp-312], 321" c78424c8feffff41010000 0x0 (storew 0 (+ (var esp) (bv 32 0xfffffec8)) (bv 32 0x141))
+a "mov dword [esp], 3" c7042403000000 0x0 (storew 0 (+ (var esp) (bv 32 0x0)) (bv 32 0x3))
+a "mov dword [esp+4], 1" c744240401000000 0x0 (storew 0 (+ (var esp) (bv 32 0x4)) (bv 32 0x1))
 aB "mov dword fs:[eax], eax" 648900
 aB "mov dword gs:[eax], eax" 658900
 aB "mov dword ss:[eax], eax" 368900
 aB "mov eax, dword fs:[1]" 648b042501000000
 aB "movd xmm0, dword [eax]" 660f6e00
-a "mov eax, 0" b800000000
-a "mov [eax], 0" c70000000000
-a "mov eax, 0x8049000" b800900408
-a "mov eax, 1" b801000000
-a "mov [eax+2], ebx" 895802
-a "mov [eax+345], ebx" 899859010000
-a "mov eax, 300" b82c010000
-a "mov eax, 3" b803000000
-a "mov [eax+4], eax" 894004
-a "mov [eax+4], ecx" 894804
-a "mov eax, cr0" 0f20c0
-a "mov eax, dr0" 0f21c0
-a "mov eax, dword [0]" a100000000
-a "mov ecx, dword [0]" 8b0d00000000
-a "mov ecx, dword [1]" 8b0d01000000
-a "mov eax, dword [eax]" 8b00
-a "mov eax, dword [ebp]" 8b4500
-a "mov eax, dword [esp]" 8b0424
+a "mov eax, 0" b800000000 0x0 (set eax (bv 32 0x0))
+a "mov [eax], 0" c70000000000 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (bv 32 0x0))
+a "mov eax, 0x8049000" b800900408 0x0 (set eax (bv 32 0x8049000))
+a "mov eax, 1" b801000000 0x0 (set eax (bv 32 0x1))
+a "mov [eax+2], ebx" 895802 0x0 (storew 0 (+ (var eax) (bv 32 0x2)) (var ebx))
+a "mov [eax+345], ebx" 899859010000 0x0 (storew 0 (+ (var eax) (bv 32 0x159)) (var ebx))
+a "mov eax, 300" b82c010000 0x0 (set eax (bv 32 0x12c))
+a "mov eax, 3" b803000000 0x0 (set eax (bv 32 0x3))
+a "mov [eax+4], eax" 894004 0x0 (storew 0 (+ (var eax) (bv 32 0x4)) (var eax))
+a "mov [eax+4], ecx" 894804 0x0 (storew 0 (+ (var eax) (bv 32 0x4)) (var ecx))
+aB "mov eax, cr0" 0f20c0 0x0 (set eax (var cr0))
+a "mov eax, dr0" 0f21c0 0x0 (set eax (var dr0))
+a "mov eax, dword [0]" a100000000 0x0 (set eax (loadw 0 32 (bv 32 0x0)))
+a "mov ecx, dword [0]" 8b0d00000000 0x0 (set ecx (loadw 0 32 (bv 32 0x0)))
+a "mov ecx, dword [1]" 8b0d01000000 0x0 (set ecx (loadw 0 32 (bv 32 0x1)))
+a "mov eax, dword [eax]" 8b00 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0x0))))
+a "mov eax, dword [ebp]" 8b4500 0x0 (set eax (loadw 0 32 (+ (var ebp) (bv 32 0x0))))
+a "mov eax, dword [esp]" 8b0424 0x0 (set eax (loadw 0 32 (+ (var esp) (bv 32 0x0))))
 aB "mov eax, dword fs:[ebp]" 648b4500
-a "mov eax, [eax+1337]" 8b8039050000
-a "mov ecx, [eip+1337]" 8b0d39050000
-a "mov ecx, [eip+13]" 8b0d0d000000
-a "mov eax, [eax-1337]" 8b80c7faffff
-a "mov eax,[eax*4+32]" 8b048520000000
-a "mov eax,[eax*4-32]" 8b0485e0ffffff
-a "mov eax,[eax*4+332]" 8b04854c010000
-a "mov eax,[eax*4-332]" 8b0485b4feffff
-a "mov eax, [eax+4]" 8b4004
-a "mov eax, [eax-4]" 8b40fc
-a "mov [eax], eax" 8900
-a "mov byte [eax], al" 8800
-a "mov eax, eax" 89c0
-a "mov eax, [eax]" 8b00
-a "mov [eax+eax], eax" 890400
+a "mov eax, [eax+1337]" 8b8039050000 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0x539))))
+a "mov ecx, [eip+1337]" 8b0d39050000 0x0 (set ecx (loadw 0 32 (bv 32 0x539)))
+a "mov ecx, [eip+13]" 8b0d0d000000 0x0 (set ecx (loadw 0 32 (bv 32 0xd)))
+a "mov eax, [eax-1337]" 8b80c7faffff 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0xfffffac7))))
+a "mov eax,[eax*4+32]" 8b048520000000 0x0 (set eax (loadw 0 32 (+ (* (var eax) (bv 32 0x4)) (bv 32 0x20))))
+a "mov eax,[eax*4-32]" 8b0485e0ffffff 0x0 (set eax (loadw 0 32 (+ (* (var eax) (bv 32 0x4)) (bv 32 0xffffffe0))))
+a "mov eax,[eax*4+332]" 8b04854c010000 0x0 (set eax (loadw 0 32 (+ (* (var eax) (bv 32 0x4)) (bv 32 0x14c))))
+a "mov eax,[eax*4-332]" 8b0485b4feffff 0x0 (set eax (loadw 0 32 (+ (* (var eax) (bv 32 0x4)) (bv 32 0xfffffeb4))))
+a "mov eax, [eax+4]" 8b4004 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0x4))))
+a "mov eax, [eax-4]" 8b40fc 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0xfffffffc))))
+a "mov [eax], eax" 8900 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var eax))
+a "mov byte [eax], al" 8800 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (cast 8 false (var eax)))
+a "mov eax, eax" 89c0 0x0 (set eax (var eax))
+a "mov eax, [eax]" 8b00 0x0 (set eax (loadw 0 32 (+ (var eax) (bv 32 0x0))))
+a "mov [eax+eax], eax" 890400 0x0 (storew 0 (+ (+ (var eax) (* (var eax) (bv 32 0x1))) (bv 32 0x0)) (var eax))
 aB "mov eax,[eax+ebx*4+32]" 8b449820
-a "mov [eax+eax], ebx" 891c00
-a "mov [eax+eax], ecx" 890c00
-a "mov eax, [ebp]" 8b4500
-a "mov [eax], ebx" 8918
-a "mov eax, ebx" 89d8
-a "mov eax, [ebx]" 8b03
-a "mov eax,[ecx*8+64]" 8b04cd40000000
+a "mov [eax+eax], ebx" 891c00 0x0 (storew 0 (+ (+ (var eax) (* (var eax) (bv 32 0x1))) (bv 32 0x0)) (var ebx))
+a "mov [eax+eax], ecx" 890c00 0x0 (storew 0 (+ (+ (var eax) (* (var eax) (bv 32 0x1))) (bv 32 0x0)) (var ecx))
+a "mov eax, [ebp]" 8b4500 0x0 (set eax (loadw 0 32 (+ (var ebp) (bv 32 0x0))))
+a "mov [eax], ebx" 8918 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var ebx))
+a "mov eax, ebx" 89d8 0x0 (set eax (var ebx))
+a "mov eax, [ebx]" 8b03 0x0 (set eax (loadw 0 32 (+ (var ebx) (bv 32 0x0))))
+a "mov eax,[ecx*8+64]" 8b04cd40000000 0x0 (set eax (loadw 0 32 (+ (* (var ecx) (bv 32 0x8)) (bv 32 0x40))))
 aB "mov [ecx*8+64], eax" 8904CD40000000
-a "mov [eax+ecx], eax" 890408
-a "mov eax, [esi]" 8b06
-a "mov eax, [esp+4]" 8b442404
-a "mov eax, esp" 89e0
-a "mov eax, [esp]" 8b0424
-a "mov ebp, 0" bd00000000
-a "mov [ebp+4], eax" 898504000000
-a "mov [ebp+4], ebx" 899d04000000
-a "mov [ebp+4], ecx" 898d04000000
-a "mov ebx, 0" bb00000000
-a "mov [ebx+2], ebx" 895b02
-a "mov [ebx-2], ecx" 894bfe
-a "mov ebx, -3" bbfdffffff
-a "mov [ebx+454], ebx" 899bc6010000
-a "mov [ebx-552], edx" 8993d8fdffff
-a "mov [ebx], eax" 8903
-a "mov ebx, eax" 89c3
-a "mov ebx, [eax]" 8b18
-a "mov [ebx+eax], eax" 890403
-a "mov ebx, [ecx + edx]" 8b1c11
-a "mov ecx, 0" b900000000
-a "mov ecx, -432" b950feffff
-a "mov ecx, [eax]" 8b08
-a "mov edi, 0" bf00000000
-a "mov edx, 0" ba00000000
-a "mov esi, 0" be00000000
-a "mov esi, [esi + 8]" 8b7608
-a "mov esp, 0" bc00000000
-a "mov [esp-12], eax" 894424f4
-a "mov [esp+2], ebx" 895c2402
-a "mov [esp-2], ebx" 895c24fe
-a "mov [esp-233], ebx" 899c2417ffffff
-a "mov [esp+454], ebx" 899c24c6010000
+a "mov [eax+ecx], eax" 890408 0x0 (storew 0 (+ (+ (var eax) (* (var ecx) (bv 32 0x1))) (bv 32 0x0)) (var eax))
+a "mov eax, [esi]" 8b06 0x0 (set eax (loadw 0 32 (+ (var esi) (bv 32 0x0))))
+a "mov eax, [esp+4]" 8b442404 0x0 (set eax (loadw 0 32 (+ (var esp) (bv 32 0x4))))
+a "mov eax, esp" 89e0 0x0 (set eax (var esp))
+a "mov eax, [esp]" 8b0424 0x0 (set eax (loadw 0 32 (+ (var esp) (bv 32 0x0))))
+a "mov ebp, 0" bd00000000 0x0 (set ebp (bv 32 0x0))
+a "mov [ebp+4], eax" 898504000000 0x0 (storew 0 (+ (var ebp) (bv 32 0x4)) (var eax))
+a "mov [ebp+4], ebx" 899d04000000 0x0 (storew 0 (+ (var ebp) (bv 32 0x4)) (var ebx))
+a "mov [ebp+4], ecx" 898d04000000 0x0 (storew 0 (+ (var ebp) (bv 32 0x4)) (var ecx))
+a "mov ebx, 0" bb00000000 0x0 (set ebx (bv 32 0x0))
+a "mov [ebx+2], ebx" 895b02 0x0 (storew 0 (+ (var ebx) (bv 32 0x2)) (var ebx))
+a "mov [ebx-2], ecx" 894bfe 0x0 (storew 0 (+ (var ebx) (bv 32 0xfffffffe)) (var ecx))
+a "mov ebx, -3" bbfdffffff 0x0 (set ebx (bv 32 0xfffffffd))
+a "mov [ebx+454], ebx" 899bc6010000 0x0 (storew 0 (+ (var ebx) (bv 32 0x1c6)) (var ebx))
+a "mov [ebx-552], edx" 8993d8fdffff 0x0 (storew 0 (+ (var ebx) (bv 32 0xfffffdd8)) (var edx))
+a "mov [ebx], eax" 8903 0x0 (storew 0 (+ (var ebx) (bv 32 0x0)) (var eax))
+a "mov ebx, eax" 89c3 0x0 (set ebx (var eax))
+a "mov ebx, [eax]" 8b18 0x0 (set ebx (loadw 0 32 (+ (var eax) (bv 32 0x0))))
+a "mov [ebx+eax], eax" 890403 0x0 (storew 0 (+ (+ (var ebx) (* (var eax) (bv 32 0x1))) (bv 32 0x0)) (var eax))
+a "mov ebx, [ecx + edx]" 8b1c11 0x0 (set ebx (loadw 0 32 (+ (+ (var ecx) (* (var edx) (bv 32 0x1))) (bv 32 0x0))))
+a "mov ecx, 0" b900000000 0x0 (set ecx (bv 32 0x0))
+a "mov ecx, -432" b950feffff 0x0 (set ecx (bv 32 0xfffffe50))
+a "mov ecx, [eax]" 8b08 0x0 (set ecx (loadw 0 32 (+ (var eax) (bv 32 0x0))))
+a "mov edi, 0" bf00000000 0x0 (set edi (bv 32 0x0))
+a "mov edx, 0" ba00000000 0x0 (set edx (bv 32 0x0))
+a "mov esi, 0" be00000000 0x0 (set esi (bv 32 0x0))
+a "mov esi, [esi + 8]" 8b7608 0x0 (set esi (loadw 0 32 (+ (var esi) (bv 32 0x8))))
+a "mov esp, 0" bc00000000 0x0 (set esp (bv 32 0x0))
+a "mov [esp-12], eax" 894424f4 0x0 (storew 0 (+ (var esp) (bv 32 0xfffffff4)) (var eax))
+a "mov [esp+2], ebx" 895c2402 0x0 (storew 0 (+ (var esp) (bv 32 0x2)) (var ebx))
+a "mov [esp-2], ebx" 895c24fe 0x0 (storew 0 (+ (var esp) (bv 32 0xfffffffe)) (var ebx))
+a "mov [esp-233], ebx" 899c2417ffffff 0x0 (storew 0 (+ (var esp) (bv 32 0xffffff17)) (var ebx))
+a "mov [esp+454], ebx" 899c24c6010000 0x0 (storew 0 (+ (var esp) (bv 32 0x1c6)) (var ebx))
 aB "mov es, word [eax]" 8e00
 aB "movhlps xmm0, xmm0" 0f12
 aB "movhpd qword [eax], xmm0" 660f1700
@@ -1593,7 +1593,7 @@ aB "movupd xmm0, xmmword [eax]" 660f1000
 aB "movupd xmmword [eax], xmm0" 660f1100
 aB "movups xmm0, xmmword [eax]" 0f10
 aB "movups xmmword [eax], xmm0" 0f11
-a "mov word [eax], es" 8c00
+aB "mov word [eax], es" 8c00 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (var es))
 a "movzx eax, byte [eax]" 0fb600
 a "movzx ecx, byte [esp]" 0fb60c24
 a "movzx eax, word [eax]" 0fb700
@@ -2197,71 +2197,71 @@ aB "xsave [eax]" 0fae20
 a "xsetbv" 0f01d1
 a "nop" 90
 a "int 0x80" cd80 0x0 (goto int)
-a "mov eax, 33" b821000000
-a "mov rax, 33" 48c7c021000000
-a "mov [ebp+4],0" c7450400000000
+a "mov eax, 33" b821000000 0x0 (set eax (bv 32 0x21))
+aB "mov rax, 33" 48c7c021000000 0x0 (set eax (bv 32 0x21))
+a "mov [ebp+4],0" c7450400000000 0x0 (storew 0 (+ (var ebp) (bv 32 0x4)) (bv 32 0x0))
 a "jmp 0x1b" eb05 0x14 (jmp (+ (bv 32 0x14) (bv 32 0x1b)))
 ad "sete al" 0f94c0
-a "mov byte ptr [bp+di],0x0" 67c60300
-a "mov byte ptr [bp+di-0x1],0x20" 67c643ff20
-a "mov byte ptr [bp+di],0x25" 67c60325
-a "mov byte ptr [bp+di],0x30" 67c60330
-a "mov byte ptr [bp+si-0x1],0x30" 67c642ff30
-a "mov byte ptr [bx],0x0" 67c60700
-a "mov byte ptr [bx+si+0x3e06],0x0" 67c680063e00
-a "mov byte ptr [esi],0x7f" c6067f
-a "mov byte ptr [esi],0x86" c60686
-a "mov byte ptr [esp+0x25],0xc0" c6442425c0
-a "mov byte ptr [si],0x11" 67c60411
-a "mov byte ptr [si],0x13" 67c60413
-a "mov byte ptr [si+0x24],0x14" 67c6442414
-a "mov byte ptr [si+0x24],0x18" 67c6442418
-a "mov byte ptr [si+0x24],0x1a" 67c644241a
-a "mov byte ptr [si+0x24],0x25" 67c6442425
-a "mov byte ptr [si+0x24],0x2e" 67c644242e
-a "mov byte ptr [si+0x24],0x44" 67c6442444
-a "mov byte ptr [si],0x24" 67c60424
-a "mov dword ptr [bx+si+0x6],0x8b640000" 67c740060000648b
-a "mov dword ptr [eax+eax*1],0xa740000" c704000000740a
-a "mov dword ptr [ebp-0x44],0x31660305" c745bc05036631
-a "mov dword ptr [ebp-0x4c],0x47534943" c745b443495347
-a "mov dword ptr [edx],0x74000000" c70200000074
-a "mov dword ptr [esi],0x15078" c70678500100
-a "mov dword ptr [esi],0x404020" c70620404000
-a "mov dword ptr [esi],0xb0003e04" c706043e00b0
-a "mov dword ptr [esi],0xb8003e04" c706043e00b8
-a "mov dword ptr [esp+0x1c],0x534d4150" c744241c50414d53
-a "mov dword ptr [esp+0x1c],0xc6670001" c744241c010067c6
-a "mov dword ptr [esp],0x1" c7042401000000
-a "mov dword ptr [esp+0x20],0x66670014" c744242014006766
-a "mov dword ptr [esp+0x24],0x66670f00" c7442424000f6766
-a "mov dword ptr [esp+0x24],0x66671a00" c7442424001a6766
-a "mov dword ptr [esp+0x4],0x0" c744240400000000
-a "mov dword ptr [esp+0xc],0x1" c744240c01000000
-a "mov dword ptr [esp+0xc],0x3" c744240c03000000
-a "mov dword ptr [si+0x24],0x6606071c" 67c744241c070666
-a "mov dword ptr [si+0x24],0x660b0c1c" 67c744241c0c0b66
-a "mov dword ptr [si+0x24],0x66111120" 67c7442420111166
-a "mov dword ptr [si+0x24],0x66111220" 67c7442420121166
-a "mov dword ptr [si+0x24],0x66240120" 67c7442420012466
-a "mov dword ptr [si+0x24],0x6700002a" 67c744242a000067
-a "mov dword ptr [si+0x24],0x67000714" 67c7442414070067
-a "mov dword ptr [si+0x24],0x674f0134" 67c7442434014f67
-a "mov dword ptr [si+0x24],0x67e80124" 67c744242401e867
-a "mov dword ptr [si+0x24],0x67e82024" 67c744242420e867
-a "mov word ptr [bp+di+0x10],0x0" 6766c743100000
-a "mov word ptr [bx+si],0x5" 6766c7000500
-a "mov word ptr [esi],0x3d04" 66c706043d
-a "mov word ptr [esi],0x4020" 66c7062040
-a "mov word ptr [esi],0x5078" 66c7067850
-a "mov word ptr [esi],0x5084" 66c7068450
-a "mov word ptr [esp+0x10],0x0" 66c74424100000
-a "mov word ptr [esp+0x14],0x0" 66c74424140000
-a "mov word ptr [si+0x24],0x4" 6766c744240400
-a "mov word ptr [si+0x24],0x8" 6766c744240800
-a "mov word ptr [si+0x24],0xff04" 6766c7442404ff
-a "mov word ptr [si],0x24" 6766c7042400
-a "mov eax, [eax * 2 + 8]" 8b044508000000
+a "mov byte ptr [bp+di],0x0" 67c60300 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebp))) (* (cast 32 false (cast 16 false (var edi))) (bv 32 0x1))) (bv 32 0x0)) (bv 8 0x0))
+a "mov byte ptr [bp+di-0x1],0x20" 67c643ff20 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebp))) (* (cast 32 false (cast 16 false (var edi))) (bv 32 0x1))) (bv 32 0xffffffff)) (bv 8 0x20))
+a "mov byte ptr [bp+di],0x25" 67c60325 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebp))) (* (cast 32 false (cast 16 false (var edi))) (bv 32 0x1))) (bv 32 0x0)) (bv 8 0x25))
+a "mov byte ptr [bp+di],0x30" 67c60330 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebp))) (* (cast 32 false (cast 16 false (var edi))) (bv 32 0x1))) (bv 32 0x0)) (bv 8 0x30))
+a "mov byte ptr [bp+si-0x1],0x30" 67c642ff30 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebp))) (* (cast 32 false (cast 16 false (var esi))) (bv 32 0x1))) (bv 32 0xffffffff)) (bv 8 0x30))
+a "mov byte ptr [bx],0x0" 67c60700 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var ebx))) (bv 32 0x0)) (bv 8 0x0))
+a "mov byte ptr [bx+si+0x3e06],0x0" 67c680063e00 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebx))) (* (cast 32 false (cast 16 false (var esi))) (bv 32 0x1))) (bv 32 0x3e06)) (bv 8 0x0))
+a "mov byte ptr [esi],0x7f" c6067f 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 8 0x7f))
+a "mov byte ptr [esi],0x86" c60686 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 8 0x86))
+a "mov byte ptr [esp+0x25],0xc0" c6442425c0 0x0 (storew 0 (+ (var esp) (bv 32 0x25)) (bv 8 0xc0))
+a "mov byte ptr [si],0x11" 67c60411 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x0)) (bv 8 0x11))
+a "mov byte ptr [si],0x13" 67c60413 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x0)) (bv 8 0x13))
+a "mov byte ptr [si+0x24],0x14" 67c6442414 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 8 0x14))
+a "mov byte ptr [si+0x24],0x18" 67c6442418 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 8 0x18))
+a "mov byte ptr [si+0x24],0x1a" 67c644241a 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 8 0x1a))
+a "mov byte ptr [si+0x24],0x25" 67c6442425 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 8 0x25))
+a "mov byte ptr [si+0x24],0x2e" 67c644242e 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 8 0x2e))
+a "mov byte ptr [si+0x24],0x44" 67c6442444 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 8 0x44))
+a "mov byte ptr [si],0x24" 67c60424 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x0)) (bv 8 0x24))
+a "mov dword ptr [bx+si+0x6],0x8b640000" 67c740060000648b 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebx))) (* (cast 32 false (cast 16 false (var esi))) (bv 32 0x1))) (bv 32 0x6)) (bv 32 0x8b640000))
+a "mov dword ptr [eax+eax*1],0xa740000" c704000000740a 0x0 (storew 0 (+ (+ (var eax) (* (var eax) (bv 32 0x1))) (bv 32 0x0)) (bv 32 0xa740000))
+a "mov dword ptr [ebp-0x44],0x31660305" c745bc05036631 0x0 (storew 0 (+ (var ebp) (bv 32 0xffffffbc)) (bv 32 0x31660305))
+a "mov dword ptr [ebp-0x4c],0x47534943" c745b443495347 0x0 (storew 0 (+ (var ebp) (bv 32 0xffffffb4)) (bv 32 0x47534943))
+a "mov dword ptr [edx],0x74000000" c70200000074 0x0 (storew 0 (+ (var edx) (bv 32 0x0)) (bv 32 0x74000000))
+a "mov dword ptr [esi],0x15078" c70678500100 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 32 0x15078))
+a "mov dword ptr [esi],0x404020" c70620404000 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 32 0x404020))
+a "mov dword ptr [esi],0xb0003e04" c706043e00b0 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 32 0xb0003e04))
+a "mov dword ptr [esi],0xb8003e04" c706043e00b8 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 32 0xb8003e04))
+a "mov dword ptr [esp+0x1c],0x534d4150" c744241c50414d53 0x0 (storew 0 (+ (var esp) (bv 32 0x1c)) (bv 32 0x534d4150))
+a "mov dword ptr [esp+0x1c],0xc6670001" c744241c010067c6 0x0 (storew 0 (+ (var esp) (bv 32 0x1c)) (bv 32 0xc6670001))
+a "mov dword ptr [esp],0x1" c7042401000000 0x0 (storew 0 (+ (var esp) (bv 32 0x0)) (bv 32 0x1))
+a "mov dword ptr [esp+0x20],0x66670014" c744242014006766 0x0 (storew 0 (+ (var esp) (bv 32 0x20)) (bv 32 0x66670014))
+a "mov dword ptr [esp+0x24],0x66670f00" c7442424000f6766 0x0 (storew 0 (+ (var esp) (bv 32 0x24)) (bv 32 0x66670f00))
+a "mov dword ptr [esp+0x24],0x66671a00" c7442424001a6766 0x0 (storew 0 (+ (var esp) (bv 32 0x24)) (bv 32 0x66671a00))
+a "mov dword ptr [esp+0x4],0x0" c744240400000000 0x0 (storew 0 (+ (var esp) (bv 32 0x4)) (bv 32 0x0))
+a "mov dword ptr [esp+0xc],0x1" c744240c01000000 0x0 (storew 0 (+ (var esp) (bv 32 0xc)) (bv 32 0x1))
+a "mov dword ptr [esp+0xc],0x3" c744240c03000000 0x0 (storew 0 (+ (var esp) (bv 32 0xc)) (bv 32 0x3))
+a "mov dword ptr [si+0x24],0x6606071c" 67c744241c070666 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x6606071c))
+a "mov dword ptr [si+0x24],0x660b0c1c" 67c744241c0c0b66 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x660b0c1c))
+a "mov dword ptr [si+0x24],0x66111120" 67c7442420111166 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x66111120))
+a "mov dword ptr [si+0x24],0x66111220" 67c7442420121166 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x66111220))
+a "mov dword ptr [si+0x24],0x66240120" 67c7442420012466 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x66240120))
+a "mov dword ptr [si+0x24],0x6700002a" 67c744242a000067 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x6700002a))
+a "mov dword ptr [si+0x24],0x67000714" 67c7442414070067 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x67000714))
+a "mov dword ptr [si+0x24],0x674f0134" 67c7442434014f67 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x674f0134))
+a "mov dword ptr [si+0x24],0x67e80124" 67c744242401e867 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x67e80124))
+a "mov dword ptr [si+0x24],0x67e82024" 67c744242420e867 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 32 0x67e82024))
+a "mov word ptr [bp+di+0x10],0x0" 6766c743100000 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebp))) (* (cast 32 false (cast 16 false (var edi))) (bv 32 0x1))) (bv 32 0x10)) (bv 16 0x0))
+a "mov word ptr [bx+si],0x5" 6766c7000500 0x0 (storew 0 (+ (+ (cast 32 false (cast 16 false (var ebx))) (* (cast 32 false (cast 16 false (var esi))) (bv 32 0x1))) (bv 32 0x0)) (bv 16 0x5))
+a "mov word ptr [esi],0x3d04" 66c706043d 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 16 0x3d04))
+a "mov word ptr [esi],0x4020" 66c7062040 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 16 0x4020))
+a "mov word ptr [esi],0x5078" 66c7067850 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 16 0x5078))
+a "mov word ptr [esi],0x5084" 66c7068450 0x0 (storew 0 (+ (var esi) (bv 32 0x0)) (bv 16 0x5084))
+a "mov word ptr [esp+0x10],0x0" 66c74424100000 0x0 (storew 0 (+ (var esp) (bv 32 0x10)) (bv 16 0x0))
+a "mov word ptr [esp+0x14],0x0" 66c74424140000 0x0 (storew 0 (+ (var esp) (bv 32 0x14)) (bv 16 0x0))
+a "mov word ptr [si+0x24],0x4" 6766c744240400 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 16 0x4))
+a "mov word ptr [si+0x24],0x8" 6766c744240800 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 16 0x8))
+a "mov word ptr [si+0x24],0xff04" 6766c7442404ff 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x24)) (bv 16 0xff04))
+a "mov word ptr [si],0x24" 6766c7042400 0x0 (storew 0 (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x0)) (bv 16 0x24))
+a "mov eax, [eax * 2 + 8]" 8b044508000000 0x0 (set eax (loadw 0 32 (+ (* (var eax) (bv 32 0x2)) (bv 32 0x8))))
 a "inc al" fec0 0x0 (seq (set _op (cast 8 false (var eax))) (set _result (+ (var _op) (bv 8 0x1))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var _result)))) (set _result (var _result)) (set _x (var _op)) (set _y (bv 8 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 a "inc ax" 6640 0x0 (seq (set _op (cast 16 false (var eax))) (set _result (+ (var _op) (bv 16 0x1))) (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (var _result)))) (set _result (var _result)) (set _x (var _op)) (set _y (bv 16 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 a "inc BYTE PTR [ebx+0x18]" fe4318 0x0 (seq (set _op (loadw 0 8 (+ (var ebx) (bv 32 0x18)))) (set _result (+ (var _op) (bv 8 0x1))) (storew 0 (+ (var ebx) (bv 32 0x18)) (var _result)) (set _result (var _result)) (set _x (var _op)) (set _y (bv 8 0x1)) (set of (|| (&& (&& (! (msb (var _result))) (msb (var _x))) (msb (var _y))) (&& (&& (msb (var _result)) (! (msb (var _x)))) (! (msb (var _y)))))) (set af (|| (|| (&& (msb (cast 4 false (var _x))) (msb (cast 4 false (var _y)))) (&& (! (msb (cast 4 false (var _result)))) (msb (cast 4 false (var _y))))) (&& (msb (cast 4 false (var _x))) (! (msb (cast 4 false (var _result))))))) (set _result (var _result)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
