@@ -1,4 +1,4 @@
-d "lea edx, [0x2c4b]" 8d154b2c0000
+d "lea edx, [0x2c4b]" 8d154b2c0000 0x0 (set edx (bv 32 0x2c4b))
 d "aaa" 37 0x0 (seq (branch (|| (! (ule (& (cast 8 false (var eax)) (bv 8 0xf)) (bv 8 0x9))) (var af)) (seq (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (+ (cast 16 false (var eax)) (bv 16 0x106))))) (set af true) (set cf true)) (seq (set af false) (set cf false))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (& (cast 8 false (var eax)) (bv 8 0xf))))))
 d "aad" d50a 0x0 (seq (set temp_al (cast 8 false (var eax))) (set temp_ah (cast 8 false (>> (var eax) (bv 8 0x8) false))) (set adjusted (& (+ (var temp_al) (* (var temp_ah) (bv 8 0xa))) (bv 8 0xff))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var adjusted)))) (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false))) (set _result (var adjusted)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "aad 0x69" d569 0x0 (seq (set temp_al (cast 8 false (var eax))) (set temp_ah (cast 8 false (>> (var eax) (bv 8 0x8) false))) (set adjusted (& (+ (var temp_al) (* (var temp_ah) (bv 8 0x69))) (bv 8 0xff))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var adjusted)))) (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (bv 8 0x0)) (bv 8 0x8) false))) (set _result (var adjusted)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
@@ -217,9 +217,9 @@ d "lcall [eax]" ff18
 d "lddqu xmm0, xmmword [eax]" f20ff000
 d "ldmxcsr dword [eax]" 0fae10
 dB "lds eax, [eax]" c500 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))
-d "lea eax, [eax]" 8d00
+d "lea eax, [eax]" 8d00 0x0 (set eax (+ (var eax) (bv 32 0x0)))
 d "leave" C9
-d "les eax, [eax]" c400
+dB "les eax, [eax]" c400 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
 d "lfence" 0faee8
 d "lgdt [eax]" 0f0110
 d "lidt [eax]" 0f0118
@@ -228,7 +228,7 @@ d "lldt word [eax]" 0f0010
 d "lmsw ax" 0f01f0
 d "lmsw word [eax]" 0f0130
 d "lock and word fs:[bx + si], si" 646766f02130
-d "lodsb al, byte [esi]" ac
+dB "lodsb al, byte [esi]" ac 0x0 (seq (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (+ (+ (var esi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))))) (branch (var df) (set esi (- (var esi) (bv 32 0x1))) (set esi (+ (var esi) (bv 32 0x1)))))
 d "lodsd eax, dword [esi]" ad
 d "loop 3" 66e200
 d "lsl eax, dword [eax]" 0f0300
@@ -1361,25 +1361,25 @@ aB "lcall [eax]" ff18
 aB "lddqu xmm0, xmmword [eax]" f20ff000
 aB "ldmxcsr [eax]" 0fae10
 aB "lds eax, [eax]" c500
-a "lea eax, [4]" 8d0504000000
-a "lea eax, [eax+4]" 8d4004
-a "lea eax, [eax]" 8d00
-a "lea eax, [ebp+24]" 8d4518
-a "lea eax, [ebx+24]" 8d4318
-a "lea eax, [ebx+4]" 8d4304
-a "lea eax, [ecx]" 8d01
-a "lea eax, [esp]" 8d0424
-a "lea ebx, [4]" 8d1d04000000
-a "lea ebx, [eax+24]" 8d5818
-a "lea ebx, [eax+4]" 8d5804
-a "lea ebx, [ebp+324]" 8d9d44010000
-a "lea ebx, [ebp]" 8d5d00
-a "lea edx, [0x4422221d]" 8d151d222244
-a "lea edx, 0x2c4b" 8d154b2c0000
+a "lea eax, [4]" 8d0504000000 0x0 (set eax (bv 32 0x4))
+a "lea eax, [eax+4]" 8d4004 0x0 (set eax (+ (var eax) (bv 32 0x4)))
+a "lea eax, [eax]" 8d00 0x0 (set eax (+ (var eax) (bv 32 0x0)))
+a "lea eax, [ebp+24]" 8d4518 0x0 (set eax (+ (var ebp) (bv 32 0x18)))
+a "lea eax, [ebx+24]" 8d4318 0x0 (set eax (+ (var ebx) (bv 32 0x18)))
+a "lea eax, [ebx+4]" 8d4304 0x0 (set eax (+ (var ebx) (bv 32 0x4)))
+a "lea eax, [ecx]" 8d01 0x0 (set eax (+ (var ecx) (bv 32 0x0)))
+a "lea eax, [esp]" 8d0424 0x0 (set eax (+ (var esp) (bv 32 0x0)))
+a "lea ebx, [4]" 8d1d04000000 0x0 (set ebx (bv 32 0x4))
+a "lea ebx, [eax+24]" 8d5818 0x0 (set ebx (+ (var eax) (bv 32 0x18)))
+a "lea ebx, [eax+4]" 8d5804 0x0 (set ebx (+ (var eax) (bv 32 0x4)))
+a "lea ebx, [ebp+324]" 8d9d44010000 0x0 (set ebx (+ (var ebp) (bv 32 0x144)))
+a "lea ebx, [ebp]" 8d5d00 0x0 (set ebx (+ (var ebp) (bv 32 0x0)))
+a "lea edx, [0x4422221d]" 8d151d222244 0x0 (set edx (bv 32 0x4422221d))
+a "lea edx, 0x2c4b" 8d154b2c0000 0x0 (set edx (bv 32 0x2c4b))
 a "leave" c9
-a "les eax, [eax]" c400
-a "les eax, [eax+12]" c4400c
-a "les eax, [eax-233]" c48017ffffff
+aB "les eax, [eax]" c400 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
+aB "les eax, [eax+12]" c4400c 0x0 (set eax (+ (+ (var eax) (bv 32 0xc)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
+aB "les eax, [eax-233]" c48017ffffff 0x0 (set eax (+ (+ (var eax) (bv 32 0xffffff17)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
 a "lfence" 0faee8
 aB "lfs eax, dword [eax]" 0fb400
 a "lgdt [eax]" 0f0110
