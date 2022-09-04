@@ -772,13 +772,18 @@ static bool read_le_header_aux(rz_bin_le_obj_t *bin, RzBuffer *buf) {
 		rz_buf_read_le32_offset(buf, &offset, &bin->header->stacksize);
 }
 
-static bool le_init_header(rz_bin_le_obj_t *bin, RzBuffer *buf) {
+static rz_bin_le_obj_t *le_init_header(RzBuffer *buf) {
+	rz_bin_le_obj_t *bin = RZ_NEW0(rz_bin_le_obj_t);
+	if (!bin) {
+		return NULL;
+	}
 	ut8 magic[2];
 	rz_buf_read_at(buf, 0, magic, sizeof(magic));
 	if (!memcmp(&magic, "MZ", 2)) {
 		ut16 tmp;
 		if (!rz_buf_read_le16_at(buf, 0x3c, &tmp)) {
-			return false;
+			rz_bin_le_free(bin);
+			return NULL;
 		}
 		bin->headerOff = tmp;
 	} else {
@@ -786,10 +791,18 @@ static bool le_init_header(rz_bin_le_obj_t *bin, RzBuffer *buf) {
 	}
 	bin->header = RZ_NEW0(LE_image_header);
 	if (!bin->header) {
-		RZ_LOG_ERROR("Failed to allocate memory");
-		return false;
+		RZ_LOG_ERROR("le: Failed to allocate memory\n");
+		rz_bin_le_free(bin);
+		return NULL;
 	}
-	return read_le_header_aux(bin, buf);
+
+	if (!read_le_header_aux(bin, buf)) {
+		RZ_LOG_ERROR("le: Failed to read LE header\n");
+		rz_bin_le_free(bin);
+		return NULL;
+	}
+
+	return bin;
 }
 
 void rz_bin_le_free(rz_bin_le_obj_t *bin) {
@@ -801,16 +814,22 @@ void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 }
 
 rz_bin_le_obj_t *rz_bin_le_new_buf(RzBuffer *buf) {
-	rz_bin_le_obj_t *bin = RZ_NEW0(rz_bin_le_obj_t);
+	rz_bin_le_obj_t *bin = le_init_header(buf);
 	if (!bin) {
 		return NULL;
 	}
 
-	le_init_header(bin, buf);
 	LE_image_header *h = bin->header;
 	if (!memcmp("LE", h->magic, 2)) {
 		bin->is_le = true;
 	}
+
+	if (UT32_MUL_OVFCHK(h->objcnt, sizeof(LE_object_entry))) {
+		RZ_LOG_ERROR("le: overflow on objcnt\n");
+		rz_bin_le_free(bin);
+		return NULL;
+	}
+
 	bin->type = le_get_module_type(bin);
 	bin->cpu = le_get_cpu_type(bin);
 	bin->os = le_get_os_type(bin);
