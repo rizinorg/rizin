@@ -825,12 +825,15 @@ rz_bin_le_obj_t *rz_bin_le_new_buf(RzBuffer *buf) {
 	offset = (ut64)bin->headerOff + h->objtab;
 	for (ut32 i = 0; i < h->objcnt; i++) {
 		LE_object_entry *le_obj_entry = bin->objtbl + i;
-		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->virtual_size);
-		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->reloc_base_addr);
-		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->flags);
-		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->page_tbl_idx);
-		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->page_tbl_entries);
-		rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->reserved);
+		if (!rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->virtual_size) ||
+			!rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->reloc_base_addr) ||
+			!rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->flags) ||
+			!rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->page_tbl_idx) ||
+			!rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->page_tbl_entries) ||
+			!rz_buf_read_le32_offset(buf, &offset, &le_obj_entry->reserved)) {
+			rz_bin_le_free(bin);
+			return NULL;
+		}
 	}
 	bin->buf = buf;
 	return bin;
