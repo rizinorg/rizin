@@ -316,20 +316,20 @@ d "movzx eax, word [eax]" 0fb700
 ad "mov byte [esp + eax + 0xf], 0" c644040f00 0x0 (storew 0 (+ (+ (var esp) (* (var eax) (bv 32 0x1))) (bv 32 0xf)) (bv 8 0x0))
 ad "mov byte [eax + ecx + 0xf], 0" c644080f00 0x0 (storew 0 (+ (+ (var eax) (* (var ecx) (bv 32 0x1))) (bv 32 0xf)) (bv 8 0x0))
 ad "mov byte [edx + ecx + 2], 4" c6440a0204 0x0 (storew 0 (+ (+ (var edx) (* (var ecx) (bv 32 0x1))) (bv 32 0x2)) (bv 8 0x4))
-d "mul byte [eax]" f620
+d "mul byte [eax]" f620 0x0 (seq (set _mul (* (cast 16 false (cast 8 false (var eax))) (cast 16 false (loadw 0 8 (+ (var eax) (bv 32 0x0)))))) (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (var _mul)))) (branch (is_zero (>> (var _mul) (bv 8 0x8) false)) (seq (set of false) (set cf false)) (seq (set of true) (set cf true))))
 d "mulsd xmm0, qword [eax]" f20f5900
 d "mulss xmm0, dword [eax]" f30f5900
 d "mwait" 0f01c9
-d "neg byte [eax]" f618
-d "neg eax" f7d8
-a "neg eax" f7d8
-d "nop" 90
-d "not byte [eax]" f610
-d "not al" f6d0
-d "or al, 0" 0c00
-d "or byte [eax], al" 0800
-d "or dword [eax], eax" 0900
-d "or eax, dword [eax]" 0b00
+d "neg byte [eax]" f618 0x0 (seq (set _op (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (branch (is_zero (var _op)) (set cf false) (set cf true)) (storew 0 (+ (var eax) (bv 32 0x0)) (~- (var _op))))
+d "neg eax" f7d8 0x0 (seq (set _op (var eax)) (branch (is_zero (var _op)) (set cf false) (set cf true)) (set eax (~- (var _op))))
+a "neg eax" f7d8 0x0 (seq (set _op (var eax)) (branch (is_zero (var _op)) (set cf false) (set cf true)) (set eax (~- (var _op))))
+ad "nop" 90 0x0 nop
+d "not byte [eax]" f610 0x0 (storew 0 (+ (var eax) (bv 32 0x0)) (~ (loadw 0 8 (+ (var eax) (bv 32 0x0)))))
+d "not al" f6d0 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (~ (cast 8 false (var eax))))))
+d "or al, 0" 0c00 0x0 (seq (set _or (| (cast 8 false (var eax)) (bv 8 0x0))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var _or)))) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "or byte [eax], al" 0800 0x0 (seq (set _or (| (loadw 0 8 (+ (var eax) (bv 32 0x0))) (cast 8 false (var eax)))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "or dword [eax], eax" 0900 0x0 (seq (set _or (| (loadw 0 32 (+ (var eax) (bv 32 0x0))) (var eax))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+d "or eax, dword [eax]" 0b00 0x0 (seq (set _or (| (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "out 0, al" E600
 d "out 0, eax" E700
 d "out 0x84, eax" e784
@@ -1599,7 +1599,7 @@ a "movzx ecx, byte [esp]" 0fb60c24
 a "movzx eax, word [eax]" 0fb700
 a "movzx edx, word [esp]" 0fb71424
 aB "mpsadbw xmm0, xmm0, 0" 660f3a42c000
-a "mul byte [eax]" f620
+a "mul byte [eax]" f620 0x0 (seq (set _mul (* (cast 16 false (cast 8 false (var eax))) (cast 16 false (loadw 0 8 (+ (var eax) (bv 32 0x0)))))) (set eax (| (& (var eax) (~ (bv 32 0xffff))) (cast 32 false (var _mul)))) (branch (is_zero (>> (var _mul) (bv 8 0x8) false)) (seq (set of false) (set cf false)) (seq (set of true) (set cf true))))
 aB "mulpd xmm0, xmmword [eax]" 660f5900
 aB "mulpd xmm7, xmm7" 660f59ff
 aB "mulps xmm0, xmmword [eax]" 0f5900
@@ -1611,13 +1611,12 @@ aB "mulss xmm0, dword [eax]" f30f5900
 aB "mulss xmm7, xmm7" 66f2f0f59ff0
 a "mwait" 0f01c9
 aB "neg byte [eax]" f618
-a "nop" 90
 aB "not byte [eax]" f610
 aB "not al" f6d0
-a "or al, 0" 0c00
-a "or byte [eax], al" 0800
-a "or dword [eax], eax" 0900
-a "or eax, dword [eax]" 0b00
+a "or al, 0" 0c00 0x0 (seq (set _or (| (cast 8 false (var eax)) (bv 8 0x0))) (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (var _or)))) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+a "or byte [eax], al" 0800 0x0 (seq (set _or (| (loadw 0 8 (+ (var eax) (bv 32 0x0))) (cast 8 false (var eax)))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+a "or dword [eax], eax" 0900 0x0 (seq (set _or (| (loadw 0 32 (+ (var eax) (bv 32 0x0))) (var eax))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
+a "or eax, dword [eax]" 0b00 0x0 (seq (set _or (| (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 aB "orpd xmm0, xmmword [eax]" 660f5600
 aB "orps xmm0, xmmword [eax]" 0f5600
 a "out 0, al" e600
@@ -2195,7 +2194,6 @@ aB "xorps xmm0, xmmword [eax]" 0f5700
 aB "xrstor [eax]" 0fae28
 aB "xsave [eax]" 0fae20
 a "xsetbv" 0f01d1
-a "nop" 90
 a "int 0x80" cd80 0x0 (goto int)
 a "mov eax, 33" b821000000 0x0 (set eax (bv 32 0x21))
 aB "mov rax, 33" 48c7c021000000 0x0 (set eax (bv 32 0x21))
