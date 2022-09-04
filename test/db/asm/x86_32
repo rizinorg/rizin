@@ -330,11 +330,11 @@ d "or al, 0" 0c00 0x0 (seq (set _or (| (cast 8 false (var eax)) (bv 8 0x0))) (se
 d "or byte [eax], al" 0800 0x0 (seq (set _or (| (loadw 0 8 (+ (var eax) (bv 32 0x0))) (cast 8 false (var eax)))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "or dword [eax], eax" 0900 0x0 (seq (set _or (| (loadw 0 32 (+ (var eax) (bv 32 0x0))) (var eax))) (storew 0 (+ (var eax) (bv 32 0x0)) (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 d "or eax, dword [eax]" 0b00 0x0 (seq (set _or (| (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
-d "out 0, al" E600
-d "out 0, eax" E700
-d "out 0x84, eax" e784
-ad "out dx, al" ee
-ad "out dx, eax" ef
+d "out 0, al" e600 0x0 empty
+d "out 0, eax" e700 0x0 empty
+d "out 0x84, eax" e784 0x0 empty
+ad "out dx, al" ee 0x0 empty
+ad "out dx, eax" ef 0x0 empty
 d "outsb dx, byte [esi]" 6e
 d "outsd dx, dword [esi]" 6f
 d "paddq xmm0, xmmword [eax]" 660fd400
@@ -1619,9 +1619,9 @@ a "or dword [eax], eax" 0900 0x0 (seq (set _or (| (loadw 0 32 (+ (var eax) (bv 3
 a "or eax, dword [eax]" 0b00 0x0 (seq (set _or (| (var eax) (loadw 0 32 (+ (var eax) (bv 32 0x0))))) (set eax (var _or)) (set of false) (set cf false) (set _result (var _or)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (smod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 aB "orpd xmm0, xmmword [eax]" 660f5600
 aB "orps xmm0, xmmword [eax]" 0f5600
-a "out 0, al" e600
-a "out 0, eax" e700
-a "out 0x84, eax" e784
+a "out 0, al" e600 0x0 empty
+a "out 0, eax" e700 0x0 empty
+a "out 0x84, eax" e784 0x0 empty
 a "outsb dx, byte [esi]" 6e
 a "outsd dx, dword [esi]" 6f
 aB "pabsb xmm0, xmm0" 660f381cc0
