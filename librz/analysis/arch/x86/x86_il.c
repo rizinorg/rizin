@@ -307,18 +307,18 @@ static const char *x86_eflags_registers[] = {
 
 #define COMMON_REGS \
 	"cs", /* X86_REG_CS */ \
-	"ss", /* X86_REG_SS */ \
-	"ds", /* X86_REG_DS */ \
-	"es", /* X86_REG_ES */ \
-	"cf", /* X86_EFLAGS_CF */ \
-	"pf", /* X86_EFLAGS_PF */ \
-	"af", /* X86_EFLAGS_AF */ \
-	"zf", /* X86_EFLAGS_ZF */ \
-	"sf", /* X86_EFLAGS_SF */ \
-	"tf", /* X86_EFLAGS_TF */ \
-	"if", /* X86_EFLAGS_IF */ \
-	"df", /* X86_EFLAGS_DF */ \
-	"of" /* X86_EFLAGS_OF */
+		"ss", /* X86_REG_SS */ \
+		"ds", /* X86_REG_DS */ \
+		"es", /* X86_REG_ES */ \
+		"cf", /* X86_EFLAGS_CF */ \
+		"pf", /* X86_EFLAGS_PF */ \
+		"af", /* X86_EFLAGS_AF */ \
+		"zf", /* X86_EFLAGS_ZF */ \
+		"sf", /* X86_EFLAGS_SF */ \
+		"tf", /* X86_EFLAGS_TF */ \
+		"if", /* X86_EFLAGS_IF */ \
+		"df", /* X86_EFLAGS_DF */ \
+		"of" /* X86_EFLAGS_OF */
 
 /**
  * \brief All registers bound to IL variables for x86 16-bit
@@ -2002,7 +2002,6 @@ IL_LIFTER(mov) {
 	}
 }
 
-
 /**
  * MOVSB
  * Move string byte
@@ -2083,6 +2082,151 @@ IL_LIFTER(movsw) {
 	}
 }
 
+/**
+ * MUL
+ * Unsigned multiply
+ * Encoding: M
+ */
+IL_LIFTER(mul) {
+	RzILOpPure *op = UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE * 2, x86_il_get_op(0));
+	RzILOpEffect *true_cond = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE));
+	RzILOpEffect *false_cond = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE));
+
+	switch (ins->structure->operands[0].size) {
+	case 1: {
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(16, x86_il_get_reg(X86_REG_AL)), op));
+		RzILOpEffect *ax = x86_il_set_reg(X86_REG_AX, VARL("_mul"));
+		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(8))), true_cond, false_cond);
+
+		return SEQ3(set, ax, flags);
+	}
+	case 2: {
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(32, x86_il_get_reg(X86_REG_AX)), op));
+		RzILOpEffect *dx = x86_il_set_reg(X86_REG_DX, UNSIGNED(16, SHIFTR0(VARL("_mul"), U8(16))));
+		RzILOpEffect *ax = x86_il_set_reg(X86_REG_AX, UNSIGNED(16, LOGAND(VARL("_mul"), U16(0xffff))));
+		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(16))), true_cond, false_cond);
+
+		return SEQ4(set, dx, ax, flags);
+	}
+	case 4: {
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(64, x86_il_get_reg(X86_REG_EAX)), op));
+		RzILOpEffect *edx = x86_il_set_reg(X86_REG_EDX, UNSIGNED(32, SHIFTR0(VARL("_mul"), U8(32))));
+		RzILOpEffect *eax = x86_il_set_reg(X86_REG_EAX, UNSIGNED(32, LOGAND(VARL("_mul"), U32(0xffffffffULL))));
+		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(32))), true_cond, false_cond);
+
+		return SEQ4(set, edx, eax, flags);
+	}
+	case 8: {
+		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(128, x86_il_get_reg(X86_REG_RAX)), op));
+		RzILOpEffect *rdx = x86_il_set_reg(X86_REG_RDX, UNSIGNED(64, SHIFTR0(VARL("_mul"), U8(64))));
+		RzILOpEffect *rax = x86_il_set_reg(X86_REG_RAX, UNSIGNED(64, LOGAND(VARL("_mul"), U64(0xffffffffffffffffULL))));
+		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(64))), true_cond, false_cond);
+
+		return SEQ4(set, rdx, rax, flags);
+	}
+	}
+
+	rz_warn_if_reached();
+	return NULL;
+}
+
+/**
+ * NEG
+ * Two's complement negation
+ * Encoding: M
+ */
+IL_LIFTER(neg) {
+	RzILOpEffect *op = SETL("_op", x86_il_get_op(0));
+	RzILOpEffect *cf = BRANCH(IS_ZERO(VARL("_op")), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE));
+	RzILOpEffect *neg = x86_il_set_op(0, NEG(VARL("_op")));
+
+	return SEQ3(op, cf, neg);
+}
+
+/**
+ * NOP
+ * No operation
+ * Encoding:
+ *  - ZO (zero operands)
+ *  - M (multi-byte nop)
+ */
+IL_LIFTER(nop) {
+	return NOP();
+}
+
+/**
+ * NOT
+ * One's complement negation
+ * Encoding: M
+ */
+IL_LIFTER(not ) {
+	return x86_il_set_op(0, LOGNOT(x86_il_get_op(0)));
+}
+
+/**
+ * OR
+ * Logical inclusive or
+ * Encoding:
+ *  - I
+ *  - MI
+ *  - MR
+ *  - RM
+ */
+IL_LIFTER(or) {
+	RzILOpEffect *clear_flags = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE));
+
+	if (ins->structure->op_count == 1) {
+		/* I encoding */
+		switch (ins->structure->operands[0].size) {
+		case 1: {
+			RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_AL), x86_il_get_op(0)));
+			RzILOpEffect *set_result = x86_il_set_reg(X86_REG_AL, VARL("_or"));
+			RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
+
+			return SEQ4(result, set_result, clear_flags, res_flags);
+		}
+		case 2: {
+			RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_AX), x86_il_get_op(0)));
+			RzILOpEffect *set_result = x86_il_set_reg(X86_REG_AX, VARL("_or"));
+			RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
+
+			return SEQ4(result, set_result, clear_flags, res_flags);
+		}
+		case 4: {
+			if (ins->structure->rex) {
+				/* Use RAX and sign extend the operand */
+				RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_RAX), SIGNED(64, x86_il_get_op(0))));
+				RzILOpEffect *set_result = x86_il_set_reg(X86_REG_RAX, VARL("_or"));
+				RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
+
+				return SEQ4(result, set_result, clear_flags, res_flags);
+			} else {
+				RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_EAX), x86_il_get_op(0)));
+				RzILOpEffect *set_result = x86_il_set_reg(X86_REG_EAX, VARL("_or"));
+				RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
+
+				return SEQ4(result, set_result, clear_flags, res_flags);
+			}
+		}
+		default:
+			rz_warn_if_reached();
+		}
+	} else {
+		RzILOpPure *second_op = x86_il_get_op(1);
+		if (ins->structure->operands[0].size != ins->structure->operands[1].size) {
+			/* Casting necessary when the operand sizes don't match (in case when the second operand is an immediate value) */
+			second_op = SIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, second_op);
+		}
+		RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_op(0), second_op));
+		RzILOpEffect *set_result = x86_il_set_op(0, VARL("_or"));
+		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
+
+		return SEQ4(result, set_result, clear_flags, res_flags);
+	}
+
+	return NULL;
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2150,6 +2294,11 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_MOV] = x86_il_mov,
 	[X86_INS_MOVSB] = x86_il_movsb,
 	[X86_INS_MOVSW] = x86_il_movsw,
+	[X86_INS_MUL] = x86_il_mul,
+	[X86_INS_NEG] = x86_il_neg,
+	[X86_INS_NOP] = x86_il_nop,
+	[X86_INS_NOT] = x86_il_not,
+	[X86_INS_OR] = x86_il_or,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
@@ -2174,17 +2323,17 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(analysis->bits, analysis->big_endian, analysis->bits);
 
 	switch (analysis->bits) {
-		case 16:
-			r->reg_bindings = x86_bound_regs_16;
-			break;
-		case 32:
-			r->reg_bindings = x86_bound_regs_32;
-			break;
-		case 64:
-			r->reg_bindings = x86_bound_regs_64;
-			break;
-		default:
-			rz_warn_if_reached();
+	case 16:
+		r->reg_bindings = x86_bound_regs_16;
+		break;
+	case 32:
+		r->reg_bindings = x86_bound_regs_32;
+		break;
+	case 64:
+		r->reg_bindings = x86_bound_regs_64;
+		break;
+	default:
+		rz_warn_if_reached();
 	}
 
 	RzILEffectLabel *int_label = rz_il_effect_label_new("int", EFFECT_LABEL_SYSCALL);
