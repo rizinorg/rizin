@@ -2227,6 +2227,16 @@ IL_LIFTER(or) {
 	return NULL;
 }
 
+/**
+ * OUT
+ * Output to port
+ * Encodings: I, ZO
+ */
+IL_LIFTER(out) {
+	/* TODO: Implement after I/O ports acccessing implemented in IL */
+	return EMPTY();
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2299,6 +2309,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_NOP] = x86_il_nop,
 	[X86_INS_NOT] = x86_il_not,
 	[X86_INS_OR] = x86_il_or,
+	[X86_INS_OUT] = x86_il_out,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
