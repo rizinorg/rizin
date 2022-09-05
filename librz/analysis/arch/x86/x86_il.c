@@ -351,10 +351,11 @@ static const char *x86_bound_regs_32[] = {
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
 	"edi", /* X86_REG_EDI */
+	"nt", /* X86_EFLAGS_NT */
 	"fs", /* X86_REG_FS */
 	"gs", /* X86_REG_GS */
-	"cr0", /* X86_EFLAGS_CR0 */
-	"dr0", /* X86_EFLAGS_DR0 */
+	"cr0", /* X86_REG_CR0 */
+	"dr0", /* X86_REG_DR0 */
 	NULL
 };
 
@@ -374,8 +375,8 @@ static const char *x86_bound_regs_64[] = {
 	"rdi", /* X86_REG_RDI */
 	"fs", /* X86_REG_FS */
 	"gs", /* X86_REG_GS */
-	"cr0", /* X86_EFLAGS_CR0 */
-	"dr0", /* X86_EFLAGS_DR0 */
+	"cr0", /* X86_REG_CR0 */
+	"dr0", /* X86_REG_DR0 */
 	NULL
 };
 
@@ -891,6 +892,79 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPur
 
 #define x86_il_set_arithmetic_flags(res, x, y, addition)           x86_il_set_arithmetic_flags_bits(res, x, y, addition, analysis->bits)
 #define x86_il_set_arithmetic_flags_except_cf(res, x, y, addition) x86_il_set_arithmetic_flags_except_cf_bits(res, x, y, addition, analysis->bits)
+
+RzILOpPure *x86_il_get_flags(unsigned int size) {
+	/* We really don't care about bits higher than 16 for now */
+	RzILOpPure *val;
+	if (size == 8) {
+		goto lower_half;
+	}
+
+	/* Bit 15: Reserved,
+	always 1 on 8086 and 186,
+	always 0 on later models
+	Assuming 0 */
+	val = x86_bool_to_bv(IL_FALSE, size);
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_NT]), size));
+
+	/** Bit 12-13: IOPL,
+	I/O privilege level (286+ only),
+	always 1 on 8086 and 186
+	Assuming all 1 */
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), UN(size, 0x3));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_OF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_DF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_IF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_TF]), size));
+
+lower_half:
+	if (size == 8) {
+		val = x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_SF]), size);
+	} else {
+		val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), size));
+	}
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_AF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_PF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), UN(size, 1));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_CF]), size));
+
+	return val;
+}
+
+RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
+	RzILOpEffect *set_val = SETL("_flags", val);
+
+	RzILOpEffect *eff = SETG(x86_eflags_registers[X86_EFLAGS_CF], LSB(VARL("_flags")));
+
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(2))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_PF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(2))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_AF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(2))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_ZF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_SF], LSB(VARL("_flags"))));
+
+	if (size == 8) {
+		return SEQ2(set_val, eff);
+	}
+
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_TF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_IF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_DF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_OF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(3))));
+	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_NT], LSB(VARL("_flags"))));
+
+	/* Again, we will be ignoring bits over 16 and also ignore IOPL */
+
+	return SEQ2(set_val, eff);
+}
 
 /**
  * ======== INSTRUCTION DOCUMENTATION FORMAT ========
@@ -1836,14 +1910,7 @@ IL_LIFTER(jmp) {
  * No operands
  */
 IL_LIFTER(lahf) {
-	RzILOpPure *val = x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_SF]), 8);
-	val = LOGOR(SHIFTL0(val, U8(1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), 8));
-	val = LOGOR(SHIFTL0(val, U8(2)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_AF]), 8));
-	val = LOGOR(SHIFTL0(val, U8(2)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_PF]), 8));
-	val = LOGOR(SHIFTL0(val, U8(1)), UN(8, 1));
-	val = LOGOR(SHIFTL0(val, U8(1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_CF]), 8));
-
-	return x86_il_set_reg(X86_REG_AH, val);
+	return x86_il_set_reg(X86_REG_AH, x86_il_get_flags(8));
 }
 
 /**
@@ -2237,6 +2304,80 @@ IL_LIFTER(out) {
 	return EMPTY();
 }
 
+typedef struct pop_helper_t {
+	RzILOpPure *val;
+	RzILOpEffect *eff;
+} PopHelper;
+
+PopHelper x86_pop_helper(unsigned int op_size, unsigned int bitness) {
+	X86Mem stack_mem;
+	/* The correct register will automatically be chosen if we use RSP */
+	stack_mem.base = X86_REG_RSP;
+	stack_mem.disp = 0;
+	stack_mem.index = X86_REG_INVALID;
+	stack_mem.scale = 1;
+	stack_mem.segment = X86_REG_SS;
+
+	PopHelper ret;
+
+	ret.val = LOADW(op_size * BITS_PER_BYTE, x86_il_get_memaddr_bits(stack_mem, bitness));
+	ret.eff = x86_il_set_reg_bits(X86_REG_RSP, ADD(x86_il_get_reg_bits(X86_REG_RSP, bitness), UN(bitness, op_size)), bitness);
+
+	return ret;
+}
+
+/**
+ * POP
+ * Pop a value from the stack
+ * Encoding:
+ *  - M
+ *  - O
+ *  - ZO
+ */
+IL_LIFTER(pop) {
+	/* Ideally, we should use the stack size instead of the address size (analysis->bits),
+	but there seems to be no way to do that using Capstone */
+	/* Also, it is very rare to use have a different stack size and address size */
+	PopHelper pop = x86_pop_helper(ins->structure->operands[0].size, analysis->bits);
+	RzILOpEffect *copy = x86_il_set_op(0, pop.val);
+
+	return SEQ2(copy, pop.eff);
+}
+
+/**
+ * POPF
+ * Pop stack into FLAGS register (16 bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(popf) {
+	/* This is not _completely_ accurate, but it is good enough for our purposes */
+	PopHelper pop = x86_pop_helper(16, analysis->bits);
+	return SEQ2(x86_il_set_flags(pop.val, 16), pop.eff);
+}
+
+/**
+ * POPFD
+ * Pop stack into EFLAGS register (32 bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(popfd) {
+	/* Functionally the same as POPF IL */
+	PopHelper pop = x86_pop_helper(32, analysis->bits);
+	return SEQ2(x86_il_set_flags(pop.val, 32), pop.eff);
+}
+
+/**
+ * POPFQ
+ * Pop stack into RFLAGS register (64 bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(popfq) {
+	/* Functionally the same as POPF IL */
+	PopHelper pop = x86_pop_helper(64, analysis->bits);
+	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
+}
+
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2310,6 +2451,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_NOT] = x86_il_not,
 	[X86_INS_OR] = x86_il_or,
 	[X86_INS_OUT] = x86_il_out,
+	[X86_INS_POP] = x86_il_pop,
+	[X86_INS_POPF] = x86_il_popf,
+	[X86_INS_POPFD] = x86_il_popfd,
+	[X86_INS_POPFQ] = x86_il_popfq,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
