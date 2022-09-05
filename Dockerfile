@@ -98,6 +98,4 @@ ENV HOME /home/rizin
 
 COPY --from=0 /tmp/rizin-install/ /
 
-RUN rz-pm init && rz-pm update
-
 CMD ["/bin/bash"]
