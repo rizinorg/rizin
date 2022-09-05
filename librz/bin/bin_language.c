@@ -57,6 +57,13 @@ static inline bool check_dart(RzBinSymbol *sym) {
 	return strstr(sym->name, "io_flutter_");
 }
 
+static inline bool check_pascal(RzBinSymbol *sym) {
+	if (strstr(sym->name, "$_$")) {
+		return true;
+	}
+	return strstr(sym->name, "_$$_");
+}
+
 /**
  * \brief Tries to detect which language is used in the binary based on symbols and libraries
  *
@@ -160,6 +167,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 		} else if (check_dart(sym)) {
 			info->lang = "dart";
 			return RZ_BIN_LANGUAGE_DART;
+		} else if (check_pascal(sym)) {
+			info->lang = "pascal";
+			return RZ_BIN_LANGUAGE_PASCAL;
 		}
 	}
 
@@ -219,6 +229,8 @@ RZ_API RzBinLanguage rz_bin_language_to_id(const char *language) {
 		return language_apply_blocks_mask(RZ_BIN_LANGUAGE_C, has_blocks);
 	} else if (!strcmp(language, "go")) {
 		return RZ_BIN_LANGUAGE_GO;
+	} else if (!strcmp(language, "pascal")) {
+		return RZ_BIN_LANGUAGE_PASCAL;
 	}
 	return RZ_BIN_LANGUAGE_UNKNOWN;
 }
@@ -252,6 +264,8 @@ RZ_API const char *rz_bin_language_to_string(RzBinLanguage language) {
 		return "groovy";
 	case RZ_BIN_LANGUAGE_DART:
 		return "dart";
+	case RZ_BIN_LANGUAGE_PASCAL:
+		return "pascal";
 	default:
 		return NULL;
 	}

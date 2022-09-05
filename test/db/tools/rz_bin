@@ -868,6 +868,14 @@ test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
 EOF
 RUN
 
+NAME=rz-bin -D pascal
+FILE==
+CMDS=!rz-bin -D pascal "EXAMPLE_$$_SUMOFSQUARES$LONGINT$$LONGINT"
+EXPECT=<<EOF
+unit example sumofsquares(longint) longint
+EOF
+RUN
+
 NAME=rz-bin -D Invalid
 FILE==
 CMDS=!rz-bin -D Invalid XXXXX
@@ -879,6 +887,7 @@ List of supported languages:
 java   LGPL3    deroad
 msvc   LGPL3    inisider
 objc   LGPL3    pancake
+pascal LGPL3    deroad
 c++    GPL-2    Free Software Foundation
 rust   LGPL3    pancake
 swift  MIT      pancake

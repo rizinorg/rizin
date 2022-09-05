@@ -2354,9 +2354,13 @@ RUN
 
 NAME=Test iD
 FILE==
-CMDS=iD java "Fake([BCDFIJSZ)Ltest/class/name;"
+CMDS=<<EOF
+iD java "Fake([BCDFIJSZ)Ltest/class/name;"
+iD pascal "EXAMPLE$_$SUMOFSQUARES$LONGINT$$LONGINT"
+EOF
 EXPECT=<<EOF
 test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
+unit example sumofsquares(longint) longint
 EOF
 RUN
 

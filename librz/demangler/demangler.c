@@ -27,6 +27,7 @@ DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_sw
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
+DEFINE_DEMANGLER_PLUGIN(pascal, "pascal", "LGPL3", "deroad", libdemangle_handler_pascal);
 
 static RzDemanglerPlugin *demangler_static_plugins[] = { RZ_DEMANGLER_STATIC_PLUGINS };
 
@@ -55,6 +56,13 @@ RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
  */
 RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol) {
 	return libdemangle_handler_objc(symbol);
+}
+
+/**
+ * \brief Demangles pascal symbols
+ */
+RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol) {
+	return libdemangle_handler_pascal(symbol);
 }
 
 /**
