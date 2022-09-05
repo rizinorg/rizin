@@ -3127,7 +3127,8 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case ';':
 			rz_cons_gotoxy(0, 0);
-			add_comment(core, core->offset, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
+			ut64 addr = core->print->cur_enabled ? core->offset + core->print->cur : core->offset;
+			add_comment(core, addr, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
 			break;
 		case 'b':
 			rz_core_visual_browse(core, arg + 1);
