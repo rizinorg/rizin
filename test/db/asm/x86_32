@@ -359,23 +359,23 @@ d "pmaxsw mm0, qword [eax]" 0fee00
 d "pmaxub mm0, qword [eax]" 0fde00
 d "pminsw mm0, qword [eax]" 0fea00
 d "pminub mm0, qword [eax]" 0fda00
-d "pop ds" 1F
-d "pop dword [eax]" 8f00
-d "pop eax" 58
-d "pop ebp" 5D
-d "pop ebx" 5B
-d "pop ecx" 59
-d "pop edi" 5F
-d "pop edx" 5A
-d "pop es" 07
-d "pop esi" 5E
-d "pop esp" 5C
-d "pop fs" 0fa1
-d "pop gs" 0fa9
-d "pop ss" 17
+d "pop ds" 1f 0x0 (seq (set ds (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+d "pop dword [eax]" 8f00 0x0 (seq (storew 0 (+ (var eax) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop eax" 58 0x0 (seq (set eax (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop ebp" 5d 0x0 (seq (set ebp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop ebx" 5b 0x0 (seq (set ebx (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop ecx" 59 0x0 (seq (set ecx (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop edi" 5f 0x0 (seq (set edi (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop edx" 5a 0x0 (seq (set edx (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop es" 07 0x0 (seq (set es (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+d "pop esi" 5e 0x0 (seq (set esi (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop esp" 5c 0x0 (seq (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+d "pop fs" 0fa1 0x0 (seq (set fs (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+d "pop gs" 0fa9 0x0 (seq (set gs (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+d "pop ss" 17 0x0 (seq (set ss (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
 d "popal" 61
 d "popaw" 6661
-d "popfd" 9D
+d "popfd" 9d 0x0 (seq (set _flags (loadw 0 256 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set cf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set pf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set af (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set zf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set sf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set tf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set if (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set df (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set of (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x3) false)) (set nt (lsb (var _flags))) (set esp (+ (var esp) (bv 32 0x20))))
 d "por mm0, qword [eax]" 0feb00
 d "prefetchnta byte [eax]" 0f1800
 d "prefetcht0 byte [eax]" 0f1808
@@ -1745,28 +1745,28 @@ aB "pmuludq xmm0, xmmword [eax]" 660ff400
 a "popal" 61
 a "popaw" 6661
 aB "popcnt eax, qword [eax]" f30fb8
-a "pop ds" 1f
-a "pop dword [eax+4]" 8f4004
-a "pop dword [eax]" 8f00
-a "pop dword [ebp+4]" 8f4504
-a "pop dword [ebp]" 8f4500
-a "pop dword [ecx]" 8f01
-a "pop dword [edi]" 8f07
-a "pop dword [esi]" 8f06
-a "pop dword [esp]" 8f0424
-a "pop eax" 58
-a "pop ebp" 5d
-a "pop ebx" 5b
-a "pop ecx" 59
-a "pop edi" 5f
-a "pop edx" 5a
-a "pop es" 07
-a "pop esi" 5e
-a "pop esp" 5c
-a "popfd" 9d
-a "pop fs" 0fa1
-a "pop gs" 0fa9
-a "pop ss" 17
+a "pop ds" 1f 0x0 (seq (set ds (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+a "pop dword [eax+4]" 8f4004 0x0 (seq (storew 0 (+ (var eax) (bv 32 0x4)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [eax]" 8f00 0x0 (seq (storew 0 (+ (var eax) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [ebp+4]" 8f4504 0x0 (seq (storew 0 (+ (var ebp) (bv 32 0x4)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [ebp]" 8f4500 0x0 (seq (storew 0 (+ (var ebp) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [ecx]" 8f01 0x0 (seq (storew 0 (+ (var ecx) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [edi]" 8f07 0x0 (seq (storew 0 (+ (var edi) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [esi]" 8f06 0x0 (seq (storew 0 (+ (var esi) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop dword [esp]" 8f0424 0x0 (seq (storew 0 (+ (var esp) (bv 32 0x0)) (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop eax" 58 0x0 (seq (set eax (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop ebp" 5d 0x0 (seq (set ebp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop ebx" 5b 0x0 (seq (set ebx (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop ecx" 59 0x0 (seq (set ecx (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop edi" 5f 0x0 (seq (set edi (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop edx" 5a 0x0 (seq (set edx (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop es" 07 0x0 (seq (set es (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+a "pop esi" 5e 0x0 (seq (set esi (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "pop esp" 5c 0x0 (seq (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x4))))
+a "popfd" 9d 0x0 (seq (set _flags (loadw 0 256 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set cf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set pf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set af (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set zf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set sf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set tf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set if (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set df (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set of (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x3) false)) (set nt (lsb (var _flags))) (set esp (+ (var esp) (bv 32 0x20))))
+a "pop fs" 0fa1 0x0 (seq (set fs (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+a "pop gs" 0fa9 0x0 (seq (set gs (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
+a "pop ss" 17 0x0 (seq (set ss (loadw 0 16 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))) (set esp (+ (var esp) (bv 32 0x2))))
 aB "por mm0, qword [eax]" 0feb00
 aB "por xmm0, xmmword [eax]" 660feb00
 aB "prefetch byte [eax]" 0f0d00
