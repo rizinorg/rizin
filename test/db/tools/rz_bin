@@ -872,7 +872,7 @@ NAME=rz-bin -D pascal
 FILE==
 CMDS=!rz-bin -D pascal "EXAMPLE_$$_SUMOFSQUARES$LONGINT$$LONGINT"
 EXPECT=<<EOF
-unit example sumofsquares(longint) longint
+unit example sumofsquares(longint)longint
 EOF
 RUN
 
