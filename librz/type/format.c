@@ -582,7 +582,7 @@ static void rz_type_format_time(RzStrBuf *outbuf, int endian, int mode,
 // TODO: support unsigned int?
 static void rz_type_format_hex(RzStrBuf *outbuf, int endian, int mode,
 	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr = 0xadc0ffeeadc0ffee;
+	ut64 addr = 0;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size / ARRAYINDEX_COEF - 1;
@@ -752,7 +752,7 @@ static int rz_type_format_disasm(const RzPrint *p, ut64 seeki, int size) {
 
 static void rz_type_format_octal(RzStrBuf *outbuf, int endian, int mode,
 	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	ut64 addr = 0xadc0ffeeadc0ffee;
+	ut64 addr = 0;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size / ARRAYINDEX_COEF - 1;
