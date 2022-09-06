@@ -1853,6 +1853,7 @@ RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFu
 
 // tfj and afsj call this function
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
+	char *tmp = NULL;
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
 	char *ret_type_str = NULL;
@@ -1876,15 +1877,17 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 		pj_o(pj);
 		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
 		RzType *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
-		char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
+		tmp = rz_type_as_string(a->typedb, arg_type);
 		pj_ks(pj, "name", arg_name);
-		pj_ks(pj, "type", arg_type_str);
-		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
+		pj_ks(pj, "type", tmp);
+		free(tmp);
+		tmp = rz_str_newf("A%d", i);
+		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(tmp));
+		free(tmp);
 		if (cc_arg) {
 			pj_ks(pj, "cc", cc_arg);
 		}
 		pj_end(pj);
-		free(arg_type_str);
 	}
 	pj_end(pj);
 	pj_end(pj);
