@@ -951,3 +951,44 @@ RZ_API RZ_OWN RzList /*<RzBacktrace *>*/ *rz_core_debug_backtraces(RzCore *core)
 	rz_list_free(list);
 	return bts;
 }
+
+/**
+ * \brief Seek to `PC` if needed
+ * \param core The RzCore instance
+ */
+RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
+	ut64 follow = rz_config_get_i(core->config, "dbg.follow");
+	if (follow <= 0) {
+		return;
+	}
+	ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+	if ((pc < core->offset) || (pc > (core->offset + follow))) {
+		rz_core_seek_to_register(core, "PC", false);
+	}
+	rz_core_debug_sync_bits(core);
+}
+
+static void foreach_reg_set_or_clear(RzCore *core, bool set) {
+	RzReg *reg = rz_core_reg_default(core);
+	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	RzListIter *it;
+	RzRegItem *reg_item;
+	rz_list_foreach (regs, it, reg_item) {
+		if (set) {
+			const ut64 value = rz_reg_get_value(reg, reg_item);
+			rz_flag_set(core->flags, reg_item->name, value, reg_item->size / 8);
+		} else {
+			rz_flag_unset_name(core->flags, reg_item->name);
+		}
+	}
+}
+
+RZ_API void rz_core_debug_set_register_flags(RzCore *core) {
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
+	foreach_reg_set_or_clear(core, true);
+	rz_flag_space_pop(core->flags);
+}
+
+RZ_API void rz_core_debug_clear_register_flags(RzCore *core) {
+	foreach_reg_set_or_clear(core, false);
+}
