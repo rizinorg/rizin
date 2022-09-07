@@ -134,6 +134,7 @@ RZ_IPI void rz_core_debug_continue(RzCore *core);
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
 RZ_IPI void rz_core_debug_print_status(RzCore *core);
 RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, bool hwbp, bool watch);
+RZ_IPI void rz_core_debug_ri(RzCore *core);
 
 /* cfile.c */
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
