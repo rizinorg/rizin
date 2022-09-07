@@ -2,6 +2,7 @@ demangler_plugins_list = [
   'java',
   'msvc',
   'objc',
+  'pascal',
 ]
 
 if get_option('use_gpl')

@@ -13,14 +13,12 @@ else
   subdir('rz-sign')
   subdir('rz-ax')
 endif
-subdir('rz-pm')
 if get_option('enable_rz_test')
   subdir('rz-test')
 endif
 
 install_man(
   'man/rz-agent.1',
-  'man/rz-pm.1',
   'man/rz-bin.1',
   'man/rizin.1',
   'man/rz-diff.1',
@@ -33,3 +31,7 @@ install_man(
   'man/rz-sign.1',
   'man/rz-esil.7',
 )
+if get_option('enable_rz_pm')
+  subdir('rz-pm')
+  install_man('man/rz-pm.1')
+endif
