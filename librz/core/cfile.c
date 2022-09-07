@@ -1664,6 +1664,54 @@ RZ_API void rz_core_io_file_reopen(RZ_NONNULL RzCore *core, int fd, int perms) {
 	}
 }
 
+static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
+	RzIO *io = (RzIO *)user;
+	RzIODesc *desc = (RzIODesc *)data;
+
+	if (rz_io_desc_is_blockdevice(desc) || rz_io_desc_is_dbg(desc)) {
+		return true;
+	}
+
+	if (strstr(desc->uri, "://")) {
+		return true;
+	}
+
+	ut64 size = rz_io_desc_size(desc);
+
+	char *uri = rz_str_newf("malloc://%" PFMT64u, size);
+	if (!uri) {
+		return false;
+	}
+
+	ut8 *buf = malloc(size);
+	// if malloc fails, we can just abort the loop by returning false
+	if (!buf) {
+		free(uri);
+		return false;
+	}
+
+	RzIODesc *ndesc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
+	free(uri);
+	if (!ndesc) {
+		free(buf);
+		return false;
+	}
+
+	rz_io_desc_read_at(desc, 0LL, buf, (int)size); // that cast o_O
+	rz_io_desc_write_at(ndesc, 0LL, buf, (int)size);
+	free(buf);
+	rz_io_desc_exchange(io, desc->fd, ndesc->fd);
+
+	rz_io_desc_close(desc);
+	return true;
+}
+
+RZ_API void rz_core_file_reopen_in_malloc(RzCore *core) {
+	if (core && core->io && core->io->files) {
+		rz_id_storage_foreach(core->io->files, reopen_in_malloc_cb, core->io);
+	}
+}
+
 /* --------------------------------------------------------------------------------- */
 
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig) {
