@@ -429,7 +429,7 @@ static ut32 avr_kkkkkkkkkkkk(cchar* name, AVROpMnem id, ut16 data[2], ut64 pc, A
 	pc += k;
 
 	aop->mnemonic = id;
-	aop->param[0] = pc;
+	aop->param[0] = k;
 	rz_strbuf_setf(sb, "%s 0x%" PFMT64x, name, pc);
 	return 2;
 }
