@@ -2440,13 +2440,10 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 		return sections;
 	}
 
-	if (!bin->sects) {
+	if (!bin->sects || bin->nsects < 1) {
 		return NULL;
 	}
 	ut32 to = RZ_MIN(bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
-	if (to < 1) {
-		return NULL;
-	}
 	if (!(sections = calloc(to + 1, sizeof(struct section_t)))) {
 		return NULL;
 	}
