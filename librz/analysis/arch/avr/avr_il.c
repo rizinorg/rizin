@@ -2365,12 +2365,12 @@ static RzILOpEffect *avr_il_push(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 
 static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
-	st32 k = (st16)aop->param[0];
+	st16 k = (st16)aop->param[0];
 
 	RzILOpPure *val, *num;
 	RzILOpEffect *jmp, *push, *sub;
 
-	jmp = avr_il_jump_relative(aop, analysis, k);
+	jmp = avr_il_jump_relative(aop, analysis, pc + k);
 
 	val = VARG(AVR_SP);
 	val = AVR_ADDR(val);
@@ -2412,9 +2412,9 @@ static RzILOpEffect *avr_il_ret(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// PC = PC + k + 1
-	st32 k = (st16)aop->param[0];
+	st16 k = (st16)aop->param[0];
 
-	return avr_il_jump_relative(aop, analysis, k);
+	return avr_il_jump_relative(aop, analysis, pc + k);
 }
 
 static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
