@@ -175,7 +175,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_RCALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = aop.param[0]; // address
+		op->jump = addr + (st16)aop.param[0]; // address
 		op->fail = addr + aop.size;
 		break;
 	case AVR_OP_RET:
@@ -189,7 +189,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_RJMP:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = aop.param[0]; // address
+		op->jump = addr + (st16)aop.param[0]; // address
 		break;
 	case AVR_OP_SBCI:
 		/* fall through*/
