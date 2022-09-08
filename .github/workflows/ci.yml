@@ -649,6 +649,7 @@ jobs:
       - name: Compile with meson
         run: |
           export PATH=${HOME}/.local/bin:${PATH}
+          sed -i 's@\${ANDROID_NDK}@'"${ANDROID_NDK}"'@' .github/meson-android-${{ matrix.name }}.ini
           meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
           ninja -C build && ninja -C build install
       - name: Create rizin-android-${{ matrix.name }}.tar.gz
