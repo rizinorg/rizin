@@ -1003,3 +1003,25 @@ _sram = 0x00000000
 spmcsr = 0x00000000
 EOF
 RUN
+
+NAME=avr rjmp test
+FILE==
+CMDS=<<EOF
+e asm.arch=avr
+wx 0f94db6e8091bc1988231fc04090b4195090b5196090b6197090b7190f94e0514616
+om 3 0x0003755c 64 0 rwx test_map
+pd 10 @ 0x0003755c
+EOF
+EXPECT=<<EOF
+            0x0003755c      call  0x2ddb6
+            0x00037560      lds   r24, 0x19bc
+            0x00037564      tst   r24
+        ,=< 0x00037566      rjmp  0x375a6
+        |   0x00037568      lds   r4, 0x19b4
+        |   0x0003756c      lds   r5, 0x19b5
+        |   0x00037570      lds   r6, 0x19b6
+        |   0x00037574      lds   r7, 0x19b7
+        |   0x00037578      call  0x2a3c0
+        |   0x0003757c      cp    r4, r22
+EOF
+RUN

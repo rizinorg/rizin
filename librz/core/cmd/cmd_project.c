@@ -3,23 +3,6 @@
 
 #include <rz_project.h>
 
-RZ_API bool rz_core_project_load_for_cli(RzCore *core, const char *file, bool load_bin_io) {
-	RzSerializeResultInfo *res = rz_serialize_result_info_new();
-	RzProjectErr err = rz_project_load_file(core, file, load_bin_io, res);
-	if (err != RZ_PROJECT_ERR_SUCCESS) {
-		RZ_LOG_ERROR("core: Failed to load project: %s\n", rz_project_err_message(err));
-	} else if (!rz_list_empty(res)) {
-		rz_cons_printf("Detailed project load info:\n");
-	}
-	RzListIter *it;
-	char *s;
-	rz_list_foreach (res, it, s) {
-		rz_cons_printf("  %s\n", s);
-	}
-	rz_serialize_result_info_free(res);
-	return err == RZ_PROJECT_ERR_SUCCESS;
-}
-
 RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **argv) {
 	const char *file;
 	if (argc == 1) {
