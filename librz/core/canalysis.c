@@ -6191,3 +6191,142 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 
 	return p;
 }
+
+static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports_only) {
+	RzAnalysisOp op;
+	int depth = rz_config_get_i(core->config, "analysis.depth");
+	const int addrbytes = core->io->addrbytes;
+	const int bsz = 4096;
+	int bufi = 0;
+	int bufi_max = bsz - 16;
+	if (addr_end - addr > UT32_MAX) {
+		return;
+	}
+	ut8 *buf = malloc(bsz);
+	ut8 *block0 = calloc(1, bsz);
+	ut8 *block1 = malloc(bsz);
+	if (!buf || !block0 || !block1) {
+		RZ_LOG_ERROR("core: cannot allocate buf or block\n");
+		free(buf);
+		free(block0);
+		free(block1);
+		return;
+	}
+	memset(block1, -1, bsz);
+	int minop = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	if (minop < 1) {
+		minop = 1;
+	}
+	int setBits = rz_config_get_i(core->config, "asm.bits");
+	rz_cons_break_push(NULL, NULL);
+	while (addr < addr_end && !rz_cons_is_breaked()) {
+		// TODO: too many ioreads here
+		if (bufi > bufi_max) {
+			bufi = 0;
+		}
+		if (!bufi) {
+			(void)rz_io_read_at(core->io, addr, buf, bsz);
+		}
+		if (!memcmp(buf, block0, bsz) || !memcmp(buf, block1, bsz)) {
+			// eprintf ("Error: skipping uninitialized block \n");
+			addr += bsz;
+			continue;
+		}
+		RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, addr);
+		if (hint && hint->bits) {
+			setBits = hint->bits;
+		}
+		rz_analysis_hint_free(hint);
+		if (setBits != core->rasm->bits) {
+			rz_config_set_i(core->config, "asm.bits", setBits);
+		}
+		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
+			if (op.size < 1) {
+				op.size = minop;
+			}
+			if (op.type == RZ_ANALYSIS_OP_TYPE_CALL) {
+				bool isValidCall = true;
+				if (imports_only) {
+					RzFlagItem *f = rz_flag_get_i(core->flags, op.jump);
+					if (!f || !strstr(f->name, "imp.")) {
+						isValidCall = false;
+					}
+				}
+				RzBinReloc *rel = rz_core_getreloc(core, addr, op.size);
+				if (rel && (rel->import || rel->symbol)) {
+					isValidCall = false;
+				}
+				if (isValidCall) {
+					ut8 buf[4];
+					rz_io_read_at(core->io, op.jump, buf, 4);
+					isValidCall = memcmp(buf, "\x00\x00\x00\x00", 4);
+				}
+				if (isValidCall) {
+					// add xref here
+					rz_analysis_xrefs_set(core->analysis, addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
+					if (rz_io_is_valid_offset(core->io, op.jump, 1)) {
+						rz_core_analysis_fcn(core, op.jump, addr, RZ_ANALYSIS_XREF_TYPE_CALL, depth);
+					}
+				}
+			}
+		} else {
+			op.size = minop;
+		}
+		if ((int)op.size < 1) {
+			op.size = minop;
+		}
+		addr += op.size;
+		bufi += addrbytes * op.size;
+		rz_analysis_op_fini(&op);
+	}
+	rz_cons_break_pop();
+	free(buf);
+	free(block0);
+	free(block1);
+}
+
+/*
+ * \brief Performs analysis on each call sight, creates new functions whenever necessary.
+ * \param core RzCore instance
+ * \param imports_only if true it analyses calls only of imported functions, otherwise - every flag
+ */
+RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only) {
+	rz_return_if_fail(core);
+
+	RzList *ranges = NULL;
+	RzIOMap *r;
+	ut64 addr;
+	RzBinFile *binfile = rz_bin_cur(core->bin);
+	addr = core->offset;
+	if (binfile) {
+		ranges = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
+	}
+	rz_cons_break_push(NULL, NULL);
+	if (!binfile || rz_list_length(ranges) < 1) {
+		RzListIter *iter;
+		RzIOMap *map;
+		rz_list_free(ranges);
+		ranges = rz_core_get_boundaries_prot(core, 0, NULL, "analysis");
+		if (ranges) {
+			rz_list_foreach (ranges, iter, map) {
+				ut64 addr = map->itv.addr;
+				_analysis_calls(core, addr, rz_itv_end(map->itv), imports_only);
+			}
+		}
+	} else {
+		RzListIter *iter;
+		if (binfile) {
+			rz_list_foreach (ranges, iter, r) {
+				addr = r->itv.addr;
+				// this normally will happen on fuzzed binaries, dunno if with huge
+				// binaries as well
+				if (rz_cons_is_breaked()) {
+					break;
+				}
+				_analysis_calls(core, addr, rz_itv_end(r->itv), imports_only);
+			}
+		}
+	}
+	rz_cons_break_pop();
+	rz_list_free(ranges);
+}
