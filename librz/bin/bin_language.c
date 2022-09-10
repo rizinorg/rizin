@@ -64,6 +64,13 @@ static inline bool check_pascal(RzBinSymbol *sym) {
 	return strstr(sym->name, "_$$_");
 }
 
+static inline bool check_nim(RzBinSymbol *sym) {
+	if (!strncmp(sym->name, "NimMain", strlen("NimMain"))) {
+		return true;
+	}
+	return rz_str_endswith(sym->name, ".nim.c");
+}
+
 /**
  * \brief Tries to detect which language is used in the binary based on symbols and libraries
  *
@@ -170,6 +177,9 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 		} else if (check_pascal(sym)) {
 			info->lang = "pascal";
 			return RZ_BIN_LANGUAGE_PASCAL;
+		} else if (check_nim(sym)) {
+			info->lang = "nim";
+			return RZ_BIN_LANGUAGE_NIM;
 		}
 	}
 
@@ -231,6 +241,8 @@ RZ_API RzBinLanguage rz_bin_language_to_id(const char *language) {
 		return RZ_BIN_LANGUAGE_GO;
 	} else if (!strcmp(language, "pascal")) {
 		return RZ_BIN_LANGUAGE_PASCAL;
+	} else if (!strcmp(language, "nim")) {
+		return RZ_BIN_LANGUAGE_NIM;
 	}
 	return RZ_BIN_LANGUAGE_UNKNOWN;
 }
@@ -266,6 +278,8 @@ RZ_API const char *rz_bin_language_to_string(RzBinLanguage language) {
 		return "dart";
 	case RZ_BIN_LANGUAGE_PASCAL:
 		return "pascal";
+	case RZ_BIN_LANGUAGE_NIM:
+		return "nim";
 	default:
 		return NULL;
 	}
