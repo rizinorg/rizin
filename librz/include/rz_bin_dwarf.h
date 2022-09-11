@@ -899,7 +899,7 @@ typedef struct {
  * \brief Line info of all compilation units from the entire debug_line section
  */
 typedef struct {
-	RzList /*<RzBinDwarfLineUnit>*/ *units;
+	RzList /*<RzBinDwarfLineUnit *>*/ *units;
 	struct rz_bin_source_line_info_t *lines;
 } RzBinDwarfLineInfo;
 
@@ -916,7 +916,7 @@ typedef struct rz_bin_dwarf_loc_entry_t {
 } RzBinDwarfLocRange;
 
 typedef struct rz_bin_dwarf_loc_list_t {
-	RzList /*<RzBinDwarfLocRange>*/ *list;
+	RzList /*<RzBinDwarfLocRange *>*/ *list;
 	ut64 offset;
 } RzBinDwarfLocList;
 

@@ -113,7 +113,7 @@ static ut64 count_blocks(ut64 length, ut64 block_size) {
 	return num_blocks;
 }
 
-static RzList *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
+static RzList /*<RzPdbMsfStream *>*/ *pdb7_extract_streams(RzPdb *pdb, RzPdbMsfStreamDirectory *msd) {
 	RzList *streams = rz_list_newf(msf_stream_free);
 	if (!streams) {
 		goto error_memory;

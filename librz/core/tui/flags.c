@@ -37,7 +37,7 @@ static int flag_offset_sort(const void *a, const void *b) {
 	return 0;
 }
 
-static void sort_flags(RzList *l, int sort) {
+static void sort_flags(RzList /*<RzFlagItem *>*/ *l, int sort) {
 	switch (sort) {
 	case SORT_NAME:
 		rz_list_sort(l, flag_name_sort);

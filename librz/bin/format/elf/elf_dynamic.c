@@ -85,7 +85,7 @@ static bool init_dt_dynamic(ELFOBJ *bin, RzBinElfDtDynamic *ptr) {
 	return fill_dt_dynamic(bin, ptr, offset, segment->data.p_filesz);
 }
 
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin) {
+RZ_BORROW RzVector /*<ut64>*/ *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {

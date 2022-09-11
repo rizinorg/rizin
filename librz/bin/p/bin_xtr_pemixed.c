@@ -7,7 +7,7 @@
 #include <rz_bin.h>
 #include "pe/pemixed.h"
 
-static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
+static RzList /*<RzBinXtrData *>*/ *oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
 static RzBinXtrData *oneshot(RzBin *bin, const ut8 *buf, ut64 size, int subbin_type);
 
 static void free_xtr(void *xtr_obj) {
@@ -48,7 +48,7 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 // TODO RzBufferify
-static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
+static RzList /*<RzBinXtrData *>*/ *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	// extract dos componenent first
 	RzBinXtrData *data = oneshot(bin, buf, size, SUB_BIN_DOS);
 

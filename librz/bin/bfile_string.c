@@ -21,7 +21,7 @@ typedef struct shared_data_t {
 
 typedef struct search_thread_data_t {
 	RzThreadQueue *intervals;
-	RzList *results;
+	RzList /*<RzBinString *>*/ *results;
 	size_t min_length;
 	RzStrEnc encoding;
 	bool check_ascii_freq;
@@ -73,7 +73,7 @@ static RzBinString *to_bin_string(RzDetectedString *src) {
 	return dst;
 }
 
-static RzList *string_scan_range(SearchThreadData *std, const ut64 paddr, const ut64 size) {
+static RzList /*<RzDetectedString *>*/ *string_scan_range(SearchThreadData *std, const ut64 paddr, const ut64 size) {
 	RzList *found = rz_list_newf((RzListFree)free);
 	if (!found) {
 		return NULL;
@@ -238,7 +238,7 @@ static int string_compare_sort(const RzBinString *a, const RzBinString *b) {
 	return 0;
 }
 
-static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzList *results, const RzBinSection *section) {
+static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzList /*<RzBinString *>*/ *results, const RzBinSection *section) {
 	// load objc/swift strings from CFstring table section
 
 	RzBinObject *o = bf->o;
@@ -290,7 +290,7 @@ static void string_scan_range_cfstring(RzBinFile *bf, HtUP *strings_db, RzList *
 	free(sbuf);
 }
 
-static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzList *results, ut64 max_interval) {
+static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzList /*<RzBinString *>*/ *results, ut64 max_interval) {
 	RzListIter *iter = NULL;
 	RzBinSection *section = NULL;
 	RzBinObject *o = bf->o;

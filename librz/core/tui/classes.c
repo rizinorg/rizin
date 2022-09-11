@@ -16,7 +16,7 @@
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
 // Segfaults - stack overflow, because of recursion
-static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const char *grep, RzList *list) {
+static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const char *grep, RzList /*<RzBinClass *>*/ *list) {
 	bool show_color = rz_config_get_i(core->config, "scr.color");
 	RzListIter *iter;
 	RzBinClass *c, *cur = NULL;

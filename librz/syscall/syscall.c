@@ -412,7 +412,7 @@ static bool callback_list(void *u, const char *k, const char *v) {
 	return true; // continue loop
 }
 
-RZ_API RzList *rz_syscall_list(RzSyscall *s) {
+RZ_API RzList /*<RzSyscallItem *>*/ *rz_syscall_list(RzSyscall *s) {
 	rz_return_val_if_fail(s, NULL);
 	if (!s->db) {
 		return NULL;

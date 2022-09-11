@@ -150,7 +150,7 @@ typedef struct {
 typedef struct {
 	Pe_image_clr_header *header;
 	Pe_image_metadata_header *metadata_header;
-	RzList /* Pe_image_metadata_stream */ *streams;
+	RzList /*<Pe_image_metadata_stream *>*/ *streams;
 
 	// special streams
 	Pe_image_metadata_stream *tilde_stream;
@@ -160,8 +160,8 @@ typedef struct {
 	// header data
 	Pe_image_metadata_tilde_header *tilde;
 	RzBuffer *strings;
-	RzPVector /* Pe_image_metadata_methoddef */ *methoddefs;
-	RzList /* Pe_image_metadata_typedef */ *typedefs;
+	RzPVector /*<Pe_image_metadata_methoddef *>*/ *methoddefs;
+	RzList /*<Pe_image_metadata_typedef *>*/ *typedefs;
 } Pe_image_clr;
 
 int bin_pe_dotnet_init_metadata(Pe_image_clr *clr, bool big_endian, RzBuffer *b, ut64 metadata_directory);

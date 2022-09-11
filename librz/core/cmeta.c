@@ -295,7 +295,7 @@ typedef struct {
 	RzAnalysisMetaType type;
 	const RzSpace *space;
 
-	RzPVector /*RzIntervalNode*/ *result;
+	RzPVector /*<RzIntervalNode *>*/ *result;
 } CollectCtx;
 
 static bool item_matches_filter(RzAnalysisMetaItem *item, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space) {
@@ -310,7 +310,7 @@ static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,

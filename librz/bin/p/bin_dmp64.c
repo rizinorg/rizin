@@ -80,11 +80,11 @@ static void header(RzBinFile *bf) {
 	}
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 4, false);
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 #define FIELD_COMMENT(header, field, comment) \
@@ -185,7 +185,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	dmp_page_desc *page;
 	dmp64_triage_datablock *datablock;
 	RzList *ret;
@@ -227,7 +227,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	if (!obj->drivers) {
 		return NULL;

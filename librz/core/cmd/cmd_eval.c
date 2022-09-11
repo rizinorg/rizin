@@ -19,7 +19,7 @@ static bool load_theme(RzCore *core, const char *path) {
 	return res;
 }
 
-static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzListIter *iter) {
+static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzListIter /*<char *>*/ *iter) {
 	const char *fn = rz_str_lchr(file, '/');
 	if (!fn) {
 		fn = file;

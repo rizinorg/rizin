@@ -12,7 +12,7 @@
 #include "pyc_magic.h"
 #include "marshal.h"
 
-bool pyc_get_sections_symbols(RzBinPycObj *pyc, RzList *sections, RzList *symbols, RzList *mem, RzBuffer *buf, ut32 magic);
+bool pyc_get_sections_symbols(RzBinPycObj *pyc, RzList /*<RzBinSection *>*/ *sections, RzList /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *mem, RzBuffer *buf, ut32 magic);
 bool pyc_is_code(ut8 b, ut32 magic);
 
 #endif

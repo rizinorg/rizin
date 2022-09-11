@@ -80,11 +80,11 @@ static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
 	return 0;
 }
 
-static void sortxrefs(RzList *list) {
+static void sortxrefs(RzList /*<RzAnalysisXRef *>*/ *list) {
 	rz_list_sort(list, (RzListComparator)ref_cmp);
 }
 
-static void listxrefs(HtUP *m, ut64 addr, RzList *list) {
+static void listxrefs(HtUP *m, ut64 addr, RzList /*<RzAnalysisXRef *>*/ *list) {
 	if (addr == UT64_MAX) {
 		ht_up_foreach(m, mylistrefs_cb, list);
 	} else {
@@ -275,7 +275,7 @@ RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis) {
 	return ret;
 }
 
-static RzList *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
+static RzList /*<RzAnalysisXRef *>*/ *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	RzList *list = rz_analysis_xref_list_new();

@@ -13,7 +13,7 @@
 
 #include "parse_common.c"
 
-static RzList *arm_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *arm_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("abs", "1 = abs(1)"),
@@ -133,7 +133,7 @@ static const RzPseudoReplace arm_replace[] = {
 
 static const RzPseudoConfig arm_config = RZ_PSEUDO_DEFINE_CONFIG(arm_direct, arm_lexicon, arm_replace, 5, arm_tokenize);
 
-RzList *arm_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *arm_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	const char *comma_replace = NULL;

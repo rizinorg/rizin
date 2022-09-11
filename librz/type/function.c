@@ -564,7 +564,7 @@ static bool function_names_collect_cb(void *user, const void *k, const void *v) 
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_function_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *result = rz_list_newf(free);
 	ht_pp_foreach(typedb->callables, function_names_collect_cb, result);
@@ -585,7 +585,7 @@ static bool noreturn_function_names_collect_cb(void *user, const void *k, const 
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_noreturn_function_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_noreturn_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *noretl = rz_list_newf(free);
 	ht_pp_foreach(typedb->callables, noreturn_function_names_collect_cb, noretl);

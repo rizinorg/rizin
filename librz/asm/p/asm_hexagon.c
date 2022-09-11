@@ -19,7 +19,7 @@
 #include "hexagon_insn.h"
 #include "hexagon_arch.h"
 
-static RZ_OWN RzPVector /* RzAsmTokenPattern */ *get_token_patterns() {
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	static RzPVector *pvec = NULL;
 	if (pvec) {
 		return pvec;
@@ -111,7 +111,7 @@ static RZ_OWN RzPVector /* RzAsmTokenPattern */ *get_token_patterns() {
 	return pvec;
 }
 
-static void compile_token_patterns(RZ_INOUT RzPVector /* RzAsmTokenPattern* */ *patterns) {
+static void compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
 	rz_return_if_fail(patterns);
 
 	void **it;

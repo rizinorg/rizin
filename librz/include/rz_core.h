@@ -216,9 +216,9 @@ typedef struct rz_core_tasks_t {
 	RzCoreTaskBreak break_cb;
 	void *break_cb_user;
 	int task_id_next;
-	RzList *tasks;
-	RzList *tasks_queue;
-	RzList *oneshot_queue;
+	RzList /*<RzCoreTask *>*/ *tasks;
+	RzList /*<RzCoreTask *>*/ *tasks_queue;
+	RzList /*<OneShot *>*/ *oneshot_queue;
 	int oneshots_enqueued;
 	struct rz_core_task_t *current_task;
 	struct rz_core_task_t *main_task;
@@ -235,8 +235,8 @@ typedef struct rz_core_tasks_t {
  * Once a new seek is performed, all redos are lost.
  */
 typedef struct rz_core_seek_history_t {
-	RzVector undos; ///< Stack of RzCoreSeekItems, allowing to "go back in time"
-	RzVector redos; ///< Stack of RzCoreSeekItems, allowing to re-do an action that was undone.
+	RzVector /*<RzCoreSeekItem>*/ undos; ///< Stack of RzCoreSeekItems, allowing to "go back in time"
+	RzVector /*<RzCoreSeekItem>*/ redos; ///< Stack of RzCoreSeekItems, allowing to re-do an action that was undone.
 	bool saved_set; ///< When true, the \p saved field is set
 	RzCoreSeekItem saved_item; ///< Position to save in history
 } RzCoreSeekHistory;
@@ -481,11 +481,11 @@ RZ_API bool rz_core_write_seq_at(RzCore *core, ut64 addr, ut64 from, ut64 to, ut
 RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
-RZ_API void rz_core_print_scrollbar(RzCore *core);
-RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
+RZ_IPI void rz_core_print_scrollbar(RzCore *core);
+RZ_IPI void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_help_vars_print(RzCore *core);
-RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr);
-RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
+RZ_IPI bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr);
+RZ_IPI ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
 RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
 RZ_API RzBinReloc *rz_core_get_reloc_to(RzCore *core, ut64 addr);
 RZ_API ut64 rz_core_get_asmqjmps(RzCore *core, const char *str);
@@ -800,7 +800,7 @@ typedef struct rz_core_disasm_options {
 	int invbreak;
 	int cbytes;
 	RzAnalysisFunction *function; ///< Disassemble a function
-	RzPVector *vec; ///< Not print, but append as RzPVector<RzAnalysisDisasmText>
+	RzPVector /*<RzAnalysisDisasmText *>*/ *vec; ///< Not print, but append as RzPVector<RzAnalysisDisasmText>
 } RzCoreDisasmOptions;
 
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
@@ -1068,7 +1068,7 @@ RZ_API bool rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
-RZ_API RZ_OWN char *rz_core_clippy(RzCore *core, const char *msg);
+RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const char *msg);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
@@ -1103,7 +1103,7 @@ typedef struct {
 	ut64 from;
 	ut64 to;
 	ut64 step;
-	RzVector blocks;
+	RzVector /*<RzCoreAnalysisStatsItem>*/ blocks;
 } RzCoreAnalysisStats;
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
@@ -1113,8 +1113,8 @@ RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);
 RZ_API ut64 rz_core_analysis_stats_get_block_from(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 
-RZ_API int rz_line_hist_offset_up(RzLine *line);
-RZ_API int rz_line_hist_offset_down(RzLine *line);
+RZ_IPI int rz_line_hist_offset_up(RzLine *line);
+RZ_IPI int rz_line_hist_offset_down(RzLine *line);
 
 RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 num, ut64 addr);
 

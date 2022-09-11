@@ -10,7 +10,7 @@ static bool rz_io_ar_plugin_open(RzIO *io, const char *file, bool many) {
 	return !strncmp("ar://", file, 5) || !strncmp("lib://", file, 6);
 }
 
-static RzList *rz_io_ar_open_many(RzIO *io, const char *file, int perm, int mode) {
+static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, int perm, int mode) {
 	const char *arname = strstr(file, "://");
 	if (!arname) {
 		return NULL;

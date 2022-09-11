@@ -37,12 +37,12 @@ enum {
 };
 
 typedef struct {
-	RzPVector *items;
+	RzPVector /*<char *>*/ *items;
 } RzTableRow;
 
 typedef struct {
-	RzVector *rows;
-	RzVector *cols;
+	RzVector /*<RzTableRow>*/ *rows;
+	RzVector /*<RzTableColumn>*/ *cols;
 	int totalCols;
 	bool showHeader;
 	bool showFancy;
@@ -68,11 +68,11 @@ RZ_API int rz_table_column_nth(RzTable *t, const char *name);
 RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char *name, int maxWidth);
 RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...);
 RZ_API void rz_table_set_vcolumnsf(RzTable *t, const char *fmt, va_list ap);
-RZ_API RzTableRow *rz_table_row_new(RzPVector *items);
+RZ_API RzTableRow *rz_table_row_new(RzPVector /*<char *>*/ *items);
 RZ_API void rz_table_add_row(RZ_NONNULL RzTable *t, const char *name, ...);
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...);
 RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...);
-RZ_API void rz_table_add_row_vec(RZ_NONNULL RzTable *t, RZ_NONNULL RzPVector *items);
+RZ_API void rz_table_add_row_vec(RZ_NONNULL RzTable *t, RZ_NONNULL RzPVector /*<char *>*/ *items);
 RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t);
 RZ_API char *rz_table_tosimplestring(RzTable *t);
 RZ_API char *rz_table_tostring(RzTable *t);
@@ -85,9 +85,9 @@ RZ_API void rz_table_group(RzTable *t, int nth, RzTableSelector fcn);
 RZ_API bool rz_table_query(RzTable *t, const char *q);
 RZ_API void rz_table_hide_header(RzTable *t);
 RZ_API bool rz_table_align(RzTable *t, int nth, int align);
-RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 len, int width, bool va);
+RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va);
 RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t);
-RZ_API void rz_table_columns(RzTable *t, RzList *cols); // const char *name, ...);
+RZ_API void rz_table_columns(RzTable *t, RzList /*<char *>*/ *cols); // const char *name, ...);
 #ifdef __cplusplus
 }
 #endif

@@ -8,7 +8,7 @@
 #include "rz_list.h"
 #include "rz_types_base.h"
 
-static RzList *parse_list(const char *str) {
+static RzList /*<char *>*/ *parse_list(const char *str) {
 	char *line, *data, *str_n;
 
 	if (!str) {
@@ -24,7 +24,7 @@ static RzList *parse_list(const char *str) {
 	return list;
 }
 
-static RzList *get_constants(const char *str) {
+static RzList /*<char *>*/ *get_constants(const char *str) {
 	RzList *list;
 	char *p, *data;
 	if (!str) {
@@ -211,7 +211,7 @@ static void esil_split_flg(char *esil_str, char **esil_main, char **esil_flg) {
 		mem_write = NULL; \
 	}
 
-static char *rop_classify_constant(RzCore *core, RzList *ropList) {
+static char *rop_classify_constant(RzCore *core, RzList /*<char *>*/ *ropList) {
 	char *esil_str, *constant;
 	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL, *out = NULL;
 	RzListIter *iter_r, *iter_dst, *iter_const;
@@ -297,7 +297,7 @@ out_error:
 	return NULL;
 }
 
-static char *rop_classify_mov(RzCore *core, RzList *ropList) {
+static char *rop_classify_mov(RzCore *core, RzList /*<char *>*/ *ropList) {
 	char *esil_str;
 	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL, *out = NULL;
 	RzListIter *iter_src, *iter_r, *iter_dst;
@@ -391,7 +391,7 @@ out_error:
 	return NULL;
 }
 
-static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
+static char *rop_classify_arithmetic(RzCore *core, RzList /*<char *>*/ *ropList) {
 	char *esil_str, *op;
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL,
 	     *out = NULL;
@@ -519,7 +519,7 @@ out_error:
 	return NULL;
 }
 
-static char *rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
+static char *rop_classify_arithmetic_const(RzCore *core, RzList /*<char *>*/ *ropList) {
 	char *esil_str, *op, *constant;
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RzListIter *iter_src1, *iter_r, *iter_dst, *iter_ops, *iter_const;
@@ -643,7 +643,7 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 	return arithmetic;
 }
 
-static int rop_classify_nops(RzCore *core, RzList *ropList) {
+static int rop_classify_nops(RzCore *core, RzList /*<char *>*/ *ropList) {
 	char *esil_str;
 	int changes = 1;
 	RzListIter *iter_r;
@@ -673,7 +673,7 @@ static int rop_classify_nops(RzCore *core, RzList *ropList) {
 	return changes;
 }
 
-static void rop_classify(RzCore *core, Sdb *db, RzList *ropList, const char *key, unsigned int size) {
+static void rop_classify(RzCore *core, Sdb *db, RzList /*<char *>*/ *ropList, const char *key, unsigned int size) {
 	int nop = 0;
 	rop_classify_nops(core, ropList);
 	char *mov, *ct, *arithm, *arithm_ct, *str;

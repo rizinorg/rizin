@@ -170,7 +170,7 @@ static bool rz_debug_bf_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static RzList *rz_debug_native_map_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	if (!is_io_bf(dbg)) {
 		return false;
 	}

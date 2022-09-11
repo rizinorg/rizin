@@ -473,7 +473,7 @@ void winkd_walk_vadtree(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, ut64 pa
 	}
 }
 
-RzList *winkd_list_maps(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
+RzList /*<WindMap *>*/ *winkd_list_maps(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	if (!ctx->target.vadroot) {
 		return NULL;
 	}
@@ -510,7 +510,7 @@ WindProc *winkd_get_process_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address) 
 	return proc;
 }
 
-RzList *winkd_list_process(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
+RzList /*<WindProc *>*/ *winkd_list_process(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	RzList *ret = NULL;
 	bool current_process_found = false;
 	// Grab the PsActiveProcessHead from _KDDEBUGGER_DATA64
@@ -622,7 +622,7 @@ static int read_at_uva_or_kernel(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address
 	return winkd_read_at_uva(ctx, address, buf, count);
 }
 
-RzList *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
+RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	RzList *ret = rz_list_newf(winkd_windmodule_free);
 	if (!ret) {
 		return NULL;
@@ -779,7 +779,7 @@ WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address)
 	return thread;
 }
 
-RzList *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
+RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 	RzList *ret;
 	ut64 ptr, base;
 	bool current_thread_found = false;

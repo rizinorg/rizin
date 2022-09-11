@@ -38,7 +38,7 @@
 	if (binfile && binfile->rbin && binfile->rbin->verbose) \
 	eprintf
 
-static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
+static RZ_NULLABLE RZ_BORROW const RzList /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file);
 
 static void table_add_row_bool(RzTable *t, const char *key, bool val) {
 	RzTableColumnType *typeString = rz_table_type("bool");
@@ -1688,7 +1688,7 @@ RZ_API bool rz_core_bin_set_cur(RZ_NONNULL RzCore *core, RZ_NULLABLE RzBinFile *
 /**
  * Strings for the given file, respecting settings like bin.strings
  */
-static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file) {
+static RZ_NULLABLE RZ_BORROW const RzList /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file) {
 	rz_return_val_if_fail(r && file, false);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(file);
 	if (!plugin || !rz_config_get_i(r->config, "bin.strings")) {
@@ -2353,7 +2353,7 @@ static bool digests_pj_cb(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSection *section, RzList *hashes) {
+static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSection *section, RzList /*<char *>*/ *hashes) {
 	ut64 addr = get_section_addr(core, o, section);
 	char perms[5];
 	section_perms_str(perms, section->perm);
@@ -2400,7 +2400,7 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 	pj_end(pj);
 }
 
-static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBinSection *section, RzList *hashes) {
+static bool sections_print_table(RzCore *core, RzTable *t, RzBinObject *o, RzBinSection *section, RzList /*<char *>*/ *hashes) {
 	ut64 addr = get_section_addr(core, o, section);
 	char perms[5];
 	section_perms_str(perms, section->perm);
@@ -2454,7 +2454,7 @@ cleanup:
 	return result;
 }
 
-static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList *hashes) {
+static void sections_headers_setup(RzCore *core, RzCmdStateOutput *state, RzList /*<char *>*/ *hashes) {
 	RzListIter *iter;
 	char *hashname;
 
@@ -2680,7 +2680,7 @@ RZ_API bool rz_core_bin_segments_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 	return true;
 }
 
-static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList *list) {
+static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList /*<RzBinString *>*/ *list) {
 	bool b64str = rz_config_get_i(core->config, "bin.b64str");
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
@@ -4915,7 +4915,7 @@ RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core) {
 		symstore_path, basename, info->guid, basename);
 }
 
-static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, const RzList *mems, int perms) {
+static void bin_memory_print_rec(RzCmdStateOutput *state, RzBinMem *mirror, const RzList /*<RzBinMem *>*/ *mems, int perms) {
 	RzListIter *it;
 	RzBinMem *mem;
 
@@ -4963,7 +4963,7 @@ RZ_API bool rz_core_bin_memory_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	return true;
 }
 
-static void bin_resources_print_standard(RzCore *core, RzList *hashes, RzBinResource *resource) {
+static void bin_resources_print_standard(RzCore *core, RzList /*<char *>*/ *hashes, RzBinResource *resource) {
 	char humansz[8];
 	rz_num_units(humansz, sizeof(humansz), resource->size);
 	rz_cons_printf("Resource %zd\n", resource->index);
@@ -4991,7 +4991,7 @@ static void bin_resources_print_standard(RzCore *core, RzList *hashes, RzBinReso
 	}
 }
 
-static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzList *hashes, RzBinResource *resource) {
+static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzList /*<char *>*/ *hashes, RzBinResource *resource) {
 	rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
 		resource->type, resource->vaddr, resource->size, resource->language, resource->time);
 	if (hashes && resource->size > 0) {
@@ -5012,7 +5012,7 @@ static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzL
 	}
 }
 
-static void bin_resources_print_json(RzCore *core, RzCmdStateOutput *state, RzList *hashes, RzBinResource *resource) {
+static void bin_resources_print_json(RzCore *core, RzCmdStateOutput *state, RzList /*<char *>*/ *hashes, RzBinResource *resource) {
 	pj_o(state->d.pj);
 	pj_ks(state->d.pj, "name", resource->name);
 	pj_ki(state->d.pj, "index", resource->index);

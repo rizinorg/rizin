@@ -408,7 +408,7 @@ RZ_API bool rz_analysis_block_successor_addrs_foreach(RzAnalysisBlock *block, Rz
 
 typedef struct rz_analysis_block_recurse_context_t {
 	RzAnalysis *analysis;
-	RzPVector /*<RzAnalysisBlock>*/ to_visit;
+	RzPVector /*<RzAnalysisBlock *>*/ to_visit;
 	HtUP *visited;
 } RzAnalysisBlockRecurseContext;
 
@@ -486,7 +486,7 @@ beach:
 
 typedef struct {
 	RzAnalysisBlock *bb;
-	RzListIter *switch_it;
+	RzListIter /*<RzAnalysisCaseOp *>*/ *switch_it;
 } RecurseDepthFirstCtx;
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
@@ -601,8 +601,8 @@ typedef struct {
 	RzAnalysis *analysis;
 	RzAnalysisBlock *cur_parent;
 	ut64 dst;
-	RzPVector /*<RzAnalysisBlock>*/ *next_visit; // accumulate block of the next level in the tree
-	HtUP /*<RzAnalysisBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
+	RzPVector /*<RzAnalysisBlock *>*/ *next_visit; // accumulate block of the next level in the tree
+	HtUP /*<RzAnalysisBlock *>*/ *visited; // maps addrs to their previous block (or NULL for entry)
 } PathContext;
 
 static bool shortest_path_successor_cb(ut64 addr, void *user) {

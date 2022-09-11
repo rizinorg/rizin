@@ -102,7 +102,7 @@ static bool has_already_been_processed(ELFOBJ *bin, ut64 offset, HtUU *set) {
 	return found;
 }
 
-static bool get_relocs_entry(ELFOBJ *bin, RzBinElfSection *section, RzVector *relocs, struct relocs_segment *segment, HtUU *set) {
+static bool get_relocs_entry(ELFOBJ *bin, RzBinElfSection *section, RzVector /*<RzBinElfReloc>*/ *relocs, struct relocs_segment *segment, HtUU *set) {
 	for (ut64 entry_offset = 0; entry_offset < segment->size; entry_offset += segment->entry_size) {
 		if (has_already_been_processed(bin, segment->offset + entry_offset, set)) {
 			continue;
@@ -127,7 +127,7 @@ static bool get_relocs_entry(ELFOBJ *bin, RzBinElfSection *section, RzVector *re
 	return true;
 }
 
-static bool get_relocs_entry_from_dt_dynamic_aux(ELFOBJ *bin, RzVector *relocs, ut64 dt_addr, ut64 dt_size, ut64 entry_size, ut64 mode, HtUU *set) {
+static bool get_relocs_entry_from_dt_dynamic_aux(ELFOBJ *bin, RzVector /*<RzBinElfReloc>*/ *relocs, ut64 dt_addr, ut64 dt_size, ut64 entry_size, ut64 mode, HtUU *set) {
 	ut64 addr;
 	ut64 size;
 
@@ -145,7 +145,7 @@ static bool get_relocs_entry_from_dt_dynamic_aux(ELFOBJ *bin, RzVector *relocs, 
 	return get_relocs_entry(bin, NULL, relocs, &segment, set);
 }
 
-static bool get_relocs_entry_from_dt_dynamic(ELFOBJ *bin, RzVector *relocs, HtUU *set) {
+static bool get_relocs_entry_from_dt_dynamic(ELFOBJ *bin, RzVector /*<RzBinElfReloc>*/ *relocs, HtUU *set) {
 	ut64 entry_size;
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
@@ -179,7 +179,7 @@ static ut64 get_section_relocation_mode(RzBinElfSection *section) {
 	return section->type == SHT_REL ? DT_REL : DT_RELA;
 }
 
-static bool get_relocs_entry_from_sections(ELFOBJ *bin, RzVector *relocs, HtUU *set) {
+static bool get_relocs_entry_from_sections(ELFOBJ *bin, RzVector /*<RzBinElfReloc>*/ *relocs, HtUU *set) {
 	RzBinElfSection *section;
 	rz_bin_elf_foreach_sections(bin, section) {
 		if (!section->is_valid || (section->type != SHT_REL && section->type != SHT_RELA)) {
@@ -199,7 +199,7 @@ static bool get_relocs_entry_from_sections(ELFOBJ *bin, RzVector *relocs, HtUU *
 	return true;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzVector /*<RzBinElfReloc>*/ *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	HtUU *set = ht_uu_new0();

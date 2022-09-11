@@ -994,7 +994,7 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, Variab
 	return "unsupported_reg";
 }
 
-static RzBinDwarfLocRange *find_largest_loc_range(RzList *loc_list) {
+static RzBinDwarfLocRange *find_largest_loc_range(RzList /*<RzBinDwarfLocRange *>*/ *loc_list) {
 	RzBinDwarfLocRange *largest = NULL;
 	ut64 max_range_size = 0;
 	RzListIter *iter;

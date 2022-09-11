@@ -150,10 +150,10 @@ typedef struct dex_class_def_t {
 	ut32 n_interfaces;
 	ut16 *interfaces;
 
-	RzList /*<DexEncodedField>*/ *static_fields;
-	RzList /*<DexEncodedField>*/ *instance_fields;
-	RzList /*<DexEncodedMethod>*/ *direct_methods;
-	RzList /*<DexEncodedMethod>*/ *virtual_methods;
+	RzList /*<DexEncodedField *>*/ *static_fields;
+	RzList /*<DexEncodedField *>*/ *instance_fields;
+	RzList /*<DexEncodedMethod *>*/ *direct_methods;
+	RzList /*<DexEncodedMethod *>*/ *virtual_methods;
 } DexClassDef;
 #define DEX_CLASS_DEF_SIZE (0x20)
 
@@ -187,11 +187,11 @@ typedef struct dex_t {
 	ut32 data_offset;
 
 	/* lists */
-	RzPVector /*<DexString>*/ *strings;
-	RzPVector /*<DexProtoId>*/ *proto_ids;
-	RzPVector /*<DexFieldId>*/ *field_ids;
-	RzPVector /*<DexMethodId>*/ *method_ids;
-	RzPVector /*<DexClassDef>*/ *class_defs;
+	RzPVector /*<DexString *>*/ *strings;
+	RzPVector /*<DexProtoId *>*/ *proto_ids;
+	RzPVector /*<DexFieldId *>*/ *field_ids;
+	RzPVector /*<DexMethodId *>*/ *method_ids;
+	RzPVector /*<DexClassDef *>*/ *class_defs;
 
 	DexTypeId *types;
 

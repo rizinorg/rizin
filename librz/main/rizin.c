@@ -276,7 +276,7 @@ static int main_print_var(const char *var_name) {
 	return 0;
 }
 
-static bool run_commands(RzCore *r, RzList *cmds, RzList *files, bool quiet, int do_analysis) {
+static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>*/ *files, bool quiet, int do_analysis) {
 	RzListIter *iter;
 	const char *cmdn;
 	const char *file;

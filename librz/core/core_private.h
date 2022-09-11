@@ -113,7 +113,7 @@ RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
 RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format);
 RZ_IPI bool rz_core_agraph_is_shortcuts(RzCore *core, RzAGraph *g);
 RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, ut64 addr, char *title);
-RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph *graph);
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph);
 
 /* cgraph.c */
 RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
@@ -124,7 +124,7 @@ RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdSt
 
 /* creg.c */
 RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
-RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items);
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items);
 
 /* cdebug.c */
 RZ_IPI void rz_core_debug_sync_bits(RzCore *core);
@@ -179,7 +179,7 @@ RZ_IPI RzCmdStatus rz_macros_handler(RzCore *core, const char *name, const char 
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_regs_references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode);
-RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList *list);
+RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList /*<RzRegItem *>*/ *list);
 RZ_IPI RzCmdStatus rz_regs_valgroup_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_arenas_push_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
@@ -258,7 +258,7 @@ typedef struct rz_core_visual_tab_t {
 } RzCoreVisualTab;
 
 typedef struct rz_core_visual_t {
-	RzList *tabs;
+	RzList /*<RzCoreVisualTab *>*/ *tabs;
 	int tab;
 	bool is_inputing; // whether the user is inputing
 	char *inputing; // for filter on the go in Vv mode

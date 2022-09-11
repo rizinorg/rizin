@@ -15,6 +15,7 @@ jobs:
     outputs:
       yaml: ${{ steps.filter.outputs.yaml }}
       clang-format: ${{ steps.filter.outputs.clang-format }}
+      bindgen-linter: ${{ steps.filter.outputs.bindgen-linter }}
       prettier: ${{ steps.filter.outputs.prettier }}
       python: ${{ steps.filter.outputs.python }}
     steps:
@@ -26,6 +27,11 @@ jobs:
           yaml:
             - '**.yml'
             - '**.yaml'
+            - '.github/workflows/linter.yml'
+          bindgen-linter:
+            - '**.c'
+            - '**.h'
+            - '**.inc'
             - '.github/workflows/linter.yml'
           clang-format:
             - '**.c'
@@ -58,6 +64,37 @@ jobs:
         run: |
           ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
+
+  bindgen-linter:
+    needs: changes
+    runs-on: ubuntu-22.04
+    if: ${{ needs.changes.outputs.bindgen-linter == 'true' }}
+    steps:
+      - name: Checkout rizin
+        uses: actions/checkout@v3
+        with:
+          path: rizin
+      - name: Checkout rz-bindgen
+        uses: actions/checkout@v3
+        with:
+          repository: rizinorg/rz-bindgen
+          path: rz-bindgen
+      - name: Install dependencies
+        run: |
+          sudo pip install meson ninja
+          sudo apt update
+          sudo apt install libclang-14-dev
+      - name: Build rizin
+        working-directory: rizin
+        run: |
+          meson setup build
+          ninja -C build
+      - name: Run rz-bindgen linter
+        run: |
+          python3 rz-bindgen/src/lint.py \
+                  --clang-path "/usr/lib/llvm-14/lib" \
+                  --clang-args "-resource-dir=$(clang -print-resource-dir) " \
+                  --rizin-path rizin
 
   clang-format:
     needs: changes

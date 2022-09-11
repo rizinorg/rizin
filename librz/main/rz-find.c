@@ -34,7 +34,7 @@ typedef struct {
 	ut64 to;
 	ut64 cur;
 	RzPrint *pr;
-	RzList *keywords;
+	RzList /*<char *>*/ *keywords;
 	const char *mask;
 	const char *curfile;
 	const char *comma;

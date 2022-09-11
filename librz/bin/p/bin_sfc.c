@@ -95,7 +95,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static void addrom(RzList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
+static void addrom(RzList /*<RzBinSection *>*/ *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
 	RzBinSection *ptr = RZ_NEW0(RzBinSection);
 	if (!ptr) {
 		return;
@@ -122,11 +122,11 @@ static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
 }
 #endif
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	// RzBinSection *ptr = NULL;
 	int hdroffset = 0;
@@ -185,7 +185,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *mem(RzBinFile *bf) {
+static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	RzList *ret;
 	RzBinMem *m;
 	RzBinMem *m_bak;
@@ -268,7 +268,7 @@ static RzList *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	if (!(ret = rz_list_new())) {
 		return NULL;

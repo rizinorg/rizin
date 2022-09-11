@@ -168,14 +168,14 @@ typedef struct rz_flirt_module_t {
 	// until but not including the first variant byte
 	// this is a custom crc16
 	ut32 length; // total length of the module
-	RzList *public_functions;
-	RzList *tail_bytes;
-	RzList *referenced_functions;
+	RzList /*<RzFlirtFunction *>*/ *public_functions;
+	RzList /*<RzFlirtTailByte *>*/ *tail_bytes;
+	RzList /*<RzFlirtFunction *>*/ *referenced_functions;
 } RzFlirtModule;
 
 typedef struct rz_flirt_node_t {
-	RzList *child_list;
-	RzList *module_list;
+	RzList /*<RzFlirtNode *>*/ *child_list;
+	RzList /*<RzFlirtModule *>*/ *module_list;
 	ut32 length; // length of the pattern
 	ut64 variant_mask; // this is the mask that will define variant bytes in ut8 *pattern_bytes
 	ut8 *pattern_bytes; // holds the pattern bytes of the signature

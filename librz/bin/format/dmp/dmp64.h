@@ -29,9 +29,9 @@ struct rz_bin_dmp64_obj_t {
 	dmp_p_memory_run *runs;
 	ut8 *bitmap;
 	ut64 dtb;
-	RzList *pages;
-	RzList *datablocks;
-	RzList *drivers;
+	RzList /*<dmp_page_desc *>*/ *pages;
+	RzList /*<dmp64_triage_datablock *>*/ *datablocks;
+	RzList /*<dmp_driver_desc *>*/ *drivers;
 
 	RzBuffer *b;
 	int size;

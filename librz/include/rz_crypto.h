@@ -34,7 +34,7 @@ typedef struct rz_crypto_t {
 	int output_size;
 	int dir;
 	void *user;
-	RzList *plugins;
+	RzList /*<RzCryptoPlugin *>*/ *plugins;
 } RzCrypto;
 
 typedef struct rz_crypto_plugin_t {

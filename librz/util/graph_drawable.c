@@ -25,7 +25,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info(const char *title, const char 
 	return data;
 }
 
-RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph *graph, const char *title, const char *body, ut64 offset) {
+RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset) {
 	rz_return_val_if_fail(graph, NULL);
 	RzGraphNodeInfo *data = rz_graph_create_node_info(title, body, offset);
 	if (!data) {

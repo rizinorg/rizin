@@ -141,7 +141,7 @@ static bool parse_offset(const char *s, RZ_OUT RzRegProfileDef *def) {
  * \return true On success.
  * \return false On Failure.
  */
-static bool parse_alias(RZ_OUT RzList *alias_list, RZ_BORROW RzList *tokens) {
+static bool parse_alias(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_BORROW RzList /*<char *>*/ *tokens) {
 	rz_return_val_if_fail(alias_list && tokens, false);
 	RzRegProfileAlias *pa = RZ_NEW0(RzRegProfileAlias);
 	if (!pa) {
@@ -180,7 +180,7 @@ static bool parse_alias(RZ_OUT RzList *alias_list, RZ_BORROW RzList *tokens) {
  * \return false On failure.
  * \return true On success.
  */
-static bool parse_def(RZ_OUT RzList *def_list, RZ_BORROW RzList *tokens) {
+static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW RzList /*<char *>*/ *tokens) {
 	rz_return_val_if_fail(def_list && tokens, false);
 
 	RzRegProfileDef *def = RZ_NEW0(RzRegProfileDef);
@@ -267,7 +267,7 @@ reg_parse_error:
  * \return false On failure.
  * \return true On success.
  */
-static bool parse_reg_profile_str(RZ_OUT RzList *alias_list, RZ_OUT RzList *def_list, const char *profile_str) {
+static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, const char *profile_str) {
 	rz_return_val_if_fail(alias_list && def_list && profile_str, false);
 
 	RzList *def_lines = rz_str_split_duplist_n(profile_str, "\n", 0, true);

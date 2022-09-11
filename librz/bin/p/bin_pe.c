@@ -129,7 +129,7 @@ static char *signature(RzBinFile *bf, bool json) {
 	return rz_pkcs7_cms_to_string(bin->cms);
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;

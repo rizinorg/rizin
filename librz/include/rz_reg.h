@@ -110,8 +110,8 @@ typedef struct {
 } RzRegProfileDef;
 
 typedef struct {
-	RzList /* RzRegProfileAlias */ *alias;
-	RzList /* RzRegProfileDef */ *defs;
+	RzList /*<RzRegProfileAlias *>*/ *alias;
+	RzList /*<RzRegProfileDef *>*/ *defs;
 } RzRegProfile;
 
 typedef struct rz_reg_item_t {
@@ -134,10 +134,10 @@ typedef struct rz_reg_arena_t {
 
 typedef struct rz_reg_set_t {
 	RzRegArena *arena;
-	RzList *pool; ///< RzRegArena
-	RzList *regs; ///< RzRegItem
+	RzList /*<RzRegArena *>*/ *pool; ///< RzRegArena
+	RzList /*<RzRegItem *>*/ *regs; ///< RzRegItem
 	HtPP *ht_regs; ///< name:RzRegItem
-	RzListIter *cur;
+	RzListIter /*<RzRegArena *>*/ *cur;
 	ut32 maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;
 
@@ -148,8 +148,8 @@ typedef struct rz_reg_t {
 	RzRegProfile reg_profile;
 	char *name[RZ_REG_NAME_LAST]; // aliases
 	RzRegSet regset[RZ_REG_TYPE_LAST];
-	RzList *allregs;
-	RzList *roregs;
+	RzList /*<RzRegItem *>*/ *allregs;
+	RzList /*<char *>*/ *roregs;
 	int iters;
 	int arch;
 	int bits;
@@ -193,7 +193,7 @@ RZ_API const char *rz_reg_get_role(int role);
 RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str);
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
 RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name);
-RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type);
+RZ_API const RzList /*<RzRegItem *>*/ *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);
 RZ_API RzRegItem *rz_reg_next_diff(RzReg *reg, int type, const ut8 *buf, int buflen, RzRegItem *prev_ri, int regsize);
 
@@ -213,7 +213,7 @@ RZ_API bool rz_reg_cond_set(RzReg *reg, const char *name, bool val);
 RZ_API int rz_reg_cond_get_value(RzReg *r, const char *name);
 RZ_API bool rz_reg_cond_bits_set(RzReg *r, int type, RzRegFlags *f, bool v);
 RZ_API int rz_reg_cond_bits(RzReg *r, int type, RzRegFlags *f);
-RZ_API RzRegFlags *rz_reg_cond_retrieve(RzReg *r, RzRegFlags *);
+RZ_API RzRegFlags *rz_reg_cond_retrieve(RzReg *r, RzRegFlags *f);
 RZ_API int rz_reg_cond(RzReg *r, int type);
 
 /* bitvector, for everything */
@@ -267,7 +267,7 @@ RZ_API const char *rz_reg_cond_to_string(int n);
 RZ_API int rz_reg_cond_from_string(const char *str);
 RZ_API void rz_reg_arena_shrink(RzReg *reg);
 
-RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /*<RzRegItem *>*/ *regs);
+RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /*<RzRegItem *>*/ *regs);
 
 #ifdef __cplusplus
 }

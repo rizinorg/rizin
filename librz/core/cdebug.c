@@ -545,7 +545,7 @@ static int cmp(const void *a, const void *b) {
  * Used to determine the min & max addresses of maps and
  * scale the ascii bar to the width of the terminal
  */
-static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width) {
+static int findMinMax(RzList /*<RzDebugMap *>*/ *maps, ut64 *min, ut64 *max, int skip, int width) {
 	RzDebugMap *map;
 	RzListIter *iter;
 	*min = UT64_MAX;
@@ -565,7 +565,7 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width) {
 	return (int)(*max - *min) / width;
 }
 
-static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, int colors) {
+static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *maps, ut64 addr, int colors) {
 	ut64 mul; // The amount of address space a single console column will represent in bar graph
 	ut64 min = -1, max = 0;
 	int width = rz_cons_get_size(NULL) - 90;

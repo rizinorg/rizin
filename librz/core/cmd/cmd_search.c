@@ -158,7 +158,7 @@ static const char *searchprefix = NULL;
 
 struct search_parameters {
 	RzCore *core;
-	RzList *boundaries;
+	RzList /*<RzIOMap *>*/ *boundaries;
 	const char *mode;
 	const char *cmd_hit;
 	PJ *pj;
@@ -532,7 +532,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 	}
 }
 
-static void append_bound(RzList *list, RzIO *io, RzInterval search_itv, ut64 from, ut64 size, int perms) {
+static void append_bound(RzList /*<RzIOMap *>*/ *list, RzIO *io, RzInterval search_itv, ut64 from, ut64 size, int perms) {
 	RzIOMap *map = RZ_NEW0(RzIOMap);
 	if (!map) {
 		return;
@@ -987,7 +987,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 }
 
 // TODO: follow unconditional jumps
-static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RzList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
+static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RzList /*<char *>*/ *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RzAnalysisOp aop = { 0 };
@@ -1121,7 +1121,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
+static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj, int mode) {
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
 	RzList *ropList = NULL;
@@ -1288,7 +1288,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 	int max_count = rz_config_get_i(core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
 	RzList /*<endlist_pair>*/ *end_list = rz_list_newf(free);
-	RzList /*<RzRegex>*/ *rx_list = NULL;
+	RzList /*<char *>*/ *rx_list = NULL;
 	int align = core->search->align;
 	RzListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
@@ -2605,7 +2605,7 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) 
 	}
 }
 
-static ut8 *v_writebuf(RzCore *core, RzList *nums, int len, char ch, int bsize) {
+static ut8 *v_writebuf(RzCore *core, RzList /*<char *>*/ *nums, int len, char ch, int bsize) {
 	ut8 *ptr;
 	ut64 n64;
 	ut32 n32;

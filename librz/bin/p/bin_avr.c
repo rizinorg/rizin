@@ -139,7 +139,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return bi;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 	if (tmp_entry == UT64_MAX) {
@@ -157,7 +157,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RzList *ret, const char *name, ut64 addr) {
+static void addsym(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr) {
 	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (ptr) {
 		ptr->name = strdup(name ? name : "");
@@ -168,7 +168,7 @@ static void addsym(RzList *ret, const char *name, ut64 addr) {
 	}
 }
 
-static void addptr(RzList *ret, const char *name, ut64 addr, RzBuffer *b) {
+static void addptr(RzList /*<RzBinSymbol *>*/ *ret, const char *name, ut64 addr, RzBuffer *b) {
 	if (b && rjmp(b, 0)) {
 		addsym(ret, sdb_fmt("vector.%s", name), addr);
 		ut64 ptr_addr;
@@ -178,7 +178,7 @@ static void addptr(RzList *ret, const char *name, ut64 addr, RzBuffer *b) {
 	}
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBuffer *obj = bf->o->bin_obj;
 
@@ -195,7 +195,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	// we dont want to find strings in avr bins because there are lot of false positives
 	return NULL;
 }

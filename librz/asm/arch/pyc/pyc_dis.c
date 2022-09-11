@@ -6,9 +6,9 @@
 
 static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
-static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList *names, RzList *consts, RzList *varnames, RzList *interned_table, RzList *freevars, RzList *cellvars, RzList *opcode_arg_fmt);
+static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList /*<pyc_object *>*/ *names, RzList /*<pyc_object *>*/ *consts, RzList /*<pyc_object *>*/ *varnames, RzList /*<pyc_object *>*/ *freevars, RzList /*<pyc_object *>*/ *cellvars, RzList /*<pyc_arg_fmt *>*/ *opcode_arg_fmt);
 
-int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *interned_table, ut64 pc, pyc_opcodes *ops) {
+int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList /*<pyc_code_object *>*/ *cobjs, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 i = 0, oparg;
 	st64 start_offset, end_offset;
@@ -46,7 +46,7 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *int
 				oparg = code[i];
 				i += 1;
 			}
-			const char *arg = parse_arg(&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
+			const char *arg = parse_arg(&ops->opcodes[op], oparg, names, consts, varnames, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {
 				rz_strbuf_appendf(&opstruct->buf_asm, "%20s", arg);
 				free((char *)arg);
@@ -60,9 +60,9 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *int
 	return 0;
 }
 
-static char *generic_array_obj_to_string(RzList *l);
+static char *generic_array_obj_to_string(RzList /*<pyc_object *>*/ *l);
 
-static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList *names, RzList *consts, RzList *varnames, RzList *interned_table, RzList *freevars, RzList *cellvars, RzList *opcode_arg_fmt) {
+static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList /*<pyc_object *>*/ *names, RzList /*<pyc_object *>*/ *consts, RzList /*<pyc_object *>*/ *varnames, RzList /*<pyc_object *>*/ *freevars, RzList /*<pyc_object *>*/ *cellvars, RzList /*<pyc_arg_fmt *>*/ *opcode_arg_fmt) {
 	pyc_object *t = NULL;
 	const char *arg = NULL;
 	pyc_code_object *tmp_cobj;
@@ -151,7 +151,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList *names, R
 	return arg;
 }
 
-static char *generic_array_obj_to_string(RzList *l) {
+static char *generic_array_obj_to_string(RzList /*<pyc_object *>*/ *l) {
 	RzListIter *iter = NULL;
 	pyc_object *e = NULL;
 

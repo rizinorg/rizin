@@ -1229,7 +1229,7 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 #endif
 }
 
-static void recursive_search_glob(const char *path, const char *glob, RzList *list, int depth) {
+static void recursive_search_glob(const char *path, const char *glob, RzList /*<char *>*/ *list, int depth) {
 	if (depth < 1) {
 		return;
 	}
@@ -1260,7 +1260,7 @@ static void recursive_search_glob(const char *path, const char *glob, RzList *li
 	rz_list_free(dir);
 }
 
-RZ_API RzList *rz_file_globsearch(const char *_globbed_path, int maxdepth) {
+RZ_API RzList /*<char *>*/ *rz_file_globsearch(const char *_globbed_path, int maxdepth) {
 	char *globbed_path = strdup(_globbed_path);
 	RzList *files = rz_list_newf(free);
 	char *glob = strchr(globbed_path, '*');

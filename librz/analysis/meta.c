@@ -50,7 +50,7 @@ typedef struct {
 	RzAnalysisMetaType type;
 	const RzSpace *space;
 
-	RzPVector /*RzIntervalNode*/ *result;
+	RzPVector /*<RzIntervalNode *>*/ *result;
 } CollectCtx;
 
 static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
@@ -61,7 +61,7 @@ static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -74,7 +74,7 @@ static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -87,7 +87,7 @@ static RzPVector *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,

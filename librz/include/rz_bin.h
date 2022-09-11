@@ -264,27 +264,27 @@ typedef struct rz_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
-	RzList /*<RzBinVirtualFile>*/ *vfiles;
-	RzList /*<RzBinMap>*/ *maps;
-	RzList /*<RzBinSection>*/ *sections;
-	RzList /*<RzBinImport>*/ *imports;
-	RzList /*<RzBinSymbol>*/ *symbols;
-	RzList /*<RzBinResource>*/ *resources;
+	RzList /*<RzBinVirtualFile *>*/ *vfiles;
+	RzList /*<RzBinMap *>*/ *maps;
+	RzList /*<RzBinSection *>*/ *sections;
+	RzList /*<RzBinImport *>*/ *imports;
+	RzList /*<RzBinSymbol *>*/ *symbols;
+	RzList /*<RzBinResource *>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
 	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
-	RzList /*<RzBinAddr>*/ *entries;
-	RzList /*<RzBinField>*/ *fields;
-	RzList /*<char*>*/ *libs;
+	RzList /*<RzBinAddr *>*/ *entries;
+	RzList /*<RzBinField *>*/ *fields;
+	RzList /*<char *>*/ *libs;
 	RzBinRelocStorage *relocs;
 	RzBinStrDb *strings;
-	RzList /*<RzBinClass>*/ *classes;
+	RzList /*<RzBinClass *>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;
 	RzBinSourceLineInfo *lines;
-	RzList /*<RzBinMem>*/ *mem;
+	RzList /*<RzBinMem *>*/ *mem;
 	char *regstate;
 	RzBinInfo *info;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
@@ -401,10 +401,10 @@ typedef struct rz_bin_xtr_plugin_t {
 
 	RzBinXtrData *(*extract_from_bytes)(RzBin *bin, const ut8 *buf, ut64 size, int idx);
 	RzBinXtrData *(*extract_from_buffer)(RzBin *bin, RzBuffer *buf, int idx);
-	RzList *(*extractall_from_bytes)(RzBin *bin, const ut8 *buf, ut64 size);
-	RzList *(*extractall_from_buffer)(RzBin *bin, RzBuffer *buf);
+	RzList /*<RzBinXtrData *>*/ *(*extractall_from_bytes)(RzBin *bin, const ut8 *buf, ut64 size);
+	RzList /*<RzBinXtrData *>*/ *(*extractall_from_buffer)(RzBin *bin, RzBuffer *buf);
 	RzBinXtrData *(*extract)(RzBin *bin, int idx);
-	RzList *(*extractall)(RzBin *bin);
+	RzList /*<RzBinXtrData *>*/ *(*extractall)(RzBin *bin);
 
 	bool (*load)(RzBin *bin);
 	int (*size)(RzBin *bin);
@@ -531,7 +531,7 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
 	RzList /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
 	RzList /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
-	RzBinInfo /*<RzBinInfo *>*/ *(*info)(RzBinFile *bf);
+	RzBinInfo *(*info)(RzBinFile *bf);
 	RzList /*<RzBinField *>*/ *(*fields)(RzBinFile *bf);
 	RzList /*<char *>*/ *(*libs)(RzBinFile *bf);
 	RzList /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
@@ -642,7 +642,7 @@ typedef struct rz_bin_section_t {
  */
 typedef struct rz_bin_section_map_t {
 	const RzBinSection *segment;
-	RzPVector sections;
+	RzPVector /*<RzBinSection *>*/ sections;
 } RzBinSectionMap;
 
 typedef struct rz_bin_class_t {
@@ -652,8 +652,8 @@ typedef struct rz_bin_class_t {
 	char *visibility_str; // XXX only used by java
 	int index;
 	ut64 addr;
-	RzList *methods; // <RzBinSymbol>
-	RzList *fields; // <RzBinField>
+	RzList /*<RzBinSymbol *>*/ *methods;
+	RzList /*<RzBinField *>*/ *fields;
 	// RzList *interfaces; // <char *>
 	int visibility;
 } RzBinClass;
@@ -783,7 +783,7 @@ typedef struct rz_bin_mem_t {
 	ut64 addr;
 	int size;
 	int perms;
-	RzList /*<RzBinMem>*/ *mirrors; // for mirror access; stuff here should only create new maps not new fds
+	RzList /*<RzBinMem *>*/ *mirrors; // for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
 typedef struct rz_bin_resource_t {

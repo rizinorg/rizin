@@ -115,7 +115,6 @@ RZ_API void rz_egg_free(RzEgg *egg) {
 	rz_buf_free(egg->src);
 	rz_buf_free(egg->buf);
 	rz_buf_free(egg->bin);
-	rz_list_free(egg->list);
 	rz_asm_free(egg->rasm);
 	rz_syscall_free(egg->syscall);
 	sdb_free(egg->db);

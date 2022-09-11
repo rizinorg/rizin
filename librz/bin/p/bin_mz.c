@@ -149,7 +149,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return mzaddr;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
 	RzList *res = NULL;
 	if (!(res = rz_list_newf(free))) {
@@ -162,7 +162,7 @@ static RzList *entries(RzBinFile *bf) {
 	return res;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_mz_get_segments(bf->o->bin_obj);
 }
 
@@ -224,7 +224,7 @@ static void header(RzBinFile *bf) {
 		mz->dos_header->overlay_number);
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinReloc *rel = NULL;
 	const struct rz_bin_mz_reloc_t *relocs = NULL;

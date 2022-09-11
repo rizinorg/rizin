@@ -161,7 +161,7 @@ RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr) {
 }
 
 /* TODO rename to _kill_ -> _signal_ */
-RZ_API RzList *rz_debug_kill_list(RzDebug *dbg) {
+RZ_API RzList /*<void *>*/ *rz_debug_kill_list(RzDebug *dbg) {
 	if (dbg->cur->kill_list) {
 		return dbg->cur->kill_list(dbg);
 	}

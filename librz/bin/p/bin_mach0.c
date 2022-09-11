@@ -64,15 +64,15 @@ static ut64 baddr(RzBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
+static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	return MACH0_(get_virtual_files)(bf);
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return MACH0_(get_maps)(bf);
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return MACH0_(get_segments)(bf);
 }
 
@@ -93,7 +93,7 @@ static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
+static void process_constructors(RzBinFile *bf, RzList /*<RzBinAddr *>*/ *ret, int bits) {
 	RzList *secs = sections(bf);
 	RzListIter *iter;
 	RzBinSection *sec;
@@ -137,7 +137,7 @@ static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
 	}
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	RzBinAddr *ptr = NULL;
@@ -184,7 +184,7 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) * bin, RzBinSymbol **p) {
 	}
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	struct MACH0_(obj_t) * bin;
 	int i;
 	const struct symbol_t *syms = NULL;
@@ -334,7 +334,7 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 	return ptr;
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = bf ? bf->o->bin_obj : NULL;
 	const char *name;
@@ -380,7 +380,7 @@ static RzList *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	RzList *ret = NULL;
 	struct MACH0_(obj_t) *bin = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
@@ -428,7 +428,7 @@ static RzList *relocs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	int i;
 	char *ptr = NULL;
 	struct lib_t *libs;
@@ -495,7 +495,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *classes(RzBinFile *bf) {
+static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	return MACH0_(parse_classes)(bf, NULL);
 }
 
@@ -821,7 +821,7 @@ static ut64 size(RzBinFile *bf) {
 	return off + len;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 4, false);
 }
 

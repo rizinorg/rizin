@@ -870,11 +870,11 @@ static char *get_abi_mips(ELFOBJ *bin) {
 /**
  * \brief List all imported lib
  * \param elf binary
- * \return an allocated list of RzBinElfLib
+ * \return an allocated list of char*
  *
  * Use dynamic information (dt_needed) to generate a list of imported lib
  */
-RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {

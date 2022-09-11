@@ -152,7 +152,7 @@ RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *te
 	return ret ? 0 : 1;
 }
 
-RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text) {
+RZ_API RzList /*<char *>*/ *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text) {
 	RzList *list = rz_list_newf(free);
 	RzRegex rx;
 	RzRegexMatch match;

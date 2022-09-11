@@ -75,7 +75,7 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 	return name;
 }
 
-RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	int i;
 	if (!bin) {
 		return NULL;
@@ -118,7 +118,7 @@ static void ne_sanitize_name(char *name, ut16 count) {
 	}
 }
 
-RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
 	RzList *symbols = rz_list_newf(free);
@@ -354,7 +354,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	return true;
 }
 
-RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
@@ -390,7 +390,7 @@ RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 	return imports;
 }
 
-RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 	RzList *entries = rz_list_newf(free);
 	if (!entries) {
 		return NULL;
@@ -472,7 +472,7 @@ end:
 	return entries;
 }
 
-RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	RzList *segments = bin->segments;
 	if (!segments) {
 		return NULL;

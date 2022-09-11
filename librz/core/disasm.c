@@ -306,7 +306,7 @@ typedef struct {
 	int maxflags;
 	int asm_types;
 
-	RzPVector *vec;
+	RzPVector /*<RzAnalysisDisasmText *>*/ *vec;
 } RzDisasmState;
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -1797,7 +1797,7 @@ static void ds_show_functions_argvar(RzDisasmState *ds, RzAnalysisFunction *fcn,
 	free(constr);
 }
 
-static void printVarSummary(RzDisasmState *ds, RzList *list) {
+static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *list) {
 	const char *numColor = ds->core->cons->context->pal.num;
 	RzAnalysisVar *var;
 	RzListIter *iter;

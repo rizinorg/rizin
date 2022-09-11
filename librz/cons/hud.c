@@ -109,7 +109,7 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 	return true;
 }
 
-static RzList *hud_filter(RzList *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
+static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RzListIter *iter;
 	char *current_entry;
 	char mask[HUD_BUF_SIZE];

@@ -80,7 +80,7 @@ struct g_cb {
 typedef struct ascii_edge_t {
 	RzANode *from;
 	RzANode *to;
-	RzList *x, *y;
+	RzList /*<void *>*/ *x, *y; // void* is treated as a size_t
 	int is_reversed;
 } AEdge;
 
@@ -209,7 +209,7 @@ static void agraph_node_free(RzANode *n) {
 
 static int agraph_refresh(struct agraph_refresh_data *grd);
 
-static void update_node_dimension(const RzGraph *g, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
+static void update_node_dimension(const RzGraph /*<RzANode *>*/ *g, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
 	const RzList *nodes = rz_graph_get_nodes(g);
 	RzGraphNode *gn;
 	RzListIter *it;
@@ -430,7 +430,7 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 	rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
 }
 
-static int **get_crossing_matrix(const RzGraph *g,
+static int **get_crossing_matrix(const RzGraph /*<RzANode *>*/ *g,
 	const struct layer_t layers[],
 	int maxlayer, int i, int from_up,
 	int *n_rows) {
@@ -540,7 +540,7 @@ err_row:
 	return NULL;
 }
 
-static int layer_sweep(const RzGraph *g, const struct layer_t layers[],
+static int layer_sweep(const RzGraph /*<RzANode *>*/ *g, const struct layer_t layers[],
 	int maxlayer, int i, int from_up) {
 	RzGraphNode *u, *v;
 	const RzANode *au, *av;
@@ -958,7 +958,7 @@ static HtPP *compute_vertical_nodes(const RzAGraph *g) {
  * - v E C
  * - w E C => L(v) is a subset of C
  * - w E C, the s+(w) exists and is not in any class yet => s+(w) E C */
-static RzList **compute_classes(const RzAGraph *g, HtPP *v_nodes, int is_left, int *n_classes) {
+static RzList /*<RzGraphNode *>*/ **compute_classes(const RzAGraph *g, HtPP *v_nodes, int is_left, int *n_classes) {
 	int i, j, c;
 	RzList **res = RZ_NEWS0(RzList *, g->n_layers);
 	RzGraphNode *gn;
@@ -1038,7 +1038,7 @@ static int adjust_class_val(const RzAGraph *g, const RzGraphNode *gn, const RzGr
 
 /* adjusts the position of previously placed left/right classes */
 /* tries to place classes as close as possible */
-static void adjust_class(const RzAGraph *g, int is_left, RzList **classes, HtPU *res, int c) {
+static void adjust_class(const RzAGraph *g, int is_left, RzList /*<RzGraphNode *>*/ **classes, HtPU *res, int c) {
 	const RzGraphNode *gn;
 	const RzListIter *it;
 	const RzANode *an;
@@ -1117,7 +1117,7 @@ static int place_nodes_sel_p(int newval, int oldval, int is_first, int is_left) 
 }
 
 /* places left/right the nodes of a class */
-static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, RzList **classes, HtPU *res, SetP *placed) {
+static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, HtPU *res, SetP *placed) {
 	const RzList *lv = ht_pp_find(v_nodes, gn, NULL);
 	int p = 0, v, is_first = true;
 	const RzGraphNode *gk;
@@ -1135,7 +1135,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 		sibl_anode = get_anode(sibling);
 		if (ak->klass == sibl_anode->klass) {
 			if (!set_p_contains(placed, sibling)) {
-				place_nodes(g, sibling, is_left, v_nodes, classes, res, placed);
+				place_nodes(g, sibling, is_left, v_nodes, res, placed);
 			}
 
 			v = place_nodes_val(g, gk, sibling, res, is_left);
@@ -1178,7 +1178,7 @@ static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
 
 		rz_list_foreach (classes[i], it, gn) {
 			if (!set_p_contains(placed, gn)) {
-				place_nodes(g, gn, is_left, v_nodes, classes, res, placed);
+				place_nodes(g, gn, is_left, v_nodes, res, placed);
 			}
 		}
 
@@ -1355,7 +1355,7 @@ static int RP_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
 	return (a->pos > b->pos) - (a->pos < b->pos);
 }
 
-static void collect_changes(const RzAGraph *g, int l, const RzGraphNode *b, int from_up, int s, int e, RzList *list, int is_left) {
+static void collect_changes(const RzAGraph *g, int l, const RzGraphNode *b, int from_up, int s, int e, RzList /*<struct len_pos_t *>*/ *list, int is_left) {
 	const RzGraphNode *vt = g->layers[l].nodes[e - 1];
 	const RzGraphNode *vtp = g->layers[l].nodes[s];
 	struct len_pos_t *cx;

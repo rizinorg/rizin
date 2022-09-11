@@ -13,7 +13,7 @@
 
 #include "parse_common.c"
 
-static RzList *avr_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *avr_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar avr_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("adc", "1 += 2 + carry"),
@@ -104,7 +104,7 @@ static const RzPseudoGrammar avr_lexicon[] = {
 
 static const RzPseudoConfig avr_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(avr_lexicon, 3, avr_tokenize);
 
-RzList *avr_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *avr_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	bool insert_zero = false;

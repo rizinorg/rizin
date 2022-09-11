@@ -158,9 +158,9 @@ struct PE_(rz_bin_pe_obj_t) {
 	int endian;
 	bool verbose;
 	int big_endian;
-	RzList *rich_entries;
-	RzList *relocs;
-	RzList *resources; // RzList of rz_pe_resources
+	RzList /*<Pe_image_rich_entry *>*/ *rich_entries;
+	RzList /*<RzBinReloc *>*/ *relocs;
+	RzList /*<rz_pe_resource *>*/ *resources;
 	const char *file;
 	RzBuffer *b;
 	Sdb *kv;
@@ -177,7 +177,7 @@ struct PE_(rz_bin_pe_obj_t) {
 #define PE_READ_STRUCT_FIELD(var, struct_type, field, size) var->field = rz_read_le##size(buf + offsetof(struct_type, field))
 
 // pe_clr.c
-RZ_OWN RzList *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bin);
+RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bin);
 ut64 PE_(rz_bin_pe_get_clr_methoddef_offset)(RzBinPEObj *bin, Pe_image_metadata_methoddef *methoddef);
 int PE_(bin_pe_init_clr)(RzBinPEObj *bin);
 
@@ -234,7 +234,7 @@ int PE_(bin_pe_init_resource)(RzBinPEObj *bin);
 // pe_section.c
 int PE_(bin_pe_init_sections)(RzBinPEObj *bin);
 void PE_(rz_bin_pe_check_sections)(RzBinPEObj *bin, struct rz_bin_pe_section_t **sects);
-RzList *PE_(section_flag_to_rzlist)(ut64 flag);
+RzList /*<char *>*/ *PE_(section_flag_to_rzlist)(ut64 flag);
 struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin);
 
 // pe_security.c

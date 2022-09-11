@@ -1922,7 +1922,7 @@ static bool format_collect_cb(void *user, const void *k, const void *v) {
 	return true;
 }
 
-RZ_API RZ_OWN RzList *rz_type_db_format_all(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *formats = rz_list_newf(free);
 	ht_pp_foreach(typedb->formats, format_collect_cb, formats);

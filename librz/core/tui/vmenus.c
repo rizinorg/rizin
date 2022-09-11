@@ -73,7 +73,7 @@ static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *t
  * \param inputing
  * \return return the pointer of RzPVector
  */
-static RzPVector *capture_filter_keywords(char *inputing) {
+static RzPVector /*<char *>*/ *capture_filter_keywords(char *inputing) {
 	rz_return_val_if_fail(inputing, NULL);
 	RzPVector *keywords = rz_pvector_new(free);
 
@@ -108,7 +108,7 @@ static RzPVector *capture_filter_keywords(char *inputing) {
  * \param filter_fcn store the filtered functions
  * \return return the number of functions that conform to the keywords
  */
-static ut32 filter_function(RzCore *core, RzList *filter_fcn, RzPVector *keywords) {
+static ut32 filter_function(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *filter_fcn, RzPVector /*<char *>*/ *keywords) {
 	rz_return_val_if_fail(core, 0);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;

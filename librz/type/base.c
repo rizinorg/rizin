@@ -78,7 +78,7 @@ RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType 
 }
 
 struct list_kind {
-	RzList *types;
+	RzList /*<RzBaseType *>*/ *types;
 	RzBaseTypeKind kind;
 };
 

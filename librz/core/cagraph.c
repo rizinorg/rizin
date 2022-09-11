@@ -271,7 +271,7 @@ RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
 	return true;
 }
 
-RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph *graph) {
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
 	if (!(core && core->graph && graph)) {
 		return false;
 	}

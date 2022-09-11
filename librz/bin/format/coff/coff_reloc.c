@@ -192,7 +192,7 @@ void get_relocs_list_cb(RZ_BORROW RzBinReloc *reloc, ut8 *patch_buf, size_t patc
 	rz_list_push(r, reloc_copy);
 }
 
-RZ_API RzList *rz_coff_get_relocs(struct rz_bin_coff_obj *bin) {
+RZ_API RzList /*<RzBinReloc *>*/ *rz_coff_get_relocs(struct rz_bin_coff_obj *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzList *r = rz_list_newf(free);
 	if (!r) {

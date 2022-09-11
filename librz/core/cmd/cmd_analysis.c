@@ -727,7 +727,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 #undef PRINTF_LN_NOT
 #undef PRINTF_LN_STR
 
-static char *fcnjoin(RzList *list) {
+static char *fcnjoin(RzList /*<RzAnalysisFunction *>*/ *list) {
 	RzAnalysisFunction *n;
 	RzListIter *iter;
 	RzStrBuf buf;
@@ -740,7 +740,7 @@ static char *fcnjoin(RzList *list) {
 	return s;
 }
 
-static char *ut64join(RzList *list) {
+static char *ut64join(RzList /*<ut64 *>*/ *list) {
 	ut64 *n;
 	RzListIter *iter;
 	RzStrBuf buf;
@@ -820,11 +820,11 @@ static void cmd_address_info(RzCore *core, const ut64 addr, RzCmdStateOutput *st
 }
 
 typedef struct {
-	RzList *regs;
-	RzList *regread;
-	RzList *regwrite;
-	RzList *regvalues;
-	RzList *inputregs;
+	RzList /*<char *>*/ *regs;
+	RzList /*<char *>*/ *regread;
+	RzList /*<char *>*/ *regwrite;
+	RzList /*<char *>*/ *regvalues;
+	RzList /*<char *>*/ *inputregs;
 } AeaStats;
 
 static void aea_stats_init(AeaStats *stats) {
@@ -842,7 +842,7 @@ static void aea_stats_fini(AeaStats *stats) {
 	RZ_FREE(stats->inputregs);
 }
 
-static bool contains(RzList *list, const char *name) {
+static bool contains(RzList /*<char *>*/ *list, const char *name) {
 	RzListIter *iter;
 	const char *n;
 	rz_list_foreach (list, iter, n) {
@@ -942,7 +942,7 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *val, int *len
 	return 0;
 }
 
-static void showregs(RzList *list) {
+static void showregs(RzList /*<char *>*/ *list) {
 	if (!rz_list_empty(list)) {
 		char *reg;
 		RzListIter *iter;
@@ -956,7 +956,7 @@ static void showregs(RzList *list) {
 	rz_cons_newline();
 }
 
-static void showmem(RzList *list) {
+static void showmem(RzList /*<AeaMemItem *>*/ *list) {
 	if (!rz_list_empty(list)) {
 		AeaMemItem *item;
 		RzListIter *iter;
@@ -967,7 +967,7 @@ static void showmem(RzList *list) {
 	rz_cons_newline();
 }
 
-static void showregs_json(RzList *list, PJ *pj) {
+static void showregs_json(RzList /*<char *>*/ *list, PJ *pj) {
 	pj_a(pj);
 	if (!rz_list_empty(list)) {
 		char *reg;
@@ -980,7 +980,7 @@ static void showregs_json(RzList *list, PJ *pj) {
 	pj_end(pj);
 }
 
-static void showmem_json(RzList *list, PJ *pj) {
+static void showmem_json(RzList /*<AeaMemItem *>*/ *list, PJ *pj) {
 	pj_a(pj);
 	if (!rz_list_empty(list)) {
 		RzListIter *iter;
@@ -2442,7 +2442,7 @@ static void xref_print_to_json(RZ_UNUSED RzCore *core, RzAnalysisXRef *xref, PJ 
 	pj_end(pj);
 }
 
-static void xref_list_print_to_json(RZ_UNUSED RzCore *core, RzList *list, PJ *pj) {
+static void xref_list_print_to_json(RZ_UNUSED RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list, PJ *pj) {
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	pj_a(pj);
@@ -3219,7 +3219,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_set_s_handler(RzCore *core, int argc, const
 	return xrefs_set(core, argc, argv, RZ_ANALYSIS_XREF_TYPE_STRING);
 }
 
-static void xrefs_list_print(RzCore *core, RzList *list) {
+static void xrefs_list_print(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 
@@ -3260,7 +3260,7 @@ static const char *xref_type2cmd(RzAnalysisXRefType type) {
 	return "ax";
 }
 
-static void xref_list_print_as_cmd(RZ_UNUSED RzCore *core, RzList *list) {
+static void xref_list_print_as_cmd(RZ_UNUSED RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	rz_list_foreach (list, iter, xref) {
@@ -3593,7 +3593,7 @@ static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *
 	return xref1->to != xref2->to;
 }
 
-static void function_list_print_to_table(RzCore *core, RzList *list, RzTable *t, bool verbose) {
+static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list, RzTable *t, bool verbose) {
 	RzTableColumnType *typeString = rz_table_type("string");
 	RzTableColumnType *typeNumber = rz_table_type("number");
 	rz_table_add_column(t, typeNumber, "addr", 0);
@@ -3663,7 +3663,7 @@ static void function_list_print_to_table(RzCore *core, RzList *list, RzTable *t,
 	}
 }
 
-static void function_list_print(RzCore *core, RzList *list) {
+static void function_list_print(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (list, it, fcn) {
@@ -3682,7 +3682,7 @@ static void function_list_print(RzCore *core, RzList *list) {
 	}
 }
 
-static void function_list_print_quiet(RZ_UNUSED RzCore *core, RzList *list) {
+static void function_list_print_quiet(RZ_UNUSED RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (list, it, fcn) {
@@ -3731,7 +3731,7 @@ static void fcn_list_bbs(RzAnalysisFunction *fcn) {
 	}
 }
 
-static void function_list_print_as_cmd(RzCore *core, RzList *list, RzCmdStateOutput *state) {
+static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list, RzCmdStateOutput *state) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (list, it, fcn) {
@@ -3883,7 +3883,7 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	pj_end(state->d.pj);
 }
 
-static void function_list_print_to_json(RzCore *core, RzList *list, RzCmdStateOutput *state) {
+static void function_list_print_to_json(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list, RzCmdStateOutput *state) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	pj_a(state->d.pj);
@@ -3952,7 +3952,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_size_sum_handler(RzCore *core, int argc,
 }
 
 // Lists function names and their calls (uniqified)
-static void function_print_calls(RzCore *core, RzList *fcns, RzCmdStateOutput *state) {
+static void function_print_calls(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *fcns, RzCmdStateOutput *state) {
 	PJ *pj = state->d.pj;
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
@@ -4180,7 +4180,7 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	}
 }
 
-static void fcn_list_print_info(RzCore *core, RzList *fcns, RzCmdStateOutput *state) {
+static void fcn_list_print_info(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *fcns, RzCmdStateOutput *state) {
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, iter, fcn) {
@@ -4302,7 +4302,7 @@ static void gather_opcode_stat_for_fcn(RzCore *core, HtPU *ht, RzAnalysisFunctio
 	}
 }
 
-static bool list_keys_cb(RzList *list, char *k, RZ_UNUSED ut64 v) {
+static bool list_keys_cb(RzList /*<char *>*/ *list, char *k, RZ_UNUSED ut64 v) {
 	rz_list_push(list, k);
 	return true;
 }
@@ -5932,7 +5932,7 @@ RZ_IPI RzCmdStatus rz_analysis_all_esil_functions_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzList *get_xrefs(RzAnalysisBlock *block) {
+static RzList /*<ut64 *>*/ *get_xrefs(RzAnalysisBlock *block) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	RzList *list = NULL;
@@ -5950,7 +5950,7 @@ static RzList *get_xrefs(RzAnalysisBlock *block) {
 	return list;
 }
 
-static RzList *get_calls(RzAnalysisBlock *block) {
+static RzList /*<ut64 *>*/ *get_calls(RzAnalysisBlock *block) {
 	ut8 *data = malloc(block->size);
 	if (!data) {
 		return NULL;

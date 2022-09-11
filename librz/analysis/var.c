@@ -590,7 +590,7 @@ RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 	return count[type];
 }
 
-static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, RzList *list) {
+static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, RzList /*<RzAnalysisVarField *>*/ *list) {
 	if (av->type->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return false;
 	}
@@ -1114,7 +1114,7 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 }
 
-static RzList *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
+static RzList /*<RzAnalysisVar *>*/ *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
 	if (!a || !fcn) {
 		return NULL;
 	}

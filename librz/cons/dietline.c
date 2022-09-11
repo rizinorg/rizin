@@ -632,7 +632,7 @@ static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, con
 	buf->data[buf->length] = '\0';
 }
 
-static char *get_max_common_pfx(RzPVector *options) {
+static char *get_max_common_pfx(RzPVector /*<char *>*/ *options) {
 	const char *ref = rz_pvector_at(options, 0);
 	size_t min_common_len = strlen(ref);
 	void **it;

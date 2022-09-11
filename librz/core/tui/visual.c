@@ -1209,7 +1209,7 @@ static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 	rz_cons_set_raw(true);
 }
 
-static int follow_ref(RzCore *core, RzList *xrefs, int choice, bool xref_to) {
+static int follow_ref(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *xrefs, int choice, bool xref_to) {
 	RzAnalysisXRef *xrefi = rz_list_get_n(xrefs, choice);
 	if (xrefi) {
 		if (core->print->cur_enabled) {

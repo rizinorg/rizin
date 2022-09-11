@@ -362,7 +362,7 @@ static ut64 numget(RzCore *core, const char *k) {
 	return rz_num_math(core->num, k);
 }
 
-static const RzList *__flagsGet(RzCore *core, ut64 offset) {
+static const RzList /*<RzFlagItem *>*/ *__flagsGet(RzCore *core, ut64 offset) {
 	return rz_flag_get_list(core->flags, offset);
 }
 

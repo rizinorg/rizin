@@ -148,7 +148,7 @@ static void var_type_set_resolve_overlaps(RzAnalysis *analysis, RzAnalysisVar *v
 	var_type_set(analysis, var, type, ref, true);
 }
 
-static void vars_resolve_overlaps(RzPVector *vars) {
+static void vars_resolve_overlaps(RzPVector /*<RzAnalysisVar *>*/ *vars) {
 	for (size_t i = 0; i < rz_pvector_len(vars); i++) {
 		RzAnalysisVar *var = rz_pvector_at(vars, i);
 		rz_analysis_var_resolve_overlaps(var);
@@ -213,7 +213,7 @@ static ut64 get_addr(RzAnalysis *analysis, const char *regname, int idx) {
 	return reg_op->value;
 }
 
-static RzList *parse_format(RzCore *core, char *fmt) {
+static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 	if (!fmt || !*fmt) {
 		return NULL;
 	}
@@ -570,7 +570,7 @@ static inline bool return_type_analysis_context_unresolved(struct ReturnTypeAnal
 }
 
 // Progate return type passed using pointer
-static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVector *used_vars, ut64 addr, struct ReturnTypeAnalysisCtx *ctx) {
+static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVector /*<RzAnalysisVar *>*/ *used_vars, ut64 addr, struct ReturnTypeAnalysisCtx *ctx) {
 	// int *ret; *ret = strlen(s);
 	// TODO: memref check , dest and next src match
 	char nsrc[REGNAME_SIZE] = { 0 };
@@ -588,7 +588,7 @@ static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVe
 }
 
 // Forward propagation of function return type
-static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, RzILTraceInstruction *trace, struct ReturnTypeAnalysisCtx *ctx, RzPVector *used_vars) {
+static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, RzILTraceInstruction *trace, struct ReturnTypeAnalysisCtx *ctx, RzPVector /*<RzAnalysisVar *>*/ *used_vars) {
 	char src[REGNAME_SIZE] = { 0 };
 	void **uvit;
 

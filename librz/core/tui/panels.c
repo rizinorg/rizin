@@ -555,7 +555,7 @@ static void __clear_panels_menuRec(RzPanelsMenuItem *pmi);
 static RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item);
 static void __handle_menu(RzCore *core, const int key);
 static int cmpstr(const void *_a, const void *_b);
-static RzList *__sorted_list(RzCore *core, char *menu[], int count);
+static RzList /*<char *>*/ *__sorted_list(RzCore *core, char *menu[], int count);
 
 /* config */
 static char *__get_panels_config_dir_path(void);
@@ -4559,7 +4559,7 @@ int cmpstr(const void *_a, const void *_b) {
 	return strcmp(a, b);
 }
 
-RzList *__sorted_list(RzCore *core, char *menu[], int count) {
+RzList /*<char *>*/ *__sorted_list(RzCore *core, char *menu[], int count) {
 	RzList *list = rz_list_new();
 	int i;
 	for (i = 0; i < count; i++) {

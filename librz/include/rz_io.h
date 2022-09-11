@@ -70,14 +70,14 @@ typedef struct rz_io_t {
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
 	RzIDPool *map_ids;
-	RzPVector maps; // from tail backwards maps with higher priority are found
+	RzPVector /*<RzIOMap *>*/ maps; // from tail backwards maps with higher priority are found
 	RzSkyline map_skyline; // map parts that are not covered by others
 	RzIDStorage *files;
-	RzPVector cache;
+	RzPVector /*<RzIOCache *>*/ cache;
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	RzList *plugins;
+	RzList /*<RzIOPlugin *>*/ *plugins;
 	char *runprofile;
 	char *envprofile;
 #if USE_PTRACE_WRAP
@@ -125,7 +125,7 @@ typedef struct rz_io_plugin_t {
 	// int (*is_file_opened)(RzIO *io, RzIODesc *fd, const char *);
 	char *(*system)(RzIO *io, RzIODesc *fd, const char *);
 	RzIODesc *(*open)(RzIO *io, const char *, int perm, int mode);
-	RzList * /*RzIODesc* */ (*open_many)(RzIO *io, const char *, int perm, int mode);
+	RzList /*<RzIODesc *>*/ *(*open_many)(RzIO *io, const char *, int perm, int mode);
 	int (*read)(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
 	ut64 (*lseek)(RzIO *io, RzIODesc *fd, ut64 offset, int whence);
 	int (*write)(RzIO *io, RzIODesc *fd, const ut8 *buf, int count);
@@ -297,9 +297,9 @@ RZ_API void rz_io_map_cleanup(RzIO *io);
 RZ_API void rz_io_map_fini(RzIO *io);
 RZ_API void rz_io_map_set_name(RzIOMap *map, const char *name);
 RZ_API void rz_io_map_del_name(RzIOMap *map);
-RZ_API RzList *rz_io_map_get_for_fd(RzIO *io, int fd);
+RZ_API RzList /*<RzIOMap *>*/ *rz_io_map_get_for_fd(RzIO *io, int fd);
 RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize);
-RZ_API RZ_BORROW RzPVector *rz_io_maps(RzIO *io);
+RZ_API RZ_BORROW RzPVector /*<RzIOMap *>*/ *rz_io_maps(RzIO *io);
 
 // next free address to place a map.. maybe just unify
 RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_align);
@@ -316,7 +316,7 @@ RZ_API RzIO *rz_io_init(RzIO *io);
 RZ_API RzIODesc *rz_io_open_nomap(RzIO *io, const char *uri, int flags, int mode); // should return int
 RZ_API RzIODesc *rz_io_open(RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
-RZ_API RzList *rz_io_open_many(RzIO *io, const char *uri, int flags, int mode);
+RZ_API RzList /*<RzIODesc *>*/ *rz_io_open_many(RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_open_buffer(RzIO *io, RzBuffer *b, int flags, int mode);
 RZ_API bool rz_io_close(RzIO *io);
 RZ_API bool rz_io_reopen(RzIO *io, int fd, int flags, int mode);
@@ -399,7 +399,7 @@ RZ_API bool rz_io_desc_cache_commit(RzIODesc *desc);
 RZ_API void rz_io_desc_cache_cleanup(RzIODesc *desc);
 RZ_API void rz_io_desc_cache_fini(RzIODesc *desc);
 RZ_API void rz_io_desc_cache_fini_all(RzIO *io);
-RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc);
+RZ_API RzList /*<RzIOCache *>*/ *rz_io_desc_cache_list(RzIODesc *desc);
 
 /* io/fd.c */
 RZ_API int rz_io_fd_open(RzIO *io, const char *uri, int flags, int mode);

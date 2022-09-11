@@ -5,7 +5,7 @@
 #include <rz_pdb.h>
 #include "../bin/pdb/pdb.h"
 
-static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const RzList *types) {
+static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const RzList /*<RzBaseType *>*/ *types) {
 	rz_return_if_fail(pdb && db && types);
 	if (!types) {
 		RZ_LOG_ERROR("core: there is nothing to print!\n");
@@ -21,7 +21,7 @@ static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const
 	return;
 }
 
-static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzList *types, PJ *pj) {
+static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzList /*<RzBaseType *>*/ *types, PJ *pj) {
 	rz_return_if_fail(db && pdb && types && pj);
 	RzListIter *it;
 	RzBaseType *type;

@@ -48,7 +48,7 @@ RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr);
 
 RZ_API ut64 rz_coff_import_index_addr(struct rz_bin_coff_obj *obj, ut64 imp_index);
 RZ_API ut64 rz_coff_get_reloc_targets_map_base(struct rz_bin_coff_obj *obj);
-RZ_API RzList *rz_coff_get_relocs(struct rz_bin_coff_obj *bin);
+RZ_API RzList /*<RzBinReloc *>*/ *rz_coff_get_relocs(struct rz_bin_coff_obj *bin);
 RZ_API ut64 rz_coff_get_reloc_targets_vfile_size(struct rz_bin_coff_obj *obj);
 RZ_API RZ_BORROW RzBuffer *rz_coff_get_patched_buf(struct rz_bin_coff_obj *bin);
 

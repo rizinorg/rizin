@@ -5,11 +5,11 @@
 
 #include "pe.h"
 
-RZ_OWN RzList /* RzBinSymbol */ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bin) {
+RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bin) {
 	if (!bin || !bin->clr || !bin->clr->methoddefs) {
 		return NULL;
 	}
-	RzList /* RzBinSymbol */ *methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzList /*<RzBinSymbol *>*/ *methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!methods) {
 		return NULL;
 	}

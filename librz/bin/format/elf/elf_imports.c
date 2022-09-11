@@ -302,7 +302,7 @@ static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol
 	symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, symbol->vaddr);
 }
 
-static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector *symbols) {
+static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector /*<RzBinElfSymbol>*/ *symbols) {
 	RzBinElfSymbol *symbol;
 	rz_vector_foreach(symbols, symbol) {
 		convert_elf_symbol_to_elf_import(bin, symbol);
@@ -326,7 +326,7 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut
 	return NULL;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzVector *result = Elf_(rz_bin_elf_compute_symbols)(bin, filter_import);

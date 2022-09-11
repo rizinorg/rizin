@@ -153,7 +153,7 @@ typedef struct rz_bin_reloc_formular_symbols_t {
 
 static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
-static RzList *imports(RzBinFile *bf);
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf);
 
 struct special_symbol_translation {
 	RzBinSpecialSymbol symbol;
@@ -273,7 +273,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_addr_new_from_paddr(bin, paddr);
 }
 
-static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList *result) {
+static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList /*<RzBinAddr *>*/ *result) {
 	ut64 constructor_offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (constructor_offset == UT64_MAX) {
 		return;
@@ -309,7 +309,7 @@ static void add_constructor(ELFOBJ *bin, ut64 addr, ut64 size, int type, RzList 
 	}
 }
 
-static void add_constructors(ELFOBJ *bin, RzList *result) {
+static void add_constructors(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 	ut64 addr, size;
 
 	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAY, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_PREINIT_ARRAYSZ, &size)) {
@@ -325,7 +325,7 @@ static void add_constructors(ELFOBJ *bin, RzList *result) {
 	}
 }
 
-static void add_entry_offset(ELFOBJ *bin, RzList *result) {
+static void add_entry_offset(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 	ut64 paddr = Elf_(rz_bin_elf_get_entry_offset)(bin);
 	if (paddr == UT64_MAX) {
 		return;
@@ -346,7 +346,7 @@ static void add_entry_offset(ELFOBJ *bin, RzList *result) {
 	rz_list_append(result, tmp);
 }
 
-static void add_java_libraries(ELFOBJ *bin, RzList *result) {
+static void add_java_libraries(ELFOBJ *bin, RzList /*<RzBinAddr *>*/ *result) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {
 		if (symbol->name && rz_str_startswith(symbol->name, "Java") && rz_str_endswith(symbol->name, "_init")) {
@@ -359,7 +359,7 @@ static void add_java_libraries(ELFOBJ *bin, RzList *result) {
 	}
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
@@ -650,7 +650,7 @@ static ut32 section_perms_from_flags(ut32 flags) {
 	return r;
 }
 
-static RzList *maps_unpatched(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps_unpatched(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	if (!obj) {
 		return NULL;
@@ -1443,7 +1443,7 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
 
-static RzList *virtual_files(RzBinFile *bf) {
+static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
 	if (!r) {
 		return NULL;
@@ -1484,7 +1484,7 @@ static RzList *virtual_files(RzBinFile *bf) {
 	return r;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	if (!obj) {
 		return NULL;
@@ -1503,7 +1503,7 @@ static RzList *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ELFOBJ *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
@@ -1630,7 +1630,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
@@ -1666,7 +1666,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
@@ -1694,12 +1694,12 @@ static RzList *imports(RzBinFile *bf) {
 	return result;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = NULL;
 	RzBinReloc *ptr = NULL;
@@ -1886,7 +1886,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool add_fields_aux(ELFOBJ *bin, RzList *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
+static bool add_fields_aux(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result, ut64 offset, size_t size, const char *name, char *(get_value)(ELFOBJ *bin), const char *fmt) {
 	char *value = get_value(bin);
 	if (!value) {
 		return false;
@@ -1908,7 +1908,7 @@ static bool add_fields_aux(ELFOBJ *bin, RzList *result, ut64 offset, size_t size
 	return true;
 }
 
-static bool add_fields(ELFOBJ *bin, RzList *result) {
+static bool add_fields(ELFOBJ *bin, RzList /*<RzBinField *>*/ *result) {
 	size_t size = bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64 ? 8 : 4;
 
 	return add_fields_aux(bin, result, E_IDENT_OFFSET, 16, "MAGIC", Elf_(rz_bin_elf_get_e_indent_as_string), "x") &&
@@ -1927,7 +1927,7 @@ static bool add_fields(ELFOBJ *bin, RzList *result) {
 		add_fields_aux(bin, result, E_SHSTRNDX_OFFSET, 2, "ShStrndx", Elf_(rz_bin_elf_get_e_shstrndx_as_string), "d");
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = rz_bin_file_get_elf(bf);
@@ -1962,6 +1962,6 @@ static ut64 size(RzBinFile *bf) {
 	return off + len;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 4, false);
 }

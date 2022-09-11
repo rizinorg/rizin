@@ -45,9 +45,9 @@ typedef struct {
 	int cur; // current row selected
 	int cur_sort; // holds current sort
 	RzCore *core;
-	RzList *mainCol;
-	RzList *xrefsCol;
-	RzList *refsCol;
+	RzList /*<RzCoreVisualViewGraphItem *>*/ *mainCol;
+	RzList /*<RzCoreVisualViewGraphItem *>*/ *xrefsCol;
+	RzList /*<RzCoreVisualViewGraphItem *>*/ *refsCol;
 } RzCoreVisualViewGraph;
 
 typedef struct {
@@ -69,7 +69,7 @@ static char *print_item(void *_core, void *_item, bool selected) {
 	return rz_str_newf("%c 0x%08" PFMT64x "\n", selected ? '>' : ' ', item->addr);
 }
 
-static RzList *__xrefs(RzCore *core, ut64 addr) {
+static RzList /*<RzCoreVisualViewGraphItem *>*/ *__xrefs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
@@ -92,7 +92,7 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 	return r;
 }
 
-static RzList *__refs(RzCore *core, ut64 addr) {
+static RzList /*<RzCoreVisualViewGraphItem *>*/ *__refs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
@@ -119,7 +119,7 @@ static RzList *__refs(RzCore *core, ut64 addr) {
 	return r;
 }
 
-static RzList *__fcns(RzCore *core) {
+static RzList /*<RzCoreVisualViewGraphItem *>*/ *__fcns(RzCore *core) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
@@ -166,7 +166,7 @@ static int cmpname(const void *_a, const void *_b) {
 	return (int)strcmp(a->name, b->name);
 }
 
-static void __sort(RzCoreVisualViewGraph *status, RzList *list) {
+static void __sort(RzCoreVisualViewGraph *status, RzList /*<RzCoreVisualViewGraphItem *>*/ *list) {
 	rz_return_if_fail(status && list);
 	RzListComparator cmp = (status->cur_sort == SORT_ADDRESS) ? cmpaddr : cmpname;
 	list->sorted = false;

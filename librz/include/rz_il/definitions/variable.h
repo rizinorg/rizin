@@ -29,8 +29,8 @@ RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var);
  * This is meant only as a low-level container to be used in RzILVM.
  */
 typedef struct rz_il_var_set_t {
-	HtPP /* <char *, RzILVar *> */ *vars;
-	HtPP /* <char *, RzILVal *> */ *contents;
+	HtPP /*<char *, RzILVar *>*/ *vars;
+	HtPP /*<char *, RzILVal *>*/ *contents;
 } RzILVarSet;
 
 RZ_API bool rz_il_var_set_init(RzILVarSet *vs);

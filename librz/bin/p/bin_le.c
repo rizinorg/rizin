@@ -107,27 +107,27 @@ static void header(RzBinFile *bf) {
 	p("Stack Size: 0x%04x\n", h->stacksize);
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return rz_bin_le_get_sections(bf->o->bin_obj);
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return rz_bin_le_get_entrypoints(bf->o->bin_obj);
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return rz_bin_le_get_symbols(bf->o->bin_obj);
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return rz_bin_le_get_imports(bf->o->bin_obj);
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return rz_bin_le_get_libs(bf->o->bin_obj);
 }
 
-static RzList *relocs(RzBinFile *bf) {
+static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return rz_bin_le_get_relocs(bf->o->bin_obj);
 }
 
@@ -149,7 +149,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return info;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 0, false);
 }
 

@@ -87,9 +87,9 @@ RZ_PACKED(
 	typedef struct {
 		Sdb *kv;
 		lmf_header lmfh;
-		RzList *fixups;
-		RzList *sections;
-		RzList *maps;
+		RzList /*<RzBinSection *>*/ *fixups;
+		RzList /*<RzBinSection *>*/ *sections;
+		RzList /*<RzBinMap *>*/ *maps;
 		lmf_rw_end rwend;
 	})
 QnxObj;

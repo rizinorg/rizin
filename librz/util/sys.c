@@ -213,7 +213,7 @@ static DIR *sys_opendir(const char *path) {
 }
 #endif
 
-RZ_API RzList *rz_sys_dir(const char *path) {
+RZ_API RzList /*<char *>*/ *rz_sys_dir(const char *path) {
 	RzList *list = NULL;
 #if __WINDOWS__
 	WIN32_FIND_DATAW entry;

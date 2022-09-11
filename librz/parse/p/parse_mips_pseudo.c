@@ -14,7 +14,7 @@
 
 #include "parse_common.c"
 
-static RzList *mips_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *mips_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar mips_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 = 2 + 3"),
@@ -92,7 +92,7 @@ static const RzPseudoReplace mips_replace[] = {
 
 static const RzPseudoConfig mips_config = RZ_PSEUDO_DEFINE_CONFIG(mips_direct, mips_lexicon, mips_replace, 4, mips_tokenize);
 
-RzList *mips_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *mips_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	bool insert_zero = false;

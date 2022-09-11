@@ -20,7 +20,7 @@ typedef struct rz_range_item_t {
 typedef struct rz_range_t {
 	int count;
 	int changed;
-	RzList *ranges;
+	RzList /*<RRangeItem *>*/ *ranges;
 } RRange;
 
 RZ_API RRange *rz_range_new(void);

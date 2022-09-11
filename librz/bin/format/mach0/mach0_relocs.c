@@ -497,7 +497,7 @@ beach:
 	return relocs;
 }
 
-static RzPVector *get_patchable_relocs(struct MACH0_(obj_t) * obj) {
+static RzPVector /*<struct reloc_t *>*/ *get_patchable_relocs(struct MACH0_(obj_t) * obj) {
 	if (!obj->options.patch_relocs) {
 		return NULL;
 	}

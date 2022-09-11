@@ -33,7 +33,7 @@ HEAPTYPE(ut64);
 		rz_core_reg_update_flags(core); \
 	} while (0)
 
-static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
+static RzList /*<RzRegItem *>*/ *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(reg, NULL);
 	// default
 	if (RZ_STR_ISEMPTY(filter)) {
@@ -343,7 +343,7 @@ RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSyn
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RzList *ritems, RzOutputMode mode) {
+static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RzList /*<RzRegItem *>*/ *ritems, RzOutputMode mode) {
 	bool failed;
 	SYNC_READ_LIST(ritems, failed);
 	if (failed) {
@@ -420,7 +420,7 @@ static bool valgroup_regcb(void *u, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList *list) {
+RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList /*<RzRegItem *>*/ *list) {
 	int use_colors = rz_config_get_i(core->config, "scr.color");
 
 	RzListIter *iter;

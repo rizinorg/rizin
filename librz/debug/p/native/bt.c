@@ -12,7 +12,7 @@
 
 typedef RzList *(*RzDebugFrameCallback)(RzDebug *dbg, ut64 at);
 
-static void prepend_current_pc(RzDebug *dbg, RzList *list) {
+static void prepend_current_pc(RzDebug *dbg, RzList /*<RzDebugFrame *>*/ *list) {
 	RzDebugFrame *frame;
 	const char *pcname;
 	if (list) {
@@ -43,7 +43,7 @@ static void *backtrace_proxy(void *user) {
 }
 #endif
 
-static RzList *rz_debug_native_frames(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *rz_debug_native_frames(RzDebug *dbg, ut64 at) {
 	RzDebugFrameCallback cb = NULL;
 	if (dbg->btalgo) {
 		if (!strcmp(dbg->btalgo, "fuzzy")) {

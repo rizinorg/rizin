@@ -28,7 +28,7 @@ typedef struct rz_flag_zone_item_t {
 
 typedef struct rz_flags_at_offset_t {
 	ut64 off;
-	RzList *flags; /* list of RzFlagItem at offset */
+	RzList /*<RzFlagItem *>*/ *flags; /* list of RzFlagItem at offset */
 } RzFlagsAtOffset;
 
 typedef struct rz_flag_item_t {
@@ -61,7 +61,7 @@ typedef RzFlagItem *(*RzFlagGet)(RzFlag *f, const char *name);
 typedef RzFlagItem *(*RzFlagGetAtAddr)(RzFlag *f, ut64);
 typedef RzFlagItem *(*RzFlagGetAt)(RzFlag *f, ut64 addr, bool closest);
 typedef RzFlagItem *(*RzFlagGetAtBySpaces)(RzFlag *f, ut64 off, ...);
-typedef const RzList *(*RzFlagGetList)(RzFlag *f, ut64 addr);
+typedef const RzList /*<RzFlagItem *>*/ *(*RzFlagGetList)(RzFlag *f, ut64 addr);
 typedef RzFlagItem *(*RzFlagSet)(RzFlag *f, const char *name, ut64 addr, ut32 size);
 typedef bool (*RzFlagUnset)(RzFlag *f, RzFlagItem *item);
 typedef bool (*RzFlagUnsetName)(RzFlag *f, const char *name);

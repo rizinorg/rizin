@@ -66,12 +66,12 @@ static RzBinInfo *info(RzBinFile *arch) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *arch) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *arch) {
 	RzBinPycObj *ctx = arch->o->bin_obj;
 	return ctx->sections_cache;
 }
 
-static RzList *entries(RzBinFile *arch) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *arch) {
 	RzList *entries = rz_list_newf((RzListFree)free);
 	if (!entries) {
 		return NULL;
@@ -93,7 +93,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList *symbols(RzBinFile *arch) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
 	RzBinPycObj *pyc = arch->o->bin_obj;
 	RzList *shared = rz_list_newf((RzListFree)rz_list_free);
 	if (!shared) {

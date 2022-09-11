@@ -80,7 +80,7 @@ typedef struct rz_socket_t {
 } RzSocket;
 
 typedef struct rz_socket_http_options {
-	RzList *authtokens;
+	RzList /*<char *>*/ *authtokens;
 	bool accept_timeout;
 	int timeout;
 	bool httpauth;

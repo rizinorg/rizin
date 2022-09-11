@@ -54,7 +54,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf(free);
 	if (ret) {
 		RzBinAddr *entry = rz_bin_te_get_entrypoint(bf->o->bin_obj);
@@ -71,7 +71,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_te_section_t *sections = NULL;

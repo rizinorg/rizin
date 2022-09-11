@@ -2160,7 +2160,7 @@ static bool __isDataSection(RzBinSection *sect) {
 	return false;
 }
 
-RzList *MACH0_(get_virtual_files)(RzBinFile *bf) {
+RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
 	if (!ret) {
@@ -2215,7 +2215,7 @@ RzList *MACH0_(get_virtual_files)(RzBinFile *bf) {
 	return ret;
 }
 
-RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
+RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
@@ -2250,7 +2250,7 @@ RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 	return ret;
 }
 
-RzList *MACH0_(get_maps)(RzBinFile *bf) {
+RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
 	RzList *ret = MACH0_(get_maps_unpatched)(bf);
 	if (!ret) {
 		return NULL;
@@ -2265,7 +2265,7 @@ RzList *MACH0_(get_maps)(RzBinFile *bf) {
 	return ret;
 }
 
-RzList *MACH0_(get_segments)(RzBinFile *bf) {
+RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bin->sections_cache) {
 		return bin->sections_cache;
@@ -2376,7 +2376,7 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 	}
 }
 
-RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
+RzList /*<char *>*/ *MACH0_(section_flag_to_rzlist)(ut64 flag) {
 	RzList *flag_list = rz_list_new();
 	if (flag & S_ATTR_PURE_INSTRUCTIONS) {
 		rz_list_append(flag_list, "PURE_INSTRUCTIONS");
@@ -3760,7 +3760,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	free(mh);
 }
 
-RzList *MACH0_(mach_fields)(RzBinFile *bf) {
+RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf) {
 	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size(buf);
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);

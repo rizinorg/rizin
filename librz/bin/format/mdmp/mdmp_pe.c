@@ -7,7 +7,7 @@
 
 #include "mdmp_pe.h"
 
-static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList *list) {
+static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList /*<RzBinAddr *>*/ *list) {
 	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
@@ -42,7 +42,7 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList *li
 	} while (vaddr);
 }
 
-RzList *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzList /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	ut64 offset;
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
@@ -87,7 +87,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-RzList *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzList /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -143,7 +143,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin)
 	return ret;
 }
 
-RzList *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzList /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	/* TODO: Vet code, taken verbatim(ish) from bin_pe.c */
 	int i;
 	ut64 ba = pe_bin->vaddr; // baddr (arch);
@@ -209,7 +209,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin
 	return ret;
 }
 
-RzList *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct rz_bin_pe_export_t *symbols = NULL;

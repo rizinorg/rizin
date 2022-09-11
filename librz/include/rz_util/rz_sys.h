@@ -86,7 +86,7 @@ RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);
 RZ_API int rz_sys_arch_id(const char *arch);
 RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch);
-RZ_API RzList *rz_sys_dir(const char *path);
+RZ_API RzList /*<char *>*/ *rz_sys_dir(const char *path);
 RZ_API void rz_sys_perror_str(const char *fun);
 #define rz_sys_mkdir_failed() (errno != EEXIST)
 RZ_API bool rz_sys_mkdir(const char *dir);

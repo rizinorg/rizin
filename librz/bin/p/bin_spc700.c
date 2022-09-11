@@ -39,7 +39,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 	spc_hdr spchdr;
@@ -66,7 +66,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf(free);
 	if (ret) {
 		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);

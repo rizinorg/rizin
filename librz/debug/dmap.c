@@ -26,7 +26,7 @@ RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int pe
 	return map;
 }
 
-RZ_API RzList *rz_debug_modules_list(RzDebug *dbg) {
+RZ_API RzList /*<RzDebugMap *>*/ *rz_debug_modules_list(RzDebug *dbg) {
 	return (dbg && dbg->cur && dbg->cur->modules_get) ? dbg->cur->modules_get(dbg) : NULL;
 }
 
@@ -80,7 +80,7 @@ RZ_API void rz_debug_map_free(RzDebugMap *map) {
 	free(map);
 }
 
-RZ_API RzList *rz_debug_map_list_new(void) {
+RZ_API RzList /*<RzDebugMap *>*/ *rz_debug_map_list_new(void) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -95,6 +95,6 @@ RZ_API RzList *rz_debug_map_list_new(void) {
  * \param user_map Boolean value, if true return memory maps belonging to user space else return memory maps belonging to kernel space
  * \return
  */
-RZ_API RZ_BORROW RzList *rz_debug_map_list(RzDebug *dbg, bool user_map) {
+RZ_API RZ_BORROW RzList /*<RzDebugMap *>*/ *rz_debug_map_list(RzDebug *dbg, bool user_map) {
 	return user_map ? dbg->maps_user : dbg->maps;
 }

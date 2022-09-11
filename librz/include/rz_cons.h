@@ -1059,7 +1059,7 @@ struct rz_line_comp_t {
 	bool opt;
 	size_t args_limit;
 	bool quit;
-	RzPVector args; /* <char *> */
+	RzPVector /*<char *>*/ args;
 	RzLineCompletionCb run;
 	void *run_user;
 };
@@ -1072,7 +1072,7 @@ typedef struct rz_line_ns_completion_t RzLineNSCompletion;
  * user.
  */
 typedef struct rz_line_ns_completion_result_t {
-	RzPVector options; ///< Vector of options that can be used for autocompletion
+	RzPVector /*<char *>*/ options; ///< Vector of options that can be used for autocompletion
 	HtPP *options_ht; ///< Hash table to keep track of duplicated autocompletion suggestions
 	size_t start; ///< First byte that was considered for autocompletion. Everything before this will be left intact.
 	size_t end; ///< Last byte that was considered for autocompletion. Everything after this will be left intact.
@@ -1116,7 +1116,7 @@ struct rz_line_t {
 	int echo;
 	int has_echo;
 	char *prompt;
-	RzList /*<str>*/ *kill_ring;
+	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
 	char *clipboard;
 	int disable;
@@ -1132,8 +1132,8 @@ struct rz_line_t {
 	int offset_hist_index;
 	int file_hist_index;
 	RzLineHud *hud;
-	RzList *sdbshell_hist;
-	RzListIter *sdbshell_hist_iter;
+	RzList /*<char *>*/ *sdbshell_hist;
+	RzListIter /*<char *>*/ *sdbshell_hist_iter;
 	RzVirtTermMode vtmode;
 }; /* RzLine */
 

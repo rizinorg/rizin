@@ -72,7 +72,7 @@ typedef struct {
 typedef struct {
 	ut32 op_type; ///< RzAnalysisOpType. Mnemonic color depends on this.
 	RzStrBuf *str; //< Contains the raw asm string
-	RzVector /* <RzAsmToken> */ *tokens; //< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
+	RzVector /*<RzAsmToken>*/ *tokens; //< Contains only the tokenization meta-info without strings, ordered by start for log2(n) access
 } RzAsmTokenString;
 
 typedef struct {
@@ -161,7 +161,6 @@ typedef struct rz_print_t {
 	bool esc_bslash;
 	bool wide_offsets;
 	const char *strconv_mode;
-	RzList *vars;
 	char io_unalloc_ch;
 	bool show_offset;
 
