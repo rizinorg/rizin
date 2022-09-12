@@ -2309,7 +2309,7 @@ typedef struct pop_helper_t {
 	RzILOpEffect *eff;
 } PopHelper;
 
-PopHelper x86_pop_helper(unsigned int op_size, unsigned int bitness) {
+PopHelper x86_pop_helper_bits(unsigned int op_size, unsigned int bitness) {
 	X86Mem stack_mem;
 	/* The correct register will automatically be chosen if we use RSP */
 	stack_mem.base = X86_REG_RSP;
@@ -2326,6 +2326,8 @@ PopHelper x86_pop_helper(unsigned int op_size, unsigned int bitness) {
 	return ret;
 }
 
+#define x86_pop_helper(op_size) x86_pop_helper_bits(op_size, analysis->bits)
+
 /**
  * POP
  * Pop a value from the stack
@@ -2338,7 +2340,7 @@ IL_LIFTER(pop) {
 	/* Ideally, we should use the stack size instead of the address size (analysis->bits),
 	but there seems to be no way to do that using Capstone */
 	/* Also, it is very rare to use have a different stack size and address size */
-	PopHelper pop = x86_pop_helper(ins->structure->operands[0].size, analysis->bits);
+	PopHelper pop = x86_pop_helper(ins->structure->operands[0].size);
 	RzILOpEffect *copy = x86_il_set_op(0, pop.val);
 
 	return SEQ2(copy, pop.eff);
@@ -2351,7 +2353,7 @@ IL_LIFTER(pop) {
  */
 IL_LIFTER(popf) {
 	/* This is not _completely_ accurate, but it is good enough for our purposes */
-	PopHelper pop = x86_pop_helper(16, analysis->bits);
+	PopHelper pop = x86_pop_helper(2 /* BYTES */);
 	return SEQ2(x86_il_set_flags(pop.val, 16), pop.eff);
 }
 
@@ -2362,7 +2364,7 @@ IL_LIFTER(popf) {
  */
 IL_LIFTER(popfd) {
 	/* Functionally the same as POPF IL */
-	PopHelper pop = x86_pop_helper(32, analysis->bits);
+	PopHelper pop = x86_pop_helper(4 /* BYTES */);
 	return SEQ2(x86_il_set_flags(pop.val, 32), pop.eff);
 }
 
@@ -2373,10 +2375,112 @@ IL_LIFTER(popfd) {
  */
 IL_LIFTER(popfq) {
 	/* Functionally the same as POPF IL */
-	PopHelper pop = x86_pop_helper(64, analysis->bits);
+	PopHelper pop = x86_pop_helper(8 /* BYTES */);
 	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
 }
 
+RzILOpEffect *x86_push_helper_bits(RzILOpPure *val, unsigned int op_size, unsigned int bitness) {
+	X86Mem stack_mem;
+	/* The correct register will automatically be chosen if we use RSP */
+	stack_mem.base = X86_REG_RSP;
+	stack_mem.disp = 0;
+	stack_mem.index = X86_REG_INVALID;
+	stack_mem.scale = 1;
+	stack_mem.segment = X86_REG_SS;
+
+	RzILOpEffect *ret = STOREW(x86_il_get_memaddr_bits(stack_mem, bitness), val);
+	ret = SEQ2(ret, x86_il_set_reg_bits(X86_REG_RSP, SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness), UN(bitness, op_size)), bitness));
+
+	return ret;
+}
+
+#define x86_push_helper(val, op_size) x86_push_helper_bits(val, op_size, analysis->bits)
+
+/**
+ * PUSH
+ * Push value on the stack
+ * Encoding:
+ *  - M
+ *  - O
+ *  - I
+ *  - ZO
+ */
+IL_LIFTER(push) {
+	return x86_push_helper(x86_il_get_op(0), ins->structure->operands->size);
+}
+
+/**
+ * PUSHF
+ * Push FLAGS register onto the stack (16 bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(pushf) {
+	return x86_push_helper(x86_il_get_flags(16), 2);
+}
+
+/**
+ * PUSHFD
+ * Push EFLAGS register onto the stack (32 bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(pushfd) {
+	return x86_push_helper(x86_il_get_flags(32), 4);
+}
+
+/**
+ * PUSHFQ
+ * Push RFLAGS register onto the stack (64 bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(pushfq) {
+	return x86_push_helper(x86_il_get_flags(64), 8);
+}
+
+/**
+ * PUSHA
+ * Push all general-purpose registers (16-bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(pushaw) {
+	if (analysis->bits != 16) {
+		return NULL;
+	}
+
+	RzILOpEffect *temp = SETL("_sp", x86_il_get_reg(X86_REG_SP));
+	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_AX), 2);
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_CX), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_DX), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_BX), 2));
+	push = SEQ2(push, x86_push_helper(VARL("_sp"), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_BP), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_SI), 2));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_DI), 2));
+
+	return SEQ2(temp, push);
+}
+
+/**
+ * PUSHAD
+ * Push all general-purpose registers (32-bits)
+ * Encoding: ZO
+ */
+IL_LIFTER(pushal) {
+	if (analysis->bits != 32) {
+		return NULL;
+	}
+
+	RzILOpEffect *temp = SETL("_esp", x86_il_get_reg(X86_REG_ESP));
+	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(X86_REG_EAX), 4);
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ECX), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDX), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBX), 4));
+	push = SEQ2(push, x86_push_helper(VARL("_esp"), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EBP), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_ESI), 4));
+	push = SEQ2(push, x86_push_helper(x86_il_get_reg(X86_REG_EDI), 4));
+
+	return SEQ2(temp, push);
+}
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
@@ -2455,6 +2559,12 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_POPF] = x86_il_popf,
 	[X86_INS_POPFD] = x86_il_popfd,
 	[X86_INS_POPFQ] = x86_il_popfq,
+	[X86_INS_PUSH] = x86_il_push,
+	[X86_INS_PUSHF] = x86_il_pushf,
+	[X86_INS_PUSHFD] = x86_il_pushfd,
+	[X86_INS_PUSHFQ] = x86_il_pushfq,
+	[X86_INS_PUSHAW] = x86_il_pushaw,
+	[X86_INS_PUSHAL] = x86_il_pushal,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
