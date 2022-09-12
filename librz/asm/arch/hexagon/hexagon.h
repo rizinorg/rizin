@@ -3,7 +3,7 @@
 
 // LLVM commit: 96e220e6886868d6663d966ecc396befffc355e7
 // LLVM commit date: 2022-01-05 11:01:52 +0000 (ISO 8601 format)
-// Date of code generation: 2022-08-07 13:35:47-04:00
+// Date of code generation: 2022-09-12 14:26:04-04:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -148,7 +148,7 @@ typedef struct {
  */
 typedef struct {
 	HexPkt pkts[HEXAGON_STATE_PKTS]; // buffered instructions
-	RzList *const_ext_l; // Constant extender values.
+	RzList /*<HexConstExt *>*/ *const_ext_l; // Constant extender values.
 	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
