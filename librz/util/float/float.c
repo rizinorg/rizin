@@ -19,7 +19,7 @@
 #include "float_internal.c"
 
 /**
- * \breif return the bitvector string of a float
+ * \brief return the bitvector string of a float
  * \param f float
  * \return char* string of bitvector
  */
@@ -47,7 +47,9 @@ RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad)
  * \brief return a human-readable string of float
  * \param f float
  * \return a human-readable string of float.
- * exponent part and mantissa part would be spilit
+ * exponent part and mantissa part would be split as follows:
+ * 'sign' 'exponent part' | 'mantissa part'
+ *  1.0f would be shown as +01111111|00000000000000000000000
  */
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f && f->s, NULL);
@@ -98,7 +100,7 @@ RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
 #define PROC_SPECIAL_FLOAT_END }
 
 /**
- * Get const attributes from float
+ * \brief Get const attributes from float
  * \param format RzFloatFormat, format of a float
  * \param which_info Specify an attribute
  * \return ut32 const value bind with `which_info`
@@ -143,7 +145,7 @@ RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f) {
 }
 
 /**
- * Init the bv inside float
+ * Init the bitvector inside float
  * \param f float
  * \return return true if init success else return false
  */
