@@ -784,7 +784,7 @@ static inline bool imm_is_scaled(const HexOpAttr attr) {
  * \param addr The address of the instruction which gets the constant extender applied.
  * \return HexConstExt* A const. ext., if there is one which should be applied on the instruction at addr. Otherwise NULL.
  */
-static HexConstExt *get_const_ext_from_addr(const RzList *ce_list, const ut32 addr) {
+static HexConstExt *get_const_ext_from_addr(const RzList /*<HexConstExt *>*/ *ce_list, const ut32 addr) {
 	HexConstExt *ce = NULL;
 	RzListIter *iter = NULL;
 	rz_list_foreach (ce_list, iter, ce) {
