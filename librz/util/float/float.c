@@ -105,7 +105,7 @@ RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
  * \param which_info Specify an attribute
  * \return ut32 const value bind with `which_info`
  */
-RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info) {
+RZ_IPI ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info) {
 	switch (format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return rz_float_info_bin32(which_info);
@@ -901,7 +901,7 @@ clean:
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	bool l_sign = rz_float_get_sign(left);
 	bool r_sign = rz_float_get_sign(right);
 	if (l_sign == r_sign) {
@@ -915,7 +915,7 @@ RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	bool l_sign = rz_float_get_sign(left);
 	bool r_sign = rz_float_get_sign(right);
 	if (l_sign == r_sign) {
@@ -929,7 +929,7 @@ RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	/* Process NaN and Inf cases */
@@ -1054,7 +1054,7 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	PROC_SPECIAL_FLOAT_START(left, right)
@@ -1329,9 +1329,7 @@ static RZ_OWN RzFloat *rz_float_rem_internal(RZ_NONNULL RzFloat *left, RZ_NONNUL
 		if (aligned_length < my->len) {
 			two_exponent_fact = rz_bv_new(my->len);
 			stretched_my = rz_bv_dup(my);
-		}
-		else
-		{
+		} else {
 			is_stretched = true;
 			two_exponent_fact = rz_bv_new(aligned_length);
 			stretched_my = rz_bv_prepend_zero(my, aligned_length - my->len);
@@ -1342,8 +1340,7 @@ static RZ_OWN RzFloat *rz_float_rem_internal(RZ_NONNULL RzFloat *left, RZ_NONNUL
 		RzBitVector *fact_mod = rz_bv_mod(two_exponent_fact, stretched_my);
 
 		RzBitVector *mx_fact;
-		mx_fact = is_stretched ? rz_bv_cut_head(fact_mod, aligned_length - my->len) :
-				       rz_bv_dup(fact_mod);
+		mx_fact = is_stretched ? rz_bv_cut_head(fact_mod, aligned_length - my->len) : rz_bv_dup(fact_mod);
 
 		// 3. mul with mx, and then mod my
 		// mul maybe overflow, so stretch both
@@ -1464,7 +1461,7 @@ clean:
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	return rz_float_rem_internal(left, right, RZ_FLOAT_RMODE_RNE, mode);
 }
 
@@ -1478,7 +1475,7 @@ RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	return rz_float_rem_internal(left, right, RZ_FLOAT_RMODE_RTZ, mode);
 }
 
@@ -1487,7 +1484,7 @@ RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
 	// process NaN / Inf
 	{
 		RzFloatSpec a_type, b_type, c_type;
@@ -1713,7 +1710,7 @@ clean:
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
+RZ_IPI RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
 	// Use Newton method now, May Optimize
 	RzFloat *eps = rz_float_new_zero(n->r);
 	ut32 bias = rz_float_get_format_info(n->r, RZ_FLOAT_INFO_BIAS);
@@ -1755,7 +1752,7 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
  * get the absolute value of given float
  * \param f float
  */
-RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
+RZ_IPI RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzFloat *abs = rz_float_dup(f);
 	if (rz_float_get_sign(f)) {
@@ -1796,4 +1793,92 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 
 	rz_bv_free(exp_bv);
 	return ret;
+}
+
+/**
+ * calculate \p left + \p right and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_add(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode) {
+	return rz_float_add_ieee_bin(x, y, mode);
+}
+
+/**
+ * calculate \p left - \p right and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_sub(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode) {
+	return rz_float_sub_ieee_bin(x, y, mode);
+}
+
+/**
+ * calculate \p left * \p right and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_mul(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode) {
+	return rz_float_mul_ieee_bin(x, y, mode);
+}
+
+/**
+ * \brief calculate \p left / \p right and round the result after, return the result
+ * \details
+ * Inf / not Inf -> Inf
+ * non-0 / 0 -> Inf
+ * Inf / Inf -> invalid
+ * 0 / 0 -> invalid
+ * 0 / not 0 -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_div(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode) {
+	return rz_float_div_ieee_bin(x, y, mode);
+}
+
+/**
+ * \brief calculate \p left % \p right and round the result after, return the result
+ * \details
+ * Any % 0 => NaN
+ * Inf % Any => NaN, invalid
+ * Any % Inf -> Any
+ * 0 % Any -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_rem(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode) {
+	return rz_float_rem_ieee_bin(x, y, mode);
+}
+
+/**
+ * \brief calculate \p left % \p right and round the result after, return the result
+ * \details
+ * Any % 0 => NaN
+ * Inf % Any => NaN, invalid
+ * Any % Inf -> Any
+ * 0 % Any -> 0
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_mod(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode) {
+	return rz_float_mod_ieee_bin(x, y, mode);
+}
+
+/**
+ * calculate \p a * \p b + \p c, and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_fma(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
+	return rz_float_fma_ieee_bin(a, b, c, mode);
+}
+
+/**
+ * calculate the root of \p n, and round the result after, return the result
+ * \param mode rounding mode
+ * \return result of arithmetic operation
+ */
+RZ_API RZ_OWN RzFloat *rz_float_sqrt(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
+	return rz_float_sqrt_ieee_bin(n, mode);
 }

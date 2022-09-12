@@ -73,7 +73,7 @@ typedef struct float_t {
 	RzFloatException exception; ///< exception of float operations
 } RzFloat;
 
-RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
+RZ_IPI ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
 RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f);
 RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f);
 RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format);
@@ -91,14 +91,25 @@ RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f);
 RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_inf(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f);
-RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode);
-RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
+
+RZ_IPI RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode);
+RZ_IPI RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
+
+RZ_API RZ_OWN RzFloat *rz_float_add(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sub(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_mul(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_div(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_rem(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_mod(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_fma(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sqrt(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
+
 RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f64(ut64 hex_value);

@@ -86,21 +86,21 @@ bool f32_ieee_add_test(void) {
 	// no rounding needed 1.5f + 0.25f -> precise result
 	RzFloat *f1 = rz_float_new_from_single(0.25f);
 	RzFloat *f2 = rz_float_new_from_single(1.5f + 0.25f);
-	RzFloat *f2_calc = rz_float_add_ieee_bin(f0, f1, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f2_calc = rz_float_add(f0, f1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f2->s, f2_calc->s), "test calculating bv value of 1.5f + 0.25f");
 
 	RzFloat *f3 = rz_float_new_from_single(0.3f);
 	RzFloat *f4 = rz_float_new_from_single(1.5f + 0.3f);
-	RzFloat *f4_calc = rz_float_add_ieee_bin(f0, f3, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f4_calc = rz_float_add(f0, f3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f4->s, f4_calc->s), "test calculating bv value of 1.5f + 0.3f");
 
 	RzFloat *f5 = rz_float_new_from_single(1.7f);
 	RzFloat *f6 = rz_float_new_from_single(1.7f + 0.3f);
-	RzFloat *f6_calc = rz_float_add_ieee_bin(f3, f5, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f6_calc = rz_float_add(f3, f5, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f6->s, f6_calc->s), "test calculating bv value of 1.7f + 0.3f");
 
 	RzFloat *f7 = rz_float_new_from_single(0.3f + 0.25f);
-	RzFloat *f7_calc = rz_float_add_ieee_bin(f1, f3, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f7_calc = rz_float_add(f1, f3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f7->s, f7_calc->s), "test calculating bv value of 0.25f + 0.3f");
 
 	RzFloat *subf1 = rz_float_new_from_single(6.8881E-41f);
@@ -109,11 +109,11 @@ bool f32_ieee_add_test(void) {
 
 	// subf1 + subf2 = 6.961E-41f
 	RzFloat *res1 = rz_float_new_from_single(6.961E-41f);
-	RzFloat *res1_calc = rz_float_add_ieee_bin(subf1, subf2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *res1_calc = rz_float_add(subf1, subf2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(res1->s, res1_calc->s), "test subnormal add 6.8881E-41f + 7.29e-43f");
 
 	RzFloat *res2 = rz_float_new_from_single(1.14514f);
-	RzFloat *res2_calc = rz_float_add_ieee_bin(subf1, subf3, RZ_FLOAT_RMODE_RNE);
+	RzFloat *res2_calc = rz_float_add(subf1, subf3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(res2->s, res2_calc->s), "test subnormal and normal 1.14514f + 6.8881E-41f");
 
 	rz_float_free(f0);
@@ -145,21 +145,21 @@ bool f32_ieee_sub_test(void) {
 	// no rounding needed 1.5f + 0.25f -> precise result
 	RzFloat *f1 = rz_float_new_from_single(0.25f);
 	RzFloat *f2 = rz_float_new_from_single(1.5f - 0.25f);
-	RzFloat *f2_calc = rz_float_sub_ieee_bin(f0, f1, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f2_calc = rz_float_sub(f0, f1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f2->s, f2_calc->s), "test calculating bv value of 1.5f - 0.25f");
 
 	RzFloat *f3 = rz_float_new_from_single(1.3f);
 	RzFloat *f4 = rz_float_new_from_single(1.7f);
 	RzFloat *f5 = rz_float_new_from_single(1.3f - 1.7f);
-	RzFloat *f5_calc = rz_float_sub_ieee_bin(f3, f4, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f5_calc = rz_float_sub(f3, f4, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f5->s, f5_calc->s), "test calculating bv value of 1.3f - 1.7f");
 	RzFloat *f6 = rz_float_new_from_single(1.7f - 1.3f);
-	RzFloat *f6_calc = rz_float_sub_ieee_bin(f4, f3, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f6_calc = rz_float_sub(f4, f3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f6->s, f6_calc->s), "test calculating bv value of 1.7f - 1.3f");
 
 	RzFloat *f7 = rz_float_new_from_single(0.3f);
 	RzFloat *f8 = rz_float_new_from_single(1.5f - 0.3f);
-	RzFloat *f8_calc = rz_float_sub_ieee_bin(f0, f7, RZ_FLOAT_RMODE_RNE);
+	RzFloat *f8_calc = rz_float_sub(f0, f7, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f8->s, f8_calc->s), "test calculating bv value of 1.5f - 0.3f");
 
 	RzFloat *subf1 = rz_float_new_from_single(6.8881E-41f);
@@ -168,11 +168,11 @@ bool f32_ieee_sub_test(void) {
 
 	// subf1 + subf2 = 6.961E-41f
 	RzFloat *res1 = rz_float_new_from_single(6.8152E-41f);
-	RzFloat *res1_calc = rz_float_sub_ieee_bin(subf1, subf2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *res1_calc = rz_float_sub(subf1, subf2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(res1->s, res1_calc->s), "test subnormal add 6.8881E-41f - 7.29e-43f");
 
 	RzFloat *res2 = rz_float_new_from_single(1.14514f);
-	RzFloat *res2_calc = rz_float_sub_ieee_bin(subf3, subf1, RZ_FLOAT_RMODE_RNE);
+	RzFloat *res2_calc = rz_float_sub(subf3, subf1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(res2->s, res2_calc->s), "test subnormal and normal 1.14514f - 6.8881E-41f");
 
 	rz_float_free(f0);
@@ -202,17 +202,17 @@ bool f32_ieee_mul_test(void) {
 	RzFloat *f1 = rz_float_new_from_single(11.1f);
 	RzFloat *f2 = rz_float_new_from_single(2.37f);
 	RzFloat *f1f2 = rz_float_new_from_single(26.307f);
-	RzFloat *calc_f1f2 = rz_float_mul_ieee_bin(f1, f2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_f1f2 = rz_float_mul(f1, f2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f1f2->s, calc_f1f2->s), "Compare Mul of 11.1 * 2.37 == 26.307 ?");
 
 	RzFloat *subf1 = rz_float_new_from_single(4.555041E-39f);
 	RzFloat *subf2 = rz_float_new_from_single(2.350989E-39f);
 	RzFloat *f2subf1 = rz_float_new_from_single(1.0795446E-38f);
-	RzFloat *calc_f2subf1 = rz_float_mul_ieee_bin(subf1, f2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_f2subf1 = rz_float_mul(subf1, f2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(f2subf1->s, calc_f2subf1->s), "Normal * Sub-normal");
 
 	RzFloat *subf1subf2 = rz_float_new_from_single(0.0f);
-	RzFloat *calc_subf1subf2 = rz_float_mul_ieee_bin(subf1, subf2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_subf1subf2 = rz_float_mul(subf1, subf2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(subf1subf2->s, calc_subf1subf2->s), "Sub-normal * Sub-normal");
 
 	rz_float_free(f1);
@@ -232,22 +232,22 @@ bool f32_ieee_div_test(void) {
 	RzFloat *f1 = rz_float_new_from_single(11.1f);
 	RzFloat *f2 = rz_float_new_from_single(2.37f);
 	RzFloat *div1 = rz_float_new_from_single(4.6835446f);
-	RzFloat *calc_div1 = rz_float_div_ieee_bin(f1, f2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_div1 = rz_float_div(f1, f2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(div1->s, calc_div1->s), "Compare Div of 11.1 / 2.37 == 4.6835446 ?");
 
 	RzFloat *f3 = rz_float_new_from_single(1111.1f);
 	RzFloat *div2 = rz_float_new_from_single(2.1330214E-3f);
-	RzFloat *calc_div2 = rz_float_div_ieee_bin(f2, f3, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_div2 = rz_float_div(f2, f3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(div2->s, calc_div2->s), "Div 2.37 / 1111.1 == 2.1330214E-3 ?");
 
 	RzFloat *subf1 = rz_float_new_from_single(4.555041E-39f);
 	RzFloat *subf2 = rz_float_new_from_single(2.350989E-39f);
 	RzFloat *div3 = rz_float_new_from_single(1.9374998f);
-	RzFloat *calc_div3 = rz_float_div_ieee_bin(subf1, subf2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_div3 = rz_float_div(subf1, subf2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(div3->s, calc_div3->s), "Div sub-normal test 1");
 
 	RzFloat *div4 = rz_float_new_from_single(0.5161291f);
-	RzFloat *calc_div4 = rz_float_div_ieee_bin(subf2, subf1, RZ_FLOAT_RMODE_RNE);
+	RzFloat *calc_div4 = rz_float_div(subf2, subf1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_bv(div4->s, calc_div4->s), "Div sub-normal test 2");
 
 	rz_float_free(f1);
@@ -351,7 +351,7 @@ bool f32_ieee_fma_test(void) {
 	b1 = rz_float_new_from_hex_as_f32(0xCB800000);
 	c1 = rz_float_new_from_hex_as_f32(0x4C440D9E);
 	expect1 = rz_float_new_from_hex_as_f32(0x4C440D9E);
-	z1 = rz_float_fma_ieee_bin(a1, b1, c1, RZ_FLOAT_RMODE_RNE);
+	z1 = rz_float_fma(a1, b1, c1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect1, z1), "Fused Mul Add test 1");
 
 	RzFloat *a2, *b2, *c2, *expect2, *z2;
@@ -359,7 +359,7 @@ bool f32_ieee_fma_test(void) {
 	b2 = rz_float_new_from_hex_as_f32(0x3F7FFFFE);
 	c2 = rz_float_new_from_hex_as_f32(0xC1C800D3);
 	expect2 = rz_float_new_from_hex_as_f32(0xC1C8416D);
-	z2 = rz_float_fma_ieee_bin(a2, b2, c2, RZ_FLOAT_RMODE_RNE);
+	z2 = rz_float_fma(a2, b2, c2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect2, z2), "Fused Mul Add test 2");
 
 	RzFloat *a3, *b3, *c3, *expect3, *z3;
@@ -367,7 +367,7 @@ bool f32_ieee_fma_test(void) {
 	b3 = rz_float_new_from_hex_as_f32(0x3F1DD0B8);
 	c3 = rz_float_new_from_hex_as_f32(0x81000000);
 	expect3 = rz_float_new_from_hex_as_f32(0x6F1DD067);
-	z3 = rz_float_fma_ieee_bin(a3, b3, c3, RZ_FLOAT_RMODE_RNE);
+	z3 = rz_float_fma(a3, b3, c3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect3, z3), "Fused Mul Add test 3");
 
 	RzFloat *a4, *b4, *c4, *expect4, *z4;
@@ -375,7 +375,7 @@ bool f32_ieee_fma_test(void) {
 	b4 = rz_float_new_from_single(2.0f);
 	c4 = rz_float_new_from_single(4.0f);
 	expect4 = rz_float_new_from_single(1.0f);
-	z4 = rz_float_fma_ieee_bin(a4, b4, c4, RZ_FLOAT_RMODE_RNE);
+	z4 = rz_float_fma(a4, b4, c4, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect4, z4), "Fused Mul Add test 4");
 
 	rz_float_free(a1);
@@ -411,11 +411,11 @@ bool f32_ieee_round_test(void) {
 	RzFloat *expect_rne_rna_rtp_rtz = rz_float_new_from_hex_as_f32(0xBFF01062);
 	RzFloat *expect_rtn = rz_float_new_from_hex_as_f32(0xBFF01063);
 
-	RzFloat *rne = rz_float_add_ieee_bin(a, b, RZ_FLOAT_RMODE_RNE);
-	RzFloat *rna = rz_float_add_ieee_bin(a, b, RZ_FLOAT_RMODE_RNA);
-	RzFloat *rtp = rz_float_add_ieee_bin(a, b, RZ_FLOAT_RMODE_RTP);
-	RzFloat *rtn = rz_float_add_ieee_bin(a, b, RZ_FLOAT_RMODE_RTN);
-	RzFloat *rtz = rz_float_add_ieee_bin(a, b, RZ_FLOAT_RMODE_RTZ);
+	RzFloat *rne = rz_float_add(a, b, RZ_FLOAT_RMODE_RNE);
+	RzFloat *rna = rz_float_add(a, b, RZ_FLOAT_RMODE_RNA);
+	RzFloat *rtp = rz_float_add(a, b, RZ_FLOAT_RMODE_RTP);
+	RzFloat *rtn = rz_float_add(a, b, RZ_FLOAT_RMODE_RTN);
+	RzFloat *rtz = rz_float_add(a, b, RZ_FLOAT_RMODE_RTZ);
 
 	mu_assert_true(is_equal_float(rne, expect_rne_rna_rtp_rtz), "RNE test");
 	mu_assert_true(is_equal_float(rna, expect_rne_rna_rtp_rtz), "RNA test");
@@ -435,7 +435,7 @@ bool f32_ieee_sqrt_test(void) {
 	RzFloat *a1, *z1, *expect1;
 	a1 = rz_float_new_from_single(4.0f);
 	expect1 = rz_float_new_from_single(2.0f);
-	z1 = rz_float_sqrt_ieee_bin(a1, RZ_FLOAT_RMODE_RNE);
+	z1 = rz_float_sqrt(a1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(z1, expect1), "test sqrt 1");
 	rz_float_free(a1);
 	rz_float_free(z1);
@@ -444,7 +444,7 @@ bool f32_ieee_sqrt_test(void) {
 	RzFloat *a2, *z2, *expect2;
 	a2 = rz_float_new_from_single(0.0144f);
 	expect2 = rz_float_new_from_single(0.12f);
-	z2 = rz_float_sqrt_ieee_bin(a2, RZ_FLOAT_RMODE_RNE);
+	z2 = rz_float_sqrt(a2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(z2, expect2), "test sqrt 2");
 	rz_float_free(a2);
 	rz_float_free(z2);
@@ -453,7 +453,7 @@ bool f32_ieee_sqrt_test(void) {
 	RzFloat *a3, *z3, *expect3;
 	a3 = rz_float_new_from_single(42.0f);
 	expect3 = rz_float_new_from_single(6.480740547180176f);
-	z3 = rz_float_sqrt_ieee_bin(a3, RZ_FLOAT_RMODE_RNE);
+	z3 = rz_float_sqrt(a3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(z3, expect3), "test sqrt 3");
 	rz_float_free(a3);
 	rz_float_free(z3);
@@ -471,11 +471,11 @@ bool f32_ieee_special_num_test(void) {
 
 	// Basic Operations
 	// 1. Add
-	RzFloat *add1 = rz_float_add_ieee_bin(nan, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *add2 = rz_float_add_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *add3 = rz_float_add_ieee_bin(nan, pinf, RZ_FLOAT_RMODE_RNE);
-	RzFloat *add4 = rz_float_add_ieee_bin(pinf, ninf, RZ_FLOAT_RMODE_RNE);
-	RzFloat *add5 = rz_float_add_ieee_bin(zero, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *add1 = rz_float_add(nan, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *add2 = rz_float_add(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *add3 = rz_float_add(nan, pinf, RZ_FLOAT_RMODE_RNE);
+	RzFloat *add4 = rz_float_add(pinf, ninf, RZ_FLOAT_RMODE_RNE);
+	RzFloat *add5 = rz_float_add(zero, cst_num, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(rz_float_is_nan(add1), "Add NaN and Const");
 	mu_assert_true(rz_float_is_inf(add2), "Add Inf and Const");
 	mu_assert_true(rz_float_is_nan(add3), "Add NaN and Inf");
@@ -489,11 +489,11 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(add5);
 
 	// 2. Sub
-	RzFloat *sub1 = rz_float_sub_ieee_bin(nan, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *sub2 = rz_float_sub_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *sub3 = rz_float_sub_ieee_bin(nan, pinf, RZ_FLOAT_RMODE_RNE);
-	RzFloat *sub4 = rz_float_sub_ieee_bin(ninf, ninf, RZ_FLOAT_RMODE_RNE);
-	RzFloat *sub5 = rz_float_sub_ieee_bin(cst_num, zero, RZ_FLOAT_RMODE_RNE);
+	RzFloat *sub1 = rz_float_sub(nan, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *sub2 = rz_float_sub(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *sub3 = rz_float_sub(nan, pinf, RZ_FLOAT_RMODE_RNE);
+	RzFloat *sub4 = rz_float_sub(ninf, ninf, RZ_FLOAT_RMODE_RNE);
+	RzFloat *sub5 = rz_float_sub(cst_num, zero, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(rz_float_is_nan(sub1), "Sub NaN and Const");
 	mu_assert_true(rz_float_is_inf(sub2), "Sub Inf and Const");
 	mu_assert_true(rz_float_is_nan(sub3), "Sub NaN and Inf");
@@ -507,10 +507,10 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(sub5);
 
 	// 3. MUL
-	RzFloat *mul1 = rz_float_mul_ieee_bin(nan, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *mul2 = rz_float_mul_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *mul3 = rz_float_mul_ieee_bin(zero, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *mul4 = rz_float_mul_ieee_bin(pinf, zero, RZ_FLOAT_RMODE_RNE);
+	RzFloat *mul1 = rz_float_mul(nan, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *mul2 = rz_float_mul(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *mul3 = rz_float_mul(zero, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *mul4 = rz_float_mul(pinf, zero, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(rz_float_is_nan(mul1), "Mul NaN and Const");
 	mu_assert_true(rz_float_is_inf(mul2), "Mul Inf and Const");
 	mu_assert_true(is_equal_float(mul3, zero), "Mul Zero and Const");
@@ -522,12 +522,12 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(mul4);
 
 	// 4. DIV
-	RzFloat *div1 = rz_float_div_ieee_bin(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *div2 = rz_float_div_ieee_bin(pinf, ninf, RZ_FLOAT_RMODE_RNE);
-	RzFloat *div3 = rz_float_div_ieee_bin(zero, zero, RZ_FLOAT_RMODE_RNE);
-	RzFloat *div4 = rz_float_div_ieee_bin(zero, cst_num, RZ_FLOAT_RMODE_RNE);
-	RzFloat *div5 = rz_float_div_ieee_bin(cst_num, zero, RZ_FLOAT_RMODE_RNE);
-	RzFloat *div6 = rz_float_div_ieee_bin(cst_num, pinf, RZ_FLOAT_RMODE_RNE);
+	RzFloat *div1 = rz_float_div(pinf, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *div2 = rz_float_div(pinf, ninf, RZ_FLOAT_RMODE_RNE);
+	RzFloat *div3 = rz_float_div(zero, zero, RZ_FLOAT_RMODE_RNE);
+	RzFloat *div4 = rz_float_div(zero, cst_num, RZ_FLOAT_RMODE_RNE);
+	RzFloat *div5 = rz_float_div(cst_num, zero, RZ_FLOAT_RMODE_RNE);
+	RzFloat *div6 = rz_float_div(cst_num, pinf, RZ_FLOAT_RMODE_RNE);
 
 	mu_assert_true(rz_float_is_inf(div1), "Inf / Non-inf => Inf ");
 	mu_assert_true(rz_float_is_nan(div2) && (div2->exception & RZ_FLOAT_E_INVALID_OP),
@@ -556,7 +556,7 @@ bool f32_ieee_rem_test(void) {
 	RzFloat *a1 = rz_float_new_from_single(4.0f);
 	RzFloat *b1 = rz_float_new_from_single(1.5f);
 	RzFloat *expect1 = rz_float_new_from_single(1.0f);
-	RzFloat *rem1 = rz_float_rem_ieee_bin(a1, b1, RZ_FLOAT_RMODE_RNE);
+	RzFloat *rem1 = rz_float_rem(a1, b1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem1, expect1), "rem test 1");
 	rz_float_free(a1);
 	rz_float_free(b1);
@@ -566,7 +566,7 @@ bool f32_ieee_rem_test(void) {
 	RzFloat *a2 = rz_float_new_from_hex_as_f32(0xCBF83FFF);
 	RzFloat *b2 = rz_float_new_from_hex_as_f32(0x44801003);
 	RzFloat *expect2 = rz_float_new_from_hex_as_f32(0xC3F52F40);
-	RzFloat *rem2 = rz_float_rem_ieee_bin(a2, b2, RZ_FLOAT_RMODE_RNE);
+	RzFloat *rem2 = rz_float_rem(a2, b2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem2, expect2), "rem test 2");
 	rz_float_free(a2);
 	rz_float_free(b2);
@@ -576,7 +576,7 @@ bool f32_ieee_rem_test(void) {
 	RzFloat *a3 = rz_float_new_from_hex_as_f32(0x3F7FFF3F);
 	RzFloat *b3 = rz_float_new_from_hex_as_f32(0x957CE0B6);
 	RzFloat *expect3 = rz_float_new_from_hex_as_f32(0x145F53B0);
-	RzFloat *rem3 = rz_float_rem_ieee_bin(a3, b3, RZ_FLOAT_RMODE_RNE);
+	RzFloat *rem3 = rz_float_rem(a3, b3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
 	rz_float_free(a3);
 	rz_float_free(b3);
