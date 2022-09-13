@@ -19,6 +19,8 @@ RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
 	visual->autoblocksize = true;
 	visual->color = 1;
 	visual->debug = 1;
+	visual->splitPtr = UT64_MAX;
+	visual->insertNibble = -1;
 	return visual;
 }
 
@@ -330,12 +332,6 @@ static const char *help_msg_visual_fn[] = {
 	"F9", "continue",
 	NULL
 };
-
-static bool splitView = false;
-static ut64 splitPtr = UT64_MAX;
-
-#undef USE_THREADS
-#define USE_THREADS 1
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, core->offset);
@@ -1615,6 +1611,7 @@ static void prevOpcode(RzCore *core) {
 }
 
 static void cursor_nextrow(RzCore *core, bool use_ocur) {
+	RzCoreVisual *visual = core->visual;
 	RzPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
@@ -1630,13 +1627,13 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 		p->cur += rz_config_get_i(core->config, "hex.cols");
 		return;
 	}
-	if (splitView) {
+	if (visual->splitView) {
 		int w = rz_config_get_i(core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
 		}
 		if (core->seltab == 0) {
-			splitPtr += w;
+			visual->splitPtr += w;
 		} else {
 			core->offset += w;
 		}
@@ -1695,6 +1692,7 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 }
 
 static void cursor_prevrow(RzCore *core, bool use_ocur) {
+	RzCoreVisual *visual = core->visual;
 	RzPrint *p = core->print;
 	ut32 roff, prev_roff;
 	int row;
@@ -1711,13 +1709,13 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 		return;
 	}
 
-	if (splitView) {
+	if (visual->splitView) {
 		int w = rz_config_get_i(core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
 		}
 		if (core->seltab == 0) {
-			splitPtr -= w;
+			visual->splitPtr -= w;
 		} else {
 			core->offset -= w;
 		}
@@ -1865,17 +1863,15 @@ static bool fix_cursor(RzCore *core) {
 	return res;
 }
 
-static bool __ime = false;
-static int __nib = -1;
-
 static bool insert_mode_enabled(RzCore *core) {
-	if (!__ime) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual->insertMode) {
 		return false;
 	}
 	char ch = (ut8)rz_cons_readchar();
 	if ((ut8)ch == KEY_ALTQ) {
 		(void)rz_cons_readchar();
-		__ime = false;
+		visual->insertMode = false;
 		return true;
 	}
 	char arrows = rz_cons_arrow_to_hjkl(ch);
@@ -1929,13 +1925,13 @@ static bool insert_mode_enabled(RzCore *core) {
 	case 'd':
 	case 'e':
 	case 'f':
-		if (__nib != -1) {
-			char hexpair[3] = { __nib, ch, 0 };
+		if (visual->insertNibble != -1) {
+			char hexpair[3] = { visual->insertNibble, ch, 0 };
 			rz_core_write_hexpair(core, core->offset + core->print->cur, hexpair);
 			core->print->cur++;
-			__nib = -1;
+			visual->insertNibble = -1;
 		} else {
-			__nib = ch;
+			visual->insertNibble = ch;
 		}
 		break;
 	case 'r': // "r -1"
@@ -1958,7 +1954,7 @@ static bool insert_mode_enabled(RzCore *core) {
 		break;
 	case 'Q':
 	case 'q':
-		__ime = false;
+		visual->insertMode = false;
 		break;
 	case '?':
 		rz_cons_less_str("\nVisual Insert Mode:\n\n"
@@ -2247,7 +2243,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case 'O': // tab TAB
 		case 9: // tab TAB
 			rz_core_visual_toggle_decompiler_disasm(core, false, true);
-			if (splitView) {
+			if (visual->splitView) {
 				// this split view is kind of useless imho, we should kill it or merge it into tabs
 				core->print->cur = 0;
 				core->curtab = 0;
@@ -2381,11 +2377,11 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 		} break;
 		case '\\':
-			if (splitPtr == UT64_MAX) {
-				splitPtr = core->offset;
+			if (visual->splitPtr == UT64_MAX) {
+				visual->splitPtr = core->offset;
 			}
-			splitView = !splitView;
-			setcursor(core, splitView);
+			visual->splitView = !visual->splitView;
+			setcursor(core, visual->splitView);
 			break;
 		case 'c':
 			setcursor(core, !core->print->cur_enabled);
@@ -2534,7 +2530,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					return true;
 				}
 				if (core->print->ocur == -1) {
-					__ime = true;
+					visual->insertMode = true;
 					core->print->cur_enabled = true;
 					return true;
 				}
@@ -3343,7 +3339,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 		char *address = (core->print->wide_offsets && core->dbg->bits & RZ_SYS_BITS_64)
 			? rz_str_newf("0x%016" PFMT64x, core->offset)
 			: rz_str_newf("0x%08" PFMT64x, core->offset);
-		if (__ime) {
+		if (visual->insertMode) {
 			title = rz_str_newf("[%s + %d> * INSERT MODE *\n",
 				address, core->print->cur);
 		} else {
@@ -3638,7 +3634,7 @@ static void visual_refresh(RzCore *core) {
 		core->print->screen_bounds = 0;
 		cmd_str = vcmd;
 	} else {
-		if (splitView) {
+		if (visual->splitView) {
 			static char debugstr[512];
 			const char *pxw = NULL;
 			int h = rz_num_get(core->num, "$r");
@@ -3655,7 +3651,7 @@ static void visual_refresh(RzCore *core) {
 			snprintf(debugstr, sizeof(debugstr),
 				"?0;%s %d @ %" PFMT64d ";cl;"
 				"?1;%s %d @ %" PFMT64d ";",
-				pxw, size, splitPtr,
+				pxw, size, visual->splitPtr,
 				pxw, size, core->offset);
 			core->print->screen_bounds = 1LL;
 			cmd_str = debugstr;
@@ -3768,13 +3764,13 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		input[0], 0
 	};
 
-	splitPtr = UT64_MAX;
+	RzCoreVisual *visual = core->visual;
+	visual->splitPtr = UT64_MAX;
 
 	if (rz_cons_get_size(&ch) < 1 || ch < 1) {
 		RZ_LOG_ERROR("core: Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}
-	RzCoreVisual *visual = core->visual;
 	visual->obs = core->blocksize;
 	// rz_cons_set_cup (true);
 
