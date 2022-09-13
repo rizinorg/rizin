@@ -813,6 +813,10 @@ commands:
         summary: Show function + delta for given offset
         cname: analysis_function_describe_offset
         args: []
+  - name: aF
+    summary: Analyze function non-recursively
+    cname: analysis_function_add_nodepth
+    args: []
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall

@@ -2026,9 +2026,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
-	case 'F': // "aF"
-		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
-		break;
 	case '*': // "a*"
 		rz_core_cmd0_rzshell(core, "afl*");
 		rz_core_cmd0_rzshell(core, "ah*");
@@ -4431,6 +4428,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, in
 		}
 	}
 	rz_list_free(list);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_add_nodepth_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 	return RZ_CMD_STATUS_OK;
 }
 

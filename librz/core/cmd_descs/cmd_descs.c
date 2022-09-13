@@ -2719,6 +2719,14 @@ static const RzCmdDescHelp analysis_function_describe_offset_help = {
 	.args = analysis_function_describe_offset_args,
 };
 
+static const RzCmdDescArg analysis_function_add_nodepth_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_add_nodepth_help = {
+	.summary = "Analyze function non-recursively",
+	.args = analysis_function_add_nodepth_args,
+};
+
 static const RzCmdDescDetailEntry analysis_appcall_Examples_detail_entries[] = {
 	{ .text = "aeC", .arg_str = " 1 2 @ sym._add", .comment = "Call sym._add(1,2)" },
 	{ 0 },
@@ -15527,6 +15535,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_describe_offset_cd = rz_cmd_desc_argv_new(core->rcmd, af_cd, "afd", rz_analysis_function_describe_offset_handler, &analysis_function_describe_offset_help);
 	rz_warn_if_fail(analysis_function_describe_offset_cd);
+
+	RzCmdDesc *analysis_function_add_nodepth_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aF", rz_analysis_function_add_nodepth_handler, &analysis_function_add_nodepth_help);
+	rz_warn_if_fail(analysis_function_add_nodepth_cd);
 
 	RzCmdDesc *analysis_appcall_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aeC", rz_analysis_appcall_handler, &analysis_appcall_help);
 	rz_warn_if_fail(analysis_appcall_cd);
