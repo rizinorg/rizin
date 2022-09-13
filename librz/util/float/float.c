@@ -1752,7 +1752,7 @@ RZ_IPI RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
  * get the absolute value of given float
  * \param f float
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
+RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzFloat *abs = rz_float_dup(f);
 	if (rz_float_get_sign(f)) {
