@@ -2560,6 +2560,8 @@ IL_LIFTER(rcr) {
 	return ret;
 }
 
+#undef RCX_MACRO
+
 #define ROX_MACRO() \
 	unsigned int size = ins->structure->operands[0].size; \
 	unsigned int cnt_size = ins->structure->operands[1].size * BITS_PER_BYTE; \
@@ -2624,6 +2626,8 @@ IL_LIFTER(ror) {
 	return ret;
 }
 
+#undef ROX_MACRO
+
 /**
  * RET
  * Return (near pointer)
@@ -2673,6 +2677,104 @@ IL_LIFTER(retfq) {
  */
 IL_LIFTER(sahf) {
 	return x86_il_set_flags(x86_il_get_reg(X86_REG_AH), 8);
+}
+
+#define SHIFT_MACRO() \
+	RzILOpEffect *count = SETL("_cnt", x86_il_get_op(1)); \
+	RzILOpEffect *count_mask = NULL; \
+	unsigned int count_size = ins->structure->operands[1].size * BITS_PER_BYTE; \
+	if (analysis->bits) { \
+		count_mask = SETL("_cnt_mask", UN(count_size, 0x3f)); \
+	} else { \
+		count_mask = SETL("_cnt_mask", UN(count_size, 0x1f)); \
+	} \
+	RzILOpEffect *masked_count = SETL("_masked", LOGAND(VARL("_cnt"), VARL("_cnt_mask"))); \
+	RzILOpEffect *temp_count = SETL("_tmp_cnt", VARL("_masked")); \
+	RzILOpEffect *dest = SETL("_dest", x86_il_get_op(0)); \
+	RzILOpEffect *temp_dest = SETL("_tmp_dest", VARL("_dest")); \
+	RzILOpBool *while_cond = NON_ZERO(VARL("_tmp_cnt")); \
+	RzILOpEffect *ret = SEQ6(count, count_mask, masked_count, temp_count, dest, temp_dest);
+
+/**
+ * SAL
+ * Shift arithmetically left (signed shift left)
+ * Encoding: M1, MC, MI
+ * (Functionally the same as SHL)
+ */
+IL_LIFTER(sal) {
+	SHIFT_MACRO();
+
+	RzILOpEffect *loop_body = SETG(EFLAGS(CF), MSB(VARL("_dest")));
+	loop_body = SEQ2(loop_body, SETL("_dest", SHIFTL0(VARL("_dest"), U8(1))));
+	loop_body = SEQ2(loop_body, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(count_size, 1))));
+
+	ret = SEQ2(ret, REPEAT(while_cond, loop_body));
+
+	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
+	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+
+	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+}
+
+/**
+ * SAR
+ * Shift arithmetically right (signed shift right)
+ * Encoding: M1, MC, MI
+ */
+IL_LIFTER(sar) {
+	SHIFT_MACRO();
+	
+	RzILOpEffect *loop_body = SETG(EFLAGS(CF), LSB(VARL("_dest")));
+	loop_body = SEQ2(loop_body, SETL("_dest", SHIFTRA(VARL("_dest"), U8(1))));
+	loop_body = SEQ2(loop_body, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(count_size, 1))));
+
+	ret = SEQ2(ret, REPEAT(while_cond, loop_body));
+
+	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
+	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), IL_FALSE);
+
+	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+}
+
+/**
+ * SHL
+ * Shift left (unsigned shift left)
+ * Encoding: M1, MC, MI
+ * (Functionally the same as SAL)
+ */
+IL_LIFTER(shl) {
+	SHIFT_MACRO();
+
+	RzILOpEffect *loop_body = SETG(EFLAGS(CF), MSB(VARL("_dest")));
+	loop_body = SEQ2(loop_body, SETL("_dest", SHIFTL0(VARL("_dest"), U8(1))));
+	loop_body = SEQ2(loop_body, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(count_size, 1))));
+
+	ret = SEQ2(ret, REPEAT(while_cond, loop_body));
+
+	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
+	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+
+	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+}
+
+/**
+ * SHR
+ * Shift right (unsigned shift left)
+ * Encoding: M1, MC, MI
+ */
+IL_LIFTER(shr) {
+	SHIFT_MACRO();
+	
+	RzILOpEffect *loop_body = SETG(EFLAGS(CF), LSB(VARL("_dest")));
+	loop_body = SEQ2(loop_body, SETL("_dest", SHIFTR0(VARL("_dest"), U8(1))));
+	loop_body = SEQ2(loop_body, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(count_size, 1))));
+
+	ret = SEQ2(ret, REPEAT(while_cond, loop_body));
+
+	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
+	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), MSB(VARL("_tmp_dest")));
+
+	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -2766,6 +2868,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_RETF] = x86_il_retf,
 	[X86_INS_RETFQ] = x86_il_retfq,
 	[X86_INS_SAHF] = x86_il_sahf,
+	[X86_INS_SAL] = x86_il_sal,
+	[X86_INS_SAR] = x86_il_sar,
+	[X86_INS_SHL] = x86_il_shl,
+	[X86_INS_SHR] = x86_il_shr,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>

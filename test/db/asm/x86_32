@@ -1950,7 +1950,10 @@ a "sfence" 0faef8
 a "sgdt [eax]" 0f0100
 aB "shld dword [eax], eax, 0" 0fa40000
 aB "shld dword [eax], eax, cl" 0fa500
-a "shl edx, 5" c1e205
+ad "sar edx, 5" c1fa05 0x0 (seq (set _cnt (bv 8 0x5)) (set _cnt_mask (bv 8 0x3f)) (set _masked (& (var _cnt) (var _cnt_mask))) (set _tmp_cnt (var _masked)) (set _dest (var edx)) (set _tmp_dest (var _dest)) (repeat (! (is_zero (var _tmp_cnt))) (seq (set cf (lsb (var _dest))) (set _dest (>> (var _dest) (bv 8 0x1) (msb (var _dest)))) (set _tmp_cnt (- (var _tmp_cnt) (bv 8 0x1))))) (branch (== (var _masked) (bv 8 0x1)) (set of false) nop))
+ad "sal edx, 5" c1f205 0x0 (seq (set _cnt (bv 8 0x5)) (set _cnt_mask (bv 8 0x3f)) (set _masked (& (var _cnt) (var _cnt_mask))) (set _tmp_cnt (var _masked)) (set _dest (var edx)) (set _tmp_dest (var _dest)) (repeat (! (is_zero (var _tmp_cnt))) (seq (set cf (msb (var _dest))) (set _dest (<< (var _dest) (bv 8 0x1) false)) (set _tmp_cnt (- (var _tmp_cnt) (bv 8 0x1))))) (branch (== (var _masked) (bv 8 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop))
+ad "shl edx, 5" c1e205 0x0 (seq (set _cnt (bv 8 0x5)) (set _cnt_mask (bv 8 0x3f)) (set _masked (& (var _cnt) (var _cnt_mask))) (set _tmp_cnt (var _masked)) (set _dest (var edx)) (set _tmp_dest (var _dest)) (repeat (! (is_zero (var _tmp_cnt))) (seq (set cf (msb (var _dest))) (set _dest (<< (var _dest) (bv 8 0x1) false)) (set _tmp_cnt (- (var _tmp_cnt) (bv 8 0x1))))) (branch (== (var _masked) (bv 8 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop))
+ad "shr edx, 5" c1ea05 0x0 (seq (set _cnt (bv 8 0x5)) (set _cnt_mask (bv 8 0x3f)) (set _masked (& (var _cnt) (var _cnt_mask))) (set _tmp_cnt (var _masked)) (set _dest (var edx)) (set _tmp_dest (var _dest)) (repeat (! (is_zero (var _tmp_cnt))) (seq (set cf (lsb (var _dest))) (set _dest (>> (var _dest) (bv 8 0x1) false)) (set _tmp_cnt (- (var _tmp_cnt) (bv 8 0x1))))) (branch (== (var _masked) (bv 8 0x1)) (set of (msb (var _tmp_dest))) nop))
 aB "shrd dword [eax], eax, 0" 0fac0000
 aB "shrd dword [eax], eax, cl" 0fad00
 aB "shufpd xmm0, xmmword [eax], 0x0" 660fc60000
