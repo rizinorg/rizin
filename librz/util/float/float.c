@@ -51,8 +51,10 @@ RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad)
  * 'sign' 'exponent part' | 'mantissa part'
  *  1.0f would be shown as +01111111|00000000000000000000000
  */
-RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f) {
-	rz_return_val_if_fail(f && f->s, NULL);
+RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f) {
+	if (!f || !f->s) {
+		return NULL;
+	}
 
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);

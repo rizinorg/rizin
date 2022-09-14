@@ -114,7 +114,7 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f64(ut64 hex_value);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f32(ut32 hex_value);
-RZ_API RZ_OWN char *rz_float_as_string(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f);
 RZ_API RZ_OWN char *rz_float_as_bit_string(RZ_NULLABLE RzFloat *f);
 RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad);
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign);
