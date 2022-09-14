@@ -2132,33 +2132,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
-	case 'p': // "ap"
-	{
-		const ut8 *prelude = (const ut8 *)"\xe9\x2d"; //: fffff000";
-		const int prelude_sz = 2;
-		const int bufsz = 4096;
-		ut8 *buf = calloc(1, bufsz);
-		ut64 off = core->offset;
-		if (input[1] == ' ') {
-			off = rz_num_math(core->num, input + 1);
-			rz_io_read_at(core->io, off - bufsz + prelude_sz, buf, bufsz);
-		} else {
-			rz_io_read_at(core->io, off - bufsz + prelude_sz, buf, bufsz);
-		}
-		// const char *prelude = "\x2d\xe9\xf0\x47"; //:fffff000";
-		rz_mem_reverse(buf, bufsz);
-		// rz_print_hexdump (NULL, off, buf, bufsz, 16, -16);
-		const ut8 *pos = rz_mem_mem(buf, bufsz, prelude, prelude_sz);
-		if (pos) {
-			int delta = (size_t)(pos - buf);
-			RZ_LOG_DEBUG("core: POS = %d\n", delta);
-			RZ_LOG_DEBUG("core: HIT = 0x%" PFMT64x "\n", off - delta);
-			rz_cons_printf("0x%08" PFMT64x "\n", off - delta);
-		} else {
-			RZ_LOG_ERROR("core: Cannot find prelude\n");
-		}
-		free(buf);
-	} break;
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
 	case 'F': // "aF"
 		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
