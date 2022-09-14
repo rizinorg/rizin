@@ -305,6 +305,8 @@ static const char *x86_eflags_registers[] = {
 	[X86_EFLAGS_VM] = "vm"
 };
 
+#define EFLAGS(f) x86_eflags_registers[X86_EFLAGS_##f]
+
 #define COMMON_REGS \
 	"cs", /* X86_REG_CS */ \
 		"ss", /* X86_REG_SS */ \
@@ -834,9 +836,9 @@ static RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int
 	RzILOpBool *sf = MSB(VARL("_result"));
 
 	return SEQ5(set, pf.eff,
-		SETG(x86_eflags_registers[X86_EFLAGS_PF], pf.val),
-		SETG(x86_eflags_registers[X86_EFLAGS_ZF], zf),
-		SETG(x86_eflags_registers[X86_EFLAGS_SF], sf));
+		SETG(EFLAGS(PF), pf.val),
+		SETG(EFLAGS(ZF), zf),
+		SETG(EFLAGS(SF), sf));
 }
 
 #define x86_il_set_result_flags(result) x86_il_set_result_flags_bits(result, analysis->bits)
@@ -864,9 +866,9 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ
 	}
 
 	return SEQ6(result_set, x_set, y_set,
-		SETG(x86_eflags_registers[X86_EFLAGS_CF], cf),
-		SETG(x86_eflags_registers[X86_EFLAGS_OF], of),
-		SETG(x86_eflags_registers[X86_EFLAGS_AF], af));
+		SETG(EFLAGS(CF), cf),
+		SETG(EFLAGS(OF), of),
+		SETG(EFLAGS(AF), af));
 }
 
 static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
@@ -886,8 +888,8 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPur
 	}
 
 	return SEQ5(result_set, x_set, y_set,
-		SETG(x86_eflags_registers[X86_EFLAGS_OF], of),
-		SETG(x86_eflags_registers[X86_EFLAGS_AF], af));
+		SETG(EFLAGS(OF), of),
+		SETG(EFLAGS(AF), af));
 }
 
 #define x86_il_set_arithmetic_flags(res, x, y, addition)           x86_il_set_arithmetic_flags_bits(res, x, y, addition, analysis->bits)
@@ -905,29 +907,29 @@ RzILOpPure *x86_il_get_flags(unsigned int size) {
 	always 0 on later models
 	Assuming 0 */
 	val = x86_bool_to_bv(IL_FALSE, size);
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_NT]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(NT)), size));
 
 	/** Bit 12-13: IOPL,
 	I/O privilege level (286+ only),
 	always 1 on 8086 and 186
 	Assuming all 1 */
 	val = LOGOR(SHIFTL0(val, UN(size, 2)), UN(size, 0x3));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_OF]), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_DF]), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_IF]), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_TF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(OF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(DF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(IF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(TF)), size));
 
 lower_half:
 	if (size == 8) {
-		val = x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_SF]), size);
+		val = x86_bool_to_bv(VARG(EFLAGS(SF)), size);
 	} else {
-		val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), size));
+		val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(ZF)), size));
 	}
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_AF]), size));
-	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_PF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(ZF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(EFLAGS(AF)), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 2)), x86_bool_to_bv(VARG(EFLAGS(PF)), size));
 	val = LOGOR(SHIFTL0(val, UN(size, 1)), UN(size, 1));
-	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(x86_eflags_registers[X86_EFLAGS_CF]), size));
+	val = LOGOR(SHIFTL0(val, UN(size, 1)), x86_bool_to_bv(VARG(EFLAGS(CF)), size));
 
 	return val;
 }
@@ -935,31 +937,31 @@ lower_half:
 RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
 	RzILOpEffect *set_val = SETL("_flags", val);
 
-	RzILOpEffect *eff = SETG(x86_eflags_registers[X86_EFLAGS_CF], LSB(VARL("_flags")));
+	RzILOpEffect *eff = SETG(EFLAGS(CF), LSB(VARL("_flags")));
 
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(2))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_PF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(PF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(2))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_AF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(AF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(2))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_ZF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(ZF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_SF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(SF), LSB(VARL("_flags"))));
 
 	if (size == 8) {
 		return SEQ2(set_val, eff);
 	}
 
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_TF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(TF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_IF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(IF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_DF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(DF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(1))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_OF], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(OF), LSB(VARL("_flags"))));
 	eff = SEQ2(eff, SETL("_flags", SHIFTR0(VARL("_flags"), U8(3))));
-	eff = SEQ2(eff, SETG(x86_eflags_registers[X86_EFLAGS_NT], LSB(VARL("_flags"))));
+	eff = SEQ2(eff, SETG(EFLAGS(NT), LSB(VARL("_flags"))));
 
 	/* Again, we will be ignoring bits over 16 and also ignore IOPL */
 
@@ -993,15 +995,15 @@ IL_LIFTER(aaa) {
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
-	RzILOpPure *cond = OR(al_ovf, VARG(x86_eflags_registers[X86_EFLAGS_AF]));
+	RzILOpPure *cond = OR(al_ovf, VARG(EFLAGS(AF)));
 
 	RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, ADD(x86_il_get_reg(X86_REG_AX), U16(0x106)));
-	RzILOpEffect *set_af = SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE);
-	RzILOpEffect *set_cf = SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE);
+	RzILOpEffect *set_af = SETG(EFLAGS(AF), IL_TRUE);
+	RzILOpEffect *set_cf = SETG(EFLAGS(CF), IL_TRUE);
 	RzILOpEffect *true_cond = SEQ3(set_ax, set_af, set_cf);
 
-	set_af = SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_FALSE);
-	set_cf = SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+	set_af = SETG(EFLAGS(AF), IL_FALSE);
+	set_cf = SETG(EFLAGS(CF), IL_FALSE);
 	RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
 
 	RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
@@ -1073,16 +1075,16 @@ IL_LIFTER(aas) {
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
-	RzILOpPure *cond = OR(al_ovf, VARG(x86_eflags_registers[X86_EFLAGS_AF]));
+	RzILOpPure *cond = OR(al_ovf, VARG(EFLAGS(AF)));
 
 	RzILOpEffect *set_ax = x86_il_set_reg(X86_REG_AX, SUB(x86_il_get_reg(X86_REG_AX), U16(0x6)));
 	RzILOpEffect *set_ah = x86_il_set_reg(X86_REG_AH, SUB(x86_il_get_reg(X86_REG_AH), U8(0x1)));
-	RzILOpEffect *set_af = SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE);
-	RzILOpEffect *set_cf = SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE);
+	RzILOpEffect *set_af = SETG(EFLAGS(AF), IL_TRUE);
+	RzILOpEffect *set_cf = SETG(EFLAGS(CF), IL_TRUE);
 	RzILOpEffect *true_cond = SEQ4(set_ax, set_ah, set_af, set_cf);
 
-	set_af = SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_FALSE);
-	set_cf = SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+	set_af = SETG(EFLAGS(AF), IL_FALSE);
+	set_cf = SETG(EFLAGS(CF), IL_FALSE);
 	RzILOpEffect *false_cond = SEQ2(set_af, set_cf);
 
 	RzILOpEffect *final_cond = BRANCH(cond, true_cond, false_cond);
@@ -1105,7 +1107,7 @@ IL_LIFTER(aas) {
 IL_LIFTER(adc) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_op(0));
 	RzILOpEffect *op2 = SETL("op2", x86_il_get_op(1));
-	RzILOpPure *cf = VARG(x86_eflags_registers[X86_EFLAGS_CF]);
+	RzILOpPure *cf = VARG(EFLAGS(CF));
 
 	RzILOpEffect *sum = SETL("sum", ADD(ADD(VARL("op1"), VARL("op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("sum"));
@@ -1155,8 +1157,8 @@ IL_LIFTER(and) {
 	RzILOpEffect *and = SETL("and_", LOGAND(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("and_"));
-	RzILOpEffect *clear_of = SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE);
-	RzILOpEffect *clear_cf = SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
+	RzILOpEffect *clear_cf = SETG(EFLAGS(CF), IL_FALSE);
 	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("and_"));
 
 	return SEQ5(and, set_dest, clear_of, clear_cf, set_res_flags);
@@ -1184,7 +1186,7 @@ IL_LIFTER(cbw) {
  * F8 | Valid | Valid
  */
 IL_LIFTER(clc) {
-	return SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+	return SETG(EFLAGS(CF), IL_FALSE);
 }
 
 /**
@@ -1193,7 +1195,7 @@ IL_LIFTER(clc) {
  * FC | Valid | Valid
  */
 IL_LIFTER(cld) {
-	return SETG(x86_eflags_registers[X86_EFLAGS_DF], IL_FALSE);
+	return SETG(EFLAGS(DF), IL_FALSE);
 }
 
 /**
@@ -1202,7 +1204,7 @@ IL_LIFTER(cld) {
  * FA | Valid | Valid
  */
 IL_LIFTER(cli) {
-	return SETG(x86_eflags_registers[X86_EFLAGS_IF], IL_FALSE);
+	return SETG(EFLAGS(IF), IL_FALSE);
 }
 
 /**
@@ -1211,7 +1213,7 @@ IL_LIFTER(cli) {
  * F5 | Valid | Valid
  */
 IL_LIFTER(cmc) {
-	return SETG(x86_eflags_registers[X86_EFLAGS_CF], INV(VARG(x86_eflags_registers[X86_EFLAGS_CF])));
+	return SETG(EFLAGS(CF), INV(VARG(EFLAGS(CF))));
 }
 
 /**
@@ -1264,7 +1266,7 @@ IL_LIFTER(cmpsb) {
 	RzILOpEffect *sub = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(analysis->bits, 1)));
 	sub = SEQ2(sub, x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), UN(analysis->bits, 1))));
 
-	return SEQ6(op1, op2, res, arith_flags, res_flags, BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), sub, add));
+	return SEQ6(op1, op2, res, arith_flags, res_flags, BRANCH(VARG(EFLAGS(DF)), sub, add));
 }
 
 /**
@@ -1285,7 +1287,7 @@ IL_LIFTER(cmpsw) {
 	RzILOpEffect *sub = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(analysis->bits, 2)));
 	sub = SEQ2(sub, x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), UN(analysis->bits, 2))));
 
-	return SEQ6(op1, op2, res, arith_flags, res_flags, BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), sub, add));
+	return SEQ6(op1, op2, res, arith_flags, res_flags, BRANCH(VARG(EFLAGS(DF)), sub, add));
 }
 
 /**
@@ -1297,19 +1299,19 @@ IL_LIFTER(daa) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
-	RzILOpEffect *old_cf = SETL("old_cf", VARG(x86_eflags_registers[X86_EFLAGS_CF]));
+	RzILOpEffect *old_cf = SETL("old_cf", VARG(EFLAGS(CF)));
 
-	RzILOpEffect *set_cf = SETL(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+	RzILOpEffect *set_cf = SETL(EFLAGS(CF), IL_FALSE);
 
 	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(X86_REG_AL), UN(8, 0xf)), UN(8, 9));
-	cond = OR(cond, VARG(x86_eflags_registers[X86_EFLAGS_AF]));
+	cond = OR(cond, VARG(EFLAGS(AF)));
 
 	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *sum = SETL("_sum", ADD(VARL("_al"), UN(8, 6)));
 	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
 	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_sub_borrow(VARL("_sum"), VARL("_al"), UN(8, 6)));
 
-	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], new_cf), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE)), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_FALSE)));
+	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(EFLAGS(CF), new_cf), SETG(EFLAGS(AF), IL_TRUE)), SETG(EFLAGS(AF), IL_FALSE)));
 
 	cond = OR(UGT(VARL("old_al"), UN(8, 0x99)), VARL("old_cf"));
 
@@ -1317,7 +1319,7 @@ IL_LIFTER(daa) {
 	sum = SETL("_sum", ADD(VARL("_al"), UN(8, 0x60)));
 	true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
 
-	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE)), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE)), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
+	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(EFLAGS(CF), IL_TRUE)), SETG(EFLAGS(CF), IL_FALSE)), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
 
 	return ret;
 }
@@ -1331,19 +1333,19 @@ IL_LIFTER(das) {
 	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
-	RzILOpEffect *old_cf = SETL("old_cf", VARG(x86_eflags_registers[X86_EFLAGS_CF]));
+	RzILOpEffect *old_cf = SETL("old_cf", VARG(EFLAGS(CF)));
 
-	RzILOpEffect *set_cf = SETL(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE);
+	RzILOpEffect *set_cf = SETL(EFLAGS(CF), IL_FALSE);
 
 	RzILOpBool *cond = UGT(LOGAND(x86_il_get_reg(X86_REG_AL), UN(8, 0xf)), UN(8, 9));
-	cond = OR(cond, VARG(x86_eflags_registers[X86_EFLAGS_AF]));
+	cond = OR(cond, VARG(EFLAGS(AF)));
 
 	RzILOpEffect *set_al = SETL("_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *sum = SETL("_sum", SUB(VARL("_al"), UN(8, 6)));
 	RzILOpEffect *true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
 	RzILOpPure *new_cf = OR(VARL("old_cf"), x86_il_is_sub_borrow(VARL("_sum"), VARL("_al"), UN(8, 6)));
 
-	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], new_cf), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_TRUE)), SETG(x86_eflags_registers[X86_EFLAGS_AF], IL_FALSE)));
+	RzILOpEffect *ret = SEQ4(old_al, old_cf, set_cf, BRANCH(cond, SEQ3(true_cond, SETG(EFLAGS(CF), new_cf), SETG(EFLAGS(AF), IL_TRUE)), SETG(EFLAGS(AF), IL_FALSE)));
 
 	cond = OR(UGT(VARL("old_al"), UN(8, 0x99)), VARL("old_cf"));
 
@@ -1351,7 +1353,7 @@ IL_LIFTER(das) {
 	sum = SETL("_sum", SUB(VARL("_al"), UN(8, 0x60)));
 	true_cond = SEQ3(set_al, sum, x86_il_set_reg(X86_REG_AL, VARL("_sum")));
 
-	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE)), NOP()), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
+	ret = SEQ3(ret, BRANCH(cond, SEQ2(true_cond, SETG(EFLAGS(CF), IL_TRUE)), NOP()), x86_il_set_result_flags(x86_il_get_reg(X86_REG_AL)));
 
 	return ret;
 }
@@ -1545,8 +1547,8 @@ IL_LIFTER(imul) {
 
 			/* Check if the result fits in a byte */
 			RzILOpPure *cond = EQ(SIGNED(16, UNSIGNED(8, VARL("_tmp_xp"))), VARL("_tmp_xp"));
-			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
-			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+			RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 			return SEQ3(tmp_xp, set_ax, BRANCH(cond, true_branch, false_branch));
 		}
@@ -1557,8 +1559,8 @@ IL_LIFTER(imul) {
 
 			/* Check if the result fits in a word */
 			RzILOpPure *cond = EQ(SIGNED(32, UNSIGNED(16, VARL("_tmp_xp"))), VARL("_tmp_xp"));
-			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
-			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+			RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 			return SEQ4(tmp_xp, set_ax, set_dx, BRANCH(cond, true_branch, false_branch));
 		}
@@ -1569,8 +1571,8 @@ IL_LIFTER(imul) {
 
 			/* Check if the result fits in a doubleword */
 			RzILOpPure *cond = EQ(SIGNED(64, UNSIGNED(32, VARL("_tmp_xp"))), VARL("_tmp_xp"));
-			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
-			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+			RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 			return SEQ4(tmp_xp, set_eax, set_edx, BRANCH(cond, true_branch, false_branch));
 		}
@@ -1581,8 +1583,8 @@ IL_LIFTER(imul) {
 
 			/* Check if the result fits in a quadword */
 			RzILOpPure *cond = EQ(SIGNED(128, UNSIGNED(64, VARL("_tmp_xp"))), VARL("_tmp_xp"));
-			RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
-			RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+			RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+			RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 			return SEQ4(tmp_xp, set_rax, set_rdx, BRANCH(cond, true_branch, false_branch));
 		}
@@ -1599,8 +1601,8 @@ IL_LIFTER(imul) {
 
 		/* Check if the result fits in the destination */
 		RzILOpPure *cond = EQ(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
-		RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
-		RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+		RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+		RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 		return SEQ5(dest, tmp_xp, set_dest, set_operand, BRANCH(cond, true_branch, false_branch));
 	}
@@ -1611,8 +1613,8 @@ IL_LIFTER(imul) {
 
 		/* Check if the result fits in the destination */
 		RzILOpPure *cond = EQ(SIGNED(ins->structure->operands[0].size * 2 * BITS_PER_BYTE, VARL("_dest")), VARL("_tmp_xp"));
-		RzILOpEffect *true_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE));
-		RzILOpEffect *false_branch = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE));
+		RzILOpEffect *true_branch = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+		RzILOpEffect *false_branch = SEQ2(SETG(EFLAGS(CF), IL_TRUE), SETG(EFLAGS(OF), IL_TRUE));
 
 		return SEQ4(tmp_xp, set_dest, set_operand, BRANCH(cond, true_branch, false_branch));
 	}
@@ -1670,7 +1672,7 @@ static void label_int(RzILVM *vm, RzILOpEffect *op) {
  * Call to interrupt if overflow flag set
  */
 IL_LIFTER(into) {
-	return BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_OF]), GOTO("int"), NOP());
+	return BRANCH(VARG(EFLAGS(OF)), GOTO("int"), NOP());
 }
 
 /**
@@ -1698,7 +1700,7 @@ IL_LIFTER(iret) {
  * Encoding: D
  */
 IL_LIFTER(ja) {
-	RzILOpBool *cond = AND(INV(VARG(x86_eflags_registers[X86_EFLAGS_CF])), INV(VARG(x86_eflags_registers[X86_EFLAGS_ZF])));
+	RzILOpBool *cond = AND(INV(VARG(EFLAGS(CF))), INV(VARG(EFLAGS(ZF))));
 	JUMP_IL();
 }
 
@@ -1708,7 +1710,7 @@ IL_LIFTER(ja) {
  * Encoding: D
  */
 IL_LIFTER(jae) {
-	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_CF]));
+	RzILOpBool *cond = INV(VARG(EFLAGS(CF)));
 	JUMP_IL();
 }
 
@@ -1718,7 +1720,7 @@ IL_LIFTER(jae) {
  * Encoding: D
  */
 IL_LIFTER(jb) {
-	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_CF]);
+	RzILOpBool *cond = VARG(EFLAGS(CF));
 	JUMP_IL();
 }
 
@@ -1728,7 +1730,7 @@ IL_LIFTER(jb) {
  * Encoding: D
  */
 IL_LIFTER(jbe) {
-	RzILOpBool *cond = OR(VARG(x86_eflags_registers[X86_EFLAGS_CF]), VARG(x86_eflags_registers[X86_EFLAGS_ZF]));
+	RzILOpBool *cond = OR(VARG(EFLAGS(CF)), VARG(EFLAGS(ZF)));
 	JUMP_IL();
 }
 
@@ -1768,7 +1770,7 @@ IL_LIFTER(jrcxz) {
  * Encoding: D
  */
 IL_LIFTER(je) {
-	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_ZF]);
+	RzILOpBool *cond = VARG(EFLAGS(ZF));
 	JUMP_IL();
 }
 
@@ -1778,7 +1780,7 @@ IL_LIFTER(je) {
  * Encoding: D
  */
 IL_LIFTER(jg) {
-	RzILOpBool *cond = AND(INV(VARG(x86_eflags_registers[X86_EFLAGS_ZF])), INV(XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF]))));
+	RzILOpBool *cond = AND(INV(VARG(EFLAGS(ZF))), INV(XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF)))));
 	JUMP_IL();
 }
 
@@ -1788,7 +1790,7 @@ IL_LIFTER(jg) {
  * Encoding: D
  */
 IL_LIFTER(jge) {
-	RzILOpBool *cond = INV(XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF])));
+	RzILOpBool *cond = INV(XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF))));
 	JUMP_IL();
 }
 
@@ -1798,7 +1800,7 @@ IL_LIFTER(jge) {
  * Encoding: D
  */
 IL_LIFTER(jl) {
-	RzILOpBool *cond = XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF]));
+	RzILOpBool *cond = XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF)));
 	JUMP_IL();
 }
 
@@ -1808,7 +1810,7 @@ IL_LIFTER(jl) {
  * Encoding: D
  */
 IL_LIFTER(jle) {
-	RzILOpBool *cond = OR(VARG(x86_eflags_registers[X86_EFLAGS_ZF]), XOR(VARG(x86_eflags_registers[X86_EFLAGS_SF]), VARG(x86_eflags_registers[X86_EFLAGS_OF])));
+	RzILOpBool *cond = OR(VARG(EFLAGS(ZF)), XOR(VARG(EFLAGS(SF)), VARG(EFLAGS(OF))));
 	JUMP_IL();
 }
 
@@ -1818,7 +1820,7 @@ IL_LIFTER(jle) {
  * Encoding: D
  */
 IL_LIFTER(jne) {
-	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_ZF]));
+	RzILOpBool *cond = INV(VARG(EFLAGS(ZF)));
 	JUMP_IL();
 }
 
@@ -1828,7 +1830,7 @@ IL_LIFTER(jne) {
  * Encoding: D
  */
 IL_LIFTER(jno) {
-	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_OF]));
+	RzILOpBool *cond = INV(VARG(EFLAGS(OF)));
 	JUMP_IL();
 }
 
@@ -1838,7 +1840,7 @@ IL_LIFTER(jno) {
  * Encoding: D
  */
 IL_LIFTER(jnp) {
-	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_PF]));
+	RzILOpBool *cond = INV(VARG(EFLAGS(PF)));
 	JUMP_IL();
 }
 
@@ -1848,7 +1850,7 @@ IL_LIFTER(jnp) {
  * Encoding: D
  */
 IL_LIFTER(jns) {
-	RzILOpBool *cond = INV(VARG(x86_eflags_registers[X86_EFLAGS_SF]));
+	RzILOpBool *cond = INV(VARG(EFLAGS(SF)));
 	JUMP_IL();
 }
 
@@ -1858,7 +1860,7 @@ IL_LIFTER(jns) {
  * Encoding: D
  */
 IL_LIFTER(jo) {
-	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_OF]);
+	RzILOpBool *cond = VARG(EFLAGS(OF));
 	JUMP_IL();
 }
 
@@ -1868,7 +1870,7 @@ IL_LIFTER(jo) {
  * Encoding: D
  */
 IL_LIFTER(jp) {
-	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_PF]);
+	RzILOpBool *cond = VARG(EFLAGS(PF));
 	JUMP_IL();
 }
 
@@ -1878,7 +1880,7 @@ IL_LIFTER(jp) {
  * Encoding: D
  */
 IL_LIFTER(js) {
-	RzILOpBool *cond = VARG(x86_eflags_registers[X86_EFLAGS_SF]);
+	RzILOpBool *cond = VARG(EFLAGS(SF));
 	JUMP_IL();
 }
 
@@ -1956,7 +1958,7 @@ IL_LIFTER(lodsb) {
 		RzILOpPure *val = LOADW(8, x86_il_get_reg(X86_REG_RSI));
 		RzILOpEffect *inc = x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), UN(64, 1)));
 		RzILOpEffect *dec = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(64, 1)));
-		RzILOpEffect *update_rsi = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update_rsi = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(x86_il_set_reg(X86_REG_AL, val), update_rsi);
 
@@ -1972,7 +1974,7 @@ IL_LIFTER(lodsb) {
 		X86Reg si_reg = analysis->bits == 16 ? X86_REG_SI : X86_REG_ESI;
 		RzILOpEffect *inc = x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(analysis->bits, 1)));
 		RzILOpEffect *dec = x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(analysis->bits, 1)));
-		RzILOpEffect *update_si = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update_si = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(x86_il_set_reg(X86_REG_AL, val), update_si);
 	}
@@ -1988,7 +1990,7 @@ IL_LIFTER(lodsw) {
 		RzILOpPure *val = LOADW(16, x86_il_get_reg(X86_REG_RSI));
 		RzILOpEffect *inc = x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), UN(64, 2)));
 		RzILOpEffect *dec = x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(64, 2)));
-		RzILOpEffect *update_rsi = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update_rsi = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(x86_il_set_reg(X86_REG_AX, val), update_rsi);
 
@@ -2004,7 +2006,7 @@ IL_LIFTER(lodsw) {
 		X86Reg si_reg = analysis->bits == 16 ? X86_REG_SI : X86_REG_ESI;
 		RzILOpEffect *inc = x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(analysis->bits, 2)));
 		RzILOpEffect *dec = x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(analysis->bits, 2)));
-		RzILOpEffect *update_si = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update_si = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(x86_il_set_reg(X86_REG_AX, val), update_si);
 	}
@@ -2079,7 +2081,7 @@ IL_LIFTER(movsb) {
 		RzILOpPure *val = LOADW(8, x86_il_get_reg(X86_REG_RSI));
 		RzILOpEffect *inc = SEQ2(x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), UN(64, 1))), x86_il_set_reg(X86_REG_RDI, ADD(x86_il_get_reg(X86_REG_RDI), UN(64, 1))));
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(64, 1))), x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), UN(64, 1))));
-		RzILOpEffect *update = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(STOREW(x86_il_get_reg(X86_REG_RDI), val), update);
 
@@ -2103,7 +2105,7 @@ IL_LIFTER(movsb) {
 		X86Reg di_reg = analysis->bits == 16 ? X86_REG_DI : X86_REG_EDI;
 		RzILOpEffect *inc = SEQ2(x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(analysis->bits, 1))), x86_il_set_reg(di_reg, ADD(x86_il_get_reg(di_reg), UN(analysis->bits, 1))));
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(analysis->bits, 1))), x86_il_set_reg(di_reg, SUB(x86_il_get_reg(di_reg), UN(analysis->bits, 1))));
-		RzILOpEffect *update = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(x86_il_set_mem(dst_mem, val), update);
 	}
@@ -2119,7 +2121,7 @@ IL_LIFTER(movsw) {
 		RzILOpPure *val = LOADW(16, x86_il_get_reg(X86_REG_RSI));
 		RzILOpEffect *inc = SEQ2(x86_il_set_reg(X86_REG_RSI, ADD(x86_il_get_reg(X86_REG_RSI), UN(64, 2))), x86_il_set_reg(X86_REG_RDI, ADD(x86_il_get_reg(X86_REG_RDI), UN(64, 2))));
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(X86_REG_RSI, SUB(x86_il_get_reg(X86_REG_RSI), UN(64, 2))), x86_il_set_reg(X86_REG_RDI, SUB(x86_il_get_reg(X86_REG_RDI), UN(64, 2))));
-		RzILOpEffect *update = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(STOREW(x86_il_get_reg(X86_REG_RDI), val), update);
 
@@ -2143,7 +2145,7 @@ IL_LIFTER(movsw) {
 		X86Reg di_reg = analysis->bits == 16 ? X86_REG_DI : X86_REG_EDI;
 		RzILOpEffect *inc = SEQ2(x86_il_set_reg(si_reg, ADD(x86_il_get_reg(si_reg), UN(analysis->bits, 2))), x86_il_set_reg(di_reg, ADD(x86_il_get_reg(di_reg), UN(analysis->bits, 2))));
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(si_reg, SUB(x86_il_get_reg(si_reg), UN(analysis->bits, 2))), x86_il_set_reg(di_reg, SUB(x86_il_get_reg(di_reg), UN(analysis->bits, 2))));
-		RzILOpEffect *update = BRANCH(VARG(x86_eflags_registers[X86_EFLAGS_DF]), dec, inc);
+		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
 		return SEQ2(x86_il_set_mem(dst_mem, val), update);
 	}
@@ -2156,8 +2158,8 @@ IL_LIFTER(movsw) {
  */
 IL_LIFTER(mul) {
 	RzILOpPure *op = UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE * 2, x86_il_get_op(0));
-	RzILOpEffect *true_cond = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE));
-	RzILOpEffect *false_cond = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_TRUE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE));
+	RzILOpEffect *true_cond = SEQ2(SETG(EFLAGS(OF), IL_FALSE), SETG(EFLAGS(CF), IL_FALSE));
+	RzILOpEffect *false_cond = SEQ2(SETG(EFLAGS(OF), IL_TRUE), SETG(EFLAGS(CF), IL_TRUE));
 
 	switch (ins->structure->operands[0].size) {
 	case 1: {
@@ -2204,7 +2206,7 @@ IL_LIFTER(mul) {
  */
 IL_LIFTER(neg) {
 	RzILOpEffect *op = SETL("_op", x86_il_get_op(0));
-	RzILOpEffect *cf = BRANCH(IS_ZERO(VARL("_op")), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_TRUE));
+	RzILOpEffect *cf = BRANCH(IS_ZERO(VARL("_op")), SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(CF), IL_TRUE));
 	RzILOpEffect *neg = x86_il_set_op(0, NEG(VARL("_op")));
 
 	return SEQ3(op, cf, neg);
@@ -2240,7 +2242,7 @@ IL_LIFTER(not ) {
  *  - RM
  */
 IL_LIFTER(or) {
-	RzILOpEffect *clear_flags = SEQ2(SETG(x86_eflags_registers[X86_EFLAGS_OF], IL_FALSE), SETG(x86_eflags_registers[X86_EFLAGS_CF], IL_FALSE));
+	RzILOpEffect *clear_flags = SEQ2(SETG(EFLAGS(OF), IL_FALSE), SETG(EFLAGS(CF), IL_FALSE));
 
 	if (ins->structure->op_count == 1) {
 		/* I encoding */
@@ -2482,6 +2484,146 @@ IL_LIFTER(pushal) {
 	return SEQ2(temp, push);
 }
 
+#define RCX_MACRO() \
+	unsigned int size = ins->structure->operands[0].size; \
+	RzILOpEffect *dest = SETL("_dest", x86_il_get_op(0)); \
+	RzILOpEffect *temp_count = NULL, *cnt_masked = NULL; \
+	ut8 tmp_count_size = 0; \
+	switch (size) { \
+	case 1: \
+		temp_count = SETL("_tmp_cnt", MOD(UNSIGNED(5, x86_il_get_op(1)), UN(5, 9))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op(1))); \
+		tmp_count_size = 5; \
+		break; \
+	case 2: \
+		temp_count = SETL("_tmp_cnt", MOD(UNSIGNED(5, x86_il_get_op(1)), UN(5, 17))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op(1))); \
+		tmp_count_size = 5; \
+		break; \
+	case 4: \
+		temp_count = SETL("_tmp_cnt", UNSIGNED(5, x86_il_get_op(1))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op(1))); \
+		tmp_count_size = 5; \
+		break; \
+	case 8: \
+		temp_count = SETL("_tmp_cnt", UNSIGNED(6, x86_il_get_op(1))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(6, x86_il_get_op(1))); \
+		tmp_count_size = 6; \
+		break; \
+	default: \
+		rz_warn_if_reached(); \
+	}
+
+/**
+ * RCL
+ * Rotate left, with carry
+ * Encoding: MI, M1, MC
+ */
+IL_LIFTER(rcl) {
+	RCX_MACRO();
+
+	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
+	RzILOpEffect *repeat = SETL("_tmp_cf", MSB(VARL("_dest")));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), x86_bool_to_bv(VARG(EFLAGS(CF)), BITS_PER_BYTE * size))));
+	repeat = SEQ2(repeat, SETG(EFLAGS(CF), VARL("_tmp_cf")));
+	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(tmp_count_size, 1))));
+
+	RzILOpEffect *ret = SEQ4(dest, temp_count, cnt_masked, REPEAT(cond, repeat));
+
+	RzILOpBool *if_cond = EQ(VARL("_cnt_mask"), UN(tmp_count_size, 1));
+	RzILOpEffect *true_eff = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest"));
+
+	return SEQ3(ret, BRANCH(if_cond, true_eff, NULL), set_dest);
+}
+
+/**
+ * RCR
+ * Rotate right, with carry
+ * Encoding: MI, M1, MC
+ */
+IL_LIFTER(rcr) {
+	RCX_MACRO();
+
+	RzILOpBool *if_cond = EQ(VARL("_cnt_mask"), UN(tmp_count_size, 1));
+	RzILOpEffect *true_eff = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+
+	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
+	RzILOpEffect *repeat = SETL("_tmp_cf", LSB(VARL("_dest")));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(x86_bool_to_bv(VARG(EFLAGS(CF)), BITS_PER_BYTE * size), U8(size)))));
+	repeat = SEQ2(repeat, SETG(EFLAGS(CF), VARL("_tmp_cf")));
+	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(tmp_count_size, 1))));
+
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest"));
+	RzILOpEffect *ret = SEQ6(dest, temp_count, cnt_masked, BRANCH(if_cond, true_eff, NULL), REPEAT(cond, repeat), set_dest);
+
+	return ret;
+}
+
+#define ROX_MACRO() \
+	unsigned int size = ins->structure->operands[0].size; \
+	unsigned int cnt_size = ins->structure->operands[1].size * BITS_PER_BYTE; \
+	RzILOpEffect *dest = SETL("_dest", x86_il_get_op(0)); \
+	RzILOpEffect *count_mask = NULL; \
+	if (size == 64) { \
+		count_mask = SETL("_cnt_mask", UN(ins->structure->operands[1].size * BITS_PER_BYTE, 0x3f)); \
+	} else { \
+		count_mask = SETL("_cnt_mask", UN(ins->structure->operands[1].size * BITS_PER_BYTE, 0x1f)); \
+	} \
+	RzILOpEffect *count = SETL("_cnt", x86_il_get_op(1)); \
+	RzILOpEffect *masked = SETL("_masked", LOGAND(VARL("_cnt_mask"), VARL("_cnt"))); \
+	RzILOpEffect *temp_count = SETL("_tmp_cnt", MOD(VARL("_masked"), UN(cnt_size, size)));
+
+/**
+ * ROL
+ * Rotate left
+ * Encoding: MI, M1, MC
+ */
+IL_LIFTER(rol) {
+	ROX_MACRO();
+
+	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
+	RzILOpEffect *repeat = SETL("_tmp_cf", MSB(VARL("_dest")));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTL0(VARL("_dest"), U8(1)), x86_bool_to_bv(VARL("_tmp_cf"), BITS_PER_BYTE * size))));
+	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(cnt_size, 1))));
+
+	RzILOpBool *if_cond1 = NON_ZERO(VARL("_masked"));
+	RzILOpEffect *true_eff1 = SETG(EFLAGS(CF), LSB(VARL("_dest")));
+
+	RzILOpBool *if_cond2 = EQ(VARL("_masked"), UN(cnt_size, 1));
+	RzILOpEffect *true_eff2 = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest"));
+	RzILOpEffect *ret = SEQ9(dest, count_mask, count, masked, temp_count, REPEAT(cond, repeat), BRANCH(if_cond1, true_eff1, NULL), BRANCH(if_cond2, true_eff2, NULL), set_dest);
+
+	return ret;
+}
+
+/**
+ * ROR
+ * Rotate right
+ * Encoding: MI, M1, MC
+ */
+IL_LIFTER(ror) {
+	ROX_MACRO();
+
+	RzILOpBool *cond = NON_ZERO(VARL("_tmp_cnt"));
+	RzILOpEffect *repeat = SETL("_tmp_cf", LSB(VARL("_dest")));
+	repeat = SEQ2(repeat, SETL("_dest", ADD(SHIFTR0(VARL("_dest"), U8(1)), SHIFTL0(x86_bool_to_bv(VARL("_tmp_cf"), BITS_PER_BYTE * size), U8(size)))));
+	repeat = SEQ2(repeat, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(cnt_size, 1))));
+
+	RzILOpBool *if_cond1 = NON_ZERO(VARL("_masked"));
+	RzILOpEffect *true_eff1 = SETG(EFLAGS(CF), MSB(VARL("_dest")));
+
+	RzILOpBool *if_cond2 = EQ(VARL("_masked"), UN(cnt_size, 1));
+	RzILOpEffect *true_eff2 = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest"));
+	RzILOpEffect *ret = SEQ9(dest, count_mask, count, masked, temp_count, REPEAT(cond, repeat), BRANCH(if_cond1, true_eff1, NULL), BRANCH(if_cond2, true_eff2, NULL), set_dest);
+
+	return ret;
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2565,6 +2707,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_PUSHFQ] = x86_il_pushfq,
 	[X86_INS_PUSHAW] = x86_il_pushaw,
 	[X86_INS_PUSHAL] = x86_il_pushal,
+	[X86_INS_RCL] = x86_il_rcl,
+	[X86_INS_RCR] = x86_il_rcr,
+	[X86_INS_ROL] = x86_il_rol,
+	[X86_INS_ROR] = x86_il_ror,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
