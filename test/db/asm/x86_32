@@ -419,9 +419,9 @@ d "rdpmc" 0f33
 d "rdtsc" 0f31
 d "rdtscp" 0f01f9
 d "repne movsb byte es:[edi], byte ptr [esi]" f2a4
-d "ret" C3
-d "retf 0" CA0000
-d "retf" CB
+d "ret" c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
+d "retf 0" ca0000 0x0 empty
+d "retf" cb 0x0 empty
 d "rol byte [eax], 0" c00000
 d "rol byte [eax], 1" d000
 d "rol byte [eax], cl" d200
@@ -1890,11 +1890,11 @@ a "rdtsc" 0f31
 a "rdtscp" 0f01f9
 a "repne movsb byte es:[edi], byte ptr [esi]" f2a4
 a "repz movsb" f3a4
-a "ret" c3
+a "ret" c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
 a "bnd ret" f2c3
 a "retf 0" ca0000
-a "retf" cb
-a "retw" 66c3
+a "retf" cb 0x0 empty
+a "retw" 66c3 0x0 (seq (set esp (+ (var esp) (bv 32 0x4))) (set esp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
 ad "rcl byte [eax], cl" d210 0x0 (seq (set _dest (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (smod (cast 5 false (cast 8 false (var ecx))) (bv 5 0x9))) (set _cnt_mask (cast 5 false (cast 8 false (var ecx)))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
 ad "rcl byte [eax], 1" d010 0x0 (seq (set _dest (loadw 0 8 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (smod (cast 5 false (bv 8 0x1)) (bv 5 0x9))) (set _cnt_mask (cast 5 false (bv 8 0x1))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
 ad "rcl dword [eax], cl" d310 0x0 (seq (set _dest (loadw 0 32 (+ (var eax) (bv 32 0x0)))) (set _tmp_cnt (cast 5 false (cast 8 false (var ecx)))) (set _cnt_mask (cast 5 false (cast 8 false (var ecx)))) (repeat (! (is_zero (var _tmp_cnt))) (seq (set _tmp_cf (msb (var _dest))) (set _dest (+ (<< (var _dest) (bv 8 0x1) false) (ite (var cf) (bv 32 0x1) (bv 32 0x0)))) (set cf (var _tmp_cf)) (set _tmp_cnt (- (var _tmp_cnt) (bv 5 0x1))))) (branch (== (var _cnt_mask) (bv 5 0x1)) (set of (^^ (msb (var _dest)) (var cf))) nop) (storew 0 (+ (var eax) (bv 32 0x0)) (var _dest)))
