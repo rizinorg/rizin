@@ -97,6 +97,8 @@ static const RzCmdDescArg analyze_xrefs_section_bytes_args[2];
 static const RzCmdDescArg analyze_function_linked_offsets_args[2];
 static const RzCmdDescArg print_commands_after_traps_args[2];
 static const RzCmdDescArg print_areas_no_functions_args[2];
+static const RzCmdDescArg analysis_data_args[4];
+static const RzCmdDescArg analysis_data_trampoline_args[3];
 static const RzCmdDescArg analysis_function_add_recu_args[2];
 static const RzCmdDescArg analysis_function_add_recu_force_args[2];
 static const RzCmdDescArg analysis_function_create_args[4];
@@ -1601,6 +1603,81 @@ static const RzCmdDescArg analyze_value_to_maps_args[] = {
 static const RzCmdDescHelp analyze_value_to_maps_help = {
 	.summary = "Analyze values referencing a specific section or map",
 	.args = analyze_value_to_maps_args,
+};
+
+static const RzCmdDescHelp ad_help = {
+	.summary = "Analyze data",
+};
+static const RzCmdDescArg analysis_data_args[] = {
+	{
+		.name = "count",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "depth",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "wordsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_data_help = {
+	.summary = "Analyze <count> data words with <depth>",
+	.args = analysis_data_args,
+};
+
+static const RzCmdDescArg analysis_data_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_data_function_help = {
+	.summary = "Analyze data in function",
+	.args = analysis_data_function_args,
+};
+
+static const RzCmdDescArg analysis_data_function_gaps_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_data_function_gaps_help = {
+	.summary = "Analyze data in function gaps",
+	.args = analysis_data_function_gaps_args,
+};
+
+static const RzCmdDescArg analysis_data_kind_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_data_kind_help = {
+	.summary = "Analyze data kind (code, text, data, invalid, etc)",
+	.args = analysis_data_kind_args,
+};
+
+static const RzCmdDescArg analysis_data_trampoline_args[] = {
+	{
+		.name = "minimum",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.default_value = "0",
+
+	},
+	{
+		.name = "maximum",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.default_value = "0",
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_data_trampoline_help = {
+	.summary = "Analyze data trampolines",
+	.args = analysis_data_trampoline_args,
 };
 
 static const RzCmdDescHelp af_help = {
@@ -15225,6 +15302,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyze_value_to_maps_cd = rz_cmd_desc_argv_state_new(core->rcmd, aa_cd, "aav", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_analyze_value_to_maps_handler, &analyze_value_to_maps_help);
 	rz_warn_if_fail(analyze_value_to_maps_cd);
+
+	RzCmdDesc *ad_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ad", rz_analysis_data_handler, &analysis_data_help, &ad_help);
+	rz_warn_if_fail(ad_cd);
+	RzCmdDesc *analysis_data_function_cd = rz_cmd_desc_argv_new(core->rcmd, ad_cd, "adf", rz_analysis_data_function_handler, &analysis_data_function_help);
+	rz_warn_if_fail(analysis_data_function_cd);
+
+	RzCmdDesc *analysis_data_function_gaps_cd = rz_cmd_desc_argv_new(core->rcmd, ad_cd, "adfg", rz_analysis_data_function_gaps_handler, &analysis_data_function_gaps_help);
+	rz_warn_if_fail(analysis_data_function_gaps_cd);
+
+	RzCmdDesc *analysis_data_kind_cd = rz_cmd_desc_argv_new(core->rcmd, ad_cd, "adk", rz_analysis_data_kind_handler, &analysis_data_kind_help);
+	rz_warn_if_fail(analysis_data_kind_cd);
+
+	RzCmdDesc *analysis_data_trampoline_cd = rz_cmd_desc_argv_new(core->rcmd, ad_cd, "adt", rz_analysis_data_trampoline_handler, &analysis_data_trampoline_help);
+	rz_warn_if_fail(analysis_data_trampoline_cd);
 
 	RzCmdDesc *af_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "af", rz_analysis_function_add_recu_handler, &analysis_function_add_recu_help, &af_help);
 	rz_warn_if_fail(af_cd);
