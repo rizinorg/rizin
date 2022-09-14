@@ -2624,6 +2624,48 @@ IL_LIFTER(ror) {
 	return ret;
 }
 
+/**
+ * RET
+ * Return (near pointer)
+ * Encoding: ZO, I
+ * Most modern x86-32 and x86-64 programs use this return instruction
+ */
+IL_LIFTER(ret) {
+	PopHelper ph = x86_pop_helper(analysis->bits / BITS_PER_BYTE /* BYTES */);
+	RzILOpEffect *ret = ph.eff;
+	/* We can use RSP, and the correct stack pointer will be resolved depending on bitness */
+	ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ph.val));
+
+	if (ins->structure->op_count == 1) {
+		/* Immediate operand (Encondig: I) */
+		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm * BITS_PER_BYTE))));
+	}
+
+	return ret;
+}
+
+/**
+ * RETF
+ * Return far pointer
+ * Encoding: ZO, I
+ * Rarely found in modern programs
+ */
+IL_LIFTER(retf) {
+	/* Unimplemented: Too rare and cumbersome to implement */
+	return EMPTY();
+}
+
+/**
+ * RETFQ
+ * Return far pointer (size: qword)
+ * Encoding: ZO, I
+ * Rarely found in modern programs
+ */
+IL_LIFTER(retfq) {
+	/* Unimplemented: Too rare and cumbersome to implement */
+	return EMPTY();
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2711,6 +2753,9 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_RCR] = x86_il_rcr,
 	[X86_INS_ROL] = x86_il_rol,
 	[X86_INS_ROR] = x86_il_ror,
+	[X86_INS_RET] = x86_il_ret,
+	[X86_INS_RETF] = x86_il_retf,
+	[X86_INS_RETFQ] = x86_il_retfq,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
