@@ -429,7 +429,7 @@ d "rol dword [eax], 0" c10000
 d "rol dword [eax], 1" d100
 d "rol dword [eax], cl" d300
 d "rsm" 0faa
-d "sahf" 9E
+ad "sahf" 9e 0x0 (seq (set _flags (cast 8 false (>> (var eax) (bv 8 0x8) false))) (set cf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set pf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set af (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set zf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set sf (lsb (var _flags))))
 d "salc" D6
 d "sbb al, 0" 1c00
 d "sbb al, byte [eax]" 1a00
@@ -1922,7 +1922,6 @@ aB "roundss xmm0, xmm0, 0" 660f3a0ac000
 a "rsm" 0faa
 aB "rsqrtps xmm0, xmmword [eax]" 0f5200
 aB "rsqrtss xmm0, dword [eax]" f30f5200
-a "sahf" 9e
 a "salc" d6
 a "sbb al, 0" 1c00
 a "sbb al, byte [eax]" 1a00

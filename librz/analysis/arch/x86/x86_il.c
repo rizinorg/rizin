@@ -2666,6 +2666,15 @@ IL_LIFTER(retfq) {
 	return EMPTY();
 }
 
+/**
+ * SAHF
+ * Store AH into FLAGS
+ * Encoding: ZO
+ */
+IL_LIFTER(sahf) {
+	return x86_il_set_flags(x86_il_get_reg(X86_REG_AH), 8);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2756,6 +2765,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_RET] = x86_il_ret,
 	[X86_INS_RETF] = x86_il_retf,
 	[X86_INS_RETFQ] = x86_il_retfq,
+	[X86_INS_SAHF] = x86_il_sahf,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
