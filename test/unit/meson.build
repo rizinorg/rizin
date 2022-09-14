@@ -48,6 +48,7 @@ if get_option('enable_tests')
     'file',
     'flags',
     'flirt',
+    'float',
     'glob',
     'graph',
     'hash',

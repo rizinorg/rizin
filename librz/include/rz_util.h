@@ -38,6 +38,7 @@
 #include "rz_util/rz_time.h"
 #include "rz_util/rz_debruijn.h"
 #include "rz_util/rz_file.h"
+#include "rz_util/rz_float.h"
 #include "rz_util/rz_hex.h"
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_mem.h"

@@ -72,6 +72,7 @@ rz_util_files = [
   'rz_util/rz_debruijn.h',
   'rz_util/rz_event.h',
   'rz_util/rz_file.h',
+  'rz_util/rz_float.h',
   'rz_util/rz_graph.h',
   'rz_util/rz_graph_drawable.h',
   'rz_util/rz_hex.h',
