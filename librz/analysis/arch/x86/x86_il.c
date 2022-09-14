@@ -2723,7 +2723,7 @@ IL_LIFTER(sal) {
  */
 IL_LIFTER(sar) {
 	SHIFT_MACRO();
-	
+
 	RzILOpEffect *loop_body = SETG(EFLAGS(CF), LSB(VARL("_dest")));
 	loop_body = SEQ2(loop_body, SETL("_dest", SHIFTRA(VARL("_dest"), U8(1))));
 	loop_body = SEQ2(loop_body, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(count_size, 1))));
@@ -2764,7 +2764,7 @@ IL_LIFTER(shl) {
  */
 IL_LIFTER(shr) {
 	SHIFT_MACRO();
-	
+
 	RzILOpEffect *loop_body = SETG(EFLAGS(CF), LSB(VARL("_dest")));
 	loop_body = SEQ2(loop_body, SETL("_dest", SHIFTR0(VARL("_dest"), U8(1))));
 	loop_body = SEQ2(loop_body, SETL("_tmp_cnt", SUB(VARL("_tmp_cnt"), UN(count_size, 1))));
@@ -2775,6 +2775,25 @@ IL_LIFTER(shr) {
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), MSB(VARL("_tmp_dest")));
 
 	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+}
+
+/**
+ * SBB
+ * Subtraction with borrow
+ * DEST = DEST - (SRC + CF)
+ * Encoding: I, MI, MR, RM
+ */
+IL_LIFTER(sbb) {
+	RzILOpEffect *op1 = SETL("_op1", x86_il_get_op(0));
+	RzILOpEffect *op2 = SETL("_op2", x86_il_get_op(1));
+	RzILOpPure *cf = VARG(EFLAGS(CF));
+
+	RzILOpEffect *diff = SETL("_diff", SUB(SUB(VARL("_op1"), VARL("_op2")), x86_bool_to_bv(cf, ins->structure->operands[0].size * BITS_PER_BYTE)));
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_diff"));
+	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_diff"));
+	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("_diff"), VARL("_op1"), VARL("_op2"), false);
+
+	return SEQ6(op1, op2, diff, set_dest, set_res_flags, set_arith_flags);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -2872,6 +2891,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_SAR] = x86_il_sar,
 	[X86_INS_SHL] = x86_il_shl,
 	[X86_INS_SHR] = x86_il_shr,
+	[X86_INS_SBB] = x86_il_sbb,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
