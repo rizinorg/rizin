@@ -2796,6 +2796,111 @@ IL_LIFTER(sbb) {
 	return SEQ6(op1, op2, diff, set_dest, set_res_flags, set_arith_flags);
 }
 
+RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {
+	X86Reg sub_reg;
+
+	switch (size) {
+	case 8:
+		sub_reg = X86_REG_AL;
+		break;
+	case 16:
+		sub_reg = X86_REG_AX;
+		break;
+	case 32:
+		sub_reg = X86_REG_EAX;
+		break;
+	case 64:
+		sub_reg = X86_REG_RAX;
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	if (analysis->bits == 64) {
+		X86Reg mem_reg = X86_REG_RDI;
+		unsigned short mem_size = 64;
+		/* Address override prefix: 67H */
+		if (ins->structure->prefix[3]) {
+			mem_reg = X86_REG_EDI;
+			mem_size = 32;
+		}
+
+		RzILOpEffect *reg = SETL("_reg", x86_il_get_reg(sub_reg));
+		RzILOpEffect *src = SETL("_src", LOADW(size, x86_il_get_reg(mem_reg)));
+		RzILOpEffect *temp = SETL("_temp", SUB(VARL("_reg"), VARL("_src")));
+		RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("_temp"), VARL("_reg"), VARL("_src"), false);
+		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_temp"));
+
+		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size)));
+		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size)));
+
+		return SEQ6(reg, src, temp, arith_flags, res_flags, BRANCH(VARG(EFLAGS(DF)), decrement, increment));
+	} else {
+		RzILOpEffect *reg = SETL("_reg", x86_il_get_reg(sub_reg));
+
+		X86Reg mem_reg = X86_REG_EDI;
+		unsigned short mem_size = 32;
+		/* Check bitness and address override prefix: 67H */
+		if (analysis->bits == 16 || ins->structure->prefix[3]) {
+			mem_reg = X86_REG_DI;
+			mem_size = 16;
+		}
+
+		X86Mem src_mem;
+		src_mem.base = mem_reg;
+		src_mem.disp = 0;
+		src_mem.index = X86_REG_INVALID;
+		src_mem.scale = 1;
+		src_mem.segment = X86_REG_ES;
+		RzILOpEffect *src = SETL("_src", LOADW(size, x86_il_get_memaddr(src_mem)));
+
+		RzILOpEffect *temp = SETL("_temp", SUB(VARL("_reg"), VARL("_src")));
+		RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("_temp"), VARL("_reg"), VARL("_src"), false);
+		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_temp"));
+
+		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size)));
+		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size)));
+
+		return SEQ6(reg, src, temp, arith_flags, res_flags, BRANCH(VARG(EFLAGS(DF)), decrement, increment));
+	}
+}
+
+/**
+ * SCASB
+ * Compare byte string
+ * ZO
+ */
+IL_LIFTER(scasb) {
+	return x86_il_scas_helper(ins, pc, analysis, 8);
+}
+
+/**
+ * SCASW
+ * Compare word string
+ * ZO
+ */
+IL_LIFTER(scasw) {
+	return x86_il_scas_helper(ins, pc, analysis, 16);
+}
+
+/**
+ * SCASD
+ * Compare dword string
+ * ZO
+ */
+IL_LIFTER(scasd) {
+	return x86_il_scas_helper(ins, pc, analysis, 32);
+}
+
+/**
+ * SCASQ
+ * Compare quadword string (only for x86-64)
+ * ZO
+ */
+IL_LIFTER(scasq) {
+	return x86_il_scas_helper(ins, pc, analysis, 64);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -2892,6 +2997,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_SHL] = x86_il_shl,
 	[X86_INS_SHR] = x86_il_shr,
 	[X86_INS_SBB] = x86_il_sbb,
+	[X86_INS_SCASB] = x86_il_scasb,
+	[X86_INS_SCASW] = x86_il_scasw,
+	[X86_INS_SCASD] = x86_il_scasd,
+	[X86_INS_SCASQ] = x86_il_scasq,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
