@@ -2618,7 +2618,7 @@ IL_LIFTER(ror) {
 	RzILOpEffect *true_eff1 = SETG(EFLAGS(CF), MSB(VARL("_dest")));
 
 	RzILOpBool *if_cond2 = EQ(VARL("_masked"), UN(cnt_size, 1));
-	RzILOpEffect *true_eff2 = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
+	RzILOpEffect *true_eff2 = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), MSB(SHIFTL0(VARL("_dest"), U8(1)))));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_dest"));
 	RzILOpEffect *ret = SEQ9(dest, count_mask, count, masked, temp_count, REPEAT(cond, repeat), BRANCH(if_cond1, true_eff1, NULL), BRANCH(if_cond2, true_eff2, NULL), set_dest);
