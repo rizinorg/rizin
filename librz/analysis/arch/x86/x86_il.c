@@ -1304,8 +1304,8 @@ RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 		RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("_temp"), VARL("_src1"), VARL("_src2"), false);
 		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_temp"));
 
-		RzILOpEffect *increment = SEQ2(x86_il_set_reg(mem_reg1, ADD(x86_il_get_reg(mem_reg1), UN(mem_size, 1))), x86_il_set_reg(mem_reg2, ADD(x86_il_get_reg(mem_reg2), UN(mem_size, 1))));
-		RzILOpEffect *decrement = SEQ2(x86_il_set_reg(mem_reg1, SUB(x86_il_get_reg(mem_reg1), UN(mem_size, 1))), x86_il_set_reg(mem_reg2, SUB(x86_il_get_reg(mem_reg2), UN(mem_size, 1))));
+		RzILOpEffect *increment = SEQ2(x86_il_set_reg(mem_reg1, ADD(x86_il_get_reg(mem_reg1), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(mem_reg2, ADD(x86_il_get_reg(mem_reg2), UN(mem_size, size / BITS_PER_BYTE))));
+		RzILOpEffect *decrement = SEQ2(x86_il_set_reg(mem_reg1, SUB(x86_il_get_reg(mem_reg1), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(mem_reg2, SUB(x86_il_get_reg(mem_reg2), UN(mem_size, size / BITS_PER_BYTE))));
 
 		return SEQ6(src1, src2, temp, arith_flags, res_flags, BRANCH(VARG(EFLAGS(DF)), increment, decrement));
 	}
@@ -2741,7 +2741,7 @@ IL_LIFTER(ret) {
 
 	if (ins->structure->op_count == 1) {
 		/* Immediate operand (Encondig: I) */
-		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm * BITS_PER_BYTE))));
+		ret = SEQ2(ret, x86_il_set_reg(X86_REG_RSP, ADD(x86_il_get_reg(X86_REG_RSP), UN(analysis->bits, ins->structure->operands[0].imm))));
 	}
 
 	return ret;
