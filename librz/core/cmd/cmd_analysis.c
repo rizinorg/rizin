@@ -38,18 +38,6 @@ static const char *help_msg_a[] = {
 	NULL
 };
 
-static const char *help_msg_ad[] = {
-	"Usage:", "ad", "[kt] [...]",
-	"ad", " [N] [D]", "analyze N data words at D depth",
-	"ad4", " [N] [D]", "analyze N data words at D depth (asm.bits=32)",
-	"ad8", " [N] [D]", "analyze N data words at D depth (asm.bits=64)",
-	"adf", "", "analyze data in function (use like .adf @@=`afl~[0]`",
-	"adfg", "", "analyze data in function gaps",
-	"adt", "", "analyze data trampolines (wip)",
-	"adk", "", "analyze data kind (code, text, data, invalid, ...)",
-	NULL
-};
-
 static const char *help_msg_ae[] = {
 	"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
 	"ae", " [expr]", "evaluate ESIL expression",
@@ -372,41 +360,17 @@ static bool core_analysis_name_print(RzCore *core, RzCmdStateOutput *state) {
 	return true;
 }
 
-static void print_trampolines(RzCore *core, ut64 a, ut64 b, size_t element_size) {
-	int i;
-	for (i = 0; i < core->blocksize; i += element_size) {
-		ut32 n;
-		memcpy(&n, core->block + i, sizeof(ut32));
-		if (n >= a && n <= b) {
-			if (element_size == 4) {
-				rz_cons_printf("f trampoline.%x @ 0x%" PFMT64x "\n", n, core->offset + i);
-			} else {
-				rz_cons_printf("f trampoline.%" PFMT32x " @ 0x%" PFMT64x "\n", n, core->offset + i);
-			}
-			rz_cons_printf("Cd %zu @ 0x%" PFMT64x ":%zu\n", element_size, core->offset + i, element_size);
-			// TODO: add data xrefs
+static void print_trampolines(RzCore *core, ut64 minimum, ut64 maximum,
+	size_t element_size) {
+	bool big_endian = rz_config_get_b(core->config, "cfg.big_endian");
+	for (int i = 0; i < core->blocksize; i += element_size) {
+		ut32 n = rz_read_ble32(core->block + i, big_endian);
+		if (n < minimum || n > maximum) {
+			continue;
 		}
-	}
-}
-
-static void cmd_analysis_trampoline(RzCore *core, const char *input) {
-	int bits = rz_config_get_i(core->config, "asm.bits");
-	char *p, *inp = strdup(input);
-	p = strchr(inp, ' ');
-	if (p) {
-		*p = 0;
-	}
-	ut64 a = rz_num_math(core->num, inp);
-	ut64 b = p ? rz_num_math(core->num, p + 1) : 0;
-	free(inp);
-
-	switch (bits) {
-	case 32:
-		print_trampolines(core, a, b, 4);
-		break;
-	case 64:
-		print_trampolines(core, a, b, 8);
-		break;
+		rz_cons_printf("f trampoline.%" PFMT32x " @ 0x%" PFMT64x "\n", n, core->offset + i);
+		rz_cons_printf("Cd %zu @ 0x%" PFMT64x ":%zu\n", element_size, core->offset + i, element_size);
+		// TODO: add data xrefs
 	}
 }
 
@@ -1946,76 +1910,6 @@ static inline RzFlagItem *core_flag_get_at_as_ref_type(RzCore *core, RzAnalysisX
 	}
 }
 
-#define var_ref_list(a, d, t) sdb_fmt("var.0x%" PFMT64x ".%d.%d.%s", \
-	a, 1, d, (t == 'R') ? "reads" : "writes");
-
-static bool analysis_fcn_data(RzCore *core, const char *input) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ANY);
-	if (fcn) {
-		int i;
-		bool gap = false;
-		ut64 gap_addr = UT64_MAX;
-		ut32 fcn_size = rz_analysis_function_size_from_entry(fcn);
-		char *bitmap = calloc(1, fcn_size);
-		if (bitmap) {
-			RzAnalysisBlock *b;
-			RzListIter *iter;
-			rz_list_foreach (fcn->bbs, iter, b) {
-				int f = b->addr - fcn->addr;
-				int t = RZ_MIN(f + b->size, fcn_size);
-				if (f >= 0) {
-					while (f < t) {
-						bitmap[f++] = 1;
-					}
-				}
-			}
-		}
-		for (i = 0; i < fcn_size; i++) {
-			ut64 here = fcn->addr + i;
-			if (bitmap && bitmap[i]) {
-				if (gap) {
-					rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", here - gap_addr, gap_addr);
-					gap = false;
-				}
-				gap_addr = UT64_MAX;
-			} else {
-				if (!gap) {
-					gap = true;
-					gap_addr = here;
-				}
-			}
-		}
-		if (gap) {
-			rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", fcn->addr + fcn_size - gap_addr, gap_addr);
-		}
-		free(bitmap);
-		return true;
-	}
-	return false;
-}
-
-static bool analysis_fcn_data_gaps(RzCore *core, const char *input) {
-	ut64 end = UT64_MAX;
-	RzAnalysisFunction *fcn;
-	RzListIter *iter;
-	int i, wordsize = (core->rasm->bits == 64) ? 8 : 4;
-	rz_list_sort(core->analysis->fcns, cmpaddr);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		if (end != UT64_MAX) {
-			int range = fcn->addr - end;
-			if (range > 0) {
-				for (i = 0; i + wordsize < range; i += wordsize) {
-					rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", wordsize, end + i);
-				}
-				rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", range - i, end + i);
-				// rz_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", range, end);
-			}
-		}
-		end = fcn->addr + rz_analysis_function_size_from_entry(fcn);
-	}
-	return true;
-}
-
 RZ_IPI RzCmdStatus rz_analysis_list_vtables_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	rz_analysis_list_vtables(core->analysis, mode);
 	return RZ_CMD_STATUS_OK;
@@ -2128,91 +2022,14 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 }
 
 RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
-	const char *r;
 	RzCore *core = (RzCore *)data;
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
-	case 'p': // "ap"
-	{
-		const ut8 *prelude = (const ut8 *)"\xe9\x2d"; //: fffff000";
-		const int prelude_sz = 2;
-		const int bufsz = 4096;
-		ut8 *buf = calloc(1, bufsz);
-		ut64 off = core->offset;
-		if (input[1] == ' ') {
-			off = rz_num_math(core->num, input + 1);
-			rz_io_read_at(core->io, off - bufsz + prelude_sz, buf, bufsz);
-		} else {
-			rz_io_read_at(core->io, off - bufsz + prelude_sz, buf, bufsz);
-		}
-		// const char *prelude = "\x2d\xe9\xf0\x47"; //:fffff000";
-		rz_mem_reverse(buf, bufsz);
-		// rz_print_hexdump (NULL, off, buf, bufsz, 16, -16);
-		const ut8 *pos = rz_mem_mem(buf, bufsz, prelude, prelude_sz);
-		if (pos) {
-			int delta = (size_t)(pos - buf);
-			RZ_LOG_DEBUG("core: POS = %d\n", delta);
-			RZ_LOG_DEBUG("core: HIT = 0x%" PFMT64x "\n", off - delta);
-			rz_cons_printf("0x%08" PFMT64x "\n", off - delta);
-		} else {
-			RZ_LOG_ERROR("core: Cannot find prelude\n");
-		}
-		free(buf);
-	} break;
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
-	case 'F': // "aF"
-		rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
-		break;
 	case '*': // "a*"
 		rz_core_cmd0_rzshell(core, "afl*");
 		rz_core_cmd0_rzshell(core, "ah*");
 		rz_core_cmd0_rzshell(core, "ax*");
-		break;
-	case 'd': // "ad"
-		switch (input[1]) {
-		case 'f': // "adf"
-			if (input[2] == 'g') {
-				analysis_fcn_data_gaps(core, rz_str_trim_head_ro(input + 1));
-			} else {
-				analysis_fcn_data(core, input + 1);
-			}
-			break;
-		case 't': // "adt"
-			cmd_analysis_trampoline(core, input + 2);
-			break;
-		case ' ': { // "ad"
-			const int default_depth = 1;
-			const char *p;
-			int a, b;
-			a = rz_num_math(core->num, input + 2);
-			p = strchr(input + 2, ' ');
-			b = p ? rz_num_math(core->num, p + 1) : default_depth;
-			if (a < 1) {
-				a = 1;
-			}
-			if (b < 1) {
-				b = 1;
-			}
-			rz_core_analysis_data(core, core->offset, a, b, 0);
-		} break;
-		case 'k': // "adk"
-			r = rz_analysis_data_kind(core->analysis,
-				core->offset, core->block, core->blocksize);
-			rz_cons_println(r);
-			break;
-		case '\0': // "ad"
-			rz_core_analysis_data(core, core->offset, 2 + (core->blocksize / 4), 1, 0);
-			break;
-		case '4': // "ad4"
-			rz_core_analysis_data(core, core->offset, 2 + (core->blocksize / 4), 1, 4);
-			break;
-		case '8': // "ad8"
-			rz_core_analysis_data(core, core->offset, 2 + (core->blocksize / 4), 1, 8);
-			break;
-		default:
-			rz_core_cmd_help(core, help_msg_ad);
-			break;
-		}
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_a);
@@ -4614,6 +4431,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, in
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_function_add_nodepth_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_function_add_recu_handler(RzCore *core, int argc, const char **argv) {
 	const char *name = argc == 2 ? argv[1] : NULL;
 	bool analyze_recursively = true;
@@ -6526,5 +6348,104 @@ RZ_IPI RzCmdStatus rz_global_imports_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_delete_global_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_analysis_purge_imports(core->analysis);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_data_handler(RzCore *core, int argc, const char **argv) {
+	int count = argc > 1 ? rz_num_math(core->num, argv[1]) : 2 + (core->blocksize / 4);
+	if (count < 1) {
+		RZ_LOG_ERROR("Count could not be negative or zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int depth = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
+	if (depth < 1) {
+		RZ_LOG_ERROR("Depth could not be negative or zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int wordsize = argc > 3 ? rz_num_math(core->num, argv[3]) : 0;
+	rz_core_analysis_data(core, core->offset, count, depth, wordsize);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_data_function_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ANY);
+	if (!fcn) {
+		RZ_LOG_ERROR("Function not found at the 0x%08" PFMT64x " offset\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int i;
+	bool gap = false;
+	ut64 gap_addr = UT64_MAX;
+	ut32 fcn_size = rz_analysis_function_size_from_entry(fcn);
+	char *bitmap = calloc(1, fcn_size);
+	if (bitmap) {
+		RzAnalysisBlock *b;
+		RzListIter *iter;
+		rz_list_foreach (fcn->bbs, iter, b) {
+			int f = b->addr - fcn->addr;
+			int t = RZ_MIN(f + b->size, fcn_size);
+			if (f >= 0) {
+				while (f < t) {
+					bitmap[f++] = 1;
+				}
+			}
+		}
+	}
+	for (i = 0; i < fcn_size; i++) {
+		ut64 here = fcn->addr + i;
+		if (bitmap && bitmap[i]) {
+			if (gap) {
+				rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", here - gap_addr, gap_addr);
+				gap = false;
+			}
+			gap_addr = UT64_MAX;
+		} else {
+			if (!gap) {
+				gap = true;
+				gap_addr = here;
+			}
+		}
+	}
+	if (gap) {
+		rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", fcn->addr + fcn_size - gap_addr, gap_addr);
+	}
+	free(bitmap);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc, const char **argv) {
+	ut64 end = UT64_MAX;
+	RzAnalysisFunction *fcn;
+	RzListIter *iter;
+	int i, wordsize = core->rasm->bits / 8;
+	rz_list_sort(core->analysis->fcns, cmpaddr);
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		if (end != UT64_MAX) {
+			int range = fcn->addr - end;
+			if (range > 0) {
+				for (i = 0; i + wordsize < range; i += wordsize) {
+					rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", wordsize, end + i);
+				}
+				rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", range - i, end + i);
+			}
+		}
+		end = fcn->addr + rz_analysis_function_size_from_entry(fcn);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_data_kind_handler(RzCore *core, int argc, const char **argv) {
+	const char *kind = rz_analysis_data_kind(core->analysis,
+		core->offset, core->block, core->blocksize);
+	rz_cons_println(kind);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_data_trampoline_handler(RzCore *core, int argc, const char **argv) {
+	ut64 minimum = rz_num_math(core->num, argv[1]);
+	ut64 maximum = rz_num_math(core->num, argv[2]);
+
+	int bits = rz_config_get_i(core->config, "asm.bits");
+	print_trampolines(core, minimum, maximum, bits / 8);
 	return RZ_CMD_STATUS_OK;
 }

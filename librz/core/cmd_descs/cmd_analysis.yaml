@@ -170,6 +170,44 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
         args: []
+  - name: ad
+    summary: Analyze data
+    subcommands:
+      - name: ad
+        summary: Analyze <count> data words with <depth>
+        cname: analysis_data
+        args:
+          - name: count
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: depth
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: wordsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: adf
+        summary: Analyze data in function
+        cname: analysis_data_function
+        args: []
+      - name: adfg
+        summary: Analyze data in function gaps
+        cname: analysis_data_function_gaps
+        args: []
+      - name: adk
+        summary: Analyze data kind (code, text, data, invalid, etc)
+        cname: analysis_data_kind
+        args: []
+      - name: adt
+        summary: Analyze data trampolines
+        cname: analysis_data_trampoline
+        args:
+          - name: minimum
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 0
+          - name: maximum
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 0
   - name: af
     summary: Analyze Functions commands
     subcommands:
@@ -775,6 +813,10 @@ commands:
         summary: Show function + delta for given offset
         cname: analysis_function_describe_offset
         args: []
+  - name: aF
+    summary: Analyze function non-recursively
+    cname: analysis_function_add_nodepth
+    args: []
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall
