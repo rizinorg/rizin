@@ -329,9 +329,9 @@ bool rz_float_abs_test(void) {
 }
 
 bool rz_float_new_from_hex_test() {
-	RzFloat *hex1 = rz_float_new_from_hex_as_f32(0xC00007EF);
+	RzFloat *hex1 = rz_float_new_from_ut32_as_f32(0xC00007EF);
 	RzFloat *expect1 = rz_float_new_from_single(-2.0004842f);
-	RzFloat *hex2 = rz_float_new_from_hex_as_f32(0x3DFFF7BF);
+	RzFloat *hex2 = rz_float_new_from_ut32_as_f32(0x3DFFF7BF);
 	RzFloat *expect2 = rz_float_new_from_single(0.12498426f);
 
 	mu_assert_true(is_equal_float(hex1, expect1), "new from hex 1");
@@ -347,26 +347,26 @@ bool rz_float_new_from_hex_test() {
 
 bool f32_ieee_fma_test(void) {
 	RzFloat *a1, *b1, *c1, *expect1, *z1;
-	a1 = rz_float_new_from_hex_as_f32(0x2B6C2D9D);
-	b1 = rz_float_new_from_hex_as_f32(0xCB800000);
-	c1 = rz_float_new_from_hex_as_f32(0x4C440D9E);
-	expect1 = rz_float_new_from_hex_as_f32(0x4C440D9E);
+	a1 = rz_float_new_from_ut32_as_f32(0x2B6C2D9D);
+	b1 = rz_float_new_from_ut32_as_f32(0xCB800000);
+	c1 = rz_float_new_from_ut32_as_f32(0x4C440D9E);
+	expect1 = rz_float_new_from_ut32_as_f32(0x4C440D9E);
 	z1 = rz_float_fma(a1, b1, c1, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect1, z1), "Fused Mul Add test 1");
 
 	RzFloat *a2, *b2, *c2, *expect2, *z2;
-	a2 = rz_float_new_from_hex_as_f32(0xBD0134F8);
-	b2 = rz_float_new_from_hex_as_f32(0x3F7FFFFE);
-	c2 = rz_float_new_from_hex_as_f32(0xC1C800D3);
-	expect2 = rz_float_new_from_hex_as_f32(0xC1C8416D);
+	a2 = rz_float_new_from_ut32_as_f32(0xBD0134F8);
+	b2 = rz_float_new_from_ut32_as_f32(0x3F7FFFFE);
+	c2 = rz_float_new_from_ut32_as_f32(0xC1C800D3);
+	expect2 = rz_float_new_from_ut32_as_f32(0xC1C8416D);
 	z2 = rz_float_fma(a2, b2, c2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect2, z2), "Fused Mul Add test 2");
 
 	RzFloat *a3, *b3, *c3, *expect3, *z3;
-	a3 = rz_float_new_from_hex_as_f32(0x6F7FFF7C);
-	b3 = rz_float_new_from_hex_as_f32(0x3F1DD0B8);
-	c3 = rz_float_new_from_hex_as_f32(0x81000000);
-	expect3 = rz_float_new_from_hex_as_f32(0x6F1DD067);
+	a3 = rz_float_new_from_ut32_as_f32(0x6F7FFF7C);
+	b3 = rz_float_new_from_ut32_as_f32(0x3F1DD0B8);
+	c3 = rz_float_new_from_ut32_as_f32(0x81000000);
+	expect3 = rz_float_new_from_ut32_as_f32(0x6F1DD067);
 	z3 = rz_float_fma(a3, b3, c3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(expect3, z3), "Fused Mul Add test 3");
 
@@ -405,11 +405,11 @@ bool f32_ieee_fma_test(void) {
 }
 
 bool f32_ieee_round_test(void) {
-	RzFloat *a = rz_float_new_from_hex_as_f32(0xC00007EF);
-	RzFloat *b = rz_float_new_from_hex_as_f32(0x3DFFF7BF);
+	RzFloat *a = rz_float_new_from_ut32_as_f32(0xC00007EF);
+	RzFloat *b = rz_float_new_from_ut32_as_f32(0x3DFFF7BF);
 
-	RzFloat *expect_rne_rna_rtp_rtz = rz_float_new_from_hex_as_f32(0xBFF01062);
-	RzFloat *expect_rtn = rz_float_new_from_hex_as_f32(0xBFF01063);
+	RzFloat *expect_rne_rna_rtp_rtz = rz_float_new_from_ut32_as_f32(0xBFF01062);
+	RzFloat *expect_rtn = rz_float_new_from_ut32_as_f32(0xBFF01063);
 
 	RzFloat *rne = rz_float_add(a, b, RZ_FLOAT_RMODE_RNE);
 	RzFloat *rna = rz_float_add(a, b, RZ_FLOAT_RMODE_RNA);
@@ -563,9 +563,9 @@ bool f32_ieee_rem_test(void) {
 	rz_float_free(expect1);
 	rz_float_free(rem1);
 
-	RzFloat *a2 = rz_float_new_from_hex_as_f32(0xCBF83FFF);
-	RzFloat *b2 = rz_float_new_from_hex_as_f32(0x44801003);
-	RzFloat *expect2 = rz_float_new_from_hex_as_f32(0xC3F52F40);
+	RzFloat *a2 = rz_float_new_from_ut32_as_f32(0xCBF83FFF);
+	RzFloat *b2 = rz_float_new_from_ut32_as_f32(0x44801003);
+	RzFloat *expect2 = rz_float_new_from_ut32_as_f32(0xC3F52F40);
 	RzFloat *rem2 = rz_float_rem(a2, b2, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem2, expect2), "rem test 2");
 	rz_float_free(a2);
@@ -573,9 +573,9 @@ bool f32_ieee_rem_test(void) {
 	rz_float_free(expect2);
 	rz_float_free(rem2);
 
-	RzFloat *a3 = rz_float_new_from_hex_as_f32(0x3F7FFF3F);
-	RzFloat *b3 = rz_float_new_from_hex_as_f32(0x957CE0B6);
-	RzFloat *expect3 = rz_float_new_from_hex_as_f32(0x145F53B0);
+	RzFloat *a3 = rz_float_new_from_ut32_as_f32(0x3F7FFF3F);
+	RzFloat *b3 = rz_float_new_from_ut32_as_f32(0x957CE0B6);
+	RzFloat *expect3 = rz_float_new_from_ut32_as_f32(0x145F53B0);
 	RzFloat *rem3 = rz_float_rem(a3, b3, RZ_FLOAT_RMODE_RNE);
 	mu_assert_true(is_equal_float(rem3, expect3), "rem test 3");
 	rz_float_free(a3);
