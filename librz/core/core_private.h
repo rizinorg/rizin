@@ -271,6 +271,12 @@ typedef struct rz_core_visual_t {
 	int printMode;
 	int color;
 	int debug;
+	/* Insert mode */
+	bool insertMode;
+	int insertNibble;
+	/* Split view */
+	bool splitView;
+	ut64 splitPtr;
 	/* Output formats */
 	int currentFormat;
 	int current0format;
