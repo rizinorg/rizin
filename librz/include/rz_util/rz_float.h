@@ -10,7 +10,7 @@
 #define RZ_FLOAT_H
 #include <rz_types.h>
 
-typedef enum float_format_enum {
+typedef enum rz_float_format_enum {
 	/// basic IEEE 754 float format enums
 	/// ref : https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats
 	/// 1. IEEE binary representations, use binary digits to represent float. machine-friendly
@@ -28,7 +28,7 @@ typedef enum float_format_enum {
 	RZ_FLOAT_UNK ///< End of enums
 } RzFloatFormat;
 
-typedef enum float_format_info {
+typedef enum rz_float_format_info {
 	RZ_FLOAT_INFO_BASE, ///< base of float representation, 2 for binary, 10 for decimal representation
 	RZ_FLOAT_INFO_EXP_LEN, ///< info about width of exponent field, in bits
 	RZ_FLOAT_INFO_MAN_LEN, ///< info about width of mantissa field, in bits
@@ -36,7 +36,7 @@ typedef enum float_format_info {
 	RZ_FLOAT_INFO_BIAS ///< exponent bias
 } RzFloatInfo;
 
-typedef enum float_round_enum {
+typedef enum rz_float_round_enum {
 	RZ_FLOAT_RMODE_RNE, ///< rounding to nearest, ties to even
 	RZ_FLOAT_RMODE_RNA, ///< rounding to nearest, ties away
 	RZ_FLOAT_RMODE_RTP, ///< rounding towards positive
@@ -45,7 +45,7 @@ typedef enum float_round_enum {
 	RZ_FLOAT_RMODE_UNK ///< end
 } RzFloatRMode; ///< Rounding Mode
 
-typedef enum float_exception_enum {
+typedef enum rz_float_exception_enum {
 	RZ_FLOAT_E_INVALID_OP = 1, ///< Invalid operation
 	RZ_FLOAT_E_DIV_ZERO = 2, ///< Divide zero
 	RZ_FLOAT_E_OVERFLOW = 4, ///< overflow exception
@@ -58,7 +58,7 @@ typedef enum float_exception_enum {
  * quiet_NaN : A == 1, signaling_NaN : A == 0
  * PA-RISC and MIPS, use A as is_signal flag. Should reverse the case
  */
-typedef enum float_speciality_enum {
+typedef enum rz_float_speciality_enum {
 	RZ_FLOAT_SPEC_NOT = 0, ///< not a special num
 	RZ_FLOAT_SPEC_ZERO = 1, ///< zero float
 	RZ_FLOAT_SPEC_PINF = 2, ///< positive infinity
@@ -67,7 +67,7 @@ typedef enum float_speciality_enum {
 	RZ_FLOAT_SPEC_SNAN = 5, ///< Signaling NaN
 } RzFloatSpec;
 
-typedef struct float_t {
+typedef struct rz_float_t {
 	RzFloatFormat r; ///< An interpretation of bitvector
 	RzBitVector *s; ///< The bitvector of float
 	RzFloatException exception; ///< exception of float operations
