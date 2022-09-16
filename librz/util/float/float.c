@@ -297,39 +297,48 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value) {
 /**
  * \brief create RzFloat by giving hex value, most used in writing testcases
  * ref : http://www.jhauser.us/arithmetic/TestFloat-3/doc/TestFloat-general.html
- * \param hex_value 32-bit/64-bit hex value to represent 32-bit/64-bit bitvector
+ * \param value 32-bit/64-bit value to represent 32-bit/64-bit bitvector (big endian)
  * \param format float format
  * \return new RzFloat
  */
-static RZ_OWN RzFloat *rz_float_new_from_hex(ut64 hex_value, RzFloatFormat format) {
-	if ((format == RZ_FLOAT_IEEE754_BIN_32) || (format == RZ_FLOAT_IEEE754_BIN_64)) {
-		RzFloat *ret = RZ_NEW(RzFloat);
+static RZ_OWN RzFloat *float_new_from_ut64(ut64 value, RzFloatFormat format) {
+	RzFloat *ret = NULL;
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		/* fall-thru */
+	case RZ_FLOAT_IEEE754_BIN_64:
+		ret = RZ_NEW(RzFloat);
+		if (!ret) {
+			RZ_LOG_ERROR("float: Cannot allocate RzFloat\n");
+			break;
+		}
 		ret->r = format;
-		ret->s = rz_bv_new_from_ut64(rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN), hex_value);
-		return ret;
-	} else {
+		ret->s = rz_bv_new_from_ut64(rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN), value);
+		break;
+	default:
 		// could not carry hex value larger than ut64 max
-		rz_warn_if_reached();
-		return NULL;
+		RZ_LOG_ERROR("float: unsupported float format type %u\n", format);
+		break;
 	}
+	return ret;
 }
 
 /**
  * \brief create RzFloat by giving 64-bit hex value, most used in writing testcases
- * \param hex_value 64-bit hex_value
+ * \param value 64-bit value to represent 64-bit bitvector (big endian)
  * \return RzFloat-binary64
  */
-RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f64(ut64 hex_value) {
-	return rz_float_new_from_hex(hex_value, RZ_FLOAT_IEEE754_BIN_64);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_ut64_as_f64(ut64 value) {
+	return float_new_from_ut64(value, RZ_FLOAT_IEEE754_BIN_64);
 }
 
 /**
  * \brief create RzFloat by giving 32-bit hex value, most used in writing testcases
- * \param hex_value 32-bit hex_value
+ * \param value 32-bit value to represent 32-bit bitvector (big endian)
  * \return RzFloat-binary32
  */
-RZ_API RZ_OWN RzFloat *rz_float_new_from_hex_as_f32(ut32 hex_value) {
-	return rz_float_new_from_hex(hex_value, RZ_FLOAT_IEEE754_BIN_32);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_ut32_as_f32(ut32 value) {
+	return float_new_from_ut64(value, RZ_FLOAT_IEEE754_BIN_32);
 }
 
 /**
