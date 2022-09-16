@@ -118,8 +118,7 @@ RZ_IPI ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_inf
 	case RZ_FLOAT_IEEE754_DEC_64:
 	case RZ_FLOAT_IEEE754_DEC_128:
 	default:
-		RZ_LOG_ERROR("FORMAT NOT IMPLEMENTED YET");
-		rz_warn_if_reached();
+		RZ_LOG_ERROR("float: info: Unsupported format %u\n", format);
 		return 0;
 	}
 }
@@ -195,7 +194,7 @@ RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzFloat *cp = RZ_NEW(RzFloat);
 	if (!cp) {
-		RZ_LOG_ERROR("Dup float failed")
+		RZ_LOG_ERROR("float: dup: Cannot allocate RzFloat\n");
 		return NULL;
 	}
 
@@ -260,12 +259,12 @@ RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value) {
 RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value) {
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
 	if (!f) {
-		RZ_LOG_ERROR("Failed to new a single float")
+		RZ_LOG_ERROR("float: Failed to allocate single-precision RzFloat\n");
 		return NULL;
 	}
 
 	if (!rz_float_set_from_single(f, value)) {
-		RZ_LOG_ERROR("Error in set float from single")
+		RZ_LOG_ERROR("float: Error in setting RzFloat from single-precision float\n");
 		rz_float_free(f);
 		return NULL;
 	}
@@ -281,12 +280,12 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value) {
 RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value) {
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
 	if (!f) {
-		RZ_LOG_ERROR("Failed to new a double float")
+		RZ_LOG_ERROR("float: Failed to allocate double-precision RzFloat\n");
 		return NULL;
 	}
 
 	if (!rz_float_set_from_double(f, value)) {
-		RZ_LOG_ERROR("Error in set float from double")
+		RZ_LOG_ERROR("float: Error in setting RzFloat from double-precision float\n");
 		rz_float_free(f);
 		return NULL;
 	}
@@ -620,7 +619,7 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	RzBitVector *r_mantissa = get_man(right->s, right->r);
 
 	if (!l_exp_squashed || !r_exp_squashed || !l_mantissa || !r_mantissa) {
-		RZ_LOG_ERROR("Error when parsing rz-float")
+		RZ_LOG_ERROR("float: fadd: Error when parsing RzFloat\n");
 		return NULL;
 	}
 
@@ -778,7 +777,7 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	RzBitVector *r_mantissa = get_man(right->s, right->r);
 
 	if (!l_exp_squashed || !r_exp_squashed || !l_mantissa || !r_mantissa) {
-		RZ_LOG_ERROR("Error when parsing rz-float")
+		RZ_LOG_ERROR("float: fsub: Error when parsing RzFloat\n");
 		rz_bv_free(l_exp_squashed);
 		rz_bv_free(r_exp_squashed);
 		rz_bv_free(l_mantissa);
