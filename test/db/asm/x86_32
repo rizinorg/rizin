@@ -465,10 +465,10 @@ d "sldt word [eax]" 0f0000
 d "smsw ax" 660f01e0
 d "smsw eax" 0f01e0
 d "smsw word [eax]" 0f0120
-d "stc" F9
-d "std" FD
+ad "stc" f9 0x0 (set cf true)
+ad "std" fd 0x0 (set df true)
 d "stgi" 0f01dc
-d "sti" FB
+ad "sti" fb 0x0 (set if true)
 d "stmxcsr dword [eax]" 0fae18
 d "stosb byte es:[edi], al" aa
 d "stosd dword es:[edi], eax" ab
@@ -1959,10 +1959,7 @@ aB "sqrtpd xmm0, xmmword [eax]" 660f5100
 aB "sqrtps xmm0, xmmword [eax]" 0f5100
 aB "sqrtsd xmm0, qword [eax]" f20f5100
 aB "sqrtss xmm0, dword [eax]" f30f5100
-a "stc" f9
-a "std" fd
 a "stgi" 0f01dc
-a "sti" fb
 a "stmxcsr dword [eax]" 0fae18
 a "stosb byte es:[edi], al" aa
 a "stosd dword es:[edi], eax" ab

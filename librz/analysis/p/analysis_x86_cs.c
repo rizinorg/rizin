@@ -3390,6 +3390,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	nt	.1	.462	0\n"
 			"flg	rf	.1	.464	0\n"
 			"flg	vm	.1	.465	0\n"
+			"flg	ac	.1	.466	0\n"
 			"drx	dr0	.32	0	0\n"
 			"drx	dr1	.32	4	0\n"
 			"drx	dr2	.32	8	0\n"
@@ -3554,6 +3555,10 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	if	.1	.1161	0	interrupt\n"
 			"flg	df	.1	.1162	0	direction\n"
 			"flg	of	.1	.1163	0	overflow\n"
+			"flg	nt	.1	.1166	0\n"
+			"flg	rf	.1	.1168	0\n"
+			"flg	vm	.1	.1169	0\n"
+			"flg	ac	.1	.1170	0\n"
 
 			"gpr	rsp	.64	152	0\n"
 			"gpr	esp	.32	152	0\n"
