@@ -989,10 +989,18 @@ RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
  * \brief Invalid instruction
  */
 IL_LIFTER(invalid) {
+	return NULL;
+}
+
+/**
+ * \brief Unimplemnted instruction
+ */
+IL_LIFTER(unimpl) {
 	return EMPTY();
 }
 
-/* 8086/8088 instructions*/
+
+/* 8086/8088/80186/80286/80386/80486 instructions*/
 
 /**
  * AAA
@@ -1173,10 +1181,10 @@ IL_LIFTER(and) {
 	return SEQ5(and, set_dest, clear_of, clear_cf, set_res_flags);
 }
 
-IL_LIFTER(call) {
-	// TODO
-	return EMPTY();
-}
+// IL_LIFTER(call) {
+// 	// TODO
+// 	return EMPTY();
+// }
 
 /**
  * CBW
@@ -1521,8 +1529,10 @@ IL_LIFTER(div) {
  * Enter HALT state
  */
 IL_LIFTER(hlt) {
-	/* It just jumps to an empty goto label "halt" */
-	return GOTO("halt");
+	/* It just jumps to an empty goto label "halt"
+	Also need an EMPTY() instruction after it to denote 
+	the end of analysis and restart all IL analysis */
+	return SEQ2(GOTO("halt"), EMPTY());
 }
 
 static void label_halt(RzILVM *vm, RzILOpEffect *op) {
@@ -1692,15 +1702,15 @@ IL_LIFTER(imul) {
 	return NULL;
 }
 
-/**
- * IN
- * Input from port
- * Encodings: I, ZO
- */
-IL_LIFTER(in) {
-	/* TODO: Implement after I/O ports acccessing implemented in IL */
-	return EMPTY();
-}
+// /**
+//  * IN
+//  * Input from port
+//  * Encodings: I, ZO
+//  */
+// IL_LIFTER(in) {
+// 	/* TODO: Implement after I/O ports acccessing implemented in IL */
+// 	return EMPTY();
+// }
 
 /**
  * INC
@@ -1724,8 +1734,10 @@ IL_LIFTER(inc) {
  * Encodings: I, ZO
  */
 IL_LIFTER(int) {
-	/* For now, it just jumps to an empty goto label "int" */
-	return GOTO("int");
+	/* For now, it just jumps to an empty goto label "int" 
+	Also need an EMPTY() instruction after it to denote 
+	the end of analysis and restart all IL analysis */
+	return SEQ2(GOTO("int"), EMPTY());
 }
 
 static void label_int(RzILVM *vm, RzILOpEffect *op) {
@@ -1738,17 +1750,17 @@ static void label_int(RzILVM *vm, RzILOpEffect *op) {
  * Call to interrupt if overflow flag set
  */
 IL_LIFTER(into) {
-	return BRANCH(VARG(EFLAGS(OF)), GOTO("int"), NOP());
+	return BRANCH(VARG(EFLAGS(OF)), SEQ2(GOTO("int"), EMPTY()), NOP());
 }
 
-/**
- * IRET
- * Return from interrupt
- */
-IL_LIFTER(iret) {
-	/* TODO: Implement IRET properly */
-	return EMPTY();
-}
+// /**
+//  * IRET
+//  * Return from interrupt
+//  */
+// IL_LIFTER(iret) {
+// 	/* TODO: Implement IRET properly */
+// 	return EMPTY();
+// }
 
 #define JUMP_IL() \
 	do { \
@@ -2109,41 +2121,41 @@ IL_LIFTER(lodsq) {
 	return x86_il_lods_helper(ins, pc, analysis, 64);
 }
 
-/**
- * LOOP
- * Loop the following instruction
- * Encoding: D
- * Decrement count ; jump if count != 0
- */
-IL_LIFTER(loop) {
-	/* TODO: Unimplemented */
-	/* This is hard to implement currently, since it would require to loop the following instruction
-	and the IL currently provides no way to get the effect of another instruction */
-	/* Also, it's usage is usually very rare, so not worth all the effort. For now an `EMPTY` opcode is returned */
-	return EMPTY();
-}
+// /**
+//  * LOOP
+//  * Loop the following instruction
+//  * Encoding: D
+//  * Decrement count ; jump if count != 0
+//  */
+// IL_LIFTER(loop) {
+// 	/* TODO: Unimplemented */
+// 	/* This is hard to implement currently, since it would require to loop the following instruction
+// 	and the IL currently provides no way to get the effect of another instruction */
+// 	/* Also, it's usage is usually very rare, so not worth all the effort. For now an `EMPTY` opcode is returned */
+// 	return EMPTY();
+// }
 
-/**
- * LOOPE
- * Loop the following instruction
- * Encoding: D
- * Decrement count ; jump if count != 0 and ZF = 1
- */
-IL_LIFTER(loope) {
-	/* TODO: Unimplemented */
-	return EMPTY();
-}
+// /**
+//  * LOOPE
+//  * Loop the following instruction
+//  * Encoding: D
+//  * Decrement count ; jump if count != 0 and ZF = 1
+//  */
+// IL_LIFTER(loope) {
+// 	/* TODO: Unimplemented */
+// 	return EMPTY();
+// }
 
-/**
- * LOOPNE
- * Loop the following instruction
- * Encoding: D
- * Decrement count ; jump if count != 0 and ZF = 0
- */
-IL_LIFTER(loopne) {
-	/* TODO: Unimplemented */
-	return EMPTY();
-}
+// /**
+//  * LOOPNE
+//  * Loop the following instruction
+//  * Encoding: D
+//  * Decrement count ; jump if count != 0 and ZF = 0
+//  */
+// IL_LIFTER(loopne) {
+// 	/* TODO: Unimplemented */
+// 	return EMPTY();
+// }
 
 /**
  * MOV
@@ -2362,15 +2374,15 @@ IL_LIFTER(or) {
 	return SEQ5(or, set_dest, clear_of, clear_cf, set_res_flags);
 }
 
-/**
- * OUT
- * Output to port
- * Encodings: I, ZO
- */
-IL_LIFTER(out) {
-	/* TODO: Implement after I/O ports acccessing implemented in IL */
-	return EMPTY();
-}
+// /**
+//  * OUT
+//  * Output to port
+//  * Encodings: I, ZO
+//  */
+// IL_LIFTER(out) {
+// 	/* TODO: Implement after I/O ports acccessing implemented in IL */
+// 	return EMPTY();
+// }
 
 typedef struct pop_helper_t {
 	RzILOpPure *val;
@@ -2714,27 +2726,27 @@ IL_LIFTER(ret) {
 	return ret;
 }
 
-/**
- * RETF
- * Return far pointer
- * Encoding: ZO, I
- * Rarely found in modern programs
- */
-IL_LIFTER(retf) {
-	/* Unimplemented: Too rare and cumbersome to implement */
-	return EMPTY();
-}
+// /**
+//  * RETF
+//  * Return far pointer
+//  * Encoding: ZO, I
+//  * Rarely found in modern programs
+//  */
+// IL_LIFTER(retf) {
+// 	/* Unimplemented: Too rare and cumbersome to implement */
+// 	return EMPTY();
+// }
 
-/**
- * RETFQ
- * Return far pointer (size: qword)
- * Encoding: ZO, I
- * Rarely found in modern programs
- */
-IL_LIFTER(retfq) {
-	/* Unimplemented: Too rare and cumbersome to implement */
-	return EMPTY();
-}
+// /**
+//  * RETFQ
+//  * Return far pointer (size: qword)
+//  * Encoding: ZO, I
+//  * Rarely found in modern programs
+//  */
+// IL_LIFTER(retfq) {
+// 	/* Unimplemented: Too rare and cumbersome to implement */
+// 	return EMPTY();
+// }
 
 /**
  * SAHF
@@ -3134,15 +3146,15 @@ IL_LIFTER(test) {
 	return SEQ4(res, test, res_flags, arith_flags);
 }
 
-/**
- * WAIT
- * Wait until not busy
- * ZO
- */
-IL_LIFTER(wait) {
-	/* Unimplemented */
-	return EMPTY();
-}
+// /**
+//  * WAIT
+//  * Wait until not busy
+//  * ZO
+//  */
+// IL_LIFTER(wait) {
+// 	/* Unimplemented */
+// 	return EMPTY();
+// }
 
 /**
  * XCHG
@@ -3212,7 +3224,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_ADC] = x86_il_adc,
 	[X86_INS_ADD] = x86_il_add,
 	[X86_INS_AND] = x86_il_and,
-	[X86_INS_CALL] = x86_il_call,
+	[X86_INS_CALL] = x86_il_unimpl,
 	[X86_INS_CBW] = x86_il_cbw,
 	[X86_INS_CLC] = x86_il_clc,
 	[X86_INS_CLD] = x86_il_cld,
@@ -3230,11 +3242,11 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_HLT] = x86_il_hlt,
 	[X86_INS_IDIV] = x86_il_idiv,
 	[X86_INS_IMUL] = x86_il_imul,
-	[X86_INS_IN] = x86_il_in,
+	[X86_INS_IN] = x86_il_unimpl,
 	[X86_INS_INC] = x86_il_inc,
 	[X86_INS_INT] = x86_il_int,
 	[X86_INS_INTO] = x86_il_into,
-	[X86_INS_IRET] = x86_il_iret,
+	[X86_INS_IRET] = x86_il_unimpl,
 	[X86_INS_JA] = x86_il_ja,
 	[X86_INS_JAE] = x86_il_jae,
 	[X86_INS_JB] = x86_il_jb,
@@ -3263,9 +3275,9 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LODSW] = x86_il_lodsw,
 	[X86_INS_LODSD] = x86_il_lodsd,
 	[X86_INS_LODSQ] = x86_il_lodsq,
-	[X86_INS_LOOP] = x86_il_loop,
-	[X86_INS_LOOPE] = x86_il_loope,
-	[X86_INS_LOOPNE] = x86_il_loopne,
+	[X86_INS_LOOP] = x86_il_unimpl,
+	[X86_INS_LOOPE] = x86_il_unimpl,
+	[X86_INS_LOOPNE] = x86_il_unimpl,
 	[X86_INS_MOV] = x86_il_mov,
 	[X86_INS_MOVSB] = x86_il_movsb,
 	[X86_INS_MOVSW] = x86_il_movsw,
@@ -3276,7 +3288,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_NOP] = x86_il_nop,
 	[X86_INS_NOT] = x86_il_not,
 	[X86_INS_OR] = x86_il_or,
-	[X86_INS_OUT] = x86_il_out,
+	[X86_INS_OUT] = x86_il_unimpl,
 	[X86_INS_POP] = x86_il_pop,
 	[X86_INS_POPF] = x86_il_popf,
 	[X86_INS_POPFD] = x86_il_popfd,
@@ -3292,8 +3304,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_ROL] = x86_il_rol,
 	[X86_INS_ROR] = x86_il_ror,
 	[X86_INS_RET] = x86_il_ret,
-	[X86_INS_RETF] = x86_il_retf,
-	[X86_INS_RETFQ] = x86_il_retfq,
+	[X86_INS_RETF] = x86_il_unimpl,
+	[X86_INS_RETFQ] = x86_il_unimpl,
 	[X86_INS_SAHF] = x86_il_sahf,
 	[X86_INS_SAL] = x86_il_sal,
 	[X86_INS_SAR] = x86_il_sar,
@@ -3314,10 +3326,11 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STOSW] = x86_il_stosw,
 	[X86_INS_SUB] = x86_il_sub,
 	[X86_INS_TEST] = x86_il_test,
-	[X86_INS_WAIT] = x86_il_wait,
+	[X86_INS_WAIT] = x86_il_unimpl,
 	[X86_INS_XCHG] = x86_il_xchg,
 	[X86_INS_XLATB] = x86_il_xlatb,
 	[X86_INS_XOR] = x86_il_xor,
+	[X86_INS_BOUND] = x86_il_unimpl
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
