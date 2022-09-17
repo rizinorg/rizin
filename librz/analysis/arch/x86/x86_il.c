@@ -3405,6 +3405,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_XOR] = x86_il_xor,
 	[X86_INS_BOUND] = x86_il_bound,
 	[X86_INS_ENTER] = x86_il_enter,
+	[X86_INS_INSB] = x86_il_unimpl,
+	[X86_INS_INSW] = x86_il_unimpl,
+	[X86_INS_OUTSB] = x86_il_unimpl,
+	[X86_INS_OUTSW] = x86_il_unimpl
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
