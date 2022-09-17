@@ -3176,6 +3176,29 @@ IL_LIFTER(test) {
 	return SEQ4(res, test, res_flags, arith_flags);
 }
 
+/**
+ * WAIT
+ * Wait until not busy
+ * ZO
+ */
+IL_LIFTER(wait) {
+	/* Unimplemented */
+	return EMPTY();
+}
+
+/**
+ * XCHG
+ * Exchange data
+ * Encoding: O, MR, RM
+ */
+IL_LIFTER(xchg) {
+	RzILOpEffect *temp = SETL("_temp", x86_il_get_op(0));
+	RzILOpEffect *xchg = x86_il_set_op(0, x86_il_get_op(1));
+	RzILOpEffect *set_src = x86_il_set_op(1, VARL("_temp"));
+
+	return SEQ3(temp, xchg, set_src);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3292,6 +3315,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STOSW] = x86_il_stosw,
 	[X86_INS_SUB] = x86_il_sub,
 	[X86_INS_TEST] = x86_il_test,
+	[X86_INS_WAIT] = x86_il_wait,
+	[X86_INS_XCHG] = x86_il_xchg,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
