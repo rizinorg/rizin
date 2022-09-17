@@ -694,7 +694,9 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 		if (!esil_buf) {
 			return;
 		}
-		char *ptr_end = strstr(esil_buf, sdb_fmt(",%s,%s,", reg, sign));
+		char *tmp = rz_str_newf(",%s,%s,", reg, sign);
+		char *ptr_end = tmp ? strstr(esil_buf, tmp) : NULL;
+		free(tmp);
 		if (!ptr_end) {
 			free(esil_buf);
 			return;
