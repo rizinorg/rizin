@@ -16,12 +16,6 @@
 #define X86_BIT(x)  UN(1, x)
 #define X86_TO32(x) UNSIGNED(32, x)
 
-#define RET_NULL_IF_64BIT_OR_LOCK() \
-	if (analysis->bits == 64 || ins->structure->prefix[0] == X86_PREFIX_LOCK) { \
-		/* #UD exception */ \
-		return NULL; \
-	}
-
 #define IL_LIFTER(mnem) static RzILOpEffect *x86_il_##mnem(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis)
 
 /**
@@ -1008,7 +1002,6 @@ IL_LIFTER(unimpl) {
  * 37 | Invalid | Valid
  */
 IL_LIFTER(aaa) {
-	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
@@ -1035,7 +1028,6 @@ IL_LIFTER(aaa) {
  * D5 ib | Invalid | Valid
  */
 IL_LIFTER(aad) {
-	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *temp_ah = SETL("temp_ah", x86_il_get_reg(X86_REG_AH));
@@ -1063,7 +1055,6 @@ IL_LIFTER(aad) {
  * D4 ib | Invalid | Valid
  */
 IL_LIFTER(aam) {
-	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *temp_al = SETL("temp_al", x86_il_get_reg(X86_REG_AL));
 
@@ -1088,7 +1079,6 @@ IL_LIFTER(aam) {
  * 3F | Invalid | Valid
  */
 IL_LIFTER(aas) {
-	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
@@ -1370,7 +1360,6 @@ IL_LIFTER(cmpsq) {
  * 27 | Invalid | Valid
  */
 IL_LIFTER(daa) {
-	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *old_cf = SETL("old_cf", VARG(EFLAGS(CF)));
@@ -1404,7 +1393,6 @@ IL_LIFTER(daa) {
  * 2F | Invalid | Valid
  */
 IL_LIFTER(das) {
-	RET_NULL_IF_64BIT_OR_LOCK();
 
 	RzILOpEffect *old_al = SETL("old_al", x86_il_get_reg(X86_REG_AL));
 	RzILOpEffect *old_cf = SETL("old_cf", VARG(EFLAGS(CF)));
@@ -3210,6 +3198,26 @@ IL_LIFTER(xor) {
 	return SEQ5(xor, set_dest, clear_of, clear_cf, set_res_flags);
 }
 
+/**
+ * BOUND
+ * Check array index against bounds
+ * Encoding: RM
+ */
+
+IL_LIFTER(bound) {
+	RzILOpEffect *index = SETL("_index", x86_il_get_op(0));
+	
+	X86Mem mem = ins->structure->operands[1].mem;
+	RzILOpEffect *lower = SETL("_lower", LOADW(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
+	mem.disp += ins->structure->operands[1].size / mem.scale;
+	RzILOpEffect *upper = SETL("_upper", LOADW(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
+
+	RzILOpBool *cond = OR(ULT(VARL("_index"), VARL("_lower")), UGT(VARL("_index"), VARL("_upper")));
+
+	/* Interrupt if out of bounds, NOP otherwise */
+	return SEQ4(index, lower, upper, BRANCH(cond, SEQ2(GOTO("int"), EMPTY()), NOP()));
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3330,7 +3338,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_XCHG] = x86_il_xchg,
 	[X86_INS_XLATB] = x86_il_xlatb,
 	[X86_INS_XOR] = x86_il_xor,
-	[X86_INS_BOUND] = x86_il_unimpl
+	[X86_INS_BOUND] = x86_il_bound,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
