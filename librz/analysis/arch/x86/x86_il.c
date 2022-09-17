@@ -3266,7 +3266,7 @@ IL_LIFTER(enter) {
 	RzILOpEffect *frame_temp = SETL("_frame_tmp", x86_il_get_reg(sp_reg));
 
 	RzILOpEffect *itr = SETL("_itr", U8(1));
-	
+
 	/* RBP will be dynamically resolved to the correct BP register */
 	RzILOpEffect *loop_body = SEQ3(x86_il_set_reg(X86_REG_RBP, SUB(x86_il_get_reg(X86_REG_RBP), UN(analysis->bits, bp_size))), x86_push_helper(LOADW(bp_size * BITS_PER_BYTE, x86_il_get_reg(X86_REG_RBP)), bp_size), SETL("_itr", ADD(VARL("_itr"), U8(1))));
 	RzILOpEffect *loop = REPEAT(ULT(VARL("_itr"), VARL("_nest_lvl")), loop_body);
@@ -3281,6 +3281,53 @@ IL_LIFTER(enter) {
 	}
 
 	return SEQ6(alloc_size, nesting_level, push, frame_temp, BRANCH(IS_ZERO(VARL("_nest_lvl")), NOP(), SEQ2(BRANCH(UGT(VARL("_nest_lvl"), U8(1)), SEQ2(itr, loop), NOP()), nesting_lvl1)), continue_eff);
+}
+
+/**
+ * LEAVE
+ * High level procedure exit
+ * Encoding: ZO
+ */
+IL_LIFTER(leave) {
+	RzILOpEffect *set_sp = x86_il_set_reg(X86_REG_RSP, x86_il_get_reg(X86_REG_RBP));
+
+	/* Default value initialization (useless, but need to avoid warnings) */
+	X86Reg bp_reg = X86_REG_RBP;
+	unsigned short bp_size = analysis->bits / BITS_PER_BYTE;
+
+	switch (analysis->bits) {
+	case 64:
+		/* Operand-size override (66H) */
+		if (ins->structure->prefix[2]) {
+			bp_reg = X86_REG_EBP;
+			bp_size = 4;
+		} else {
+			bp_reg = X86_REG_RBP;
+			bp_size = 8;
+		}
+		break;
+	case 32:
+		/* Operand-size override (66H) */
+		if (ins->structure->prefix[2]) {
+			bp_reg = X86_REG_BP;
+			bp_size = 2;
+		} else {
+			bp_reg = X86_REG_EBP;
+			bp_size = 4;
+		}
+		break;
+	case 16:
+		bp_reg = X86_REG_BP;
+		bp_size = 2;
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	PopHelper pop = x86_pop_helper(bp_size /* BYTES */);
+	RzILOpEffect *set_bp = x86_il_set_reg(bp_reg, pop.val);
+
+	return SEQ3(set_sp, pop.eff, set_bp);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -3408,7 +3455,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_INSB] = x86_il_unimpl,
 	[X86_INS_INSW] = x86_il_unimpl,
 	[X86_INS_OUTSB] = x86_il_unimpl,
-	[X86_INS_OUTSW] = x86_il_unimpl
+	[X86_INS_OUTSW] = x86_il_unimpl,
+	[X86_INS_LEAVE] = x86_il_leave
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>

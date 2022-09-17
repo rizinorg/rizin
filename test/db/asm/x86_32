@@ -217,7 +217,7 @@ d "lddqu xmm0, xmmword [eax]" f20ff000
 d "ldmxcsr dword [eax]" 0fae10
 d "lds eax, [eax]" c500 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))
 d "lea eax, [eax]" 8d00 0x0 (set eax (+ (var eax) (bv 32 0x0)))
-d "leave" C9
+ad "leave" c9 0x0 (seq (set esp (var ebp)) (set esp (+ (var esp) (bv 32 0x4))) (set ebp (loadw 0 32 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)))))
 d "les eax, [eax]" c400 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
 d "lfence" 0faee8
 d "lgdt [eax]" 0f0110
@@ -1375,7 +1375,6 @@ a "lea ebx, [ebp+324]" 8d9d44010000 0x0 (set ebx (+ (var ebp) (bv 32 0x144)))
 a "lea ebx, [ebp]" 8d5d00 0x0 (set ebx (+ (var ebp) (bv 32 0x0)))
 a "lea edx, [0x4422221d]" 8d151d222244 0x0 (set edx (bv 32 0x4422221d))
 a "lea edx, 0x2c4b" 8d154b2c0000 0x0 (set edx (bv 32 0x2c4b))
-a "leave" c9
 a "les eax, [eax]" c400 0x0 (set eax (+ (+ (var eax) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
 a "les eax, [eax+12]" c4400c 0x0 (set eax (+ (+ (var eax) (bv 32 0xc)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
 a "les eax, [eax-233]" c48017ffffff 0x0 (set eax (+ (+ (var eax) (bv 32 0xffffff17)) (<< (cast 32 false (var es)) (bv 8 0x4) false)))
