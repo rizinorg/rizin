@@ -211,7 +211,10 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 
 	if (!rebase_info) {
 		return rz_buf_read_at(cache->buf, ctx->off, buf, len);
+	} else if (rebase_info->page_size < 1) {
+		return -1;
 	}
+
 	st64 result = 0;
 	ut64 offset_in_data = ctx->off - rebase_info->start_of_data;
 	ut64 page_offset = offset_in_data % rebase_info->page_size;
@@ -224,7 +227,7 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	if (rounded_count > rebase_info->page_size) {
 		internal_buf = malloc(rounded_count);
 		if (!internal_buf) {
-			RZ_LOG_ERROR("Cannot allocate memory for 'internal_buf'\n");
+			RZ_LOG_ERROR("dyldcache: Cannot allocate memory for 'internal_buf'\n");
 			return -1;
 		}
 	}
@@ -235,7 +238,7 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 		result = RZ_MIN(len, internal_result);
 		memcpy(buf, internal_buf + page_offset, result);
 	} else {
-		RZ_LOG_ERROR("Cannot rebase\n");
+		RZ_LOG_ERROR("dyldcache: Cannot rebase address\n");
 		result = rz_buf_read_at(cache->buf, ctx->off, buf, len);
 	}
 
