@@ -3141,6 +3141,27 @@ IL_LIFTER(stosq) {
 	return x86_il_stos_helper(ins, pc, analysis, 64);
 }
 
+/**
+ * SUB
+ * (SUB family of instructions)
+ * Possible encodings:
+ *  - I
+ *  - MI
+ *  - MR
+ *  - RM
+ */
+IL_LIFTER(sub) {
+	RzILOpEffect *op1 = SETL("op1", x86_il_get_op(0));
+	RzILOpEffect *op2 = SETL("op2", x86_il_get_op(1));
+	RzILOpEffect *sub = SETL("sub", SUB(VARL("op1"), VARL("op2")));
+
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("sub"));
+	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("sub"));
+	RzILOpEffect *set_arith_flags = x86_il_set_arithmetic_flags(VARL("sub"), VARL("op1"), VARL("op2"), false);
+
+	return SEQ6(op1, op2, sub, set_dest, set_res_flags, set_arith_flags);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3255,6 +3276,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STOSD] = x86_il_stosd,
 	[X86_INS_STOSQ] = x86_il_stosq,
 	[X86_INS_STOSW] = x86_il_stosw,
+	[X86_INS_SUB] = x86_il_sub,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
