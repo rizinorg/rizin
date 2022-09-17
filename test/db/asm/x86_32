@@ -470,8 +470,8 @@ ad "std" fd 0x0 (set df true)
 d "stgi" 0f01dc
 ad "sti" fb 0x0 (set if true)
 d "stmxcsr dword [eax]" 0fae18
-d "stosb byte es:[edi], al" aa
-d "stosd dword es:[edi], eax" ab
+ad "stosb byte es:[edi], al" aa 0x0 (seq (storew 0 (+ (+ (var edi) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)) (cast 8 false (var eax))) (branch (var df) (set edi (- (var edi) (bv 32 0x1))) (set edi (+ (var edi) (bv 32 0x1)))))
+ad "stosd dword es:[edi], eax" ab 0x0 (seq (storew 0 (+ (+ (var edi) (bv 32 0x0)) (<< (cast 32 false (var es)) (bv 8 0x4) false)) (var eax)) (branch (var df) (set edi (- (var edi) (bv 32 0x4))) (set edi (+ (var edi) (bv 32 0x4)))))
 d "str word [eax]" 0f0008
 d "sub al, 0" 2c00
 d "sub al, byte [eax]" 2a00
@@ -1961,8 +1961,6 @@ aB "sqrtsd xmm0, qword [eax]" f20f5100
 aB "sqrtss xmm0, dword [eax]" f30f5100
 a "stgi" 0f01dc
 a "stmxcsr dword [eax]" 0fae18
-a "stosb byte es:[edi], al" aa
-a "stosd dword es:[edi], eax" ab
 a "str word [eax]" 0f0008
 a "sub al, 0" 2c00
 a "sub al, byte [eax]" 2a00

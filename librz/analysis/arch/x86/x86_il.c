@@ -3045,6 +3045,102 @@ IL_LIFTER(sti) {
 	return SETG(EFLAGS(IF), IL_TRUE);
 }
 
+RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {
+	X86Reg store_reg;
+
+	switch (size) {
+	case 8:
+		store_reg = X86_REG_AL;
+		break;
+	case 16:
+		store_reg = X86_REG_AX;
+		break;
+	case 32:
+		store_reg = X86_REG_EAX;
+		break;
+	case 64:
+		store_reg = X86_REG_RAX;
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	if (analysis->bits == 64) {
+		X86Reg mem_reg = X86_REG_RDI;
+		ut8 mem_size = 64;
+		/* Address override prefix: 67H */
+		if (ins->structure->prefix[3]) {
+			mem_reg = X86_REG_EDI;
+			mem_size = 32;
+		}
+
+		RzILOpEffect *store = STORE(x86_il_get_reg(mem_reg), x86_il_get_reg(store_reg));
+
+		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
+		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
+
+		return SEQ2(store, BRANCH(VARG(EFLAGS(DF)), decrement, increment));
+	} else {
+		X86Reg mem_reg = X86_REG_EDI;
+		ut8 mem_size = 32;
+		/* Check bitness and address override prefix: 67H */
+		if (analysis->bits == 16 || ins->structure->prefix[3]) {
+			mem_reg = X86_REG_DI;
+			mem_size = 16;
+		}
+
+		X86Mem src_mem;
+		src_mem.base = mem_reg;
+		src_mem.disp = 0;
+		src_mem.index = X86_REG_INVALID;
+		src_mem.scale = 1;
+		src_mem.segment = X86_REG_ES;
+		RzILOpEffect *store = x86_il_set_mem(src_mem, x86_il_get_reg(store_reg));
+
+		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
+		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
+
+		return SEQ2(store, BRANCH(VARG(EFLAGS(DF)), decrement, increment));
+	}
+}
+
+/**
+ * STOSB
+ * Store byte in a string
+ * ZO
+ */
+IL_LIFTER(stosb) {
+	return x86_il_stos_helper(ins, pc, analysis, 8);
+}
+
+/**
+ * STOSW
+ * Store word in a string
+ * ZO
+ */
+IL_LIFTER(stosw) {
+
+	return x86_il_stos_helper(ins, pc, analysis, 16);
+}
+
+/**
+ * STOSD
+ * Store dword in a string
+ * ZO
+ */
+IL_LIFTER(stosd) {
+	return x86_il_stos_helper(ins, pc, analysis, 32);
+}
+
+/**
+ * STOSQ
+ * Store quadword in a string
+ * ZO
+ */
+IL_LIFTER(stosq) {
+	return x86_il_stos_helper(ins, pc, analysis, 64);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3155,6 +3251,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STC] = x86_il_stc,
 	[X86_INS_STD] = x86_il_std,
 	[X86_INS_STI] = x86_il_sti,
+	[X86_INS_STOSB] = x86_il_stosb,
+	[X86_INS_STOSD] = x86_il_stosd,
+	[X86_INS_STOSQ] = x86_il_stosq,
+	[X86_INS_STOSW] = x86_il_stosw,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
