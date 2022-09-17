@@ -174,11 +174,12 @@ CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
 ____hm md4            LGPL3      deroad
-____hm md5            LGPL2      Alan DeKok (md5 algorithm implementation), deroad (plugin)
+____hm md5            LGPL2      Alan DeKok
 ____hm sha1           LGPL3      deroad
 ____hm sha256         BSD-3      Aaron D. Gifford
 ____hm sha384         BSD-3      Aaron D. Gifford
 ____hm sha512         BSD-3      Aaron D. Gifford
+____h_ blake3         CC0        Samuel Neves,Jack O'Connor
 ____h_ fletcher8      LGPL3      deroad
 ____h_ fletcher16     LGPL3      deroad
 ____h_ fletcher32     LGPL3      deroad
@@ -572,6 +573,7 @@ string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha384: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha512: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake3: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher32: computed hash doesn't match the expected one
@@ -1336,3 +1338,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-hash -a blake3 -s "admin"
+FILE==
+CMDS=!rz-hash -a blake3 -s "admin"
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake3: d289b2da9b7051f36b4e396e0af3e069e78cf119a7fdcb6437b685c4875e9f9e
+EOF
+RUN

@@ -78,7 +78,7 @@ static bool plugin_md5_small_block(const ut8 *data, ut64 size, ut8 **digest, RzH
 RzHashPlugin rz_hash_plugin_md5 = {
 	.name = "md5",
 	.license = "LGPL2",
-	.author = "Alan DeKok (md5 algorithm implementation), deroad (plugin)",
+	.author = "Alan DeKok",
 	.support_hmac = true,
 	.context_new = plugin_md5_context_new,
 	.context_free = plugin_md5_context_free,
