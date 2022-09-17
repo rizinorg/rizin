@@ -3162,6 +3162,20 @@ IL_LIFTER(sub) {
 	return SEQ6(op1, op2, sub, set_dest, set_res_flags, set_arith_flags);
 }
 
+/**
+ * TEST
+ * Logical compare (AND)
+ * Encoding: I, MI, MR
+ */
+IL_LIFTER(test) {
+	RzILOpEffect *res = SETL("_res", LOGAND(x86_il_get_op(0), x86_il_get_op(1)));
+	RzILOpEffect *test = x86_il_set_op(0, VARL("_res"));
+	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_res"));
+	RzILOpEffect *arith_flags = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
+
+	return SEQ4(res, test, res_flags, arith_flags);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3277,6 +3291,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STOSQ] = x86_il_stosq,
 	[X86_INS_STOSW] = x86_il_stosw,
 	[X86_INS_SUB] = x86_il_sub,
+	[X86_INS_TEST] = x86_il_test,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
