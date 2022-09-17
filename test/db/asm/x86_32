@@ -135,6 +135,7 @@ d "divsd xmm0, qword [eax]" f20f5e00
 d "divss xmm0, dword [eax]" f30f5e00
 d "emms" 0f77
 ad "endbr32" f30f1efb
+d "enter 2, 0" c8020000 0x0 (seq (set _alloc_sz (cast 16 false (bv 32 0x2))) (set _nest_lvl (smod (cast 8 false (bv 32 0x0)) (bv 8 0x20))) (storew 0 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)) (var ebp)) (set esp (- (var esp) (bv 32 0x4))) (set _frame_tmp (var esp)) (branch (is_zero (var _nest_lvl)) nop (seq (branch (! (ule (var _nest_lvl) (bv 8 0x1))) (seq (set _itr (bv 8 0x1)) (repeat (&& (ule (var _itr) (var _nest_lvl)) (! (== (var _itr) (var _nest_lvl)))) (seq (set ebp (- (var ebp) (bv 32 0x4))) (storew 0 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)) (loadw 0 32 (var ebp))) (set esp (- (var esp) (bv 32 0x4))) (set _itr (+ (var _itr) (bv 8 0x1)))))) nop) (storew 0 (+ (+ (cast 32 false (var esp)) (bv 32 0x0)) (<< (cast 32 false (var ss)) (bv 8 0x4) false)) (var _frame_tmp)) (set esp (- (var esp) (bv 32 0x4))))) (set esp (- (var esp) (cast 32 false (var _alloc_sz)))) (set ebp (var _frame_tmp)))
 d "femms" 0f0e
 d "fxrstor [eax]" 0fae08
 d "fxsave [eax]" 0fae00

@@ -993,7 +993,6 @@ IL_LIFTER(unimpl) {
 	return EMPTY();
 }
 
-
 /* 8086/8088/80186/80286/80386/80486 instructions*/
 
 /**
@@ -1518,7 +1517,7 @@ IL_LIFTER(div) {
  */
 IL_LIFTER(hlt) {
 	/* It just jumps to an empty goto label "halt"
-	Also need an EMPTY() instruction after it to denote 
+	Also need an EMPTY() instruction after it to denote
 	the end of analysis and restart all IL analysis */
 	return SEQ2(GOTO("halt"), EMPTY());
 }
@@ -1722,8 +1721,8 @@ IL_LIFTER(inc) {
  * Encodings: I, ZO
  */
 IL_LIFTER(int) {
-	/* For now, it just jumps to an empty goto label "int" 
-	Also need an EMPTY() instruction after it to denote 
+	/* For now, it just jumps to an empty goto label "int"
+	Also need an EMPTY() instruction after it to denote
 	the end of analysis and restart all IL analysis */
 	return SEQ2(GOTO("int"), EMPTY());
 }
@@ -2352,7 +2351,7 @@ IL_LIFTER(not ) {
 IL_LIFTER(or) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect *or = SETL("_or", LOGOR(op1, op2));
+	RzILOpEffect * or = SETL("_or", LOGOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -3188,7 +3187,7 @@ IL_LIFTER(xlatb) {
 IL_LIFTER(xor) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect *xor = SETL("_xor", LOGXOR(op1, op2));
+	RzILOpEffect * xor = SETL("_xor", LOGXOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_xor"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -3206,7 +3205,7 @@ IL_LIFTER(xor) {
 
 IL_LIFTER(bound) {
 	RzILOpEffect *index = SETL("_index", x86_il_get_op(0));
-	
+
 	X86Mem mem = ins->structure->operands[1].mem;
 	RzILOpEffect *lower = SETL("_lower", LOADW(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(mem)));
 	mem.disp += ins->structure->operands[1].size / mem.scale;
@@ -3216,6 +3215,72 @@ IL_LIFTER(bound) {
 
 	/* Interrupt if out of bounds, NOP otherwise */
 	return SEQ4(index, lower, upper, BRANCH(cond, SEQ2(GOTO("int"), EMPTY()), NOP()));
+}
+
+/**
+ * ENTER
+ * Make a stack frame for procedure parameters
+ * Encoding: II
+ */
+IL_LIFTER(enter) {
+	RzILOpEffect *alloc_size = SETL("_alloc_sz", UNSIGNED(16, x86_il_get_op(0)));
+	RzILOpEffect *nesting_level = SETL("_nest_lvl", MOD(UNSIGNED(8, x86_il_get_op(1)), U8(32)));
+
+	/* Will get resolved correctly to the largest SP reg */
+	X86Reg sp_reg = X86_REG_RSP;
+
+	/* Default value initialization (useless, but need to avoid warnings) */
+	X86Reg bp_reg = X86_REG_RBP;
+	unsigned short bp_size = analysis->bits / BITS_PER_BYTE;
+
+	switch (analysis->bits) {
+	case 64:
+		/* Operand-size override (66H) */
+		if (ins->structure->prefix[2]) {
+			bp_reg = X86_REG_EBP;
+			bp_size = 4;
+		} else {
+			bp_reg = X86_REG_RBP;
+			bp_size = 8;
+		}
+		break;
+	case 32:
+		/* Operand-size override (66H) */
+		if (ins->structure->prefix[2]) {
+			bp_reg = X86_REG_BP;
+			bp_size = 2;
+		} else {
+			bp_reg = X86_REG_EBP;
+			bp_size = 4;
+		}
+		break;
+	case 16:
+		bp_reg = X86_REG_BP;
+		bp_size = 2;
+		break;
+	default:
+		rz_warn_if_reached();
+	}
+
+	RzILOpEffect *push = x86_push_helper(x86_il_get_reg(bp_reg), bp_size);
+	RzILOpEffect *frame_temp = SETL("_frame_tmp", x86_il_get_reg(sp_reg));
+
+	RzILOpEffect *itr = SETL("_itr", U8(1));
+	
+	/* RBP will be dynamically resolved to the correct BP register */
+	RzILOpEffect *loop_body = SEQ3(x86_il_set_reg(X86_REG_RBP, SUB(x86_il_get_reg(X86_REG_RBP), UN(analysis->bits, bp_size))), x86_push_helper(LOADW(bp_size * BITS_PER_BYTE, x86_il_get_reg(X86_REG_RBP)), bp_size), SETL("_itr", ADD(VARL("_itr"), U8(1))));
+	RzILOpEffect *loop = REPEAT(ULT(VARL("_itr"), VARL("_nest_lvl")), loop_body);
+
+	RzILOpEffect *nesting_lvl1 = x86_push_helper(VARL("_frame_tmp"), bp_size);
+
+	RzILOpEffect *continue_eff = x86_il_set_reg(sp_reg, SUB(x86_il_get_reg(sp_reg), UNSIGNED(bp_size * BITS_PER_BYTE, VARL("_alloc_sz"))));
+	if (bp_size == 16) {
+		continue_eff = SEQ2(continue_eff, x86_il_set_reg(bp_reg, UNSIGNED(16, UNSIGNED(15, VARL("_frame_tmp")))));
+	} else {
+		continue_eff = SEQ2(continue_eff, x86_il_set_reg(bp_reg, VARL("_frame_tmp")));
+	}
+
+	return SEQ6(alloc_size, nesting_level, push, frame_temp, BRANCH(IS_ZERO(VARL("_nest_lvl")), NOP(), SEQ2(BRANCH(UGT(VARL("_nest_lvl"), U8(1)), SEQ2(itr, loop), NOP()), nesting_lvl1)), continue_eff);
 }
 
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
@@ -3339,6 +3404,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_XLATB] = x86_il_xlatb,
 	[X86_INS_XOR] = x86_il_xor,
 	[X86_INS_BOUND] = x86_il_bound,
+	[X86_INS_ENTER] = x86_il_enter,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
