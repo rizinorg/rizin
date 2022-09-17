@@ -149,6 +149,7 @@ extern RzHashPlugin rz_hash_plugin_xxhash32;
 extern RzHashPlugin rz_hash_plugin_parity;
 extern RzHashPlugin rz_hash_plugin_entropy;
 extern RzHashPlugin rz_hash_plugin_entropy_fract;
+extern RzHashPlugin rz_hash_plugin_blake3;
 
 #ifdef __cplusplus
 }

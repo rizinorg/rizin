@@ -279,6 +279,10 @@ endif
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 
+# handle blake3 algo
+blake3_proj = subproject('blake3', default_options: ['default_library=static'])
+blake3_dep = blake3_proj.get_variable('blake3_dep')
+
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 

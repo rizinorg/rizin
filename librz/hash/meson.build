@@ -8,6 +8,7 @@ hash_plugins = {
     'sha256',
     'sha384',
     'sha512',
+    'blake3',
     'fletcher8',
     'fletcher16',
     'fletcher32',
@@ -79,6 +80,7 @@ rz_hash_sources = [
   'p/algo_crca.c',
   'p/algo_adler32.c',
   'p/algo_fletcher.c',
+  'p/algo_blake3.c',
   'p/algo_md4.c',
   'p/algo_md5.c',
   'p/algo_mod255.c',
@@ -101,7 +103,7 @@ rz_hash_sources = [
   'algorithms/fletcher/fletcher.c'
 ]
 
-dependencies = [mth, rz_util_dep, xxhash_dep]
+dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]
 
 if sys_openssl.found()
   dependencies += [sys_openssl]
