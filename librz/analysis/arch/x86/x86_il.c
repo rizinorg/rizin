@@ -302,7 +302,9 @@ static const char *x86_eflags_registers[] = {
 	[X86_EFLAGS_DF] = "df",
 	[X86_EFLAGS_OF] = "of",
 	[X86_EFLAGS_NT] = "nt",
-	[X86_EFLAGS_VM] = "vm"
+	[X86_EFLAGS_RF] = "rf",
+	[X86_EFLAGS_VM] = "vm",
+	[X86_EFLAGS_AC] = "ac"
 };
 
 #define EFLAGS(f) x86_eflags_registers[X86_EFLAGS_##f]
@@ -354,6 +356,9 @@ static const char *x86_bound_regs_32[] = {
 	"esi", /* X86_REG_ESI */
 	"edi", /* X86_REG_EDI */
 	"nt", /* X86_EFLAGS_NT */
+	"rf", /* X86_EFLAGS_RF */
+	"vm", /* X86_EFLAGS_VM */
+	"ac", /* X86_EFLAGS_AC */
 	"fs", /* X86_REG_FS */
 	"gs", /* X86_REG_GS */
 	"cr0", /* X86_REG_CR0 */
@@ -375,6 +380,10 @@ static const char *x86_bound_regs_64[] = {
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
 	"rdi", /* X86_REG_RDI */
+	"nt", /* X86_EFLAGS_NT */
+	"rf", /* X86_EFLAGS_RF */
+	"vm", /* X86_EFLAGS_VM */
+	"ac", /* X86_EFLAGS_AC */
 	"fs", /* X86_REG_FS */
 	"gs", /* X86_REG_GS */
 	"cr0", /* X86_REG_CR0 */
@@ -3000,6 +3009,42 @@ IL_LIFTER(scasq) {
 	return x86_il_scas_helper(ins, pc, analysis, 64);
 }
 
+/**
+ * STAC
+ * Set AC flag
+ * ZO
+ */
+IL_LIFTER(stac) {
+	return SETG(EFLAGS(AC), IL_TRUE);
+}
+
+/**
+ * STC
+ * Set carry flag (CF)
+ * ZO
+ */
+IL_LIFTER(stc) {
+	return SETG(EFLAGS(CF), IL_TRUE);
+}
+
+/**
+ * STD
+ * Set direction flag (DF)
+ * ZO
+ */
+IL_LIFTER(std) {
+	return SETG(EFLAGS(DF), IL_TRUE);
+}
+
+/**
+ * STI
+ * Set interrupt flag (IF)
+ * ZO
+ */
+IL_LIFTER(sti) {
+	return SETG(EFLAGS(IF), IL_TRUE);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3106,6 +3151,10 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_SCASW] = x86_il_scasw,
 	[X86_INS_SCASD] = x86_il_scasd,
 	[X86_INS_SCASQ] = x86_il_scasq,
+	[X86_INS_STAC] = x86_il_stac,
+	[X86_INS_STC] = x86_il_stc,
+	[X86_INS_STD] = x86_il_std,
+	[X86_INS_STI] = x86_il_sti,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
