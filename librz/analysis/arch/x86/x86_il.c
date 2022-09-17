@@ -2350,58 +2350,16 @@ IL_LIFTER(not ) {
  *  - RM
  */
 IL_LIFTER(or) {
-	RzILOpEffect *clear_flags = SEQ2(SETG(EFLAGS(OF), IL_FALSE), SETG(EFLAGS(CF), IL_FALSE));
+	RzILOpPure *op1 = x86_il_get_op(0);
+	RzILOpPure *op2 = x86_il_get_op(1);
+	RzILOpEffect *or = SETL("_or", LOGOR(op1, op2));
 
-	if (ins->structure->op_count == 1) {
-		/* I encoding */
-		switch (ins->structure->operands[0].size) {
-		case 1: {
-			RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_AL), x86_il_get_op(0)));
-			RzILOpEffect *set_result = x86_il_set_reg(X86_REG_AL, VARL("_or"));
-			RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
+	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
+	RzILOpEffect *clear_cf = SETG(EFLAGS(CF), IL_FALSE);
+	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_or"));
 
-			return SEQ4(result, set_result, clear_flags, res_flags);
-		}
-		case 2: {
-			RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_AX), x86_il_get_op(0)));
-			RzILOpEffect *set_result = x86_il_set_reg(X86_REG_AX, VARL("_or"));
-			RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
-
-			return SEQ4(result, set_result, clear_flags, res_flags);
-		}
-		case 4: {
-			if (ins->structure->rex) {
-				/* Use RAX and sign extend the operand */
-				RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_RAX), SIGNED(64, x86_il_get_op(0))));
-				RzILOpEffect *set_result = x86_il_set_reg(X86_REG_RAX, VARL("_or"));
-				RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
-
-				return SEQ4(result, set_result, clear_flags, res_flags);
-			} else {
-				RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_reg(X86_REG_EAX), x86_il_get_op(0)));
-				RzILOpEffect *set_result = x86_il_set_reg(X86_REG_EAX, VARL("_or"));
-				RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
-
-				return SEQ4(result, set_result, clear_flags, res_flags);
-			}
-		}
-		default:
-			rz_warn_if_reached();
-		}
-	} else {
-		RzILOpPure *second_op = x86_il_get_op(1);
-		if (ins->structure->operands[0].size != ins->structure->operands[1].size) {
-			/* Casting necessary when the operand sizes don't match (in case when the second operand is an immediate value) */
-			second_op = SIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, second_op);
-		}
-		RzILOpEffect *result = SETL("_or", LOGOR(x86_il_get_op(0), second_op));
-		RzILOpEffect *set_result = x86_il_set_op(0, VARL("_or"));
-		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_or"));
-
-		return SEQ4(result, set_result, clear_flags, res_flags);
-	}
-
-	return NULL;
+	return SEQ5(or, set_dest, clear_of, clear_cf, set_res_flags);
 }
 
 /**
@@ -3074,7 +3032,7 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 			mem_size = 32;
 		}
 
-		RzILOpEffect *store = STORE(x86_il_get_reg(mem_reg), x86_il_get_reg(store_reg));
+		RzILOpEffect *store = STOREW(x86_il_get_reg(mem_reg), x86_il_get_reg(store_reg));
 
 		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
 		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
@@ -3199,6 +3157,47 @@ IL_LIFTER(xchg) {
 	return SEQ3(temp, xchg, set_src);
 }
 
+/**
+ * XLATB
+ * Table look-up translation
+ * Encoding: ZO
+ */
+IL_LIFTER(xlatb) {
+	X86Mem mem;
+	mem.disp = 0;
+	mem.index = X86_REG_INVALID;
+	mem.scale = 1;
+	mem.segment = X86_REG_DS;
+	mem.base = X86_REG_EBX;
+
+	if (analysis->bits == 64) {
+		mem.segment = X86_REG_INVALID;
+		mem.base = X86_REG_RBX;
+	} else if (analysis->bits == 16) {
+		mem.base = X86_REG_BX;
+	}
+
+	return x86_il_set_reg(X86_REG_AL, LOADW(8, ADD(x86_il_get_memaddr(mem), UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_AL)))));
+}
+
+/**
+ * XOR
+ * Logical exclusive OR
+ * Encodings: I, MI, MR, RM
+ */
+IL_LIFTER(xor) {
+	RzILOpPure *op1 = x86_il_get_op(0);
+	RzILOpPure *op2 = x86_il_get_op(1);
+	RzILOpEffect *xor = SETL("_xor", LOGXOR(op1, op2));
+
+	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_xor"));
+	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
+	RzILOpEffect *clear_cf = SETG(EFLAGS(CF), IL_FALSE);
+	RzILOpEffect *set_res_flags = x86_il_set_result_flags(VARL("_xor"));
+
+	return SEQ5(xor, set_dest, clear_of, clear_cf, set_res_flags);
+}
+
 typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *);
 
 /**
@@ -3317,6 +3316,8 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_TEST] = x86_il_test,
 	[X86_INS_WAIT] = x86_il_wait,
 	[X86_INS_XCHG] = x86_il_xchg,
+	[X86_INS_XLATB] = x86_il_xlatb,
+	[X86_INS_XOR] = x86_il_xor,
 };
 
 #include <rz_il/rz_il_opbuilder_end.h>
