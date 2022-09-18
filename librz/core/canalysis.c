@@ -6403,7 +6403,8 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
  *
  * \return if analysis was able to find the previous instruction address
  */
-RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr) {
+RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, RZ_OUT RZ_BORROW RZ_NONNULL ut64 *prev_addr) {
+	rz_return_val_if_fail(core && prev_addr, false);
 	RzAnalysisBlock *bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
@@ -6428,8 +6429,8 @@ RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut
  * no concrete analysis info is available.
  */
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs) {
-	int i;
-	for (i = 0; i < numinstrs; i++) {
+	rz_return_val_if_fail(core, UT64_MAX);
+	for (int i = 0; i < numinstrs; i++) {
 		start_addr = rz_core_prevop_addr_heuristic(core, start_addr);
 	}
 	return start_addr;

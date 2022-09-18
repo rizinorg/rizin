@@ -484,7 +484,7 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 RZ_IPI void rz_core_print_scrollbar(RzCore *core);
 RZ_IPI void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_help_vars_print(RzCore *core);
-RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr);
+RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, RZ_OUT RZ_BORROW RZ_NONNULL ut64 *prev_addr);
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
 RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
 RZ_API RzBinReloc *rz_core_get_reloc_to(RzCore *core, ut64 addr);
