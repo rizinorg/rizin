@@ -1076,10 +1076,15 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	return target > 4 ? target - 4 : 0;
 }
 
-//  Returns true if we can use analysis to find the previous operation address,
-//  sets prev_addr to the value of the instruction numinstrs back.
-//  If we can't use the analysis, then set prev_addr to UT64_MAX and return false;
-RZ_IPI bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr) {
+/**
+ * Search of the numinstrs-th instruction before start_addr.
+ *
+ * Sets prev_addr to the value of the instruction numinstrs back.
+ * If we can't use the analysis, then sets prev_addr to UT64_MAX and returns false
+ *
+ * \return if analysis was able to find the previous instruction address
+ */
+RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr) {
 	RzAnalysisBlock *bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
@@ -1099,9 +1104,11 @@ RZ_IPI bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut
 	return false;
 }
 
-//  Like rz_core_prevop_addr(), but also uses fallback from prevop_addr() if
-//  no analysis info is available.
-RZ_IPI ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs) {
+/**
+ * Like rz_core_prevop_addr(), but also uses heuristics as fallback if
+ * no concrete analysis info is available.
+ */
+RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs) {
 	int i;
 	for (i = 0; i < numinstrs; i++) {
 		start_addr = prevop_addr(core, start_addr);
