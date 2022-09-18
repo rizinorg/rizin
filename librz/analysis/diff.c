@@ -92,10 +92,6 @@ RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *analysis, RzAnalysisF
 	RzAnalysisBlock *bb;
 	RzListIter *iter;
 
-	if (analysis && analysis->cur && analysis->cur->fingerprint_fcn) {
-		return (analysis->cur->fingerprint_fcn(analysis, fcn));
-	}
-
 	fcn->fingerprint = NULL;
 	fcn->fingerprint_size = 0;
 	rz_list_foreach (fcn->bbs, iter, bb) {

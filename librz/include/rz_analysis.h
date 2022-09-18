@@ -1186,7 +1186,6 @@ typedef struct rz_analysis_plugin_t {
 
 	RzAnalysisRegProfGetCallback get_reg_profile;
 	RzAnalysisFPBBCallback fingerprint_bb;
-	RzAnalysisFPFcnCallback fingerprint_fcn;
 	RzAnalysisDiffBBCallback diff_bb;
 	RzAnalysisDiffFcnCallback diff_fcn;
 	RzAnalysisDiffEvalCallback diff_eval;
