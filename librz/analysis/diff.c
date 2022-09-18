@@ -54,21 +54,18 @@ RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock
 	if (!analysis) {
 		return -1;
 	}
-	if (analysis->cur && analysis->cur->fingerprint_bb) {
-		return (analysis->cur->fingerprint_bb(analysis, bb));
-	}
 	if (!(bb->fingerprint = malloc(1 + bb->size))) {
 		return -1;
 	}
 	if (!(buf = malloc(bb->size + 1))) {
-		free(bb->fingerprint);
+		RZ_FREE(bb->fingerprint);
 		return -1;
 	}
 	if (analysis->iob.read_at(analysis->iob.io, bb->addr, buf, bb->size)) {
 		memcpy(bb->fingerprint, buf, bb->size);
 		if (analysis->diff_ops) { // diff using only the opcode
 			if (!(op = rz_analysis_op_new())) {
-				free(bb->fingerprint);
+				RZ_FREE(bb->fingerprint);
 				free(buf);
 				return -1;
 			}
