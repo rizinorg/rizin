@@ -1227,7 +1227,7 @@ static void replace_asm_test(RZ_NONNULL const char *path, ut64 line_idx,
  */
 static bool asm_test_failed_both_ways(RzAsmTest *test, RzAsmTestOutput *out) {
 	// check that both ways are requested
-	if (!(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) || !(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE)) {
+	if (!(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) || !(test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE)) {
 		return false;
 	}
 	// check that disasm is wrong
