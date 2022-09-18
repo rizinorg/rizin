@@ -47,6 +47,7 @@ RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj);
 RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core);
+RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr);
 
 /* cmeta.c */
 RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutput *state);

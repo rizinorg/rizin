@@ -1016,106 +1016,6 @@ static void setprintmode(RzCore *core, int n) {
 	}
 }
 
-#define OPDELTA 32
-static ut64 prevop_addr(RzCore *core, ut64 addr) {
-	ut8 buf[OPDELTA * 2];
-	ut64 target, base;
-	RzAnalysisBlock *bb;
-	RzAnalysisOp op;
-	int len, ret, i;
-	int minop = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
-	int maxop = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
-
-	if (minop == maxop) {
-		if (minop == -1) {
-			return addr - 4;
-		}
-		return addr - minop;
-	}
-
-	// let's see if we can use analysis info to get the previous instruction
-	// TODO: look in the current basicblock, then in the current function
-	// and search in all functions only as a last chance, to try to speed
-	// up the process.
-	bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr - minop);
-	if (bb) {
-		ut64 res = rz_analysis_block_get_op_addr_in(bb, addr - minop);
-		if (res != UT64_MAX) {
-			return res;
-		}
-	}
-	// if we analysis info didn't help then fallback to the dumb solution.
-	int midflags = rz_config_get_i(core->config, "asm.flags.middle");
-	target = addr;
-	base = target > OPDELTA ? target - OPDELTA : 0;
-	rz_io_read_at(core->io, base, buf, sizeof(buf));
-	for (i = 0; i < sizeof(buf); i++) {
-		ret = rz_analysis_op(core->analysis, &op, base + i,
-			buf + i, sizeof(buf) - i, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (ret > 0) {
-			len = op.size;
-			if (len < 1) {
-				len = 1;
-			}
-			rz_analysis_op_fini(&op); // XXX
-			if (midflags >= RZ_MIDFLAGS_REALIGN) {
-				int skip_bytes = rz_core_flag_in_middle(core, base + i, len, &midflags);
-				if (skip_bytes && base + i + skip_bytes < target) {
-					i += skip_bytes - 1;
-					continue;
-				}
-			}
-		} else {
-			len = 1;
-		}
-		if (target <= base + i + len) {
-			return base + i;
-		}
-		i += len - 1;
-	}
-	return target > 4 ? target - 4 : 0;
-}
-
-/**
- * Search of the numinstrs-th instruction before start_addr.
- *
- * Sets prev_addr to the value of the instruction numinstrs back.
- * If we can't use the analysis, then sets prev_addr to UT64_MAX and returns false
- *
- * \return if analysis was able to find the previous instruction address
- */
-RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr) {
-	RzAnalysisBlock *bb;
-	int i;
-	// Check that we're in a bb, otherwise this prevop stuff won't work.
-	bb = rz_analysis_find_most_relevant_block_in(core->analysis, start_addr);
-	if (bb) {
-		if (rz_analysis_block_get_op_addr_in(bb, start_addr) != UT64_MAX) {
-			// Do some analysis looping.
-			for (i = 0; i < numinstrs; i++) {
-				*prev_addr = prevop_addr(core, start_addr);
-				start_addr = *prev_addr;
-			}
-			return true;
-		}
-	}
-	// Dang! not in a bb, return false and fallback to other methods.
-	*prev_addr = UT64_MAX;
-	return false;
-}
-
-/**
- * Like rz_core_prevop_addr(), but also uses heuristics as fallback if
- * no concrete analysis info is available.
- */
-RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs) {
-	int i;
-	for (i = 0; i < numinstrs; i++) {
-		start_addr = prevop_addr(core, start_addr);
-	}
-	return start_addr;
-}
-
 static bool fill_hist_offset(RzCore *core, RzLine *line, RzCoreSeekItem *csi) {
 	ut64 off = csi->offset;
 	RzFlagItem *f = rz_flag_get_at(core->flags, off, false);
@@ -1186,7 +1086,7 @@ RZ_IPI void rz_core_visual_offset(RzCore *core) {
 }
 
 RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr) {
-	ut64 prev_addr = prevop_addr(core, addr);
+	ut64 prev_addr = rz_core_prevop_addr_heuristic(core, addr);
 	return addr - prev_addr;
 }
 
@@ -1762,7 +1662,7 @@ static void cursor_prevrow(RzCore *core, bool use_ocur) {
 		prev_roff = row > 0 ? rz_print_rowoff(p, row - 1) : UT32_MAX;
 		delta = p->cur - roff;
 		if (prev_roff == UT32_MAX) {
-			ut64 prev_addr = prevop_addr(core, core->offset + roff);
+			ut64 prev_addr = rz_core_prevop_addr_heuristic(core, core->offset + roff);
 			if (prev_addr > core->offset) {
 				prev_roff = 0;
 				prev_sz = 1;
