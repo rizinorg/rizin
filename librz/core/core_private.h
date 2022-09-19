@@ -365,6 +365,9 @@ RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_IPI int rz_core_visual_view_graph(RzCore *core);
 RZ_IPI int rz_core_visual_prompt(RzCore *core);
 
+RZ_IPI void rz_core_visual_scrollbar(RzCore *core);
+RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core);
+
 /* visual marks */
 RZ_IPI void rz_core_visual_mark_seek(RzCore *core, ut8 ch);
 RZ_IPI void rz_core_visual_mark(RzCore *core, ut8 ch);

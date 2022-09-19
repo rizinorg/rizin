@@ -3346,8 +3346,7 @@ static int visual_responsive(RzCore *core) {
 }
 
 // TODO: use colors
-// TODO: find better name
-RZ_IPI void rz_core_print_scrollbar(RzCore *core) {
+RZ_IPI void rz_core_visual_scrollbar(RzCore *core) {
 	int i, h, w = rz_cons_get_size(&h);
 
 	int scrollbar = rz_config_get_i(core->config, "scr.scrollbar");
@@ -3356,7 +3355,7 @@ RZ_IPI void rz_core_print_scrollbar(RzCore *core) {
 		return;
 	}
 	if (scrollbar > 2) {
-		rz_core_print_scrollbar_bottom(core);
+		rz_core_visual_scrollbar_bottom(core);
 		return;
 	}
 
@@ -3414,7 +3413,7 @@ RZ_IPI void rz_core_print_scrollbar(RzCore *core) {
 	rz_cons_flush();
 }
 
-RZ_IPI void rz_core_print_scrollbar_bottom(RzCore *core) {
+RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core) {
 	int i, h, w = rz_cons_get_size(&h);
 
 	if (w < 10 || h < 4) {
@@ -3600,7 +3599,7 @@ static void visual_refresh(RzCore *core) {
 	// core->seltab = 0; // user selected tab
 
 	if (rz_config_get_i(core->config, "scr.scrollbar")) {
-		rz_core_print_scrollbar(core);
+		rz_core_visual_scrollbar(core);
 	}
 }
 
