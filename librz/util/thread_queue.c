@@ -48,6 +48,32 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(size_t max_size, RZ_NULLABLE RzList
 }
 
 /**
+ * \brief  Allocates and initializes a new fifo queue using a user-defined list
+ *
+ * \param  list  Pointer to the list that will be owned by the queue.
+ *
+ * \return On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new2(RZ_NONNULL RZ_OWN RzList /*<void *>*/ *list) {
+	rz_return_val_if_fail(list, NULL);
+	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
+	if (!queue) {
+		return NULL;
+	}
+
+	queue->max_size = rz_list_length(list);
+	queue->list = list;
+	queue->lock = rz_th_lock_new(false);
+	queue->cond = rz_th_cond_new();
+	if (!queue->list || !queue->lock || !queue->cond) {
+		rz_th_queue_free(queue);
+		return NULL;
+	}
+
+	return queue;
+}
+
+/**
  * \brief  Frees a RzThreadQueue structure
  *
  * \param  queue The RzThreadQueue to free
