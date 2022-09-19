@@ -1111,9 +1111,6 @@ RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);
 RZ_API ut64 rz_core_analysis_stats_get_block_from(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 RZ_API ut64 rz_core_analysis_stats_get_block_to(RZ_NONNULL const RzCoreAnalysisStats *s, size_t i);
 
-RZ_IPI int rz_line_hist_offset_up(RzLine *line);
-RZ_IPI int rz_line_hist_offset_down(RzLine *line);
-
 RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 num, ut64 addr);
 
 /* tasks */

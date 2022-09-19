@@ -368,6 +368,9 @@ RZ_IPI int rz_core_visual_prompt(RzCore *core);
 RZ_IPI void rz_core_visual_scrollbar(RzCore *core);
 RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core);
 
+RZ_IPI int rz_line_hist_offset_up(RzLine *line);
+RZ_IPI int rz_line_hist_offset_down(RzLine *line);
+
 /* visual marks */
 RZ_IPI void rz_core_visual_mark_seek(RzCore *core, ut8 ch);
 RZ_IPI void rz_core_visual_mark(RzCore *core, ut8 ch);
