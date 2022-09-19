@@ -100,16 +100,6 @@ static const char *help_msg_des[] = {
 	NULL
 };
 
-static const char *help_msg_di[] = {
-	"Usage: di", "", "Debugger target information",
-	"di", "", "Show debugger target information",
-	"di*", "", "Same as above, but in rizin commands",
-	"diq", "", "Same as above, but in one line",
-	"dij", "", "Same as above, but in JSON format",
-	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
-	NULL
-};
-
 static const char *help_msg_dk[] = {
 	"Usage: dk", "", "Signal commands",
 	"dk", "", "List all signal handlers of child process",
@@ -2218,13 +2208,6 @@ static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name) ? rz_str_newf("core.%u", pid) : rz_str_trim_dup(raw_name);
 }
 
-static ut8 *getFileData(RzCore *core, const char *arg) {
-	if (*arg == '$') {
-		return (ut8 *)rz_cmd_alias_get(core->rcmd, arg, 1);
-	}
-	return (ut8 *)rz_file_slurp(arg, NULL);
-}
-
 static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 	if (!buf) {
 		if (errmsg) {
@@ -2363,149 +2346,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
 		break;
-	case 'i': // "di"
-	{
-		RzDebugInfo *rdi = rz_debug_info(core->dbg, input + 2);
-		RzDebugReasonType stop = rz_debug_stop_reason(core->dbg);
-		char *escaped_str;
-		switch (input[1]) {
-		case '\0': // "di"
-#define P rz_cons_printf
-#define PS(X, Y) \
-	{ \
-		escaped_str = rz_str_escape(Y); \
-		rz_cons_printf(X, escaped_str); \
-		free(escaped_str); \
-	}
-			if (rdi) {
-				const char *s = rz_signal_to_string(core->dbg->reason.signum);
-				P("type=%s\n", rz_debug_reason_to_string(core->dbg->reason.type));
-				P("signal=%s\n", s ? s : "none");
-				P("signum=%d\n", core->dbg->reason.signum);
-				P("sigpid=%d\n", core->dbg->reason.tid);
-				P("addr=0x%" PFMT64x "\n", core->dbg->reason.addr);
-				P("bp_addr=0x%" PFMT64x "\n", core->dbg->reason.bp_addr);
-				P("inbp=%s\n", rz_str_bool(core->dbg->reason.bp_addr));
-				P("baddr=0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
-				P("pid=%d\n", rdi->pid);
-				P("tid=%d\n", rdi->tid);
-				P("stopaddr=0x%" PFMT64x "\n", core->dbg->stopaddr);
-				if (rdi->uid != -1) {
-					P("uid=%d\n", rdi->uid);
-				}
-				if (rdi->gid != -1) {
-					P("gid=%d\n", rdi->gid);
-				}
-				if (rdi->usr) {
-					P("usr=%s\n", rdi->usr);
-				}
-				if (rdi->exe && *rdi->exe) {
-					P("exe=%s\n", rdi->exe);
-				}
-				if (rdi->cmdline && *rdi->cmdline) {
-					P("cmdline=%s\n", rdi->cmdline);
-				}
-				if (rdi->cwd && *rdi->cwd) {
-					P("cwd=%s\n", rdi->cwd);
-				}
-				if (rdi->kernel_stack && *rdi->kernel_stack) {
-					P("kernel_stack=\n%s\n", rdi->kernel_stack);
-				}
-			}
-			if (stop != -1) {
-				P("stopreason=%d\n", stop);
-			}
-			break;
-		case 'f': // "dif" "diff"
-			if (input[1] == '?') {
-				RZ_LOG_ERROR("core: Usage: dif $a $b  # diff two alias files\n");
-			} else {
-				char *arg = strchr(input, ' ');
-				if (arg) {
-					arg = strdup(rz_str_trim_head_ro(arg + 1));
-					char *arg2 = strchr(arg, ' ');
-					if (arg2) {
-						*arg2++ = 0;
-						char *a = (char *)getFileData(core, arg);
-						char *b = (char *)getFileData(core, arg2);
-						if (a && b) {
-							RzDiff *dff = rz_diff_lines_new(a, b, NULL);
-							char *uni = rz_diff_unified_text(dff, arg, arg2, false, false);
-							rz_diff_free(dff);
-							rz_cons_printf("%s\n", uni);
-							free(uni);
-						} else {
-							RZ_LOG_ERROR("core: Cannot open those alias files\n");
-						}
-						free(a);
-						free(b);
-					}
-					free(arg);
-				} else {
-					RZ_LOG_ERROR("core: Usage: dif $a $b  # diff two alias files\n");
-				}
-			}
-			break;
-		case '*': // "di*"
-			if (rdi) {
-				rz_cons_printf("f dbg.signal @ %d\n", core->dbg->reason.signum);
-				rz_cons_printf("f dbg.sigpid @ %d\n", core->dbg->reason.tid);
-				rz_cons_printf("f dbg.inbp @ %d\n", core->dbg->reason.bp_addr ? 1 : 0);
-				rz_cons_printf("f dbg.sigaddr @ 0x%" PFMT64x "\n", core->dbg->reason.addr);
-				rz_cons_printf("f dbg.baddr @ 0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
-				rz_cons_printf("f dbg.pid @ %d\n", rdi->pid);
-				rz_cons_printf("f dbg.tid @ %d\n", rdi->tid);
-				rz_cons_printf("f dbg.uid @ %d\n", rdi->uid);
-				rz_cons_printf("f dbg.gid @ %d\n", rdi->gid);
-			}
-			break;
-		case 'j': // "dij"
-			P("{");
-			if (rdi) {
-				const char *s = rz_signal_to_string(core->dbg->reason.signum);
-				P("\"type\":\"%s\",", rz_debug_reason_to_string(core->dbg->reason.type));
-				P("\"signal\":\"%s\",", s ? s : "none");
-				P("\"signum\":%d,", core->dbg->reason.signum);
-				P("\"sigpid\":%d,", core->dbg->reason.tid);
-				P("\"addr\":%" PFMT64d ",", core->dbg->reason.addr);
-				P("\"inbp\":%s,", rz_str_bool(core->dbg->reason.bp_addr));
-				P("\"baddr\":%" PFMT64d ",", rz_debug_get_baddr(core->dbg, NULL));
-				P("\"stopaddr\":%" PFMT64d ",", core->dbg->stopaddr);
-				P("\"pid\":%d,", rdi->pid);
-				P("\"tid\":%d,", rdi->tid);
-				P("\"uid\":%d,", rdi->uid);
-				P("\"gid\":%d,", rdi->gid);
-				if (rdi->usr) {
-					PS("\"usr\":\"%s\",", rdi->usr);
-				}
-				if (rdi->exe) {
-					PS("\"exe\":\"%s\",", rdi->exe);
-				}
-				if (rdi->cmdline) {
-					PS("\"cmdline\":\"%s\",", rdi->cmdline);
-				}
-				if (rdi->cwd) {
-					PS("\"cwd\":\"%s\",", rdi->cwd);
-				}
-			}
-			P("\"stopreason\":%d}\n", stop);
-			break;
-#undef P
-#undef PS
-		case 'q': {
-			const char *r = rz_debug_reason_to_string(core->dbg->reason.type);
-			if (!r) {
-				r = "none";
-			}
-			rz_cons_printf("%s at 0x%08" PFMT64x "\n", r, core->dbg->stopaddr);
-		} break;
-		case '?': // "di?"
-		default:
-			rz_core_cmd_help(core, help_msg_di);
-			break;
-		}
-		rz_debug_info_free(rdi);
-	} break;
 	case 'e': // "de"
 		rz_core_debug_esil(core, input + 1);
 		break;
@@ -3613,5 +3453,112 @@ RZ_IPI RzCmdStatus rz_debug_drx_unset_handler(RzCore *core, int argc, const char
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_DRX, false);
 	rz_debug_drx_unset(core->dbg, atoi(argv[1] + 2));
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_DRX, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzDebugInfo *rdi = rz_debug_info(core->dbg, NULL);
+	RzDebugReasonType stop = rz_debug_stop_reason(core->dbg);
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		if (rdi) {
+			const char *s = rz_signal_to_string(core->dbg->reason.signum);
+			rz_cons_printf("type=%s\n", rz_debug_reason_to_string(core->dbg->reason.type));
+			rz_cons_printf("signal=%s\n", s ? s : "none");
+			rz_cons_printf("signum=%d\n", core->dbg->reason.signum);
+			rz_cons_printf("sigpid=%d\n", core->dbg->reason.tid);
+			rz_cons_printf("addr=0x%" PFMT64x "\n", core->dbg->reason.addr);
+			rz_cons_printf("bp_addr=0x%" PFMT64x "\n", core->dbg->reason.bp_addr);
+			rz_cons_printf("inbp=%s\n", rz_str_bool(core->dbg->reason.bp_addr));
+			rz_cons_printf("baddr=0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
+			rz_cons_printf("pid=%d\n", rdi->pid);
+			rz_cons_printf("tid=%d\n", rdi->tid);
+			rz_cons_printf("stopaddr=0x%" PFMT64x "\n", core->dbg->stopaddr);
+			if (rdi->uid != -1) {
+				rz_cons_printf("uid=%d\n", rdi->uid);
+			}
+			if (rdi->gid != -1) {
+				rz_cons_printf("gid=%d\n", rdi->gid);
+			}
+			if (rdi->usr) {
+				rz_cons_printf("usr=%s\n", rdi->usr);
+			}
+			if (rdi->exe && *rdi->exe) {
+				rz_cons_printf("exe=%s\n", rdi->exe);
+			}
+			if (rdi->cmdline && *rdi->cmdline) {
+				rz_cons_printf("cmdline=%s\n", rdi->cmdline);
+			}
+			if (rdi->cwd && *rdi->cwd) {
+				rz_cons_printf("cwd=%s\n", rdi->cwd);
+			}
+			if (rdi->kernel_stack && *rdi->kernel_stack) {
+				rz_cons_printf("kernel_stack=\n%s\n", rdi->kernel_stack);
+			}
+		}
+		if (stop != -1) {
+			rz_cons_printf("stopreason=%d\n", stop);
+		}
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		if (!rdi) {
+			break;
+		}
+		rz_cons_printf("f dbg.signal @ %d\n", core->dbg->reason.signum);
+		rz_cons_printf("f dbg.sigpid @ %d\n", core->dbg->reason.tid);
+		rz_cons_printf("f dbg.inbp @ %d\n", core->dbg->reason.bp_addr ? 1 : 0);
+		rz_cons_printf("f dbg.sigaddr @ 0x%" PFMT64x "\n", core->dbg->reason.addr);
+		rz_cons_printf("f dbg.baddr @ 0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
+		rz_cons_printf("f dbg.pid @ %d\n", rdi->pid);
+		rz_cons_printf("f dbg.tid @ %d\n", rdi->tid);
+		rz_cons_printf("f dbg.uid @ %d\n", rdi->uid);
+		rz_cons_printf("f dbg.gid @ %d\n", rdi->gid);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj_o(pj);
+		if (rdi) {
+			const char *s = rz_signal_to_string(core->dbg->reason.signum);
+			pj_ks(pj, "type", rz_debug_reason_to_string(core->dbg->reason.type));
+			pj_ks(pj, "signal", s ? s : "none");
+			pj_kn(pj, "signum", core->dbg->reason.signum);
+			pj_kn(pj, "sigpid", core->dbg->reason.tid);
+			pj_kn(pj, "addr", core->dbg->reason.addr);
+			pj_ks(pj, "inbp", rz_str_bool(core->dbg->reason.bp_addr));
+			pj_kn(pj, "baddr", rz_debug_get_baddr(core->dbg, NULL));
+			pj_kn(pj, "stopaddr", core->dbg->stopaddr);
+			pj_kn(pj, "pid", rdi->pid);
+			pj_kn(pj, "tid", rdi->tid);
+			pj_kn(pj, "uid", rdi->uid);
+			pj_kn(pj, "gid", rdi->gid);
+			if (rdi->usr) {
+				pj_ks(pj, "usr", rdi->usr);
+			}
+			if (rdi->exe) {
+				pj_ks(pj, "exe", rdi->exe);
+			}
+			if (rdi->cmdline) {
+				pj_ks(pj, "cmdline", rdi->cmdline);
+			}
+			if (rdi->cwd) {
+				pj_ks(pj, "cwd", rdi->cwd);
+			}
+		}
+		pj_kn(pj, "stopreason", stop);
+		pj_end(pj);
+		break;
+	case RZ_OUTPUT_MODE_QUIET: {
+		const char *r = rz_debug_reason_to_string(core->dbg->reason.type);
+		if (!r) {
+			r = "none";
+		}
+		rz_cons_printf("%s at 0x%08" PFMT64x "\n", r, core->dbg->stopaddr);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	rz_debug_info_free(rdi);
 	return RZ_CMD_STATUS_OK;
 }

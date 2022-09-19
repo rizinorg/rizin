@@ -513,6 +513,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_save_trace_session_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_tag_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_set_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
@@ -1034,6 +1035,7 @@ RZ_IPI RzCmdStatus rz_yank_hexpairs_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_yank_hex_print_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_yank_paste_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_yank_string_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **argv);
