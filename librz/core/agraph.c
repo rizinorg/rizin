@@ -3566,7 +3566,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	int res = agraph_print(g, grd->fs, core, *fcn);
 
 	if (rz_config_get_i(core->config, "scr.scrollbar")) {
-		rz_core_print_scrollbar(core);
+		rz_core_visual_scrollbar(core);
 	}
 
 	return res;
