@@ -650,6 +650,7 @@ static const RzCmdDescArg yank_hexpairs_args[2];
 static const RzCmdDescArg yank_hex_print_args[2];
 static const RzCmdDescArg yank_paste_args[2];
 static const RzCmdDescArg yank_string_args[2];
+static const RzCmdDescArg cmd_shell_diff_args[3];
 static const RzCmdDescArg cmd_shell_env_args[3];
 static const RzCmdDescArg cmd_shell_ls_args[2];
 static const RzCmdDescArg cmd_shell_rm_args[2];
@@ -7469,6 +7470,14 @@ static const RzCmdDescArg cmd_debug_trace_tag_args[] = {
 static const RzCmdDescHelp cmd_debug_trace_tag_help = {
 	.summary = "Select trace tag (no arg unsets)",
 	.args = cmd_debug_trace_tag_args,
+};
+
+static const RzCmdDescArg debug_info_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp debug_info_help = {
+	.summary = "Debug information",
+	.args = debug_info_args,
 };
 
 static const RzCmdDescHelp dl_help = {
@@ -14809,6 +14818,24 @@ static const RzCmdDescHelp shell_help = {
 	.summary = "Common shell commands",
 	.sort_subcommands = true,
 };
+static const RzCmdDescArg cmd_shell_diff_args[] = {
+	{
+		.name = "A",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "B",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_diff_help = {
+	.summary = "Compare <A> file with <B>",
+	.args = cmd_shell_diff_args,
+};
+
 static const RzCmdDescDetailEntry cmd_shell_env_Examples_detail_entries[] = {
 	{ .text = "%", .arg_str = NULL, .comment = "List all environment variables" },
 	{ .text = "%", .arg_str = "SHELL", .comment = "Print value of SHELL variable" },
@@ -16569,6 +16596,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_trace_tag_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtt", rz_cmd_debug_trace_tag_handler, &cmd_debug_trace_tag_help);
 	rz_warn_if_fail(cmd_debug_trace_tag_cd);
 
+	RzCmdDesc *debug_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_debug_cd, "di", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_info_handler, &debug_info_help);
+	rz_warn_if_fail(debug_info_cd);
+	rz_cmd_desc_set_default_mode(debug_info_cd, RZ_OUTPUT_MODE_STANDARD);
+
 	RzCmdDesc *dl_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dl", rz_cmd_debug_handler_set_handler, &cmd_debug_handler_set_help, &dl_help);
 	rz_warn_if_fail(dl_cd);
 	RzCmdDesc *cmd_debug_handler_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dl_cd, "dll", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_handler_list_handler, &cmd_debug_handler_list_help);
@@ -18140,6 +18171,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *shell_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "shell", NULL, NULL, &shell_help);
 	rz_warn_if_fail(shell_cd);
+	RzCmdDesc *cmd_shell_diff_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "diff", rz_cmd_shell_diff_handler, &cmd_shell_diff_help);
+	rz_warn_if_fail(cmd_shell_diff_cd);
+
 	RzCmdDesc *cmd_shell_env_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "env", rz_cmd_shell_env_handler, &cmd_shell_env_help);
 	rz_warn_if_fail(cmd_shell_env_cd);
 

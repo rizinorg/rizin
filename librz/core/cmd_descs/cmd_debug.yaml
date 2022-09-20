@@ -546,6 +546,17 @@ commands:
         args:
           - name: tag
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: di
+    summary: Debug information
+    cname: debug_info
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    args: []
   - name: dl
     summary: Debug handler
     subcommands:

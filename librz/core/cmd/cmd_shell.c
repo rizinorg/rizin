@@ -233,3 +233,27 @@ RZ_IPI RzCmdStatus rz_cmd_shell_fortune_handler(RzCore *core, int argc, const ch
 	rz_core_fortune_print_random(core);
 	return RZ_CMD_STATUS_OK;
 }
+
+// diff
+RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv) {
+	char *a = rz_file_slurp(argv[1], NULL);
+	if (!a) {
+		RZ_LOG_ERROR("core: Cannot open file A: \"%s\"\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *b = rz_file_slurp(argv[2], NULL);
+	if (!b) {
+		RZ_LOG_ERROR("core: Cannot open file B: \"%s\"\n", argv[2]);
+		free(a);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzDiff *dff = rz_diff_lines_new(a, b, NULL);
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	char *uni = rz_diff_unified_text(dff, argv[1], argv[2], false, color);
+	rz_diff_free(dff);
+	rz_cons_printf("%s\n", uni);
+	free(uni);
+	free(a);
+	free(b);
+	return RZ_CMD_STATUS_OK;
+}

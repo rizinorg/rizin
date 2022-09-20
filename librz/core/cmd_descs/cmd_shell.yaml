@@ -4,6 +4,14 @@
 name: cmd_shell
 type: RZ_CMD_DESC_TYPE_GROUP
 commands:
+  - name: diff
+    summary: Compare <A> file with <B>
+    cname: cmd_shell_diff
+    args:
+      - name: A
+        type: RZ_CMD_ARG_TYPE_FILE
+      - name: B
+        type: RZ_CMD_ARG_TYPE_FILE
   - name: env
     cname: cmd_shell_env
     summary: Get/set environment variables
