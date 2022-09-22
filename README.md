@@ -82,7 +82,7 @@ Dalvik, EBC, Java, Lua, Python, WebAssembly, Brainfuck, Malbolge
 ## Supported File Formats
 
 ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, NE, LE, TE, XBE, BIOS/UEFI,
-Dyldcache, DEX, ART, CGC ELF, Java class, Android boot image, Plan9 executable,
+Dyldcache, DEX, ART, CGC, ELF, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), DMP (Windows pagedump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
