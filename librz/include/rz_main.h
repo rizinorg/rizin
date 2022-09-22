@@ -28,7 +28,7 @@ RZ_LIB_VERSION_HEADER(rz_main);
 
 typedef int (*RzMainCallback)(int argc, const char **argv);
 
-RZ_API RzMainCallback *rz_main_find(const char *name);
+RZ_API RzMainCallback rz_main_find(const char *name);
 RZ_API int rz_main_version_print(const char *program);
 RZ_API int rz_main_rz_ax(int argc, const char **argv);
 RZ_API int rz_main_rz_run(int argc, const char **argv);
