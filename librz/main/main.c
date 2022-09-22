@@ -9,7 +9,7 @@
 
 RZ_LIB_VERSION(rz_main);
 
-typedef struct rz_main_t {
+typedef struct main_entry_t {
 	const char *name;
 	RzMainCallback main;
 } MainEntry;
