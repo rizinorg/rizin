@@ -1103,3 +1103,54 @@ commands:
             args:
               - name: number
                 type: RZ_CMD_ARG_TYPE_NUM
+  - name: dx
+    summary: Code injection commands
+    subcommands:
+      - name: dx
+        summary: Inject opcodes
+        cname: cmd_debug_inject_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: dx
+                arg_str: " 9090"
+                comment: Insert two 0x90 bytes (nop instruction on x86 platforms)
+      - name: dxa
+        summary: Assemble code and inject
+        cname: cmd_debug_inject_assembly
+        args:
+          - name: asm
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: dxa
+                arg_str: " mov eax,6; mov ebx,0; int 0x80"
+                comment: Assemble and insert 3 instructions
+      - name: dxe
+        summary: Compile RzEgg expression and inject
+        cname: cmd_debug_inject_egg
+        args:
+          - name: expression
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dxr
+        summary: Inject opcodes and restore state
+        cname: cmd_debug_inject_opcode_restore
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dxs
+        summary: Syscall injection
+        cname: cmd_debug_inject_syscall
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: dxs
+                arg_str: " write 1, 0x8048, 12"
+                comment: Inject the write() syscall with given arguments
