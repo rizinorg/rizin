@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -13,12 +14,6 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_main);
 
-typedef struct rz_main_t {
-	const char *name;
-	int (*main)(int argc, const char **argv);
-	// stdin/stdout
-} RzMain;
-
 #if __WINDOWS__
 #define MAIN_NAME                       wmain
 #define ARGV_TYPE                       wchar_t
@@ -33,10 +28,7 @@ typedef struct rz_main_t {
 
 typedef int (*RzMainCallback)(int argc, const char **argv);
 
-RZ_API RzMain *rz_main_new(const char *name);
-RZ_API void rz_main_free(RzMain *m);
-RZ_API int rz_main_run(RzMain *m, int argc, const char **argv);
-
+RZ_API RzMainCallback *rz_main_find(const char *name);
 RZ_API int rz_main_version_print(const char *program);
 RZ_API int rz_main_rz_ax(int argc, const char **argv);
 RZ_API int rz_main_rz_run(int argc, const char **argv);
