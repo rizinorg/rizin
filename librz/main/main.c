@@ -26,7 +26,6 @@ static MainEntry main_prog[] = {
 	{ "rz-hash", rz_main_rz_hash },
 	{ "rz-run", rz_main_rz_run },
 	{ "rz-sign", rz_main_rz_sign },
-	{ "rz", rz_main_rizin },
 };
 
 RZ_API RzMainCallback rz_main_find(const char *name) {
