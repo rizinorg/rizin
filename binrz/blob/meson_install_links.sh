@@ -7,7 +7,7 @@ set -e
 mkdir -p "${DESTDIR}/${MESON_INSTALL_PREFIX}/bin"
 cd "${DESTDIR}/${MESON_INSTALL_PREFIX}/bin"
 
-TOOLS="rz-hash rz-run rz-asm rz-bin rz-gg rz-agent rz-diff rz-find rassign2 rz-ax"
+TOOLS="rz-hash rz-run rz-asm rz-bin rz-gg rz-agent rz-diff rz-find rz-sign rz-ax"
 
 for TOOL in $TOOLS ; do
     ln -sf rizin $TOOL ;
