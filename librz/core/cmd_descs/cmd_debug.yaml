@@ -719,6 +719,100 @@ commands:
         cname: cmd_debug_heap_jemalloc
         type: RZ_CMD_DESC_TYPE_OLDINPUT
         args: []
+  - name: dp
+    summary: List or attach to process or thread
+    subcommands:
+      - name: dp
+        summary: List current pid and children
+        cname: cmd_debug_pid_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpl
+        summary: List all attachable pids
+        cname: cmd_debug_pid_attachable_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args: []
+      - name: dpa
+        summary: Attach to selected <pid>
+        cname: cmd_debug_pid_attach
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dp-
+        summary: Detach from selected <pid>
+        cname: cmd_debug_pid_detach
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dp=
+        summary: Select <pid>
+        cname: cmd_debug_pid_select
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dpc
+        summary: Select forked pid (see dbg.forks)
+        cname: cmd_debug_pid_select_forked
+        args: []
+      - name: dpc*
+        summary: Display forked pid (see dbg.forks)
+        cname: cmd_debug_pid_display_forked
+        args: []
+      - name: dpe
+        summary: Show path to executable
+        cname: cmd_debug_executable_path
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpf
+        summary: Attach to pid like file fd
+        cname: cmd_debug_pid_attach_fd
+        args: []
+      - name: dpk
+        summary: Send <signal> to process <pid>
+        cname: cmd_debug_pid_signal
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpT
+        summary: List threads of specified or current <pid>
+        cname: cmd_debug_thread_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpt=
+        summary: Select <thread-id>
+        cname: cmd_debug_pid_thread_select
+        args:
+          - name: thread-id
+            type: RZ_CMD_ARG_TYPE_RZNUM
+
   #####################################################
   # Keep this in sync with ar in cmd_analysis.yaml from here...
   - name: dr

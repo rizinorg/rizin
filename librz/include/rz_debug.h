@@ -459,7 +459,6 @@ RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
 // RZ_API int rz_debug_pid_add_thread(RzDebug *dbg);
 // RZ_API int rz_debug_pid_del(RzDebug *dbg);
 // RZ_API int rz_debug_pid_del_thread(RzDebug *dbg);
-RZ_API int rz_debug_pid_list(RzDebug *dbg, int pid, char fmt);
 RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
 RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
 RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
@@ -535,8 +534,6 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base);
 RZ_API void rz_debug_bp_update(RzDebug *dbg);
 
 /* pid */
-RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt);
-
 RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg);
 
 RZ_API void rz_debug_trace_reset(RzDebug *dbg);
