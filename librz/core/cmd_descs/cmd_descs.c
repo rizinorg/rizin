@@ -348,6 +348,14 @@ static const RzCmdDescArg debug_memory_permission_args[3];
 static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
+static const RzCmdDescArg cmd_debug_pid_list_args[2];
+static const RzCmdDescArg cmd_debug_pid_attach_args[2];
+static const RzCmdDescArg cmd_debug_pid_detach_args[2];
+static const RzCmdDescArg cmd_debug_pid_select_args[2];
+static const RzCmdDescArg cmd_debug_executable_path_args[2];
+static const RzCmdDescArg cmd_debug_pid_signal_args[3];
+static const RzCmdDescArg cmd_debug_thread_list_args[2];
+static const RzCmdDescArg cmd_debug_pid_thread_select_args[2];
 static const RzCmdDescArg debug_regs_args[2];
 static const RzCmdDescArg debug_regs_columns_args[2];
 static const RzCmdDescArg debug_regs_references_args[2];
@@ -7850,6 +7858,164 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_args[] = {
 static const RzCmdDescHelp cmd_debug_heap_jemalloc_help = {
 	.summary = "Jemalloc heap commands",
 	.args = cmd_debug_heap_jemalloc_args,
+};
+
+static const RzCmdDescHelp dp_help = {
+	.summary = "List or attach to process or thread",
+};
+static const RzCmdDescArg cmd_debug_pid_list_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_list_help = {
+	.summary = "List current pid and children",
+	.args = cmd_debug_pid_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_attachable_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_attachable_list_help = {
+	.summary = "List all attachable pids",
+	.args = cmd_debug_pid_attachable_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_attach_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_attach_help = {
+	.summary = "Attach to selected <pid>",
+	.args = cmd_debug_pid_attach_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_detach_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_detach_help = {
+	.summary = "Detach from selected <pid>",
+	.args = cmd_debug_pid_detach_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_select_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_select_help = {
+	.summary = "Select <pid>",
+	.args = cmd_debug_pid_select_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_select_forked_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_select_forked_help = {
+	.summary = "Select forked pid (see dbg.forks)",
+	.args = cmd_debug_pid_select_forked_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_display_forked_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_display_forked_help = {
+	.summary = "Display forked pid (see dbg.forks)",
+	.args = cmd_debug_pid_display_forked_args,
+};
+
+static const RzCmdDescArg cmd_debug_executable_path_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_executable_path_help = {
+	.summary = "Show path to executable",
+	.args = cmd_debug_executable_path_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_attach_fd_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_attach_fd_help = {
+	.summary = "Attach to pid like file fd",
+	.args = cmd_debug_pid_attach_fd_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_signal_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "signal",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_signal_help = {
+	.summary = "Send <signal> to process <pid>",
+	.args = cmd_debug_pid_signal_args,
+};
+
+static const RzCmdDescArg cmd_debug_thread_list_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_thread_list_help = {
+	.summary = "List threads of specified or current <pid>",
+	.args = cmd_debug_thread_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_pid_thread_select_args[] = {
+	{
+		.name = "thread-id",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_pid_thread_select_help = {
+	.summary = "Select <thread-id>",
+	.args = cmd_debug_pid_thread_select_args,
 };
 
 static const RzCmdDescDetailEntry dr_Register_space_Filter_detail_entries[] = {
@@ -16687,6 +16853,44 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
+
+	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
+	rz_warn_if_fail(dp_cd);
+	rz_cmd_desc_set_default_mode(dp_cd, RZ_OUTPUT_MODE_STANDARD);
+	RzCmdDesc *cmd_debug_pid_attachable_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dp_cd, "dpl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_attachable_list_handler, &cmd_debug_pid_attachable_list_help);
+	rz_warn_if_fail(cmd_debug_pid_attachable_list_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_pid_attachable_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_debug_pid_attach_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpa", rz_cmd_debug_pid_attach_handler, &cmd_debug_pid_attach_help);
+	rz_warn_if_fail(cmd_debug_pid_attach_cd);
+
+	RzCmdDesc *cmd_debug_pid_detach_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dp-", rz_cmd_debug_pid_detach_handler, &cmd_debug_pid_detach_help);
+	rz_warn_if_fail(cmd_debug_pid_detach_cd);
+
+	RzCmdDesc *cmd_debug_pid_select_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dp=", rz_cmd_debug_pid_select_handler, &cmd_debug_pid_select_help);
+	rz_warn_if_fail(cmd_debug_pid_select_cd);
+
+	RzCmdDesc *cmd_debug_pid_select_forked_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpc", rz_cmd_debug_pid_select_forked_handler, &cmd_debug_pid_select_forked_help);
+	rz_warn_if_fail(cmd_debug_pid_select_forked_cd);
+
+	RzCmdDesc *cmd_debug_pid_display_forked_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpc*", rz_cmd_debug_pid_display_forked_handler, &cmd_debug_pid_display_forked_help);
+	rz_warn_if_fail(cmd_debug_pid_display_forked_cd);
+
+	RzCmdDesc *cmd_debug_executable_path_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpe", rz_cmd_debug_executable_path_handler, &cmd_debug_executable_path_help);
+	rz_warn_if_fail(cmd_debug_executable_path_cd);
+
+	RzCmdDesc *cmd_debug_pid_attach_fd_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpf", rz_cmd_debug_pid_attach_fd_handler, &cmd_debug_pid_attach_fd_help);
+	rz_warn_if_fail(cmd_debug_pid_attach_fd_cd);
+
+	RzCmdDesc *cmd_debug_pid_signal_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpk", rz_cmd_debug_pid_signal_handler, &cmd_debug_pid_signal_help);
+	rz_warn_if_fail(cmd_debug_pid_signal_cd);
+
+	RzCmdDesc *cmd_debug_thread_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dp_cd, "dpT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_thread_list_handler, &cmd_debug_thread_list_help);
+	rz_warn_if_fail(cmd_debug_thread_list_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_thread_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_debug_pid_thread_select_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpt=", rz_cmd_debug_pid_thread_select_handler, &cmd_debug_pid_thread_select_help);
+	rz_warn_if_fail(cmd_debug_pid_thread_select_cd);
 
 	RzCmdDesc *dr_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_regs_handler, &debug_regs_help, &dr_help);
 	rz_warn_if_fail(dr_cd);

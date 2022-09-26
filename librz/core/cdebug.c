@@ -992,3 +992,131 @@ RZ_API void rz_core_debug_set_register_flags(RzCore *core) {
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core) {
 	foreach_reg_set_or_clear(core, false);
 }
+
+RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *state) {
+	if (!dbg || !dbg->cur || !dbg->cur->pids) {
+		return false;
+	}
+	RzList *list = dbg->cur->pids(dbg, RZ_MAX(0, pid));
+	if (!list) {
+		return false;
+	}
+	RzListIter *iter;
+	RzDebugPid *p;
+	char status[2];
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "bdddss", "current",
+		"ppid", "pid", "uid", "status", "path");
+	rz_list_foreach (list, iter, p) {
+		rz_strf(status, "%c", p->status);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kb(state->d.pj, "current", dbg->pid == p->pid);
+			pj_ki(state->d.pj, "ppid", p->ppid);
+			pj_ki(state->d.pj, "pid", p->pid);
+			pj_ki(state->d.pj, "uid", p->uid);
+			pj_ks(state->d.pj, "status", status);
+			pj_ks(state->d.pj, "path", p->path);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "bdddss", dbg->pid == p->pid, p->ppid,
+				p->pid, p->uid, status, p->path);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf(" %c %d ppid:%d uid:%d %s %s\n",
+				dbg->pid == p->pid ? '*' : '-',
+				p->pid, p->ppid, p->uid, status, p->path);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_list_free(list);
+	rz_cmd_state_output_array_end(state);
+	return true;
+}
+
+RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state) {
+	if (pid == -1) {
+		return false;
+	}
+	if (!dbg || !dbg->cur || !dbg->cur->threads) {
+		return false;
+	}
+	RzList *list = dbg->cur->threads(dbg, pid);
+	if (!list) {
+		return false;
+	}
+	RzListIter *iter;
+	RzDebugPid *p;
+	RzAnalysisFunction *fcn = NULL;
+	RzDebugMap *map = NULL;
+	RzStrBuf *path = NULL;
+	char status[2];
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "bdss", "current",
+		"pid", "status", "path");
+	rz_list_foreach (list, iter, p) {
+		path = rz_strbuf_new("");
+		if (p->pc != 0) {
+			map = rz_debug_map_get(dbg, p->pc);
+			if (map && map->name && map->name[0]) {
+				rz_strbuf_appendf(path, "%s ", map->name);
+			}
+
+			rz_strbuf_appendf(path, "(0x%" PFMT64x ")", p->pc);
+
+			fcn = rz_analysis_get_fcn_in(dbg->analysis, p->pc, 0);
+			if (fcn) {
+				if (p->pc == fcn->addr) {
+					rz_strbuf_appendf(path, " at %s", fcn->name);
+				} else {
+					st64 delta = p->pc - fcn->addr;
+					char sign = delta >= 0 ? '+' : '-';
+					rz_strbuf_appendf(path, " in %s%c%" PFMT64u, fcn->name, sign, RZ_ABS(delta));
+				}
+			} else {
+				const char *flag_name = dbg->corebind.getName(dbg->corebind.core, p->pc);
+				if (flag_name) {
+					rz_strbuf_appendf(path, " at %s", flag_name);
+				} else {
+					char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
+					if (name_delta) {
+						rz_strbuf_appendf(path, " in %s", name_delta);
+						free(name_delta);
+					}
+				}
+			}
+		}
+		rz_strf(status, "%c", p->status);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kb(state->d.pj, "current", dbg->tid == p->pid);
+			pj_ki(state->d.pj, "pid", p->pid);
+			pj_ks(state->d.pj, "status", status);
+			pj_ks(state->d.pj, "path", rz_strbuf_get(path));
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "bdss", dbg->pid == p->pid, p->pid,
+				status, rz_strbuf_get(path));
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf(" %c %d %s %s\n",
+				dbg->tid == p->pid ? '*' : '-',
+				p->pid, status, rz_strbuf_get(path));
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		rz_strbuf_free(path);
+	}
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
+	return true;
+}
