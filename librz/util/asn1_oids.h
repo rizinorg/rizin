@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_OIDS_H
