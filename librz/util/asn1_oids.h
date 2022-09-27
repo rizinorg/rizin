@@ -1,12 +1,8 @@
-// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef OIDS_H
-#define OIDS_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef RZ_OIDS_H
+#define RZ_OIDS_H
 
 struct rz_oid_list_t {
 	const char *oid;
@@ -997,6 +993,9 @@ struct rz_oid_list_t {
 	{ "1.2.840.113635.100.3", "appleDotMacCertificate" },
 	{ "1.2.840.113635.100.3.1", "appleDotMacCertificateRequest" },
 	{ "1.2.840.113635.100.3.2", "appleDotMacCertificateExtension" },
+	{ "1.2.840.113635.100.3.2.1", "appleDotMacCertificateExtensionIdentity" },
+	{ "1.2.840.113635.100.3.2.2", "appleDotMacCertificateExtensionEmailSign" },
+	{ "1.2.840.113635.100.3.2.3", "appleDotMacCertificateExtensionEmailEncrypt" },
 	{ "1.2.840.113635.100.3.3", "appleDotMacCertificateRequestValues" },
 	{ "1.2.840.113635.100.4", "appleExtendedKeyUsage" },
 	{ "1.2.840.113635.100.4.1", "appleCodeSigning" },
@@ -1004,6 +1003,13 @@ struct rz_oid_list_t {
 	{ "1.2.840.113635.100.4.1.2", "appleSoftwareUpdateSigning" },
 	{ "1.2.840.113635.100.4.1.3", "appleCodeSigningThirdParty" },
 	{ "1.2.840.113635.100.4.1.4", "appleResourceSigning" },
+	{ "1.2.840.113635.100.4.10", "appleMacAppStoreInstallerPackageSigning" },
+	{ "1.2.840.113635.100.4.11", "appleExtensionProvisioningProfileSigning" },
+	{ "1.2.840.113635.100.4.13", "appleDeveloperIdInstaller" },
+	{ "1.2.840.113635.100.4.14", "appleEkuPassbookSigning" },
+	{ "1.2.840.113635.100.4.15", "appleExtendedKeyUsage_15" }, // unknown but defined in Apple_WWDR_CPS_v1.14.pdf
+	{ "1.2.840.113635.100.4.16", "appleEkuProfileSigning" },
+	{ "1.2.840.113635.100.4.17", "appleEkuQaProfileSigning" },
 	{ "1.2.840.113635.100.4.2", "appleIChatSigning" },
 	{ "1.2.840.113635.100.4.3", "appleIChatEncryption" },
 	{ "1.2.840.113635.100.4.4", "appleSystemIdentity" },
@@ -1017,15 +1023,73 @@ struct rz_oid_list_t {
 	{ "1.2.840.113635.100.4.6.2", "appleCryptoTier1QoS" },
 	{ "1.2.840.113635.100.4.6.3", "appleCryptoTier2QoS" },
 	{ "1.2.840.113635.100.4.6.4", "appleCryptoTier3QoS" },
+	{ "1.2.840.113635.100.4.7.0", "appleExtensionAppleIdSharing" },
+	{ "1.2.840.113635.100.4.8", "appleSafariExtensionSigning" },
+	{ "1.2.840.113635.100.4.9", "appleThirdPartyMacDeveloperInstaller" },
 	{ "1.2.840.113635.100.5", "appleCertificatePolicies" },
 	{ "1.2.840.113635.100.5.1", "appleCertificatePolicyID" },
+	{ "1.2.840.113635.100.5.12", "appleMobileStoreSigningPolicy" },
+	{ "1.2.840.113635.100.5.12.1", "appleTestMobileStoreSigningPolicy" },
 	{ "1.2.840.113635.100.5.2", "appleDotMacCertificatePolicyID" },
 	{ "1.2.840.113635.100.5.3", "appleADCCertificatePolicyID" },
+	{ "1.2.840.113635.100.5.6", "appleMacAppStoreCertPolicy" },
+	{ "1.2.840.113635.100.5.6.1", "appleMacAppStoreReceiptCertPolicy" },
+	{ "1.2.840.113635.100.5.7", "appleAppleIdCertPolicy" },
+	{ "1.2.840.113635.100.5.7.1", "appleAppleIdSharingCertPolicy" },
 	{ "1.2.840.113635.100.6", "appleCertificateExtensions" },
 	{ "1.2.840.113635.100.6.1", "appleCertificateExtensionCodeSigning" },
 	{ "1.2.840.113635.100.6.1.1", "appleCertificateExtensionAppleSigning" },
-	{ "1.2.840.113635.100.6.1.2", "appleCertificateExtensionADCDeveloperSigning" },
+	{ "1.2.840.113635.100.6.1.10", "appleMacAppStoreInstallerSigning" },
+	{ "1.2.840.113635.100.6.1.11", "appleMacAppStoreReceipt" },
+	{ "1.2.840.113635.100.6.1.12", "appleMacAppStoreDevSigning" },
+	{ "1.2.840.113635.100.6.1.13", "appleDeveloperIdApplication" },
+	{ "1.2.840.113635.100.6.1.14", "appleDeveloperIdInstaller" },
+	{ "1.2.840.113635.100.6.1.16", "applePayPassbookSigning" },
+	{ "1.2.840.113635.100.6.1.17", "appleWebsitePushNotificationSigning" },
+	{ "1.2.840.113635.100.6.1.18", "appleDeveloperIdKernel" },
+	{ "1.2.840.113635.100.6.1.2", "appleIPhoneSoftwareDevelopmentSigning" },
+	{ "1.2.840.113635.100.6.1.2.0", "appleCertificateExtensionADCDeveloperSigning" },
+	{ "1.2.840.113635.100.6.1.2.0.0", "appleCertificateExtensionADCAppleSigning" },
+	{ "1.2.840.113635.100.6.1.25.1", "appleTestFlight" },
+	{ "1.2.840.113635.100.6.1.25.2", "appleInternalRelease" },
+	{ "1.2.840.113635.100.6.1.26", "appleCertificateExtensionCodeSigning_26" }, // unknown but defined in Apple_WWDR_CPS_v1.14.pdf
+	{ "1.2.840.113635.100.6.1.30", "appleDeveloperIDTicket" },
 	{ "1.2.840.113635.100.6.1.3", "appleCertificateExtensionADCAppleSigning" },
+	{ "1.2.840.113635.100.6.1.33", "appleDeveloperIdDate" },
+	{ "1.2.840.113635.100.6.1.4", "appleIPhoneSoftwareSubmissionSigning" },
+	{ "1.2.840.113635.100.6.1.5", "appleSafariExtensionSigningDeveloper" },
+	{ "1.2.840.113635.100.6.1.6", "appleIPhoneOsVpnSigning" },
+	{ "1.2.840.113635.100.6.1.7", "appleMacAppSigningDevelopment" },
+	{ "1.2.840.113635.100.6.1.8", "appleMacAppSigningSubmission" },
+	{ "1.2.840.113635.100.6.1.9", "appleMacAppStoreCodeSigning" },
+	{ "1.2.840.113635.100.6.11.1", "appleExtensionMacAppStoreReceipt" },
+	{ "1.2.840.113635.100.6.2", "appleExtensionIntermediateMarker" },
+	{ "1.2.840.113635.100.6.2.1", "appleExtensionWwdrIntermediate" },
+	{ "1.2.840.113635.100.6.2.1", "appleWorldwideDeveloperRelations" },
+	{ "1.2.840.113635.100.6.2.10", "appleExtensionSysint2Intermediate" },
+	{ "1.2.840.113635.100.6.2.11", "appleDeveloperAuthentication" },
+	{ "1.2.840.113635.100.6.2.11", "appleExtensionDeveloperAuthentication" },
+	{ "1.2.840.113635.100.6.2.12", "appleExtensionServerAuthentication" },
+	{ "1.2.840.113635.100.6.2.14", "appleApplicationIntegrationG3" },
+	{ "1.2.840.113635.100.6.2.15", "appleWorldwideDeveloperRelationsG2" },
+	{ "1.2.840.113635.100.6.2.19", "appleSoftwareUpdateCertification" },
+	{ "1.2.840.113635.100.6.2.2", "appleExtensionItmsIntermediate" },
+	{ "1.2.840.113635.100.6.2.3", "appleApplicationIntegration" },
+	{ "1.2.840.113635.100.6.2.6", "appleDeveloperId" },
+	{ "1.2.840.113635.100.6.2.7", "appleExtensionAppleIdIntermediate" },
+	{ "1.2.840.113635.100.6.2.9", "appleTimestamp" },
+	{ "1.2.840.113635.100.6.21", "appleCertificateExtensions_21" }, // unknown but defined in Apple_WWDR_CPS_v1.14.pdf
+	{ "1.2.840.113635.100.6.22", "appleExtensionSoftwareSigning" },
+	{ "1.2.840.113635.100.6.23.1.0", "appleExtensionEscrowService" },
+	{ "1.2.840.113635.100.6.3.1", "applePushNotificationServiceDevelopment" },
+	{ "1.2.840.113635.100.6.3.2", "applePushNotificationServiceProduction" },
+	{ "1.2.840.113635.100.6.3.3", "applePushNotificationServiceBundleId" },
+	{ "1.2.840.113635.100.6.3.4", "applePushNotificationServiceVoIPTopics" },
+	{ "1.2.840.113635.100.6.3.5", "applePushNotificationServiceVoIP" },
+	{ "1.2.840.113635.100.6.3.6", "applePushNotificationServiceTopics" },
+	{ "1.2.840.113635.100.6.32", "appleMerchantIdHash" },
+	{ "1.2.840.113635.100.6.39", "applePayIssuerEncryptionPolicy" },
+	{ "1.2.840.113635.100.6.46", "applePayNotOnlyChina" },
 	{ "1.2.840.114021.1.6.1", "Identrus.unknown.policyIdentifier" },
 	{ "1.2.840.114021.4.1", "identrusOCSP" },
 	{ "1.3.101.1.4", "thawte-ce" },
@@ -2337,8 +2401,4 @@ struct rz_oid_list_t {
 	{ 0, 0 }
 };
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* OIDS_H */
+#endif /* RZ_OIDS_H */
