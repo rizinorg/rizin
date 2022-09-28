@@ -257,3 +257,11 @@ RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char 
 	free(b);
 	return RZ_CMD_STATUS_OK;
 }
+
+// date
+RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char **argv) {
+	char *now = rz_time_date_now_to_string();
+	rz_cons_printf("%s\n", now);
+	free(now);
+	return RZ_CMD_STATUS_OK;
+}

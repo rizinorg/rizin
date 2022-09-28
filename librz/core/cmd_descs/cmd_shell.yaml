@@ -4,6 +4,10 @@
 name: cmd_shell
 type: RZ_CMD_DESC_TYPE_GROUP
 commands:
+  - name: date
+    summary: Get current date
+    cname: cmd_shell_date
+    args: []
   - name: diff
     summary: Compare <A> file with <B>
     cname: cmd_shell_diff

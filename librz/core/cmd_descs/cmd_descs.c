@@ -316,6 +316,12 @@ static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
+static const RzCmdDescArg cmd_debug_descriptor_open_args[2];
+static const RzCmdDescArg cmd_debug_descriptor_close_args[2];
+static const RzCmdDescArg cmd_debug_descriptor_seek_args[3];
+static const RzCmdDescArg cmd_debug_descriptor_dup_args[3];
+static const RzCmdDescArg cmd_debug_descriptor_read_args[4];
+static const RzCmdDescArg cmd_debug_descriptor_write_args[4];
 static const RzCmdDescArg cmd_debug_process_profile_args[2];
 static const RzCmdDescArg cmd_debug_step_args[2];
 static const RzCmdDescArg cmd_debug_step_back_args[2];
@@ -7036,6 +7042,125 @@ static const RzCmdDescHelp cmd_debug_continue_traptrace_help = {
 
 static const RzCmdDescHelp cmd_debug_continue_until_help = {
 	.summary = "Debug continue until",
+};
+
+static const RzCmdDescHelp dd_help = {
+	.summary = "Debug file descriptors commands",
+};
+static const RzCmdDescArg cmd_debug_descriptor_open_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_open_help = {
+	.summary = "Open and map <file> given the path",
+	.args = cmd_debug_descriptor_open_args,
+};
+
+static const RzCmdDescArg cmd_debug_descriptor_close_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_close_help = {
+	.summary = "Close the <fd> file descriptor",
+	.args = cmd_debug_descriptor_close_args,
+};
+
+static const RzCmdDescArg cmd_debug_descriptor_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_list_help = {
+	.summary = "List all file descriptors",
+	.args = cmd_debug_descriptor_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_descriptor_seek_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_seek_help = {
+	.summary = "Seek given <fd> to the <offset>",
+	.args = cmd_debug_descriptor_seek_args,
+};
+
+static const RzCmdDescArg cmd_debug_descriptor_dup_args[] = {
+	{
+		.name = "fd_src",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "fd_dst",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_dup_help = {
+	.summary = "Duplicate <fd_src> to <fd_dst>",
+	.args = cmd_debug_descriptor_dup_args,
+};
+
+static const RzCmdDescArg cmd_debug_descriptor_read_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_read_help = {
+	.summary = "Read <len> bytes from <fd> file at <offset>",
+	.args = cmd_debug_descriptor_read_args,
+};
+
+static const RzCmdDescArg cmd_debug_descriptor_write_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_descriptor_write_help = {
+	.summary = "Write <len> bytes to <fd> file at <offset>",
+	.args = cmd_debug_descriptor_write_args,
 };
 
 static const RzCmdDescHelp do_help = {
@@ -15092,6 +15217,14 @@ static const RzCmdDescHelp shell_help = {
 	.summary = "Common shell commands",
 	.sort_subcommands = true,
 };
+static const RzCmdDescArg cmd_shell_date_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_date_help = {
+	.summary = "Get current date",
+	.args = cmd_shell_date_args,
+};
+
 static const RzCmdDescArg cmd_shell_diff_args[] = {
 	{
 		.name = "A",
@@ -16759,6 +16892,27 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
 	rz_warn_if_fail(cmd_debug_continue_until_cd);
+
+	RzCmdDesc *dd_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dd", rz_cmd_debug_descriptor_open_handler, &cmd_debug_descriptor_open_help, &dd_help);
+	rz_warn_if_fail(dd_cd);
+	RzCmdDesc *cmd_debug_descriptor_close_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "dd-", rz_cmd_debug_descriptor_close_handler, &cmd_debug_descriptor_close_help);
+	rz_warn_if_fail(cmd_debug_descriptor_close_cd);
+
+	RzCmdDesc *cmd_debug_descriptor_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dd_cd, "ddl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_descriptor_list_handler, &cmd_debug_descriptor_list_help);
+	rz_warn_if_fail(cmd_debug_descriptor_list_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_descriptor_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_debug_descriptor_seek_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "dds", rz_cmd_debug_descriptor_seek_handler, &cmd_debug_descriptor_seek_help);
+	rz_warn_if_fail(cmd_debug_descriptor_seek_cd);
+
+	RzCmdDesc *cmd_debug_descriptor_dup_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddd", rz_cmd_debug_descriptor_dup_handler, &cmd_debug_descriptor_dup_help);
+	rz_warn_if_fail(cmd_debug_descriptor_dup_cd);
+
+	RzCmdDesc *cmd_debug_descriptor_read_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddr", rz_cmd_debug_descriptor_read_handler, &cmd_debug_descriptor_read_help);
+	rz_warn_if_fail(cmd_debug_descriptor_read_cd);
+
+	RzCmdDesc *cmd_debug_descriptor_write_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddw", rz_cmd_debug_descriptor_write_handler, &cmd_debug_descriptor_write_help);
+	rz_warn_if_fail(cmd_debug_descriptor_write_cd);
 
 	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "do", NULL, NULL, &do_help);
 	rz_warn_if_fail(do_cd);
@@ -18497,6 +18651,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *shell_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "shell", NULL, NULL, &shell_help);
 	rz_warn_if_fail(shell_cd);
+	RzCmdDesc *cmd_shell_date_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "date", rz_cmd_shell_date_handler, &cmd_shell_date_help);
+	rz_warn_if_fail(cmd_shell_date_cd);
+
 	RzCmdDesc *cmd_shell_diff_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "diff", rz_cmd_shell_diff_handler, &cmd_shell_diff_help);
 	rz_warn_if_fail(cmd_shell_diff_cd);
 
