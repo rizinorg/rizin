@@ -2059,19 +2059,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		}
 		break;
 #endif
-	case 'w': // "dw"
-		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-		for (; !rz_cons_is_breaked();) {
-			int pid = atoi(input + 1);
-			// int opid = core->dbg->pid = pid;
-			int res = rz_debug_kill(core->dbg, pid, 0, 0);
-			if (!res) {
-				break;
-			}
-			rz_sys_usleep(200);
-		}
-		rz_cons_break_pop();
-		break;
 	case '?': // "d?"
 	default:
 		rz_core_cmd_help(core, help_msg_d);
@@ -3401,5 +3388,19 @@ RZ_IPI RzCmdStatus rz_cmd_debug_core_dump_generate_handler(RzCore *core, int arg
 	}
 	rz_buf_free(dst);
 	free(corefile);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_wait_handler(RzCore *core, int argc, const char **argv) {
+	int pid = argc > 1 ? rz_num_math(core->num, argv[1]) : core->dbg->pid;
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	for (; !rz_cons_is_breaked();) {
+		int res = rz_debug_kill(core->dbg, pid, 0, 0);
+		if (!res) {
+			break;
+		}
+		rz_sys_usleep(200);
+	}
+	rz_cons_break_pop();
 	return RZ_CMD_STATUS_OK;
 }
