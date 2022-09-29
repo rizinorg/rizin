@@ -2050,15 +2050,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'k': // "dk"
 		rz_core_debug_kill(core, input + 1);
 		break;
-#if __WINDOWS__
-	case 'W': // "dW"
-		if (input[1] == 'i') {
-			rz_w32_identify_window();
-		} else {
-			rz_w32_print_windows(core->dbg);
-		}
-		break;
-#endif
 	case '?': // "d?"
 	default:
 		rz_core_cmd_help(core, help_msg_d);
@@ -3403,4 +3394,24 @@ RZ_IPI RzCmdStatus rz_cmd_debug_wait_handler(RzCore *core, int argc, const char 
 	}
 	rz_cons_break_pop();
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_windows_list_handler(RzCore *core, int argc, const char **argv) {
+#if __WINDOWS__
+	rz_w32_print_windows(core->dbg);
+	return RZ_CMD_STATUS_OK;
+#else
+	RZ_LOG_ERROR("This command works only on Microsoft Windows\n");
+	return RZ_CMD_STATUS_ERROR;
+#endif
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, const char **argv) {
+#if __WINDOWS__
+	rz_w32_identify_window();
+	return RZ_CMD_STATUS_OK;
+#else
+	RZ_LOG_ERROR("This command works only on Microsoft Windows\n");
+	return RZ_CMD_STATUS_ERROR;
+#endif
 }

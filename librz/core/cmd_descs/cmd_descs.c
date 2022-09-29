@@ -8610,6 +8610,25 @@ static const RzCmdDescHelp cmd_debug_wait_help = {
 	.args = cmd_debug_wait_args,
 };
 
+static const RzCmdDescHelp dW_help = {
+	.summary = "Windows process commands",
+};
+static const RzCmdDescArg cmd_debug_windows_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_windows_list_help = {
+	.summary = "List process windows",
+	.args = cmd_debug_windows_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_window_identify_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_window_identify_help = {
+	.summary = "Identify window under cursor",
+	.args = cmd_debug_window_identify_args,
+};
+
 static const RzCmdDescHelp dx_help = {
 	.summary = "Code injection commands",
 };
@@ -17268,6 +17287,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_wait_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_cd, "dw", rz_cmd_debug_wait_handler, &cmd_debug_wait_help);
 	rz_warn_if_fail(cmd_debug_wait_cd);
+
+	RzCmdDesc *dW_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dW", rz_cmd_debug_windows_list_handler, &cmd_debug_windows_list_help, &dW_help);
+	rz_warn_if_fail(dW_cd);
+	RzCmdDesc *cmd_debug_window_identify_cd = rz_cmd_desc_argv_new(core->rcmd, dW_cd, "dWi", rz_cmd_debug_window_identify_handler, &cmd_debug_window_identify_help);
+	rz_warn_if_fail(cmd_debug_window_identify_cd);
 
 	RzCmdDesc *dx_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dx", rz_cmd_debug_inject_opcode_handler, &cmd_debug_inject_opcode_help, &dx_help);
 	rz_warn_if_fail(dx_cd);
