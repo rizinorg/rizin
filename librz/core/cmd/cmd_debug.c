@@ -2017,10 +2017,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_tag_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
-static char *get_corefile_name(const char *raw_name, int pid) {
-	return (!*raw_name) ? rz_str_newf("core.%u", pid) : rz_str_trim_dup(raw_name);
-}
-
 static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 	if (!buf) {
 		if (errmsg) {
@@ -2050,27 +2046,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	switch (input[0]) {
 	case 'e': // "de"
 		rz_core_debug_esil(core, input + 1);
-		break;
-	case 'g': // "dg"
-		if (core->dbg->cur && core->dbg->cur->gcore) {
-			if (core->dbg->pid == -1) {
-				RZ_LOG_ERROR("core: Not debugging, can't write core.\n");
-				break;
-			}
-			char *corefile = get_corefile_name(input + 1, core->dbg->pid);
-			RZ_LOG_WARN("core: Writing to file '%s'\n", corefile);
-			rz_file_rm(corefile);
-			RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);
-			if (dst) {
-				if (!core->dbg->cur->gcore(core->dbg, corefile, dst)) {
-					RZ_LOG_ERROR("core: dg: coredump failed\n");
-				}
-				rz_buf_free(dst);
-			} else {
-				perror("rz_buf_new_file");
-			}
-			free(corefile);
-		}
 		break;
 	case 'k': // "dk"
 		rz_core_debug_kill(core, input + 1);
@@ -3402,5 +3377,29 @@ RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_write_handler(RzCore *core, int argc,
 		consumeBuffer(buf, "dx ", "Cannot write");
 		return RZ_CMD_STATUS_ERROR;
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_core_dump_generate_handler(RzCore *core, int argc, const char **argv) {
+	if (!core->dbg->cur || !core->dbg->cur->gcore || core->dbg->pid == -1) {
+		RZ_LOG_ERROR("core: Not debugging, can't write core file.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *corefile = argc > 1 ? strdup(argv[1]) : rz_str_newf("core.%u", core->dbg->pid);
+	RZ_LOG_WARN("core: Writing to file '%s'\n", corefile);
+	rz_file_rm(corefile);
+	RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);
+	if (!dst) {
+		RZ_LOG_WARN("core: Cannot create new file '%s'\n", corefile);
+		free(corefile);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!core->dbg->cur->gcore(core->dbg, corefile, dst)) {
+		RZ_LOG_ERROR("core: dg: coredump failed\n");
+		free(corefile);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_buf_free(dst);
+	free(corefile);
 	return RZ_CMD_STATUS_OK;
 }

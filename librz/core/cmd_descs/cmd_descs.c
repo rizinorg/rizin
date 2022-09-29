@@ -322,6 +322,7 @@ static const RzCmdDescArg cmd_debug_descriptor_seek_args[3];
 static const RzCmdDescArg cmd_debug_descriptor_dup_args[3];
 static const RzCmdDescArg cmd_debug_descriptor_read_args[4];
 static const RzCmdDescArg cmd_debug_descriptor_write_args[4];
+static const RzCmdDescArg cmd_debug_core_dump_generate_args[2];
 static const RzCmdDescArg cmd_debug_process_profile_args[2];
 static const RzCmdDescArg cmd_debug_step_args[2];
 static const RzCmdDescArg cmd_debug_step_back_args[2];
@@ -7161,6 +7162,20 @@ static const RzCmdDescArg cmd_debug_descriptor_write_args[] = {
 static const RzCmdDescHelp cmd_debug_descriptor_write_help = {
 	.summary = "Write <len> bytes to <fd> file at <offset>",
 	.args = cmd_debug_descriptor_write_args,
+};
+
+static const RzCmdDescArg cmd_debug_core_dump_generate_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_core_dump_generate_help = {
+	.summary = "Generate core dump file",
+	.args = cmd_debug_core_dump_generate_args,
 };
 
 static const RzCmdDescHelp do_help = {
@@ -16913,6 +16928,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_descriptor_write_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddw", rz_cmd_debug_descriptor_write_handler, &cmd_debug_descriptor_write_help);
 	rz_warn_if_fail(cmd_debug_descriptor_write_cd);
+
+	RzCmdDesc *cmd_debug_core_dump_generate_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_cd, "dg", rz_cmd_debug_core_dump_generate_handler, &cmd_debug_core_dump_generate_help);
+	rz_warn_if_fail(cmd_debug_core_dump_generate_cd);
 
 	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "do", NULL, NULL, &do_help);
 	rz_warn_if_fail(do_cd);

@@ -483,6 +483,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_seek_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_dup_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_read_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_write_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_core_dump_generate_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv);

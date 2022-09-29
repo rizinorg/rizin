@@ -373,6 +373,13 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: len
             type: RZ_CMD_ARG_TYPE_NUM
+  - name: dg
+    summary: Generate core dump file
+    cname: cmd_debug_core_dump_generate
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
   - name: do
     summary: Debug (re)open commands
     subcommands:
