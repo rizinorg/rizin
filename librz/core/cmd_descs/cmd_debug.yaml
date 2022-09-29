@@ -1171,6 +1171,13 @@ commands:
             args:
               - name: number
                 type: RZ_CMD_ARG_TYPE_NUM
+  - name: dw
+    summary: Block prompt until <pid> dies
+    cname: cmd_debug_wait
+    args:
+      - name: pid
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
   - name: dx
     summary: Code injection commands
     subcommands:

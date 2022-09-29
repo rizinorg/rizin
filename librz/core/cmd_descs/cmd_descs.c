@@ -381,6 +381,7 @@ static const RzCmdDescArg debug_reg_profile_open_args[2];
 static const RzCmdDescArg debug_reg_profile_gdb_args[2];
 static const RzCmdDescArg debug_drx_args[5];
 static const RzCmdDescArg debug_drx_unset_args[2];
+static const RzCmdDescArg cmd_debug_wait_args[2];
 static const RzCmdDescArg cmd_debug_inject_opcode_args[2];
 static const RzCmdDescArg cmd_debug_inject_assembly_args[2];
 static const RzCmdDescArg cmd_debug_inject_egg_args[2];
@@ -8593,6 +8594,20 @@ static const RzCmdDescArg debug_drx_unset_args[] = {
 static const RzCmdDescHelp debug_drx_unset_help = {
 	.summary = "Clear hardware breakpoint",
 	.args = debug_drx_unset_args,
+};
+
+static const RzCmdDescArg cmd_debug_wait_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_wait_help = {
+	.summary = "Block prompt until <pid> dies",
+	.args = cmd_debug_wait_args,
 };
 
 static const RzCmdDescHelp dx_help = {
@@ -17250,6 +17265,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(drx_cd);
 	RzCmdDesc *debug_drx_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drx_cd, "drx-", rz_debug_drx_unset_handler, &debug_drx_unset_help);
 	rz_warn_if_fail(debug_drx_unset_cd);
+
+	RzCmdDesc *cmd_debug_wait_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_cd, "dw", rz_cmd_debug_wait_handler, &cmd_debug_wait_help);
+	rz_warn_if_fail(cmd_debug_wait_cd);
 
 	RzCmdDesc *dx_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dx", rz_cmd_debug_inject_opcode_handler, &cmd_debug_inject_opcode_help, &dx_help);
 	rz_warn_if_fail(dx_cd);
