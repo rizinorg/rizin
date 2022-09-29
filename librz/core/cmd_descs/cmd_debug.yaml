@@ -1178,6 +1178,17 @@ commands:
       - name: pid
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
+  - name: dW
+    summary: Windows process commands
+    subcommands:
+      - name: dW
+        summary: List process windows
+        cname: cmd_debug_windows_list
+        args: []
+      - name: dWi
+        summary: Identify window under cursor
+        cname: cmd_debug_window_identify
+        args: []
   - name: dx
     summary: Code injection commands
     subcommands:
