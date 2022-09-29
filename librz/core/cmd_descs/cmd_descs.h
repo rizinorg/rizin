@@ -476,6 +476,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_ret_handler(RzCore *core, int argc, con
 RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_open_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_close_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_seek_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_dup_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_read_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_write_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_profile_edit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_process_close_handler(RzCore *core, int argc, const char **argv);
@@ -1052,6 +1059,7 @@ RZ_IPI RzCmdStatus rz_yank_hexpairs_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_yank_hex_print_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_yank_paste_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_yank_string_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **argv);

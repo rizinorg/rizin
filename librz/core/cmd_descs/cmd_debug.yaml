@@ -312,6 +312,67 @@ commands:
         summary: Debug continue until
         cname: cmd_debug_continue_until
         type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: dd
+    summary: Debug file descriptors commands
+    subcommands:
+      - name: dd
+        summary: Open and map <file> given the path
+        cname: cmd_debug_descriptor_open
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dd-
+        summary: Close the <fd> file descriptor
+        cname: cmd_debug_descriptor_close
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddl
+        summary: List all file descriptors
+        cname: cmd_debug_descriptor_list
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+      - name: dds
+        summary: Seek given <fd> to the <offset>
+        cname: cmd_debug_descriptor_seek
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddd
+        summary: Duplicate <fd_src> to <fd_dst>
+        cname: cmd_debug_descriptor_dup
+        args:
+          - name: fd_src
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: fd_dst
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddr
+        summary: Read <len> bytes from <fd> file at <offset>
+        cname: cmd_debug_descriptor_read
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddw
+        summary: Write <len> bytes to <fd> file at <offset>
+        cname: cmd_debug_descriptor_write
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
   - name: do
     summary: Debug (re)open commands
     subcommands:

@@ -1120,3 +1120,48 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 	rz_list_free(list);
 	return true;
 }
+
+RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state) {
+	if (!dbg || !dbg->cur || !dbg->cur->desc.list) {
+		return false;
+	}
+	RzList *list = dbg->cur->desc.list(dbg->pid);
+	if (!list) {
+		return false;
+	}
+	RzListIter *iter;
+	RzDebugDesc *p;
+	char desctype[2];
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ddsss", "fd",
+		"offset", "perms", "type", "path");
+	rz_list_foreach (list, iter, p) {
+		rz_strf(desctype, "%c", p->type);
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_ki(state->d.pj, "fd", p->fd);
+			pj_ki(state->d.pj, "offset", p->off);
+			pj_ks(state->d.pj, "perms", rz_str_rwx_i(p->perm));
+			pj_ks(state->d.pj, "type", desctype);
+			pj_ks(state->d.pj, "path", p->path);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "ddsss", p->fd, p->off,
+				rz_str_rwx_i(p->perm), desctype, p->path);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%i 0x%" PFMT64x " %s %s %s\n", p->fd, p->off,
+				rz_str_rwx_i(p->perm),
+				desctype, p->path);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
+	return true;
+}

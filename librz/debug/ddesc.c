@@ -67,29 +67,3 @@ RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len) {
 	}
 	return false;
 }
-
-RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad) {
-	int count = 0;
-	RzList *list;
-	RzListIter *iter;
-	RzDebugDesc *p;
-
-	if (rad) {
-		if (dbg && dbg->cb_printf) {
-			dbg->cb_printf("TODO \n");
-		}
-	} else {
-		if (dbg && dbg->cur && dbg->cur->desc.list) {
-			list = dbg->cur->desc.list(dbg->pid);
-			rz_list_foreach (list, iter, p) {
-				dbg->cb_printf("%i 0x%" PFMT64x " %c%c%c %s\n", p->fd, p->off,
-					(p->perm & RZ_PERM_R) ? 'r' : '-',
-					(p->perm & RZ_PERM_W) ? 'w' : '-',
-					p->type, p->path);
-			}
-			rz_list_purge(list);
-			free(list);
-		}
-	}
-	return count;
-}

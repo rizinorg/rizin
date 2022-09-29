@@ -32,7 +32,6 @@ static const char *help_msg_d[] = {
 	"dd", "[?]", "File descriptors (!fd in r1)",
 	"de", "[-sc] [perm] [rm] [e]", "Debug with ESIL (see de?)",
 	"dg", " <file>", "Generate a core-file (WIP)",
-	"dH", " [handler]", "Transplant process to a new handler",
 	"di", "[?]", "Show debugger backend information (See dh)",
 	"dk", "[?]", "List, send, get, set, signal handlers of child",
 	"dL", "[?]", "List or set debugger handler",
@@ -66,19 +65,6 @@ static const char *help_msg_dcu[] = {
 	"dcu", " address", "Continue until address",
 	"dcu", " [..tail]", "Continue until the range",
 	"dcu", " [from] [to]", "Continue until the range",
-	NULL
-};
-
-static const char *help_msg_dd[] = {
-	"Usage: dd", "", "Descriptors commands",
-	"dd", "", "List file descriptors",
-	"dd", " <file>", "Open and map that file into the UI",
-	"dd-", "<fd>", "Close stdout fd",
-	"dd*", "", "List file descriptors (in rizin commands)",
-	"dds", " <fd> <off>", "Seek given fd)",
-	"ddd", " <fd1> <fd2>", "Dup2 from fd1 to fd2",
-	"ddr", " <fd> <size>", "Read N bytes from fd",
-	"ddw", " <fd> <hexpairs>", "Write N bytes to fd",
 	NULL
 };
 
@@ -2061,115 +2047,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int follow = 0;
 
-	if (!strncmp(input, "ate", 3)) {
-		char *now = rz_time_date_now_to_string();
-		rz_cons_printf("%s\n", now);
-		free(now);
-		return 0;
-	}
-
 	switch (input[0]) {
-	case 'd': // "ddd"
-		switch (input[1]) {
-		case '\0': // "ddd"
-			rz_debug_desc_list(core->dbg, 0);
-			break;
-		case '*': // "dtd*"
-			rz_debug_desc_list(core->dbg, 1);
-			break;
-		case 's': // "dtds"
-		{
-			ut64 off = UT64_MAX;
-			int fd = atoi(input + 2);
-			char *str = strchr(input + 2, ' ');
-			if (str)
-				off = rz_num_math(core->num, str + 1);
-			if (off == UT64_MAX || !rz_debug_desc_seek(core->dbg, fd, off)) {
-				RzBuffer *buf = rz_core_syscallf(core, "lseek", "%d, 0x%" PFMT64x ", %d", fd, off, 0);
-				consumeBuffer(buf, "dx ", "Cannot seek");
-			}
-		} break;
-		case 't': { // "ddt" <ttypath>
-			RzBuffer *buf = rz_core_syscall(core, "close", 0);
-			consumeBuffer(buf, "dx ", "Cannot close");
-			break;
-		}
-		case 'd': // "ddd"
-		{
-			ut64 newfd = UT64_MAX;
-			int fd = atoi(input + 2);
-			char *str = strchr(input + 3, ' ');
-			if (str)
-				newfd = rz_num_math(core->num, str + 1);
-			if (newfd == UT64_MAX || !rz_debug_desc_dup(core->dbg, fd, newfd)) {
-				RzBuffer *buf = rz_core_syscallf(core, "dup2", "%d, %d", fd, (int)newfd);
-				if (buf) {
-					consumeBuffer(buf, "dx ", NULL);
-				} else {
-					RZ_LOG_ERROR("core: Cannot dup %d %d\n", fd, (int)newfd);
-				}
-			}
-		} break;
-		case 'r': {
-			ut64 off = UT64_MAX;
-			ut64 len = UT64_MAX;
-			int fd = atoi(input + 2);
-			char *str = strchr(input + 2, ' ');
-			if (str)
-				off = rz_num_math(core->num, str + 1);
-			if (str)
-				str = strchr(str + 1, ' ');
-			if (str)
-				len = rz_num_math(core->num, str + 1);
-			if (len == UT64_MAX || off == UT64_MAX ||
-				!rz_debug_desc_read(core->dbg, fd, off, len)) {
-				consumeBuffer(rz_core_syscallf(core, "read", "%d, 0x%" PFMT64x ", %d",
-						      fd, off, (int)len),
-					"dx ", "Cannot read");
-			}
-		} break;
-		case 'w': {
-			ut64 off = UT64_MAX;
-			ut64 len = UT64_MAX;
-			int fd = atoi(input + 2);
-			char *str = strchr(input + 2, ' ');
-			if (str)
-				off = rz_num_math(core->num, str + 1);
-			if (str)
-				str = strchr(str + 1, ' ');
-			if (str)
-				len = rz_num_math(core->num, str + 1);
-			if (len == UT64_MAX || off == UT64_MAX ||
-				!rz_debug_desc_write(core->dbg, fd, off, len)) {
-				RzBuffer *buf = rz_core_syscallf(core, "write", "%d, 0x%" PFMT64x ", %d", fd, off, (int)len);
-				consumeBuffer(buf, "dx ", "Cannot write");
-			}
-			break;
-		}
-		case '-': // "dd-"
-		{
-			int fd = atoi(input + 2);
-			// rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
-			RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
-			consumeBuffer(buf, "dx ", "Cannot close");
-			break;
-		}
-		case ' ': // "dd"
-		{
-			// TODO: handle read, readwrite, append
-			RzBuffer *buf = rz_core_syscallf(core, "open", "%s, %d, %d", input + 2, 2, 0644);
-			consumeBuffer(buf, "dx ", "Cannot open");
-			break;
-		}
-		case '?':
-		default:
-			rz_core_cmd_help(core, help_msg_dd);
-			break;
-		}
-		break;
-	case 'H': // "dH"
-		RZ_LOG_ERROR("core: dH has not been implemented\n");
-		break;
 	case 'e': // "de"
 		rz_core_debug_esil(core, input + 1);
 		break;
@@ -3456,4 +3334,73 @@ RZ_IPI RzCmdStatus rz_cmd_debug_inject_syscall_handler(RzCore *core, int argc, c
 	bool result = debug_inject_opcode(core, str);
 	free(str);
 	return bool2status(result);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_open_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_num_math(core->num, argv[1]);
+	RzBuffer *buf = rz_core_syscallf(core, "open", "%d, %d, %d", fd, 2, 0644);
+	consumeBuffer(buf, "dx ", "Cannot open");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_close_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_num_math(core->num, argv[1]);
+	RzBuffer *buf = rz_core_syscallf(core, "close", "%d", fd);
+	consumeBuffer(buf, "dx ", "Cannot close");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return bool2status(rz_core_debug_desc_print(core->dbg, state));
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_seek_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_num_math(core->num, argv[1]);
+	ut64 off = rz_num_math(core->num, argv[2]);
+	if (off == UT64_MAX || !rz_debug_desc_seek(core->dbg, fd, off)) {
+		RzBuffer *buf = rz_core_syscallf(core, "lseek", "%d, 0x%" PFMT64x ", %d", fd, off, 0);
+		consumeBuffer(buf, "dx ", "Cannot seek");
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_dup_handler(RzCore *core, int argc, const char **argv) {
+	int fd_src = rz_num_math(core->num, argv[1]);
+	int fd_dst = rz_num_math(core->num, argv[2]);
+	if (fd_dst == UT64_MAX || !rz_debug_desc_dup(core->dbg, fd_src, fd_dst)) {
+		RzBuffer *buf = rz_core_syscallf(core, "dup2", "%d, %d", fd_src, fd_dst);
+		if (!buf) {
+			RZ_LOG_ERROR("core: Cannot dup %d %d\n", fd_src, fd_dst);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		consumeBuffer(buf, "dx ", NULL);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_read_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_num_math(core->num, argv[1]);
+	ut64 off = rz_num_math(core->num, argv[2]);
+	ut64 len = rz_num_math(core->num, argv[3]);
+	if (len == UT64_MAX || off == UT64_MAX ||
+		!rz_debug_desc_read(core->dbg, fd, off, len)) {
+		consumeBuffer(rz_core_syscallf(core, "read", "%d, 0x%" PFMT64x ", %d",
+				      fd, off, (int)len),
+			"dx ", "Cannot read");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_descriptor_write_handler(RzCore *core, int argc, const char **argv) {
+	int fd = rz_num_math(core->num, argv[1]);
+	ut64 off = rz_num_math(core->num, argv[2]);
+	ut64 len = rz_num_math(core->num, argv[3]);
+	if (len == UT64_MAX || off == UT64_MAX ||
+		!rz_debug_desc_write(core->dbg, fd, off, len)) {
+		RzBuffer *buf = rz_core_syscallf(core, "write", "%d, 0x%" PFMT64x ", %d", fd, off, (int)len);
+		consumeBuffer(buf, "dx ", "Cannot write");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
 }
