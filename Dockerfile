@@ -50,6 +50,7 @@ RUN echo -e "Building versions:\n\
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
+	ninja-build \
 	cmake \
 	gcc \
 	cpp \
@@ -65,7 +66,7 @@ RUN apt-get install -y --no-install-recommends \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
 	${with_ppc_as:+binutils-powerpc64le-linux-gnu}
 
-RUN pip3 install meson ninja==1.10.2.3
+RUN pip3 install meson
 
 # Build rizin in a volume to minimize space used by build
 COPY . /tmp/rizin/
