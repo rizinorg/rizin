@@ -531,6 +531,11 @@ static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
 static const RzCmdDescArg print_utf16be_args[2];
 static const RzCmdDescArg print_utf32be_args[2];
+static const RzCmdDescArg print_value_args[2];
+static const RzCmdDescArg print_value1_args[2];
+static const RzCmdDescArg print_value2_args[2];
+static const RzCmdDescArg print_value4_args[2];
+static const RzCmdDescArg print_value8_args[2];
 static const RzCmdDescArg print_hexdump_args[2];
 static const RzCmdDescArg print_hexdump_annotated_args[2];
 static const RzCmdDescArg print_op_analysis_color_map_args[2];
@@ -12367,6 +12372,79 @@ static const RzCmdDescHelp print_utf32be_help = {
 	.args = print_utf32be_args,
 };
 
+static const RzCmdDescHelp pv_help = {
+	.summary = "Print bytes based on current bitness and endianness",
+};
+static const RzCmdDescArg print_value_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value_help = {
+	.summary = "print bytes",
+	.args = print_value_args,
+};
+
+static const RzCmdDescArg print_value1_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value1_help = {
+	.summary = "print 1 byte",
+	.args = print_value1_args,
+};
+
+static const RzCmdDescArg print_value2_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value2_help = {
+	.summary = "print 2 bytes",
+	.args = print_value2_args,
+};
+
+static const RzCmdDescArg print_value4_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value4_help = {
+	.summary = "print 4 bytes",
+	.args = print_value4_args,
+};
+
+static const RzCmdDescArg print_value8_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value8_help = {
+	.summary = "print 8 bytes",
+	.args = print_value8_args,
+};
+
 static const RzCmdDescHelp px_help = {
 	.summary = "Show hexdump",
 };
@@ -18365,6 +18443,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
 	rz_warn_if_fail(print_utf32be_cd);
+
+	RzCmdDesc *pv_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value_handler, &print_value_help, &pv_help);
+	rz_warn_if_fail(pv_cd);
+	RzCmdDesc *print_value1_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv1", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value1_handler, &print_value1_help);
+	rz_warn_if_fail(print_value1_cd);
+
+	RzCmdDesc *print_value2_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv2", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value2_handler, &print_value2_help);
+	rz_warn_if_fail(print_value2_cd);
+
+	RzCmdDesc *print_value4_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv4", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value4_handler, &print_value4_help);
+	rz_warn_if_fail(print_value4_cd);
+
+	RzCmdDesc *print_value8_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value8_handler, &print_value8_help);
+	rz_warn_if_fail(print_value8_cd);
 
 	RzCmdDesc *px_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "px", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_handler, &print_hexdump_help, &px_help);
 	rz_warn_if_fail(px_cd);

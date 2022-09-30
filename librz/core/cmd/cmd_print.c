@@ -394,17 +394,6 @@ static const char *help_msg_ps[] = {
 	NULL
 };
 
-static const char *help_msg_pv[] = {
-	"Usage: pv[j][1,2,4,8,z]", "", "",
-	"pv", "", "print bytes based on asm.bits",
-	"pv1", "", "print 1 byte in memory",
-	"pv2", "", "print 2 bytes in memory",
-	"pv4", "", "print 4 bytes in memory",
-	"pv8", "", "print 8 bytes in memory",
-	"pvz", "", "print value as string (alias for ps)",
-	NULL
-};
-
 static const char *help_msg_px[] = {
 	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
 	"px", "", "show hexdump",
@@ -2533,206 +2522,6 @@ RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-// XXX blocksize is missing
-static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
-	const char *stack[] = {
-		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
-	};
-	ut8 *block = core->block;
-	int blocksize = core->blocksize;
-	ut8 *block_end = core->block + blocksize;
-	int i, n = core->rasm->bits / 8;
-	int type = 'v';
-	bool fixed_size = true;
-	switch (input[0]) {
-	case '1': // "pv1"
-		n = 1;
-		input++;
-		break;
-	case '2': // "pv2"
-		n = 2;
-		input++;
-		break;
-	case '4': // "pv4"
-		n = 4;
-		input++;
-		break;
-	case '8': // "pv8"
-		n = 8;
-		input++;
-		break;
-	default:
-		if (*input && input[1] == 'j') {
-			input++;
-		}
-		fixed_size = false;
-		break;
-	}
-	const char *arg = strchr(input, ' ');
-	if (arg) {
-		arg = rz_str_trim_head_ro(arg + 1);
-	} else {
-		arg = input;
-	}
-	st64 repeat = rz_num_math(core->num, arg);
-	if (repeat < 0) {
-		repeat = 1;
-	}
-	if (useBytes && n > 0 && repeat > 0) {
-		repeat /= n;
-	}
-	if (repeat < 1) {
-		repeat = 1;
-	}
-	// variables can be
-	switch (input[0]) {
-	case 'z': // "pvz"
-		type = 'z';
-		if (input[1]) {
-			input++;
-		} else {
-			rz_core_cmdf(core, "ps");
-			break;
-		}
-		/* fallthrough */
-		// case ' ': // "pv "
-		for (i = 0; stack[i]; i++) {
-			if (!strcmp(input + 1, stack[i])) {
-				if (type == 'z') {
-					rz_core_cmdf(core, "ps @ [`drn sp`+%d]", n * i);
-				} else {
-					rz_core_cmdf(core, "?v [`drn sp`+%d]", n * i);
-				}
-			}
-		}
-		break;
-	case '*': { // "pv*"
-		for (i = 0; i < repeat; i++) {
-			const bool be = core->print->big_endian;
-			ut64 at = core->offset + (i * n);
-			ut8 *b = block + (i * n);
-			switch (n) {
-			case 1:
-				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble8(b));
-				break;
-			case 2:
-				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble16(b, be));
-				break;
-			case 4:
-				rz_cons_printf("f pval.0x%08" PFMT64x " @ %d\n", at, rz_read_ble32(b, be));
-				break;
-			case 8:
-			default:
-				rz_cons_printf("f pval.0x%08" PFMT64x " @ %" PFMT64d "\n", at, rz_read_ble64(b, be));
-				break;
-			}
-		}
-		break;
-	}
-	case 'j': { // "pvj"
-		PJ *pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_a(pj);
-		ut64 at = core->offset;
-		ut64 oldAt = at;
-		for (i = 0; i < repeat; i++) {
-			rz_core_seek(core, at, false);
-			char *str = rz_core_cmd_str(core, "ps");
-			rz_str_trim(str);
-			char *p = str;
-			if (p) {
-				while (*p) {
-					if (*p == '\\' && p[1] == 'x') {
-						memmove(p, p + 4, strlen(p + 4) + 1);
-					}
-					p++;
-				}
-			}
-			// rz_num_get is going to use a dangling pointer since the internal
-			// token that RzNum holds ([$$]) has been already freed by rz_core_cmd_str
-			// rz_num_math reloads a new token so the dangling pointer is gone
-			pj_o(pj);
-			pj_k(pj, "value");
-			switch (n) {
-			case 1:
-				pj_i(pj, rz_read_ble8(block));
-				break;
-			case 2:
-				pj_i(pj, rz_read_ble16(block, core->print->big_endian));
-				break;
-			case 4:
-				pj_n(pj, (ut64)rz_read_ble32(block, core->print->big_endian));
-				break;
-			case 8:
-			default:
-				pj_n(pj, rz_read_ble64(block, core->print->big_endian));
-				break;
-			}
-			pj_ks(pj, "string", str);
-			pj_end(pj);
-			free(str);
-			at += n;
-		}
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		rz_core_seek(core, oldAt, false);
-		break;
-	}
-	case '?': // "pv?"
-		rz_core_cmd_help(core, help_msg_pv);
-		break;
-	default:
-		do {
-			repeat--;
-			if (block + 8 >= block_end) {
-				RZ_LOG_ERROR("core: block is truncated.\n");
-				break;
-			}
-			ut64 v;
-			if (!fixed_size) {
-				n = 0;
-			}
-			switch (n) {
-			case 1:
-				v = rz_read_ble8(block);
-				rz_cons_printf("0x%02" PFMT64x "\n", v);
-				block += 1;
-				break;
-			case 2:
-				v = rz_read_ble16(block, core->print->big_endian);
-				rz_cons_printf("0x%04" PFMT64x "\n", v);
-				block += 2;
-				break;
-			case 4:
-				v = rz_read_ble32(block, core->print->big_endian);
-				rz_cons_printf("0x%08" PFMT64x "\n", v);
-				block += 4;
-				break;
-			case 8:
-				v = rz_read_ble64(block, core->print->big_endian);
-				rz_cons_printf("0x%016" PFMT64x "\n", v);
-				block += 8;
-				break;
-			default:
-				v = rz_read_ble64(block, core->print->big_endian);
-				switch (core->rasm->bits / 8) {
-				case 1: rz_cons_printf("0x%02" PFMT64x "\n", v & UT8_MAX); break;
-				case 2: rz_cons_printf("0x%04" PFMT64x "\n", v & UT16_MAX); break;
-				case 4: rz_cons_printf("0x%08" PFMT64x "\n", v & UT32_MAX); break;
-				case 8: rz_cons_printf("0x%016" PFMT64x "\n", v & UT64_MAX); break;
-				default: break;
-				}
-				block += core->rasm->bits / 8;
-				break;
-			}
-		} while (repeat > 0);
-		break;
-	}
-}
-
 static bool cmd_print_blocks(RzCore *core, const char *input) {
 	bool result = false;
 	char mode = input[0];
@@ -4371,12 +4160,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				free(res);
 			}
 		}
-		break;
-	case 'v': // "pv"
-		cmd_print_pv(core, input + 1, false);
-		break;
-	case 'V': // "pv"
-		cmd_print_pv(core, input + 1, true);
 		break;
 	case '-': // "p-"
 		return cmd_print_blocks(core, input + 1);
@@ -6626,4 +6409,164 @@ RZ_IPI RzCmdStatus rz_cmd_print_axml_handler(RzCore *core, int argc, const char 
 	rz_cons_printf("%s", s);
 	free(s);
 	return RZ_CMD_STATUS_OK;
+}
+
+typedef struct {
+	ut64 size;
+	ut64 repeat;
+	bool useBytes;
+} PrintValueOptions;
+
+static void print_value_single(RzCore *core, PrintValueOptions *opts, ut64 address, ut64 value, RzCmdStateOutput *state) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("f pval.0x%08" PFMT64x " @ %" PFMT64d "\n", address, value);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		switch (opts->size) {
+		case 1:
+			rz_cons_printf("0x%02" PFMT64x "\n", value);
+			break;
+		case 2:
+			rz_cons_printf("0x%04" PFMT64x "\n", value);
+			break;
+		case 4:
+			rz_cons_printf("0x%08" PFMT64x "\n", value);
+			break;
+		case 8:
+			rz_cons_printf("0x%016" PFMT64x "\n", value);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		break;
+	case RZ_OUTPUT_MODE_JSON: {
+		// TODO: Use API instead of the command
+		char *str = rz_core_cmd_str(core, "ps");
+		rz_str_trim(str);
+		char *p = str;
+		if (p) {
+			while (*p) {
+				if (*p == '\\' && p[1] == 'x') {
+					memmove(p, p + 4, strlen(p + 4) + 1);
+				}
+				p++;
+			}
+		}
+		pj_o(state->d.pj);
+		pj_k(state->d.pj, "value");
+		switch (opts->size) {
+		case 1:
+		case 2:
+			pj_i(state->d.pj, value);
+			break;
+		case 4:
+		case 8:
+			pj_n(state->d.pj, value);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		pj_ks(state->d.pj, "string", str);
+		pj_end(state->d.pj);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput *state) {
+	ut64 old_at = core->offset;
+	ut8 *block = core->block;
+	int blocksize = core->blocksize;
+	ut8 *block_end = core->block + blocksize;
+
+	if (block + 8 >= block_end) {
+		RZ_LOG_ERROR("core: block is truncated.\n");
+		return false;
+	}
+	ut64 repeat = opts->repeat;
+	if (opts->useBytes && opts->size > 0 && repeat > 0) {
+		repeat /= opts->size;
+	}
+	ut64 at = old_at;
+	rz_cmd_state_output_array_start(state);
+	do {
+		rz_core_seek(core, at, false);
+
+		ut64 v = 0;
+		switch (opts->size) {
+		case 1:
+			v = rz_read_ble8(block);
+			block += opts->size;
+			break;
+		case 2:
+			v = rz_read_ble16(block, core->print->big_endian);
+			block += opts->size;
+			break;
+		case 4:
+			v = rz_read_ble32(block, core->print->big_endian);
+			block += opts->size;
+			break;
+		case 8:
+			v = rz_read_ble64(block, core->print->big_endian);
+			block += opts->size;
+			break;
+		case 0:
+			v = rz_read_ble64(block, core->print->big_endian);
+			opts->size = core->rasm->bits / 8;
+			switch (core->rasm->bits / 8) {
+			case 1: v &= UT8_MAX; break;
+			case 2: v &= UT16_MAX; break;
+			case 4: v &= UT32_MAX; break;
+			case 8: v &= UT64_MAX; break;
+			default: break;
+			}
+			block += core->rasm->bits / 8;
+			break;
+		}
+		print_value_single(core, opts, at, v, state);
+		repeat--;
+		at += opts->size;
+	} while (repeat > 0);
+	rz_cmd_state_output_array_end(state);
+	rz_core_seek(core, old_at, false);
+	return true;
+}
+
+static RzCmdStatus print_value_size(RzCore *core, RzCmdStateOutput *state, int argc, const char **argv, ut64 size) {
+	int repeat = argc > 1 ? rz_num_math(NULL, argv[1]) : 1;
+	if (repeat < 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	PrintValueOptions opts = {
+		.size = size,
+		.repeat = repeat,
+		.useBytes = false
+	};
+	return bool2status(print_value(core, &opts, state));
+}
+
+RZ_IPI RzCmdStatus rz_print_value_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return print_value_size(core, state, argc, argv, 0);
+}
+
+RZ_IPI RzCmdStatus rz_print_value1_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return print_value_size(core, state, argc, argv, 1);
+}
+
+RZ_IPI RzCmdStatus rz_print_value2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return print_value_size(core, state, argc, argv, 2);
+}
+
+RZ_IPI RzCmdStatus rz_print_value4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return print_value_size(core, state, argc, argv, 4);
+}
+
+RZ_IPI RzCmdStatus rz_print_value8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return print_value_size(core, state, argc, argv, 8);
 }
