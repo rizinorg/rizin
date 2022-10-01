@@ -20,6 +20,7 @@ ARGS=-d
 CMDS=<<EOF
 dcu main
 pi 8 @ pc
+dk 9
 EOF
 EXPECT=<<EOF
 sub sp, sp, 0x50
