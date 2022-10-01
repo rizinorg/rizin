@@ -61,7 +61,7 @@ bool test_rz_analysis_var() {
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	assert_sane(analysis);
 
 	// creating variables and renaming

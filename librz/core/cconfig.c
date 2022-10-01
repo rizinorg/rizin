@@ -66,10 +66,6 @@ static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction 
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int compareType(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
-	return (a && b && a->diff->type && b->diff->type ? (a->diff->type > b->diff->type) - (a->diff->type < b->diff->type) : 0);
-}
-
 static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
@@ -79,10 +75,6 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b)
 	sa = rz_analysis_function_realsize(a);
 	sb = rz_analysis_function_realsize(b);
 	return (sa > sb) - (sa < sb);
-}
-
-static int compareDist(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
-	return (a && b && a->diff->dist && b->diff->dist ? (a->diff->dist > b->diff->dist) - (a->diff->dist < b->diff->dist) : 0);
 }
 
 static bool cb_diff_sort(void *_core, void *_node) {
@@ -96,12 +88,8 @@ static bool cb_diff_sort(void *_core, void *_node) {
 			core->analysis->columnSort = (RzListComparator)compareNameLen;
 		} else if (!strcmp(column, "addr")) {
 			core->analysis->columnSort = (RzListComparator)compareAddress;
-		} else if (!strcmp(column, "type")) {
-			core->analysis->columnSort = (RzListComparator)compareType;
 		} else if (!strcmp(column, "size")) {
 			core->analysis->columnSort = (RzListComparator)compareSize;
-		} else if (!strcmp(column, "dist")) {
-			core->analysis->columnSort = (RzListComparator)compareDist;
 		} else {
 			goto fail;
 		}
@@ -3248,11 +3236,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* diff */
 	n = NODECB("diff.sort", "addr", &cb_diff_sort);
 	SETDESC(n, "Specify function diff sorting column");
-	SETOPTIONS(n, "name", "namelen", "addr", "type", "size", "dist", NULL);
+	SETOPTIONS(n, "name", "namelen", "addr", "size", NULL);
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
 	SETI("diff.to", 0, "Set destination diffing address for px (uses cc command)");
 	SETBPREF("diff.bare", "false", "Never show function names in diff output");
-	SETBPREF("diff.levenstein", "false", "Use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
 	SETI("dir.depth", 10, "Maximum depth when searching recursively for files");

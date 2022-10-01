@@ -72,8 +72,6 @@ static void block_free(RzAnalysisBlock *block) {
 		return;
 	}
 	rz_analysis_cond_free(block->cond);
-	free(block->fingerprint);
-	rz_analysis_diff_free(block->diff);
 	free(block->op_bytes);
 	rz_analysis_switch_op_free(block->switch_op);
 	rz_list_free(block->fcns);

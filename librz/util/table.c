@@ -40,9 +40,12 @@ RZ_API RzTableColumnType *rz_table_type(const char *name) {
 static void __table_adjust(RzTable *t) {
 	RzTableColumn *col;
 	RzTableRow *row;
-	rz_vector_foreach(t->cols, col) {
-		int itemLength = rz_str_len_utf8_ansi(col->name) + 1;
-		col->width = itemLength;
+	int length = 0;
+	if (t->showHeader) {
+		rz_vector_foreach(t->cols, col) {
+			int length = rz_str_len_utf8_ansi(col->name) + 1;
+			col->width = length;
+		}
 	}
 	rz_vector_foreach(t->rows, row) {
 		void **pitem;
@@ -50,10 +53,10 @@ static void __table_adjust(RzTable *t) {
 		int ncol = 0;
 		rz_pvector_foreach (row->items, pitem) {
 			item = *pitem;
-			int itemLength = rz_str_len_utf8_ansi(item) + 1;
-			RzTableColumn *c = rz_vector_index_ptr(t->cols, ncol);
-			if (c) {
-				c->width = RZ_MAX(c->width, itemLength);
+			length = rz_str_len_utf8_ansi(item) + 1;
+			col = rz_vector_index_ptr(t->cols, ncol);
+			if (col) {
+				col->width = RZ_MAX(col->width, length);
 			}
 			ncol++;
 		}
@@ -156,7 +159,7 @@ RZ_API RzTableRow *rz_table_row_new(RzPVector /*<char *>*/ *items) {
 }
 
 static bool __addRow(RzTable *t, RzPVector /*<char *>*/ *items, const char *arg, int col) {
-	int itemLength = rz_str_len_utf8_ansi(arg) + 1;
+	int itemLength = rz_str_len_utf8_ansi(arg);
 	RzTableColumn *c = rz_vector_index_ptr(t->cols, col);
 	if (c) {
 		char *str = strdup(arg);
@@ -356,19 +359,25 @@ static int __strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableCo
 	RzCons *cons = (RzCons *)t->cons;
 	const char *v_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
 	int ll = rz_strbuf_length(sb);
+	int pad = 0;
+	int len = rz_str_len_utf8_ansi(str);
+	if (len < rz_str_len_utf8(str) && len < col->width) {
+		pad = col->width - len;
+	}
+
 	switch (col->align) {
 	case RZ_TABLE_ALIGN_LEFT:
-		rz_strbuf_appendf(sb, "%s %-*s ", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%s %-*s", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%*s", pad, "");
 		break;
 	case RZ_TABLE_ALIGN_RIGHT:
-		rz_strbuf_appendf(sb, "%s %*s ", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%s%*s%*s", v_line, pad, " ", col->width, str);
 		break;
 	case RZ_TABLE_ALIGN_CENTER: {
-		int len = rz_str_len_utf8(str);
-		int pad = (col->width - len) / 2;
+		pad = (col->width - len) / 2;
 		int left = col->width - (pad * 2 + len);
-		rz_strbuf_appendf(sb, "%s %-*s ", v_line, pad, " ");
-		rz_strbuf_appendf(sb, "%-*s ", pad + left, str);
+		rz_strbuf_appendf(sb, "%s %-*s", v_line, pad, " ");
+		rz_strbuf_appendf(sb, "%-*s", pad + left, str);
 		break;
 	}
 	}
@@ -443,8 +452,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 			item = *pitem;
 			RzTableColumn *col = rz_vector_index_ptr(t->cols, c);
 			if (col) {
-				int l = __strbuf_append_col_aligned_fancy(t, sb, col, item);
-				len = RZ_MAX(len, l);
+				(void)__strbuf_append_col_aligned_fancy(t, sb, col, item);
 			}
 			c++;
 		}
@@ -457,8 +465,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 		rz_strbuf_appendf(sb, "%s%s%s\n", l_intersect, h_line_str, rz_intersect);
 		rz_vector_foreach(t->cols, col) {
 			char *num = col->total == -1 ? "" : sdb_itoa(col->total, tmp, 10);
-			int l = __strbuf_append_col_aligned_fancy(t, sb, col, num);
-			len = RZ_MAX(len, l);
+			(void)__strbuf_append_col_aligned_fancy(t, sb, col, num);
 		}
 		rz_strbuf_appendf(sb, "%s\n", v_line);
 	}

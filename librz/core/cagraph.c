@@ -9,7 +9,7 @@ RZ_IPI void rz_core_agraph_reset(RzCore *core) {
 	rz_agraph_reset(core->graph);
 }
 
-RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color) {
+RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body) {
 	char *b = strdup(body);
 	if (rz_str_startswith(b, "base64:")) {
 		char *newbody = strdup(b);
@@ -28,7 +28,7 @@ RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char 
 	if (!RZ_STR_ISEMPTY(b)) {
 		b = rz_str_append(b, "\n");
 	}
-	rz_agraph_add_node_with_color(core->graph, title, b, color);
+	rz_agraph_add_node(core->graph, title, b);
 	free(b);
 }
 

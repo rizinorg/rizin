@@ -194,7 +194,6 @@ RZ_IPI char **rz_analysis_graph_format_choices(RzCore *core);
 RZ_IPI RzCmdStatus rz_analysis_graph_dataref_global_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_function_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_imports_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_graph_refs_handler(RzCore *core, int argc, const char **argv);

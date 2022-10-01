@@ -17,14 +17,12 @@
  * /
  *   /blocks
  *     0x<addr>={size:<ut64>, jump?:<ut64>, fail?:<ut64>, traced?:true, colorize?:<ut32>,
- *               fingerprint?:"<base64>", diff?: <RzAnalysisDiff>, switch_op?:<RzAnalysisSwitchOp>,
- *               ninstr:<int>, op_pos?:[<ut16>], stackptr:<int>, parent_stackptr:<int>,
- *               cmpval:<ut64>, cmpreg?:<str>}
+ *               switch_op?:<RzAnalysisSwitchOp>, ninstr:<int>, op_pos?:[<ut16>], stackptr:<int>,
+ *               parent_stackptr:<int>, cmpval:<ut64>, cmpreg?:<str>}
  *   /functions
  *     0x<addr>={name:<str>, bits?:<int>, type:<int>, cc?:<str>, stack:<int>, maxstack:<int>,
  *               ninstr:<int>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
- *               fingerprint?:"<base64>", diff?:<RzAnalysisDiff>, bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>],
- *               labels?: {<str>:<ut64>}}
+ *               bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>], labels?: {<str>:<ut64>}}
  *   /xrefs
  *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"s"}]
  *
@@ -46,9 +44,6 @@
  *   /imports
  *     <str>=i
  *
- * RzAnalysisDiff JSON:
- * {type?:"m"|"u", addr:<ut64>, dist:<double>, name?:<str>, size:<ut32>}
- *
  * RzAnalysisSwitchOp JSON:
  * {addr:<ut64>, min:<ut64>, max:<ut64>, def:<ut64>, cases:[<RzAnalysisCaseOp>]}
  *
@@ -60,107 +55,6 @@
  *   accs?: [{off:<st64>, type:"r|w|rw", reg:<str>, sp?:<st64>}], constrs?:[<int>,<ut64>,...]}
  *
  */
-
-RZ_API void rz_serialize_analysis_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisDiff *diff) {
-	pj_o(j);
-	switch (diff->type) {
-	case RZ_ANALYSIS_DIFF_TYPE_MATCH:
-		pj_ks(j, "type", "m");
-		break;
-	case RZ_ANALYSIS_DIFF_TYPE_UNMATCH:
-		pj_ks(j, "type", "u");
-		break;
-	}
-	if (diff->addr != UT64_MAX) {
-		pj_kn(j, "addr", diff->addr);
-	}
-	if (diff->dist != 0.0) {
-		pj_kd(j, "dist", diff->dist);
-	}
-	if (diff->name) {
-		pj_ks(j, "name", diff->name);
-	}
-	if (diff->size) {
-		pj_kn(j, "size", (ut64)diff->size);
-	}
-	pj_end(j);
-}
-
-enum {
-	DIFF_FIELD_TYPE,
-	DIFF_FIELD_ADDR,
-	DIFF_FIELD_DIST,
-	DIFF_FIELD_NAME,
-	DIFF_FIELD_SIZE
-};
-
-RZ_API RzSerializeAnalDiffParser rz_serialize_analysis_diff_parser_new(void) {
-	RzSerializeAnalDiffParser parser = rz_key_parser_new();
-	if (!parser) {
-		return NULL;
-	}
-	rz_key_parser_add(parser, "type", DIFF_FIELD_TYPE);
-	rz_key_parser_add(parser, "addr", DIFF_FIELD_ADDR);
-	rz_key_parser_add(parser, "dist", DIFF_FIELD_DIST);
-	rz_key_parser_add(parser, "name", DIFF_FIELD_NAME);
-	rz_key_parser_add(parser, "size", DIFF_FIELD_SIZE);
-	return parser;
-}
-
-RZ_API void rz_serialize_analysis_diff_parser_free(RzSerializeAnalDiffParser parser) {
-	rz_key_parser_free(parser);
-}
-
-RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RzJson *json) {
-	if (json->type != RZ_JSON_OBJECT) {
-		return NULL;
-	}
-	RzAnalysisDiff *diff = rz_analysis_diff_new();
-	if (!diff) {
-		return NULL;
-	}
-	RZ_KEY_PARSER_JSON(parser, json, child, {
-		case DIFF_FIELD_TYPE:
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			if (strcmp(child->str_value, "m") == 0) {
-				diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
-			} else if (strcmp(child->str_value, "u") == 0) {
-				diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-			}
-			break;
-		case DIFF_FIELD_ADDR:
-			if (child->type != RZ_JSON_INTEGER) {
-				break;
-			}
-			diff->addr = child->num.u_value;
-			break;
-		case DIFF_FIELD_DIST:
-			if (child->type == RZ_JSON_INTEGER) {
-				diff->dist = child->num.u_value;
-			} else if (child->type == RZ_JSON_DOUBLE) {
-				diff->dist = child->num.dbl_value;
-			}
-			break;
-		case DIFF_FIELD_NAME:
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			free(diff->name);
-			diff->name = strdup(child->str_value);
-			break;
-		case DIFF_FIELD_SIZE:
-			if (child->type != RZ_JSON_INTEGER) {
-				break;
-			}
-			diff->size = child->num.u_value;
-			break;
-		default:
-			break;
-	})
-	return diff;
-}
 
 RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op) {
 	pj_o(j);
@@ -256,17 +150,6 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	if (block->colorize) {
 		pj_kn(j, "colorize", (ut64)block->colorize);
 	}
-	if (block->fingerprint) {
-		char *b64 = rz_base64_encode_dyn(block->fingerprint, block->size);
-		if (b64) {
-			pj_ks(j, "fingerprint", b64);
-			free(b64);
-		}
-	}
-	if (block->diff) {
-		pj_k(j, "diff");
-		rz_serialize_analysis_diff_save(j, block->diff);
-	}
 
 	// TODO: cond? It's used nowhere...
 
@@ -326,8 +209,6 @@ enum {
 	BLOCK_FIELD_FAIL,
 	BLOCK_FIELD_TRACED,
 	BLOCK_FIELD_COLORIZE,
-	BLOCK_FIELD_FINGERPRINT,
-	BLOCK_FIELD_DIFF,
 	BLOCK_FIELD_SWITCH_OP,
 	BLOCK_FIELD_NINSTR,
 	BLOCK_FIELD_OP_POS,
@@ -340,7 +221,6 @@ enum {
 typedef struct {
 	RzAnalysis *analysis;
 	RzKeyParser *parser;
-	RzSerializeAnalDiffParser diff_parser;
 } BlockLoadCtx;
 
 static bool block_load_cb(void *user, const char *k, const char *v) {
@@ -362,7 +242,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	proto.size = UT64_MAX;
 	proto.parent_stackptr = INT_MAX;
 	proto.cmpval = UT64_MAX;
-	size_t fingerprint_size = SIZE_MAX;
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BLOCK_FIELD_SIZE:
 			if (child->type != RZ_JSON_INTEGER) {
@@ -393,40 +272,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 				break;
 			}
 			proto.colorize = (ut32)child->num.u_value;
-			break;
-		case BLOCK_FIELD_FINGERPRINT: {
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			if (proto.fingerprint) {
-				free(proto.fingerprint);
-				proto.fingerprint = NULL;
-			}
-			fingerprint_size = strlen(child->str_value);
-			if (!fingerprint_size) {
-				break;
-			}
-			proto.fingerprint = malloc(fingerprint_size);
-			if (!proto.fingerprint) {
-				break;
-			}
-			int decsz = rz_base64_decode(proto.fingerprint, child->str_value, fingerprint_size);
-			if (decsz <= 0) {
-				free(proto.fingerprint);
-				proto.fingerprint = NULL;
-				fingerprint_size = 0;
-			} else if (decsz < fingerprint_size) {
-				ut8 *n = realloc(proto.fingerprint, (size_t)decsz);
-				if (n) {
-					proto.fingerprint = n;
-					fingerprint_size = decsz;
-				}
-			}
-			break;
-		}
-		case BLOCK_FIELD_DIFF:
-			rz_analysis_diff_free(proto.diff);
-			proto.diff = rz_serialize_analysis_diff_load(ctx->diff_parser, child);
 			break;
 		case BLOCK_FIELD_SWITCH_OP:
 			rz_analysis_switch_op_free(proto.switch_op);
@@ -492,7 +337,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 
 	errno = 0;
 	ut64 addr = strtoull(k, NULL, 0);
-	if (errno || proto.size == UT64_MAX || (fingerprint_size != SIZE_MAX && fingerprint_size != proto.size) || (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
+	if (errno || proto.size == UT64_MAX || (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
 		goto error;
 	}
 
@@ -504,8 +349,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	block->fail = proto.fail;
 	block->traced = proto.traced;
 	block->colorize = proto.colorize;
-	block->fingerprint = proto.fingerprint;
-	block->diff = proto.diff;
 	block->switch_op = proto.switch_op;
 	block->ninstr = proto.ninstr;
 	if (proto.op_pos) {
@@ -520,15 +363,13 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 
 	return true;
 error:
-	free(proto.fingerprint);
-	rz_analysis_diff_free(proto.diff);
 	rz_analysis_switch_op_free(proto.switch_op);
 	free(proto.op_pos);
 	return false;
 }
 
-RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
-	BlockLoadCtx ctx = { analysis, rz_key_parser_new(), diff_parser };
+RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
+	BlockLoadCtx ctx = { analysis, rz_key_parser_new() };
 	if (!ctx.parser) {
 		RZ_SERIALIZE_ERR(res, "parser init failed");
 		return false;
@@ -538,8 +379,6 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 	rz_key_parser_add(ctx.parser, "fail", BLOCK_FIELD_FAIL);
 	rz_key_parser_add(ctx.parser, "traced", BLOCK_FIELD_TRACED);
 	rz_key_parser_add(ctx.parser, "colorize", BLOCK_FIELD_COLORIZE);
-	rz_key_parser_add(ctx.parser, "fingerprint", BLOCK_FIELD_FINGERPRINT);
-	rz_key_parser_add(ctx.parser, "diff", BLOCK_FIELD_DIFF);
 	rz_key_parser_add(ctx.parser, "switch_op", BLOCK_FIELD_SWITCH_OP);
 	rz_key_parser_add(ctx.parser, "ninstr", BLOCK_FIELD_NINSTR);
 	rz_key_parser_add(ctx.parser, "op_pos", BLOCK_FIELD_OP_POS);
@@ -644,7 +483,7 @@ enum {
 };
 
 RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
-	RzSerializeAnalDiffParser parser = rz_key_parser_new();
+	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
 	}
@@ -913,7 +752,7 @@ enum {
 };
 
 RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_new(void) {
-	RzSerializeAnalDiffParser parser = rz_key_parser_new();
+	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
 	}
@@ -1087,17 +926,6 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 	if (function->is_noreturn) {
 		pj_kb(j, "noreturn", true);
 	}
-	if (function->fingerprint) {
-		char *b64 = rz_base64_encode_dyn(function->fingerprint, function->fingerprint_size);
-		if (b64) {
-			pj_ks(j, "fingerprint", b64);
-			free(b64);
-		}
-	}
-	if (function->diff) {
-		pj_k(j, "diff");
-		rz_serialize_analysis_diff_save(j, function->diff);
-	}
 
 	pj_ka(j, "bbs");
 	RzListIter *it;
@@ -1161,8 +989,6 @@ enum {
 	FUNCTION_FIELD_BP_FRAME,
 	FUNCTION_FIELD_BP_OFF,
 	FUNCTION_FIELD_NORETURN,
-	FUNCTION_FIELD_FINGERPRINT,
-	FUNCTION_FIELD_DIFF,
 	FUNCTION_FIELD_BBS,
 	FUNCTION_FIELD_IMPORTS,
 	FUNCTION_FIELD_VARS,
@@ -1172,7 +998,6 @@ enum {
 typedef struct {
 	RzAnalysis *analysis;
 	RzKeyParser *parser;
-	RzSerializeAnalDiffParser diff_parser;
 	RzSerializeAnalVarParser var_parser;
 } FunctionLoadCtx;
 
@@ -1265,43 +1090,6 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 			}
 			noreturn = child->num.u_value ? true : false;
 			break;
-		case FUNCTION_FIELD_FINGERPRINT:
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			if (function->fingerprint) {
-				free(function->fingerprint);
-				function->fingerprint = NULL;
-			}
-			function->fingerprint_size = strlen(child->str_value);
-			if (!function->fingerprint_size) {
-				break;
-			}
-			function->fingerprint = malloc(function->fingerprint_size);
-			if (!function->fingerprint) {
-				function->fingerprint_size = 0;
-				break;
-			}
-			int decsz = rz_base64_decode(function->fingerprint, child->str_value, function->fingerprint_size);
-			if (decsz <= 0) {
-				free(function->fingerprint);
-				function->fingerprint = NULL;
-				function->fingerprint_size = 0;
-			} else if (decsz < function->fingerprint_size) {
-				ut8 *n = realloc(function->fingerprint, (size_t)decsz);
-				if (!n) {
-					free(function->fingerprint);
-					function->fingerprint = NULL;
-					function->fingerprint_size = 0;
-				}
-				function->fingerprint = n;
-				function->fingerprint_size = (size_t)decsz;
-			}
-			break;
-		case FUNCTION_FIELD_DIFF:
-			rz_analysis_diff_free(function->diff);
-			function->diff = rz_serialize_analysis_diff_load(ctx->diff_parser, child);
-			break;
 		case FUNCTION_FIELD_BBS: {
 			if (child->type != RZ_JSON_ARRAY) {
 				break;
@@ -1390,11 +1178,10 @@ beach:
 	return ret;
 }
 
-RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	FunctionLoadCtx ctx = {
 		.analysis = analysis,
 		.parser = rz_key_parser_new(),
-		.diff_parser = diff_parser,
 		.var_parser = rz_serialize_analysis_var_parser_new()
 	};
 	bool ret;
@@ -1414,8 +1201,6 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	rz_key_parser_add(ctx.parser, "bp_frame", FUNCTION_FIELD_BP_FRAME);
 	rz_key_parser_add(ctx.parser, "bp_off", FUNCTION_FIELD_BP_OFF);
 	rz_key_parser_add(ctx.parser, "noreturn", FUNCTION_FIELD_NORETURN);
-	rz_key_parser_add(ctx.parser, "fingerprint", FUNCTION_FIELD_FINGERPRINT);
-	rz_key_parser_add(ctx.parser, "diff", FUNCTION_FIELD_DIFF);
 	rz_key_parser_add(ctx.parser, "bbs", FUNCTION_FIELD_BBS);
 	rz_key_parser_add(ctx.parser, "imports", FUNCTION_FIELD_IMPORTS);
 	rz_key_parser_add(ctx.parser, "vars", FUNCTION_FIELD_VARS);
@@ -2209,18 +1994,14 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = false;
-	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
-	if (!diff_parser) {
-		goto beach;
-	}
+	Sdb *subdb = NULL;
 
 	rz_analysis_purge(analysis);
 
-	Sdb *subdb;
 #define SUB(ns, call) RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, goto beach;)
 	SUB("xrefs", rz_serialize_analysis_xrefs_load(subdb, analysis, res));
 
-	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));
+	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, res));
 
 	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
 	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
@@ -2228,7 +2009,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
 
 	// All bbs have ref=1 now
-	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, diff_parser, res));
+	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, res));
 	SUB("noreturn", rz_serialize_analysis_function_noreturn_load(subdb, analysis, res));
 	// BB's refs have increased if they are part of a function.
 	// We must subtract from each to hold our invariant again.
@@ -2255,6 +2036,5 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 	ret = true;
 beach:
-	rz_serialize_analysis_diff_parser_free(diff_parser);
 	return ret;
 }

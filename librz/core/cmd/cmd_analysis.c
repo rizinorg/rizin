@@ -2147,23 +2147,17 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_add_handler(RzCore *core, int arg
 	ut64 size = rz_num_math(core->num, argv[3]);
 	ut64 jump = argc > 4 ? rz_num_math(core->num, argv[4]) : UT64_MAX;
 	ut64 fail = argc > 5 ? rz_num_math(core->num, argv[5]) : UT64_MAX;
-	RzAnalysisDiff *diff = NULL;
-	if (argc > 6) {
-		diff = rz_analysis_diff_new();
-		diff->type = argv[6][0] == 'm' ? RZ_ANALYSIS_DIFF_TYPE_MATCH : RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-	}
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcn_addr);
 	if (!fcn) {
 		RZ_LOG_ERROR("core: Cannot find function at 0x%" PFMT64x "\n", fcn_addr);
 		goto err;
 	}
-	if (!rz_analysis_fcn_add_bb(core->analysis, fcn, addr, size, jump, fail, diff)) {
+	if (!rz_analysis_fcn_add_bb(core->analysis, fcn, addr, size, jump, fail)) {
 		RZ_LOG_ERROR("core: Cannot add basic block at 0x%" PFMT64x " to fcn at 0x%" PFMT64x "\n", addr, fcn_addr);
 		goto err;
 	}
 	res = RZ_CMD_STATUS_OK;
 err:
-	rz_analysis_diff_free(diff);
 	return res;
 }
 
@@ -2379,13 +2373,13 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	return (a && b) ? (a->delta > b->delta) - (a->delta < b->delta) : 0;
 }
 
-static void core_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind, RzCmdStateOutput *state) {
+static void core_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzCmdStateOutput *state) {
 	RzAnalysisVar *var;
 	RzListIter *iter;
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(state->d.pj);
 	}
-	RzList *list = rz_analysis_var_list(analysis, fcn, kind);
+	RzList *list = rz_analysis_var_list(fcn, kind);
 	if (!list) {
 		goto fail;
 	}
@@ -3453,13 +3447,8 @@ static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunct
 		rz_list_free(calls);
 
 		if (verbose) {
-			int locals = rz_analysis_var_count(core->analysis, fcn, 's', 0);
-			locals += rz_analysis_var_count(core->analysis, fcn, 'b', 0);
-			locals += rz_analysis_var_count(core->analysis, fcn, 'r', 0);
-
-			int args = rz_analysis_var_count(core->analysis, fcn, 's', 1);
-			args += rz_analysis_var_count(core->analysis, fcn, 'b', 1);
-			args += rz_analysis_var_count(core->analysis, fcn, 'r', 1);
+			ut32 locals = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL);
+			ut32 args = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
 
 			rz_table_add_rowf(t, "XsndddddddbXnXdddd", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
@@ -3521,17 +3510,6 @@ static char function_type_to_char(RzAnalysisFunction *fcn) {
 	return 'f';
 }
 
-static const char *diff_type_to_str(RzAnalysisDiff *diff) {
-	if (diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
-		return "new";
-	}
-	return diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "match" : "unmatch";
-}
-
-static char diff_type_to_char(RzAnalysisDiff *diff) {
-	return diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL ? 'n' : diff->type;
-}
-
 static void fcn_list_bbs(RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
 	RzListIter *iter;
@@ -3541,9 +3519,6 @@ static void fcn_list_bbs(RzAnalysisFunction *fcn) {
 			fcn->addr, bbi->addr, bbi->size);
 		rz_cons_printf("0x%08" PFMT64x " ", bbi->jump);
 		rz_cons_printf("0x%08" PFMT64x, bbi->fail);
-		if (bbi->diff) {
-			rz_cons_printf(" %c", diff_type_to_char(bbi->diff));
-		}
 		rz_cons_printf("\n");
 	}
 }
@@ -3555,10 +3530,9 @@ static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunctio
 		const char *defaultCC = rz_analysis_cc_default(core->analysis);
 		char *name = rz_core_analysis_fcn_name(core, fcn);
 		rz_cons_printf("\"f %s %" PFMT64u " @ 0x%08" PFMT64x "\"\n", name, rz_analysis_function_linear_size(fcn), fcn->addr);
-		rz_cons_printf("\"af+ %s %c %c @ 0x%08" PFMT64x "\"\n",
+		rz_cons_printf("\"af+ %s %c @ 0x%08" PFMT64x "\"\n",
 			name, // rz_analysis_fcn_size (fcn), name,
 			function_type_to_char(fcn),
-			diff_type_to_char(fcn->diff),
 			fcn->addr);
 		// FIXME: this command prints something annoying. Does it have important side-effects?
 		fcn_list_bbs(fcn);
@@ -3570,9 +3544,9 @@ static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunctio
 			rz_cons_printf("afc %s @ 0x%08" PFMT64x "\n", fcn->cc ? fcn->cc : defaultCC, fcn->addr);
 		}
 		/* show variables  and arguments */
-		core_analysis_var_list_show(core->analysis, fcn, 'b', state);
-		core_analysis_var_list_show(core->analysis, fcn, 'r', state);
-		core_analysis_var_list_show(core->analysis, fcn, 's', state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, state);
 		/* Show references */
 		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		xref_list_print_as_cmd(core, xrefs);
@@ -3679,23 +3653,15 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	pj_ki(state->d.pj, "outdegree", outdegree);
 
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
-		pj_ki(state->d.pj, "nlocals", rz_analysis_var_count(core->analysis, fcn, 'b', 0) + rz_analysis_var_count(core->analysis, fcn, 'r', 0) + rz_analysis_var_count(core->analysis, fcn, 's', 0));
-		pj_ki(state->d.pj, "nargs", rz_analysis_var_count(core->analysis, fcn, 'b', 1) + rz_analysis_var_count(core->analysis, fcn, 'r', 1) + rz_analysis_var_count(core->analysis, fcn, 's', 1));
+		pj_kn(state->d.pj, "nlocals", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL));
+		pj_kn(state->d.pj, "nargs", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT));
 
 		pj_k(state->d.pj, "bpvars");
-		core_analysis_var_list_show(core->analysis, fcn, 'b', state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, state);
 		pj_k(state->d.pj, "spvars");
-		core_analysis_var_list_show(core->analysis, fcn, 's', state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, state);
 		pj_k(state->d.pj, "regvars");
-		core_analysis_var_list_show(core->analysis, fcn, 'r', state);
-
-		pj_ks(state->d.pj, "difftype", diff_type_to_str(fcn->diff));
-		if (fcn->diff->addr != -1) {
-			pj_kn(state->d.pj, "diffaddr", fcn->diff->addr);
-		}
-		if (fcn->diff->name) {
-			pj_ks(state->d.pj, "diffname", fcn->diff->name);
-		}
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, state);
 	}
 	pj_end(state->d.pj);
 }
@@ -3895,7 +3861,7 @@ static void fcn_print_trace_info(RzDebugTrace *traced, RzAnalysisFunction *fcn) 
 	rz_list_foreach (traced->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (rz_analysis_function_contains(fcn, trace->addr)) {
-				rz_cons_printf("\ntraced: %d\n", trace->times);
+				rz_cons_printf("traced: %d\n", trace->times);
 				return;
 			}
 		}
@@ -3908,26 +3874,23 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	int ebbs = 0;
 	char *name = rz_core_analysis_fcn_name(core, fcn);
 
-	rz_cons_printf("#\noffset: 0x%08" PFMT64x "\nname: %s\nsize: %" PFMT64u,
+	rz_cons_printf("offset: 0x%08" PFMT64x "\nname: %s\nsize: %" PFMT64u "\n",
 		fcn->addr, name, rz_analysis_function_linear_size(fcn));
-	rz_cons_printf("\nis-pure: %s", rz_str_bool(rz_analysis_function_purity(fcn)));
-	rz_cons_printf("\nrealsz: %" PFMT64d, rz_analysis_function_realsize(fcn));
-	rz_cons_printf("\nstackframe: %d", fcn->maxstack);
+	rz_cons_printf("is-pure: %s\n", rz_str_bool(rz_analysis_function_purity(fcn)));
+	rz_cons_printf("realsz: %" PFMT64d "\n", rz_analysis_function_realsize(fcn));
+	rz_cons_printf("stackframe: %d\n", fcn->maxstack);
 	if (fcn->cc) {
-		rz_cons_printf("\ncall-convention: %s", fcn->cc);
+		rz_cons_printf("call-convention: %s\n", fcn->cc);
 	}
-	rz_cons_printf("\ncyclomatic-cost: %d", rz_analysis_function_cost(fcn));
-	rz_cons_printf("\ncyclomatic-complexity: %d", rz_analysis_function_complexity(fcn));
-	rz_cons_printf("\nloops: %d", rz_analysis_function_loops(fcn));
-	rz_cons_printf("\nbits: %d", fcn->bits);
-	rz_cons_printf("\ntype: %s", rz_analysis_fcntype_tostring(fcn->type));
-	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
-		rz_cons_printf(" [%s]", diff_type_to_str(fcn->diff));
-	}
-	rz_cons_printf("\nnum-bbs: %d", rz_list_length(fcn->bbs));
-	rz_cons_printf("\nedges: %d", rz_analysis_function_count_edges(fcn, &ebbs));
-	rz_cons_printf("\nend-bbs: %d", ebbs);
-	rz_cons_printf("\ncall-refs:");
+	rz_cons_printf("cyclomatic-cost: %d\n", rz_analysis_function_cost(fcn));
+	rz_cons_printf("cyclomatic-complexity: %d\n", rz_analysis_function_complexity(fcn));
+	rz_cons_printf("loops: %d\n", rz_analysis_function_loops(fcn));
+	rz_cons_printf("bits: %d\n", fcn->bits);
+	rz_cons_printf("type: %s\n", rz_analysis_fcntype_tostring(fcn->type));
+	rz_cons_printf("num-bbs: %d\n", rz_list_length(fcn->bbs));
+	rz_cons_printf("edges: %d\n", rz_analysis_function_count_edges(fcn, &ebbs));
+	rz_cons_printf("end-bbs: %d\n", ebbs);
+	rz_cons_printf("call-refs:");
 	int outdegree = 0;
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	rz_list_foreach (xrefs, iter, xrefi) {
@@ -3958,36 +3921,26 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 				xrefi->type == RZ_ANALYSIS_XREF_TYPE_CALL ? 'C' : 'J');
 		}
 	}
-	rz_cons_printf("\nnoreturn: %s", rz_str_bool(fcn->is_noreturn));
-	rz_cons_printf("\nin-degree: %d", indegree);
-	rz_cons_printf("\nout-degree: %d", outdegree);
-	rz_cons_printf("\ndata-xrefs:");
+	rz_cons_printf("\nnoreturn: %s\n", rz_str_bool(fcn->is_noreturn));
+	rz_cons_printf("in-degree: %d\n", indegree);
+	rz_cons_printf("out-degree: %d\n", outdegree);
+	rz_cons_printf("data-xrefs:");
 	rz_list_foreach (xrefs, iter, xrefi) {
 		if (xrefi->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			rz_cons_printf(" 0x%08" PFMT64x, xrefi->from);
 		}
 	}
 	rz_list_free(xrefs);
+	rz_cons_printf("\n");
 
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
-		int args_count = rz_analysis_var_count(core->analysis, fcn, 'b', 1);
-		args_count += rz_analysis_var_count(core->analysis, fcn, 's', 1);
-		args_count += rz_analysis_var_count(core->analysis, fcn, 'r', 1);
-		int var_count = rz_analysis_var_count(core->analysis, fcn, 'b', 0);
-		var_count += rz_analysis_var_count(core->analysis, fcn, 's', 0);
-		var_count += rz_analysis_var_count(core->analysis, fcn, 'r', 0);
+		ut32 args_count = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
+		ut32 var_count = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL);
 
-		rz_cons_printf("\nlocals: %d\nargs: %d\n", var_count, args_count);
-		core_analysis_var_list_show(core->analysis, fcn, 'b', state);
-		core_analysis_var_list_show(core->analysis, fcn, 's', state);
-		core_analysis_var_list_show(core->analysis, fcn, 'r', state);
-		rz_cons_printf("diff: type: %s", diff_type_to_str(fcn->diff));
-		if (fcn->diff->addr != -1) {
-			rz_cons_printf("addr: 0x%" PFMT64x, fcn->diff->addr);
-		}
-		if (fcn->diff->name) {
-			rz_cons_printf("function: %s", fcn->diff->name);
-		}
+		rz_cons_printf("locals: %u\nargs: %u\n", var_count, args_count);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, state);
+		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, state);
 	}
 	free(name);
 
@@ -4000,10 +3953,14 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 static void fcn_list_print_info(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *fcns, RzCmdStateOutput *state) {
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
+	bool next = false;
 	rz_list_foreach (fcns, iter, fcn) {
+		if (next) {
+			rz_cons_printf("#\n");
+		}
 		fcn_print_info(core, fcn, state);
+		next = true;
 	}
-	rz_cons_newline();
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -4446,24 +4403,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_add_recu_handler(RzCore *core, int argc,
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalysisDiff *diff = rz_analysis_diff_new();
-	if (!diff) {
-		RZ_LOG_ERROR("Cannot init RzAnalysisDiff\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (argc == 4) {
-		switch (argv[3][0]) {
-		case 'm':
-			diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
-			break;
-		case 'u':
-			diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-			break;
-		default:
-			break;
-		}
-	}
-	int type = RZ_ANALYSIS_FCN_TYPE_FCN;
+	RzAnalysisFcnType type = RZ_ANALYSIS_FCN_TYPE_FCN;
 	if (argc >= 3) {
 		switch (argv[2][0]) {
 		case 'l':
@@ -4479,9 +4419,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_create_handler(RzCore *core, int argc, c
 			break;
 		}
 	}
-	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, argv[1], core->offset, type, diff);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, argv[1], core->offset, type);
 	if (!fcn) {
-		rz_analysis_diff_free(diff);
 		RZ_LOG_ERROR("Cannot add function (duplicated)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -4646,21 +4585,6 @@ RZ_IPI RzCmdStatus rz_analysis_graph_callgraph_global_handler(RzCore *core, int 
 	return bool2status(rz_core_graph_print(core, UT64_MAX, RZ_CORE_GRAPH_TYPE_FUNCALL, format));
 }
 
-RZ_IPI RzCmdStatus rz_analysis_graph_diff_handler(RzCore *core, int argc, const char **argv) {
-	const RzCoreGraphFormat format = rz_core_graph_format_from_string(argv[1]);
-	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
-
-	rz_core_gdiff_function_1_file(core, core->offset, addr);
-	RzGraph *graph = rz_core_graph_diff(core, addr);
-	if (!graph) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	core->graph->is_callgraph = false;
-	rz_core_graph_print_graph(core, graph, format, true);
-	rz_graph_free(graph);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_analysis_graph_bb_function_handler(RzCore *core, int argc, const char **argv) {
 	const RzCoreGraphFormat format = rz_core_graph_format_from_string(argv[1]);
 	return bool2status(rz_core_graph_print(core, core->offset, RZ_CORE_GRAPH_TYPE_BLOCK_FUN, format));
@@ -4718,8 +4642,7 @@ RZ_IPI RzCmdStatus rz_analysis_graph_custom_clear_handler(RzCore *core, int argc
 
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_node_add_handler(RzCore *core, int argc, const char **argv) {
 	const char *body = argc > 2 ? argv[2] : "";
-	const int color = argc > 3 ? (int)(rz_num_math(NULL, argv[3])) : -1;
-	rz_core_agraph_add_node(core, argv[1], body, color);
+	rz_core_agraph_add_node(core, argv[1], body);
 	return RZ_CMD_STATUS_OK;
 }
 

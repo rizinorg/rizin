@@ -414,8 +414,8 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 		free(tstr);
 		return false;
 	}
-	bpargs = p->varlist(f, 'b');
-	spargs = p->varlist(f, 's');
+	bpargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_BPV);
+	spargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_SPV);
 	/* Iterate over stack pointer arguments/variables */
 	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
 	if (ucase && tstr[1]) {
