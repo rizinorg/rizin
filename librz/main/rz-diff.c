@@ -507,8 +507,8 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		}
 		break;
 	case DIFF_DISTANCE_LEVENSHTEIN:
-		if (!rz_diff_levenstein_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
-			rz_diff_error("failed to calculate distance with levenstein algorithm\n");
+		if (!rz_diff_levenshtein_distance(a_buffer, a_size, b_buffer, b_size, &distance, &similarity)) {
+			rz_diff_error("failed to calculate distance with levenshtein algorithm\n");
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
@@ -1395,6 +1395,665 @@ rz_diff_unified_files_bad:
 
 /**************************************** graphs ***************************************/
 
+static const char *get_config_or_default(RzCore *core, const char *key, const char *def_value) {
+	const char *value = rz_config_get(core->config, key);
+	if (RZ_STR_ISEMPTY(value)) {
+		return def_value;
+	}
+	return value;
+}
+
+static void graphviz_dot_header(RzCore *core_a) {
+	const char *font = get_config_or_default(core_a, "graph.font", "Courier");
+	const char *gv_edge = get_config_or_default(core_a, "graph.gv.edge", "arrowhead=\"normal\"");
+	const char *gv_node = get_config_or_default(core_a, "graph.gv.node", "fillcolor=gray style=filled shape=box");
+	const char *gv_spline = get_config_or_default(core_a, "graph.gv.spline", "splines=\"ortho\"");
+	rz_cons_printf("digraph code {\n"
+		       "\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" %s];\n"
+		       "\tnode [%s];\n"
+		       "\tedge [%s];\n",
+		font, gv_spline, gv_node, gv_edge);
+}
+
+static void print_color_node(RzCore *core, RzAnalysisBlock *bbi) {
+	bool color_current = rz_config_get_b(core->config, "graph.gv.current");
+	bool current = rz_analysis_block_contains(bbi, core->offset);
+	if (current && color_current) {
+		rz_cons_printf("\t\"0x%08" PFMT64x "\" ", bbi->addr);
+		rz_cons_printf("\t[fillcolor=gray style=filled shape=box];\n");
+	}
+}
+
+static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
+	char *opcodes = NULL;
+	RzConfigHold *hc = NULL;
+
+	if (!(hc = rz_config_hold_new(core->config))) {
+		return NULL;
+	}
+	rz_config_hold_i(hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines", "asm.cmt.right", "asm.lines.fcn", "asm.bytes", "asm.comments", NULL);
+	rz_config_set_i(core->config, "scr.utf8", 0);
+	rz_config_set_i(core->config, "asm.offset", 0);
+	rz_config_set_i(core->config, "asm.lines", 0);
+	rz_config_set_i(core->config, "asm.cmt.right", 0);
+	rz_config_set_i(core->config, "asm.lines.fcn", 0);
+	rz_config_set_i(core->config, "asm.bytes", 0);
+	rz_config_set_i(core->config, "asm.comments", 0);
+	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
+
+	opcodes = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bbi->addr);
+
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+	return opcodes;
+}
+
+static const char *pair_color(RzAnalysisMatchPair *pair) {
+	if (pair->similarity >= 1.0) {
+		return "lightgray";
+	} else if (pair->similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
+		return "yellow";
+	}
+	return "red";
+}
+
+static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore *core_b, RzAnalysisFunction *fcn_b, RzAnalysisMatchResult *result) {
+	char addr_a[32], addr_b[32];
+
+	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisBlock *bbi = NULL;
+	RzListIter *iter = NULL;
+	const char *font = get_config_or_default(core_a, "graph.font", "Courier");
+
+	rz_strf(addr_a, "0x%08" PFMT64x, fcn_a->addr);
+	rz_strf(addr_b, "0x%08" PFMT64x, fcn_b->addr);
+
+	const char *norig = fcn_a->name ? fcn_a->name : addr_a;
+	const char *nmodi = fcn_b->name ? fcn_b->name : addr_b;
+
+	// we add all the matching basic block first
+	rz_list_foreach (result->matches, iter, pair) {
+		bbi = (RzAnalysisBlock *)pair->pair_a;
+
+		const char *fillcolor = pair_color(pair);
+		char *original = basic_block_opcodes(core_a, bbi);
+		if (!original) {
+			break;
+		}
+
+		if (pair->similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
+			// if they are similar then we diff the opcodes.
+
+			char *modified = basic_block_opcodes(core_b, (RzAnalysisBlock *)pair->pair_b);
+			if (modified && strcmp(original, modified) != 0) {
+				RzDiff *dff = rz_diff_lines_new(original, modified, NULL);
+				char *diffstr = rz_diff_unified_text(dff, norig, nmodi, false, false);
+				rz_diff_free(dff);
+				free(modified);
+
+				rz_str_replace_char(diffstr, '"', '\'');
+				diffstr = rz_str_replace(diffstr, "\n", "\\l", 1);
+				rz_cons_printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
+					       "color=\"black\", fontname=\"%s\","
+					       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
+					bbi->addr, fillcolor, font, diffstr, fcn_a->name,
+					bbi->addr);
+				free(diffstr);
+				continue;
+			}
+
+			// sometimes the mismatch is on a call value
+			// but the output is actually the same due sym./imp.
+			// thus we ignore the similarity check and consider this
+			// as a perfect match.
+			free(modified);
+		}
+
+		rz_str_replace_char(original, '"', '\'');
+		original = rz_str_replace(original, "\n", "\\l", 1);
+		rz_cons_printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
+			       "color=\"black\", fontname=\"%s\","
+			       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
+			bbi->addr, fillcolor, font, original, fcn_a->name, bbi->addr);
+		free(original);
+	}
+
+	// we then add all the unmatched basic blocks
+	rz_list_foreach (result->unmatch_a, iter, bbi) {
+		char *opcodes = basic_block_opcodes(core_a, bbi);
+		if (!opcodes) {
+			break;
+		}
+
+		rz_str_replace_char(opcodes, '"', '\'');
+		opcodes = rz_str_replace(opcodes, "\n", "\\l", 1);
+		rz_cons_printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"white\","
+			       "color=\"black\", fontname=\"%s\","
+			       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
+			bbi->addr, font, opcodes, fcn_a->name, bbi->addr);
+		free(opcodes);
+	}
+}
+
+#define PAL_JUMP "#0037da"
+#define PAL_FAIL "#c50f1f"
+#define PAL_TRUE "#13a10e"
+static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
+	RzAnalysisBlock *bbi;
+	RzListIter *iter;
+
+	rz_list_foreach (fcn->bbs, iter, bbi) {
+		if (bbi->jump != UT64_MAX) {
+			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
+				bbi->addr, bbi->jump,
+				bbi->fail != UT64_MAX ? PAL_TRUE : PAL_JUMP);
+			print_color_node(core, bbi);
+		}
+		if (bbi->fail != UT64_MAX) {
+			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
+				bbi->addr, bbi->fail);
+			print_color_node(core, bbi);
+		}
+		if (bbi->switch_op) {
+			RzAnalysisCaseOp *caseop;
+			RzListIter *iter2;
+
+			if (bbi->fail != UT64_MAX) {
+				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
+					bbi->addr, bbi->fail);
+				print_color_node(core, bbi);
+			}
+			rz_list_foreach (bbi->switch_op->cases, iter2, caseop) {
+				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color2=\"" PAL_FAIL "\"];\n",
+					caseop->addr, caseop->jump);
+				print_color_node(core, bbi);
+			}
+		}
+	}
+}
+#undef PAL_JUMP
+#undef PAL_FAIL
+#undef PAL_TRUE
+
+static void graphviz_dot_graph(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore *core_b, RzAnalysisFunction *fcn_b, RzAnalysisMatchResult *result) {
+	graphviz_dot_header(core_a);
+	if (fcn_a->bbs) {
+		graphviz_dot_nodes(core_a, fcn_a, core_b, fcn_b, result);
+		graphviz_dot_edges(core_a, fcn_a);
+	} else {
+		rz_cons_printf("\t\"0x%08" PFMT64x "\";\n", fcn_a->addr);
+	}
+	rz_cons_printf("}\n");
+}
+
+static void graph_basic_block_json(const char *name, RzAnalysisBlock *bbi, PJ *pj) {
+	pj_ko(pj, name); // "<name>": { -- object begin
+	pj_kn(pj, "address", bbi->addr);
+	if (bbi->jump != UT64_MAX) {
+		pj_kn(pj, "jump", bbi->jump);
+	}
+	if (bbi->fail != UT64_MAX) {
+		pj_kn(pj, "fail", bbi->fail);
+	}
+	if (!bbi->switch_op) {
+		pj_end(pj); // } -- object end
+		return;
+	}
+
+	RzAnalysisCaseOp *caseop;
+	RzListIter *iter;
+	pj_ka(pj, "switch"); // [ -- "switch" begin
+	rz_list_foreach (bbi->switch_op->cases, iter, caseop) {
+		pj_o(pj); // { -- caseop object begin
+		pj_kn(pj, "address", caseop->addr);
+		pj_kn(pj, "jump", caseop->jump);
+		pj_end(pj); // } -- caseop object end
+	}
+	pj_end(pj); // ] -- "switch" end
+	pj_end(pj); // } -- object end
+}
+
+static void diff_graph_result_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore *core_b, RzAnalysisFunction *fcn_b, RzAnalysisMatchResult *result, PJ *pj) {
+	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisBlock *bbi_a = NULL, *bbi_b = NULL;
+	RzListIter *iter = NULL;
+	char *opcodes_a = NULL, *opcodes_b = NULL;
+	char addr_a[32], addr_b[32];
+
+	rz_strf(addr_a, "0x%08" PFMT64x, fcn_a->addr);
+	rz_strf(addr_b, "0x%08" PFMT64x, fcn_b->addr);
+
+	const char *norig = fcn_a->name ? fcn_a->name : addr_a;
+	const char *nmodi = fcn_b->name ? fcn_b->name : addr_b;
+
+	pj_ka(pj, "result"); // "result": { -- array object begin
+
+	// we add all the matching basic block first
+	rz_list_foreach (result->matches, iter, pair) {
+		bbi_a = (RzAnalysisBlock *)pair->pair_a;
+		bbi_b = (RzAnalysisBlock *)pair->pair_b;
+
+		opcodes_a = basic_block_opcodes(core_a, bbi_a);
+		if (!opcodes_a) {
+			break;
+		}
+
+		pj_o(pj); // { -- array object begin
+
+		pj_ko(pj, "pair"); // "pair": {
+		graph_basic_block_json("source", bbi_a, pj);
+		graph_basic_block_json("match", bbi_b, pj);
+		pj_end(pj); // } -- "pair" end
+
+		pj_ko(pj, "similarity"); // "similarity": {
+		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_TYPE_STR(pair->similarity));
+		pj_kd(pj, "score", pair->similarity);
+		pj_end(pj); // } -- "similarity" end
+
+		if (pair->similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
+			// if they are similar then we diff the opcodes.
+
+			opcodes_b = basic_block_opcodes(core_b, bbi_b);
+			if (opcodes_b && strcmp(opcodes_a, opcodes_b) != 0) {
+				RzDiff *dff = rz_diff_lines_new(opcodes_a, opcodes_b, NULL);
+				char *diffstr = rz_diff_unified_text(dff, norig, nmodi, false, false);
+				rz_diff_free(dff);
+				if (diffstr) {
+					free(opcodes_a);
+					opcodes_a = diffstr;
+				}
+			}
+
+			// sometimes the mismatch is on a call value
+			// but the output is actually the same due sym./imp.
+			// thus we ignore the similarity check and consider this
+			// as a perfect match.
+			free(opcodes_b);
+		}
+
+		pj_ks(pj, "opcodes", opcodes_a);
+		pj_end(pj); // } -- array object end
+		free(opcodes_a);
+	}
+
+	// we then add all the unmatched basic blocks
+	// first from the source function
+	rz_list_foreach (result->unmatch_a, iter, bbi_a) {
+		opcodes_a = basic_block_opcodes(core_a, bbi_a);
+		if (!opcodes_a) {
+			break;
+		}
+
+		pj_o(pj); // { -- array object begin
+
+		pj_ko(pj, "pair"); // "pair": {
+		graph_basic_block_json("source", bbi_a, pj);
+		pj_knull(pj, "match");
+		pj_end(pj); // } -- "pair" end
+
+		pj_ko(pj, "similarity"); // "similarity": {
+		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
+		pj_kd(pj, "score", 0.0);
+		pj_end(pj); // } -- "similarity" end
+
+		pj_ks(pj, "opcodes", opcodes_a);
+		pj_end(pj); // } -- array object end
+		free(opcodes_a);
+	}
+
+	// then from the match function
+	rz_list_foreach (result->unmatch_b, iter, bbi_b) {
+		opcodes_b = basic_block_opcodes(core_b, bbi_b);
+		if (!opcodes_b) {
+			break;
+		}
+
+		pj_o(pj); // { -- array object begin
+
+		pj_ko(pj, "pair"); // "pair": {
+		pj_knull(pj, "source");
+		graph_basic_block_json("match", bbi_b, pj);
+		pj_end(pj); // } -- "pair" end
+
+		pj_ko(pj, "similarity"); // "similarity": {
+		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
+		pj_kd(pj, "score", 0.0);
+		pj_end(pj); // } -- "similarity" end
+
+		pj_ks(pj, "opcodes", opcodes_b);
+		pj_end(pj); // } -- array object end
+		free(opcodes_b);
+	}
+
+	pj_end(pj); // } -- result object end
+}
+
+static void diff_graph_function_detail_as_json(const char *object_name, RzAnalysisFunction *fcn, PJ *pj) {
+	pj_ko(pj, object_name); // "<object_name>: {" -- object begin
+
+	char *fcn_name = rz_str_escape_utf8_for_json(fcn->name, -1);
+	pj_ks(pj, "name", rz_str_get_null(fcn_name));
+	free(fcn_name);
+	pj_kn(pj, "offset", fcn->addr);
+	pj_ki(pj, "ninstr", fcn->ninstr);
+	pj_kn(pj, "nargs", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT));
+	pj_kn(pj, "nlocals", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL));
+	pj_kn(pj, "size", rz_analysis_function_linear_size(fcn));
+	pj_ki(pj, "stack", fcn->maxstack);
+	pj_ks(pj, "type", rz_analysis_fcntype_tostring(fcn->type));
+
+	pj_end(pj); // } -- <object_name> object end
+}
+
+static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore *core_b, RzAnalysisFunction *fcn_b, RzAnalysisMatchResult *result, PJ *pj) {
+	pj_o(pj);
+	diff_graph_function_detail_as_json("source", fcn_a, pj);
+	diff_graph_function_detail_as_json("match", fcn_a, pj);
+	diff_graph_result_as_json(core_a, fcn_a, core_b, fcn_b, result, pj);
+	pj_end(pj);
+}
+
+static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzAnalysisFunction *find) {
+	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisFunction *match = NULL;
+	RzAnalysisMatchResult *result = NULL;
+	RzList *list_a = rz_list_new();
+	if (!list_a || !rz_list_append(list_a, find)) {
+		RZ_LOG_ERROR("rz-diff: cannot allocate and initialize RzList for function search\n");
+		goto fail;
+	}
+
+	result = rz_analysis_match_functions_2(analysis_a, list_a, analysis_b, analysis_b->fcns);
+	if (result && rz_list_length(result->matches) > 0) {
+		pair = (RzAnalysisMatchPair *)rz_list_first(result->matches);
+		match = (RzAnalysisFunction *)pair->pair_b;
+	}
+
+fail:
+	rz_analysis_match_result_free(result);
+	rz_list_free(list_a);
+	return match;
+}
+
+/**
+ * \brief Generate a json or graphviz dot output of the graph and its data.
+ *
+ * Each node that doesn't match 100% with the other function will include
+ * a unified diff of the assembly of the same basic block.
+ * */
+static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b, ut64 addr_b, DiffMode mode) {
+	rz_return_if_fail(core_a && core_b);
+
+	PJ *pj = NULL;
+	RzAnalysisFunction *fcn_b = NULL, *fcn_a = NULL;
+	RzAnalysisMatchResult *result = NULL;
+
+	// find function
+	fcn_a = rz_analysis_get_function_at(core_a->analysis, addr_a);
+	if (!fcn_a) {
+		RZ_LOG_ERROR("rz-diff: cannot get function at 0x%" PFMT64x "\n", addr_a);
+		return;
+	}
+
+	if (addr_b == UT64_MAX) {
+		// find matching function on core B
+		fcn_b = find_best_matching_function(core_a->analysis, core_b->analysis, fcn_a);
+		if (!fcn_b) {
+			RZ_LOG_ERROR("rz-diff: cannot find best matching function for function at 0x%" PFMT64x "\n", addr_a);
+			return;
+		}
+	} else {
+		fcn_b = rz_analysis_get_function_at(core_b->analysis, addr_b);
+		if (!fcn_b) {
+			RZ_LOG_ERROR("rz-diff: cannot get function at 0x%" PFMT64x "\n", addr_b);
+			return;
+		}
+	}
+
+	// calculate all the matches between the basic blocks of the 2 functions.
+	result = rz_analysis_match_basic_blocks_2(core_a->analysis, fcn_a, core_b->analysis, fcn_b);
+	if (!result) {
+		RZ_LOG_ERROR("rz-diff: cannot calculate matching basic blocks for function at 0x%" PFMT64x "\n", addr_a);
+		return;
+	}
+
+	switch (mode) {
+	case DIFF_MODE_JSON:
+		pj = pj_new();
+		if (!pj) {
+			RZ_LOG_ERROR("rz-diff: cannot allocate json structure for function matching\n");
+			rz_analysis_match_result_free(result);
+			return;
+		}
+
+		diff_graph_as_json(core_a, fcn_a, core_b, fcn_b, result, pj);
+		rz_cons_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+		break;
+	default:
+		graphviz_dot_graph(core_a, fcn_a, core_b, fcn_b, result);
+		break;
+	}
+	rz_cons_flush();
+
+	rz_analysis_match_result_free(result);
+}
+
+static void diff_function_as_json(const char *obj_name, RzAnalysisFunction *fcn, PJ *pj) {
+	if (!fcn) {
+		return;
+	}
+	pj_ko(pj, obj_name); // "<obj_name>": { -- object end
+	pj_ks(pj, "name", fcn->name);
+	pj_kn(pj, "addr", fcn->addr);
+	pj_kn(pj, "size", rz_analysis_function_realsize(fcn));
+	pj_end(pj); // } -- <obj_name> object end
+}
+
+static void diff_functions_result_as_json(RzAnalysisMatchResult *result, PJ *pj) {
+	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
+	RzListIter *iter = NULL;
+
+	pj_a(pj); // [ -- list of pairs begin
+
+	// first the matching functions.
+	rz_list_foreach (result->matches, iter, pair) {
+		fcn_a = (RzAnalysisFunction *)pair->pair_a;
+		fcn_b = (RzAnalysisFunction *)pair->pair_b;
+
+		pj_o(pj); // { -- match object begin
+		pj_kd(pj, "similarity", pair->similarity);
+		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_TYPE_STR(pair->similarity));
+		diff_function_as_json("original", fcn_a, pj);
+		diff_function_as_json("modified", fcn_b, pj);
+		pj_end(pj); // } -- match object end
+	}
+
+	// then the unmatched functions from list A.
+	rz_list_foreach (result->unmatch_a, iter, fcn_a) {
+		pj_o(pj); // { -- match object begin
+		pj_kd(pj, "similarity", 0.0);
+		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
+		diff_function_as_json("original", fcn_a, pj);
+		pj_knull(pj, "modified");
+		pj_end(pj); // } -- match object end
+	}
+
+	// then the unmatched functions from list B.
+	rz_list_foreach (result->unmatch_a, iter, fcn_b) {
+		pj_o(pj); // { -- match object begin
+		pj_kd(pj, "similarity", 0.0);
+		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
+		pj_knull(pj, "original");
+		diff_function_as_json("modified", fcn_b, pj);
+		pj_end(pj); // } -- match object end
+	}
+
+	pj_end(pj); // ] -- list of pairs end
+}
+
+static void diff_functions_result_as_table(RzCore *core_a, RzCore *core_b, RzAnalysisMatchResult *result, RzTable *table) {
+	char tmp[128];
+	const char *type_s = NULL;
+	const char *type_n = NULL;
+	ut64 size_a = 0, size_b = 0;
+	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
+	RzListIter *iter = NULL;
+
+	bool color = rz_config_get_i(core_a->config, "scr.color") > 0 || rz_config_get_i(core_b->config, "scr.color") > 0;
+	bool no_names = rz_config_get_b(core_a->config, "diff.bare") || rz_config_get_b(core_b->config, "diff.bare");
+
+	if (no_names) {
+		rz_table_set_columnsf(table, "nXssXn", "size0", "addr0", "type", "similarity", "addr1", "size1");
+	} else {
+		rz_table_set_columnsf(table, "snXssXns", "name0", "size0", "addr0", "type", "similarity", "addr1", "size1", "name1");
+	}
+
+	type_n = tmp;
+	// first the matching functions.
+	rz_list_foreach (result->matches, iter, pair) {
+		fcn_a = (RzAnalysisFunction *)pair->pair_a;
+		fcn_b = (RzAnalysisFunction *)pair->pair_b;
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
+		size_a = rz_analysis_function_realsize(fcn_a);
+		size_b = rz_analysis_function_realsize(fcn_b);
+
+		if (pair->similarity >= 1.0) {
+			rz_strf(tmp, color ? Color_BGREEN "%.6f" Color_RESET : "%.6f", pair->similarity);
+			type_s = color ? Color_BGREEN "COMPLETE" Color_RESET : "COMPLETE";
+		} else if (pair->similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
+			rz_strf(tmp, color ? Color_BYELLOW "%.6f" Color_RESET : "%.6f", pair->similarity);
+			type_s = color ? Color_BYELLOW "PARTIAL " Color_RESET : "PARTIAL ";
+		} else {
+			rz_strf(tmp, color ? Color_BRED "%.4f" Color_RESET : "%.4f", pair->similarity);
+			type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+		}
+
+		if (no_names) {
+			rz_table_add_rowf(table, "nXssXn", size_a, fcn_a->addr, type_s, type_n, fcn_b->addr, fcn_b->addr, size_b);
+		} else {
+			rz_table_add_rowf(table, "snXssXns", fcn_a->name, size_a, fcn_a->addr, type_s, type_n, fcn_b->addr, size_b, fcn_b->name);
+		}
+	}
+
+	// then the unmatched functions from list A.
+	rz_list_foreach (result->unmatch_a, iter, fcn_a) {
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
+		size_a = rz_analysis_function_realsize(fcn_a);
+		size_b = 0;
+		type_n = color ? Color_BRED "0.000000" Color_RESET : "0.000000";
+		type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+		if (no_names) {
+			rz_table_add_rowf(table, "nXssXn", size_a, fcn_a->addr, type_s, type_n, UT64_MAX, size_b);
+		} else {
+			rz_table_add_rowf(table, "snXssXns", fcn_a->name, size_a, fcn_a->addr, type_s, type_n, UT64_MAX, size_b, "");
+		}
+	}
+
+	// then the unmatched functions from list B.
+	rz_list_foreach (result->unmatch_a, iter, fcn_b) {
+		if (fcn_b->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_b->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
+		size_a = 0;
+		size_b = rz_analysis_function_realsize(fcn_b);
+		type_n = color ? Color_BRED "0.000000" Color_RESET : "0.000000";
+		type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+		if (no_names) {
+			rz_table_add_rowf(table, "nXssXn", size_a, UT64_MAX, type_s, type_n, size_b, fcn_b->addr);
+		} else {
+			rz_table_add_rowf(table, "snXssXns", "", size_a, UT64_MAX, type_s, type_n, fcn_b->addr, size_b, fcn_b->name);
+		}
+	}
+}
+
+/**
+ * \brief Performs function matching and shows the result in a table.
+ *
+ * Takes 2 cores and tries to match all the functions with eachother;
+ * Then the scores are shown in a table (when in quiet mode, the table
+ * is headerless)
+ * */
+static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
+	rz_return_if_fail(core_a && core_b);
+
+	char *output = NULL;
+	RzList *fcns_a = NULL, *fcns_b = NULL;
+	PJ *pj = NULL;
+	RzTable *table = NULL;
+	RzAnalysisMatchResult *result = NULL;
+	fcns_a = rz_list_clone(rz_analysis_get_fcns(core_a->analysis));
+	if (rz_list_empty(fcns_a)) {
+		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
+		return;
+	}
+
+	fcns_b = rz_list_clone(rz_analysis_get_fcns(core_b->analysis));
+	if (rz_list_empty(fcns_b)) {
+		RZ_LOG_ERROR("rz-diff: No functions found in file1.\n");
+		return;
+	}
+
+	rz_list_sort(fcns_a, core_a->analysis->columnSort);
+	rz_list_sort(fcns_b, core_b->analysis->columnSort);
+
+	// calculate all the matches between the functions of the 2 different core files.
+	result = rz_analysis_match_functions_2(core_a->analysis, fcns_a, core_b->analysis, fcns_b);
+	if (!result) {
+		RZ_LOG_ERROR("rz-diff: cannot perform matching functions search\n");
+		goto fail;
+	}
+
+	if (mode == DIFF_MODE_JSON) {
+		pj = pj_new();
+		if (!pj) {
+			RZ_LOG_ERROR("rz-diff: cannot allocate json structure for function matching\n");
+			goto fail;
+		}
+		diff_functions_result_as_json(result, pj);
+	} else {
+		table = rz_table_new();
+		if (!table) {
+			RZ_LOG_ERROR("rz-diff: cannot allocate table structure for function matching\n");
+			goto fail;
+		}
+		diff_functions_result_as_table(core_a, core_b, result, table);
+	}
+
+	switch (mode) {
+	case DIFF_MODE_JSON:
+		output = pj_drain(pj);
+		rz_cons_printf("%s\n", output);
+		pj = NULL;
+		break;
+	case DIFF_MODE_STANDARD:
+		output = rz_table_tofancystring(table);
+		rz_cons_printf("%s", output);
+		break;
+	default: // DIFF_MODE_QUIET
+		rz_table_align(table, 0, RZ_TABLE_ALIGN_RIGHT);
+		rz_table_hide_header(table);
+		output = rz_table_tosimplestring(table);
+		rz_cons_printf("%s", output);
+		break;
+	}
+
+	rz_cons_flush();
+
+fail:
+	free(output);
+	rz_table_free(table);
+	rz_analysis_match_result_free(result);
+	rz_list_free(fcns_a);
+	rz_list_free(fcns_b);
+}
+
 static bool convert_offset_from_input(RzCore *core, const char *input, ut64 *offset) {
 	if (rz_num_is_valid_input(NULL, input)) {
 		*offset = rz_num_get_input_value(NULL, input);
@@ -1426,8 +2085,8 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	}
 
 	if (ctx->type == DIFF_TYPE_PLOTDIFF) {
-		ut64 address_a = 0;
-		ut64 address_b = 0;
+		ut64 address_a = UT64_MAX;
+		ut64 address_b = UT64_MAX;
 
 		if (!convert_offset_from_input(a->core, ctx->input_a, &address_a)) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_a);
@@ -1459,12 +2118,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 				goto rz_diff_graphs_files_bad;
 			}
 		}
-
-		if (!rz_core_gdiff_function_2_files(a->core, b->core, address_a, address_b)) {
-			rz_diff_error("cannot diff graphs with inputs '%s' with '%s'\n", ctx->input_a, ctx->input_b);
-			goto rz_diff_graphs_files_bad;
-		}
-		rz_core_diff_show_function(a->core, b->core, address_a, ctx->mode == DIFF_MODE_JSON);
+		core_show_function_diff(a->core, address_a, b->core, address_b, ctx->mode);
 	} else {
 		if (!rz_core_analysis_everything(a->core, false, NULL)) {
 			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_a);
@@ -1474,11 +2128,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 			rz_diff_error("cannot analyze binary '%s'\n", ctx->file_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		if (!rz_core_gdiff_2_files(a->core, b->core)) {
-			rz_diff_error("cannot diff all graphs\n");
-			goto rz_diff_graphs_files_bad;
-		}
-		rz_core_diff_show(a->core, b->core, ctx->mode == DIFF_MODE_JSON);
+		core_diff_show(a->core, b->core, ctx->mode);
 	}
 
 	success = true;

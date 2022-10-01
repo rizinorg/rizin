@@ -4964,9 +4964,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 			nargs = DEFAULT_NARGS;
 			if (fcn) {
 				// @TODO: fcn->nargs should be updated somewhere and used here instead
-				nargs = rz_analysis_var_count(core->analysis, fcn, 's', 1) +
-					rz_analysis_var_count(core->analysis, fcn, 'b', 1) +
-					rz_analysis_var_count(core->analysis, fcn, 'r', 1);
+				nargs = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
 			}
 			if (nargs > 0) {
 				ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");

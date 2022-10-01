@@ -1626,9 +1626,9 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 		RzList *vars;
 		if (!strncmp(buf->data, "afvn ", 5)) {
-			vars = rz_analysis_var_list(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+			vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
 		} else {
-			vars = rz_list_new(); // TODO rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_ARG);
+			vars = rz_list_new(); // TODO rz_analysis_var_list (fcn, RZ_ANALYSIS_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RzAnalysisVar *var;

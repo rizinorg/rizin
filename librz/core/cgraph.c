@@ -241,31 +241,6 @@ static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 	return rz_core_cmd_strf(core, "pdb @ 0x%" PFMT64x, addr);
 }
 
-static inline char *block_diff(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
-	if (!bb) {
-		bb = rz_analysis_get_block_at(core->analysis, addr);
-		if (!bb) {
-			return NULL;
-		}
-	}
-
-	char *str_a = block_disasm(core, bb->addr, NULL);
-	if (!bb->diff) {
-		return str_a;
-	}
-	char *str_b = block_disasm(core, bb->diff->addr, NULL);
-	RzDiff *diff = rz_diff_lines_new(str_a, str_b, NULL);
-	char dff_from[32], dff_to[32];
-	snprintf(dff_from, sizeof(dff_from), "0x%08" PFMT64x, bb->addr);
-	snprintf(dff_to, sizeof(dff_to), "0x%08" PFMT64x, bb->diff->addr);
-	char *body = rz_diff_unified_text(diff, dff_from, dff_to, false, false);
-	rz_diff_free(diff);
-
-	free(str_a);
-	free(str_b);
-	return body;
-}
-
 static inline RzGraphNode *graph_add_cached(RzCore *core, HtUP *cache, RzAnalysisBlock *bb, ut64 offset, RzGraph /*<RzGraphNodeInfo *>*/ *graph, GraphBodyFn body_fn) {
 	RzGraphNode *node = (RzGraphNode *)ht_up_find(cache, offset, NULL);
 	if (node) {
@@ -403,13 +378,6 @@ fail:
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function(RzCore *core, ut64 addr) {
 	return rz_core_graph_function_bbs(core, addr, block_disasm);
-}
-
-/**
- * \brief Get a graph of the function difference at \p addr.
- */
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_diff(RzCore *core, ut64 addr) {
-	return rz_core_graph_function_bbs(core, addr, block_diff);
 }
 
 static char *block_line(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {

@@ -331,15 +331,9 @@ static void tiny_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 	}
 }
 
-static char *get_node_color(int color, int cur) {
+static inline char *get_node_color(int cur) {
 	RzCons *cons = rz_cons_singleton();
-	if (color == -1) {
-		return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
-	}
-	return color ? (
-			       color == RZ_ANALYSIS_DIFF_TYPE_MATCH ? cons->context->pal.diff_match : color == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? cons->context->pal.diff_unmatch
-																	     : cons->context->pal.diff_new)
-		     : cons->context->pal.diff_unknown;
+	return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
 }
 
 static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
@@ -349,7 +343,6 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
-	int color = n->difftype;
 	const bool showTitle = g->show_node_titles;
 	const bool showBody = g->show_node_body;
 
@@ -427,7 +420,7 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RzANode* from RzCore*
-	rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(color, cur));
+	rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(cur));
 }
 
 static int **get_crossing_matrix(const RzGraph /*<RzANode *>*/ *g,
@@ -3710,7 +3703,20 @@ RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title) {
 	sdb_set(g->db, "agraph.title", g->title, 0);
 }
 
-RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *title, const char *body, int color) {
+/**
+ * \brief Convert a RzGraphNodeInfo \p info to RzANode and add to \p g.
+ */
+RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info) {
+	rz_return_val_if_fail(g && info, NULL);
+	RzANode *an = rz_agraph_add_node(g, info->title, info->body);
+	if (!an) {
+		return NULL;
+	}
+	an->offset = info->offset;
+	return an;
+}
+
+RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const char *body) {
 	RzANode *res = rz_agraph_get_node(g, title);
 	if (res) {
 		return res;
@@ -3727,7 +3733,6 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 	res->is_dummy = false;
 	res->is_reversed = false;
 	res->klass = -1;
-	res->difftype = color;
 	res->offset = UT64_MAX;
 	res->shortcut_w = 0;
 	res->gnode = rz_graph_add_node(g->graph, res);
@@ -3749,23 +3754,6 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 		sdb_set_owned(g->db, sdb_fmt("agraph.nodes.%s.body", res->title), s, 0);
 	}
 	return res;
-}
-
-/**
- * \brief Convert a RzGraphNodeInfo \p info to RzANode and add to \p g.
- */
-RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info) {
-	rz_return_val_if_fail(g && info, NULL);
-	RzANode *an = rz_agraph_add_node_with_color(g, info->title, info->body, -1);
-	if (!an) {
-		return NULL;
-	}
-	an->offset = info->offset;
-	return an;
-}
-
-RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const char *body) {
-	return rz_agraph_add_node_with_color(g, title, body, -1);
 }
 
 RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title) {

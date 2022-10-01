@@ -1736,7 +1736,7 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const 
 }
 
 /* rename RzAnalysisFunctionBB.add() */
-RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, RZ_BORROW RzAnalysisDiff *diff) {
+RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail) {
 	if (size == 0) {
 		RZ_LOG_ERROR("Empty basic block at 0x%08" PFMT64x " (not allowed).\n", addr);
 		rz_warn_if_reached();
@@ -1764,19 +1764,6 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 
 	block->jump = jump;
 	block->fail = fail;
-	if (diff) {
-		if (!block->diff) {
-			block->diff = rz_analysis_diff_new();
-		}
-		if (block->diff) {
-			block->diff->type = diff->type;
-			block->diff->addr = diff->addr;
-			if (diff->name) {
-				RZ_FREE(block->diff->name);
-				block->diff->name = strdup(diff->name);
-			}
-		}
-	}
 	rz_analysis_block_unref(block);
 	return true;
 }

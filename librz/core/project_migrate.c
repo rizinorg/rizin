@@ -258,7 +258,7 @@ RZ_API bool rz_project_migrate_v5_v6(RzProject *prj, RzSerializeResultInfo *res)
 // --
 // Migration 6 -> 7
 //
-// Changes from <commit-hash>
+// Changes from 96a85e573e766e3870a01482f36c92df403cc4cd
 //	Removed esil pin feature. Namespace deleted: /core/analysis/pins
 
 RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res) {
@@ -273,7 +273,7 @@ RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res)
 // --
 // Migration 7 -> 8
 //
-// Changes from <commit-hash>
+// Changes from ea02b0d25f48bb17bc6578259485549cf5c74a20
 //	Removed zignature feature. Namespace deleted: /core/analysis/zigns
 //	Also removed configs zign.* options.
 
@@ -303,6 +303,15 @@ RZ_API bool rz_project_migrate_v7_v8(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 8 -> 9
+//
+// Changes from <missing>
+//	Removed fingerprint from the serialized RzAnalysisFunction & RzAnalysisBlock
+
+RZ_API bool rz_project_migrate_v8_v9(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the deserializer will ignore the original serialized data
+	return true;
+}
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
@@ -311,7 +320,8 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v4_v5,
 	rz_project_migrate_v5_v6,
 	rz_project_migrate_v6_v7,
-	rz_project_migrate_v7_v8
+	rz_project_migrate_v7_v8,
+	rz_project_migrate_v8_v9
 };
 
 /// Migrate the given project to the current version in-place

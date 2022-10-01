@@ -23,7 +23,6 @@ typedef struct rz_ascii_node_t {
 	int is_dummy;
 	int is_reversed;
 	int klass;
-	int difftype;
 	ut32 shortcut_w;
 	bool is_mini;
 	ut64 offset;
@@ -101,7 +100,6 @@ RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title);
 RZ_API RzANode *rz_agraph_get_first_node(const RzAGraph *g);
 RZ_API RzANode *rz_agraph_get_node(const RzAGraph *g, const char *title);
 RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const char *body);
-RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *title, const char *body, int color);
 RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info);
 RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title);
 RZ_API void rz_agraph_add_edge(const RzAGraph *g, RzANode *a, RzANode *b);

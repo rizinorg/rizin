@@ -9,80 +9,6 @@
 
 #include "test_analysis_block_invars.inl"
 
-bool test_analysis_diff_save() {
-	RzAnalysisDiff *diff = rz_analysis_diff_new();
-
-	PJ *j = pj_new();
-	rz_serialize_analysis_diff_save(j, diff);
-	mu_assert_streq(pj_string(j), "{}", "empty diff");
-	pj_free(j);
-
-	diff->name = strdup(PERTURBATOR_JSON);
-	diff->dist = 42.3;
-	diff->addr = 0x1337;
-	diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
-	diff->size = 0x4242;
-	j = pj_new();
-	rz_serialize_analysis_diff_save(j, diff);
-	mu_assert_streq(pj_string(j), "{\"type\":\"m\",\"addr\":4919,\"dist\":42.300000,\"name\":\"\\\\\\\\,\\\\\\\";] [}{'\",\"size\":16962}", "full diff");
-	pj_free(j);
-
-	diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-	j = pj_new();
-	rz_serialize_analysis_diff_save(j, diff);
-	mu_assert_streq(pj_string(j), "{\"type\":\"u\",\"addr\":4919,\"dist\":42.300000,\"name\":\"\\\\\\\\,\\\\\\\";] [}{'\",\"size\":16962}", "full unmatch diff");
-	pj_free(j);
-
-	rz_analysis_diff_free(diff);
-	mu_end;
-}
-
-bool test_analysis_diff_load() {
-	RzSerializeAnalDiffParser parser = rz_serialize_analysis_diff_parser_new();
-
-	char *str = strdup("{}");
-	RzJson *json = rz_json_parse(str);
-	RzAnalysisDiff *diff = rz_serialize_analysis_diff_load(parser, json);
-	rz_json_free(json);
-	free(str);
-	mu_assert_notnull(diff, "diff");
-	mu_assert_eq(diff->addr, UT64_MAX, "addr");
-	mu_assert_eq(diff->size, 0, "size");
-	mu_assert_eq(diff->type, RZ_ANALYSIS_DIFF_TYPE_NULL, "type");
-	mu_assert_eq(diff->dist, 0.0, "dist");
-	mu_assert_null(diff->name, "name");
-	rz_analysis_diff_free(diff);
-
-	str = strdup("{\"type\":\"m\",\"addr\":4919,\"dist\":42.300000,\"name\":\"\\\\\\\\,\\\\\\\";] [}{'\",\"size\":16962}");
-	json = rz_json_parse(str);
-	diff = rz_serialize_analysis_diff_load(parser, json);
-	rz_json_free(json);
-	free(str);
-	mu_assert_notnull(diff, "diff");
-	mu_assert_eq(diff->addr, 0x1337, "addr");
-	mu_assert_eq(diff->size, 0x4242, "size");
-	mu_assert_eq(diff->type, RZ_ANALYSIS_DIFF_TYPE_MATCH, "type");
-	mu_assert_eq(diff->dist, 42.3, "dist");
-	mu_assert_streq(diff->name, PERTURBATOR_JSON, "name");
-	rz_analysis_diff_free(diff);
-
-	str = strdup("{\"type\":\"u\",\"addr\":4919,\"dist\":42.300000,\"name\":\"\\\\\\\\,\\\\\\\";] [}{'\",\"size\":16962}");
-	json = rz_json_parse(str);
-	diff = rz_serialize_analysis_diff_load(parser, json);
-	rz_json_free(json);
-	free(str);
-	mu_assert_notnull(diff, "diff");
-	mu_assert_eq(diff->addr, 0x1337, "addr");
-	mu_assert_eq(diff->size, 0x4242, "size");
-	mu_assert_eq(diff->type, RZ_ANALYSIS_DIFF_TYPE_UNMATCH, "type");
-	mu_assert_eq(diff->dist, 42.3, "dist");
-	mu_assert_streq(diff->name, PERTURBATOR_JSON, "name");
-	rz_analysis_diff_free(diff);
-
-	rz_serialize_analysis_diff_parser_free(parser);
-	mu_end;
-}
-
 bool test_analysis_switch_op_save() {
 	RzAnalysisSwitchOp *op = rz_analysis_switch_op_new(1337, 42, 45, 46);
 
@@ -143,7 +69,7 @@ bool test_analysis_switch_op_load() {
 Sdb *blocks_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"size\":42}", 0);
-	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=\",\"diff\":{\"addr\":54123},\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"stackptr\":43,\"parent_stackptr\":57,\"cmpval\":3735928559,\"cmpreg\":\"rax\"}", 0);
+	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"stackptr\":43,\"parent_stackptr\":57,\"cmpval\":3735928559,\"cmpreg\":\"rax\"}", 0);
 	return db;
 }
 
@@ -157,12 +83,6 @@ bool test_analysis_block_save() {
 	block->fail = 0x4213;
 	block->traced = true;
 	block->colorize = 0xff0000;
-	block->fingerprint = malloc(block->size);
-	for (size_t v = 0; v < block->size; v++) {
-		block->fingerprint[v] = v;
-	}
-	block->diff = rz_analysis_diff_new();
-	block->diff->addr = 54123;
 	block->switch_op = rz_analysis_switch_op_new(49232, 3, 5, 7);
 	block->ninstr = 3;
 	mu_assert("enough size for op_pos test", block->op_pos_size >= 2); // if this fails, just change the test
@@ -188,8 +108,7 @@ bool test_analysis_block_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 
 	Sdb *db = blocks_ref_db();
-	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
-	bool succ = rz_serialize_analysis_blocks_load(db, analysis, diff_parser, NULL);
+	bool succ = rz_serialize_analysis_blocks_load(db, analysis, NULL);
 	mu_assert("load success", succ);
 
 	RzAnalysisBlock *a = NULL;
@@ -214,8 +133,6 @@ bool test_analysis_block_load() {
 	mu_assert_eq(a->fail, UT64_MAX, "fail");
 	mu_assert("traced", !a->traced);
 	mu_assert_eq(a->colorize, 0, "colorize");
-	mu_assert_null(a->fingerprint, "fingerprint");
-	mu_assert_null(a->diff, "diff");
 	mu_assert_null(a->switch_op, "switch op");
 	mu_assert_eq(a->ninstr, 0, "ninstr");
 	mu_assert_eq(a->stackptr, 0, "stackptr");
@@ -229,13 +146,6 @@ bool test_analysis_block_load() {
 	mu_assert_eq(b->fail, 0x4213, "fail");
 	mu_assert("traced", b->traced);
 	mu_assert_eq(b->colorize, 0xff0000, "colorize");
-	mu_assert_notnull(b->fingerprint, "fingerprint");
-	mu_assert_memeq(b->fingerprint,
-		(const ut8 *)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"
-			     "\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f",
-		32, "fingerprint");
-	mu_assert_notnull(b->diff, "diff");
-	mu_assert_eq(b->diff->addr, 54123, "diff addr"); // diff is covered in detail by its own tests
 	mu_assert_notnull(b->switch_op, "switch op");
 	mu_assert_eq(b->switch_op->addr, 49232, "switch op addr"); // switch_op is covered in detail by its own tests
 	mu_assert_eq(b->ninstr, 3, "ninstr");
@@ -251,15 +161,8 @@ bool test_analysis_block_load() {
 	analysis = rz_analysis_new();
 	// This could lead to a buffer overflow if unchecked:
 	sdb_set(db, "0x539", "{\"size\":42,\"ninstr\":4,\"op_pos\":[4,7]}", 0);
-	succ = rz_serialize_analysis_blocks_load(db, analysis, diff_parser, NULL);
+	succ = rz_serialize_analysis_blocks_load(db, analysis, NULL);
 	mu_assert("reject invalid op_pos array length", !succ);
-
-	rz_analysis_free(analysis);
-	analysis = rz_analysis_new();
-	// This could lead to a buffer overflow if unchecked:
-	sdb_set(db, "0x539", "{\"size\":33,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=\"}", 0);
-	succ = rz_serialize_analysis_blocks_load(db, analysis, diff_parser, NULL);
-	mu_assert("reject invalid fingerprint size", !succ);
 
 	assert_block_invariants(analysis);
 	// assert_block_leaks would fail here because loading blocks "leaks" them on purpose to be added to functions later.
@@ -268,20 +171,19 @@ bool test_analysis_block_load() {
 
 	sdb_free(db);
 	rz_analysis_free(analysis);
-	rz_serialize_analysis_diff_parser_free(diff_parser);
 	mu_end;
 }
 
 Sdb *functions_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"diff\":{},\"bbs\":[1337]}", 0);
-	sdb_set(db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODw==\",\"diff\":{\"addr\":4321},\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
-	sdb_set(db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set(db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set(db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set(db, "0x67932", "{\"name\":\"anamnesis\",\"bits\":32,\"type\":4,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"noreturn\":true,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set(db, "0x31337", "{\"name\":\"aldebaran\",\"bits\":32,\"type\":-1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
+	sdb_set(db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"bbs\":[1337]}", 0);
+	sdb_set(db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
+	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
+	sdb_set(db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
+	sdb_set(db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
+	sdb_set(db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bbs\":[]}", 0);
+	sdb_set(db, "0x67932", "{\"name\":\"anamnesis\",\"bits\":32,\"type\":4,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"noreturn\":true,\"bbs\":[]}", 0);
+	sdb_set(db, "0x31337", "{\"name\":\"aldebaran\",\"bits\":32,\"type\":-1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}", 0);
 	return db;
 }
 
@@ -291,7 +193,7 @@ bool test_analysis_function_save() {
 	RzAnalysisBlock *ba = rz_analysis_create_block(analysis, 1337, 42);
 	RzAnalysisBlock *bb = rz_analysis_create_block(analysis, 1234, 32);
 
-	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 	rz_analysis_function_add_block(f, ba);
 	rz_analysis_function_add_block(f, bb);
 	f->bits = 16;
@@ -300,12 +202,6 @@ bool test_analysis_function_save() {
 	f->maxstack = 123;
 	f->bp_off = 4;
 	f->ninstr = 13;
-	f->fingerprint_size = 0x10;
-	f->fingerprint = malloc(f->fingerprint_size);
-	for (size_t v = 0; v < f->fingerprint_size; v++) {
-		f->fingerprint[v] = v;
-	}
-	f->diff->addr = 4321;
 	f->imports = rz_list_newf(free);
 	rz_list_push(f->imports, strdup("earth"));
 	rz_list_push(f->imports, strdup("rise"));
@@ -313,21 +209,21 @@ bool test_analysis_function_save() {
 	rz_analysis_function_set_label(f, "another", 1450);
 	rz_analysis_function_set_label(f, "year", 1440);
 
-	f = rz_analysis_create_function(analysis, "effekt", 1234, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	f = rz_analysis_create_function(analysis, "effekt", 1234, RZ_ANALYSIS_FCN_TYPE_FCN);
 	rz_analysis_function_add_block(f, ba);
 	f->is_pure = true;
 	f->bits = 0;
 
-	f = rz_analysis_create_function(analysis, "hiberno", 4242, RZ_ANALYSIS_FCN_TYPE_LOC, NULL);
+	f = rz_analysis_create_function(analysis, "hiberno", 4242, RZ_ANALYSIS_FCN_TYPE_LOC);
 	f->bp_frame = false;
 
-	f = rz_analysis_create_function(analysis, "anamnesis", 424242, RZ_ANALYSIS_FCN_TYPE_SYM, NULL);
+	f = rz_analysis_create_function(analysis, "anamnesis", 424242, RZ_ANALYSIS_FCN_TYPE_SYM);
 	f->is_noreturn = true;
 
-	rz_analysis_create_function(analysis, "agnosie", 0xdead, RZ_ANALYSIS_FCN_TYPE_IMP, NULL);
-	rz_analysis_create_function(analysis, "eskapist", 0xbeef, RZ_ANALYSIS_FCN_TYPE_INT, NULL);
-	rz_analysis_create_function(analysis, "lifnej", 0xc0ffee, RZ_ANALYSIS_FCN_TYPE_ROOT, NULL);
-	rz_analysis_create_function(analysis, "aldebaran", 0x31337, RZ_ANALYSIS_FCN_TYPE_ANY, NULL);
+	rz_analysis_create_function(analysis, "agnosie", 0xdead, RZ_ANALYSIS_FCN_TYPE_IMP);
+	rz_analysis_create_function(analysis, "eskapist", 0xbeef, RZ_ANALYSIS_FCN_TYPE_INT);
+	rz_analysis_create_function(analysis, "lifnej", 0xc0ffee, RZ_ANALYSIS_FCN_TYPE_ROOT);
+	rz_analysis_create_function(analysis, "aldebaran", 0x31337, RZ_ANALYSIS_FCN_TYPE_ANY);
 
 	rz_analysis_block_unref(ba);
 	rz_analysis_block_unref(bb);
@@ -347,12 +243,11 @@ bool test_analysis_function_load() {
 	RzAnalysis *analysis = rz_analysis_new();
 
 	Sdb *db = functions_ref_db();
-	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
 
 	RzAnalysisBlock *ba = rz_analysis_create_block(analysis, 1337, 42);
 	RzAnalysisBlock *bb = rz_analysis_create_block(analysis, 1234, 32);
 
-	bool succ = rz_serialize_analysis_functions_load(db, analysis, diff_parser, NULL);
+	bool succ = rz_serialize_analysis_functions_load(db, analysis, NULL);
 	mu_assert("load success", succ);
 
 	mu_assert_eq(ba->ref, 3, "ba refs");
@@ -378,10 +273,6 @@ bool test_analysis_function_load() {
 	mu_assert("noreturn", !f->is_noreturn);
 	mu_assert("bp_frame", f->bp_frame);
 	mu_assert_eq(f->bp_off, 4, "bp off");
-	mu_assert_eq(f->fingerprint_size, 0x10, "fingerprint size");
-	mu_assert_memeq(f->fingerprint, (const ut8 *)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f", 0x10, "fingerprint");
-	mu_assert_notnull(f->diff, "diff");
-	mu_assert_eq(f->diff->addr, 4321, "diff addr"); // diff is covered in detail by its own tests
 	mu_assert_notnull(f->imports, "imports");
 	mu_assert_eq(rz_list_length(f->imports), 2, "imports count");
 	mu_assert_streq(rz_list_get_n(f->imports, 0), "earth", "import");
@@ -406,8 +297,6 @@ bool test_analysis_function_load() {
 	mu_assert("noreturn", !f->is_noreturn);
 	mu_assert("bp_frame", f->bp_frame);
 	mu_assert_eq(f->bp_off, 0, "bp off");
-	mu_assert_null(f->fingerprint, "fingerprint");
-	mu_assert_notnull(f->diff, "diff");
 	mu_assert_null(f->imports, "imports");
 	mu_assert_eq(f->labels->count, 0, "labels count");
 
@@ -424,8 +313,6 @@ bool test_analysis_function_load() {
 	mu_assert("pure", !f->is_pure);
 	mu_assert("noreturn", !f->is_noreturn);
 	mu_assert("bp_frame", !f->bp_frame);
-	mu_assert_null(f->fingerprint, "fingerprint");
-	mu_assert_notnull(f->diff, "diff");
 	mu_assert_null(f->imports, "imports");
 	mu_assert_eq(f->labels->count, 0, "labels count");
 
@@ -442,8 +329,6 @@ bool test_analysis_function_load() {
 	mu_assert("pure", !f->is_pure);
 	mu_assert("noreturn", f->is_noreturn);
 	mu_assert("bp_frame", f->bp_frame);
-	mu_assert_null(f->fingerprint, "fingerprint");
-	mu_assert_notnull(f->diff, "diff");
 	mu_assert_null(f->imports, "imports");
 	mu_assert_eq(f->labels->count, 0, "labels count");
 
@@ -476,7 +361,6 @@ bool test_analysis_function_load() {
 
 	sdb_free(db);
 	rz_analysis_free(analysis);
-	rz_serialize_analysis_diff_parser_free(diff_parser);
 	mu_end;
 }
 
@@ -536,7 +420,7 @@ bool test_analysis_function_noreturn_load() {
 
 Sdb *vars_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":64,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[],"
+	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":64,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[],"
 			     "\"vars\":["
 			     "{\"name\":\"arg_rax\",\"type\":\"int64_t\",\"kind\":\"r\",\"reg\":\"rax\",\"arg\":true,\"accs\":[{\"off\":3,\"type\":\"r\",\"sp\":42,\"reg\":\"rax\"},{\"off\":13,\"type\":\"rw\",\"sp\":13,\"reg\":\"rbx\"},{\"off\":23,\"type\":\"w\",\"sp\":123,\"reg\":\"rcx\"}],\"constrs\":[0,42,1,84,2,126,3,168,4,210,5,252,6,294,7,336,8,378,9,420,10,462,11,504,12,546,13,588,14,630,15,672]},"
 			     "{\"name\":\"var_sp\",\"type\":\"const char *\",\"kind\":\"s\",\"delta\":16,\"accs\":[{\"off\":3,\"type\":\"w\",\"sp\":321,\"reg\":\"rsp\"}]},"
@@ -553,7 +437,7 @@ bool test_analysis_var_save() {
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 
-	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
 
@@ -614,9 +498,8 @@ bool test_analysis_var_load() {
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 
 	Sdb *db = vars_ref_db();
-	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
 
-	bool succ = rz_serialize_analysis_functions_load(db, analysis, diff_parser, NULL);
+	bool succ = rz_serialize_analysis_functions_load(db, analysis, NULL);
 	mu_assert("load success", succ);
 	RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, 1337);
 	mu_assert_notnull(f, "function");
@@ -700,7 +583,6 @@ bool test_analysis_var_load() {
 
 	sdb_free(db);
 	rz_analysis_free(analysis);
-	rz_serialize_analysis_diff_parser_free(diff_parser);
 	mu_end;
 }
 
@@ -1388,8 +1270,8 @@ Sdb *analysis_ref_db() {
 	sdb_set(blocks, "0x539", "{\"size\":42}", 0);
 
 	Sdb *functions = sdb_ns(db, "functions", true);
-	sdb_set(functions, "0x4d2", "{\"name\":\"effekt\",\"bits\":32,\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[1337]}", 0);
-	sdb_set(functions, "0x539", "{\"name\":\"hirsch\",\"bits\":32,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[1337,1234]}", 0);
+	sdb_set(functions, "0x4d2", "{\"name\":\"effekt\",\"bits\":32,\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[1337]}", 0);
+	sdb_set(functions, "0x539", "{\"name\":\"hirsch\",\"bits\":32,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[1337,1234]}", 0);
 
 	Sdb *noret = sdb_ns(db, "noreturn", true);
 	sdb_bool_set(noret, "addr.800800.noreturn", true, 0);
@@ -1441,11 +1323,11 @@ bool test_analysis_save() {
 	RzAnalysisBlock *ba = rz_analysis_create_block(analysis, 1337, 42);
 	RzAnalysisBlock *bb = rz_analysis_create_block(analysis, 1234, 32);
 
-	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 	rz_analysis_function_add_block(f, ba);
 	rz_analysis_function_add_block(f, bb);
 
-	f = rz_analysis_create_function(analysis, "effekt", 1234, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	f = rz_analysis_create_function(analysis, "effekt", 1234, RZ_ANALYSIS_FCN_TYPE_FCN);
 	rz_analysis_function_add_block(f, ba);
 
 	rz_analysis_block_unref(ba);
@@ -1551,8 +1433,6 @@ bool test_analysis_load() {
 }
 
 int all_tests() {
-	mu_run_test(test_analysis_diff_save);
-	mu_run_test(test_analysis_diff_load);
 	mu_run_test(test_analysis_switch_op_save);
 	mu_run_test(test_analysis_switch_op_load);
 	mu_run_test(test_analysis_block_save);

@@ -8,7 +8,10 @@
 #include <rz_core.h>
 #include <rz_list.h>
 
-#define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
+#define ACCESS_CMP(x, y)        ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
+#define IS_VALID_VAR_KIND(kind) (kind == RZ_ANALYSIS_VAR_KIND_REG || \
+	kind == RZ_ANALYSIS_VAR_KIND_BPV || \
+	kind == RZ_ANALYSIS_VAR_KIND_SPV)
 
 static const char *__int_type_from_size(int size) {
 	switch (size) {
@@ -180,8 +183,8 @@ static void var_free(RzAnalysisVar *var) {
 	if (!var) {
 		return;
 	}
-	rz_type_free(var->type);
 	rz_analysis_var_clear_accesses(var);
+	rz_type_free(var->type);
 	rz_vector_fini(&var->constraints);
 	free(var->name);
 	free(var->regname);
@@ -571,25 +574,6 @@ RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
 	return rz_strbuf_drain_nofree(&sb);
 }
 
-RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kind, int type) {
-	// type { local: 0, arg: 1 };
-	RzList *list = rz_analysis_var_list(a, fcn, kind);
-	RzAnalysisVar *var;
-	RzListIter *iter;
-	int count[2] = {
-		0
-	};
-	rz_list_foreach (list, iter, var) {
-		if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
-			count[1]++;
-			continue;
-		}
-		count[var->isarg]++;
-	}
-	rz_list_free(list);
-	return count[type];
-}
-
 static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, RzList /*<RzAnalysisVarField *>*/ *list) {
 	if (av->type->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return false;
@@ -616,6 +600,59 @@ static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, R
 		member_offset += rz_type_db_get_bitsize(a->typedb, member->type) / 8;
 	}
 	return false;
+}
+
+/**
+ * \brief      Counts the number of var types based on their kind
+ *
+ * \param      fcn   The RzAnalysisFunction to use
+ * \param[in]  kind  The kind of the vars
+ * \param[in]  type  The type of the vars
+ *
+ * \return     The counted number of var types based on their kind
+ */
+RZ_API size_t rz_analysis_var_count(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzAnalysisVarType type) {
+	rz_return_val_if_fail(fcn && IS_VALID_VAR_KIND(kind) && type < RZ_ANALYSIS_VAR_TYPE_SIZE, 0);
+
+	size_t count = 0;
+	RzAnalysisVar *var = NULL;
+	RzListIter *iter = NULL;
+	RzList *list = rz_analysis_var_list(fcn, kind);
+	if (!list) {
+		return 0;
+	}
+
+	if (kind == RZ_ANALYSIS_VAR_KIND_REG && type == RZ_ANALYSIS_VAR_TYPE_ARGUMENT) {
+		// all registers types are considered as arguments.
+		count = rz_list_length(list);
+		goto end;
+	}
+
+	rz_list_foreach (list, iter, var) {
+		if (type == RZ_ANALYSIS_VAR_TYPE_LOCAL) {
+			count += var->isarg ? 0 : 1;
+		} else /* if (type == RZ_ANALYSIS_VAR_TYPE_ARGUMENT) */ {
+			count += var->isarg ? 1 : 0;
+		}
+	}
+
+end:
+	rz_list_free(list);
+	return count;
+}
+/**
+ * \brief      Counts the total number of var types
+ *
+ * \param      fcn   The RzAnalysisFunction to use
+ * \param[in]  type  The type of the vars
+ *
+ * @return     The total number of var of a specific type
+ */
+RZ_API size_t rz_analysis_var_count_total(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarType type) {
+	rz_return_val_if_fail(fcn && type < RZ_ANALYSIS_VAR_TYPE_SIZE, 0);
+	return rz_analysis_var_count(fcn, RZ_ANALYSIS_VAR_KIND_REG, type) +
+		rz_analysis_var_count(fcn, RZ_ANALYSIS_VAR_KIND_BPV, type) +
+		rz_analysis_var_count(fcn, RZ_ANALYSIS_VAR_KIND_SPV, type);
 }
 
 static const char *get_regname(RzAnalysis *analysis, RzAnalysisValue *value) {
@@ -954,8 +991,8 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			}
 			callee_rargs = callee_rargs
 				? callee_rargs
-				: rz_analysis_var_count(analysis, f, RZ_ANALYSIS_VAR_KIND_REG, 1);
-			callee_rargs_l = rz_analysis_var_list(analysis, f, RZ_ANALYSIS_VAR_KIND_REG);
+				: rz_analysis_var_count(f, RZ_ANALYSIS_VAR_KIND_REG, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
+			callee_rargs_l = rz_analysis_var_list(f, RZ_ANALYSIS_VAR_KIND_REG);
 		}
 		size_t i;
 		for (i = 0; i < callee_rargs; i++) {
@@ -1116,24 +1153,6 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 }
 
-static RzList /*<RzAnalysisVar *>*/ *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
-	if (!a || !fcn) {
-		return NULL;
-	}
-	RzList *list = rz_list_new();
-	if (kind < 1) {
-		kind = RZ_ANALYSIS_VAR_KIND_BPV; // by default show vars
-	}
-	void **it;
-	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalysisVar *var = *it;
-		if (var->kind == kind) {
-			rz_list_push(list, var);
-		}
-	}
-	return list;
-}
-
 RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	// rz_analysis_var_list if there are not vars with that kind returns a list with
 	// zero element.. which is an unnecessary loss of cpu time
@@ -1141,9 +1160,9 @@ RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAna
 	if (!list) {
 		return NULL;
 	}
-	RzList *reg_vars = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG);
-	RzList *bpv_vars = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
-	RzList *spv_vars = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV);
+	RzList *reg_vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_REG);
+	RzList *bpv_vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+	RzList *spv_vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_SPV);
 	rz_list_join(list, reg_vars);
 	rz_list_join(list, bpv_vars);
 	rz_list_join(list, spv_vars);
@@ -1151,10 +1170,6 @@ RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAna
 	rz_list_free(bpv_vars);
 	rz_list_free(spv_vars);
 	return list;
-}
-
-RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
-	return var_generate_list(a, fcn, kind);
 }
 
 static void var_field_free(RzAnalysisVarField *field) {
@@ -1165,10 +1180,11 @@ static void var_field_free(RzAnalysisVarField *field) {
 	free(field);
 }
 
-RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind) {
+RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, RzAnalysisVarKind kind) {
 	if (!fcn) {
 		return NULL;
 	}
+
 	RzList *list = rz_list_newf((RzListFree)var_field_free);
 	if (kind < 1) {
 		kind = RZ_ANALYSIS_VAR_KIND_BPV; // by default show vars
@@ -1193,7 +1209,35 @@ RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_
 			break;
 		}
 		field->delta = var->delta;
-		rz_list_push(list, field);
+		rz_list_append(list, field);
+	}
+	return list;
+}
+
+/**
+ * \brief      Returns a list of vars (RzAnalysisVar) of the requrested kind
+ *
+ * \param      fcn   The function to use to retrieve the list of vars
+ * \param[in]  kind  The kind of the vars to retrieve
+ *
+ * \return     On success a list of RzAnalysisVar pointers (can be empty), otherwise NULL.
+ */
+RZ_API RZ_OWN RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind) {
+	rz_return_val_if_fail(fcn && IS_VALID_VAR_KIND(kind), NULL);
+
+	RzList *list = rz_list_new();
+	if (!list) {
+		RZ_LOG_ERROR("analysis: Cannot allocate RzList for RzAnalysisVar\n");
+		return NULL;
+	}
+
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
+		if (var->kind != kind) {
+			continue;
+		}
+		rz_list_append(list, var);
 	}
 	return list;
 }
@@ -1209,9 +1253,9 @@ static int regvar_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 }
 
 RZ_API void rz_analysis_fcn_vars_cache_init(RzAnalysis *analysis, RzAnalysisFcnVarsCache *cache, RzAnalysisFunction *fcn) {
-	cache->bvars = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
-	cache->rvars = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG);
-	cache->svars = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV);
+	cache->bvars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+	cache->rvars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_REG);
+	cache->svars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_SPV);
 	rz_list_sort(cache->bvars, (RzListComparator)var_comparator);
 	RzListIter *it;
 	RzAnalysisVar *var;

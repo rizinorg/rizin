@@ -96,8 +96,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_classes_attrs = sdb_ns(analysis->sdb_classes, "attrs", 1);
 	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	(void)rz_analysis_xrefs_init(analysis);
-	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
-	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
 	analysis->syscall = rz_syscall_new();
 	analysis->arch_target = rz_platform_target_new();
 	analysis->platform_target = rz_platform_target_index_new();

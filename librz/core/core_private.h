@@ -98,7 +98,7 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path);
 RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *typename);
 
 /* agraph.c */
-RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
+RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body);
 RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
 RZ_IPI void rz_core_agraph_add_edge(RzCore *core, const char *un, const char *vn);
 RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn);
