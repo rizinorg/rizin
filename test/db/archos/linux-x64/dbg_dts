@@ -10,6 +10,7 @@ dtsf ./
 dr rip
 ds 10
 dr rip
+dk 9
 rm ./session.sdb
 rm ./registers.sdb
 rm ./memory.sdb
@@ -36,6 +37,7 @@ ds
 s
 dsb
 s
+dk 9
 EOF
 EXPECT=<<EOF
 0x40052f

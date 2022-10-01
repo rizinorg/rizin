@@ -1438,9 +1438,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
 							rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 						}
-						// Even if killed above, we must still detach, otherwise
-						// there will be a zombie on macOS!
-						rz_debug_detach(r->dbg, r->dbg->pid);
 					} else {
 						continue;
 					}
@@ -1489,6 +1486,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	/* capture return value */
 	ret = r->num->value;
 beach:
+	if (!rz_debug_is_dead(r->dbg)) {
+		// Always detach properly if still attached, even if we already killed the process,
+		// otherwise there will be a zombie on macOS!
+		rz_debug_detach(r->dbg, r->dbg->pid);
+	}
 	if (quietLeak) {
 		exit(ret);
 		return ret;
