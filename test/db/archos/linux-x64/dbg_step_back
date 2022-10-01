@@ -76,6 +76,7 @@ dc
 dsb
 dsb
 dr rip
+dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x0040053b
