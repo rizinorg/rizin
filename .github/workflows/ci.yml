@@ -82,7 +82,7 @@ jobs:
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-11
+            os: macos-12
             build_system: meson
             compiler: clang
             run_tests: true
@@ -158,17 +158,17 @@ jobs:
 
     steps:
       - name: Show available memory on Linux
-        if: matrix.os != 'macos-11' && matrix.enabled
+        if: matrix.os != 'macos-12' && matrix.enabled
         run: free -h
       - uses: actions/checkout@v2
         if: matrix.enabled
         with:
           fetch-depth: 2
       - name: Install pkg-config with Homebrew
-        if: matrix.os == 'macos-11' && matrix.enabled
+        if: matrix.os == 'macos-12' && matrix.enabled
         run: brew install pkg-config
       - name: Install python and other dependencies
-        if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11' && matrix.enabled
+        if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-12' && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
@@ -183,7 +183,7 @@ jobs:
         if: matrix.run_tests && matrix.enabled
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
       - name: Install Linux test dependencies
-        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-11'
+        if: matrix.run_tests && matrix.enabled && matrix.os != 'macos-12'
         run: |
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 libc6-dev
@@ -217,7 +217,7 @@ jobs:
           export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
           ninja -C build install
       - name: Disable user authentication for debugging (macOS)
-        if: matrix.os == 'macos-11' && matrix.enabled
+        if: matrix.os == 'macos-12' && matrix.enabled
         run: |
           sudo security authorizationdb write system.privilege.taskport allow
       - name: Run unit tests (meson)
@@ -571,7 +571,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-11
+    runs-on: macos-12
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -771,8 +771,7 @@ jobs:
     strategy:
       matrix:
         system:
-          - macos-latest
-          - macos-11
+          - macos-12
     runs-on: ${{ matrix.system }}
     needs: [build-osx-pkg]
     steps:
