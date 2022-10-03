@@ -350,7 +350,7 @@ static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
 }
 
 static bool read_hdr(RzBuffer *b, struct minidump_header *hdr) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return false;
 	}
@@ -592,7 +592,7 @@ static bool read_module_aux(RzBuffer *b, ut64 addr, struct minidump_module *modu
 }
 
 static bool read_module(RzBuffer *b, ut64 addr, struct minidump_module *module) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return false;
 	}
@@ -611,7 +611,7 @@ static bool read_module(RzBuffer *b, ut64 addr, struct minidump_module *module) 
 }
 
 static bool read_memory64_list(RzBuffer *b, ut64 addr, struct minidump_memory64_list *memory64_list) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return false;
 	}
@@ -640,7 +640,7 @@ static bool read_memory64_list(RzBuffer *b, ut64 addr, struct minidump_memory64_
 }
 
 static bool read_desc(RzBuffer *b, ut64 addr, struct minidump_memory_descriptor64 *desc) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return false;
 	}
@@ -1153,7 +1153,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 }
 
 static bool read_entry(RzBuffer *b, ut64 addr, struct minidump_directory *entry) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return false;
 	}

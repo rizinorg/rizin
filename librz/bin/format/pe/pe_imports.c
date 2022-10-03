@@ -6,7 +6,7 @@
 #include "pe.h"
 
 int PE_(read_image_import_directory)(RzBuffer *b, ut64 addr, PE_(image_import_directory) * import_dir) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
@@ -22,7 +22,7 @@ int PE_(read_image_import_directory)(RzBuffer *b, ut64 addr, PE_(image_import_di
 }
 
 int PE_(read_image_delay_import_directory)(RzBuffer *b, ut64 addr, PE_(image_delay_import_directory) * directory) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}

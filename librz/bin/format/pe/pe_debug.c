@@ -137,7 +137,7 @@ static int get_debug_info(RzBinPEObj *bin, PE_(image_debug_directory_entry) * db
 }
 
 static int read_image_debug_directory_entry(RzBuffer *b, ut64 addr, PE_(image_debug_directory_entry) * entry) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}

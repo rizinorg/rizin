@@ -27,7 +27,7 @@ static bool read_image_resource_directory_aux(RzBuffer *b, Pe_image_resource_dir
 }
 
 static int read_image_resource_directory(RzBuffer *b, ut64 addr, Pe_image_resource_directory *dir) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return -1;
 	}
@@ -1319,7 +1319,7 @@ static char *_resource_type_str(int type) {
 }
 
 static int read_image_resource_directory_entry(RzBuffer *b, ut64 addr, Pe_image_resource_directory_entry *entry) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return -1;
 	}
@@ -1340,7 +1340,7 @@ static int read_image_resource_directory_entry(RzBuffer *b, ut64 addr, Pe_image_
 }
 
 static int read_image_resource_data_entry(RzBuffer *b, ut64 addr, Pe_image_resource_data_entry *entry) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
