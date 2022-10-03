@@ -4,18 +4,26 @@
 
 #include "blake3_impl.h"
 
+#if defined(IS_X86)
+#if defined(_MSC_VER)
+#include <intrin.h>
+#elif defined(__GNUC__)
+#include <immintrin.h>
+#else
+#undef IS_X86 /* Unimplemented! */
+#endif
+#endif
+
 #define MAYBE_UNUSED(x) (void)((x))
 
 #if defined(IS_X86)
 static uint64_t xgetbv() {
 #if defined(_MSC_VER)
   return _xgetbv(0);
-#elif defined(__GNUC__) || defined(__clang__)
+#else
   uint32_t eax = 0, edx = 0;
   __asm__ __volatile__("xgetbv\n" : "=a"(eax), "=d"(edx) : "c"(0));
   return ((uint64_t)edx << 32) | eax;
-#else
-  return 0;
 #endif
 }
 
