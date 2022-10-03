@@ -48,7 +48,7 @@ static bool read_tls_directory_aux(RzBuffer *b, PE_(image_tls_directory) * tls_d
 }
 
 static int read_tls_directory(RzBuffer *b, ut64 addr, PE_(image_tls_directory) * tls_directory) {
-	st64 tmp = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return -1;
 	}

@@ -62,7 +62,7 @@ static ut32 clr_max_rows(int count, ...) {
 static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr *clr) {
 	Pe_image_metadata_tilde_header *tilde = clr->tilde;
 
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
@@ -713,7 +713,7 @@ error:
 }
 
 static int read_image_clr_header(RzBuffer *b, ut64 addr, Pe_image_clr_header *header) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
@@ -743,7 +743,7 @@ static int read_image_clr_header(RzBuffer *b, ut64 addr, Pe_image_clr_header *he
 }
 
 int bin_pe_dotnet_read_method_header(Pe_image_clr *clr, RzBuffer *b, RzBinSymbol *sym) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, sym->paddr, RZ_BUF_SET) < 0) {
 		return -1;
 	}

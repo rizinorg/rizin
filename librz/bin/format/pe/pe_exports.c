@@ -116,7 +116,7 @@ static struct rz_bin_pe_export_t *parse_symbol_table(RzBinPEObj *bin, struct rz_
 }
 
 static int read_image_export_directory(RzBuffer *b, ut64 addr, PE_(image_export_directory) * export_dir) {
-	st64 o_addr = rz_buf_seek(b, 0, RZ_BUF_CUR);
+	st64 o_addr = rz_buf_tell(b);
 	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
 		return -1;
 	}
