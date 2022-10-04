@@ -608,11 +608,11 @@ jobs:
             bits: 64
           - name: clang_cl
             compiler: clang-cl
-            meson_options: --default-library=shared
+            meson_options: --default-library=shared -Dportable=true
             bits: 64
           - name: clang_cl_x86
             compiler: clang-cl
-            meson_options: --default-library=shared
+            meson_options: --default-library=shared -Dportable=true
             bits: 32
     steps:
       - uses: actions/checkout@v2
