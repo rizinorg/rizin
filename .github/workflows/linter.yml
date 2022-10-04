@@ -11,7 +11,7 @@ on:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       yaml: ${{ steps.filter.outputs.yaml }}
       clang-format: ${{ steps.filter.outputs.clang-format }}
@@ -51,7 +51,7 @@ jobs:
 
   cmd_descs_yaml_check:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v2
@@ -98,7 +98,7 @@ jobs:
 
   clang-format:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.clang-format == 'true' }}
     steps:
     - name: Checkout repository
@@ -124,7 +124,7 @@ jobs:
 
   prettier:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.prettier == 'true' }}
     steps:
     - name: Checkout repository
@@ -140,7 +140,7 @@ jobs:
 
   python:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.python == 'true' }}
     steps:
     - name: Checkout repository
@@ -160,7 +160,7 @@ jobs:
         find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs pylint
 
   licenses:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
