@@ -236,10 +236,6 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             optional: true
             choices: ["l", "i", "s"]
-          - name: diff
-            type: RZ_CMD_ARG_TYPE_CHOICES
-            optional: true
-            choices: ["m", "u"]
       - name: af-
         summary: Delete function
         cname: analysis_function_del
@@ -295,10 +291,6 @@ commands:
               - name: fail
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-              - name: diff
-                type: RZ_CMD_ARG_TYPE_CHOICES
-                optional: true
-                choices: ["m", "u"]
           - name: afb-
             summary: Remove basic block from function
             cname: analysis_function_blocks_del
@@ -1094,17 +1086,6 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
             choices_cb: rz_analysis_graph_format_choices
-      - name: agd
-        summary: Diff graph
-        cname: analysis_graph_diff
-        args:
-          - name: format
-            type: RZ_CMD_ARG_TYPE_CHOICES
-            default_value: "ascii"
-            choices_cb: rz_analysis_graph_format_choices
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
       - name: agf
         summary: Basic blocks function graph
         cname: analysis_graph_bb_function
@@ -1184,9 +1165,6 @@ commands:
                 type: RZ_CMD_ARG_TYPE_STRING
               - name: body
                 type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-              - name: color
-                type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
           - name: agn-
             summary: Remove a node from the custom graph

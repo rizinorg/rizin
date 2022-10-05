@@ -4834,7 +4834,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			RzList *list = rz_analysis_var_list(core->analysis, fcni, 'r');
+			RzList *list = rz_analysis_var_list(fcni, RZ_ANALYSIS_VAR_KIND_REG);
 			if (!rz_list_empty(list)) {
 				rz_list_free(list);
 				continue;

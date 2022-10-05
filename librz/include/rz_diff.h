@@ -93,7 +93,7 @@ RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE cons
 
 /* Distances algorithms */
 RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
-RZ_API bool rz_diff_levenstein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
+RZ_API bool rz_diff_levenshtein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
 
 #endif
 

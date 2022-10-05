@@ -307,8 +307,8 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 		}
 	}
 
-	bpargs = p->varlist(f, 'b');
-	spargs = p->varlist(f, 's');
+	bpargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_BPV);
+	spargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_SPV);
 	bool ucase = IS_UPPER(*tstr);
 	RzAnalysisVarField *var;
 	rz_list_foreach (bpargs, iter, var) {

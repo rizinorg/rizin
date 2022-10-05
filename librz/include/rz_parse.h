@@ -15,7 +15,7 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_parse);
 
-typedef RzList *(*RzAnalysisVarList)(RzAnalysisFunction *fcn, int kind);
+typedef RzList *(*RzAnalysisVarList)(RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
 
 typedef struct rz_parse_t {
 	void *user;
@@ -56,7 +56,7 @@ typedef struct rz_parse_plugin_t {
 #ifdef RZ_API
 
 /* lifecycle */
-RZ_API struct rz_parse_t *rz_parse_new(void);
+RZ_API RzParse *rz_parse_new(void);
 RZ_API void rz_parse_free(RzParse *p);
 
 /* plugins */

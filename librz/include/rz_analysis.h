@@ -124,7 +124,7 @@ enum {
 
 #define RZ_ANALYSIS_CC_MAXARG 16
 
-enum {
+typedef enum {
 	RZ_ANALYSIS_FCN_TYPE_NULL = 0,
 	RZ_ANALYSIS_FCN_TYPE_FCN = 1 << 0,
 	RZ_ANALYSIS_FCN_TYPE_LOC = 1 << 1,
@@ -133,31 +133,13 @@ enum {
 	RZ_ANALYSIS_FCN_TYPE_INT = 1 << 4, /* privileged function - ends with iret/reti/.. */
 	RZ_ANALYSIS_FCN_TYPE_ROOT = 1 << 5, /* matching flag */
 	RZ_ANALYSIS_FCN_TYPE_ANY = -1 /* all the bits set */
-};
+} RzAnalysisFcnType;
 
-#define RZ_ANALYSIS_DIFF_THRESHOLD (0.5)
-
-enum {
-	RZ_ANALYSIS_DIFF_TYPE_NULL = 0,
-	RZ_ANALYSIS_DIFF_TYPE_MATCH = 'm',
-	RZ_ANALYSIS_DIFF_TYPE_UNMATCH = 'u'
-};
-
-typedef struct rz_analysis_diff_t {
-	int type;
-	ut64 addr;
-	double dist;
-	char *name;
-	ut32 size;
-} RzAnalysisDiff;
-
-typedef struct rz_analysis_attr_t RzAnalysisAttr;
-
-struct rz_analysis_attr_t {
+typedef struct rz_analysis_attr_t {
 	char *key;
 	long value;
-	RzAnalysisAttr *next;
-};
+	struct rz_analysis_attr_t *next;
+} RzAnalysisAttr;
 
 /* Stores useful function metadata */
 /* TODO: Think about moving more stuff to this structure? */
@@ -193,10 +175,7 @@ typedef struct rz_analysis_function_t {
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
-	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	int argnum; // number of arguments;
-	size_t fingerprint_size;
-	RzAnalysisDiff *diff;
 	RzList /*<RzAnalysisBlock *>*/ *bbs; // TODO: should be RzPVector
 	RzAnalysisFcnMeta meta;
 	RzList /*<char *>*/ *imports; // maybe bound to class?
@@ -497,9 +476,6 @@ typedef struct rz_analysis_t {
 	RzReg *reg;
 	ut8 *last_disasm_reg;
 	RzSyscall *syscall;
-	int diff_ops;
-	double diff_thbb;
-	double diff_thfcn;
 	RzIOBind iob;
 	RzFlagBind flb;
 	RzFlagSet flg_class_set;
@@ -633,6 +609,13 @@ typedef enum {
 	RZ_ANALYSIS_VAR_KIND_BPV = 'b',
 	RZ_ANALYSIS_VAR_KIND_SPV = 's'
 } RzAnalysisVarKind;
+
+typedef enum {
+	RZ_ANALYSIS_VAR_TYPE_LOCAL = 0,
+	RZ_ANALYSIS_VAR_TYPE_ARGUMENT,
+	// -----
+	RZ_ANALYSIS_VAR_TYPE_SIZE
+} RzAnalysisVarType;
 
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
@@ -797,8 +780,6 @@ typedef struct rz_analysis_bb_t {
 	ut64 fail;
 	bool traced;
 	ut32 colorize;
-	ut8 *fingerprint;
-	RzAnalysisDiff *diff;
 	RzAnalysisCond *cond;
 	RzAnalysisSwitchOp *switch_op;
 	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
@@ -1148,9 +1129,6 @@ typedef bool (*RzAnalysisRegProfCallback)(RzAnalysis *a);
 typedef char *(*RzAnalysisRegProfGetCallback)(RzAnalysis *a);
 typedef int (*RzAnalysisFPBBCallback)(RzAnalysis *a, RzAnalysisBlock *bb);
 typedef int (*RzAnalysisFPFcnCallback)(RzAnalysis *a, RzAnalysisFunction *fcn);
-typedef int (*RzAnalysisDiffBBCallback)(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2);
-typedef int (*RzAnalysisDiffFcnCallback)(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns, RzList /*<RzAnalysisFunction *>*/ *fcns2);
-typedef int (*RzAnalysisDiffEvalCallback)(RzAnalysis *analysis);
 
 typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
 typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
@@ -1185,9 +1163,6 @@ typedef struct rz_analysis_plugin_t {
 	RzAnalysisOpCallback op;
 
 	RzAnalysisRegProfGetCallback get_reg_profile;
-	RzAnalysisDiffBBCallback diff_bb;
-	RzAnalysisDiffFcnCallback diff_fcn;
-	RzAnalysisDiffEvalCallback diff_eval;
 
 	RzAnalysisEsilCB esil_init; // initialize esil-related stuff
 	RzAnalysisEsilLoopCB esil_post_loop; // cycle-counting, firing interrupts, ...
@@ -1327,7 +1302,7 @@ RZ_API void rz_analysis_function_free(void *fcn);
 RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 
 // Create a new function and add it to analysis (rz_analysis_function_new() + set members + rz_analysis_add_function())
-RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, int type, RzAnalysisDiff *diff);
+RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type);
 
 // returns all functions that have a basic block containing the given address
 RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_functions_in(RzAnalysis *analysis, ut64 addr);
@@ -1540,9 +1515,7 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *analysis,
 RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 len, int reftype);
 RZ_API int rz_analysis_fcn_del(RzAnalysis *analysis, ut64 addr);
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr);
-RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn,
-	ut64 addr, ut64 size,
-	ut64 jump, ut64 fail, RZ_BORROW RzAnalysisDiff *diff);
+RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail);
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void);
 
@@ -1552,13 +1525,6 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn);
 
 RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address);
 RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks);
-
-#define RZ_ANALYSIS_FCN_VARKIND_LOCAL 'v'
-
-/* args */
-RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kind, int type);
-
-/* vars // globals. not here  */
 
 RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn);
 RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn);
@@ -1605,9 +1571,12 @@ RZ_API st64 rz_analysis_function_get_var_stackptr_at(RzAnalysisFunction *fcn, st
 RZ_API const char *rz_analysis_function_get_var_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
 RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr);
 
+/* var */
 // There could be multiple vars used in multiple functions. Use rz_analysis_get_functions_in()+rz_analysis_function_get_vars_used_at() instead.
 RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr);
 
+RZ_API size_t rz_analysis_var_count(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzAnalysisVarType type);
+RZ_API size_t rz_analysis_var_count_total(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarType type);
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
 RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);
@@ -1676,19 +1645,45 @@ RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_paths_by_address(RzAna
 /* project */
 RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);
 
-#define RZ_ANALYSIS_THRESHOLDFCN 0.7F
-#define RZ_ANALYSIS_THRESHOLDBB  0.7F
+/* similarity.c */
+typedef enum {
+	RZ_ANALYSIS_SIMILARITY_COMPLETE = 'c',
+	RZ_ANALYSIS_SIMILARITY_PARTIAL = 'p',
+	RZ_ANALYSIS_SIMILARITY_UNLIKE = 'u'
+} RzAnalysisSimilarity;
+#define RZ_ANALYSIS_SIMILARITY_COMPLETE_STR "COMPLETE"
+#define RZ_ANALYSIS_SIMILARITY_PARTIAL_STR  "PARTIAL"
+#define RZ_ANALYSIS_SIMILARITY_UNLIKE_STR   "UNLIKE"
 
-/* diff.c */
-RZ_API RZ_OWN RzAnalysisDiff *rz_analysis_diff_new(void);
-RZ_API void rz_analysis_diff_setup(RzAnalysis *analysis, int doops, double thbb, double thfcn);
-RZ_API void rz_analysis_diff_setup_i(RzAnalysis *analysis, int doops, int thbb, int thfcn);
-RZ_API void rz_analysis_diff_free(RzAnalysisDiff *diff);
-RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock *bb);
-RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
-RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2);
-RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns, RzList /*<RzAnalysisFunction *>*/ *fcns2);
-RZ_API int rz_analysis_diff_eval(RzAnalysis *analysis);
+typedef struct rz_analysis_match_pair_t {
+	const void *pair_a; ///< Match pair from input A (the pointers are either RzAnalysisBlock or RzAnalysisFunction)
+	const void *pair_b; ///< Match pair from input B (the pointers are either RzAnalysisBlock or RzAnalysisFunction)
+	double similarity; ///< Similarity score (from 0 to 1.0, where 1 is perfect match and 0 is complete mismatch)
+} RzAnalysisMatchPair;
+
+typedef struct rz_analysis_match_result_t {
+	RzList /*<RzAnalysisMatchPair *>*/ *matches; ///< List of matched pairs between input A and B
+	RzList /*<void *>*/ *unmatch_a; ///< List of unmatched elements from input A (the pointers are either RzAnalysisBlock or RzAnalysisFunction)
+	RzList /*<void *>*/ *unmatch_b; ///< List of unmatched elements from input B (the pointers are either RzAnalysisBlock or RzAnalysisFunction)
+} RzAnalysisMatchResult;
+
+#define RZ_ANALYSIS_SIMILARITY_THRESHOLD (0.5)
+
+#define RZ_ANALYSIS_SIMILARITY_TYPE(sim) \
+	(sim < RZ_ANALYSIS_SIMILARITY_THRESHOLD ? RZ_ANALYSIS_SIMILARITY_UNLIKE : (sim >= 1.0 ? RZ_ANALYSIS_SIMILARITY_COMPLETE : RZ_ANALYSIS_SIMILARITY_PARTIAL))
+
+#define RZ_ANALYSIS_SIMILARITY_TYPE_STR(sim) \
+	(sim < RZ_ANALYSIS_SIMILARITY_THRESHOLD ? RZ_ANALYSIS_SIMILARITY_UNLIKE_STR : (sim >= 1.0 ? RZ_ANALYSIS_SIMILARITY_COMPLETE_STR : RZ_ANALYSIS_SIMILARITY_PARTIAL_STR))
+
+RZ_API double rz_analysis_similarity_basic_block(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisBlock *bb_a, RZ_NONNULL RzAnalysisBlock *bb_b);
+RZ_API double rz_analysis_similarity_function(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b);
+RZ_API double rz_analysis_similarity_basic_block_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisBlock *bb_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisBlock *bb_b);
+RZ_API double rz_analysis_similarity_function_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RZ_NONNULL RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b);
+RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions_2(RZ_NONNULL RzAnalysis *analysis_a, RzList /*<RzAnalysisFunction *>*/ *list_a, RZ_NONNULL RzAnalysis *analysis_b, RzList /*<RzAnalysisFunction *>*/ *list_b);
+RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *result);
 
 /* value.c */
 RZ_API RzAnalysisValue *rz_analysis_value_new(void);
@@ -1734,9 +1729,9 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 RZ_API int rz_analysis_reflines_middle(RzAnalysis *analysis, RzList /*<RzAnalysisRefline *>*/ *list, ut64 addr, int len);
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);
-RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind);
+RZ_API RZ_OWN RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
 RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn);
-RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int kind);
+RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
 
 // calling conventions API
 RZ_API bool rz_analysis_cc_exist(RzAnalysis *analysis, const char *convention);
@@ -2066,11 +2061,6 @@ RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAn
 RZ_API void rz_serialize_analysis_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisSwitchOp *op);
 RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const RzJson *json);
 
-typedef void *RzSerializeAnalDiffParser;
-RZ_API RzSerializeAnalDiffParser rz_serialize_analysis_diff_parser_new(void);
-RZ_API void rz_serialize_analysis_diff_parser_free(RzSerializeAnalDiffParser parser);
-RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RzJson *json);
-RZ_API void rz_serialize_analysis_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisDiff *diff);
 RZ_API void rz_serialize_analysis_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 
 RZ_API void rz_serialize_typelinks_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzAnalysis *analysis);
@@ -2086,7 +2076,7 @@ RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL
  * RzAnalysis must not contain any blocks when calling this function!
  * All loaded blocks will have a ref of 1 after this function and should be unrefd once after loading functions.
  */
-RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
 typedef void *RzSerializeAnalVarParser;
 RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void);
@@ -2110,7 +2100,7 @@ typedef struct analysis_bytes_t {
 } RzAnalysisBytes;
 
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
-RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_analysis_function_noreturn_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_function_noreturn_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_analysis_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);

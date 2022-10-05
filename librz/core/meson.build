@@ -47,7 +47,6 @@ rz_core_sources = [
   'csyscall.c',
   'disasm.c',
   'fortune.c',
-  'gdiff.c',
   'golang.c',
   'hack.c',
   'libs.c',

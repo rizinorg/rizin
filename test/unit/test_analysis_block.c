@@ -128,7 +128,7 @@ bool test_rz_analysis_block_split_in_function() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
@@ -210,7 +210,7 @@ bool test_rz_analysis_block_merge_in_function() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *first = rz_analysis_create_block(analysis, 0x1337, 42);
 	RzAnalysisBlock *second = rz_analysis_create_block(analysis, 0x1337 + 42, 624);
@@ -243,7 +243,7 @@ bool test_rz_analysis_block_delete() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
@@ -271,7 +271,7 @@ bool test_rz_analysis_block_set_size() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
@@ -310,7 +310,7 @@ bool test_rz_analysis_block_relocate() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
@@ -593,14 +593,14 @@ bool test_rz_analysis_block_automerge() {
 		RzAnalysisBlock *f = rz_analysis_create_block(analysis, 0x150, 0x10);
 		e->jump = f->addr;
 
-		RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 		rz_analysis_function_add_block(fa, a);
 		rz_analysis_function_add_block(fa, c);
 		rz_analysis_function_add_block(fa, d);
 		rz_analysis_function_add_block(fa, e);
 		rz_analysis_function_add_block(fa, f);
 
-		RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x110, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x110, RZ_ANALYSIS_FCN_TYPE_FCN);
 		rz_analysis_function_add_block(fb, b);
 		rz_analysis_function_add_block(fb, c);
 		rz_analysis_function_add_block(fb, d);
@@ -657,12 +657,12 @@ bool test_rz_analysis_block_chop_noreturn(void) {
 	a->jump = c->addr;
 	b->jump = c->addr;
 
-	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	rz_analysis_function_add_block(fa, a);
 	rz_analysis_function_add_block(fa, b);
 	rz_analysis_function_add_block(fa, c);
 
-	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x130, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x130, RZ_ANALYSIS_FCN_TYPE_FCN);
 	fb->is_noreturn = true;
 
 	rz_analysis_block_chop_noreturn(b, 0x111);

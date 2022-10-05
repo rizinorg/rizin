@@ -92,11 +92,11 @@ bool test_rz_analysis_function_relocate() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_invariants(analysis);
 
-	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "do_something", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_invariants(analysis);
-	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "do_something_else", 0xdeadbeef, 0, NULL);
+	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "do_something_else", 0xdeadbeef, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_invariants(analysis);
-	rz_analysis_create_function(analysis, "do_something_different", 0xc0ffee, 0, NULL);
+	rz_analysis_create_function(analysis, "do_something_different", 0xc0ffee, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_invariants(analysis);
 
 	bool success = rz_analysis_function_relocate(fa, fb->addr);
@@ -117,7 +117,7 @@ bool test_rz_analysis_function_relocate() {
 bool test_rz_analysis_function_labels() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "do_something", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	bool s = rz_analysis_function_set_label(f, "smartfriend", 0x1339);
 	mu_assert_true(s, "set label");

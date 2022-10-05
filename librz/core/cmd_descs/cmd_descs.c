@@ -104,9 +104,9 @@ static const RzCmdDescArg analysis_data_args[4];
 static const RzCmdDescArg analysis_data_trampoline_args[3];
 static const RzCmdDescArg analysis_function_add_recu_args[2];
 static const RzCmdDescArg analysis_function_add_recu_force_args[2];
-static const RzCmdDescArg analysis_function_create_args[4];
+static const RzCmdDescArg analysis_function_create_args[3];
 static const RzCmdDescArg analysis_function_analyze_jmptable_args[3];
-static const RzCmdDescArg analysis_function_blocks_add_args[7];
+static const RzCmdDescArg analysis_function_blocks_add_args[6];
 static const RzCmdDescArg analysis_function_blocks_edge_args[3];
 static const RzCmdDescArg analysis_function_blocks_switch_type_args[3];
 static const RzCmdDescArg analysis_function_blocks_color_args[3];
@@ -162,7 +162,6 @@ static const RzCmdDescArg analysis_graph_dataref_args[2];
 static const RzCmdDescArg analysis_graph_dataref_global_args[2];
 static const RzCmdDescArg analysis_graph_callgraph_function_args[2];
 static const RzCmdDescArg analysis_graph_callgraph_global_args[2];
-static const RzCmdDescArg analysis_graph_diff_args[3];
 static const RzCmdDescArg analysis_graph_bb_function_args[2];
 static const RzCmdDescArg analysis_graph_imports_args[2];
 static const RzCmdDescArg analysis_graph_refs_args[2];
@@ -171,7 +170,7 @@ static const RzCmdDescArg analysis_graph_normal_args[2];
 static const RzCmdDescArg analysis_graph_line_args[2];
 static const RzCmdDescArg analysis_graph_xrefs_args[2];
 static const RzCmdDescArg analysis_graph_custom_args[2];
-static const RzCmdDescArg analysis_graph_custom_node_add_args[4];
+static const RzCmdDescArg analysis_graph_custom_node_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_node_remove_args[2];
 static const RzCmdDescArg analysis_graph_custom_edge_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_edge_remove_args[3];
@@ -1739,8 +1738,6 @@ static const RzCmdDescHelp analysis_function_add_recu_force_help = {
 };
 
 static const char *analysis_function_create_type_choices[] = { "l", "i", "s", NULL };
-
-static const char *analysis_function_create_diff_choices[] = { "m", "u", NULL };
 static const RzCmdDescArg analysis_function_create_args[] = {
 	{
 		.name = "name",
@@ -1752,13 +1749,6 @@ static const RzCmdDescArg analysis_function_create_args[] = {
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
 		.choices.choices = analysis_function_create_type_choices,
-
-	},
-	{
-		.name = "diff",
-		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.optional = true,
-		.choices.choices = analysis_function_create_diff_choices,
 
 	},
 	{ 0 },
@@ -1830,7 +1820,6 @@ static const RzCmdDescHelp analysis_function_blocks_list_help = {
 	.args = analysis_function_blocks_list_args,
 };
 
-static const char *analysis_function_blocks_add_diff_choices[] = { "m", "u", NULL };
 static const RzCmdDescArg analysis_function_blocks_add_args[] = {
 	{
 		.name = "fcn_addr",
@@ -1856,14 +1845,8 @@ static const RzCmdDescArg analysis_function_blocks_add_args[] = {
 	{
 		.name = "fail",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
-
-	},
-	{
-		.name = "diff",
-		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.optional = true,
-		.choices.choices = analysis_function_blocks_add_diff_choices,
 
 	},
 	{ 0 },
@@ -3236,28 +3219,6 @@ static const RzCmdDescHelp analysis_graph_callgraph_global_help = {
 	.args = analysis_graph_callgraph_global_args,
 };
 
-static const RzCmdDescArg analysis_graph_diff_args[] = {
-	{
-		.name = "format",
-		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.default_value = "ascii",
-		.choices.choices_cb = rz_analysis_graph_format_choices,
-
-	},
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_graph_diff_help = {
-	.summary = "Diff graph",
-	.args = analysis_graph_diff_args,
-};
-
 static const RzCmdDescArg analysis_graph_bb_function_args[] = {
 	{
 		.name = "format",
@@ -3398,12 +3359,6 @@ static const RzCmdDescArg analysis_graph_custom_node_add_args[] = {
 	{
 		.name = "body",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
-
-	},
-	{
-		.name = "color",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -16126,9 +16081,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_graph_callgraph_global_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agC", rz_analysis_graph_callgraph_global_handler, &analysis_graph_callgraph_global_help);
 	rz_warn_if_fail(analysis_graph_callgraph_global_cd);
-
-	RzCmdDesc *analysis_graph_diff_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agd", rz_analysis_graph_diff_handler, &analysis_graph_diff_help);
-	rz_warn_if_fail(analysis_graph_diff_cd);
 
 	RzCmdDesc *analysis_graph_bb_function_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agf", rz_analysis_graph_bb_function_handler, &analysis_graph_bb_function_help);
 	rz_warn_if_fail(analysis_graph_bb_function_cd);

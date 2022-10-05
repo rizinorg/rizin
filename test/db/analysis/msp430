@@ -4,6 +4,7 @@ CMDS=<<EOF
 s main
 aF
 pif
+?e
 afi
 EOF
 EXPECT=<<EOF
@@ -26,7 +27,7 @@ clr r15
 add 0x0064, sp
 bis 0x00f0, sr
 jmp $-0x0004
-#
+
 offset: 0x00004438
 name: main
 size: 62
@@ -37,7 +38,7 @@ cyclomatic-cost: 0
 cyclomatic-complexity: 1
 loops: 0
 bits: 32
-type: fcn [new]
+type: fcn
 num-bbs: 5
 edges: 6
 end-bbs: 0
@@ -50,7 +51,6 @@ out-degree: 6
 data-xrefs:
 locals: 0
 args: 0
-diff: type: new
 EOF
 RUN
 
@@ -61,6 +61,7 @@ CMDS=<<EOF
 s main
 aF
 pif
+?e
 afi
 EOF
 EXPECT=<<EOF
@@ -83,7 +84,7 @@ clr r15
 add 0x0064, sp
 bis 0x00f0, sr
 jmp $-0x0004
-#
+
 offset: 0x00004438
 name: main
 size: 62
@@ -94,7 +95,7 @@ cyclomatic-cost: 0
 cyclomatic-complexity: 1
 loops: 0
 bits: 16
-type: fcn [new]
+type: fcn
 num-bbs: 5
 edges: 6
 end-bbs: 0
@@ -107,6 +108,5 @@ out-degree: 6
 data-xrefs:
 locals: 0
 args: 0
-diff: type: new
 EOF
 RUN
