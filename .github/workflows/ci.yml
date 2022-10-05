@@ -755,16 +755,12 @@ jobs:
           export PATH=$PATH:/usr/local/bin
           meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
-      - name: Init rz-pm
-        run: rz-pm init && rz-pm update
-      - name: Compile and install rzpipe
+      - name: Install rz-pipe-py
         run: |
-          set -e
-          for p in $RZPIPE_TESTS ; do
-            echo $p
-            rz-pm -i $p
-          done
-          set +e
+          pip install -U rzpipe
+      - name: Install rz-pipe-go
+        run: |
+          go get github.com/rizinorg/rz-pipe/go
 
   test-osx-pkg:
     name: Test OSX pkg
