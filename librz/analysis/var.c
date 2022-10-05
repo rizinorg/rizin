@@ -646,7 +646,7 @@ end:
  * \param      fcn   The RzAnalysisFunction to use
  * \param[in]  type  The type of the vars
  *
- * @return     The total number of var of a specific type
+ * \return     The total number of var of a specific type
  */
 RZ_API size_t rz_analysis_var_count_total(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarType type) {
 	rz_return_val_if_fail(fcn && type < RZ_ANALYSIS_VAR_TYPE_SIZE, 0);
