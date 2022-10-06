@@ -108,7 +108,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400575
 rip = 0x0040057c
-Hello world
 EOF
 RUN
 
@@ -125,7 +124,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400539
 rip = 0x0040053b
-Hello world
 EOF
 RUN
 
@@ -142,7 +140,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400546
 rip = 0x00400548
-Hello world
 EOF
 RUN
 
@@ -159,7 +156,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400549
 rip = 0x0040054e
-Hello world
 EOF
 RUN
 
@@ -273,7 +269,6 @@ dcu main
 EOF
 EXPECT=<<EOF
 0x400574
-Hello world
 EOF
 REGEXP_FILTER_ERR=<<EOF
 Continue[ a-zA-Z0-9]+
