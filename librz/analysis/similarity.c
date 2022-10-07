@@ -28,6 +28,7 @@ typedef struct signature_data_t {
 } SignatureData;
 
 typedef SignatureData *(*SignatureDataCb)(RzAnalysis *analysis, void *data);
+typedef bool (*SignatureMetaCompare)(void *a, void *b);
 
 static SignatureData *signature_data_bb_new(RzAnalysis *analysis, RzAnalysisBlock *bb) {
 	rz_return_val_if_fail(analysis && bb, NULL);
@@ -75,6 +76,7 @@ static SignatureData *signature_data_fcn_new(RzAnalysis *analysis, RzAnalysisFun
 		}
 		current += bb->size;
 	}
+
 	sim->size = size;
 	sim->data = data;
 	sim->info = fcn;
@@ -194,7 +196,7 @@ static RZ_OWN RzAnalysisMatchPair *match_pair_new(const void *pair_a, const void
 	return result;
 }
 
-static RzList /*<void *>*/ *signature_data_from_list(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzList /*<void *>*/ *list_src, SignatureDataCb callback_new) {
+static RzList /*<SignatureData *>*/ *signature_data_from_list(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzList /*<void *>*/ *list_src, SignatureDataCb callback_new) {
 	RzList *list = rz_list_newf((RzListFree)signature_data_free);
 	if (!list) {
 		RZ_LOG_ERROR("analysis: Cannot allocate RzList for basic blocks signatures\n");
@@ -216,7 +218,7 @@ static RzList /*<void *>*/ *signature_data_from_list(RZ_NONNULL RzAnalysis *anal
 	return list;
 }
 
-static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzList /*<void *>*/ *list_a, RZ_NONNULL RzList /*<void *>*/ *list_b, SignatureDataCb callback_new) {
+static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzList /*<void *>*/ *list_a, RZ_NONNULL RzList /*<void *>*/ *list_b, SignatureMetaCompare callback_cmp, SignatureDataCb callback_new) {
 	RzAnalysisMatchResult *result = NULL;
 
 	RzList *matches = rz_list_newf((RzListFree)free);
@@ -233,6 +235,56 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	RzListIter *it_a = NULL, *it_b = NULL, *match_b = NULL;
 	double max_similarity = 0.0, calc_similarity = 0.0;
 
+	if (callback_cmp) {
+		// Sometimes we can pre-match the data by name etc, so we can make the list smaller.
+		it_a = sims_a->head;
+		while (it_a) {
+			sim_a = rz_list_iter_get_data(it_a);
+			match_b = NULL;
+			max_similarity = 0.0;
+			rz_list_foreach (sims_b, it_b, sim_b) {
+				if (!callback_cmp(sim_a->info, sim_b->info)) {
+					continue;
+				}
+
+				if (signature_fast_compare(sim_a, sim_b)) {
+					max_similarity = 1.0;
+				} else {
+					signature_levenshtein_distance(sim_a, sim_b, max_similarity);
+				}
+
+				match_b = it_b;
+				break;
+			}
+
+			if (!match_b) {
+				it_a = rz_list_iter_get_next(it_a);
+				continue;
+			}
+
+			sim_b = rz_list_iter_get_data(match_b);
+			pair = match_pair_new(sim_a->info, sim_b->info, max_similarity);
+			if (!pair || !rz_list_append(matches, pair)) {
+				free(pair);
+				goto fail;
+			}
+
+			rz_list_delete(sims_b, match_b);
+			RzListIter *it_del = it_a;
+			it_a = it_del->p;
+			rz_list_delete(sims_a, it_del);
+
+			if (!it_a) {
+				// if we delete the first element
+				// we need to fetch the new first
+				// iter
+				it_a = sims_a->head;
+			} else {
+				it_a = rz_list_iter_get_next(it_a);
+			}
+		}
+	}
+
 	rz_list_foreach (sims_a, it_a, sim_a) {
 		match_b = NULL;
 		max_similarity = 0.0;
@@ -245,7 +297,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 
 			calc_similarity = 0.0;
 			signature_levenshtein_distance(sim_a, sim_b, calc_similarity);
-			if (calc_similarity <= max_similarity || calc_similarity <= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
+			if (calc_similarity <= max_similarity) {
 				continue;
 			}
 			max_similarity = calc_similarity;
@@ -255,7 +307,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 			}
 		}
 
-		if (!match_b) {
+		if (!match_b || max_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
 			if (!rz_list_append(unmatch_a, sim_a->info)) {
 				goto fail;
 			}
@@ -328,7 +380,18 @@ RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *res
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b) {
 	rz_return_val_if_fail(analysis && fcn_a && fcn_b, NULL);
-	return analysis_match_result_new(analysis, analysis, fcn_a->bbs, fcn_b->bbs, (SignatureDataCb)signature_data_bb_new);
+	return analysis_match_result_new(analysis, analysis, fcn_a->bbs, fcn_b->bbs, NULL, (SignatureDataCb)signature_data_bb_new);
+}
+
+static bool function_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {
+	if (RZ_STR_ISEMPTY(fcn_a->name) ||
+		RZ_STR_ISEMPTY(fcn_b->name) ||
+		!strncmp(fcn_a->name, "fcn.", strlen("fcn.")) ||
+		!strncmp(fcn_b->name, "fcn.", strlen("fcn."))) {
+		return false;
+	}
+
+	return !strcmp(fcn_a->name, fcn_b->name);
 }
 
 /**
@@ -342,7 +405,7 @@ RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL R
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RZ_NONNULL RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b) {
 	rz_return_val_if_fail(analysis && list_a && list_b, NULL);
-	return analysis_match_result_new(analysis, analysis, list_a, list_b, (SignatureDataCb)signature_data_fcn_new);
+	return analysis_match_result_new(analysis, analysis, list_a, list_b, (SignatureMetaCompare)function_cmp, (SignatureDataCb)signature_data_fcn_new);
 }
 
 /**
@@ -357,7 +420,7 @@ RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RZ_NONNULL RzAn
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks_2(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzAnalysisFunction *fcn_b) {
 	rz_return_val_if_fail(analysis_a && analysis_b && fcn_a && fcn_b, NULL);
-	return analysis_match_result_new(analysis_a, analysis_b, fcn_a->bbs, fcn_b->bbs, (SignatureDataCb)signature_data_bb_new);
+	return analysis_match_result_new(analysis_a, analysis_b, fcn_a->bbs, fcn_b->bbs, NULL, (SignatureDataCb)signature_data_bb_new);
 }
 
 /**
@@ -372,5 +435,5 @@ RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks_2(RZ_NONNULL
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions_2(RZ_NONNULL RzAnalysis *analysis_a, RzList /*<RzAnalysisFunction *>*/ *list_a, RZ_NONNULL RzAnalysis *analysis_b, RzList /*<RzAnalysisFunction *>*/ *list_b) {
 	rz_return_val_if_fail(analysis_a && analysis_b && list_a && list_b, NULL);
-	return analysis_match_result_new(analysis_a, analysis_b, list_a, list_b, (SignatureDataCb)signature_data_fcn_new);
+	return analysis_match_result_new(analysis_a, analysis_b, list_a, list_b, (SignatureMetaCompare)function_cmp, (SignatureDataCb)signature_data_fcn_new);
 }

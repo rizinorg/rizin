@@ -601,6 +601,7 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 	rz_config_set_i(core->config, "scr.color", colors ? 1 : 0);
 	rz_config_set_b(core->config, "scr.interactive", false);
 	rz_config_set_b(core->config, "cfg.debug", false);
+	rz_config_set_b(core->config, "scr.prompt", false);
 	core->print->scr_prompt = false;
 	cfile = rz_core_file_open(core, filename, 0, 0);
 	if (!cfile) {
@@ -1894,6 +1895,9 @@ static void diff_functions_result_as_json(RzAnalysisMatchResult *result, PJ *pj)
 	rz_list_foreach (result->matches, iter, pair) {
 		fcn_a = (RzAnalysisFunction *)pair->pair_a;
 		fcn_b = (RzAnalysisFunction *)pair->pair_b;
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
 
 		pj_o(pj); // { -- match object begin
 		pj_kd(pj, "similarity", pair->similarity);
@@ -1905,6 +1909,9 @@ static void diff_functions_result_as_json(RzAnalysisMatchResult *result, PJ *pj)
 
 	// then the unmatched functions from list A.
 	rz_list_foreach (result->unmatch_a, iter, fcn_a) {
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
 		pj_o(pj); // { -- match object begin
 		pj_kd(pj, "similarity", 0.0);
 		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
@@ -1914,7 +1921,10 @@ static void diff_functions_result_as_json(RzAnalysisMatchResult *result, PJ *pj)
 	}
 
 	// then the unmatched functions from list B.
-	rz_list_foreach (result->unmatch_a, iter, fcn_b) {
+	rz_list_foreach (result->unmatch_b, iter, fcn_b) {
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
 		pj_o(pj); // { -- match object begin
 		pj_kd(pj, "similarity", 0.0);
 		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
@@ -1990,7 +2000,7 @@ static void diff_functions_result_as_table(RzCore *core_a, RzCore *core_b, RzAna
 	}
 
 	// then the unmatched functions from list B.
-	rz_list_foreach (result->unmatch_a, iter, fcn_b) {
+	rz_list_foreach (result->unmatch_b, iter, fcn_b) {
 		if (fcn_b->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_b->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
 			continue;
 		}
