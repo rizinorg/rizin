@@ -5,30 +5,22 @@
 #include <stdio.h>
 #include "rz_util.h"
 
-inline RzListIter *rz_list_iter_new(void) {
-	return calloc(1, sizeof(RzListIter));
-}
-
-RZ_API void rz_list_iter_free(RzListIter *list) {
-	/* do nothing? */
-}
-
 /**
  * \brief returns the next RzList iterator in the list
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RzListIter *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->n;
+RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RzListIter *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	return iter->n;
 }
 
 /**
  * \brief returns the value stored in the next RzList iterator
  *
  **/
-RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RzListIter *list) {
-	rz_return_val_if_fail(list, NULL);
-	RzListIter *n = list->n;
+RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RzListIter *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	RzListIter *n = iter->n;
 	if (!n) {
 		return NULL;
 	}
@@ -39,9 +31,9 @@ RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RzListIter *list) {
  * \brief returns the value stored in the list element
  *
  **/
-RZ_API void *rz_list_iter_get_data(RzListIter *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->data;
+RZ_API void *rz_list_iter_get_data(RzListIter *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	return iter->data;
 }
 
 /**
@@ -65,9 +57,9 @@ RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
  * \brief Returns the next element of the list
  *
  **/
-RZ_API RzListIter *rz_list_get_next(RzListIter *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->n;
+RZ_API RzListIter *rz_list_get_next(RzListIter *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	return iter->n;
 }
 
 /**
