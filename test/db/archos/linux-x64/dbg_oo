@@ -91,7 +91,6 @@ EXPECT=<<EOF
 0x0
 0x0
 0x3
-Hello world!
 EOF
 RUN
 

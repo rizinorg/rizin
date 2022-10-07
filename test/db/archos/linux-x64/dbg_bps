@@ -251,7 +251,6 @@ EXPECT=<<EOF
 3 E:1
 ----------
 0 E:1
-Hello world!
 EOF
 RUN
 
