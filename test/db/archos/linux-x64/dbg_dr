@@ -329,7 +329,6 @@ dr esi=0x42
 dr edi=0x42
 dr rflags=0
 ?== true `e cfg.debug`; ?! dr; ?? ar
-dk 9
 EOF
 EXPECT=<<EOF
 false

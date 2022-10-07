@@ -4,7 +4,6 @@ ARGS=-d
 CMDS=<<EOF
 dmiqq ld
 dmiqq ld _dl_rtld_di_serinfo
-dk 9
 EOF
 EXPECT=<<EOF
 __get_cpu_features
@@ -49,7 +48,6 @@ FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 dmiaqq ld~la_activity
-dk 9
 EOF
 EXPECT=<<EOF
 la_activity
@@ -63,7 +61,6 @@ CMDS=<<EOF
 dmias ld
 s sym._dl_rtld_di_serinfo
 fN
-dk 9
 EOF
 EXPECT=<<EOF
 _dl_rtld_di_serinfo

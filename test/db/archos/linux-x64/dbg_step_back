@@ -13,7 +13,6 @@ dr rbx
 dr rcx
 dr r12
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rbx = 0x00000001
@@ -46,7 +45,6 @@ dr rcx
 dr r10
 dr rbp
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rax = 0x00400574
@@ -76,7 +74,6 @@ dc
 dsb
 dsb
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x0040053b

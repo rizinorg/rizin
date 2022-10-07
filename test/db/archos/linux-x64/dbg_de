@@ -9,7 +9,6 @@ dec
 s rip
 # the call instruction reads rsp, then we should be inside strlen
 pi 1
-dk 9
 EOF
 EXPECT=<<EOF
 jmp qword [reloc.strlen]
@@ -26,7 +25,6 @@ dec
 .drf
 s rip-7
 pi 2
-dk 9
 EOF
 EXPECT=<<EOF
 lea rax, str.Hello
