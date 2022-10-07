@@ -24,3 +24,18 @@ efbeadde5dc36690
 5589e5cc5dc36690
 EOF
 RUN
+
+NAME=dk 9
+FILE=bins/elf/analysis/calls_x64
+ARGS=-a x86 -d
+CMDS=<<EOF
+dk 9
+dc
+EOF
+EXPECT=<<EOF
+EOF
+REGEXP_FILTER_ERR=child.*signal [0-9]+.*
+EXPECT_ERR=<<EOF
+child received signal 9
+EOF
+RUN
