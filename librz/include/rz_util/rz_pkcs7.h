@@ -23,18 +23,18 @@ typedef struct rz_pkcs7_digestalgorithmidentifiers_t {
 } RzPKCS7DigestAlgorithmIdentifiers;
 
 typedef struct rz_pkcs7_contentinfo_t {
-	RASN1String *contentType; // OID
-	RASN1Binary *content; // optional. oid structure definition
+	RzASN1String *contentType; // OID
+	RzASN1Binary *content; // optional. oid structure definition
 } RzPKCS7ContentInfo;
 
 typedef struct rz_pkcs7_issuerandserialnumber_t {
 	RzX509Name issuer;
-	RASN1Binary *serialNumber;
+	RzASN1Binary *serialNumber;
 } RzPKCS7IssuerAndSerialNumber;
 
 typedef struct rz_pkcs7_attribute_t {
-	RASN1String *oid; // OID
-	RASN1Binary *data; // optional. oid structure definition
+	RzASN1String *oid; // OID
+	RzASN1Binary *data; // optional. oid structure definition
 } RzPKCS7Attribute;
 
 typedef struct rz_pkcs7_attributes_t {
@@ -48,7 +48,7 @@ typedef struct rz_pkcs7_signerinfo_t {
 	RzX509AlgorithmIdentifier digestAlgorithm;
 	RzPKCS7Attributes authenticatedAttributes; // Optional
 	RzX509AlgorithmIdentifier digestEncryptionAlgorithm;
-	RASN1Binary *encryptedDigest;
+	RzASN1Binary *encryptedDigest;
 	RzPKCS7Attributes unauthenticatedAttributes; // Optional
 } RzPKCS7SignerInfo;
 
@@ -67,18 +67,18 @@ typedef struct rz_pkcs7_signeddata_t {
 } RzPKCS7SignedData;
 
 typedef struct rz_pkcs7_container_t {
-	RASN1String *contentType;
+	RzASN1String *contentType;
 	RzPKCS7SignedData signedData;
 } RzCMS;
 
 typedef struct rz_cms_attribute_type_optional_value_t {
-	RASN1String *type; // OID
-	RASN1Binary *data; // optional.
+	RzASN1String *type; // OID
+	RzASN1Binary *data; // optional.
 } RzSpcAttributeTypeAndOptionalValue;
 
 typedef struct rz_cms_digest_info_t {
 	RzX509AlgorithmIdentifier digestAlgorithm;
-	RASN1Binary *digest;
+	RzASN1Binary *digest;
 } RzSpcDigestInfo;
 
 typedef struct rz_cms_indirect_data_content_t {

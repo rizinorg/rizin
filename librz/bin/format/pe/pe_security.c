@@ -10,7 +10,7 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(RzBinPEObj *bin) {
 	if (!bin->spcinfo) {
 		return NULL;
 	}
-	RASN1Binary *digest = bin->spcinfo->messageDigest.digest;
+	RzASN1Binary *digest = bin->spcinfo->messageDigest.digest;
 	if (!digest) {
 		return NULL;
 	}
