@@ -1165,3 +1165,96 @@ RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state) {
 	rz_list_free(list);
 	return true;
 }
+
+struct RzCoreDebugState {
+	RzDebug *dbg;
+	RzCmdStateOutput *state;
+};
+
+static const char *signal_option(int opt) {
+	if (opt == RZ_DBG_SIGNAL_CONT) {
+		return ("continue");
+	}
+	if (opt == RZ_DBG_SIGNAL_SKIP) {
+		return ("skip");
+	}
+	return NULL;
+}
+
+static bool siglistcb(void *p, const char *k, const char *v) {
+	static char key[32] = "cfg.";
+	struct RzCoreDebugState *ds = p;
+	int opt;
+	if (atoi(k) > 0) {
+		strncpy(key + 4, k, 20);
+		opt = sdb_num_get(ds->dbg->sgnls, key, 0);
+		if (opt && ds->state->mode == RZ_OUTPUT_MODE_STANDARD) {
+			rz_cons_printf("%s %s", k, v);
+			const char *optstr = signal_option(opt);
+			if (optstr) {
+				rz_cons_printf(" %s", optstr);
+			}
+			rz_cons_newline();
+		} else {
+			rz_cons_printf("%s %s\n", k, v);
+		}
+	}
+	return true;
+}
+
+static bool siglistjsoncb(void *p, const char *k, const char *v) {
+	static char key[32] = "cfg.";
+	struct RzCoreDebugState *ds = p;
+	int opt;
+	if (atoi(k) > 0) {
+		strncpy(key + 4, k, 20);
+		opt = (int)sdb_num_get(ds->dbg->sgnls, key, 0);
+		pj_o(ds->state->d.pj);
+		pj_ks(ds->state->d.pj, "signum", k);
+		pj_ks(ds->state->d.pj, "name", v);
+		const char *optstr = signal_option(opt);
+		if (optstr) {
+			pj_ks(ds->state->d.pj, "option", optstr);
+		} else {
+			pj_knull(ds->state->d.pj, "option");
+		}
+		pj_end(ds->state->d.pj);
+	}
+	return true;
+}
+
+static bool siglisttblcb(void *p, const char *k, const char *v) {
+	static char key[32] = "cfg.";
+	struct RzCoreDebugState *ds = p;
+	int opt;
+	if (atoi(k) > 0) {
+		strncpy(key + 4, k, 20);
+		opt = (int)sdb_num_get(ds->dbg->sgnls, key, 0);
+		const char *optstr = signal_option(opt);
+		rz_table_add_rowf(ds->state->d.t, "sss", k, v, rz_str_get(optstr));
+	}
+	return true;
+}
+
+RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state) {
+	struct RzCoreDebugState ds = { dbg, state };
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "sss", "signum",
+		"name", "option");
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		sdb_foreach(dbg->sgnls, siglistjsoncb, &ds);
+		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		sdb_foreach(dbg->sgnls, siglisttblcb, &ds);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+	case RZ_OUTPUT_MODE_QUIET:
+		sdb_foreach(dbg->sgnls, siglistcb, &ds);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	rz_cmd_state_output_array_end(state);
+}

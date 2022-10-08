@@ -61,85 +61,6 @@ RZ_API void rz_debug_signal_init(RzDebug *dbg) {
 	}
 }
 
-static bool siglistcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
-	RzDebug *dbg = (RzDebug *)p;
-	int opt, mode = dbg->_mode;
-	if (atoi(k) > 0) {
-		strncpy(key + 4, k, 20);
-		opt = sdb_num_get(DB, key, 0);
-		if (opt) {
-			rz_cons_printf("%s %s", k, v);
-			if (opt & RZ_DBG_SIGNAL_CONT) {
-				rz_cons_strcat(" cont");
-			}
-			if (opt & RZ_DBG_SIGNAL_SKIP) {
-				rz_cons_strcat(" skip");
-			}
-			rz_cons_newline();
-		} else {
-			if (mode == 0) {
-				rz_cons_printf("%s %s\n", k, v);
-			}
-		}
-	}
-	return true;
-}
-
-struct debug_pj {
-	RzDebug *dbg;
-	PJ *pj;
-};
-
-static bool siglistjsoncb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
-	struct debug_pj *dpj = (struct debug_pj *)p;
-	int opt;
-	if (atoi(k) > 0) {
-		strncpy(key + 4, k, 20);
-		opt = (int)sdb_num_get(dpj->dbg->sgnls, key, 0);
-		if (dpj->dbg->_mode == 2) {
-			dpj->dbg->_mode = 0;
-		}
-		pj_o(dpj->pj);
-		pj_ks(dpj->pj, "signum", k);
-		pj_ks(dpj->pj, "name", v);
-		if (opt & RZ_DBG_SIGNAL_CONT) {
-			pj_ks(dpj->pj, "option", "cont");
-		} else if (opt & RZ_DBG_SIGNAL_SKIP) {
-			pj_ks(dpj->pj, "option", "skip");
-		} else {
-			pj_knull(dpj->pj, "option");
-		}
-		pj_end(dpj->pj);
-	}
-	return true;
-}
-
-RZ_API void rz_debug_signal_list(RzDebug *dbg, RzOutputMode mode) {
-	dbg->_mode = mode;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = pj_new();
-		if (!pj) {
-			break;
-		}
-		struct debug_pj dpj = { dbg, pj };
-		pj_a(pj);
-		sdb_foreach(DB, siglistjsoncb, &dpj);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-		break;
-	}
-	case RZ_OUTPUT_MODE_STANDARD:
-	default:
-		sdb_foreach(DB, siglistcb, dbg);
-		break;
-	}
-	dbg->_mode = 0;
-}
-
 RZ_API int rz_debug_signal_send(RzDebug *dbg, int num) {
 	return rz_sys_kill(dbg->pid, num);
 }
@@ -166,15 +87,4 @@ RZ_API RzList /*<void *>*/ *rz_debug_kill_list(RzDebug *dbg) {
 		return dbg->cur->kill_list(dbg);
 	}
 	return NULL;
-}
-
-RZ_API int rz_debug_kill_setup(RzDebug *dbg, int sig, int action) {
-	eprintf("TODO: set signal handlers of child\n");
-	// TODO: must inject code to call signal()
-#if 0
-	if (dbg->cur->kill_setup)
-		return dbg->cur->kill_setup (dbg, sig, action);
-#endif
-	// TODO: implement rz_debug_kill_setup
-	return false;
 }
