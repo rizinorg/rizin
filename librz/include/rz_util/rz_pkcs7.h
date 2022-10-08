@@ -86,12 +86,12 @@ typedef struct {
 	SpcDigestInfo messageDigest;
 } SpcIndirectDataContent;
 
-RZ_API RCMS *rz_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
-RZ_API void rz_pkcs7_free_cms(RCMS *container);
-RZ_API char *rz_pkcs7_cms_to_string(RCMS *container);
-RZ_API PJ *rz_pkcs7_cms_json(RCMS *container);
-RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms);
-RZ_API void rz_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo);
+RZ_API RZ_OWN RCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 length);
+RZ_API void rz_pkcs7_cms_free(RZ_NULLABLE RCMS *container);
+RZ_API RZ_OWN char *rz_pkcs7_cms_to_string(RZ_NULLABLE RCMS *container);
+RZ_API RZ_OWN PJ *rz_pkcs7_cms_json(RZ_NULLABLE RCMS *container);
+RZ_API RZ_OWN SpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RCMS *cms);
+RZ_API void rz_pkcs7_spcinfo_free(RZ_NULLABLE SpcIndirectDataContent *spcinfo);
 
 #ifdef __cplusplus
 }
