@@ -7,7 +7,7 @@
 #include <string.h>
 #include "./x509.h"
 
-static bool rz_x509_validity_parse(RX509Validity *validity, RASN1Object *object) {
+static bool rz_x509_validity_parse(RzX509Validity *validity, RASN1Object *object) {
 	RASN1Object *o;
 	if (!validity || !object || object->list.length != 2) {
 		return false;
@@ -41,7 +41,7 @@ static inline bool is_oid_object(RASN1Object *object) {
 		object->list.objects[0]->tag == TAG_OID;
 }
 
-RZ_IPI bool rz_x509_algorithmidentifier_parse(RX509AlgorithmIdentifier *ai, RASN1Object *object) {
+RZ_IPI bool rz_x509_algorithmidentifier_parse(RzX509AlgorithmIdentifier *ai, RASN1Object *object) {
 	rz_return_val_if_fail(ai && object, false);
 
 	if (object->list.length < 1 || !object->list.objects || !is_oid_object(object)) {
@@ -54,7 +54,7 @@ RZ_IPI bool rz_x509_algorithmidentifier_parse(RX509AlgorithmIdentifier *ai, RASN
 	return true;
 }
 
-static bool x509_subjectpublickeyinfo_parse(RX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
+static bool x509_subjectpublickeyinfo_parse(RzX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
 	RASN1Object *o;
 	if (!spki || !object || object->list.length != 2) {
 		return false;
@@ -76,7 +76,7 @@ static bool x509_subjectpublickeyinfo_parse(RX509SubjectPublicKeyInfo *spki, RAS
 	return true;
 }
 
-RZ_IPI bool rz_x509_name_parse(RX509Name *name, RASN1Object *object) {
+RZ_IPI bool rz_x509_name_parse(RzX509Name *name, RASN1Object *object) {
 	ut32 i;
 	if (!name || !object || !object->list.length) {
 		return false;
@@ -119,7 +119,7 @@ RZ_IPI bool rz_x509_name_parse(RX509Name *name, RASN1Object *object) {
 	return true;
 }
 
-static bool x509_extension_parse(RX509Extension *ext, RASN1Object *object) {
+static bool x509_extension_parse(RzX509Extension *ext, RASN1Object *object) {
 	RASN1Object *o;
 	if (!ext || !object || object->list.length < 2) {
 		return false;
@@ -140,7 +140,7 @@ static bool x509_extension_parse(RX509Extension *ext, RASN1Object *object) {
 	return true;
 }
 
-static void x509_extension_free(RX509Extension *ex) {
+static void x509_extension_free(RzX509Extension *ex) {
 	if (!ex) {
 		return;
 	}
@@ -150,19 +150,19 @@ static void x509_extension_free(RX509Extension *ex) {
 	free(ex);
 }
 
-static bool x509_extensions_parse(RX509Extensions *ext, RASN1Object *object) {
+static bool x509_extensions_parse(RzX509Extensions *ext, RASN1Object *object) {
 	ut32 i;
 	if (!ext || !object || object->list.length != 1 || !object->list.objects[0]->length) {
 		return false;
 	}
 	object = object->list.objects[0];
-	ext->extensions = (RX509Extension **)calloc(object->list.length, sizeof(RX509Extension *));
+	ext->extensions = (RzX509Extension **)calloc(object->list.length, sizeof(RzX509Extension *));
 	if (!ext->extensions) {
 		return false;
 	}
 	ext->length = object->list.length;
 	for (i = 0; i < object->list.length; i++) {
-		ext->extensions[i] = RZ_NEW0(RX509Extension);
+		ext->extensions[i] = RZ_NEW0(RzX509Extension);
 		if (!x509_extension_parse(ext->extensions[i], object->list.objects[i])) {
 			x509_extension_free(ext->extensions[i]);
 			ext->extensions[i] = NULL;
@@ -171,7 +171,7 @@ static bool x509_extensions_parse(RX509Extensions *ext, RASN1Object *object) {
 	return true;
 }
 
-static bool x509_tbscertificate_parse(RX509TBSCertificate *tbsc, RASN1Object *object) {
+static bool x509_tbscertificate_parse(RzX509TBSCertificate *tbsc, RASN1Object *object) {
 	RASN1Object **elems;
 	ut32 i;
 	ut32 shift = 0;
@@ -232,11 +232,11 @@ static bool x509_tbscertificate_parse(RX509TBSCertificate *tbsc, RASN1Object *ob
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RASN1Object *object) {
+RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
-	RX509Certificate *cert = RZ_NEW0(RX509Certificate);
+	RzX509Certificate *cert = RZ_NEW0(RzX509Certificate);
 	if (!cert) {
 		goto fail;
 	}
@@ -277,7 +277,7 @@ fail:
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8 *buffer, ut32 length) {
+RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8 *buffer, ut32 length) {
 	RzX509Certificate *certificate;
 	RzASN1Object *object;
 	if (!buffer || !length) {
@@ -289,15 +289,15 @@ RZ_API RZ_OWN RX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8
 	return certificate;
 }
 
-static RX509CRLEntry *x509_crlentry_parse(RASN1Object *object) {
-	RX509CRLEntry *entry;
+static RzX509CRLEntry *x509_crlentry_parse(RASN1Object *object) {
+	RzX509CRLEntry *entry;
 	if (!object ||
 		object->list.length != 2 ||
 		!object->list.objects[1] ||
 		!object->list.objects[0]) {
 		return NULL;
 	}
-	entry = RZ_NEW0(RX509CRLEntry);
+	entry = RZ_NEW0(RzX509CRLEntry);
 	if (!entry) {
 		return NULL;
 	}
@@ -313,13 +313,13 @@ static RX509CRLEntry *x509_crlentry_parse(RASN1Object *object) {
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN RX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN1Object *object) {
-	RX509CertificateRevocationList *crl;
+RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN1Object *object) {
+	RzX509CertificateRevocationList *crl;
 	RASN1Object **elems;
 	if (!object || object->list.length < 4) {
 		return NULL;
 	}
-	crl = RZ_NEW0(RX509CertificateRevocationList);
+	crl = RZ_NEW0(RzX509CertificateRevocationList);
 	if (!crl) {
 		return NULL;
 	}
@@ -334,7 +334,7 @@ RZ_API RZ_OWN RX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN
 	crl->nextUpdate = rz_asn1_stringify_utctime(elems[3]->sector, elems[3]->length);
 	if (object->list.length > 4 && object->list.objects[4]) {
 		ut32 i;
-		crl->revokedCertificates = calloc(object->list.objects[4]->list.length, sizeof(RX509CRLEntry *));
+		crl->revokedCertificates = calloc(object->list.objects[4]->list.length, sizeof(RzX509CRLEntry *));
 		if (!crl->revokedCertificates) {
 			free(crl);
 			return NULL;
@@ -347,7 +347,7 @@ RZ_API RZ_OWN RX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN
 	return crl;
 }
 
-RZ_IPI void rz_x509_algorithmidentifier_fini(RX509AlgorithmIdentifier *ai) {
+RZ_IPI void rz_x509_algorithmidentifier_fini(RzX509AlgorithmIdentifier *ai) {
 	if (ai) {
 		// no need to free ai, since this functions is used internally
 		rz_asn1_free_string(ai->algorithm);
@@ -355,7 +355,7 @@ RZ_IPI void rz_x509_algorithmidentifier_fini(RX509AlgorithmIdentifier *ai) {
 	}
 }
 
-static void x509_validity_fini(RX509Validity *validity) {
+static void x509_validity_fini(RzX509Validity *validity) {
 	if (!validity) {
 		return;
 	}
@@ -364,7 +364,7 @@ static void x509_validity_fini(RX509Validity *validity) {
 	rz_asn1_free_string(validity->notBefore);
 }
 
-RZ_IPI void rz_x509_name_fini(RX509Name *name) {
+RZ_IPI void rz_x509_name_fini(RzX509Name *name) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -380,7 +380,7 @@ RZ_IPI void rz_x509_name_fini(RX509Name *name) {
 	// not freeing name since it's not allocated dinamically
 }
 
-static void x509_extensions_fini(RX509Extensions *ex) {
+static void x509_extensions_fini(RzX509Extensions *ex) {
 	ut32 i;
 	if (!ex) {
 		return;
@@ -394,7 +394,7 @@ static void x509_extensions_fini(RX509Extensions *ex) {
 	// no need to free ex, since this functions is used internally
 }
 
-static void x509_subjectpublickeyinfo_fini(RX509SubjectPublicKeyInfo *spki) {
+static void x509_subjectpublickeyinfo_fini(RzX509SubjectPublicKeyInfo *spki) {
 	if (!spki) {
 		return;
 	}
@@ -405,7 +405,7 @@ static void x509_subjectpublickeyinfo_fini(RX509SubjectPublicKeyInfo *spki) {
 	// No need to free spki, since it's a static variable.
 }
 
-static void x509_tbscertificate_fini(RX509TBSCertificate *tbsc) {
+static void x509_tbscertificate_fini(RzX509TBSCertificate *tbsc) {
 	if (!tbsc) {
 		return;
 	}
@@ -423,11 +423,11 @@ static void x509_tbscertificate_fini(RX509TBSCertificate *tbsc) {
 }
 
 /**
- * \brief      Frees an RX509Certificate certificate
+ * \brief      Frees an RzX509Certificate certificate
  *
  * \param      certificate  The object to use to parse the CRL
  */
-RZ_API void rz_x509_certificate_free(RZ_NULLABLE RX509Certificate *certificate) {
+RZ_API void rz_x509_certificate_free(RZ_NULLABLE RzX509Certificate *certificate) {
 	if (!certificate) {
 		return;
 	}
@@ -437,7 +437,7 @@ RZ_API void rz_x509_certificate_free(RZ_NULLABLE RX509Certificate *certificate) 
 	free(certificate);
 }
 
-static void x509_crlentry_free(RX509CRLEntry *entry) {
+static void x509_crlentry_free(RzX509CRLEntry *entry) {
 	if (!entry) {
 		return;
 	}
@@ -446,7 +446,7 @@ static void x509_crlentry_free(RX509CRLEntry *entry) {
 	free(entry);
 }
 
-RZ_IPI void rz_x509_crl_free(RX509CertificateRevocationList *crl) {
+RZ_IPI void rz_x509_crl_free(RzX509CertificateRevocationList *crl) {
 	ut32 i;
 	if (!crl) {
 		return;
@@ -465,7 +465,7 @@ RZ_IPI void rz_x509_crl_free(RX509CertificateRevocationList *crl) {
 	free(crl);
 }
 
-static void x509_validity_dump(RX509Validity *validity, const char *pad, RzStrBuf *sb) {
+static void x509_validity_dump(RzX509Validity *validity, const char *pad, RzStrBuf *sb) {
 	if (!validity) {
 		return;
 	}
@@ -477,7 +477,7 @@ static void x509_validity_dump(RX509Validity *validity, const char *pad, RzStrBu
 	rz_strbuf_appendf(sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
-RZ_IPI void rz_x509_name_dump(RX509Name *name, const char *pad, RzStrBuf *sb) {
+RZ_IPI void rz_x509_name_dump(RzX509Name *name, const char *pad, RzStrBuf *sb) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -493,7 +493,7 @@ RZ_IPI void rz_x509_name_dump(RX509Name *name, const char *pad, RzStrBuf *sb) {
 	}
 }
 
-static void x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, const char *pad, RzStrBuf *sb) {
+static void x509_subjectpublickeyinfo_dump(RzX509SubjectPublicKeyInfo *spki, const char *pad, RzStrBuf *sb) {
 	const char *a;
 	if (!spki) {
 		return;
@@ -515,7 +515,7 @@ static void x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, cons
 	//	rz_asn1_free_string (e);
 }
 
-static void x509_extensions_dump(RX509Extensions *exts, const char *pad, RzStrBuf *sb) {
+static void x509_extensions_dump(RzX509Extensions *exts, const char *pad, RzStrBuf *sb) {
 	ut32 i;
 	if (!exts) {
 		return;
@@ -524,7 +524,7 @@ static void x509_extensions_dump(RX509Extensions *exts, const char *pad, RzStrBu
 		pad = "";
 	}
 	for (i = 0; i < exts->length; i++) {
-		RX509Extension *e = exts->extensions[i];
+		RzX509Extension *e = exts->extensions[i];
 		if (!e) {
 			continue;
 		}
@@ -538,7 +538,7 @@ static void x509_extensions_dump(RX509Extensions *exts, const char *pad, RzStrBu
 	}
 }
 
-static void x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *pad, RzStrBuf *sb) {
+static void x509_tbscertificate_dump(RzX509TBSCertificate *tbsc, const char *pad, RzStrBuf *sb) {
 	RASN1String *sid = NULL, *iid = NULL;
 	if (!tbsc) {
 		return;
@@ -596,7 +596,7 @@ static void x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *pad,
  * \param[in]  pad   The padding to use for the string
  * \param      sb    The RzStrBuf to write to
  */
-RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RX509Certificate *cert, RZ_NULLABLE const char *pad, RZ_NONNULL RzStrBuf *sb) {
+RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RzX509Certificate *cert, RZ_NULLABLE const char *pad, RZ_NONNULL RzStrBuf *sb) {
 	rz_return_if_fail(sb);
 	RASN1String *algo = NULL;
 	char *pad2;
@@ -619,7 +619,7 @@ RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RX509Certificate *cert, RZ_NULL
 	free(pad2);
 }
 
-static void x509_crlentry_dump(RX509CRLEntry *crle, const char *pad, RzStrBuf *sb) {
+static void x509_crlentry_dump(RzX509CRLEntry *crle, const char *pad, RzStrBuf *sb) {
 	RASN1String *id = NULL, *utc = NULL;
 	if (!crle) {
 		return;
@@ -646,7 +646,7 @@ static void x509_crlentry_dump(RX509CRLEntry *crle, const char *pad, RzStrBuf *s
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad) {
+RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RzX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;
@@ -681,7 +681,7 @@ RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RX509CertificateRevocation
 	return rz_strbuf_drain(sb);
 }
 
-static void x509_validity_json(PJ *pj, RX509Validity *validity) {
+static void x509_validity_json(PJ *pj, RzX509Validity *validity) {
 	if (!validity) {
 		return;
 	}
@@ -693,7 +693,7 @@ static void x509_validity_json(PJ *pj, RX509Validity *validity) {
 	}
 }
 
-RZ_IPI void rz_x509_name_json(PJ *pj, RX509Name *name) {
+RZ_IPI void rz_x509_name_json(PJ *pj, RzX509Name *name) {
 	ut32 i;
 	for (i = 0; i < name->length; i++) {
 		if (!name->oids[i] || !name->names[i]) {
@@ -703,7 +703,7 @@ RZ_IPI void rz_x509_name_json(PJ *pj, RX509Name *name) {
 	}
 }
 
-static void x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *spki) {
+static void x509_subjectpublickeyinfo_json(PJ *pj, RzX509SubjectPublicKeyInfo *spki) {
 	RASN1String *m = NULL;
 	if (!spki) {
 		return;
@@ -727,7 +727,7 @@ static void x509_subjectpublickeyinfo_json(PJ *pj, RX509SubjectPublicKeyInfo *sp
 	}
 }
 
-static void x509_extensions_json(PJ *pj, RX509Extensions *exts) {
+static void x509_extensions_json(PJ *pj, RzX509Extensions *exts) {
 	if (!exts) {
 		return;
 	}
@@ -736,7 +736,7 @@ static void x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 	ut32 i;
 	pj_a(pj);
 	for (i = 0; i < exts->length; i++) {
-		RX509Extension *e = exts->extensions[i];
+		RzX509Extension *e = exts->extensions[i];
 		if (!e) {
 			continue;
 		}
@@ -761,7 +761,7 @@ static void x509_extensions_json(PJ *pj, RX509Extensions *exts) {
 	pj_end(pj);
 }
 
-static void x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
+static void x509_crlentry_json(PJ *pj, RzX509CRLEntry *crle) {
 	RASN1String *m = NULL;
 	if (!crle) {
 		return;
@@ -785,7 +785,7 @@ static void x509_crlentry_json(PJ *pj, RX509CRLEntry *crle) {
  * \param      pj    The PJ pointer to write to
  * \param      crl   The crl to convert to json
  */
-RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RX509CertificateRevocationList *crl) {
+RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509CertificateRevocationList *crl) {
 	rz_return_if_fail(pj);
 	ut32 i;
 	if (!crl) {
@@ -813,7 +813,7 @@ RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RX509CertificateRevo
 	pj_end(pj);
 }
 
-static void x509_tbscertificate_json(PJ *pj, RX509TBSCertificate *tbsc) {
+static void x509_tbscertificate_json(PJ *pj, RzX509TBSCertificate *tbsc) {
 	pj_o(pj);
 	RASN1String *m = NULL;
 	if (!tbsc) {
@@ -867,7 +867,7 @@ static void x509_tbscertificate_json(PJ *pj, RX509TBSCertificate *tbsc) {
  * \param      pj           The PJ pointer to write to
  * \param      certificate  The certificate to convert to json
  */
-RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RX509Certificate *certificate) {
+RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509Certificate *certificate) {
 	rz_return_if_fail(pj);
 	if (!certificate) {
 		return;

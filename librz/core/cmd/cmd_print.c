@@ -1089,7 +1089,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	case 'x': // "pFx" x509
 	{
 		RASN1Object *object = rz_asn1_create_object(data, size);
-		RX509Certificate *x509 = rz_x509_certificate_parse(object);
+		RzX509Certificate *x509 = rz_x509_certificate_parse(object);
 		if (x509) {
 			RzStrBuf *sb = rz_strbuf_new("");
 			rz_x509_certificate_dump(x509, NULL, sb);
