@@ -4,10 +4,10 @@
 #ifndef RZ_X509_INTERNAL_H
 #define RZ_X509_INTERNAL_H
 
-RZ_IPI bool rz_x509_algorithmidentifier_parse(RzX509AlgorithmIdentifier *ai, RASN1Object *object);
+RZ_IPI bool rz_x509_algorithmidentifier_parse(RzX509AlgorithmIdentifier *ai, RzASN1Object *object);
 RZ_IPI void rz_x509_algorithmidentifier_fini(RzX509AlgorithmIdentifier *ai);
 
-RZ_IPI bool rz_x509_name_parse(RzX509Name *name, RASN1Object *object);
+RZ_IPI bool rz_x509_name_parse(RzX509Name *name, RzASN1Object *object);
 RZ_IPI void rz_x509_name_fini(RzX509Name *name);
 RZ_IPI void rz_x509_name_dump(RzX509Name *name, const char *pad, RzStrBuf *sb);
 RZ_IPI void rz_x509_name_json(PJ *pj, RzX509Name *name);

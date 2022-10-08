@@ -13,40 +13,40 @@ extern "C" {
  */
 
 typedef struct rz_x509_validity_t {
-	RASN1String *notBefore;
-	RASN1String *notAfter;
+	RzASN1String *notBefore;
+	RzASN1String *notAfter;
 } RzX509Validity;
 
 typedef struct rz_x509_name_t {
 	ut32 length;
-	RASN1String **oids;
-	RASN1String **names;
+	RzASN1String **oids;
+	RzASN1String **names;
 } RzX509Name;
 
 typedef struct rz_x509_algorithmidentifier_t {
-	RASN1String *algorithm; // OBJECT IDENTIFIER
-	RASN1String *parameters; // OPTIONAL
+	RzASN1String *algorithm; // OBJECT IDENTIFIER
+	RzASN1String *parameters; // OPTIONAL
 } RzX509AlgorithmIdentifier;
 
 typedef struct rz_x509_authoritykeyidentifier_t {
-	RASN1Binary *keyIdentifier;
+	RzASN1Binary *keyIdentifier;
 	RzX509Name authorityCertIssuer;
-	RASN1Binary *authorityCertSerialNumber;
+	RzASN1Binary *authorityCertSerialNumber;
 } RzX509AuthorityKeyIdentifier;
 
 typedef struct rz_x509_subjectpublickeyinfo_t {
 	RzX509AlgorithmIdentifier algorithm;
 	// This is a bit string, but it encapsulate mod + pubkey
-	RASN1Binary *subjectPublicKey; // BIT STRING
+	RzASN1Binary *subjectPublicKey; // BIT STRING
 	// Extracted module and exponent from pubkey
-	RASN1Binary *subjectPublicKeyExponent;
-	RASN1Binary *subjectPublicKeyModule;
+	RzASN1Binary *subjectPublicKeyExponent;
+	RzASN1Binary *subjectPublicKeyModule;
 } RzX509SubjectPublicKeyInfo;
 
 typedef struct rz_x509_extension_t {
-	RASN1String *extnID; // OBJECT IDENTIFIER
+	RzASN1String *extnID; // OBJECT IDENTIFIER
 	bool critical;
-	RASN1Binary *extnValue; // OCTET STRING
+	RzASN1Binary *extnValue; // OCTET STRING
 } RzX509Extension;
 
 typedef struct rz_x509_extensions_t {
@@ -56,44 +56,44 @@ typedef struct rz_x509_extensions_t {
 
 typedef struct rz_x509_tbscertificate_t {
 	ut32 version; // INTEGER
-	RASN1String *serialNumber; // INTEGER
+	RzASN1String *serialNumber; // INTEGER
 	RzX509AlgorithmIdentifier signature;
 	RzX509Name issuer;
 	RzX509Validity validity;
 	RzX509Name subject;
 	RzX509SubjectPublicKeyInfo subjectPublicKeyInfo;
-	RASN1Binary *issuerUniqueID; // BIT STRING
-	RASN1Binary *subjectUniqueID; // BIT STRING
+	RzASN1Binary *issuerUniqueID; // BIT STRING
+	RzASN1Binary *subjectUniqueID; // BIT STRING
 	RzX509Extensions extensions;
 } RzX509TBSCertificate;
 
 typedef struct rz_x509_certificate_t {
 	RzX509TBSCertificate tbsCertificate;
 	RzX509AlgorithmIdentifier algorithmIdentifier;
-	RASN1Binary *signature; // BIT STRING
+	RzASN1Binary *signature; // BIT STRING
 } RzX509Certificate;
 
 // RFC 1422
 
 typedef struct rz_x509_crlentry {
-	RASN1Binary *userCertificate; // INTEGER ?
-	RASN1String *revocationDate; // UTCTime
+	RzASN1Binary *userCertificate; // INTEGER ?
+	RzASN1String *revocationDate; // UTCTime
 } RzX509CRLEntry;
 
 typedef struct rz_x509_certificaterevocationlist {
 	RzX509AlgorithmIdentifier signature;
 	RzX509Name issuer;
-	RASN1String *lastUpdate; // UTCTime
-	RASN1String *nextUpdate; // UTCTime
+	RzASN1String *lastUpdate; // UTCTime
+	RzASN1String *nextUpdate; // UTCTime
 	ut32 length;
 	RzX509CRLEntry **revokedCertificates;
 } RzX509CertificateRevocationList;
 
-RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN1Object *object);
+RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RzASN1Object *object);
 RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RzX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad);
 RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509CertificateRevocationList *crl);
 
-RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RASN1Object *object);
+RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RzASN1Object *object);
 RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8 *buffer, ut32 length);
 RZ_API void rz_x509_certificate_free(RZ_NULLABLE RzX509Certificate *certificate);
 RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509Certificate *certificate);

@@ -6,23 +6,23 @@
 #include <rz_util.h>
 #include "./x509.h"
 
-static bool pkcs7_attributes_parse(RzPKCS7Attributes *attribute, RASN1Object *object);
+static bool pkcs7_attributes_parse(RzPKCS7Attributes *attribute, RzASN1Object *object);
 
-static bool pkcs7_contentinfo_parse(RzPKCS7ContentInfo *ci, RASN1Object *object) {
+static bool pkcs7_contentinfo_parse(RzPKCS7ContentInfo *ci, RzASN1Object *object) {
 	if (!ci || !object || object->list.length < 1 || !object->list.objects[0]) {
 		return false;
 	}
 	ci->contentType = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (object->list.length > 1) {
-		RASN1Object *obj1 = object->list.objects[1];
+		RzASN1Object *obj1 = object->list.objects[1];
 		if (obj1) {
-			ci->content = rz_asn1_create_binary(obj1->sector, obj1->length);
+			ci->content = rz_asn1_binary_parse(obj1->sector, obj1->length);
 		}
 	}
 	return true;
 }
 
-static bool pkcs7_certificaterevocationlists_parse(RzPKCS7CertificateRevocationLists *crls, RASN1Object *object) {
+static bool pkcs7_certificaterevocationlists_parse(RzPKCS7CertificateRevocationLists *crls, RzASN1Object *object) {
 	if (!crls || !object) {
 		return false;
 	}
@@ -51,7 +51,7 @@ static void pkcs7_certificaterevocationlists_fini(RzPKCS7CertificateRevocationLi
 	// Used internally pkcs #7, so it shouldn't free crls.
 }
 
-static bool pkcs7_extendedcertificatesandcertificates_parse(RzPKCS7ExtendedCertificatesAndCertificates *ecac, RASN1Object *object) {
+static bool pkcs7_extendedcertificatesandcertificates_parse(RzPKCS7ExtendedCertificatesAndCertificates *ecac, RzASN1Object *object) {
 	if (!ecac || !object) {
 		return false;
 	}
@@ -81,7 +81,7 @@ static void pkcs7_extendedcertificatesandcertificates_fini(RzPKCS7ExtendedCertif
 	// Used internally pkcs #7, so it shouldn't free ecac.
 }
 
-static bool pkcs7_digestalgorithmidentifier_parse(RzPKCS7DigestAlgorithmIdentifiers *dai, RASN1Object *object) {
+static bool pkcs7_digestalgorithmidentifier_parse(RzPKCS7DigestAlgorithmIdentifiers *dai, RzASN1Object *object) {
 	if (!dai || !object) {
 		return false;
 	}
@@ -127,19 +127,19 @@ static void pkcs7_contentinfo_fini(RzPKCS7ContentInfo *ci) {
 	if (!ci) {
 		return;
 	}
-	rz_asn1_free_binary(ci->content);
-	rz_asn1_free_string(ci->contentType);
+	rz_asn1_binary_free(ci->content);
+	rz_asn1_string_free(ci->contentType);
 	// Used internally pkcs #7, so it shouldn't free ci.
 }
 
-static bool pkcs7_issuerandserialnumber_parse(RzPKCS7IssuerAndSerialNumber *iasu, RASN1Object *object) {
+static bool pkcs7_issuerandserialnumber_parse(RzPKCS7IssuerAndSerialNumber *iasu, RzASN1Object *object) {
 	if (!iasu || !object || object->list.length != 2) {
 		return false;
 	}
 	rz_x509_name_parse(&iasu->issuer, object->list.objects[0]);
-	RASN1Object *obj1 = object->list.objects[1];
+	RzASN1Object *obj1 = object->list.objects[1];
 	if (obj1) {
-		iasu->serialNumber = rz_asn1_create_binary(obj1->sector, obj1->length);
+		iasu->serialNumber = rz_asn1_binary_parse(obj1->sector, obj1->length);
 	}
 	return true;
 }
@@ -149,12 +149,12 @@ static void pkcs7_issuerandserialnumber_fini(RzPKCS7IssuerAndSerialNumber *iasu)
 		return;
 	}
 	rz_x509_name_fini(&iasu->issuer);
-	rz_asn1_free_binary(iasu->serialNumber);
+	rz_asn1_binary_free(iasu->serialNumber);
 	// Used internally pkcs #7, so it shouldn't free iasu.
 }
 
-static bool pkcs7_signerinfo_parse(RzPKCS7SignerInfo *si, RASN1Object *object) {
-	RASN1Object **elems;
+static bool pkcs7_signerinfo_parse(RzPKCS7SignerInfo *si, RzASN1Object *object) {
+	RzASN1Object **elems;
 	ut32 shift = 3;
 	if (!si || !object || object->list.length < 5) {
 		return false;
@@ -164,7 +164,7 @@ static bool pkcs7_signerinfo_parse(RzPKCS7SignerInfo *si, RASN1Object *object) {
 	si->version = (ut32)elems[0]->sector[0];
 	pkcs7_issuerandserialnumber_parse(&si->issuerAndSerialNumber, elems[1]);
 	rz_x509_algorithmidentifier_parse(&si->digestAlgorithm, elems[2]);
-	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
+	if (shift < object->list.length && elems[shift]->klass == RZ_ASN1_CLASS_CONTEXT && elems[shift]->tag == 0) {
 		pkcs7_attributes_parse(&si->authenticatedAttributes, elems[shift]);
 		shift++;
 	}
@@ -173,15 +173,15 @@ static bool pkcs7_signerinfo_parse(RzPKCS7SignerInfo *si, RASN1Object *object) {
 		shift++;
 	}
 	if (shift < object->list.length) {
-		RASN1Object *obj1 = object->list.objects[shift];
+		RzASN1Object *obj1 = object->list.objects[shift];
 		if (obj1) {
-			si->encryptedDigest = rz_asn1_create_binary(obj1->sector, obj1->length);
+			si->encryptedDigest = rz_asn1_binary_parse(obj1->sector, obj1->length);
 			shift++;
 		}
 	}
 	if (shift < object->list.length) {
-		RASN1Object *elem = elems[shift];
-		if (elem && elem->klass == CLASS_CONTEXT && elem->tag == 1) {
+		RzASN1Object *elem = elems[shift];
+		if (elem && elem->klass == RZ_ASN1_CLASS_CONTEXT && elem->tag == 1) {
 			pkcs7_attributes_parse(&si->unauthenticatedAttributes, elems[shift]);
 		}
 	}
@@ -192,8 +192,8 @@ static void pkcs7_attribute_free(RzPKCS7Attribute *attribute) {
 	if (!attribute) {
 		return;
 	}
-	rz_asn1_free_binary(attribute->data);
-	rz_asn1_free_string(attribute->oid);
+	rz_asn1_binary_free(attribute->data);
+	rz_asn1_string_free(attribute->oid);
 	free(attribute);
 }
 
@@ -216,12 +216,12 @@ static void pkcs7_signerinfo_free(RzPKCS7SignerInfo *si) {
 	rz_x509_algorithmidentifier_fini(&si->digestAlgorithm);
 	pkcs7_attributes_fini(&si->authenticatedAttributes);
 	rz_x509_algorithmidentifier_fini(&si->digestEncryptionAlgorithm);
-	rz_asn1_free_binary(si->encryptedDigest);
+	rz_asn1_binary_free(si->encryptedDigest);
 	pkcs7_attributes_fini(&si->unauthenticatedAttributes);
 	free(si);
 }
 
-static bool pkcs7_signerinfos_parse(RzPKCS7SignerInfos *ss, RASN1Object *object) {
+static bool pkcs7_signerinfos_parse(RzPKCS7SignerInfos *ss, RzASN1Object *object) {
 	if (!ss || !object) {
 		return false;
 	}
@@ -255,26 +255,26 @@ static void pkcs7_signerinfos_fini(RzPKCS7SignerInfos *ss) {
 	// Used internally pkcs #7, so it shouldn't free ss.
 }
 
-static bool pkcs7_signeddata_parse(RzPKCS7SignedData *sd, RASN1Object *object) {
+static bool pkcs7_signeddata_parse(RzPKCS7SignedData *sd, RzASN1Object *object) {
 	ut32 shift = 3;
 	if (!sd || !object || object->list.length < 4) {
 		return false;
 	}
 	memset(sd, 0, sizeof(RzPKCS7SignedData));
-	RASN1Object **elems = object->list.objects;
+	RzASN1Object **elems = object->list.objects;
 	// Following RFC
 	sd->version = (ut32)elems[0]->sector[0];
 	pkcs7_digestalgorithmidentifier_parse(&sd->digestAlgorithms, elems[1]);
 	pkcs7_contentinfo_parse(&sd->contentInfo, elems[2]);
 	// Optional
 	if (object->list.length > 3 && shift < object->list.length && elems[shift] &&
-		elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
+		elems[shift]->klass == RZ_ASN1_CLASS_CONTEXT && elems[shift]->tag == 0) {
 		pkcs7_extendedcertificatesandcertificates_parse(&sd->certificates, elems[shift]);
 		shift++;
 	}
 	// Optional
 	if (object->list.length > 3 && shift < object->list.length && elems[shift] &&
-		elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
+		elems[shift]->klass == RZ_ASN1_CLASS_CONTEXT && elems[shift]->tag == 1) {
 		pkcs7_certificaterevocationlists_parse(&sd->crls, elems[shift]);
 		shift++;
 	}
@@ -305,7 +305,7 @@ static void pkcs7_signeddata_fini(RzPKCS7SignedData *sd) {
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 length) {
-	RASN1Object *object;
+	RzASN1Object *object;
 	RzCMS *container;
 	if (!buffer || !length) {
 		return NULL;
@@ -314,18 +314,18 @@ RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 leng
 	if (!container) {
 		return NULL;
 	}
-	object = rz_asn1_create_object(buffer, length);
+	object = rz_asn1_object_parse(buffer, length);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1] ||
 		object->list.objects[1]->list.length < 1) {
-		rz_asn1_free_object(object);
+		rz_asn1_object_free(object);
 		free(container);
 		return NULL;
 	}
 	if (object->list.objects[0]) {
 		container->contentType = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
 		if (!container->contentType) {
-			rz_asn1_free_object(object);
+			rz_asn1_object_free(object);
 			free(container);
 			return NULL;
 		}
@@ -333,7 +333,7 @@ RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 leng
 	if (object->list.objects[1]) {
 		pkcs7_signeddata_parse(&container->signedData, object->list.objects[1]->list.objects[0]);
 	}
-	rz_asn1_free_object(object);
+	rz_asn1_object_free(object);
 	return container;
 }
 
@@ -344,13 +344,13 @@ RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 leng
  */
 RZ_API void rz_pkcs7_cms_free(RZ_NULLABLE RzCMS *container) {
 	if (container) {
-		rz_asn1_free_string(container->contentType);
+		rz_asn1_string_free(container->contentType);
 		pkcs7_signeddata_fini(&container->signedData);
 		free(container);
 	}
 }
 
-static RzPKCS7Attribute *pkcs7_attribute_parse(RASN1Object *object) {
+static RzPKCS7Attribute *pkcs7_attribute_parse(RzASN1Object *object) {
 	RzPKCS7Attribute *attribute;
 	if (!object || object->list.length < 1) {
 		return NULL;
@@ -363,15 +363,15 @@ static RzPKCS7Attribute *pkcs7_attribute_parse(RASN1Object *object) {
 		attribute->oid = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
 	}
 	if (object->list.length == 2) {
-		RASN1Object *obj1 = object->list.objects[1];
+		RzASN1Object *obj1 = object->list.objects[1];
 		if (obj1) {
-			attribute->data = rz_asn1_create_binary(obj1->sector, obj1->length);
+			attribute->data = rz_asn1_binary_parse(obj1->sector, obj1->length);
 		}
 	}
 	return attribute;
 }
 
-static bool pkcs7_attributes_parse(RzPKCS7Attributes *attributes, RASN1Object *object) {
+static bool pkcs7_attributes_parse(RzPKCS7Attributes *attributes, RzASN1Object *object) {
 	if (!attributes || !object || !object->list.length) {
 		return false;
 	}
@@ -391,8 +391,8 @@ static bool pkcs7_attributes_parse(RzPKCS7Attributes *attributes, RASN1Object *o
 }
 
 static void pkcs7_signedinfo_dump(RzPKCS7SignerInfo *si, const char *pad, RzStrBuf *sb) {
-	RASN1String *s = NULL;
-	RASN1Binary *o = NULL;
+	RzASN1String *s = NULL;
+	RzASN1Binary *o = NULL;
 	char *pad2, *pad3;
 	if (!si) {
 		return;
@@ -412,7 +412,7 @@ static void pkcs7_signedinfo_dump(RzPKCS7SignerInfo *si, const char *pad, RzStrB
 		s = rz_asn1_stringify_integer(o->binary, o->length);
 	}
 	rz_strbuf_appendf(sb, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
-	rz_asn1_free_string(s);
+	rz_asn1_string_free(s);
 
 	s = si->digestAlgorithm.algorithm;
 	rz_strbuf_appendf(sb, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
@@ -432,7 +432,7 @@ static void pkcs7_signedinfo_dump(RzPKCS7SignerInfo *si, const char *pad, RzStrB
 	//	if ((o = si->encryptedDigest)) s = rz_asn1_stringify_bytes (o->binary, o->length);
 	//	else s = NULL;
 	//	eprintf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
-	//	rz_asn1_free_string (s);
+	//	rz_asn1_string_free (s);
 	rz_strbuf_appendf(sb, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
 	rz_strbuf_appendf(sb, "%sUnauthenticated Attributes:\n", pad2);
 	for (ut32 i = 0; i < si->unauthenticatedAttributes.length; i++) {
@@ -465,7 +465,7 @@ RZ_API RZ_OWN char *rz_pkcs7_cms_to_string(RZ_NULLABLE RzCMS *container) {
 	if (container->signedData.digestAlgorithms.elements) {
 		for (ut32 i = 0; i < container->signedData.digestAlgorithms.length; i++) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
-				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
+				RzASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
 				rz_strbuf_appendf(sb, "    %s\n", s ? s->string : "Missing");
 			}
 		}
@@ -505,12 +505,12 @@ static void pkcs7_signedinfo_json(PJ *pj, RzPKCS7SignerInfo *si) {
 	rz_x509_name_json(pj, &si->issuerAndSerialNumber.issuer);
 	pj_end(pj);
 	if (si->issuerAndSerialNumber.serialNumber) {
-		RASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
-		RASN1String *s = rz_asn1_stringify_integer(o->binary, o->length);
+		RzASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
+		RzASN1String *s = rz_asn1_stringify_integer(o->binary, o->length);
 		if (s) {
 			pj_ks(pj, "SerialNumber", s->string);
 		}
-		rz_asn1_free_string(s);
+		rz_asn1_string_free(s);
 	}
 
 	if (si->digestAlgorithm.algorithm) {
@@ -538,12 +538,12 @@ static void pkcs7_signedinfo_json(PJ *pj, RzPKCS7SignerInfo *si) {
 	}
 
 	if (si->encryptedDigest) {
-		RASN1Binary *o = si->encryptedDigest;
-		RASN1String *s = rz_asn1_stringify_integer(o->binary, o->length);
+		RzASN1Binary *o = si->encryptedDigest;
+		RzASN1String *s = rz_asn1_stringify_integer(o->binary, o->length);
 		if (s) {
 			pj_ks(pj, "EncryptedDigest", s->string);
 		}
-		rz_asn1_free_string(s);
+		rz_asn1_string_free(s);
 	}
 
 	pj_k(pj, "UnauthenticatedAttributes");
@@ -591,7 +591,7 @@ RZ_API RZ_OWN PJ *rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container) {
 		pj_a(pj);
 		for (ut32 i = 0; i < container->signedData.digestAlgorithms.length; i++) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
-				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
+				RzASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
 				if (s) {
 					pj_s(pj, s->string);
 				}
@@ -626,7 +626,7 @@ RZ_API RZ_OWN PJ *rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container) {
 	return pj;
 }
 
-static bool pkcs7_spcdata_parse(RzSpcAttributeTypeAndOptionalValue *data, RASN1Object *object) {
+static bool pkcs7_spcdata_parse(RzSpcAttributeTypeAndOptionalValue *data, RzASN1Object *object) {
 	if (!data || !object || object->list.length < 1 ||
 		!object->list.objects[0]) {
 		return false;
@@ -637,14 +637,14 @@ static bool pkcs7_spcdata_parse(RzSpcAttributeTypeAndOptionalValue *data, RASN1O
 	} else if (object->list.length < 2) {
 		return true;
 	}
-	RASN1Object *obj1 = object->list.objects[1];
+	RzASN1Object *obj1 = object->list.objects[1];
 	if (obj1) {
-		data->data = rz_asn1_create_binary(obj1->sector, obj1->length);
+		data->data = rz_asn1_binary_parse(obj1->sector, obj1->length);
 	}
 	return true;
 }
 
-static bool pkcs7_spcmessagedigest_parse(RzSpcDigestInfo *messageDigest, RASN1Object *object) {
+static bool pkcs7_spcmessagedigest_parse(RzSpcDigestInfo *messageDigest, RzASN1Object *object) {
 	if (!messageDigest || !object || object->list.length < 2 ||
 		!object->list.objects[0] || !object->list.objects[1]) {
 		return false;
@@ -652,8 +652,8 @@ static bool pkcs7_spcmessagedigest_parse(RzSpcDigestInfo *messageDigest, RASN1Ob
 	if (!rz_x509_algorithmidentifier_parse(&messageDigest->digestAlgorithm, object->list.objects[0])) {
 		return false;
 	}
-	RASN1Object *obj1 = object->list.objects[1];
-	messageDigest->digest = rz_asn1_create_binary(obj1->sector, obj1->length);
+	RzASN1Object *obj1 = object->list.objects[1];
+	messageDigest->digest = rz_asn1_binary_parse(obj1->sector, obj1->length);
 	return true;
 }
 
@@ -667,7 +667,7 @@ static bool pkcs7_spcmessagedigest_parse(RzSpcDigestInfo *messageDigest, RASN1Ob
 RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS *cms) {
 	rz_return_val_if_fail(cms, NULL);
 
-	RASN1String *type = cms->signedData.contentInfo.contentType;
+	RzASN1String *type = cms->signedData.contentInfo.contentType;
 	if (type && strcmp(type->string, "spcIndirectDataContext")) {
 		return NULL;
 	}
@@ -677,12 +677,12 @@ RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS 
 		return NULL;
 	}
 
-	RASN1Binary *content = cms->signedData.contentInfo.content;
+	RzASN1Binary *content = cms->signedData.contentInfo.content;
 	if (!content) {
 		free(spcinfo);
 		return NULL;
 	}
-	RASN1Object *object = rz_asn1_create_object(content->binary, content->length);
+	RzASN1Object *object = rz_asn1_object_parse(content->binary, content->length);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
 		RZ_FREE_CUSTOM(spcinfo, rz_pkcs7_spcinfo_free);
@@ -701,7 +701,7 @@ RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS 
 		}
 	}
 beach:
-	rz_asn1_free_object(object);
+	rz_asn1_object_free(object);
 	return spcinfo;
 }
 
@@ -709,15 +709,15 @@ static void pkcs7_spcdata_fini(RzSpcAttributeTypeAndOptionalValue *data) {
 	if (!data) {
 		return;
 	}
-	rz_asn1_free_string(data->type);
-	rz_asn1_free_binary(data->data);
+	rz_asn1_string_free(data->type);
+	rz_asn1_binary_free(data->data);
 }
 
 static void pkcs7_spcmessagedigest_fini(RzSpcDigestInfo *messageDigest) {
 	if (!messageDigest) {
 		return;
 	}
-	rz_asn1_free_binary(messageDigest->digest);
+	rz_asn1_binary_free(messageDigest->digest);
 	rz_x509_algorithmidentifier_fini(&messageDigest->digestAlgorithm);
 }
 
