@@ -164,8 +164,8 @@ struct PE_(rz_bin_pe_obj_t) {
 	const char *file;
 	RzBuffer *b;
 	Sdb *kv;
-	RCMS *cms;
-	SpcIndirectDataContent *spcinfo;
+	RzCMS *cms;
+	RzSpcIndirectDataContent *spcinfo;
 	char *authentihash;
 	bool is_authhash_valid;
 	bool is_signed;
