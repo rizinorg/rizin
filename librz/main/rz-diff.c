@@ -30,6 +30,7 @@ typedef enum {
 	DIFF_DISTANCE_UNKNOWN = 0,
 	DIFF_DISTANCE_MYERS,
 	DIFF_DISTANCE_LEVENSHTEIN,
+	DIFF_DISTANCE_SSDEEP,
 } DiffDistance;
 
 typedef enum {
@@ -201,8 +202,9 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -a [arch] specify architecture plugin to use (x86, arm, ..)\n"
 		"  -b [bits] specify register size for arch (16 (thumb), 32, 64, ..)\n"
 		"  -d [algo] compute edit distance based on the choosen algorithm:\n"
-		"              myers | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
-		"              leven | Levenshtein O(N^2) algorithm (with substitution)\n"
+		"              myers  | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
+		"              leven  | Levenshtein O(N^2) algorithm (with substitution)\n"
+		"              ssdeep | distance of ssdeep hashes\n"
 		"  -H        hexadecimal visual mode\n"
 		"  -h        this help message\n"
 		"  -j        json output\n"
@@ -321,6 +323,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_MYERS);
 		} else if (!strcmp(algorithm, "leven")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LEVENSHTEIN);
+		} else if (!strcmp(algorithm, "ssdeep")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
 		} else {
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -d argument '%s' is not a recognized algorithm.\n", algorithm);
 		}
@@ -512,6 +516,12 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
+	case DIFF_DISTANCE_SSDEEP:
+		if ((similarity = rz_hash_ssdeep_compare(a_buffer, b_buffer)) < 0) {
+			rz_diff_error("failed to calculate distance with ssdeep compare algorithm\n");
+			goto rz_diff_calculate_distance_bad;
+		}
+		break;
 	default:
 		rz_diff_error("unknown distance algorithm\n");
 		goto rz_diff_calculate_distance_bad;
@@ -525,17 +535,23 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		}
 		pj_o(pj);
 		pj_kd(pj, "similarity", similarity);
-		pj_kn(pj, "distance", distance);
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+			pj_kn(pj, "distance", distance);
+		}
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
 	} else if (ctx->mode == DIFF_MODE_QUIET) {
 		printf("%.3f\n", similarity);
-		printf("%d\n", distance);
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+			printf("%d\n", distance);
+		}
 	} else {
 		// DIFF_MODE_STANDARD
 		printf("similarity: %.3f\n", similarity);
-		printf("distance: %d\n", distance);
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+			printf("distance: %d\n", distance);
+		}
 	}
 	free(a_buffer);
 	free(b_buffer);

@@ -688,7 +688,7 @@ RZ_API bool rz_analysis_block_was_modified(RzAnalysisBlock *block) {
 		free(buf);
 		return false;
 	}
-	ut32 cur_hash = rz_hash_xxhash(block->analysis->hash, buf, block->size);
+	ut32 cur_hash = rz_hash_xxhash(buf, block->size);
 	free(buf);
 	return block->bbhash != cur_hash;
 }
@@ -706,7 +706,7 @@ RZ_API void rz_analysis_block_update_hash(RzAnalysisBlock *block) {
 		free(buf);
 		return;
 	}
-	block->bbhash = rz_hash_xxhash(block->analysis->hash, buf, block->size);
+	block->bbhash = rz_hash_xxhash(buf, block->size);
 	free(buf);
 }
 

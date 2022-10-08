@@ -369,7 +369,7 @@ RZ_API bool rz_bin_file_close(RzBin *bin, int bd) {
 }
 
 static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList /*<RzBinFileHash *>*/ *list) {
-	char hash[128];
+	char hash[256];
 	const ut8 *digest = NULL;
 	RzHashSize digest_size = 0;
 
@@ -378,9 +378,11 @@ static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList /*<RzBi
 		return false;
 	}
 
-	if (!strcmp(name, "entropy")) {
+	if (!strncmp(name, "entropy", strlen("entropy"))) {
 		double entropy = rz_read_be_double(digest);
 		rz_strf(hash, "%f", entropy);
+	} else if (!strcmp(name, "ssdeep")) {
+		rz_strf(hash, "%s", (const char *)digest);
 	} else {
 		rz_hex_bin2str(digest, digest_size, hash);
 	}

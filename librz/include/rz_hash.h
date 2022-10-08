@@ -74,9 +74,11 @@ RZ_API RZ_OWN ut8 *rz_hash_cfg_calculate_small_block(RZ_NONNULL RzHash *rh, RZ_N
 RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *rh, RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NULLABLE ut32 *size, bool invert);
 RZ_API RZ_OWN char *rz_hash_cfg_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address);
 
-RZ_API ut32 rz_hash_xxhash(RZ_NONNULL RzHash *rh, RZ_NONNULL const ut8 *input, size_t size);
-RZ_API double rz_hash_entropy(RZ_NONNULL RzHash *rh, RZ_NONNULL const ut8 *data, ut64 len);
-RZ_API double rz_hash_entropy_fraction(RZ_NONNULL RzHash *rh, RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_ssdeep_compare(RZ_NONNULL const char *hash1, RZ_NONNULL const char *hash2);
+RZ_API char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size);
+RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size);
+RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
 
 #endif
 
@@ -150,6 +152,7 @@ extern RzHashPlugin rz_hash_plugin_parity;
 extern RzHashPlugin rz_hash_plugin_entropy;
 extern RzHashPlugin rz_hash_plugin_entropy_fract;
 extern RzHashPlugin rz_hash_plugin_blake3;
+extern RzHashPlugin rz_hash_plugin_ssdeep;
 
 #ifdef __cplusplus
 }

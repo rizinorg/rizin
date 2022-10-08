@@ -1030,7 +1030,7 @@ static void cmd_p_minus_e(RzCore *core, ut64 at, ut64 ate) {
 		return;
 	}
 	if (rz_io_read_at(core->io, at, blockptr, (ate - at))) {
-		ut8 entropy = (ut8)(rz_hash_entropy_fraction(core->hash, blockptr, (ate - at)) * 255);
+		ut8 entropy = (ut8)(rz_hash_entropy_fraction(blockptr, (ate - at)) * 255);
 		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
 		if (rz_config_get_i(core->config, "scr.color")) {
 			const char *color =
@@ -2470,6 +2470,16 @@ static void handle_entropy(RzCore *core, const char *name, const ut8 *block, int
 	free(digest);
 }
 
+static void handle_ssdeep(RzCore *core, const char *name, const ut8 *block, int len) {
+	RzHashSize digest_size = 0;
+	char *digest = (char *)rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
+	if (!digest) {
+		return;
+	}
+	rz_cons_printf("%s\n", digest);
+	free(digest);
+}
+
 static inline void hexprint(const ut8 *data, int len) {
 	if (!data || len < 1) {
 		return;
@@ -2495,8 +2505,10 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const c
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!strncmp(plugin->name, "entropy", 7)) {
+	if (!strncmp(plugin->name, "entropy", strlen("entropy"))) {
 		handle_entropy(core, plugin->name, core->block, core->blocksize);
+	} else if (!strcmp(plugin->name, "ssdeep")) {
+		handle_ssdeep(core, plugin->name, core->block, core->blocksize);
 	} else {
 		handle_hash_cfg(core, plugin->name, core->block, core->blocksize);
 	}
@@ -3301,7 +3313,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * (i + skipblocks));
 				rz_io_read_at(core->io, off, p, blocksize);
-				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(core->hash, p, blocksize));
+				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
 			}
 			free(p);
 			core_print_columns(core, ptr, nblocks, 14);
@@ -3400,7 +3412,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + (blocksize * (i + skipblocks));
 			rz_io_read_at(core->io, off, p, blocksize);
-			ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(core->hash, p, blocksize));
+			ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
 		}
 		free(p);
 		print_bars = true;
