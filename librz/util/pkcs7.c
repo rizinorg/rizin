@@ -387,37 +387,6 @@ static bool rz_pkcs7_parse_attributes(RPKCS7Attributes *attributes, RASN1Object 
 	return true;
 }
 
-#if 0
-// XXX: unused
-static void rz_pkcs7_signerinfos_dump(RX509CertificateRevocationList *crl, const char* pad, RzStrBuf *sb) {
-	RASN1String *algo = NULL, *last = NULL, *next = NULL;
-	ut32 i;
-	char *pad2, *pad3;
-	if (!crl) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	pad3 = rz_str_newf ("%s    ", pad);
-	if (!pad3) return;
-
-	pad2 = pad3 + 2;
-	algo = crl->signature.algorithm;
-	last = crl->lastUpdate;
-	next = crl->nextUpdate;
-	rz_strbuf_appendf (sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3, algo ? algo->string : "", pad2);
-	rz_x509_name_dump (&crl->issuer, pad3, sb);
-	rz_strbuf_appendf (sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
-				pad2, last ? last->string : "Missing",
-				pad2, next ? next->string : "Missing", pad2);
-	for (i = 0; i < crl->length; i++) {
-		rz_x509_crlentry_dump (crl->revokedCertificates[i], pad3, sb);
-	}
-	free (pad3);
-}
-#endif
-
 static void rz_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RzStrBuf *sb) {
 	RASN1String *s = NULL;
 	RASN1Binary *o = NULL;
