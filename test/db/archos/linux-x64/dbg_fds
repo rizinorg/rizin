@@ -3,7 +3,6 @@ FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
 ddl~?
-dk 9
 EOF
 EXPECT=<<EOF
 3
@@ -18,7 +17,6 @@ CMDS=<<EOF
 ddl~?
 dd- 1
 ddl~?
-dk 9
 EOF
 EXPECT=<<EOF
 3
@@ -31,7 +29,6 @@ FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
 ddl~?
-dk 9
 EOF
 EXPECT=<<EOF
 3

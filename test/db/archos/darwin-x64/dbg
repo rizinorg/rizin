@@ -8,7 +8,6 @@ CMDS=<<EOF
 # just make sure pc is in a map of dyld even after sleeping.
 !sleep 0.5
 dm @ rip~*~[9]
-dk 9
 EOF
 EXPECT=<<EOF
 /usr/lib/dyld
@@ -22,7 +21,6 @@ ARGS=-d
 CMDS=<<EOF
 dcu main
 pi 8 @ rip
-dk 9
 EOF
 EXPECT=<<EOF
 push rbp
@@ -45,7 +43,6 @@ FILE=bins/mach0/hello-objc-osx
 ARGS=-d
 CMDS=<<EOF
 dm~hello
-dk 9
 EOF
 REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
 EXPECT=<<EOF
@@ -63,7 +60,6 @@ CMDS=<<EOF
 fl@F:maps~hello
 ?e --
 dm*~hello,fss
-dk 9
 EOF
 EXPECT=<<EOF
 0x100000000 4096 hello_objc_osx.r_x
@@ -88,7 +84,6 @@ dcu main
 dr rip
 dr rdi
 ps @ rdi
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x100000f17
@@ -113,7 +108,6 @@ dr rip
 dc
 dr rip
 dr rdi
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x100000f0c

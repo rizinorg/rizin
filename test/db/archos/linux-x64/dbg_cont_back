@@ -10,7 +10,6 @@ dc
 dcb
 dcb
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x00400574
@@ -28,7 +27,6 @@ dts+
 dc
 dcb
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x00400574
@@ -62,7 +60,6 @@ dr rip
 dsb
 dcb
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x0040290d
