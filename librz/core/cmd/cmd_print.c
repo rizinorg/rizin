@@ -1105,14 +1105,14 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	} break;
 	case 'p': // "pFp"
 	{
-		RCMS *cms = rz_pkcs7_parse_cms(data, size);
+		RCMS *cms = rz_pkcs7_cms_parse(data, size);
 		if (cms) {
 			char *res = rz_pkcs7_cms_to_string(cms);
 			if (res) {
 				rz_cons_printf("%s\n", res);
 				free(res);
 			}
-			rz_pkcs7_free_cms(cms);
+			rz_pkcs7_cms_free(cms);
 		} else {
 			RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 		}
