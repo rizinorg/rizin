@@ -143,13 +143,22 @@ static void decode_buffer(RzStrBuf *sb, const ut8 *start, const ut8 *end, ut32 p
 	}
 }
 
-RZ_API char *rz_protobuf_decode(const ut8 *start, const ut64 size, bool debug) {
-	if (!start || !size) {
+/**
+ * \brief      Decodes an encoded proto-buffer to a readable string
+ *
+ * \param[in]  buffer  The buffer to use to decode
+ * \param[in]  size    The size of the buffer
+ * \param[in]  debug   When set to true, adds extra infos to the decoded structure.
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN char *rz_protobuf_decode(RZ_NULLABLE const ut8 *buffer, const ut64 size, bool debug) {
+	if (!buffer || !size) {
 		eprintf("Invalid buffer pointer or size.\n");
 		return NULL;
 	}
-	const ut8 *end = start + size;
+	const ut8 *end = buffer + size;
 	RzStrBuf *sb = rz_strbuf_new("");
-	decode_buffer(sb, start, end, 0u, debug);
+	decode_buffer(sb, buffer, end, 0u, debug);
 	return rz_strbuf_drain(sb);
 }
