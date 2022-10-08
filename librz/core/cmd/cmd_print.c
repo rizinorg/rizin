@@ -1089,7 +1089,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	case 'x': // "pFx" x509
 	{
 		RASN1Object *object = rz_asn1_create_object(data, size);
-		RX509Certificate *x509 = rz_x509_parse_certificate(object);
+		RX509Certificate *x509 = rz_x509_certificate_parse(object);
 		if (x509) {
 			RzStrBuf *sb = rz_strbuf_new("");
 			rz_x509_certificate_dump(x509, NULL, sb);
@@ -1098,7 +1098,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 				rz_cons_printf("%s\n", res);
 				free(res);
 			}
-			rz_x509_free_certificate(x509);
+			rz_x509_certificate_free(x509);
 		} else {
 			RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 		}

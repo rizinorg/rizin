@@ -6,9 +6,6 @@
 #include <rz_util.h>
 #include "./x509.h"
 
-extern void rz_x509_name_json(PJ *pj, RX509Name *name);
-extern void rz_x509_free_crl(RX509CertificateRevocationList *crl);
-extern void rz_x509_crlentry_dump(RX509CRLEntry *crle, const char *pad, RzStrBuf *sb);
 static bool rz_pkcs7_parse_attributes(RPKCS7Attributes *attribute, RASN1Object *object);
 
 static bool rz_pkcs7_parse_contentinfo(RPKCS7ContentInfo *ci, RASN1Object *object) {
@@ -37,7 +34,7 @@ static bool rz_pkcs7_parse_certificaterevocationlists(RPKCS7CertificateRevocatio
 		}
 		crls->length = object->list.length;
 		for (i = 0; i < crls->length; i++) {
-			crls->elements[i] = rz_x509_parse_crl(object->list.objects[i]);
+			crls->elements[i] = rz_x509_crl_parse(object->list.objects[i]);
 		}
 	}
 	return true;
@@ -47,7 +44,7 @@ static void rz_pkcs7_free_certificaterevocationlists(RPKCS7CertificateRevocation
 	ut32 i;
 	if (crls) {
 		for (i = 0; i < crls->length; i++) {
-			rz_x509_free_crl(crls->elements[i]);
+			rz_x509_crl_free(crls->elements[i]);
 			crls->elements[i] = NULL;
 		}
 		RZ_FREE(crls->elements);
@@ -67,7 +64,7 @@ static bool rz_pkcs7_parse_extendedcertificatesandcertificates(RPKCS7ExtendedCer
 		}
 		ecac->length = object->list.length;
 		for (i = 0; i < ecac->length; i++) {
-			ecac->elements[i] = rz_x509_parse_certificate(object->list.objects[i]);
+			ecac->elements[i] = rz_x509_certificate_parse(object->list.objects[i]);
 			object->list.objects[i] = NULL;
 		}
 	}
@@ -78,7 +75,7 @@ static void rz_pkcs7_free_extendedcertificatesandcertificates(RPKCS7ExtendedCert
 	ut32 i;
 	if (ecac) {
 		for (i = 0; i < ecac->length; i++) {
-			rz_x509_free_certificate(ecac->elements[i]);
+			rz_x509_certificate_free(ecac->elements[i]);
 			ecac->elements[i] = NULL;
 		}
 		RZ_FREE(ecac->elements);
@@ -98,7 +95,7 @@ static bool rz_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdenti
 		}
 		dai->length = object->list.length;
 		for (i = 0; i < dai->length; i++) {
-			// rz_x509_parse_algorithmidentifier returns bool,
+			// rz_x509_algorithmidentifier_parse returns bool,
 			// so i have to allocate before calling the function
 			dai->elements[i] = (RX509AlgorithmIdentifier *)malloc(sizeof(RX509AlgorithmIdentifier));
 			// should i handle invalid memory? the function checks the pointer
@@ -106,7 +103,7 @@ static bool rz_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdenti
 			if (dai->elements[i]) {
 				// Memset is needed to initialize to 0 the structure and avoid garbage.
 				memset(dai->elements[i], 0, sizeof(RX509AlgorithmIdentifier));
-				rz_x509_parse_algorithmidentifier(dai->elements[i], object->list.objects[i]);
+				rz_x509_algorithmidentifier_parse(dai->elements[i], object->list.objects[i]);
 			}
 		}
 	}
@@ -118,8 +115,8 @@ static void rz_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentif
 	if (dai) {
 		for (i = 0; i < dai->length; i++) {
 			if (dai->elements[i]) {
-				rz_x509_free_algorithmidentifier(dai->elements[i]);
-				// rz_x509_free_algorithmidentifier doesn't free the pointer
+				rz_x509_algorithmidentifier_fini(dai->elements[i]);
+				// rz_x509_algorithmidentifier_fini doesn't free the pointer
 				// because on x509 the original use was internal.
 				RZ_FREE(dai->elements[i]);
 			}
@@ -141,7 +138,7 @@ static bool rz_pkcs7_parse_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *ia
 	if (!iasu || !object || object->list.length != 2) {
 		return false;
 	}
-	rz_x509_parse_name(&iasu->issuer, object->list.objects[0]);
+	rz_x509_name_parse(&iasu->issuer, object->list.objects[0]);
 	RASN1Object *obj1 = object->list.objects[1];
 	if (obj1) {
 		iasu->serialNumber = rz_asn1_create_binary(obj1->sector, obj1->length);
@@ -151,7 +148,7 @@ static bool rz_pkcs7_parse_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *ia
 
 static void rz_pkcs7_free_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu) {
 	if (iasu) {
-		rz_x509_free_name(&iasu->issuer);
+		rz_x509_name_fini(&iasu->issuer);
 		rz_asn1_free_binary(iasu->serialNumber);
 		// Used internally pkcs #7, so it shouldn't free iasu.
 	}
@@ -174,13 +171,13 @@ static bool rz_pkcs7_parse_signerinfo(RPKCS7SignerInfo *si, RASN1Object *object)
 	// Following RFC
 	si->version = (ut32)elems[0]->sector[0];
 	rz_pkcs7_parse_issuerandserialnumber(&si->issuerAndSerialNumber, elems[1]);
-	rz_x509_parse_algorithmidentifier(&si->digestAlgorithm, elems[2]);
+	rz_x509_algorithmidentifier_parse(&si->digestAlgorithm, elems[2]);
 	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
 		rz_pkcs7_parse_attributes(&si->authenticatedAttributes, elems[shift]);
 		shift++;
 	}
 	if (shift < object->list.length) {
-		rz_x509_parse_algorithmidentifier(&si->digestEncryptionAlgorithm, elems[shift]);
+		rz_x509_algorithmidentifier_parse(&si->digestEncryptionAlgorithm, elems[shift]);
 		shift++;
 	}
 	if (shift < object->list.length) {
@@ -221,9 +218,9 @@ static void rz_pkcs7_free_attributes(RPKCS7Attributes *attributes) {
 static void rz_pkcs7_free_signerinfo(RPKCS7SignerInfo *si) {
 	if (si) {
 		rz_pkcs7_free_issuerandserialnumber(&si->issuerAndSerialNumber);
-		rz_x509_free_algorithmidentifier(&si->digestAlgorithm);
+		rz_x509_algorithmidentifier_fini(&si->digestAlgorithm);
 		rz_pkcs7_free_attributes(&si->authenticatedAttributes);
-		rz_x509_free_algorithmidentifier(&si->digestEncryptionAlgorithm);
+		rz_x509_algorithmidentifier_fini(&si->digestEncryptionAlgorithm);
 		rz_asn1_free_binary(si->encryptedDigest);
 		rz_pkcs7_free_attributes(&si->unauthenticatedAttributes);
 		free(si);
@@ -632,7 +629,7 @@ static bool rz_pkcs7_parse_spcmessagedigest(SpcDigestInfo *messageDigest, RASN1O
 		!object->list.objects[0] || !object->list.objects[1]) {
 		return false;
 	}
-	if (!rz_x509_parse_algorithmidentifier(&messageDigest->digestAlgorithm, object->list.objects[0])) {
+	if (!rz_x509_algorithmidentifier_parse(&messageDigest->digestAlgorithm, object->list.objects[0])) {
 		return false;
 	}
 	RASN1Object *obj1 = object->list.objects[1];
@@ -691,7 +688,7 @@ static void rz_pkcs7_free_spcdata(SpcAttributeTypeAndOptionalValue *data) {
 static void rz_pkcs7_free_spcmessagedigest(SpcDigestInfo *messageDigest) {
 	if (messageDigest) {
 		rz_asn1_free_binary(messageDigest->digest);
-		rz_x509_free_algorithmidentifier(&messageDigest->digestAlgorithm);
+		rz_x509_algorithmidentifier_fini(&messageDigest->digestAlgorithm);
 	}
 }
 
