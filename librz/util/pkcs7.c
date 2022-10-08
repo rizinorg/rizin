@@ -28,7 +28,7 @@ static bool rz_pkcs7_parse_certificaterevocationlists(RPKCS7CertificateRevocatio
 		return false;
 	}
 	if (object->list.length > 0) {
-		crls->elements = (RX509CertificateRevocationList **)calloc(object->list.length, sizeof(RX509CertificateRevocationList *));
+		crls->elements = (RzX509CertificateRevocationList **)calloc(object->list.length, sizeof(RzX509CertificateRevocationList *));
 		if (!crls->elements) {
 			return false;
 		}
@@ -58,7 +58,7 @@ static bool rz_pkcs7_parse_extendedcertificatesandcertificates(RPKCS7ExtendedCer
 		return false;
 	}
 	if (object->list.length > 0) {
-		ecac->elements = (RX509Certificate **)calloc(object->list.length, sizeof(RX509Certificate *));
+		ecac->elements = (RzX509Certificate **)calloc(object->list.length, sizeof(RzX509Certificate *));
 		if (!ecac->elements) {
 			return false;
 		}
@@ -89,7 +89,7 @@ static bool rz_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdenti
 		return false;
 	}
 	if (object->list.length > 0) {
-		dai->elements = (RX509AlgorithmIdentifier **)calloc(object->list.length, sizeof(RX509AlgorithmIdentifier *));
+		dai->elements = (RzX509AlgorithmIdentifier **)calloc(object->list.length, sizeof(RzX509AlgorithmIdentifier *));
 		if (!dai->elements) {
 			return false;
 		}
@@ -97,12 +97,12 @@ static bool rz_pkcs7_parse_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdenti
 		for (i = 0; i < dai->length; i++) {
 			// rz_x509_algorithmidentifier_parse returns bool,
 			// so i have to allocate before calling the function
-			dai->elements[i] = (RX509AlgorithmIdentifier *)malloc(sizeof(RX509AlgorithmIdentifier));
+			dai->elements[i] = (RzX509AlgorithmIdentifier *)malloc(sizeof(RzX509AlgorithmIdentifier));
 			// should i handle invalid memory? the function checks the pointer
 			// or it should return if dai->elements[i] == NULL ?
 			if (dai->elements[i]) {
 				// Memset is needed to initialize to 0 the structure and avoid garbage.
-				memset(dai->elements[i], 0, sizeof(RX509AlgorithmIdentifier));
+				memset(dai->elements[i], 0, sizeof(RzX509AlgorithmIdentifier));
 				rz_x509_algorithmidentifier_parse(dai->elements[i], object->list.objects[i]);
 			}
 		}
@@ -155,7 +155,7 @@ static void rz_pkcs7_free_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *ias
 }
 
 /*
-	RX509AlgorithmIdentifier digestEncryptionAlgorithm;
+	RzX509AlgorithmIdentifier digestEncryptionAlgorithm;
 	RASN1Object *encryptedDigest;
 	RASN1Object *unauthenticatedAttributes; //Optional type ??
 } RPKCS7SignerInfo;

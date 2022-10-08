@@ -9,17 +9,17 @@ extern "C" {
 
 typedef struct rz_pkcs7_certificaterevocationlists_t {
 	ut32 length;
-	RX509CertificateRevocationList **elements;
+	RzX509CertificateRevocationList **elements;
 } RPKCS7CertificateRevocationLists;
 
 typedef struct rz_pkcs7_extendedcertificatesandcertificates_t {
 	ut32 length;
-	RX509Certificate **elements;
+	RzX509Certificate **elements;
 } RPKCS7ExtendedCertificatesAndCertificates;
 
 typedef struct rz_pkcs7_digestalgorithmidentifiers_t {
 	ut32 length;
-	RX509AlgorithmIdentifier **elements;
+	RzX509AlgorithmIdentifier **elements;
 } RPKCS7DigestAlgorithmIdentifiers;
 
 typedef struct rz_pkcs7_contentinfo_t {
@@ -28,7 +28,7 @@ typedef struct rz_pkcs7_contentinfo_t {
 } RPKCS7ContentInfo;
 
 typedef struct rz_pkcs7_issuerandserialnumber_t {
-	RX509Name issuer;
+	RzX509Name issuer;
 	RASN1Binary *serialNumber;
 } RPKCS7IssuerAndSerialNumber;
 
@@ -45,9 +45,9 @@ typedef struct rz_pkcs7_attributes_t {
 typedef struct rz_pkcs7_signerinfo_t {
 	ut32 version;
 	RPKCS7IssuerAndSerialNumber issuerAndSerialNumber;
-	RX509AlgorithmIdentifier digestAlgorithm;
+	RzX509AlgorithmIdentifier digestAlgorithm;
 	RPKCS7Attributes authenticatedAttributes; // Optional
-	RX509AlgorithmIdentifier digestEncryptionAlgorithm;
+	RzX509AlgorithmIdentifier digestEncryptionAlgorithm;
 	RASN1Binary *encryptedDigest;
 	RPKCS7Attributes unauthenticatedAttributes; // Optional
 } RPKCS7SignerInfo;
@@ -77,7 +77,7 @@ typedef struct {
 } SpcAttributeTypeAndOptionalValue;
 
 typedef struct {
-	RX509AlgorithmIdentifier digestAlgorithm;
+	RzX509AlgorithmIdentifier digestAlgorithm;
 	RASN1Binary *digest;
 } SpcDigestInfo;
 

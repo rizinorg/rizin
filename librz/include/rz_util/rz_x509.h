@@ -15,106 +15,89 @@ extern "C" {
 typedef struct rz_x509_validity_t {
 	RASN1String *notBefore;
 	RASN1String *notAfter;
-} RX509Validity;
+} RzX509Validity;
 
 typedef struct rz_x509_name_t {
 	ut32 length;
 	RASN1String **oids;
 	RASN1String **names;
-} RX509Name;
+} RzX509Name;
 
 typedef struct rz_x509_algorithmidentifier_t {
 	RASN1String *algorithm; // OBJECT IDENTIFIER
 	RASN1String *parameters; // OPTIONAL
-} RX509AlgorithmIdentifier;
-
-/*
-//SubjectKeyIdentifier OCTET STRING so it should be an ASN1Object
-
-typedef struct rz_x509_keyusage_t {
-	ut8 digitalSignature : 1;
-	ut8 contentCommitment : 1;
-	ut8 keyEncipherment : 1;
-	ut8 dataEncipherment : 1;
-	ut8 keyAgreement : 1;
-	ut8 keyCertSign : 1;
-	ut8 cRLSign : 1;
-	ut8 encipherOnly : 1;
-	ut8 decipherOnly : 1;
-} X509KeyUsage;
- */
+} RzX509AlgorithmIdentifier;
 
 typedef struct rz_x509_authoritykeyidentifier_t {
 	RASN1Binary *keyIdentifier;
-	RX509Name authorityCertIssuer;
+	RzX509Name authorityCertIssuer;
 	RASN1Binary *authorityCertSerialNumber;
-} RX509AuthorityKeyIdentifier;
+} RzX509AuthorityKeyIdentifier;
 
 typedef struct rz_x509_subjectpublickeyinfo_t {
-	RX509AlgorithmIdentifier algorithm;
+	RzX509AlgorithmIdentifier algorithm;
 	// This is a bit string, but it encapsulate mod + pubkey
 	RASN1Binary *subjectPublicKey; // BIT STRING
-	// This struct won't follow RFC,
-	// just because it should be seen as this.
+	// Extracted module and exponent from pubkey
 	RASN1Binary *subjectPublicKeyExponent;
 	RASN1Binary *subjectPublicKeyModule;
-} RX509SubjectPublicKeyInfo;
+} RzX509SubjectPublicKeyInfo;
 
 typedef struct rz_x509_extension_t {
 	RASN1String *extnID; // OBJECT IDENTIFIER
 	bool critical;
 	RASN1Binary *extnValue; // OCTET STRING
-} RX509Extension;
+} RzX509Extension;
 
 typedef struct rz_x509_extensions_t {
 	ut32 length;
-	RX509Extension **extensions;
-} RX509Extensions;
+	RzX509Extension **extensions;
+} RzX509Extensions;
 
 typedef struct rz_x509_tbscertificate_t {
 	ut32 version; // INTEGER
 	RASN1String *serialNumber; // INTEGER
-	RX509AlgorithmIdentifier signature;
-	RX509Name issuer;
-	RX509Validity validity;
-	RX509Name subject;
-	RX509SubjectPublicKeyInfo subjectPublicKeyInfo;
+	RzX509AlgorithmIdentifier signature;
+	RzX509Name issuer;
+	RzX509Validity validity;
+	RzX509Name subject;
+	RzX509SubjectPublicKeyInfo subjectPublicKeyInfo;
 	RASN1Binary *issuerUniqueID; // BIT STRING
 	RASN1Binary *subjectUniqueID; // BIT STRING
-	RX509Extensions extensions;
-} RX509TBSCertificate;
+	RzX509Extensions extensions;
+} RzX509TBSCertificate;
 
 typedef struct rz_x509_certificate_t {
-	RX509TBSCertificate tbsCertificate;
-	RX509AlgorithmIdentifier algorithmIdentifier;
+	RzX509TBSCertificate tbsCertificate;
+	RzX509AlgorithmIdentifier algorithmIdentifier;
 	RASN1Binary *signature; // BIT STRING
-} RX509Certificate;
+} RzX509Certificate;
 
 // RFC 1422
 
 typedef struct rz_x509_crlentry {
 	RASN1Binary *userCertificate; // INTEGER ?
 	RASN1String *revocationDate; // UTCTime
-} RX509CRLEntry;
+} RzX509CRLEntry;
 
 typedef struct rz_x509_certificaterevocationlist {
-	RX509AlgorithmIdentifier signature;
-	RX509Name issuer;
+	RzX509AlgorithmIdentifier signature;
+	RzX509Name issuer;
 	RASN1String *lastUpdate; // UTCTime
 	RASN1String *nextUpdate; // UTCTime
 	ut32 length;
-	RX509CRLEntry **revokedCertificates;
-} RX509CertificateRevocationList;
+	RzX509CRLEntry **revokedCertificates;
+} RzX509CertificateRevocationList;
 
-RZ_API RZ_OWN RX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN1Object *object);
-RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad);
-RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RX509CertificateRevocationList *crl);
+RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RASN1Object *object);
+RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RzX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad);
+RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509CertificateRevocationList *crl);
 
-RZ_API RZ_OWN RX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RASN1Object *object);
-RZ_API RZ_OWN RX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8 *buffer, ut32 length);
-RZ_API void rz_x509_certificate_free(RZ_NULLABLE RX509Certificate *certificate);
-RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RX509Certificate *certificate);
-RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RX509Certificate *cert, RZ_NULLABLE const char *pad, RZ_NONNULL RzStrBuf *sb);
+RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RASN1Object *object);
+RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8 *buffer, ut32 length);
+RZ_API void rz_x509_certificate_free(RZ_NULLABLE RzX509Certificate *certificate);
+RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509Certificate *certificate);
+RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RzX509Certificate *cert, RZ_NULLABLE const char *pad, RZ_NONNULL RzStrBuf *sb);
 
 #ifdef __cplusplus
 }
