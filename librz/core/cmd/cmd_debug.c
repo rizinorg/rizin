@@ -68,24 +68,6 @@ static const char *help_msg_dcu[] = {
 	NULL
 };
 
-static const char *help_msg_de[] = {
-	"Usage:", "de", "[-sc] [perm] [rm] [expr]",
-	"de", "", "List esil watchpoints",
-	"de-*", "", "Delete all esil watchpoints",
-	"de", " [perm] [rm] [addr|reg|from..to]", "Stop on condition",
-	"dec", "", "Continue execution until matching expression",
-	"des", "[?] [N]", "Step-in N instructions with esildebug",
-	"desu", " [addr]", "Esildebug until specific address",
-	NULL
-};
-
-static const char *help_msg_des[] = {
-	"Usage:", "des", "[u] [arg]",
-	"des", " [N]", "step-in N instructions with esildebug",
-	"desu", " [addr]", "esildebug until specific address",
-	NULL
-};
-
 static const char *help_msg_dk[] = {
 	"Usage: dk", "", "Signal commands",
 	"dk", "", "List all signal handlers of child process",
@@ -1542,95 +1524,6 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	rz_cons_break_pop();
 }
 
-static void rz_core_debug_esil(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case '\0': // "de"
-		// list
-		rz_debug_esil_watch_list(core->dbg);
-		break;
-	case ' ': // "de "
-	{
-		char *line = strdup(input + 1);
-		char *p, *q;
-		int done = 0;
-		int perm = 0, dev = 0;
-		p = strchr(line, ' ');
-		if (p) {
-			*p++ = 0;
-			if (strchr(line, 'r'))
-				perm |= RZ_PERM_R;
-			if (strchr(line, 'w'))
-				perm |= RZ_PERM_W;
-			if (strchr(line, 'x'))
-				perm |= RZ_PERM_X;
-			q = strchr(p, ' ');
-			if (q) {
-				*q++ = 0;
-				dev = p[0];
-				if (q) {
-					rz_debug_esil_watch(core->dbg, perm, dev, q);
-					done = 1;
-				}
-			}
-		}
-		if (!done) {
-			const char *help_de_msg[] = {
-				"Usage:", "de", " [perm] [reg|mem] [expr]",
-				NULL
-			};
-			rz_core_cmd_help(core, help_de_msg);
-		}
-		free(line);
-	} break;
-	case '-': // "de-"
-		rz_debug_esil_watch_reset(core->dbg);
-		break;
-	case 'c': // "dec"
-		if (rz_debug_esil_watch_empty(core->dbg)) {
-			RZ_LOG_ERROR("core: Error: no esil watchpoints defined\n");
-		} else {
-			rz_core_analysis_esil_reinit(core);
-			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
-			rz_debug_esil_continue(core->dbg);
-		}
-		break;
-	case 's': // "des"
-		if (input[1] == 'u' && input[2] == ' ') { // "desu"
-			ut64 addr, naddr, fin = rz_num_math(core->num, input + 2);
-			rz_core_analysis_esil_reinit(core);
-			addr = rz_debug_reg_get(core->dbg, "PC");
-			while (addr != fin) {
-				rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
-				rz_debug_esil_step(core->dbg, 1);
-				naddr = rz_debug_reg_get(core->dbg, "PC");
-				if (naddr == addr) {
-					RZ_LOG_WARN("core: Detected loophole\n");
-					break;
-				}
-				addr = naddr;
-			}
-		} else if (input[1] == '?' || !input[1]) {
-			rz_core_cmd_help(core, help_msg_des);
-		} else {
-			rz_core_analysis_esil_reinit(core);
-			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
-			// continue
-			rz_debug_esil_step(core->dbg, rz_num_math(core->num, input + 1));
-		}
-		break;
-	case '?': // "de?"
-	default: {
-		rz_core_cmd_help(core, help_msg_de);
-		// TODO #7967 help refactor: move to detail
-		rz_cons_printf("Examples:\n"
-			       " de r r rip       # stop when reads rip\n"
-			       " de rw m ADDR     # stop when read or write in ADDR\n"
-			       " de w r rdx       # stop when rdx register is modified\n"
-			       " de x m FROM..TO  # stop when rip in range\n");
-	} break;
-	}
-}
-
 static void rz_core_debug_kill(RzCore *core, const char *input) {
 	if (!input || *input == '?') {
 		if (input && input[1]) {
@@ -2044,9 +1937,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	int follow = 0;
 
 	switch (input[0]) {
-	case 'e': // "de"
-		rz_core_debug_esil(core, input + 1);
-		break;
 	case 'k': // "dk"
 		rz_core_debug_kill(core, input + 1);
 		break;
@@ -3414,4 +3304,56 @@ RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, 
 	RZ_LOG_ERROR("This command works only on Microsoft Windows\n");
 	return RZ_CMD_STATUS_ERROR;
 #endif
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_add_handler(RzCore *core, int argc, const char **argv) {
+	int perm = rz_str_rwx(argv[1]);
+	int kind = (int)argv[2][0];
+	rz_debug_esil_watch(core->dbg, perm, kind, argv[3]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_remove_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_esil_watch_reset(core->dbg);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_debug_esil_watch_print(core->dbg, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_continue_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_esil_watch_empty(core->dbg)) {
+		RZ_LOG_ERROR("core: Error: no esil watchpoints defined\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_analysis_esil_reinit(core);
+	rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
+	rz_debug_esil_continue(core->dbg);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_reinit(core);
+	rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
+	rz_debug_esil_step(core->dbg, rz_num_math(core->num, argv[1]));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_until_handler(RzCore *core, int argc, const char **argv) {
+	ut64 fin = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_reinit(core);
+	ut64 addr = rz_debug_reg_get(core->dbg, "PC");
+	while (addr != fin) {
+		rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
+		rz_debug_esil_step(core->dbg, 1);
+		ut64 naddr = rz_debug_reg_get(core->dbg, "PC");
+		if (naddr == addr) {
+			RZ_LOG_WARN("core: Detected loophole\n");
+			break;
+		}
+		addr = naddr;
+	}
+	return RZ_CMD_STATUS_OK;
 }

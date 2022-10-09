@@ -424,6 +424,12 @@ typedef struct rz_backtrace_t {
 	char *flagdesc2;
 } RzBacktrace;
 
+typedef struct rz_debug_esil_watchpoint_t {
+	int rwx;
+	int dev;
+	char *expr;
+} RzDebugEsilWatchpoint;
+
 #ifdef RZ_API
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
@@ -562,7 +568,7 @@ RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count);
 RZ_API ut64 rz_debug_esil_continue(RzDebug *dbg);
 RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr);
 RZ_API void rz_debug_esil_watch_reset(RzDebug *dbg);
-RZ_API void rz_debug_esil_watch_list(RzDebug *dbg);
+RZ_API RZ_BORROW RzList /*<RzDebugEsilWatchpoint *>*/ *rz_debug_esil_watch_list(RzDebug *dbg);
 RZ_API int rz_debug_esil_watch_empty(RzDebug *dbg);
 RZ_API void rz_debug_esil_prestep(RzDebug *d, int p);
 

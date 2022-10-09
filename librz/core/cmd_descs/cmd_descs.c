@@ -39,6 +39,7 @@ static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
+static const RzCmdDescDetail cmd_debug_esil_add_details[2];
 static const RzCmdDescDetail debug_reg_cond_details[4];
 static const RzCmdDescDetail dr_details[2];
 static const RzCmdDescDetail cmd_debug_inject_opcode_details[2];
@@ -321,6 +322,9 @@ static const RzCmdDescArg cmd_debug_descriptor_seek_args[3];
 static const RzCmdDescArg cmd_debug_descriptor_dup_args[3];
 static const RzCmdDescArg cmd_debug_descriptor_read_args[4];
 static const RzCmdDescArg cmd_debug_descriptor_write_args[4];
+static const RzCmdDescArg cmd_debug_esil_add_args[4];
+static const RzCmdDescArg cmd_debug_esil_step_args[2];
+static const RzCmdDescArg cmd_debug_esil_step_until_args[2];
 static const RzCmdDescArg cmd_debug_core_dump_generate_args[2];
 static const RzCmdDescArg cmd_debug_process_profile_args[2];
 static const RzCmdDescArg cmd_debug_step_args[2];
@@ -7118,6 +7122,98 @@ static const RzCmdDescArg cmd_debug_descriptor_write_args[] = {
 static const RzCmdDescHelp cmd_debug_descriptor_write_help = {
 	.summary = "Write <len> bytes to <fd> file at <offset>",
 	.args = cmd_debug_descriptor_write_args,
+};
+
+static const RzCmdDescHelp de_help = {
+	.summary = "Manage ESIL watchpoints",
+};
+static const RzCmdDescDetailEntry cmd_debug_esil_add_Examples_detail_entries[] = {
+	{ .text = "de", .arg_str = "r reg rip", .comment = "Stop when reads RIP register" },
+	{ .text = "de", .arg_str = "rw mem ADDR", .comment = "Stop when read or write in ADDR" },
+	{ .text = "de", .arg_str = "w r rdx", .comment = "Stop when rdx register is modified" },
+	{ .text = "de", .arg_str = "x m FROM..TO", .comment = "Stop when rip in range" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_esil_add_details[] = {
+	{ .name = "Examples", .entries = cmd_debug_esil_add_Examples_detail_entries },
+	{ 0 },
+};
+static const char *cmd_debug_esil_add_kind_choices[] = { "reg", "mem", NULL };
+static const RzCmdDescArg cmd_debug_esil_add_args[] = {
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "kind",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.choices.choices = cmd_debug_esil_add_kind_choices,
+
+	},
+	{
+		.name = "expression",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_add_help = {
+	.summary = "Add ESIL watchpoint",
+	.details = cmd_debug_esil_add_details,
+	.args = cmd_debug_esil_add_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_remove_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_remove_help = {
+	.summary = "Remove all ESIL watchpoints",
+	.args = cmd_debug_esil_remove_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_list_help = {
+	.summary = "List all ESIL watchpoints",
+	.args = cmd_debug_esil_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_continue_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_continue_help = {
+	.summary = "Continue execution until matching expression",
+	.args = cmd_debug_esil_continue_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_step_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_step_help = {
+	.summary = "Step-in <N> instructions with ESIL",
+	.args = cmd_debug_esil_step_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_step_until_args[] = {
+	{
+		.name = "<address>",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_step_until_help = {
+	.summary = "Step until specified <address>",
+	.args = cmd_debug_esil_step_until_args,
 };
 
 static const RzCmdDescArg cmd_debug_core_dump_generate_args[] = {
@@ -16968,6 +17064,23 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_descriptor_write_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddw", rz_cmd_debug_descriptor_write_handler, &cmd_debug_descriptor_write_help);
 	rz_warn_if_fail(cmd_debug_descriptor_write_cd);
+
+	RzCmdDesc *de_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "de", rz_cmd_debug_esil_add_handler, &cmd_debug_esil_add_help, &de_help);
+	rz_warn_if_fail(de_cd);
+	RzCmdDesc *cmd_debug_esil_remove_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "de-*", rz_cmd_debug_esil_remove_handler, &cmd_debug_esil_remove_help);
+	rz_warn_if_fail(cmd_debug_esil_remove_cd);
+
+	RzCmdDesc *cmd_debug_esil_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, de_cd, "del", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_esil_list_handler, &cmd_debug_esil_list_help);
+	rz_warn_if_fail(cmd_debug_esil_list_cd);
+
+	RzCmdDesc *cmd_debug_esil_continue_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "dec", rz_cmd_debug_esil_continue_handler, &cmd_debug_esil_continue_help);
+	rz_warn_if_fail(cmd_debug_esil_continue_cd);
+
+	RzCmdDesc *cmd_debug_esil_step_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "des", rz_cmd_debug_esil_step_handler, &cmd_debug_esil_step_help);
+	rz_warn_if_fail(cmd_debug_esil_step_cd);
+
+	RzCmdDesc *cmd_debug_esil_step_until_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "desu", rz_cmd_debug_esil_step_until_handler, &cmd_debug_esil_step_until_help);
+	rz_warn_if_fail(cmd_debug_esil_step_until_cd);
 
 	RzCmdDesc *cmd_debug_core_dump_generate_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_cd, "dg", rz_cmd_debug_core_dump_generate_handler, &cmd_debug_core_dump_generate_help);
 	rz_warn_if_fail(cmd_debug_core_dump_generate_cd);
