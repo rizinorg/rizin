@@ -6512,18 +6512,18 @@ RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char **argv) {
-	RASN1Object *asn1 = rz_asn1_create_object(core->block, core->blocksize);
+RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzASN1Object *asn1 = rz_asn1_object_parse(core->block, core->blocksize);
 	if (!asn1) {
-		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	char *res = rz_asn1_to_string(asn1, 0, NULL);
-	rz_asn1_free_object(asn1);
+	char *res = rz_asn1_to_string(asn1, 0, mode == RZ_OUTPUT_MODE_STANDARD);
+	rz_asn1_object_free(asn1);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%s\n", res);
+	rz_cons_printf("%s", res);
 	free(res);
 	return RZ_CMD_STATUS_OK;
 }
@@ -6531,6 +6531,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_cmd_print_protobuf_handler(RzCore *core, int argc, const char **argv) {
 	char *s = rz_protobuf_decode(core->block, core->blocksize, true);
 	if (!s) {
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("%s", s);
@@ -6538,42 +6539,65 @@ RZ_IPI RzCmdStatus rz_cmd_print_protobuf_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_pkcs7_handler(RzCore *core, int argc, const char **argv) {
-	RCMS *cms = rz_pkcs7_parse_cms(core->block, core->blocksize);
+RZ_IPI RzCmdStatus rz_cmd_print_pkcs7_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	char *res = NULL;
+	RzCMS *cms = rz_pkcs7_cms_parse(core->block, core->blocksize);
 	if (!cms) {
-		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 	}
-	char *res = rz_pkcs7_cms_to_string(cms);
-	if (res) {
-		rz_cons_printf("%s\n", res);
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_pkcs7_cms_json(cms, state->d.pj);
+		break;
+	default:
+		res = rz_pkcs7_cms_to_string(cms);
+		if (res) {
+			rz_cons_printf("%s", res);
+			free(res);
+		}
+		break;
 	}
-	free(res);
-	rz_pkcs7_free_cms(cms);
+	rz_pkcs7_cms_free(cms);
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_x509_handler(RzCore *core, int argc, const char **argv) {
-	RASN1Object *object = rz_asn1_create_object(core->block, core->blocksize);
-	RX509Certificate *x509 = rz_x509_parse_certificate(object);
+RZ_IPI RzCmdStatus rz_cmd_print_x509_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	char *res = NULL;
+	RzStrBuf *sb = NULL;
+	RzX509Certificate *x509 = rz_x509_certificate_parse2(core->block, core->blocksize);
 	if (!x509) {
-		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzStrBuf *sb = rz_strbuf_new("");
-	rz_x509_certificate_dump(x509, NULL, sb);
-	char *res = rz_strbuf_drain(sb);
-	if (res) {
-		rz_cons_printf("%s\n", res);
-		free(res);
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_x509_certificate_json(state->d.pj, x509);
+		break;
+	default:
+		sb = rz_strbuf_new(NULL);
+		if (!sb) {
+			RZ_LOG_ERROR("core: failed to allocate RzStrBuf\n");
+			rz_x509_certificate_free(x509);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_x509_certificate_dump(x509, NULL, sb);
+		res = rz_strbuf_drain(sb);
+		if (res) {
+			rz_cons_printf("%s", res);
+			free(res);
+		}
+		break;
 	}
-	rz_x509_free_certificate(x509);
+	rz_x509_certificate_free(x509);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_axml_handler(RzCore *core, int argc, const char **argv) {
 	char *s = rz_axml_decode(core->block, core->blocksize);
 	if (!s) {
-		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("%s", s);

@@ -570,17 +570,11 @@ static void pkcs7_signedinfo_json(PJ *pj, RzPKCS7SignerInfo *si) {
  * \brief      Converts a Cryptographic Message Syntax (or CMS) into a JSON object
  *
  * \param      container  The container to be converted to json
- *
- * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN PJ *rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container) {
+RZ_API void rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container, RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(pj);
 	if (!container) {
-		return NULL;
-	}
-
-	PJ *pj = pj_new();
-	if (!pj) {
-		return NULL;
+		return;
 	}
 
 	pj_o(pj);
@@ -623,7 +617,6 @@ RZ_API RZ_OWN PJ *rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container) {
 	}
 	pj_end(pj);
 	pj_end(pj);
-	return pj;
 }
 
 static bool pkcs7_spcdata_parse(RzSpcAttributeTypeAndOptionalValue *data, RzASN1Object *object) {

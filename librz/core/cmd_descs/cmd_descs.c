@@ -513,11 +513,6 @@ static const RzCmdDescArg cmd_disassembly_n_instrs_as_text_json_args[2];
 static const RzCmdDescArg cmd_sizes_of_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
-static const RzCmdDescArg cmd_print_asn1_args[2];
-static const RzCmdDescArg cmd_print_protobuf_args[2];
-static const RzCmdDescArg cmd_print_pkcs7_args[2];
-static const RzCmdDescArg cmd_print_x509_args[2];
-static const RzCmdDescArg cmd_print_axml_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
@@ -11882,15 +11877,9 @@ static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
 };
 
 static const RzCmdDescHelp pF_help = {
-	.summary = "Print parsed ASN.1, PKCS, X590, DER, etc formats",
+	.summary = "Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
 };
 static const RzCmdDescArg cmd_print_asn1_args[] = {
-	{
-		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_asn1_help = {
@@ -11899,12 +11888,6 @@ static const RzCmdDescHelp cmd_print_asn1_help = {
 };
 
 static const RzCmdDescArg cmd_print_protobuf_args[] = {
-	{
-		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_protobuf_help = {
@@ -11913,12 +11896,6 @@ static const RzCmdDescHelp cmd_print_protobuf_help = {
 };
 
 static const RzCmdDescArg cmd_print_pkcs7_args[] = {
-	{
-		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_pkcs7_help = {
@@ -11927,12 +11904,6 @@ static const RzCmdDescHelp cmd_print_pkcs7_help = {
 };
 
 static const RzCmdDescArg cmd_print_x509_args[] = {
-	{
-		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_x509_help = {
@@ -11941,12 +11912,6 @@ static const RzCmdDescHelp cmd_print_x509_help = {
 };
 
 static const RzCmdDescArg cmd_print_axml_args[] = {
-	{
-		.name = "len",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_axml_help = {
@@ -18106,16 +18071,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *pF_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pF", NULL, NULL, &pF_help);
 	rz_warn_if_fail(pF_cd);
-	RzCmdDesc *cmd_print_asn1_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFa", rz_cmd_print_asn1_handler, &cmd_print_asn1_help);
+	RzCmdDesc *cmd_print_asn1_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pF_cd, "pFa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_asn1_handler, &cmd_print_asn1_help);
 	rz_warn_if_fail(cmd_print_asn1_cd);
 
 	RzCmdDesc *cmd_print_protobuf_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFb", rz_cmd_print_protobuf_handler, &cmd_print_protobuf_help);
 	rz_warn_if_fail(cmd_print_protobuf_cd);
 
-	RzCmdDesc *cmd_print_pkcs7_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFp", rz_cmd_print_pkcs7_handler, &cmd_print_pkcs7_help);
+	RzCmdDesc *cmd_print_pkcs7_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_pkcs7_handler, &cmd_print_pkcs7_help);
 	rz_warn_if_fail(cmd_print_pkcs7_cd);
 
-	RzCmdDesc *cmd_print_x509_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFx", rz_cmd_print_x509_handler, &cmd_print_x509_help);
+	RzCmdDesc *cmd_print_x509_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_x509_handler, &cmd_print_x509_help);
 	rz_warn_if_fail(cmd_print_x509_cd);
 
 	RzCmdDesc *cmd_print_axml_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFA", rz_cmd_print_axml_handler, &cmd_print_axml_help);

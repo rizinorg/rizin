@@ -346,43 +346,39 @@ commands:
             cname: cmd_disassemble_summarize_block
             args: []
   - name: pF
-    summary: Print parsed ASN.1, PKCS, X590, DER, etc formats
+    summary: Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
     subcommands:
       - name: pFa
         summary: Decode ASN.1 from current block
         cname: cmd_print_asn1
-        args:
-          - name: len
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
       - name: pFb
         summary: Decode raw protobuf from current block
         cname: cmd_print_protobuf
-        args:
-          - name: len
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
       - name: pFp
         summary: Decode PKCS7 from current block
         cname: cmd_print_pkcs7
-        args:
-          - name: len
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: pFx
         summary: Decode X.509 from current block
         cname: cmd_print_x509
-        args:
-          - name: len
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: pFA
         summary: Decode Android Binary XML from current block
         cname: cmd_print_axml
-        args:
-          - name: len
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
+        args: []
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget
