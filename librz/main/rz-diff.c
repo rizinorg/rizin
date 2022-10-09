@@ -77,6 +77,7 @@ typedef struct diff_context_t {
 	bool show_time;
 	bool colors;
 	bool analyze_all;
+	bool command_line;
 	const char *architecture;
 	const char *input_a;
 	const char *input_b;
@@ -204,7 +205,8 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -d [algo] compute edit distance based on the choosen algorithm:\n"
 		"              myers  | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
 		"              leven  | Levenshtein O(N^2) algorithm (with substitution)\n"
-		"              ssdeep | distance of ssdeep hashes\n"
+		"              ssdeep | Context triggered piecewise hashing comparison\n"
+		"  -i        use command line arguments instead of files (only for -d)\n"
 		"  -H        hexadecimal visual mode\n"
 		"  -h        this help message\n"
 		"  -j        json output\n"
@@ -268,7 +270,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqvABCTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqviABCTa:b:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
@@ -281,6 +283,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'b': rz_diff_ctx_set_unsigned(ctx, arch_bits, opt.arg); break;
 		case 'd': rz_diff_set_def(algorithm, NULL, opt.arg); break;
 		case 'h': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HELP); break;
+		case 'i': rz_diff_ctx_set_def(ctx, command_line, false, true); break;
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
@@ -330,6 +333,10 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		}
 	} else if (type) {
 		rz_diff_ctx_set_opt(ctx, DIFF_OPT_UNIFIED);
+
+		if (ctx->command_line) {
+			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -i is not supported with -t flag.\n");
+		}
 
 		if (!strcmp(type, "bytes")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_BYTES);
@@ -495,12 +502,22 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	ut32 distance = 0;
 	double similarity = 0.0;
 
-	if (!(a_buffer = rz_diff_slurp_file(ctx->file_a, &a_size))) {
-		goto rz_diff_calculate_distance_bad;
-	}
-
-	if (!(b_buffer = rz_diff_slurp_file(ctx->file_b, &b_size))) {
-		goto rz_diff_calculate_distance_bad;
+	if (ctx->command_line) {
+		if (!(a_buffer = (ut8 *)strdup(ctx->file_a))) {
+			goto rz_diff_calculate_distance_bad;
+		}
+		a_size = strlen((const char *)a_buffer);
+		if (!(b_buffer = (ut8 *)strdup(ctx->file_b))) {
+			goto rz_diff_calculate_distance_bad;
+		}
+		b_size = strlen((const char *)b_buffer);
+	} else {
+		if (!(a_buffer = rz_diff_slurp_file(ctx->file_a, &a_size))) {
+			goto rz_diff_calculate_distance_bad;
+		}
+		if (!(b_buffer = rz_diff_slurp_file(ctx->file_b, &b_size))) {
+			goto rz_diff_calculate_distance_bad;
+		}
 	}
 
 	switch (ctx->distance) {
@@ -517,7 +534,7 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		}
 		break;
 	case DIFF_DISTANCE_SSDEEP:
-		if ((similarity = rz_hash_ssdeep_compare(a_buffer, b_buffer)) < 0) {
+		if ((similarity = rz_hash_ssdeep_compare((const char *)a_buffer, (const char *)b_buffer)) < 0) {
 			rz_diff_error("failed to calculate distance with ssdeep compare algorithm\n");
 			goto rz_diff_calculate_distance_bad;
 		}

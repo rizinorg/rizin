@@ -84,6 +84,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-diff similarity comparison (ssdeep)
+FILE==
+CMDS=!rz-diff -i -d ssdeep '384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC' '384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC'
+EXPECT=<<EOF
+similarity: 0.696
+EOF
+RUN
+
+NAME=rz-diff similarity comparison (ssdeep) json
+FILE==
+CMDS=!rz-diff -i -d ssdeep '384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC' '384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC'
+EXPECT=<<EOF
+{"similarity":0.695652}
+EOF
+RUN
+
+NAME=rz-diff similarity comparison (ssdeep) QUIET
+FILE==
+CMDS=!rz-diff -i -d ssdeep '384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC' '384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC'
+EXPECT=<<EOF
+0.696
+EOF
+RUN
 
 NAME=rz-diff bytes comparison
 FILE==
