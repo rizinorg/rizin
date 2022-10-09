@@ -93,7 +93,7 @@ jobs:
           - name: linux-gcc-tests-asan
             os: ubuntu-22.04
             build_system: meson
-            compiler: gcc
+            compiler: gcc-12
             cflags: "-DRZ_ASSERT_STDOUT=1 -Wno-cpp"
             meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror
             asan: true
@@ -193,6 +193,9 @@ jobs:
       - name: Install clang
         if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-22.04' && matrix.enabled
         run: sudo apt-get --assume-yes install clang
+      - name: Install gcc-12
+        if: matrix.compiler == 'gcc-12' && matrix.os == 'ubuntu-22.04' && matrix.enabled
+        run: sudo apt-get --assume-yes install gcc-12
       - name: Build with Meson
         if: matrix.build_system == 'meson' && matrix.enabled
         run: |
