@@ -120,11 +120,12 @@ static char *signature(RzBinFile *bf, bool json) {
 	}
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	if (json) {
-		PJ *pj = rz_pkcs7_cms_json(bin->cms);
-		if (pj) {
-			return pj_drain(pj);
+		PJ *pj = pj_new();
+		if (!pj) {
+			return strdup("{}");
 		}
-		return strdup("{}");
+		rz_pkcs7_cms_json(bin->cms, pj);
+		return pj_drain(pj);
 	}
 	return rz_pkcs7_cms_to_string(bin->cms);
 }
