@@ -224,7 +224,11 @@ RZ_API bool rz_float_set_from_single(RZ_NONNULL RzFloat *f, float value) {
 		return false;
 	}
 
+#if RZ_SYS_ENDIAN
+	rz_bv_set_from_bytes_be(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
+#else
 	rz_bv_set_from_bytes_le(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
+#endif
 	return f;
 }
 
@@ -246,7 +250,11 @@ RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value) {
 		return false;
 	}
 
+#if RZ_SYS_ENDIAN
+	rz_bv_set_from_bytes_be(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
+#else
 	rz_bv_set_from_bytes_le(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
+#endif
 	return f;
 }
 

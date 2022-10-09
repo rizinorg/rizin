@@ -7,7 +7,6 @@ db @ entry0
 e cmd.bp="?e cmd.bp ran"
 dbc "?e bpcmd ran" @ `dbl:start~:2`
 dc
-dk 9
 EOF
 EXPECT=<<EOF
 cmd.bp ran

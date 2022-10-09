@@ -10,7 +10,6 @@ pdf @ sym.main~:3
 EOF
 EXPECT=<<EOF
 / int main (int argc, char **argv, char **envp);
-p=3
 EOF
 RUN
 
@@ -26,7 +25,6 @@ EOF
 EXPECT=<<EOF
 1
 2
-p=3
 EOF
 RUN
 

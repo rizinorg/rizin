@@ -10,7 +10,7 @@ static const char *PE_(bin_pe_get_claimed_authentihash)(RzBinPEObj *bin) {
 	if (!bin->spcinfo) {
 		return NULL;
 	}
-	RASN1Binary *digest = bin->spcinfo->messageDigest.digest;
+	RzASN1Binary *digest = bin->spcinfo->messageDigest.digest;
 	if (!digest) {
 		return NULL;
 	}
@@ -133,8 +133,8 @@ int PE_(bin_pe_init_security)(RzBinPEObj *bin) {
 		rz_buf_read_at(bin->b, offset + 8, cert->bCertificate, cert->dwLength - 6);
 
 		if (!bin->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
-			bin->cms = rz_pkcs7_parse_cms(cert->bCertificate, cert->dwLength - 6);
-			bin->spcinfo = bin->cms ? rz_pkcs7_parse_spcinfo(bin->cms) : NULL;
+			bin->cms = rz_pkcs7_cms_parse(cert->bCertificate, cert->dwLength - 6);
+			bin->spcinfo = bin->cms ? rz_pkcs7_spcinfo_parse(bin->cms) : NULL;
 		}
 		if (!bin->cms || !bin->spcinfo) {
 			RZ_FREE(cert->bCertificate);

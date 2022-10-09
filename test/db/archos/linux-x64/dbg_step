@@ -22,7 +22,6 @@ FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 id~?
-dk 9
 EOF
 EXPECT=<<EOF
 0
@@ -37,7 +36,6 @@ dr rax=rip > /dev/null
 ?vi rax-rip
 db @ rip
 dso
-dk 9
 ?vi rax-rip~?^0$
 EOF
 EXPECT=<<EOF
@@ -108,7 +106,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400575
 rip = 0x0040057c
-Hello world
 EOF
 RUN
 
@@ -125,7 +122,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400539
 rip = 0x0040053b
-Hello world
 EOF
 RUN
 
@@ -142,7 +138,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400546
 rip = 0x00400548
-Hello world
 EOF
 RUN
 
@@ -159,7 +154,6 @@ EOF
 EXPECT=<<EOF
 rip = 0x00400549
 rip = 0x0040054e
-Hello world
 EOF
 RUN
 
@@ -170,7 +164,6 @@ CMDS=<<EOF
 dcu main
 dsu 0x400546
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 rip = 0x00400546
@@ -184,7 +177,6 @@ CMDS=<<EOF
 dcu main
 dsui mov eax
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 0x00400575 7 call qword [0x600958]
@@ -215,7 +207,6 @@ CMDS=<<EOF
 dcu 0x00400574
 dsi rax=2
 dr rax
-dk 9
 EOF
 EXPECT=<<EOF
 rax = 0x00000002
@@ -273,7 +264,6 @@ dcu main
 EOF
 EXPECT=<<EOF
 0x400574
-Hello world
 EOF
 REGEXP_FILTER_ERR=<<EOF
 Continue[ a-zA-Z0-9]+

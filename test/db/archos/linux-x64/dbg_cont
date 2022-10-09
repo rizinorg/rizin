@@ -7,7 +7,6 @@ dcu entry0
 dr PC
 ds
 dr PC
-dk 9
 EOF
 EXPECT=<<EOF
 eip = 0x080482d0
@@ -24,7 +23,6 @@ dcu entry0
 dr PC
 3ds
 dr PC
-dk 9
 EOF
 EXPECT=<<EOF
 eip = 0x080482d0

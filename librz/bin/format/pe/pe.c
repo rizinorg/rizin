@@ -104,8 +104,8 @@ void *PE_(rz_bin_pe_free)(RzBinPEObj *bin) {
 	free(bin->authentihash);
 	rz_list_free(bin->rich_entries);
 	rz_list_free(bin->resources);
-	rz_pkcs7_free_cms(bin->cms);
-	rz_pkcs7_free_spcinfo(bin->spcinfo);
+	rz_pkcs7_cms_free(bin->cms);
+	rz_pkcs7_spcinfo_free(bin->spcinfo);
 	rz_hash_free(bin->hash);
 	rz_buf_free(bin->b);
 	bin->b = NULL;

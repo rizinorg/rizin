@@ -4,7 +4,6 @@ ARGS=-d
 CMDS=<<EOF
 sr PC
 p8 4
-dk 9
 NOT_EXPECT=1
 EOF
 EXPECT=<<EOF
@@ -32,7 +31,6 @@ s entry0
 p8 2
 wx 9090
 p8 2
-dk 9
 EOF
 EXPECT=<<EOF
 f30f

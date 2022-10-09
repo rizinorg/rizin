@@ -1487,6 +1487,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ret = r->num->value;
 beach:
 	if (!rz_debug_is_dead(r->dbg)) {
+		if (!rz_cons_is_interactive() && rz_config_get_i(r->config, "dbg.exitkills") &&
+			rz_debug_can_kill(r->dbg)) {
+			rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+		}
 		// Always detach properly if still attached, even if we already killed the process,
 		// otherwise there will be a zombie on macOS!
 		rz_debug_detach(r->dbg, r->dbg->pid);
