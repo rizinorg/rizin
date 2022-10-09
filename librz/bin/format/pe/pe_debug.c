@@ -99,7 +99,7 @@ static int get_debug_info(RzBinPEObj *bin, PE_(image_debug_directory_entry) * db
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
 			dbgname = (char *)rsds_hdr.file_name;
-			strncpy(res->file_name, (const char *)dbgname, sizeof(res->file_name));
+			strncpy(res->file_name, (const char *)dbgname, sizeof(res->file_name) - 1);
 			res->file_name[sizeof(res->file_name) - 1] = 0;
 			rsds_hdr.free((struct SCV_RSDS_HEADER *)&rsds_hdr);
 		} else if (strncmp((const char *)dbg_data, "NB10", 4) == 0) {
