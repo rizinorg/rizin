@@ -11887,12 +11887,23 @@ static const RzCmdDescHelp cmd_print_asn1_help = {
 	.args = cmd_print_asn1_args,
 };
 
-static const RzCmdDescArg cmd_print_protobuf_args[] = {
-	{ 0 },
-};
 static const RzCmdDescHelp cmd_print_protobuf_help = {
 	.summary = "Decode raw protobuf from current block",
-	.args = cmd_print_protobuf_args,
+};
+static const RzCmdDescArg cmd_print_protobuf_standard_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_protobuf_standard_help = {
+	.summary = "Decode raw protobuf from current block",
+	.args = cmd_print_protobuf_standard_args,
+};
+
+static const RzCmdDescArg cmd_print_protobuf_verbose_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_protobuf_verbose_help = {
+	.summary = "Decode raw protobuf from current block (verbose)",
+	.args = cmd_print_protobuf_verbose_args,
 };
 
 static const RzCmdDescArg cmd_print_pkcs7_args[] = {
@@ -18074,8 +18085,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_asn1_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pF_cd, "pFa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_asn1_handler, &cmd_print_asn1_help);
 	rz_warn_if_fail(cmd_print_asn1_cd);
 
-	RzCmdDesc *cmd_print_protobuf_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFb", rz_cmd_print_protobuf_handler, &cmd_print_protobuf_help);
+	RzCmdDesc *cmd_print_protobuf_cd = rz_cmd_desc_group_new(core->rcmd, pF_cd, "pFb", rz_cmd_print_protobuf_standard_handler, &cmd_print_protobuf_standard_help, &cmd_print_protobuf_help);
 	rz_warn_if_fail(cmd_print_protobuf_cd);
+	RzCmdDesc *cmd_print_protobuf_verbose_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_protobuf_cd, "pFbv", rz_cmd_print_protobuf_verbose_handler, &cmd_print_protobuf_verbose_help);
+	rz_warn_if_fail(cmd_print_protobuf_verbose_cd);
 
 	RzCmdDesc *cmd_print_pkcs7_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_pkcs7_handler, &cmd_print_pkcs7_help);
 	rz_warn_if_fail(cmd_print_pkcs7_cd);

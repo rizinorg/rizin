@@ -358,7 +358,15 @@ commands:
       - name: pFb
         summary: Decode raw protobuf from current block
         cname: cmd_print_protobuf
-        args: []
+        subcommands:
+          - name: pFb
+            summary: Decode raw protobuf from current block
+            cname: cmd_print_protobuf_standard
+            args: []
+          - name: pFbv
+            summary: Decode raw protobuf from current block (verbose)
+            cname: cmd_print_protobuf_verbose
+            args: []
       - name: pFp
         summary: Decode PKCS7 from current block
         cname: cmd_print_pkcs7

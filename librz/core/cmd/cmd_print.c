@@ -6528,7 +6528,18 @@ RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_print_protobuf_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_print_protobuf_standard_handler(RzCore *core, int argc, const char **argv) {
+	char *s = rz_protobuf_decode(core->block, core->blocksize, false);
+	if (!s) {
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%s", s);
+	free(s);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_protobuf_verbose_handler(RzCore *core, int argc, const char **argv) {
 	char *s = rz_protobuf_decode(core->block, core->blocksize, true);
 	if (!s) {
 		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
