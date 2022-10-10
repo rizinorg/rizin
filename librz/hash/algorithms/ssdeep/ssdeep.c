@@ -41,7 +41,7 @@ typedef struct digest_block_t {
 	SumHash half;
 } DigestBlock;
 
-typedef struct rz_ssdeep_t {
+struct rz_ssdeep_t {
 	RollHash roll;
 	DigestBlock blocks[SSDEEP_N_BLOCK_HASHES];
 	SumHash lasth;
@@ -53,7 +53,7 @@ typedef struct rz_ssdeep_t {
 	ut32 start;
 	ut32 end;
 	ut32 roll_mask;
-} RzSSDeep;
+};
 
 static const char *base64_charset = SSDEEP_BASE64_CHARSET;
 static const char fnv_b64_table[64][64] = {
