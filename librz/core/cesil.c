@@ -326,3 +326,37 @@ RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil) {
 	}
 	return true;
 }
+
+RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state) {
+	RzDebugEsilWatchpoint *ew;
+	RzListIter *iter;
+	RzList *watchpoints = rz_debug_esil_watch_list(dbg);
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "sss", "permissions", "kind", "expression");
+	rz_list_foreach (watchpoints, iter, ew) {
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "permissions", rz_str_rwx_i(ew->rwx));
+			pj_ks(state->d.pj, "kind", ew->dev == 'r' ? "reg" : "mem");
+			pj_ks(state->d.pj, "expression", ew->expr);
+			pj_end(state->d.pj);
+			break;
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "sss",
+				rz_str_rwx_i(ew->rwx), ew->dev == 'r' ? "reg" : "mem",
+				ew->expr);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			rz_cons_printf("de %s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+}
