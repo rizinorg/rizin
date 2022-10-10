@@ -25,7 +25,16 @@ typedef struct hash_cfg_config_t {
 
 const static RzHashPlugin *hash_static_plugins[] = { RZ_HASH_STATIC_PLUGINS };
 
-RZ_API char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size) {
+/**
+ * \brief      Calculates the ssdeep digest of the given input
+ *
+ * \param[in]  input  The input buffer
+ * \param[in]  size   The size of the input
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size) {
+	rz_return_val_if_fail(input, NULL);
 	char *digest = malloc(RZ_HASH_SSDEEP_DIGEST_SIZE);
 	if (!digest) {
 		RZ_LOG_ERROR("msg digest: cannot allocate ssdeep digest buffer\n");
@@ -58,11 +67,27 @@ RZ_API double rz_hash_ssdeep_compare(RZ_NONNULL const char *hash_a, RZ_NONNULL c
 	return rz_ssdeep_compare(hash_a, hash_b);
 }
 
+/**
+ * \brief      Calculates the xxhash digest of the given input
+ *
+ * \param[in]  input  The input buffer
+ * \param[in]  size   The size of the input
+ *
+ * \return     The resulting digest of the input
+ */
 RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size) {
 	rz_return_val_if_fail(input, 0);
 	return XXH32(input, size, 0);
 }
 
+/**
+ * \brief      Calculates the entropy of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  size  The size of the input
+ *
+ * \return     The resulting entropy of the input
+ */
 RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len) {
 	rz_return_val_if_fail(data, 0.0);
 	const RzHashPlugin *plugin = &rz_hash_plugin_entropy;
@@ -76,6 +101,14 @@ RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len) {
 	return e;
 }
 
+/**
+ * \brief      Calculates the fractional entropy of the given input
+ *
+ * \param[in]  data  The input buffer
+ * \param[in]  size  The size of the input
+ *
+ * \return     The resulting fractional entropy of the input
+ */
 RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len) {
 	rz_return_val_if_fail(data, 0.0);
 	const RzHashPlugin *plugin = &rz_hash_plugin_entropy_fract;

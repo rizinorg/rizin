@@ -75,7 +75,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *
 RZ_API RZ_OWN char *rz_hash_cfg_randomart(RZ_NONNULL const ut8 *buffer, ut32 length, ut64 address);
 
 RZ_API double rz_hash_ssdeep_compare(RZ_NONNULL const char *hash1, RZ_NONNULL const char *hash2);
-RZ_API char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size);
+RZ_API RZ_OWN char *rz_hash_ssdeep(RZ_NONNULL const ut8 *input, size_t size);
 RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size);
 RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len);
 RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
