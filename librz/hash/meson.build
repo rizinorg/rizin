@@ -68,6 +68,7 @@ hash_plugins = {
     'xor8',
     'xor16',
     'xxhash32',
+    'ssdeep',
     'parity',
     'entropy',
     'entropy_fract',
@@ -91,6 +92,7 @@ rz_hash_sources = [
   'p/algo_xor8.c',
   'p/algo_xor16.c',
   'p/algo_xxhash32.c',
+  'p/algo_ssdeep.c',
   'p/algo_parity.c',
   'p/algo_entropy.c',
   'p/algo_entropy_fractional.c',
@@ -100,7 +102,8 @@ rz_hash_sources = [
   'algorithms/adler32/adler32.c',
   'algorithms/crc/crca.c',
   'algorithms/xor/xor.c',
-  'algorithms/fletcher/fletcher.c'
+  'algorithms/fletcher/fletcher.c',
+  'algorithms/ssdeep/ssdeep.c',
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]

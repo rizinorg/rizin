@@ -2166,7 +2166,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 				begin = at;
 			}
 			rz_io_read_at(core->io, at, buf, buf_size);
-			double e = rz_hash_entropy(core->hash, buf, buf_size);
+			double e = rz_hash_entropy(buf, buf_size);
 			double diff = oe - e;
 			diff = RZ_ABS(diff);
 			end = at + buf_size;
