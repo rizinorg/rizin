@@ -540,6 +540,69 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
+  - name: pv
+    summary: Print bytes based on current bitness and endianness
+    subcommands:
+      - name: pv
+        summary: print bytes
+        cname: print_value
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv1
+        summary: print 1 byte
+        cname: print_value1
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv2
+        summary: print 2 bytes
+        cname: print_value2
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv4
+        summary: print 4 bytes
+        cname: print_value4
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv8
+        summary: print 8 bytes
+        cname: print_value8
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
   - name: px
     summary: Show hexdump
     subcommands:

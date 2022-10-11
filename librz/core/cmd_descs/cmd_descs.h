@@ -1761,6 +1761,16 @@ RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psM"
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pv"
+RZ_IPI RzCmdStatus rz_print_value_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pv1"
+RZ_IPI RzCmdStatus rz_print_value1_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pv2"
+RZ_IPI RzCmdStatus rz_print_value2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pv4"
+RZ_IPI RzCmdStatus rz_print_value4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pv8"
+RZ_IPI RzCmdStatus rz_print_value8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "px"
 RZ_IPI RzCmdStatus rz_print_hexdump_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pxa"
