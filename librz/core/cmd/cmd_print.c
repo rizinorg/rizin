@@ -14,23 +14,6 @@
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static const char *help_msg_pr[] = {
-	"Usage: pr[glx]", "[size]", "print N raw bytes",
-	"prc", "[=fep..]", "print bytes as colors in palette",
-	"prg", "[?]", "print raw GUNZIPped block",
-	"prx", "", "printable chars with real offset (hyew)",
-	"prz", "", "print raw zero terminated string",
-	NULL
-};
-
-static const char *help_msg_prg[] = {
-	"Usage: prg[io]", "", "print raw GUNZIPped block",
-	"prg", "", "print gunzipped data of current block",
-	"prgi", "", "show consumed bytes when inflating",
-	"prgo", "", "show output bytes after inflating",
-	NULL
-};
-
 static const char *help_msg_amper[] = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
 	"&", " <cmd>", "run <cmd> in a new background task",
@@ -608,8 +591,7 @@ static const ut32 colormap[256] = {
 	0xffffff,
 };
 
-// colordump
-static void cmd_prc(RzCore *core, const ut8 *block, int len) {
+static void colordump(RzCore *core, const ut8 *block, int len) {
 	const char *chars = " .,:;!O@#";
 	bool square = rz_config_get_i(core->config, "scr.square");
 	int i, j;
@@ -2065,23 +2047,6 @@ static bool print_operation_transform(RzCore *core, RzCoreWriteOp op, RZ_NULLABL
 	return true;
 }
 
-static void printraw(RzCore *core, int len) {
-	int obsz = core->blocksize;
-	int restore_obsz = 0;
-	if (len != obsz) {
-		if (!rz_core_block_size(core, len)) {
-			len = core->blocksize;
-		} else {
-			restore_obsz = 1;
-		}
-	}
-	rz_print_raw(core->print, core->offset, core->block, len);
-	if (restore_obsz) {
-		(void)rz_core_block_size(core, obsz);
-	}
-	core->cons->newline = core->cmd_in_backticks ? false : true;
-}
-
 static void handle_entropy(RzCore *core, const char *name, const ut8 *block, int len) {
 	RzHashSize digest_size = 0;
 	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
@@ -3119,67 +3084,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			// XXX: need cmd_magic header for rz_core_magic
 			const char *filename = rz_str_trim_head_ro(input + 1);
 			rz_core_magic(core, filename, true, NULL);
-		}
-		break;
-	case 'r': // "pr"
-		switch (input[1]) {
-		case 'c': // "prc" // color raw dump
-			cmd_prc(core, block, len);
-			break;
-		case '?':
-			rz_core_cmd_help(core, help_msg_pr);
-			break;
-		case 'g': // "prg" // gunzip
-			switch (input[2]) {
-			case '?':
-				rz_core_cmd_help(core, help_msg_prg);
-				break;
-			case 'i': // "prgi"
-			{
-				int outlen = 0;
-				int inConsumed = 0;
-				ut8 *out;
-				out = rz_inflate(block, core->blocksize, &inConsumed, &outlen);
-				rz_cons_printf("%d\n", inConsumed);
-				free(out);
-			} break;
-			case 'o': // "prgo"
-			{
-				int outlen = 0;
-				ut8 *out;
-				out = rz_inflate(block, core->blocksize, NULL, &outlen);
-				rz_cons_printf("%d\n", outlen);
-				free(out);
-			} break;
-			default: {
-				int outlen = 0;
-				ut8 *out;
-				out = rz_inflate(block, core->blocksize, NULL, &outlen);
-				if (out) {
-					rz_cons_memcat((const char *)out, outlen);
-				}
-				free(out);
-			}
-			}
-			break;
-		/* TODO: compact */
-		case 'x': // "prx"
-		{
-			int a = rz_config_get_i(core->config, "hex.bytes");
-			rz_config_set_i(core->config, "hex.bytes", false);
-			rz_core_cmdf(core, "px%s", input + 1);
-			rz_config_set_i(core->config, "hex.bytes", a);
-		} break;
-		case 'z': // "prz"
-			if (l != 0) {
-				printraw(core, strlen((const char *)core->block));
-			}
-			break;
-		default:
-			if (l != 0) {
-				printraw(core, len);
-			}
-			break;
 		}
 		break;
 	case 'x': // "px"
@@ -6479,5 +6383,77 @@ RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char
 		rz_cons_newline();
 		i += step;
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+static void printraw(RzCore *core, int len) {
+	ut8 *data = malloc(len);
+	if (!data) {
+		return;
+	}
+	if (rz_io_read_at(core->io, core->offset, data, len)) {
+		rz_print_raw(core->print, core->offset, data, len);
+	}
+	free(data);
+	core->cons->newline = core->cmd_in_backticks ? false : true;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	if (len < 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	printraw(core, len);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_raw_colors_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	if (len < 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	colordump(core, core->block, len);
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool gunzip_and_print_block(RzCore *core, bool verbose) {
+	int outlen = 0;
+	int inConsumed = 0;
+	ut8 *out;
+	out = rz_inflate(core->block, core->blocksize, &inConsumed, &outlen);
+	if (!out) {
+		return false;
+	}
+	if (verbose) {
+		rz_cons_printf("consumed: %d produced: %d\n", inConsumed, outlen);
+	}
+	rz_cons_memcat((const char *)out, outlen);
+	free(out);
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_raw_gunzip_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(gunzip_and_print_block(core, false));
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_raw_gunzip_verbose_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(gunzip_and_print_block(core, true));
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, const char **argv) {
+	int a = rz_config_get_i(core->config, "hex.bytes");
+	rz_config_set_i(core->config, "hex.bytes", false);
+	// TODO: Use the API instead of commands
+	rz_core_cmd0(core, "pxx");
+	rz_config_set_i(core->config, "hex.bytes", a);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv) {
+	int len = argc > 1 ? rz_num_math(core->num, argv[1]) : strlen((const char *)core->block);
+	if (len < 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	printraw(core, len);
 	return RZ_CMD_STATUS_OK;
 }
