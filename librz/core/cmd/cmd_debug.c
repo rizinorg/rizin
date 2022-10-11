@@ -24,33 +24,6 @@
 		} \
 	} while (0)
 
-static const char *help_msg_d[] = {
-	"Usage:", "d", " # Debug commands",
-	"db", "[?]", "Breakpoints commands",
-	"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-	"dc", "[?]", "Continue execution",
-	"dd", "[?]", "File descriptors (!fd in r1)",
-	"de", "[-sc] [perm] [rm] [e]", "Debug with ESIL (see de?)",
-	"dg", " <file>", "Generate a core-file (WIP)",
-	"di", "[?]", "Show debugger backend information (See dh)",
-	"dk", "[?]", "List, send, get, set, signal handlers of child",
-	"dL", "[?]", "List or set debugger handler",
-	"dm", "[?]", "Show memory maps",
-	"do", "[?]", "Open process (reload, alias for 'oo')",
-	"doc", "", "Close debug session",
-	"dp", "[?]", "List, attach to process or thread id",
-	"dr", "[?]", "Cpu registers",
-	"ds", "[?]", "Step, over, source line",
-	"dt", "[?]", "Display instruction traces",
-	"dw", " <pid>", "Block prompt until pid dies",
-#if __WINDOWS__
-	"dW", "", "List process windows",
-	"dWi", "", "Identify window under cursor",
-#endif
-	"dx", "[?]", "Inject and run code on target process (See gs)",
-	NULL
-};
-
 static const char *help_msg_dcs[] = {
 	"Usage:", "dcs", " Continue until syscall",
 	"dcs", "", "Continue until next syscall",
@@ -65,44 +38,6 @@ static const char *help_msg_dcu[] = {
 	"dcu", " address", "Continue until address",
 	"dcu", " [..tail]", "Continue until the range",
 	"dcu", " [from] [to]", "Continue until the range",
-	NULL
-};
-
-static const char *help_msg_de[] = {
-	"Usage:", "de", "[-sc] [perm] [rm] [expr]",
-	"de", "", "List esil watchpoints",
-	"de-*", "", "Delete all esil watchpoints",
-	"de", " [perm] [rm] [addr|reg|from..to]", "Stop on condition",
-	"dec", "", "Continue execution until matching expression",
-	"des", "[?] [N]", "Step-in N instructions with esildebug",
-	"desu", " [addr]", "Esildebug until specific address",
-	NULL
-};
-
-static const char *help_msg_des[] = {
-	"Usage:", "des", "[u] [arg]",
-	"des", " [N]", "step-in N instructions with esildebug",
-	"desu", " [addr]", "esildebug until specific address",
-	NULL
-};
-
-static const char *help_msg_dk[] = {
-	"Usage: dk", "", "Signal commands",
-	"dk", "", "List all signal handlers of child process",
-	"dk", " <signal>", "Send KILL signal to child",
-	"dk", " <signal>=1", "Set signal handler for <signal> in child",
-	"dk?", "<signal>", "Name/signum resolver",
-	"dko", "[?] <signal>", "Reset skip or cont options for given signal",
-	"dko", " <signal> [|skip|cont]", "On signal SKIP handler or CONT into",
-	"dkj", "", "List all signal handlers in JSON",
-	NULL
-};
-
-static const char *help_msg_dko[] = {
-	"Usage:", "dko", " # Signal handling commands",
-	"dko", "", "List existing signal handling",
-	"dko", " [signal]", "Clear handling for a signal",
-	"dko", " [signal] [skip|cont]", "Set handling for a signal",
 	NULL
 };
 
@@ -1542,172 +1477,6 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	rz_cons_break_pop();
 }
 
-static void rz_core_debug_esil(RzCore *core, const char *input) {
-	switch (input[0]) {
-	case '\0': // "de"
-		// list
-		rz_debug_esil_watch_list(core->dbg);
-		break;
-	case ' ': // "de "
-	{
-		char *line = strdup(input + 1);
-		char *p, *q;
-		int done = 0;
-		int perm = 0, dev = 0;
-		p = strchr(line, ' ');
-		if (p) {
-			*p++ = 0;
-			if (strchr(line, 'r'))
-				perm |= RZ_PERM_R;
-			if (strchr(line, 'w'))
-				perm |= RZ_PERM_W;
-			if (strchr(line, 'x'))
-				perm |= RZ_PERM_X;
-			q = strchr(p, ' ');
-			if (q) {
-				*q++ = 0;
-				dev = p[0];
-				if (q) {
-					rz_debug_esil_watch(core->dbg, perm, dev, q);
-					done = 1;
-				}
-			}
-		}
-		if (!done) {
-			const char *help_de_msg[] = {
-				"Usage:", "de", " [perm] [reg|mem] [expr]",
-				NULL
-			};
-			rz_core_cmd_help(core, help_de_msg);
-		}
-		free(line);
-	} break;
-	case '-': // "de-"
-		rz_debug_esil_watch_reset(core->dbg);
-		break;
-	case 'c': // "dec"
-		if (rz_debug_esil_watch_empty(core->dbg)) {
-			RZ_LOG_ERROR("core: Error: no esil watchpoints defined\n");
-		} else {
-			rz_core_analysis_esil_reinit(core);
-			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
-			rz_debug_esil_continue(core->dbg);
-		}
-		break;
-	case 's': // "des"
-		if (input[1] == 'u' && input[2] == ' ') { // "desu"
-			ut64 addr, naddr, fin = rz_num_math(core->num, input + 2);
-			rz_core_analysis_esil_reinit(core);
-			addr = rz_debug_reg_get(core->dbg, "PC");
-			while (addr != fin) {
-				rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
-				rz_debug_esil_step(core->dbg, 1);
-				naddr = rz_debug_reg_get(core->dbg, "PC");
-				if (naddr == addr) {
-					RZ_LOG_WARN("core: Detected loophole\n");
-					break;
-				}
-				addr = naddr;
-			}
-		} else if (input[1] == '?' || !input[1]) {
-			rz_core_cmd_help(core, help_msg_des);
-		} else {
-			rz_core_analysis_esil_reinit(core);
-			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
-			// continue
-			rz_debug_esil_step(core->dbg, rz_num_math(core->num, input + 1));
-		}
-		break;
-	case '?': // "de?"
-	default: {
-		rz_core_cmd_help(core, help_msg_de);
-		// TODO #7967 help refactor: move to detail
-		rz_cons_printf("Examples:\n"
-			       " de r r rip       # stop when reads rip\n"
-			       " de rw m ADDR     # stop when read or write in ADDR\n"
-			       " de w r rdx       # stop when rdx register is modified\n"
-			       " de x m FROM..TO  # stop when rip in range\n");
-	} break;
-	}
-}
-
-static void rz_core_debug_kill(RzCore *core, const char *input) {
-	if (!input || *input == '?') {
-		if (input && input[1]) {
-			const char *signame, *arg = input + 1;
-			int signum = atoi(arg);
-			if (signum > 0) {
-				signame = rz_signal_to_string(signum);
-				if (signame)
-					rz_cons_println(signame);
-			} else {
-				signum = rz_signal_from_string(arg);
-				if (signum > 0) {
-					rz_cons_printf("%d\n", signum);
-				}
-			}
-		} else {
-			rz_core_cmd_help(core, help_msg_dk);
-		}
-	} else if (*input == 'o') {
-		switch (input[1]) {
-		case 0: // "dko" - list signal skip/conts
-			rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
-			break;
-		case ' ': // dko SIGNAL
-			if (input[2]) {
-				char *p, *name = strdup(input + 2);
-				int signum = atoi(name);
-				p = strchr(name, ' ');
-				if (p)
-					*p++ = 0; /* got SIGNAL and an action */
-				// Actions:
-				//  - pass
-				//  - trace
-				//  - stop
-				if (signum < 1)
-					signum = rz_signal_from_string(name);
-				if (signum > 0) {
-					if (!p || !p[0]) { // stop (the usual)
-						rz_debug_signal_setup(core->dbg, signum, 0);
-					} else if (*p == 's') { // skip
-						rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_SKIP);
-					} else if (*p == 'c') { // cont
-						rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_CONT);
-					} else {
-						RZ_LOG_ERROR("core: Invalid option: %s\n", p);
-					}
-				} else {
-					RZ_LOG_ERROR("core: Invalid signal: %s\n", input + 2);
-				}
-				free(name);
-				break;
-			}
-			/* fall through */
-		case '?':
-		default: {
-			rz_core_cmd_help(core, help_msg_dko);
-			// TODO #7967 help refactor: move to detail
-			rz_cons_println("NOTE: [signal] can be a number or a string that resolves with dk?\n"
-					"  skip means do not enter into the signal handler\n"
-					"  continue means enter into the signal handler");
-		}
-		}
-	} else if (*input == 'j') {
-		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_JSON);
-	} else if (!*input) {
-		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
-	} else {
-		int sig = atoi(input);
-		char *p = strchr(input, '=');
-		if (p) {
-			rz_debug_kill_setup(core->dbg, sig, rz_num_math(core->num, p + 1));
-		} else {
-			rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, sig);
-		}
-	}
-}
-
 static bool cmd_dcu(RzCore *core, const char *input) {
 	const char *ptr = NULL;
 	ut64 from, to, pc;
@@ -2037,28 +1806,6 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 		rz_cons_printf("%02x", tmp);
 	}
 	rz_cons_printf("\n");
-}
-
-RZ_IPI int rz_cmd_debug(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int follow = 0;
-
-	switch (input[0]) {
-	case 'e': // "de"
-		rz_core_debug_esil(core, input + 1);
-		break;
-	case 'k': // "dk"
-		rz_core_debug_kill(core, input + 1);
-		break;
-	case '?': // "d?"
-	default:
-		rz_core_cmd_help(core, help_msg_d);
-		break;
-	}
-	if (follow > 0) {
-		rz_core_dbg_follow_seek_register(core);
-	}
-	return 0;
 }
 
 // db
@@ -3414,4 +3161,104 @@ RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, 
 	RZ_LOG_ERROR("This command works only on Microsoft Windows\n");
 	return RZ_CMD_STATUS_ERROR;
 #endif
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_add_handler(RzCore *core, int argc, const char **argv) {
+	int perm = rz_str_rwx(argv[1]);
+	int kind = (int)argv[2][0];
+	rz_debug_esil_watch(core->dbg, perm, kind, argv[3]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_remove_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_esil_watch_reset(core->dbg);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_debug_esil_watch_print(core->dbg, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_continue_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_esil_watch_empty(core->dbg)) {
+		RZ_LOG_ERROR("core: Error: no esil watchpoints defined\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_analysis_esil_reinit(core);
+	rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
+	rz_debug_esil_continue(core->dbg);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_esil_reinit(core);
+	rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
+	rz_debug_esil_step(core->dbg, rz_num_math(core->num, argv[1]));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_until_handler(RzCore *core, int argc, const char **argv) {
+	ut64 fin = rz_num_math(core->num, argv[1]);
+	rz_core_analysis_esil_reinit(core);
+	ut64 addr = rz_debug_reg_get(core->dbg, "PC");
+	while (addr != fin) {
+		rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
+		rz_debug_esil_step(core->dbg, 1);
+		ut64 naddr = rz_debug_reg_get(core->dbg, "PC");
+		if (naddr == addr) {
+			RZ_LOG_WARN("core: Detected loophole\n");
+			break;
+		}
+		addr = naddr;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_handler(RzCore *core, int argc, const char **argv) {
+	int signum = rz_num_math(core->num, argv[1]);
+	rz_debug_kill(core->dbg, core->dbg->pid, core->dbg->tid, signum);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_debug_signal_print(core->dbg, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_name_handler(RzCore *core, int argc, const char **argv) {
+	int signum = rz_num_math(core->num, argv[1]);
+	const char *signame = rz_signal_to_string(signum);
+	if (!signame) {
+		RZ_LOG_ERROR("Invalid signal number\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(signame);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_number_handler(RzCore *core, int argc, const char **argv) {
+	int signum = rz_signal_from_string(argv[1]);
+	if (signum <= 0) {
+		RZ_LOG_ERROR("Invalid signal name\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%d\n", signum);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_signal_option_handler(RzCore *core, int argc, const char **argv) {
+	int signum = rz_num_math(core->num, argv[1]);
+	if (!strcmp(argv[2], "skip")) {
+		rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_SKIP);
+	} else if (!strcmp(argv[2], "reset")) {
+		// Reset the signal
+		rz_debug_signal_setup(core->dbg, signum, 0);
+	} else if (!strcmp(argv[2], "continue")) {
+		rz_debug_signal_setup(core->dbg, signum, RZ_DBG_SIGNAL_CONT);
+	} else {
+		RZ_LOG_ERROR("core: Invalid option: %s\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
 }

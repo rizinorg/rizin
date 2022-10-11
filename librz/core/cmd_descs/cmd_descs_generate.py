@@ -753,24 +753,39 @@ def handler2decl(cd, cd_type, handler_name, db_names):
     out = []
     if cd_type == CD_TYPE_ARGV and handler_name not in db_names:
         out.append(
-            "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);"
-            % (handler_name,)
+            '// "%s"\nRZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);'
+            % (
+                cd.name,
+                handler_name,
+            )
         )
         db_names.add(handler_name)
     if cd_type == CD_TYPE_ARGV_MODES and handler_name not in db_names:
         out.append(
-            "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);"
-            % (handler_name,)
+            '// "%s"\nRZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);'
+            % (
+                cd.name,
+                handler_name,
+            )
         )
         db_names.add(handler_name)
     if cd_type == CD_TYPE_ARGV_STATE and handler_name not in db_names:
         out.append(
-            "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);"
-            % (handler_name,)
+            '// "%s"\nRZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);'
+            % (
+                cd.name,
+                handler_name,
+            )
         )
         db_names.add(handler_name)
     if cd_type == CD_TYPE_OLDINPUT and handler_name not in db_names:
-        out.append("RZ_IPI int %s(void *data, const char *input);" % (handler_name,))
+        out.append(
+            '// "%s"\nRZ_IPI int %s(void *data, const char *input);'
+            % (
+                cd.name,
+                handler_name,
+            )
+        )
         db_names.add(handler_name)
 
     if cd.details_cb is not None and cd.details_cb not in db_names:

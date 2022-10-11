@@ -39,6 +39,8 @@ static const RzCmdDescDetail cw_details[2];
 static const RzCmdDescDetail cmd_debug_list_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[2];
+static const RzCmdDescDetail cmd_debug_esil_add_details[2];
+static const RzCmdDescDetail cmd_debug_signal_option_details[2];
 static const RzCmdDescDetail debug_reg_cond_details[4];
 static const RzCmdDescDetail dr_details[2];
 static const RzCmdDescDetail cmd_debug_inject_opcode_details[2];
@@ -321,6 +323,9 @@ static const RzCmdDescArg cmd_debug_descriptor_seek_args[3];
 static const RzCmdDescArg cmd_debug_descriptor_dup_args[3];
 static const RzCmdDescArg cmd_debug_descriptor_read_args[4];
 static const RzCmdDescArg cmd_debug_descriptor_write_args[4];
+static const RzCmdDescArg cmd_debug_esil_add_args[4];
+static const RzCmdDescArg cmd_debug_esil_step_args[2];
+static const RzCmdDescArg cmd_debug_esil_step_until_args[2];
 static const RzCmdDescArg cmd_debug_core_dump_generate_args[2];
 static const RzCmdDescArg cmd_debug_process_profile_args[2];
 static const RzCmdDescArg cmd_debug_step_args[2];
@@ -342,6 +347,10 @@ static const RzCmdDescArg cmd_debug_trace_esil_args[2];
 static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_trace_tag_args[2];
+static const RzCmdDescArg cmd_debug_signal_args[2];
+static const RzCmdDescArg cmd_debug_signal_name_args[2];
+static const RzCmdDescArg cmd_debug_signal_number_args[2];
+static const RzCmdDescArg cmd_debug_signal_option_args[3];
 static const RzCmdDescArg cmd_debug_handler_set_args[2];
 static const RzCmdDescArg cmd_debug_allocate_maps_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
@@ -522,6 +531,11 @@ static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
 static const RzCmdDescArg print_utf16be_args[2];
 static const RzCmdDescArg print_utf32be_args[2];
+static const RzCmdDescArg print_value_args[2];
+static const RzCmdDescArg print_value1_args[2];
+static const RzCmdDescArg print_value2_args[2];
+static const RzCmdDescArg print_value4_args[2];
+static const RzCmdDescArg print_value8_args[2];
 static const RzCmdDescArg print_hexdump_args[2];
 static const RzCmdDescArg print_hexdump_annotated_args[2];
 static const RzCmdDescArg print_op_analysis_color_map_args[2];
@@ -6405,7 +6419,7 @@ static const RzCmdDescHelp meta_var_stack_comment_list_help = {
 	.args = meta_var_stack_comment_list_args,
 };
 
-static const RzCmdDescHelp cmd_debug_help = {
+static const RzCmdDescHelp d_help = {
 	.summary = "Debugger commands",
 };
 static const RzCmdDescHelp db_help = {
@@ -7120,6 +7134,98 @@ static const RzCmdDescHelp cmd_debug_descriptor_write_help = {
 	.args = cmd_debug_descriptor_write_args,
 };
 
+static const RzCmdDescHelp de_help = {
+	.summary = "Manage ESIL watchpoints",
+};
+static const RzCmdDescDetailEntry cmd_debug_esil_add_Examples_detail_entries[] = {
+	{ .text = "de", .arg_str = "r reg rip", .comment = "Stop when reads RIP register" },
+	{ .text = "de", .arg_str = "rw mem ADDR", .comment = "Stop when read or write in ADDR" },
+	{ .text = "de", .arg_str = "w r rdx", .comment = "Stop when rdx register is modified" },
+	{ .text = "de", .arg_str = "x m FROM..TO", .comment = "Stop when rip in range" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_esil_add_details[] = {
+	{ .name = "Examples", .entries = cmd_debug_esil_add_Examples_detail_entries },
+	{ 0 },
+};
+static const char *cmd_debug_esil_add_kind_choices[] = { "reg", "mem", NULL };
+static const RzCmdDescArg cmd_debug_esil_add_args[] = {
+	{
+		.name = "perm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "kind",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.choices.choices = cmd_debug_esil_add_kind_choices,
+
+	},
+	{
+		.name = "expression",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_add_help = {
+	.summary = "Add ESIL watchpoint",
+	.details = cmd_debug_esil_add_details,
+	.args = cmd_debug_esil_add_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_remove_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_remove_help = {
+	.summary = "Remove all ESIL watchpoints",
+	.args = cmd_debug_esil_remove_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_list_help = {
+	.summary = "List all ESIL watchpoints",
+	.args = cmd_debug_esil_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_continue_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_continue_help = {
+	.summary = "Continue execution until matching expression",
+	.args = cmd_debug_esil_continue_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_step_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_step_help = {
+	.summary = "Step-in <N> instructions with ESIL",
+	.args = cmd_debug_esil_step_args,
+};
+
+static const RzCmdDescArg cmd_debug_esil_step_until_args[] = {
+	{
+		.name = "<address>",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_esil_step_until_help = {
+	.summary = "Step until specified <address>",
+	.args = cmd_debug_esil_step_until_args,
+};
+
 static const RzCmdDescArg cmd_debug_core_dump_generate_args[] = {
 	{
 		.name = "filename",
@@ -7590,6 +7696,89 @@ static const RzCmdDescArg debug_info_args[] = {
 static const RzCmdDescHelp debug_info_help = {
 	.summary = "Debug information",
 	.args = debug_info_args,
+};
+
+static const RzCmdDescHelp dk_help = {
+	.summary = "Debug signals management",
+};
+static const RzCmdDescArg cmd_debug_signal_args[] = {
+	{
+		.name = "signal",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_signal_help = {
+	.summary = "Send signal to the child",
+	.args = cmd_debug_signal_args,
+};
+
+static const RzCmdDescArg cmd_debug_signal_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_signal_list_help = {
+	.summary = "List all signal handlers of the child process",
+	.args = cmd_debug_signal_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_signal_name_args[] = {
+	{
+		.name = "signal",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_signal_name_help = {
+	.summary = "Resolve the name of signal given the number",
+	.args = cmd_debug_signal_name_args,
+};
+
+static const RzCmdDescArg cmd_debug_signal_number_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_signal_number_help = {
+	.summary = "Resolve the signal number given the name",
+	.args = cmd_debug_signal_number_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_signal_option_Signal_space_options_detail_entries[] = {
+	{ .text = "skip", .arg_str = NULL, .comment = "Do not enter into the signal handler" },
+	{ .text = "continue", .arg_str = NULL, .comment = "Enter into the signal handler" },
+	{ .text = "reset", .arg_str = NULL, .comment = "Remove all previously set signal options" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_signal_option_details[] = {
+	{ .name = "Signal options", .entries = cmd_debug_signal_option_Signal_space_options_detail_entries },
+	{ 0 },
+};
+static const char *cmd_debug_signal_option_option_choices[] = { "skip", "continue", "reset", NULL };
+static const RzCmdDescArg cmd_debug_signal_option_args[] = {
+	{
+		.name = "signal",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "option",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "reset",
+		.choices.choices = cmd_debug_signal_option_option_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_signal_option_help = {
+	.summary = "Set skip or continue options for a given signal",
+	.details = cmd_debug_signal_option_details,
+	.args = cmd_debug_signal_option_args,
 };
 
 static const RzCmdDescHelp dl_help = {
@@ -11876,6 +12065,60 @@ static const RzCmdDescHelp cmd_disassemble_summarize_block_help = {
 	.args = cmd_disassemble_summarize_block_args,
 };
 
+static const RzCmdDescHelp pF_help = {
+	.summary = "Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
+};
+static const RzCmdDescArg cmd_print_asn1_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_asn1_help = {
+	.summary = "Decode ASN.1 from current block",
+	.args = cmd_print_asn1_args,
+};
+
+static const RzCmdDescHelp cmd_print_protobuf_help = {
+	.summary = "Decode raw protobuf from current block",
+};
+static const RzCmdDescArg cmd_print_protobuf_standard_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_protobuf_standard_help = {
+	.summary = "Decode raw protobuf from current block",
+	.args = cmd_print_protobuf_standard_args,
+};
+
+static const RzCmdDescArg cmd_print_protobuf_verbose_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_protobuf_verbose_help = {
+	.summary = "Decode raw protobuf from current block (verbose)",
+	.args = cmd_print_protobuf_verbose_args,
+};
+
+static const RzCmdDescArg cmd_print_pkcs7_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_pkcs7_help = {
+	.summary = "Decode PKCS7 from current block",
+	.args = cmd_print_pkcs7_args,
+};
+
+static const RzCmdDescArg cmd_print_x509_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_x509_help = {
+	.summary = "Decode X.509 from current block",
+	.args = cmd_print_x509_args,
+};
+
+static const RzCmdDescArg cmd_print_axml_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_axml_help = {
+	.summary = "Decode Android Binary XML from current block",
+	.args = cmd_print_axml_args,
+};
+
 static const RzCmdDescHelp cmd_print_gadget_help = {
 	.summary = "Print gadgets",
 };
@@ -12127,6 +12370,79 @@ static const RzCmdDescArg print_utf32be_args[] = {
 static const RzCmdDescHelp print_utf32be_help = {
 	.summary = "Print buffer as a utf32be string",
 	.args = print_utf32be_args,
+};
+
+static const RzCmdDescHelp pv_help = {
+	.summary = "Print bytes based on current bitness and endianness",
+};
+static const RzCmdDescArg print_value_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value_help = {
+	.summary = "print bytes",
+	.args = print_value_args,
+};
+
+static const RzCmdDescArg print_value1_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value1_help = {
+	.summary = "print 1 byte",
+	.args = print_value1_args,
+};
+
+static const RzCmdDescArg print_value2_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value2_help = {
+	.summary = "print 2 bytes",
+	.args = print_value2_args,
+};
+
+static const RzCmdDescArg print_value4_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value4_help = {
+	.summary = "print 4 bytes",
+	.args = print_value4_args,
+};
+
+static const RzCmdDescArg print_value8_args[] = {
+	{
+		.name = "repeat",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_value8_help = {
+	.summary = "print 8 bytes",
+	.args = print_value8_args,
 };
 
 static const RzCmdDescHelp px_help = {
@@ -16748,9 +17064,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *meta_var_stack_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_stack_comment_list_handler, &meta_var_stack_comment_list_help);
 	rz_warn_if_fail(meta_var_stack_comment_list_cd);
 
-	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
-	rz_warn_if_fail(cmd_debug_cd);
-	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "db", rz_cmd_debug_add_bp_handler, &cmd_debug_add_bp_help, &db_help);
+	RzCmdDesc *d_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "d", NULL, NULL, &d_help);
+	rz_warn_if_fail(d_cd);
+	RzCmdDesc *db_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "db", rz_cmd_debug_add_bp_handler, &cmd_debug_add_bp_help, &db_help);
 	rz_warn_if_fail(db_cd);
 	RzCmdDesc *cmd_debug_list_bp_cd = rz_cmd_desc_argv_state_new(core->rcmd, db_cd, "dbl", RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_bp_handler, &cmd_debug_list_bp_help);
 	rz_warn_if_fail(cmd_debug_list_bp_cd);
@@ -16859,7 +17175,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_set_cond_bp_win_cd = rz_cmd_desc_argv_new(core->rcmd, db_cd, "dbW", rz_cmd_debug_set_cond_bp_win_handler, &cmd_debug_set_cond_bp_win_help);
 	rz_warn_if_fail(cmd_debug_set_cond_bp_win_cd);
 
-	RzCmdDesc *dc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dc", rz_cmd_debug_continue_execution_handler, &cmd_debug_continue_execution_help, &dc_help);
+	RzCmdDesc *dc_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dc", rz_cmd_debug_continue_execution_handler, &cmd_debug_continue_execution_help, &dc_help);
 	rz_warn_if_fail(dc_cd);
 	RzCmdDesc *cmd_debug_continue_back_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcb", rz_cmd_debug_continue_back_handler, &cmd_debug_continue_back_help);
 	rz_warn_if_fail(cmd_debug_continue_back_cd);
@@ -16894,7 +17210,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
 	rz_warn_if_fail(cmd_debug_continue_until_cd);
 
-	RzCmdDesc *dd_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dd", rz_cmd_debug_descriptor_open_handler, &cmd_debug_descriptor_open_help, &dd_help);
+	RzCmdDesc *dd_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dd", rz_cmd_debug_descriptor_open_handler, &cmd_debug_descriptor_open_help, &dd_help);
 	rz_warn_if_fail(dd_cd);
 	RzCmdDesc *cmd_debug_descriptor_close_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "dd-", rz_cmd_debug_descriptor_close_handler, &cmd_debug_descriptor_close_help);
 	rz_warn_if_fail(cmd_debug_descriptor_close_cd);
@@ -16915,10 +17231,27 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_descriptor_write_cd = rz_cmd_desc_argv_new(core->rcmd, dd_cd, "ddw", rz_cmd_debug_descriptor_write_handler, &cmd_debug_descriptor_write_help);
 	rz_warn_if_fail(cmd_debug_descriptor_write_cd);
 
-	RzCmdDesc *cmd_debug_core_dump_generate_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_cd, "dg", rz_cmd_debug_core_dump_generate_handler, &cmd_debug_core_dump_generate_help);
+	RzCmdDesc *de_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "de", rz_cmd_debug_esil_add_handler, &cmd_debug_esil_add_help, &de_help);
+	rz_warn_if_fail(de_cd);
+	RzCmdDesc *cmd_debug_esil_remove_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "de-*", rz_cmd_debug_esil_remove_handler, &cmd_debug_esil_remove_help);
+	rz_warn_if_fail(cmd_debug_esil_remove_cd);
+
+	RzCmdDesc *cmd_debug_esil_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, de_cd, "del", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_esil_list_handler, &cmd_debug_esil_list_help);
+	rz_warn_if_fail(cmd_debug_esil_list_cd);
+
+	RzCmdDesc *cmd_debug_esil_continue_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "dec", rz_cmd_debug_esil_continue_handler, &cmd_debug_esil_continue_help);
+	rz_warn_if_fail(cmd_debug_esil_continue_cd);
+
+	RzCmdDesc *cmd_debug_esil_step_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "des", rz_cmd_debug_esil_step_handler, &cmd_debug_esil_step_help);
+	rz_warn_if_fail(cmd_debug_esil_step_cd);
+
+	RzCmdDesc *cmd_debug_esil_step_until_cd = rz_cmd_desc_argv_new(core->rcmd, de_cd, "desu", rz_cmd_debug_esil_step_until_handler, &cmd_debug_esil_step_until_help);
+	rz_warn_if_fail(cmd_debug_esil_step_until_cd);
+
+	RzCmdDesc *cmd_debug_core_dump_generate_cd = rz_cmd_desc_argv_new(core->rcmd, d_cd, "dg", rz_cmd_debug_core_dump_generate_handler, &cmd_debug_core_dump_generate_help);
 	rz_warn_if_fail(cmd_debug_core_dump_generate_cd);
 
-	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "do", NULL, NULL, &do_help);
+	RzCmdDesc *do_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "do", NULL, NULL, &do_help);
 	rz_warn_if_fail(do_cd);
 	RzCmdDesc *cmd_debug_process_profile_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "dor", rz_cmd_debug_process_profile_handler, &cmd_debug_process_profile_help);
 	rz_warn_if_fail(cmd_debug_process_profile_cd);
@@ -16929,7 +17262,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_process_close_cd = rz_cmd_desc_argv_new(core->rcmd, do_cd, "doc", rz_cmd_debug_process_close_handler, &cmd_debug_process_close_help);
 	rz_warn_if_fail(cmd_debug_process_close_cd);
 
-	RzCmdDesc *ds_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step_handler, &cmd_debug_step_help, &ds_help);
+	RzCmdDesc *ds_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "ds", rz_cmd_debug_step_handler, &cmd_debug_step_help, &ds_help);
 	rz_warn_if_fail(ds_cd);
 	RzCmdDesc *cmd_debug_step_back_cd = rz_cmd_desc_argv_new(core->rcmd, ds_cd, "dsb", rz_cmd_debug_step_back_handler, &cmd_debug_step_back_help);
 	rz_warn_if_fail(cmd_debug_step_back_cd);
@@ -16969,7 +17302,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_step_until_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuf", rz_cmd_debug_step_until_flag_handler, &cmd_debug_step_until_flag_help);
 	rz_warn_if_fail(cmd_debug_step_until_flag_cd);
 
-	RzCmdDesc *dt_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dt", rz_cmd_debug_trace_handler, &cmd_debug_trace_help, &dt_help);
+	RzCmdDesc *dt_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dt", rz_cmd_debug_trace_handler, &cmd_debug_trace_help, &dt_help);
 	rz_warn_if_fail(dt_cd);
 	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
 	rz_warn_if_fail(cmd_debug_traces_cd);
@@ -17028,17 +17361,32 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_trace_tag_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtt", rz_cmd_debug_trace_tag_handler, &cmd_debug_trace_tag_help);
 	rz_warn_if_fail(cmd_debug_trace_tag_cd);
 
-	RzCmdDesc *debug_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_debug_cd, "di", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_info_handler, &debug_info_help);
+	RzCmdDesc *debug_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, d_cd, "di", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_info_handler, &debug_info_help);
 	rz_warn_if_fail(debug_info_cd);
 	rz_cmd_desc_set_default_mode(debug_info_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *dl_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dl", rz_cmd_debug_handler_set_handler, &cmd_debug_handler_set_help, &dl_help);
+	RzCmdDesc *dk_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dk", rz_cmd_debug_signal_handler, &cmd_debug_signal_help, &dk_help);
+	rz_warn_if_fail(dk_cd);
+	RzCmdDesc *cmd_debug_signal_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dk_cd, "dkl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_signal_list_handler, &cmd_debug_signal_list_help);
+	rz_warn_if_fail(cmd_debug_signal_list_cd);
+	rz_cmd_desc_set_default_mode(cmd_debug_signal_list_cd, RZ_OUTPUT_MODE_STANDARD);
+
+	RzCmdDesc *cmd_debug_signal_name_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dkn", rz_cmd_debug_signal_name_handler, &cmd_debug_signal_name_help);
+	rz_warn_if_fail(cmd_debug_signal_name_cd);
+
+	RzCmdDesc *cmd_debug_signal_number_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dkN", rz_cmd_debug_signal_number_handler, &cmd_debug_signal_number_help);
+	rz_warn_if_fail(cmd_debug_signal_number_cd);
+
+	RzCmdDesc *cmd_debug_signal_option_cd = rz_cmd_desc_argv_new(core->rcmd, dk_cd, "dko", rz_cmd_debug_signal_option_handler, &cmd_debug_signal_option_help);
+	rz_warn_if_fail(cmd_debug_signal_option_cd);
+
+	RzCmdDesc *dl_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dl", rz_cmd_debug_handler_set_handler, &cmd_debug_handler_set_help, &dl_help);
 	rz_warn_if_fail(dl_cd);
 	RzCmdDesc *cmd_debug_handler_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dl_cd, "dll", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_handler_list_handler, &cmd_debug_handler_list_help);
 	rz_warn_if_fail(cmd_debug_handler_list_cd);
 	rz_cmd_desc_set_default_mode(cmd_debug_handler_list_cd, RZ_OUTPUT_MODE_STANDARD);
 
-	RzCmdDesc *dm_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
+	RzCmdDesc *dm_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
 	rz_warn_if_fail(dm_cd);
 	RzCmdDesc *cmd_debug_allocate_maps_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm+", rz_cmd_debug_allocate_maps_handler, &cmd_debug_allocate_maps_help);
 	rz_warn_if_fail(cmd_debug_allocate_maps_cd);
@@ -17120,7 +17468,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
 
-	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
+	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
 	rz_warn_if_fail(dp_cd);
 	rz_cmd_desc_set_default_mode(dp_cd, RZ_OUTPUT_MODE_STANDARD);
 	RzCmdDesc *cmd_debug_pid_attachable_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, dp_cd, "dpl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_attachable_list_handler, &cmd_debug_pid_attachable_list_help);
@@ -17158,7 +17506,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_pid_thread_select_cd = rz_cmd_desc_argv_new(core->rcmd, dp_cd, "dpt=", rz_cmd_debug_pid_thread_select_handler, &cmd_debug_pid_thread_select_help);
 	rz_warn_if_fail(cmd_debug_pid_thread_select_cd);
 
-	RzCmdDesc *dr_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_regs_handler, &debug_regs_help, &dr_help);
+	RzCmdDesc *dr_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_debug_regs_handler, &debug_regs_help, &dr_help);
 	rz_warn_if_fail(dr_cd);
 	RzCmdDesc *debug_regs_columns_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "dr=", rz_debug_regs_columns_handler, &debug_regs_columns_help);
 	rz_warn_if_fail(debug_regs_columns_cd);
@@ -17237,15 +17585,15 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *debug_drx_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drx_cd, "drx-", rz_debug_drx_unset_handler, &debug_drx_unset_help);
 	rz_warn_if_fail(debug_drx_unset_cd);
 
-	RzCmdDesc *cmd_debug_wait_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_debug_cd, "dw", rz_cmd_debug_wait_handler, &cmd_debug_wait_help);
+	RzCmdDesc *cmd_debug_wait_cd = rz_cmd_desc_argv_new(core->rcmd, d_cd, "dw", rz_cmd_debug_wait_handler, &cmd_debug_wait_help);
 	rz_warn_if_fail(cmd_debug_wait_cd);
 
-	RzCmdDesc *dW_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dW", rz_cmd_debug_windows_list_handler, &cmd_debug_windows_list_help, &dW_help);
+	RzCmdDesc *dW_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dW", rz_cmd_debug_windows_list_handler, &cmd_debug_windows_list_help, &dW_help);
 	rz_warn_if_fail(dW_cd);
 	RzCmdDesc *cmd_debug_window_identify_cd = rz_cmd_desc_argv_new(core->rcmd, dW_cd, "dWi", rz_cmd_debug_window_identify_handler, &cmd_debug_window_identify_help);
 	rz_warn_if_fail(cmd_debug_window_identify_cd);
 
-	RzCmdDesc *dx_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dx", rz_cmd_debug_inject_opcode_handler, &cmd_debug_inject_opcode_help, &dx_help);
+	RzCmdDesc *dx_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dx", rz_cmd_debug_inject_opcode_handler, &cmd_debug_inject_opcode_help, &dx_help);
 	rz_warn_if_fail(dx_cd);
 	RzCmdDesc *cmd_debug_inject_assembly_cd = rz_cmd_desc_argv_new(core->rcmd, dx_cd, "dxa", rz_cmd_debug_inject_assembly_handler, &cmd_debug_inject_assembly_help);
 	rz_warn_if_fail(cmd_debug_inject_assembly_cd);
@@ -18026,6 +18374,25 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_disassemble_summarize_block_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_disassemble_summarize_cd, "pdsb", rz_cmd_disassemble_summarize_block_handler, &cmd_disassemble_summarize_block_help);
 	rz_warn_if_fail(cmd_disassemble_summarize_block_cd);
 
+	RzCmdDesc *pF_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pF", NULL, NULL, &pF_help);
+	rz_warn_if_fail(pF_cd);
+	RzCmdDesc *cmd_print_asn1_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pF_cd, "pFa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_asn1_handler, &cmd_print_asn1_help);
+	rz_warn_if_fail(cmd_print_asn1_cd);
+
+	RzCmdDesc *cmd_print_protobuf_cd = rz_cmd_desc_group_new(core->rcmd, pF_cd, "pFb", rz_cmd_print_protobuf_standard_handler, &cmd_print_protobuf_standard_help, &cmd_print_protobuf_help);
+	rz_warn_if_fail(cmd_print_protobuf_cd);
+	RzCmdDesc *cmd_print_protobuf_verbose_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_protobuf_cd, "pFbv", rz_cmd_print_protobuf_verbose_handler, &cmd_print_protobuf_verbose_help);
+	rz_warn_if_fail(cmd_print_protobuf_verbose_cd);
+
+	RzCmdDesc *cmd_print_pkcs7_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_pkcs7_handler, &cmd_print_pkcs7_help);
+	rz_warn_if_fail(cmd_print_pkcs7_cd);
+
+	RzCmdDesc *cmd_print_x509_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_x509_handler, &cmd_print_x509_help);
+	rz_warn_if_fail(cmd_print_x509_cd);
+
+	RzCmdDesc *cmd_print_axml_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFA", rz_cmd_print_axml_handler, &cmd_print_axml_help);
+	rz_warn_if_fail(cmd_print_axml_cd);
+
 	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
 	rz_warn_if_fail(cmd_print_gadget_cd);
 	RzCmdDesc *cmd_print_gadget_print_as_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pg*", rz_cmd_print_gadget_print_as_rizin_handler, &cmd_print_gadget_print_as_rizin_help);
@@ -18076,6 +18443,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_utf32be_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psM", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_utf32be_handler, &print_utf32be_help);
 	rz_warn_if_fail(print_utf32be_cd);
+
+	RzCmdDesc *pv_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value_handler, &print_value_help, &pv_help);
+	rz_warn_if_fail(pv_cd);
+	RzCmdDesc *print_value1_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv1", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value1_handler, &print_value1_help);
+	rz_warn_if_fail(print_value1_cd);
+
+	RzCmdDesc *print_value2_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv2", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value2_handler, &print_value2_help);
+	rz_warn_if_fail(print_value2_cd);
+
+	RzCmdDesc *print_value4_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv4", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value4_handler, &print_value4_help);
+	rz_warn_if_fail(print_value4_cd);
+
+	RzCmdDesc *print_value8_cd = rz_cmd_desc_argv_state_new(core->rcmd, pv_cd, "pv8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_print_value8_handler, &print_value8_help);
+	rz_warn_if_fail(print_value8_cd);
 
 	RzCmdDesc *px_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "px", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_hexdump_handler, &print_hexdump_help, &px_help);
 	rz_warn_if_fail(px_cd);

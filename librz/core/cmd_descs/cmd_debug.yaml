@@ -373,6 +373,67 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: len
             type: RZ_CMD_ARG_TYPE_NUM
+  - name: de
+    summary: Manage ESIL watchpoints
+    subcommands:
+      - name: de
+        summary: Add ESIL watchpoint
+        cname: cmd_debug_esil_add
+        args:
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: kind
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices:
+              - reg
+              - mem
+          - name: expression
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: de
+                arg_str: "r reg rip"
+                comment: Stop when reads RIP register
+              - text: de
+                arg_str: "rw mem ADDR"
+                comment: Stop when read or write in ADDR
+              - text: de
+                arg_str: "w r rdx"
+                comment: Stop when rdx register is modified
+              - text: de
+                arg_str: "x m FROM..TO"
+                comment: Stop when rip in range
+      - name: de-*
+        summary: Remove all ESIL watchpoints
+        cname: cmd_debug_esil_remove
+        args: []
+      - name: del
+        summary: List all ESIL watchpoints
+        cname: cmd_debug_esil_list
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: dec
+        summary: Continue execution until matching expression
+        cname: cmd_debug_esil_continue
+        args: []
+      - name: des
+        summary: Step-in <N> instructions with ESIL
+        cname: cmd_debug_esil_step
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: desu
+        summary: Step until specified <address>
+        cname: cmd_debug_esil_step_until
+        args:
+          - name: <address>
+            type: RZ_CMD_ARG_TYPE_RZNUM
   - name: dg
     summary: Generate core dump file
     cname: cmd_debug_core_dump_generate
@@ -625,6 +686,57 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
     default_mode: RZ_OUTPUT_MODE_STANDARD
     args: []
+  - name: dk
+    summary: Debug signals management
+    subcommands:
+      - name: dk
+        summary: Send signal to the child
+        cname: cmd_debug_signal
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dkl
+        summary: List all signal handlers of the child process
+        cname: cmd_debug_signal_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: dkn
+        summary: Resolve the name of signal given the number
+        cname: cmd_debug_signal_name
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dkN
+        summary: Resolve the signal number given the name
+        cname: cmd_debug_signal_number
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dko
+        summary: Set skip or continue options for a given signal
+        cname: cmd_debug_signal_option
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: option
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices: ["skip", "continue", "reset"]
+            default_value: "reset"
+        details:
+          - name: Signal options
+            entries:
+              - text: skip
+                comment: Do not enter into the signal handler
+              - text: continue
+                comment: Enter into the signal handler
+              - text: reset
+                comment: Remove all previously set signal options
   - name: dl
     summary: Debug handler
     subcommands:

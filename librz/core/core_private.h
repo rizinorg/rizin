@@ -23,6 +23,7 @@ RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off);
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
+RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state);
 
 RZ_IPI void rz_core_analysis_il_reinit(RzCore *core);
 RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
@@ -139,6 +140,7 @@ RZ_IPI void rz_core_debug_ri(RzCore *core);
 RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state);
+RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state);
 
 /* cfile.c */
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
