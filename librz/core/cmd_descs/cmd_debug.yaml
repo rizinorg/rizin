@@ -686,6 +686,57 @@ commands:
       - RZ_OUTPUT_MODE_QUIET
     default_mode: RZ_OUTPUT_MODE_STANDARD
     args: []
+  - name: dk
+    summary: Debug signals management
+    subcommands:
+      - name: dk
+        summary: Send signal to the child
+        cname: cmd_debug_signal
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dkl
+        summary: List all signal handlers of the child process
+        cname: cmd_debug_signal_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: dkn
+        summary: Resolve the name of signal given the number
+        cname: cmd_debug_signal_name
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dkN
+        summary: Resolve the signal number given the name
+        cname: cmd_debug_signal_number
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dko
+        summary: Set skip or continue options for a given signal
+        cname: cmd_debug_signal_option
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: option
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices: ["skip", "continue", "reset"]
+            default_value: "reset"
+        details:
+          - name: Signal options
+            entries:
+              - text: skip
+                comment: Do not enter into the signal handler
+              - text: continue
+                comment: Enter into the signal handler
+              - text: reset
+                comment: Remove all previously set signal options
   - name: dl
     summary: Debug handler
     subcommands:
