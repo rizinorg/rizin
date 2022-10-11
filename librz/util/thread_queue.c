@@ -120,7 +120,7 @@ RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *u
 /**
  * \brief  Removes an element from the queue, but does not awaits when empty.
  *
- * \param  queue The RzThreadQueue to push to
+ * \param  queue The RzThreadQueue to pop from
  * \param  tail  When true, pops the element from the tail, otherwise from the head
  *
  * \return On success returns a valid pointer, otherwise NULL
@@ -194,4 +194,26 @@ RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue) {
 	bool is_full = queue->max_size != RZ_THREAD_QUEUE_UNLIMITED && rz_list_length(queue->list) >= queue->max_size;
 	rz_th_lock_leave(queue->lock);
 	return is_full;
+}
+
+/**
+ * \brief  Removes all elements from the queue, but does not awaits when empty.
+ *
+ * \param  queue The RzThreadQueue to pop from
+ *
+ * \return On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzList /*<void *>*/ *rz_th_queue_pop_all(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, false);
+
+	RzList *list = rz_list_newf(queue->list->free);
+	if (!list) {
+		return NULL;
+	}
+
+	rz_th_lock_enter(queue->lock);
+	RzList *res = queue->list;
+	queue->list = list;
+	rz_th_lock_leave(queue->lock);
+	return res;
 }
