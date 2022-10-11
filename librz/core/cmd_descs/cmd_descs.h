@@ -1827,6 +1827,18 @@ RZ_IPI RzCmdStatus rz_print_operation_shr_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_print_operation_sub_handler(RzCore *core, int argc, const char **argv);
 // "pox"
 RZ_IPI RzCmdStatus rz_print_operation_xor_handler(RzCore *core, int argc, const char **argv);
+// "pr"
+RZ_IPI RzCmdStatus rz_cmd_print_raw_handler(RzCore *core, int argc, const char **argv);
+// "prc"
+RZ_IPI RzCmdStatus rz_cmd_print_raw_colors_handler(RzCore *core, int argc, const char **argv);
+// "prg"
+RZ_IPI RzCmdStatus rz_cmd_print_raw_gunzip_handler(RzCore *core, int argc, const char **argv);
+// "prgv"
+RZ_IPI RzCmdStatus rz_cmd_print_raw_gunzip_verbose_handler(RzCore *core, int argc, const char **argv);
+// "prx"
+RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, const char **argv);
+// "prz"
+RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv);
 // "psc"
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psw"
