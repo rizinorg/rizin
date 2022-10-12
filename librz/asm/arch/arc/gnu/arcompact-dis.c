@@ -344,6 +344,9 @@ my_sprintf(struct arcDisState *state, char *buf, const char *format, ...) {
 	int size, leading_zero, regMap[2];
 	va_list ap;
 
+	if (!buf) {
+		return;
+	}
 	va_start(ap, format);
 	bp = buf;
 	*bp = 0;
