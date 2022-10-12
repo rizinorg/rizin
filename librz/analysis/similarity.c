@@ -236,12 +236,6 @@ static RZ_OWN RzAnalysisMatchPair *match_pair_new(const void *pair_a, const void
 	return result;
 }
 
-static int comparePairAddresses(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
-	const RzAnalysisFunction *a = ma->pair_a;
-	const RzAnalysisFunction *b = mb->pair_a;
-	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
-}
-
 static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnalysis *analysis_a, RZ_NONNULL RzAnalysis *analysis_b, RZ_NONNULL RzList /*<void *>*/ *list_a, RZ_NONNULL RzList /*<void *>*/ *list_b, RzThreadFunction thread_cb, AllocateBuffer alloc_cb) {
 	size_t pool_size = 1;
 	RzListIter *iter;
@@ -273,9 +267,6 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	result->matches = rz_th_queue_pop_all(shared.matches);
 	result->unmatch_a = rz_th_queue_pop_all(shared.unmatch);
 	result->unmatch_b = unmatch_b;
-
-	rz_list_sort(result->matches, (RzListComparator)comparePairAddresses);
-	rz_list_sort(result->unmatch_a, analysis_a->columnSort);
 
 	// there is no need to sort unmatch_b because it is already sorted.
 	rz_list_foreach (result->matches, iter, pair) {

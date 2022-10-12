@@ -1809,6 +1809,16 @@ fail:
 	return match;
 }
 
+static int compareBlocks(const RzAnalysisBlock *a, const RzAnalysisBlock *b) {
+	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
+}
+
+static int comparePairBlocks(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
+	const RzAnalysisBlock *a = ma->pair_a;
+	const RzAnalysisBlock *b = mb->pair_a;
+	return compareBlocks(a, b);
+}
+
 /**
  * \brief Generate a json or graphviz dot output of the graph and its data.
  *
@@ -1850,6 +1860,10 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 		RZ_LOG_ERROR("rz-diff: cannot calculate matching basic blocks for function at 0x%" PFMT64x "\n", addr_a);
 		return;
 	}
+
+	rz_list_sort(result->matches, (RzListComparator)comparePairBlocks);
+	rz_list_sort(result->unmatch_a, (RzListComparator)compareBlocks);
+	rz_list_sort(result->unmatch_b, (RzListComparator)compareBlocks);
 
 	switch (mode) {
 	case DIFF_MODE_JSON:
@@ -2016,6 +2030,12 @@ static void diff_functions_result_as_table(RzCore *core_a, RzCore *core_b, RzAna
 	}
 }
 
+static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisMatchPair *mb) {
+	const RzAnalysisFunction *a = ma->pair_a;
+	const RzAnalysisFunction *b = mb->pair_a;
+	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
+}
+
 /**
  * \brief Performs function matching and shows the result in a table.
  *
@@ -2043,15 +2063,16 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 		return;
 	}
 
-	rz_list_sort(fcns_a, core_a->analysis->columnSort);
-	rz_list_sort(fcns_b, core_b->analysis->columnSort);
-
 	// calculate all the matches between the functions of the 2 different core files.
 	result = rz_analysis_match_functions_2(core_a->analysis, fcns_a, core_b->analysis, fcns_b);
 	if (!result) {
 		RZ_LOG_ERROR("rz-diff: cannot perform matching functions search\n");
 		goto fail;
 	}
+
+	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions);
+	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort);
+	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort);
 
 	if (mode == DIFF_MODE_JSON) {
 		pj = pj_new();
