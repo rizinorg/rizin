@@ -310,6 +310,49 @@ RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *res
 }
 
 static void *analysis_match_basic_blocks(SharedContext *shared) {
+	double max_similarity = 0.0, calc_similarity = 0.0;
+	const RzListIter *iter = NULL;
+	RzAnalysisBlock *bb_a = NULL, *bb_b = NULL, *match = NULL;
+	RzAnalysisMatchPair *pair = NULL;
+	ut32 size_a = 0, size_b = 0;
+	ut8 *buf_a = NULL, *buf_b = NULL;
+
+	while ((bb_a = rz_th_queue_pop(shared->queue, false))) {
+		if (!shared_context_alloc_a(shared, bb_a, &buf_a, &size_a)) {
+			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for block 0x%08" PFMT64x " (A)\n", bb_a->addr);
+			rz_th_queue_push(shared->unmatch, bb_a, true);
+			continue;
+		}
+
+		match = NULL;
+		max_similarity = 0.0;
+		rz_list_foreach (shared->list_b, iter, bb_b) {
+			if (!shared_context_alloc_b(shared, bb_b, &buf_b, &size_b)) {
+				RZ_LOG_ERROR("analysis_match: cannot allocate buffer for block 0x%08" PFMT64x " (B)\n", bb_b->addr);
+				continue;
+			}
+
+			calc_similarity = calculate_similarity(buf_a, size_a, buf_b, size_b);
+			free(buf_b);
+
+			if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD && calc_similarity <= max_similarity) {
+				continue;
+			}
+			max_similarity = calc_similarity;
+			match = bb_b;
+			if (max_similarity >= 1.0) {
+				break;
+			}
+		}
+		free(buf_a);
+
+		if (match && (pair = match_pair_new(bb_a, match, max_similarity))) {
+			rz_th_queue_push(shared->matches, pair, true);
+			continue;
+		}
+		rz_th_queue_push(shared->unmatch, bb_a, true);
+	}
+
 	return NULL;
 }
 
@@ -341,7 +384,7 @@ static bool function_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {
 static void *analysis_match_functions(SharedContext *shared) {
 	double max_similarity = 0.0, calc_similarity = 0.0;
 	const RzListIter *iter = NULL;
-	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL, *match_b = NULL;
+	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL, *match = NULL;
 	RzAnalysisMatchPair *pair = NULL;
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
@@ -353,7 +396,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 			continue;
 		}
 
-		match_b = NULL;
+		match = NULL;
 		max_similarity = 0.0;
 		rz_list_foreach (shared->list_b, iter, fcn_b) {
 			if (!shared_context_alloc_b(shared, fcn_b, &buf_b, &size_b)) {
@@ -366,20 +409,20 @@ static void *analysis_match_functions(SharedContext *shared) {
 
 			if (function_cmp(fcn_a, fcn_b)) {
 				max_similarity = calc_similarity;
-				match_b = fcn_b;
+				match = fcn_b;
 				break;
 			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD && calc_similarity <= max_similarity) {
 				continue;
 			}
 			max_similarity = calc_similarity;
-			match_b = fcn_b;
+			match = fcn_b;
 			if (max_similarity >= 1.0) {
 				break;
 			}
 		}
 		free(buf_a);
 
-		if (match_b && (pair = match_pair_new(fcn_a, match_b, max_similarity))) {
+		if (match && (pair = match_pair_new(fcn_a, match, max_similarity))) {
 			rz_th_queue_push(shared->matches, pair, true);
 			continue;
 		}
