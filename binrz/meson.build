@@ -7,7 +7,6 @@ else
   subdir('rz-bin')
   subdir('rizin')
   subdir('rz-gg')
-  subdir('rz-agent')
   subdir('rz-diff')
   subdir('rz-find')
   subdir('rz-sign')
@@ -18,7 +17,6 @@ if get_option('enable_rz_test')
 endif
 
 install_man(
-  'man/rz-agent.1',
   'man/rz-bin.1',
   'man/rizin.1',
   'man/rz-diff.1',

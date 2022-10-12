@@ -1,6 +1,5 @@
 rz_main_sources = [
   'main.c',
-  'rz-agent.c',
   'rz-bin.c',
   'rizin.c',
   'rz-diff.c',

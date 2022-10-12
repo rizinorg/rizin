@@ -36,7 +36,6 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv);
 RZ_API int rz_main_rz_bin(int argc, const char **argv);
 RZ_API int rz_main_rizin(int argc, const char **argv);
 RZ_API int rz_main_rz_asm(int argc, const char **argv);
-RZ_API int rz_main_rz_agent(int argc, const char **argv);
 RZ_API int rz_main_rz_find(int argc, const char **argv);
 RZ_API int rz_main_rz_diff(int argc, const char **argv);
 RZ_API int rz_main_rz_gg(int argc, const char **argv);
