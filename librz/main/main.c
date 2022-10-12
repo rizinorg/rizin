@@ -16,7 +16,6 @@ typedef struct main_entry_t {
 
 static MainEntry main_prog[] = {
 	{ "rizin", rz_main_rizin },
-	{ "rz-agent", rz_main_rz_agent },
 	{ "rz-asm", rz_main_rz_asm },
 	{ "rz-ax", rz_main_rz_ax },
 	{ "rz-bin", rz_main_rz_bin },
