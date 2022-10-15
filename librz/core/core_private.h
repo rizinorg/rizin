@@ -129,7 +129,6 @@ RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzRe
 RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items);
 
 /* cdebug.c */
-RZ_IPI void rz_core_debug_sync_bits(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
