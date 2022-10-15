@@ -98,6 +98,7 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 					}
 					break;
 				}
+				case DYLD_CHAINED_PTR_64:
 				case DYLD_CHAINED_PTR_64_OFFSET: {
 					stride = 4;
 					struct dyld_chained_ptr_64_bind *bind =
@@ -108,7 +109,10 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 						struct dyld_chained_ptr_64_rebase *p =
 							(struct dyld_chained_ptr_64_rebase *)&raw_ptr;
 						delta = p->next;
-						ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+						ptr_value = (((ut64)p->high8 << 56) | p->target);
+						if (segment->pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
+							ptr_value += obj->baddr;
+						}
 					}
 					break;
 				}

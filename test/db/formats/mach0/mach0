@@ -339,3 +339,19 @@ paddr      size   vaddr       vsize  align perm name
 0x00002000 0x1000 0x100002000 0x1000 0x0   -r-- LINKEDIT
 EOF
 RUN
+
+NAME=DYLD_CHAINED_PTR_64
+FILE=bins/mach0/ios-DYLD_CHAINED_PTR_64
+CMDS=<<EOF
+pv8 @ 0x100011538 # resolved pointer to "v32@0:8@16@24" string
+ic
+EOF
+EXPECT=<<EOF
+0x000000010000b672
+address     min         max         name                       super 
+---------------------------------------------------------------------
+0x1000115c0 0x100007f40 0x100008318 Chained_iOS.ViewController 
+0x100011608 0x1000083c4 0x1000089c4 Chained_iOS.AppDelegate    
+0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  
+EOF
+RUN
