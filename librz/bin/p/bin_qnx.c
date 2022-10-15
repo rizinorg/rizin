@@ -4,11 +4,33 @@
 #include "qnx/qnx.h"
 #include "../i/private.h"
 
-static int lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
+static bool read_lmf_header(lmf_header *lmfh, RzBuffer *buf, ut64 off) {
+	ut64 offset = off;
+	return (rz_buf_read_le16_offset(buf, &offset, &lmfh->version) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->cflags) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->cpu) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->fpu) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->code_index) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->stack_index) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->heap_index) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->argv_index) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->spare2[0]) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->spare2[1]) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->spare2[2]) &&
+		rz_buf_read_le16_offset(buf, &offset, &lmfh->spare2[3]) &&
+		rz_buf_read_le32_offset(buf, &offset, &lmfh->code_offset) &&
+		rz_buf_read_le32_offset(buf, &offset, &lmfh->stack_nbytes) &&
+		rz_buf_read_le32_offset(buf, &offset, &lmfh->heap_nbytes) &&
+		rz_buf_read_le32_offset(buf, &offset, &lmfh->image_base) &&
+		rz_buf_read_le32_offset(buf, &offset, &lmfh->spare3[0]) &&
+		rz_buf_read_le32_offset(buf, &offset, &lmfh->spare3[1]));
+}
+
+static bool lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
 	if (rz_buf_size(buf) < sizeof(lmf_header)) {
 		return false;
 	}
-	if (rz_buf_fread_at(buf, QNX_HEADER_ADDR, (ut8 *)lmfh, "iiiiiiiicccciiiicc", 1) < QNX_HDR_SIZE) {
+	if (!read_lmf_header(lmfh, buf, QNX_HEADER_ADDR)) {
 		return false;
 	}
 	sdb_set(db, "qnx.version", sdb_fmt("0x%xH", lmfh->version), 0);
@@ -32,7 +54,6 @@ static bool check_buffer(RzBuffer *buf) {
 	return r == sizeof(tmp) && !memcmp(tmp, QNX_MAGIC, sizeof(tmp));
 }
 
-// Frees the bin_obj of the binary file
 static void destroy(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	rz_list_free(qo->sections);
@@ -63,24 +84,39 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	if (!qo->kv) {
 		goto beach;
 	}
-	// Read the first record
-	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&lrec, "ccss", 1) < QNX_RECORD_SIZE) {
+	// Read the first lmf_record
+	ut64 off = 0;
+	if (!(rz_buf_read8_offset(buf, &off, &lrec.rec_type) &&
+		    rz_buf_read8_offset(buf, &off, &lrec.reserved) &&
+		    rz_buf_read_le16_offset(buf, &off, &lrec.data_nbytes) &&
+		    rz_buf_read_le16_offset(buf, &off, &lrec.spare))) {
 		goto beach;
 	}
 	// Load the header
-	lmf_header_load(&qo->lmfh, bf->buf, qo->kv);
+	if (!lmf_header_load(&qo->lmfh, bf->buf, qo->kv)) {
+		goto beach;
+	}
 	offset += lrec.data_nbytes;
 
 	for (;;) {
-		if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&lrec, "ccss", 1) < QNX_RECORD_SIZE) {
+		if (!(rz_buf_read8_offset(buf, &offset, &lrec.rec_type) &&
+			    rz_buf_read8_offset(buf, &offset, &lrec.reserved) &&
+			    rz_buf_read_le16_offset(buf, &offset, &lrec.data_nbytes) &&
+			    rz_buf_read_le16_offset(buf, &offset, &lrec.spare))) {
 			goto beach;
 		}
-		offset += sizeof(lmf_record);
 
 		if (lrec.rec_type == LMF_IMAGE_END_REC) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
-			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof(lmf_resource)) {
+			if (lrec.data_nbytes <= LMF_RESOURCE_SIZE) {
+				goto beach;
+			}
+			off = offset;
+			if (!(rz_buf_read_le16_offset(buf, &off, &lres.res_type) &&
+				    rz_buf_read_le16_offset(buf, &off, &lres.spare[0]) &&
+				    rz_buf_read_le16_offset(buf, &off, &lres.spare[1]) &&
+				    rz_buf_read_le16_offset(buf, &off, &lres.spare[2]))) {
 				goto beach;
 			}
 			RzBinSection *ptr = RZ_NEW0(RzBinSection);
@@ -89,7 +125,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			}
 			ptr->name = strdup("LMF_RESOURCE");
 			ptr->paddr = offset;
-			ptr->vsize = lrec.data_nbytes - sizeof(lmf_resource);
+			ptr->vsize = lrec.data_nbytes - LMF_RESOURCE_SIZE;
 			ptr->size = ptr->vsize;
 			rz_list_append(sections, ptr);
 
@@ -103,18 +139,23 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			map->vsize = ptr->vsize;
 			rz_list_append(maps, map);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
+			if (lrec.data_nbytes <= LMF_DATA_SIZE) {
+				goto beach;
+			}
 			RzBinSection *ptr = RZ_NEW0(RzBinSection);
 			if (!ptr) {
 				goto beach;
 			}
-			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+			off = offset;
+			if (!(rz_buf_read_le16_offset(buf, &off, &ldata.segment) &&
+				    rz_buf_read_le32_offset(buf, &off, &ldata.offset))) {
 				free(ptr);
 				goto beach;
 			}
 			ptr->name = strdup("LMF_LOAD");
 			ptr->paddr = offset;
 			ptr->vaddr = ldata.offset;
-			ptr->vsize = lrec.data_nbytes - sizeof(lmf_data);
+			ptr->vsize = lrec.data_nbytes - LMF_DATA_SIZE;
 			ptr->size = ptr->vsize;
 			rz_list_append(sections, ptr);
 
@@ -129,7 +170,12 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			rz_list_append(maps, map);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
-			if (!ptr || rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+			if (!ptr) {
+				goto beach;
+			}
+			off = offset;
+			if (!(rz_buf_read_le16_offset(buf, &off, &ldata.segment) &&
+				    rz_buf_read_le32_offset(buf, &off, &ldata.offset))) {
 				free(ptr);
 				goto beach;
 			}
@@ -138,7 +184,12 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			rz_list_append(fixups, ptr);
 		} else if (lrec.rec_type == LMF_8087_FIXUP_REC) {
 			RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
-			if (!ptr || rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
+			if (!ptr) {
+				goto beach;
+			}
+			off = offset;
+			if (!(rz_buf_read_le16_offset(buf, &off, &ldata.segment) &&
+				    rz_buf_read_le32_offset(buf, &off, &ldata.offset))) {
 				free(ptr);
 				goto beach;
 			}
@@ -146,7 +197,11 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 			ptr->type = 'F'; // "LMF_8087_FIXUP";
 			rz_list_append(fixups, ptr);
 		} else if (lrec.rec_type == LMF_RW_END_REC) {
-			rz_buf_fread_at(bf->buf, offset, (ut8 *)&qo->rwend, "si", 1);
+			off = offset;
+			if (!(rz_buf_read_le16_offset(buf, &off, &qo->rwend.verify) &&
+				    rz_buf_read_le32_offset(buf, &off, &qo->rwend.signature))) {
+				goto beach;
+			}
 		}
 		offset += lrec.data_nbytes;
 	}
