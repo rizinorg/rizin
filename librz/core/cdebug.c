@@ -181,15 +181,6 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
 	return true;
 }
 
-RZ_IPI void rz_core_debug_sync_bits(RzCore *core) {
-	if (rz_core_is_debug(core)) {
-		ut64 asm_bits = rz_config_get_i(core->config, "asm.bits");
-		if (asm_bits != core->dbg->bits * 8) {
-			rz_config_set_i(core->config, "asm.bits", core->dbg->bits * 8);
-		}
-	}
-}
-
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
@@ -965,7 +956,6 @@ RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
 	if ((pc < core->offset) || (pc > (core->offset + follow))) {
 		rz_core_seek_to_register(core, "PC", false);
 	}
-	rz_core_debug_sync_bits(core);
 }
 
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
