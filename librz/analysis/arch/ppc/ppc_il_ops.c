@@ -429,7 +429,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		rB = cs_reg_name(handle, INSOP(1).reg);
 		imm = INSOP(1).imm;
 	} else {
-		crX = cs_reg_name(handle, INSOP(0).imm);
+		crX = cs_reg_name(handle, INSOP(0).reg);
 		rA = cs_reg_name(handle, INSOP(1).reg);
 		rB = cs_reg_name(handle, INSOP(2).reg);
 		imm = INSOP(2).imm;
