@@ -24,7 +24,7 @@
 typedef ut8 *(*AllocateBuffer)(RzAnalysis *analysis, void *data, ut8 **buffer, ut32 *buf_sz);
 
 typedef struct shared_context_t {
-	const RzList *list_b;
+	const RzList /*<void *>*/ *list_b;
 	RzThreadQueue *queue;
 	RzThreadQueue *matches;
 	RzThreadQueue *unmatch;
