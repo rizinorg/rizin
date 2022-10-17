@@ -1108,10 +1108,10 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		}
 		if (core->parser->subrel && ds->analysis_op.refptr) {
 			if (core->parser->subrel_addr == 0) {
-				ut64 killme = UT64_MAX;
+				ut64 sub_address = UT64_MAX;
 				const int be = core->rasm->big_endian;
-				rz_io_read_i(core->io, ds->analysis_op.ptr, &killme, ds->analysis_op.refptr, be);
-				core->parser->subrel_addr = killme;
+				rz_io_read_i(core->io, ds->analysis_op.ptr, &sub_address, ds->analysis_op.refptr, be);
+				core->parser->subrel_addr = sub_address;
 			}
 		}
 		char *source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);

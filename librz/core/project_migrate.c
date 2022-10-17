@@ -168,7 +168,7 @@ RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res)
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
 	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
-	// Kill me in the future
+	// Remove me in the future
 	sdb_ns(analysis_db, "vars", true);
 #if 0
 	V3V4TypesCtx ctx = {
