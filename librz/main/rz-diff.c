@@ -1889,6 +1889,7 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 
 static void diff_function_as_json(const char *obj_name, RzAnalysisFunction *fcn, PJ *pj) {
 	if (!fcn) {
+		pj_knull(pj, obj_name);
 		return;
 	}
 	pj_ko(pj, obj_name); // "<obj_name>": { -- object end
@@ -1898,135 +1899,58 @@ static void diff_function_as_json(const char *obj_name, RzAnalysisFunction *fcn,
 	pj_end(pj); // } -- <obj_name> object end
 }
 
-static void diff_functions_result_as_json(RzAnalysisMatchResult *result, PJ *pj) {
-	RzAnalysisMatchPair *pair = NULL;
-	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
-	RzListIter *iter = NULL;
-
-	pj_a(pj); // [ -- list of pairs begin
-
-	// first the matching functions.
-	rz_list_foreach (result->matches, iter, pair) {
-		fcn_a = (RzAnalysisFunction *)pair->pair_a;
-		fcn_b = (RzAnalysisFunction *)pair->pair_b;
-		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
-			continue;
-		}
-
-		pj_o(pj); // { -- match object begin
-		pj_kd(pj, "similarity", pair->similarity);
-		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_TYPE_STR(pair->similarity));
-		diff_function_as_json("original", fcn_a, pj);
-		diff_function_as_json("modified", fcn_b, pj);
-		pj_end(pj); // } -- match object end
-	}
-
-	// then the unmatched functions from list A.
-	rz_list_foreach (result->unmatch_a, iter, fcn_a) {
-		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
-			continue;
-		}
-		pj_o(pj); // { -- match object begin
-		pj_kd(pj, "similarity", 0.0);
-		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
-		diff_function_as_json("original", fcn_a, pj);
-		pj_knull(pj, "modified");
-		pj_end(pj); // } -- match object end
-	}
-
-	// then the unmatched functions from list B.
-	rz_list_foreach (result->unmatch_b, iter, fcn_b) {
-		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
-			continue;
-		}
-		pj_o(pj); // { -- match object begin
-		pj_kd(pj, "similarity", 0.0);
-		pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_UNLIKE_STR);
-		pj_knull(pj, "original");
-		diff_function_as_json("modified", fcn_b, pj);
-		pj_end(pj); // } -- match object end
-	}
-
-	pj_end(pj); // ] -- list of pairs end
+static void diff_similarity_as_json(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b, double similarity, PJ *pj) {
+	pj_o(pj); // { -- match object begin
+	pj_kd(pj, "similarity", similarity);
+	pj_ks(pj, "type", RZ_ANALYSIS_SIMILARITY_TYPE_STR(similarity));
+	diff_function_as_json("original", fcn_a, pj);
+	diff_function_as_json("modified", fcn_b, pj);
+	pj_end(pj); // } -- match object end
 }
 
-static void diff_functions_result_as_table(RzCore *core_a, RzCore *core_b, RzAnalysisMatchResult *result, RzTable *table) {
+static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b, double similarity, bool color, bool no_name, RzTable *table) {
 	char tmp[128];
 	const char *type_s = NULL;
 	const char *type_n = NULL;
-	ut64 size_a = 0, size_b = 0;
-	RzAnalysisMatchPair *pair = NULL;
-	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
-	RzListIter *iter = NULL;
 
-	bool color = rz_config_get_i(core_a->config, "scr.color") > 0 || rz_config_get_i(core_b->config, "scr.color") > 0;
-	bool no_names = rz_config_get_b(core_a->config, "diff.bare") || rz_config_get_b(core_b->config, "diff.bare");
+	ut64 size_a = fcn_a ? rz_analysis_function_realsize(fcn_a) : 0;
+	ut64 size_b = fcn_b ? rz_analysis_function_realsize(fcn_b) : 0;
 
-	if (no_names) {
-		rz_table_set_columnsf(table, "nXssXn", "size0", "addr0", "type", "similarity", "addr1", "size1");
-	} else {
-		rz_table_set_columnsf(table, "snXssXns", "name0", "size0", "addr0", "type", "similarity", "addr1", "size1", "name1");
-	}
-
-	type_n = tmp;
-	// first the matching functions.
-	rz_list_foreach (result->matches, iter, pair) {
-		fcn_a = (RzAnalysisFunction *)pair->pair_a;
-		fcn_b = (RzAnalysisFunction *)pair->pair_b;
-		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
-			continue;
-		}
-		size_a = rz_analysis_function_realsize(fcn_a);
-		size_b = rz_analysis_function_realsize(fcn_b);
-
-		if (pair->similarity >= 1.0) {
-			rz_strf(tmp, color ? Color_BGREEN "%.6f" Color_RESET : "%.6f", pair->similarity);
+	if (similarity > 0.0 && fcn_a && fcn_b) {
+		type_n = tmp;
+		if (similarity >= 1.0) {
+			rz_strf(tmp, color ? Color_BGREEN "%.6f" Color_RESET : "%.6f", similarity);
 			type_s = color ? Color_BGREEN "COMPLETE" Color_RESET : "COMPLETE";
-		} else if (pair->similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
-			rz_strf(tmp, color ? Color_BYELLOW "%.6f" Color_RESET : "%.6f", pair->similarity);
+		} else if (similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
+			rz_strf(tmp, color ? Color_BYELLOW "%.6f" Color_RESET : "%.6f", similarity);
 			type_s = color ? Color_BYELLOW "PARTIAL " Color_RESET : "PARTIAL ";
 		} else {
-			rz_strf(tmp, color ? Color_BRED "%.4f" Color_RESET : "%.4f", pair->similarity);
+			rz_strf(tmp, color ? Color_BRED "%.4f" Color_RESET : "%.4f", similarity);
 			type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
 		}
-
-		if (no_names) {
-			rz_table_add_rowf(table, "nXssXn", size_a, fcn_a->addr, type_s, type_n, fcn_b->addr, fcn_b->addr, size_b);
-		} else {
-			rz_table_add_rowf(table, "snXssXns", fcn_a->name, size_a, fcn_a->addr, type_s, type_n, fcn_b->addr, size_b, fcn_b->name);
-		}
-	}
-
-	// then the unmatched functions from list A.
-	rz_list_foreach (result->unmatch_a, iter, fcn_a) {
-		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
-			continue;
-		}
-		size_a = rz_analysis_function_realsize(fcn_a);
-		size_b = 0;
+	} else {
 		type_n = color ? Color_BRED "0.000000" Color_RESET : "0.000000";
 		type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
-		if (no_names) {
+	}
+
+	if (no_name) {
+		if (fcn_a && fcn_b) {
+			rz_table_add_rowf(table, "nXssXn", size_a, fcn_a->addr, type_s, type_n, fcn_b->addr, fcn_b->addr, size_b);
+		} else if (fcn_a) {
 			rz_table_add_rowf(table, "nXssXn", size_a, fcn_a->addr, type_s, type_n, UT64_MAX, size_b);
 		} else {
-			rz_table_add_rowf(table, "snXssXns", fcn_a->name, size_a, fcn_a->addr, type_s, type_n, UT64_MAX, size_b, "");
+			rz_table_add_rowf(table, "nXssXn", size_a, UT64_MAX, type_s, type_n, size_b, fcn_b->addr);
 		}
+		return;
 	}
 
-	// then the unmatched functions from list B.
-	rz_list_foreach (result->unmatch_b, iter, fcn_b) {
-		if (fcn_b->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_b->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
-			continue;
-		}
-		size_a = 0;
-		size_b = rz_analysis_function_realsize(fcn_b);
-		type_n = color ? Color_BRED "0.000000" Color_RESET : "0.000000";
-		type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
-		if (no_names) {
-			rz_table_add_rowf(table, "nXssXn", size_a, UT64_MAX, type_s, type_n, size_b, fcn_b->addr);
-		} else {
-			rz_table_add_rowf(table, "snXssXns", "", size_a, UT64_MAX, type_s, type_n, fcn_b->addr, size_b, fcn_b->name);
-		}
+	// with names
+	if (fcn_a && fcn_b) {
+		rz_table_add_rowf(table, "snXssXns", fcn_a->name, size_a, fcn_a->addr, type_s, type_n, fcn_b->addr, size_b, fcn_b->name);
+	} else if (fcn_a) {
+		rz_table_add_rowf(table, "snXssXns", fcn_a->name, size_a, fcn_a->addr, type_s, type_n, UT64_MAX, size_b, "");
+	} else {
+		rz_table_add_rowf(table, "snXssXns", "", size_a, UT64_MAX, type_s, type_n, fcn_b->addr, size_b, fcn_b->name);
 	}
 }
 
@@ -2051,6 +1975,11 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 	PJ *pj = NULL;
 	RzTable *table = NULL;
 	RzAnalysisMatchResult *result = NULL;
+	RzAnalysisMatchPair *pair = NULL;
+	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
+	RzListIter *iter = NULL;
+	bool color = false, no_name = false;
+
 	fcns_a = rz_list_clone(rz_analysis_get_fcns(core_a->analysis));
 	if (rz_list_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
@@ -2080,18 +2009,65 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode) {
 			RZ_LOG_ERROR("rz-diff: cannot allocate json structure for function matching\n");
 			goto fail;
 		}
-		diff_functions_result_as_json(result, pj);
+		pj_a(pj); // [ -- list of pairs begin
 	} else {
+		color = rz_config_get_i(core_a->config, "scr.color") > 0 || rz_config_get_i(core_b->config, "scr.color") > 0;
+		no_name = rz_config_get_b(core_a->config, "diff.bare") || rz_config_get_b(core_b->config, "diff.bare");
+
 		table = rz_table_new();
 		if (!table) {
 			RZ_LOG_ERROR("rz-diff: cannot allocate table structure for function matching\n");
 			goto fail;
 		}
-		diff_functions_result_as_table(core_a, core_b, result, table);
+
+		if (no_name) {
+			rz_table_set_columnsf(table, "nXssXn", "size0", "addr0", "type", "similarity", "addr1", "size1");
+		} else {
+			rz_table_set_columnsf(table, "snXssXns", "name0", "size0", "addr0", "type", "similarity", "addr1", "size1", "name1");
+		}
+	}
+
+	// first the matching functions.
+	rz_list_foreach (result->matches, iter, pair) {
+		fcn_a = (RzAnalysisFunction *)pair->pair_a;
+		fcn_b = (RzAnalysisFunction *)pair->pair_b;
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
+		if (mode == DIFF_MODE_JSON) {
+			diff_similarity_as_json(fcn_a, fcn_b, pair->similarity, pj);
+		} else {
+			diff_similarity_as_table(fcn_a, fcn_b, pair->similarity, color, no_name, table);
+		}
+	}
+
+	// then the unmatched functions from list A.
+	rz_list_foreach (result->unmatch_a, iter, fcn_a) {
+		if (fcn_a->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_a->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
+		if (mode == DIFF_MODE_JSON) {
+			diff_similarity_as_json(fcn_a, NULL, 0.0, pj);
+		} else {
+			diff_similarity_as_table(fcn_a, NULL, 0.0, color, no_name, table);
+		}
+	}
+
+	// then the unmatched functions from list B.
+	rz_list_foreach (result->unmatch_b, iter, fcn_b) {
+		if (fcn_b->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn_b->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
+		}
+		if (mode == DIFF_MODE_JSON) {
+			diff_similarity_as_json(NULL, fcn_b, 0.0, pj);
+		} else {
+			diff_similarity_as_table(NULL, fcn_b, 0.0, color, no_name, table);
+		}
 	}
 
 	switch (mode) {
 	case DIFF_MODE_JSON:
+		pj_end(pj); // ] -- list of pairs end
 		output = pj_drain(pj);
 		rz_cons_printf("%s\n", output);
 		pj = NULL;
