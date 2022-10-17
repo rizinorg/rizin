@@ -157,68 +157,59 @@ static bool task_is_dead(RzIODesc *fd, int pid) {
 	return (kr != KERN_SUCCESS || !count);
 }
 
-static ut64 the_lower = UT64_MAX;
-
-static ut64 getNextValid(RzIO *io, RzIODesc *fd, ut64 addr) {
-	struct vm_region_submap_info_64 info;
-	vm_address_t address = MACH_VM_MIN_ADDRESS;
-	vm_size_t size = (vm_size_t)0;
-	vm_size_t osize = (vm_size_t)0;
-	natural_t depth = 0;
-	kern_return_t kr;
-	int tid = __get_pid(fd);
-	task_t task = pid_to_task(fd, tid);
-	ut64 lower = addr;
-#if __arm64__ || __aarch64__
-	size = osize = 16384; // acording to frida
-#else
-	size = osize = 4096;
-#endif
-	if (the_lower != UT64_MAX) {
-		return RZ_MAX(addr, the_lower);
-	}
-
-	for (;;) {
-		mach_msg_type_number_t info_count;
-		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+/**
+ * Find the readable range of memory in the task's vm with the lowest address
+ * greater than or equal to \p min_addr.
+ *
+ * \param size_out is set to the size of the found range, if one was found.
+ * \return the lowest address of the found range, always >= min_addr, or
+ *         UT64_MAX if none was found.
+ */
+static ut64 find_next_readable_region(task_t task, ut64 min_addr, ut64 *size_out) {
+	vm_address_t addr = min_addr;
+	while (true) {
+		vm_size_t size = (vm_size_t)0;
+		struct vm_region_submap_info_64 info;
+		mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
 		memset(&info, 0, sizeof(info));
-		kr = vm_region_recurse_64(task, &address, &size,
-			&depth, (vm_region_recurse_info_t)&info, &info_count);
+
+		// Choose a large depth value to make the recurse call descend as far
+		// as possible into submaps, because we only care about the regions
+		// actually backed by some data, which are the non-submap leaves.
+		natural_t depth = 2048;
+
+		kern_return_t kr = vm_region_recurse_64(task, &addr, &size, &depth,
+			(vm_region_recurse_info_t)&info, &info_count);
 		if (kr != KERN_SUCCESS) {
+			// Error or simply no more maps.
 			break;
 		}
-		if (lower == addr) {
-			lower = address;
+		if (!info.is_submap && (info.protection & VM_PROT_READ)) {
+			// Found a readable map.
+			// If min_addr is inside this map, addr will be less than it, so
+			// clamp it here:
+			ut64 ret = RZ_MAX(min_addr, addr);
+			*size_out = (addr + size) - ret;
+			return ret;
 		}
-		if (info.is_submap) {
-			depth++;
-			continue;
-		}
-		if (addr >= address && addr < address + size) {
-			return addr;
-		}
-		if (address < lower) {
-			lower = address;
-		}
-		if (size < 1) {
-			size = osize;
-		}
-		address += size;
-		size = 0;
+
+		// The found map is not readable for us.
+		// is_submap (checked above) can be true when either our selected depth
+		// does not reach fully to a non-submap leaf (unlikely), or when there
+		// is a submap that does not contain anything else, which we don't care
+		// about.
+
+		addr += size;
 	}
-	the_lower = lower;
-	return lower;
+	return UT64_MAX;
 }
 
 static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
-	vm_size_t size = 0;
-	int blen, err, copied = 0;
-	int blocksize = 32;
+	rz_return_val_if_fail(io && desc && buf && len >= 0, -1);
 	RzIODescData *dd = (RzIODescData *)desc->data;
-	if (!io || !desc || !buf || !dd) {
-		return -1;
-	}
-	if (dd->magic != rz_str_djb2_hash("mach")) {
+	rz_return_val_if_fail(dd, -1);
+	ut64 base_addr = io->off;
+	if (UT64_ADD_OVFCHK(base_addr, len)) {
 		return -1;
 	}
 	memset(buf, 0xff, len);
@@ -227,48 +218,34 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 	if (task_is_dead(desc, pid)) {
 		return -1;
 	}
-	if (pid == 0) {
-		if (io->off < 4096) {
-			return len;
-		}
-	}
-	copied = getNextValid(io, desc, io->off) - io->off;
-	if (copied < 0) {
-		copied = 0;
-	}
+
+	// We can't just directly read at random locations and expect unmapped or
+	// otherwise unreadable regions to be filled with 0xff. vm_read_overwrite
+	// would simply fail if such a region is inside the queried range. Instead,
+	// we manually search for readable regions inside our target range and fill
+	// our buffer piece by piece.
+	ut64 copied = 0;
 	while (copied < len) {
-		blen = RZ_MIN((len - copied), blocksize);
-		// blen = len;
-		err = vm_read_overwrite(task,
-			(ut64)io->off + copied, blen,
-			(pointer_t)buf + copied, &size);
-		switch (err) {
-		case KERN_PROTECTION_FAILURE:
-			// eprintf ("rz_io_mach_read: kern protection failure.\n");
-			break;
-		case KERN_INVALID_ADDRESS:
-			if (blocksize == 1) {
-				memset(buf + copied, 0xff, len - copied);
-				return size + copied;
-			}
-			blocksize = 1;
-			blen = 1;
-			buf[copied] = 0xff;
+		ut64 region_size;
+		ut64 region_addr = find_next_readable_region(task, base_addr + copied, &region_size);
+		if (region_addr == UT64_MAX || region_addr > base_addr + len) {
+			// no more readable regions in our target range
 			break;
 		}
-		if (err == -1 || size < 1) {
-			return -1;
+		// Skip unreadable (already filled with 0xff)...
+		copied += region_addr - (base_addr + copied);
+		// ...then read:
+		ut64 read_size = RZ_MIN(region_size, len - copied);
+		vm_size_t res_size = read_size;
+		kern_return_t kr = vm_read_overwrite(task,
+			region_addr, read_size,
+			(pointer_t)buf + (region_addr - base_addr), &res_size);
+		if (kr != KERN_SUCCESS) {
+			RZ_LOG_ERROR("Error while reading memory of process: %s\n",
+				rz_str_get_null(mach_error_string(kr)));
+			break;
 		}
-		if (size == 0) {
-			if (blocksize == 1) {
-				memset(buf + copied, 0xff, len - copied);
-				return len;
-			}
-			blocksize = 1;
-			blen = 1;
-			buf[copied] = 0xff;
-		}
-		copied += blen;
+		copied += read_size;
 	}
 	return len;
 }
