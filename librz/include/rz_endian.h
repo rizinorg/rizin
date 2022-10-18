@@ -502,6 +502,14 @@ static inline ut64 rz_read_ble64(const void *src, bool big_endian) {
 	return big_endian ? rz_read_be64(src) : rz_read_le64(src);
 }
 
+static inline float rz_read_ble_float(const void *src, bool big_endian) {
+	return big_endian ? rz_read_be_float(src) : rz_read_le_float(src);
+}
+
+static inline double rz_read_ble_double(const void *src, bool big_endian) {
+	return big_endian ? rz_read_be_double(src) : rz_read_le_double(src);
+}
+
 static inline ut16 rz_read_at_ble16(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be16(src, offset) : rz_read_at_le16(src, offset);
 }
@@ -512,6 +520,14 @@ static inline ut32 rz_read_at_ble32(const void *src, size_t offset, bool big_end
 
 static inline ut64 rz_read_at_ble64(const void *src, size_t offset, bool big_endian) {
 	return big_endian ? rz_read_at_be64(src, offset) : rz_read_at_le64(src, offset);
+}
+
+static inline float rz_read_at_ble_float(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? rz_read_at_be_float(src, offset) : rz_read_at_le_float(src, offset);
+}
+
+static inline double rz_read_at_ble_double(const void *src, size_t offset, bool big_endian) {
+	return big_endian ? rz_read_at_be_double(src, offset) : rz_read_at_le_double(src, offset);
 }
 
 static inline ut64 rz_read_ble(const void *src, bool big_endian, int size) {
