@@ -4277,14 +4277,14 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 						ds_print_str(ds, msg, len, refaddr);
 					}
 				} else if (!strcmp(kind, "invalid")) {
-					int *n = (int *)&refaddr;
+					st32 n = (st32)refaddr;
 					ut64 p = ds->analysis_op.val;
 					if (p == UT64_MAX || p == UT32_MAX) {
 						p = ds->analysis_op.ptr;
 					}
 					/* avoid double ; -1 */
 					if (p != UT64_MAX && p != UT32_MAX) {
-						if (*n > -0xfff && *n < 0xfff) {
+						if (n > -0xfff && n < 0xfff) {
 							if (!aligned) {
 								ds_begin_comment(ds);
 							}
