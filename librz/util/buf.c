@@ -87,9 +87,8 @@ static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
 	for (int i = 0; i < n; i++) {
 		int m = 1;
 		int tsize = 2;
-		bool bigendian = true;
-
 		for (int j = 0; fmt[j]; j++) {
+			bool bigendian = false;
 			switch (fmt[j]) {
 			case '0':
 			case '1':
@@ -105,66 +104,63 @@ static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
 					m = rz_num_get(NULL, &fmt[j]);
 				}
 				continue;
+			case 'S':
+				bigendian = true;
+				/* fall-thru */
 			case 's':
 				tsize = 2;
-				bigendian = false;
-				break;
-			case 'S':
-				tsize = 2;
-				bigendian = true;
-				break;
-			case 'i':
-				tsize = 4;
-				bigendian = false;
 				break;
 			case 'I':
-				tsize = 4;
 				bigendian = true;
-				break;
-			case 'l':
-				tsize = 8;
-				bigendian = false;
+				/* fall-thru */
+			case 'i':
+				tsize = 4;
 				break;
 			case 'L':
-				tsize = 8;
 				bigendian = true;
+				/* fall-thru */
+			case 'l':
+				tsize = 8;
 				break;
 			case 'c':
 				tsize = 1;
-				bigendian = false;
 				break;
-			default: return -1;
+			default:
+				return -1;
 			}
 
 			for (int k = 0; k < m; k++) {
 				ut8 tmp[sizeof(ut64)];
-				ut8 d1;
-				ut16 d2;
-				ut32 d3;
-				ut64 d4;
 				st64 r = rz_buf_read(src, tmp, tsize);
 				if (r < tsize) {
 					return -1;
 				}
 
-				switch (tsize) {
-				case 1:
-					d1 = rz_read_ble8(tmp);
-					r = rz_buf_write(dst, (ut8 *)&d1, 1);
-					break;
-				case 2:
-					d2 = rz_read_ble16(tmp, bigendian);
-					r = rz_buf_write(dst, (ut8 *)&d2, 2);
-					break;
-				case 4:
-					d3 = rz_read_ble32(tmp, bigendian);
-					r = rz_buf_write(dst, (ut8 *)&d3, 4);
-					break;
-				case 8:
-					d4 = rz_read_ble64(tmp, bigendian);
-					r = rz_buf_write(dst, (ut8 *)&d4, 8);
-					break;
+				if (bigendian != RZ_SYS_ENDIAN && tsize > 1) {
+					// just swap endianness if the host endianness
+					// is not the same and is not one byte
+					switch (tsize) {
+					case 2: {
+						ut16 value = rz_read_ble16(tmp, bigendian);
+						rz_write_ble16(tmp, value, RZ_SYS_ENDIAN);
+						break;
+					}
+					case 4: {
+						ut32 value = rz_read_ble32(tmp, bigendian);
+						rz_write_ble32(tmp, value, RZ_SYS_ENDIAN);
+						break;
+					}
+					case 8: {
+						ut64 value = rz_read_ble64(tmp, bigendian);
+						rz_write_ble64(tmp, value, RZ_SYS_ENDIAN);
+						break;
+					}
+					default:
+						return -1;
+					}
 				}
+				r = rz_buf_write(dst, tmp, tsize);
+
 				if (r < 0) {
 					return -1;
 				}
