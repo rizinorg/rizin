@@ -206,28 +206,13 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		unset_src = true;
 		break;
 	case 64:
-		if (reg->big_endian) {
-			rz_write_be64(src, value);
-		} else {
-			rz_write_le64(src, value);
-		}
-		break;
+		/* fall-thru */
 	case 32:
-		if (reg->big_endian) {
-			rz_write_be32(src, value);
-		} else {
-			rz_write_le32(src, value);
-		}
-		break;
+		/* fall-thru */
 	case 16:
-		if (reg->big_endian) {
-			rz_write_be16(src, value);
-		} else {
-			rz_write_le16(src, value);
-		}
-		break;
+		/* fall-thru */
 	case 8:
-		rz_write_ble8(src, (ut8)(value & UT8_MAX));
+		rz_write_ble(src, value, reg->big_endian, item->size);
 		break;
 	case 4: {
 		// Example: 4bit Register is located at bit 1 of a byte.
