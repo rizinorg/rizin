@@ -7,9 +7,9 @@
 
 static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size(b) > 4) {
-		ut32 buf;
-		rz_buf_read_at(b, 0, (ut8 *)&buf, sizeof(buf));
-		struct pyc_version version = get_pyc_version(buf);
+		ut32 magic = 0;
+		rz_buf_read_le32_at(b, 0, &magic);
+		struct pyc_version version = get_pyc_version(magic);
 		return version.magic != -1;
 	}
 	return false;
@@ -20,9 +20,9 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	if (!ctx) {
 		return false;
 	}
-	ut32 ver;
-	rz_buf_read_at(buf, 0, (ut8 *)&ver, sizeof(ver));
-	ctx->version = get_pyc_version(ver);
+	ut32 magic = 0;
+	rz_buf_read_le32_at(buf, 0, &magic);
+	ctx->version = get_pyc_version(magic);
 	obj->bin_obj = ctx;
 	return true;
 }
