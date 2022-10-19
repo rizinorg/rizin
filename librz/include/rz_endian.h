@@ -583,6 +583,14 @@ static inline void rz_write_ble(void *dst, ut64 val, bool big_endian, int size) 
 	}
 }
 
+static inline void rz_write_ble_float(void *src, float val, bool big_endian) {
+	big_endian ? rz_write_be_float(src, val) : rz_write_le_float(src, val);
+}
+
+static inline void rz_write_ble_double(void *src, double val, bool big_endian) {
+	big_endian ? rz_write_be_double(src, val) : rz_write_le_double(src, val);
+}
+
 /*swap*/
 static inline ut16 rz_swap_ut16(ut16 val) {
 	return (val << 8) | (val >> 8);
