@@ -338,7 +338,7 @@ static String *Pe_r_bin_pe_parse_string(RzBinPEObj *bin, PE_DWord *curAddr) {
 		if (*curAddr > bin->size || *curAddr + sizeof(ut16) > bin->size) {
 			goto out_error;
 		}
-		if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)&utf16_char, sizeof(ut16)) != sizeof(ut16)) {
+		if (!rz_buf_read_le16_at(bin->b, *curAddr, &utf16_char)) {
 			RZ_LOG_INFO("check (String szKey)\n");
 			goto out_error;
 		}
@@ -1381,7 +1381,7 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 			int i;
 			ut16 buf;
 			ut32 NameOffset = entry.u1.Name & 0x7fffffff;
-			if (rz_buf_read_at(bin->b, bin->resource_directory_offset + NameOffset, (ut8 *)&buf, sizeof(ut16)) != sizeof(ut16)) {
+			if (!rz_buf_read_le16_at(bin->b, bin->resource_directory_offset + NameOffset, &buf)) {
 				break;
 			}
 			ut16 resourceEntryNameLength = rz_read_le16(&buf);

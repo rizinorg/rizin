@@ -405,7 +405,7 @@ static cache_imgxtr_t *read_cache_imgextra(RzBuffer *cache_buf, cache_hdr_t *hdr
 static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	char file[256];
 	char *lib_name = file;
-	if (rz_buf_read_at(cache_buf, img->pathFileOffset, (ut8 *)&file, sizeof(file)) == sizeof(file)) {
+	if (rz_buf_read_at(cache_buf, img->pathFileOffset, (ut8 *)file, sizeof(file)) == sizeof(file)) {
 		file[255] = 0;
 		return strdup(lib_name);
 	}
@@ -423,7 +423,7 @@ static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, cache_h
 	}
 	for (size_t i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
-		if (rz_buf_read_at(cache_buf, img[i].pathFileOffset, (ut8 *)&file, sizeof(file)) != sizeof(file)) {
+		if (rz_buf_read_at(cache_buf, img[i].pathFileOffset, (ut8 *)file, sizeof(file)) != sizeof(file)) {
 			continue;
 		}
 		file[255] = 0;
