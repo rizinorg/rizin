@@ -475,6 +475,72 @@ commands:
         summary: Print all instructions at the current function
         cname: print_instructions_function
         args: []
+  - name: pp
+    summary: Print patterns
+    subcommands:
+      - name: pp0
+        summary: Print buffer filled with zeroes
+        cname: print_pattern0
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp1
+        summary: Print incremental byte pattern (honor lower bits of current address and block size)
+        cname: print_pattern1
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp2
+        summary: Print incremental word pattern
+        cname: print_pattern2
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp4
+        summary: Print incremental dword pattern
+        cname: print_pattern4
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp8
+        summary: Print incremental qword pattern
+        cname: print_pattern8
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppa
+        summary: Print Latin alphabet pattern
+        cname: print_pattern_latin_alphabet
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppd
+        summary: Print De Brujin pattern
+        cname: print_pattern_debrujin
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppf
+        summary: Print buffer filled with 0xFF
+        cname: print_pattern_oxff
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppn
+        summary: Print numeric pin pattern
+        cname: print_pattern_num
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: pt
     summary: Print timestamps
     cname: cmd_print_timestamp

@@ -527,6 +527,15 @@ static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
 static const RzCmdDescArg assembly_of_hex_alias_args[2];
 static const RzCmdDescArg print_instructions_args[2];
+static const RzCmdDescArg print_pattern0_args[2];
+static const RzCmdDescArg print_pattern1_args[2];
+static const RzCmdDescArg print_pattern2_args[2];
+static const RzCmdDescArg print_pattern4_args[2];
+static const RzCmdDescArg print_pattern8_args[2];
+static const RzCmdDescArg print_pattern_latin_alphabet_args[2];
+static const RzCmdDescArg print_pattern_debrujin_args[2];
+static const RzCmdDescArg print_pattern_oxff_args[2];
+static const RzCmdDescArg print_pattern_num_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
@@ -12296,6 +12305,144 @@ static const RzCmdDescHelp print_instructions_function_help = {
 	.args = print_instructions_function_args,
 };
 
+static const RzCmdDescHelp pp_help = {
+	.summary = "Print patterns",
+};
+static const RzCmdDescArg print_pattern0_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern0_help = {
+	.summary = "Print buffer filled with zeroes",
+	.args = print_pattern0_args,
+};
+
+static const RzCmdDescArg print_pattern1_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern1_help = {
+	.summary = "Print incremental byte pattern (honor lower bits of current address and block size)",
+	.args = print_pattern1_args,
+};
+
+static const RzCmdDescArg print_pattern2_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern2_help = {
+	.summary = "Print incremental word pattern",
+	.args = print_pattern2_args,
+};
+
+static const RzCmdDescArg print_pattern4_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern4_help = {
+	.summary = "Print incremental dword pattern",
+	.args = print_pattern4_args,
+};
+
+static const RzCmdDescArg print_pattern8_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern8_help = {
+	.summary = "Print incremental qword pattern",
+	.args = print_pattern8_args,
+};
+
+static const RzCmdDescArg print_pattern_latin_alphabet_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_latin_alphabet_help = {
+	.summary = "Print Latin alphabet pattern",
+	.args = print_pattern_latin_alphabet_args,
+};
+
+static const RzCmdDescArg print_pattern_debrujin_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_debrujin_help = {
+	.summary = "Print De Brujin pattern",
+	.args = print_pattern_debrujin_args,
+};
+
+static const RzCmdDescArg print_pattern_oxff_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_oxff_help = {
+	.summary = "Print buffer filled with 0xFF",
+	.args = print_pattern_oxff_args,
+};
+
+static const RzCmdDescArg print_pattern_num_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_num_help = {
+	.summary = "Print numeric pin pattern",
+	.args = print_pattern_num_args,
+};
+
 static const RzCmdDescHelp cmd_print_timestamp_help = {
 	.summary = "Print timestamps",
 };
@@ -18516,6 +18663,35 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(pI_cd);
 	RzCmdDesc *print_instructions_function_cd = rz_cmd_desc_argv_new(core->rcmd, pI_cd, "pIf", rz_print_instructions_function_handler, &print_instructions_function_help);
 	rz_warn_if_fail(print_instructions_function_cd);
+
+	RzCmdDesc *pp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pp", NULL, NULL, &pp_help);
+	rz_warn_if_fail(pp_cd);
+	RzCmdDesc *print_pattern0_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp0", rz_print_pattern0_handler, &print_pattern0_help);
+	rz_warn_if_fail(print_pattern0_cd);
+
+	RzCmdDesc *print_pattern1_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp1", rz_print_pattern1_handler, &print_pattern1_help);
+	rz_warn_if_fail(print_pattern1_cd);
+
+	RzCmdDesc *print_pattern2_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp2", rz_print_pattern2_handler, &print_pattern2_help);
+	rz_warn_if_fail(print_pattern2_cd);
+
+	RzCmdDesc *print_pattern4_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp4", rz_print_pattern4_handler, &print_pattern4_help);
+	rz_warn_if_fail(print_pattern4_cd);
+
+	RzCmdDesc *print_pattern8_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp8", rz_print_pattern8_handler, &print_pattern8_help);
+	rz_warn_if_fail(print_pattern8_cd);
+
+	RzCmdDesc *print_pattern_latin_alphabet_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppa", rz_print_pattern_latin_alphabet_handler, &print_pattern_latin_alphabet_help);
+	rz_warn_if_fail(print_pattern_latin_alphabet_cd);
+
+	RzCmdDesc *print_pattern_debrujin_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppd", rz_print_pattern_debrujin_handler, &print_pattern_debrujin_help);
+	rz_warn_if_fail(print_pattern_debrujin_cd);
+
+	RzCmdDesc *print_pattern_oxff_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppf", rz_print_pattern_oxff_handler, &print_pattern_oxff_help);
+	rz_warn_if_fail(print_pattern_oxff_cd);
+
+	RzCmdDesc *print_pattern_num_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppn", rz_print_pattern_num_handler, &print_pattern_num_help);
+	rz_warn_if_fail(print_pattern_num_cd);
 
 	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
 	rz_warn_if_fail(cmd_print_timestamp_cd);
