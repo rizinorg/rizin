@@ -76,15 +76,21 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 }
 
 static void cmd_write_bits(RzCore *core, int set, ut64 val) {
+	ut8 buf[sizeof(ut64)];
 	ut64 ret, orig;
 	// used to set/unset bit in current address
-	rz_io_read_at(core->io, core->offset, (ut8 *)&orig, sizeof(orig));
+	if (!rz_io_read_at(core->io, core->offset, buf, sizeof(buf))) {
+		cmd_write_fail(core);
+		return;
+	}
+	orig = rz_read_ble64(buf, core->rasm->big_endian);
 	if (set) {
 		ret = orig | val;
 	} else {
 		ret = orig & (~(val));
 	}
-	if (!rz_core_write_at(core, core->offset, (const ut8 *)&ret, sizeof(ret))) {
+	rz_write_ble64(buf, ret, core->rasm->big_endian);
+	if (!rz_core_write_at(core, core->offset, buf, sizeof(buf))) {
 		cmd_write_fail(core);
 	}
 }
