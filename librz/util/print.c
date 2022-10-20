@@ -859,7 +859,6 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					int left = len - i;
 					/* TODO: check step. it should be 2/4 for base(32) and 8 for
 					 *       base(64) */
-					ut64 n = 0;
 					size_t sz_n = (base == 64)
 						? sizeof(ut64)
 						: (step == 2)
@@ -871,7 +870,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 						j += sz_n;
 						continue;
 					}
-					rz_mem_swaporcopy((ut8 *)&n, buf + j, sz_n, p->big_endian);
+					ut64 n = rz_read_ble(buf + j, p->big_endian, sz_n * 8);
 					print_cursor_l(sb, p, j, sz_n);
 					// stub for colors
 					if (p->colorfor) {
