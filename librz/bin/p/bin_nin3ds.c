@@ -114,13 +114,12 @@ static char *n3ds_section_name(N3DSFirmSectHdr *shdr) {
 }
 
 static RzBinSection *n3ds_firm_section_new(N3DSFirmSectHdr *shdr) {
-	RzBinSection *section = NULL;
 	if (!shdr->size) {
 		/* when a section size is 0, then is not used. */
 		return NULL;
 	}
 
-	section = RZ_NEW0(RzBinSection);
+	RzBinSection *section = RZ_NEW0(RzBinSection);
 	if (!section) {
 		RZ_LOG_ERROR("bin: failed to allocate RzBinSection\n");
 		return NULL;
