@@ -361,7 +361,7 @@ RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_basic_blocks(RZ_NONNULL R
 	return analysis_match_result_new(analysis, analysis, fcn_a->bbs, fcn_b->bbs, (RzThreadFunction)analysis_match_basic_blocks, (AllocateBuffer)basic_block_data_new);
 }
 
-static bool function_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {
+static bool function_name_cmp(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b) {
 	if (RZ_STR_ISEMPTY(fcn_b->name) ||
 		!strncmp(fcn_b->name, "fcn.", strlen("fcn.")) ||
 		RZ_STR_ISEMPTY(fcn_a->name) ||
@@ -398,7 +398,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 			calc_similarity = calculate_similarity(buf_a, size_a, buf_b, size_b);
 			free(buf_b);
 
-			if (function_cmp(fcn_a, fcn_b)) {
+			if (function_name_cmp(fcn_a, fcn_b)) {
 				max_similarity = calc_similarity;
 				match = fcn_b;
 				break;
