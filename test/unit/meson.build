@@ -25,6 +25,7 @@ if get_option('enable_tests')
     'base64',
     'big',
     'bin_lines',
+    'bin_mach0',
     'bitmap',
     'bitvector',
     'buf',
