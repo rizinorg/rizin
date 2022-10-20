@@ -1077,7 +1077,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 			while (size--) {
 				// XXX this 999 is scary
 				updateAddr(buf + i, 9999, endian, &addr, NULL);
-				rz_mem_swaporcopy((ut8 *)&val_f, buf + i, sizeof(double), endian);
+				val_f = rz_read_at_ble_double(buf, i, endian);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%.17g", val_f);
 					if (elem == 0) {
