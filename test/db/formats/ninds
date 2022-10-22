@@ -1,16 +1,56 @@
-NAME=NDS: Open/iI
+NAME=Nintendo DS
 FILE=bins/nds/bin
-CMDS=iI~?Nintendo
+CMDS=iI ; omlt ; iS ; ie
 EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=NDS: Maps
-FILE=bins/nds/bin
-CMDS=oml
-EXPECT=<<EOF
- 1 fd: 3 +0x00000200 0x02000000 * 0x021b0863 r-x fmap.arm9
- 2 fd: 3 +0x001b0c00 0x037f8000 - 0x03805b4f r-x fmap.arm7
+arch     arm
+cpu      N/A
+baddr    0x02000000
+binsz    0x001ce803
+bintype  N/A
+bits     32
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Nintendo DS
+maxopsz  4
+minopsz  4
+os       nds
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+.-------------------------------------------------------------------------------------.
+| id | fd | pa       | pa_end   | size     | va        | va_end    | perm | name      |
+)-------------------------------------------------------------------------------------(
+| 1  | 3  | 0x200    | 0x1b0a64 | 0x1b0864 | 0x2000000 | 0x21b0864 | r-x  | fmap.arm9 |
+| 2  | 3  | 0x1b0c00 | 0x1be750 | 0xdb50   | 0x37f8000 | 0x3805b50 | r-x  | fmap.arm7 |
+`-------------------------------------------------------------------------------------'
+paddr      size     vaddr      vsize    align perm name type flags 
+-------------------------------------------------------------------
+0x00000200 0x1b0864 0x02000000 0x1b0864 0x0   -rwx arm9      
+0x001b0c00 0xdb50   0x037f8000 0xdb50   0x0   -rwx arm7      
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x02000000 0x00000200 ---------- ---------- program
+0x037f8000 0x001b0c00 ---------- ---------- program
 EOF
 RUN
