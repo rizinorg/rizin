@@ -548,7 +548,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				break;
 			case 32: {
 				ut32 ip32 = off;
-				ut8 *ip = (ut8 *)&ip32;
+				ut8 ip[sizeof(ut32)];
+				rz_write_le32(ip, ip32);
 				snprintf(num, sizeof(num), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 			} break;
 			case 80:
