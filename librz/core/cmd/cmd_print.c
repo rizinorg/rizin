@@ -6505,19 +6505,19 @@ static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput 
 			block += opts->size;
 			break;
 		case 2:
-			v = rz_read_ble16(block, core->print->big_endian);
+			v = rz_read_ble16(block, core->rasm->big_endian);
 			block += opts->size;
 			break;
 		case 4:
-			v = rz_read_ble32(block, core->print->big_endian);
+			v = rz_read_ble32(block, core->rasm->big_endian);
 			block += opts->size;
 			break;
 		case 8:
-			v = rz_read_ble64(block, core->print->big_endian);
+			v = rz_read_ble64(block, core->rasm->big_endian);
 			block += opts->size;
 			break;
 		case 0:
-			v = rz_read_ble64(block, core->print->big_endian);
+			v = rz_read_ble64(block, core->rasm->big_endian);
 			opts->size = core->rasm->bits / 8;
 			switch (core->rasm->bits / 8) {
 			case 1: v &= UT8_MAX; break;

@@ -75,7 +75,7 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 	return 1;
 }
 
-static void cmd_write_bits(RzCore *core, int set, ut64 val) {
+static void cmd_write_bits(RzCore *core, bool set, ut64 val) {
 	ut8 buf[sizeof(ut64)];
 	ut64 ret, orig;
 	// used to set/unset bit in current address
@@ -301,12 +301,12 @@ err:
 }
 
 RZ_IPI RzCmdStatus rz_write_bits_handler(RzCore *core, int argc, const char **argv) {
-	cmd_write_bits(core, 1, rz_num_math(core->num, argv[1]));
+	cmd_write_bits(core, true, rz_num_math(core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_write_unset_bits_handler(RzCore *core, int argc, const char **argv) {
-	cmd_write_bits(core, 0, rz_num_math(core->num, argv[1]));
+	cmd_write_bits(core, false, rz_num_math(core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 
