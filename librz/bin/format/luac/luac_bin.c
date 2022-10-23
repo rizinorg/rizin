@@ -198,15 +198,15 @@ static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry) {
 		if (entry->data_len < sizeof(double)) {
 			return NULL;
 		}
-		float_value = *(double *)entry->data;
+		float_value = rz_read_le_double(entry->data);
 		ret = rz_str_newf("%s_const_%f", proto_name, float_value);
 		break;
 	case LUA_VNUMINT:
 		rz_return_val_if_fail(entry->data, NULL);
-		if (entry->data_len < sizeof(int)) {
+		if (entry->data_len < sizeof(st32)) {
 			return NULL;
 		}
-		integer_value = *(int *)entry->data;
+		integer_value = (st32)rz_read_le32(entry->data);
 		ret = rz_str_newf("%s_const_%d", proto_name, integer_value);
 		break;
 	default:
