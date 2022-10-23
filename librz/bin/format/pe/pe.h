@@ -182,7 +182,7 @@ ut64 PE_(rz_bin_pe_get_clr_methoddef_offset)(RzBinPEObj *bin, Pe_image_metadata_
 int PE_(bin_pe_init_clr)(RzBinPEObj *bin);
 
 // pe_debug.c
-int PE_(rz_bin_pe_get_debug_data)(RzBinPEObj *bin, SDebugInfo *res);
+bool PE_(rz_bin_pe_get_debug_data)(RzBinPEObj *bin, SDebugInfo *res);
 
 // pe_exports.c
 int PE_(bin_pe_init_exports)(RzBinPEObj *bin);
