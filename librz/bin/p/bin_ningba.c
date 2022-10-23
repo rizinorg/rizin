@@ -87,7 +87,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ningba = {
 	.name = "ningba",
-	.desc = "Game Boy Advance format rz_bin plugin",
+	.desc = "Nintendo Gameboy Advance plugin",
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

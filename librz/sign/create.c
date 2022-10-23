@@ -216,6 +216,8 @@ static inline bool is_valid_mask_prelude(const ut8 *buffer, ut32 b_size) {
 static int flirt_compare_module(const RzFlirtModule *a, const RzFlirtModule *b) {
 	if (a->length != b->length) {
 		return a->length - b->length;
+	} else if (a->crc_length != b->crc_length) {
+		return a->crc_length - b->crc_length;
 	}
 	const RzFlirtFunction *af = rz_list_first(a->public_functions);
 	const RzFlirtFunction *bf = rz_list_first(b->public_functions);

@@ -771,7 +771,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 
 	ut64 offset = slideInfoOffset;
 	ut32 slide_info_version = 0;
-	if (rz_buf_read_at(cache_buf, offset, (ut8 *)&slide_info_version, 4) != 4) {
+	if (!rz_buf_read_le32_at(cache_buf, offset, &slide_info_version)) {
 		return NULL;
 	}
 

@@ -339,8 +339,8 @@ EXPECT=<<EOF
 0x004832a0 1378 flirt.mpn_impn_mul_n
 0x00483810 431 flirt.mpn_impn_sqr_n_basecase
 0x004839c0 1262 flirt.mpn_impn_sqr_n
-0x00483f50 173 flirt.mpn_sub_n_1
-0x00484000 235 flirt.mpn_addmul_1
+0x00483f50 173 flirt.mpn_sub_n
+0x00484000 235 flirt.mpn_submul_1
 0x004840f0 144 flirt.mpn_extract_double
 0x00484180 185 flirt.mpn_extract_long_double
 0x00484240 286 flirt.mpn_extract_float128
@@ -348,6 +348,7 @@ EXPECT=<<EOF
 0x00484c90 138 flirt.strerror
 0x00484d40 77 flirt.strsep
 0x00484f50 8 flirt.getpid
+0x00485150 7 flirt.profile_frequency
 0x00485160 416 flirt.dl_fixup
 0x00485300 544 flirt.dl_profile_fixup
 0x00485520 2 flirt.dl_call_pltexit
@@ -362,10 +363,11 @@ EXPECT=<<EOF
 0x00487960 101 flirt.dl_tlsdesc_resolve_hold_fixup
 0x004879d0 25 flirt.dl_unmap
 0x00487cf0 83 flirt.dl_addr_inside_object
-0x00487d50 173 flirt.mpn_sub_n
-0x00487e00 235 flirt.mpn_addmul_1_1
+0x00487d50 173 flirt.mpn_add_n
+0x00487e00 235 flirt.mpn_addmul_1
 0x004895d0 877 flirt.dl_init
 0x00489940 1806 flirt.dl_check_map_versions
+0x0048f380 5 flirt.bsd_getpgrp
 0x0048fa10 478 flirt.dl_iterate_phdr
 0x0048fbf0 73 flirt.nl_finddomain_subfreeres
 0x0048fc40 247 flirt.nl_unload_domain
@@ -382,7 +384,7 @@ aaa
 Fs bins/flirt/elf-x86/libcurl.a.pat
 EOF
 EXPECT=<<EOF
-Found 100 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pat
+Found 101 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pat
 EOF
 RUN
 
