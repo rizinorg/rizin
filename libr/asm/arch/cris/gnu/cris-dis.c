@@ -1392,7 +1392,7 @@ if (sregp) {
    length of the instruction, in bytes.  Prefix register names with `$' if
    WITH_REG_PREFIX.  */
 
-int
+static int
 print_insn_cris_generic (bfd_vma memaddr,
 			 disassemble_info *info,
 			 bfd_boolean with_reg_prefix)
