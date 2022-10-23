@@ -1996,11 +1996,9 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 					}
 				}
 			} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
-				ut8 buf[32];
-				ut32 *n32 = (ut32 *)buf;
-				ut64 *n64 = (ut64 *)buf;
+				ut8 buf[8];
 				if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-					ut64 n = (bits == 64) ? *n64 : *n32;
+					ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
 					rz_strbuf_appendf(s, "0x%" PFMT64x " ", n);
 				}
 			}
@@ -2041,11 +2039,9 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	}
 	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
-		ut8 buf[32];
-		ut32 *n32 = (ut32 *)buf;
-		ut64 *n64 = (ut64 *)buf;
+		ut8 buf[8];
 		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			ut64 n = (bits == 64) ? *n64 : *n32;
+			ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
 			if (n != value) {
 				if (pj) {
 					pj_k(pj, "ref");
