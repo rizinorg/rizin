@@ -56,7 +56,6 @@ static bool is_imported_symbol(struct coff_symbol *s) {
 
 static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, RzBinSymbol **sym) {
 	RzBinSymbol *ptr = *sym;
-	struct coff_symbol *s = NULL;
 	struct coff_scn_hdr *sc_hdr = NULL;
 	if (idx < 0 || idx > bin->hdr.f_nsyms) {
 		return false;
@@ -64,8 +63,8 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	if (!bin->symbols) {
 		return false;
 	}
-	s = &bin->symbols[idx];
-	char *coffname = rz_coff_symbol_name(bin, s);
+	struct coff_symbol *s = &bin->symbols[idx];
+	char *coffname = rz_coff_symbol_name(bin, (const ut8 *)&s->n_name);
 	if (!coffname) {
 		return false;
 	}
@@ -154,7 +153,7 @@ static RzBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
 		free(ptr);
 		return NULL;
 	}
-	char *coffname = rz_coff_symbol_name(bin, s);
+	char *coffname = rz_coff_symbol_name(bin, (const ut8 *)s->n_name);
 	if (!coffname) {
 		free(ptr);
 		return NULL;
@@ -238,7 +237,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			return ret;
 		}
 		struct coff_scn_hdr *hdr = &obj->scn_hdrs[i];
-		ptr->name = rz_coff_symbol_name(obj, hdr);
+		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)hdr->s_name);
 		ptr->psize = hdr->s_size;
 		ptr->vsize = hdr->s_size;
 		ptr->paddr = hdr->s_scnptr;
@@ -284,7 +283,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if (!ptr) {
 			return ret;
 		}
-		ptr->name = rz_coff_symbol_name(obj, &obj->scn_hdrs[i]);
+		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)&obj->scn_hdrs[i].s_name);
 		if (strstr(ptr->name, "data")) {
 			ptr->is_data = true;
 		}
