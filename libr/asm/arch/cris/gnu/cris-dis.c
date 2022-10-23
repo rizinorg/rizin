@@ -193,40 +193,52 @@ get_opcode_entry (unsigned int insn,
   /* Allocate and clear the opcode-table.  */
   if (!opc_table)
     {
-      opc_table = calloc (65536, sizeof (opc_table[0]));
+      opc_table = malloc (65536 * sizeof (opc_table[0]));
       if (!opc_table) {
 	      return NULL;
       }
 
+      memset (opc_table, 0, 65536 * sizeof (const struct cris_opcode *));
+
       dip_prefixes
-	= calloc (65536, sizeof (dip_prefixes[0]));
+	= malloc (65536 * sizeof (const struct cris_opcode **));
       if (!dip_prefixes) {
 	      return NULL;
       }
 
+      memset (dip_prefixes, 0, 65536 * sizeof (dip_prefixes[0]));
+
       bdapq_m1_prefixes
-	= calloc (65536, sizeof (bdapq_m1_prefixes[0]));
+	= malloc (65536 * sizeof (const struct cris_opcode **));
       if (!bdapq_m1_prefixes) {
 	      return NULL;
       }
 
+      memset (bdapq_m1_prefixes, 0, 65536 * sizeof (bdapq_m1_prefixes[0]));
+
       bdapq_m2_prefixes
-	= calloc (65536, sizeof (bdapq_m2_prefixes[0]));
+	= malloc (65536 * sizeof (const struct cris_opcode **));
       if (!bdapq_m2_prefixes) {
 	      return NULL;
       }
 
+      memset (bdapq_m2_prefixes, 0, 65536 * sizeof (bdapq_m2_prefixes[0]));
+
       bdapq_m4_prefixes
-	= calloc (65536, sizeof (bdapq_m4_prefixes[0]));
+	= malloc (65536 * sizeof (const struct cris_opcode **));
       if (!bdapq_m4_prefixes) {
 	      return NULL;
       }
 
+      memset (bdapq_m4_prefixes, 0, 65536 * sizeof (bdapq_m4_prefixes[0]));
+
       rest_prefixes
-	= calloc (65536, sizeof (rest_prefixes[0]));
+	= malloc (65536 * sizeof (const struct cris_opcode **));
       if (!rest_prefixes) {
 	      return NULL;
       }
+
+      memset (rest_prefixes, 0, 65536 * sizeof (rest_prefixes[0]));
     }
 
   /* Get the right table if this is a prefix.
