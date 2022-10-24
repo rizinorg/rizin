@@ -221,13 +221,14 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 
 static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	MiniDmpModule *module;
-	struct minidump_string *str;
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzList *ret, *pe_secs;
 	RzListIter *it, *it0;
 	RzBinSection *ptr;
+	ut8 str_buffer[512];
+	ut32 str_length = 0;
 
 	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
 
@@ -237,32 +238,36 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	// XXX: Never add here as they are covered above
 	rz_list_foreach (obj->streams.modules, it, module) {
-		ut8 b[512];
+		if (!rz_buf_read_le32_at(obj->b, module->module_name_rva, &str_length)) {
+			RZ_LOG_ERROR("bin: mdmp: failed to read utf16 string length\n");
+			break;
+		}
+
+		size_t ptr_name_len = (str_length + 2) * 4;
+		if (ptr_name_len < 1 || ptr_name_len > (sizeof(str_buffer) + sizeof(str_length))) {
+			continue;
+		} else if ((module->module_name_rva + sizeof(str_length) + str_length) > rz_buf_size(obj->b)) {
+			break;
+		}
+
+		memset(str_buffer, 0, sizeof(str_buffer));
+
+		// best effor reading
+		if (rz_buf_read_at(obj->b, module->module_name_rva + sizeof(str_length), str_buffer, sizeof(str_buffer)) < 2) {
+			RZ_LOG_ERROR("bin: mdmp: failed to read utf16 string\n");
+			break;
+		}
 
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		if (module->module_name_rva + sizeof(struct minidump_string) >= rz_buf_size(obj->b)) {
-			free(ptr);
-			continue;
-		}
-		rz_buf_read_at(obj->b, module->module_name_rva, (ut8 *)&b, sizeof(b));
-		str = (struct minidump_string *)b;
-		int ptr_name_len = (str->length + 2) * 4;
-		if (ptr_name_len < 1 || ptr_name_len > sizeof(b) - 4) {
-			continue;
-		}
-		if (module->module_name_rva + str->length > rz_buf_size(obj->b)) {
-			free(ptr);
-			break;
-		}
-		ptr->name = calloc(1, ptr_name_len);
+
+		ptr->name = RZ_NEWS0(char, ptr_name_len);
 		if (!ptr->name) {
 			free(ptr);
 			continue;
 		}
-		rz_str_utf16_to_utf8((ut8 *)ptr->name, str->length * 4,
-			(const ut8 *)(&str->buffer), str->length, obj->endian);
+		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);

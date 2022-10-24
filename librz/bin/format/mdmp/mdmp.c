@@ -132,7 +132,7 @@ void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj) {
 	return;
 }
 
-static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
+static void mdmp_obj_sdb_init(struct rz_bin_mdmp_obj *obj) {
 	/* TODO: Handle unions, can we? */
 	/* FIXME: Why are we getting struct missing errors when it finds them */
 	sdb_set(obj->kv, "mdmp_mem_state.cparse",
@@ -1223,7 +1223,7 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 }
 
 static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
-	rz_bin_mdmp_init_parsing(obj);
+	mdmp_obj_sdb_init(obj);
 
 	if (!rz_bin_mdmp_init_hdr(obj)) {
 		RZ_LOG_ERROR("Failed to initialise header\n");

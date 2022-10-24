@@ -462,13 +462,6 @@ typedef struct minidump_module_list_t {
 	ut32 number_of_modules;
 } MiniDmpModuleList;
 
-/* Describes a string. */
-RZ_PACKED(
-	struct minidump_string {
-		ut32 length;
-		ut16 *buffer;
-	});
-
 /* Contains processor and operating system information. */
 RZ_PACKED(
 	struct minidump_system_info {
