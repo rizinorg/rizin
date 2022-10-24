@@ -584,6 +584,20 @@ static bool mdmp_read_token_info_list(RzBuffer *b, ut64 *offset, MiniDmpTokenInf
 		rz_buf_read_le32_offset(b, offset, &list->element_header_size);
 }
 
+static bool mdmp_read_unloaded_module(RzBuffer *b, ut64 *offset, MiniDmpUnloadedModule *module) {
+	return rz_buf_read_le64_offset(b, offset, &module->base_of_image) &&
+		rz_buf_read_le32_offset(b, offset, &module->size_of_image) &&
+		rz_buf_read_le32_offset(b, offset, &module->check_sum) &&
+		rz_buf_read_le32_offset(b, offset, &module->time_date_stamp) &&
+		rz_buf_read_le32_offset(b, offset, &module->module_name_rva);
+}
+
+static bool mdmp_read_unloaded_module_list(RzBuffer *b, ut64 *offset, MiniDmpUnloadedModuleList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
@@ -594,7 +608,7 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 	MiniDmpThreadExList thread_ex_list = { 0 };
 	MiniDmpThreadInfoList thread_info_list = { 0 };
 	MiniDmpTokenInfoList token_info_list = { 0 };
-	struct minidump_unloaded_module_list unloaded_module_list = { 0 };
+	MiniDmpUnloadedModuleList unloaded_module_list = { 0 };
 	ut64 offset;
 	int i, r;
 
@@ -855,8 +869,8 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case UNLOADED_MODULE_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&unloaded_module_list, sizeof(unloaded_module_list));
-		if (r != sizeof(unloaded_module_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_unloaded_module_list(obj->b, &offset, &unloaded_module_list)) {
 			break;
 		}
 
@@ -870,18 +884,14 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 								     "SizeOfHeader SizeOfEntry NumberOfEntries",
 			0);
 
-		offset = entry->location.rva + sizeof(unloaded_module_list);
 		for (i = 0; i < unloaded_module_list.number_of_entries; i++) {
-			struct minidump_unloaded_module *module = RZ_NEW(struct minidump_unloaded_module);
-			if (!module) {
+			MiniDmpUnloadedModule *module = RZ_NEW(MiniDmpUnloadedModule);
+			if (!module ||
+				!mdmp_read_unloaded_module(obj->b, &offset, module) ||
+				!rz_list_append(obj->streams.unloaded_modules, module)) {
+				free(module);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)module, sizeof(*module));
-			if (r != sizeof(*module)) {
-				break;
-			}
-			rz_list_append(obj->streams.unloaded_modules, module);
-			offset += sizeof(*module);
 		}
 		break;
 	case MISC_INFO_STREAM:

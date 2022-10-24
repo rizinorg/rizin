@@ -558,23 +558,20 @@ typedef struct minidump_token_info_list_t {
 
 /* Contains information about a module that has been unloaded. This information
  * can help diagnose problems calling code that is no longer loaded. */
-RZ_PACKED(
-	struct minidump_unloaded_module {
-		ut64 base_of_image;
-		ut32 size_of_image;
-		ut32 check_sum;
-		ut32 time_date_stamp;
-		rva_t module_name_rva;
-	});
+typedef struct minidump_unloaded_module_t {
+	ut64 base_of_image;
+	ut32 size_of_image;
+	ut32 check_sum;
+	ut32 time_date_stamp;
+	rva_t module_name_rva;
+} MiniDmpUnloadedModule;
 
 /* Contains a list of unloaded modules. */
-RZ_PACKED(
-	struct minidump_unloaded_module_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut32 number_of_entries;
-		struct minidump_unloaded_module entries[];
-	});
+typedef struct minidump_unloaded_module_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+} MiniDmpUnloadedModuleList;
 
 /* Contains user-defined information stored in a data stream. */
 RZ_PACKED(
