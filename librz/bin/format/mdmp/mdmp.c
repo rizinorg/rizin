@@ -392,67 +392,15 @@ static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-static bool read_memory64_list(RzBuffer *b, ut64 addr, struct minidump_memory64_list *memory64_list) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	ut64 number_of_memory_ranges;
-	if (!rz_buf_read_le64(b, &number_of_memory_ranges)) {
-		return false;
-	}
-	memory64_list->number_of_memory_ranges = number_of_memory_ranges;
-
-	ut64 base_rva;
-	if (!rz_buf_read_le64(b, &base_rva)) {
-		return false;
-	}
-	memory64_list->base_rva = base_rva;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool read_desc(RzBuffer *b, ut64 addr, MiniDmpMemDescr64 *desc) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	ut64 start_of_memory_range;
-	if (!rz_buf_read_le64(b, &start_of_memory_range)) {
-		return false;
-	}
-	desc->start_of_memory_range = start_of_memory_range;
-
-	ut64 data_size;
-	if (!rz_buf_read_le64(b, &data_size)) {
-		return false;
-	}
-	desc->data_size = data_size;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return true;
-}
-
-#define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
 #define mdmp_read_module_list(b, addr, list)   rz_buf_read_le32_at(b, addr, list.number_of_modules)
 #define mdmp_read_thread_list(b, addr, list)   rz_buf_read_le32_at(b, addr, list.number_of_threads)
+#define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
+
+static bool mdmp_read_memory_list64(RzBuffer *b, ut64 addr, MiniDmpMemList64 *list) {
+	ut64 offset = addr;
+	return rz_buf_read_le64_offset(b, &offset, &list->number_of_memory_ranges) &&
+		rz_buf_read_le64_offset(b, &offset, &list->base_rva);
+}
 
 static bool mdmp_read_location_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpLocDescr32 *desc) {
 	return rz_buf_read_le32_offset(b, offset, &desc->data_size) &&
@@ -462,6 +410,11 @@ static bool mdmp_read_location_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpLo
 static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
 	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
 		mdmp_read_location_descriptor32(b, offset, &desc->memory);
+}
+
+static bool mdmp_read_memory_descriptor64(RzBuffer *b, ut64 *offset, MiniDmpMemDescr64 *desc) {
+	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
+		rz_buf_read_le64_offset(b, offset, &desc->data_size);
 }
 
 static bool mdmp_read_thread_ex(RzBuffer *b, ut64 *offset, MiniDmpThreadEx *th) {
@@ -556,7 +509,7 @@ static bool mdmp_read_handle_data_stream(RzBuffer *b, ut64 addr, MiniDmpHandleDa
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list;
 	MiniDmpMemList32 memory_list;
-	struct minidump_memory64_list memory64_list;
+	MiniDmpMemList64 memory64_list;
 	struct minidump_memory_info_list memory_info_list;
 	MiniDmpModuleList module_list;
 	MiniDmpThreadList thread_list;
@@ -734,7 +687,7 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		}
 		break;
 	case MEMORY_64_LIST_STREAM:
-		if (!read_memory64_list(obj->b, entry->location.rva, &memory64_list)) {
+		if (!mdmp_read_memory_list64(obj->b, entry->location.rva, &memory64_list)) {
 			break;
 		}
 
@@ -748,15 +701,15 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 			0);
 
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
-		offset = entry->location.rva + sizeof(memory64_list);
+		offset = entry->location.rva + sizeof(MiniDmpMemList64);
 		for (i = 0; i < memory64_list.number_of_memory_ranges; i++) {
 			MiniDmpMemDescr64 *desc = RZ_NEW(MiniDmpMemDescr64);
-			if (!desc) {
+			if (!desc ||
+				!mdmp_read_memory_descriptor64(obj->b, &offset, desc) ||
+				!rz_list_append(obj->streams.memories64.memories, desc)) {
+				free(desc);
 				break;
 			}
-			read_desc(obj->b, offset, desc);
-			rz_list_append(obj->streams.memories64.memories, desc);
-			offset += sizeof(*desc);
 		}
 		break;
 	case COMMENT_STREAM_A:

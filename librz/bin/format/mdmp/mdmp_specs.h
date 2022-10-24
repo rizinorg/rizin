@@ -355,11 +355,10 @@ typedef struct minidump_memory_list32_t {
 } MiniDmpMemList32;
 
 /* Contains a list of memory ranges. */
-RZ_PACKED(
-	struct minidump_memory64_list {
-		ut64 number_of_memory_ranges;
-		rva64_t base_rva;
-	});
+typedef struct minidump_memory64_list {
+	ut64 number_of_memory_ranges;
+	rva64_t base_rva;
+} MiniDmpMemList64;
 
 /* Describes a region of memory. */
 RZ_PACKED(
