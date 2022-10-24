@@ -355,33 +355,30 @@ typedef struct minidump_memory_list32_t {
 } MiniDmpMemList32;
 
 /* Contains a list of memory ranges. */
-typedef struct minidump_memory64_list {
+typedef struct minidump_memory_list64_t {
 	ut64 number_of_memory_ranges;
 	rva64_t base_rva;
 } MiniDmpMemList64;
 
 /* Describes a region of memory. */
-RZ_PACKED(
-	struct minidump_memory_info {
-		ut64 base_address;
-		ut64 allocation_base;
-		ut32 allocation_protect;
-		ut32 __alignment_1;
-		ut64 region_size;
-		ut32 state;
-		ut32 protect;
-		ut32 type;
-		ut32 __alignment_2;
-	});
+typedef struct minidump_memory_info_t {
+	ut64 base_address;
+	ut64 allocation_base;
+	ut32 allocation_protect;
+	ut32 __alignment_1;
+	ut64 region_size;
+	ut32 state;
+	ut32 protect;
+	ut32 type;
+	ut32 __alignment_2;
+} MiniDmpMemInfo;
 
 /* Contains a list of memory regions. */
-RZ_PACKED(
-	struct minidump_memory_info_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut64 number_of_entries;
-		struct minidump_memory_info entries[];
-	});
+typedef struct minidump_memory_info_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut64 number_of_entries;
+} MiniDmpMemInfoList;
 
 /* Contains a variety of information. */
 RZ_PACKED(
@@ -676,7 +673,7 @@ RZ_PACKED(
 		};
 
 		struct {
-			struct minidump_memory_info vm_region;
+			MiniDmpMemInfo vm_region;
 			ut8 /*bool*/ should_continue;
 		};
 

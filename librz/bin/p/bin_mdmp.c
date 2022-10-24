@@ -306,7 +306,7 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	MiniDmpLocDescr32 *location = NULL;
 	MiniDmpMemDescr32 *module;
 	MiniDmpMemDescr64 *module64;
-	struct minidump_memory_info *mem_info;
+	MiniDmpMemInfo *mem_info;
 	struct rz_bin_mdmp_obj *obj;
 	RzList *ret;
 	RzListIter *it;

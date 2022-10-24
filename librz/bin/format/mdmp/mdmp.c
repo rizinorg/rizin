@@ -27,8 +27,8 @@ ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
 	return paddr;
 }
 
-struct minidump_memory_info *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
-	struct minidump_memory_info *mem_info;
+MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
+	MiniDmpMemInfo *mem_info;
 	RzListIter *it;
 
 	if (!obj) {
@@ -45,7 +45,7 @@ struct minidump_memory_info *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *ob
 }
 
 ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
-	struct minidump_memory_info *mem_info;
+	MiniDmpMemInfo *mem_info;
 
 	if (!(mem_info = rz_bin_mdmp_get_mem_info(obj, vaddr))) {
 		/* if there is no mem info in the dump, assume default permission */
@@ -506,17 +506,35 @@ static bool mdmp_read_handle_data_stream(RzBuffer *b, ut64 addr, MiniDmpHandleDa
 		rz_buf_read_le32_offset(b, &offset, &stream->reserved);
 }
 
+static bool mdmp_read_memory_info_list(RzBuffer *b, ut64 *offset, MiniDmpMemInfoList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le64_offset(b, offset, &list->number_of_entries);
+}
+
+static bool mdmp_read_memory_info(RzBuffer *b, ut64 *offset, MiniDmpMemInfo *info) {
+	return rz_buf_read_le64_offset(b, offset, &info->base_address) &&
+		rz_buf_read_le64_offset(b, offset, &info->allocation_base) &&
+		rz_buf_read_le32_offset(b, offset, &info->allocation_protect) &&
+		rz_buf_read_le32_offset(b, offset, &info->__alignment_1) &&
+		rz_buf_read_le64_offset(b, offset, &info->region_size) &&
+		rz_buf_read_le32_offset(b, offset, &info->state) &&
+		rz_buf_read_le32_offset(b, offset, &info->protect) &&
+		rz_buf_read_le32_offset(b, offset, &info->type) &&
+		rz_buf_read_le32_offset(b, offset, &info->__alignment_2);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
-	struct minidump_handle_operation_list handle_operation_list;
-	MiniDmpMemList32 memory_list;
-	MiniDmpMemList64 memory64_list;
-	struct minidump_memory_info_list memory_info_list;
-	MiniDmpModuleList module_list;
-	MiniDmpThreadList thread_list;
-	MiniDmpThreadExList thread_ex_list;
-	struct minidump_thread_info_list thread_info_list;
-	struct minidump_token_info_list token_info_list;
-	struct minidump_unloaded_module_list unloaded_module_list;
+	struct minidump_handle_operation_list handle_operation_list = { 0 };
+	MiniDmpMemList32 memory_list = { 0 };
+	MiniDmpMemList64 memory64_list = { 0 };
+	MiniDmpMemInfoList memory_info_list = { 0 };
+	MiniDmpModuleList module_list = { 0 };
+	MiniDmpThreadList thread_list = { 0 };
+	MiniDmpThreadExList thread_ex_list = { 0 };
+	struct minidump_thread_info_list thread_info_list = { 0 };
+	struct minidump_token_info_list token_info_list = { 0 };
+	struct minidump_unloaded_module_list unloaded_module_list = { 0 };
 	ut64 offset;
 	int i, r;
 
@@ -833,8 +851,8 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 
 		break;
 	case MEMORY_INFO_LIST_STREAM:
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&memory_info_list, sizeof(memory_info_list));
-		if (r != sizeof(memory_info_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_memory_info_list(obj->b, &offset, &memory_info_list)) {
 			break;
 		}
 
@@ -852,18 +870,14 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 				memory_info_list.number_of_entries),
 			0);
 
-		offset = entry->location.rva + sizeof(memory_info_list);
 		for (i = 0; i < memory_info_list.number_of_entries; i++) {
-			struct minidump_memory_info *info = RZ_NEW(struct minidump_memory_info);
-			if (!info) {
+			MiniDmpMemInfo *info = RZ_NEW(MiniDmpMemInfo);
+			if (!info ||
+				!mdmp_read_memory_info(obj->b, &offset, info) ||
+				!rz_list_append(obj->streams.memory_infos, info)) {
+				free(info);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)info, sizeof(*info));
-			if (r != sizeof(*info)) {
-				break;
-			}
-			rz_list_append(obj->streams.memory_infos, info);
-			offset += sizeof(*info);
 		}
 		break;
 	case THREAD_INFO_LIST_STREAM:

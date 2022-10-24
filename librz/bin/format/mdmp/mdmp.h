@@ -62,6 +62,6 @@ struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RzBuffer *buf);
 void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj);
 ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
 ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
-struct minidump_memory_info *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
+MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
 
 #endif /* MDMP_H */
