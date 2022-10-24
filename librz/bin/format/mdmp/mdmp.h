@@ -25,7 +25,7 @@ struct rz_bin_mdmp_obj {
 		MiniDmpExcStream *exception;
 		MiniDmpFuncTableStream *function_table;
 		MiniDmpHandleDataStream *handle_data;
-		struct minidump_system_info *system_info;
+		MiniDmpSysInfo *system_info;
 
 		union {
 			MiniDmpMiscInfo *misc_info_1;

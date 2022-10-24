@@ -445,46 +445,45 @@ typedef struct minidump_module_list_t {
 } MiniDmpModuleList;
 
 /* Contains processor and operating system information. */
-RZ_PACKED(
-	struct minidump_system_info {
-		ut16 processor_architecture;
-		ut16 processor_level;
-		ut16 processor_revision;
+typedef struct minidump_system_info_t {
+	ut16 processor_architecture;
+	ut16 processor_level;
+	ut16 processor_revision;
 
-		union {
-			ut16 reserved_0;
-			struct {
-				ut8 number_of_processors;
-				ut8 product_type;
-			};
+	union {
+		ut16 reserved_0;
+		struct {
+			ut8 number_of_processors;
+			ut8 product_type;
 		};
+	};
 
-		ut32 major_version;
-		ut32 minor_version;
-		ut32 build_number;
-		ut32 platform_id;
-		rva_t csd_version_rva;
+	ut32 major_version;
+	ut32 minor_version;
+	ut32 build_number;
+	ut32 platform_id;
+	rva_t csd_version_rva;
 
-		union {
-			ut32 reserved_1;
-			struct {
-				ut16 suite_mask;
-				ut16 reserved_2;
-			};
+	union {
+		ut32 reserved_1;
+		struct {
+			ut16 suite_mask;
+			ut16 reserved_2;
 		};
+	};
 
-		union {
-			struct {
-				ut32 vendor_id[3];
-				ut32 version_information;
-				ut32 feature_information;
-				ut32 amd_extended_cpu_features;
-			} x86_cpu_info;
-			struct {
-				ut64 processor_features[2];
-			} other_cpu_info;
-		} cpu;
-	});
+	union {
+		struct {
+			ut32 vendor_id[3];
+			ut32 version_information;
+			ut32 feature_information;
+			ut32 amd_extended_cpu_features;
+		} x86_cpu_info;
+		struct {
+			ut64 processor_features[2];
+		} other_cpu_info;
+	} cpu;
+} MiniDmpSysInfo;
 
 /* Contains information for a specific thread. */
 typedef struct minidump_thread_t {

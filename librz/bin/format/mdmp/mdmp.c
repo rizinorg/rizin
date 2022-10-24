@@ -534,6 +534,24 @@ static bool mdmp_read_misc_info(RzBuffer *b, ut64 addr, MiniDmpMiscInfo *info) {
 		rz_buf_read_le32_offset(b, &offset, &info->process_kernel_time);
 }
 
+static bool mdmp_read_system_info(RzBuffer *b, ut64 addr, MiniDmpSysInfo *info) {
+	ut64 offset = addr;
+
+	return rz_buf_read_le16_offset(b, &offset, &info->processor_architecture) &&
+		rz_buf_read_le16_offset(b, &offset, &info->processor_level) &&
+		rz_buf_read_le16_offset(b, &offset, &info->processor_revision) &&
+		rz_buf_read8_offset(b, &offset, &info->number_of_processors) &&
+		rz_buf_read8_offset(b, &offset, &info->product_type) &&
+		rz_buf_read_le32_offset(b, &offset, &info->major_version) &&
+		rz_buf_read_le32_offset(b, &offset, &info->minor_version) &&
+		rz_buf_read_le32_offset(b, &offset, &info->build_number) &&
+		rz_buf_read_le32_offset(b, &offset, &info->platform_id) &&
+		rz_buf_read_le32_offset(b, &offset, &info->csd_version_rva) &&
+		rz_buf_read_le32_offset(b, &offset, &info->reserved_1) &&
+		rz_buf_read_le64_offset(b, &offset, &info->cpu.other_cpu_info.processor_features[0]) &&
+		rz_buf_read_le64_offset(b, &offset, &info->cpu.other_cpu_info.processor_features[1]);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
@@ -662,15 +680,12 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 
 		break;
 	case SYSTEM_INFO_STREAM:
-		obj->streams.system_info = RZ_NEW(struct minidump_system_info);
-		if (!obj->streams.system_info) {
+		obj->streams.system_info = RZ_NEW(MiniDmpSysInfo);
+		if (!obj->streams.system_info ||
+			!mdmp_read_system_info(obj->b, entry->location.rva, obj->streams.system_info)) {
+			RZ_FREE(obj->streams.system_info);
 			break;
 		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.system_info, sizeof(*obj->streams.system_info));
-		if (r != sizeof(*obj->streams.system_info)) {
-			break;
-		}
-
 		sdb_num_set(obj->kv, "mdmp_system_info.offset",
 			entry->location.rva, 0);
 		/* TODO: We need E as a byte! */
