@@ -464,6 +464,17 @@ static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemD
 		mdmp_read_location_descriptor32(b, offset, &desc->memory);
 }
 
+static bool mdmp_read_thread_ex(RzBuffer *b, ut64 *offset, MiniDmpThreadEx *th) {
+	return rz_buf_read_le32_offset(b, offset, &th->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &th->suspend_count) &&
+		rz_buf_read_le32_offset(b, offset, &th->priority_class) &&
+		rz_buf_read_le32_offset(b, offset, &th->priority) &&
+		rz_buf_read_le64_offset(b, offset, &th->teb) &&
+		mdmp_read_memory_descriptor32(b, offset, &th->stack) &&
+		mdmp_read_location_descriptor32(b, offset, &th->thread_context) &&
+		mdmp_read_memory_descriptor32(b, offset, &th->backing_store);
+}
+
 static bool mdmp_read_vs_fixedfileinfo(RzBuffer *b, ut64 *offset, VSFixedFileInfo *info) {
 	return rz_buf_read_le32_offset(b, offset, &info->dw_signature) &&
 		rz_buf_read_le32_offset(b, offset, &info->dw_struc_version) &&
@@ -531,7 +542,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 	struct minidump_memory_info_list memory_info_list;
 	MiniDmpModuleList module_list;
 	MiniDmpThreadList thread_list;
-	struct minidump_thread_ex_list thread_ex_list;
+	MiniDmpThreadExList thread_ex_list;
 	struct minidump_thread_info_list thread_info_list;
 	struct minidump_token_info_list token_info_list;
 	struct minidump_unloaded_module_list unloaded_module_list;
@@ -617,10 +628,8 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		offset = entry->location.rva + sizeof(MiniDmpModuleList);
 		for (i = 0; i < memory_list.number_of_memory_ranges; i++) {
 			MiniDmpMemDescr32 *desc = RZ_NEW(MiniDmpMemDescr32);
-			if (!desc) {
-				break;
-			}
-			if (!mdmp_read_memory_descriptor32(obj->b, &offset, desc) ||
+			if (!desc ||
+				!mdmp_read_memory_descriptor32(obj->b, &offset, desc) ||
 				!rz_list_append(obj->streams.memories, desc)) {
 				free(desc);
 				break;
@@ -677,8 +686,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case THREAD_EX_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&thread_ex_list, sizeof(thread_ex_list));
-		if (r != sizeof(thread_ex_list)) {
+		if (!mdmp_read_thread_list(obj->b, entry->location.rva, &thread_ex_list)) {
 			break;
 		}
 
@@ -696,18 +704,15 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 				thread_ex_list.number_of_threads),
 			0);
 
-		offset = entry->location.rva + sizeof(thread_ex_list);
+		offset = entry->location.rva + sizeof(MiniDmpThreadExList);
 		for (i = 0; i < thread_ex_list.number_of_threads; i++) {
-			struct minidump_thread_ex *thread = RZ_NEW(struct minidump_thread_ex);
-			if (!thread) {
+			MiniDmpThreadEx *thread = RZ_NEW(MiniDmpThreadEx);
+			if (!thread ||
+				!mdmp_read_thread_ex(obj->b, &offset, thread) ||
+				!rz_list_append(obj->streams.ex_threads, thread)) {
+				free(thread);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)thread, sizeof(*thread));
-			if (r != sizeof(*thread)) {
-				break;
-			}
-			rz_list_append(obj->streams.ex_threads, thread);
-			offset += sizeof(*thread);
 		}
 		break;
 	case MEMORY_64_LIST_STREAM:

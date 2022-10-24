@@ -529,25 +529,22 @@ typedef struct minidump_thread_list_t {
 } MiniDmpThreadList;
 
 /* Contains extended information for a specific thread. */
-RZ_PACKED(
-	struct minidump_thread_ex {
-		ut32 thread_id;
-		ut32 suspend_count;
-		ut32 priority_class;
-		ut32 priority;
-		ut64 teb;
+typedef struct minidump_thread_ex_t {
+	ut32 thread_id;
+	ut32 suspend_count;
+	ut32 priority_class;
+	ut32 priority;
+	ut64 teb;
 
-		MiniDmpMemDescr32 stack;
-		MiniDmpLocDescr32 thread_context;
-		MiniDmpMemDescr32 backing_store;
-	});
+	MiniDmpMemDescr32 stack;
+	MiniDmpLocDescr32 thread_context;
+	MiniDmpMemDescr32 backing_store;
+} MiniDmpThreadEx;
 
 /* Contains a list of threads. */
-RZ_PACKED(
-	struct minidump_thread_ex_list {
-		ut32 number_of_threads;
-		struct minidump_thread_ex threads[];
-	});
+typedef struct minidump_thread_ex_list_t {
+	ut32 number_of_threads;
+} MiniDmpThreadExList;
 
 /* Contains thread state information. */
 RZ_PACKED(
