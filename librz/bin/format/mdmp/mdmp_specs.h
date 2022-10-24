@@ -330,7 +330,7 @@ typedef struct minidump_handle_descriptor_t {
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-typedef struct minidump_handle_descriptor_2 {
+typedef struct minidump_handle_descriptor_2_t {
 	ut64 handle;
 	rva_t type_name_rva;
 	rva_t object_name_rva;
@@ -343,12 +343,11 @@ typedef struct minidump_handle_descriptor_2 {
 } MiniDmpHandleDescr2; /* unused */
 
 /* Contains object-specific information for a handle. */
-RZ_PACKED(
-	struct minidump_handle_object_information {
-		rva_t next_info_rva;
-		ut32 info_type;
-		ut32 size_of_info;
-	});
+typedef struct minidump_handle_object_information_t {
+	rva_t next_info_rva;
+	ut32 info_type;
+	ut32 size_of_info;
+} MiniDmpHandleObjInfo; /* unused */
 
 /* Contains a list of memory ranges. */
 typedef struct minidump_memory_list32_t {
