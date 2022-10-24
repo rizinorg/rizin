@@ -8,7 +8,7 @@
 // XXX: this is a random number, no idea how long it should be.
 #define COMMENTS_SIZE 32
 
-ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
+ut64 rz_bin_mdmp_get_paddr(MiniDmpObj *obj, ut64 vaddr) {
 	/* FIXME: Will only resolve exact matches, probably no need to fix as
 	** this function will become redundant on the optimisation stage */
 	MiniDmpMemDescr64 *memory;
@@ -27,7 +27,7 @@ ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
 	return paddr;
 }
 
-MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
+MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(MiniDmpObj *obj, ut64 vaddr) {
 	MiniDmpMemInfo *mem_info;
 	RzListIter *it;
 
@@ -44,7 +44,7 @@ MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr
 	return NULL;
 }
 
-ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
+ut32 rz_bin_mdmp_get_perm(MiniDmpObj *obj, ut64 vaddr) {
 	MiniDmpMemInfo *mem_info;
 
 	if (!(mem_info = rz_bin_mdmp_get_mem_info(obj, vaddr))) {
@@ -98,7 +98,7 @@ static void rz_bin_mdmp_free_pe64_bin(struct Pe64_rz_bin_mdmp_pe_bin *pe_bin) {
 	free(pe_bin);
 }
 
-void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj) {
+void rz_bin_mdmp_free(MiniDmpObj *obj) {
 	if (!obj) {
 		return;
 	}
@@ -132,7 +132,7 @@ void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj) {
 	return;
 }
 
-static void mdmp_obj_sdb_init(struct rz_bin_mdmp_obj *obj) {
+static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 	/* TODO: Handle unions, can we? */
 	/* FIXME: Why are we getting struct missing errors when it finds them */
 	sdb_set(obj->kv, "mdmp_mem_state.cparse",
@@ -360,7 +360,7 @@ static bool mdmp_read_header(RzBuffer *b, MiniDmpHeader *hdr) {
 		rz_buf_read_le64_offset(b, &offset, &hdr->flags);
 }
 
-static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
+static bool rz_bin_mdmp_init_hdr(MiniDmpObj *obj) {
 	obj->hdr = RZ_NEW(MiniDmpHeader);
 	if (!obj->hdr || !mdmp_read_header(obj->b, obj->hdr)) {
 		return false;
@@ -627,7 +627,7 @@ static bool mdmp_read_handle_operation_list(RzBuffer *b, ut64 *offset, MiniDmpHa
 		rz_buf_read_le32_offset(b, offset, &list->reserved);
 }
 
-static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
+static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
 	MiniDmpHandleOpList handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
 	MiniDmpMemList64 memory64_list = { 0 };
@@ -1068,14 +1068,14 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 	return true;
 }
 
-static bool mdmp_read_directory(struct rz_bin_mdmp_obj *obj, ut64 addr, MiniDmpDir *entry) {
+static bool mdmp_read_directory(MiniDmpObj *obj, ut64 addr, MiniDmpDir *entry) {
 	ut64 offset = addr;
 	return rz_buf_read_le32_offset(obj->b, &offset, &entry->stream_type) &&
 		mdmp_read_location_descriptor32(obj->b, &offset, &entry->location) &&
 		mdmp_init_directory_entry(obj, entry);
 }
 
-static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
+static bool rz_bin_mdmp_init_directory(MiniDmpObj *obj) {
 	sdb_num_set(obj->kv, "mdmp_directory.offset",
 		obj->hdr->stream_directory_rva, 0);
 	sdb_set(obj->kv, "mdmp_directory.format", "[4]E? "
@@ -1187,7 +1187,7 @@ static int check_pe64_buf(RzBuffer *buf, ut64 length) {
 	return ret;
 }
 
-static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
+static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 	bool dup;
 	ut64 paddr;
 	MiniDmpModule *module;
@@ -1253,7 +1253,7 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
+static int rz_bin_mdmp_init(MiniDmpObj *obj) {
 	mdmp_obj_sdb_init(obj);
 
 	if (!rz_bin_mdmp_init_hdr(obj)) {
@@ -1274,8 +1274,8 @@ static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RzBuffer *buf) {
-	struct rz_bin_mdmp_obj *obj = RZ_NEW0(struct rz_bin_mdmp_obj);
+MiniDmpObj *rz_bin_mdmp_new_buf(RzBuffer *buf) {
+	MiniDmpObj *obj = RZ_NEW0(MiniDmpObj);
 	if (!obj) {
 		return NULL;
 	}
