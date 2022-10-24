@@ -588,10 +588,9 @@ typedef struct minidump_user_stream_information_t {
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeThreadCallback. */
-RZ_PACKED(
-	struct minidump_include_thread_callback {
-		ut32 thread_id;
-	});
+typedef struct minidump_include_thread_callback_t {
+	ut32 thread_id;
+} MiniDmpIncludeThreadCallback; /* unused */
 
 /* Contains module information for the MiniDumpCallback function when the
  * callback type is ModuleCallback. */
