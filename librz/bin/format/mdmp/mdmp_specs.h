@@ -262,23 +262,22 @@ typedef struct minidump_exception_stream_t {
 } MiniDmpExcStream;
 
 /* Describes an exception. */
-RZ_PACKED(
-	struct minidump_exception_record {
-		ut32 exception_code;
-		ut32 exception_flags;
+typedef struct minidump_exception_record_t {
+	ut32 exception_code;
+	ut32 exception_flags;
 
-		struct minidump_exception_record *exception_record;
+	struct minidump_exception_record_t *exception_record;
 
-		void *exception_address;
-		ut32 number_parameters;
-		void /*ULONG_PTR*/ *exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-	});
+	void *exception_address;
+	ut32 number_parameters;
+	void /*ULONG_PTR*/ *exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
+} MiniDmpExcRecord; /* unused */
 
 /* Contains an exception record with a machine-independent description of an
  * exception and a context record with a machine-dependent description of the
  * processor context at the time of the exception. */
 typedef struct minidump_exception_pointers_t {
-	struct minidump_exception_record exception_record;
+	MiniDmpExcRecord exception_record;
 	void /* struct context */ *context_record;
 } MiniDmpExcPointers; /* unused */
 
@@ -310,7 +309,7 @@ typedef struct minidump_function_table_stream_t {
 } MiniDmpFuncTableStream;
 
 /* Represents the header for a handle data stream. */
-typedef struct minidump_handle_data_stream {
+typedef struct minidump_handle_data_stream_t {
 	ut32 size_of_header;
 	ut32 size_of_descriptor;
 	ut32 number_of_descriptors;
@@ -319,31 +318,29 @@ typedef struct minidump_handle_data_stream {
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-RZ_PACKED(
-	struct minidump_handle_descriptor {
-		ut64 handle;
-		rva_t type_name_rva;
-		rva_t object_name_rva;
-		ut32 attributes;
-		ut32 granted_access;
-		ut32 handle_count;
-		ut32 pointer_count;
-	});
+typedef struct minidump_handle_descriptor_t {
+	ut64 handle;
+	rva_t type_name_rva;
+	rva_t object_name_rva;
+	ut32 attributes;
+	ut32 granted_access;
+	ut32 handle_count;
+	ut32 pointer_count;
+} MiniDmpHandleDescr; /* unused */
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-RZ_PACKED(
-	struct minidump_handle_descriptor_2 {
-		ut64 handle;
-		rva_t type_name_rva;
-		rva_t object_name_rva;
-		ut32 attributes;
-		ut32 granted_access;
-		ut32 handle_count;
-		ut32 pointer_count;
-		rva_t object_info_rva;
-		ut32 reserved_0;
-	});
+typedef struct minidump_handle_descriptor_2 {
+	ut64 handle;
+	rva_t type_name_rva;
+	rva_t object_name_rva;
+	ut32 attributes;
+	ut32 granted_access;
+	ut32 handle_count;
+	ut32 pointer_count;
+	rva_t object_info_rva;
+	ut32 reserved_0;
+} MiniDmpHandleDescr2; /* unused */
 
 /* Contains object-specific information for a handle. */
 RZ_PACKED(
