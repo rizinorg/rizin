@@ -574,20 +574,17 @@ typedef struct minidump_unloaded_module_list_t {
 } MiniDmpUnloadedModuleList;
 
 /* Contains user-defined information stored in a data stream. */
-RZ_PACKED(
-	struct minidump_user_stream {
-		ut32 type;
-		ut32 buffer_size;
-		void /*PVOID*/ *buffer;
-	});
+typedef struct minidump_user_stream_t {
+	ut32 type;
+	ut32 buffer_size;
+	void /*PVOID*/ *buffer;
+} MiniDmpUserStream; /* unused */
 
 /* Contains a list of user data streams used by the MiniDumpWriteDump function. */
-RZ_PACKED(
-	struct minidump_user_stream_information {
-		ut32 user_stream_count;
-
-		struct minidump_user_stream *user_stream_array;
-	});
+typedef struct minidump_user_stream_information_t {
+	ut32 user_stream_count;
+	MiniDmpUserStream *user_stream_array;
+} MiniDmpUserStreamInfo; /* unused */
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeThreadCallback. */
