@@ -391,20 +391,19 @@ typedef struct minidump_misc_info_t {
 } MiniDmpMiscInfo;
 
 /* Represents information in the miscellaneous information stream. */
-RZ_PACKED(
-	struct minidump_misc_info_2 {
-		ut32 size_of_info;
-		ut32 flags_1;
-		ut32 process_id;
-		ut32 process_create_time;
-		ut32 process_user_time;
-		ut32 process_kernel_time;
-		ut32 processor_max_mhz;
-		ut32 processor_current_mhz;
-		ut32 processor_mhz_limit;
-		ut32 processor_max_idle_state;
-		ut32 processor_current_idle_state;
-	});
+typedef struct minidump_misc_info_2_t {
+	ut32 size_of_info;
+	ut32 flags_1;
+	ut32 process_id;
+	ut32 process_create_time;
+	ut32 process_user_time;
+	ut32 process_kernel_time;
+	ut32 processor_max_mhz;
+	ut32 processor_current_mhz;
+	ut32 processor_mhz_limit;
+	ut32 processor_max_idle_state;
+	ut32 processor_current_idle_state;
+} MiniDmpMiscInfo2; /* unused */
 
 /* Contains version information for a file. This information is language and
  * code page independent. */
