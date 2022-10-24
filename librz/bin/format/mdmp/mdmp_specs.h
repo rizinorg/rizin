@@ -236,11 +236,10 @@ typedef struct minidump_memory_descriptor64_t {
 } MiniDmpMemDescr64;
 
 /* Contains the information needed to access a specific data stream in a minidump file. */
-RZ_PACKED(
-	struct minidump_directory {
-		ut32 stream_type;
-		MiniDmpLocDescr32 location;
-	});
+typedef struct minidump_directory_t {
+	ut32 stream_type;
+	MiniDmpLocDescr32 location;
+} MiniDmpDir;
 
 /* Contains exception information. */
 typedef struct minidump_exception_t {

@@ -535,7 +535,7 @@ static bool mdmp_read_exception_stream(RzBuffer *b, ut64 *offset, MiniDmpExcStre
 		mdmp_read_location_descriptor32(b, offset, &stream->thread_context);
 }
 
-static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct minidump_directory *entry) {
+static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list;
 	MiniDmpMemList32 memory_list;
 	struct minidump_memory64_list memory64_list;
@@ -1005,45 +1005,14 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 	return true;
 }
 
-static bool read_entry(RzBuffer *b, ut64 addr, struct minidump_directory *entry) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	ut32 stream_type;
-	if (!rz_buf_read_le32(b, &stream_type)) {
-		return false;
-	}
-	entry->stream_type = stream_type;
-
-	ut32 data_size;
-	if (!rz_buf_read_le32(b, &data_size)) {
-		return false;
-	}
-	entry->location.data_size = data_size;
-
-	ut32 rva;
-	if (!rz_buf_read_le32(b, &rva)) {
-		return false;
-	}
-	entry->location.rva = rva;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return true;
+static bool mdmp_read_directory(struct rz_bin_mdmp_obj *obj, ut64 addr, MiniDmpDir *entry) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(obj->b, &offset, &entry->stream_type) &&
+		mdmp_read_location_descriptor32(obj->b, &offset, &entry->location) &&
+		mdmp_init_directory_entry(obj, entry);
 }
 
 static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
-	ut32 i;
-	struct minidump_directory entry;
-
 	sdb_num_set(obj->kv, "mdmp_directory.offset",
 		obj->hdr->stream_directory_rva, 0);
 	sdb_set(obj->kv, "mdmp_directory.format", "[4]E? "
@@ -1053,18 +1022,17 @@ static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
 
 	ut64 rvadir = obj->hdr->stream_directory_rva;
 	ut64 bytes_left = rvadir < obj->size ? obj->size - rvadir : 0;
-	size_t max_entries = RZ_MIN(obj->hdr->number_of_streams, bytes_left / sizeof(struct minidump_directory));
+	size_t max_entries = RZ_MIN(obj->hdr->number_of_streams, bytes_left / sizeof(MiniDmpDir));
 	if (max_entries < obj->hdr->number_of_streams) {
 		RZ_LOG_ERROR("Number of streams = %u is greater than is supportable by bin size\n",
 			obj->hdr->number_of_streams);
 	}
 	/* Parse each entry in the directory */
-	for (i = 0; i < max_entries; i++) {
-		ut32 delta = i * sizeof(struct minidump_directory);
-		if (read_entry(obj->b, rvadir + delta, &entry)) {
-			if (!rz_bin_mdmp_init_directory_entry(obj, &entry)) {
-				return false;
-			}
+	for (ut32 i = 0; i < max_entries; i++) {
+		ut32 delta = i * sizeof(MiniDmpDir);
+		MiniDmpDir entry = { 0 };
+		if (!mdmp_read_directory(obj, rvadir + delta, &entry)) {
+			return false;
 		}
 	}
 
