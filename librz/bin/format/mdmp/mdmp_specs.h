@@ -594,21 +594,20 @@ typedef struct minidump_include_thread_callback_t {
 
 /* Contains module information for the MiniDumpCallback function when the
  * callback type is ModuleCallback. */
-RZ_PACKED(
-	struct minidump_module_callback {
-		ut16 /*pwchar*/ *full_path;
-		ut64 base_of_image;
-		ut32 size_of_image;
-		ut32 check_sum;
-		ut32 time_date_stamp;
+typedef struct minidump_module_callback_t {
+	ut16 /*pwchar*/ *full_path;
+	ut64 base_of_image;
+	ut32 size_of_image;
+	ut32 check_sum;
+	ut32 time_date_stamp;
 
-		VSFixedFileInfo version_info;
+	VSFixedFileInfo version_info;
 
-		void /*pvoid*/ *cv_record;
-		ut32 size_of_cv_record;
-		void /*pvoid*/ *misc_record;
-		ut32 size_of_misc_record;
-	});
+	void /*pvoid*/ *cv_record;
+	ut32 size_of_cv_record;
+	void /*pvoid*/ *misc_record;
+	ut32 size_of_misc_record;
+} MiniDmpModuleCallback; /* unused */
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeModuleCallback. */
