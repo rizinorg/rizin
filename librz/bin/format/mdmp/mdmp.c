@@ -598,8 +598,37 @@ static bool mdmp_read_unloaded_module_list(RzBuffer *b, ut64 *offset, MiniDmpUnl
 		rz_buf_read_le32_offset(b, offset, &list->number_of_entries);
 }
 
+static bool mdmp_read_avrf_backtrace_information(RzBuffer *b, ut64 *offset, AVRFBacktraceInfo *info) {
+	if (!rz_buf_read_le32_offset(b, offset, &info->depth) ||
+		!rz_buf_read_le32_offset(b, offset, &info->index)) {
+		return false;
+	}
+	for (size_t i = 0; i < AVRF_MAX_TRACES; ++i) {
+		if (!rz_buf_read_le64_offset(b, offset, &info->return_addresses[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool mdmp_read_avrf_handle_operation(RzBuffer *b, ut64 *offset, AVRFHandleOp *op) {
+	return rz_buf_read_le64_offset(b, offset, &op->handle) &&
+		rz_buf_read_le32_offset(b, offset, &op->process_id) &&
+		rz_buf_read_le32_offset(b, offset, &op->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &op->operation_type) &&
+		rz_buf_read_le32_offset(b, offset, &op->spare_0) &&
+		mdmp_read_avrf_backtrace_information(b, offset, &op->back_trace_information);
+}
+
+static bool mdmp_read_handle_operation_list(RzBuffer *b, ut64 *offset, MiniDmpHandleOpList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries) &&
+		rz_buf_read_le32_offset(b, offset, &list->reserved);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
-	struct minidump_handle_operation_list handle_operation_list = { 0 };
+	MiniDmpHandleOpList handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
 	MiniDmpMemList64 memory64_list = { 0 };
 	MiniDmpMemInfoList memory_info_list = { 0 };
@@ -974,8 +1003,8 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case HANDLE_OPERATION_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&handle_operation_list, sizeof(handle_operation_list));
-		if (r != sizeof(handle_operation_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_handle_operation_list(obj->b, &offset, &handle_operation_list)) {
 			break;
 		}
 
@@ -985,18 +1014,14 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 								      "SizeOfHeader SizeOfEntry NumberOfEntries Reserved",
 			0);
 
-		offset = entry->location.rva + sizeof(handle_operation_list);
 		for (i = 0; i < handle_operation_list.number_of_entries; i++) {
-			struct avrf_handle_operation *op = RZ_NEW(struct avrf_handle_operation);
-			if (!op) {
+			AVRFHandleOp *op = RZ_NEW(AVRFHandleOp);
+			if (!op ||
+				!mdmp_read_avrf_handle_operation(obj->b, &offset, op) ||
+				!rz_list_append(obj->streams.operations, op)) {
+				free(op);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)op, sizeof(*op));
-			if (r != sizeof(*op)) {
-				break;
-			}
-			rz_list_append(obj->streams.operations, op);
-			offset += sizeof(*op);
 		}
 
 		break;

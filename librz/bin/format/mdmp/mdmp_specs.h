@@ -659,32 +659,28 @@ typedef struct minidump_callback_output_t {
 	st32 /* HRESULT */ status;
 } MiniDmpCallbackOutput; /* unused */
 
-RZ_PACKED(
-	struct avrf_backtrace_information {
-		ut32 depth;
-		ut32 index;
-		ut64 return_addresses[AVRF_MAX_TRACES];
-	});
+typedef struct avrf_backtrace_information_t {
+	ut32 depth;
+	ut32 index;
+	ut64 return_addresses[AVRF_MAX_TRACES];
+} AVRFBacktraceInfo;
 
-RZ_PACKED(
-	struct avrf_handle_operation {
-		ut64 handle;
-		ut32 process_id;
-		ut32 thread_id;
-		ut32 operation_type;
-		ut32 spare_0;
+typedef struct avrf_handle_operation_t {
+	ut64 handle;
+	ut32 process_id;
+	ut32 thread_id;
+	ut32 operation_type;
+	ut32 spare_0;
 
-		struct avrf_backtrace_information back_trace_information;
-	});
+	AVRFBacktraceInfo back_trace_information;
+} AVRFHandleOp;
 
 /* Contains a list of handle operations. */
-RZ_PACKED(
-	struct minidump_handle_operation_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut32 number_of_entries;
-		ut32 reserved;
-		struct avrf_handle_operation entries[];
-	});
+typedef struct minidump_handle_operation_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+	ut32 reserved;
+} MiniDmpHandleOpList;
 
 #endif /* MDMP_SPECS_H */
