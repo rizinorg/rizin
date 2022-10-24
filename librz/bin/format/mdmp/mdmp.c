@@ -571,6 +571,19 @@ static bool mdmp_read_thread_info_list(RzBuffer *b, ut64 *offset, MiniDmpThreadI
 		rz_buf_read_le32_offset(b, offset, &list->number_of_entries);
 }
 
+static bool mdmp_read_token_info(RzBuffer *b, ut64 *offset, MiniDmpTokenInfo *info) {
+	return rz_buf_read_le32_offset(b, offset, &info->token_size) &&
+		rz_buf_read_le32_offset(b, offset, &info->token_id) &&
+		rz_buf_read_le64_offset(b, offset, &info->token_handle);
+}
+
+static bool mdmp_read_token_info_list(RzBuffer *b, ut64 *offset, MiniDmpTokenInfoList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_list) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries) &&
+		rz_buf_read_le32_offset(b, offset, &list->list_header_size) &&
+		rz_buf_read_le32_offset(b, offset, &list->element_header_size);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
@@ -580,7 +593,7 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 	MiniDmpThreadList thread_list = { 0 };
 	MiniDmpThreadExList thread_ex_list = { 0 };
 	MiniDmpThreadInfoList thread_info_list = { 0 };
-	struct minidump_token_info_list token_info_list = { 0 };
+	MiniDmpTokenInfoList token_info_list = { 0 };
 	struct minidump_unloaded_module_list unloaded_module_list = { 0 };
 	ut64 offset;
 	int i, r;
@@ -979,8 +992,8 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case TOKEN_STREAM:
 		/* TODO: Not fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&token_info_list, sizeof(token_info_list));
-		if (r != sizeof(token_info_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_token_info_list(obj->b, &offset, &token_info_list)) {
 			break;
 		}
 
@@ -994,18 +1007,14 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 								"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize",
 			0);
 
-		offset = entry->location.rva + sizeof(token_info_list);
 		for (i = 0; i < token_info_list.number_of_entries; i++) {
-			struct minidump_token_info *info = RZ_NEW(struct minidump_token_info);
-			if (!info) {
+			MiniDmpTokenInfo *info = RZ_NEW(MiniDmpTokenInfo);
+			if (!info ||
+				!mdmp_read_token_info(obj->b, &offset, info) ||
+				!rz_list_append(obj->streams.token_infos, info)) {
+				free(info);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)info, sizeof(*info));
-			if (r != sizeof(*info)) {
-				break;
-			}
-			rz_list_append(obj->streams.token_infos, info);
-			offset += sizeof(*info);
 		}
 		break;
 

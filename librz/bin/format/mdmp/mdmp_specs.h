@@ -542,22 +542,19 @@ typedef struct minidump_thread_info_list_t {
 } MiniDmpThreadInfoList;
 
 /* Contains a token information. */
-RZ_PACKED(
-	struct minidump_token_info {
-		ut32 token_size;
-		ut32 token_id;
-		ut64 token_handle;
-	});
+typedef struct minidump_token_info_t {
+	ut32 token_size;
+	ut32 token_id;
+	ut64 token_handle;
+} MiniDmpTokenInfo;
 
 /* Contains a list of token information. */
-RZ_PACKED(
-	struct minidump_token_info_list {
-		ut32 size_of_list;
-		ut32 number_of_entries;
-		ut32 list_header_size;
-		ut32 element_header_size;
-		struct minidump_token_info entries[];
-	});
+typedef struct minidump_token_info_list_t {
+	ut32 size_of_list;
+	ut32 number_of_entries;
+	ut32 list_header_size;
+	ut32 element_header_size;
+} MiniDmpTokenInfoList;
 
 /* Contains information about a module that has been unloaded. This information
  * can help diagnose problems calling code that is no longer loaded. */
