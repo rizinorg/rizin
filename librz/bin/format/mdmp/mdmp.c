@@ -552,6 +552,25 @@ static bool mdmp_read_system_info(RzBuffer *b, ut64 addr, MiniDmpSysInfo *info) 
 		rz_buf_read_le64_offset(b, &offset, &info->cpu.other_cpu_info.processor_features[1]);
 }
 
+static bool mdmp_read_thread_info(RzBuffer *b, ut64 *offset, MiniDmpThreadInfo *info) {
+	return rz_buf_read_le32_offset(b, offset, &info->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &info->dump_flags) &&
+		rz_buf_read_le32_offset(b, offset, &info->dump_error) &&
+		rz_buf_read_le32_offset(b, offset, &info->exit_status) &&
+		rz_buf_read_le64_offset(b, offset, &info->create_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->exit_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->kernel_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->user_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->start_address) &&
+		rz_buf_read_le64_offset(b, offset, &info->affinity);
+}
+
+static bool mdmp_read_thread_info_list(RzBuffer *b, ut64 *offset, MiniDmpThreadInfoList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
@@ -560,7 +579,7 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 	MiniDmpModuleList module_list = { 0 };
 	MiniDmpThreadList thread_list = { 0 };
 	MiniDmpThreadExList thread_ex_list = { 0 };
-	struct minidump_thread_info_list thread_info_list = { 0 };
+	MiniDmpThreadInfoList thread_info_list = { 0 };
 	struct minidump_token_info_list token_info_list = { 0 };
 	struct minidump_unloaded_module_list unloaded_module_list = { 0 };
 	ut64 offset;
@@ -905,8 +924,8 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case THREAD_INFO_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&thread_info_list, sizeof(thread_info_list));
-		if (r != sizeof(thread_info_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_thread_info_list(obj->b, &offset, &thread_info_list)) {
 			break;
 		}
 
@@ -920,18 +939,14 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 								 "SizeOfHeader SizeOfEntry NumberOfEntries",
 			0);
 
-		offset = entry->location.rva + sizeof(thread_info_list);
 		for (i = 0; i < thread_info_list.number_of_entries; i++) {
-			struct minidump_thread_info *info = RZ_NEW(struct minidump_thread_info);
-			if (!info) {
+			MiniDmpThreadInfo *info = RZ_NEW(MiniDmpThreadInfo);
+			if (!info ||
+				!mdmp_read_thread_info(obj->b, &offset, info) ||
+				!rz_list_append(obj->streams.thread_infos, info)) {
+				free(info);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)info, sizeof(*info));
-			if (r != sizeof(*info)) {
-				break;
-			}
-			rz_list_append(obj->streams.thread_infos, info);
-			offset += sizeof(*info);
 		}
 		break;
 	case HANDLE_OPERATION_LIST_STREAM:

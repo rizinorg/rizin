@@ -521,28 +521,25 @@ typedef struct minidump_thread_ex_list_t {
 } MiniDmpThreadExList;
 
 /* Contains thread state information. */
-RZ_PACKED(
-	struct minidump_thread_info {
-		ut32 thread_id;
-		ut32 dump_flags;
-		ut32 dump_error;
-		ut32 exit_status;
-		ut64 create_time;
-		ut64 exit_time;
-		ut64 kernel_time;
-		ut64 user_time;
-		ut64 start_address;
-		ut64 affinity;
-	});
+typedef struct minidump_thread_info_t {
+	ut32 thread_id;
+	ut32 dump_flags;
+	ut32 dump_error;
+	ut32 exit_status;
+	ut64 create_time;
+	ut64 exit_time;
+	ut64 kernel_time;
+	ut64 user_time;
+	ut64 start_address;
+	ut64 affinity;
+} MiniDmpThreadInfo;
 
 /* Contains a list of threads. */
-RZ_PACKED(
-	struct minidump_thread_info_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut32 number_of_entries;
-		struct minidump_thread_info entries[];
-	});
+typedef struct minidump_thread_info_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+} MiniDmpThreadInfoList;
 
 /* Contains a token information. */
 RZ_PACKED(
