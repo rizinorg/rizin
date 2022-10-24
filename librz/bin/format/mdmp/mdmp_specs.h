@@ -628,12 +628,11 @@ typedef struct minidump_io_callback_t {
 /* Contains information about a failed memory read operation. This structure is
  * used by the MiniDumpCallback function when the callback type is
  * ReadMemoryFailureCallback. */
-RZ_PACKED(
-	struct minidump_read_memory_failure_callback {
-		ut64 offset;
-		ut32 bytes;
-		st32 /* HRESULT */ failure_status;
-	});
+typedef struct minidump_read_memory_failure_callback_t {
+	ut64 offset;
+	ut32 bytes;
+	st32 /* HRESULT */ failure_status;
+} MiniDmpReadMemoryFailureCallback; /* unused */
 
 /* Contains information returned by the MiniDumpCallback function. */
 RZ_PACKED(
