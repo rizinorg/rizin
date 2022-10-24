@@ -618,13 +618,12 @@ typedef struct minidump_include_module_callback_t {
 /* Contains I/O callback information. This structure is used by the
  * MiniDumpCallback function when the callback type is IoStartCallback,
  * IoWriteAllCallback, or IoFinishCallback. */
-RZ_PACKED(
-	struct minidump_io_callback {
-		void /*handle*/ *Handle;
-		ut64 offset;
-		void /*pvoid*/ *buffer;
-		ut32 buffer_bytes;
-	});
+typedef struct minidump_io_callback_t {
+	void /*handle*/ *Handle;
+	ut64 offset;
+	void /*pvoid*/ *buffer;
+	ut32 buffer_bytes;
+} MiniDmpIOCallback; /* unused */
 
 /* Contains information about a failed memory read operation. This structure is
  * used by the MiniDumpCallback function when the callback type is
