@@ -452,10 +452,16 @@ static bool read_desc(RzBuffer *b, ut64 addr, MiniDmpMemDescr64 *desc) {
 
 #define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
 #define mdmp_read_module_list(b, addr, list)   rz_buf_read_le32_at(b, addr, list.number_of_modules)
+#define mdmp_read_thread_list(b, addr, list)   rz_buf_read_le32_at(b, addr, list.number_of_threads)
 
 static bool mdmp_read_location_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpLocDescr32 *desc) {
 	return rz_buf_read_le32_offset(b, offset, &desc->data_size) &&
 		rz_buf_read_le32_offset(b, offset, &desc->rva);
+}
+
+static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
+	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
+		mdmp_read_location_descriptor32(b, offset, &desc->memory);
 }
 
 static bool mdmp_read_vs_fixedfileinfo(RzBuffer *b, ut64 *offset, VSFixedFileInfo *info) {
@@ -511,11 +517,6 @@ static bool mdmp_read_exception(RzBuffer *b, ut64 *offset, MiniDmpException *exc
 		rz_buf_read_le64_offset(b, offset, &exc->exception_information[14]);
 }
 
-static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
-	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
-		mdmp_read_location_descriptor32(b, offset, &desc->memory);
-}
-
 static bool mdmp_read_exception_stream(RzBuffer *b, ut64 *offset, MiniDmpExcStream *stream) {
 	return rz_buf_read_le32_offset(b, offset, &stream->thread_id) &&
 		rz_buf_read_le32_offset(b, offset, &stream->__alignment) &&
@@ -529,7 +530,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 	struct minidump_memory64_list memory64_list;
 	struct minidump_memory_info_list memory_info_list;
 	MiniDmpModuleList module_list;
-	struct minidump_thread_list thread_list;
+	MiniDmpThreadList thread_list;
 	struct minidump_thread_ex_list thread_ex_list;
 	struct minidump_thread_info_list thread_info_list;
 	struct minidump_token_info_list token_info_list;
@@ -546,8 +547,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 	switch (entry->stream_type) {
 	case THREAD_LIST_STREAM:
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&thread_list, sizeof(thread_list));
-		if (r != sizeof(thread_list)) {
+		if (!mdmp_read_thread_list(obj->b, entry->location.rva, &thread_list)) {
 			break;
 		}
 
