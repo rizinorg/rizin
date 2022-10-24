@@ -635,30 +635,29 @@ typedef struct minidump_read_memory_failure_callback_t {
 } MiniDmpReadMemoryFailureCallback; /* unused */
 
 /* Contains information returned by the MiniDumpCallback function. */
-RZ_PACKED(
-	struct minidump_callback_output {
-		union {
-			ut32 module_write_flags;
-			ut32 thread_write_flags;
-			ut32 secondary_flags;
-			struct {
-				ut64 memory_base;
-				ut32 memory_size;
-			};
-			struct {
-				ut8 /*bool*/ check_cancel;
-				ut8 /*bool*/ cancel;
-			};
-			void /*handle*/ *handle;
-		};
-
+typedef struct minidump_callback_output_t {
+	union {
+		ut32 module_write_flags;
+		ut32 thread_write_flags;
+		ut32 secondary_flags;
 		struct {
-			MiniDmpMemInfo vm_region;
-			ut8 /*bool*/ should_continue;
+			ut64 memory_base;
+			ut32 memory_size;
 		};
+		struct {
+			ut8 /*bool*/ check_cancel;
+			ut8 /*bool*/ cancel;
+		};
+		void /*handle*/ *handle;
+	};
 
-		st32 /* HRESULT */ status;
-	});
+	struct {
+		MiniDmpMemInfo vm_region;
+		ut8 /*bool*/ should_continue;
+	};
+
+	st32 /* HRESULT */ status;
+} MiniDmpCallbackOutput; /* unused */
 
 RZ_PACKED(
 	struct avrf_backtrace_information {
