@@ -277,32 +277,27 @@ RZ_PACKED(
 /* Contains an exception record with a machine-independent description of an
  * exception and a context record with a machine-dependent description of the
  * processor context at the time of the exception. */
-RZ_PACKED(
-	struct minidump_exception_pointers {
-		struct minidump_exception_record exception_record;
-		void /* struct context */ *context_record;
-	});
+typedef struct minidump_exception_pointers_t {
+	struct minidump_exception_record exception_record;
+	void /* struct context */ *context_record;
+} MiniDmpExcPointers; /* unused */
 
 /* Contains the exception information written to the minidump file by the
  * MiniDumpWriteDump function. */
-RZ_PACKED(
-	struct minidump_exception_information {
-		ut32 thread_id;
-
-		struct minidump_exception_pointers *exception_pointers;
-
-		ut8 /*bool*/ client_pointers;
-	});
+typedef struct minidump_exception_information_t {
+	ut32 thread_id;
+	MiniDmpExcPointers *exception_pointers;
+	ut8 /*bool*/ client_pointers;
+} MiniDmpExcInfo; /* unused */
 
 /* Represents a function table stream. */
-RZ_PACKED(
-	struct minidump_function_table_descriptor {
-		ut64 minimum_address;
-		ut64 maximum_address;
-		ut64 base_address;
-		ut32 entry_count;
-		ut32 size_of_align_pad;
-	});
+typedef struct minidump_function_table_descriptor_t {
+	ut64 minimum_address;
+	ut64 maximum_address;
+	ut64 base_address;
+	ut32 entry_count;
+	ut32 size_of_align_pad;
+} MiniDmpFuncTableDescr; /* unused */
 
 /* Represents the header for the function table stream. */
 RZ_PACKED(
