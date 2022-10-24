@@ -425,46 +425,42 @@ RZ_PACKED(
 
 /* Contains version information for a file. This information is language and
  * code page independent. */
-RZ_PACKED(
-	struct vs_fixedfileinfo {
-		ut32 dw_signature;
-		ut32 dw_struc_version;
-		ut32 dw_file_version_ms;
-		ut32 dw_file_version_ls;
-		ut32 dw_product_version_ms;
-		ut32 dw_product_version_ls;
-		ut32 dw_file_flags_mask;
-		ut32 dw_file_flags;
-		ut32 dw_file_os;
-		ut32 dw_file_type;
-		ut32 dw_file_subtype;
-		ut32 dw_file_date_ms;
-		ut32 dw_file_date_ls;
-	});
+typedef struct vs_fixedfileinfo_t {
+	ut32 dw_signature;
+	ut32 dw_struc_version;
+	ut32 dw_file_version_ms;
+	ut32 dw_file_version_ls;
+	ut32 dw_product_version_ms;
+	ut32 dw_product_version_ls;
+	ut32 dw_file_flags_mask;
+	ut32 dw_file_flags;
+	ut32 dw_file_os;
+	ut32 dw_file_type;
+	ut32 dw_file_subtype;
+	ut32 dw_file_date_ms;
+	ut32 dw_file_date_ls;
+} VSFixedFileInfo;
 
 /* Contains information for a specific module. */
-RZ_PACKED(
-	struct minidump_module {
-		ut64 base_of_image;
-		ut32 size_of_image;
-		ut32 check_sum;
-		ut32 time_date_stamp;
-		rva_t module_name_rva;
+typedef struct minidump_module_t {
+	ut64 base_of_image;
+	ut32 size_of_image;
+	ut32 check_sum;
+	ut32 time_date_stamp;
+	rva_t module_name_rva;
 
-		struct vs_fixedfileinfo version_info;
-		MiniDmpLocDescr32 cv_record;
-		MiniDmpLocDescr32 misc_record;
+	VSFixedFileInfo version_info;
+	MiniDmpLocDescr32 cv_record;
+	MiniDmpLocDescr32 misc_record;
 
-		ut64 reserved_0;
-		ut64 reserved_1;
-	});
+	ut64 reserved_0;
+	ut64 reserved_1;
+} MiniDmpModule;
 
 /* Contains a list of modules. */
-RZ_PACKED(
-	struct minidump_module_list {
-		ut32 number_of_modules;
-		struct minidump_module modules[];
-	});
+typedef struct minidump_module_list_t {
+	ut32 number_of_modules;
+} MiniDmpModuleList;
 
 /* Describes a string. */
 RZ_PACKED(
@@ -650,7 +646,7 @@ RZ_PACKED(
 		ut32 check_sum;
 		ut32 time_date_stamp;
 
-		struct vs_fixedfileinfo version_info;
+		VSFixedFileInfo version_info;
 
 		void /*pvoid*/ *cv_record;
 		ut32 size_of_cv_record;

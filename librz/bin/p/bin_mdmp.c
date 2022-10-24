@@ -220,7 +220,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 }
 
 static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	struct minidump_module *module;
+	MiniDmpModule *module;
 	struct minidump_string *str;
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
