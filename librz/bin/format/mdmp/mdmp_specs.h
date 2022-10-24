@@ -243,26 +243,24 @@ RZ_PACKED(
 	});
 
 /* Contains exception information. */
-RZ_PACKED(
-	struct minidump_exception {
-		ut32 exception_code;
-		ut32 exception_flags;
-		ut64 exception_record;
-		ut64 exception_address;
-		ut32 number_parameters;
-		ut32 __unused_alignment;
-		ut64 exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-	});
+typedef struct minidump_exception_t {
+	ut32 exception_code;
+	ut32 exception_flags;
+	ut64 exception_record;
+	ut64 exception_address;
+	ut32 number_parameters;
+	ut32 __unused_alignment;
+	ut64 exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
+} MiniDmpException;
 
 /* Contains exception information. */
-RZ_PACKED(
-	struct minidump_exception_stream {
-		ut32 thread_id;
-		ut32 __alignment;
+typedef struct minidump_exception_stream_t {
+	ut32 thread_id;
+	ut32 __alignment;
 
-		struct minidump_exception exception_record;
-		MiniDmpLocDescr32 thread_context;
-	});
+	MiniDmpException exception_record;
+	MiniDmpLocDescr32 thread_context;
+} MiniDmpExcStream;
 
 /* Describes an exception. */
 RZ_PACKED(

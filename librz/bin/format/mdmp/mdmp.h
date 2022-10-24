@@ -22,7 +22,7 @@ struct rz_bin_mdmp_obj {
 		ut8 *comments_a;
 		ut8 *comments_w;
 
-		struct minidump_exception_stream *exception;
+		MiniDmpExcStream *exception;
 		struct minidump_function_table_stream *function_table;
 		struct minidump_handle_data_stream *handle_data;
 		struct minidump_system_info *system_info;

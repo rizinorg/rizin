@@ -617,13 +617,48 @@ static bool read_desc(RzBuffer *b, ut64 addr, MiniDmpMemDescr64 *desc) {
 	return true;
 }
 
-static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
-	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
-		rz_buf_read_le32_offset(b, offset, &desc->memory.data_size) &&
-		rz_buf_read_le32_offset(b, offset, &desc->memory.rva);
+#define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
+
+static bool mdmp_read_exception(RzBuffer *b, ut64 *offset, MiniDmpException *exc) {
+	return rz_buf_read_le32_offset(b, offset, &exc->exception_code) &&
+		rz_buf_read_le32_offset(b, offset, &exc->exception_flags) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_record) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_address) &&
+		rz_buf_read_le32_offset(b, offset, &exc->number_parameters) &&
+		rz_buf_read_le32_offset(b, offset, &exc->__unused_alignment) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[0]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[1]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[2]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[3]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[4]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[5]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[6]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[7]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[8]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[9]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[10]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[11]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[12]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[13]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[14]);
 }
 
-#define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
+static bool mdmp_read_location_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpLocDescr32 *desc) {
+	return rz_buf_read_le32_offset(b, offset, &desc->data_size) &&
+		rz_buf_read_le32_offset(b, offset, &desc->rva);
+}
+
+static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
+	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
+		mdmp_read_location_descriptor32(b, offset, &desc->memory);
+}
+
+static bool mdmp_read_exception_stream(RzBuffer *b, ut64 *offset, MiniDmpExcStream *stream) {
+	return rz_buf_read_le32_offset(b, offset, &stream->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &stream->__alignment) &&
+		mdmp_read_exception(b, offset, &stream->exception_record) &&
+		mdmp_read_location_descriptor32(b, offset, &stream->thread_context);
+}
 
 static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct minidump_directory *entry) {
 	struct minidump_handle_operation_list handle_operation_list;
@@ -734,13 +769,11 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case EXCEPTION_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.exception = RZ_NEW(struct minidump_exception_stream);
-		if (!obj->streams.exception) {
-			break;
-		}
-
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.exception, sizeof(*obj->streams.exception));
-		if (r != sizeof(*obj->streams.exception)) {
+		obj->streams.exception = RZ_NEW(MiniDmpExcStream);
+		offset = entry->location.rva;
+		if (!obj->streams.exception ||
+			!mdmp_read_exception_stream(obj->b, &offset, obj->streams.exception)) {
+			RZ_FREE(obj->streams.exception);
 			break;
 		}
 
