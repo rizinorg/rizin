@@ -28,7 +28,7 @@ struct rz_bin_mdmp_obj {
 		struct minidump_system_info *system_info;
 
 		union {
-			struct minidump_misc_info *misc_info_1;
+			MiniDmpMiscInfo *misc_info_1;
 			struct minidump_misc_info_2 *misc_info_2;
 		} misc_info;
 

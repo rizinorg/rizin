@@ -524,6 +524,16 @@ static bool mdmp_read_memory_info(RzBuffer *b, ut64 *offset, MiniDmpMemInfo *inf
 		rz_buf_read_le32_offset(b, offset, &info->__alignment_2);
 }
 
+static bool mdmp_read_misc_info(RzBuffer *b, ut64 addr, MiniDmpMiscInfo *info) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(b, &offset, &info->size_of_info) &&
+		rz_buf_read_le32_offset(b, &offset, &info->flags_1) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_id) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_create_time) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_user_time) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_kernel_time);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list = { 0 };
 	MiniDmpMemList32 memory_list = { 0 };
@@ -829,12 +839,10 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case MISC_INFO_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.misc_info.misc_info_1 = RZ_NEW(struct minidump_misc_info);
-		if (!obj->streams.misc_info.misc_info_1) {
-			break;
-		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.misc_info.misc_info_1, sizeof(*obj->streams.misc_info.misc_info_1));
-		if (r != sizeof(*obj->streams.misc_info.misc_info_1)) {
+		obj->streams.misc_info.misc_info_1 = RZ_NEW(MiniDmpMiscInfo);
+		if (!obj->streams.misc_info.misc_info_1 ||
+			!mdmp_read_misc_info(obj->b, entry->location.rva, obj->streams.misc_info.misc_info_1)) {
+			RZ_FREE(obj->streams.misc_info.misc_info_1);
 			break;
 		}
 

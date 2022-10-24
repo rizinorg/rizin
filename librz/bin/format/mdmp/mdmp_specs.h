@@ -381,15 +381,14 @@ typedef struct minidump_memory_info_list_t {
 } MiniDmpMemInfoList;
 
 /* Contains a variety of information. */
-RZ_PACKED(
-	struct minidump_misc_info {
-		ut32 size_of_info;
-		ut32 flags_1;
-		ut32 process_id;
-		ut32 process_create_time;
-		ut32 process_user_time;
-		ut32 process_kernel_time;
-	});
+typedef struct minidump_misc_info_t {
+	ut32 size_of_info;
+	ut32 flags_1;
+	ut32 process_id;
+	ut32 process_create_time;
+	ut32 process_user_time;
+	ut32 process_kernel_time;
+} MiniDmpMiscInfo;
 
 /* Represents information in the miscellaneous information stream. */
 RZ_PACKED(
