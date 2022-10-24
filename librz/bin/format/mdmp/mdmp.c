@@ -535,6 +535,24 @@ static bool mdmp_read_exception_stream(RzBuffer *b, ut64 *offset, MiniDmpExcStre
 		mdmp_read_location_descriptor32(b, offset, &stream->thread_context);
 }
 
+static bool mdmp_read_function_table_stream(RzBuffer *b, ut64 addr, MiniDmpFuncTableStream *stream) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(b, &offset, &stream->size_of_header) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_descriptor) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_native_descriptor) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_function_entry) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->number_of_descriptors) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_align_pad);
+}
+
+static bool mdmp_read_handle_data_stream(RzBuffer *b, ut64 addr, MiniDmpHandleDataStream *stream) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(b, &offset, &stream->size_of_header) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_descriptor) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->number_of_descriptors) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->reserved);
+}
+
 static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *entry) {
 	struct minidump_handle_operation_list handle_operation_list;
 	MiniDmpMemList32 memory_list;
@@ -777,12 +795,10 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case HANDLE_DATA_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.handle_data = RZ_NEW(struct minidump_handle_data_stream);
-		if (!obj->streams.handle_data) {
-			break;
-		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.handle_data, sizeof(*obj->streams.handle_data));
-		if (r != sizeof(*obj->streams.handle_data)) {
+		obj->streams.handle_data = RZ_NEW(MiniDmpHandleDataStream);
+		if (!obj->streams.handle_data ||
+			!mdmp_read_handle_data_stream(obj->b, entry->location.rva, obj->streams.handle_data)) {
+			RZ_FREE(obj->streams.handle_data);
 			break;
 		}
 
@@ -795,12 +811,10 @@ static bool mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, MiniDmpDir *e
 		break;
 	case FUNCTION_TABLE_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.function_table = RZ_NEW(struct minidump_function_table_stream);
-		if (!obj->streams.function_table) {
-			break;
-		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.function_table, sizeof(*obj->streams.function_table));
-		if (r != sizeof(*obj->streams.function_table)) {
+		obj->streams.function_table = RZ_NEW(MiniDmpFuncTableStream);
+		if (!obj->streams.function_table ||
+			!mdmp_read_function_table_stream(obj->b, entry->location.rva, obj->streams.function_table)) {
+			RZ_FREE(obj->streams.function_table);
 			break;
 		}
 

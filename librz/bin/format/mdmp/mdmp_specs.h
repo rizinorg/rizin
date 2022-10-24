@@ -300,24 +300,22 @@ typedef struct minidump_function_table_descriptor_t {
 } MiniDmpFuncTableDescr; /* unused */
 
 /* Represents the header for the function table stream. */
-RZ_PACKED(
-	struct minidump_function_table_stream {
-		ut32 size_of_header;
-		ut32 size_of_descriptor;
-		ut32 size_of_native_descriptor;
-		ut32 size_of_function_entry;
-		ut32 number_of_descriptors;
-		ut32 size_of_align_pad;
-	});
+typedef struct minidump_function_table_stream_t {
+	ut32 size_of_header;
+	ut32 size_of_descriptor;
+	ut32 size_of_native_descriptor;
+	ut32 size_of_function_entry;
+	ut32 number_of_descriptors;
+	ut32 size_of_align_pad;
+} MiniDmpFuncTableStream;
 
 /* Represents the header for a handle data stream. */
-RZ_PACKED(
-	struct minidump_handle_data_stream {
-		ut32 size_of_header;
-		ut32 size_of_descriptor;
-		ut32 number_of_descriptors;
-		ut32 reserved;
-	});
+typedef struct minidump_handle_data_stream {
+	ut32 size_of_header;
+	ut32 size_of_descriptor;
+	ut32 number_of_descriptors;
+	ut32 reserved;
+} MiniDmpHandleDataStream;
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
