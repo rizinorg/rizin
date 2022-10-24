@@ -611,10 +611,9 @@ typedef struct minidump_module_callback_t {
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeModuleCallback. */
-RZ_PACKED(
-	struct minidump_include_module_callback {
-		ut64 base_of_image;
-	});
+typedef struct minidump_include_module_callback_t {
+	ut64 base_of_image;
+} MiniDmpIncludeModuleCallback; /* unused */
 
 /* Contains I/O callback information. This structure is used by the
  * MiniDumpCallback function when the callback type is IoStartCallback,
