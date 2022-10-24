@@ -184,7 +184,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	}
 
 	RzListIter *it;
-	struct minidump_memory_descriptor *memory;
+	MiniDmpMemDescr32 *memory;
 	rz_list_foreach (obj->streams.memories, it, memory) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -200,7 +200,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	}
 
 	ut64 index = obj->streams.memories64.base_rva;
-	struct minidump_memory_descriptor64 *memory64;
+	MiniDmpMemDescr64 *memory64;
 	rz_list_foreach (obj->streams.memories64.memories, it, memory64) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -298,9 +298,9 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 }
 
 static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
-	struct minidump_location_descriptor *location = NULL;
-	struct minidump_memory_descriptor *module;
-	struct minidump_memory_descriptor64 *module64;
+	MiniDmpLocDescr32 *location = NULL;
+	MiniDmpMemDescr32 *module;
+	MiniDmpMemDescr64 *module64;
 	struct minidump_memory_info *mem_info;
 	struct rz_bin_mdmp_obj *obj;
 	RzList *ret;

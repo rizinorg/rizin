@@ -194,57 +194,52 @@ typedef enum thread_write_flags_t {
 } thread_write_flags;
 
 /* Contains header information for the minidump file. */
-RZ_PACKED(
-	struct minidump_header {
-		ut32 signature;
-		ut32 version;
-		ut32 number_of_streams;
-		rva_t stream_directory_rva;
-		ut32 check_sum;
+typedef struct minidump_header_t {
+	ut32 signature;
+	ut32 version;
+	ut32 number_of_streams;
+	rva_t stream_directory_rva;
+	ut32 check_sum;
 
-		union {
-			ut32 reserved;
-			ut32 time_date_stamp;
-		};
+	union {
+		ut32 reserved;
+		ut32 time_date_stamp;
+	};
 
-		ut64 flags;
-	});
-
-/* Contains information describing the location of a data stream within a
- * minidump file. */
-RZ_PACKED(
-	struct minidump_location_descriptor {
-		ut32 data_size;
-		rva_t rva;
-	});
+	ut64 flags;
+} MiniDmpHeader;
 
 /* Contains information describing the location of a data stream within a
  * minidump file. */
-RZ_PACKED(
-	struct minidump_location_descriptor64 {
-		ut64 data_size;
-		rva64_t rva;
-	});
+typedef struct minidump_location_descriptor32_t {
+	ut32 data_size;
+	rva_t rva;
+} MiniDmpLocDescr32;
+
+/* Contains information describing the location of a data stream within a
+ * minidump file. */
+typedef struct minidump_location_descriptor64_t {
+	ut64 data_size;
+	rva64_t rva;
+} MiniDmpLocDescr64;
 
 /* Describes a range of memory. */
-RZ_PACKED(
-	struct minidump_memory_descriptor {
-		ut64 start_of_memory_range;
-		struct minidump_location_descriptor memory;
-	});
+typedef struct minidump_memory_descriptor32_t {
+	ut64 start_of_memory_range;
+	MiniDmpLocDescr32 memory;
+} MiniDmpMemDescr32;
 
 /* Describes a range of memory. */
-RZ_PACKED(
-	struct minidump_memory_descriptor64 {
-		ut64 start_of_memory_range;
-		ut64 data_size;
-	});
+typedef struct minidump_memory_descriptor64_t {
+	ut64 start_of_memory_range;
+	ut64 data_size;
+} MiniDmpMemDescr64;
 
 /* Contains the information needed to access a specific data stream in a minidump file. */
 RZ_PACKED(
 	struct minidump_directory {
 		ut32 stream_type;
-		struct minidump_location_descriptor location;
+		MiniDmpLocDescr32 location;
 	});
 
 /* Contains exception information. */
@@ -266,7 +261,7 @@ RZ_PACKED(
 		ut32 __alignment;
 
 		struct minidump_exception exception_record;
-		struct minidump_location_descriptor thread_context;
+		MiniDmpLocDescr32 thread_context;
 	});
 
 /* Describes an exception. */
@@ -369,18 +364,15 @@ RZ_PACKED(
 	});
 
 /* Contains a list of memory ranges. */
-RZ_PACKED(
-	struct minidump_memory_list {
-		ut32 number_of_memory_ranges;
-		struct minidump_memory_descriptor memory_ranges[];
-	});
+typedef struct minidump_memory_list32_t {
+	ut32 number_of_memory_ranges;
+} MiniDmpMemList32;
 
 /* Contains a list of memory ranges. */
 RZ_PACKED(
 	struct minidump_memory64_list {
 		ut64 number_of_memory_ranges;
 		rva64_t base_rva;
-		struct minidump_memory_descriptor64 memory_ranges[];
 	});
 
 /* Describes a region of memory. */
@@ -462,8 +454,8 @@ RZ_PACKED(
 		rva_t module_name_rva;
 
 		struct vs_fixedfileinfo version_info;
-		struct minidump_location_descriptor cv_record;
-		struct minidump_location_descriptor misc_record;
+		MiniDmpLocDescr32 cv_record;
+		MiniDmpLocDescr32 misc_record;
 
 		ut64 reserved_0;
 		ut64 reserved_1;
@@ -533,8 +525,8 @@ RZ_PACKED(
 		ut32 priority_class;
 		ut32 priority;
 		ut64 teb;
-		struct minidump_memory_descriptor stack;
-		struct minidump_location_descriptor thread_context;
+		MiniDmpMemDescr32 stack;
+		MiniDmpLocDescr32 thread_context;
 	});
 
 /* Contains a list of threads. */
@@ -553,9 +545,9 @@ RZ_PACKED(
 		ut32 priority;
 		ut64 teb;
 
-		struct minidump_memory_descriptor stack;
-		struct minidump_location_descriptor thread_context;
-		struct minidump_memory_descriptor backing_store;
+		MiniDmpMemDescr32 stack;
+		MiniDmpLocDescr32 thread_context;
+		MiniDmpMemDescr32 backing_store;
 	});
 
 /* Contains a list of threads. */

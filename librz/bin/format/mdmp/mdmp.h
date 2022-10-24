@@ -15,7 +15,7 @@
 #include "mdmp_pe64.h"
 
 struct rz_bin_mdmp_obj {
-	struct minidump_header *hdr;
+	MiniDmpHeader *hdr;
 
 	/* Encountered streams */
 	struct minidump_streams {

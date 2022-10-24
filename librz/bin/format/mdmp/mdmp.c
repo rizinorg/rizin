@@ -11,7 +11,7 @@
 ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
 	/* FIXME: Will only resolve exact matches, probably no need to fix as
 	** this function will become redundant on the optimisation stage */
-	struct minidump_memory_descriptor64 *memory;
+	MiniDmpMemDescr64 *memory;
 	ut64 index, paddr = 0;
 	RzListIter *it;
 
@@ -349,80 +349,29 @@ static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
 	sdb_set(obj->kv, "mdmp_string.format", "dZ Length Buffer", 0);
 }
 
-static bool read_hdr(RzBuffer *b, struct minidump_header *hdr) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, 0, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	bool result = true;
-
-	ut32 signature = 0;
-	if (!rz_buf_read_le32(b, &signature)) {
-		result = false;
-	}
-	hdr->signature = signature;
-
-	ut32 version = 0;
-	if (!rz_buf_read_le32(b, &version)) {
-		result = false;
-	}
-	hdr->version = version;
-
-	ut32 number_of_streams = 0;
-	if (!rz_buf_read_le32(b, &number_of_streams)) {
-		result = false;
-	}
-	hdr->number_of_streams = number_of_streams;
-
-	ut32 stream_directory_rva = 0;
-	if (!rz_buf_read_le32(b, &stream_directory_rva)) {
-		result = false;
-	}
-	hdr->stream_directory_rva = stream_directory_rva;
-
-	ut32 check_sum = 0;
-	if (!rz_buf_read_le32(b, &check_sum)) {
-		result = false;
-	}
-	hdr->check_sum = check_sum;
-
-	ut32 reserved = 0;
-	if (!rz_buf_read_le32(b, &reserved)) {
-		result = false;
-	}
-	hdr->reserved = reserved;
-
-	ut64 flags = 0;
-	if (!rz_buf_read_le64(b, &flags)) {
-		result = false;
-	}
-	hdr->flags = flags;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return result;
+static bool mdmp_read_header(RzBuffer *b, MiniDmpHeader *hdr) {
+	ut64 offset = 0;
+	return rz_buf_read_le32_offset(b, &offset, &hdr->signature) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->version) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->number_of_streams) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->stream_directory_rva) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->check_sum) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->reserved) &&
+		rz_buf_read_le64_offset(b, &offset, &hdr->flags);
 }
 
 static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
-	obj->hdr = RZ_NEW(struct minidump_header);
-	if (!obj->hdr) {
+	obj->hdr = RZ_NEW(MiniDmpHeader);
+	if (!obj->hdr || !mdmp_read_header(obj->b, obj->hdr)) {
 		return false;
 	}
-	read_hdr(obj->b, obj->hdr);
 
 	if (obj->hdr->number_of_streams == 0) {
 		RZ_LOG_WARN("No streams present!\n");
 		return false;
 	}
 
-	if (obj->hdr->stream_directory_rva < sizeof(struct minidump_header)) {
+	if (obj->hdr->stream_directory_rva < sizeof(MiniDmpHeader)) {
 		RZ_LOG_ERROR("RVA for directory resides in the header!\n");
 		return false;
 	}
@@ -639,7 +588,7 @@ static bool read_memory64_list(RzBuffer *b, ut64 addr, struct minidump_memory64_
 	return true;
 }
 
-static bool read_desc(RzBuffer *b, ut64 addr, struct minidump_memory_descriptor64 *desc) {
+static bool read_desc(RzBuffer *b, ut64 addr, MiniDmpMemDescr64 *desc) {
 	st64 tmp = rz_buf_tell(b);
 	if (tmp < 0) {
 		return false;
@@ -668,9 +617,17 @@ static bool read_desc(RzBuffer *b, ut64 addr, struct minidump_memory_descriptor6
 	return true;
 }
 
+static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
+	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
+		rz_buf_read_le32_offset(b, offset, &desc->memory.data_size) &&
+		rz_buf_read_le32_offset(b, offset, &desc->memory.rva);
+}
+
+#define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
+
 static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct minidump_directory *entry) {
 	struct minidump_handle_operation_list handle_operation_list;
-	struct minidump_memory_list memory_list;
+	MiniDmpMemList32 memory_list;
 	struct minidump_memory64_list memory64_list;
 	struct minidump_memory_info_list memory_info_list;
 	struct minidump_module_list module_list;
@@ -749,8 +706,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		}
 		break;
 	case MEMORY_LIST_STREAM:
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&memory_list, sizeof(memory_list));
-		if (r != sizeof(memory_list)) {
+		if (!mdmp_read_memory_list32(obj->b, entry->location.rva, &memory_list)) {
 			break;
 		}
 
@@ -765,16 +721,15 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof(memory_list);
 		for (i = 0; i < memory_list.number_of_memory_ranges; i++) {
-			struct minidump_memory_descriptor *desc = RZ_NEW(struct minidump_memory_descriptor);
+			MiniDmpMemDescr32 *desc = RZ_NEW(MiniDmpMemDescr32);
 			if (!desc) {
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)desc, sizeof(*desc));
-			if (r != sizeof(*desc)) {
+			if (!mdmp_read_memory_descriptor32(obj->b, &offset, desc) ||
+				!rz_list_append(obj->streams.memories, desc)) {
+				free(desc);
 				break;
 			}
-			rz_list_append(obj->streams.memories, desc);
-			offset += sizeof(*desc);
 		}
 		break;
 	case EXCEPTION_STREAM:
@@ -879,7 +834,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
 		offset = entry->location.rva + sizeof(memory64_list);
 		for (i = 0; i < memory64_list.number_of_memory_ranges; i++) {
-			struct minidump_memory_descriptor64 *desc = RZ_NEW(struct minidump_memory_descriptor64);
+			MiniDmpMemDescr64 *desc = RZ_NEW(MiniDmpMemDescr64);
 			if (!desc) {
 				break;
 			}
