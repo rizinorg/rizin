@@ -3676,8 +3676,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"aixar", "aout", "ar", "bin", "coff", "dos:com", "dos:com:old", "dos:exe", "dos:exe:old",
 		"dosdrv", "elf", "intelhex", "le", "loader", "lx", "moshex", "ne", "nlm", "omf", "omflib",
 		"pe", "pilot", "srec", "w32run", "zip", "all", "none", NULL);
-	SETB("flirt.sig.deflate", false, "enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
+	SETB("flirt.sig.deflate", false, "Enables/disables FLIRT zlib compression when creating a signature file (available only for .sig files)");
 	SETI("flirt.node.optimize", RZ_FLIRT_NODE_OPTIMIZE_MAX, "FLIRT optimization option when creating a signature file (none: 0, normal: 1, smallest: 2)");
+	SETB("flirt.ignore.unknown", true, "When enabled, on FLIRT creation it will ignore any function starting with `fcn.`");
 	SETPREF("flirt.sigdb.path", "", "Additional user defined rizin sigdb location to load on the filesystem.");
 	SETB("flirt.sigdb.load.system", true, "Load signatures from the system path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");

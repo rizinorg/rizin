@@ -443,7 +443,8 @@ RZ_API bool rz_core_flirt_create_file(RZ_NONNULL RzCore *core, RZ_NONNULL const 
 		return false;
 	}
 
-	RzFlirtNode *node = rz_sign_flirt_node_new(core->analysis, optimize);
+	bool ignore_unknown = rz_config_get_b(core->config, "flirt.ignore.unknown");
+	RzFlirtNode *node = rz_sign_flirt_node_new(core->analysis, optimize, ignore_unknown);
 	if (!node) {
 		return false;
 	}

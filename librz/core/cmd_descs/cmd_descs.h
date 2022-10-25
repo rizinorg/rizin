@@ -1356,6 +1356,8 @@ RZ_IPI RzCmdStatus rz_flirt_create_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_flirt_dump_handler(RzCore *core, int argc, const char **argv);
 // "Fs"
 RZ_IPI RzCmdStatus rz_flirt_scan_handler(RzCore *core, int argc, const char **argv);
+// "Ff"
+RZ_IPI RzCmdStatus rz_flirt_function_handler(RzCore *core, int argc, const char **argv);
 // "Fa"
 RZ_IPI RzCmdStatus rz_apply_signatures_from_sigdb_handler(RzCore *core, int argc, const char **argv);
 // "Fl"

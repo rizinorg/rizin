@@ -9866,6 +9866,14 @@ static const RzCmdDescHelp flirt_scan_help = {
 	.args = flirt_scan_args,
 };
 
+static const RzCmdDescArg flirt_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp flirt_function_help = {
+	.summary = "Outputs the flirt function signature info",
+	.args = flirt_function_args,
+};
+
 static const RzCmdDescArg apply_signatures_from_sigdb_args[] = {
 	{
 		.name = "filter",
@@ -17831,6 +17839,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *flirt_scan_cd = rz_cmd_desc_argv_new(core->rcmd, F_cd, "Fs", rz_flirt_scan_handler, &flirt_scan_help);
 	rz_warn_if_fail(flirt_scan_cd);
+
+	RzCmdDesc *flirt_function_cd = rz_cmd_desc_argv_new(core->rcmd, F_cd, "Ff", rz_flirt_function_handler, &flirt_function_help);
+	rz_warn_if_fail(flirt_function_cd);
 
 	RzCmdDesc *apply_signatures_from_sigdb_cd = rz_cmd_desc_argv_new(core->rcmd, F_cd, "Fa", rz_apply_signatures_from_sigdb_handler, &apply_signatures_from_sigdb_help);
 	rz_warn_if_fail(apply_signatures_from_sigdb_cd);
