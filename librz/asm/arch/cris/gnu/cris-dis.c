@@ -20,12 +20,21 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "disas-asm.h"
 #include "sysdep.h"
 #include "opcode/cris.h"
 #include "libiberty.h"
+
+/* Return TRUE if the start of STR matches PREFIX, FALSE otherwise.  */
+
+static inline bool
+startswith (const char *str, const char *prefix)
+{
+  return strncmp (str, prefix, strlen (prefix)) == 0;
+}
 
 /* No instruction will be disassembled longer than this.  In theory, and
    in silicon, address prefixes can be cascaded.  In practice, cascading
