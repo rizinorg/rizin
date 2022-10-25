@@ -21,6 +21,10 @@ commands:
     args:
       - name: filename
         type: RZ_CMD_ARG_TYPE_FILE
+  - name: Ff
+    cname: flirt_function
+    summary: Outputs the flirt function signature info
+    args: []
   - name: Fa
     summary: Apply signatures from sigdb
     cname: apply_signatures_from_sigdb

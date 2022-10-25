@@ -214,7 +214,8 @@ typedef struct rz_flirt_info_t {
 } RzFlirtInfo;
 
 RZ_API ut32 rz_sign_flirt_node_count_nodes(RZ_NONNULL const RzFlirtNode *node);
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization, bool ignore_unknown);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_from_function(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *func, bool tail_bytes);
 RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node);
 RZ_API void rz_sign_flirt_info_fini(RZ_NULLABLE RzFlirtInfo *info);
 

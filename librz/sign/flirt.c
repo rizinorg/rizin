@@ -202,6 +202,8 @@ typedef struct parse_status_t {
 // CRC-HDLC & CRC-16/X-25 produces the same but in LE format.
 #define POLY 0x8408
 ut16 flirt_crc16(const ut8 *data_p, size_t length) {
+	rz_return_val_if_fail(data_p, 0);
+
 	ut8 i;
 	ut32 data;
 	ut32 crc = 0xFFFF;
@@ -345,6 +347,15 @@ static bool is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask
 	return true;
 }
 
+static bool check_crc16(const RzFlirtModule *module, ut8 *b, ut32 b_size) {
+	if (!module->crc_length) {
+		return true;
+	} else if ((b_size - RZ_FLIRT_MAX_PRELUDE_SIZE) < module->crc_length) {
+		return false;
+	}
+	return module->crc16 == flirt_crc16(b + RZ_FLIRT_MAX_PRELUDE_SIZE, module->crc_length);
+}
+
 /**
  * \brief Checks if the module matches the buffer and renames the matched functions
  *
@@ -363,14 +374,13 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 	RzFlirtTailByte *tail_byte = NULL;
 	ut32 name_index = 0;
 
-	if (module->crc_length && buf_size >= (32 + module->crc_length) &&
-		module->crc16 != flirt_crc16(b + 32, module->crc_length)) {
+	if (!check_crc16(module, b, buf_size)) {
 		return false;
 	}
 	if (module->tail_bytes) {
 		rz_list_foreach (module->tail_bytes, it, tail_byte) {
-			if (32 + module->crc_length + tail_byte->offset < buf_size &&
-				b[32 + module->crc_length + tail_byte->offset] != tail_byte->value) {
+			if (RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset < buf_size &&
+				b[RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset] != tail_byte->value) {
 				return false;
 			}
 		}
@@ -384,7 +394,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
-		next_module_function = rz_analysis_get_function_at((RzAnalysis *)analysis, address + flirt_func->offset);
+		next_module_function = rz_analysis_get_function_at(analysis, address + flirt_func->offset);
 		if (next_module_function) {
 			ut32 next_module_function_size;
 
@@ -445,7 +455,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 
 			// remove old flag
-			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
+			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "sym.", "fcn.", "func.", NULL);
 			if (fit) {
 				analysis->flb.unset(analysis->flb.f, fit);
 			}
@@ -503,12 +513,12 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 	RzListIter *it_func;
 	RzAnalysisFunction *func;
 	rz_list_foreach (analysis->fcns, it_func, func) {
-		if (func->type != RZ_ANALYSIS_FCN_TYPE_FCN && func->type != RZ_ANALYSIS_FCN_TYPE_LOC) { // scan only for unknown functions
+		if (func->name && !strncmp(func->name, "flirt.", strlen("flirt."))) {
 			continue;
 		}
 
 		ut64 func_size = rz_analysis_function_linear_size(func);
-		ut64 malloc_size = RZ_MAX(func_size, 32);
+		ut64 malloc_size = RZ_MAX(func_size, RZ_FLIRT_MAX_PRELUDE_SIZE);
 		ut8 *func_buf = calloc(1, malloc_size);
 		if (!func_buf) {
 			ret = false;
@@ -1663,7 +1673,7 @@ RZ_API bool rz_sign_flirt_write_compressed_pattern_to_buffer(RZ_NONNULL const Rz
 
 	if (options->version >= 8) {
 		// pattern_size (little endian) - we always use 32 bytes prelude
-		rz_buf_append_le_bits(buffer, tmp, 32, 16);
+		rz_buf_append_le_bits(buffer, tmp, RZ_FLIRT_MAX_PRELUDE_SIZE, 16);
 	}
 
 	if (options->version >= 10) {
