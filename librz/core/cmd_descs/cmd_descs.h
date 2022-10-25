@@ -193,6 +193,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int a
 RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, const char **argv);
 // "afs"
 RZ_IPI RzCmdStatus rz_analysis_function_signature_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "afsb"
+RZ_IPI RzCmdStatus rz_analysis_function_signature_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "afs!"
 RZ_IPI RzCmdStatus rz_analysis_function_signature_editor_handler(RzCore *core, int argc, const char **argv);
 // "afsr"
