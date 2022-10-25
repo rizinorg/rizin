@@ -1997,6 +1997,14 @@ static const RzCmdDescHelp analysis_function_signature_help = {
 	.args = analysis_function_signature_args,
 };
 
+static const RzCmdDescArg analysis_function_signature_bytes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_signature_bytes_help = {
+	.summary = "Outputs the function signature bytes, mask and search mask at current address",
+	.args = analysis_function_signature_bytes_args,
+};
+
 static const RzCmdDescArg analysis_function_signature_editor_args[] = {
 	{ 0 },
 };
@@ -16144,6 +16152,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *afs_cd = rz_cmd_desc_group_modes_new(core->rcmd, af_cd, "afs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_signature_handler, &analysis_function_signature_help, &afs_help);
 	rz_warn_if_fail(afs_cd);
+	RzCmdDesc *analysis_function_signature_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, afs_cd, "afsb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_signature_bytes_handler, &analysis_function_signature_bytes_help);
+	rz_warn_if_fail(analysis_function_signature_bytes_cd);
+
 	RzCmdDesc *analysis_function_signature_editor_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afs!", rz_analysis_function_signature_editor_handler, &analysis_function_signature_editor_help);
 	rz_warn_if_fail(analysis_function_signature_editor_cd);
 
