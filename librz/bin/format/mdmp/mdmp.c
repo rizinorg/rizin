@@ -8,10 +8,10 @@
 // XXX: this is a random number, no idea how long it should be.
 #define COMMENTS_SIZE 32
 
-ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
+ut64 rz_bin_mdmp_get_paddr(MiniDmpObj *obj, ut64 vaddr) {
 	/* FIXME: Will only resolve exact matches, probably no need to fix as
 	** this function will become redundant on the optimisation stage */
-	struct minidump_memory_descriptor64 *memory;
+	MiniDmpMemDescr64 *memory;
 	ut64 index, paddr = 0;
 	RzListIter *it;
 
@@ -27,8 +27,8 @@ ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
 	return paddr;
 }
 
-struct minidump_memory_info *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
-	struct minidump_memory_info *mem_info;
+MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(MiniDmpObj *obj, ut64 vaddr) {
+	MiniDmpMemInfo *mem_info;
 	RzListIter *it;
 
 	if (!obj) {
@@ -44,8 +44,8 @@ struct minidump_memory_info *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *ob
 	return NULL;
 }
 
-ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
-	struct minidump_memory_info *mem_info;
+ut32 rz_bin_mdmp_get_perm(MiniDmpObj *obj, ut64 vaddr) {
+	MiniDmpMemInfo *mem_info;
 
 	if (!(mem_info = rz_bin_mdmp_get_mem_info(obj, vaddr))) {
 		/* if there is no mem info in the dump, assume default permission */
@@ -98,7 +98,7 @@ static void rz_bin_mdmp_free_pe64_bin(struct Pe64_rz_bin_mdmp_pe_bin *pe_bin) {
 	free(pe_bin);
 }
 
-void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj) {
+void rz_bin_mdmp_free(MiniDmpObj *obj) {
 	if (!obj) {
 		return;
 	}
@@ -132,7 +132,7 @@ void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj) {
 	return;
 }
 
-static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
+static void mdmp_obj_sdb_init(MiniDmpObj *obj) {
 	/* TODO: Handle unions, can we? */
 	/* FIXME: Why are we getting struct missing errors when it finds them */
 	sdb_set(obj->kv, "mdmp_mem_state.cparse",
@@ -349,80 +349,29 @@ static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
 	sdb_set(obj->kv, "mdmp_string.format", "dZ Length Buffer", 0);
 }
 
-static bool read_hdr(RzBuffer *b, struct minidump_header *hdr) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, 0, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	bool result = true;
-
-	ut32 signature = 0;
-	if (!rz_buf_read_le32(b, &signature)) {
-		result = false;
-	}
-	hdr->signature = signature;
-
-	ut32 version = 0;
-	if (!rz_buf_read_le32(b, &version)) {
-		result = false;
-	}
-	hdr->version = version;
-
-	ut32 number_of_streams = 0;
-	if (!rz_buf_read_le32(b, &number_of_streams)) {
-		result = false;
-	}
-	hdr->number_of_streams = number_of_streams;
-
-	ut32 stream_directory_rva = 0;
-	if (!rz_buf_read_le32(b, &stream_directory_rva)) {
-		result = false;
-	}
-	hdr->stream_directory_rva = stream_directory_rva;
-
-	ut32 check_sum = 0;
-	if (!rz_buf_read_le32(b, &check_sum)) {
-		result = false;
-	}
-	hdr->check_sum = check_sum;
-
-	ut32 reserved = 0;
-	if (!rz_buf_read_le32(b, &reserved)) {
-		result = false;
-	}
-	hdr->reserved = reserved;
-
-	ut64 flags = 0;
-	if (!rz_buf_read_le64(b, &flags)) {
-		result = false;
-	}
-	hdr->flags = flags;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return result;
+static bool mdmp_read_header(RzBuffer *b, MiniDmpHeader *hdr) {
+	ut64 offset = 0;
+	return rz_buf_read_le32_offset(b, &offset, &hdr->signature) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->version) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->number_of_streams) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->stream_directory_rva) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->check_sum) &&
+		rz_buf_read_le32_offset(b, &offset, &hdr->reserved) &&
+		rz_buf_read_le64_offset(b, &offset, &hdr->flags);
 }
 
-static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
-	obj->hdr = RZ_NEW(struct minidump_header);
-	if (!obj->hdr) {
+static bool rz_bin_mdmp_init_hdr(MiniDmpObj *obj) {
+	obj->hdr = RZ_NEW(MiniDmpHeader);
+	if (!obj->hdr || !mdmp_read_header(obj->b, obj->hdr)) {
 		return false;
 	}
-	read_hdr(obj->b, obj->hdr);
 
 	if (obj->hdr->number_of_streams == 0) {
 		RZ_LOG_WARN("No streams present!\n");
 		return false;
 	}
 
-	if (obj->hdr->stream_directory_rva < sizeof(struct minidump_header)) {
+	if (obj->hdr->stream_directory_rva < sizeof(MiniDmpHeader)) {
 		RZ_LOG_ERROR("RVA for directory resides in the header!\n");
 		return false;
 	}
@@ -443,242 +392,252 @@ static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-static bool read_module_aux(RzBuffer *b, ut64 addr, struct minidump_module *module) {
-	ut64 base_of_image;
-	if (!rz_buf_read_le64(b, &base_of_image)) {
+#define mdmp_read_module_list(b, addr, list)   rz_buf_read_le32_at(b, addr, list.number_of_modules)
+#define mdmp_read_thread_list(b, addr, list)   rz_buf_read_le32_at(b, addr, list.number_of_threads)
+#define mdmp_read_memory_list32(b, addr, list) rz_buf_read_le32_at(b, addr, list.number_of_memory_ranges)
+
+static bool mdmp_read_memory_list64(RzBuffer *b, ut64 addr, MiniDmpMemList64 *list) {
+	ut64 offset = addr;
+	return rz_buf_read_le64_offset(b, &offset, &list->number_of_memory_ranges) &&
+		rz_buf_read_le64_offset(b, &offset, &list->base_rva);
+}
+
+static bool mdmp_read_location_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpLocDescr32 *desc) {
+	return rz_buf_read_le32_offset(b, offset, &desc->data_size) &&
+		rz_buf_read_le32_offset(b, offset, &desc->rva);
+}
+
+static bool mdmp_read_memory_descriptor32(RzBuffer *b, ut64 *offset, MiniDmpMemDescr32 *desc) {
+	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
+		mdmp_read_location_descriptor32(b, offset, &desc->memory);
+}
+
+static bool mdmp_read_memory_descriptor64(RzBuffer *b, ut64 *offset, MiniDmpMemDescr64 *desc) {
+	return rz_buf_read_le64_offset(b, offset, &desc->start_of_memory_range) &&
+		rz_buf_read_le64_offset(b, offset, &desc->data_size);
+}
+
+static bool mdmp_read_thread_ex(RzBuffer *b, ut64 *offset, MiniDmpThreadEx *th) {
+	return rz_buf_read_le32_offset(b, offset, &th->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &th->suspend_count) &&
+		rz_buf_read_le32_offset(b, offset, &th->priority_class) &&
+		rz_buf_read_le32_offset(b, offset, &th->priority) &&
+		rz_buf_read_le64_offset(b, offset, &th->teb) &&
+		mdmp_read_memory_descriptor32(b, offset, &th->stack) &&
+		mdmp_read_location_descriptor32(b, offset, &th->thread_context) &&
+		mdmp_read_memory_descriptor32(b, offset, &th->backing_store);
+}
+
+static bool mdmp_read_vs_fixedfileinfo(RzBuffer *b, ut64 *offset, VSFixedFileInfo *info) {
+	return rz_buf_read_le32_offset(b, offset, &info->dw_signature) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_struc_version) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_version_ms) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_version_ls) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_product_version_ms) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_product_version_ls) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_flags_mask) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_flags) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_os) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_type) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_subtype) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_date_ms) &&
+		rz_buf_read_le32_offset(b, offset, &info->dw_file_date_ls);
+}
+
+static bool mdmp_read_module(RzBuffer *b, ut64 *offset, MiniDmpModule *module) {
+	return rz_buf_read_le64_offset(b, offset, &module->base_of_image) &&
+		rz_buf_read_le32_offset(b, offset, &module->size_of_image) &&
+		rz_buf_read_le32_offset(b, offset, &module->check_sum) &&
+		rz_buf_read_le32_offset(b, offset, &module->time_date_stamp) &&
+		rz_buf_read_le32_offset(b, offset, &module->module_name_rva) &&
+		mdmp_read_vs_fixedfileinfo(b, offset, &module->version_info) &&
+		mdmp_read_location_descriptor32(b, offset, &module->cv_record) &&
+		mdmp_read_location_descriptor32(b, offset, &module->misc_record) &&
+		rz_buf_read_le64_offset(b, offset, &module->reserved_0) &&
+		rz_buf_read_le64_offset(b, offset, &module->reserved_1);
+}
+
+static bool mdmp_read_exception(RzBuffer *b, ut64 *offset, MiniDmpException *exc) {
+	return rz_buf_read_le32_offset(b, offset, &exc->exception_code) &&
+		rz_buf_read_le32_offset(b, offset, &exc->exception_flags) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_record) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_address) &&
+		rz_buf_read_le32_offset(b, offset, &exc->number_parameters) &&
+		rz_buf_read_le32_offset(b, offset, &exc->__unused_alignment) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[0]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[1]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[2]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[3]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[4]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[5]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[6]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[7]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[8]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[9]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[10]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[11]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[12]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[13]) &&
+		rz_buf_read_le64_offset(b, offset, &exc->exception_information[14]);
+}
+
+static bool mdmp_read_exception_stream(RzBuffer *b, ut64 *offset, MiniDmpExcStream *stream) {
+	return rz_buf_read_le32_offset(b, offset, &stream->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &stream->__alignment) &&
+		mdmp_read_exception(b, offset, &stream->exception_record) &&
+		mdmp_read_location_descriptor32(b, offset, &stream->thread_context);
+}
+
+static bool mdmp_read_function_table_stream(RzBuffer *b, ut64 addr, MiniDmpFuncTableStream *stream) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(b, &offset, &stream->size_of_header) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_descriptor) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_native_descriptor) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_function_entry) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->number_of_descriptors) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_align_pad);
+}
+
+static bool mdmp_read_handle_data_stream(RzBuffer *b, ut64 addr, MiniDmpHandleDataStream *stream) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(b, &offset, &stream->size_of_header) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->size_of_descriptor) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->number_of_descriptors) &&
+		rz_buf_read_le32_offset(b, &offset, &stream->reserved);
+}
+
+static bool mdmp_read_memory_info_list(RzBuffer *b, ut64 *offset, MiniDmpMemInfoList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le64_offset(b, offset, &list->number_of_entries);
+}
+
+static bool mdmp_read_memory_info(RzBuffer *b, ut64 *offset, MiniDmpMemInfo *info) {
+	return rz_buf_read_le64_offset(b, offset, &info->base_address) &&
+		rz_buf_read_le64_offset(b, offset, &info->allocation_base) &&
+		rz_buf_read_le32_offset(b, offset, &info->allocation_protect) &&
+		rz_buf_read_le32_offset(b, offset, &info->__alignment_1) &&
+		rz_buf_read_le64_offset(b, offset, &info->region_size) &&
+		rz_buf_read_le32_offset(b, offset, &info->state) &&
+		rz_buf_read_le32_offset(b, offset, &info->protect) &&
+		rz_buf_read_le32_offset(b, offset, &info->type) &&
+		rz_buf_read_le32_offset(b, offset, &info->__alignment_2);
+}
+
+static bool mdmp_read_misc_info(RzBuffer *b, ut64 addr, MiniDmpMiscInfo *info) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(b, &offset, &info->size_of_info) &&
+		rz_buf_read_le32_offset(b, &offset, &info->flags_1) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_id) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_create_time) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_user_time) &&
+		rz_buf_read_le32_offset(b, &offset, &info->process_kernel_time);
+}
+
+static bool mdmp_read_system_info(RzBuffer *b, ut64 addr, MiniDmpSysInfo *info) {
+	ut64 offset = addr;
+
+	return rz_buf_read_le16_offset(b, &offset, &info->processor_architecture) &&
+		rz_buf_read_le16_offset(b, &offset, &info->processor_level) &&
+		rz_buf_read_le16_offset(b, &offset, &info->processor_revision) &&
+		rz_buf_read8_offset(b, &offset, &info->number_of_processors) &&
+		rz_buf_read8_offset(b, &offset, &info->product_type) &&
+		rz_buf_read_le32_offset(b, &offset, &info->major_version) &&
+		rz_buf_read_le32_offset(b, &offset, &info->minor_version) &&
+		rz_buf_read_le32_offset(b, &offset, &info->build_number) &&
+		rz_buf_read_le32_offset(b, &offset, &info->platform_id) &&
+		rz_buf_read_le32_offset(b, &offset, &info->csd_version_rva) &&
+		rz_buf_read_le32_offset(b, &offset, &info->reserved_1) &&
+		rz_buf_read_le64_offset(b, &offset, &info->cpu.other_cpu_info.processor_features[0]) &&
+		rz_buf_read_le64_offset(b, &offset, &info->cpu.other_cpu_info.processor_features[1]);
+}
+
+static bool mdmp_read_thread_info(RzBuffer *b, ut64 *offset, MiniDmpThreadInfo *info) {
+	return rz_buf_read_le32_offset(b, offset, &info->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &info->dump_flags) &&
+		rz_buf_read_le32_offset(b, offset, &info->dump_error) &&
+		rz_buf_read_le32_offset(b, offset, &info->exit_status) &&
+		rz_buf_read_le64_offset(b, offset, &info->create_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->exit_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->kernel_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->user_time) &&
+		rz_buf_read_le64_offset(b, offset, &info->start_address) &&
+		rz_buf_read_le64_offset(b, offset, &info->affinity);
+}
+
+static bool mdmp_read_thread_info_list(RzBuffer *b, ut64 *offset, MiniDmpThreadInfoList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries);
+}
+
+static bool mdmp_read_token_info(RzBuffer *b, ut64 *offset, MiniDmpTokenInfo *info) {
+	return rz_buf_read_le32_offset(b, offset, &info->token_size) &&
+		rz_buf_read_le32_offset(b, offset, &info->token_id) &&
+		rz_buf_read_le64_offset(b, offset, &info->token_handle);
+}
+
+static bool mdmp_read_token_info_list(RzBuffer *b, ut64 *offset, MiniDmpTokenInfoList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_list) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries) &&
+		rz_buf_read_le32_offset(b, offset, &list->list_header_size) &&
+		rz_buf_read_le32_offset(b, offset, &list->element_header_size);
+}
+
+static bool mdmp_read_unloaded_module(RzBuffer *b, ut64 *offset, MiniDmpUnloadedModule *module) {
+	return rz_buf_read_le64_offset(b, offset, &module->base_of_image) &&
+		rz_buf_read_le32_offset(b, offset, &module->size_of_image) &&
+		rz_buf_read_le32_offset(b, offset, &module->check_sum) &&
+		rz_buf_read_le32_offset(b, offset, &module->time_date_stamp) &&
+		rz_buf_read_le32_offset(b, offset, &module->module_name_rva);
+}
+
+static bool mdmp_read_unloaded_module_list(RzBuffer *b, ut64 *offset, MiniDmpUnloadedModuleList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries);
+}
+
+static bool mdmp_read_avrf_backtrace_information(RzBuffer *b, ut64 *offset, AVRFBacktraceInfo *info) {
+	if (!rz_buf_read_le32_offset(b, offset, &info->depth) ||
+		!rz_buf_read_le32_offset(b, offset, &info->index)) {
 		return false;
 	}
-	module->base_of_image = base_of_image;
-
-	ut32 size_of_image;
-	if (!rz_buf_read_le32(b, &size_of_image)) {
-		return false;
+	for (size_t i = 0; i < AVRF_MAX_TRACES; ++i) {
+		if (!rz_buf_read_le64_offset(b, offset, &info->return_addresses[i])) {
+			return false;
+		}
 	}
-	module->size_of_image = size_of_image;
-
-	ut32 check_sum;
-	if (!rz_buf_read_le32(b, &check_sum)) {
-		return false;
-	}
-	module->check_sum = check_sum;
-
-	ut32 time_date_stamp;
-	if (!rz_buf_read_le32(b, &time_date_stamp)) {
-		return false;
-	}
-	module->time_date_stamp = time_date_stamp;
-
-	ut32 module_name_rva;
-	if (!rz_buf_read_le32(b, &module_name_rva)) {
-		return false;
-	}
-	module->module_name_rva = module_name_rva;
-
-	ut32 dw_signature;
-	if (!rz_buf_read_le32(b, &dw_signature)) {
-		return false;
-	}
-	module->version_info.dw_signature = dw_signature;
-
-	ut32 dw_struc_version;
-	if (!rz_buf_read_le32(b, &dw_struc_version)) {
-		return false;
-	}
-	module->version_info.dw_struc_version = dw_struc_version;
-
-	ut32 dw_file_version_ms;
-	if (!rz_buf_read_le32(b, &dw_file_version_ms)) {
-		return false;
-	}
-	module->version_info.dw_file_version_ms = dw_file_version_ms;
-
-	ut32 dw_file_version_ls;
-	if (!rz_buf_read_le32(b, &dw_file_version_ls)) {
-		return false;
-	}
-	module->version_info.dw_file_version_ls = dw_file_version_ls;
-
-	ut32 dw_product_version_ms;
-	if (!rz_buf_read_le32(b, &dw_product_version_ms)) {
-		return false;
-	}
-	module->version_info.dw_product_version_ms = dw_product_version_ms;
-
-	ut32 dw_product_version_ls;
-	if (!rz_buf_read_le32(b, &dw_product_version_ls)) {
-		return false;
-	}
-	module->version_info.dw_product_version_ls = dw_product_version_ls;
-
-	ut32 dw_file_flags_mask;
-	if (!rz_buf_read_le32(b, &dw_file_flags_mask)) {
-		return false;
-	}
-	module->version_info.dw_file_flags_mask = dw_file_flags_mask;
-
-	ut32 dw_file_flags;
-	if (!rz_buf_read_le32(b, &dw_file_flags)) {
-		return false;
-	}
-	module->version_info.dw_file_flags = dw_file_flags;
-
-	ut32 dw_file_os;
-	if (!rz_buf_read_le32(b, &dw_file_os)) {
-		return false;
-	}
-	module->version_info.dw_file_os = dw_file_os;
-
-	ut32 dw_file_type;
-	if (!rz_buf_read_le32(b, &dw_file_type)) {
-		return false;
-	}
-	module->version_info.dw_file_type = dw_file_type;
-
-	ut32 dw_file_subtype;
-	if (!rz_buf_read_le32(b, &dw_file_subtype)) {
-		return false;
-	}
-	module->version_info.dw_file_subtype = dw_file_subtype;
-
-	ut32 dw_file_date_ms;
-	if (!rz_buf_read_le32(b, &dw_file_date_ms)) {
-		return false;
-	}
-	module->version_info.dw_file_date_ms = dw_file_date_ms;
-
-	ut32 dw_file_date_ls;
-	if (!rz_buf_read_le32(b, &dw_file_date_ls)) {
-		return false;
-	}
-	module->version_info.dw_file_date_ls = dw_file_date_ls;
-
-	ut32 cv_record_data_size;
-	if (!rz_buf_read_le32(b, &cv_record_data_size)) {
-		return false;
-	}
-	module->cv_record.data_size = cv_record_data_size;
-
-	ut32 cv_record_rva;
-	if (!rz_buf_read_le32(b, &cv_record_rva)) {
-		return false;
-	}
-	module->cv_record.rva = cv_record_rva;
-
-	ut32 misc_record_data_size;
-	if (!rz_buf_read_le32(b, &misc_record_data_size)) {
-		return false;
-	}
-	module->misc_record.data_size = misc_record_data_size;
-
-	ut32 misc_record_rva;
-	if (!rz_buf_read_le32(b, &misc_record_rva)) {
-		return false;
-	}
-	module->misc_record.rva = misc_record_rva;
-
-	ut64 reserved_0;
-	if (!rz_buf_read_le64(b, &reserved_0)) {
-		return false;
-	}
-	module->reserved_0 = reserved_0;
-
-	ut64 reserved_1;
-	if (!rz_buf_read_le64(b, &reserved_1)) {
-		return false;
-	}
-	module->reserved_1 = reserved_1;
-
 	return true;
 }
 
-static bool read_module(RzBuffer *b, ut64 addr, struct minidump_module *module) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	bool result = read_module_aux(b, addr, module);
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return result;
+static bool mdmp_read_avrf_handle_operation(RzBuffer *b, ut64 *offset, AVRFHandleOp *op) {
+	return rz_buf_read_le64_offset(b, offset, &op->handle) &&
+		rz_buf_read_le32_offset(b, offset, &op->process_id) &&
+		rz_buf_read_le32_offset(b, offset, &op->thread_id) &&
+		rz_buf_read_le32_offset(b, offset, &op->operation_type) &&
+		rz_buf_read_le32_offset(b, offset, &op->spare_0) &&
+		mdmp_read_avrf_backtrace_information(b, offset, &op->back_trace_information);
 }
 
-static bool read_memory64_list(RzBuffer *b, ut64 addr, struct minidump_memory64_list *memory64_list) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	ut64 number_of_memory_ranges;
-	if (!rz_buf_read_le64(b, &number_of_memory_ranges)) {
-		return false;
-	}
-	memory64_list->number_of_memory_ranges = number_of_memory_ranges;
-
-	ut64 base_rva;
-	if (!rz_buf_read_le64(b, &base_rva)) {
-		return false;
-	}
-	memory64_list->base_rva = base_rva;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return true;
+static bool mdmp_read_handle_operation_list(RzBuffer *b, ut64 *offset, MiniDmpHandleOpList *list) {
+	return rz_buf_read_le32_offset(b, offset, &list->size_of_header) &&
+		rz_buf_read_le32_offset(b, offset, &list->size_of_entry) &&
+		rz_buf_read_le32_offset(b, offset, &list->number_of_entries) &&
+		rz_buf_read_le32_offset(b, offset, &list->reserved);
 }
 
-static bool read_desc(RzBuffer *b, ut64 addr, struct minidump_memory_descriptor64 *desc) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	ut64 start_of_memory_range;
-	if (!rz_buf_read_le64(b, &start_of_memory_range)) {
-		return false;
-	}
-	desc->start_of_memory_range = start_of_memory_range;
-
-	ut64 data_size;
-	if (!rz_buf_read_le64(b, &data_size)) {
-		return false;
-	}
-	desc->data_size = data_size;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct minidump_directory *entry) {
-	struct minidump_handle_operation_list handle_operation_list;
-	struct minidump_memory_list memory_list;
-	struct minidump_memory64_list memory64_list;
-	struct minidump_memory_info_list memory_info_list;
-	struct minidump_module_list module_list;
-	struct minidump_thread_list thread_list;
-	struct minidump_thread_ex_list thread_ex_list;
-	struct minidump_thread_info_list thread_info_list;
-	struct minidump_token_info_list token_info_list;
-	struct minidump_unloaded_module_list unloaded_module_list;
+static bool mdmp_init_directory_entry(MiniDmpObj *obj, MiniDmpDir *entry) {
+	MiniDmpHandleOpList handle_operation_list = { 0 };
+	MiniDmpMemList32 memory_list = { 0 };
+	MiniDmpMemList64 memory64_list = { 0 };
+	MiniDmpMemInfoList memory_info_list = { 0 };
+	MiniDmpModuleList module_list = { 0 };
+	MiniDmpThreadList thread_list = { 0 };
+	MiniDmpThreadExList thread_ex_list = { 0 };
+	MiniDmpThreadInfoList thread_info_list = { 0 };
+	MiniDmpTokenInfoList token_info_list = { 0 };
+	MiniDmpUnloadedModuleList unloaded_module_list = { 0 };
 	ut64 offset;
 	int i, r;
 
@@ -689,12 +648,9 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		return false;
 	}
 
-	ut32 number_of_modules;
-
 	switch (entry->stream_type) {
 	case THREAD_LIST_STREAM:
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&thread_list, sizeof(thread_list));
-		if (r != sizeof(thread_list)) {
+		if (!mdmp_read_thread_list(obj->b, entry->location.rva, &thread_list)) {
 			break;
 		}
 
@@ -714,10 +670,9 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		/* TODO: Not yet fully parsed or utilised */
 		break;
 	case MODULE_LIST_STREAM:
-		if (!rz_buf_read_le32_at(obj->b, entry->location.rva, &number_of_modules)) {
+		if (!mdmp_read_module_list(obj->b, entry->location.rva, &module_list)) {
 			break;
 		}
-		module_list.number_of_modules = number_of_modules;
 
 		sdb_set(obj->kv, "mdmp_module.format", "qddtd???qq "
 						       "BaseOfImage SizeOfImage CheckSum "
@@ -737,20 +692,19 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof(module_list);
 		for (i = 0; i < module_list.number_of_modules; i++) {
-			struct minidump_module *module = RZ_NEW(struct minidump_module);
+			MiniDmpModule *module = RZ_NEW(MiniDmpModule);
 			if (!module) {
 				break;
 			}
-			if (!read_module(obj->b, offset, module)) {
+			if (!mdmp_read_module(obj->b, &offset, module) ||
+				!rz_list_append(obj->streams.modules, module)) {
+				free(module);
 				break;
 			}
-			rz_list_append(obj->streams.modules, module);
-			offset += sizeof(*module);
 		}
 		break;
 	case MEMORY_LIST_STREAM:
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&memory_list, sizeof(memory_list));
-		if (r != sizeof(memory_list)) {
+		if (!mdmp_read_memory_list32(obj->b, entry->location.rva, &memory_list)) {
 			break;
 		}
 
@@ -763,29 +717,24 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 				memory_list.number_of_memory_ranges),
 			0);
 
-		offset = entry->location.rva + sizeof(memory_list);
+		offset = entry->location.rva + sizeof(MiniDmpModuleList);
 		for (i = 0; i < memory_list.number_of_memory_ranges; i++) {
-			struct minidump_memory_descriptor *desc = RZ_NEW(struct minidump_memory_descriptor);
-			if (!desc) {
+			MiniDmpMemDescr32 *desc = RZ_NEW(MiniDmpMemDescr32);
+			if (!desc ||
+				!mdmp_read_memory_descriptor32(obj->b, &offset, desc) ||
+				!rz_list_append(obj->streams.memories, desc)) {
+				free(desc);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)desc, sizeof(*desc));
-			if (r != sizeof(*desc)) {
-				break;
-			}
-			rz_list_append(obj->streams.memories, desc);
-			offset += sizeof(*desc);
 		}
 		break;
 	case EXCEPTION_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.exception = RZ_NEW(struct minidump_exception_stream);
-		if (!obj->streams.exception) {
-			break;
-		}
-
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.exception, sizeof(*obj->streams.exception));
-		if (r != sizeof(*obj->streams.exception)) {
+		obj->streams.exception = RZ_NEW(MiniDmpExcStream);
+		offset = entry->location.rva;
+		if (!obj->streams.exception ||
+			!mdmp_read_exception_stream(obj->b, &offset, obj->streams.exception)) {
+			RZ_FREE(obj->streams.exception);
 			break;
 		}
 
@@ -806,15 +755,12 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		break;
 	case SYSTEM_INFO_STREAM:
-		obj->streams.system_info = RZ_NEW(struct minidump_system_info);
-		if (!obj->streams.system_info) {
+		obj->streams.system_info = RZ_NEW(MiniDmpSysInfo);
+		if (!obj->streams.system_info ||
+			!mdmp_read_system_info(obj->b, entry->location.rva, obj->streams.system_info)) {
+			RZ_FREE(obj->streams.system_info);
 			break;
 		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.system_info, sizeof(*obj->streams.system_info));
-		if (r != sizeof(*obj->streams.system_info)) {
-			break;
-		}
-
 		sdb_num_set(obj->kv, "mdmp_system_info.offset",
 			entry->location.rva, 0);
 		/* TODO: We need E as a byte! */
@@ -829,8 +775,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case THREAD_EX_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&thread_ex_list, sizeof(thread_ex_list));
-		if (r != sizeof(thread_ex_list)) {
+		if (!mdmp_read_thread_list(obj->b, entry->location.rva, &thread_ex_list)) {
 			break;
 		}
 
@@ -848,22 +793,19 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 				thread_ex_list.number_of_threads),
 			0);
 
-		offset = entry->location.rva + sizeof(thread_ex_list);
+		offset = entry->location.rva + sizeof(MiniDmpThreadExList);
 		for (i = 0; i < thread_ex_list.number_of_threads; i++) {
-			struct minidump_thread_ex *thread = RZ_NEW(struct minidump_thread_ex);
-			if (!thread) {
+			MiniDmpThreadEx *thread = RZ_NEW(MiniDmpThreadEx);
+			if (!thread ||
+				!mdmp_read_thread_ex(obj->b, &offset, thread) ||
+				!rz_list_append(obj->streams.ex_threads, thread)) {
+				free(thread);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)thread, sizeof(*thread));
-			if (r != sizeof(*thread)) {
-				break;
-			}
-			rz_list_append(obj->streams.ex_threads, thread);
-			offset += sizeof(*thread);
 		}
 		break;
 	case MEMORY_64_LIST_STREAM:
-		if (!read_memory64_list(obj->b, entry->location.rva, &memory64_list)) {
+		if (!mdmp_read_memory_list64(obj->b, entry->location.rva, &memory64_list)) {
 			break;
 		}
 
@@ -877,15 +819,15 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 			0);
 
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
-		offset = entry->location.rva + sizeof(memory64_list);
+		offset = entry->location.rva + sizeof(MiniDmpMemList64);
 		for (i = 0; i < memory64_list.number_of_memory_ranges; i++) {
-			struct minidump_memory_descriptor64 *desc = RZ_NEW(struct minidump_memory_descriptor64);
-			if (!desc) {
+			MiniDmpMemDescr64 *desc = RZ_NEW(MiniDmpMemDescr64);
+			if (!desc ||
+				!mdmp_read_memory_descriptor64(obj->b, &offset, desc) ||
+				!rz_list_append(obj->streams.memories64.memories, desc)) {
+				free(desc);
 				break;
 			}
-			read_desc(obj->b, offset, desc);
-			rz_list_append(obj->streams.memories64.memories, desc);
-			offset += sizeof(*desc);
 		}
 		break;
 	case COMMENT_STREAM_A:
@@ -924,12 +866,10 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case HANDLE_DATA_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.handle_data = RZ_NEW(struct minidump_handle_data_stream);
-		if (!obj->streams.handle_data) {
-			break;
-		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.handle_data, sizeof(*obj->streams.handle_data));
-		if (r != sizeof(*obj->streams.handle_data)) {
+		obj->streams.handle_data = RZ_NEW(MiniDmpHandleDataStream);
+		if (!obj->streams.handle_data ||
+			!mdmp_read_handle_data_stream(obj->b, entry->location.rva, obj->streams.handle_data)) {
+			RZ_FREE(obj->streams.handle_data);
 			break;
 		}
 
@@ -942,12 +882,10 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case FUNCTION_TABLE_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.function_table = RZ_NEW(struct minidump_function_table_stream);
-		if (!obj->streams.function_table) {
-			break;
-		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.function_table, sizeof(*obj->streams.function_table));
-		if (r != sizeof(*obj->streams.function_table)) {
+		obj->streams.function_table = RZ_NEW(MiniDmpFuncTableStream);
+		if (!obj->streams.function_table ||
+			!mdmp_read_function_table_stream(obj->b, entry->location.rva, obj->streams.function_table)) {
+			RZ_FREE(obj->streams.function_table);
 			break;
 		}
 
@@ -960,8 +898,8 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case UNLOADED_MODULE_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&unloaded_module_list, sizeof(unloaded_module_list));
-		if (r != sizeof(unloaded_module_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_unloaded_module_list(obj->b, &offset, &unloaded_module_list)) {
 			break;
 		}
 
@@ -975,28 +913,22 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 								     "SizeOfHeader SizeOfEntry NumberOfEntries",
 			0);
 
-		offset = entry->location.rva + sizeof(unloaded_module_list);
 		for (i = 0; i < unloaded_module_list.number_of_entries; i++) {
-			struct minidump_unloaded_module *module = RZ_NEW(struct minidump_unloaded_module);
-			if (!module) {
+			MiniDmpUnloadedModule *module = RZ_NEW(MiniDmpUnloadedModule);
+			if (!module ||
+				!mdmp_read_unloaded_module(obj->b, &offset, module) ||
+				!rz_list_append(obj->streams.unloaded_modules, module)) {
+				free(module);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)module, sizeof(*module));
-			if (r != sizeof(*module)) {
-				break;
-			}
-			rz_list_append(obj->streams.unloaded_modules, module);
-			offset += sizeof(*module);
 		}
 		break;
 	case MISC_INFO_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.misc_info.misc_info_1 = RZ_NEW(struct minidump_misc_info);
-		if (!obj->streams.misc_info.misc_info_1) {
-			break;
-		}
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)obj->streams.misc_info.misc_info_1, sizeof(*obj->streams.misc_info.misc_info_1));
-		if (r != sizeof(*obj->streams.misc_info.misc_info_1)) {
+		obj->streams.misc_info.misc_info_1 = RZ_NEW(MiniDmpMiscInfo);
+		if (!obj->streams.misc_info.misc_info_1 ||
+			!mdmp_read_misc_info(obj->b, entry->location.rva, obj->streams.misc_info.misc_info_1)) {
+			RZ_FREE(obj->streams.misc_info.misc_info_1);
 			break;
 		}
 
@@ -1013,8 +945,8 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		break;
 	case MEMORY_INFO_LIST_STREAM:
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&memory_info_list, sizeof(memory_info_list));
-		if (r != sizeof(memory_info_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_memory_info_list(obj->b, &offset, &memory_info_list)) {
 			break;
 		}
 
@@ -1032,24 +964,20 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 				memory_info_list.number_of_entries),
 			0);
 
-		offset = entry->location.rva + sizeof(memory_info_list);
 		for (i = 0; i < memory_info_list.number_of_entries; i++) {
-			struct minidump_memory_info *info = RZ_NEW(struct minidump_memory_info);
-			if (!info) {
+			MiniDmpMemInfo *info = RZ_NEW(MiniDmpMemInfo);
+			if (!info ||
+				!mdmp_read_memory_info(obj->b, &offset, info) ||
+				!rz_list_append(obj->streams.memory_infos, info)) {
+				free(info);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)info, sizeof(*info));
-			if (r != sizeof(*info)) {
-				break;
-			}
-			rz_list_append(obj->streams.memory_infos, info);
-			offset += sizeof(*info);
 		}
 		break;
 	case THREAD_INFO_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&thread_info_list, sizeof(thread_info_list));
-		if (r != sizeof(thread_info_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_thread_info_list(obj->b, &offset, &thread_info_list)) {
 			break;
 		}
 
@@ -1063,24 +991,20 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 								 "SizeOfHeader SizeOfEntry NumberOfEntries",
 			0);
 
-		offset = entry->location.rva + sizeof(thread_info_list);
 		for (i = 0; i < thread_info_list.number_of_entries; i++) {
-			struct minidump_thread_info *info = RZ_NEW(struct minidump_thread_info);
-			if (!info) {
+			MiniDmpThreadInfo *info = RZ_NEW(MiniDmpThreadInfo);
+			if (!info ||
+				!mdmp_read_thread_info(obj->b, &offset, info) ||
+				!rz_list_append(obj->streams.thread_infos, info)) {
+				free(info);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)info, sizeof(*info));
-			if (r != sizeof(*info)) {
-				break;
-			}
-			rz_list_append(obj->streams.thread_infos, info);
-			offset += sizeof(*info);
 		}
 		break;
 	case HANDLE_OPERATION_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&handle_operation_list, sizeof(handle_operation_list));
-		if (r != sizeof(handle_operation_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_handle_operation_list(obj->b, &offset, &handle_operation_list)) {
 			break;
 		}
 
@@ -1090,25 +1014,21 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 								      "SizeOfHeader SizeOfEntry NumberOfEntries Reserved",
 			0);
 
-		offset = entry->location.rva + sizeof(handle_operation_list);
 		for (i = 0; i < handle_operation_list.number_of_entries; i++) {
-			struct avrf_handle_operation *op = RZ_NEW(struct avrf_handle_operation);
-			if (!op) {
+			AVRFHandleOp *op = RZ_NEW(AVRFHandleOp);
+			if (!op ||
+				!mdmp_read_avrf_handle_operation(obj->b, &offset, op) ||
+				!rz_list_append(obj->streams.operations, op)) {
+				free(op);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)op, sizeof(*op));
-			if (r != sizeof(*op)) {
-				break;
-			}
-			rz_list_append(obj->streams.operations, op);
-			offset += sizeof(*op);
 		}
 
 		break;
 	case TOKEN_STREAM:
 		/* TODO: Not fully parsed or utilised */
-		r = rz_buf_read_at(obj->b, entry->location.rva, (ut8 *)&token_info_list, sizeof(token_info_list));
-		if (r != sizeof(token_info_list)) {
+		offset = entry->location.rva;
+		if (!mdmp_read_token_info_list(obj->b, &offset, &token_info_list)) {
 			break;
 		}
 
@@ -1122,18 +1042,14 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 								"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize",
 			0);
 
-		offset = entry->location.rva + sizeof(token_info_list);
 		for (i = 0; i < token_info_list.number_of_entries; i++) {
-			struct minidump_token_info *info = RZ_NEW(struct minidump_token_info);
-			if (!info) {
+			MiniDmpTokenInfo *info = RZ_NEW(MiniDmpTokenInfo);
+			if (!info ||
+				!mdmp_read_token_info(obj->b, &offset, info) ||
+				!rz_list_append(obj->streams.token_infos, info)) {
+				free(info);
 				break;
 			}
-			r = rz_buf_read_at(obj->b, offset, (ut8 *)info, sizeof(*info));
-			if (r != sizeof(*info)) {
-				break;
-			}
-			rz_list_append(obj->streams.token_infos, info);
-			offset += sizeof(*info);
 		}
 		break;
 
@@ -1152,45 +1068,14 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 	return true;
 }
 
-static bool read_entry(RzBuffer *b, ut64 addr, struct minidump_directory *entry) {
-	st64 tmp = rz_buf_tell(b);
-	if (tmp < 0) {
-		return false;
-	}
-
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	ut32 stream_type;
-	if (!rz_buf_read_le32(b, &stream_type)) {
-		return false;
-	}
-	entry->stream_type = stream_type;
-
-	ut32 data_size;
-	if (!rz_buf_read_le32(b, &data_size)) {
-		return false;
-	}
-	entry->location.data_size = data_size;
-
-	ut32 rva;
-	if (!rz_buf_read_le32(b, &rva)) {
-		return false;
-	}
-	entry->location.rva = rva;
-
-	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
-		return false;
-	}
-
-	return true;
+static bool mdmp_read_directory(MiniDmpObj *obj, ut64 addr, MiniDmpDir *entry) {
+	ut64 offset = addr;
+	return rz_buf_read_le32_offset(obj->b, &offset, &entry->stream_type) &&
+		mdmp_read_location_descriptor32(obj->b, &offset, &entry->location) &&
+		mdmp_init_directory_entry(obj, entry);
 }
 
-static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
-	ut32 i;
-	struct minidump_directory entry;
-
+static bool rz_bin_mdmp_init_directory(MiniDmpObj *obj) {
 	sdb_num_set(obj->kv, "mdmp_directory.offset",
 		obj->hdr->stream_directory_rva, 0);
 	sdb_set(obj->kv, "mdmp_directory.format", "[4]E? "
@@ -1200,18 +1085,17 @@ static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
 
 	ut64 rvadir = obj->hdr->stream_directory_rva;
 	ut64 bytes_left = rvadir < obj->size ? obj->size - rvadir : 0;
-	size_t max_entries = RZ_MIN(obj->hdr->number_of_streams, bytes_left / sizeof(struct minidump_directory));
+	size_t max_entries = RZ_MIN(obj->hdr->number_of_streams, bytes_left / sizeof(MiniDmpDir));
 	if (max_entries < obj->hdr->number_of_streams) {
 		RZ_LOG_ERROR("Number of streams = %u is greater than is supportable by bin size\n",
 			obj->hdr->number_of_streams);
 	}
 	/* Parse each entry in the directory */
-	for (i = 0; i < max_entries; i++) {
-		ut32 delta = i * sizeof(struct minidump_directory);
-		if (read_entry(obj->b, rvadir + delta, &entry)) {
-			if (!rz_bin_mdmp_init_directory_entry(obj, &entry)) {
-				return false;
-			}
+	for (ut32 i = 0; i < max_entries; i++) {
+		ut32 delta = i * sizeof(MiniDmpDir);
+		MiniDmpDir entry = { 0 };
+		if (!mdmp_read_directory(obj, rvadir + delta, &entry)) {
+			return false;
 		}
 	}
 
@@ -1303,10 +1187,10 @@ static int check_pe64_buf(RzBuffer *buf, ut64 length) {
 	return ret;
 }
 
-static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
+static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 	bool dup;
 	ut64 paddr;
-	struct minidump_module *module;
+	MiniDmpModule *module;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin, *pe32_dup;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin, *pe64_dup;
 	RzBuffer *buf;
@@ -1369,8 +1253,8 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
-	rz_bin_mdmp_init_parsing(obj);
+static int rz_bin_mdmp_init(MiniDmpObj *obj) {
+	mdmp_obj_sdb_init(obj);
 
 	if (!rz_bin_mdmp_init_hdr(obj)) {
 		RZ_LOG_ERROR("Failed to initialise header\n");
@@ -1390,8 +1274,8 @@ static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RzBuffer *buf) {
-	struct rz_bin_mdmp_obj *obj = RZ_NEW0(struct rz_bin_mdmp_obj);
+MiniDmpObj *rz_bin_mdmp_new_buf(RzBuffer *buf) {
+	MiniDmpObj *obj = RZ_NEW0(MiniDmpObj);
 	if (!obj) {
 		return NULL;
 	}
