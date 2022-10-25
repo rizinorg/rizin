@@ -1,5 +1,5 @@
 /* cris-opc.c -- Table of opcodes for the CRIS processor.
-   Copyright 2000, 2001, 2004, 2007 Free Software Foundation, Inc.
+   Copyright (C) 2000-2022 Free Software Foundation, Inc.
    Contributed by Axis Communications AB, Lund, Sweden.
    Originally written for GAS 1.38.1 by Mikael Asker.
    Reorganized by Hans-Peter Nilsson.
