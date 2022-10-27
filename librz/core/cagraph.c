@@ -112,12 +112,12 @@ RZ_IPI void rz_core_agraph_print_interactive(RzCore *core) {
 static void agraph_print_node_dot(RzANode *n, void *user) {
 	char *label = strdup(n->body);
 	// label = rz_str_replace (label, "\n", "\\l", 1);
-	label = rz_str_replace(label, "\"", "\\\"", 1);
 
 	if (!label || !*label) {
 		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
 			n->title, n->title, n->title);
 	} else {
+		label = rz_str_replace(label, "\"", "\\\"", 1);
 		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
 			n->title, n->title, n->title, label);
 	}
