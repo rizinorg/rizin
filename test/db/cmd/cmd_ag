@@ -857,12 +857,12 @@ push rsp
 ; 0x8c0
 lea r8, [sym.__libc_csu_fini]
 ; 0x850
-; \"AWAVA\x89\xffAUATL\x8d%.\x05 \"
+; 'AWAVA\x89\xffAUATL\x8d%.\x05 '
 lea rcx, [sym.__libc_csu_init]
 ; 0x7aa
 lea rdi, [main]
 ; [reloc.__libc_start_main:8]=0x201058 reloc.target.__libc_start_main
-; \"X\x10 \"
+; 'X\x10 '
 call qword [reloc.__libc_start_main]
 "]
 }
