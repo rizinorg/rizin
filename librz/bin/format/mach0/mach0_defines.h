@@ -1483,6 +1483,14 @@ enum {
 	DYLD_CHAINED_PTR_ARM64E_USERLAND24 = 12,
 };
 
+#include <rz_util/rz_num.h>
+
+#define READ_BITS(dst, count) \
+	do { \
+		dst = raw_val & rz_num_bitmask(count); \
+		raw_val >>= count; \
+	} while (0);
+
 struct dyld_chained_ptr_arm64e_rebase {
 	uint64_t target : 43,
 		high8 : 8,
@@ -1490,6 +1498,14 @@ struct dyld_chained_ptr_arm64e_rebase {
 		bind : 1, // == 0
 		auth : 1; // == 0
 };
+
+static inline void dyld_chained_ptr_arm64e_rebase_read(struct dyld_chained_ptr_arm64e_rebase *dst, ut64 raw_val) {
+	READ_BITS(dst->target, 43);
+	READ_BITS(dst->high8, 8);
+	READ_BITS(dst->next, 11);
+	READ_BITS(dst->bind, 1);
+	READ_BITS(dst->auth, 1);
+}
 
 struct dyld_chained_ptr_arm64e_bind {
 	uint64_t ordinal : 16,
@@ -1500,6 +1516,15 @@ struct dyld_chained_ptr_arm64e_bind {
 		auth : 1; // == 0
 };
 
+static inline void dyld_chained_ptr_arm64e_bind_read(struct dyld_chained_ptr_arm64e_bind *dst, ut64 raw_val) {
+	READ_BITS(dst->ordinal, 16);
+	READ_BITS(dst->zero, 16);
+	READ_BITS(dst->addend, 19);
+	READ_BITS(dst->next, 11);
+	READ_BITS(dst->bind, 1);
+	READ_BITS(dst->auth, 1);
+}
+
 struct dyld_chained_ptr_arm64e_auth_rebase {
 	uint64_t target : 32,
 		diversity : 16,
@@ -1509,6 +1534,16 @@ struct dyld_chained_ptr_arm64e_auth_rebase {
 		bind : 1, // == 0
 		auth : 1; // == 1
 };
+
+static inline void dyld_chained_ptr_arm64e_auth_rebase_read(struct dyld_chained_ptr_arm64e_auth_rebase *dst, ut64 raw_val) {
+	READ_BITS(dst->target, 32);
+	READ_BITS(dst->diversity, 16);
+	READ_BITS(dst->addrDiv, 1);
+	READ_BITS(dst->key, 2);
+	READ_BITS(dst->next, 11);
+	READ_BITS(dst->bind, 1);
+	READ_BITS(dst->auth, 1);
+}
 
 struct dyld_chained_ptr_arm64e_auth_bind {
 	uint64_t ordinal : 16,
@@ -1521,6 +1556,17 @@ struct dyld_chained_ptr_arm64e_auth_bind {
 		auth : 1; // == 1
 };
 
+static inline void dyld_chained_ptr_arm64e_auth_bind_read(struct dyld_chained_ptr_arm64e_auth_bind *dst, ut64 raw_val) {
+	READ_BITS(dst->ordinal, 16);
+	READ_BITS(dst->zero, 16);
+	READ_BITS(dst->diversity, 16);
+	READ_BITS(dst->addrDiv, 1);
+	READ_BITS(dst->key, 2);
+	READ_BITS(dst->next, 11);
+	READ_BITS(dst->bind, 1);
+	READ_BITS(dst->auth, 1);
+}
+
 struct dyld_chained_ptr_64_rebase {
 	uint64_t target : 36,
 		high8 : 8,
@@ -1528,6 +1574,14 @@ struct dyld_chained_ptr_64_rebase {
 		next : 12,
 		bind : 1; // == 0
 };
+
+static inline void dyld_chained_ptr_64_rebase_read(struct dyld_chained_ptr_64_rebase *dst, ut64 raw_val) {
+	READ_BITS(dst->target, 36);
+	READ_BITS(dst->high8, 8);
+	READ_BITS(dst->reserved, 7);
+	READ_BITS(dst->next, 12);
+	READ_BITS(dst->bind, 1);
+}
 
 struct dyld_chained_ptr_64_bind {
 	uint64_t ordinal : 24,
@@ -1537,6 +1591,14 @@ struct dyld_chained_ptr_64_bind {
 		bind : 1; // == 1
 };
 
+static inline void dyld_chained_ptr_64_bind_read(struct dyld_chained_ptr_64_bind *dst, ut64 raw_val) {
+	READ_BITS(dst->ordinal, 24);
+	READ_BITS(dst->addend, 8);
+	READ_BITS(dst->reserved, 19);
+	READ_BITS(dst->next, 12);
+	READ_BITS(dst->bind, 1);
+}
+
 /* WARNING: this is guesswork based on trial and error */
 struct dyld_chained_ptr_arm64e_cache_rebase {
 	uint64_t target : 43,
@@ -1544,6 +1606,13 @@ struct dyld_chained_ptr_arm64e_cache_rebase {
 		next : 12,
 		auth : 1; // == 0
 };
+
+static inline void dyld_chained_ptr_arm64e_cache_rebase_read(struct dyld_chained_ptr_arm64e_cache_rebase *dst, ut64 raw_val) {
+	READ_BITS(dst->target, 43);
+	READ_BITS(dst->high8, 8);
+	READ_BITS(dst->next, 12);
+	READ_BITS(dst->auth, 1);
+}
 
 struct dyld_chained_ptr_arm64e_cache_auth_rebase {
 	uint64_t target : 32,
@@ -1554,6 +1623,15 @@ struct dyld_chained_ptr_arm64e_cache_auth_rebase {
 		auth : 1; // == 1
 };
 
+static inline void dyld_chained_ptr_arm64e_cache_auth_rebase_read(struct dyld_chained_ptr_arm64e_cache_auth_rebase *dst, ut64 raw_val) {
+	READ_BITS(dst->target, 32);
+	READ_BITS(dst->diversity, 16);
+	READ_BITS(dst->addrDiv, 1);
+	READ_BITS(dst->key, 2);
+	READ_BITS(dst->next, 12);
+	READ_BITS(dst->auth, 1);
+}
+
 struct dyld_chained_ptr_arm64e_bind24 {
 	uint64_t ordinal : 24,
 		zero : 8,
@@ -1562,6 +1640,15 @@ struct dyld_chained_ptr_arm64e_bind24 {
 		bind : 1, // == 1
 		auth : 1; // == 0
 };
+
+static inline void dyld_chained_ptr_arm64e_bind24_read(struct dyld_chained_ptr_arm64e_bind24 *dst, ut64 raw_val) {
+	READ_BITS(dst->ordinal, 24);
+	READ_BITS(dst->zero, 8);
+	READ_BITS(dst->addend, 19);
+	READ_BITS(dst->next, 11);
+	READ_BITS(dst->bind, 1);
+	READ_BITS(dst->auth, 1);
+}
 
 struct dyld_chained_ptr_arm64e_auth_bind24 {
 	uint64_t ordinal : 24,
@@ -1573,5 +1660,20 @@ struct dyld_chained_ptr_arm64e_auth_bind24 {
 		bind : 1, // == 1
 		auth : 1; // == 1
 };
+
+static inline void dyld_chained_ptr_arm64e_auth_bind24_read(struct dyld_chained_ptr_arm64e_auth_bind24 *dst, ut64 raw_val) {
+	READ_BITS(dst->ordinal, 24);
+	READ_BITS(dst->zero, 8);
+	READ_BITS(dst->diversity, 16);
+	READ_BITS(dst->addrDiv, 1);
+	READ_BITS(dst->key, 2);
+	READ_BITS(dst->next, 11);
+	READ_BITS(dst->bind, 1);
+	READ_BITS(dst->auth, 1);
+}
+
+// When adding more structs/readers here, also add tests to test/unit/test_bin_mach0.c!
+
+#undef READ_BITS
 
 #endif

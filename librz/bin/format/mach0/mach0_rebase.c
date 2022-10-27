@@ -61,23 +61,23 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				case DYLD_CHAINED_PTR_ARM64E: {
 					bool is_bind = IS_PTR_BIND(raw_ptr);
 					if (is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_bind *p =
-							(struct dyld_chained_ptr_arm64e_auth_bind *)&raw_ptr;
-						delta = p->next;
+						struct dyld_chained_ptr_arm64e_auth_bind p;
+						dyld_chained_ptr_arm64e_auth_bind_read(&p, raw_ptr);
+						delta = p.next;
 					} else if (!is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_bind *p =
-							(struct dyld_chained_ptr_arm64e_bind *)&raw_ptr;
-						delta = p->next;
+						struct dyld_chained_ptr_arm64e_bind p;
+						dyld_chained_ptr_arm64e_bind_read(&p, raw_ptr);
+						delta = p.next;
 					} else if (is_auth && !is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_rebase *p =
-							(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = p->target + obj->baddr;
+						struct dyld_chained_ptr_arm64e_auth_rebase p;
+						dyld_chained_ptr_arm64e_auth_rebase_read(&p, raw_ptr);
+						delta = p.next;
+						ptr_value = p.target + obj->baddr;
 					} else {
-						struct dyld_chained_ptr_arm64e_rebase *p =
-							(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = ((ut64)p->high8 << 56) | p->target;
+						struct dyld_chained_ptr_arm64e_rebase p;
+						dyld_chained_ptr_arm64e_rebase_read(&p, raw_ptr);
+						delta = p.next;
+						ptr_value = ((ut64)p.high8 << 56) | p.target;
 					}
 					break;
 				}
@@ -85,15 +85,15 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				case DYLD_CHAINED_PTR_ARM64E_KERNEL: {
 					stride = 4;
 					if (is_auth) {
-						struct dyld_chained_ptr_arm64e_cache_auth_rebase *p =
-							(struct dyld_chained_ptr_arm64e_cache_auth_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = p->target + obj->baddr;
+						struct dyld_chained_ptr_arm64e_cache_auth_rebase p;
+						dyld_chained_ptr_arm64e_cache_auth_rebase_read(&p, raw_ptr);
+						delta = p.next;
+						ptr_value = p.target + obj->baddr;
 					} else {
-						struct dyld_chained_ptr_arm64e_cache_rebase *p =
-							(struct dyld_chained_ptr_arm64e_cache_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = ((ut64)p->high8 << 56) | p->target;
+						struct dyld_chained_ptr_arm64e_cache_rebase p;
+						dyld_chained_ptr_arm64e_cache_rebase_read(&p, raw_ptr);
+						delta = p.next;
+						ptr_value = ((ut64)p.high8 << 56) | p.target;
 						ptr_value += obj->baddr;
 					}
 					break;
@@ -101,15 +101,15 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				case DYLD_CHAINED_PTR_64:
 				case DYLD_CHAINED_PTR_64_OFFSET: {
 					stride = 4;
-					struct dyld_chained_ptr_64_bind *bind =
-						(struct dyld_chained_ptr_64_bind *)&raw_ptr;
-					if (bind->bind) {
-						delta = bind->next;
+					struct dyld_chained_ptr_64_bind bind;
+					dyld_chained_ptr_64_bind_read(&bind, raw_ptr);
+					if (bind.bind) {
+						delta = bind.next;
 					} else {
-						struct dyld_chained_ptr_64_rebase *p =
-							(struct dyld_chained_ptr_64_rebase *)&raw_ptr;
-						delta = p->next;
-						ptr_value = (((ut64)p->high8 << 56) | p->target);
+						struct dyld_chained_ptr_64_rebase p;
+						dyld_chained_ptr_64_rebase_read(&p, raw_ptr);
+						delta = p.next;
+						ptr_value = (((ut64)p.high8 << 56) | p.target);
 						if (segment->pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
 							ptr_value += obj->baddr;
 						}
@@ -118,21 +118,21 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 				}
 				case DYLD_CHAINED_PTR_ARM64E_USERLAND24: {
 					stride = 8;
-					struct dyld_chained_ptr_arm64e_bind24 *bind =
-						(struct dyld_chained_ptr_arm64e_bind24 *)&raw_ptr;
-					if (bind->bind) {
-						delta = bind->next;
+					struct dyld_chained_ptr_arm64e_bind24 bind;
+					dyld_chained_ptr_arm64e_bind24_read(&bind, raw_ptr);
+					if (bind.bind) {
+						delta = bind.next;
 					} else {
-						if (bind->auth) {
-							struct dyld_chained_ptr_arm64e_auth_rebase *p =
-								(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
-							delta = p->next;
-							ptr_value = p->target + obj->baddr;
+						if (bind.auth) {
+							struct dyld_chained_ptr_arm64e_auth_rebase p;
+							dyld_chained_ptr_arm64e_auth_rebase_read(&p, raw_ptr);
+							delta = p.next;
+							ptr_value = p.target + obj->baddr;
 						} else {
-							struct dyld_chained_ptr_arm64e_rebase *p =
-								(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
-							delta = p->next;
-							ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+							struct dyld_chained_ptr_arm64e_rebase p;
+							dyld_chained_ptr_arm64e_rebase_read(&p, raw_ptr);
+							delta = p.next;
+							ptr_value = obj->baddr + (((ut64)p.high8 << 56) | p.target);
 						}
 					}
 					break;

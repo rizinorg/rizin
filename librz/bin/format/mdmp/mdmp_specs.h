@@ -194,560 +194,493 @@ typedef enum thread_write_flags_t {
 } thread_write_flags;
 
 /* Contains header information for the minidump file. */
-RZ_PACKED(
-	struct minidump_header {
-		ut32 signature;
-		ut32 version;
-		ut32 number_of_streams;
-		rva_t stream_directory_rva;
-		ut32 check_sum;
+typedef struct minidump_header_t {
+	ut32 signature;
+	ut32 version;
+	ut32 number_of_streams;
+	rva_t stream_directory_rva;
+	ut32 check_sum;
 
-		union {
-			ut32 reserved;
-			ut32 time_date_stamp;
-		};
+	union {
+		ut32 reserved;
+		ut32 time_date_stamp;
+	};
 
-		ut64 flags;
-	});
-
-/* Contains information describing the location of a data stream within a
- * minidump file. */
-RZ_PACKED(
-	struct minidump_location_descriptor {
-		ut32 data_size;
-		rva_t rva;
-	});
+	ut64 flags;
+} MiniDmpHeader;
 
 /* Contains information describing the location of a data stream within a
  * minidump file. */
-RZ_PACKED(
-	struct minidump_location_descriptor64 {
-		ut64 data_size;
-		rva64_t rva;
-	});
+typedef struct minidump_location_descriptor32_t {
+	ut32 data_size;
+	rva_t rva;
+} MiniDmpLocDescr32;
+
+/* Contains information describing the location of a data stream within a
+ * minidump file. */
+typedef struct minidump_location_descriptor64_t {
+	ut64 data_size;
+	rva64_t rva;
+} MiniDmpLocDescr64;
 
 /* Describes a range of memory. */
-RZ_PACKED(
-	struct minidump_memory_descriptor {
-		ut64 start_of_memory_range;
-		struct minidump_location_descriptor memory;
-	});
+typedef struct minidump_memory_descriptor32_t {
+	ut64 start_of_memory_range;
+	MiniDmpLocDescr32 memory;
+} MiniDmpMemDescr32;
 
 /* Describes a range of memory. */
-RZ_PACKED(
-	struct minidump_memory_descriptor64 {
-		ut64 start_of_memory_range;
-		ut64 data_size;
-	});
+typedef struct minidump_memory_descriptor64_t {
+	ut64 start_of_memory_range;
+	ut64 data_size;
+} MiniDmpMemDescr64;
 
 /* Contains the information needed to access a specific data stream in a minidump file. */
-RZ_PACKED(
-	struct minidump_directory {
-		ut32 stream_type;
-		struct minidump_location_descriptor location;
-	});
+typedef struct minidump_directory_t {
+	ut32 stream_type;
+	MiniDmpLocDescr32 location;
+} MiniDmpDir;
 
 /* Contains exception information. */
-RZ_PACKED(
-	struct minidump_exception {
-		ut32 exception_code;
-		ut32 exception_flags;
-		ut64 exception_record;
-		ut64 exception_address;
-		ut32 number_parameters;
-		ut32 __unused_alignment;
-		ut64 exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-	});
+typedef struct minidump_exception_t {
+	ut32 exception_code;
+	ut32 exception_flags;
+	ut64 exception_record;
+	ut64 exception_address;
+	ut32 number_parameters;
+	ut32 __unused_alignment;
+	ut64 exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
+} MiniDmpException;
 
 /* Contains exception information. */
-RZ_PACKED(
-	struct minidump_exception_stream {
-		ut32 thread_id;
-		ut32 __alignment;
+typedef struct minidump_exception_stream_t {
+	ut32 thread_id;
+	ut32 __alignment;
 
-		struct minidump_exception exception_record;
-		struct minidump_location_descriptor thread_context;
-	});
+	MiniDmpException exception_record;
+	MiniDmpLocDescr32 thread_context;
+} MiniDmpExcStream;
 
 /* Describes an exception. */
-RZ_PACKED(
-	struct minidump_exception_record {
-		ut32 exception_code;
-		ut32 exception_flags;
+typedef struct minidump_exception_record_t {
+	ut32 exception_code;
+	ut32 exception_flags;
 
-		struct minidump_exception_record *exception_record;
+	struct minidump_exception_record_t *exception_record;
 
-		void *exception_address;
-		ut32 number_parameters;
-		void /*ULONG_PTR*/ *exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
-	});
+	void *exception_address;
+	ut32 number_parameters;
+	void /*ULONG_PTR*/ *exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
+} MiniDmpExcRecord; /* unused */
 
 /* Contains an exception record with a machine-independent description of an
  * exception and a context record with a machine-dependent description of the
  * processor context at the time of the exception. */
-RZ_PACKED(
-	struct minidump_exception_pointers {
-		struct minidump_exception_record exception_record;
-		void /* struct context */ *context_record;
-	});
+typedef struct minidump_exception_pointers_t {
+	MiniDmpExcRecord exception_record;
+	void /* struct context */ *context_record;
+} MiniDmpExcPointers; /* unused */
 
 /* Contains the exception information written to the minidump file by the
  * MiniDumpWriteDump function. */
-RZ_PACKED(
-	struct minidump_exception_information {
-		ut32 thread_id;
-
-		struct minidump_exception_pointers *exception_pointers;
-
-		ut8 /*bool*/ client_pointers;
-	});
+typedef struct minidump_exception_information_t {
+	ut32 thread_id;
+	MiniDmpExcPointers *exception_pointers;
+	ut8 /*bool*/ client_pointers;
+} MiniDmpExcInfo; /* unused */
 
 /* Represents a function table stream. */
-RZ_PACKED(
-	struct minidump_function_table_descriptor {
-		ut64 minimum_address;
-		ut64 maximum_address;
-		ut64 base_address;
-		ut32 entry_count;
-		ut32 size_of_align_pad;
-	});
+typedef struct minidump_function_table_descriptor_t {
+	ut64 minimum_address;
+	ut64 maximum_address;
+	ut64 base_address;
+	ut32 entry_count;
+	ut32 size_of_align_pad;
+} MiniDmpFuncTableDescr; /* unused */
 
 /* Represents the header for the function table stream. */
-RZ_PACKED(
-	struct minidump_function_table_stream {
-		ut32 size_of_header;
-		ut32 size_of_descriptor;
-		ut32 size_of_native_descriptor;
-		ut32 size_of_function_entry;
-		ut32 number_of_descriptors;
-		ut32 size_of_align_pad;
-	});
+typedef struct minidump_function_table_stream_t {
+	ut32 size_of_header;
+	ut32 size_of_descriptor;
+	ut32 size_of_native_descriptor;
+	ut32 size_of_function_entry;
+	ut32 number_of_descriptors;
+	ut32 size_of_align_pad;
+} MiniDmpFuncTableStream;
 
 /* Represents the header for a handle data stream. */
-RZ_PACKED(
-	struct minidump_handle_data_stream {
-		ut32 size_of_header;
-		ut32 size_of_descriptor;
-		ut32 number_of_descriptors;
-		ut32 reserved;
-	});
+typedef struct minidump_handle_data_stream_t {
+	ut32 size_of_header;
+	ut32 size_of_descriptor;
+	ut32 number_of_descriptors;
+	ut32 reserved;
+} MiniDmpHandleDataStream;
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-RZ_PACKED(
-	struct minidump_handle_descriptor {
-		ut64 handle;
-		rva_t type_name_rva;
-		rva_t object_name_rva;
-		ut32 attributes;
-		ut32 granted_access;
-		ut32 handle_count;
-		ut32 pointer_count;
-	});
+typedef struct minidump_handle_descriptor_t {
+	ut64 handle;
+	rva_t type_name_rva;
+	rva_t object_name_rva;
+	ut32 attributes;
+	ut32 granted_access;
+	ut32 handle_count;
+	ut32 pointer_count;
+} MiniDmpHandleDescr; /* unused */
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-RZ_PACKED(
-	struct minidump_handle_descriptor_2 {
-		ut64 handle;
-		rva_t type_name_rva;
-		rva_t object_name_rva;
-		ut32 attributes;
-		ut32 granted_access;
-		ut32 handle_count;
-		ut32 pointer_count;
-		rva_t object_info_rva;
-		ut32 reserved_0;
-	});
+typedef struct minidump_handle_descriptor_2_t {
+	ut64 handle;
+	rva_t type_name_rva;
+	rva_t object_name_rva;
+	ut32 attributes;
+	ut32 granted_access;
+	ut32 handle_count;
+	ut32 pointer_count;
+	rva_t object_info_rva;
+	ut32 reserved_0;
+} MiniDmpHandleDescr2; /* unused */
 
 /* Contains object-specific information for a handle. */
-RZ_PACKED(
-	struct minidump_handle_object_information {
-		rva_t next_info_rva;
-		ut32 info_type;
-		ut32 size_of_info;
-	});
+typedef struct minidump_handle_object_information_t {
+	rva_t next_info_rva;
+	ut32 info_type;
+	ut32 size_of_info;
+} MiniDmpHandleObjInfo; /* unused */
 
 /* Contains a list of memory ranges. */
-RZ_PACKED(
-	struct minidump_memory_list {
-		ut32 number_of_memory_ranges;
-		struct minidump_memory_descriptor memory_ranges[];
-	});
+typedef struct minidump_memory_list32_t {
+	ut32 number_of_memory_ranges;
+} MiniDmpMemList32;
 
 /* Contains a list of memory ranges. */
-RZ_PACKED(
-	struct minidump_memory64_list {
-		ut64 number_of_memory_ranges;
-		rva64_t base_rva;
-		struct minidump_memory_descriptor64 memory_ranges[];
-	});
+typedef struct minidump_memory_list64_t {
+	ut64 number_of_memory_ranges;
+	rva64_t base_rva;
+} MiniDmpMemList64;
 
 /* Describes a region of memory. */
-RZ_PACKED(
-	struct minidump_memory_info {
-		ut64 base_address;
-		ut64 allocation_base;
-		ut32 allocation_protect;
-		ut32 __alignment_1;
-		ut64 region_size;
-		ut32 state;
-		ut32 protect;
-		ut32 type;
-		ut32 __alignment_2;
-	});
+typedef struct minidump_memory_info_t {
+	ut64 base_address;
+	ut64 allocation_base;
+	ut32 allocation_protect;
+	ut32 __alignment_1;
+	ut64 region_size;
+	ut32 state;
+	ut32 protect;
+	ut32 type;
+	ut32 __alignment_2;
+} MiniDmpMemInfo;
 
 /* Contains a list of memory regions. */
-RZ_PACKED(
-	struct minidump_memory_info_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut64 number_of_entries;
-		struct minidump_memory_info entries[];
-	});
+typedef struct minidump_memory_info_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut64 number_of_entries;
+} MiniDmpMemInfoList;
 
 /* Contains a variety of information. */
-RZ_PACKED(
-	struct minidump_misc_info {
-		ut32 size_of_info;
-		ut32 flags_1;
-		ut32 process_id;
-		ut32 process_create_time;
-		ut32 process_user_time;
-		ut32 process_kernel_time;
-	});
+typedef struct minidump_misc_info_t {
+	ut32 size_of_info;
+	ut32 flags_1;
+	ut32 process_id;
+	ut32 process_create_time;
+	ut32 process_user_time;
+	ut32 process_kernel_time;
+} MiniDmpMiscInfo;
 
 /* Represents information in the miscellaneous information stream. */
-RZ_PACKED(
-	struct minidump_misc_info_2 {
-		ut32 size_of_info;
-		ut32 flags_1;
-		ut32 process_id;
-		ut32 process_create_time;
-		ut32 process_user_time;
-		ut32 process_kernel_time;
-		ut32 processor_max_mhz;
-		ut32 processor_current_mhz;
-		ut32 processor_mhz_limit;
-		ut32 processor_max_idle_state;
-		ut32 processor_current_idle_state;
-	});
+typedef struct minidump_misc_info_2_t {
+	ut32 size_of_info;
+	ut32 flags_1;
+	ut32 process_id;
+	ut32 process_create_time;
+	ut32 process_user_time;
+	ut32 process_kernel_time;
+	ut32 processor_max_mhz;
+	ut32 processor_current_mhz;
+	ut32 processor_mhz_limit;
+	ut32 processor_max_idle_state;
+	ut32 processor_current_idle_state;
+} MiniDmpMiscInfo2; /* unused */
 
 /* Contains version information for a file. This information is language and
  * code page independent. */
-RZ_PACKED(
-	struct vs_fixedfileinfo {
-		ut32 dw_signature;
-		ut32 dw_struc_version;
-		ut32 dw_file_version_ms;
-		ut32 dw_file_version_ls;
-		ut32 dw_product_version_ms;
-		ut32 dw_product_version_ls;
-		ut32 dw_file_flags_mask;
-		ut32 dw_file_flags;
-		ut32 dw_file_os;
-		ut32 dw_file_type;
-		ut32 dw_file_subtype;
-		ut32 dw_file_date_ms;
-		ut32 dw_file_date_ls;
-	});
+typedef struct vs_fixedfileinfo_t {
+	ut32 dw_signature;
+	ut32 dw_struc_version;
+	ut32 dw_file_version_ms;
+	ut32 dw_file_version_ls;
+	ut32 dw_product_version_ms;
+	ut32 dw_product_version_ls;
+	ut32 dw_file_flags_mask;
+	ut32 dw_file_flags;
+	ut32 dw_file_os;
+	ut32 dw_file_type;
+	ut32 dw_file_subtype;
+	ut32 dw_file_date_ms;
+	ut32 dw_file_date_ls;
+} VSFixedFileInfo;
 
 /* Contains information for a specific module. */
-RZ_PACKED(
-	struct minidump_module {
-		ut64 base_of_image;
-		ut32 size_of_image;
-		ut32 check_sum;
-		ut32 time_date_stamp;
-		rva_t module_name_rva;
+typedef struct minidump_module_t {
+	ut64 base_of_image;
+	ut32 size_of_image;
+	ut32 check_sum;
+	ut32 time_date_stamp;
+	rva_t module_name_rva;
 
-		struct vs_fixedfileinfo version_info;
-		struct minidump_location_descriptor cv_record;
-		struct minidump_location_descriptor misc_record;
+	VSFixedFileInfo version_info;
+	MiniDmpLocDescr32 cv_record;
+	MiniDmpLocDescr32 misc_record;
 
-		ut64 reserved_0;
-		ut64 reserved_1;
-	});
+	ut64 reserved_0;
+	ut64 reserved_1;
+} MiniDmpModule;
 
 /* Contains a list of modules. */
-RZ_PACKED(
-	struct minidump_module_list {
-		ut32 number_of_modules;
-		struct minidump_module modules[];
-	});
-
-/* Describes a string. */
-RZ_PACKED(
-	struct minidump_string {
-		ut32 length;
-		ut16 *buffer;
-	});
+typedef struct minidump_module_list_t {
+	ut32 number_of_modules;
+} MiniDmpModuleList;
 
 /* Contains processor and operating system information. */
-RZ_PACKED(
-	struct minidump_system_info {
-		ut16 processor_architecture;
-		ut16 processor_level;
-		ut16 processor_revision;
+typedef struct minidump_system_info_t {
+	ut16 processor_architecture;
+	ut16 processor_level;
+	ut16 processor_revision;
 
-		union {
-			ut16 reserved_0;
-			struct {
-				ut8 number_of_processors;
-				ut8 product_type;
-			};
+	union {
+		ut16 reserved_0;
+		struct {
+			ut8 number_of_processors;
+			ut8 product_type;
 		};
+	};
 
-		ut32 major_version;
-		ut32 minor_version;
-		ut32 build_number;
-		ut32 platform_id;
-		rva_t csd_version_rva;
+	ut32 major_version;
+	ut32 minor_version;
+	ut32 build_number;
+	ut32 platform_id;
+	rva_t csd_version_rva;
 
-		union {
-			ut32 reserved_1;
-			struct {
-				ut16 suite_mask;
-				ut16 reserved_2;
-			};
+	union {
+		ut32 reserved_1;
+		struct {
+			ut16 suite_mask;
+			ut16 reserved_2;
 		};
+	};
 
-		union {
-			struct {
-				ut32 vendor_id[3];
-				ut32 version_information;
-				ut32 feature_information;
-				ut32 amd_extended_cpu_features;
-			} x86_cpu_info;
-			struct {
-				ut64 processor_features[2];
-			} other_cpu_info;
-		} cpu;
-	});
+	union {
+		struct {
+			ut32 vendor_id[3];
+			ut32 version_information;
+			ut32 feature_information;
+			ut32 amd_extended_cpu_features;
+		} x86_cpu_info;
+		struct {
+			ut64 processor_features[2];
+		} other_cpu_info;
+	} cpu;
+} MiniDmpSysInfo;
 
 /* Contains information for a specific thread. */
-RZ_PACKED(
-	struct minidump_thread {
-		ut32 thread_id;
-		ut32 suspend_count;
-		ut32 priority_class;
-		ut32 priority;
-		ut64 teb;
-		struct minidump_memory_descriptor stack;
-		struct minidump_location_descriptor thread_context;
-	});
+typedef struct minidump_thread_t {
+	ut32 thread_id;
+	ut32 suspend_count;
+	ut32 priority_class;
+	ut32 priority;
+	ut64 teb;
+	MiniDmpMemDescr32 stack;
+	MiniDmpLocDescr32 thread_context;
+} MiniDmpThread;
 
 /* Contains a list of threads. */
-RZ_PACKED(
-	struct minidump_thread_list {
-		ut32 number_of_threads;
-		struct minidump_thread threads[0];
-	});
+typedef struct minidump_thread_list_t {
+	ut32 number_of_threads;
+	MiniDmpThread threads[0]; // not parsed because not used due missing usage.
+} MiniDmpThreadList;
 
 /* Contains extended information for a specific thread. */
-RZ_PACKED(
-	struct minidump_thread_ex {
-		ut32 thread_id;
-		ut32 suspend_count;
-		ut32 priority_class;
-		ut32 priority;
-		ut64 teb;
+typedef struct minidump_thread_ex_t {
+	ut32 thread_id;
+	ut32 suspend_count;
+	ut32 priority_class;
+	ut32 priority;
+	ut64 teb;
 
-		struct minidump_memory_descriptor stack;
-		struct minidump_location_descriptor thread_context;
-		struct minidump_memory_descriptor backing_store;
-	});
+	MiniDmpMemDescr32 stack;
+	MiniDmpLocDescr32 thread_context;
+	MiniDmpMemDescr32 backing_store;
+} MiniDmpThreadEx;
 
 /* Contains a list of threads. */
-RZ_PACKED(
-	struct minidump_thread_ex_list {
-		ut32 number_of_threads;
-		struct minidump_thread_ex threads[];
-	});
+typedef struct minidump_thread_ex_list_t {
+	ut32 number_of_threads;
+} MiniDmpThreadExList;
 
 /* Contains thread state information. */
-RZ_PACKED(
-	struct minidump_thread_info {
-		ut32 thread_id;
-		ut32 dump_flags;
-		ut32 dump_error;
-		ut32 exit_status;
-		ut64 create_time;
-		ut64 exit_time;
-		ut64 kernel_time;
-		ut64 user_time;
-		ut64 start_address;
-		ut64 affinity;
-	});
+typedef struct minidump_thread_info_t {
+	ut32 thread_id;
+	ut32 dump_flags;
+	ut32 dump_error;
+	ut32 exit_status;
+	ut64 create_time;
+	ut64 exit_time;
+	ut64 kernel_time;
+	ut64 user_time;
+	ut64 start_address;
+	ut64 affinity;
+} MiniDmpThreadInfo;
 
 /* Contains a list of threads. */
-RZ_PACKED(
-	struct minidump_thread_info_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut32 number_of_entries;
-		struct minidump_thread_info entries[];
-	});
+typedef struct minidump_thread_info_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+} MiniDmpThreadInfoList;
 
 /* Contains a token information. */
-RZ_PACKED(
-	struct minidump_token_info {
-		ut32 token_size;
-		ut32 token_id;
-		ut64 token_handle;
-	});
+typedef struct minidump_token_info_t {
+	ut32 token_size;
+	ut32 token_id;
+	ut64 token_handle;
+} MiniDmpTokenInfo;
 
 /* Contains a list of token information. */
-RZ_PACKED(
-	struct minidump_token_info_list {
-		ut32 size_of_list;
-		ut32 number_of_entries;
-		ut32 list_header_size;
-		ut32 element_header_size;
-		struct minidump_token_info entries[];
-	});
+typedef struct minidump_token_info_list_t {
+	ut32 size_of_list;
+	ut32 number_of_entries;
+	ut32 list_header_size;
+	ut32 element_header_size;
+} MiniDmpTokenInfoList;
 
 /* Contains information about a module that has been unloaded. This information
  * can help diagnose problems calling code that is no longer loaded. */
-RZ_PACKED(
-	struct minidump_unloaded_module {
-		ut64 base_of_image;
-		ut32 size_of_image;
-		ut32 check_sum;
-		ut32 time_date_stamp;
-		rva_t module_name_rva;
-	});
+typedef struct minidump_unloaded_module_t {
+	ut64 base_of_image;
+	ut32 size_of_image;
+	ut32 check_sum;
+	ut32 time_date_stamp;
+	rva_t module_name_rva;
+} MiniDmpUnloadedModule;
 
 /* Contains a list of unloaded modules. */
-RZ_PACKED(
-	struct minidump_unloaded_module_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut32 number_of_entries;
-		struct minidump_unloaded_module entries[];
-	});
+typedef struct minidump_unloaded_module_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+} MiniDmpUnloadedModuleList;
 
 /* Contains user-defined information stored in a data stream. */
-RZ_PACKED(
-	struct minidump_user_stream {
-		ut32 type;
-		ut32 buffer_size;
-		void /*PVOID*/ *buffer;
-	});
+typedef struct minidump_user_stream_t {
+	ut32 type;
+	ut32 buffer_size;
+	void /*PVOID*/ *buffer;
+} MiniDmpUserStream; /* unused */
 
 /* Contains a list of user data streams used by the MiniDumpWriteDump function. */
-RZ_PACKED(
-	struct minidump_user_stream_information {
-		ut32 user_stream_count;
-
-		struct minidump_user_stream *user_stream_array;
-	});
+typedef struct minidump_user_stream_information_t {
+	ut32 user_stream_count;
+	MiniDmpUserStream *user_stream_array;
+} MiniDmpUserStreamInfo; /* unused */
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeThreadCallback. */
-RZ_PACKED(
-	struct minidump_include_thread_callback {
-		ut32 thread_id;
-	});
+typedef struct minidump_include_thread_callback_t {
+	ut32 thread_id;
+} MiniDmpIncludeThreadCallback; /* unused */
 
 /* Contains module information for the MiniDumpCallback function when the
  * callback type is ModuleCallback. */
-RZ_PACKED(
-	struct minidump_module_callback {
-		ut16 /*pwchar*/ *full_path;
-		ut64 base_of_image;
-		ut32 size_of_image;
-		ut32 check_sum;
-		ut32 time_date_stamp;
+typedef struct minidump_module_callback_t {
+	ut16 /*pwchar*/ *full_path;
+	ut64 base_of_image;
+	ut32 size_of_image;
+	ut32 check_sum;
+	ut32 time_date_stamp;
 
-		struct vs_fixedfileinfo version_info;
+	VSFixedFileInfo version_info;
 
-		void /*pvoid*/ *cv_record;
-		ut32 size_of_cv_record;
-		void /*pvoid*/ *misc_record;
-		ut32 size_of_misc_record;
-	});
+	void /*pvoid*/ *cv_record;
+	ut32 size_of_cv_record;
+	void /*pvoid*/ *misc_record;
+	ut32 size_of_misc_record;
+} MiniDmpModuleCallback; /* unused */
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeModuleCallback. */
-RZ_PACKED(
-	struct minidump_include_module_callback {
-		ut64 base_of_image;
-	});
+typedef struct minidump_include_module_callback_t {
+	ut64 base_of_image;
+} MiniDmpIncludeModuleCallback; /* unused */
 
 /* Contains I/O callback information. This structure is used by the
  * MiniDumpCallback function when the callback type is IoStartCallback,
  * IoWriteAllCallback, or IoFinishCallback. */
-RZ_PACKED(
-	struct minidump_io_callback {
-		void /*handle*/ *Handle;
-		ut64 offset;
-		void /*pvoid*/ *buffer;
-		ut32 buffer_bytes;
-	});
+typedef struct minidump_io_callback_t {
+	void /*handle*/ *Handle;
+	ut64 offset;
+	void /*pvoid*/ *buffer;
+	ut32 buffer_bytes;
+} MiniDmpIOCallback; /* unused */
 
 /* Contains information about a failed memory read operation. This structure is
  * used by the MiniDumpCallback function when the callback type is
  * ReadMemoryFailureCallback. */
-RZ_PACKED(
-	struct minidump_read_memory_failure_callback {
-		ut64 offset;
-		ut32 bytes;
-		st32 /* HRESULT */ failure_status;
-	});
+typedef struct minidump_read_memory_failure_callback_t {
+	ut64 offset;
+	ut32 bytes;
+	st32 /* HRESULT */ failure_status;
+} MiniDmpReadMemoryFailureCallback; /* unused */
 
 /* Contains information returned by the MiniDumpCallback function. */
-RZ_PACKED(
-	struct minidump_callback_output {
-		union {
-			ut32 module_write_flags;
-			ut32 thread_write_flags;
-			ut32 secondary_flags;
-			struct {
-				ut64 memory_base;
-				ut32 memory_size;
-			};
-			struct {
-				ut8 /*bool*/ check_cancel;
-				ut8 /*bool*/ cancel;
-			};
-			void /*handle*/ *handle;
-		};
-
+typedef struct minidump_callback_output_t {
+	union {
+		ut32 module_write_flags;
+		ut32 thread_write_flags;
+		ut32 secondary_flags;
 		struct {
-			struct minidump_memory_info vm_region;
-			ut8 /*bool*/ should_continue;
+			ut64 memory_base;
+			ut32 memory_size;
 		};
+		struct {
+			ut8 /*bool*/ check_cancel;
+			ut8 /*bool*/ cancel;
+		};
+		void /*handle*/ *handle;
+	};
 
-		st32 /* HRESULT */ status;
-	});
+	struct {
+		MiniDmpMemInfo vm_region;
+		ut8 /*bool*/ should_continue;
+	};
 
-RZ_PACKED(
-	struct avrf_backtrace_information {
-		ut32 depth;
-		ut32 index;
-		ut64 return_addresses[AVRF_MAX_TRACES];
-	});
+	st32 /* HRESULT */ status;
+} MiniDmpCallbackOutput; /* unused */
 
-RZ_PACKED(
-	struct avrf_handle_operation {
-		ut64 handle;
-		ut32 process_id;
-		ut32 thread_id;
-		ut32 operation_type;
-		ut32 spare_0;
+typedef struct avrf_backtrace_information_t {
+	ut32 depth;
+	ut32 index;
+	ut64 return_addresses[AVRF_MAX_TRACES];
+} AVRFBacktraceInfo;
 
-		struct avrf_backtrace_information back_trace_information;
-	});
+typedef struct avrf_handle_operation_t {
+	ut64 handle;
+	ut32 process_id;
+	ut32 thread_id;
+	ut32 operation_type;
+	ut32 spare_0;
+
+	AVRFBacktraceInfo back_trace_information;
+} AVRFHandleOp;
 
 /* Contains a list of handle operations. */
-RZ_PACKED(
-	struct minidump_handle_operation_list {
-		ut32 size_of_header;
-		ut32 size_of_entry;
-		ut32 number_of_entries;
-		ut32 reserved;
-		struct avrf_handle_operation entries[];
-	});
+typedef struct minidump_handle_operation_list_t {
+	ut32 size_of_header;
+	ut32 size_of_entry;
+	ut32 number_of_entries;
+	ut32 reserved;
+} MiniDmpHandleOpList;
 
 #endif /* MDMP_SPECS_H */

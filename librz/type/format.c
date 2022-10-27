@@ -43,7 +43,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 		return 0;
 	}
 	if (len >= sizeof(float)) {
-		rz_mem_swaporcopy((ut8 *)&f, buf, sizeof(float), endian);
+		f = rz_read_ble_float(buf, endian);
 	}
 	if (addr && len > 3) {
 		ut32 tmpaddr = rz_read_ble32(buf, endian);
@@ -1055,7 +1055,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 		size %= ARRAYINDEX_COEF;
 	}
 	updateAddr(buf + i, 999, endian, &addr, NULL);
-	rz_mem_swaporcopy((ut8 *)&val_f, buf + i, sizeof(double), endian);
+	val_f = rz_read_at_ble_double(buf, i, endian);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv8 %s @ 0x%08" PFMT64x "\n", setval,
 			seeki + ((elem >= 0) ? elem * 8 : 0));
@@ -1077,7 +1077,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 			while (size--) {
 				// XXX this 999 is scary
 				updateAddr(buf + i, 9999, endian, &addr, NULL);
-				rz_mem_swaporcopy((ut8 *)&val_f, buf + i, sizeof(double), endian);
+				val_f = rz_read_at_ble_double(buf, i, endian);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%.17g", val_f);
 					if (elem == 0) {

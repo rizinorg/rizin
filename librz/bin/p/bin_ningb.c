@@ -249,7 +249,7 @@ RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_ningb = {
 	.name = "ningb",
-	.desc = "Gameboy format rz_bin plugin",
+	.desc = "Nintendo Gameboy plugin",
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

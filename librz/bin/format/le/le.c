@@ -94,6 +94,29 @@ static RzBinSymbol *le_get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
 	return sym;
 }
 
+static bool read_le_entry_bundle_entry(RzBuffer *buf, ut64 addr, LE_entry_bundle_entry *e, LE_entry_bundle_type type) {
+	ut64 offset = addr;
+	switch (type) {
+	case ENTRY16:
+		return rz_buf_read8_offset(buf, &offset, &e->entry_16.flags) &&
+			rz_buf_read_le16_offset(buf, &offset, &e->entry_16.offset);
+	case CALLGATE:
+		return rz_buf_read8_offset(buf, &offset, &e->callgate.flags) &&
+			rz_buf_read_le16_offset(buf, &offset, &e->callgate.offset) &&
+			rz_buf_read_le16_offset(buf, &offset, &e->callgate.callgate_sel);
+	case ENTRY32:
+		return rz_buf_read8_offset(buf, &offset, &e->entry_32.flags) &&
+			rz_buf_read_le32_offset(buf, &offset, &e->entry_32.offset);
+	case FORWARDER:
+		return rz_buf_read8_offset(buf, &offset, &e->forwarder.flags) &&
+			rz_buf_read_le16_offset(buf, &offset, &e->forwarder.import_ord) &&
+			rz_buf_read_le32_offset(buf, &offset, &e->forwarder.offset);
+	default:
+		memset(e, 0, sizeof(LE_entry_bundle_entry));
+		return false;
+	}
+}
+
 RzList /*<char *>*/ *le_get_entries(rz_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)bin->header->enttab + bin->headerOff;
 	RzList *l = rz_list_newf(free);
@@ -124,9 +147,10 @@ RzList /*<char *>*/ *le_get_entries(rz_bin_le_obj_t *bin) {
 		bool typeinfo = header.type & ENTRY_PARAMETER_TYPING_PRESENT;
 		int i;
 		for (i = 0; i < header.count; i++) {
-			ut64 entry = -1;
-			rz_buf_read_at(bin->buf, offset, (ut8 *)&e, sizeof(e));
-			switch (header.type & ~ENTRY_PARAMETER_TYPING_PRESENT) {
+			LE_entry_bundle_type bundle_type = header.type & ~ENTRY_PARAMETER_TYPING_PRESENT;
+			ut64 entry = UT64_MAX;
+			read_le_entry_bundle_entry(bin->buf, offset, &e, bundle_type);
+			switch (bundle_type) {
 			case ENTRY16:
 				if ((header.objnum - 1) < bin->header->objcnt) {
 					entry = (ut64)e.entry_16.offset + bin->objtbl[header.objnum - 1].reloc_base_addr;
@@ -156,6 +180,8 @@ RzList /*<char *>*/ *le_get_entries(rz_bin_le_obj_t *bin) {
 				break;
 			case FORWARDER:
 				offset += sizeof(e.forwarder);
+				break;
+			default:
 				break;
 			}
 			if (entry != UT64_MAX) {
@@ -488,13 +514,12 @@ RzList /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			break;
 		}
 		LE_fixup_record_header header;
-		int ret = rz_buf_read_at(bin->buf, offset, (ut8 *)&header, sizeof(header));
-		if (ret != sizeof(header)) {
+		if (!(rz_buf_read8_offset(bin->buf, &offset, &header.source) &&
+			    rz_buf_read8_offset(bin->buf, &offset, &header.target))) {
 			RZ_LOG_WARN("Cannot read out of bounds relocation.\n");
 			free(rel);
 			break;
 		}
-		offset += sizeof(header);
 		switch (header.source & F_SOURCE_TYPE_MASK) {
 		case BYTEFIXUP:
 			rel->type = RZ_BIN_RELOC_8;

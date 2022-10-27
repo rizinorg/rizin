@@ -362,6 +362,14 @@ commands:
               - name: signature
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
+          - name: afsb
+            cname: analysis_function_signature_bytes
+            summary: Outputs the function signature bytes, mask and search mask at current address
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            args: []
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
           - name: afs!
             cname: analysis_function_signature_editor
             summary: Set function signature at current address by using the editor

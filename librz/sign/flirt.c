@@ -202,6 +202,8 @@ typedef struct parse_status_t {
 // CRC-HDLC & CRC-16/X-25 produces the same but in LE format.
 #define POLY 0x8408
 ut16 flirt_crc16(const ut8 *data_p, size_t length) {
+	rz_return_val_if_fail(data_p, 0);
+
 	ut8 i;
 	ut32 data;
 	ut32 crc = 0xFFFF;
@@ -345,6 +347,15 @@ static bool is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask
 	return true;
 }
 
+static bool check_crc16(const RzFlirtModule *module, ut8 *b, ut32 b_size) {
+	if (!module->crc_length) {
+		return true;
+	} else if ((b_size - RZ_FLIRT_MAX_PRELUDE_SIZE) < module->crc_length) {
+		return false;
+	}
+	return module->crc16 == flirt_crc16(b + RZ_FLIRT_MAX_PRELUDE_SIZE, module->crc_length);
+}
+
 /**
  * \brief Checks if the module matches the buffer and renames the matched functions
  *
@@ -357,44 +368,47 @@ static bool is_pattern_matching(ut32 p_size, const ut8 *pattern, const ut8 *mask
  * \return True if pattern does match, false otherwise.
  */
 static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module, ut8 *b, ut64 address, ut32 buf_size) {
-	RzFlirtFunction *flirt_func;
-	RzAnalysisFunction *next_module_function;
-	RzListIter *tail_byte_it, *flirt_func_it;
-	RzFlirtTailByte *tail_byte;
+	RzFlirtFunction *flirt_func = NULL;
+	RzAnalysisFunction *next_module_function = NULL;
+	RzListIter *it = NULL;
+	RzFlirtTailByte *tail_byte = NULL;
 	ut32 name_index = 0;
 
-	if (32 + module->crc_length < buf_size &&
-		module->crc16 != flirt_crc16(b + 32, module->crc_length)) {
+	if (!check_crc16(module, b, buf_size)) {
 		return false;
 	}
 	if (module->tail_bytes) {
-		rz_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			if (32 + module->crc_length + tail_byte->offset < buf_size &&
-				b[32 + module->crc_length + tail_byte->offset] != tail_byte->value) {
+		rz_list_foreach (module->tail_bytes, it, tail_byte) {
+			if (RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset < buf_size &&
+				b[RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset] != tail_byte->value) {
 				return false;
 			}
 		}
 	}
 
-	rz_list_foreach (module->public_functions, flirt_func_it, flirt_func) {
+	rz_list_foreach (module->public_functions, it, flirt_func) {
+		if (next_module_function && (address + flirt_func->offset) == next_module_function->addr) {
+			// ensures that the next function is an actual function not pointing to the same offset
+			break;
+		}
+
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
-
-		next_module_function = rz_analysis_get_function_at((RzAnalysis *)analysis, address + flirt_func->offset);
+		next_module_function = rz_analysis_get_function_at(analysis, address + flirt_func->offset);
 		if (next_module_function) {
 			ut32 next_module_function_size;
 
 			// get function size from flirt signature
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
 			RzFlirtFunction *next_flirt_func;
-			RzListIter *next_flirt_func_it = flirt_func_it->n;
-			while (next_flirt_func_it) {
-				next_flirt_func = next_flirt_func_it->data;
+			RzListIter *next_it = it->n;
+			while (next_it) {
+				next_flirt_func = next_it->data;
 				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
 					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
 					break;
 				}
-				next_flirt_func_it = next_flirt_func_it->n;
+				next_it = next_it->n;
 			}
 			// resize function if needed
 			next_module_function_size = rz_analysis_function_linear_size(next_module_function);
@@ -441,7 +455,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 
 			// remove old flag
-			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
+			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "sym.", "fcn.", "func.", NULL);
 			if (fit) {
 				analysis->flb.unset(analysis->flb.f, fit);
 			}
@@ -499,12 +513,13 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 	RzListIter *it_func;
 	RzAnalysisFunction *func;
 	rz_list_foreach (analysis->fcns, it_func, func) {
-		if (func->type != RZ_ANALYSIS_FCN_TYPE_FCN && func->type != RZ_ANALYSIS_FCN_TYPE_LOC) { // scan only for unknown functions
+		if (func->name && !strncmp(func->name, "flirt.", strlen("flirt."))) {
 			continue;
 		}
 
 		ut64 func_size = rz_analysis_function_linear_size(func);
-		ut8 *func_buf = malloc(func_size);
+		ut64 malloc_size = RZ_MAX(func_size, RZ_FLIRT_MAX_PRELUDE_SIZE);
+		ut8 *func_buf = calloc(1, malloc_size);
 		if (!func_buf) {
 			ret = false;
 			break;
@@ -518,7 +533,7 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 		RzListIter *node_child_it;
 		RzFlirtNode *child;
 		rz_list_foreach (root_node->child_list, node_child_it, child) {
-			if (node_match_buffer(analysis, child, func_buf, func->addr, func_size, 0)) {
+			if (node_match_buffer(analysis, child, func_buf, func->addr, malloc_size, 0)) {
 				break;
 			}
 		}
@@ -1658,7 +1673,7 @@ RZ_API bool rz_sign_flirt_write_compressed_pattern_to_buffer(RZ_NONNULL const Rz
 
 	if (options->version >= 8) {
 		// pattern_size (little endian) - we always use 32 bytes prelude
-		rz_buf_append_le_bits(buffer, tmp, 32, 16);
+		rz_buf_append_le_bits(buffer, tmp, RZ_FLIRT_MAX_PRELUDE_SIZE, 16);
 	}
 
 	if (options->version >= 10) {

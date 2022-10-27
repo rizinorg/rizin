@@ -254,24 +254,24 @@ RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 								int addend = -1;
 								ut64 delta;
 								if (is_auth && is_bind) {
-									struct dyld_chained_ptr_arm64e_auth_bind *p =
-										(struct dyld_chained_ptr_arm64e_auth_bind *)&raw_ptr;
-									delta = p->next;
-									ordinal = p->ordinal;
+									struct dyld_chained_ptr_arm64e_auth_bind p;
+									dyld_chained_ptr_arm64e_auth_bind_read(&p, raw_ptr);
+									delta = p.next;
+									ordinal = p.ordinal;
 								} else if (!is_auth && is_bind) {
-									struct dyld_chained_ptr_arm64e_bind *p =
-										(struct dyld_chained_ptr_arm64e_bind *)&raw_ptr;
-									delta = p->next;
-									ordinal = p->ordinal;
-									addend = p->addend;
+									struct dyld_chained_ptr_arm64e_bind p;
+									dyld_chained_ptr_arm64e_bind_read(&p, raw_ptr);
+									delta = p.next;
+									ordinal = p.ordinal;
+									addend = p.addend;
 								} else if (is_auth && !is_bind) {
-									struct dyld_chained_ptr_arm64e_auth_rebase *p =
-										(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
-									delta = p->next;
+									struct dyld_chained_ptr_arm64e_auth_rebase p;
+									dyld_chained_ptr_arm64e_auth_rebase_read(&p, raw_ptr);
+									delta = p.next;
 								} else {
-									struct dyld_chained_ptr_arm64e_rebase *p =
-										(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
-									delta = p->next;
+									struct dyld_chained_ptr_arm64e_rebase p;
+									dyld_chained_ptr_arm64e_rebase_read(&p, raw_ptr);
+									delta = p.next;
 								}
 								if (ordinal != -1) {
 									if (ordinal >= n_threaded_binds) {

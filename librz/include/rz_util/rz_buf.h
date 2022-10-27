@@ -224,6 +224,15 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 		return true; \
 	}
 
+static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result, size_t size) {
+	rz_return_val_if_fail(b && offset && result, false);
+	if (rz_buf_read_at(b, *offset, result, size) != size) {
+		return false;
+	}
+	*offset += size;
+	return true;
+}
+
 #define DEFINE_RZ_BUF_WRITE_OFFSET_BLE(size) \
 	static inline bool rz_buf_write_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, ut##size value, bool big_endian) { \
 		rz_return_val_if_fail(b &&offset, false); \
@@ -233,6 +242,15 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 		*offset += sizeof(value); \
 		return true; \
 	}
+
+static inline bool rz_buf_write_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL ut8 *result, size_t size) {
+	rz_return_val_if_fail(b && offset && result, false);
+	if (rz_buf_write_at(b, *offset, result, size) != size) {
+		return false;
+	}
+	*offset += size;
+	return true;
+}
 
 #define rz_buf_read_ble8_at(b, addr, result, endian) ((void)endian, rz_buf_read8_at(b, addr, result))
 #define rz_buf_write_ble8_at(b, addr, value, endian) ((void)endian, rz_buf_write8_at(b, addr, value))

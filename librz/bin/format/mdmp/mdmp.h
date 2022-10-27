@@ -14,22 +14,22 @@
 #include "mdmp_pe.h"
 #include "mdmp_pe64.h"
 
-struct rz_bin_mdmp_obj {
-	struct minidump_header *hdr;
+typedef struct minidump_object_t {
+	MiniDmpHeader *hdr;
 
 	/* Encountered streams */
 	struct minidump_streams {
 		ut8 *comments_a;
 		ut8 *comments_w;
 
-		struct minidump_exception_stream *exception;
-		struct minidump_function_table_stream *function_table;
-		struct minidump_handle_data_stream *handle_data;
-		struct minidump_system_info *system_info;
+		MiniDmpExcStream *exception;
+		MiniDmpFuncTableStream *function_table;
+		MiniDmpHandleDataStream *handle_data;
+		MiniDmpSysInfo *system_info;
 
 		union {
-			struct minidump_misc_info *misc_info_1;
-			struct minidump_misc_info_2 *misc_info_2;
+			MiniDmpMiscInfo *misc_info_1;
+			MiniDmpMiscInfo2 *misc_info_2;
 		} misc_info;
 
 		/* Lists */
@@ -56,12 +56,12 @@ struct rz_bin_mdmp_obj {
 	size_t size;
 	ut8 endian;
 	Sdb *kv;
-};
+} MiniDmpObj;
 
-struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RzBuffer *buf);
-void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj);
-ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
-ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
-struct minidump_memory_info *rz_bin_mdmp_get_mem_info(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
+MiniDmpObj *rz_bin_mdmp_new_buf(RzBuffer *buf);
+void rz_bin_mdmp_free(MiniDmpObj *obj);
+ut64 rz_bin_mdmp_get_paddr(MiniDmpObj *obj, ut64 vaddr);
+ut32 rz_bin_mdmp_get_perm(MiniDmpObj *obj, ut64 vaddr);
+MiniDmpMemInfo *rz_bin_mdmp_get_mem_info(MiniDmpObj *obj, ut64 vaddr);
 
 #endif /* MDMP_H */

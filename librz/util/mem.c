@@ -186,17 +186,6 @@ RZ_API int rz_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	return true;
 }
 
-// The default endian is LE for streams.
-// This function either swaps or copies len bytes depending on bool big_endian
-// TODO: Remove completely
-RZ_API void rz_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian) {
-	if (big_endian) {
-		rz_mem_swapendian(dest, src, len);
-	} else {
-		memcpy(dest, src, len);
-	}
-}
-
 // This function unconditionally swaps endian of size bytes of orig -> dest
 // TODO: Remove completely
 RZ_API void rz_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {

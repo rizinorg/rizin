@@ -146,7 +146,7 @@ void PE_(free_VS_VERSIONINFO)(PE_VS_VERSIONINFO *vs_VersionInfo) {
 }
 
 static Var *Pe_r_bin_pe_parse_var(RzBinPEObj *bin, PE_DWord *curAddr) {
-	Var *var = calloc(1, sizeof(*var));
+	Var *var = RZ_NEW0(Var);
 	if (!var) {
 		RZ_LOG_INFO("calloc (Var)\n");
 		return NULL;
@@ -215,7 +215,7 @@ static Var *Pe_r_bin_pe_parse_var(RzBinPEObj *bin, PE_DWord *curAddr) {
 }
 
 static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(RzBinPEObj *bin, PE_DWord *curAddr) {
-	VarFileInfo *varFileInfo = calloc(1, sizeof(*varFileInfo));
+	VarFileInfo *varFileInfo = RZ_NEW0(VarFileInfo);
 	if (!varFileInfo) {
 		RZ_LOG_INFO("calloc (VarFileInfo)\n");
 		return NULL;
@@ -293,7 +293,7 @@ static VarFileInfo *Pe_r_bin_pe_parse_var_file_info(RzBinPEObj *bin, PE_DWord *c
 }
 
 static String *Pe_r_bin_pe_parse_string(RzBinPEObj *bin, PE_DWord *curAddr) {
-	String *string = calloc(1, sizeof(*string));
+	String *string = RZ_NEW0(String);
 	PE_DWord begAddr = *curAddr;
 	int len_value = 0;
 	int i = 0;
@@ -338,7 +338,7 @@ static String *Pe_r_bin_pe_parse_string(RzBinPEObj *bin, PE_DWord *curAddr) {
 		if (*curAddr > bin->size || *curAddr + sizeof(ut16) > bin->size) {
 			goto out_error;
 		}
-		if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)&utf16_char, sizeof(ut16)) != sizeof(ut16)) {
+		if (!rz_buf_read_le16_at(bin->b, *curAddr, &utf16_char)) {
 			RZ_LOG_INFO("check (String szKey)\n");
 			goto out_error;
 		}
@@ -381,7 +381,7 @@ out_error:
 }
 
 static StringTable *Pe_r_bin_pe_parse_string_table(RzBinPEObj *bin, PE_DWord *curAddr) {
-	StringTable *stringTable = calloc(1, sizeof(*stringTable));
+	StringTable *stringTable = RZ_NEW0(StringTable);
 	if (!stringTable) {
 		RZ_LOG_INFO("calloc (stringTable)\n");
 		return NULL;
@@ -460,7 +460,7 @@ static StringTable *Pe_r_bin_pe_parse_string_table(RzBinPEObj *bin, PE_DWord *cu
 }
 
 static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(RzBinPEObj *bin, PE_DWord *curAddr) {
-	StringFileInfo *stringFileInfo = calloc(1, sizeof(*stringFileInfo));
+	StringFileInfo *stringFileInfo = RZ_NEW0(StringFileInfo);
 	if (!stringFileInfo) {
 		RZ_LOG_INFO("calloc (StringFileInfo)\n");
 		return NULL;
@@ -555,7 +555,7 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(RzBinPEObj *bin, PE_DW
 	}
 static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(RzBinPEObj *bin, PE_DWord version_info_paddr) {
 	ut32 sz;
-	PE_VS_VERSIONINFO *vs_VersionInfo = calloc(1, sizeof(PE_VS_VERSIONINFO));
+	PE_VS_VERSIONINFO *vs_VersionInfo = RZ_NEW0(PE_VS_VERSIONINFO);
 	if (!vs_VersionInfo) {
 		return NULL;
 	}
@@ -1381,7 +1381,7 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 			int i;
 			ut16 buf;
 			ut32 NameOffset = entry.u1.Name & 0x7fffffff;
-			if (rz_buf_read_at(bin->b, bin->resource_directory_offset + NameOffset, (ut8 *)&buf, sizeof(ut16)) != sizeof(ut16)) {
+			if (!rz_buf_read_le16_at(bin->b, bin->resource_directory_offset + NameOffset, &buf)) {
 				break;
 			}
 			ut16 resourceEntryNameLength = rz_read_le16(&buf);

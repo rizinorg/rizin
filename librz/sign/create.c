@@ -60,6 +60,23 @@ static RzFlirtFunction *flirt_function_new(const char *name, bool is_local, ut64
 	return function;
 }
 
+/**
+ * The CRC used for the function can only be calculated with non-masked bytes
+ * after the prelude.
+ * The length of the buffer must be between 0 and 0xFF.
+ * All the extra bytes not used by the CRC will be used in for the tail.
+ */
+static ut32 flirt_crc16_length(RZ_NONNULL const ut8 *mask, size_t size) {
+	rz_return_val_if_fail(mask, 0);
+	size = RZ_MIN(size, 0xFF);
+	for (size_t i = 0; i < size; ++i) {
+		if (mask[i] != 0xFF) {
+			return i;
+		}
+	}
+	return size;
+}
+
 static RzFlirtModule *flirt_module_new(RzAnalysis *analysis, RzAnalysisFunction *func, const ut8 *buffer, const ut8 *mask, ut64 b_size, bool tail_bytes) {
 	RzFlirtModule *module = RZ_NEW0(RzFlirtModule);
 	if (!module) {
@@ -87,14 +104,15 @@ static RzFlirtModule *flirt_module_new(RzAnalysis *analysis, RzAnalysisFunction 
 
 	if (b_size > 0 && buffer) {
 		// the crc should be generated only for when the buffer is > RZ_FLIRT_MAX_PRELUDE_SIZE
-		module->crc_length = RZ_MIN(b_size, 0xFF);
+		// also the size can be zero if after the prelude there is only masked bytes
+		module->crc_length = flirt_crc16_length(mask, b_size);
 		module->crc16 = flirt_crc16(buffer, module->crc_length);
 	}
 
-	module->length = rz_analysis_function_linear_size(func);
+	module->length = rz_analysis_function_size_from_entry(func);
 
 	if (tail_bytes) {
-		for (ut32 i = 0; i < RZ_MIN(b_size, 0xFF); ++i) {
+		for (ut32 i = module->crc_length, k = 0; i < b_size && k < 0xFF; ++i, ++k) {
 			if (mask[i] != 0xff) {
 				continue;
 			}
@@ -216,6 +234,8 @@ static inline bool is_valid_mask_prelude(const ut8 *buffer, ut32 b_size) {
 static int flirt_compare_module(const RzFlirtModule *a, const RzFlirtModule *b) {
 	if (a->length != b->length) {
 		return a->length - b->length;
+	} else if (a->crc_length != b->crc_length) {
+		return a->crc_length - b->crc_length;
 	}
 	const RzFlirtFunction *af = rz_list_first(a->public_functions);
 	const RzFlirtFunction *bf = rz_list_first(b->public_functions);
@@ -345,14 +365,103 @@ fail:
 	return false;
 }
 
+static RzFlirtNode *flirt_create_child_from_function(RzAnalysis *analysis, RzAnalysisFunction *func, bool tail_bytes) {
+	RzFlirtNode *child = NULL;
+	ut64 func_size = rz_analysis_function_size_from_entry(func);
+	if (func_size < 1) {
+		return NULL;
+	}
+
+	if (func_size > ST32_MAX) {
+		RZ_LOG_ERROR("FLIRT: this function exceeds the max size allowed by iob->read_at.\n");
+		RZ_LOG_ERROR("FLIRT: this should never happen. please open a bug report.\n");
+		return NULL;
+	}
+
+	ut8 *pattern = malloc(func_size);
+	if (!pattern) {
+		RZ_LOG_ERROR("FLIRT: cannot allocate function buffer.\n");
+		return NULL;
+	}
+
+	if (!analysis->iob.read_at(analysis->iob.io, func->addr, pattern, (int)func_size)) {
+		RZ_LOG_WARN("FLIRT: couldn't read function %s at 0x%" PFMT64x ".\n", func->name, func->addr);
+		free(pattern);
+		return NULL;
+	}
+
+	ut8 *mask = rz_analysis_mask(analysis, func_size, pattern, func->addr);
+	if (!mask) {
+		RZ_LOG_ERROR("FLIRT: cannot calculate pattern mask.\n");
+		free(pattern);
+		return NULL;
+	} else if (!is_valid_mask_prelude(mask, func_size)) {
+		RZ_LOG_ERROR("FLIRT: the function '%s' has a mask which remove all the bytes from the pattern.\n", func->name);
+		goto fail;
+	}
+
+	for (ut32 i = func_size - 1; i > 1; --i) {
+		if (mask[i] != 0xFF) {
+			func_size--;
+			continue;
+		}
+		break;
+	}
+
+	child = flirt_create_child_from_analysis(analysis, func, pattern, mask, func_size, tail_bytes);
+
+fail:
+	free(pattern);
+	free(mask);
+	return child;
+}
+
+/**
+ * \brief      Creates a RzFlirtNode from a given function
+ *
+ * \param      analysis    The RzAnalysis structure to use
+ * \param      func        The function to add in the flirt node
+ * \param      tail_bytes  When false throws any tail bytes
+ *
+ * \return     Generated FLIRT node.
+ */
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_from_function(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *func, bool tail_bytes) {
+	rz_return_val_if_fail(analysis && analysis->coreb.core && func && func->name, NULL);
+
+	RzFlirtNode *child = flirt_create_child_from_function(analysis, func, tail_bytes);
+	if (!child) {
+		return NULL;
+	}
+
+	RzFlirtNode *root = RZ_NEW0(RzFlirtNode);
+	if (!root ||
+		!(root->child_list = rz_list_newf((RzListFree)rz_sign_flirt_node_free))) {
+		RZ_LOG_ERROR("FLIRT: cannot allocate root node.\n");
+		goto fail;
+	}
+
+	if (!rz_list_append(root->child_list, child)) {
+		RZ_LOG_ERROR("FLIRT: cannot append child to root list.\n");
+		goto fail;
+	}
+
+	return root;
+
+fail:
+	rz_sign_flirt_node_free(child);
+	rz_sign_flirt_node_free(root);
+	return NULL;
+}
+
 /**
  * \brief Generates the FLIRT signatures and returns an RzFlirtNode
  *
- * \param  analysis     The RzAnalysis structure to derive the signatures.
- * \param  optimization Optimization to apply after creation of the flatten nodes.
- * \return              Generated FLIRT root node.
+ * \param  analysis        The RzAnalysis structure to derive the signatures.
+ * \param  optimization    Optimization to apply after creation of the flatten nodes.
+ * \param  ignore_unknown  When enabled adds also the `fcn.XXXXXXX` functions.
+ * \return                 Generated FLIRT root node.
  */
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization) {
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization, bool ignore_unknown) {
 	rz_return_val_if_fail(analysis && analysis->coreb.core, NULL);
 	if (optimization > RZ_FLIRT_NODE_OPTIMIZE_MAX) {
 		RZ_LOG_ERROR("FLIRT: optimization value is invalid (%u > RZ_FLIRT_NODE_OPTIMIZE_MAX).\n", optimization);
@@ -374,60 +483,19 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 	RzListIter *it;
 	RzAnalysisFunction *func;
 	rz_list_foreach (analysis->fcns, it, func) {
-		ut64 func_size = rz_analysis_function_linear_size(func);
 		if (!func->name) {
 			RZ_LOG_ERROR("FLIRT: function at 0x%" PFMT64x " has a null name. skipping function...\n", func->addr);
 			continue;
-		} else if ((func->type != RZ_ANALYSIS_FCN_TYPE_FCN &&
-				   func->type != RZ_ANALYSIS_FCN_TYPE_LOC &&
-				   func->type != RZ_ANALYSIS_FCN_TYPE_SYM) ||
-			func_size < 1 ||
-			starts_with_flag(func->name, "imp.") ||
-			starts_with_flag(func->name, "sym.imp.")) {
+		} else if (starts_with_flag(func->name, "imp.") ||
+			starts_with_flag(func->name, "sym.imp.") ||
+			(ignore_unknown && starts_with_flag(func->name, "fcn."))) {
 			continue;
 		}
 
-		if (func_size > ST32_MAX) {
-			RZ_LOG_ERROR("FLIRT: this function exceeds the max size allowed by iob->read_at.\n");
-			RZ_LOG_ERROR("FLIRT: this should never happen. please open a bug report.\n");
+		RzFlirtNode *child = flirt_create_child_from_function(analysis, func, tail_bytes);
+		if (!child) {
 			goto fail;
-		}
-
-		ut8 *pattern = malloc(func_size);
-		if (!pattern) {
-			RZ_LOG_ERROR("FLIRT: cannot allocate function buffer.\n");
-			goto fail;
-		}
-
-		if (!analysis->iob.read_at(analysis->iob.io, func->addr, pattern, (int)func_size)) {
-			RZ_LOG_WARN("FLIRT: couldn't read function %s at 0x%" PFMT64x ".\n", func->name, func->addr);
-			free(pattern);
-			continue;
-		}
-
-		ut8 *mask = rz_analysis_mask(analysis, func_size, pattern, func->addr);
-		if (!mask) {
-			RZ_LOG_ERROR("FLIRT: cannot calculate pattern mask.\n");
-			free(pattern);
-			goto fail;
-		} else if (!is_valid_mask_prelude(mask, func_size)) {
-			free(pattern);
-			free(mask);
-			continue;
-		}
-
-		for (ut32 i = func_size - 1; i > 1; --i) {
-			if (mask[i] != 0xFF) {
-				func_size--;
-				continue;
-			}
-			break;
-		}
-
-		RzFlirtNode *child = flirt_create_child_from_analysis(analysis, func, pattern, mask, func_size, tail_bytes);
-		RZ_FREE(pattern);
-		free(mask);
-		if (!child || !rz_list_append(root->child_list, child)) {
+		} else if (!rz_list_append(root->child_list, child)) {
 			RZ_LOG_ERROR("FLIRT: cannot append child to root list.\n");
 			rz_sign_flirt_node_free(child);
 			goto fail;

@@ -10,18 +10,18 @@
 
 #include "mdmp/mdmp.h"
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *mdmp_get_sdb(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
-	struct rz_bin_mdmp_obj *obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	MiniDmpObj *obj = (MiniDmpObj *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv : NULL;
 }
 
-static void destroy(RzBinFile *bf) {
-	rz_bin_mdmp_free((struct rz_bin_mdmp_obj *)bf->o->bin_obj);
+static void mdmp_destroy(RzBinFile *bf) {
+	rz_bin_mdmp_free((MiniDmpObj *)bf->o->bin_obj);
 }
 
-static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	struct rz_bin_mdmp_obj *obj;
+static RzList /*<RzBinAddr *>*/ *mdmp_entries(RzBinFile *bf) {
+	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
@@ -31,7 +31,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_rz_bin_mdmp_pe_get_entrypoint(pe32_bin);
@@ -47,15 +47,15 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
-	struct rz_bin_mdmp_obj *obj;
+static RzBinInfo *mdmp_info(RzBinFile *bf) {
+	MiniDmpObj *obj;
 	RzBinInfo *ret;
 
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	ret->big_endian = obj->endian;
 	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", obj->hdr->check_sum)); // FIXME: Leaks
@@ -121,10 +121,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<char *>*/ *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *mdmp_libs(RzBinFile *bf) {
 	char *ptr = NULL;
 	int i;
-	struct rz_bin_mdmp_obj *obj;
+	MiniDmpObj *obj;
 	struct rz_bin_pe_lib_t *libs = NULL;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -138,7 +138,7 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	/* TODO: Resolve module name for lib, or filter to remove duplicates,
 	** rather than the vaddr :) */
@@ -165,26 +165,26 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool mdmp_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(buf, false);
-	struct rz_bin_mdmp_obj *res = rz_bin_mdmp_new_buf(buf);
+	MiniDmpObj *res = rz_bin_mdmp_new_buf(buf);
 	if (res) {
-		sdb_ns_set(sdb, "info", res->kv);
+		sdb_ns_set(sdb, "mdmp_info", res->kv);
 		obj->bin_obj = res;
 		return true;
 	}
 	return false;
 }
 
-static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
-	struct rz_bin_mdmp_obj *obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+static RzList /*<RzBinMap *>*/ *mdmp_maps(RzBinFile *bf) {
+	MiniDmpObj *obj = (MiniDmpObj *)bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
 
 	RzListIter *it;
-	struct minidump_memory_descriptor *memory;
+	MiniDmpMemDescr32 *memory;
 	rz_list_foreach (obj->streams.memories, it, memory) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -200,7 +200,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	}
 
 	ut64 index = obj->streams.memories64.base_rva;
-	struct minidump_memory_descriptor64 *memory64;
+	MiniDmpMemDescr64 *memory64;
 	rz_list_foreach (obj->streams.memories64.memories, it, memory64) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -219,17 +219,18 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	struct minidump_module *module;
-	struct minidump_string *str;
-	struct rz_bin_mdmp_obj *obj;
+static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
+	MiniDmpModule *module;
+	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzList *ret, *pe_secs;
 	RzListIter *it, *it0;
 	RzBinSection *ptr;
+	ut8 str_buffer[512];
+	ut32 str_length = 0;
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
@@ -237,32 +238,36 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	// XXX: Never add here as they are covered above
 	rz_list_foreach (obj->streams.modules, it, module) {
-		ut8 b[512];
+		if (!rz_buf_read_le32_at(obj->b, module->module_name_rva, &str_length)) {
+			RZ_LOG_ERROR("bin: mdmp: failed to read utf16 string length\n");
+			break;
+		}
+
+		size_t ptr_name_len = (str_length + 2) * 4;
+		if (ptr_name_len < 1 || ptr_name_len > (sizeof(str_buffer) + sizeof(str_length))) {
+			continue;
+		} else if ((module->module_name_rva + sizeof(str_length) + str_length) > rz_buf_size(obj->b)) {
+			break;
+		}
+
+		memset(str_buffer, 0, sizeof(str_buffer));
+
+		// best effor reading
+		if (rz_buf_read_at(obj->b, module->module_name_rva + sizeof(str_length), str_buffer, sizeof(str_buffer)) < 2) {
+			RZ_LOG_ERROR("bin: mdmp: failed to read utf16 string\n");
+			break;
+		}
 
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		if (module->module_name_rva + sizeof(struct minidump_string) >= rz_buf_size(obj->b)) {
-			free(ptr);
-			continue;
-		}
-		rz_buf_read_at(obj->b, module->module_name_rva, (ut8 *)&b, sizeof(b));
-		str = (struct minidump_string *)b;
-		int ptr_name_len = (str->length + 2) * 4;
-		if (ptr_name_len < 1 || ptr_name_len > sizeof(b) - 4) {
-			continue;
-		}
-		if (module->module_name_rva + str->length > rz_buf_size(obj->b)) {
-			free(ptr);
-			break;
-		}
-		ptr->name = calloc(1, ptr_name_len);
+
+		ptr->name = RZ_NEWS0(char, ptr_name_len);
 		if (!ptr->name) {
 			free(ptr);
 			continue;
 		}
-		rz_str_utf16_to_utf8((ut8 *)ptr->name, str->length * 4,
-			(const ut8 *)(&str->buffer), str->length, obj->endian);
+		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);
@@ -297,12 +302,12 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
-	struct minidump_location_descriptor *location = NULL;
-	struct minidump_memory_descriptor *module;
-	struct minidump_memory_descriptor64 *module64;
-	struct minidump_memory_info *mem_info;
-	struct rz_bin_mdmp_obj *obj;
+static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
+	MiniDmpLocDescr32 *location = NULL;
+	MiniDmpMemDescr32 *module;
+	MiniDmpMemDescr64 *module64;
+	MiniDmpMemInfo *mem_info;
+	MiniDmpObj *obj;
 	RzList *ret;
 	RzListIter *it;
 	RzBinMem *ptr;
@@ -313,9 +318,9 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
-	/* [1] As there isnt a better place to put this info at the moment we will
+	/* [1] As there isnt a better place to put this mdmp_info at the moment we will
 	** mash it into the name field, but without enumeration for now  */
 	rz_list_foreach (obj->streams.memories, it, module) {
 		if (!(ptr = RZ_NEW0(RzBinMem))) {
@@ -368,8 +373,8 @@ static RzList /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	struct rz_bin_mdmp_obj *obj;
+static RzList /*<RzBinReloc *>*/ *mdmp_relocs(RzBinFile *bf) {
+	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
@@ -379,7 +384,7 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (pe32_bin->bin && pe32_bin->bin->relocs) {
@@ -395,8 +400,8 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
-	struct rz_bin_mdmp_obj *obj;
+static RzList /*<RzBinImport *>*/ *mdmp_imports(RzBinFile *bf) {
+	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzList *list;
@@ -407,7 +412,7 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_rz_bin_mdmp_pe_get_imports(pe32_bin);
@@ -426,8 +431,8 @@ static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	struct rz_bin_mdmp_obj *obj;
+static RzList /*<RzBinSymbol *>*/ *mdmp_symbols(RzBinFile *bf) {
+	MiniDmpObj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzList *ret, *list;
@@ -437,7 +442,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 
-	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
+	obj = (MiniDmpObj *)bf->o->bin_obj;
 
 	rz_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		list = Pe32_rz_bin_mdmp_pe_get_symbols(bf->rbin, pe32_bin);
@@ -452,7 +457,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool mdmp_check_buffer(RzBuffer *b) {
 	ut8 magic[6];
 	if (rz_buf_read_at(b, 0, magic, sizeof(magic)) == 6) {
 		return !memcmp(magic, MDMP_MAGIC, 6);
@@ -460,28 +465,28 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *mdmp_strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, 0, false);
 }
 
 RzBinPlugin rz_bin_plugin_mdmp = {
 	.name = "mdmp",
-	.desc = "Minidump format rz_bin plugin",
+	.desc = "Windows MiniDump plugin",
 	.license = "LGPL3",
-	.destroy = &destroy,
-	.entries = entries,
-	.get_sdb = &get_sdb,
-	.imports = &imports,
-	.info = &info,
-	.libs = &libs,
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
-	.mem = &mem,
-	.relocs = &relocs,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.strings = &strings,
+	.destroy = &mdmp_destroy,
+	.entries = mdmp_entries,
+	.get_sdb = &mdmp_get_sdb,
+	.imports = &mdmp_imports,
+	.info = &mdmp_info,
+	.libs = &mdmp_libs,
+	.load_buffer = &mdmp_load_buffer,
+	.check_buffer = &mdmp_check_buffer,
+	.mem = &mdmp_mem,
+	.relocs = &mdmp_relocs,
+	.maps = &mdmp_maps,
+	.sections = &mdmp_sections,
+	.symbols = &mdmp_symbols,
+	.strings = &mdmp_strings,
 };
 
 #ifndef RZ_PLUGIN_INCORE

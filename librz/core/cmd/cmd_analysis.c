@@ -2189,6 +2189,106 @@ RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
+static bool function_byte_signature(RzCore *core, RzAnalysisFunction *fcn, ut8 **buffer, ut32 *buf_sz) {
+	size_t size = 0, current = 0;
+	ut8 *data = NULL;
+	RzAnalysisBlock *bb = NULL;
+	RzListIter *iter = NULL;
+
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		size += bb->size;
+	}
+
+	if (size < 1 || !(data = malloc(size))) {
+		RZ_LOG_ERROR("core: failed to allocate pattern bytes for function '%s'\n", fcn->name);
+		goto fail;
+	}
+
+	current = 0;
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->size > 0 && !rz_io_read_at(core->io, bb->addr, data + current, bb->size)) {
+			RZ_LOG_ERROR("core: failed to read at %" PFMT64x "\n", bb->addr);
+			goto fail;
+		}
+		current += bb->size;
+	}
+
+	*buf_sz = size;
+	*buffer = data;
+	return true;
+
+fail:
+	free(data);
+	return false;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_signature_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *f = analysis_get_function_in(core->analysis, core->offset);
+	if (!f) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	ut32 size = 0;
+	char *s_pattern = NULL, *s_mask = NULL, *s_search = NULL;
+	ut8 *pattern = NULL, *mask = NULL;
+
+	if (!function_byte_signature(core, f, &pattern, &size)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	mask = rz_analysis_mask(core->analysis, size, pattern, f->addr);
+	if (!mask) {
+		RZ_LOG_ERROR("core: failed to create mask of function '%s'\n", f->name);
+		status = RZ_CMD_STATUS_ERROR;
+		goto fail;
+	}
+
+	if (!(s_pattern = rz_hex_bin2strdup(pattern, size)) ||
+		!(s_mask = rz_hex_bin2strdup(mask, size)) ||
+		!(s_search = strdup(s_pattern))) {
+		RZ_LOG_ERROR("core: failed to convert pattern & mask to string\n");
+		status = RZ_CMD_STATUS_ERROR;
+		goto fail;
+	}
+
+	for (ut32 i = 0, j = 0; i < size; ++i, j += 2) {
+		if (mask[i] == 0xFF) {
+			continue;
+		}
+		s_search[j] = '.';
+		s_search[j + 1] = '.';
+	}
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf("pattern %s\n", s_pattern);
+		rz_cons_printf("mask %s\n", s_mask);
+		rz_cons_printf("search %s\n", s_search);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "pattern", s_pattern);
+		pj_ks(state->d.pj, "mask", s_mask);
+		pj_ks(state->d.pj, "search", s_search);
+		pj_end(state->d.pj);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+fail:
+	free(s_pattern);
+	free(s_mask);
+	free(s_search);
+	free(mask);
+	free(pattern);
+	return status;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_function_signature_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzAnalysisFunction *f = analysis_get_function_in(core->analysis, core->offset);
 	if (!f) {

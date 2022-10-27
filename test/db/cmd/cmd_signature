@@ -202,11 +202,6 @@ EXPECT=<<EOF
 0x0044a030 142 flirt.sbrk
 0x0044a0c0 64 flirt.getpagesize
 0x0044a100 80 flirt.getdtablesize
-0x0044a2c0 327 flirt.trecurse
-0x0044a410 982 flirt.tsearch
-0x0044a7f0 87 flirt.tfind
-0x0044ae00 175 flirt.twalk
-0x0044aeb0 435 flirt.tdestroy
 0x0044b070 432 flirt.next_line
 0x0044b220 1168 flirt.get_nprocs
 0x0044b6b0 224 flirt.get_nprocs_conf
@@ -215,16 +210,11 @@ EXPECT=<<EOF
 0x0044b8b0 17 flirt.getclktck
 0x0044b8d0 82 flirt.init_misc
 0x0044b990 64 flirt.libc_alloca_cutoff
-0x0044b9d0 40 flirt.lll_lock_wait_private
-0x0044ba00 28 flirt.lll_unlock_wake_private
 0x0044ba20 86 flirt.libc_enable_asynccancel
 0x0044ba80 89 flirt.libc_disable_asynccancel
 0x0044baf0 32 flirt.stack_chk_fail
 0x0044bb10 97 flirt.fortify_fail_abort
 0x0044bb80 32 flirt.fortify_fail
-0x0044bc30 114 flirt.tunable_set_val
-0x0044bcb0 1533 flirt.tunables_init
-0x0044c2b0 90 flirt.tunable_get_val
 0x0044c310 1038 flirt.dl_aux_init
 0x0044c720 2296 flirt.dl_non_dynamic_init
 0x0044d020 69 flirt.libc_init_secure
@@ -320,15 +310,12 @@ EXPECT=<<EOF
 0x004806c0 210 flirt.dl_exception_create
 0x004807a0 729 flirt.dl_exception_create_format
 0x00480a80 38 flirt.dl_exception_free
-0x00480ab0 236 flirt.dl_cache_libcmp
-0x00480ba0 2862 flirt.dl_load_cache_lookup
-0x004816d0 56 flirt.dl_unload_cache
 0x00482060 195 flirt.fatal_error
 0x00482130 80 flirt.dl_signal_exception
 0x00482180 80 flirt.dl_signal_error
 0x004821d0 208 flirt.dl_catch_exception
 0x004822a0 112 flirt.dl_catch_error
-0x00482310 162 flirt.longjmp_chk
+0x00482310 82 flirt.longjmp
 0x00482370 59 flirt.mpn_cmp
 0x004823b0 1466 flirt.mpn_divrem
 0x00482970 259 flirt.mpn_lshift
@@ -339,15 +326,15 @@ EXPECT=<<EOF
 0x004832a0 1378 flirt.mpn_impn_mul_n
 0x00483810 431 flirt.mpn_impn_sqr_n_basecase
 0x004839c0 1262 flirt.mpn_impn_sqr_n
-0x00483f50 173 flirt.mpn_sub_n_1
-0x00484000 235 flirt.mpn_addmul_1
+0x00483f50 173 flirt.mpn_sub_n
+0x00484000 235 flirt.mpn_submul_1
 0x004840f0 144 flirt.mpn_extract_double
 0x00484180 185 flirt.mpn_extract_long_double
 0x00484240 286 flirt.mpn_extract_float128
-0x00484360 203 flirt.itoa_word
 0x00484c90 138 flirt.strerror
 0x00484d40 77 flirt.strsep
 0x00484f50 8 flirt.getpid
+0x00485150 7 flirt.profile_frequency
 0x00485160 416 flirt.dl_fixup
 0x00485300 544 flirt.dl_profile_fixup
 0x00485520 2 flirt.dl_call_pltexit
@@ -362,10 +349,11 @@ EXPECT=<<EOF
 0x00487960 101 flirt.dl_tlsdesc_resolve_hold_fixup
 0x004879d0 25 flirt.dl_unmap
 0x00487cf0 83 flirt.dl_addr_inside_object
-0x00487d50 173 flirt.mpn_sub_n
-0x00487e00 235 flirt.mpn_addmul_1_1
+0x00487d50 173 flirt.mpn_add_n
+0x00487e00 235 flirt.mpn_addmul_1
 0x004895d0 877 flirt.dl_init
 0x00489940 1806 flirt.dl_check_map_versions
+0x0048f380 5 flirt.bsd_getpgrp
 0x0048fa10 478 flirt.dl_iterate_phdr
 0x0048fbf0 73 flirt.nl_finddomain_subfreeres
 0x0048fc40 247 flirt.nl_unload_domain
@@ -382,7 +370,7 @@ aaa
 Fs bins/flirt/elf-x86/libcurl.a.pat
 EOF
 EXPECT=<<EOF
-Found 100 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pat
+Found 148 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.pat
 EOF
 RUN
 
@@ -395,7 +383,7 @@ aaa
 Fs bins/flirt/elf-x86/libcurl.a.sig
 EOF
 EXPECT=<<EOF
-Found 205 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.sig
+Found 148 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.sig
 EOF
 RUN
 
@@ -415,49 +403,51 @@ CMDS=<<EOF
 e flirt.sigdb.load.system=false
 e flirt.sigdb.load.home=false
 aaa
-Fs bins/flirt/elf-x86/test.symbols.pat~silence
-pdf @ main
+Fs bins/flirt/elf-x86/test.stripped.pat~silence
+af @ data.004011a5
+pdf @ data.004011a5
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from flirt.entry0 @ 0x401791
-/ int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_18h @ rbp-0x18
-|           ; var int64_t var_dh @ rbp-0xd
+            ; DATA XREF from entry0 @ 0x40105f
+/ data.004011a5 (int64_t arg1, int64_t arg2);
+|           ; var int64_t var_70h @ rbp-0x70
+|           ; var int64_t var_64h @ rbp-0x64
+|           ; var int64_t var_60h @ rbp-0x60
 |           ; var int64_t var_8h @ rbp-0x8
-|           0x00401895      push  rbp
-|           0x00401896      mov   rbp, rsp
-|           0x00401899      sub   rsp, 0x20
-|           0x0040189d      mov   rax, qword fs:[0x28]
-|           0x004018a6      mov   qword [var_8h], rax
-|           0x004018aa      xor   eax, eax
-|           0x004018ac      lea   rax, data.00482004                   ; 0x482004 ; "r"
-|           0x004018b3      mov   rsi, rax                             ; int64_t arg2
-|           0x004018b6      lea   rax, str.test                        ; 0x482006 ; "test"
-|           0x004018bd      mov   rdi, rax                             ; int64_t arg1
-|           0x004018c0      call  flirt.IO_fopen64
-|           0x004018c5      mov   qword [var_18h], rax
-|           0x004018c9      mov   rax, qword [var_18h]
-|           0x004018cd      mov   edx, 1                               ; int64_t arg3
-|           0x004018d2      mov   esi, 5                               ; int64_t arg2
-|           0x004018d7      mov   rdi, rax                             ; uint64_t arg1
-|           0x004018da      call  flirt.fseek
-|           0x004018df      mov   rdx, qword [var_18h]
-|           0x004018e3      lea   rax, [var_dh]
-|           0x004018e7      mov   rcx, rdx                             ; int64_t arg4
-|           0x004018ea      mov   edx, 1                               ; int64_t arg3
-|           0x004018ef      mov   esi, 5                               ; int64_t arg2
-|           0x004018f4      mov   rdi, rax                             ; int64_t arg1
-|           0x004018f7      call  flirt.IO_fread
-|           0x004018fc      mov   rax, qword [var_18h]
-|           0x00401900      mov   rdi, rax                             ; int64_t arg1
-|           0x00401903      call  flirt.IO_fclose
-|           0x00401908      mov   eax, 0
-|           0x0040190d      mov   rdx, qword [var_8h]
-|           0x00401911      sub   rdx, qword fs:[0x28]
-|       ,=< 0x0040191a      je    0x401921
-|       |   0x0040191c      call  flirt.chk_fail
-|       `-> 0x00401921      leave
-\           0x00401922      ret
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           0x004011a5      push  rbp
+|           0x004011a6      mov   rbp, rsp
+|           0x004011a9      sub   rsp, 0x70
+|           0x004011ad      mov   dword [var_64h], edi                 ; arg1
+|           0x004011b0      mov   qword [var_70h], rsi                 ; arg2
+|           0x004011b4      mov   rax, qword fs:[0x28]
+|           0x004011bd      mov   qword [var_8h], rax
+|           0x004011c1      xor   eax, eax
+|           0x004011c3      mov   rax, qword [var_70h]
+|           0x004011c7      add   rax, 8
+|           0x004011cb      mov   rax, qword [rax]
+|           0x004011ce      mov   rdi, rax
+|           0x004011d1      call  flirt.atoi
+|           0x004011d6      mov   edx, eax
+|           0x004011d8      lea   rax, [var_60h]
+|           0x004011dc      mov   ecx, edx
+|           0x004011de      lea   rdx, str.Hello__d                    ; segment.LOAD2
+|                                                                      ; 0x404000 ; "Hello %d\n"
+|           0x004011e5      mov   esi, 0x50                            ; 'P' ; 80
+|           0x004011ea      mov   rdi, rax
+|           0x004011ed      mov   eax, 0
+|           0x004011f2      call  flirt.snprintf
+|           0x004011f7      lea   rax, [var_60h]
+|           0x004011fb      mov   rdi, rax
+|           0x004011fe      call  flirt.puts
+|           0x00401203      mov   eax, 0
+|           0x00401208      mov   rdx, qword [var_8h]
+|           0x0040120c      sub   rdx, qword fs:[0x28]
+|       ,=< 0x00401215      je    0x40121c
+|       |   0x00401217      call  fcn.0040146f
+|       `-> 0x0040121c      leave
+\           0x0040121d      ret
 EOF
 RUN
 
@@ -468,49 +458,51 @@ CMDS=<<EOF
 e flirt.sigdb.load.system=false
 e flirt.sigdb.load.home=false
 aaa
-Fs bins/flirt/elf-x86/test.symbols.sig~silence
-pdf @ main
+Fs bins/flirt/elf-x86/test.stripped.sig~silence
+af @ data.004011a5
+pdf @ data.004011a5
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from flirt.entry0 @ 0x401791
-/ int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_18h @ rbp-0x18
-|           ; var int64_t var_dh @ rbp-0xd
+            ; DATA XREF from entry0 @ 0x40105f
+/ data.004011a5 (int64_t arg1, int64_t arg2);
+|           ; var int64_t var_70h @ rbp-0x70
+|           ; var int64_t var_64h @ rbp-0x64
+|           ; var int64_t var_60h @ rbp-0x60
 |           ; var int64_t var_8h @ rbp-0x8
-|           0x00401895      push  rbp
-|           0x00401896      mov   rbp, rsp
-|           0x00401899      sub   rsp, 0x20
-|           0x0040189d      mov   rax, qword fs:[0x28]
-|           0x004018a6      mov   qword [var_8h], rax
-|           0x004018aa      xor   eax, eax
-|           0x004018ac      lea   rax, data.00482004                   ; 0x482004 ; "r"
-|           0x004018b3      mov   rsi, rax                             ; int64_t arg2
-|           0x004018b6      lea   rax, str.test                        ; 0x482006 ; "test"
-|           0x004018bd      mov   rdi, rax                             ; int64_t arg1
-|           0x004018c0      call  flirt.IO_fopen64
-|           0x004018c5      mov   qword [var_18h], rax
-|           0x004018c9      mov   rax, qword [var_18h]
-|           0x004018cd      mov   edx, 1                               ; int64_t arg3
-|           0x004018d2      mov   esi, 5                               ; int64_t arg2
-|           0x004018d7      mov   rdi, rax                             ; uint64_t arg1
-|           0x004018da      call  flirt.fseek
-|           0x004018df      mov   rdx, qword [var_18h]
-|           0x004018e3      lea   rax, [var_dh]
-|           0x004018e7      mov   rcx, rdx                             ; int64_t arg4
-|           0x004018ea      mov   edx, 1                               ; int64_t arg3
-|           0x004018ef      mov   esi, 5                               ; int64_t arg2
-|           0x004018f4      mov   rdi, rax                             ; int64_t arg1
-|           0x004018f7      call  flirt.IO_fread
-|           0x004018fc      mov   rax, qword [var_18h]
-|           0x00401900      mov   rdi, rax                             ; int64_t arg1
-|           0x00401903      call  flirt.IO_fclose
-|           0x00401908      mov   eax, 0
-|           0x0040190d      mov   rdx, qword [var_8h]
-|           0x00401911      sub   rdx, qword fs:[0x28]
-|       ,=< 0x0040191a      je    0x401921
-|       |   0x0040191c      call  flirt.chk_fail
-|       `-> 0x00401921      leave
-\           0x00401922      ret
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           0x004011a5      push  rbp
+|           0x004011a6      mov   rbp, rsp
+|           0x004011a9      sub   rsp, 0x70
+|           0x004011ad      mov   dword [var_64h], edi                 ; arg1
+|           0x004011b0      mov   qword [var_70h], rsi                 ; arg2
+|           0x004011b4      mov   rax, qword fs:[0x28]
+|           0x004011bd      mov   qword [var_8h], rax
+|           0x004011c1      xor   eax, eax
+|           0x004011c3      mov   rax, qword [var_70h]
+|           0x004011c7      add   rax, 8
+|           0x004011cb      mov   rax, qword [rax]
+|           0x004011ce      mov   rdi, rax
+|           0x004011d1      call  flirt.atoi
+|           0x004011d6      mov   edx, eax
+|           0x004011d8      lea   rax, [var_60h]
+|           0x004011dc      mov   ecx, edx
+|           0x004011de      lea   rdx, str.Hello__d                    ; segment.LOAD2
+|                                                                      ; 0x404000 ; "Hello %d\n"
+|           0x004011e5      mov   esi, 0x50                            ; 'P' ; 80
+|           0x004011ea      mov   rdi, rax
+|           0x004011ed      mov   eax, 0
+|           0x004011f2      call  flirt.snprintf
+|           0x004011f7      lea   rax, [var_60h]
+|           0x004011fb      mov   rdi, rax
+|           0x004011fe      call  flirt.puts
+|           0x00401203      mov   eax, 0
+|           0x00401208      mov   rdx, qword [var_8h]
+|           0x0040120c      sub   rdx, qword fs:[0x28]
+|       ,=< 0x00401215      je    0x40121c
+|       |   0x00401217      call  fcn.0040146f
+|       `-> 0x0040121c      leave
+\           0x0040121d      ret
 EOF
 RUN
 
@@ -523,9 +515,9 @@ e flirt.sigdb.path=bins/sigdb/fake-db
 Fl
 EOF
 EXPECT=<<EOF
-bin arch bits name          modules details                    
----------------------------------------------------------------
-elf x86  64   match.sig     1       Built with rizin 0.4.0-git
+bin arch bits name          modules details                
+-----------------------------------------------------------
+elf x86  64   match.sig     1       Built with rizin 0.5.0
 elf x86  64   not-match.pat 1       
 EOF
 RUN
@@ -537,11 +529,13 @@ e flirt.sigdb.load.system=false
 e flirt.sigdb.load.home=false
 e flirt.sigdb.path=bins/sigdb/fake-db
 aaa
-afl~printf
+afl~flirt
 EOF
 EXPECT=<<EOF
-0x00409c70   18 516  -> 514  flirt.printf
-0x0046fc50    7 516  -> 342  flirt.printf_1
+0x00409c70    5 208          flirt.printf
+0x0046ffb0    4 208          flirt.printf_1
+0x0046fe50    4 208  -> 197  flirt.printf_2
+0x0046fc50    4 208  -> 201  flirt.printf_3
 EOF
 RUN
 
@@ -557,7 +551,31 @@ afl~printf
 EOF
 EXPECT=<<EOF
 Applying elf/x86/64/match.sig signature file
-0x00409c70   18 516  -> 514  flirt.printf
-0x0046fc50    7 516  -> 342  flirt.printf_1
+0x00409c70    5 208          flirt.printf
+0x0046ffb0    4 208          flirt.printf_1
+0x0046fe50    4 208  -> 197  flirt.printf_2
+0x0046fc50    4 208  -> 201  flirt.printf_3
+EOF
+RUN
+
+NAME=Check function signature flirt and rizin
+FILE=bins/sigdb/elf-x86-64-static-libc
+CMDS=<<EOF
+aaa
+afsb @ 0x00409c70
+afsbj ~{} @ 0x00409c70
+Ff @ 0x00409c70
+EOF
+EXPECT=<<EOF
+pattern f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074370f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c0488b3d274a0a004889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7442404300000004889442410e8842e0000488b54241864482b14252800000075084881c4d8000000c3e8b7e103000f1f8000000000
+mask ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000ffffffffffff00000000ffffffffffffffffffffffffffffff00ffffffffffffffffff00000000ffffffffffffff
+search f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074..0f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c048............4889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7..............4889442410e8........488b54241864482b14252800000075..4881c4d8000000c3e8........0f1f8000000000
+{
+  "pattern": "f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074370f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c0488b3d274a0a004889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7442404300000004889442410e8842e0000488b54241864482b14252800000075084881c4d8000000c3e8b7e103000f1f8000000000",
+  "mask": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000ffffffffffff00000000ffffffffffffffffffffffffffffff00ffffffffffffffffff00000000ffffffffffffff",
+  "search": "f30f1efa4881ecd80000004989fa4889742428488954243048894c24384c894424404c894c244884c074..0f294424500f294c24600f295424700f299c24800000000f29a424900000000f29ac24a00000000f29b424b00000000f29bc24c000000064488b042528000000488944241831c048............4889e231c9488d8424e00000004c89d6c70424080000004889442408488d442420c7..............4889442410e8........488b54241864482b14252800000075..4881c4d8000000c3e8........0f1f8000000000"
+}
+F30F1EFA4881ECD80000004989FA4889742428488954243048894C24384C8944 0A CA1D 00D0 :0000 fcn.00409c70 ......................0F294424500F294C24600F295424700F299C24800000000F29A424900000000F29AC24A00000000F29B424B00000000F29BC24C000000064488B042528000000488944241831C048............4889E231C9488D8424E00000004C89D6C70424080000004889442408488D442420C7..............4889442410E8........488B54241864482B14252800000075..4881C4D8000000C3E8........0F1F8000000000
+---
 EOF
 RUN
