@@ -117,7 +117,7 @@ static void agraph_print_node_dot(RzANode *n, void *user) {
 		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
 			n->title, n->title, n->title);
 	} else {
-		label = rz_str_replace(label, "\"", "\\\"", 1);
+		rz_str_replace_ch(label, '\"', '\'', true);
 		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
 			n->title, n->title, n->title, label);
 	}

@@ -62,7 +62,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			rz_strbuf_appendf(&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
 				node->idx, print_node->title, print_node->title);
 		} else {
-			body = rz_str_replace(body, "\"", "\\\"", 1);
+			rz_str_replace_ch(body, '\"', '\'', true);
 			rz_strbuf_appendf(&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
 				node->idx, print_node->title, print_node->title, body);
 		}
