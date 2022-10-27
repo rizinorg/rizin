@@ -1,27 +1,28 @@
-// SPDX-FileCopyrightText: 2000, 2001, 2004 Free Software Foundation, Inc.
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2000-2022 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 /* cris.h -- Header file for CRIS opcode and register tables.
-   Copyright (C) 2000, 2001, 2004 Free Software Foundation, Inc.
+   Copyright (C) 2000-2022 Free Software Foundation, Inc.
    Contributed by Axis Communications AB, Lund, Sweden.
    Originally written for GAS 1.38.1 by Mikael Asker.
    Updated, BFDized and GNUified by Hans-Peter Nilsson.
 
-This file is part of GAS, GDB and the GNU binutils.
+   This file is part of GAS, GDB and the GNU binutils.
 
-GAS, GDB, and GNU binutils is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2, or (at your
-option) any later version.
+   GAS, GDB, and GNU binutils is free software; you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 3, or (at your
+   option) any later version.
 
-GAS, GDB, and GNU binutils are distributed in the hope that they will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+   GAS, GDB, and GNU binutils are distributed in the hope that they will be
+   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+   MA 02110-1301, USA.  */
 
 #ifndef __CRIS_H_INCLUDED_
 #define __CRIS_H_INCLUDED_
