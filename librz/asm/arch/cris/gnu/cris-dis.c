@@ -591,6 +591,8 @@ format_hex (unsigned long number,
 static char *
 format_dec (long number, char *outbuffer, int signedp)
 {
+  if (!outbuffer)
+    return NULL;
   last_immediate = number;
   if (signedp)
     sprintf (outbuffer, "%ld", number);
