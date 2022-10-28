@@ -73,7 +73,7 @@ unix_asm = [
   ['c' / 'blake3_sse41_x86-64_unix.S',  '-DBLAKE3_NO_SSE41',  'sse41',  simd_sse41,  ['-msse4.1']],
 ]
 
-is_x86 = target_machine.cpu_family() == 'x86_64' or target_machine.cpu_family() == 'x86'
+is_x64 = target_machine.cpu_family() == 'x86_64'
 is_arm = target_machine.cpu_family() == 'aarch64'
 has_intrins = cc.has_header('immintrin.h')
 
@@ -85,7 +85,7 @@ if has_intrins and is_arm
   else
     add_project_arguments('-DBLAKE3_USE_NEON=0', language: 'c')
   endif
-elif has_intrins and is_x86
+elif has_intrins and is_x64
   if target_machine.system() == 'windows'
     if cc.get_id() == 'msvc'
       blake3_simd = win_msvc_asm

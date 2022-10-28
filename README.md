@@ -14,7 +14,7 @@ To learn more on Rizin you may want to read the
 
 # How to install
 
-Look at [INSTALL.md](./INSTALL.md).
+Look at [install instructions](https://rizin.re/install/) on our web page.
 
 # How to build
 

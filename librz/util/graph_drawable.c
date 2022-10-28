@@ -56,11 +56,13 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 
 	rz_list_foreach (nodes, it, node) {
 		RzGraphNodeInfo *print_node = (RzGraphNodeInfo *)node->data;
-		const char *body = print_node->body;
+		char *body = print_node->body;
+
 		if (!body || !*body) {
 			rz_strbuf_appendf(&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
 				node->idx, print_node->title, print_node->title);
 		} else {
+			rz_str_replace_ch(body, '\"', '\'', true);
 			rz_strbuf_appendf(&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
 				node->idx, print_node->title, print_node->title, body);
 		}
