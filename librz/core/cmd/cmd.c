@@ -1195,8 +1195,9 @@ static char *find_ch_after_macro(char *ptr, char ch) {
 }
 
 static int rz_core_cmd_subst(RzCore *core, char *cmd) {
-	ut64 rep = strtoull(cmd, NULL, 10);
 	int ret = 0, orep;
+	rz_return_val_if_fail(cmd, ret);
+	ut64 rep = strtoull(cmd, NULL, 10);
 	char *colon = NULL, *icmd = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
