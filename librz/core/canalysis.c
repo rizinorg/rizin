@@ -5023,6 +5023,9 @@ RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE in
 			bin = "elf";
 		} else if (!strcmp(obj->plugin->name, "pe64")) {
 			bin = "pe";
+		} else if (!strcmp(obj->plugin->name, "coff")) {
+			// coff files are used also for PE, we can use the same signatures.
+			bin = "pe";
 		} else {
 			bin = obj->plugin->name;
 		}
