@@ -356,6 +356,15 @@ static bool check_crc16(const RzFlirtModule *module, ut8 *b, ut32 b_size) {
 	return module->crc16 == flirt_crc16(b + RZ_FLIRT_MAX_PRELUDE_SIZE, module->crc_length);
 }
 
+static bool try_rename_function(RzAnalysis *analysis, RzAnalysisFunction *fcn, const char *name) {
+	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
+		// do not rename if is a symbol but check if
+		// another function has the same name
+		return ht_pp_find(analysis->ht_name_fun, name, NULL) == NULL;
+	}
+	return rz_analysis_function_rename(fcn, name);
+}
+
 /**
  * \brief Checks if the module matches the buffer and renames the matched functions
  *
@@ -444,7 +453,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 				return false;
 			}
 
-			while (!rz_analysis_function_rename(next_module_function, name)) {
+			while (!try_rename_function(analysis, next_module_function, name)) {
 				free(name);
 				name_index++;
 				name = rz_str_newf("flirt.%s_%u", flirt_func->name, name_index);
@@ -455,7 +464,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 
 			// remove old flag
-			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "sym.", "fcn.", "func.", NULL);
+			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
 			if (fit) {
 				analysis->flb.unset(analysis->flb.f, fit);
 			}
