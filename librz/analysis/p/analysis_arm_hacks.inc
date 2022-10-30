@@ -149,6 +149,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RzAnalysisOp *op) {
 
 static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len) {
 	int ret = -1;
+	rz_return_val_if_fail(buf, ret);
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->bits == 64 && len >= 4) {
 		ut32 insn = rz_read_ble32(buf, a->big_endian);
