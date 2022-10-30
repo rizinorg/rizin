@@ -70,7 +70,7 @@ RZ_API void rz_bv_fini(RZ_NONNULL RzBitVector *bv) {
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_new(ut32 length) {
 	rz_return_val_if_fail(length, NULL);
-	RzBitVector *bv = RZ_NEW(RzBitVector);
+	RzBitVector *bv = RZ_NEW0(RzBitVector);
 	if (!bv || !rz_bv_init(bv, length)) {
 		free(bv);
 		return NULL;

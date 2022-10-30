@@ -16,6 +16,7 @@ typedef enum rz_float_format_enum {
 	/// 1. IEEE binary representations, use binary digits to represent float. machine-friendly
 	RZ_FLOAT_IEEE754_BIN_32, ///< IEEE-754 binary 32 format (single)
 	RZ_FLOAT_IEEE754_BIN_64, ///< IEEE-754 binary64 format (double)
+	RZ_FLOAT_IEEE754_BIN_80, ///< IEEE-754 binary80 format
 	RZ_FLOAT_IEEE754_BIN_128, ///< IEEE-754 binary128 format
 
 	/// 2. IEEE decimal representations, use decimal digits to represent float precisely
@@ -73,33 +74,41 @@ typedef struct rz_float_t {
 	RzFloatException exception; ///< exception of float operations
 } RzFloat;
 
-RZ_IPI ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
+RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
 RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f);
 RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f);
 RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f);
-RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value);
-RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value);
-RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f32(float value);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f64(double value);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f80(long double value);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f128(long double value);
+RZ_API RZ_OWN RzFloat *rz_float_new_from_bv(RZ_NONNULL const RzBitVector *bv);
+RZ_API bool rz_float_set_from_f32(RZ_NONNULL RzFloat *f, float value);
+RZ_API bool rz_float_set_from_f64(RZ_NONNULL RzFloat *f, double value);
+RZ_API bool rz_float_set_from_f80(RZ_NONNULL RzFloat *f, long double value);
+RZ_API bool rz_float_set_from_f128(RZ_NONNULL RzFloat *f, long double value);
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent_squashed(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_squashed(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_stretched(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa(RZ_NONNULL RzFloat *f);
-RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_is_negative(RZ_NONNULL RzFloat *f);
 RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_inf(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_is_zero(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y);
 
-RZ_IPI RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode);
-RZ_IPI RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
 
 RZ_API RZ_OWN RzFloat *rz_float_add(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
 RZ_API RZ_OWN RzFloat *rz_float_sub(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
@@ -115,9 +124,14 @@ RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_ut64_as_f64(ut64 value);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_ut32_as_f32(ut32 value);
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f);
+RZ_API RZ_OWN char *rz_float_as_dec_string(RZ_NULLABLE RzFloat *f);
 RZ_API RZ_OWN char *rz_float_as_bit_string(RZ_NULLABLE RzFloat *f);
 RZ_API RZ_OWN char *rz_float_as_hex_string(RZ_NULLABLE RzFloat *f, bool use_pad);
-RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign);
+RZ_API bool rz_float_set_from_inf(RZ_NONNULL RzFloat *f, bool is_negative);
+RZ_API bool rz_float_set_from_zero(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_set_from_qnan(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_set_from_snan(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool is_negative);
 RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);

@@ -17,6 +17,8 @@
  **/
 
 #include "float_internal.c"
+#include <rz_userconf.h>
+#include <math.h>
 
 /**
  * \brief return the bitvector string of a float
@@ -68,7 +70,7 @@ RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f) {
 	ut32 pos = rz_bv_len(f->s) - 1;
 	ut32 i;
 
-	str[0] = rz_float_get_sign(f) ? '-' : '+';
+	str[0] = rz_float_is_negative(f) ? '-' : '+';
 	pos -= 1;
 
 	for (i = 0; i < exp_len; ++i) {
@@ -82,6 +84,113 @@ RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f) {
 
 	str[total + 1] = '\0';
 	return str;
+}
+
+static int float_exponent(RzFloat *f) {
+	RzBitVector *expt = rz_float_get_exponent_squashed(f);
+	if (!expt) {
+		return 0;
+	}
+	int value = (int)rz_bv_to_ut32(expt);
+	rz_bv_free(expt);
+	return value;
+}
+
+static bool float_is_mantissa_zero(RzFloat *f) {
+	RzBitVector *mantissa = rz_float_get_mantissa_squashed(f);
+	if (!mantissa) {
+		return false;
+	}
+	bool is_zero = rz_bv_is_zero_vector(mantissa);
+	rz_bv_free(mantissa);
+	return is_zero;
+}
+
+#define define_cast_to_type(fname, ftype, f_ldexp) \
+	static ftype cast_to_##fname(RzFloat *f) { \
+		const ftype zero = 0.0; \
+		const ftype one = 1.0; \
+		const ftype two = 2.0; \
+		bool is_negative = rz_float_is_negative(f); \
+		if (rz_float_is_inf(f)) { \
+			return is_negative ? (one / zero) : (-one / zero); \
+		} else if (rz_float_is_nan(f)) { \
+			return zero / zero; \
+		} else if (rz_float_is_zero(f)) { \
+			return zero; \
+		} \
+		int bias = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_BIAS) - 1; \
+		ut32 manl = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN); \
+		int exponent = float_exponent(f) - bias; \
+		ftype fractional = 0.0; \
+		for (ut32 i = 0; i < manl; ++i) { \
+			if (rz_bv_get(f->s, i)) { \
+				fractional += one; \
+			} \
+			fractional /= two; \
+		} \
+		if (!(!float_exponent(f) && !float_is_mantissa_zero(f))) { \
+			fractional += one; \
+			fractional /= two; \
+		} \
+		ftype result = f_ldexp(fractional, exponent); \
+		return is_negative ? -result : result; \
+	}
+
+define_cast_to_type(float, float, ldexpf);
+define_cast_to_type(double, double, ldexp);
+define_cast_to_type(long_double, long double, ldexpl);
+
+/**
+ * \brief return a decimal number (like -1.56) in string form of the float
+ * \param f  Float
+ * \return   A human-readable decimal in string form of float.
+ */
+RZ_API RZ_OWN char *rz_float_as_dec_string(RZ_NULLABLE RzFloat *f) {
+	if (!f || !f->s) {
+		return NULL;
+	}
+
+	RzFloatSpec type = rz_float_detect_spec(f);
+	switch (type) {
+	case RZ_FLOAT_SPEC_ZERO:
+		return strdup("0.0");
+	case RZ_FLOAT_SPEC_PINF:
+		return strdup("+inf");
+	case RZ_FLOAT_SPEC_NINF:
+		return strdup("-inf");
+	case RZ_FLOAT_SPEC_QNAN:
+		/* fall-thru */
+	case RZ_FLOAT_SPEC_SNAN:
+		return strdup("nan");
+	default:
+		break;
+	}
+
+	long double result = 0;
+	switch (f->r) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		result = cast_to_float(f);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_64:
+		result = cast_to_double(f);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_80:
+		result = cast_to_long_double(f);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_128:
+		result = cast_to_long_double(f);
+		break;
+	case RZ_FLOAT_IEEE754_DEC_64:
+		/* fall-thru */
+	case RZ_FLOAT_IEEE754_DEC_128:
+		/* fall-thru */
+	default:
+		RZ_LOG_ERROR("float: string: unsupported format %u\n", f->r);
+		return NULL;
+	}
+
+	return rz_str_newf("%" LDBLFMTg, result);
 }
 
 /*
@@ -107,12 +216,14 @@ RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f) {
  * \param which_info Specify an attribute
  * \return ut32 const value bind with `which_info`
  */
-RZ_IPI ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info) {
+RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info) {
 	switch (format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
 		return rz_float_info_bin32(which_info);
 	case RZ_FLOAT_IEEE754_BIN_64:
 		return rz_float_info_bin64(which_info);
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return rz_float_info_bin80(which_info);
 	case RZ_FLOAT_IEEE754_BIN_128:
 		return rz_float_info_bin128(which_info);
 	case RZ_FLOAT_IEEE754_DEC_64:
@@ -169,14 +280,14 @@ RZ_API bool rz_float_init(RZ_NONNULL RzFloat *f, RzFloatFormat format) {
  * \return return an RzFloat instance with zero value
  */
 RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format) {
-	RzFloat *f = RZ_NEW(RzFloat);
+	RzFloat *f = RZ_NEW0(RzFloat);
 	if (!f) {
 		return NULL;
 	}
 	f->s = NULL;
 
 	if (!rz_float_init(f, format)) {
-		free(f);
+		rz_float_free(f);
 		return NULL;
 	}
 
@@ -192,7 +303,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new(RzFloatFormat format) {
  */
 RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
-	RzFloat *cp = RZ_NEW(RzFloat);
+	RzFloat *cp = RZ_NEW0(RzFloat);
 	if (!cp) {
 		RZ_LOG_ERROR("float: dup: Cannot allocate RzFloat\n");
 		return NULL;
@@ -205,57 +316,132 @@ RZ_API RZ_OWN RzFloat *rz_float_dup(RZ_NONNULL RzFloat *f) {
 	return cp;
 }
 
+#define define_cast_from_value(fname, ftype, f_frexp) \
+	static bool cast_from_##fname##_value(RzFloat *f, ftype value) { \
+		const ftype zero = 0.0; \
+		const ftype one = 1.0; \
+		const ftype two = 2.0; \
+		bool is_negative = false; \
+		if (value <= zero) { \
+			is_negative = true; \
+			value = -value; \
+		} \
+		int exponent = 0; \
+		ftype fractional = f_frexp(value, &exponent); \
+		int bias = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_BIAS) - 1; \
+		ut32 expl = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN); \
+		ut32 manl = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN); \
+		if (exponent <= -bias) { \
+			exponent--; \
+		} \
+		exponent += bias; \
+		while (exponent < 0) { \
+			/* denormalize */ \
+			fractional /= two; \
+			exponent++; \
+		} \
+		for (ut32 i = 0; i < manl && fractional != zero; ++i) { \
+			fractional *= two; \
+			if (fractional >= one) { \
+				fractional -= one; \
+				rz_bv_set(f->s, manl - i, true); \
+			} \
+		} \
+		if (roundl(fractional) > 0.5l) { \
+			rz_bv_set(f->s, 0, true); \
+		} \
+		RzBitVector *expbv = rz_bv_new_from_ut64(expl, exponent); \
+		if (!expbv) { \
+			return false; \
+		} \
+		rz_bv_copy_nbits(expbv, 0, f->s, manl, expl); \
+		rz_bv_free(expbv); \
+		rz_bv_set(f->s, f->s->len - 1, is_negative); \
+		return true; \
+	}
+
+define_cast_from_value(float, float, frexpf);
+define_cast_from_value(double, double, frexp);
+define_cast_from_value(long_double, long double, frexpl);
+
 /**
  * Set float bv from C type `float`
- * \param f a normal float
- * \param value value of type `float`
- * \return true if success
+ * \param f      A normal float
+ * \param value  Value of type `float`
+ * \return       True if success
  */
-// TODO : a better way to deal with the different physical implementation
-RZ_API bool rz_float_set_from_single(RZ_NONNULL RzFloat *f, float value) {
+RZ_API bool rz_float_set_from_f32(RZ_NONNULL RzFloat *f, float value) {
 	rz_return_val_if_fail(f, false);
 
-	// TODO : should we support single float -> a given format float ?
+	// TODO : should we support single float to a given format float ?
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-	// check if given RzFloat is a IEEE754-binary32
 	if (exp_len != 8 || man_len != 23) {
-		RZ_LOG_WARN("Do not support single to other float conversion in set_from");
+		RZ_LOG_ERROR("float: failed to cast float32 to other float conversion\n");
 		return false;
 	}
 
-#if RZ_SYS_ENDIAN
-	rz_bv_set_from_bytes_be(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
-#else
-	rz_bv_set_from_bytes_le(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
-#endif
-	return f;
+	return cast_from_float_value(f, value);
 }
 
 /**
  * Set float bv from C type `double`
- * \param f a normal float
- * \param value value of type `double`
- * \return true if success
+ * \param f      A normal float
+ * \param value  Value of type `double`
+ * \return       True if success
  */
-// TODO : a better way to deal with the different physical implementation
-RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value) {
+RZ_API bool rz_float_set_from_f64(RZ_NONNULL RzFloat *f, double value) {
 	rz_return_val_if_fail(f, false);
 
-	// TODO : should we support double float -> a given format float ?
+	// TODO : should we support double float to a given format float ?
 	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
 	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
 	if (exp_len != 11 || man_len != 52) {
-		RZ_LOG_WARN("Do not support double to other float conversion in set_from");
+		RZ_LOG_ERROR("float: failed to cast float64 to other float conversion\n");
 		return false;
 	}
 
-#if RZ_SYS_ENDIAN
-	rz_bv_set_from_bytes_be(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
-#else
-	rz_bv_set_from_bytes_le(f->s, (ut8 *)&value, 0, exp_len + man_len + 1);
-#endif
-	return f;
+	return cast_from_double_value(f, value);
+}
+
+/**
+ * Set float bv from C type `long double`
+ * \param f      A normal float
+ * \param value  Value of type `long double`
+ * \return       True if success
+ */
+RZ_API bool rz_float_set_from_f80(RZ_NONNULL RzFloat *f, long double value) {
+	rz_return_val_if_fail(f, false);
+
+	// TODO : should we support quadruple float to a given format float ?
+	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	if (exp_len != 15 || man_len != 64) {
+		RZ_LOG_ERROR("float: failed to cast float80 to other float conversion\n");
+		return false;
+	}
+
+	return cast_from_long_double_value(f, value);
+}
+
+/**
+ * Set float bv from C type `long double`
+ * \param f      A normal float
+ * \param value  Value of type `long double`
+ * \return       True if success
+ */
+RZ_API bool rz_float_set_from_f128(RZ_NONNULL RzFloat *f, long double value) {
+	rz_return_val_if_fail(f, false);
+
+	// TODO : should we support quadruple float to a given format float ?
+	ut32 exp_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+	ut32 man_len = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	if (exp_len != 15 || man_len != 112) {
+		RZ_LOG_ERROR("float: failed to cast float128 to other float conversion\n");
+		return false;
+	}
+
+	return cast_from_long_double_value(f, value);
 }
 
 /**
@@ -263,16 +449,22 @@ RZ_API bool rz_float_set_from_double(RZ_NONNULL RzFloat *f, double value) {
  * \param value single float value
  * \return RzFloat representation of single float
  */
-// TODO : a better way to deal with the different physical implementation
-RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value) {
-	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
-	if (!f) {
-		RZ_LOG_ERROR("float: Failed to allocate single-precision RzFloat\n");
-		return NULL;
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f32(float value) {
+	if (isinf(value)) {
+		return rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, value != F32_PINF);
+	} else if (isnan(value)) {
+		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_32);
+	} else if (value == 0) {
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32);
 	}
 
-	if (!rz_float_set_from_single(f, value)) {
-		RZ_LOG_ERROR("float: Error in setting RzFloat from single-precision float\n");
+	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
+	if (!f) {
+		RZ_LOG_ERROR("float: failed to allocate float32\n");
+		return NULL;
+	}
+	if (!rz_float_set_from_f32(f, value)) {
+		RZ_LOG_ERROR("float: failed converting to float32\n");
 		rz_float_free(f);
 		return NULL;
 	}
@@ -280,24 +472,126 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_single(float value) {
 }
 
 /**
- * \brief create a float by given the double float value
- * \param value double float value
- * \return RzFloat representation of double float
+ * \brief create a float64 by given the double value
+ * \param value  Double value
+ * \return       RzFloat representation of double
  */
-// TODO : a better way to deal with the different physical implementation
-RZ_API RZ_OWN RzFloat *rz_float_new_from_double(double value) {
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f64(double value) {
+	if (isinf(value)) {
+		return rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_64, value != F64_PINF);
+	} else if (isnan(value)) {
+		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_64);
+	} else if (value == 0) {
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64);
+	}
+
 	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
 	if (!f) {
-		RZ_LOG_ERROR("float: Failed to allocate double-precision RzFloat\n");
+		RZ_LOG_ERROR("float: failed to allocate float64\n");
 		return NULL;
 	}
 
-	if (!rz_float_set_from_double(f, value)) {
-		RZ_LOG_ERROR("float: Error in setting RzFloat from double-precision float\n");
+	if (!rz_float_set_from_f64(f, value)) {
+		RZ_LOG_ERROR("float: failed converting to float64\n");
 		rz_float_free(f);
 		return NULL;
 	}
 
+	return f;
+}
+
+/**
+ * \brief Create a float80 by given the long double value
+ * \param value  Long double value
+ * \return       RzFloat representation of long double
+ */
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f80(long double value) {
+	if (isinf(value)) {
+		return rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_80, value != F128_PINF);
+	} else if (isnan(value)) {
+		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_80);
+	} else if (value == 0) {
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_80);
+	}
+
+	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
+	if (!f) {
+		RZ_LOG_ERROR("float: failed to allocate float80\n");
+		return NULL;
+	}
+
+	if (!rz_float_set_from_f80(f, value)) {
+		RZ_LOG_ERROR("float: failed converting to float80\n");
+		rz_float_free(f);
+		return NULL;
+	}
+
+	return f;
+}
+
+/**
+ * \brief Create a float128 by given the long double value
+ * \param value  Long double value
+ * \return       RzFloat representation of long double
+ */
+RZ_API RZ_OWN RzFloat *rz_float_new_from_f128(long double value) {
+	if (isinf(value)) {
+		return rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_128, value != F128_PINF);
+	} else if (isnan(value)) {
+		return rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_128);
+	} else if (value == 0) {
+		return rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_128);
+	}
+
+	RzFloat *f = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
+	if (!f) {
+		RZ_LOG_ERROR("float: failed to allocate float128\n");
+		return NULL;
+	}
+
+	if (!rz_float_set_from_f128(f, value)) {
+		RZ_LOG_ERROR("float: failed converting to float128\n");
+		rz_float_free(f);
+		return NULL;
+	}
+
+	return f;
+}
+
+/**
+ * \brief      Tries to convert a bitvector with a fixed size into a float number
+ *
+ * \param[in]  bv    The bitvector to cast
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN RzFloat *rz_float_new_from_bv(RZ_NONNULL const RzBitVector *bv) {
+	rz_return_val_if_fail(bv, NULL);
+
+	RzFloat *f = NULL;
+	switch (bv->len) {
+	case 32:
+		f = rz_float_new(RZ_FLOAT_IEEE754_BIN_32);
+		break;
+	case 64:
+		f = rz_float_new(RZ_FLOAT_IEEE754_BIN_64);
+		break;
+	case 80:
+		f = rz_float_new(RZ_FLOAT_IEEE754_BIN_80);
+		break;
+	case 128:
+		f = rz_float_new(RZ_FLOAT_IEEE754_BIN_128);
+		break;
+	default:
+		RZ_LOG_ERROR("float: Error in casting bitvector with size %u to float\n", bv->len);
+		return NULL;
+	}
+
+	if (!f) {
+		return NULL;
+	}
+
+	rz_bv_copy(bv, f->s);
 	return f;
 }
 
@@ -314,7 +608,7 @@ static RZ_OWN RzFloat *float_new_from_ut64(ut64 value, RzFloatFormat format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
 		/* fall-thru */
 	case RZ_FLOAT_IEEE754_BIN_64:
-		ret = RZ_NEW(RzFloat);
+		ret = RZ_NEW0(RzFloat);
 		if (!ret) {
 			RZ_LOG_ERROR("float: Cannot allocate RzFloat\n");
 			break;
@@ -407,7 +701,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa(RZ_NONNULL RzFloat *f) {
  * \param f float num
  * \return bool value of sign bit
  */
-RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f) {
+RZ_API bool rz_float_is_negative(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, false);
 	return get_sign(f->s, f->r);
 }
@@ -472,28 +766,142 @@ RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f) {
 }
 
 /**
- * Generate a infinity float and specify the sign bit
- * \param format format of float to generate
- * \param sign sign bit of infinity, is_negative flag
- * \return an infinity float
+ * detect if the float number is zero
+ * \param f  Float
+ * \return   True if it's zero, else false
  */
-RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool sign) {
+RZ_API bool rz_float_is_zero(RZ_NONNULL RzFloat *f) {
+	RzFloatSpec type = rz_float_detect_spec(f);
+	return type == RZ_FLOAT_SPEC_ZERO;
+}
+
+/**
+ * \brief      Compares 2 float numbers allowing imperfect bits
+ *
+ * \param      x    The float X
+ * \param      y    The float Y
+ *
+ * \return     True if the two floats are equal, otherwise false
+ */
+RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
+	rz_return_val_if_fail(x && y, false);
+	RzBitVector *xb = x->s;
+	RzBitVector *yb = y->s;
+
+	if (xb->len != yb->len) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	for (ut32 i = 1; i < xb->len; ++i) {
+		if (rz_bv_get(xb, i) != rz_bv_get(yb, i)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static void set_inf(RzFloat *f, bool is_negative) {
+	RzBitVector *bv = f->s;
+	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+
+	// set sign bit (MSB), keep mantissa as zero-bv
+	rz_bv_set(bv, bv->len - 1, is_negative);
+}
+
+static void set_qnan(RzFloat *f) {
+	RzBitVector *bv = f->s;
+	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+
+	// set is_quiet to 1
+	rz_bv_set(bv, exp_start - 1, true);
+
+	// set sig as non-zero
+	rz_bv_set(bv, 0, true);
+}
+
+static void set_snan(RzFloat *f) {
+	RzBitVector *bv = f->s;
+	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 exp_end = exp_start + rz_float_get_format_info(f->r, RZ_FLOAT_INFO_EXP_LEN);
+
+	// set exponent part to all 1
+	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
+
+	// set is_quiet to 0 (msb of mantissa part)
+	rz_bv_set(bv, exp_start - 1, false);
+
+	// set sig as non-zero
+	rz_bv_set(bv, 0, true);
+}
+
+/**
+ * Sets the float to infinity and specify the sign bit
+ * \param f            Float
+ * \param is_negative  Sign bit of infinity, negative flag
+ * \return             On success returns true, otherwise false
+ */
+RZ_API bool rz_float_set_from_inf(RZ_NONNULL RzFloat *f, bool is_negative) {
+	rz_return_val_if_fail(f, false);
+	set_inf(f, is_negative);
+	return true;
+}
+
+/**
+ * Sets the float to zero
+ * \param f  Float
+ * \return   On success returns true, otherwise false
+ */
+RZ_API bool rz_float_set_from_zero(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, false);
+	return rz_bv_set_all(f->s, false);
+}
+
+/**
+ * Sets the float to quiet NaN
+ * \param f  Float
+ * \return   On success returns true, otherwise false
+ */
+RZ_API bool rz_float_set_from_qnan(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, false);
+	set_qnan(f);
+	return true;
+}
+
+/**
+ * Sets the float to signal NaN
+ * \param f  Float
+ * \return   On success returns true, otherwise false
+ */
+RZ_API bool rz_float_set_from_snan(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, false);
+	set_snan(f);
+	return true;
+}
+
+/**
+ * Generate a infinity float and specify the sign bit
+ * \param format       Format of float to generate
+ * \param is_negative  Sign bit of infinity, negative flag
+ * \return             An infinity float
+ */
+RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool is_negative) {
 	// gen an Infinite num for return
 	RzFloat *ret = rz_float_new(format);
 	if (!ret || !ret->s) {
 		rz_float_free(ret);
 		return NULL;
 	}
-	RzBitVector *bv = ret->s;
-	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-
-	// set exponent part to all 1
-	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
-
-	// set sign bit (MSB), keep mantissa as zero-bv
-	rz_bv_set(bv, bv->len - 1, sign);
-
+	set_inf(ret, is_negative);
 	return ret;
 }
 
@@ -518,19 +926,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format) {
 		rz_float_free(ret);
 		return NULL;
 	}
-	RzBitVector *bv = ret->s;
-	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-
-	// set exponent part to all 1
-	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
-
-	// set is_quiet to 1
-	rz_bv_set(bv, exp_start - 1, true);
-
-	// set sig as non-zero
-	rz_bv_set(bv, 0, true);
-
+	set_qnan(ret);
 	return ret;
 }
 
@@ -546,19 +942,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format) {
 		rz_float_free(ret);
 		return NULL;
 	}
-	RzBitVector *bv = ret->s;
-	ut32 exp_start = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-	ut32 exp_end = exp_start + rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
-
-	// set exponent part to all 1
-	rz_bv_set_range(bv, exp_start, exp_end - 1, true);
-
-	// set is_quiet to 0 (msb of mantissa part)
-	rz_bv_set(bv, exp_start - 1, false);
-
-	// set sig as non-zero
-	rz_bv_set(bv, 0, true);
-
+	set_snan(ret);
 	return ret;
 }
 
@@ -754,8 +1138,8 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 		return propagate_float_nan(left, l_type, right, r_type);
 	}
 
-	bool l_sign = rz_float_get_sign(left);
-	bool r_sign = rz_float_get_sign(right);
+	bool l_sign = rz_float_is_negative(left);
+	bool r_sign = rz_float_is_negative(right);
 	if (l_is_inf || r_is_inf) {
 		if (l_is_inf && r_is_inf) {
 			// +inf - inf = NaN
@@ -919,9 +1303,9 @@ clean:
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
-	bool l_sign = rz_float_get_sign(left);
-	bool r_sign = rz_float_get_sign(right);
+RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+	bool l_sign = rz_float_is_negative(left);
+	bool r_sign = rz_float_is_negative(right);
 	if (l_sign == r_sign) {
 		return fadd_mag(left, right, l_sign, mode);
 	}
@@ -933,9 +1317,9 @@ RZ_IPI RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
-	bool l_sign = rz_float_get_sign(left);
-	bool r_sign = rz_float_get_sign(right);
+RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+	bool l_sign = rz_float_is_negative(left);
+	bool r_sign = rz_float_is_negative(right);
 	if (l_sign == r_sign) {
 		return fsub_mag(left, right, l_sign, mode);
 	}
@@ -947,7 +1331,7 @@ RZ_IPI RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	/* Process NaN and Inf cases */
@@ -957,8 +1341,8 @@ RZ_IPI RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 		return propagate_float_nan(left, l_type, right, r_type);
 	}
 
-	bool l_sign = rz_float_get_sign(left);
-	bool r_sign = rz_float_get_sign(right);
+	bool l_sign = rz_float_is_negative(left);
+	bool r_sign = rz_float_is_negative(right);
 	bool spec_sign = l_sign ^ r_sign;
 
 	if (l_is_inf) {
@@ -1072,12 +1456,12 @@ RZ_IPI RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	RzFloat *result = NULL;
 
 	PROC_SPECIAL_FLOAT_START(left, right)
-	bool l_sign = rz_float_get_sign(left);
-	bool r_sign = rz_float_get_sign(right);
+	bool l_sign = rz_float_is_negative(left);
+	bool r_sign = rz_float_is_negative(right);
 	bool sign = l_sign ^ r_sign;
 	RzFloat *spec_ret = NULL;
 
@@ -1258,7 +1642,7 @@ static RZ_OWN RzFloat *rz_float_rem_internal(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	rz_bv_free(exp_x);
 	rz_bv_free(exp_y);
 
-	bool sign_x = rz_float_get_sign(left);
+	bool sign_x = rz_float_is_negative(left);
 
 	/* quo(-x,-y) = quo(x,y), rem(-x,-y) = -rem(x,y)
 	 * quo(-x,y) = -quo(x,y), rem(-x,y)  = -rem(x,y)
@@ -1479,7 +1863,7 @@ clean:
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	return rz_float_rem_internal(left, right, RZ_FLOAT_RMODE_RNE, mode);
 }
 
@@ -1493,7 +1877,7 @@ RZ_IPI RZ_OWN RzFloat *rz_float_rem_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode) {
 	return rz_float_rem_internal(left, right, RZ_FLOAT_RMODE_RTZ, mode);
 }
 
@@ -1502,7 +1886,7 @@ RZ_IPI RZ_OWN RzFloat *rz_float_mod_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b, RZ_NONNULL RzFloat *c, RzFloatRMode mode) {
 	// process NaN / Inf
 	{
 		RzFloatSpec a_type, b_type, c_type;
@@ -1728,7 +2112,7 @@ clean:
  * \param mode rounding mode
  * \return result of arithmetic operation
  */
-RZ_IPI RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
 	// Use Newton method now, May Optimize
 	RzFloat *eps = rz_float_new_zero(n->r);
 	ut32 bias = rz_float_get_format_info(n->r, RZ_FLOAT_INFO_BIAS);
@@ -1773,7 +2157,7 @@ RZ_IPI RZ_OWN RzFloat *rz_float_sqrt_ieee_bin(RZ_NONNULL RzFloat *n, RzFloatRMod
 RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzFloat *abs = rz_float_dup(f);
-	if (rz_float_get_sign(f)) {
+	if (rz_float_is_negative(f)) {
 		// change sign if negative
 		rz_make_fabs(abs);
 	}
