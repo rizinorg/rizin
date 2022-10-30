@@ -46,7 +46,7 @@ ar a6
 EOF
 EXPECT=<<EOF
 a3 = 0xffffffffffffffff
-a4 = 0xff5af000
+a4 = 0x00000000ff5af000
 a5 = 0xffffffffffffff5a
 a6 = 0xfffffffffffffff0
 EOF
@@ -64,6 +64,6 @@ aeim
 ar a4
 EOF
 EXPECT=<<EOF
-a4 = 0x00000ff2
+a4 = 0x0000000000000ff2
 EOF
 RUN

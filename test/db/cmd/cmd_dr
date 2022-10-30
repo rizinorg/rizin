@@ -20,7 +20,7 @@ ar rflags=0x137
 ar rflags
 EOF
 EXPECT=<<EOF
-rflags = 0x00000000
-rflags = 0x00000137
+rflags = 0x0000000000000000
+rflags = 0x0000000000000137
 EOF
 RUN

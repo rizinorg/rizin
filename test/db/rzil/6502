@@ -8,7 +8,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x00000042
+a = 0x42
 EOF
 RUN
 
@@ -23,7 +23,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x00000042
+a = 0x42
 EOF
 RUN
 
@@ -38,7 +38,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x00000042
+a = 0x42
 EOF
 RUN
 
@@ -54,7 +54,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x00000042
+a = 0x42
 EOF
 RUN
 
@@ -70,7 +70,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x00000042
+a = 0x42
 EOF
 RUN
 
@@ -87,7 +87,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x0000008a
+a = 0x8a
 EOF
 RUN
 
@@ -104,7 +104,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x0000008a
+a = 0x8a
 EOF
 RUN
 
@@ -123,7 +123,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x0000008a
+a = 0x8a
 EOF
 RUN
 
@@ -140,7 +140,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x0000008a
+a = 0x8a
 EOF
 RUN
 
@@ -159,7 +159,7 @@ aezs
 ar a
 EOF
 EXPECT=<<EOF
-a = 0x0000008a
+a = 0x8a
 EOF
 RUN
 
@@ -185,26 +185,26 @@ ar 1
 EOF
 EXPECT=<<EOF
 lda #0x34
-C = 0x00000000
-Z = 0x00000000
-I = 0x00000000
-D = 0x00000000
-V = 0x00000000
-N = 0x00000000
+C = 0x0
+Z = 0x0
+I = 0x0
+D = 0x0
+V = 0x0
+N = 0x0
 lda #0x00
-C = 0x00000000
-Z = 0x00000001
-I = 0x00000000
-D = 0x00000000
-V = 0x00000000
-N = 0x00000000
+C = 0x0
+Z = 0x1
+I = 0x0
+D = 0x0
+V = 0x0
+N = 0x0
 lda #0x80
-C = 0x00000000
-Z = 0x00000000
-I = 0x00000000
-D = 0x00000000
-V = 0x00000000
-N = 0x00000001
+C = 0x0
+Z = 0x0
+I = 0x0
+D = 0x0
+V = 0x0
+N = 0x1
 EOF
 RUN
 
@@ -221,12 +221,12 @@ ar
 EOF
 EXPECT=<<EOF
 jmp 0xcafe
-a = 0x00000000
-x = 0x00000000
-y = 0x00000000
-flags = 0x00000000
-sp = 0x00000000
-pc = 0x0000cafe
+a = 0x00
+x = 0x00
+y = 0x00
+flags = 0x00
+sp = 0x00
+pc = 0xcafe
 EOF
 RUN
 

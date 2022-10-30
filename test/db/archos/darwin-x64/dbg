@@ -86,8 +86,8 @@ dr rdi
 ps @ rdi
 EOF
 EXPECT=<<EOF
-rip = 0x100000f17
-rdi = 0x100000f30
+rip = 0x0000000100000f17
+rdi = 0x0000000100000f30
 Hello World
 EOF
 EXPECT_ERR=<<EOF
@@ -110,10 +110,10 @@ dr rip
 dr rdi
 EOF
 EXPECT=<<EOF
-rip = 0x100000f0c
+rip = 0x0000000100000f0c
 --
-rip = 0x100000f17
-rdi = 0x100000f30
+rip = 0x0000000100000f17
+rdi = 0x0000000100000f30
 EOF
 EXPECT_ERR=<<EOF
 hit breakpoint at: 0x100000f0c
