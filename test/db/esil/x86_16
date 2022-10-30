@@ -14,7 +14,7 @@ ar ip = 0
 ar ip
 EOF
 EXPECT=<<EOF
-ip = 0x0000000c
-ip = 0x0000000c
+ip = 0x000c
+ip = 0x000c
 EOF
 RUN

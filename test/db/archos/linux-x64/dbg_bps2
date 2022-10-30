@@ -13,12 +13,12 @@ ds ; dr PC
 ds ; dr PC
 EOF
 EXPECT=<<EOF
-rip = 0x004004ed
-rip = 0x004004ed
-rip = 0x004004ed
-rip = 0x004004ee
-rip = 0x004004f1
-rip = 0x004004f7
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ee
+rip = 0x00000000004004f1
+rip = 0x00000000004004f7
 EOF
 RUN
 
@@ -37,11 +37,11 @@ ds ; dr PC
 ds ; dr PC
 EOF
 EXPECT=<<EOF
-rip = 0x004004ed
-rip = 0x004004ed
-rip = 0x004004ed
-rip = 0x004004ee
-rip = 0x004004f1
-rip = 0x004004f7
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ee
+rip = 0x00000000004004f1
+rip = 0x00000000004004f7
 EOF
 RUN

@@ -90,10 +90,10 @@ EOF
 REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
 EXPECT=<<EOF
 pc = f44
-x8 = 0x00000000
+x8 = 0x0000000000000000
 --
 pc = f48
-x8 = 0x00000064
+x8 = 0x0000000000000064
 EOF
 REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
@@ -125,10 +125,10 @@ EXPECT=<<EOF
 pc = f30
 --
 pc = f44
-x8 = 0x00000000
+x8 = 0x0000000000000000
 --
 pc = f48
-x8 = 0x00000064
+x8 = 0x0000000000000064
 EOF
 REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
 EXPECT_ERR=<<EOF
@@ -149,7 +149,7 @@ dr x8 = 1337
 dc
 EOF
 EXPECT=<<EOF
-x8 = 0x0000002a
+x8 = 0x000000000000002a
 Result = 1337
 EOF
 REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
