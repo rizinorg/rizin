@@ -6,10 +6,18 @@
 #include <rz_util.h>
 
 /**
- * Read the value of the given register as a bit vector
+ * \brief      Read the value of the given register as a bit vector
+ *
+ * \param      reg   The register profile
+ * \param      item  The register item
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) {
+RZ_API RZ_OWN RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) {
 	rz_return_val_if_fail(reg && item, NULL);
+	if (item->offset < 0) {
+		return rz_bv_new_zero(item->size);
+	}
 	RzRegSet *regset = &reg->regset[item->arena];
 	if (reg->big_endian) {
 		return rz_bv_new_from_bytes_be(regset->arena->bytes, item->offset, item->size);
@@ -19,201 +27,46 @@ RZ_API RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *i
 }
 
 /**
- * Set the value of the given register from the given bit vector
- * \param bv bitvector of exactly item->len bits
- * \return wether the write succeeded
+ * \brief      Gets the register value based on the given register item
+ *
+ * \param      reg   The register profile
+ * \param      item  The register item
+ *
+ * \return     Value stored in the register
  */
-RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv) {
-	rz_return_val_if_fail(reg && item && bv, false);
-	if (rz_bv_len(bv) != item->size) {
-		return false;
-	}
-	if (item->offset % 8) {
-		// TODO: this needs a bit offset arg in rz_bv_set_to_bytes_be()
-		if (item->size == 1) {
-			// workaround for flags edge-case while the offset mentioned above is not implemented yet
-			rz_reg_set_value(reg, item, rz_bv_to_ut64(bv));
-			return true;
-		}
-		RZ_LOG_ERROR("rz_reg_set_bv() for non-byte-aligned regs not supported yet.\n");
-		return false;
-	}
-	RzRegSet *regset = &reg->regset[item->arena];
-	int boff = item->offset / 8;
-	if (reg->big_endian) {
-		rz_bv_set_to_bytes_be(bv, regset->arena->bytes + boff);
-	} else {
-		rz_bv_set_to_bytes_le(bv, regset->arena->bytes + boff);
-	}
-	return true;
-}
-
-typedef ut32 ut27;
-static ut27 rz_read_me27(const ut8 *buf, int boff) {
-	ut27 ret = 0;
-	rz_mem_copybits_delta((ut8 *)&ret, 18, buf, boff, 9);
-	rz_mem_copybits_delta((ut8 *)&ret, 9, buf, boff + 9, 9);
-	rz_mem_copybits_delta((ut8 *)&ret, 0, buf, boff + 18, 9);
-	return ret;
-}
-
-RZ_API ut64 rz_reg_get_value_big(RzReg *reg, RzRegItem *item, utX *val) {
+RZ_API ut64 rz_reg_get_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) {
 	rz_return_val_if_fail(reg && item, 0);
-
-	ut64 ret = 0LL;
-	int off = BITS2BYTES(item->offset);
-	RzRegSet *regset = &reg->regset[item->arena];
-	if (!regset->arena) {
-		return 0LL;
+	if (item->offset < 0) {
+		return 0ll;
 	}
-	switch (item->size) {
-	case 80: // word + qword
-		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
-			val->v80.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v80.High = *((ut16 *)(regset->arena->bytes + off + 8));
-		} else {
-			eprintf("rz_reg_get_value: null or oob arena for current regset\n");
-		}
-		ret = val->v80.Low;
-		break;
-	case 96: // dword + qword
-		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
-			val->v96.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v96.High = *((ut32 *)(regset->arena->bytes + off + 8));
-		} else {
-			eprintf("rz_reg_get_value: null or oob arena for current regset\n");
-		}
-		ret = val->v96.Low;
-		break;
-	case 128: // qword + qword
-		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
-			val->v128.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v128.High = *((ut64 *)(regset->arena->bytes + off + 8));
-		} else {
-			eprintf("rz_reg_get_value: null or oob arena for current regset\n");
-		}
-		ret = val->v128.Low;
-		break;
-	case 256: // qword + qword + qword + qword
-		if (regset->arena->bytes && (off + 32 <= regset->arena->size)) {
-			val->v256.Low.Low = *((ut64 *)(regset->arena->bytes + off));
-			val->v256.Low.High = *((ut64 *)(regset->arena->bytes + off + 8));
-			val->v256.High.Low = *((ut64 *)(regset->arena->bytes + off + 16));
-			val->v256.High.High = *((ut64 *)(regset->arena->bytes + off + 24));
-		} else {
-			eprintf("rz_reg_get_value: null or oob arena for current regset\n");
-		}
-		ret = val->v256.Low.Low;
-		break;
-	default:
-		break;
+	RzBitVector *bv = rz_reg_get_bv(reg, item);
+	if (!bv) {
+		return 0;
 	}
-	return ret;
+	ut64 value = rz_bv_to_ut64(bv);
+	rz_bv_free(bv);
+	return value;
 }
 
-RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item) {
-	rz_return_val_if_fail(reg && item, 0);
-	if (!reg || !item || item->offset == -1) {
-		return 0LL;
-	}
-	int off = BITS2BYTES(item->offset);
-	RzRegSet *regset = &reg->regset[item->arena];
-	if (!regset->arena) {
-		return 0LL;
-	}
-	switch (item->size) {
-	case 1: {
-		int offset = item->offset / 8;
-		if (offset >= regset->arena->size) {
-			break;
-		}
-		return (regset->arena->bytes[offset] &
-			       (1 << (item->offset % 8)))
-			? 1
-			: 0;
-	} break;
-	case 4:
-		if (regset->arena->size - off - 1 >= 0) {
-			return (rz_read_at_ble8(regset->arena->bytes, off)) & 0xF;
-		}
-		break;
-	case 8:
-		if (regset->arena->size - off - 1 >= 0) {
-			return rz_read_at_ble8(regset->arena->bytes, off);
-		}
-		break;
-	case 16:
-		if (regset->arena->size - off - 2 >= 0) {
-			return rz_read_ble16(regset->arena->bytes + off, reg->big_endian);
-		}
-		break;
-	case 27:
-		if (off + 3 < regset->arena->size) {
-			return rz_read_me27(regset->arena->bytes + off, 0);
-		}
-		break;
-	case 32:
-		if (off + 4 <= regset->arena->size) {
-			return rz_read_ble32(regset->arena->bytes + off, reg->big_endian);
-		}
-		eprintf("rz_reg_get_value: 32bit oob read %d\n", off);
-		break;
-	case 64:
-		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
-			return rz_read_ble64(regset->arena->bytes + off, reg->big_endian);
-		}
-		// eprintf ("rz_reg_get_value: null or oob arena for current regset\n");
-		break;
-	case 80: // long double
-	case 96: // long floating value
-		// FIXME: It is a precision loss, please implement me properly!
-		return (ut64)rz_reg_get_longdouble(reg, item);
-	case 128:
-	case 256:
-		// XXX 128 & 256 bit
-		return (ut64)rz_reg_get_longdouble(reg, item);
-	default:
-		break;
-	}
-	return 0LL;
-}
-
-RZ_API ut64 rz_reg_get_value_by_role(RzReg *reg, RzRegisterId role) {
+/**
+ * \brief      Gets the register value based on the given register role
+ *
+ * \param      reg   The register profile
+ * \param      item  The register item
+ *
+ * \return     Value stored in the register
+ */
+RZ_API ut64 rz_reg_get_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role) {
 	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
 	return rz_reg_get_value(reg, rz_reg_get(reg, rz_reg_get_name(reg, role), -1));
 }
 
-RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
-	ut8 bytes[12];
-	ut8 *src = bytes;
-	bool unset_src = false;
-	rz_return_val_if_fail(reg && item, false);
-
-	if (rz_reg_is_readonly(reg, item)) {
-		return true;
-	}
-	if (item->offset < 0) {
-		return true;
-	}
+static bool reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 	RzRegArena *arena = reg->regset[item->arena].arena;
 	if (!arena) {
 		return false;
 	}
 	switch (item->size) {
-	case 80:
-	case 96: // long floating value
-		rz_reg_set_longdouble(reg, item, (long double)value);
-		unset_src = true;
-		break;
-	case 64:
-		/* fall-thru */
-	case 32:
-		/* fall-thru */
-	case 16:
-		/* fall-thru */
-	case 8:
-		rz_write_ble(src, value, reg->big_endian, item->size);
-		break;
 	case 4: {
 		// Example: 4bit Register is located at bit 1 of a byte.
 		// Example byte = 0b101xxxx1
@@ -238,7 +91,7 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		} else {
 			int idx = item->offset / 8;
 			if (idx + item->size > arena->size) {
-				eprintf("RzRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
+				RZ_LOG_ERROR("reg: index (%d) exeeds arena size (%d)\n", idx + item->size, arena->size);
 				return false;
 			}
 			ut8 *buf = arena->bytes + idx;
@@ -247,128 +100,90 @@ RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 			buf[0] = (buf[0] & mask) | 0;
 		}
 		return true;
-	case 128:
-	case 256:
-		// XXX 128 & 256 bit
-		return false; // (ut64)rz_reg_get_longdouble (reg, item);
 	default:
-		RZ_LOG_ERROR("rz_reg_set_value: Bit size %d not supported\n", item->size);
+		RZ_LOG_ERROR("reg: bit size %d not supported\n", item->size);
 		return false;
 	}
-	const bool fits_in_arena = (arena->size - BITS2BYTES(item->offset) - BITS2BYTES(item->size)) >= 0;
-	if (!unset_src && fits_in_arena) {
-		rz_mem_copybits(reg->regset[item->arena].arena->bytes +
-				BITS2BYTES(item->offset),
-			src, item->size);
-		return true;
-	}
-	eprintf("rz_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
-	return false;
 }
 
-RZ_API bool rz_reg_set_value_by_role(RzReg *reg, RzRegisterId role, ut64 val) {
+/**
+ * \brief      Set the value of the given register from the given bit vector
+ *
+ * \param      reg   The register profile
+ * \param      item  The register item
+ * \param[in]  bv    The bitvector to set
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv) {
+	rz_return_val_if_fail(reg && item && bv, false);
+	if (rz_reg_is_readonly(reg, item) || item->offset < 0) {
+		return true;
+	}
+	if (rz_bv_len(bv) != item->size) {
+		return false;
+	}
+	if (item->offset % 8) {
+		// TODO: this needs a bit offset arg in rz_bv_set_to_bytes_be()
+		if (item->size == 1) {
+			// workaround for flags edge-case while the offset mentioned above is not implemented yet
+			return reg_set_value(reg, item, rz_bv_to_ut64(bv));
+		}
+		RZ_LOG_ERROR("reg: failed to set bitvector for non-byte-aligned regs (not yet supported).\n");
+		return false;
+	}
+
+	RzRegSet *regset = &reg->regset[item->arena];
+	int boff = item->offset / 8;
+	if (reg->big_endian) {
+		rz_bv_set_to_bytes_be(bv, regset->arena->bytes + boff);
+	} else {
+		rz_bv_set_to_bytes_le(bv, regset->arena->bytes + boff);
+	}
+	return true;
+}
+
+/**
+ * \brief      Sets the register value based on the given register item and value
+ *
+ * \param      reg    The register profile
+ * \param      item   The register item
+ * \param      value  The value to set
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_reg_set_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, ut64 value) {
+	rz_return_val_if_fail(reg && item, false);
+	if (rz_reg_is_readonly(reg, item) || item->offset < 0) {
+		return true;
+	}
+
+	RzBitVector *bv = rz_bv_new_from_ut64(item->size, value);
+	if (!bv) {
+		RZ_LOG_ERROR("reg: failed to allocate RzBitVector for register write\n");
+		return false;
+	}
+
+	bool res = rz_reg_set_bv(reg, item, bv);
+	rz_bv_free(bv);
+	return res;
+}
+
+/**
+ * \brief      Sets the register value based on the given register role and value
+ *
+ * \param      reg    The register profile
+ * \param      role   The register role
+ * \param      value  The value to set
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_API bool rz_reg_set_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role, ut64 value) {
 	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
 	const char *name = rz_reg_get_name(reg, role);
 	if (!name) {
 		return false;
 	}
 	RzRegItem *r = rz_reg_get(reg, name, -1);
-	return rz_reg_set_value(reg, r, val);
-}
-
-RZ_API ut64 rz_reg_set_bvalue(RzReg *reg, RzRegItem *item, const char *str) {
-	ut64 num = UT64_MAX;
-	if (item && item->flags && str) {
-		num = rz_str_bits_from_string(str, item->flags);
-		if (num == UT64_MAX) {
-			num = rz_num_math(NULL, str);
-		}
-		rz_reg_set_value(reg, item, num);
-	}
-	return num;
-}
-
-RZ_API RZ_HEAP char *rz_reg_get_bvalue(RzReg *reg, RzRegItem *item) {
-	char *out = NULL;
-	if (reg && item && item->flags) {
-		out = malloc(strlen(item->flags) + 1);
-		if (out) {
-			ut64 num = rz_reg_get_value(reg, item);
-			rz_str_bits(out, (ut8 *)&num,
-				strlen(item->flags) * 8, item->flags);
-		}
-	}
-	return out;
-}
-
-/* packed registers */
-// packbits can be 8, 16, 32 or 64
-// result value is always casted into ut64
-// TODO: support packbits=128 for xmm registers
-RZ_API ut64 rz_reg_get_pack(RzReg *reg, RzRegItem *item, int packidx, int packbits) {
-	rz_return_val_if_fail(reg && item, 0LL);
-
-	if (packbits < 1) {
-		packbits = item->packed_size;
-	}
-	if (packbits > 64) {
-		packbits = 64;
-		eprintf("Does not support pack bits > 64\n");
-	}
-
-	ut64 ret = 0LL;
-	const int packbytes = packbits / 8;
-	const int packmod = packbits % 8;
-	if (packmod) {
-		eprintf("Invalid bit size for packet register\n");
-		return 0LL;
-	}
-	if ((packidx + 1) * packbits > item->size) {
-		eprintf("Packed index is beyond the register size\n");
-		return 0LL;
-	}
-	RzRegSet *regset = &reg->regset[item->arena];
-	if (!regset->arena) {
-		return 0LL;
-	}
-	int off = BITS2BYTES(item->offset);
-	off += (packidx * packbytes);
-	if (regset->arena->size - off - 1 >= 0) {
-		int i;
-		for (i = packbytes - 1; i >= 0; i--) {
-			ret = (ret << 8) | regset->arena->bytes[off + i];
-		}
-	}
-	return ret;
-}
-
-// TODO: support packbits=128 for xmm registers
-RZ_API int rz_reg_set_pack(RzReg *reg, RzRegItem *item, int packidx, int packbits, ut64 val) {
-	rz_return_val_if_fail(reg && reg->regset->arena && item, false);
-
-	if (packbits < 1) {
-		packbits = item->packed_size;
-	}
-	if (packbits > 64) {
-		packbits = 64;
-		eprintf("Does not support pack bits > 64\n");
-	}
-
-	int packbytes = packbits / 8;
-	if ((packidx + 1) * packbits > item->size) {
-		eprintf("Packed index is beyond the register size\n");
-		return false;
-	}
-	int off = BITS2BYTES(item->offset);
-	off += (packidx * packbytes);
-	if (reg->regset[item->arena].arena->size - BITS2BYTES(off) - BITS2BYTES(packbytes) >= 0) {
-		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
-		int i;
-		for (i = 0; i < packbytes; i++, val >>= 8) {
-			dst[i] = val & 0xff;
-		}
-		return true;
-	}
-	eprintf("rz_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);
-	return false;
+	return r ? rz_reg_set_value(reg, r, value) : false;
 }

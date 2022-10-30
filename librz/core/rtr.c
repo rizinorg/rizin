@@ -166,41 +166,12 @@ static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendi
 		reg);
 }
 
-static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool bigendian) {
-	switch (regsize) {
-	case 10:
-		if (bigendian) {
-			return snprintf(buf, sz,
-				"%04x%016" PFMT64x, val->v80.High,
-				val->v80.Low);
-		}
-		return snprintf(buf, sz,
-			"%016" PFMT64x "%04x", rz_swap_ut64(val->v80.Low),
-			rz_swap_ut16(val->v80.High));
-	case 12:
-		if (bigendian) {
-			return snprintf(buf, sz,
-				"%08" PFMT32x "%016" PFMT64x, val->v96.High,
-				val->v96.Low);
-		}
-		return snprintf(buf, sz,
-			"%016" PFMT64x "%08" PFMT32x, rz_swap_ut64(val->v96.Low),
-			rz_swap_ut32(val->v96.High));
-	case 16:
-		if (bigendian) {
-			return snprintf(buf, sz,
-				"%016" PFMT64x "%016" PFMT64x, val->v128.High,
-				val->v128.Low);
-		}
-		return snprintf(buf, sz,
-			"%016" PFMT64x "%016" PFMT64x,
-			rz_swap_ut64(val->v128.Low),
-			rz_swap_ut64(val->v128.High));
-	default:
-		RZ_LOG_ERROR("core: %s: big registers (%d byte(s)) not yet supported\n",
-			__func__, regsize);
-		return -1;
-	}
+static int write_bitvector(char *buf, ut64 sz, RzBitVector *bv) {
+	char *num = rz_bv_as_hex_string(bv, true);
+	int res = snprintf(buf, sz, "%s", num);
+	free(num);
+	rz_bv_free(bv);
+	return res;
 }
 
 static int swap_big_regs(char *dest, ut64 sz, const char *src, int regsz) {
@@ -257,7 +228,6 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 	RzListIter *iter;
 	gdb_reg_t *gdb_reg;
 	RzRegItem *r;
-	utX val_big;
 	ut64 m_off, reg_val;
 	bool be;
 	RzDebugPid *dbgpid;
@@ -376,10 +346,8 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 					return write_reg_val(out_buf, max_len - 1,
 						reg_val, r->size / 8, be);
 				}
-				rz_reg_get_value_big(core->dbg->reg,
-					r, &val_big);
-				return write_big_reg(out_buf, max_len - 1,
-					&val_big, r->size / 8, be);
+				RzBitVector *value = rz_reg_get_bv(core->dbg->reg, r);
+				return write_bitvector(out_buf, max_len - 1, value);
 			}
 			// dr - Print all registers
 			ret = 0;
@@ -398,11 +366,9 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 						return -1;
 					}
 				} else {
-					rz_reg_get_value_big(core->dbg->reg,
-						rz_reg_get(core->dbg->reg, gdb_reg->name, -1),
-						&val_big);
-					if (write_big_reg(out_buf + ret, gdb_reg->size * 2 + 1,
-						    &val_big, gdb_reg->size, be) < 0) {
+					r = rz_reg_get(core->dbg->reg, gdb_reg->name, -1);
+					RzBitVector *value = rz_reg_get_bv(core->dbg->reg, r);
+					if (write_bitvector(out_buf + ret, gdb_reg->size * 2 + 1, value) < 0) {
 						return -1;
 					}
 				}

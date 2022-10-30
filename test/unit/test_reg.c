@@ -195,48 +195,6 @@ bool test_rz_reg_get_list(void) {
 	mu_end;
 }
 
-bool test_rz_reg_get_pack(void) {
-	RzReg *reg;
-	RzRegItem *r;
-	ut64 value;
-
-	reg = rz_reg_new();
-	mu_assert_notnull(reg, "rz_reg_new () failed");
-
-	rz_reg_set_profile_string(reg,
-		"xmm    xmm0	.128	0	16\n\
-		xmm    xmm0h	.64		0	8\n\
-		xmm    xmm0l	.64		8	8\n\
-		xmm    xmm1	.128	16	16\n\
-		xmm    xmm1h	.64		16	8\n\
-		xmm    xmm1l	.64		24	8");
-
-	r = rz_reg_get(reg, "xmm0", RZ_REG_TYPE_XMM);
-	rz_reg_set_pack(reg, r, 0, 64, 0x0011223344556677);
-	value = rz_reg_get_pack(reg, r, 0, 64);
-	mu_assert_eq(value, 0x0011223344556677,
-		"get xmm0 value at index 0 and bitsize 64");
-
-	value = rz_reg_get_pack(reg, r, 0, 32);
-	mu_assert_eq(value, 0x44556677,
-		"get xmm0 value at index 1 and bitsize 32");
-
-	rz_reg_set_pack(reg, r, 2, 32, 0xdeadbeef);
-	value = rz_reg_get_pack(reg, r, 2, 32);
-	mu_assert_eq(value, 0xdeadbeef,
-		"get xmm0 value at index 2 and bitsize 32");
-
-	r = rz_reg_get(reg, "xmm1", RZ_REG_TYPE_XMM);
-	rz_reg_set_pack(reg, r, 1, 64, 0x8899aabbccddeeff);
-	r = rz_reg_get(reg, "xmm1l", RZ_REG_TYPE_XMM);
-	value = rz_reg_get_pack(reg, r, 0, 32);
-	mu_assert_eq(value, 0xccddeeff,
-		"get xmm1l value at index 0 and bitsize 32");
-
-	rz_reg_free(reg);
-	mu_end;
-}
-
 bool test_rz_reg_get_bv(void) {
 	RzReg *reg = rz_reg_new();
 	mu_assert_notnull(reg, "rz_reg_new () failed");
@@ -417,7 +375,6 @@ int all_tests() {
 	mu_run_test(test_rz_reg_get_value_flag);
 	mu_run_test(test_rz_reg_get);
 	mu_run_test(test_rz_reg_get_list);
-	mu_run_test(test_rz_reg_get_pack);
 	mu_run_test(test_rz_reg_get_bv);
 	mu_run_test(test_rz_reg_set_bv);
 	return tests_passed != tests_run;
