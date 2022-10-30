@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <limits.h>
+#include <math.h>
 
 #define cut8  const unsigned char
 #define ut64  unsigned long long
@@ -101,6 +102,16 @@ typedef struct _utX {
 #define UT8_MIN   0x00U
 #define ASCII_MIN 32
 #define ASCII_MAX 127
+
+#define F32_NAN   ((float)NAN)
+#define F32_PINF  ((float)INFINITY)
+#define F32_NINF  ((float)-INFINITY)
+#define F64_NAN   (NAN)
+#define F64_PINF  (INFINITY)
+#define F64_NINF  (-INFINITY)
+#define F128_NAN  ((long double)NAN)
+#define F128_PINF ((long double)INFINITY)
+#define F128_NINF ((long double)-INFINITY)
 
 #if SSIZE_MAX == ST32_MAX
 #define SZT_MAX  UT32_MAX

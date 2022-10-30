@@ -138,8 +138,8 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 		unit = '\0';
 	}
 	fmt_str = ((double)ceill(fnum) == (double)fnum)
-		? "%.0" LDBLFMT "%c"
-		: "%.1" LDBLFMT "%c";
+		? "%.0" LDBLFMTf "%c"
+		: "%.1" LDBLFMTf "%c";
 	snprintf(buf, len, fmt_str, fnum, unit);
 	return buf;
 }
