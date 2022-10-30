@@ -843,6 +843,11 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		}
 		if (dis) {
 			char *usrstr = strdup(opt.argv[opt.ind]);
+			if (!usrstr) {
+				eprintf("rz-asm: disassemble strdup OOM\n");
+				ret = 1;
+				goto beach;
+			}
 			len = strlen(usrstr);
 			if (skip && len > skip) {
 				skip *= 2;
