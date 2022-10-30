@@ -12,7 +12,7 @@ dcb
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400574
+rip = 0x0000000000400574
 EOF
 RUN
 
@@ -29,7 +29,7 @@ dcb
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400574
+rip = 0x0000000000400574
 EOF
 RUN
 
@@ -62,9 +62,9 @@ dcb
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x0040290d
-rip = 0x004028d1
-rip = 0x004028ca
-rip = 0x004028a0
+rip = 0x000000000040290d
+rip = 0x00000000004028d1
+rip = 0x00000000004028ca
+rip = 0x00000000004028a0
 EOF
 RUN

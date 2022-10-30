@@ -358,7 +358,7 @@ xfs = 0x00000000
 xgs = 0x00000063
 xcs = 0x00000023
 xss = 0x0000002b
-rflags = 0x00000202
+rflags = 0x0000000000000202
 oeax = 0xffffffff
 EOF
 RUN

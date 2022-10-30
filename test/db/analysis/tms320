@@ -87,21 +87,21 @@ ctr xdp    .23 567 0 # Extended data page register
 ctr xsp    .23 568 0 # Extended data stack pointer
 ctr xssp   .23 569 0 # Extended system stack pointer
 
-ar0 = 0x00000000
-ar1 = 0x00000000
-ar2 = 0x00000000
-ar3 = 0x00000000
-ar4 = 0x00000000
-ar5 = 0x00000000
-ar6 = 0x00000000
-ar7 = 0x00000000
-xar0 = 0x00000000
-xar1 = 0x00000000
-xar2 = 0x00000000
-xar3 = 0x00000000
-xar4 = 0x00000000
-xar5 = 0x00000000
-xar6 = 0x00000000
-xar7 = 0x00000000
+ar0 = 0x0000
+ar1 = 0x0000
+ar2 = 0x0000
+ar3 = 0x0000
+ar4 = 0x0000
+ar5 = 0x0000
+ar6 = 0x0000
+ar7 = 0x0000
+xar0 = 0x000000
+xar1 = 0x000000
+xar2 = 0x000000
+xar3 = 0x000000
+xar4 = 0x000000
+xar5 = 0x000000
+xar6 = 0x000000
+xar7 = 0x000000
 EOF
 RUN

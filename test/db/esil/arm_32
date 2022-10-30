@@ -2920,7 +2920,7 @@ EOF
 EXPECT=<<EOF
 r3 = 0x00000100
 pc = 0x00000004
-d0 = 0x1c00df0fecadec0
+d0 = 0x01c00df0fecadec0
 d1 = 0xaaaaaaaaaaaaaaaa
 EOF
 RUN
@@ -2943,7 +2943,7 @@ EOF
 EXPECT=<<EOF
 r4 = 0x00000120
 pc = 0x00000004
-d0 = 0x1c00df0fecadec0
+d0 = 0x01c00df0fecadec0
 d1 = 0xaaaaaaaaaaaaaaaa
 EOF
 RUN
@@ -2966,7 +2966,7 @@ EOF
 EXPECT=<<EOF
 r5 = 0x00000100
 pc = 0x00000004
-d0 = 0x1c00df0fecadec0
+d0 = 0x01c00df0fecadec0
 d1 = 0xaaaaaaaaaaaaaaaa
 EOF
 RUN

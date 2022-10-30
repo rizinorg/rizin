@@ -10,10 +10,10 @@ ar of
 ar zf
 EOF
 EXPECT=<<EOF
-cf = 0x00000000
-sf = 0x00000001
-of = 0x00000000
-zf = 0x00000000
+cf = 0x0
+sf = 0x1
+of = 0x0
+zf = 0x0
 EOF
 RUN
 
@@ -29,10 +29,10 @@ ar of
 ar zf
 EOF
 EXPECT=<<EOF
-cf = 0x00000001
-sf = 0x00000000
-of = 0x00000000
-zf = 0x00000000
+cf = 0x1
+sf = 0x0
+of = 0x0
+zf = 0x0
 EOF
 RUN
 
@@ -48,10 +48,10 @@ ar of
 ar zf
 EOF
 EXPECT=<<EOF
-cf = 0x00000001
-sf = 0x00000000
-of = 0x00000001
-zf = 0x00000001
+cf = 0x1
+sf = 0x0
+of = 0x1
+zf = 0x1
 EOF
 RUN
 
@@ -67,10 +67,10 @@ ar of
 ar zf
 EOF
 EXPECT=<<EOF
-cf = 0x00000001
-sf = 0x00000000
-of = 0x00000000
-zf = 0x00000001
+cf = 0x1
+sf = 0x0
+of = 0x0
+zf = 0x1
 EOF
 RUN
 
@@ -86,10 +86,10 @@ ar of
 ar zf
 EOF
 EXPECT=<<EOF
-cf = 0x00000001
-sf = 0x00000000
-of = 0x00000000
-zf = 0x00000001
+cf = 0x1
+sf = 0x0
+of = 0x0
+zf = 0x1
 EOF
 RUN
 
