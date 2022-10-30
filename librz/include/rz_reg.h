@@ -217,35 +217,14 @@ RZ_API RzRegFlags *rz_reg_cond_retrieve(RzReg *r, RzRegFlags *f);
 RZ_API int rz_reg_cond(RzReg *r, int type);
 
 /* bitvector, for everything */
-RZ_API RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item);
+RZ_API RZ_OWN RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item);
 RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv);
 
 /* integer value 8-64 bits */
-RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item);
-RZ_API ut64 rz_reg_get_value_big(RzReg *reg, RzRegItem *item, utX *val);
-RZ_API ut64 rz_reg_get_value_by_role(RzReg *reg, RzRegisterId role);
-RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value);
-RZ_API bool rz_reg_set_value_by_role(RzReg *reg, RzRegisterId role, ut64 value);
-
-/* float */
-RZ_API float rz_reg_get_float(RzReg *reg, RzRegItem *item);
-RZ_API bool rz_reg_set_float(RzReg *reg, RzRegItem *item, float value);
-
-/* double */
-RZ_API double rz_reg_get_double(RzReg *reg, RzRegItem *item);
-RZ_API bool rz_reg_set_double(RzReg *reg, RzRegItem *item, double value);
-
-/* long double */
-RZ_API long double rz_reg_get_longdouble(RzReg *reg, RzRegItem *item);
-RZ_API bool rz_reg_set_longdouble(RzReg *reg, RzRegItem *item, long double value);
-
-/* boolean */
-RZ_API char *rz_reg_get_bvalue(RzReg *reg, RzRegItem *item);
-RZ_API ut64 rz_reg_set_bvalue(RzReg *reg, RzRegItem *item, const char *str);
-
-/* packed registers */
-RZ_API int rz_reg_set_pack(RzReg *reg, RzRegItem *item, int packidx, int packbits, ut64 val);
-RZ_API ut64 rz_reg_get_pack(RzReg *reg, RzRegItem *item, int packidx, int packbits);
+RZ_API ut64 rz_reg_get_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item);
+RZ_API bool rz_reg_set_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, ut64 value);
+RZ_API ut64 rz_reg_get_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role);
+RZ_API bool rz_reg_set_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role, ut64 value);
 
 /* byte arena */
 RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size);
