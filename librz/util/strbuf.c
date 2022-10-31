@@ -136,6 +136,11 @@ RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, size_t from, size_t len) {
 	return true;
 }
 
+RZ_API bool rz_strbuf_clear(RZ_NONNULL RzStrBuf *sb) {
+	rz_return_val_if_fail(sb, false);
+	return rz_strbuf_set(sb, "") ? true : false;
+}
+
 RZ_API bool rz_strbuf_setptr(RzStrBuf *sb, char *s, int len) {
 	rz_return_val_if_fail(sb, false);
 	if (len < 0) {

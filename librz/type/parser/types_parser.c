@@ -70,6 +70,7 @@ static bool is_declarator(const char *declarator) {
 	return !strcmp(declarator, "pointer_declarator") ||
 		!strcmp(declarator, "array_declarator") ||
 		!strcmp(declarator, "function_declarator") ||
+		!strcmp(declarator, "parenthesized_declarator") ||
 		!strcmp(declarator, "identifier") ||
 		!strcmp(declarator, "field_identifier");
 }
@@ -427,7 +428,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		TSNode field_type = ts_node_child_by_field_name(child, "type", 4);
 		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
 		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Struct field AST shoudl contain type and declarator items");
+			parser_error(state, "ERROR: Struct field AST should contain type and declarator items");
 			node_malformed_error(state, child, text, "struct field");
 			result = -1;
 			goto srnexit;
@@ -718,7 +719,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		TSNode field_type = ts_node_child_by_field_name(child, "type", 4);
 		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
 		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Union field AST shoudl contain type and declarator items");
+			parser_error(state, "ERROR: Union field AST should contain type and declarator items");
 			node_malformed_error(state, child, text, "union field");
 			result = -1;
 			goto urnexit;
@@ -1708,6 +1709,30 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		if (!c_parser_callable_type_store(state, *identifier, naked_callable)) {
 			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", *identifier);
 			return -1;
+		}
+	} else if (!strcmp(node_type, "parenthesized_declarator")) { // this could be a case like char (*a)[];
+		char *real_ident = ts_node_sub_string(node, text);
+		parser_debug(state, "parenthesized declarator: %s\n", real_ident);
+		free(real_ident);
+
+		// Check if this paren has a declarator
+		TSNode paren_declarator = ts_node_named_child(node, 0);
+		if (ts_node_is_null(paren_declarator)) {
+			parser_debug(state, "Empty parenthesized declarator encountered\n");
+			return 0;
+		}
+
+		const char *declarator_type = ts_node_type(paren_declarator);
+		if (!declarator_type) {
+			node_malformed_error(state, paren_declarator, text, "Parenthesized declarator");
+			return -1;
+		}
+
+		parser_debug(state, "parenthesized declarator type: %s\n", declarator_type);
+		if (is_declarator(declarator_type) || is_identifier(declarator_type)) {
+			result = parse_type_declarator_node(state, paren_declarator, text, tpair, identifier);
+		} else {
+			return 0;
 		}
 	}
 	return result;
