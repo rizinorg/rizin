@@ -1947,6 +1947,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 }
 
 static bool do_analysis_search(RzCore *core, struct search_parameters *param, const char *input) {
+	rz_return_val_if_fail(input, false);
 	RzSearch *search = core->search;
 	ut64 at;
 	RzAnalysisOp aop;
@@ -2020,6 +2021,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 		pj_a(param->pj);
 	}
 	input = rz_str_trim_head_ro(input);
+	rz_return_val_if_fail(input, false);
 	rz_cons_break_push(NULL, NULL);
 	RzIOMap *map;
 	RzListIter *iter;
