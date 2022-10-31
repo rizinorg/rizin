@@ -345,23 +345,6 @@ static const char *help_msg_pif[] = {
 	"print instructions of function in JSON format",
 };
 
-static const char *help_msg_po[] = {
-	"Usage:", "po[24aAdlmorsx]", " [hexpairs] @ addr[!bsize]",
-	"po[24aAdlmorsx]", "", "without hexpair values, clipboard is used",
-	"po2", " [val]", "2=  2 byte endian swap",
-	"po4", " [val]", "4=  4 byte endian swap",
-	"poa", " [val]", "+=  addition (f.ex: poa 0102)",
-	"poA", " [val]", "&=  and",
-	"pod", " [val]", "/=  divide",
-	"pol", " [val]", "<<= shift left",
-	"pom", " [val]", "*=  multiply",
-	"poo", " [val]", "|=  or",
-	"por", " [val]", ">>= shift right",
-	"pos", " [val]", "-=  substraction",
-	"pox", " [val]", "^=  xor  (f.ex: pox 0x90)",
-	NULL
-};
-
 static const char *help_msg_ps[] = {
 	"Usage:", "ps[bijqpsuwWxz+] [N]", "Print String",
 	"ps", "", "print string",
@@ -2315,105 +2298,22 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	return true;
 }
 
-static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen) {
-	RzCoreWriteOp wop;
-	switch (op) {
-	case '2':
-		wop = RZ_CORE_WRITE_OP_BYTESWAP2;
-		break;
-	case '4':
-		wop = RZ_CORE_WRITE_OP_BYTESWAP4;
-		break;
-	case '8':
-		wop = RZ_CORE_WRITE_OP_BYTESWAP8;
-		break;
-	case 'a':
-		wop = RZ_CORE_WRITE_OP_ADD;
-		break;
-	case 'A':
-		wop = RZ_CORE_WRITE_OP_AND;
-		break;
-	case 'd':
-		wop = RZ_CORE_WRITE_OP_DIV;
-		break;
-	case 'l':
-		wop = RZ_CORE_WRITE_OP_SHIFT_LEFT;
-		break;
-	case 'm':
-		wop = RZ_CORE_WRITE_OP_MUL;
-		break;
-	case 'o':
-		wop = RZ_CORE_WRITE_OP_OR;
-		break;
-	case 'r':
-		wop = RZ_CORE_WRITE_OP_SHIFT_RIGHT;
-		break;
-	case 's':
-		wop = RZ_CORE_WRITE_OP_SUB;
-		break;
-	case 'x':
-		wop = RZ_CORE_WRITE_OP_XOR;
-		break;
-	default:
-		wop = RZ_CORE_WRITE_OP_XOR;
-		rz_warn_if_reached();
-		break;
-	}
-
+/* Uses data from clipboard if value is NULL */
+static bool print_operation_transform(RzCore *core, RzCoreWriteOp op, RZ_NULLABLE const char *val) {
 	ut8 *hex = NULL;
-	int hexlen = -1;
+	int hexlen = -1, buflen = -1;
 	if (val) {
-		val = rz_str_trim_head_ro(val);
 		hex = RZ_NEWS(ut8, (strlen(val) + 1) / 2);
 		if (!hex) {
-			return NULL;
+			return false;
 		}
-
 		hexlen = rz_hex_str2bin(val, hex);
 	}
-	ut8 *result = rz_core_transform_op(core, core->offset, wop, hex, hexlen, buflen);
+	ut8 *buf = rz_core_transform_op(core, core->offset, op, hex, hexlen, &buflen);
 	free(hex);
-	return result;
-}
-
-static void cmd_print_op(RzCore *core, const char *input) {
-	ut8 *buf;
-	int buflen = -1;
-
-	if (!input[0])
-		return;
-	switch (input[1]) {
-	case 'a':
-	case 's':
-	case 'A':
-	case 'x':
-	case 'r':
-	case 'l':
-	case 'm':
-	case 'd':
-	case 'o':
-	case '2':
-	case '4':
-		if (input[2]) { // parse val from arg
-			buf = old_transform_op(core, input + 3, input[1], &buflen);
-		} else { // use clipboard instead of val
-			buf = old_transform_op(core, NULL, input[1], &buflen);
-		}
-		break;
-	case 'n':
-		buf = old_transform_op(core, "ff", 'x', &buflen);
-		break;
-	case '\0':
-	case '?':
-	default:
-		rz_core_cmd_help(core, help_msg_po);
-		return;
-	}
-	if (buf) {
-		rz_core_print_hexdump(core, core->offset, buf,
-			buflen, 16, 1, 1);
-		free(buf);
-	}
+	rz_core_print_hexdump(core, core->offset, buf, buflen, 16, 1, 1);
+	free(buf);
+	return true;
 }
 
 static void printraw(RzCore *core, int len) {
@@ -4579,9 +4479,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'o': // "po"
-		cmd_print_op(core, input);
-		break;
 	case 'x': // "px"
 	{
 		bool show_offset = rz_config_get_i(core->config, "hex.offset");
@@ -6572,4 +6469,52 @@ RZ_IPI RzCmdStatus rz_print_pattern_num_handler(RzCore *core, int argc, const ch
 	rz_cons_newline();
 	free(buf);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_2swap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_BYTESWAP2, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_4swap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_BYTESWAP4, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_8swap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_BYTESWAP8, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_add_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_ADD, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_and_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_AND, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_div_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_DIV, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_shl_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_SHIFT_LEFT, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_mul_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_MUL, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_or_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_OR, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_shr_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_SHIFT_RIGHT, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_sub_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_SUB, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_xor_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_XOR, argv[1]));
 }

@@ -1777,6 +1777,30 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv);
 // "pm"
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "po2"
+RZ_IPI RzCmdStatus rz_print_operation_2swap_handler(RzCore *core, int argc, const char **argv);
+// "po4"
+RZ_IPI RzCmdStatus rz_print_operation_4swap_handler(RzCore *core, int argc, const char **argv);
+// "po8"
+RZ_IPI RzCmdStatus rz_print_operation_8swap_handler(RzCore *core, int argc, const char **argv);
+// "poa"
+RZ_IPI RzCmdStatus rz_print_operation_add_handler(RzCore *core, int argc, const char **argv);
+// "poA"
+RZ_IPI RzCmdStatus rz_print_operation_and_handler(RzCore *core, int argc, const char **argv);
+// "pod"
+RZ_IPI RzCmdStatus rz_print_operation_div_handler(RzCore *core, int argc, const char **argv);
+// "pol"
+RZ_IPI RzCmdStatus rz_print_operation_shl_handler(RzCore *core, int argc, const char **argv);
+// "pom"
+RZ_IPI RzCmdStatus rz_print_operation_mul_handler(RzCore *core, int argc, const char **argv);
+// "poo"
+RZ_IPI RzCmdStatus rz_print_operation_or_handler(RzCore *core, int argc, const char **argv);
+// "por"
+RZ_IPI RzCmdStatus rz_print_operation_shr_handler(RzCore *core, int argc, const char **argv);
+// "pos"
+RZ_IPI RzCmdStatus rz_print_operation_sub_handler(RzCore *core, int argc, const char **argv);
+// "pox"
+RZ_IPI RzCmdStatus rz_print_operation_xor_handler(RzCore *core, int argc, const char **argv);
 // "psc"
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psw"

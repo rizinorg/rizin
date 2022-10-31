@@ -574,6 +574,75 @@ commands:
         optional: true
     modes:
       - RZ_OUTPUT_MODE_JSON
+  - name: po
+    summary: Print operation applied on the data
+    subcommands:
+      - name: po2
+        summary: 2-byte endian swap
+        cname: print_operation_2swap
+        args: []
+      - name: po4
+        summary: 4-byte endian swap
+        cname: print_operation_4swap
+        args: []
+      - name: po8
+        summary: 8-byte endian swap
+        cname: print_operation_8swap
+        args: []
+      - name: poa
+        summary: Apply addition
+        cname: print_operation_add
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: poA
+        summary: Apply AND operation
+        cname: print_operation_and
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pod
+        summary: Apply division operation
+        cname: print_operation_div
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pol
+        summary: Apply shift left operation
+        cname: print_operation_shl
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pom
+        summary: Apply multiplication operation
+        cname: print_operation_mul
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: poo
+        summary: Apply OR operation
+        cname: print_operation_or
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: por
+        summary: Apply shift right operation
+        cname: print_operation_shr
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pos
+        summary: Apply subtraction operation
+        cname: print_operation_sub
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pox
+        summary: Apply XOR operation
+        cname: print_operation_xor
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
   - name: psc
     summary: Generate a C/C++ string
     cname: print_string_c_cpp

@@ -537,6 +537,15 @@ static const RzCmdDescArg print_pattern_debrujin_args[2];
 static const RzCmdDescArg print_pattern_oxff_args[2];
 static const RzCmdDescArg print_pattern_num_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
+static const RzCmdDescArg print_operation_add_args[2];
+static const RzCmdDescArg print_operation_and_args[2];
+static const RzCmdDescArg print_operation_div_args[2];
+static const RzCmdDescArg print_operation_shl_args[2];
+static const RzCmdDescArg print_operation_mul_args[2];
+static const RzCmdDescArg print_operation_or_args[2];
+static const RzCmdDescArg print_operation_shr_args[2];
+static const RzCmdDescArg print_operation_sub_args[2];
+static const RzCmdDescArg print_operation_xor_args[2];
 static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
 static const RzCmdDescArg print_utf16be_args[2];
@@ -12501,6 +12510,159 @@ static const RzCmdDescHelp cmd_print_magic_help = {
 	.args = cmd_print_magic_args,
 };
 
+static const RzCmdDescHelp po_help = {
+	.summary = "Print operation applied on the data",
+};
+static const RzCmdDescArg print_operation_2swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_2swap_help = {
+	.summary = "2-byte endian swap",
+	.args = print_operation_2swap_args,
+};
+
+static const RzCmdDescArg print_operation_4swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_4swap_help = {
+	.summary = "4-byte endian swap",
+	.args = print_operation_4swap_args,
+};
+
+static const RzCmdDescArg print_operation_8swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_8swap_help = {
+	.summary = "8-byte endian swap",
+	.args = print_operation_8swap_args,
+};
+
+static const RzCmdDescArg print_operation_add_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_add_help = {
+	.summary = "Apply addition",
+	.args = print_operation_add_args,
+};
+
+static const RzCmdDescArg print_operation_and_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_and_help = {
+	.summary = "Apply AND operation",
+	.args = print_operation_and_args,
+};
+
+static const RzCmdDescArg print_operation_div_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_div_help = {
+	.summary = "Apply division operation",
+	.args = print_operation_div_args,
+};
+
+static const RzCmdDescArg print_operation_shl_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_shl_help = {
+	.summary = "Apply shift left operation",
+	.args = print_operation_shl_args,
+};
+
+static const RzCmdDescArg print_operation_mul_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_mul_help = {
+	.summary = "Apply multiplication operation",
+	.args = print_operation_mul_args,
+};
+
+static const RzCmdDescArg print_operation_or_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_or_help = {
+	.summary = "Apply OR operation",
+	.args = print_operation_or_args,
+};
+
+static const RzCmdDescArg print_operation_shr_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_shr_help = {
+	.summary = "Apply shift right operation",
+	.args = print_operation_shr_args,
+};
+
+static const RzCmdDescArg print_operation_sub_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_sub_help = {
+	.summary = "Apply subtraction operation",
+	.args = print_operation_sub_args,
+};
+
+static const RzCmdDescArg print_operation_xor_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_xor_help = {
+	.summary = "Apply XOR operation",
+	.args = print_operation_xor_args,
+};
+
 static const RzCmdDescArg print_string_c_cpp_args[] = {
 	{ 0 },
 };
@@ -18709,6 +18871,44 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
+
+	RzCmdDesc *po_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "po", NULL, NULL, &po_help);
+	rz_warn_if_fail(po_cd);
+	RzCmdDesc *print_operation_2swap_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "po2", rz_print_operation_2swap_handler, &print_operation_2swap_help);
+	rz_warn_if_fail(print_operation_2swap_cd);
+
+	RzCmdDesc *print_operation_4swap_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "po4", rz_print_operation_4swap_handler, &print_operation_4swap_help);
+	rz_warn_if_fail(print_operation_4swap_cd);
+
+	RzCmdDesc *print_operation_8swap_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "po8", rz_print_operation_8swap_handler, &print_operation_8swap_help);
+	rz_warn_if_fail(print_operation_8swap_cd);
+
+	RzCmdDesc *print_operation_add_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "poa", rz_print_operation_add_handler, &print_operation_add_help);
+	rz_warn_if_fail(print_operation_add_cd);
+
+	RzCmdDesc *print_operation_and_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "poA", rz_print_operation_and_handler, &print_operation_and_help);
+	rz_warn_if_fail(print_operation_and_cd);
+
+	RzCmdDesc *print_operation_div_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pod", rz_print_operation_div_handler, &print_operation_div_help);
+	rz_warn_if_fail(print_operation_div_cd);
+
+	RzCmdDesc *print_operation_shl_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pol", rz_print_operation_shl_handler, &print_operation_shl_help);
+	rz_warn_if_fail(print_operation_shl_cd);
+
+	RzCmdDesc *print_operation_mul_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pom", rz_print_operation_mul_handler, &print_operation_mul_help);
+	rz_warn_if_fail(print_operation_mul_cd);
+
+	RzCmdDesc *print_operation_or_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "poo", rz_print_operation_or_handler, &print_operation_or_help);
+	rz_warn_if_fail(print_operation_or_cd);
+
+	RzCmdDesc *print_operation_shr_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "por", rz_print_operation_shr_handler, &print_operation_shr_help);
+	rz_warn_if_fail(print_operation_shr_cd);
+
+	RzCmdDesc *print_operation_sub_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pos", rz_print_operation_sub_handler, &print_operation_sub_help);
+	rz_warn_if_fail(print_operation_sub_cd);
+
+	RzCmdDesc *print_operation_xor_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pox", rz_print_operation_xor_handler, &print_operation_xor_help);
+	rz_warn_if_fail(print_operation_xor_cd);
 
 	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
 	rz_warn_if_fail(print_string_c_cpp_cd);
