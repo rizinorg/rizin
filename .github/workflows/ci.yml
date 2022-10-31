@@ -804,7 +804,9 @@ jobs:
       - uses: actions/setup-python@v2
       - name: Install pkg-config and cmake
         shell: pwsh
-        run: choco install -y cmake pkgconfiglite
+        run: |
+          choco install -y pkgconfiglite --download-checksum 2038c49d23b5ca19e2218ca89f06df18fe6d870b4c6b54c0498548ef88771f6f --download-checksum-type sha256
+          choco install -y cmake
       - name: Extract rizin version
         shell: pwsh
         run: echo "##[set-output name=branch;]$( python sys\\version.py )"
