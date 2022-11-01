@@ -387,9 +387,10 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 		return false;
 	}
 	if (module->tail_bytes) {
+		size_t begin = RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length;
 		rz_list_foreach (module->tail_bytes, it, tail_byte) {
-			if (RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset < buf_size &&
-				b[RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset] != tail_byte->value) {
+			if ((begin + tail_byte->offset) < buf_size &&
+				b[begin + tail_byte->offset] != tail_byte->value) {
 				return false;
 			}
 		}
@@ -1332,7 +1333,7 @@ RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 	}
 
 	if (!strcmp(extension, ".pat")) {
-		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_MAX, NULL);
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_NONE, NULL);
 	} else {
 		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(flirt_buf, expected_arch, NULL);
 	}
