@@ -378,6 +378,10 @@ typedef enum {
 	RZ_IL_OP_ULE,
 	RZ_IL_OP_CAST,
 	RZ_IL_OP_APPEND,
+
+	// RzILFloat
+	RZ_IL_OP_FADD,
+
 	// ...
 
 	// Memory
