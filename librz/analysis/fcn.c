@@ -2442,27 +2442,6 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 }
 
 /**
- * \brief Returns the argument count of a function
- *
- * \param a RzAnalysis instance
- * \param f Function
- */
-RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn) {
-	if (!a || !fcn) {
-		return 0;
-	}
-	void **it;
-	size_t count = 0;
-	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalysisVar *var = *it;
-		if (var->isarg) {
-			count++;
-		}
-	}
-	return count;
-}
-
-/**
  * \brief Returns vector of all function arguments
  *
  * \param a RzAnalysis instance
