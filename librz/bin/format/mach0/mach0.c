@@ -1471,12 +1471,33 @@ static const char *build_version_tool_to_string(ut32 tool) {
 	}
 }
 
+static bool read_dyld_chained_fixups_header(struct dyld_chained_fixups_header *header, RzBuffer *buf, ut64 base) {
+	ut64 offset = base;
+	return rz_buf_read_le32_offset(buf, &offset, &header->fixups_version) &&
+		rz_buf_read_le32_offset(buf, &offset, &header->starts_offset) &&
+		rz_buf_read_le32_offset(buf, &offset, &header->imports_offset) &&
+		rz_buf_read_le32_offset(buf, &offset, &header->symbols_offset) &&
+		rz_buf_read_le32_offset(buf, &offset, &header->imports_count) &&
+		rz_buf_read_le32_offset(buf, &offset, &header->imports_format) &&
+		rz_buf_read_le32_offset(buf, &offset, &header->symbols_format);
+}
+
+static bool read_dyld_chained_starts_in_segment(struct rz_dyld_chained_starts_in_segment *segment, RzBuffer *buf, ut64 base) {
+	ut64 offset = base;
+	return rz_buf_read_le32_offset(buf, &offset, &segment->size) &&
+		rz_buf_read_le16_offset(buf, &offset, &segment->page_size) &&
+		rz_buf_read_le16_offset(buf, &offset, &segment->pointer_format) &&
+		rz_buf_read_le64_offset(buf, &offset, &segment->segment_offset) &&
+		rz_buf_read_le32_offset(buf, &offset, &segment->max_valid_pointer) &&
+		rz_buf_read_le16_offset(buf, &offset, &segment->page_count);
+}
+
 static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size) {
 	struct dyld_chained_fixups_header header;
 	if (size < sizeof(header)) {
 		return false;
 	}
-	if (rz_buf_fread_at(bin->b, offset, (ut8 *)&header, "7i", 1) != sizeof(header)) {
+	if (!read_dyld_chained_fixups_header(&header, bin->b, offset)) {
 		return false;
 	}
 	if (header.fixups_version > 0) {
@@ -1494,9 +1515,8 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 	if (!bin->chained_starts) {
 		return false;
 	}
-	size_t i;
 	ut64 cursor = starts_at + sizeof(ut32);
-	for (i = 0; i < bin->nchained_starts; i++) {
+	for (size_t i = 0; i < bin->nchained_starts; i++) {
 		ut32 seg_off;
 		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
 			cursor += sizeof(ut32);
@@ -1510,7 +1530,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 			return false;
 		}
 		bin->chained_starts[i] = cur_seg;
-		if (rz_buf_fread_at(bin->b, starts_at + seg_off, (ut8 *)cur_seg, "isslis", 1) != 22) {
+		if (!read_dyld_chained_starts_in_segment(cur_seg, bin->b, starts_at + seg_off)) {
 			return false;
 		}
 		if (cur_seg->page_count > 0) {
@@ -1519,8 +1539,12 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 				cur_seg->page_count = 0;
 				return false;
 			}
-			if (rz_buf_fread_at(bin->b, starts_at + seg_off + 22, (ut8 *)page_start, "s", cur_seg->page_count) != cur_seg->page_count * 2) {
-				return false;
+			ut64 offset_page = starts_at + seg_off + 22;
+			for (size_t j = 0; j < cur_seg->page_count; ++j) {
+				if (!rz_buf_read_le16_offset(bin->b, &offset_page, &page_start[j])) {
+					free(page_start);
+					return false;
+				}
 			}
 			cur_seg->page_start = page_start;
 		}
@@ -1676,12 +1700,15 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
 	return true;
 }
 
+static bool read_load_command(struct load_command *lc, RzBuffer *buf, ut64 base, bool big_endian) {
+	ut64 offset = base;
+	return rz_buf_read_ble32_offset(buf, &offset, &lc->cmd, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &lc->cmdsize, big_endian);
+}
+
 static int init_items(struct MACH0_(obj_t) * bin) {
 	struct load_command lc = { 0, 0 };
-	ut8 loadc[sizeof(struct load_command)] = { 0 };
 	bool is_first_thread = true;
-	ut64 off = 0LL;
-	int i, len;
 
 	bin->uuidn = 0;
 	bin->os = 0;
@@ -1692,45 +1719,42 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		// return false;
 	}
 	// bprintf ("Commands: %d\n", bin->hdr.ncmds);
-	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
+	for (ut64 i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
 		i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof(struct load_command) > bin->size) {
 			bprintf("mach0: out of bounds command\n");
 			return false;
 		}
-		len = rz_buf_read_at(bin->b, off, loadc, sizeof(struct load_command));
-		if (len < 1) {
+		if (!read_load_command(&lc, bin->b, off, bin->big_endian)) {
 			bprintf("Error: read (lc) at 0x%08" PFMT64x "\n", off);
 			return false;
 		}
-		lc.cmd = rz_read_ble32(&loadc[0], bin->big_endian);
-		lc.cmdsize = rz_read_ble32(&loadc[4], bin->big_endian);
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+			bprintf("Warning: mach0_header %" PFMT64u " = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
 
-		sdb_num_set(bin->kv, sdb_fmt("mach0_cmd_%d.offset", i), off, 0);
+		sdb_num_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".offset", i), off, 0);
 		const char *format_name = cmd_to_pf_definition(lc.cmd);
 		if (format_name) {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.format", i), format_name, 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
 		} else {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
 		}
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "data_in_code", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
 			break;
 		case LC_RPATH:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "rpath", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "rpath", 0);
 			// bprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "segment", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "segment", 0);
 			bin->nsegs++;
 			if (!parse_segments(bin, off)) {
 				bprintf("error parsing segment\n");
@@ -1739,45 +1763,45 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			}
 			break;
 		case LC_SYMTAB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "symtab", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "symtab", 0);
 			if (!parse_symtab(bin, off)) {
 				bprintf("error parsing symtab\n");
 				return false;
 			}
 			break;
 		case LC_DYSYMTAB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dysymtab", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dysymtab", 0);
 			if (!parse_dysymtab(bin, off)) {
 				bprintf("error parsing dysymtab\n");
 				return false;
 			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dylib_code_sign_drs", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dylib_code_sign_drs", 0);
 			// bprintf ("[mach0] code is signed\n");
 			break;
 		case LC_VERSION_MIN_MACOSX:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_macosx", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx", 0);
 			bin->os = 1;
 			// set OS = osx
 			// bprintf ("[mach0] Requires OSX >= x\n");
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_iphoneos", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos", 0);
 			bin->os = 2;
 			// set OS = ios
 			// bprintf ("[mach0] Requires iOS >= x\n");
 			break;
 		case LC_VERSION_MIN_TVOS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_tvos", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos", 0);
 			bin->os = 4;
 			break;
 		case LC_VERSION_MIN_WATCHOS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version_min_watchos", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos", 0);
 			bin->os = 3;
 			break;
 		case LC_UUID:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "uuid", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "uuid", 0);
 			{
 				struct uuid_command uc = { 0 };
 				if (off + sizeof(struct uuid_command) > bin->size) {
@@ -1797,7 +1821,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_ENCRYPTION_INFO_64:
 			/* TODO: the struct is probably different here */
 		case LC_ENCRYPTION_INFO:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "encryption_info", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "encryption_info", 0);
 			{
 				struct MACH0_(encryption_info_command) eic = { 0 };
 				ut8 seic[sizeof(struct MACH0_(encryption_info_command))] = { 0 };
@@ -1822,7 +1846,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			}
 			break;
 		case LC_LOAD_DYLINKER: {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dylinker", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dylinker", 0);
 			RZ_FREE(bin->intrp);
 			// bprintf ("[mach0] load dynamic linker\n");
 			struct dylinker_command dy = { 0 };
@@ -1855,7 +1879,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				ut64 ss;
 			} ep = { 0 };
 			ut8 sep[2 * sizeof(ut64)] = { 0 };
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "main", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "main", 0);
 
 			if (!is_first_thread) {
 				bprintf("Error: LC_MAIN with other threads\n");
@@ -1878,14 +1902,14 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			is_first_thread = false;
 		} break;
 		case LC_UNIXTHREAD:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "unixthread", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "unixthread", 0);
 			if (!is_first_thread) {
 				bprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
 			// fallthrough
 		case LC_THREAD:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "thread", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "thread", 0);
 			if (!parse_thread(bin, &lc, off, is_first_thread)) {
 				bprintf("Cannot parse thread\n");
 				return false;
@@ -1894,7 +1918,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "load_dylib", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "load_dylib", 0);
 			bin->nlibs++;
 			if (!parse_dylib(bin, off)) {
 				bprintf("Cannot parse dylib\n");
@@ -1905,7 +1929,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY: {
 			ut8 dyldi[sizeof(struct dyld_info_command)] = { 0 };
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dyld_info", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dyld_info", 0);
 			bin->dyld_info = calloc(1, sizeof(struct dyld_info_command));
 			if (bin->dyld_info) {
 				if (off + sizeof(struct dyld_info_command) > bin->size) {
@@ -1934,28 +1958,28 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		} break;
 		case LC_CODE_SIGNATURE:
 			parse_signature(bin, off);
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "signature", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "signature", 0);
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
 		case LC_SOURCE_VERSION:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "version", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version", 0);
 			/* uint64_t  version;  */
 			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
 			// bprintf ("mach0: TODO: Show source version\n");
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "split_info", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "split_info", 0);
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "function_starts", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "function_starts", 0);
 			if (!parse_function_starts(bin, off)) {
 				bprintf("Cannot parse LC_FUNCTION_STARTS\n");
 			}
 			break;
 		case LC_REEXPORT_DYLIB:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "dylib", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "dylib", 0);
 			/* TODO */
 			break;
 		default:
@@ -1964,33 +1988,31 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	bool has_chained_fixups = false;
-	for (i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
+	for (ut64 i = 0, off = sizeof(struct MACH0_(mach_header)) + bin->options.header_at;
 		i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
-		len = rz_buf_read_at(bin->b, off, loadc, sizeof(struct load_command));
-		if (len < 1) {
+
+		if (!read_load_command(&lc, bin->b, off, bin->big_endian)) {
 			bprintf("Error: read (lc) at 0x%08" PFMT64x "\n", off);
 			return false;
 		}
-		lc.cmd = rz_read_ble32(&loadc[0], bin->big_endian);
-		lc.cmdsize = rz_read_ble32(&loadc[4], bin->big_endian);
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+			bprintf("Warning: mach0_header %" PFMT64u " = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
 
-		sdb_num_set(bin->kv, sdb_fmt("mach0_cmd_%d.offset", i), off, 0);
+		sdb_num_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".offset", i), off, 0);
 		const char *format_name = cmd_to_pf_definition(lc.cmd);
 		if (format_name) {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.format", i), format_name, 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), format_name, 0);
 		} else {
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".format", i), "[4]Ed (mach_load_command_type)cmd size", 0);
 		}
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%d.cmd", i), "data_in_code", 0);
+			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "data_in_code", 0);
 			if (bin->options.verbose) {
 				ut8 buf[8];
 				rz_buf_read_at(bin->b, off + 8, buf, sizeof(buf));

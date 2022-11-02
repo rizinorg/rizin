@@ -78,6 +78,11 @@ static cache_hdr_t *read_cache_header(RzBuffer *cache_buf, ut64 offset) {
 	return hdr;
 }
 
+#define SHIFT_MAYBE(x) \
+	if (x) { \
+		x += offset; \
+	}
+
 static void populate_cache_headers(RzDyldCache *cache) {
 	cache->n_hdr = 0;
 	RzList *hdrs = rz_list_newf(NULL);
@@ -97,11 +102,6 @@ static void populate_cache_headers(RzDyldCache *cache) {
 		rz_list_append(hdrs, h);
 
 		ut64 size = h->codeSignatureOffset + h->codeSignatureSize;
-
-#define SHIFT_MAYBE(x) \
-	if (x) { \
-		x += offset; \
-	}
 
 		SHIFT_MAYBE(h->mappingOffset);
 		SHIFT_MAYBE(h->imagesOffset);
@@ -147,6 +147,8 @@ static void populate_cache_headers(RzDyldCache *cache) {
 beach:
 	rz_list_free(hdrs);
 }
+
+#undef SHIFT_MAYBE
 
 static void populate_cache_maps(RzDyldCache *cache) {
 	rz_return_if_fail(cache && cache->buf);
