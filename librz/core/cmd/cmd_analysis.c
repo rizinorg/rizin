@@ -3547,8 +3547,8 @@ static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunct
 		rz_list_free(calls);
 
 		if (verbose) {
-			ut32 locals = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL);
-			ut32 args = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
+			ut32 locals = rz_analysis_var_local_count(fcn);
+			ut32 args = rz_analysis_arg_count(fcn);
 
 			rz_table_add_rowf(t, "XsndddddddbXnXdddd", fcn->addr,
 				fcn->name, rz_analysis_function_realsize(fcn),
@@ -3753,8 +3753,8 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	pj_ki(state->d.pj, "outdegree", outdegree);
 
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
-		pj_kn(state->d.pj, "nlocals", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL));
-		pj_kn(state->d.pj, "nargs", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT));
+		pj_kn(state->d.pj, "nlocals", rz_analysis_var_local_count(fcn));
+		pj_kn(state->d.pj, "nargs", rz_analysis_arg_count(fcn));
 
 		pj_k(state->d.pj, "bpvars");
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, state);
@@ -4034,8 +4034,8 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	rz_cons_printf("\n");
 
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
-		ut32 args_count = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
-		ut32 var_count = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL);
+		ut32 args_count = rz_analysis_arg_count(fcn);
+		ut32 var_count = rz_analysis_var_local_count(fcn);
 
 		rz_cons_printf("locals: %u\nargs: %u\n", var_count, args_count);
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, state);

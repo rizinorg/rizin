@@ -356,10 +356,6 @@ typedef enum {
 } RzAnalysisOpMask;
 
 typedef enum {
-	RZ_ANALYSIS_VAR_SCOPE_LOCAL = 0x01
-} _RzAnalysisVarScope;
-
-typedef enum {
 	RZ_ANALYSIS_STACK_NULL = 0,
 	RZ_ANALYSIS_STACK_NOP,
 	RZ_ANALYSIS_STACK_INC,
@@ -609,13 +605,6 @@ typedef enum {
 	RZ_ANALYSIS_VAR_KIND_BPV = 'b',
 	RZ_ANALYSIS_VAR_KIND_SPV = 's'
 } RzAnalysisVarKind;
-
-typedef enum {
-	RZ_ANALYSIS_VAR_TYPE_LOCAL = 0,
-	RZ_ANALYSIS_VAR_TYPE_ARGUMENT,
-	// -----
-	RZ_ANALYSIS_VAR_TYPE_SIZE
-} RzAnalysisVarType;
 
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
@@ -1575,8 +1564,9 @@ RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_
 // There could be multiple vars used in multiple functions. Use rz_analysis_get_functions_in()+rz_analysis_function_get_vars_used_at() instead.
 RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr);
 
-RZ_API size_t rz_analysis_var_count(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzAnalysisVarType type);
-RZ_API size_t rz_analysis_var_count_total(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarType type);
+RZ_API bool rz_analysis_var_is_arg(RzAnalysisVar *var);
+RZ_API size_t rz_analysis_var_local_count(RZ_NONNULL RzAnalysisFunction *fcn);
+RZ_API size_t rz_analysis_arg_count(RZ_NONNULL RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
 RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);
@@ -2045,7 +2035,6 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
 
 RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
-RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f);
