@@ -20,6 +20,12 @@
 
 #define RO_DATA_PTR(x) ((x)&FAST_DATA_MASK)
 
+#if RZ_BIN_MACH064
+#define rz_buf_read_mach0_ut_offset rz_buf_read_ble64_offset
+#else
+#define rz_buf_read_mach0_ut_offset rz_buf_read_ble32_offset
+#endif
+
 struct MACH0_(SMethodList) {
 	ut32 entsize;
 	ut32 count;
@@ -189,6 +195,21 @@ static int sort_by_offset(const void *_a, const void *_b) {
 	return a->offset - b->offset;
 }
 
+static bool read_sivarlist(struct MACH0_(SIVarList) * il, RzBuffer *buf, ut64 base, bool bigendian) {
+	ut64 offset = base;
+	return rz_buf_read_ble32_offset(buf, &offset, &il->entsize, bigendian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &il->count, bigendian);
+}
+
+static bool read_sivar(struct MACH0_(SIVar) * i, RzBuffer *buf, ut64 base, bool bigendian) {
+	ut64 offset = base;
+	return rz_buf_read_mach0_ut_offset(buf, &offset, &i->offset, bigendian) &&
+		rz_buf_read_mach0_ut_offset(buf, &offset, &i->name, bigendian) &&
+		rz_buf_read_mach0_ut_offset(buf, &offset, &i->type, bigendian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &i->alignment, bigendian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &i->size, bigendian);
+}
+
 static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass) {
 	struct MACH0_(SIVarList) il = { 0 };
 	struct MACH0_(SIVar) i;
@@ -199,8 +220,6 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	bool bigendian;
 	mach0_ut ivar_offset;
 	RzBinField *field = NULL;
-	ut8 sivarlist[sizeof(struct MACH0_(SIVarList))] = { 0 };
-	ut8 sivar[sizeof(struct MACH0_(SIVar))] = { 0 };
 	ut8 offs[sizeof(mach0_ut)] = { 0 };
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
@@ -220,18 +239,9 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	if (r + sizeof(struct MACH0_(SIVarList)) > bf->size) {
 		return;
 	}
-	if (left < sizeof(struct MACH0_(SIVarList))) {
-		if (rz_buf_read_at(buf, r, sivarlist, left) != left) {
-			return;
-		}
-	} else {
-		len = rz_buf_read_at(buf, r, sivarlist, sizeof(struct MACH0_(SIVarList)));
-		if (len != sizeof(struct MACH0_(SIVarList))) {
-			return;
-		}
+	if (!read_sivarlist(&il, buf, r, bigendian)) {
+		return;
 	}
-	il.entsize = rz_read_ble(&sivarlist[0], bigendian, 32);
-	il.count = rz_read_ble(&sivarlist[4], bigendian, 32);
 	p += sizeof(struct MACH0_(SIVarList));
 	offset += sizeof(struct MACH0_(SIVarList));
 
@@ -251,29 +261,9 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		if (r + sizeof(struct MACH0_(SIVar)) > bf->size) {
 			goto error;
 		}
-		if (left < sizeof(struct MACH0_(SIVar))) {
-			if (rz_buf_read_at(buf, r, sivar, left) != left) {
-				goto error;
-			}
-		} else {
-			len = rz_buf_read_at(buf, r, sivar, sizeof(struct MACH0_(SIVar)));
-			if (len != sizeof(struct MACH0_(SIVar))) {
-				goto error;
-			}
+		if (!read_sivar(&i, buf, r, bigendian)) {
+			goto error;
 		}
-#if RZ_BIN_MACH064
-		i.offset = rz_read_ble(&sivar[0], bigendian, 64);
-		i.name = rz_read_ble(&sivar[8], bigendian, 64);
-		i.type = rz_read_ble(&sivar[16], bigendian, 64);
-		i.alignment = rz_read_ble(&sivar[24], bigendian, 32);
-		i.size = rz_read_ble(&sivar[28], bigendian, 32);
-#else
-		i.offset = rz_read_ble(&sivar[0], bigendian, 32);
-		i.name = rz_read_ble(&sivar[4], bigendian, 32);
-		i.type = rz_read_ble(&sivar[8], bigendian, 32);
-		i.alignment = rz_read_ble(&sivar[12], bigendian, 32);
-		i.size = rz_read_ble(&sivar[16], bigendian, 32);
-#endif
 		field->vaddr = i.offset;
 		mach0_ut offset_at = va2pa(i.offset, NULL, &left, bf);
 
@@ -414,8 +404,8 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 		}
 	}
 
-	opl.entsize = rz_read_ble(&sopl[0], bigendian, 32);
-	opl.count = rz_read_ble(&sopl[4], bigendian, 32);
+	opl.entsize = rz_read_ble32(&sopl[0], bigendian);
+	opl.count = rz_read_ble32(&sopl[4], bigendian);
 
 	p += sizeof(struct MACH0_(SObjcPropertyList));
 	offset += sizeof(struct MACH0_(SObjcPropertyList));

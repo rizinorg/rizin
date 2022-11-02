@@ -610,8 +610,8 @@ struct mach_header_64 {
 };
 
 struct load_command {
-	uint32_t cmd;
-	uint32_t cmdsize;
+	ut32 cmd;
+	ut32 cmdsize;
 };
 
 struct segment_command {
@@ -1433,35 +1433,26 @@ enum X86ThreadFlavors {
 #define EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER 0x10
 
 struct dyld_chained_fixups_header {
-	uint32_t fixups_version;
-	uint32_t starts_offset;
-	uint32_t imports_offset;
-	uint32_t symbols_offset;
-	uint32_t imports_count;
-	uint32_t imports_format;
-	uint32_t symbols_format;
+	ut32 fixups_version;
+	ut32 starts_offset;
+	ut32 imports_offset;
+	ut32 symbols_offset;
+	ut32 imports_count;
+	ut32 imports_format;
+	ut32 symbols_format;
 };
 
 struct dyld_chained_starts_in_image {
 	uint32_t seg_count;
 };
 
-struct dyld_chained_starts_in_segment {
-	uint32_t size;
-	uint16_t page_size;
-	uint16_t pointer_format;
-	uint64_t segment_offset;
-	uint32_t max_valid_pointer;
-	uint16_t page_count;
-};
-
 struct rz_dyld_chained_starts_in_segment {
-	uint32_t size;
-	uint16_t page_size;
-	uint16_t pointer_format;
-	uint64_t segment_offset;
-	uint32_t max_valid_pointer;
-	uint16_t page_count;
+	ut32 size;
+	ut16 page_size;
+	ut16 pointer_format;
+	ut64 segment_offset;
+	ut32 max_valid_pointer;
+	ut16 page_count;
 	ut16 *page_start;
 };
 

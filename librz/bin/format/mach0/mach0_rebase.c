@@ -48,11 +48,10 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 			}
 			ut64 cursor = start + page_idx * page_size + page_start;
 			while (cursor < eob && cursor < end) {
-				ut8 tmp[8];
-				if (rz_buf_read_at(obj->b, cursor, tmp, 8) != 8) {
+				ut64 raw_ptr = 0;
+				if (!rz_buf_read_le64_at(obj->b, cursor, &raw_ptr)) {
 					break;
 				}
-				ut64 raw_ptr = rz_read_le64(tmp);
 				bool is_auth = IS_PTR_AUTH(raw_ptr);
 				ut64 ptr_value = raw_ptr;
 				ut64 delta;
