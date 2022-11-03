@@ -2051,7 +2051,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					if (type) {
 						bool isCandidate = !*input;
 						if (!strcmp(input, "cswi")) {
-							if (!strcmp(input + 1, type)) {
+							if (*input && !strcmp(input + 1, type)) {
 								isCandidate = true;
 							}
 						} else {
