@@ -122,7 +122,7 @@ static RzFlirtModule *flirt_module_new(RzAnalysis *analysis, RzAnalysisFunction 
 				free(tb);
 				goto fail;
 			}
-			tb->offset = i;
+			tb->offset = k;
 			tb->value = buffer[i];
 		}
 	}

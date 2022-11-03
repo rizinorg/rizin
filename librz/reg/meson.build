@@ -1,7 +1,6 @@
 rz_reg_sources = [
   'arena.c',
   'rcond.c',
-  'double.c',
   'profile.c',
   'reg.c',
   'rvalue.c',

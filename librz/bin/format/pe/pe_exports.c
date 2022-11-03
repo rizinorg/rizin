@@ -6,7 +6,7 @@
 #include "pe.h"
 
 typedef struct {
-	ut64 shortname;
+	char shortname[8];
 	ut32 value;
 	ut16 secnum;
 	ut16 symtype;
@@ -14,11 +14,25 @@ typedef struct {
 	ut8 numaux;
 } SymbolRecord;
 
+static void parse_symbol_record(SymbolRecord *record, const ut8 *buf, size_t index) {
+	memcpy(record->shortname, buf + index, sizeof(record->shortname));
+	index += sizeof(record->shortname);
+	record->value = rz_read_at_le32(buf, index);
+	index += sizeof(ut32);
+	record->secnum = rz_read_at_le16(buf, index);
+	index += sizeof(ut16);
+	record->symtype = rz_read_at_le16(buf, index);
+	index += sizeof(ut16);
+	record->symclass = buf[index];
+	index++;
+	record->numaux = buf[index];
+}
+
 static struct rz_bin_pe_export_t *parse_symbol_table(RzBinPEObj *bin, struct rz_bin_pe_export_t *exports, int sz) {
 	ut64 sym_tbl_off, num = 0;
 	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
-	struct rz_bin_pe_section_t *sections;
-	struct rz_bin_pe_export_t *exp;
+	struct rz_bin_pe_section_t *sections = NULL;
+	struct rz_bin_pe_export_t *exp = NULL;
 	struct rz_bin_pe_export_t *new_exports = NULL;
 	const size_t export_t_sz = sizeof(struct rz_bin_pe_export_t);
 	int bufsz, i, shsz;
@@ -28,7 +42,7 @@ static struct rz_bin_pe_export_t *parse_symbol_table(RzBinPEObj *bin, struct rz_
 	int textn = 0;
 	int exports_sz;
 	int symctr = 0;
-	char *buf;
+	ut8 *buf = NULL;
 
 	if (!bin || !bin->nt_headers) {
 		return NULL;
@@ -78,12 +92,12 @@ static struct rz_bin_pe_export_t *parse_symbol_table(RzBinPEObj *bin, struct rz_
 			if (i + sizeof(sr) >= bufsz) {
 				break;
 			}
-			memcpy(&sr, buf + i, sizeof(sr));
+			parse_symbol_record(&sr, buf, i);
 			// RZ_LOG_INFO("SECNUM %d\n", sr.secnum);
 			if (sr.secnum == textn) {
 				if (sr.symtype == 32) {
 					char shortname[9];
-					memcpy(shortname, &sr.shortname, 8);
+					memcpy(shortname, sr.shortname, 8);
 					shortname[8] = 0;
 					if (*shortname) {
 						strncpy((char *)exp[symctr].name, shortname, PE_NAME_LENGTH - 1);

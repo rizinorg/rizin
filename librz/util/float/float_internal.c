@@ -44,6 +44,24 @@ static inline ut32 rz_float_info_bin64(RzFloatInfo which_info) {
 	}
 }
 
+static inline ut32 rz_float_info_bin80(RzFloatInfo which_info) {
+	switch (which_info) {
+	case RZ_FLOAT_INFO_BASE:
+		return 2;
+	case RZ_FLOAT_INFO_EXP_LEN:
+		return 15;
+	case RZ_FLOAT_INFO_MAN_LEN:
+		return 64;
+	case RZ_FLOAT_INFO_TOTAL_LEN:
+		return 80;
+	case RZ_FLOAT_INFO_BIAS:
+		return 16383;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
 static inline ut32 rz_float_info_bin128(RzFloatInfo which_info) {
 	switch (which_info) {
 	case RZ_FLOAT_INFO_BASE:
@@ -185,7 +203,6 @@ static RZ_OWN RzBitVector *get_man_squashed(RZ_NONNULL RzBitVector *bv, RzFloatF
 		return NULL;
 	}
 	rz_bv_copy_nbits(bv, 0, res, 0, man_len);
-
 	return res;
 }
 
@@ -196,8 +213,7 @@ static RZ_OWN RzBitVector *get_man_squashed(RZ_NONNULL RzBitVector *bv, RzFloatF
  * \return bool sign of float bv
  */
 static RZ_OWN bool get_sign(RZ_NONNULL RzBitVector *bv, RzFloatFormat format) {
-	rz_return_val_if_fail(bv, NULL);
-
+	rz_return_val_if_fail(bv, false);
 	return rz_bv_get(bv, bv->len - 1);
 }
 

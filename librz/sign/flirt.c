@@ -356,6 +356,15 @@ static bool check_crc16(const RzFlirtModule *module, ut8 *b, ut32 b_size) {
 	return module->crc16 == flirt_crc16(b + RZ_FLIRT_MAX_PRELUDE_SIZE, module->crc_length);
 }
 
+static bool try_rename_function(RzAnalysis *analysis, RzAnalysisFunction *fcn, const char *name) {
+	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
+		// do not rename if is a symbol but check if
+		// another function has the same name
+		return ht_pp_find(analysis->ht_name_fun, name, NULL) == NULL;
+	}
+	return rz_analysis_function_rename(fcn, name);
+}
+
 /**
  * \brief Checks if the module matches the buffer and renames the matched functions
  *
@@ -378,9 +387,10 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 		return false;
 	}
 	if (module->tail_bytes) {
+		size_t begin = RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length;
 		rz_list_foreach (module->tail_bytes, it, tail_byte) {
-			if (RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset < buf_size &&
-				b[RZ_FLIRT_MAX_PRELUDE_SIZE + module->crc_length + tail_byte->offset] != tail_byte->value) {
+			if ((begin + tail_byte->offset) < buf_size &&
+				b[begin + tail_byte->offset] != tail_byte->value) {
 				return false;
 			}
 		}
@@ -444,7 +454,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 				return false;
 			}
 
-			while (!rz_analysis_function_rename(next_module_function, name)) {
+			while (!try_rename_function(analysis, next_module_function, name)) {
 				free(name);
 				name_index++;
 				name = rz_str_newf("flirt.%s_%u", flirt_func->name, name_index);
@@ -455,7 +465,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			}
 
 			// remove old flag
-			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "sym.", "fcn.", "func.", NULL);
+			RzFlagItem *fit = analysis->flb.get_at_by_spaces(analysis->flb.f, next_module_function->addr, "fcn.", "func.", NULL);
 			if (fit) {
 				analysis->flb.unset(analysis->flb.f, fit);
 			}
@@ -1323,7 +1333,7 @@ RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 	}
 
 	if (!strcmp(extension, ".pat")) {
-		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_MAX, NULL);
+		node = rz_sign_flirt_parse_string_pattern_from_buffer(flirt_buf, RZ_FLIRT_NODE_OPTIMIZE_NONE, NULL);
 	} else {
 		node = rz_sign_flirt_parse_compressed_pattern_from_buffer(flirt_buf, expected_arch, NULL);
 	}

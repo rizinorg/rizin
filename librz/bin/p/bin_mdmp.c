@@ -267,7 +267,7 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 			free(ptr);
 			continue;
 		}
-		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, obj->endian);
+		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, !obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);

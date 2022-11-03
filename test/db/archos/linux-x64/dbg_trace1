@@ -10,8 +10,8 @@ dbte @ sym.called_in_loop
 dc
 EOF
 EXPECT=<<EOF
-rip = 0x004004ed
-rip = 0x004004ed
-rip = 0x004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
 EOF
 RUN

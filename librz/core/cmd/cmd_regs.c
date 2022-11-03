@@ -85,31 +85,23 @@ static RzList /*<RzRegItem *>*/ *filter_reg_items(RzReg *reg, RZ_NULLABLE const 
 
 /// Format the value of a register as a nice hex string
 static void format_reg_value(RzReg *reg, RzRegItem *item, char *out, size_t out_size) {
-	// TODO: This could be done much nicer with RzBitVector, but it's not in RzUtil yet :-(
-	if (item->size < 80) {
-		ut64 value = rz_reg_get_value(reg, item);
-		snprintf(out, out_size, "0x%08" PFMT64x, value);
-	} else {
-		utX valueBig;
-		rz_reg_get_value_big(reg, item, &valueBig);
-		switch (item->size) {
-		case 80:
-			snprintf(out, out_size, "0x%04x%016" PFMT64x "", valueBig.v80.High, valueBig.v80.Low);
-			break;
-		case 96:
-			snprintf(out, out_size, "0x%08x%016" PFMT64x "", valueBig.v96.High, valueBig.v96.Low);
-			break;
-		case 128:
-			snprintf(out, out_size, "0x%016" PFMT64x "%016" PFMT64x "", valueBig.v128.High, valueBig.v128.Low);
-			break;
-		case 256:
-			snprintf(out, out_size, "0x%016" PFMT64x "%016" PFMT64x "%016" PFMT64x "%016" PFMT64x "",
-				valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
-			break;
-		default:
-			snprintf(out, out_size, "ERROR");
-		}
+	RzBitVector *bv = rz_reg_get_bv(reg, item);
+	if (!bv) {
+		RZ_LOG_ERROR("core: Failed to read register\n");
+		snprintf(out, out_size, "ERROR");
+		return;
 	}
+	char *num = rz_bv_as_hex_string(bv, true);
+	if (!num) {
+		RZ_LOG_ERROR("core: Failed to convert bitvector register value to string\n");
+		snprintf(out, out_size, "ERROR");
+		goto fail;
+	}
+	snprintf(out, out_size, "%s", num);
+
+fail:
+	free(num);
+	rz_bv_free(bv);
 }
 
 /// Check whether the given item's value has changed in the last step
@@ -864,7 +856,33 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 #else
 			sscanf(eq, "%Lf", &val);
 #endif
-			rz_reg_set_double(reg, item, val);
+			RzFloat *fnum = NULL;
+			switch (item->size) {
+			case 32:
+				fnum = rz_float_new_from_f32(val);
+				break;
+			case 64:
+				fnum = rz_float_new_from_f64(val);
+				break;
+			case 80:
+				fnum = rz_float_new_from_f80(val);
+				break;
+			case 128:
+				fnum = rz_float_new_from_f128(val);
+				break;
+			default:
+				goto error;
+			}
+			if (!fnum) {
+				goto error;
+			}
+
+			bool set_result = rz_reg_set_bv(reg, item, fnum->s);
+			rz_float_free(fnum);
+			if (!set_result) {
+				goto error;
+			}
+
 			SYNC_WRITE(RZ_REG_TYPE_GPR, failed);
 			if (failed) {
 				goto error;
@@ -874,8 +892,21 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 				goto error;
 			}
 		} else {
-			long double res = rz_reg_get_longdouble(reg, item);
-			rz_cons_printf("%Lf\n", res);
+			RzBitVector *bv = rz_reg_get_bv(reg, item);
+			if (!bv) {
+				goto error;
+			}
+
+			RzFloat *fnum = rz_float_new_from_bv(bv);
+			rz_bv_free(bv);
+			if (!fnum) {
+				rz_bv_free(bv);
+				goto error;
+			}
+			char *numeric = rz_float_as_dec_string(fnum);
+			rz_cons_printf("%s\n", numeric);
+			free(numeric);
+			rz_float_free(fnum);
 		}
 	} else {
 		/* note, that negative type forces sync to print the regs from the backend */

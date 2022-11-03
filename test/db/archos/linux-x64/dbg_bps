@@ -118,8 +118,8 @@ dr rax
 dr rip
 EOF
 EXPECT=<<EOF
-rax = 0x000031c0
-rip = 0x004000ce
+rax = 0x00000000000031c0
+rip = 0x00000000004000ce
 EOF
 RUN
 
@@ -136,12 +136,12 @@ dbC .(trace_rax) @ 0x4000ce
 dc
 EOF
 EXPECT=<<EOF
-rax = 0x00000000
-rax = 0x00000220
-rax = 0x000031c0
-rax = 0x000033c2
-rax = 0x00000249
-rax = 0x00000440
+rax = 0x0000000000000000
+rax = 0x0000000000000220
+rax = 0x00000000000031c0
+rax = 0x00000000000033c2
+rax = 0x0000000000000249
+rax = 0x0000000000000440
 EOF
 RUN
 
@@ -166,10 +166,10 @@ dr PC
 EOF
 EXPECT=<<EOF
 [{"addr":4195619,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":""},{"addr":4195610,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":""}]
-rip = 0x00400523
-rip = 0x0040051a
-rip = 0x0040051a
-rip = 0x00400523
+rip = 0x0000000000400523
+rip = 0x000000000040051a
+rip = 0x000000000040051a
+rip = 0x0000000000400523
 EOF
 RUN
 
