@@ -545,13 +545,14 @@ static void json_pj_recurse(const RzJson *json, PJ *pj, bool with_key) {
  */
 RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json, bool with_key) {
 	rz_return_val_if_fail(json, NULL);
+	const char *value = json->str_value ? json->str_value : ""; 
 	PJ *pj = pj_new();
 	if (json->type == RZ_JSON_STRING) {
 		if (with_key && json->key) {
-			pj_ks(pj, json->key, json->str_value);
+			pj_ks(pj, json->key, value);
 		} else {
 			// Printing string without surrounding quotes
-			pj_S(pj, json->str_value);
+			pj_S(pj, value);
 		}
 	} else {
 		json_pj_recurse(json, pj, with_key);
