@@ -40,6 +40,7 @@ typedef struct rz_il_op_pure_t RzILOpPure;
 
 typedef RzILOpPure RzILOpBool;
 typedef RzILOpPure RzILOpBitVector;
+typedef RzILOpPure RzILOpFloat;
 
 typedef struct rz_il_op_effect_t RzILOpEffect;
 
@@ -337,6 +338,174 @@ typedef struct rz_il_op_args_storew_t {
 	RzILOpBitVector *value; ///< value to store, arbitrary size
 } RzILOpArgsStoreW;
 
+/**
+ * \brief value for a float constant
+ * `float s x` interprets x as a floating-point number in format s.
+ * In BAP : `( 'r, 's ) format Float.t Value.sort -> 's bitv -> ( 'r, 's ) format float
+ */
+typedef struct rz_il_op_args_float_t {
+	RzFloatFormat r;
+	RzILOpFloat *f;
+} RzILOpArgsFloat;
+
+/**
+ * \brief opstructure for fbits : ( 'r, 's ) format float -> 's bitv
+ * fbits x is a bitvector representation of the floating-point number x.
+ */
+typedef struct rz_il_op_args_fbis_t {
+	RzILOpFloat *f;
+} RzILOpArgsFbits;
+
+/**
+ * \brief op structure for 'f float -> bool
+ * [IS_FINITE] is_finite x holds if x represents a finite number.
+ * [IS_NAN] is_nan x holds if x represents a not-a-number (NaN).
+ * [IS_INF] is_inf x holds if x represents an infinite number.
+ * [IS_FZERO] is_fzero x holds if x represents a zero.
+ * [IS_FNEG] is_fpos x holds if x represents a positive number.
+ * [IS_FPOS] is_fneg x hold if x represents a negative number.
+ */
+struct rz_il_op_args_float_unary_t {
+	RzILOpFloat *f;
+};
+
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFinite;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsNan;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsInf;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFzero;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFpos;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFneg;
+
+/**
+ * op structure for 'f float -> float
+ * [FNEG] fneg x is -x
+ * [FABS] fabs x is absolute value of x (|x|)
+ * [FSUCC] fsucc x is the least floating-point number representable in (sort x) that is greater than x.
+ * [FPRED] fpred x is the greatest floating-point number representable in (sort x) that is less than x.
+ */
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFneg;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFabs;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFsucc;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFpred;
+
+/**
+ * \brief op structure for cast to bv from float
+ * [FCAST_INT] `f_cast_int s rm x` returns an integer closest to x.
+ * [FCAST_SINT] `f_cast_sint s rm x` returns an integer closest to x.
+ */
+struct rz_il_op_args_float_cast_int_t {
+	RzFloatFormat format;
+	RzFloatRMode mode;
+	RzILOpFloat *f;
+};
+
+typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastint;
+typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastsint;
+
+/**
+ * \brief convert between different float format
+ * 'f Float.t Value.sort -> rmode -> _ float -> 'f float
+ * [FCONVERT] `fconvert f r x` is the closest to x floating number in format f.
+ */
+typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFconvert;
+
+/**
+ * \brief for cast to float from bv
+ * 'f Float.t Value.sort -> rmode -> 'a bitv -> 'f float
+ * [FCAST_FLOAT] `cast_float s rm x` is the closest to x floating-point number of sort x.
+ * 	note that : The bitvector x is interpreted as an unsigned integer in the two-complement form.
+ * [FCAST_SFLOAT] `cast_sfloat s rm x` is the closest to x floating-point number of sort x.
+ * 	note that : The bitvector x is interpreted as a signed integer in the two-complement form.
+ */
+struct rz_il_op_args_float_cast_float_t {
+	RzFloatFormat format;
+	RzFloatRMode mode;
+	RzILOpBitVector *bv;
+};
+
+typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastfloat;
+typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastsfloat;
+
+/**
+ * \brief op structure of requal
+ *  rmode -> rmode -> bool
+ * requal x y holds if rounding modes are equal.
+ */
+typedef struct rz_il_op_args_float_requal_t {
+	RzFloatFormat x;
+	RzFloatFormat y;
+} RzILOpArgsFrequal;
+
+/**
+ * \brief op structure of binary op without rmode
+ * ('float -> 'flaat -> bool)
+ * forder x y holds if floating-point number x is less than y.
+ */
+typedef struct rz_il_op_args_float_binop_t {
+	RzILOpFloat *x;
+	RzILOpFloat *y;
+} RzILOpArgsForder;
+
+/**
+ * \brief op structure for float operation (unary op with rmode)
+ * `rmode -> 'f float -> 'f float`
+ * [FROUND]
+ * [FSQRT] fsqrt m x returns the closest floating-point number to r, where r is such number that r*r is equal to x.
+ * [FRSQRT] reverse sqrt, rsqrt m x is the closest floating-point number to 1 / sqrt x.
+ */
+struct rz_il_op_args_float_alg_unop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *f;
+};
+typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFround;
+typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFsqrt;
+typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFrsqrt;
+
+/**
+ * \brief op structure for float basic arithmetic operations (binary op with rmode)
+ * rmode -> 'f float -> 'f float -> 'f float
+ * [FADD]
+ */
+struct rz_il_op_args_float_alg_binop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *a;
+	RzILOpFloat *b;
+};
+
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFadd;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFsub;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFmul;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFdiv;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFmod;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFhypot;
+typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFpow;
+
+/**
+ * \brief op structure of ternary op in float
+ * rmode -> 'f float -> 'f float -> 'f float -> 'f float
+ */
+struct rz_il_op_args_float_alg_terop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *a;
+	RzILOpFloat *b;
+	RzILOpFloat *c;
+};
+typedef struct rz_il_op_args_float_alg_terop_t RzILOpArgsFmad;
+
+/**
+ * \brief op structure for some float binary op requiring `int`
+ * rmode -> 'f float -> 'a bitv -> 'f float
+ */
+struct rz_il_op_args_float_alg_hybrid_binop_t {
+	RzFloatRMode rmode;
+	RzILOpFloat *f;
+	RzILOpBitVector *n;
+};
+
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFrootn;
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFpown;
+typedef struct rz_il_op_args_float_alg_hybrid_binop_t RzILOpArgsFcompound;
+
 /////////////////////////////
 // Opcodes of type 'a pure //
 
@@ -380,8 +549,39 @@ typedef enum {
 	RZ_IL_OP_APPEND,
 
 	// RzILFloat
+	RZ_IL_OP_FLOAT,
+	RZ_IL_OP_FBITS,
+	RZ_IL_OP_IS_FINITE,
+	RZ_IL_OP_IS_NAN,
+	RZ_IL_OP_IS_INF,
+	RZ_IL_OP_IS_FZERO,
+	RZ_IL_OP_IS_FNEG,
+	RZ_IL_OP_IS_FPOS,
+	RZ_IL_OP_FNEG,
+	RZ_IL_OP_FABS,
+	RZ_IL_OP_FCAST_INT,
+	RZ_IL_OP_FCAST_SINT,
+	RZ_IL_OP_FCAST_FLOAT,
+	RZ_IL_OP_FCAST_SFLOAT,
+	RZ_IL_OP_FCONVERT,
+	RZ_IL_OP_FREQUAL,
+	RZ_IL_OP_FSUCC,
+	RZ_IL_OP_FPRED,
+	RZ_IL_OP_FORDER,
+	RZ_IL_OP_FROUND,
+	RZ_IL_OP_FSQRT,
+	RZ_IL_FRSQRT,
 	RZ_IL_OP_FADD,
-
+	RZ_IL_OP_FSUB,
+	RZ_IL_OP_FMUL,
+	RZ_IL_OP_FDIV,
+	RZ_IL_OP_FMOD,
+	RZ_IL_OP_FHYPOT,
+	RZ_IL_OP_FPOW,
+	RZ_IL_OP_FMAD,
+	RZ_IL_OP_FROOTN,
+	RZ_IL_OP_FPOWN,
+	RZ_IL_OP_FCOMPOUND,
 	// ...
 
 	// Memory
@@ -438,6 +638,40 @@ struct rz_il_op_pure_t {
 
 		RzILOpArgsLoad load;
 		RzILOpArgsLoadW loadw;
+
+		RzILOpArgsFloat float_;
+		RzILOpArgsFbits fbits;
+		RzILOpArgsIsFinite is_finite;
+		RzILOpArgsIsNan is_nan;
+		RzILOpArgsIsInf is_inf;
+		RzILOpArgsIsFzero is_fzero;
+		RzILOpArgsIsFneg is_fneg;
+		RzILOpArgsIsFpos is_fpos;
+		RzILOpArgsFneg fneg;
+		RzILOpArgsFabs fabs;
+		RzILOpArgsFCastint fcast_int;
+		RzILOpArgsFCastsint fcast_sint;
+		RzILOpArgsFCastfloat fcast_float;
+		RzILOpArgsFCastsfloat fcast_sfloat;
+		RzILOpArgsFconvert fconvert;
+		RzILOpArgsFrequal frequal;
+		RzILOpArgsFsucc fsucc;
+		RzILOpArgsFpred fpred;
+		RzILOpArgsForder forder;
+		RzILOpArgsFround fround;
+		RzILOpArgsFsqrt fsqrt;
+		RzILOpArgsFrsqrt frsqrt;
+		RzILOpArgsFadd fadd;
+		RzILOpArgsFsub fsub;
+		RzILOpArgsFmul fmul;
+		RzILOpArgsFdiv fdiv;
+		RzILOpArgsFmod fmod;
+		RzILOpArgsFmad fmad;
+		RzILOpArgsFpow fpow;
+		RzILOpArgsFpown fpown;
+		RzILOpArgsFrootn frootn;
+		RzILOpArgsFcompound fcompound;
+		RzILOpArgsFhypot fhypot;
 	} op;
 };
 
