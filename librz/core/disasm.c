@@ -4489,7 +4489,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 			ut64 mem_2 = rz_read_at_ble64(str, 16, big_endian);
 			ut64 addr = rz_read_at_ble64(str, 0, big_endian);
 			if (!(*val >> 32)) {
-				addr &= addr & UT32_MAX;
+				addr = addr & UT32_MAX;
 			}
 			if (mem_0 == 0 && mem_1 < 0x1000) {
 				ut64 addr = mem_2;
