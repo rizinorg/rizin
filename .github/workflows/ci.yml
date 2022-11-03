@@ -447,7 +447,10 @@ jobs:
           ASAN: true
           ASAN_OPTIONS: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
       - name: Install test dependencies
-        run: LD_PRELOAD=$(gcc -print-file-name=libasan.so) pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+        run: |
+          git clone https://github.com/rizinorg/rz-pipe test/rz-pipe
+          LD_PRELOAD=$(gcc -print-file-name=libasan.so) pip3 install 'file:///rizin/test/rz-pipe#egg=rzpipe&subdirectory=python'
+        working-directory: rizin
       - name: Run integration tests and rz-test
         run: |
           export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
