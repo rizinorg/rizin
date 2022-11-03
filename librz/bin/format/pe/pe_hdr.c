@@ -113,7 +113,8 @@ bool PE_(read_nt_headers)(RzBuffer *buf, ut64 addr, PE_(image_nt_headers) * head
 	}
 
 	for (size_t i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
-		if (!rz_buf_read_le32_offset(buf, &offset, &headers->optional_header.DataDirectory[i].VirtualAddress) || !rz_buf_read_le32_offset(buf, &offset, &headers->optional_header.DataDirectory[i].Size)) {
+		if (!rz_buf_read_le32_offset(buf, &offset, &headers->optional_header.DataDirectory[i].VirtualAddress) ||
+			!rz_buf_read_le32_offset(buf, &offset, &headers->optional_header.DataDirectory[i].Size)) {
 			return false;
 		}
 	}
