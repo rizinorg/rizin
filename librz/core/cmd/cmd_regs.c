@@ -900,7 +900,6 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 			RzFloat *fnum = rz_float_new_from_bv(bv);
 			rz_bv_free(bv);
 			if (!fnum) {
-				rz_bv_free(bv);
 				goto error;
 			}
 			char *numeric = rz_float_as_dec_string(fnum);
