@@ -2887,7 +2887,6 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	ut16 *in = (ut16 *)src;
 	ut16 *inend;
 	ut32 c, d, inlen;
-	ut8 *tmp;
 	int bits;
 
 	if ((len_src % 2) == 1) {
@@ -2896,29 +2895,14 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	inlen = len_src / 2;
 	inend = in + inlen;
 	while ((in < inend) && (dst - outstart + 5 < len_dst)) {
-		if (little_endian) {
-			c = *in++;
-		} else {
-			tmp = (ut8 *)in;
-			c = *tmp++;
-			if (!c && !*tmp) {
-				break;
-			}
-			c = c | (((ut32)*tmp) << 8);
-			in++;
-		}
+		c = rz_read_ble16((const ut8 *)in, !little_endian);
+		in++;
 		if ((c & 0xFC00) == 0xD800) { /* surrogates */
 			if (in >= inend) { /* (in > inend) shouldn't happens */
 				break;
 			}
-			if (little_endian) {
-				d = *in++;
-			} else {
-				tmp = (ut8 *)in;
-				d = *tmp++;
-				d = d | (((ut32)*tmp) << 8);
-				in++;
-			}
+			d = rz_read_ble16((const ut8 *)in, !little_endian);
+			in++;
 			if ((d & 0xFC00) == 0xDC00) {
 				c &= 0x03FF;
 				c <<= 10;
