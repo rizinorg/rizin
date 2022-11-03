@@ -338,7 +338,7 @@ static String *Pe_r_bin_pe_parse_string(RzBinPEObj *bin, PE_DWord *curAddr) {
 		if (*curAddr > bin->size || *curAddr + sizeof(ut16) > bin->size) {
 			goto out_error;
 		}
-		if (!rz_buf_read_le16_at(bin->b, *curAddr, &utf16_char)) {
+		if (rz_buf_read_at(bin->b, *curAddr, (ut8 *)&utf16_char, sizeof(ut16)) != sizeof(ut16)) {
 			RZ_LOG_INFO("check (String szKey)\n");
 			goto out_error;
 		}
