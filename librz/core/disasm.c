@@ -4454,7 +4454,7 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *res, int *siz
 
 static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
-	ut32 *n32 = (ut32 *)str;
+	bool big_endian = esil->analysis ? esil->analysis->big_endian : false;
 	RzDisasmState *ds = esil->user;
 	if (!ds) {
 		return 0;
@@ -4484,13 +4484,15 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 		ds->emuptr = *val;
 		// support cstring here
 		{
-			ut64 *cstr = (ut64 *)str;
-			ut64 addr = cstr[0];
+			ut64 mem_0 = rz_read_at_ble64(str, 0, big_endian);
+			ut64 mem_1 = rz_read_at_ble64(str, 8, big_endian);
+			ut64 mem_2 = rz_read_at_ble64(str, 16, big_endian);
+			ut64 addr = rz_read_at_ble64(str, 0, big_endian);
 			if (!(*val >> 32)) {
 				addr = addr & UT32_MAX;
 			}
-			if (cstr[0] == 0 && cstr[1] < 0x1000) {
-				ut64 addr = cstr[2];
+			if (mem_0 == 0 && mem_1 < 0x1000) {
+				ut64 addr = mem_2;
 				if (!(*val >> 32)) {
 					addr = addr & UT32_MAX;
 				}
@@ -4498,9 +4500,9 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 					(ut8 *)str, sizeof(str) - 1);
 				//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
 				type = rz_str_newf("(cstr 0x%08" PFMT64x ") ", addr);
-				ds->printed_str_addr = cstr[2];
+				ds->printed_str_addr = mem_2;
 			} else if (rz_io_is_valid_offset(esil->analysis->iob.io, addr, 0)) {
-				ds->printed_str_addr = cstr[0];
+				ds->printed_str_addr = mem_0;
 				type = rz_str_newf("(pstr 0x%08" PFMT64x ") ", addr);
 				(void)rz_io_read_at(esil->analysis->iob.io, addr,
 					(ut8 *)str, sizeof(str) - 1);
@@ -4533,17 +4535,9 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 				break;
 			}
 			if (!jump_op && !ignored) {
-				const char *prefix;
-				ut32 len = sizeof(str) - 1;
-#if 0
-				RzCore *core = ds->core;
-				ut32 len = core->blocksize + 256;
-				if (len < core->blocksize || len > RZ_DISASM_MAX_STR) {
-					len = RZ_DISASM_MAX_STR;
-				}
-#endif
+				const char *prefix = NULL;
 				ds->emuptr = *val;
-				char *escstr = ds_esc_str(ds, str, (int)len, &prefix, false);
+				char *escstr = ds_esc_str(ds, str, sizeof(str) - 1, &prefix, false);
 				if (escstr) {
 					char *m;
 					if (ds->show_color) {
@@ -4560,14 +4554,9 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		} else {
-			if (!*n32) {
-				// msg = strdup ("NULL");
-			} else if (*n32 == UT32_MAX) {
-				/* nothing */
-			} else {
-				if (!ds->show_emu_str) {
-					msg = rz_str_appendf(msg, "-> 0x%x", *n32);
-				}
+			ut32 mem_value = rz_read_ble32((const ut8 *)str, big_endian);
+			if (mem_value && mem_value != UT32_MAX && !ds->show_emu_str) {
+				msg = rz_str_appendf(msg, "-> 0x%x", mem_value);
 			}
 		}
 		RZ_FREE(type);
