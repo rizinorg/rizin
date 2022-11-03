@@ -50,6 +50,14 @@ hello
 EOF
 RUN
 
+NAME=rz-ax -D null byte
+FILE==
+CMDS=!rz-ax -D ZQBlAA== | rz-ax -S
+EXPECT=<<EOF
+65006500
+EOF
+RUN
+
 NAME=rz-ax -S hello | rz-ax -s
 FILE==
 CMDS=!rz-ax -S hello | rz-ax -s
@@ -67,14 +75,6 @@ RUN
 NAME=rz-ax -S hello | rz-ax -s (2)
 FILE==
 CMDS=!echo hello | rz-ax -S | rz-ax -s | rz-ax -S | rz-ax -s
-EXPECT=<<EOF
-hello
-EOF
-RUN
-
-NAME=rz-ax -E | rz-ax -D -E
-FILE==
-CMDS=!echo hello | rz-ax -E |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
 EXPECT=<<EOF
 hello
 EOF
