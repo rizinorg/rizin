@@ -54,7 +54,6 @@ typedef struct minidump_object_t {
 
 	RzBuffer *b;
 	size_t size;
-	ut8 endian;
 	Sdb *kv;
 } MiniDmpObj;
 

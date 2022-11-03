@@ -57,7 +57,7 @@ static RzBinInfo *mdmp_info(RzBinFile *bf) {
 
 	obj = (MiniDmpObj *)bf->o->bin_obj;
 
-	ret->big_endian = obj->endian;
+	ret->big_endian = false;
 	ret->claimed_checksum = strdup(sdb_fmt("0x%08x", obj->hdr->check_sum)); // FIXME: Leaks
 	ret->file = bf->file ? strdup(bf->file) : NULL;
 	ret->has_va = true;
@@ -267,7 +267,7 @@ static RzList /*<RzBinSection *>*/ *mdmp_sections(RzBinFile *bf) {
 			free(ptr);
 			continue;
 		}
-		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, !obj->endian);
+		rz_str_utf16_to_utf8((ut8 *)ptr->name, str_length * 4, str_buffer, str_length, true);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = rz_bin_mdmp_get_paddr(obj, ptr->vaddr);
