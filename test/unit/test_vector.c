@@ -174,11 +174,31 @@ static bool test_vector_clone(void) {
 	mu_assert("rz_vector_clone", v1);
 	mu_assert_eq(v1->len, 5UL, "rz_vector_clone => len");
 	mu_assert_eq(v1->capacity, 5UL, "rz_vector_clone => capacity");
+	mu_assert_null(v1->free, "rz_vector_clone => no free");
+	mu_assert_null(v1->free_user, "rz_vector_clone => no free_user");
 	ut32 i;
 	for (i = 0; i < 5; i++) {
 		mu_assert_eq(*((ut32 *)rz_vector_index_ptr(v1, i)), i, "rz_vector_clone => content");
 	}
 	rz_vector_free(v1);
+
+	int acc[FREE_TEST_COUNT + 1] = { 0 };
+	init_test_vector(&v, FREE_TEST_COUNT, 0, elem_free_test, acc);
+	v1 = rz_vector_clone(&v);
+	rz_vector_clear(&v);
+	mu_assert("rz_vector_clone (+free)", v1);
+	mu_assert_eq(v1->len, FREE_TEST_COUNT, "rz_vector_clone (+free) => len");
+	mu_assert_eq(v1->capacity, FREE_TEST_COUNT, "rz_vector_clone (+free) => capacity");
+	mu_assert_null(v1->free, "rz_vector_clone (+free) => no free");
+	mu_assert_null(v1->free_user, "rz_vector_clone (+free) => no free_user");
+	for (i = 0; i < FREE_TEST_COUNT; i++) {
+		mu_assert_eq(*((ut32 *)rz_vector_index_ptr(v1, i)), i, "rz_vector_clone (+free) => content");
+	}
+	rz_vector_free(v1);
+	for (i = 0; i < FREE_TEST_COUNT; i++) {
+		mu_assert_eq(acc[i], 1, "free individual elements");
+	}
+	mu_assert_eq(acc[FREE_TEST_COUNT], 0, "invalid free calls");
 
 	init_test_vector(&v, 5, 5, NULL, NULL);
 	v1 = rz_vector_clone(&v);
@@ -186,6 +206,8 @@ static bool test_vector_clone(void) {
 	mu_assert("rz_vector_clone (+capacity)", v1);
 	mu_assert_eq(v1->len, 5UL, "rz_vector_clone (+capacity) => len");
 	mu_assert_eq(v1->capacity, 10UL, "rz_vector_clone (+capacity) => capacity");
+	mu_assert_null(v1->free, "rz_vector_clone => no free");
+	mu_assert_null(v1->free_user, "rz_vector_clone => no free_user");
 	for (i = 0; i < 5; i++) {
 		mu_assert_eq(*((ut32 *)rz_vector_index_ptr(v1, i)), i, "rz_vector_clone => content");
 	}
