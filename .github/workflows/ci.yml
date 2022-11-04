@@ -423,6 +423,8 @@ jobs:
         run: apt-get install --yes python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
+      - name: Install test dependencies
+        run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -446,8 +448,6 @@ jobs:
         env:
           ASAN: true
           ASAN_OPTIONS: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
-      - name: Install test dependencies
-        run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
       - name: Run integration tests and rz-test
         run: |
           export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
