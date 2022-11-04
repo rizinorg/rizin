@@ -1388,6 +1388,60 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_LOADW:
 		rz_il_op_free_1(pure, loadw, key);
 		break;
+	case RZ_IL_OP_FLOAT:
+		rz_il_op_free_1(pure, float_, bv);
+		break;
+	case RZ_IL_OP_FBITS:
+	case RZ_IL_OP_IS_FINITE:
+	case RZ_IL_OP_IS_NAN:
+	case RZ_IL_OP_IS_INF:
+	case RZ_IL_OP_IS_FZERO:
+	case RZ_IL_OP_IS_FNEG:
+	case RZ_IL_OP_IS_FPOS:
+	case RZ_IL_OP_FNEG:
+	case RZ_IL_OP_FABS:
+		rz_il_op_free_1(pure, fabs, f);
+		break;
+	case RZ_IL_OP_FSUCC:
+	case RZ_IL_OP_FPRED:
+		rz_il_op_free_1(pure, fpred, f);
+		break;
+	case RZ_IL_OP_FCAST_INT:
+	case RZ_IL_OP_FCAST_SINT:
+	case RZ_IL_OP_FCONVERT:
+		rz_il_op_free_1(pure, fconvert, f);
+		break;
+	case RZ_IL_OP_FCAST_FLOAT:
+	case RZ_IL_OP_FCAST_SFLOAT:
+		rz_il_op_free_1(pure, fcast_sfloat, bv);
+		break;
+	case RZ_IL_OP_FREQUAL:
+		break;
+	case RZ_IL_OP_FORDER:
+		rz_il_op_free_2(pure, forder, x, y);
+		break;
+	case RZ_IL_OP_FROUND:
+	case RZ_IL_OP_FSQRT:
+	case RZ_IL_OP_FRSQRT:
+		rz_il_op_free_1(pure, fsqrt, f);
+		break;
+	case RZ_IL_OP_FADD:
+	case RZ_IL_OP_FSUB:
+	case RZ_IL_OP_FMUL:
+	case RZ_IL_OP_FDIV:
+	case RZ_IL_OP_FMOD:
+	case RZ_IL_OP_FHYPOT:
+	case RZ_IL_OP_FPOW:
+		rz_il_op_free_2(pure, fpow, x, y);
+		break;
+	case RZ_IL_OP_FMAD:
+		rz_il_op_free_3(pure, fmad, x, y, z);
+		break;
+	case RZ_IL_OP_FROOTN:
+	case RZ_IL_OP_FPOWN:
+	case RZ_IL_OP_FCOMPOUND:
+		rz_il_op_free_2(pure, fcompound, f, n);
+		break;
 	default:
 		rz_warn_if_reached();
 		RZ_LOG_ERROR("RzIL: unknown opcode %u\n", op->code);
