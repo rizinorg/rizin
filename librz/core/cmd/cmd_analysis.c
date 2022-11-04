@@ -245,12 +245,11 @@ typedef enum {
 } RzVarListType;
 
 static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, const char *name, RzVarListType vlt) {
-	RzAnalysisVar *var = NULL;
-	RzListIter *iter;
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
+	void **it;
 	if (type == '=') {
 		ut64 oaddr = core->offset;
-		rz_list_foreach (list, iter, var) {
+		rz_pvector_foreach (&fcn->vars, it) {
+			RzAnalysisVar *var = *it;
 			rz_cons_printf("* %s\n", var->name);
 			RzAnalysisVarAccess *acc;
 			rz_vector_foreach(&var->accesses, acc) {
@@ -276,7 +275,8 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 	if (type == '*') {
 		const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
 		rz_cons_printf("f-fcnvar*\n");
-		rz_list_foreach (list, iter, var) {
+		rz_pvector_foreach (&fcn->vars, it) {
+			RzAnalysisVar *var = *it;
 			rz_cons_printf("f fcnvar.%s @ %s%s%d\n", var->name, bp,
 				var->delta >= 0 ? "+" : "", var->delta);
 		}
@@ -290,14 +290,15 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 		pj_a(pj);
 	}
 	if (name && *name) {
-		var = rz_analysis_function_get_var_byname(fcn, name);
+		RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
 		if (var) {
 			if (var->isarg == vlt || vlt == IS_ARG_AND_VAR) {
 				var_accesses_list(fcn, var, pj, access_type, var->name);
 			}
 		}
 	} else {
-		rz_list_foreach (list, iter, var) {
+		rz_pvector_foreach (&fcn->vars, it) {
+			RzAnalysisVar *var = *it;
 			if (var->isarg == vlt || vlt == IS_ARG_AND_VAR) {
 				var_accesses_list(fcn, var, pj, access_type, var->name);
 			}
@@ -2624,24 +2625,23 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	}
 
 	const char *bp = NULL;
-	RzList *list;
-	RzListIter *iter;
-	RzAnalysisVar *var;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, state);
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, state);
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, state);
 		break;
-	case RZ_OUTPUT_MODE_RIZIN:
+	case RZ_OUTPUT_MODE_RIZIN: {
 		bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
 		rz_cons_printf("f-fcnvar*\n");
-		list = rz_analysis_var_all_list(core->analysis, fcn);
-		rz_list_foreach (list, iter, var) {
+		void **it;
+		rz_pvector_foreach (&fcn->vars, it) {
+			RzAnalysisVar *var = *it;
 			rz_cons_printf("f fcnvar.%s @ %s%s%d\n", var->name, bp,
 				var->delta >= 0 ? "+" : "", var->delta);
 		}
 		break;
+	}
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "sp");
@@ -2665,10 +2665,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_dis_refs_handler(RzCore *core, int 
 	}
 
 	ut64 oaddr = core->offset;
-	RzListIter *iter;
-	RzAnalysisVar *var;
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-	rz_list_foreach (list, iter, var) {
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		rz_cons_printf("* %s\n", var->name);
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach(&var->accesses, acc) {
@@ -2689,7 +2688,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_dis_refs_handler(RzCore *core, int 
 		}
 	}
 	rz_core_seek(core, oaddr, 0);
-	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2762,11 +2760,14 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_stackframe_handler(RzCore *core, in
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzListIter *iter;
-	RzAnalysisVar *p;
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-	rz_list_sort(list, delta_cmp2);
-	rz_list_foreach (list, iter, p) {
+	RzPVector *vars = rz_pvector_clone(&fcn->vars);
+	if (!vars) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_pvector_sort(vars, delta_cmp2);
+	void **it;
+	rz_pvector_foreach (vars, it) {
+		RzAnalysisVar *p = *it;
 		if (p->isarg || p->delta > 0) {
 			continue;
 		}
@@ -2775,8 +2776,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_stackframe_handler(RzCore *core, in
 		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", (ut64)-p->delta, p->name, pad, ptype);
 		free(ptype);
 	}
-	rz_list_sort(list, delta_cmp);
-	rz_list_foreach (list, iter, p) {
+	rz_pvector_sort(vars, delta_cmp);
+	rz_pvector_foreach (vars, it) {
+		RzAnalysisVar *p = *it;
 		if (!p->isarg && p->delta < 0) {
 			continue;
 		}
@@ -2787,7 +2789,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_stackframe_handler(RzCore *core, in
 		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, ptype);
 		free(ptype);
 	}
-	rz_list_free(list);
+	rz_pvector_free(vars);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2805,13 +2807,11 @@ static RzCmdStatus analysis_function_vars_accesses(RzCore *core, int access_type
 	}
 
 	if (!varname) {
-		RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-		RzListIter *iter;
-		RzAnalysisVar *var;
-		rz_list_foreach (list, iter, var) {
+		void **it;
+		rz_pvector_foreach (&fcn->vars, it) {
+			RzAnalysisVar *var = *it;
 			var_accesses_list(fcn, var, NULL, access_type, var->name);
 		}
-		rz_list_free(list);
 	} else {
 		RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, varname);
 		if (!var) {
