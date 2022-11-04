@@ -345,16 +345,21 @@ typedef struct rz_il_op_args_storew_t {
  */
 typedef struct rz_il_op_args_float_t {
 	RzFloatFormat r;
-	RzILOpFloat *f;
+	RzILOpBitVector *bv;
 } RzILOpArgsFloat;
+
+/**
+ * \brief op structure for unary without rmode
+ */
+struct rz_il_op_args_float_unary_t {
+	RzILOpFloat *f;
+};
 
 /**
  * \brief opstructure for fbits : ( 'r, 's ) format float -> 's bitv
  * fbits x is a bitvector representation of the floating-point number x.
  */
-typedef struct rz_il_op_args_fbis_t {
-	RzILOpFloat *f;
-} RzILOpArgsFbits;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFbits;
 
 /**
  * \brief op structure for 'f float -> bool
@@ -365,10 +370,6 @@ typedef struct rz_il_op_args_fbis_t {
  * [IS_FNEG] is_fpos x holds if x represents a positive number.
  * [IS_FPOS] is_fneg x hold if x represents a negative number.
  */
-struct rz_il_op_args_float_unary_t {
-	RzILOpFloat *f;
-};
-
 typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsFinite;
 typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsNan;
 typedef struct rz_il_op_args_float_unary_t RzILOpArgsIsInf;
@@ -432,8 +433,8 @@ typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastsfloat;
  * requal x y holds if rounding modes are equal.
  */
 typedef struct rz_il_op_args_float_requal_t {
-	RzFloatFormat x;
-	RzFloatFormat y;
+	RzFloatRMode x;
+	RzFloatRMode y;
 } RzILOpArgsFrequal;
 
 /**
@@ -468,8 +469,8 @@ typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFrsqrt;
  */
 struct rz_il_op_args_float_alg_binop_t {
 	RzFloatRMode rmode;
-	RzILOpFloat *a;
-	RzILOpFloat *b;
+	RzILOpFloat *x;
+	RzILOpFloat *y;
 };
 
 typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFadd;
@@ -486,9 +487,9 @@ typedef struct rz_il_op_args_float_alg_binop_t RzILOpArgsFpow;
  */
 struct rz_il_op_args_float_alg_terop_t {
 	RzFloatRMode rmode;
-	RzILOpFloat *a;
-	RzILOpFloat *b;
-	RzILOpFloat *c;
+	RzILOpFloat *x;
+	RzILOpFloat *y;
+	RzILOpFloat *z;
 };
 typedef struct rz_il_op_args_float_alg_terop_t RzILOpArgsFmad;
 
@@ -570,7 +571,7 @@ typedef enum {
 	RZ_IL_OP_FORDER,
 	RZ_IL_OP_FROUND,
 	RZ_IL_OP_FSQRT,
-	RZ_IL_FRSQRT,
+	RZ_IL_OP_FRSQRT,
 	RZ_IL_OP_FADD,
 	RZ_IL_OP_FSUB,
 	RZ_IL_OP_FMUL,
@@ -726,6 +727,40 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *h
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, ut32 n_bits);
+
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fbits(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_finite(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_nan(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_inf(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fzero(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fneg(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fpos(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fneg(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsucc(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpred(RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fdiv(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmod(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpown(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 
 ///////////////////////////////
 // Opcodes of type 'a effect //
