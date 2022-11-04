@@ -19,7 +19,7 @@ jobs:
       prettier: ${{ steps.filter.outputs.prettier }}
       python: ${{ steps.filter.outputs.python }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: dorny/paths-filter@v2
       id: filter
       with:
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install tools
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
@@ -102,7 +102,7 @@ jobs:
     if: ${{ needs.changes.outputs.clang-format == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
       run: sudo apt --assume-yes install wget software-properties-common lsb-release
@@ -128,7 +128,7 @@ jobs:
     if: ${{ needs.changes.outputs.prettier == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install prettier
       run: |
@@ -144,7 +144,7 @@ jobs:
     if: ${{ needs.changes.outputs.python == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install pylint, black, isort
       run: pip install pylint black isort
@@ -163,6 +163,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: REUSE Compliance Check
-      uses: fsfe/reuse-action@v1.1
+      uses: fsfe/reuse-action@v1
