@@ -607,15 +607,13 @@ static void autocmplt_cmd_arg_fcn_var(RzCore *core, RzLineNSCompletionResult *re
 	if (!fcn) {
 		return;
 	}
-	RzList *vars = rz_analysis_var_all_list(core->analysis, fcn);
-	RzListIter *iter;
-	RzAnalysisVar *var;
-	rz_list_foreach (vars, iter, var) {
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		if (!strncmp(var->name, s, len)) {
 			rz_line_ns_completion_result_add(res, var->name);
 		}
 	}
-	rz_list_free(vars);
 }
 
 static bool is_arg_type(const char *type) {

@@ -32,39 +32,24 @@ static void function_rename(RzCore *core, ut64 addr, const char *name) {
 
 static void variable_rename(RzCore *core, ut64 addr, int vindex, const char *name) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	ut64 a_tmp = core->offset;
-	int i = 0;
-	RzListIter *iter;
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-	RzAnalysisVar *var;
-
-	rz_list_foreach (list, iter, var) {
-		if (i == vindex) {
-			rz_core_seek(core, addr, false);
-			rz_core_analysis_var_rename(core, name, var->name);
-			rz_core_seek(core, a_tmp, false);
-			break;
-		}
-		++i;
+	if (!fcn || vindex < 0 || vindex >= rz_pvector_len(&fcn->vars)) {
+		return;
 	}
-	rz_list_free(list);
+	RzAnalysisVar *var = rz_pvector_at(&fcn->vars, vindex);
+	rz_analysis_var_rename(var, name, true);
 }
 
 static void variable_set_type(RzCore *core, ut64 addr, int vindex, const char *type) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-	RzListIter *iter;
-	RzAnalysisVar *var;
-
-	RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, NULL);
-	rz_list_foreach (list, iter, var) {
-		if (vindex == 0) {
-			rz_analysis_var_set_type(var, ttype, true);
-			break;
-		}
-		vindex--;
+	if (!fcn || vindex < 0 || vindex >= rz_pvector_len(&fcn->vars)) {
+		return;
 	}
-	rz_list_free(list);
+	RzAnalysisVar *var = rz_pvector_at(&fcn->vars, vindex);
+	RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, NULL);
+	if (!ttype) {
+		return;
+	}
+	rz_analysis_var_set_type(var, ttype, true);
 }
 
 /**
@@ -218,11 +203,11 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 	int i = 0;
 	const ut64 addr = var_functions_show(core, idx, 0, cols);
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
+	if (!fcn) {
+		return addr;
+	}
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
-	RzListIter *iter;
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-	RzAnalysisVar *var;
 	// Adjust the window size automatically.
 	(void)rz_cons_get_size(&window);
 	window -= 8; // Size of printed things.
@@ -230,12 +215,14 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 	// A new line so this looks reasonable.
 	rz_cons_newline();
 
-	int llen = rz_list_length(list);
+	int llen = rz_pvector_len(&fcn->vars);
 	if (*vindex >= llen) {
 		*vindex = llen - 1;
 	}
 
-	rz_list_foreach (list, iter, var) {
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		if (i >= wdelta) {
 			if (i > window + wdelta) {
 				rz_cons_printf("...\n");
@@ -279,7 +266,6 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 		}
 		++i;
 	}
-	rz_list_free(list);
 	return addr;
 }
 

@@ -2169,15 +2169,15 @@ tx size_t
 tx "size_t *"
 EOF
 EXPECT=<<EOF
+int64_t
+const char *
+uint64_t
 int
 char **
-int64_t
-const char *
-uint64_t
 =
-uint64_t
 int64_t
 const char *
+uint64_t
 const void *
 size_t
 mbstate_t *

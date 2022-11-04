@@ -670,11 +670,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	RzAnalysisFunction *tmp_fcn = rz_analysis_get_fcn_in(analysis, addr, 0);
 	if (tmp_fcn) {
 		// Checks if var is already analyzed at given addr
-		RzList *list = rz_analysis_var_all_list(analysis, tmp_fcn);
-		if (!rz_list_empty(list)) {
+		if (!rz_pvector_empty(&tmp_fcn->vars)) {
 			varset = true;
 		}
-		rz_list_free(list);
 	}
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
 	ut64 movscale = 0;
@@ -2512,16 +2510,14 @@ static int typecmp(const void *a, const void *b) {
 }
 
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	RzListIter *iter;
-	RzAnalysisVar *var;
-	RzList *list = rz_analysis_var_all_list(analysis, fcn);
 	RzList *type_used = rz_list_new();
-	rz_list_foreach (list, iter, var) {
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		rz_list_append(type_used, var->type);
 	}
 	RzList *uniq = rz_list_uniq(type_used, typecmp);
 	rz_list_free(type_used);
-	rz_list_free(list);
 	return uniq;
 }
 

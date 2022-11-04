@@ -46,14 +46,11 @@ static RZ_OWN RzType *var_type_clone_or_default_type(RzAnalysis *analysis, RZ_BO
 
 RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(a && fcn, false);
-	RzListIter *it;
-	RzAnalysisVar *var;
-	RzList *var_list = rz_analysis_var_all_list(a, fcn);
-	rz_return_val_if_fail(var_list, false);
-
-	rz_list_foreach (var_list, it, var) {
-		// Resync delta in case the registers list changed
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		if (var->isarg && var->kind == 'r') {
+			// Resync delta in case the registers list changed
 			RzRegItem *reg = rz_reg_get(a->reg, var->regname, -1);
 			if (reg) {
 				if (var->delta != reg->index) {
@@ -62,8 +59,6 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 			}
 		}
 	}
-
-	rz_list_free(var_list);
 	return true;
 }
 
