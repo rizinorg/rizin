@@ -68,7 +68,6 @@ RZ_API void rz_vector_fini(RzVector *vec);
 // frees the vector and calls vec->free on every element if set.
 RZ_API void rz_vector_free(RzVector *vec);
 
-// the returned vector will have the same capacity as vec.
 RZ_API RzVector *rz_vector_clone(RzVector *vec);
 
 static inline bool rz_vector_empty(const RzVector *vec) {
@@ -227,6 +226,11 @@ RZ_API void rz_pvector_clear(RzPVector *vec);
 
 // free the vector and call vec->v.free on every element.
 RZ_API void rz_pvector_free(RzPVector *vec);
+
+/// See rz_vector_clone() for detailed semantics
+static inline RzPVector *rz_pvector_clone(RzPVector *vec) {
+	return (RzPVector *)rz_vector_clone(&vec->v);
+}
 
 static inline size_t rz_pvector_len(const RzPVector *vec) {
 	rz_return_val_if_fail(vec, 0);

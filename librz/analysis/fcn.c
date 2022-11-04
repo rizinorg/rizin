@@ -427,7 +427,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 				continue;
 			}
 			// vars_used will get modified if rz_analysis_var_remove_access_at gets called
-			RzPVector *cloned_vars_used = (RzPVector *)rz_vector_clone((RzVector *)vars_used);
+			RzPVector *cloned_vars_used = rz_pvector_clone(vars_used);
 			void **it;
 			rz_pvector_foreach (cloned_vars_used, it) {
 				RzAnalysisVar *other_var = *it;
@@ -1918,7 +1918,7 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 		rz_analysis_function_delete_all_vars(f);
 	}
 	size_t args_count = rz_pvector_len(callable->args);
-	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&f->vars);
+	RzPVector *cloned_vars = rz_pvector_clone(&f->vars);
 	rz_pvector_foreach (cloned_vars, it) {
 		RzAnalysisVar *var = *it;
 		if (!var->isarg) {
@@ -2314,7 +2314,7 @@ static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 fro
 		}
 		RzPVector *vars = rz_analysis_function_get_vars_used_at(fcn, addr);
 		if (vars) {
-			RzPVector *vars_clone = (RzPVector *)rz_vector_clone((RzVector *)vars);
+			RzPVector *vars_clone = rz_pvector_clone(vars);
 			void **v;
 			rz_pvector_foreach (vars_clone, v) {
 				rz_analysis_var_remove_access_at((RzAnalysisVar *)*v, addr);

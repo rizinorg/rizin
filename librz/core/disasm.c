@@ -6584,8 +6584,9 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 	RzPVector ocache = core->io->cache;
 	const int ocached = core->io->cached;
 	if (ocache.v.a) {
-		RzPVector *vec = (RzPVector *)rz_vector_clone((RzVector *)&ocache);
+		RzPVector *vec = rz_pvector_clone(&ocache);
 		vec->v.free = NULL;
+		vec->v.free_user = ocache.v.free_user;
 		core->io->cache = *vec;
 		free(vec);
 	} else {

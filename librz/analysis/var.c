@@ -97,7 +97,7 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 		return;
 	}
 	// delete variables which are overlaid by the variable type
-	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&var->fcn->vars);
+	RzPVector *cloned_vars = rz_pvector_clone(&var->fcn->vars);
 	void **it;
 	rz_pvector_foreach (cloned_vars, it) {
 		RzAnalysisVar *other = *it;
@@ -231,7 +231,7 @@ RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
 
 RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn) {
 	void **v;
-	RzPVector *vars_clone = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
+	RzPVector *vars_clone = rz_pvector_clone(&fcn->vars);
 	rz_pvector_foreach (vars_clone, v) {
 		RzAnalysisVar *var = *v;
 		if (rz_vector_empty(&var->accesses)) {
