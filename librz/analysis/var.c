@@ -1137,25 +1137,6 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 }
 
-RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	// rz_analysis_var_list if there are not vars with that kind returns a list with
-	// zero element.. which is an unnecessary loss of cpu time
-	RzList *list = rz_list_new();
-	if (!list) {
-		return NULL;
-	}
-	RzList *reg_vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_REG);
-	RzList *bpv_vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
-	RzList *spv_vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_SPV);
-	rz_list_join(list, reg_vars);
-	rz_list_join(list, bpv_vars);
-	rz_list_join(list, spv_vars);
-	rz_list_free(reg_vars);
-	rz_list_free(bpv_vars);
-	rz_list_free(spv_vars);
-	return list;
-}
-
 static void var_field_free(RzAnalysisVarField *field) {
 	if (!field) {
 		return;
