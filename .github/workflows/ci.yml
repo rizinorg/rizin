@@ -977,7 +977,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
       - name: Download subprojects
@@ -985,22 +985,22 @@ jobs:
           export PATH=${HOME}/.local/bin:${PATH}
           meson subprojects download
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker meta
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
+        uses: docker/metadata-action@v4
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Publish to Registry
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./Dockerfile
