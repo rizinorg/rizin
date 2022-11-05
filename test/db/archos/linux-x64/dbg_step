@@ -61,6 +61,7 @@ NAME=ds on calls and jumps
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 2ds
 dr rip
@@ -89,7 +90,12 @@ rip = 0x000000000040055b
 rip = 0x0000000000400567
 rip = 0x000000000040056e
 rip = 0x0000000000400510
-Hello world
+EOF
+REGEXP_FILTER_ERR=<<EOF
+Process exited[ a-zA-Z0-9=]+
+EOF
+EXPECT_ERR=<<EOF
+Process exited with status=0x0
 EOF
 RUN
 
@@ -97,6 +103,7 @@ NAME=dso on call 1
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 ds
 dr rip
@@ -113,6 +120,7 @@ NAME=dso on call 2
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 3ds
 dr rip
@@ -129,6 +137,7 @@ NAME=dso on call 3
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 5ds
 dr rip
@@ -145,6 +154,7 @@ NAME=dso on call 4
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 6ds
 dr rip
