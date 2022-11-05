@@ -66,6 +66,7 @@ NAME=debug stepback from caller
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
+wao nop @ 0x00400529
 db @ main
 db @ 0x0040057c
 dc
