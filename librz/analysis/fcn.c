@@ -427,7 +427,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 				continue;
 			}
 			// vars_used will get modified if rz_analysis_var_remove_access_at gets called
-			RzPVector *cloned_vars_used = (RzPVector *)rz_vector_clone((RzVector *)vars_used);
+			RzPVector *cloned_vars_used = rz_pvector_clone(vars_used);
 			void **it;
 			rz_pvector_foreach (cloned_vars_used, it) {
 				RzAnalysisVar *other_var = *it;
@@ -670,11 +670,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	RzAnalysisFunction *tmp_fcn = rz_analysis_get_fcn_in(analysis, addr, 0);
 	if (tmp_fcn) {
 		// Checks if var is already analyzed at given addr
-		RzList *list = rz_analysis_var_all_list(analysis, tmp_fcn);
-		if (!rz_list_empty(list)) {
+		if (!rz_pvector_empty(&tmp_fcn->vars)) {
 			varset = true;
 		}
-		rz_list_free(list);
 	}
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
 	ut64 movscale = 0;
@@ -1918,7 +1916,7 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 		rz_analysis_function_delete_all_vars(f);
 	}
 	size_t args_count = rz_pvector_len(callable->args);
-	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&f->vars);
+	RzPVector *cloned_vars = rz_pvector_clone(&f->vars);
 	rz_pvector_foreach (cloned_vars, it) {
 		RzAnalysisVar *var = *it;
 		if (!var->isarg) {
@@ -2314,7 +2312,7 @@ static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 fro
 		}
 		RzPVector *vars = rz_analysis_function_get_vars_used_at(fcn, addr);
 		if (vars) {
-			RzPVector *vars_clone = (RzPVector *)rz_vector_clone((RzVector *)vars);
+			RzPVector *vars_clone = rz_pvector_clone(vars);
 			void **v;
 			rz_pvector_foreach (vars_clone, v) {
 				rz_analysis_var_remove_access_at((RzAnalysisVar *)*v, addr);
@@ -2442,27 +2440,6 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 }
 
 /**
- * \brief Returns the argument count of a function
- *
- * \param a RzAnalysis instance
- * \param f Function
- */
-RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn) {
-	if (!a || !fcn) {
-		return 0;
-	}
-	void **it;
-	size_t count = 0;
-	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalysisVar *var = *it;
-		if (var->isarg) {
-			count++;
-		}
-	}
-	return count;
-}
-
-/**
  * \brief Returns vector of all function arguments
  *
  * \param a RzAnalysis instance
@@ -2533,16 +2510,14 @@ static int typecmp(const void *a, const void *b) {
 }
 
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	RzListIter *iter;
-	RzAnalysisVar *var;
-	RzList *list = rz_analysis_var_all_list(analysis, fcn);
 	RzList *type_used = rz_list_new();
-	rz_list_foreach (list, iter, var) {
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		rz_list_append(type_used, var->type);
 	}
 	RzList *uniq = rz_list_uniq(type_used, typecmp);
 	rz_list_free(type_used);
-	rz_list_free(list);
 	return uniq;
 }
 

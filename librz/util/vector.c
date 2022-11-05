@@ -84,8 +84,8 @@ static bool vector_clone(RzVector *dst, RzVector *src) {
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
-	dst->free = src->free;
-	dst->free_user = src->free_user;
+	dst->free = NULL;
+	dst->free_user = NULL;
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {
@@ -98,6 +98,13 @@ static bool vector_clone(RzVector *dst, RzVector *src) {
 	return true;
 }
 
+/**
+ * Construct a new vector with the same contents and capacity as \p vec.
+ *
+ * The free function of the resulting vector will be NULL, so if elements are considered
+ * to be owned and freed by \p vec, this will still be the case and the returned vector
+ * only borrows them.
+ */
 RZ_API RzVector *rz_vector_clone(RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	RzVector *ret = RZ_NEW(RzVector);

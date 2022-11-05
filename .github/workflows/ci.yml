@@ -24,7 +24,7 @@ jobs:
     outputs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -160,7 +160,7 @@ jobs:
       - name: Show available memory on Linux
         if: matrix.os != 'macos-12' && matrix.enabled
         run: free -h
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: matrix.enabled
         with:
           fetch-depth: 2
@@ -175,7 +175,7 @@ jobs:
         run: pip3 install --user meson ninja PyYAML
       - name: Checkout rzpipe
         if: matrix.enabled
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
@@ -245,13 +245,13 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Checkout our Testsuite Binaries
         if: matrix.enabled
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: rizinorg/rizin-testbins
           path: test/bins
       - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
@@ -298,7 +298,7 @@ jobs:
           CC: ${{ matrix.compiler }}
       - name: Upload test results
         if: always() && matrix.run_tests && matrix.enabled
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-results-${{ matrix.name }}
           path: test/results.json

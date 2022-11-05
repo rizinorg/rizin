@@ -1770,8 +1770,8 @@ static void diff_graph_function_detail_as_json(const char *object_name, RzAnalys
 	free(fcn_name);
 	pj_kn(pj, "offset", fcn->addr);
 	pj_ki(pj, "ninstr", fcn->ninstr);
-	pj_kn(pj, "nargs", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT));
-	pj_kn(pj, "nlocals", rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_LOCAL));
+	pj_kn(pj, "nargs", rz_analysis_arg_count(fcn));
+	pj_kn(pj, "nlocals", rz_analysis_var_local_count(fcn));
 	pj_kn(pj, "size", rz_analysis_function_linear_size(fcn));
 	pj_ki(pj, "stack", fcn->maxstack);
 	pj_ks(pj, "type", rz_analysis_fcntype_tostring(fcn->type));

@@ -5154,16 +5154,14 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 }
 
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name) {
-	RzListIter *iter;
-	RzAnalysisVar *p;
-	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	rz_list_foreach (list, iter, p) {
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *p = *it;
 		char *r = rz_core_analysis_var_display(core, p, add_name);
 		rz_strbuf_append(sb, r);
 		free(r);
 	}
-	rz_list_free(list);
 	return rz_strbuf_drain(sb);
 }
 

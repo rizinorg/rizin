@@ -4952,8 +4952,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 			rz_list_free(list);
 			nargs = DEFAULT_NARGS;
 			if (fcn) {
-				// @TODO: fcn->nargs should be updated somewhere and used here instead
-				nargs = rz_analysis_var_count_total(fcn, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
+				nargs = rz_analysis_arg_count(fcn);
 			}
 			if (nargs > 0) {
 				ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
@@ -6585,8 +6584,9 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 	RzPVector ocache = core->io->cache;
 	const int ocached = core->io->cached;
 	if (ocache.v.a) {
-		RzPVector *vec = (RzPVector *)rz_vector_clone((RzVector *)&ocache);
+		RzPVector *vec = rz_pvector_clone(&ocache);
 		vec->v.free = NULL;
+		vec->v.free_user = ocache.v.free_user;
 		core->io->cache = *vec;
 		free(vec);
 	} else {

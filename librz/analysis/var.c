@@ -46,14 +46,11 @@ static RZ_OWN RzType *var_type_clone_or_default_type(RzAnalysis *analysis, RZ_BO
 
 RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(a && fcn, false);
-	RzListIter *it;
-	RzAnalysisVar *var;
-	RzList *var_list = rz_analysis_var_all_list(a, fcn);
-	rz_return_val_if_fail(var_list, false);
-
-	rz_list_foreach (var_list, it, var) {
-		// Resync delta in case the registers list changed
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
 		if (var->isarg && var->kind == 'r') {
+			// Resync delta in case the registers list changed
 			RzRegItem *reg = rz_reg_get(a->reg, var->regname, -1);
 			if (reg) {
 				if (var->delta != reg->index) {
@@ -62,8 +59,6 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 			}
 		}
 	}
-
-	rz_list_free(var_list);
 	return true;
 }
 
@@ -97,7 +92,7 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 		return;
 	}
 	// delete variables which are overlaid by the variable type
-	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&var->fcn->vars);
+	RzPVector *cloned_vars = rz_pvector_clone(&var->fcn->vars);
 	void **it;
 	rz_pvector_foreach (cloned_vars, it) {
 		RzAnalysisVar *other = *it;
@@ -231,7 +226,7 @@ RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
 
 RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn) {
 	void **v;
-	RzPVector *vars_clone = (RzPVector *)rz_vector_clone((RzVector *)&fcn->vars);
+	RzPVector *vars_clone = rz_pvector_clone(&fcn->vars);
 	rz_pvector_foreach (vars_clone, v) {
 		RzAnalysisVar *var = *v;
 		if (rz_vector_empty(&var->accesses)) {
@@ -602,57 +597,35 @@ static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, R
 	return false;
 }
 
-/**
- * \brief      Counts the number of var types based on their kind
- *
- * \param      fcn   The RzAnalysisFunction to use
- * \param[in]  kind  The kind of the vars
- * \param[in]  type  The type of the vars
- *
- * \return     The counted number of var types based on their kind
- */
-RZ_API size_t rz_analysis_var_count(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzAnalysisVarType type) {
-	rz_return_val_if_fail(fcn && IS_VALID_VAR_KIND(kind) && type < RZ_ANALYSIS_VAR_TYPE_SIZE, 0);
+RZ_API bool rz_analysis_var_is_arg(RzAnalysisVar *var) {
+	return var->isarg || var->kind == RZ_ANALYSIS_VAR_KIND_REG; // reg vars are always arguments for now
+}
 
+static size_t count_vars(RZ_NONNULL RzAnalysisFunction *fcn, bool args) {
+	rz_return_val_if_fail(fcn, 0);
 	size_t count = 0;
-	RzAnalysisVar *var = NULL;
-	RzListIter *iter = NULL;
-	RzList *list = rz_analysis_var_list(fcn, kind);
-	if (!list) {
-		return 0;
-	}
-
-	if (kind == RZ_ANALYSIS_VAR_KIND_REG && type == RZ_ANALYSIS_VAR_TYPE_ARGUMENT) {
-		// all registers types are considered as arguments.
-		count = rz_list_length(list);
-		goto end;
-	}
-
-	rz_list_foreach (list, iter, var) {
-		if (type == RZ_ANALYSIS_VAR_TYPE_LOCAL) {
-			count += var->isarg ? 0 : 1;
-		} else /* if (type == RZ_ANALYSIS_VAR_TYPE_ARGUMENT) */ {
-			count += var->isarg ? 1 : 0;
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
+		if (rz_analysis_var_is_arg(var) == args) {
+			count++;
 		}
 	}
-
-end:
-	rz_list_free(list);
 	return count;
 }
+
 /**
- * \brief      Counts the total number of var types
- *
- * \param      fcn   The RzAnalysisFunction to use
- * \param[in]  type  The type of the vars
- *
- * \return     The total number of var of a specific type
+ * \brief Count the local (non-argument) variables in the given function
  */
-RZ_API size_t rz_analysis_var_count_total(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarType type) {
-	rz_return_val_if_fail(fcn && type < RZ_ANALYSIS_VAR_TYPE_SIZE, 0);
-	return rz_analysis_var_count(fcn, RZ_ANALYSIS_VAR_KIND_REG, type) +
-		rz_analysis_var_count(fcn, RZ_ANALYSIS_VAR_KIND_BPV, type) +
-		rz_analysis_var_count(fcn, RZ_ANALYSIS_VAR_KIND_SPV, type);
+RZ_API size_t rz_analysis_var_local_count(RZ_NONNULL RzAnalysisFunction *fcn) {
+	return count_vars(fcn, false);
+}
+
+/**
+ * \brief Count the argument variables in the given function
+ */
+RZ_API size_t rz_analysis_arg_count(RZ_NONNULL RzAnalysisFunction *fcn) {
+	return count_vars(fcn, true);
 }
 
 static const char *get_regname(RzAnalysis *analysis, RzAnalysisValue *value) {
@@ -945,6 +918,19 @@ static bool is_reg_in_src(const char *regname, RzAnalysis *analysis, RzAnalysisO
 	return (STR_EQUAL(regname, opsreg0)) || (STR_EQUAL(regname, opsreg1)) || (STR_EQUAL(regname, opsreg2));
 }
 
+static size_t count_reg_arg_vars(RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(fcn, 0);
+	size_t count = 0;
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
+		if (var->kind == RZ_ANALYSIS_VAR_KIND_REG && rz_analysis_var_is_arg(var)) {
+			count++;
+		}
+	}
+	return count;
+}
+
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	rz_return_if_fail(analysis && op && fcn);
@@ -989,9 +975,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			if (callee) {
 				callee_rargs = RZ_MIN(max_count, rz_type_func_args_count(analysis->typedb, callee));
 			}
-			callee_rargs = callee_rargs
-				? callee_rargs
-				: rz_analysis_var_count(f, RZ_ANALYSIS_VAR_KIND_REG, RZ_ANALYSIS_VAR_TYPE_ARGUMENT);
+			callee_rargs = callee_rargs ? callee_rargs : count_reg_arg_vars(f);
 			callee_rargs_l = rz_analysis_var_list(f, RZ_ANALYSIS_VAR_KIND_REG);
 		}
 		size_t i;
