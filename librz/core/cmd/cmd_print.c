@@ -4653,22 +4653,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_core_magic(core, filename, true, NULL);
 		}
 		break;
-	case 'u': // "pu"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pu[w0] [len]       print N url"
-				       "encoded bytes (w=wide, 0=stop at nil)\n");
-		} else {
-			if (l > 0) {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block;
-				opt.length = len;
-				opt.encoding = input[1] == 'w' ? RZ_STRING_ENC_UTF16LE : RZ_STRING_ENC_8BIT;
-				opt.stop_at_nil = input[1] == '0';
-				opt.urlencode = true;
-				core_print_raw_buffer(&opt);
-			}
-		}
-		break;
 	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
@@ -6569,4 +6553,38 @@ RZ_IPI RzCmdStatus rz_print_value4_handler(RzCore *core, int argc, const char **
 
 RZ_IPI RzCmdStatus rz_print_value8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return print_value_size(core, state, argc, argv, 8);
+}
+
+RZ_IPI RzCmdStatus rz_print_url_encode_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.urlencode = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_url_encode_wide_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.encoding = RZ_STRING_ENC_UTF16LE;
+	opt.urlencode = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.stop_at_nil = true;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.urlencode = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
 }

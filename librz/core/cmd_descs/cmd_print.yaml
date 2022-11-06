@@ -922,3 +922,27 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
         args: []
+  - name: pu
+    summary: URL-encoded strings
+    subcommands:
+      - name: pu
+        summary: Print <N> bytes as URL-encoded UTF-8 string
+        cname: print_url_encode
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: puw
+        summary: Print <N> bytes as URL-encoded UTF-16 string
+        cname: print_url_encode_wide
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pu0
+        summary: Print <N> bytes as URL-encoded string and stop at zero
+        cname: print_url_encode_zero
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
