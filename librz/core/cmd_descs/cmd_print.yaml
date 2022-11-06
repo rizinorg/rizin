@@ -461,6 +461,20 @@ commands:
       - name: hexpair
         type: RZ_CMD_ARG_TYPE_STRING
         optional: false
+  - name: pI
+    summary: Print instructions
+    subcommands:
+      - name: pI
+        summary: Print <N> instructions/bytes
+        cname: print_instructions
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pIf
+        summary: Print all instructions at the current function
+        cname: print_instructions_function
+        args: []
   - name: pt
     summary: Print timestamps
     cname: cmd_print_timestamp

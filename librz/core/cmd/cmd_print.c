@@ -4012,6 +4012,24 @@ RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, cons
 	return rz_assembly_of_hex_handler(core, argc, argv, mode);
 }
 
+RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	rz_core_print_disasm_instructions(core, len, 0);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc, const char **argv) {
+	const RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!f) {
+		RZ_LOG_ERROR("Cannot function at the specified address\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 fcn_size = rz_analysis_function_linear_size((RzAnalysisFunction *)f);
+	rz_core_print_disasm_instructions(core, fcn_size, 0);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_esil_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut8 *hex = calloc(1, strlen(argv[1]) + 1);
 	if (!hex) {
@@ -4164,29 +4182,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		return cmd_print_blocks(core, input + 1);
 	case '=': // "p="
 		cmd_print_bars(core, input);
-		break;
-	case 'I': // "pI"
-		switch (input[1]) {
-		case 'f': // "pIf"
-		{
-			const RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
-				RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-			if (f) {
-				rz_core_print_disasm_instructions(core,
-					rz_analysis_function_linear_size((RzAnalysisFunction *)f), 0);
-				break;
-			}
-			break;
-		}
-		case '?': // "pi?"
-			rz_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
-				       "(f=func) (see pi? and pdq)\n");
-			break;
-		default:
-			if (l) {
-				rz_core_print_disasm_instructions(core, l, 0);
-			}
-		}
 		break;
 	case 'i': // "pi"
 		switch (input[1]) {
