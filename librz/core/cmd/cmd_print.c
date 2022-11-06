@@ -168,7 +168,6 @@ static const char *help_msg_p[] = {
 	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
 	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
-	"pA", "[n_ops]", "show n_ops address and type",
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
 	"pc", "[?][p] [len]", "output C (or python) format",
@@ -4166,25 +4165,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	case '=': // "p="
 		cmd_print_bars(core, input);
 		break;
-	case 'A': // "pA"
-	{
-		const ut64 saved_from = rz_config_get_i(core->config, "search.from"),
-			   saved_to = rz_config_get_i(core->config, "search.to"),
-			   saved_maxhits = rz_config_get_i(core->config, "search.maxhits");
-
-		int want = rz_num_math(core->num, input + 1);
-		if (input[1] == '?') {
-			rz_core_cmd0(core, "/A?");
-		} else {
-			rz_config_set_i(core->config, "search.maxhits", want);
-			rz_config_set_i(core->config, "search.from", core->offset);
-			rz_config_set_i(core->config, "search.to", core->offset + core->blocksize);
-			rz_core_cmd0(core, "/A");
-			rz_config_set_i(core->config, "search.maxhits", saved_maxhits);
-			rz_config_set_i(core->config, "search.from", saved_from);
-			rz_config_set_i(core->config, "search.to", saved_to);
-		}
-	} break;
 	case 'I': // "pI"
 		switch (input[1]) {
 		case 'f': // "pIf"
