@@ -348,7 +348,7 @@ RUN
 
 NAME=mach0 fat kext reloc patching x86
 FILE=bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
-ARGS=-a x86
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 i~arch
 i~type
@@ -1041,7 +1041,7 @@ RUN
 
 NAME=mach0 fat kext reloc patching arm64
 FILE=bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
-ARGS=-a arm
+ARGS=-a arm -b 64
 CMDS=<<EOF
 i~arch
 i~type
