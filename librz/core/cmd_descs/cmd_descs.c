@@ -526,6 +526,7 @@ static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
 static const RzCmdDescArg assembly_of_hex_alias_args[2];
+static const RzCmdDescArg print_instructions_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
@@ -12269,6 +12270,32 @@ static const RzCmdDescHelp assembly_of_hex_alias_help = {
 	.args = assembly_of_hex_alias_args,
 };
 
+static const RzCmdDescHelp pI_help = {
+	.summary = "Print instructions",
+};
+static const RzCmdDescArg print_instructions_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_instructions_help = {
+	.summary = "Print <N> instructions/bytes",
+	.args = print_instructions_args,
+};
+
+static const RzCmdDescArg print_instructions_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_instructions_function_help = {
+	.summary = "Print all instructions at the current function",
+	.args = print_instructions_function_args,
+};
+
 static const RzCmdDescHelp cmd_print_timestamp_help = {
 	.summary = "Print timestamps",
 };
@@ -18484,6 +18511,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
 	rz_warn_if_fail(assembly_of_hex_alias_cd);
+
+	RzCmdDesc *pI_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pI", rz_print_instructions_handler, &print_instructions_help, &pI_help);
+	rz_warn_if_fail(pI_cd);
+	RzCmdDesc *print_instructions_function_cd = rz_cmd_desc_argv_new(core->rcmd, pI_cd, "pIf", rz_print_instructions_function_handler, &print_instructions_function_help);
+	rz_warn_if_fail(print_instructions_function_cd);
 
 	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
 	rz_warn_if_fail(cmd_print_timestamp_cd);
