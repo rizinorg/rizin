@@ -2301,7 +2301,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 /* Uses data from clipboard if value is NULL */
 static bool print_operation_transform(RzCore *core, RzCoreWriteOp op, RZ_NULLABLE const char *val) {
 	ut8 *hex = NULL;
-	int hexlen = -1, buflen = -1;
+	size_t hexlen = 0, buflen = 0;
 	if (val) {
 		hex = RZ_NEWS(ut8, (strlen(val) + 1) / 2);
 		if (!hex) {
