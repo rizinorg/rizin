@@ -564,6 +564,9 @@ static const RzCmdDescArg print_hexdump_hex8_args[2];
 static const RzCmdDescArg print_hexdump_hex8l_args[2];
 static const RzCmdDescArg print_hexdump_oct_args[2];
 static const RzCmdDescArg print_hexdump_n_lines_args[2];
+static const RzCmdDescArg print_url_encode_args[2];
+static const RzCmdDescArg print_url_encode_wide_args[2];
+static const RzCmdDescArg print_url_encode_zero_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -12925,6 +12928,54 @@ static const RzCmdDescHelp cmd_base64_decode_help = {
 	.args = cmd_base64_decode_args,
 };
 
+static const RzCmdDescHelp pu_help = {
+	.summary = "URL-encoded strings",
+};
+static const RzCmdDescArg print_url_encode_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_url_encode_help = {
+	.summary = "Print <N> bytes as URL-encoded UTF-8 string",
+	.args = print_url_encode_args,
+};
+
+static const RzCmdDescArg print_url_encode_wide_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_url_encode_wide_help = {
+	.summary = "Print <N> bytes as URL-encoded UTF-16 string",
+	.args = print_url_encode_wide_args,
+};
+
+static const RzCmdDescArg print_url_encode_zero_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_url_encode_zero_help = {
+	.summary = "Print <N> bytes as URL-encoded string and stop at zero",
+	.args = print_url_encode_zero_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -18574,6 +18625,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_base64_decode_cd = rz_cmd_desc_argv_modes_new(core->rcmd, p6_cd, "p6d", RZ_OUTPUT_MODE_STANDARD, rz_cmd_base64_decode_handler, &cmd_base64_decode_help);
 	rz_warn_if_fail(cmd_base64_decode_cd);
+
+	RzCmdDesc *pu_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pu", rz_print_url_encode_handler, &print_url_encode_help, &pu_help);
+	rz_warn_if_fail(pu_cd);
+	RzCmdDesc *print_url_encode_wide_cd = rz_cmd_desc_argv_new(core->rcmd, pu_cd, "puw", rz_print_url_encode_wide_handler, &print_url_encode_wide_help);
+	rz_warn_if_fail(print_url_encode_wide_cd);
+
+	RzCmdDesc *print_url_encode_zero_cd = rz_cmd_desc_argv_new(core->rcmd, pu_cd, "pu0", rz_print_url_encode_zero_handler, &print_url_encode_zero_help);
+	rz_warn_if_fail(print_url_encode_zero_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

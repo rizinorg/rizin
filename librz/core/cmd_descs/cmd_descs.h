@@ -1839,6 +1839,12 @@ RZ_IPI RzCmdStatus rz_print_hexdump_n_lines_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_base64_encode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "p6d"
 RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pu"
+RZ_IPI RzCmdStatus rz_print_url_encode_handler(RzCore *core, int argc, const char **argv);
+// "puw"
+RZ_IPI RzCmdStatus rz_print_url_encode_wide_handler(RzCore *core, int argc, const char **argv);
+// "pu0"
+RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, const char **argv);
 // "p"
 RZ_IPI int rz_cmd_print(void *data, const char *input);
 // "Ps"
