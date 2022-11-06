@@ -927,9 +927,8 @@ RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s)
  * \param buflen Used to return the length of the returned buffer
  * \return The transformed buffer
  */
-RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen) {
+RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, RZ_NULLABLE ut8 *hex, size_t hexlen, size_t *buflen) {
 	rz_return_val_if_fail(core, NULL);
-	rz_return_val_if_fail(!hex || hexlen >= 0, NULL);
 	rz_return_val_if_fail(buflen, NULL);
 
 	switch (op) {
@@ -942,7 +941,7 @@ RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp o
 	case RZ_CORE_WRITE_OP_XOR:
 	case RZ_CORE_WRITE_OP_SHIFT_LEFT:
 	case RZ_CORE_WRITE_OP_SHIFT_RIGHT:
-		rz_return_val_if_fail(hex && hexlen >= 0, NULL);
+		rz_return_val_if_fail(hex, NULL);
 		break;
 	default:
 		break;
@@ -1017,7 +1016,7 @@ RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp o
 			break;
 		}
 	}
-	*buflen = len;
+	*buflen = (size_t)len;
 	return buf;
 }
 
@@ -1031,8 +1030,8 @@ RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp o
  * \param hexlen Optional length of the \p hex string. Must be present if \p hex is specified.
  * \return true if the write operation succeeds, false otherwise
  */
-RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen) {
-	int buflen;
+RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, RZ_NULLABLE ut8 *hex, size_t hexlen) {
+	size_t buflen;
 	ut8 *buf = rz_core_transform_op(core, addr, op, hex, hexlen, &buflen);
 	if (!buf) {
 		return false;
