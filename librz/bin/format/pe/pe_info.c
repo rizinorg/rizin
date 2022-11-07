@@ -45,6 +45,7 @@ char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
 		case PE_IMAGE_FILE_MACHINE_MIPSFPU16: machine = "Mips FPU 16"; break;
 		case PE_IMAGE_FILE_MACHINE_POWERPC: machine = "PowerPC"; break;
 		case PE_IMAGE_FILE_MACHINE_POWERPCFP: machine = "PowerPC FP"; break;
+		case PE_IMAGE_FILE_MACHINE_POWERPC_BE: machine = "PowerPC BE"; break;
 		case PE_IMAGE_FILE_MACHINE_R10000: machine = "R10000"; break;
 		case PE_IMAGE_FILE_MACHINE_R3000: machine = "R3000"; break;
 		case PE_IMAGE_FILE_MACHINE_R4000: machine = "R4000"; break;
@@ -137,6 +138,7 @@ char *PE_(rz_bin_pe_get_arch)(RzBinPEObj *bin) {
 		break;
 	case PE_IMAGE_FILE_MACHINE_POWERPC:
 	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
+	case PE_IMAGE_FILE_MACHINE_POWERPC_BE:
 		arch = strdup("ppc");
 		break;
 	case PE_IMAGE_FILE_MACHINE_EBC:
