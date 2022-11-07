@@ -351,6 +351,8 @@ int PE_(rz_bin_pe_is_big_endian)(RzBinPEObj *bin) {
 	if (arch == PE_IMAGE_FILE_MACHINE_I386 ||
 		arch == PE_IMAGE_FILE_MACHINE_AMD64) {
 		return false;
+	} else if (arch == PE_IMAGE_FILE_MACHINE_POWERPC_BE) {
+		return true;
 	}
 	return HASCHR(PE_IMAGE_FILE_BYTES_REVERSED_HI);
 }
