@@ -14,20 +14,6 @@
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static const char *help_msg_pp[] = {
-	"Usage: pp[d]", "", "print patterns",
-	"pp0", "", "print buffer filled with zeros",
-	"pp1", "", "print incremental byte pattern (honor lower bits of cur address and bsize)",
-	"pp2", "", "print incremental word pattern",
-	"pp4", "", "print incremental dword pattern",
-	"pp8", "", "print incremental qword pattern",
-	"ppa", "[lu]", "latin alphabet (lowercase, uppercases restrictions)",
-	"ppd", "", "print debruijn pattern (see rz-gg -P, -q and wopD)",
-	"ppf", "", "print buffer filled with 0xff",
-	"ppn", "", "numeric pin patterns",
-	NULL
-};
-
 static const char *help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
@@ -3379,131 +3365,6 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 	}
 }
 
-static void __printPattern(RzCore *core, const char *_input) {
-	char *input = strdup(_input);
-	const char *arg = rz_str_nextword(input, ' ');
-	size_t i, j;
-	st64 len = arg ? rz_num_math(core->num, arg) : core->blocksize;
-	if (len < 1) {
-		RZ_LOG_ERROR("core: Invalid length\n");
-		return;
-	}
-	switch (input[0]) {
-	case 'd': // "ppd"
-		// debruijn pattern
-		{
-			ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02x", buf[i]);
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case '1': // "pp1"
-		// incremental byte sequence
-		{
-			int min = (core->offset & 0xff);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02zx", i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case '2': // "pp2"
-		// incremental half word sequences
-		{
-			// TODO: honor cfg.bigendian
-			int min = (core->offset & 0xffff);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%04zx", i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case '4': // "pp4"
-		// incremental half word sequences
-		{
-			// TODO: honor cfg.bigendian
-			int min = (core->offset & UT32_MAX);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%08zx", i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case '8': // "pp8"
-		// incremental half word sequences
-		{
-			// TODO: honor cfg.bigendian
-			ut64 min = (core->offset);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%016" PFMT64x, i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case 'f': // "ppf"
-		// zero ssled
-		{
-			ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02x", 0xff);
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case '0': // "pp0"
-		// zero ssled
-		{
-			ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02x", 0);
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case 'a':
-		// TODO
-		{
-			size_t bs = 4; // XXX hardcoded
-			ut8 *buf = calloc(bs, 1);
-			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
-			for (i = 0; i < len; i++) {
-				incAlphaBuffer(buf, bs);
-				for (j = 0; j < bs; j++) {
-					rz_cons_printf("%c", buf[j] ? buf[j] : 'A');
-				}
-				rz_cons_printf(" ");
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case 'n': // "ppn"
-	{
-		size_t bs = 4; // XXX hardcoded
-		ut8 *buf = calloc(bs, 1);
-		// for (;i>0;i--) { incDigitBuffer (buf, bs); }
-		for (i = 0; i < len; i++) {
-			incDigitBuffer(buf, bs);
-			for (j = 0; j < bs; j++) {
-				rz_cons_printf("%c", buf[j] ? buf[j] : '0');
-			}
-			rz_cons_printf(" ");
-		}
-		rz_cons_newline();
-		free(buf);
-	} break;
-	default:
-		rz_core_cmd_help(core, help_msg_pp);
-		break;
-	}
-	free(input);
-}
-
 static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = rz_config_get_i(core->config, "asm.flags");
 	const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
@@ -4340,9 +4201,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		}
 		goto beach;
-	case 'p': // "pp"
-		__printPattern(core, input + 1);
-		break;
 	case 's': // "ps"
 		switch (input[1]) {
 		case '?': // "ps?"
@@ -6561,5 +6419,157 @@ RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, cons
 	opt.encoding = RZ_STRING_ENC_8BIT;
 	opt.urlencode = true;
 	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern0_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		rz_cons_print("00");
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern1_handler(RzCore *core, int argc, const char **argv) {
+	st8 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut8 min = (core->offset & 0xff);
+	for (ut8 i = 0; i < len; i++) {
+		rz_cons_printf("%02x", i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern2_handler(RzCore *core, int argc, const char **argv) {
+	st16 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: honor cfg.bigendian
+	ut16 min = (core->offset & 0xffff);
+	for (ut16 i = 0; i < len; i++) {
+		rz_cons_printf("%04x", i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern4_handler(RzCore *core, int argc, const char **argv) {
+	st32 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: honor cfg.bigendian
+	ut32 min = (core->offset & UT32_MAX);
+	for (ut32 i = 0; i < len; i++) {
+		rz_cons_printf("%08" PFMT32x, i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern8_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: honor cfg.bigendian
+	ut64 min = (core->offset);
+	for (ut64 i = 0; i < len; i++) {
+		rz_cons_printf("%016" PFMT64x, i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_latin_alphabet_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t bs = 4;
+	ut8 *buf = calloc(bs, 1);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		incAlphaBuffer(buf, bs);
+		for (st64 j = 0; j < bs; j++) {
+			rz_cons_printf("%c", buf[j] ? buf[j] : 'A');
+		}
+		rz_cons_printf(" ");
+	}
+	rz_cons_newline();
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_debrujin_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot generate De Brujin pattern\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		rz_cons_printf("%02x", buf[i]);
+	}
+	rz_cons_newline();
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_oxff_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		rz_cons_print("ff");
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_num_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t bs = 4;
+	ut8 *buf = calloc(bs, 1);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		incDigitBuffer(buf, bs);
+		for (st64 j = 0; j < bs; j++) {
+			rz_cons_printf("%c", buf[j] ? buf[j] : '0');
+		}
+		rz_cons_printf(" ");
+	}
+	rz_cons_newline();
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
