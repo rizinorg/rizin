@@ -526,7 +526,26 @@ static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
 static const RzCmdDescArg assembly_of_hex_alias_args[2];
+static const RzCmdDescArg print_instructions_args[2];
+static const RzCmdDescArg print_pattern0_args[2];
+static const RzCmdDescArg print_pattern1_args[2];
+static const RzCmdDescArg print_pattern2_args[2];
+static const RzCmdDescArg print_pattern4_args[2];
+static const RzCmdDescArg print_pattern8_args[2];
+static const RzCmdDescArg print_pattern_latin_alphabet_args[2];
+static const RzCmdDescArg print_pattern_debrujin_args[2];
+static const RzCmdDescArg print_pattern_oxff_args[2];
+static const RzCmdDescArg print_pattern_num_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
+static const RzCmdDescArg print_operation_add_args[2];
+static const RzCmdDescArg print_operation_and_args[2];
+static const RzCmdDescArg print_operation_div_args[2];
+static const RzCmdDescArg print_operation_shl_args[2];
+static const RzCmdDescArg print_operation_mul_args[2];
+static const RzCmdDescArg print_operation_or_args[2];
+static const RzCmdDescArg print_operation_shr_args[2];
+static const RzCmdDescArg print_operation_sub_args[2];
+static const RzCmdDescArg print_operation_xor_args[2];
 static const RzCmdDescArg print_utf16le_args[2];
 static const RzCmdDescArg print_utf32le_args[2];
 static const RzCmdDescArg print_utf16be_args[2];
@@ -564,6 +583,9 @@ static const RzCmdDescArg print_hexdump_hex8_args[2];
 static const RzCmdDescArg print_hexdump_hex8l_args[2];
 static const RzCmdDescArg print_hexdump_oct_args[2];
 static const RzCmdDescArg print_hexdump_n_lines_args[2];
+static const RzCmdDescArg print_url_encode_args[2];
+static const RzCmdDescArg print_url_encode_wide_args[2];
+static const RzCmdDescArg print_url_encode_zero_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -12266,6 +12288,170 @@ static const RzCmdDescHelp assembly_of_hex_alias_help = {
 	.args = assembly_of_hex_alias_args,
 };
 
+static const RzCmdDescHelp pI_help = {
+	.summary = "Print instructions",
+};
+static const RzCmdDescArg print_instructions_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_instructions_help = {
+	.summary = "Print <N> instructions/bytes",
+	.args = print_instructions_args,
+};
+
+static const RzCmdDescArg print_instructions_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_instructions_function_help = {
+	.summary = "Print all instructions at the current function",
+	.args = print_instructions_function_args,
+};
+
+static const RzCmdDescHelp pp_help = {
+	.summary = "Print patterns",
+};
+static const RzCmdDescArg print_pattern0_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern0_help = {
+	.summary = "Print buffer filled with zeroes",
+	.args = print_pattern0_args,
+};
+
+static const RzCmdDescArg print_pattern1_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern1_help = {
+	.summary = "Print incremental byte pattern (honor lower bits of current address and block size)",
+	.args = print_pattern1_args,
+};
+
+static const RzCmdDescArg print_pattern2_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern2_help = {
+	.summary = "Print incremental word pattern",
+	.args = print_pattern2_args,
+};
+
+static const RzCmdDescArg print_pattern4_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern4_help = {
+	.summary = "Print incremental dword pattern",
+	.args = print_pattern4_args,
+};
+
+static const RzCmdDescArg print_pattern8_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern8_help = {
+	.summary = "Print incremental qword pattern",
+	.args = print_pattern8_args,
+};
+
+static const RzCmdDescArg print_pattern_latin_alphabet_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_latin_alphabet_help = {
+	.summary = "Print Latin alphabet pattern",
+	.args = print_pattern_latin_alphabet_args,
+};
+
+static const RzCmdDescArg print_pattern_debrujin_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_debrujin_help = {
+	.summary = "Print De Brujin pattern",
+	.args = print_pattern_debrujin_args,
+};
+
+static const RzCmdDescArg print_pattern_oxff_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_oxff_help = {
+	.summary = "Print buffer filled with 0xFF",
+	.args = print_pattern_oxff_args,
+};
+
+static const RzCmdDescArg print_pattern_num_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_num_help = {
+	.summary = "Print numeric pin pattern",
+	.args = print_pattern_num_args,
+};
+
 static const RzCmdDescHelp cmd_print_timestamp_help = {
 	.summary = "Print timestamps",
 };
@@ -12322,6 +12508,159 @@ static const RzCmdDescArg cmd_print_magic_args[] = {
 static const RzCmdDescHelp cmd_print_magic_help = {
 	.summary = "Print libmagic data",
 	.args = cmd_print_magic_args,
+};
+
+static const RzCmdDescHelp po_help = {
+	.summary = "Print operation applied on the data",
+};
+static const RzCmdDescArg print_operation_2swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_2swap_help = {
+	.summary = "2-byte endian swap",
+	.args = print_operation_2swap_args,
+};
+
+static const RzCmdDescArg print_operation_4swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_4swap_help = {
+	.summary = "4-byte endian swap",
+	.args = print_operation_4swap_args,
+};
+
+static const RzCmdDescArg print_operation_8swap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_8swap_help = {
+	.summary = "8-byte endian swap",
+	.args = print_operation_8swap_args,
+};
+
+static const RzCmdDescArg print_operation_add_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_add_help = {
+	.summary = "Apply addition",
+	.args = print_operation_add_args,
+};
+
+static const RzCmdDescArg print_operation_and_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_and_help = {
+	.summary = "Apply AND operation",
+	.args = print_operation_and_args,
+};
+
+static const RzCmdDescArg print_operation_div_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_div_help = {
+	.summary = "Apply division operation",
+	.args = print_operation_div_args,
+};
+
+static const RzCmdDescArg print_operation_shl_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_shl_help = {
+	.summary = "Apply shift left operation",
+	.args = print_operation_shl_args,
+};
+
+static const RzCmdDescArg print_operation_mul_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_mul_help = {
+	.summary = "Apply multiplication operation",
+	.args = print_operation_mul_args,
+};
+
+static const RzCmdDescArg print_operation_or_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_or_help = {
+	.summary = "Apply OR operation",
+	.args = print_operation_or_args,
+};
+
+static const RzCmdDescArg print_operation_shr_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_shr_help = {
+	.summary = "Apply shift right operation",
+	.args = print_operation_shr_args,
+};
+
+static const RzCmdDescArg print_operation_sub_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_sub_help = {
+	.summary = "Apply subtraction operation",
+	.args = print_operation_sub_args,
+};
+
+static const RzCmdDescArg print_operation_xor_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_operation_xor_help = {
+	.summary = "Apply XOR operation",
+	.args = print_operation_xor_args,
 };
 
 static const RzCmdDescArg print_string_c_cpp_args[] = {
@@ -12923,6 +13262,54 @@ static const RzCmdDescArg cmd_base64_decode_args[] = {
 static const RzCmdDescHelp cmd_base64_decode_help = {
 	.summary = "Base64 decoding",
 	.args = cmd_base64_decode_args,
+};
+
+static const RzCmdDescHelp pu_help = {
+	.summary = "URL-encoded strings",
+};
+static const RzCmdDescArg print_url_encode_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_url_encode_help = {
+	.summary = "Print <N> bytes as URL-encoded UTF-8 string",
+	.args = print_url_encode_args,
+};
+
+static const RzCmdDescArg print_url_encode_wide_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_url_encode_wide_help = {
+	.summary = "Print <N> bytes as URL-encoded UTF-16 string",
+	.args = print_url_encode_wide_args,
+};
+
+static const RzCmdDescArg print_url_encode_zero_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_url_encode_zero_help = {
+	.summary = "Print <N> bytes as URL-encoded string and stop at zero",
+	.args = print_url_encode_zero_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -18434,6 +18821,40 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
 	rz_warn_if_fail(assembly_of_hex_alias_cd);
 
+	RzCmdDesc *pI_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pI", rz_print_instructions_handler, &print_instructions_help, &pI_help);
+	rz_warn_if_fail(pI_cd);
+	RzCmdDesc *print_instructions_function_cd = rz_cmd_desc_argv_new(core->rcmd, pI_cd, "pIf", rz_print_instructions_function_handler, &print_instructions_function_help);
+	rz_warn_if_fail(print_instructions_function_cd);
+
+	RzCmdDesc *pp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pp", NULL, NULL, &pp_help);
+	rz_warn_if_fail(pp_cd);
+	RzCmdDesc *print_pattern0_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp0", rz_print_pattern0_handler, &print_pattern0_help);
+	rz_warn_if_fail(print_pattern0_cd);
+
+	RzCmdDesc *print_pattern1_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp1", rz_print_pattern1_handler, &print_pattern1_help);
+	rz_warn_if_fail(print_pattern1_cd);
+
+	RzCmdDesc *print_pattern2_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp2", rz_print_pattern2_handler, &print_pattern2_help);
+	rz_warn_if_fail(print_pattern2_cd);
+
+	RzCmdDesc *print_pattern4_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp4", rz_print_pattern4_handler, &print_pattern4_help);
+	rz_warn_if_fail(print_pattern4_cd);
+
+	RzCmdDesc *print_pattern8_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "pp8", rz_print_pattern8_handler, &print_pattern8_help);
+	rz_warn_if_fail(print_pattern8_cd);
+
+	RzCmdDesc *print_pattern_latin_alphabet_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppa", rz_print_pattern_latin_alphabet_handler, &print_pattern_latin_alphabet_help);
+	rz_warn_if_fail(print_pattern_latin_alphabet_cd);
+
+	RzCmdDesc *print_pattern_debrujin_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppd", rz_print_pattern_debrujin_handler, &print_pattern_debrujin_help);
+	rz_warn_if_fail(print_pattern_debrujin_cd);
+
+	RzCmdDesc *print_pattern_oxff_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppf", rz_print_pattern_oxff_handler, &print_pattern_oxff_help);
+	rz_warn_if_fail(print_pattern_oxff_cd);
+
+	RzCmdDesc *print_pattern_num_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppn", rz_print_pattern_num_handler, &print_pattern_num_help);
+	rz_warn_if_fail(print_pattern_num_cd);
+
 	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
 	rz_warn_if_fail(cmd_print_timestamp_cd);
 	RzCmdDesc *cmd_print_timestamp_current_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "pt.", rz_cmd_print_timestamp_current_handler, &cmd_print_timestamp_current_help);
@@ -18450,6 +18871,44 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
+
+	RzCmdDesc *po_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "po", NULL, NULL, &po_help);
+	rz_warn_if_fail(po_cd);
+	RzCmdDesc *print_operation_2swap_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "po2", rz_print_operation_2swap_handler, &print_operation_2swap_help);
+	rz_warn_if_fail(print_operation_2swap_cd);
+
+	RzCmdDesc *print_operation_4swap_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "po4", rz_print_operation_4swap_handler, &print_operation_4swap_help);
+	rz_warn_if_fail(print_operation_4swap_cd);
+
+	RzCmdDesc *print_operation_8swap_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "po8", rz_print_operation_8swap_handler, &print_operation_8swap_help);
+	rz_warn_if_fail(print_operation_8swap_cd);
+
+	RzCmdDesc *print_operation_add_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "poa", rz_print_operation_add_handler, &print_operation_add_help);
+	rz_warn_if_fail(print_operation_add_cd);
+
+	RzCmdDesc *print_operation_and_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "poA", rz_print_operation_and_handler, &print_operation_and_help);
+	rz_warn_if_fail(print_operation_and_cd);
+
+	RzCmdDesc *print_operation_div_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pod", rz_print_operation_div_handler, &print_operation_div_help);
+	rz_warn_if_fail(print_operation_div_cd);
+
+	RzCmdDesc *print_operation_shl_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pol", rz_print_operation_shl_handler, &print_operation_shl_help);
+	rz_warn_if_fail(print_operation_shl_cd);
+
+	RzCmdDesc *print_operation_mul_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pom", rz_print_operation_mul_handler, &print_operation_mul_help);
+	rz_warn_if_fail(print_operation_mul_cd);
+
+	RzCmdDesc *print_operation_or_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "poo", rz_print_operation_or_handler, &print_operation_or_help);
+	rz_warn_if_fail(print_operation_or_cd);
+
+	RzCmdDesc *print_operation_shr_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "por", rz_print_operation_shr_handler, &print_operation_shr_help);
+	rz_warn_if_fail(print_operation_shr_cd);
+
+	RzCmdDesc *print_operation_sub_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pos", rz_print_operation_sub_handler, &print_operation_sub_help);
+	rz_warn_if_fail(print_operation_sub_cd);
+
+	RzCmdDesc *print_operation_xor_cd = rz_cmd_desc_argv_new(core->rcmd, po_cd, "pox", rz_print_operation_xor_handler, &print_operation_xor_help);
+	rz_warn_if_fail(print_operation_xor_cd);
 
 	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
 	rz_warn_if_fail(print_string_c_cpp_cd);
@@ -18574,6 +19033,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_base64_decode_cd = rz_cmd_desc_argv_modes_new(core->rcmd, p6_cd, "p6d", RZ_OUTPUT_MODE_STANDARD, rz_cmd_base64_decode_handler, &cmd_base64_decode_help);
 	rz_warn_if_fail(cmd_base64_decode_cd);
+
+	RzCmdDesc *pu_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pu", rz_print_url_encode_handler, &print_url_encode_help, &pu_help);
+	rz_warn_if_fail(pu_cd);
+	RzCmdDesc *print_url_encode_wide_cd = rz_cmd_desc_argv_new(core->rcmd, pu_cd, "puw", rz_print_url_encode_wide_handler, &print_url_encode_wide_help);
+	rz_warn_if_fail(print_url_encode_wide_cd);
+
+	RzCmdDesc *print_url_encode_zero_cd = rz_cmd_desc_argv_new(core->rcmd, pu_cd, "pu0", rz_print_url_encode_zero_handler, &print_url_encode_zero_help);
+	rz_warn_if_fail(print_url_encode_zero_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

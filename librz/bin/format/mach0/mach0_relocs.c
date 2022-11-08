@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021-2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2020 Francesco Tamagni <mrmacete@protonmail.ch>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
@@ -10,6 +10,37 @@
 
 #include "mach0_utils.inc"
 
+#define RELOCATION_INFO_SIZE 8 // sizeof(struct relocation_info)
+
+/**
+ * \param buf buffer of at least RELOCATION_INFO_SIZE bytes
+ */
+static void read_relocation_info(struct relocation_info *dst, ut8 *src, bool big_endian) {
+	dst->r_address = (st32)rz_read_at_ble32(src, 0, big_endian);
+	uint32_t field = rz_read_at_ble32(src, 4, big_endian);
+	if (big_endian) {
+		dst->r_type = field & rz_num_bitmask(4);
+		field >>= 4;
+		dst->r_extern = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_length = field & rz_num_bitmask(2);
+		field >>= 2;
+		dst->r_pcrel = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_symbolnum = field & rz_num_bitmask(24);
+	} else {
+		dst->r_symbolnum = field & rz_num_bitmask(24);
+		field >>= 24;
+		dst->r_pcrel = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_length = field & rz_num_bitmask(2);
+		field >>= 2;
+		dst->r_extern = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_type = field & rz_num_bitmask(4);
+	}
+}
+
 static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	return a->addr - b->addr;
 }
@@ -19,20 +50,20 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		return;
 	}
 
-	ut64 total_size = num * sizeof(struct relocation_info);
-	struct relocation_info *info = calloc(num, sizeof(struct relocation_info));
-	if (!info) {
+	ut64 total_size = (ut64)num * RELOCATION_INFO_SIZE;
+	ut8 *infos = malloc(total_size);
+	if (!infos) {
 		return;
 	}
-
-	if (rz_buf_read_at(bin->b, offset, (ut8 *)info, total_size) < total_size) {
-		free(info);
+	if (rz_buf_read_at(bin->b, offset, infos, total_size) < total_size) {
+		free(infos);
 		return;
 	}
 
 	size_t i;
 	for (i = 0; i < num; i++) {
-		struct relocation_info a_info = info[i];
+		struct relocation_info a_info;
+		read_relocation_info(&a_info, infos + i * RELOCATION_INFO_SIZE, bin->big_endian);
 		ut32 sym_num = a_info.r_symbolnum;
 		if (sym_num >= bin->nsymtab) {
 			continue;
@@ -46,7 +77,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 
 		struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
 		if (!reloc) {
-			free(info);
+			free(infos);
 			free(sym_name);
 			return;
 		}
@@ -62,7 +93,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		rz_skiplist_insert(relocs, reloc);
 		free(sym_name);
 	}
-	free(info);
+	free(infos);
 }
 
 static bool is_valid_ordinal_table_size(ut64 size) {

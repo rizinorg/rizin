@@ -14,20 +14,6 @@
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-static const char *help_msg_pp[] = {
-	"Usage: pp[d]", "", "print patterns",
-	"pp0", "", "print buffer filled with zeros",
-	"pp1", "", "print incremental byte pattern (honor lower bits of cur address and bsize)",
-	"pp2", "", "print incremental word pattern",
-	"pp4", "", "print incremental dword pattern",
-	"pp8", "", "print incremental qword pattern",
-	"ppa", "[lu]", "latin alphabet (lowercase, uppercases restrictions)",
-	"ppd", "", "print debruijn pattern (see rz-gg -P, -q and wopD)",
-	"ppf", "", "print buffer filled with 0xff",
-	"ppn", "", "numeric pin patterns",
-	NULL
-};
-
 static const char *help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
@@ -168,7 +154,6 @@ static const char *help_msg_p[] = {
 	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
 	"pa", "[edD] [arg]", "pa:assemble  pa[dD]:disasm or pae: esil from hex",
-	"pA", "[n_ops]", "show n_ops address and type",
 	"pb", "[?] [n]", "bitstream of N bits",
 	"pB", "[?] [n]", "bitstream of N bytes",
 	"pc", "[?][p] [len]", "output C (or python) format",
@@ -358,23 +343,6 @@ static const char *help_msg_pif[] = {
 	"pifj",
 	"",
 	"print instructions of function in JSON format",
-};
-
-static const char *help_msg_po[] = {
-	"Usage:", "po[24aAdlmorsx]", " [hexpairs] @ addr[!bsize]",
-	"po[24aAdlmorsx]", "", "without hexpair values, clipboard is used",
-	"po2", " [val]", "2=  2 byte endian swap",
-	"po4", " [val]", "4=  4 byte endian swap",
-	"poa", " [val]", "+=  addition (f.ex: poa 0102)",
-	"poA", " [val]", "&=  and",
-	"pod", " [val]", "/=  divide",
-	"pol", " [val]", "<<= shift left",
-	"pom", " [val]", "*=  multiply",
-	"poo", " [val]", "|=  or",
-	"por", " [val]", ">>= shift right",
-	"pos", " [val]", "-=  substraction",
-	"pox", " [val]", "^=  xor  (f.ex: pox 0x90)",
-	NULL
 };
 
 static const char *help_msg_ps[] = {
@@ -2330,105 +2298,22 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	return true;
 }
 
-static ut8 *old_transform_op(RzCore *core, const char *val, char op, int *buflen) {
-	RzCoreWriteOp wop;
-	switch (op) {
-	case '2':
-		wop = RZ_CORE_WRITE_OP_BYTESWAP2;
-		break;
-	case '4':
-		wop = RZ_CORE_WRITE_OP_BYTESWAP4;
-		break;
-	case '8':
-		wop = RZ_CORE_WRITE_OP_BYTESWAP8;
-		break;
-	case 'a':
-		wop = RZ_CORE_WRITE_OP_ADD;
-		break;
-	case 'A':
-		wop = RZ_CORE_WRITE_OP_AND;
-		break;
-	case 'd':
-		wop = RZ_CORE_WRITE_OP_DIV;
-		break;
-	case 'l':
-		wop = RZ_CORE_WRITE_OP_SHIFT_LEFT;
-		break;
-	case 'm':
-		wop = RZ_CORE_WRITE_OP_MUL;
-		break;
-	case 'o':
-		wop = RZ_CORE_WRITE_OP_OR;
-		break;
-	case 'r':
-		wop = RZ_CORE_WRITE_OP_SHIFT_RIGHT;
-		break;
-	case 's':
-		wop = RZ_CORE_WRITE_OP_SUB;
-		break;
-	case 'x':
-		wop = RZ_CORE_WRITE_OP_XOR;
-		break;
-	default:
-		wop = RZ_CORE_WRITE_OP_XOR;
-		rz_warn_if_reached();
-		break;
-	}
-
+/* Uses data from clipboard if value is NULL */
+static bool print_operation_transform(RzCore *core, RzCoreWriteOp op, RZ_NULLABLE const char *val) {
 	ut8 *hex = NULL;
-	int hexlen = -1;
+	size_t hexlen = 0, buflen = 0;
 	if (val) {
-		val = rz_str_trim_head_ro(val);
 		hex = RZ_NEWS(ut8, (strlen(val) + 1) / 2);
 		if (!hex) {
-			return NULL;
+			return false;
 		}
-
 		hexlen = rz_hex_str2bin(val, hex);
 	}
-	ut8 *result = rz_core_transform_op(core, core->offset, wop, hex, hexlen, buflen);
+	ut8 *buf = rz_core_transform_op(core, core->offset, op, hex, hexlen, &buflen);
 	free(hex);
-	return result;
-}
-
-static void cmd_print_op(RzCore *core, const char *input) {
-	ut8 *buf;
-	int buflen = -1;
-
-	if (!input[0])
-		return;
-	switch (input[1]) {
-	case 'a':
-	case 's':
-	case 'A':
-	case 'x':
-	case 'r':
-	case 'l':
-	case 'm':
-	case 'd':
-	case 'o':
-	case '2':
-	case '4':
-		if (input[2]) { // parse val from arg
-			buf = old_transform_op(core, input + 3, input[1], &buflen);
-		} else { // use clipboard instead of val
-			buf = old_transform_op(core, NULL, input[1], &buflen);
-		}
-		break;
-	case 'n':
-		buf = old_transform_op(core, "ff", 'x', &buflen);
-		break;
-	case '\0':
-	case '?':
-	default:
-		rz_core_cmd_help(core, help_msg_po);
-		return;
-	}
-	if (buf) {
-		rz_core_print_hexdump(core, core->offset, buf,
-			buflen, 16, 1, 1);
-		free(buf);
-	}
+	rz_core_print_hexdump(core, core->offset, buf, buflen, 16, 1, 1);
+	free(buf);
+	return true;
 }
 
 static void printraw(RzCore *core, int len) {
@@ -3380,131 +3265,6 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 	}
 }
 
-static void __printPattern(RzCore *core, const char *_input) {
-	char *input = strdup(_input);
-	const char *arg = rz_str_nextword(input, ' ');
-	size_t i, j;
-	st64 len = arg ? rz_num_math(core->num, arg) : core->blocksize;
-	if (len < 1) {
-		RZ_LOG_ERROR("core: Invalid length\n");
-		return;
-	}
-	switch (input[0]) {
-	case 'd': // "ppd"
-		// debruijn pattern
-		{
-			ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02x", buf[i]);
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case '1': // "pp1"
-		// incremental byte sequence
-		{
-			int min = (core->offset & 0xff);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02zx", i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case '2': // "pp2"
-		// incremental half word sequences
-		{
-			// TODO: honor cfg.bigendian
-			int min = (core->offset & 0xffff);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%04zx", i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case '4': // "pp4"
-		// incremental half word sequences
-		{
-			// TODO: honor cfg.bigendian
-			int min = (core->offset & UT32_MAX);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%08zx", i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case '8': // "pp8"
-		// incremental half word sequences
-		{
-			// TODO: honor cfg.bigendian
-			ut64 min = (core->offset);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%016" PFMT64x, i + min);
-			}
-			rz_cons_newline();
-		}
-		break;
-	case 'f': // "ppf"
-		// zero ssled
-		{
-			ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02x", 0xff);
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case '0': // "pp0"
-		// zero ssled
-		{
-			ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
-			for (i = 0; i < len; i++) {
-				rz_cons_printf("%02x", 0);
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case 'a':
-		// TODO
-		{
-			size_t bs = 4; // XXX hardcoded
-			ut8 *buf = calloc(bs, 1);
-			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
-			for (i = 0; i < len; i++) {
-				incAlphaBuffer(buf, bs);
-				for (j = 0; j < bs; j++) {
-					rz_cons_printf("%c", buf[j] ? buf[j] : 'A');
-				}
-				rz_cons_printf(" ");
-			}
-			rz_cons_newline();
-			free(buf);
-		}
-		break;
-	case 'n': // "ppn"
-	{
-		size_t bs = 4; // XXX hardcoded
-		ut8 *buf = calloc(bs, 1);
-		// for (;i>0;i--) { incDigitBuffer (buf, bs); }
-		for (i = 0; i < len; i++) {
-			incDigitBuffer(buf, bs);
-			for (j = 0; j < bs; j++) {
-				rz_cons_printf("%c", buf[j] ? buf[j] : '0');
-			}
-			rz_cons_printf(" ");
-		}
-		rz_cons_newline();
-		free(buf);
-	} break;
-	default:
-		rz_core_cmd_help(core, help_msg_pp);
-		break;
-	}
-	free(input);
-}
-
 static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = rz_config_get_i(core->config, "asm.flags");
 	const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
@@ -4013,6 +3773,24 @@ RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, cons
 	return rz_assembly_of_hex_handler(core, argc, argv, mode);
 }
 
+RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	rz_core_print_disasm_instructions(core, len, 0);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc, const char **argv) {
+	const RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!f) {
+		RZ_LOG_ERROR("Cannot function at the specified address\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 fcn_size = rz_analysis_function_linear_size((RzAnalysisFunction *)f);
+	rz_core_print_disasm_instructions(core, fcn_size, 0);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_esil_of_hex_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut8 *hex = calloc(1, strlen(argv[1]) + 1);
 	if (!hex) {
@@ -4165,48 +3943,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		return cmd_print_blocks(core, input + 1);
 	case '=': // "p="
 		cmd_print_bars(core, input);
-		break;
-	case 'A': // "pA"
-	{
-		const ut64 saved_from = rz_config_get_i(core->config, "search.from"),
-			   saved_to = rz_config_get_i(core->config, "search.to"),
-			   saved_maxhits = rz_config_get_i(core->config, "search.maxhits");
-
-		int want = rz_num_math(core->num, input + 1);
-		if (input[1] == '?') {
-			rz_core_cmd0(core, "/A?");
-		} else {
-			rz_config_set_i(core->config, "search.maxhits", want);
-			rz_config_set_i(core->config, "search.from", core->offset);
-			rz_config_set_i(core->config, "search.to", core->offset + core->blocksize);
-			rz_core_cmd0(core, "/A");
-			rz_config_set_i(core->config, "search.maxhits", saved_maxhits);
-			rz_config_set_i(core->config, "search.from", saved_from);
-			rz_config_set_i(core->config, "search.to", saved_to);
-		}
-	} break;
-	case 'I': // "pI"
-		switch (input[1]) {
-		case 'f': // "pIf"
-		{
-			const RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
-				RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-			if (f) {
-				rz_core_print_disasm_instructions(core,
-					rz_analysis_function_linear_size((RzAnalysisFunction *)f), 0);
-				break;
-			}
-			break;
-		}
-		case '?': // "pi?"
-			rz_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
-				       "(f=func) (see pi? and pdq)\n");
-			break;
-		default:
-			if (l) {
-				rz_core_print_disasm_instructions(core, l, 0);
-			}
-		}
 		break;
 	case 'i': // "pi"
 		switch (input[1]) {
@@ -4365,9 +4101,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			break;
 		}
 		goto beach;
-	case 'p': // "pp"
-		__printPattern(core, input + 1);
-		break;
 	case 's': // "ps"
 		switch (input[1]) {
 		case '?': // "ps?"
@@ -4653,22 +4386,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			rz_core_magic(core, filename, true, NULL);
 		}
 		break;
-	case 'u': // "pu"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pu[w0] [len]       print N url"
-				       "encoded bytes (w=wide, 0=stop at nil)\n");
-		} else {
-			if (l > 0) {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block;
-				opt.length = len;
-				opt.encoding = input[1] == 'w' ? RZ_STRING_ENC_UTF16LE : RZ_STRING_ENC_8BIT;
-				opt.stop_at_nil = input[1] == '0';
-				opt.urlencode = true;
-				core_print_raw_buffer(&opt);
-			}
-		}
-		break;
 	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
@@ -4761,9 +4478,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			}
 			break;
 		}
-		break;
-	case 'o': // "po"
-		cmd_print_op(core, input);
 		break;
 	case 'x': // "px"
 	{
@@ -6569,4 +6283,238 @@ RZ_IPI RzCmdStatus rz_print_value4_handler(RzCore *core, int argc, const char **
 
 RZ_IPI RzCmdStatus rz_print_value8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return print_value_size(core, state, argc, argv, 8);
+}
+
+RZ_IPI RzCmdStatus rz_print_url_encode_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.urlencode = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_url_encode_wide_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.encoding = RZ_STRING_ENC_UTF16LE;
+	opt.urlencode = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.stop_at_nil = true;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.urlencode = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern0_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		rz_cons_print("00");
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern1_handler(RzCore *core, int argc, const char **argv) {
+	st8 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut8 min = (core->offset & 0xff);
+	for (ut8 i = 0; i < len; i++) {
+		rz_cons_printf("%02x", i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern2_handler(RzCore *core, int argc, const char **argv) {
+	st16 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: honor cfg.bigendian
+	ut16 min = (core->offset & 0xffff);
+	for (ut16 i = 0; i < len; i++) {
+		rz_cons_printf("%04x", i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern4_handler(RzCore *core, int argc, const char **argv) {
+	st32 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: honor cfg.bigendian
+	ut32 min = (core->offset & UT32_MAX);
+	for (ut32 i = 0; i < len; i++) {
+		rz_cons_printf("%08" PFMT32x, i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern8_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO: honor cfg.bigendian
+	ut64 min = (core->offset);
+	for (ut64 i = 0; i < len; i++) {
+		rz_cons_printf("%016" PFMT64x, i + min);
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_latin_alphabet_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t bs = 4;
+	ut8 *buf = calloc(bs, 1);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		incAlphaBuffer(buf, bs);
+		for (st64 j = 0; j < bs; j++) {
+			rz_cons_printf("%c", buf[j] ? buf[j] : 'A');
+		}
+		rz_cons_printf(" ");
+	}
+	rz_cons_newline();
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_debrujin_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut8 *buf = (ut8 *)rz_debruijn_pattern(len, 0, NULL);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot generate De Brujin pattern\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		rz_cons_printf("%02x", buf[i]);
+	}
+	rz_cons_newline();
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_oxff_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		rz_cons_print("ff");
+	}
+	rz_cons_newline();
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pattern_num_handler(RzCore *core, int argc, const char **argv) {
+	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len < 1) {
+		RZ_LOG_ERROR("Invalid pattern length\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t bs = 4;
+	ut8 *buf = calloc(bs, 1);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	for (st64 i = 0; i < len; i++) {
+		incDigitBuffer(buf, bs);
+		for (st64 j = 0; j < bs; j++) {
+			rz_cons_printf("%c", buf[j] ? buf[j] : '0');
+		}
+		rz_cons_printf(" ");
+	}
+	rz_cons_newline();
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_2swap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_BYTESWAP2, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_4swap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_BYTESWAP4, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_8swap_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_BYTESWAP8, NULL));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_add_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_ADD, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_and_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_AND, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_div_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_DIV, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_shl_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_SHIFT_LEFT, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_mul_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_MUL, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_or_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_OR, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_shr_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_SHIFT_RIGHT, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_sub_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_SUB, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_operation_xor_handler(RzCore *core, int argc, const char **argv) {
+	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_XOR, argv[1]));
 }

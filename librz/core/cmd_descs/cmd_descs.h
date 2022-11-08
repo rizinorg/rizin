@@ -1743,6 +1743,28 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pix"
 RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pI"
+RZ_IPI RzCmdStatus rz_print_instructions_handler(RzCore *core, int argc, const char **argv);
+// "pIf"
+RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc, const char **argv);
+// "pp0"
+RZ_IPI RzCmdStatus rz_print_pattern0_handler(RzCore *core, int argc, const char **argv);
+// "pp1"
+RZ_IPI RzCmdStatus rz_print_pattern1_handler(RzCore *core, int argc, const char **argv);
+// "pp2"
+RZ_IPI RzCmdStatus rz_print_pattern2_handler(RzCore *core, int argc, const char **argv);
+// "pp4"
+RZ_IPI RzCmdStatus rz_print_pattern4_handler(RzCore *core, int argc, const char **argv);
+// "pp8"
+RZ_IPI RzCmdStatus rz_print_pattern8_handler(RzCore *core, int argc, const char **argv);
+// "ppa"
+RZ_IPI RzCmdStatus rz_print_pattern_latin_alphabet_handler(RzCore *core, int argc, const char **argv);
+// "ppd"
+RZ_IPI RzCmdStatus rz_print_pattern_debrujin_handler(RzCore *core, int argc, const char **argv);
+// "ppf"
+RZ_IPI RzCmdStatus rz_print_pattern_oxff_handler(RzCore *core, int argc, const char **argv);
+// "ppn"
+RZ_IPI RzCmdStatus rz_print_pattern_num_handler(RzCore *core, int argc, const char **argv);
 // "pt"
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv);
 // "pt."
@@ -1755,6 +1777,30 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv);
 // "pm"
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "po2"
+RZ_IPI RzCmdStatus rz_print_operation_2swap_handler(RzCore *core, int argc, const char **argv);
+// "po4"
+RZ_IPI RzCmdStatus rz_print_operation_4swap_handler(RzCore *core, int argc, const char **argv);
+// "po8"
+RZ_IPI RzCmdStatus rz_print_operation_8swap_handler(RzCore *core, int argc, const char **argv);
+// "poa"
+RZ_IPI RzCmdStatus rz_print_operation_add_handler(RzCore *core, int argc, const char **argv);
+// "poA"
+RZ_IPI RzCmdStatus rz_print_operation_and_handler(RzCore *core, int argc, const char **argv);
+// "pod"
+RZ_IPI RzCmdStatus rz_print_operation_div_handler(RzCore *core, int argc, const char **argv);
+// "pol"
+RZ_IPI RzCmdStatus rz_print_operation_shl_handler(RzCore *core, int argc, const char **argv);
+// "pom"
+RZ_IPI RzCmdStatus rz_print_operation_mul_handler(RzCore *core, int argc, const char **argv);
+// "poo"
+RZ_IPI RzCmdStatus rz_print_operation_or_handler(RzCore *core, int argc, const char **argv);
+// "por"
+RZ_IPI RzCmdStatus rz_print_operation_shr_handler(RzCore *core, int argc, const char **argv);
+// "pos"
+RZ_IPI RzCmdStatus rz_print_operation_sub_handler(RzCore *core, int argc, const char **argv);
+// "pox"
+RZ_IPI RzCmdStatus rz_print_operation_xor_handler(RzCore *core, int argc, const char **argv);
 // "psc"
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psw"
@@ -1839,6 +1885,12 @@ RZ_IPI RzCmdStatus rz_print_hexdump_n_lines_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_base64_encode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "p6d"
 RZ_IPI RzCmdStatus rz_cmd_base64_decode_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pu"
+RZ_IPI RzCmdStatus rz_print_url_encode_handler(RzCore *core, int argc, const char **argv);
+// "puw"
+RZ_IPI RzCmdStatus rz_print_url_encode_wide_handler(RzCore *core, int argc, const char **argv);
+// "pu0"
+RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, const char **argv);
 // "p"
 RZ_IPI int rz_cmd_print(void *data, const char *input);
 // "Ps"

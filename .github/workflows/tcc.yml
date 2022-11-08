@@ -45,7 +45,7 @@ jobs:
           cd tinycc
           #git checkout mob
           # Well-tested commit
-          git checkout 675046bd59bc6977bb2016c7d2e115ace8a6ae6c
+          git checkout aea2b53123b987a14d99126be22947ebda455082
           chmod +x ./configure
 
     - name: Compiling and installing TinyCC

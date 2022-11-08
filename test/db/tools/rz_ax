@@ -50,6 +50,14 @@ hello
 EOF
 RUN
 
+NAME=rz-ax -D null byte
+FILE==
+CMDS=!rz-ax -D ZQBlAA== | rz-ax -S
+EXPECT=<<EOF
+65006500
+EOF
+RUN
+
 NAME=rz-ax -S hello | rz-ax -s
 FILE==
 CMDS=!rz-ax -S hello | rz-ax -s
@@ -67,14 +75,6 @@ RUN
 NAME=rz-ax -S hello | rz-ax -s (2)
 FILE==
 CMDS=!echo hello | rz-ax -S | rz-ax -s | rz-ax -S | rz-ax -s
-EXPECT=<<EOF
-hello
-EOF
-RUN
-
-NAME=rz-ax -E | rz-ax -D -E
-FILE==
-CMDS=!echo hello | rz-ax -E |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
 EXPECT=<<EOF
 hello
 EOF
@@ -193,6 +193,22 @@ FILE==
 CMDS=!rz-ax Bx63
 EXPECT=<<EOF
 1100011b
+EOF
+RUN
+
+NAME=rz-ax Bxffff0000ffff0101
+FILE==
+CMDS=!rz-ax Bxffff0000ffff0101
+EXPECT=<<EOF
+1111111111111111000000000000000011111111111111110000000100000001b
+EOF
+RUN
+
+NAME=rz-ax 64bit binary number
+FILE==
+CMDS=!rz-ax 1111111111111111000000000000000011111111111111110000000100000001b
+EXPECT=<<EOF
+0xffff0000ffff0101
 EOF
 RUN
 
@@ -416,11 +432,18 @@ EOF
 RUN
 
 NAME=long number conversion
-BROKEN=1
 FILE==
 CMDS=!rz-ax 10000000000000000000000000000000000000000000000b
 EXPECT=<<EOF
-0x8000000000000000
+0x400000000000
+EOF
+RUN
+
+NAME=long number conversion with shift
+FILE==
+CMDS=!rz-ax b$(!rz-ax "1<<46")
+EXPECT=<<EOF
+10000000000000000000000000000000000000000000000b
 EOF
 RUN
 

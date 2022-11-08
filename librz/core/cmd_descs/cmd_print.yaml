@@ -461,6 +461,86 @@ commands:
       - name: hexpair
         type: RZ_CMD_ARG_TYPE_STRING
         optional: false
+  - name: pI
+    summary: Print instructions
+    subcommands:
+      - name: pI
+        summary: Print <N> instructions/bytes
+        cname: print_instructions
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pIf
+        summary: Print all instructions at the current function
+        cname: print_instructions_function
+        args: []
+  - name: pp
+    summary: Print patterns
+    subcommands:
+      - name: pp0
+        summary: Print buffer filled with zeroes
+        cname: print_pattern0
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp1
+        summary: Print incremental byte pattern (honor lower bits of current address and block size)
+        cname: print_pattern1
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp2
+        summary: Print incremental word pattern
+        cname: print_pattern2
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp4
+        summary: Print incremental dword pattern
+        cname: print_pattern4
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp8
+        summary: Print incremental qword pattern
+        cname: print_pattern8
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppa
+        summary: Print Latin alphabet pattern
+        cname: print_pattern_latin_alphabet
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppd
+        summary: Print De Brujin pattern
+        cname: print_pattern_debrujin
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppf
+        summary: Print buffer filled with 0xFF
+        cname: print_pattern_oxff
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppn
+        summary: Print numeric pin pattern
+        cname: print_pattern_num
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: pt
     summary: Print timestamps
     cname: cmd_print_timestamp
@@ -494,6 +574,75 @@ commands:
         optional: true
     modes:
       - RZ_OUTPUT_MODE_JSON
+  - name: po
+    summary: Print operation applied on the data
+    subcommands:
+      - name: po2
+        summary: 2-byte endian swap
+        cname: print_operation_2swap
+        args: []
+      - name: po4
+        summary: 4-byte endian swap
+        cname: print_operation_4swap
+        args: []
+      - name: po8
+        summary: 8-byte endian swap
+        cname: print_operation_8swap
+        args: []
+      - name: poa
+        summary: Apply addition
+        cname: print_operation_add
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: poA
+        summary: Apply AND operation
+        cname: print_operation_and
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pod
+        summary: Apply division operation
+        cname: print_operation_div
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pol
+        summary: Apply shift left operation
+        cname: print_operation_shl
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pom
+        summary: Apply multiplication operation
+        cname: print_operation_mul
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: poo
+        summary: Apply OR operation
+        cname: print_operation_or
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: por
+        summary: Apply shift right operation
+        cname: print_operation_shr
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pos
+        summary: Apply subtraction operation
+        cname: print_operation_sub
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pox
+        summary: Apply XOR operation
+        cname: print_operation_xor
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
   - name: psc
     summary: Generate a C/C++ string
     cname: print_string_c_cpp
@@ -922,3 +1071,27 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
         args: []
+  - name: pu
+    summary: URL-encoded strings
+    subcommands:
+      - name: pu
+        summary: Print <N> bytes as URL-encoded UTF-8 string
+        cname: print_url_encode
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: puw
+        summary: Print <N> bytes as URL-encoded UTF-16 string
+        cname: print_url_encode_wide
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pu0
+        summary: Print <N> bytes as URL-encoded string and stop at zero
+        cname: print_url_encode_zero
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
