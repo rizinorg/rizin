@@ -265,6 +265,7 @@ typedef struct rz_core_visual_tab_t {
 typedef struct rz_core_visual_t {
 	RzList /*<RzCoreVisualTab *>*/ *tabs;
 	int tab;
+	bool hide_legend;
 	bool is_inputing; // whether the user is inputing
 	char *inputing; // for filter on the go in Vv mode
 	RzCoreVisualMode printidx;
