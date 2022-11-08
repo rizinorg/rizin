@@ -3,22 +3,20 @@ FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
 db @ main
-db @ 0x004028fe
+db @ 0x004028b6
 dc
 dts+
 dc
-dsb
-dsb
-dr rbx
-dr rcx
-dr r12
 dr rip
+$rsp_after=$`dr rsp`
+2dsb
+dr rip
+?v `dr rsp~[1]`-`$rsp_after~[0]`
 EOF
 EXPECT=<<EOF
-rbx = 0x0000000000000001
-rcx = 0x00736c6974756572
-r12 = 0x0000000000404870
-rip = 0x00000000004028f9
+rip = 0x00000000004028b6
+rip = 0x00000000004028af
+0x398
 EOF
 RUN
 
