@@ -445,7 +445,6 @@ RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 					continue;
 				} else if (page.flags == P_COMPRESSED) {
 					// TODO
-					RZ_LOG_WARN("Compressed page not handled: %s", s->name);
 				} else if (page.flags != P_ZEROED) {
 					s->paddr = ((ut64)page.offset << h->pageshift) + pages_start_off;
 				}
