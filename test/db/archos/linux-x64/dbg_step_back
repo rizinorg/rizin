@@ -25,38 +25,25 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
 db @ main
-db @ 0x0040052f
+db @ 0x00400510
 dc
 dts+
 dc
 dr rax
-dr rbx
-dr rcx
-dr r10
-dr rbp
 dr rip
+$rsp_after=$`dr rsp`
 dsb
 dsb
 dr rax
-dr rbx
-dr rcx
-dr r10
-dr rbp
 dr rip
+?v `dr rsp~[1]`-`$rsp_after~[0]`
 EOF
 EXPECT=<<EOF
-rax = 0x0000000000400574
-rbx = 0x0000000000400590
-rcx = 0x0000000000400590
-r10 = 0xfffffffffffff30e
-rbp = 0x0000000000000000
-rip = 0x000000000040052f
-rax = 0x0000000000400574
-rbx = 0x0000000000400590
-rcx = 0x0000000000400590
-r10 = 0xfffffffffffff30e
-rbp = 0x0000000000000000
-rip = 0x0000000000400575
+rax = 0x0000000000600980
+rip = 0x0000000000400510
+rax = 0x0000000000600980
+rip = 0x000000000040056e
+0x8
 EOF
 RUN
 
