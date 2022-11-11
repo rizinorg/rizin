@@ -565,6 +565,20 @@ commands:
         summary: Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)
         cname: cmd_print_timestamp_ntfs
         args: []
+  - name: pk
+    summary: Print cryptographic key in randomart
+    cname: print_key_randomart
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: pK
+    summary: Print cryptographic key in randomart mosaic
+    cname: print_key_mosaic
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: pm
     summary: Print libmagic data
     cname: cmd_print_magic

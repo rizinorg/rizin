@@ -1775,6 +1775,10 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, const char **argv);
 // "ptn"
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv);
+// "pk"
+RZ_IPI RzCmdStatus rz_print_key_randomart_handler(RzCore *core, int argc, const char **argv);
+// "pK"
+RZ_IPI RzCmdStatus rz_print_key_mosaic_handler(RzCore *core, int argc, const char **argv);
 // "pm"
 RZ_IPI RzCmdStatus rz_cmd_print_magic_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "po2"
@@ -2247,6 +2251,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv);
 // "fortune"
 RZ_IPI RzCmdStatus rz_cmd_shell_fortune_handler(RzCore *core, int argc, const char **argv);
+// "pkill"
+RZ_IPI RzCmdStatus rz_cmd_shell_pkill_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

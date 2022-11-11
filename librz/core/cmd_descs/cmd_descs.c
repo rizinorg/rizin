@@ -536,6 +536,8 @@ static const RzCmdDescArg print_pattern_latin_alphabet_args[2];
 static const RzCmdDescArg print_pattern_debrujin_args[2];
 static const RzCmdDescArg print_pattern_oxff_args[2];
 static const RzCmdDescArg print_pattern_num_args[2];
+static const RzCmdDescArg print_key_randomart_args[2];
+static const RzCmdDescArg print_key_mosaic_args[2];
 static const RzCmdDescArg cmd_print_magic_args[2];
 static const RzCmdDescArg print_operation_add_args[2];
 static const RzCmdDescArg print_operation_and_args[2];
@@ -724,6 +726,7 @@ static const RzCmdDescArg cmd_shell_mv_args[3];
 static const RzCmdDescArg cmd_shell_mkdir_args[3];
 static const RzCmdDescArg cmd_shell_sort_args[2];
 static const RzCmdDescArg cmd_shell_which_args[2];
+static const RzCmdDescArg cmd_shell_pkill_args[2];
 
 static const RzCmdDescHelp escl__help = {
 	.summary = "Run given commands as in system(3) or shows command history",
@@ -12495,6 +12498,36 @@ static const RzCmdDescHelp cmd_print_timestamp_ntfs_help = {
 	.args = cmd_print_timestamp_ntfs_args,
 };
 
+static const RzCmdDescArg print_key_randomart_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_key_randomart_help = {
+	.summary = "Print cryptographic key in randomart",
+	.args = print_key_randomart_args,
+};
+
+static const RzCmdDescArg print_key_mosaic_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_key_mosaic_help = {
+	.summary = "Print cryptographic key in randomart mosaic",
+	.args = print_key_mosaic_args,
+};
+
 static const RzCmdDescArg cmd_print_magic_args[] = {
 	{
 		.name = "file/directory",
@@ -16254,6 +16287,20 @@ static const RzCmdDescHelp cmd_shell_fortune_help = {
 	.args = cmd_shell_fortune_args,
 };
 
+static const RzCmdDescArg cmd_shell_pkill_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_pkill_help = {
+	.summary = "Kill process by name",
+	.args = cmd_shell_pkill_args,
+};
+
 RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -18869,6 +18916,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_timestamp_ntfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptn", rz_cmd_print_timestamp_ntfs_handler, &cmd_print_timestamp_ntfs_help);
 	rz_warn_if_fail(cmd_print_timestamp_ntfs_cd);
 
+	RzCmdDesc *print_key_randomart_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "pk", rz_print_key_randomart_handler, &print_key_randomart_help);
+	rz_warn_if_fail(print_key_randomart_cd);
+
+	RzCmdDesc *print_key_mosaic_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "pK", rz_print_key_mosaic_handler, &print_key_mosaic_help);
+	rz_warn_if_fail(print_key_mosaic_cd);
+
 	RzCmdDesc *cmd_print_magic_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pm", RZ_OUTPUT_MODE_JSON, rz_cmd_print_magic_handler, &cmd_print_magic_help);
 	rz_warn_if_fail(cmd_print_magic_cd);
 
@@ -19595,5 +19648,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_fortune_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "fortune", rz_cmd_shell_fortune_handler, &cmd_shell_fortune_help);
 	rz_warn_if_fail(cmd_shell_fortune_cd);
+
+	RzCmdDesc *cmd_shell_pkill_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "pkill", rz_cmd_shell_pkill_handler, &cmd_shell_pkill_help);
+	rz_warn_if_fail(cmd_shell_pkill_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

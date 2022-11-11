@@ -265,3 +265,19 @@ RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char 
 	free(now);
 	return RZ_CMD_STATUS_OK;
 }
+
+// pkill
+RZ_IPI RzCmdStatus rz_cmd_shell_pkill_handler(RzCore *core, int argc, const char **argv) {
+	RzListIter *iter;
+	RzDebugPid *pid;
+	RzList *pids = (core->dbg->cur && core->dbg->cur->pids)
+		? core->dbg->cur->pids(core->dbg, 0)
+		: NULL;
+	rz_list_foreach (pids, iter, pid) {
+		if (strstr(pid->path, argv[1])) {
+			rz_debug_kill(core->dbg, pid->pid, 0, 9);
+		}
+	}
+	rz_list_free(pids);
+	return RZ_CMD_STATUS_OK;
+}
