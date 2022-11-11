@@ -979,6 +979,11 @@ static void interact(RzTestState *state) {
 		}
 
 		printf("#####################\n\n");
+		char *name = rz_test_test_name(result->test);
+		if (name) {
+			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+			free(name);
+		}
 		print_result_diff(&state->run_config, result);
 		bool have_commands = result->test->type == RZ_TEST_TYPE_CMD;
 	menu:

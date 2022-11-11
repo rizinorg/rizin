@@ -131,7 +131,13 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 
 	// Adjust the windows size automaticaly
 	(void)rz_cons_get_size(&window);
-	window -= visual->inputing ? 10 : 8; // Size of printed things
+	window -= 2; // size of command line in the bottom
+	if (visual->inputing) {
+		window -= 2; // filter size
+	}
+	if (!visual->hide_legend) {
+		window -= 7; // legend size
+	}
 	bool color = rz_config_get_i(core->config, "scr.color");
 	const char *color_addr = core->cons->context->pal.offset;
 	const char *color_fcn = core->cons->context->pal.fname;
@@ -309,7 +315,8 @@ static const char *help_fun_visual[] = {
 	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to ", "(X)", "xrefs from\n",
 	"(r)", "rename ", "(c)", "calls ", "(d)", "define ", "(:)", "shell ", "(v)", "vars\n",
 	"(j/k)", "next/prev ", "(tab)", "column ", "(_)", "hud ", "(?)", " help\n",
-	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n\n",
+	"(f/F)", "set/reset filter ", "(s)", "function signature ", "(q)", "quit\n",
+	"(=)", "show/hide legend\n\n",
 	NULL
 };
 
@@ -392,7 +399,9 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
 		}
-		rz_core_vmenu_append_help(buf, help_fun_visual);
+		if (!visual->hide_legend) {
+			rz_core_vmenu_append_help(buf, help_fun_visual);
+		}
 		char *drained = rz_strbuf_drain(buf);
 		rz_cons_printf("%s", drained);
 		free(drained);
@@ -650,6 +659,11 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
+		case '=':
+			if (level == 0) {
+				visual->hide_legend = visual->hide_legend ? false : true;
+			}
+			break;
 		case 'f':
 			if (level == 0) {
 				// add new keyword
