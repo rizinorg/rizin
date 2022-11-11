@@ -4326,32 +4326,31 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_core_block_size(core, bs);
 			}
 			break;
-		case '+': // "ps+"
-			if (l > 0) {
-				const bool json = input[2] == 'j'; // ps+j
-				ut64 bitness = rz_config_get_i(core->config, "asm.bits");
-				if (bitness != 32 && bitness != 64) {
-					RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
-					break;
-				}
-				if (*core->block & 0x1) { // "long" string
-					if (bitness == 64) {
-						rz_core_cmdf(core, "ps%c @ 0x%" PFMT64x, json ? 'j' : ' ', *((ut64 *)core->block + 2));
-					} else {
-						rz_core_cmdf(core, "ps%c @ 0x%" PFMT32x, json ? 'j' : ' ', *((ut32 *)core->block + 2));
-					}
-				} else if (json) {
-					print_json_string(core, core->block + 1, len, RZ_STRING_ENC_8BIT, true);
-				} else {
-					RzStrStringifyOpt opt = { 0 };
-					opt.buffer = core->block + 1;
-					opt.length = len;
-					opt.encoding = RZ_STRING_ENC_8BIT;
-					opt.stop_at_nil = true;
-					core_print_raw_buffer(&opt);
-				}
+		case '+': { // "ps+"
+			ut64 bitness = rz_config_get_i(core->config, "asm.bits");
+			if (bitness != 32 && bitness != 64) {
+				RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
+				break;
 			}
-			break;
+			if (len < (bitness / 8) * 3) {
+				RZ_LOG_ERROR("Block size is too small to read string.\n");
+				break;
+			}
+			const bool json = input[2] == 'j'; // ps+j
+			if (*core->block & 0x1) { // "long" string
+				const ut8 *ptr = core->block + (bitness / 8) * 2;
+				rz_core_cmdf(core, "ps%c @ 0x%" PFMT64x, json ? 'j' : ' ', rz_read_ble(ptr, core->analysis->big_endian, bitness));
+			} else if (json) {
+				print_json_string(core, core->block + 1, len - 1, RZ_STRING_ENC_8BIT, true);
+			} else {
+				RzStrStringifyOpt opt = { 0 };
+				opt.buffer = core->block + 1;
+				opt.length = len - 1;
+				opt.encoding = RZ_STRING_ENC_8BIT;
+				opt.stop_at_nil = true;
+				core_print_raw_buffer(&opt);
+			}
+		} break;
 		default:
 			if (l > 0) {
 				RzStrStringifyOpt opt = { 0 };
