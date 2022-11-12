@@ -889,6 +889,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL Rz
 	rz_return_val_if_fail(f, NULL);
 	RzILOpFloat *ret;
 	rz_il_op_new_2(Float, RZ_IL_OP_FROUND, RzILOpArgsFround, fround, rmode, f);
+	return ret;
 }
 
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f) {

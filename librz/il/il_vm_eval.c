@@ -60,6 +60,40 @@ bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op);
 void *rz_il_handler_loadw(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 bool rz_il_handler_storew(RzILVM *vm, RzILOpEffect *op);
 
+void *rz_il_handler_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fbits(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_finite(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_nan(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_inf(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_fzero(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_is_fpos(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fabs(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcast_int(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcast_sfloat(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fconvert(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_frequal(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fsucc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fpred(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fadd(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fsub(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fdiv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fmul(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fmod(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fhypot(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fpow(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fmad(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_frootn(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fpown(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fcompound(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+
 // TODO: remove me when all the handlers are implemented
 void *rz_il_handler_pure_unimplemented(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 bool rz_il_handler_effect_unimplemented(RzILVM *vm, RzILOpEffect *op);
@@ -341,4 +375,27 @@ RZ_API RZ_NULLABLE RZ_OWN void *rz_il_evaluate_pure(RZ_NONNULL RzILVM *vm, RZ_NO
 RZ_API bool rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
 	return eval_effect(vm, op);
+}
+
+/**
+ * Evaluate the given pure op, return the float
+ * \return NULL if an error occured
+ */
+RZ_API RZ_NULLABLE RZ_OWN RzFloat *rz_il_evaluate_float(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op) {
+	rz_return_val_if_fail(vm && op, NULL);
+
+	// TODO implement evaluate float
+	// QUESTION : every evaluate requires an calculation, heavy cost
+	// check type and auto convertion between bitv/bool/val
+	RzILTypePure type = -1;
+	void *res = eval_pure(vm, op, &type);
+	if (!res) {
+		// propagate error
+		return NULL;
+	}
+	if (type != RZ_IL_TYPE_PURE_FLOAT) {
+		RZ_LOG_ERROR("RzIL: type error: expected float, got %s\n", pure_type_name(type));
+		return NULL;
+	}
+	return res;
 }
