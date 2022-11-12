@@ -181,3 +181,9 @@ commands:
     summary: Show the random fortune message
     cname: cmd_shell_fortune
     args: []
+  - name: pkill
+    cname: cmd_shell_pkill
+    summary: Kill process by name
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_STRING

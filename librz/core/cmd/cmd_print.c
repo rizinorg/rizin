@@ -4326,32 +4326,31 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_core_block_size(core, bs);
 			}
 			break;
-		case '+': // "ps+"
-			if (l > 0) {
-				const bool json = input[2] == 'j'; // ps+j
-				ut64 bitness = rz_config_get_i(core->config, "asm.bits");
-				if (bitness != 32 && bitness != 64) {
-					RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
-					break;
-				}
-				if (*core->block & 0x1) { // "long" string
-					if (bitness == 64) {
-						rz_core_cmdf(core, "ps%c @ 0x%" PFMT64x, json ? 'j' : ' ', *((ut64 *)core->block + 2));
-					} else {
-						rz_core_cmdf(core, "ps%c @ 0x%" PFMT32x, json ? 'j' : ' ', *((ut32 *)core->block + 2));
-					}
-				} else if (json) {
-					print_json_string(core, core->block + 1, len, RZ_STRING_ENC_8BIT, true);
-				} else {
-					RzStrStringifyOpt opt = { 0 };
-					opt.buffer = core->block + 1;
-					opt.length = len;
-					opt.encoding = RZ_STRING_ENC_8BIT;
-					opt.stop_at_nil = true;
-					core_print_raw_buffer(&opt);
-				}
+		case '+': { // "ps+"
+			ut64 bitness = rz_config_get_i(core->config, "asm.bits");
+			if (bitness != 32 && bitness != 64) {
+				RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
+				break;
 			}
-			break;
+			if (len < (bitness / 8) * 3) {
+				RZ_LOG_ERROR("Block size is too small to read string.\n");
+				break;
+			}
+			const bool json = input[2] == 'j'; // ps+j
+			if (*core->block & 0x1) { // "long" string
+				const ut8 *ptr = core->block + (bitness / 8) * 2;
+				rz_core_cmdf(core, "ps%c @ 0x%" PFMT64x, json ? 'j' : ' ', rz_read_ble(ptr, core->analysis->big_endian, bitness));
+			} else if (json) {
+				print_json_string(core, core->block + 1, len - 1, RZ_STRING_ENC_8BIT, true);
+			} else {
+				RzStrStringifyOpt opt = { 0 };
+				opt.buffer = core->block + 1;
+				opt.length = len - 1;
+				opt.encoding = RZ_STRING_ENC_8BIT;
+				opt.stop_at_nil = true;
+				core_print_raw_buffer(&opt);
+			}
+		} break;
 		default:
 			if (l > 0) {
 				RzStrStringifyOpt opt = { 0 };
@@ -4544,67 +4543,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		break;
 	case 'f': // "pf"
 		cmd_print_format(core, input, block, len);
-		break;
-	case 'k': // "pk"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pk [len]       print key in randomart\n");
-			rz_cons_printf("|Usage: pkill [process-name]\n");
-		} else if (!strncmp(input, "kill", 4)) {
-			RzListIter *iter;
-			RzDebugPid *pid;
-			const char *arg = strchr(input, ' ');
-			RzList *pids = (core->dbg->cur && core->dbg->cur->pids)
-				? core->dbg->cur->pids(core->dbg, 0)
-				: NULL;
-			if (arg && *++arg) {
-				rz_list_foreach (pids, iter, pid) {
-					if (strstr(pid->path, arg)) {
-						rz_cons_printf("dk 9 %d\n", pid->pid);
-					}
-					// rz_debug_kill (core->dbg, pid->pid, pid->pid, 9); // kill -9
-				}
-			}
-			rz_list_free(pids);
-		} else if (l > 0) {
-			len = len > core->blocksize ? core->blocksize : len;
-			char *s = rz_hash_cfg_randomart(block, len, core->offset);
-			rz_cons_println(s);
-			free(s);
-		}
-		break;
-	case 'K': // "pK"
-		if (input[1] == '?') {
-			rz_cons_printf("|Usage: pK [len]       print key in randomart mosaic\n");
-		} else if (l > 0) {
-			len = len > core->blocksize ? core->blocksize : len;
-			int w, h;
-			RzConsCanvas *c;
-			w = rz_cons_get_size(&h);
-			ut64 offset0 = core->offset;
-			int cols = (w / 20);
-			int rows = (h / 12);
-			int i, j;
-			char *s;
-			if (rows < 1) {
-				rows = 1;
-			}
-			c = rz_cons_canvas_new(w, rows * 11);
-			for (i = 0; i < rows; i++) {
-				for (j = 0; j < cols; j++) {
-					rz_cons_canvas_gotoxy(c, j * 20, i * 11);
-					core->offset += len;
-					rz_io_read_at(core->io, core->offset, core->block, len);
-					s = rz_hash_cfg_randomart(core->block, len, core->offset);
-					rz_cons_canvas_write(c, s);
-					free(s);
-				}
-			}
-			rz_cons_canvas_print(c);
-			rz_cons_canvas_free(c);
-			rz_io_read_at(core->io, offset0, core->block, len);
-			core->offset = offset0;
-			rz_cons_printf("\n");
-		}
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_p);
@@ -6517,4 +6455,52 @@ RZ_IPI RzCmdStatus rz_print_operation_sub_handler(RzCore *core, int argc, const 
 
 RZ_IPI RzCmdStatus rz_print_operation_xor_handler(RzCore *core, int argc, const char **argv) {
 	return bool2status(print_operation_transform(core, RZ_CORE_WRITE_OP_XOR, argv[1]));
+}
+
+RZ_IPI RzCmdStatus rz_print_key_randomart_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len == 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	len = len > core->blocksize ? core->blocksize : len;
+	char *s = rz_hash_cfg_randomart(core->block, len, core->offset);
+	rz_cons_println(s);
+	free(s);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_key_mosaic_handler(RzCore *core, int argc, const char **argv) {
+	ut64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (len == 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	len = len > core->blocksize ? core->blocksize : len;
+	int w, h;
+	RzConsCanvas *c;
+	w = rz_cons_get_size(&h);
+	ut64 offset0 = core->offset;
+	int cols = (w / 20);
+	int rows = (h / 12);
+	int i, j;
+	char *s;
+	if (rows < 1) {
+		rows = 1;
+	}
+	c = rz_cons_canvas_new(w, rows * 11);
+	for (i = 0; i < rows; i++) {
+		for (j = 0; j < cols; j++) {
+			rz_cons_canvas_gotoxy(c, j * 20, i * 11);
+			core->offset += len;
+			rz_io_read_at(core->io, core->offset, core->block, len);
+			s = rz_hash_cfg_randomart(core->block, len, core->offset);
+			rz_cons_canvas_write(c, s);
+			free(s);
+		}
+	}
+	rz_cons_canvas_print(c);
+	rz_cons_canvas_free(c);
+	rz_io_read_at(core->io, offset0, core->block, len);
+	core->offset = offset0;
+	rz_cons_printf("\n");
+	return RZ_CMD_STATUS_OK;
 }
