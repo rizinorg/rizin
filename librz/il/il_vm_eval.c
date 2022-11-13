@@ -133,6 +133,45 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_APPEND] = rz_il_handler_append,
 	[RZ_IL_OP_LOAD] = rz_il_handler_load,
 	[RZ_IL_OP_LOADW] = rz_il_handler_loadw,
+
+	[RZ_IL_OP_FLOAT] = rz_il_handler_float,
+	[RZ_IL_OP_FBITS] = rz_il_handler_fbits,
+	[RZ_IL_OP_IS_FINITE] = rz_il_handler_is_finite,
+	[RZ_IL_OP_IS_NAN] = rz_il_handler_is_nan,
+	[RZ_IL_OP_IS_INF] = rz_il_handler_is_inf,
+	[RZ_IL_OP_IS_FZERO] = rz_il_handler_is_fzero,
+	[RZ_IL_OP_IS_FNEG] = rz_il_handler_is_fneg,
+	[RZ_IL_OP_IS_FPOS] = rz_il_handler_is_fpos,
+	[RZ_IL_OP_FNEG] = rz_il_handler_fneg,
+	[RZ_IL_OP_FABS] = rz_il_handler_fabs,
+	[RZ_IL_OP_FREQUAL] = rz_il_handler_frequal,
+	[RZ_IL_OP_FSUCC] = rz_il_handler_fsucc,
+	[RZ_IL_OP_FPRED] = rz_il_handler_fpred,
+	[RZ_IL_OP_FORDER] = rz_il_handler_forder,
+	[RZ_IL_OP_FROUND] = rz_il_handler_fround,
+	[RZ_IL_OP_FSQRT] = rz_il_handler_fsqrt,
+	[RZ_IL_OP_FRSQRT] = rz_il_handler_frsqrt,
+	[RZ_IL_OP_FADD] = rz_il_handler_fadd,
+	[RZ_IL_OP_FSUB] = rz_il_handler_fsub,
+	[RZ_IL_OP_FMUL] = rz_il_handler_fmul,
+	[RZ_IL_OP_FDIV] = rz_il_handler_fdiv,
+	[RZ_IL_OP_FMOD] = rz_il_handler_fmod,
+	[RZ_IL_OP_FMAD] = rz_il_handler_fmad,
+
+	// TODO : uncomment them after implement it
+	/**
+	[RZ_IL_OP_FHYPOT] = rz_il_handler_fhypot,
+	[RZ_IL_OP_FPOW] = rz_il_handler_fpow,
+	[RZ_IL_OP_FROOTN] = rz_il_handler_frootn,
+	[RZ_IL_OP_FPOWN] = rz_il_handler_fpown,
+	[RZ_IL_OP_FCOMPOUND] = rz_il_handler_fcompound,
+
+	[RZ_IL_OP_FCAST_INT] = rz_il_handler_fcast_int,
+	[RZ_IL_OP_FCAST_SINT] = rz_il_handler_fcast_sint,
+	[RZ_IL_OP_FCAST_FLOAT] = rz_il_handler_fcast_float,
+	[RZ_IL_OP_FCAST_SFLOAT] = rz_il_handler_fcast_sfloat,
+	[RZ_IL_OP_FCONVERT] = rz_il_handler_fconvert,
+	**/
 };
 
 RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX] = {
