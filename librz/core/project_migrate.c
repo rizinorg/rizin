@@ -314,6 +314,21 @@ RZ_API bool rz_project_migrate_v8_v9(RzProject *prj, RzSerializeResultInfo *res)
 	return true;
 }
 
+// --
+// Migration 9 -> 10
+//
+// Changes from <commit hash not yet known>
+//	Removed stackptr and parent_stackptr from the serialized RzAnalysisBlock
+//	Added sp_entry and sp_delta to serialized RzAnalysisBlock
+
+RZ_API bool rz_project_migrate_v9_v10(RzProject *prj, RzSerializeResultInfo *res) {
+	// There is nothing to be done since the deserializer will ignore the original serialized data
+	// and missing sp_entry and sp_delta are valid for unknown values.
+	// The previous stackptr/parent_stackptr are too nonsensical to be converted to sp_entry/sp_delta
+	// unfortunately.
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -322,7 +337,8 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v5_v6,
 	rz_project_migrate_v6_v7,
 	rz_project_migrate_v7_v8,
-	rz_project_migrate_v8_v9
+	rz_project_migrate_v8_v9,
+	rz_project_migrate_v9_v10
 };
 
 /// Migrate the given project to the current version in-place

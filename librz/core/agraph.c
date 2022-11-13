@@ -2165,9 +2165,6 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 			rz_reg_arena_poke(core->analysis->reg, saved_arena);
 		}
 	}
-	if (b->parent_stackptr != INT_MAX) {
-		core->analysis->stackptr = b->parent_stackptr;
-	}
 	char *body = get_body(core, b->addr, b->size, opts);
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
@@ -2175,9 +2172,6 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 			if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
 				if (emu && core->analysis->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
-				}
-				if (jumpbb->parent_stackptr == INT_MAX) {
-					jumpbb->parent_stackptr = core->analysis->stackptr + b->stackptr;
 				}
 			}
 		}
@@ -2188,9 +2182,6 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 			if (failbb && rz_list_contains(failbb->fcns, fcn)) {
 				if (emu && core->analysis->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
-				}
-				if (failbb->parent_stackptr == INT_MAX) {
-					failbb->parent_stackptr = core->analysis->stackptr + b->stackptr;
 				}
 			}
 		}
@@ -2208,7 +2199,6 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	bool emu = rz_config_get_i(core->config, "asm.emu");
 	ut64 saved_gp = core->analysis->gp;
 	ut8 *saved_arena = NULL;
-	int saved_stackptr = core->analysis->stackptr;
 	char *shortcut = 0;
 	int shortcuts = 0;
 	core->keep_asmqjmps = false;
@@ -2255,7 +2245,6 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 			RZ_FREE(saved_arena);
 		}
 	}
-	core->analysis->stackptr = saved_stackptr;
 }
 
 static void fold_asm_trace(RzCore *core, RzAGraph *g) {
@@ -2323,7 +2312,6 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	int ret = false;
 	ut64 saved_gp = core->analysis->gp;
 	ut8 *saved_arena = NULL;
-	int saved_stackptr = core->analysis->stackptr;
 	core->keep_asmqjmps = false;
 
 	if (!fcn) {
@@ -2417,7 +2405,6 @@ cleanup:
 			RZ_FREE(saved_arena);
 		}
 	}
-	core->analysis->stackptr = saved_stackptr;
 	return ret;
 }
 

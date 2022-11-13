@@ -3050,9 +3050,6 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 			rz_reg_arena_poke(core->analysis->reg, saved_arena);
 		}
 	}
-	if (b->parent_stackptr != INT_MAX) {
-		core->analysis->stackptr = b->parent_stackptr;
-	}
 	rz_config_set_i(core->config, "asm.bb.middle", false);
 	p_type == 'D'
 		? rz_core_cmdf(core, "pD %" PFMT64u " @ 0x%" PFMT64x, b->size, b->addr)
@@ -3066,9 +3063,6 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 				if (emu && core->analysis->last_disasm_reg && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
 				}
-				if (jumpbb->parent_stackptr == INT_MAX) {
-					jumpbb->parent_stackptr = core->analysis->stackptr + b->stackptr;
-				}
 			}
 		}
 		if (p_type == 'D' && show_flags) {
@@ -3081,9 +3075,6 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 			if (failbb && rz_list_contains(failbb->fcns, fcn)) {
 				if (emu && core->analysis->last_disasm_reg && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
-				}
-				if (failbb->parent_stackptr == INT_MAX) {
-					failbb->parent_stackptr = core->analysis->stackptr + b->stackptr;
 				}
 			}
 		}
@@ -3182,7 +3173,6 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 		bool emu = rz_config_get_i(core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		ut8 *saved_arena = NULL;
-		int saved_stackptr = core->analysis->stackptr;
 		if (emu) {
 			saved_gp = core->analysis->gp;
 			saved_arena = rz_reg_arena_peek(core->analysis->reg);
@@ -3199,7 +3189,6 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 				RZ_FREE(saved_arena);
 			}
 		}
-		core->analysis->stackptr = saved_stackptr;
 		rz_config_set_i(core->config, "asm.lines.bb", asm_lines);
 	}
 	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
@@ -5342,7 +5331,6 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 		bool emu = rz_config_get_i(core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		ut8 *saved_arena = NULL;
-		int saved_stackptr = core->analysis->stackptr;
 		if (emu) {
 			saved_gp = core->analysis->gp;
 			saved_arena = rz_reg_arena_peek(core->analysis->reg);
@@ -5358,7 +5346,6 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 				RZ_FREE(saved_arena);
 			}
 		}
-		core->analysis->stackptr = saved_stackptr;
 		rz_config_set_i(core->config, "asm.lines.bb", asm_lines);
 	}
 	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);

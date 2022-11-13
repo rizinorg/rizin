@@ -17,8 +17,8 @@
  * /
  *   /blocks
  *     0x<addr>={size:<ut64>, jump?:<ut64>, fail?:<ut64>, traced?:true, colorize?:<ut32>,
- *               switch_op?:<RzAnalysisSwitchOp>, ninstr:<int>, op_pos?:[<ut16>], stackptr:<int>,
- *               parent_stackptr:<int>, cmpval:<ut64>, cmpreg?:<str>}
+ *               switch_op?:<RzAnalysisSwitchOp>, ninstr:<int>, op_pos?:[<ut16>], sp?:<st64>,
+ *               sp_delta?:[<st16>], cmpval:<ut64>, cmpreg?:<str>}
  *   /functions
  *     0x<addr>={name:<str>, bits?:<int>, type:<int>, cc?:<str>, stack:<int>, maxstack:<int>,
  *               ninstr:<int>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
@@ -161,24 +161,37 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	if (block->ninstr) {
 		pj_ki(j, "ninstr", block->ninstr);
 	}
-	if (block->op_pos && block->ninstr > 1) {
-		pj_k(j, "op_pos");
-		pj_a(j);
-		size_t i;
-		for (i = 0; i < block->ninstr - 1; i++) {
-			pj_n(j, block->op_pos[i]);
+	if (block->ninstr > 1) {
+		if (block->op_pos) {
+			pj_k(j, "op_pos");
+			pj_a(j);
+			for (size_t i = 0; i < block->ninstr - 1; i++) {
+				pj_n(j, block->op_pos[i]);
+			}
+			pj_end(j);
 		}
-		pj_end(j);
+		if (rz_vector_len(&block->sp_delta)) {
+			pj_k(j, "sp_delta");
+			pj_a(j);
+			for (size_t i = 0; i < block->ninstr; i++) {
+				if (i >= rz_vector_len(&block->sp_delta)) {
+					break;
+				}
+				// We save this negated, because most practical sp_delta vals are negative
+				// and so we can spare the '-' char.
+				pj_N(j, -*(st16 *)rz_vector_index_ptr(&block->sp_delta, i));
+			}
+			pj_end(j);
+		}
 	}
 
 	// op_bytes is only java, never set
 	// parent_reg_arena is never set
 
-	if (block->stackptr) {
-		pj_ki(j, "stackptr", block->stackptr);
-	}
-	if (block->parent_stackptr != INT_MAX) {
-		pj_ki(j, "parent_stackptr", block->parent_stackptr);
+	if (block->sp_entry != RZ_STACK_ADDR_INVALID) {
+		// We save this negated, because most practical sp_entry vals are negative
+		// and so we can spare the '-' char.
+		pj_kN(j, "sp", -block->sp_entry);
 	}
 	if (block->cmpval != UT64_MAX) {
 		pj_kn(j, "cmpval", block->cmpval);
@@ -212,8 +225,8 @@ enum {
 	BLOCK_FIELD_SWITCH_OP,
 	BLOCK_FIELD_NINSTR,
 	BLOCK_FIELD_OP_POS,
-	BLOCK_FIELD_STACKPTR,
-	BLOCK_FIELD_PARENT_STACKPTR,
+	BLOCK_FIELD_SP_ENTRY,
+	BLOCK_FIELD_SP_DELTA,
 	BLOCK_FIELD_CMPVAL,
 	BLOCK_FIELD_CMPREG
 };
@@ -240,8 +253,9 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	proto.jump = UT64_MAX;
 	proto.fail = UT64_MAX;
 	proto.size = UT64_MAX;
-	proto.parent_stackptr = INT_MAX;
+	proto.sp_entry = RZ_STACK_ADDR_INVALID;
 	proto.cmpval = UT64_MAX;
+	rz_vector_init(&proto.sp_delta, sizeof(st16), NULL, NULL);
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BLOCK_FIELD_SIZE:
 			if (child->type != RZ_JSON_INTEGER) {
@@ -305,18 +319,28 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 			}
 			break;
 		}
-		case BLOCK_FIELD_STACKPTR:
+		case BLOCK_FIELD_SP_ENTRY:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
 			}
-			proto.stackptr = (int)child->num.s_value;
+			proto.sp_entry = -child->num.s_value;
 			break;
-		case BLOCK_FIELD_PARENT_STACKPTR:
-			if (child->type != RZ_JSON_INTEGER) {
+		case BLOCK_FIELD_SP_DELTA: {
+			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			proto.parent_stackptr = (int)child->num.s_value;
+			rz_vector_clear(&proto.sp_delta);
+			rz_vector_reserve(&proto.sp_delta, child->children.count);
+			RzJson *baby;
+			for (baby = child->children.first; baby; baby = baby->next) {
+				if (baby->type != RZ_JSON_INTEGER) {
+					break;
+				}
+				st16 val = -baby->num.s_value;
+				rz_vector_push(&proto.sp_delta, &val);
+			}
 			break;
+		}
 		case BLOCK_FIELD_CMPVAL:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
@@ -356,8 +380,9 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 		block->op_pos = proto.op_pos;
 		block->op_pos_size = proto.op_pos_size;
 	}
-	block->stackptr = proto.stackptr;
-	block->parent_stackptr = proto.parent_stackptr;
+	block->sp_entry = proto.sp_entry;
+	rz_vector_fini(&block->sp_delta); // This should be a nop with a new block, but let's be safe
+	block->sp_delta = proto.sp_delta;
 	block->cmpval = proto.cmpval;
 	block->cmpreg = proto.cmpreg;
 
@@ -365,6 +390,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 error:
 	rz_analysis_switch_op_free(proto.switch_op);
 	free(proto.op_pos);
+	rz_vector_fini(&proto.sp_delta);
 	return false;
 }
 
@@ -382,8 +408,8 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 	rz_key_parser_add(ctx.parser, "switch_op", BLOCK_FIELD_SWITCH_OP);
 	rz_key_parser_add(ctx.parser, "ninstr", BLOCK_FIELD_NINSTR);
 	rz_key_parser_add(ctx.parser, "op_pos", BLOCK_FIELD_OP_POS);
-	rz_key_parser_add(ctx.parser, "stackptr", BLOCK_FIELD_STACKPTR);
-	rz_key_parser_add(ctx.parser, "parent_stackptr", BLOCK_FIELD_PARENT_STACKPTR);
+	rz_key_parser_add(ctx.parser, "sp", BLOCK_FIELD_SP_ENTRY);
+	rz_key_parser_add(ctx.parser, "sp_delta", BLOCK_FIELD_SP_DELTA);
 	rz_key_parser_add(ctx.parser, "cmpval", BLOCK_FIELD_CMPVAL);
 	rz_key_parser_add(ctx.parser, "cmpreg", BLOCK_FIELD_CMPREG);
 	bool ret = sdb_foreach(db, block_load_cb, &ctx);

@@ -228,6 +228,20 @@ RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *conventi
 	return res;
 }
 
+/**
+ * Get the size of the shadow space, i.e. a pre-allocated space before the callee's stack frame,
+ * which can usually be used by the callee to save argument registers.
+ */
+RZ_API RzStackAddr rz_analysis_cc_shadow_store(RzAnalysis *analysis, const char *convention) {
+	rz_return_val_if_fail(analysis && convention, 0);
+	if (!strcmp(convention, "ms")) {
+		// Microsoft x64 cc has an additional "shadow space" above the stack frame.
+		// TODO: this should be specified in the definition of the "ms" cc instead of beging hardcoded here.
+		return 0x28;
+	}
+	return 0;
+}
+
 RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return sdb_const_get(DB, "default.cc", 0);

@@ -368,42 +368,42 @@ pdf
 EOF
 EXPECT=<<EOF
 afvR
-   var_c0h  0x18
-   var_30h  0x21
-   var_28h
-   var_20h  0x29
-   var_18h  0x2d
-   var_10h  0x31
-   var_a0h
+   var_98h  0x18
+    var_8h  0x21
+    var_0h
+   var_s8h  0x29
+  var_s10h  0x2d
+  var_s18h  0x31
+   var_78h
 afvW
-   var_c0h  0x18
-   var_30h
-   var_28h
-   var_20h  0x3
-   var_18h  0x7
-   var_10h  0xb
-   var_a0h
+   var_98h  0x18
+    var_8h
+    var_0h
+   var_s8h  0x3
+  var_s10h  0x7
+  var_s18h  0xb
+   var_78h
 / fcn.00000000 ();
-|           ; var int64_t var_c0h @ rsp+0x20
-|           ; var int64_t var_a0h @ rsp+0x40
-|           ; var int64_t var_30h @ rsp+0xb0
-|           ; var int64_t var_28h @ rsp+0xb8
-|           ; var int64_t var_20h @ rsp+0xc0
-|           ; var int64_t var_18h @ rsp+0xc8
-|           ; var int64_t var_10h @ rsp+0xd0
-|           0x00000000      488bc4         mov   rax, var_28h
-|           0x00000003      48895808       mov   qword [var_20h], rbx
-|           0x00000007      48897010       mov   qword [var_18h], rsi
-|           0x0000000b      48897818       mov   qword [var_10h], rdi
+|           ; var int64_t var_98h @ rsp+0x20
+|           ; var int64_t var_78h @ rsp+0x40
+|           ; var int64_t var_8h @ rsp+0xb0
+|           ; var int64_t var_0h @ rsp+0xb8
+|           ; var int64_t var_s8h @ rsp+0xc0
+|           ; var int64_t var_s10h @ rsp+0xc8
+|           ; var int64_t var_s18h @ rsp+0xd0
+|           0x00000000      488bc4         mov   rax, var_0h
+|           0x00000003      48895808       mov   qword [var_s8h], rbx
+|           0x00000007      48897010       mov   qword [var_s10h], rsi
+|           0x0000000b      48897818       mov   qword [var_s18h], rdi
 |           0x0000000f      4157           push  r15
 |           0x00000011      4881ecb00000.  sub   rsp, 0xb0
-|           0x00000018      8364242000     and   dword [var_c0h], 0
-|           0x0000001d      488d4888       lea   rcx, [var_a0h]
-|           0x00000021      4c8d9c24b000.  lea   r11, [var_30h]
-|           0x00000029      498b5b10       mov   rbx, qword [var_20h]
-|           0x0000002d      498b7318       mov   rsi, qword [var_18h]
-|           0x00000031      498b7b20       mov   rdi, qword [var_10h]
-|           0x00000035      498be3         mov   rsp, var_30h
+|           0x00000018      8364242000     and   dword [var_98h], 0
+|           0x0000001d      488d4888       lea   rcx, [var_78h]
+|           0x00000021      4c8d9c24b000.  lea   r11, [var_8h]
+|           0x00000029      498b5b10       mov   rbx, qword [var_s8h]
+|           0x0000002d      498b7318       mov   rsi, qword [var_s10h]
+|           0x00000031      498b7b20       mov   rdi, qword [var_s18h]
+|           0x00000035      498be3         mov   rsp, var_8h
 |           0x00000038      415f           pop   r15
 \           0x0000003a      c3             ret
 EOF

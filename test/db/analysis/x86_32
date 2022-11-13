@@ -4240,3 +4240,63 @@ EXPECT=<<EOF
 xmm0 = 0x000000000000000000000000a0a1a2a3
 EOF
 RUN
+
+NAME=x86_32 stackptr tracking
+FILE=bins/elf/dectest32
+CMDS=<<EOF
+s main
+af
+e asm.stackptr=1
+e asm.var=0
+e asm.xrefs=0
+pdf
+
+?e --- in jumptable
+pd 10 @ 0x08049410
+EOF
+EXPECT=<<EOF
+/ int main (int argc, char **argv, char **envp);
+|           0x080491ca     0            lea   ecx, [argv]
+|           0x080491ce     0            and   esp, 0xfffffff0
+|           0x080491d1     0 -= 4       push  dword [ecx - 4]
+|           0x080491d4    -4 -= 4       push  ebp
+|           0x080491d5    -8            mov   ebp, esp
+|           0x080491d7    -8 -= 4       push  ecx
+|           0x080491d8   -12 -= 36      sub   esp, 0x24
+|           0x080491db   -48            mov   eax, ecx
+|           0x080491dd   -48            mov   edx, dword [eax + 4]
+|           0x080491e0   -48            mov   dword [var_1ch], edx
+|           0x080491e3   -48            mov   ecx, dword gs:[0x14]
+|           0x080491ea   -48            mov   dword [var_ch], ecx
+|           0x080491ed   -48            xor   ecx, ecx
+|           0x080491ef   -48 -= 4       sub   esp, 4
+|           0x080491f2   -52 -= 4       push  dword [var_1ch]
+|           0x080491f5   -56 -= 4       push  dword [eax]
+|           0x080491f7   -60            lea   eax, [var_18h]
+|           0x080491fa   -60 -= 4       push  eax
+|           0x080491fb   -64            call  sym.Aeropause
+|           0x08049200   -64 += 16      add   esp, 0x10
+|           0x08049203   -48            mov   eax, 0
+|           0x08049208   -48            mov   edx, dword [var_ch]
+|           0x0804920b   -48            xor   edx, dword gs:[0x14]
+|       ,=< 0x08049212   -48            je    0x8049219
+|       |   0x08049214   -48            call  sym.imp.__stack_chk_fail ; void __stack_chk_fail(void)
+|       `-> 0x08049219   -48            mov   ecx, dword [var_4h]
+|           0x0804921c   -48 := 0       leave
+|           0x0804921d     0            lea   esp, [ecx - 4]
+\           0x08049220     0 += 4       ret
+--- in jumptable
+|           ;-- case 3:                                                ; from 0x80493cf
+|           0x08049410   -12 -= 12      sub   esp, 0xc
+|           0x08049413   -24 -= 4       push  str.echoes               ; 0x804a032 ; "echoes"
+|           0x08049418   -28            call  sym.imp.printf
+|           0x0804941d   -28 += 16      add   esp, 0x10
+|       ,=< 0x08049420   -12            jmp   0x8049447
+|       |   ;-- case 4:                                                ; from 0x80493cf
+|       |   0x08049422   -12 -= 12      sub   esp, 0xc
+|       |   0x08049425   -24 -= 4       push  str.wall                 ; 0x804a039 ; "wall"
+|       |   0x0804942a   -28            call  sym.imp.printf
+|       |   0x0804942f   -28 += 16      add   esp, 0x10
+|      ,==< 0x08049432   -12            jmp   0x8049447
+EOF
+RUN

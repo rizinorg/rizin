@@ -1665,7 +1665,7 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 	rz_pvector_push(&ctx->reg_set, reg_set);
 	RzCore *core = ctx->core;
 	RzAnalysisFunction *fcn = ctx->fcn;
-	fcn->stack = bb->parent_stackptr;
+	fcn->stack = bb->sp_entry;
 	ut64 pos = bb->addr;
 	while (pos < bb->addr + bb->size) {
 		if (rz_cons_is_breaked()) {
@@ -1683,7 +1683,7 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 			} else if (op->stackop == RZ_ANALYSIS_STACK_RESET) {
 				fcn->stack = 0;
 			}
-			rz_analysis_extract_vars(core->analysis, fcn, op);
+			rz_analysis_extract_vars(core->analysis, fcn, op, -fcn->stack);
 		}
 		int opsize = op->size;
 		int optype = op->type;
@@ -2966,6 +2966,7 @@ typedef struct {
 	RzAnalysisFunction *fcn;
 	const char *spname;
 	ut64 initial_sp;
+	RzStackAddr shadow_store;
 } EsilBreakCtx;
 
 static const char *reg_name_for_access(RzAnalysisOp *op, RzAnalysisVarAccessType type) {
@@ -3003,7 +3004,7 @@ static void handle_var_stack_access(RzAnalysisEsil *esil, ut64 addr, RzAnalysisV
 	if (ctx->fcn && regname) {
 		ut64 spaddr = rz_reg_getv(esil->analysis->reg, ctx->spname);
 		if (addr >= spaddr && addr < ctx->initial_sp) {
-			int stack_off = addr - ctx->initial_sp;
+			int stack_off = addr - ctx->initial_sp + ctx->shadow_store;
 			RzAnalysisVar *var = rz_analysis_function_get_var(ctx->fcn, RZ_ANALYSIS_VAR_KIND_SPV, stack_off);
 			if (!var) {
 				var = rz_analysis_function_get_var(ctx->fcn, RZ_ANALYSIS_VAR_KIND_BPV, stack_off);
@@ -3011,7 +3012,7 @@ static void handle_var_stack_access(RzAnalysisEsil *esil, ut64 addr, RzAnalysisV
 			if (!var && stack_off >= -ctx->fcn->maxstack) {
 				char *varname;
 				varname = ctx->fcn->analysis->opt.varname_stack
-					? rz_str_newf("var_%xh", RZ_ABS(stack_off))
+					? rz_str_newf("var_%s%xh", stack_off > 0 ? "s" : "", RZ_ABS(stack_off)) // "s" for positive shadow space to avoid conflicts
 					: rz_analysis_function_autoname_var(ctx->fcn, RZ_ANALYSIS_VAR_KIND_SPV, "var", delta_for_access(ctx->op, type));
 				var = rz_analysis_function_set_var(ctx->fcn, stack_off, RZ_ANALYSIS_VAR_KIND_SPV, NULL, len, false, varname);
 				free(varname);
@@ -3369,19 +3370,19 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	}
 	const char *spname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	EsilBreakCtx ctx = {
-		&op,
-		fcn,
-		spname,
-		rz_reg_getv(core->analysis->reg, spname)
+		.op = &op,
+		.fcn = fcn,
+		.spname = spname,
+		.initial_sp = rz_reg_getv(core->analysis->reg, spname),
+		.shadow_store = fcn && fcn->cc ? rz_analysis_cc_shadow_store(core->analysis, fcn->cc) : 0
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	// this is necessary for the hook to read the id of analop
 	ESIL->user = &ctx;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
-
-	if (fcn && fcn->reg_save_area) {
-		rz_reg_setv(core->analysis->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
+	if (ctx.shadow_store) {
+		rz_reg_setv(core->analysis->reg, ctx.spname, ctx.initial_sp - ctx.shadow_store);
 	}
 	// RZ_LOG_ERROR("core: analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	//  TODO: backup/restore register state before/after analysis

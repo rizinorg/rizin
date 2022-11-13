@@ -649,7 +649,11 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 		SET_SRC_DST_3_REG_OR_IMM(op);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		SET_SRC_DST_3_REG_OR_IMM(op);
+		if (OPCOUNT() == 2 && OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
+			SET_SRC_DST_2_REGS(op);
+		} else {
+			SET_SRC_DST_3_REG_OR_IMM(op);
+		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_DIV: // UDIV
 #if 0

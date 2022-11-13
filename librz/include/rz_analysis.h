@@ -165,9 +165,8 @@ typedef struct rz_analysis_function_t {
 	RzPVector /*<RzAnalysisVar *>*/ vars;
 	RzType *ret_type;
 	HtUP /*<st64, RzPVector<RzAnalysisVar *>>*/ *inst_vars; // offset of instructions => the variables they access
-	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
 	st64 bp_off; // offset of bp inside owned stack frame
-	st64 stack; // stack frame size
+	RZ_DEPRECATE st64 stack; // stack frame size
 	int maxstack;
 	int ninstr;
 	bool is_pure;
@@ -510,7 +509,6 @@ typedef struct rz_analysis_t {
 	RzList /*<RzAnalysisRefline *>*/ *reflines;
 	// RzList *noreturn;
 	RzListComparator columnSort;
-	int stackptr;
 	bool (*log)(struct rz_analysis_t *analysis, const char *msg);
 	bool (*read_at)(struct rz_analysis_t *analysis, ut64 addr, ut8 *buf, int len);
 	int seggrn;
@@ -605,6 +603,32 @@ typedef enum {
 	RZ_ANALYSIS_VAR_KIND_BPV = 'b',
 	RZ_ANALYSIS_VAR_KIND_SPV = 's'
 } RzAnalysisVarKind;
+
+/**
+ * \brief An address on the stack
+ *
+ * These addresses are a relative offset to the value of the stack pointer
+ * when entering a function, i.e. just before the first instruction inside the function is executed.
+ * Thus, with the most common calling conventions, the return address with be at addr 0,
+ * arguments at positive addresses and local variables at negative addresses:
+ *
+ * For example (stack grows down):
+ *
+ * ```
+ * | ...             |
+ * | arguments       |
+ * |-----------------| < +8
+ * | return addr     |
+ * |-----------------| < 0
+ * | saved registers |
+ * | ...             |
+ * |-----------------| < negative values
+ * | local variables |
+ * | ...             |
+ * ```
+ */
+typedef st64 RzStackAddr;
+#define RZ_STACK_ADDR_INVALID ST32_MAX
 
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
@@ -771,13 +795,32 @@ typedef struct rz_analysis_bb_t {
 	ut32 colorize;
 	RzAnalysisCond *cond;
 	RzAnalysisSwitchOp *switch_op;
-	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
+
+	/**
+	 * Offsets of instructions in this block
+	 * Count is ninstr - 1 (first is always 0)
+	 */
+	ut16 *op_pos;
+
+	/**
+	 * Stack pointer deltas of instructions in this block.
+	 *
+	 * `sp_delta[i]` is the difference between the stack pointer value after
+	 * executing the i-th instruction in the block and sp_entry.
+	 * Count is ninstr.
+	 */
+	RzVector /*<st16>*/ sp_delta;
+
+	/**
+	 * Value of the stack pointer when entering this block
+	 * or RZ_STACK_ADDR_INVALID if unknown
+	 */
+	RzStackAddr sp_entry;
+
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
 	int op_pos_size; // size of the op_pos array
 	int ninstr;
-	int stackptr;
-	int parent_stackptr;
 	ut64 cmpval;
 	const char *cmpreg;
 	ut32 bbhash; // calculated with xxhash
@@ -788,10 +831,10 @@ typedef struct rz_analysis_bb_t {
 } RzAnalysisBlock;
 
 typedef struct rz_analysis_task_item {
-	RzAnalysisFunction *fcn; // current function
-	RzAnalysisBlock *block; // block being analyzed
-	st64 stack; // stack pointer value for variable analysis
-	ut64 start_address; // if block = NULL, creates block at address, else continues analysis from here
+	RzAnalysisFunction *fcn; ///< current function
+	RzAnalysisBlock *block; ///< block being analyzed
+	RzStackAddr sp; ///< stack pointer value for variable analysis
+	ut64 start_address; ///< if block = NULL, creates block at address, else continues analysis from here
 } RzAnalysisTaskItem;
 
 typedef enum {
@@ -1275,9 +1318,16 @@ RZ_API RzAnalysisBlock *rz_analysis_find_most_relevant_block_in(RzAnalysis *anal
 
 RZ_API ut16 rz_analysis_block_get_op_offset(RzAnalysisBlock *block, size_t i);
 RZ_API ut64 rz_analysis_block_get_op_addr(RzAnalysisBlock *block, size_t i);
-RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off);
+RZ_API int rz_analysis_block_get_op_index_in(RzAnalysisBlock *bb, ut64 addr);
+RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 addr);
 RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut16 v);
 RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i);
+RZ_API st16 rz_analysis_block_get_op_sp_delta(RzAnalysisBlock *bb, size_t i);
+RZ_API bool rz_analysis_block_set_op_sp_delta(RzAnalysisBlock *bb, size_t i, st16 delta);
+RZ_API st16 rz_analysis_block_get_sp_delta_at(RzAnalysisBlock *bb, ut64 addr);
+RZ_API st16 rz_analysis_block_get_sp_delta_at_end(RzAnalysisBlock *bb);
+RZ_API RzStackAddr rz_analysis_block_get_sp_at_end(RzAnalysisBlock *bb);
+RZ_API RzStackAddr rz_analysis_block_get_sp_at(RzAnalysisBlock *bb, ut64 addr);
 RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block);
 
 // ---------------------------------------
@@ -1367,6 +1417,8 @@ RZ_API int rz_analysis_get_address_bits(RzAnalysis *analysis);
 
 /* op.c */
 RZ_API const char *rz_analysis_stackop_tostring(int s);
+RZ_API RzStackAddr rz_analysis_op_apply_sp_effect(RzAnalysisOp *op, RzStackAddr sp);
+RZ_API RZ_NULLABLE RZ_OWN char *rz_analysis_op_describe_sp_effect(RzAnalysisOp *op);
 RZ_API RzAnalysisOp *rz_analysis_op_new(void);
 RZ_API void rz_analysis_op_free(void *op);
 RZ_API void rz_analysis_op_init(RzAnalysisOp *op);
@@ -1512,7 +1564,7 @@ RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);
 RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn);
 
-RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address);
+RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address, RzStackAddr sp);
 RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks);
 
 RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn);
@@ -1583,7 +1635,7 @@ RZ_API RzAnalysisVarAccess *rz_analysis_var_get_access_at(RzAnalysisVar *var, ut
 
 RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var);
 
-RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op);
+RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, RzStackAddr sp);
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count);
 
 // Get the variable that var is written to at one of its accesses
@@ -1693,17 +1745,18 @@ RZ_API int rz_analysis_cond_eval(RzAnalysis *analysis, RzAnalysisCond *cond);
 RZ_API RzAnalysisCond *rz_analysis_cond_new_from_string(const char *str);
 
 /* jmptbl */
-RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
+RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr, RzStackAddr sp);
 
 typedef struct rz_jmptable_params_t {
-	ut64 jmp_address; /// Address of the jump instruction
-	st64 case_shift; /// Shift that is added to get the real number of the case.
-	ut64 jmptbl_loc; /// Address of the jump table
-	ut64 casetbl_loc; /// Address of the indirect case table
-	ut64 jmptbl_off; /// Base of the jump table
-	ut64 entry_size; /// Size in bytes of each case entry inside the jump table
-	ut64 table_count; /// Count of cases inside the jump table
-	ut64 default_case; /// Code address of the default case of the switch
+	ut64 jmp_address; ///< Address of the jump instruction
+	st64 case_shift; ///< Shift that is added to get the real number of the case.
+	ut64 jmptbl_loc; ///< Address of the jump table
+	ut64 casetbl_loc; ///< Address of the indirect case table
+	ut64 jmptbl_off; ///< Base of the jump table
+	ut64 entry_size; ///< Size in bytes of each case entry inside the jump table
+	ut64 table_count; ///< Count of cases inside the jump table
+	ut64 default_case; ///< Code address of the default case of the switch
+	RzStackAddr sp; ///< Value of the stack pointer after the jump instruction is executed
 	RzVector /*<RzAnalysisTaskItem>*/ *tasks; /// RzVector of RzAnalysisTaskItem to add new tasks to
 } RzAnalysisJmpTableParams;
 
@@ -1734,6 +1787,7 @@ RZ_API const char *rz_analysis_cc_error(RzAnalysis *analysis, const char *conven
 RZ_API void rz_analysis_cc_set_error(RzAnalysis *analysis, const char *convention, const char *error);
 RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc);
 RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *convention);
+RZ_API RzStackAddr rz_analysis_cc_shadow_store(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis);
 RZ_API void rz_analysis_set_cc_default(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis);

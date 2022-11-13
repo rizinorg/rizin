@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2021 dso <dso@rice.edu>
@@ -268,7 +269,6 @@ typedef struct {
 	char *comment;
 	char *opstr;
 	char *osl, *sl;
-	int stackptr, ostackptr;
 	int index;
 	ut64 at, vat, addr, dest;
 	int tries, cbytes, idx;
@@ -766,7 +766,6 @@ static RzDisasmState *ds_init(RzCore *core) {
 			rz_io_map_set_name(map, "fake.stack");
 		}
 	}
-	ds->stackptr = core->analysis->stackptr;
 	ds->show_flags = rz_config_get_b(core->config, "asm.flags");
 	ds->show_bytes = rz_config_get_b(core->config, "asm.bytes");
 	ds->show_bytes_right = rz_config_get_b(core->config, "asm.bytes.right");
@@ -1941,7 +1940,6 @@ static void ds_show_functions(RzDisasmState *ds) {
 		RZ_FREE(sign);
 	}
 
-	ds->stackptr = core->analysis->stackptr;
 	RzAnalysisFcnVarsCache vars_cache;
 	rz_analysis_fcn_vars_cache_init(core->analysis, &vars_cache, f);
 
@@ -2886,7 +2884,42 @@ static void ds_print_cycles(RzDisasmState *ds) {
 	}
 }
 
-#include "disasm_stackptr.inc"
+static RzStackAddr ds_stackptr_at(RzDisasmState *ds, ut64 addr) {
+	if (!ds->fcn) {
+		return RZ_STACK_ADDR_INVALID;
+	}
+	RzAnalysisBlock *block = rz_analysis_fcn_bbget_in(ds->core->analysis, ds->fcn, addr);
+	if (!block) {
+		return RZ_STACK_ADDR_INVALID;
+	}
+	return rz_analysis_block_get_sp_at(block, addr);
+}
+
+/**
+ * Print stackpointer info between offset and disassembly like
+ *     0x08049413   -12 -= 4       push  str.echoes
+ */
+static void ds_print_stackptr(RzDisasmState *ds) {
+	if (!ds->show_stackptr) {
+		return;
+	}
+	RzStackAddr sp = ds_stackptr_at(ds, ds->at);
+	if (sp == RZ_STACK_ADDR_INVALID) {
+		rz_cons_print("    ? ");
+	} else {
+		rz_cons_printf("%5" PFMT64d " ", sp);
+	}
+	char *eff = rz_analysis_op_describe_sp_effect(&ds->analysis_op);
+	if (eff) {
+		rz_cons_print(eff);
+		int len = strlen(eff);
+		for (; len < 6; len++) {
+			rz_cons_print(" ");
+		}
+	} else {
+		rz_cons_print("      ");
+	}
+}
 
 static void ds_print_offset(RzDisasmState *ds) {
 	RzCore *core = ds->core;
@@ -4614,7 +4647,6 @@ static void ds_pre_emulation(RzDisasmState *ds) {
 	if (end < 0 || end > maxemu) {
 		return;
 	}
-	ds->stackptr = ds->core->analysis->stackptr;
 	esil->cb.hook_reg_write = NULL;
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
@@ -4627,7 +4659,6 @@ static void ds_pre_emulation(RzDisasmState *ds) {
 					i += op->size - 1;
 				}
 			}
-			ds_update_stackptr(ds, op);
 			rz_analysis_op_free(op);
 		}
 	}

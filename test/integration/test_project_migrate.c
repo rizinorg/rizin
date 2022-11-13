@@ -280,6 +280,18 @@ static bool test_migrate_v8_v9_fingerprint() {
 	mu_end;
 }
 
+static bool test_migrate_v9_v10_stackptr() {
+	RzProject *prj = rz_project_load_file_raw("prj/v9-stackptr.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v9_v10(prj, res);
+	mu_assert_true(s, "migrate success");
+	// No changes, success result is enough for us
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -469,6 +481,38 @@ static bool test_load_v8_fingerprint() {
 	mu_end;
 }
 
+static bool test_load_v9_stackptr() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 9, "prj/v9-stackptr.rzdb");
+
+	// Old stackptr/parent_stackptr is useless, thus make sure our new sp_entry/sp_delta
+	// values are all empty.
+
+	RzAnalysisBlock *block = rz_analysis_get_block_at(core->analysis, 0x8048394);
+	mu_assert_notnull(block, "block");
+	mu_assert_eq(block->sp_entry, RZ_STACK_ADDR_INVALID, "sp_entry");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 0), ST16_MAX, "sp_delta");
+
+	block = rz_analysis_get_block_at(core->analysis, 0x8048484);
+	mu_assert_notnull(block, "block");
+	mu_assert_eq(block->sp_entry, RZ_STACK_ADDR_INVALID, "sp_entry");
+	mu_assert_eq(block->ninstr, 18, "ninstr");
+	for (size_t i = 0; i < block->ninstr; i++) {
+		mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, i), ST16_MAX, "sp_delta");
+	}
+
+	block = rz_analysis_get_block_at(core->analysis, 0x8048526);
+	mu_assert_notnull(block, "block");
+	mu_assert_eq(block->sp_entry, RZ_STACK_ADDR_INVALID, "sp_entry");
+	mu_assert_eq(block->ninstr, 4, "ninstr");
+	for (size_t i = 0; i < block->ninstr; i++) {
+		mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, i), ST16_MAX, "sp_delta");
+	}
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -480,6 +524,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v6_v7_esil_pins);
 	mu_run_test(test_migrate_v7_v8_zignatures);
 	mu_run_test(test_migrate_v8_v9_fingerprint);
+	mu_run_test(test_migrate_v9_v10_stackptr);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);
@@ -492,6 +537,7 @@ int all_tests() {
 	mu_run_test(test_load_v6_esil_pins);
 	mu_run_test(test_load_v7_zignatures);
 	mu_run_test(test_load_v8_fingerprint);
+	mu_run_test(test_load_v9_stackptr);
 	return tests_passed != tests_run;
 }
 
