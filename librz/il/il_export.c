@@ -939,6 +939,74 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "load";
 	case RZ_IL_OP_LOADW:
 		return "loadw";
+
+	case RZ_IL_OP_FLOAT:
+		return "float";
+	case RZ_IL_OP_FBITS:
+		return "fbits";
+	case RZ_IL_OP_IS_FINITE:
+		return "is_finite";
+	case RZ_IL_OP_IS_NAN:
+		return "is_nan";
+	case RZ_IL_OP_IS_INF:
+		return "is_inf";
+	case RZ_IL_OP_IS_FZERO:
+		return "is_fzero";
+	case RZ_IL_OP_IS_FNEG:
+		return "is_fneg";
+	case RZ_IL_OP_IS_FPOS:
+		return "is_fpos";
+	case RZ_IL_OP_FNEG:
+		return "fneg";
+	case RZ_IL_OP_FABS:
+		return "fabs";
+	case RZ_IL_OP_FCAST_INT:
+		return "fcast_int";
+	case RZ_IL_OP_FCAST_SINT:
+		return "fcast_sint";
+	case RZ_IL_OP_FCAST_FLOAT:
+		return "fcast_float";
+	case RZ_IL_OP_FCAST_SFLOAT:
+		return "fcast_sfloat";
+	case RZ_IL_OP_FCONVERT:
+		return "fconvert";
+	case RZ_IL_OP_FREQUAL:
+		return "frequal";
+	case RZ_IL_OP_FSUCC:
+		return "fsucc";
+	case RZ_IL_OP_FPRED:
+		return "fpred";
+	case RZ_IL_OP_FORDER:
+		return "forder";
+	case RZ_IL_OP_FROUND:
+		return "fround";
+	case RZ_IL_OP_FSQRT:
+		return "fsqrt";
+	case RZ_IL_OP_FRSQRT:
+		return "frsqrt";
+	case RZ_IL_OP_FADD:
+		return "fadd";
+	case RZ_IL_OP_FSUB:
+		return "fsub";
+	case RZ_IL_OP_FMUL:
+		return "fmul";
+	case RZ_IL_OP_FDIV:
+		return "fdiv";
+	case RZ_IL_OP_FMOD:
+		return "fmod";
+	case RZ_IL_OP_FHYPOT:
+		return "fhypot";
+	case RZ_IL_OP_FPOW:
+		return "fpow";
+	case RZ_IL_OP_FMAD:
+		return "fmad";
+	case RZ_IL_OP_FROOTN:
+		return "frootn";
+	case RZ_IL_OP_FPOWN:
+		return "fpown";
+	case RZ_IL_OP_FCOMPOUND:
+		return "fcompound";
+
 	case RZ_IL_OP_PURE_MAX:
 		break;
 	}
@@ -955,6 +1023,8 @@ RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort) {
 		return rz_str_newf("bitvector:%u", (unsigned int)sort.props.bv.length);
 	case RZ_IL_TYPE_PURE_BOOL:
 		return strdup("bool");
+	case RZ_IL_TYPE_PURE_FLOAT:
+		return rz_str_newf("float:%u", (unsigned int)sort.props.f.format);
 	}
 	return strdup("invalid");
 }
