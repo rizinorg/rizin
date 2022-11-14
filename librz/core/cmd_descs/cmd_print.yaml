@@ -452,15 +452,86 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
-  - name: pix
-    summary: Print assembly expression from hexpairs (alias for pad)
-    cname: assembly_of_hex_alias
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-    args:
-      - name: hexpair
-        type: RZ_CMD_ARG_TYPE_STRING
-        optional: false
+  - name: pi
+    summary: Print instructions
+    subcommands:
+      - name: pi
+        summary: Print <N> instructions/bytes
+        cname: print_instr
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pia
+        summary: Print all possible opcodes (byte by byte)
+        cname: print_instr_opcodes
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pib
+        summary: Print all instructions in a basic block
+        cname: print_instr_block
+        args: []
+      - name: pie
+        summary: Print offset and ESIL expression
+        cname: print_instr_esil
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pif
+        summary: Print all instructions at the current function
+        cname: print_instr_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pifc
+        summary: Print only call instructions at the current function
+        cname: print_calls_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pir
+        summary: Print instructions using recursive disassembly algorithm
+        cname: print_instr_recursive
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pir.
+        summary: Print instructions using recursive disassembly algorithm from the current position
+        cname: print_instr_recursive_at
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: piu
+        summary: Print all instructions until first ret/jmp
+        cname: print_instr_until
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: limit
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pix
+        summary: Print assembly expression from hexpairs (alias for pad)
+        cname: assembly_of_hex_alias
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
   - name: pI
     summary: Print instructions
     subcommands:
