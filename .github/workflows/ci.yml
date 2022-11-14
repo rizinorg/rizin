@@ -760,7 +760,7 @@ jobs:
           pip install -U rzpipe
       - name: Install rz-pipe-go
         run: |
-          go get github.com/rizinorg/rz-pipe/go
+          go install github.com/rizinorg/rz-pipe/go@latest
 
   test-osx-pkg:
     name: Test OSX pkg
