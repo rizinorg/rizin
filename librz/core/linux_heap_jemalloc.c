@@ -497,7 +497,7 @@ static int GH(cmd_dbg_map_jemalloc)(RzCore *core, const char *input) {
 		"dmxa", "[arena_t]", "show all arenas created, or print arena_t structure for given arena",
 		"dmxb", "[arena_t]", "show all bins created for given arena",
 		"dmxc", "*|[arena_t]", "show all chunks created in all arenas, or show all chunks created for a given arena_t instance",
-		// "dmhr", "[arena_chunk_t]", "print all runs created for a given arena_chunk_t instance",
+		// "dmxr", "[arena_chunk_t]", "print all runs created for a given arena_chunk_t instance",
 		"dmx?", "", "Show map heap help", NULL
 	};
 
@@ -505,20 +505,20 @@ static int GH(cmd_dbg_map_jemalloc)(RzCore *core, const char *input) {
 	case '?':
 		rz_core_cmd_help(core, help_msg);
 		break;
-	case 'a': // dmha
+	case 'a': // dmxa
 		GH(jemalloc_print_narenas)
 		(core, input + 1);
 		break;
-	case 'b': // dmhb
+	case 'b': // dmxb
 		GH(jemalloc_get_bins)
 		(core, input + 1);
 		break;
-	case 'c': // dmhc
+	case 'c': // dmxc
 		GH(jemalloc_get_chunks)
 		(core, input + 1);
 		break;
 		/*
-	case 'r': //dmhr
+	case 'r': //dmxr
 		GH(jemalloc_get_runs) (core, input + 1);
 		break;
 	*/
