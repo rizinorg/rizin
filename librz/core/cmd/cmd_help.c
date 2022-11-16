@@ -923,7 +923,22 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			break;
 		case '=': { // "?e="
 			ut64 pc = rz_num_math(core->num, input + 2);
-			rz_print_progressbar(core->print, pc, 80);
+			RzBarOptions opts = {
+				.unicode = rz_config_get_b(core->config, "scr.utf8"),
+				.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+				.legend = true,
+				.offset = rz_config_get_b(core->config, "hex.offset"),
+				.offpos = 0,
+				.cursor = false,
+				.curpos = 0,
+				.color = rz_config_get_i(core->config, "scr.color")
+			};
+			RzStrBuf *strbuf = rz_progressbar(&opts, pc, 80);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate progressbar\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 			rz_cons_newline();
 			break;
 		}
