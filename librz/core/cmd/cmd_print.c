@@ -315,36 +315,6 @@ static const char *help_detail2_pf[] = {
 	NULL
 };
 
-static const char *help_msg_pi[] = {
-	"Usage:", "pi[befr] [num]", "",
-	"pia", "", "print all possible opcodes (byte per byte)",
-	"pib", "", "print instructions of basic block",
-	"pie", "", "print offset + esil expression",
-	"pif", "[?]", "print instructions of function",
-	"pir", "", "like 'pdr' but with 'pI' output",
-	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
-	"pix", "  [hexpairs]", "alias for pad",
-	NULL
-};
-
-static const char *help_msg_pif[] = {
-	"Usage:",
-	"pif[cj]",
-	"",
-	"pif?",
-	"",
-	"print this help message",
-	"pifc",
-	"",
-	"print all calls from this function",
-	"pifcj",
-	"",
-	"print all calls from this function in JSON format",
-	"pifj",
-	"",
-	"print instructions of function in JSON format",
-};
-
 static const char *help_msg_ps[] = {
 	"Usage:", "ps[bijqpsuwWxz+] [N]", "Print String",
 	"ps", "", "print string",
@@ -3343,21 +3313,17 @@ dsmap {
 }
 #endif
 
-static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const char *arg) {
+static void disasm_until_ret(RzCore *core, ut64 addr, int limit, RzOutputMode mode) {
 	int p = 0;
-	const bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	int i, limit = 1024;
-	if (arg && *arg && arg[1]) {
-		limit = rz_num_math(core->num, arg + 1);
-	}
-	for (i = 0; i < limit; i++) {
+	const bool show_color = rz_config_get_i(core->config, "scr.color");
+	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 		if (op) {
 			char *mnem = op->mnemonic;
 			char *m = malloc((strlen(mnem) * 2) + 32);
 			strcpy(m, mnem);
 			// rz_parse_parse (core->parser, op->mnemonic, m);
-			if (type_print == 'q') {
+			if (mode == RZ_OUTPUT_MODE_QUIET) {
 				rz_cons_printf("%s\n", m);
 			} else {
 				if (show_color) {
@@ -3380,7 +3346,7 @@ static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const cha
 				addr += op->size;
 			}
 		} else {
-			eprintf("[pdp] Cannot get op at 0x%08" PFMT64x "\n", addr + p);
+			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr + p);
 			rz_analysis_op_free(op);
 			break;
 		}
@@ -3391,30 +3357,17 @@ beach:
 	return;
 }
 
-static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, char input, char type_print, bool fromHere) {
-	RzListIter *iter;
-	RzAnalysisBlock *b = NULL;
+static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere, RzCmdStateOutput *state) {
 	const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
 	rz_config_set_i(core->config, "asm.bb.middle", false);
-	PJ *pj = NULL;
 
-	// XXX: hack must be reviewed/fixed in code analysis
-	if (!b) {
-		if (rz_list_length(f->bbs) >= 1) {
-			ut32 fcn_size = rz_analysis_function_realsize(f);
-			b = rz_list_get_top(f->bbs);
-			if (b->size > fcn_size) {
-				b->size = fcn_size;
-			}
-		}
-	}
 	rz_list_sort(f->bbs, (RzListComparator)bbcmp);
-	if (input == 'j' && b) {
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_a(pj);
+
+	RzAnalysisBlock *b;
+	RzListIter *iter;
+
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		rz_cmd_state_output_array_start(state);
 		rz_list_foreach (f->bbs, iter, b) {
 			if (fromHere) {
 				if (b->addr < core->offset) {
@@ -3424,17 +3377,15 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, char input, ch
 				}
 			}
 			ut8 *buf = malloc(b->size);
-			if (buf) {
-				rz_io_read_at(core->io, b->addr, buf, b->size);
-				rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, pj);
-				free(buf);
-			} else {
+			if (!buf) {
 				RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", b->size);
+				return;
 			}
+			rz_io_read_at(core->io, b->addr, buf, b->size);
+			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, state->d.pj);
+			free(buf);
 		}
-		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
+		rz_cmd_state_output_array_end(state);
 	} else {
 		bool asm_lines = rz_config_get_i(core->config, "asm.lines.bb");
 		bool emu = rz_config_get_i(core->config, "asm.emu");
@@ -3446,8 +3397,9 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, char input, ch
 			saved_arena = rz_reg_arena_peek(core->analysis->reg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
+
 		rz_list_foreach (f->bbs, iter, b) {
-			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
+			pr_bb(core, f, b, emu, saved_gp, saved_arena, 'I', fromHere);
 		}
 		if (emu) {
 			core->analysis->gp = saved_gp;
@@ -3944,163 +3896,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	case '=': // "p="
 		cmd_print_bars(core, input);
 		break;
-	case 'i': // "pi"
-		switch (input[1]) {
-		case '?':
-			// rz_cons_printf ("|Usage: pi[defj] [num]\n");
-			rz_core_cmd_help(core, help_msg_pi);
-			break;
-		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
-			disasm_until_ret(core, core->offset, input[2], input + 2);
-			break;
-		case 'a': // "pia" is like "pda", but with "pi" output
-			if (l != 0) {
-				rz_core_print_disasm_all(core, core->offset,
-					l, len, 'i');
-			}
-			break;
-		case 'e': // "pie"
-			if (l != 0) {
-				rz_core_disasm_pdi(core, l, 0, 'e');
-			}
-			break;
-		case 'f': // "pif"
-			if (input[2] == '?') { // "pif?"
-				rz_core_cmd_help(core, help_msg_pif);
-			} else if (input[2] == 'j') {
-				rz_core_cmdf(core, "pdfj%s", input + 3);
-			} else if (input[2] == 'c') { // "pifc"
-				RzListIter *iter;
-				RzAnalysisXRef *xrefi;
-				RzList *refs = NULL;
-				PJ *pj = NULL;
-
-				// check for bounds
-				if (input[3] != 0) {
-					if (input[3] == 'j') { // "pifcj"
-						pj = pj_new();
-						pj_a(pj);
-					}
-				}
-				// get function in current offset
-				RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
-					RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-
-				// validate that a function was found in the given address
-				if (!f) {
-					// print empty json object
-					if (pj) {
-						pj_end(pj);
-						rz_cons_println(pj_string(pj));
-						pj_free(pj);
-					}
-					break;
-				}
-				// get all the calls of the function
-				refs = rz_core_analysis_fcn_get_calls(core, f);
-
-				// sanity check
-				if (!rz_list_empty(refs)) {
-
-					// store current configurations
-					RzConfigHold *hc = rz_config_hold_new(core->config);
-					rz_config_hold_i(hc, "asm.offset", NULL);
-					rz_config_hold_i(hc, "asm.comments", NULL);
-					rz_config_hold_i(hc, "asm.tabs", NULL);
-					rz_config_hold_i(hc, "asm.bytes", NULL);
-					rz_config_hold_i(hc, "emu.str", NULL);
-
-					// temporarily replace configurations
-					rz_config_set_i(core->config, "asm.offset", false);
-					rz_config_set_i(core->config, "asm.comments", false);
-					rz_config_set_i(core->config, "asm.tabs", 0);
-					rz_config_set_i(core->config, "asm.bytes", false);
-					rz_config_set_i(core->config, "emu.str", false);
-
-					// iterate over all call references
-					rz_list_foreach (refs, iter, xrefi) {
-						if (pj) {
-							RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, xrefi->to,
-								RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-							char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), xrefi->to);
-							char *dst2 = NULL;
-							RzAnalysisOp *op = rz_core_analysis_op(core, xrefi->to, RZ_ANALYSIS_OP_MASK_BASIC);
-							RzBinReloc *rel = rz_core_getreloc(core, xrefi->to, op->size);
-							if (rel) {
-								if (rel && rel->import && rel->import->name) {
-									dst2 = rel->import->name;
-								} else if (rel && rel->symbol && rel->symbol->name) {
-									dst2 = rel->symbol->name;
-								}
-							} else {
-								dst2 = dst;
-							}
-							pj_o(pj);
-							pj_ks(pj, "dest", dst2);
-							pj_kn(pj, "addr", xrefi->to);
-							pj_kn(pj, "at", xrefi->from);
-							pj_end(pj);
-							rz_analysis_op_free(op);
-						} else {
-							char *s = rz_core_cmd_strf(core, "pdq %i @ 0x%08" PFMT64x, 1, xrefi->from);
-							rz_cons_printf("%s", s);
-						}
-					}
-
-					// restore saved configuration
-					rz_config_hold_restore(hc);
-					rz_config_hold_free(hc);
-				}
-				// print json object
-				if (pj) {
-					pj_end(pj);
-					rz_cons_println(pj_string(pj));
-					pj_free(pj);
-				}
-			} else if (l != 0) {
-				RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
-					RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-				if (f) {
-					ut32 bsz = core->blocksize;
-					// int fsz = rz_analysis_function_realsize (f);
-					int fsz = rz_analysis_function_linear_size(f); // we want max-min here
-					rz_core_block_size(core, fsz);
-					rz_core_print_disasm_instructions(core, fsz, 0);
-					rz_core_block_size(core, bsz);
-				} else {
-					rz_core_print_disasm_instructions(core,
-						core->blocksize, l);
-				}
-			}
-			break;
-		case 'r': // "pir"
-		{
-			RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
-				RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-			if (f) {
-				func_walk_blocks(core, f, input[2], 'I', input[2] == '.');
-			} else {
-				RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-				core->num->value = 0;
-			}
-		} break;
-		case 'b': // "pib"
-		{
-			RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
-			if (b) {
-				rz_core_print_disasm_instructions(core, b->size - (core->offset - b->addr), 0);
-			} else {
-				RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-				core->num->value = 0;
-			}
-		} break;
-		default: // "pi"
-			if (l != 0) {
-				rz_core_print_disasm_instructions(core, 0, l);
-			}
-			break;
-		}
-		goto beach;
 	case 's': // "ps"
 		switch (input[1]) {
 		case '?': // "ps?"
@@ -6502,5 +6297,169 @@ RZ_IPI RzCmdStatus rz_print_key_mosaic_handler(RzCore *core, int argc, const cha
 	rz_io_read_at(core->io, offset0, core->block, len);
 	core->offset = offset0;
 	rz_cons_printf("\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_handler(RzCore *core, int argc, const char **argv) {
+	ut64 N = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (N == 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_print_disasm_instructions(core, 0, N);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_opcodes_handler(RzCore *core, int argc, const char **argv) {
+	ut64 N = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (N == 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_print_disasm_all(core, core->offset, N, N, 'i');
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_block_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	if (!b) {
+		RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		core->num->value = 0;
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_print_disasm_instructions(core, b->size - (core->offset - b->addr), 0);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_esil_handler(RzCore *core, int argc, const char **argv) {
+	ut64 N = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
+	if (N == 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_disasm_pdi(core, N, 0, 'e');
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		return rz_cmd_disassembly_function_handler(core, argc, argv, state);
+	}
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!f) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut32 bsz = core->blocksize;
+	// int fsz = rz_analysis_function_realsize (f);
+	int fsz = rz_analysis_function_linear_size(f); // we want max-min here
+	rz_core_block_size(core, fsz);
+	rz_core_print_disasm_instructions(core, fsz, 0);
+	rz_core_block_size(core, bsz);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzListIter *iter;
+	RzAnalysisXRef *xrefi;
+	RzList *refs = NULL;
+
+	rz_cmd_state_output_array_start(state);
+	// get function in current offset
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+
+	if (!f) {
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// get all the calls of the function
+	refs = rz_core_analysis_fcn_get_calls(core, f);
+	if (rz_list_empty(refs)) {
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	// store current configurations
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	rz_config_hold_i(hc, "asm.offset", NULL);
+	rz_config_hold_i(hc, "asm.comments", NULL);
+	rz_config_hold_i(hc, "asm.tabs", NULL);
+	rz_config_hold_i(hc, "asm.bytes", NULL);
+	rz_config_hold_i(hc, "emu.str", NULL);
+
+	// temporarily replace configurations
+	rz_config_set_i(core->config, "asm.offset", false);
+	rz_config_set_i(core->config, "asm.comments", false);
+	rz_config_set_i(core->config, "asm.tabs", 0);
+	rz_config_set_i(core->config, "asm.bytes", false);
+	rz_config_set_i(core->config, "emu.str", false);
+
+	// iterate over all call references
+	rz_list_foreach (refs, iter, xrefi) {
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, xrefi->to,
+				RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+			char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), xrefi->to);
+			char *dst2 = NULL;
+			RzAnalysisOp *op = rz_core_analysis_op(core, xrefi->to, RZ_ANALYSIS_OP_MASK_BASIC);
+			RzBinReloc *rel = rz_core_getreloc(core, xrefi->to, op->size);
+			if (rel) {
+				if (rel && rel->import && rel->import->name) {
+					dst2 = rel->import->name;
+				} else if (rel && rel->symbol && rel->symbol->name) {
+					dst2 = rel->symbol->name;
+				}
+			} else {
+				dst2 = dst;
+			}
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "dest", dst2);
+			pj_kn(state->d.pj, "addr", xrefi->to);
+			pj_kn(state->d.pj, "at", xrefi->from);
+			pj_end(state->d.pj);
+			rz_analysis_op_free(op);
+		} else {
+			ut64 off = core->offset;
+			rz_core_seek(core, xrefi->from, true);
+			core_disassembly(core, 1, 1, state, false);
+			rz_core_seek(core, off, true);
+		}
+	}
+
+	// restore saved configuration
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_recursive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!f) {
+		RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		core->num->value = 0;
+		return RZ_CMD_STATUS_ERROR;
+	}
+	func_walk_blocks(core, f, false, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_recursive_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset,
+		RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
+	if (!f) {
+		RZ_LOG_ERROR("core: Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		core->num->value = 0;
+		return RZ_CMD_STATUS_ERROR;
+	}
+	func_walk_blocks(core, f, true, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_instr_until_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
+	disasm_until_ret(core, core->offset, limit, state->mode);
 	return RZ_CMD_STATUS_OK;
 }
