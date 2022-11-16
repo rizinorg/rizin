@@ -1741,6 +1741,24 @@ RZ_IPI RzCmdStatus rz_cmd_print_gadget_move_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const char **argv);
 // "phl"
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_algo_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pi"
+RZ_IPI RzCmdStatus rz_print_instr_handler(RzCore *core, int argc, const char **argv);
+// "pia"
+RZ_IPI RzCmdStatus rz_print_instr_opcodes_handler(RzCore *core, int argc, const char **argv);
+// "pib"
+RZ_IPI RzCmdStatus rz_print_instr_block_handler(RzCore *core, int argc, const char **argv);
+// "pie"
+RZ_IPI RzCmdStatus rz_print_instr_esil_handler(RzCore *core, int argc, const char **argv);
+// "pif"
+RZ_IPI RzCmdStatus rz_print_instr_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pifc"
+RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pir"
+RZ_IPI RzCmdStatus rz_print_instr_recursive_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pir."
+RZ_IPI RzCmdStatus rz_print_instr_recursive_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "piu"
+RZ_IPI RzCmdStatus rz_print_instr_until_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pix"
 RZ_IPI RzCmdStatus rz_assembly_of_hex_alias_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pI"
