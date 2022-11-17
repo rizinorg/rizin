@@ -504,7 +504,22 @@ static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 		max = m->itv.addr + m->itv.size;
 	}
 	rz_cons_printf("0x%08" PFMT64x " ", fi->offset);
-	rz_print_rangebar(u->core->print, fi->offset, fi->offset + fi->size, min, max, u->cols);
+	RzBarOptions opts = {
+		.unicode = false,
+		.thinline = false,
+		.legend = true,
+		.offset = false,
+		.offpos = 0,
+		.cursor = false,
+		.curpos = 0,
+		.color = false
+	};
+	RzStrBuf *strbuf = rz_rangebar(&opts, fi->offset, fi->offset + fi->size, min, max, u->cols);
+	if (!strbuf) {
+		RZ_LOG_ERROR("Cannot generate rangebar\n");
+	} else {
+		rz_cons_print(rz_strbuf_drain(strbuf));
+	}
 	rz_cons_printf("  %s\n", fi->name);
 	return true;
 }

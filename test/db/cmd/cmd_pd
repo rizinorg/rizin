@@ -1441,7 +1441,6 @@ CMDS=<<EOF
 aaa
 e asm.bytes=true
 e asm.cmt.right=0
-e scr.colors=1
 e scr.html=1
 e str.escbslash=1
 pdJ 1 @ 0x08048532
