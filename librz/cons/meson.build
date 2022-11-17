@@ -1,4 +1,5 @@
 rz_cons_sources = [
+  'bar.c',
   'canvas.c',
   'canvas_line.c',
   'cons.c',
@@ -9,6 +10,7 @@ rz_cons_sources = [
   'input.c',
   'less.c',
   'line.c',
+  'histogram.c',
   'output.c',
   'pager.c',
   'pal.c',

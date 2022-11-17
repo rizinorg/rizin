@@ -2545,7 +2545,23 @@ static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 t
 			ut8 ptr[2] = {
 				(ut8)(pc * 2.5), 0
 			};
-			rz_print_fill(core->print, ptr, 1, UT64_MAX, core->blocksize);
+			RzHistogramOptions opts = {
+				.unicode = rz_config_get_b(core->config, "scr.utf8"),
+				.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+				.legend = false,
+				.offset = rz_config_get_b(core->config, "hex.offset"),
+				.offpos = UT64_MAX,
+				.cursor = false,
+				.curpos = 0,
+				.color = rz_config_get_i(core->config, "scr.color"),
+				.pal = &core->cons->context->pal
+			};
+			RzStrBuf *strbuf = rz_histogram_vertical(&opts, ptr, 1, core->blocksize);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate vertical histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 		}
 		addr += core->blocksize;
 	}

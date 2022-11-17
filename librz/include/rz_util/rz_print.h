@@ -201,7 +201,6 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL const ut8 *buf, int len, int wordsize);
 RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONNULL const ut8 *_a, ut64 ba, RZ_NONNULL const ut8 *_b, int len, int scndcol);
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt);
-RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len);
@@ -227,8 +226,6 @@ RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor)
 
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
-RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
-RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 RZ_API const char *rz_print_color_op_type(RZ_NONNULL RzPrint *p, ut32 /* RzAnalaysisOpType */ analysis_type);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);

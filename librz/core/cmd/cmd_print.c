@@ -2690,62 +2690,6 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 	return ptr;
 }
 
-static void core_print_columns(RzCore *core, const ut8 *buf, ut32 len, ut32 height) {
-	size_t i, j;
-	bool colors = rz_config_get_i(core->config, "scr.color") > 0;
-	RzCons *cons = rz_cons_singleton();
-	RzConsPrintablePalette *pal = &cons->context->pal;
-	ut32 cols = 78;
-	ut32 rows = height > 0 ? height : 10;
-	const char *vline = cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = cons->use_utf8 ? UTF_BLOCK : "#";
-	const char *kol[5];
-	kol[0] = pal->call;
-	kol[1] = pal->jmp;
-	kol[2] = pal->cjmp;
-	kol[3] = pal->mov;
-	kol[4] = pal->nop;
-	if (colors) {
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			size_t koli = i * 5 / rows;
-			for (j = 0; j < cols; j++) {
-				int realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					if (core->print->histblock) {
-						rz_cons_printf("%s%s%s", kol[koli], block, Color_RESET);
-					} else {
-						rz_cons_printf("%s%s%s", kol[koli], vline, Color_RESET);
-					}
-				} else {
-					rz_cons_print(" ");
-				}
-			}
-			rz_cons_print("\n");
-		}
-		return;
-	}
-
-	for (i = 0; i < rows; i++) {
-		size_t threshold = i * (0xff / rows);
-		for (j = 0; j < cols; j++) {
-			size_t realJ = j * len / cols;
-			if (255 - buf[realJ] < threshold) {
-				if (core->print->histblock) {
-					rz_cons_printf("%s%s%s", Color_BGGRAY, block, Color_RESET);
-				} else {
-					rz_cons_printf("%s", vline);
-				}
-			} else if (i + 1 == rows) {
-				rz_cons_print("_");
-			} else {
-				rz_cons_print(" ");
-			}
-		}
-		rz_cons_print("\n");
-	}
-}
-
 static void cmd_print_bars(RzCore *core, const char *input) {
 	bool print_bars = false;
 	ut8 *ptr = NULL;
@@ -2835,6 +2779,18 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			goto beach;
 		}
 	}
+	RzHistogramOptions opts = {
+		.unicode = rz_config_get_b(core->config, "scr.utf8"),
+		.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+		.legend = false,
+		.offset = rz_config_get_b(core->config, "hex.offset"),
+		.offpos = from,
+		.cursor = false,
+		.curpos = 0,
+		.color = rz_config_get_i(core->config, "scr.color"),
+		.pal = &core->cons->context->pal
+	};
+
 	switch (mode) {
 	case '?': // bars
 		rz_core_cmd_help(core, help_msg_p_equal);
@@ -2936,7 +2892,13 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 					}
 					ptr[i] = 256 * k / blocksize;
 				}
-			core_print_columns(core, ptr, nblocks, 14);
+
+			RzStrBuf *strbuf = rz_histogram_horizontal(&opts, ptr, nblocks, 14);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate horizontal histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 			free(p);
 		} break;
 		case 'e': // "p=e"
@@ -2960,11 +2922,22 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 				ptr[i] = (ut8)(255 * rz_hash_entropy_fraction(p, blocksize));
 			}
 			free(p);
-			core_print_columns(core, ptr, nblocks, 14);
+			RzStrBuf *strbuf = rz_histogram_horizontal(&opts, ptr, nblocks, 14);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate horizontal histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 		} break;
-		default:
-			core_print_columns(core, core->block, core->blocksize, 14);
+		default: {
+			RzStrBuf *strbuf = rz_histogram_horizontal(&opts, core->block, core->blocksize, 14);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate horizontal histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 			break;
+		}
 		}
 		break;
 	case '2': // "p=2"
@@ -2976,7 +2949,22 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		for (i = 0; i < words; i++) {
 			ut64 word64 = word[i] + ST16_MAX;
 			rz_cons_printf("0x%08" PFMT64x " %8d  ", core->offset + (i * 2), word[i]);
-			rz_print_progressbar(core->print, word64 * 100 / UT16_MAX, 60);
+			RzBarOptions baropts = {
+				.unicode = rz_config_get_b(core->config, "scr.utf8"),
+				.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+				.legend = false,
+				.offset = rz_config_get_b(core->config, "hex.offset"),
+				.offpos = 0,
+				.cursor = false,
+				.curpos = 0,
+				.color = rz_config_get_i(core->config, "scr.color")
+			};
+			RzStrBuf *strbuf = rz_progressbar(&baropts, word64 * 100 / UT16_MAX, 60);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate vertical histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 			rz_cons_printf(" %" PFMT64d, word64 - oldword);
 			oldword = word64;
 			rz_cons_newline();
@@ -3121,13 +3109,29 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		print_bars = true;
 	} break;
 	case 'b': // bytes
-	case '\0':
+	case '\0': {
 		ptr = calloc(1, nblocks);
 		rz_io_read_at(core->io, from, ptr, nblocks);
-		// TODO: support print_bars
-		rz_print_fill(core->print, ptr, nblocks, from, blocksize);
+		RzHistogramOptions opts = {
+			.unicode = rz_config_get_b(core->config, "scr.utf8"),
+			.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+			.legend = false,
+			.offset = rz_config_get_b(core->config, "hex.offset"),
+			.offpos = from,
+			.cursor = false,
+			.curpos = 0,
+			.color = rz_config_get_i(core->config, "scr.color"),
+			.pal = &core->cons->context->pal
+		};
+		RzStrBuf *strbuf = rz_histogram_vertical(&opts, ptr, nblocks, blocksize);
+		if (!strbuf) {
+			RZ_LOG_ERROR("Cannot generate vertical histogram\n");
+		} else {
+			rz_cons_print(rz_strbuf_drain(strbuf));
+		}
 		RZ_FREE(ptr);
 		break;
+	}
 	}
 	if (print_bars) {
 		bool hex_offset = rz_config_get_i(core->config, "hex.offset");
@@ -3181,7 +3185,23 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 			break;
 		default:
 			core->print->num = core->num;
-			rz_print_fill(core->print, ptr, nblocks, from, blocksize);
+			RzHistogramOptions opts = {
+				.unicode = rz_config_get_b(core->config, "scr.utf8"),
+				.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+				.legend = false,
+				.offset = rz_config_get_b(core->config, "hex.offset"),
+				.offpos = from,
+				.cursor = false,
+				.curpos = 0,
+				.color = rz_config_get_i(core->config, "scr.color"),
+				.pal = &core->cons->context->pal
+			};
+			RzStrBuf *strbuf = rz_histogram_vertical(&opts, ptr, nblocks, blocksize);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate vertical histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 			break;
 		}
 	}

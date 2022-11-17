@@ -8,6 +8,7 @@
 #include "../core_private.h"
 
 struct open_list_ascii_data_t {
+	RzCore *core;
 	RzPrint *p;
 	int fdsz;
 };
@@ -41,15 +42,27 @@ static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
 
 static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
-	RzPrint *p = u->p;
+	RzCore *core = u->core;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
 	rz_cons_printf("%2d %c %s 0x%08" PFMT64x " ", desc->fd,
 		(desc->io && (desc->io->desc == desc)) ? '*' : '-', rz_str_rwx_i(desc->perm), sz);
-	int flags = p->flags;
-	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
-	rz_print_progressbar(p, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
-	p->flags = flags;
+	RzBarOptions opts = {
+		.unicode = rz_config_get_b(core->config, "scr.utf8"),
+		.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+		.legend = false,
+		.offset = rz_config_get_b(core->config, "hex.offset"),
+		.offpos = 0,
+		.cursor = false,
+		.curpos = 0,
+		.color = rz_config_get_i(core->config, "scr.color")
+	};
+	RzStrBuf *strbuf = rz_progressbar(&opts, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
+	if (!strbuf) {
+		RZ_LOG_ERROR("Cannot generate progressbar\n");
+	} else {
+		rz_cons_print(rz_strbuf_drain(strbuf));
+	}
 	rz_cons_printf(" %s\n", desc->uri);
 	return true;
 }
@@ -121,6 +134,7 @@ RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char 
 }
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv) {
 	struct open_list_ascii_data_t data = { 0 };
+	data.core = core;
 	data.p = core->print;
 	data.fdsz = 0;
 	rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, &data);
