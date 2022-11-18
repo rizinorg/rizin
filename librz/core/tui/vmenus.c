@@ -396,7 +396,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	if (cols > 30) {
 		rz_cons_column(cols);
 	}
-        set_current_option_to_seek(core);
+	set_current_option_to_seek(core);
 	switch (level) {
 	// Show functions list help in visual mode
 	case 0: {
