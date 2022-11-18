@@ -364,6 +364,18 @@ static void rz_core_vmenu_append_help(RzStrBuf *p, const char **help) {
 	}
 }
 
+static void set_current_option_to_seek(RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	int i = 0;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		if (core->offset == fcn->addr) {
+			option = i;
+		}
+		i++;
+	}
+}
+
 static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	rz_return_val_if_fail(core, 0);
 	RzCoreVisual *visual = core->visual;
@@ -384,6 +396,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	if (cols > 30) {
 		rz_cons_column(cols);
 	}
+        set_current_option_to_seek(core);
 	switch (level) {
 	// Show functions list help in visual mode
 	case 0: {
@@ -914,15 +927,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case 'g': {
 			rz_core_visual_showcursor(core, true);
 			rz_core_visual_offset(core); // change the seek to selected offset
-			RzListIter *iter; // change the current option to selected seek
-			RzAnalysisFunction *fcn;
-			int i = 0;
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
-				if (core->offset == fcn->addr) {
-					option = i;
-				}
-				i++;
-			}
+			set_current_option_to_seek(core);
 			rz_core_visual_showcursor(core, false);
 		} break;
 		case 'G':
