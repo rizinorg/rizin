@@ -2024,6 +2024,7 @@ RzILOpEffect *x86_il_lods_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		break;
 	default:
 		rz_warn_if_reached();
+		return NULL;
 	}
 
 	if (analysis->bits == 64) {
@@ -2924,6 +2925,7 @@ RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		break;
 	default:
 		rz_warn_if_reached();
+		return NULL;
 	}
 
 	if (analysis->bits == 64) {
@@ -3065,6 +3067,7 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		break;
 	default:
 		rz_warn_if_reached();
+		return NULL;
 	}
 
 	if (analysis->bits == 64) {
