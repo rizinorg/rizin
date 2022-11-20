@@ -3066,6 +3066,213 @@ EXPECT=<<EOF
     "mnemonic": "xor",
     "mask": "ffff",
     "esil": "eax,eax,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
+    "rzil": {
+      "opcode": "seq",
+      "x": {
+        "opcode": "set",
+        "dst": "_xor",
+        "src": {
+          "opcode": "^",
+          "x": {
+            "opcode": "var",
+            "value": "eax"
+          },
+          "y": {
+            "opcode": "var",
+            "value": "eax"
+          }
+        }
+      },
+      "y": {
+        "opcode": "seq",
+        "x": {
+          "opcode": "set",
+          "dst": "eax",
+          "src": {
+            "opcode": "var",
+            "value": "_xor"
+          }
+        },
+        "y": {
+          "opcode": "seq",
+          "x": {
+            "opcode": "set",
+            "dst": "of",
+            "src": {
+              "opcode": "bool",
+              "value": false
+            }
+          },
+          "y": {
+            "opcode": "seq",
+            "x": {
+              "opcode": "set",
+              "dst": "cf",
+              "src": {
+                "opcode": "bool",
+                "value": false
+              }
+            },
+            "y": {
+              "opcode": "seq",
+              "x": {
+                "opcode": "set",
+                "dst": "_result",
+                "src": {
+                  "opcode": "var",
+                  "value": "_xor"
+                }
+              },
+              "y": {
+                "opcode": "seq",
+                "x": {
+                  "opcode": "seq",
+                  "x": {
+                    "opcode": "seq",
+                    "x": {
+                      "opcode": "set",
+                      "dst": "_popcnt",
+                      "src": {
+                        "opcode": "bitv",
+                        "bits": "0x0",
+                        "len": 8
+                      }
+                    },
+                    "y": {
+                      "opcode": "set",
+                      "dst": "_val",
+                      "src": {
+                        "opcode": "cast",
+                        "value": {
+                          "opcode": "var",
+                          "value": "_result"
+                        },
+                        "length": 8,
+                        "fill": {
+                          "opcode": "bool",
+                          "value": false
+                        }
+                      }
+                    }
+                  },
+                  "y": {
+                    "opcode": "repeat",
+                    "condition": {
+                      "opcode": "is_zero",
+                      "bv": {
+                        "opcode": "var",
+                        "value": "_val"
+                      }
+                    },
+                    "data_eff": {
+                      "opcode": "seq",
+                      "x": {
+                        "opcode": "set",
+                        "dst": "_popcnt",
+                        "src": {
+                          "opcode": "+",
+                          "x": {
+                            "opcode": "var",
+                            "value": "_popcnt"
+                          },
+                          "y": {
+                            "opcode": "ite",
+                            "condition": {
+                              "opcode": "lsb",
+                              "bv": {
+                                "opcode": "var",
+                                "value": "_val"
+                              }
+                            },
+                            "x": {
+                              "opcode": "bitv",
+                              "bits": "0x1",
+                              "len": 8
+                            },
+                            "y": {
+                              "opcode": "bitv",
+                              "bits": "0x0",
+                              "len": 8
+                            }
+                          }
+                        }
+                      },
+                      "y": {
+                        "opcode": "set",
+                        "dst": "_val",
+                        "src": {
+                          "opcode": ">>",
+                          "x": {
+                            "opcode": "var",
+                            "value": "_val"
+                          },
+                          "y": {
+                            "opcode": "bitv",
+                            "bits": "0x1",
+                            "len": 8
+                          },
+                          "fill_bit": {
+                            "opcode": "bool",
+                            "value": false
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "y": {
+                  "opcode": "seq",
+                  "x": {
+                    "opcode": "set",
+                    "dst": "pf",
+                    "src": {
+                      "opcode": "is_zero",
+                      "bv": {
+                        "opcode": "smod",
+                        "x": {
+                          "opcode": "var",
+                          "value": "_popcnt"
+                        },
+                        "y": {
+                          "opcode": "bitv",
+                          "bits": "0x2",
+                          "len": 8
+                        }
+                      }
+                    }
+                  },
+                  "y": {
+                    "opcode": "seq",
+                    "x": {
+                      "opcode": "set",
+                      "dst": "zf",
+                      "src": {
+                        "opcode": "is_zero",
+                        "bv": {
+                          "opcode": "var",
+                          "value": "_result"
+                        }
+                      }
+                    },
+                    "y": {
+                      "opcode": "set",
+                      "dst": "sf",
+                      "src": {
+                        "opcode": "msb",
+                        "bv": {
+                          "opcode": "var",
+                          "value": "_result"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "sign": false,
     "prefix": 0,
     "id": 334,
@@ -3121,6 +3328,461 @@ EXPECT=<<EOF
     "mnemonic": "pushf",
     "mask": "ffff",
     "esil": "4,esp,-=,eflags,esp,=[4]",
+    "rzil": {
+      "opcode": "seq",
+      "x": {
+        "opcode": "set",
+        "dst": "esp",
+        "src": {
+          "opcode": "-",
+          "x": {
+            "opcode": "var",
+            "value": "esp"
+          },
+          "y": {
+            "opcode": "bitv",
+            "bits": "0x4",
+            "len": 32
+          }
+        }
+      },
+      "y": {
+        "opcode": "storew",
+        "mem": 0,
+        "key": {
+          "opcode": "+",
+          "x": {
+            "opcode": "+",
+            "x": {
+              "opcode": "cast",
+              "value": {
+                "opcode": "var",
+                "value": "esp"
+              },
+              "length": 32,
+              "fill": {
+                "opcode": "bool",
+                "value": false
+              }
+            },
+            "y": {
+              "opcode": "bitv",
+              "bits": "0x0",
+              "len": 32
+            }
+          },
+          "y": {
+            "opcode": "<<",
+            "x": {
+              "opcode": "cast",
+              "value": {
+                "opcode": "var",
+                "value": "ss"
+              },
+              "length": 32,
+              "fill": {
+                "opcode": "bool",
+                "value": false
+              }
+            },
+            "y": {
+              "opcode": "bitv",
+              "bits": "0x4",
+              "len": 8
+            },
+            "fill_bit": {
+              "opcode": "bool",
+              "value": false
+            }
+          }
+        },
+        "value": {
+          "opcode": "cast",
+          "value": {
+            "opcode": "|",
+            "x": {
+              "opcode": "<<",
+              "x": {
+                "opcode": "|",
+                "x": {
+                  "opcode": "<<",
+                  "x": {
+                    "opcode": "|",
+                    "x": {
+                      "opcode": "<<",
+                      "x": {
+                        "opcode": "|",
+                        "x": {
+                          "opcode": "<<",
+                          "x": {
+                            "opcode": "|",
+                            "x": {
+                              "opcode": "<<",
+                              "x": {
+                                "opcode": "|",
+                                "x": {
+                                  "opcode": "<<",
+                                  "x": {
+                                    "opcode": "|",
+                                    "x": {
+                                      "opcode": "<<",
+                                      "x": {
+                                        "opcode": "|",
+                                        "x": {
+                                          "opcode": "<<",
+                                          "x": {
+                                            "opcode": "|",
+                                            "x": {
+                                              "opcode": "<<",
+                                              "x": {
+                                                "opcode": "|",
+                                                "x": {
+                                                  "opcode": "<<",
+                                                  "x": {
+                                                    "opcode": "|",
+                                                    "x": {
+                                                      "opcode": "<<",
+                                                      "x": {
+                                                        "opcode": "|",
+                                                        "x": {
+                                                          "opcode": "<<",
+                                                          "x": {
+                                                            "opcode": "ite",
+                                                            "condition": {
+                                                              "opcode": "bool",
+                                                              "value": false
+                                                            },
+                                                            "x": {
+                                                              "opcode": "bitv",
+                                                              "bits": "0x1",
+                                                              "len": 16
+                                                            },
+                                                            "y": {
+                                                              "opcode": "bitv",
+                                                              "bits": "0x0",
+                                                              "len": 16
+                                                            }
+                                                          },
+                                                          "y": {
+                                                            "opcode": "bitv",
+                                                            "bits": "0x1",
+                                                            "len": 16
+                                                          },
+                                                          "fill_bit": {
+                                                            "opcode": "bool",
+                                                            "value": false
+                                                          }
+                                                        },
+                                                        "y": {
+                                                          "opcode": "ite",
+                                                          "condition": {
+                                                            "opcode": "var",
+                                                            "value": "nt"
+                                                          },
+                                                          "x": {
+                                                            "opcode": "bitv",
+                                                            "bits": "0x1",
+                                                            "len": 16
+                                                          },
+                                                          "y": {
+                                                            "opcode": "bitv",
+                                                            "bits": "0x0",
+                                                            "len": 16
+                                                          }
+                                                        }
+                                                      },
+                                                      "y": {
+                                                        "opcode": "bitv",
+                                                        "bits": "0x2",
+                                                        "len": 16
+                                                      },
+                                                      "fill_bit": {
+                                                        "opcode": "bool",
+                                                        "value": false
+                                                      }
+                                                    },
+                                                    "y": {
+                                                      "opcode": "bitv",
+                                                      "bits": "0x3",
+                                                      "len": 16
+                                                    }
+                                                  },
+                                                  "y": {
+                                                    "opcode": "bitv",
+                                                    "bits": "0x1",
+                                                    "len": 16
+                                                  },
+                                                  "fill_bit": {
+                                                    "opcode": "bool",
+                                                    "value": false
+                                                  }
+                                                },
+                                                "y": {
+                                                  "opcode": "ite",
+                                                  "condition": {
+                                                    "opcode": "var",
+                                                    "value": "of"
+                                                  },
+                                                  "x": {
+                                                    "opcode": "bitv",
+                                                    "bits": "0x1",
+                                                    "len": 16
+                                                  },
+                                                  "y": {
+                                                    "opcode": "bitv",
+                                                    "bits": "0x0",
+                                                    "len": 16
+                                                  }
+                                                }
+                                              },
+                                              "y": {
+                                                "opcode": "bitv",
+                                                "bits": "0x1",
+                                                "len": 16
+                                              },
+                                              "fill_bit": {
+                                                "opcode": "bool",
+                                                "value": false
+                                              }
+                                            },
+                                            "y": {
+                                              "opcode": "ite",
+                                              "condition": {
+                                                "opcode": "var",
+                                                "value": "df"
+                                              },
+                                              "x": {
+                                                "opcode": "bitv",
+                                                "bits": "0x1",
+                                                "len": 16
+                                              },
+                                              "y": {
+                                                "opcode": "bitv",
+                                                "bits": "0x0",
+                                                "len": 16
+                                              }
+                                            }
+                                          },
+                                          "y": {
+                                            "opcode": "bitv",
+                                            "bits": "0x1",
+                                            "len": 16
+                                          },
+                                          "fill_bit": {
+                                            "opcode": "bool",
+                                            "value": false
+                                          }
+                                        },
+                                        "y": {
+                                          "opcode": "ite",
+                                          "condition": {
+                                            "opcode": "var",
+                                            "value": "if"
+                                          },
+                                          "x": {
+                                            "opcode": "bitv",
+                                            "bits": "0x1",
+                                            "len": 16
+                                          },
+                                          "y": {
+                                            "opcode": "bitv",
+                                            "bits": "0x0",
+                                            "len": 16
+                                          }
+                                        }
+                                      },
+                                      "y": {
+                                        "opcode": "bitv",
+                                        "bits": "0x1",
+                                        "len": 16
+                                      },
+                                      "fill_bit": {
+                                        "opcode": "bool",
+                                        "value": false
+                                      }
+                                    },
+                                    "y": {
+                                      "opcode": "ite",
+                                      "condition": {
+                                        "opcode": "var",
+                                        "value": "tf"
+                                      },
+                                      "x": {
+                                        "opcode": "bitv",
+                                        "bits": "0x1",
+                                        "len": 16
+                                      },
+                                      "y": {
+                                        "opcode": "bitv",
+                                        "bits": "0x0",
+                                        "len": 16
+                                      }
+                                    }
+                                  },
+                                  "y": {
+                                    "opcode": "bitv",
+                                    "bits": "0x1",
+                                    "len": 16
+                                  },
+                                  "fill_bit": {
+                                    "opcode": "bool",
+                                    "value": false
+                                  }
+                                },
+                                "y": {
+                                  "opcode": "ite",
+                                  "condition": {
+                                    "opcode": "var",
+                                    "value": "zf"
+                                  },
+                                  "x": {
+                                    "opcode": "bitv",
+                                    "bits": "0x1",
+                                    "len": 16
+                                  },
+                                  "y": {
+                                    "opcode": "bitv",
+                                    "bits": "0x0",
+                                    "len": 16
+                                  }
+                                }
+                              },
+                              "y": {
+                                "opcode": "bitv",
+                                "bits": "0x1",
+                                "len": 16
+                              },
+                              "fill_bit": {
+                                "opcode": "bool",
+                                "value": false
+                              }
+                            },
+                            "y": {
+                              "opcode": "ite",
+                              "condition": {
+                                "opcode": "var",
+                                "value": "zf"
+                              },
+                              "x": {
+                                "opcode": "bitv",
+                                "bits": "0x1",
+                                "len": 16
+                              },
+                              "y": {
+                                "opcode": "bitv",
+                                "bits": "0x0",
+                                "len": 16
+                              }
+                            }
+                          },
+                          "y": {
+                            "opcode": "bitv",
+                            "bits": "0x2",
+                            "len": 16
+                          },
+                          "fill_bit": {
+                            "opcode": "bool",
+                            "value": false
+                          }
+                        },
+                        "y": {
+                          "opcode": "ite",
+                          "condition": {
+                            "opcode": "var",
+                            "value": "af"
+                          },
+                          "x": {
+                            "opcode": "bitv",
+                            "bits": "0x1",
+                            "len": 16
+                          },
+                          "y": {
+                            "opcode": "bitv",
+                            "bits": "0x0",
+                            "len": 16
+                          }
+                        }
+                      },
+                      "y": {
+                        "opcode": "bitv",
+                        "bits": "0x2",
+                        "len": 16
+                      },
+                      "fill_bit": {
+                        "opcode": "bool",
+                        "value": false
+                      }
+                    },
+                    "y": {
+                      "opcode": "ite",
+                      "condition": {
+                        "opcode": "var",
+                        "value": "pf"
+                      },
+                      "x": {
+                        "opcode": "bitv",
+                        "bits": "0x1",
+                        "len": 16
+                      },
+                      "y": {
+                        "opcode": "bitv",
+                        "bits": "0x0",
+                        "len": 16
+                      }
+                    }
+                  },
+                  "y": {
+                    "opcode": "bitv",
+                    "bits": "0x1",
+                    "len": 16
+                  },
+                  "fill_bit": {
+                    "opcode": "bool",
+                    "value": false
+                  }
+                },
+                "y": {
+                  "opcode": "bitv",
+                  "bits": "0x1",
+                  "len": 16
+                }
+              },
+              "y": {
+                "opcode": "bitv",
+                "bits": "0x1",
+                "len": 16
+              },
+              "fill_bit": {
+                "opcode": "bool",
+                "value": false
+              }
+            },
+            "y": {
+              "opcode": "ite",
+              "condition": {
+                "opcode": "var",
+                "value": "cf"
+              },
+              "x": {
+                "opcode": "bitv",
+                "bits": "0x1",
+                "len": 16
+              },
+              "y": {
+                "opcode": "bitv",
+                "bits": "0x0",
+                "len": 16
+              }
+            }
+          },
+          "length": 16,
+          "fill": {
+            "opcode": "bool",
+            "value": false
+          }
+        }
+      }
+    },
     "sign": false,
     "prefix": 0,
     "id": 591,
@@ -3366,7 +4028,7 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-17
+18
 address: 0x0
 opcode: nop
 esilcost: 0
@@ -3383,6 +4045,7 @@ sign: false
 type: nop
 cycles: 1
 esil: ,
+rzil: nop
 family: cpu
 90
 EOF
