@@ -3228,7 +3228,7 @@ EXPECT=<<EOF
                     "src": {
                       "opcode": "is_zero",
                       "bv": {
-                        "opcode": "smod",
+                        "opcode": "mod",
                         "x": {
                           "opcode": "var",
                           "value": "_popcnt"
