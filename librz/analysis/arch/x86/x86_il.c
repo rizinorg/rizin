@@ -3514,7 +3514,14 @@ RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnaly
 	}
 
 	x86_il_ins lifter = x86_ins[ins->mnem];
-	RzILOpEffect *lifted = lifter(ins, pc, analysis);
+
+	RzILOpEffect *lifted;
+
+	if (!lifter) {
+		/* For unimplemented instructions */
+		lifter = x86_il_unimpl;
+	}
+	lifted = lifter(ins, pc, analysis);
 
 	aop->il_op = lifted;
 	return true;

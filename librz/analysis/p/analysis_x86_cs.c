@@ -3216,15 +3216,15 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		}
 	}
 
-	// x86 RzIL uplifting
-	X86ILIns x86_il_ins = {
-		.structure = &ctx->insn->detail->x86,
-		.mnem = ctx->insn->id
-	};
-	rz_x86_il_opcode(a, op, addr, &x86_il_ins);
-
-	//#if X86_GRP_PRIVILEGE>0
 	if (ctx->insn) {
+		// x86 RzIL uplifting
+		X86ILIns x86_il_ins = {
+			.structure = &ctx->insn->detail->x86,
+			.mnem = ctx->insn->id
+		};
+		rz_x86_il_opcode(a, op, addr, &x86_il_ins);
+
+		//#if X86_GRP_PRIVILEGE>0
 #if HAVE_CSGRP_PRIVILEGE
 		if (cs_insn_group(ctx->handle, ctx->insn, X86_GRP_PRIVILEGE)) {
 			op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
