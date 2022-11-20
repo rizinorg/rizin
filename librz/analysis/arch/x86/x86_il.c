@@ -648,7 +648,7 @@ static RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 		offset = ADD(offset, UN(bits, mem.disp));
 	}
 
-	if (segment != X86_REG_INVALID) {
+	if (bits != 64 && segment != X86_REG_INVALID) {
 		// TODO: Implement segmentation
 		/* Currently the segmentation is only implemented for real mode
 		 Address = Segment * 0x10 + Offset */
@@ -1001,7 +1001,6 @@ IL_LIFTER(unimpl) {
  * 37 | Invalid | Valid
  */
 IL_LIFTER(aaa) {
-
 	RzILOpPure *low_al = LOGAND(x86_il_get_reg(X86_REG_AL), U8(0x0f));
 	RzILOpPure *al_ovf = UGT(low_al, U8(9));
 	RzILOpPure *cond = OR(al_ovf, VARG(EFLAGS(AF)));
@@ -1169,11 +1168,6 @@ IL_LIFTER(and) {
 
 	return SEQ5(and, set_dest, clear_of, clear_cf, set_res_flags);
 }
-
-// IL_LIFTER(call) {
-// 	// TODO
-// 	return EMPTY();
-// }
 
 /**
  * CBW
@@ -2446,7 +2440,7 @@ IL_LIFTER(popfq) {
 	return SEQ2(x86_il_set_flags(pop.val, 64), pop.eff);
 }
 
-RzILOpEffect *x86_push_helper_bits(RzILOpPure *val, unsigned int op_size, unsigned int bitness) {
+RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, unsigned int bitness, const X86ILIns *ins) {
 	X86Mem stack_mem;
 	/* The correct register will automatically be chosen if we use RSP */
 	stack_mem.base = X86_REG_RSP;
@@ -2455,13 +2449,64 @@ RzILOpEffect *x86_push_helper_bits(RzILOpPure *val, unsigned int op_size, unsign
 	stack_mem.scale = 1;
 	stack_mem.segment = X86_REG_SS;
 
-	RzILOpEffect *ret = STOREW(x86_il_get_memaddr_bits(stack_mem, bitness), val);
-	ret = SEQ2(ret, x86_il_set_reg_bits(X86_REG_RSP, SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness), UN(bitness, op_size)), bitness));
+	unsigned int dflag = user_op_size;
+	unsigned int op_size;
+	unsigned int stack_size = bitness / BITS_PER_BYTE;
+
+	if (ins) {
+		if (bitness == 64) {
+			dflag = ins->structure->rex ? 8 : ins->structure->prefix[2] ? 2
+										    : 4; /* in bytes */
+			stack_size = 8; /* in bytes */
+		} else {
+			/* We use the other operand and address size if the prefix is set */
+			if ((bitness == 32) ^ ins->structure->prefix[2]) {
+				dflag = 4;
+			} else {
+				dflag = 2;
+			}
+
+			stack_size = 4;
+		}
+	}
+
+	if (bitness == 64) {
+		op_size = (dflag == 2) ? 2 : 8;
+	} else {
+		op_size = dflag;
+	}
+
+	RzILOpEffect *ret = STOREW(x86_il_get_memaddr_bits(stack_mem, bitness), UNSIGNED(op_size * BITS_PER_BYTE, val));
+	ret = SEQ2(x86_il_set_reg_bits(X86_REG_RSP, SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness), UN(bitness, stack_size)), bitness), ret);
 
 	return ret;
 }
 
-#define x86_push_helper(val, op_size) x86_push_helper_bits(val, op_size, analysis->bits)
+#define x86_push_helper(val, op_size) x86_push_helper_impl(val, op_size, analysis->bits, NULL)
+
+/**
+ * CALL
+ * Perform a function call
+ * Encoding: D, M
+ */
+IL_LIFTER(call) {
+	/*
+	 * The following implementation is not accurate, since there are many nitty-gritties involved.
+	 * Like whether the call is a near or far call, absolute or relative call, etc.
+	 * Implementing it accurately will require exceptions, task switching,
+	 * shadow stack, CPU internal flags, segmentation support
+	 * Just pushing the current program counter is a good approcimation for now
+	 * shadow stack, CPU internal flags, segmentation support
+	 * Just pushing the current program counter is a good approcimation for now
+	 * We also need to push the code segment register in case 16 and 32 bit modes.
+	 */
+
+	if (analysis->bits == 64) {
+		return x86_push_helper(U64(pc), 2);
+	} else {
+		return SEQ4(SETL("_cs", UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_CS))), x86_push_helper(VARL("_cs"), analysis->bits / BITS_PER_BYTE), SETL("_pc", UN(analysis->bits, pc)), x86_push_helper(VARL("_pc"), analysis->bits / BITS_PER_BYTE));
+	}
+}
 
 /**
  * PUSH
@@ -2473,7 +2518,7 @@ RzILOpEffect *x86_push_helper_bits(RzILOpPure *val, unsigned int op_size, unsign
  *  - ZO
  */
 IL_LIFTER(push) {
-	return x86_push_helper(x86_il_get_op(0), ins->structure->operands->size);
+	return x86_push_helper_impl(x86_il_get_op(0), ins->structure->operands->size, analysis->bits, ins);
 }
 
 /**
@@ -3344,7 +3389,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_ADC] = x86_il_adc,
 	[X86_INS_ADD] = x86_il_add,
 	[X86_INS_AND] = x86_il_and,
-	[X86_INS_CALL] = x86_il_unimpl,
+	[X86_INS_CALL] = x86_il_call,
 	[X86_INS_CBW] = x86_il_cbw,
 	[X86_INS_CLC] = x86_il_clc,
 	[X86_INS_CLD] = x86_il_cld,
