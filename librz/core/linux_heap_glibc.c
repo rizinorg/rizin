@@ -427,7 +427,7 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	PRINT_GA("}\n\n");
 }
 
-static inline bool is_map_name_libc(const char *map_name) {
+static inline bool GH(is_map_name_libc)(const char *map_name) {
 	return strstr(map_name, "/libc-") || strstr(map_name, "/libc.");
 }
 
@@ -454,11 +454,11 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		rz_debug_map_sync(core->dbg);
 		rz_list_foreach (core->dbg->maps, iter, map) {
 			/* Try to find the main arena address using the glibc's symbols. */
-			if (is_map_name_libc(map->name) && first_libc && main_arena_sym == GHT_MAX) {
+			if (GH(is_map_name_libc)(map->name) && first_libc && main_arena_sym == GHT_MAX) {
 				first_libc = false;
 				main_arena_sym = GH(get_main_arena_with_symbol)(core, map);
 			}
-			if (is_map_name_libc(map->name) && map->perm == RZ_PERM_RW) {
+			if (GH(is_map_name_libc)(map->name) && map->perm == RZ_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;
