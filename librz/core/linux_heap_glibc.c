@@ -58,9 +58,11 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	return vaddr;
 }
 
+#if 0
 static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
 	return addr + ((align - (addr % align)) % align);
 }
+#endif
 
 static inline GHT GH(get_next_pointer)(RzCore *core, GHT pos, GHT next) {
 	return (core->dbg->glibc_version < 232) ? next : (GHT)((pos >> 12) ^ next);
