@@ -7,6 +7,7 @@ on:
       - "dev"
       - "stable"
       - "container-*"
+      - "*-cov"
     tags:
       - v*
   schedule:
@@ -121,7 +122,7 @@ jobs:
             run_tests: true
             meson_options: -Dbuildtype=debug -Db_coverage=true --werror
             coverage: true
-            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            enabled: true
             timeout: 60
             cflags: "-Wno-cpp"
             allow_failure: false
