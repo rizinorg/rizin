@@ -111,11 +111,11 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 			opt++;
 			break;
 		case 'l':
-			rz_core_theme_nextpal(core, 'n');
+			rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			oopt = -1;
 			break;
 		case 'h':
-			rz_core_theme_nextpal(core, 'p');
+			rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_PREVIOUS);
 			oopt = -1;
 			break;
 		case 'K':
