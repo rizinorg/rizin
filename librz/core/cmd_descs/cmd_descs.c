@@ -592,6 +592,9 @@ static const RzCmdDescArg print_hexdump_n_lines_args[2];
 static const RzCmdDescArg print_url_encode_args[2];
 static const RzCmdDescArg print_url_encode_wide_args[2];
 static const RzCmdDescArg print_url_encode_zero_args[2];
+static const RzCmdDescArg print_minus_args[2];
+static const RzCmdDescArg print_minus_entropy_args[2];
+static const RzCmdDescArg print_minus_table_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -13452,6 +13455,54 @@ static const RzCmdDescHelp print_url_encode_zero_help = {
 	.args = print_url_encode_zero_args,
 };
 
+static const RzCmdDescHelp p_minus__help = {
+	.summary = "Blocks information representation as a horisontal bar and summary",
+};
+static const RzCmdDescArg print_minus_args[] = {
+	{
+		.name = "width",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_minus_help = {
+	.summary = "Show horisontal bar of metadata in file boundaries",
+	.args = print_minus_args,
+};
+
+static const RzCmdDescArg print_minus_entropy_args[] = {
+	{
+		.name = "width",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_minus_entropy_help = {
+	.summary = "Show horisontal bar of entropy per block in file boundaries",
+	.args = print_minus_entropy_args,
+};
+
+static const RzCmdDescArg print_minus_table_args[] = {
+	{
+		.name = "depth",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_minus_table_help = {
+	.summary = "Show statistics table about blocks in the file",
+	.args = print_minus_table_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -19227,6 +19278,15 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_url_encode_zero_cd = rz_cmd_desc_argv_new(core->rcmd, pu_cd, "pu0", rz_print_url_encode_zero_handler, &print_url_encode_zero_help);
 	rz_warn_if_fail(print_url_encode_zero_cd);
+
+	RzCmdDesc *p_minus__cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "p-", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_minus_handler, &print_minus_help, &p_minus__help);
+	rz_warn_if_fail(p_minus__cd);
+	RzCmdDesc *print_minus_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_minus__cd, "p-e", rz_print_minus_entropy_handler, &print_minus_entropy_help);
+	rz_warn_if_fail(print_minus_entropy_cd);
+
+	RzCmdDesc *print_minus_table_cd = rz_cmd_desc_argv_state_new(core->rcmd, p_minus__cd, "p-h", RZ_OUTPUT_MODE_TABLE, rz_print_minus_table_handler, &print_minus_table_help);
+	rz_warn_if_fail(print_minus_table_cd);
+	rz_cmd_desc_set_default_mode(print_minus_table_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

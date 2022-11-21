@@ -1180,3 +1180,35 @@ commands:
           - name: N
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+  - name: p-
+    summary: Blocks information representation as a horisontal bar and summary
+    subcommands:
+      - name: p-
+        summary: Show horisontal bar of metadata in file boundaries
+        cname: print_minus
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: width
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p-e
+        summary: Show horisontal bar of entropy per block in file boundaries
+        cname: print_minus_entropy
+        args:
+          - name: width
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p-h
+        summary: Show statistics table about blocks in the file
+        cname: print_minus_table
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: depth
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
