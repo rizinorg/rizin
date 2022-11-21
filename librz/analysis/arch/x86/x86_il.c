@@ -648,18 +648,14 @@ static RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 		offset = ADD(offset, UN(bits, mem.disp));
 	}
 
+	/* Segmentation not present in x86-64 */
 	if (bits != 64 && segment != X86_REG_INVALID) {
 		// TODO: Implement segmentation
 		/* Currently the segmentation is only implemented for real mode
 		 Address = Segment * 0x10 + Offset */
 
-		if (bits == 32) {
-			/* Assuming real mode */
-			offset = ADD(offset, SHIFTL0(UNSIGNED(32, x86_il_get_reg_bits(segment, bits)), U8(4)));
-		} else {
-			RZ_LOG_WARN("x86: RzIL: No support for segmentation\n");
-			return NULL;
-		}
+		/* Assuming real mode */
+		offset = ADD(offset, SHIFTL0(UNSIGNED(32, x86_il_get_reg_bits(segment, bits)), U8(4)));
 	}
 
 	return offset;
