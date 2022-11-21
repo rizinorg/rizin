@@ -800,7 +800,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			delta = 0;
 			break;
 		case 'R':
-			rz_core_theme_nextpal(core, 'n');
+			rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			break;
 		case 'p':
 			printMode++;
