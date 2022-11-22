@@ -19,13 +19,21 @@ FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-dmh~?allocated
+dmh
+?e ----
 7dso
-dmh~?allocated
+dmh
 EOF
+REGEXP_FILTER_OUT=(status=[a-z,[0]+)|(size=0x[a-f0-9]+)|-+|\n|[()]|Arena|Chunk
 EXPECT=<<EOF
-1
-2
+Arena
+Chunk(status=allocated,size=0x11c10)
+Chunk(status=free[0m,size=0xf160)
+----
+Arena
+Chunk(status=allocated,size=0x11c10)
+Chunk(status=allocated,size=0x20)
+Chunk(status=free[0m,size=0xf140)
 EOF
 RUN
 
