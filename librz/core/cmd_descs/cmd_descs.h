@@ -1913,6 +1913,12 @@ RZ_IPI RzCmdStatus rz_print_url_encode_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_print_url_encode_wide_handler(RzCore *core, int argc, const char **argv);
 // "pu0"
 RZ_IPI RzCmdStatus rz_print_url_encode_zero_handler(RzCore *core, int argc, const char **argv);
+// "p-"
+RZ_IPI RzCmdStatus rz_print_minus_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "p-e"
+RZ_IPI RzCmdStatus rz_print_minus_entropy_handler(RzCore *core, int argc, const char **argv);
+// "p-h"
+RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "p"
 RZ_IPI int rz_cmd_print(void *data, const char *input);
 // "Ps"
