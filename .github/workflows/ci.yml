@@ -355,9 +355,9 @@ jobs:
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
 
       - name: Install tools
-        run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+        run: apt-get update --yes --force-yes && apt-get install --yes --force-yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
       - name: Install Python source build dependencies
-        run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
+        run: apt-get install --yes --force-yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev libffi-dev tk-dev
       - name: Install Python from source
         run: |
           curl -o Python-${PYVERSION}.tgz https://www.python.org/ftp/python/${PYVERSION}/Python-${PYVERSION}.tgz
@@ -490,12 +490,12 @@ jobs:
         working-directory: rizin
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-results-static
           path: rizin/test/results.json
       - name: Upload static build
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: rizin-static.tar.xz
           path: rizin/rizin-static.tar.xz
@@ -513,7 +513,7 @@ jobs:
         run: pip3 install --user git+https://github.com/mesonbuild/meson
       - name: Install meson and ninja
         run: pip3 install --user ninja PyYAML
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Extract rizin version
         shell: bash
         run: echo "##[set-output name=version;]$(python sys/version.py)"
@@ -526,7 +526,7 @@ jobs:
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
           mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: rizin-src.tar.xz
           path: build/meson-dist/rizin-src.tar.xz
@@ -541,7 +541,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja PyYAML
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -575,7 +575,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
       - name: Install meson and ninja
@@ -587,7 +587,7 @@ jobs:
           ./dist/osx/build_osx_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: rizin.pkg
           path: ./rizin.pkg
@@ -615,8 +615,8 @@ jobs:
             meson_options: --default-library=shared -Dportable=true
             bits: 32
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -628,11 +628,11 @@ jobs:
       - name: Build and create zip/installer
         shell: pwsh
         run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
           path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: .\dist\windows\Output\rizin.exe
@@ -647,7 +647,7 @@ jobs:
       matrix:
         name: [x86_64, arm, aarch64]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
       - name: Compile with meson
@@ -661,7 +661,7 @@ jobs:
           cd /tmp
           rm -rf android-dir/include android-dir/lib
           tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: rizin-android-${{ matrix.name }}
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
@@ -672,7 +672,7 @@ jobs:
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -701,7 +701,7 @@ jobs:
   #      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
   #      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
   #    steps:
-  #    - uses: actions/download-artifact@v2
+  #    - uses: actions/download-artifact@v3
   #      with:
   #        name: rizin-src.tar.xz
   #        path: ./
@@ -741,7 +741,7 @@ jobs:
     env:
       RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -773,7 +773,7 @@ jobs:
     steps:
       - name: Install pkg-config with Homebrew
         run: brew install pkg-config
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: rizin.pkg
           path: ./
@@ -800,8 +800,8 @@ jobs:
           - name: clang_cl_x86
             bits: 32
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
       - name: Install pkg-config and cmake
         shell: pwsh
         run: |
@@ -811,7 +811,7 @@ jobs:
         shell: pwsh
         run: echo "##[set-output name=branch;]$( python sys\\version.py )"
         id: extract_version
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: ./
@@ -862,7 +862,7 @@ jobs:
         build-rzpipe,
       ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Extract rizin version
         shell: bash
         run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -877,7 +877,7 @@ jobs:
           release_name: Release ${{ steps.extract_version.outputs.branch }}
           draft: true
           prerelease: false
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
       - name: Display structure of downloaded files
         run: ls -R
       - name: Upload rizin src tarball
