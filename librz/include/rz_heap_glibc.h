@@ -117,6 +117,7 @@ typedef RzHeapChunk32 *mchunkptr32;
 typedef struct rz_malloc_state_32 {
 	int mutex; /* serialized access */
 	int flags; /* flags */
+	int have_fastchunks; /* new free blocks in fastbin chunks? */
 	ut32 fastbinsY[NFASTBINS]; /* array of fastchunks */
 	ut32 top; /* top chunk's base addr */
 	ut32 last_remainder; /* remainder top chunk's addr */
@@ -132,6 +133,7 @@ typedef struct rz_malloc_state_32 {
 typedef struct rz_malloc_state_64 {
 	int mutex; /* serialized access */
 	int flags; /* flags */
+	int have_fastchunks; /* new free blocks in fastbin chunks? */
 	ut64 fastbinsY[NFASTBINS]; /* array of fastchunks */
 	ut64 top; /* top chunk's base addr */
 	ut64 last_remainder; /* remainder top chunk's addr */
