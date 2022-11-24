@@ -891,6 +891,52 @@ RZ_API void rz_core_sysenv_end(RzCore *core);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 
+/* grep.c */
+
+#define RZ_CORE_GREP_WORDS     10
+#define RZ_CORE_GREP_WORD_SIZE 64
+#define RZ_CORE_GREP_TOKENS    64
+
+typedef struct rz_core_grep_t {
+	char strings[RZ_CORE_GREP_WORDS][RZ_CORE_GREP_WORD_SIZE];
+	int nstrings;
+	char *str;
+	int counter;
+	bool charCounter;
+	int less;
+	bool hud;
+	bool human;
+	int json;
+	char *json_path;
+	int range_line;
+	int line;
+	int sort;
+	int sort_row;
+	bool sort_invert;
+	int f_line; // first line
+	int l_line; // last line
+	int tokens[RZ_CORE_GREP_TOKENS];
+	int tokens_used;
+	int amp;
+	int zoom;
+	int zoomy; // if set then its scaled unproportionally
+	int neg;
+	int begin;
+	int end;
+	int icase;
+	RzList *sorted_lines;
+	RzList *unsorted_lines;
+	int sorted_column;
+} RzCoreGrep;
+
+RZ_API void rz_core_grep_parsecmd(RzCore *core, char *cmd, const char *quotestr);
+RZ_API char *rz_core_grep_strip(RzCore *core, char *cmd, const char *quotestr);
+RZ_API void rz_core_grep_process(RzCore *core, char *grep);
+RZ_API int rz_core_grep_line(RzCore *core, char *buf, int len); // must be static
+RZ_API void rz_core_grepbuf(RzCore *core);
+RZ_API void rz_core_grep(RzCore *core, const char *grep);
+
+
 /* cmd_linux_heap_glibc.c */
 RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut64 m_arena);
 RZ_API RzList /*<MallocState *>*/ *rz_heap_arenas_list(RzCore *core);
