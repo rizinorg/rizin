@@ -316,7 +316,8 @@ static const char *x86_eflags_registers[] = {
 		"tf", /* X86_EFLAGS_TF */ \
 		"if", /* X86_EFLAGS_IF */ \
 		"df", /* X86_EFLAGS_DF */ \
-		"of" /* X86_EFLAGS_OF */
+		"of", /* X86_EFLAGS_OF */ \
+		"nt" /* X86_EFLAGS_NT */
 
 /**
  * \brief All registers bound to IL variables for x86 16-bit
@@ -349,7 +350,6 @@ static const char *x86_bound_regs_32[] = {
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
 	"edi", /* X86_REG_EDI */
-	"nt", /* X86_EFLAGS_NT */
 	"rf", /* X86_EFLAGS_RF */
 	"vm", /* X86_EFLAGS_VM */
 	"ac", /* X86_EFLAGS_AC */
@@ -382,7 +382,6 @@ static const char *x86_bound_regs_64[] = {
 	"r13", /* X86_REG_R13 */
 	"r14", /* X86_REG_R14 */
 	"r15", /* X86_REG_R15 */
-	"nt", /* X86_EFLAGS_NT */
 	"rf", /* X86_EFLAGS_RF */
 	"vm", /* X86_EFLAGS_VM */
 	"ac", /* X86_EFLAGS_AC */
@@ -2214,15 +2213,7 @@ IL_LIFTER(lodsq) {
  *  - MI
  */
 IL_LIFTER(mov) {
-	if (ins->structure->operands[0].size == ins->structure->operands[1].size) {
-		/* No need to cast if both the operands are of the same size */
-		return x86_il_set_op(0, x86_il_get_op(1));
-	} else if (ins->structure->operands[0].size == 64 && ins->structure->operands[1].size == 32 && ins->structure->operands[0].type == X86_OP_MEM && ins->structure->operands[1].type == X86_OP_IMM) {
-		/* Special case, where we would need signed extension (Encoding: M(64), I(32)) */
-		return x86_il_set_op(0, SN(64, ins->structure->operands[1].imm));
-	} else {
-		return x86_il_set_op(0, UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1)));
-	}
+	return x86_il_set_op(0, x86_il_get_op(1));
 }
 
 RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, ut8 size) {
@@ -2244,7 +2235,7 @@ RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(mem_reg1, SUB(x86_il_get_reg(mem_reg1), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(mem_reg2, SUB(x86_il_get_reg(mem_reg2), UN(mem_size, size / BITS_PER_BYTE))));
 		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
-		return SEQ2(STOREW(x86_il_get_reg(mem_reg2), val), update);
+		return SEQ2(STOREW((mem_size == 64 ? x86_il_get_reg(mem_reg2) : UNSIGNED(64, x86_il_get_reg(mem_reg2))), val), update);
 
 	} else {
 		X86Reg src_reg = X86_REG_ESI;
@@ -2339,7 +2330,7 @@ IL_LIFTER(mul) {
 	case 2: {
 		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(32, x86_il_get_reg(X86_REG_AX)), op));
 		RzILOpEffect *dx = x86_il_set_reg(X86_REG_DX, UNSIGNED(16, SHIFTR0(VARL("_mul"), U8(16))));
-		RzILOpEffect *ax = x86_il_set_reg(X86_REG_AX, UNSIGNED(16, LOGAND(VARL("_mul"), U16(0xffff))));
+		RzILOpEffect *ax = x86_il_set_reg(X86_REG_AX, UNSIGNED(16, VARL("_mul")));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(16))), true_cond, false_cond);
 
 		return SEQ4(set, dx, ax, flags);
@@ -2347,7 +2338,7 @@ IL_LIFTER(mul) {
 	case 4: {
 		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(64, x86_il_get_reg(X86_REG_EAX)), op));
 		RzILOpEffect *edx = x86_il_set_reg(X86_REG_EDX, UNSIGNED(32, SHIFTR0(VARL("_mul"), U8(32))));
-		RzILOpEffect *eax = x86_il_set_reg(X86_REG_EAX, UNSIGNED(32, LOGAND(VARL("_mul"), U32(0xffffffffULL))));
+		RzILOpEffect *eax = x86_il_set_reg(X86_REG_EAX, UNSIGNED(32, VARL("_mul")));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(32))), true_cond, false_cond);
 
 		return SEQ4(set, edx, eax, flags);
@@ -2355,7 +2346,7 @@ IL_LIFTER(mul) {
 	case 8: {
 		RzILOpEffect *set = SETL("_mul", MUL(UNSIGNED(128, x86_il_get_reg(X86_REG_RAX)), op));
 		RzILOpEffect *rdx = x86_il_set_reg(X86_REG_RDX, UNSIGNED(64, SHIFTR0(VARL("_mul"), U8(64))));
-		RzILOpEffect *rax = x86_il_set_reg(X86_REG_RAX, UNSIGNED(64, LOGAND(VARL("_mul"), U64(0xffffffffffffffffULL))));
+		RzILOpEffect *rax = x86_il_set_reg(X86_REG_RAX, UNSIGNED(64, VARL("_mul")));
 		RzILOpEffect *flags = BRANCH(IS_ZERO(SHIFTR0(VARL("_mul"), U8(64))), true_cond, false_cond);
 
 		return SEQ4(set, rdx, rax, flags);
