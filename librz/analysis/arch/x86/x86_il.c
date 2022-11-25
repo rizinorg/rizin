@@ -2054,12 +2054,7 @@ IL_LIFTER(lds) {
  * Cast the M to R in an unsigned cast
  */
 IL_LIFTER(lea) {
-	if (ins->structure->operands[0].size == ins->structure->operands[1].size) {
-		/* if the operand sizes match, then no casting is required */
-		return x86_il_set_op(0, x86_il_get_memaddr(ins->structure->operands[1].mem));
-	} else {
-		return x86_il_set_op(0, UNSIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_memaddr(ins->structure->operands[1].mem)));
-	}
+	return x86_il_set_op(0, x86_il_get_memaddr(ins->structure->operands[1].mem));
 }
 
 /**

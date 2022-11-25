@@ -214,6 +214,8 @@ d "jp 2" 7a00 0x0 (branch (var pf) (jmp (+ (bv 32 0x0) (bv 32 0x2))) nop)
 d "jp 6" 0f8a00000000 0x0 (branch (var pf) (jmp (+ (bv 32 0x0) (bv 32 0x6))) nop)
 d "js 2" 7800 0x0 (branch (var sf) (jmp (+ (bv 32 0x0) (bv 32 0x2))) nop)
 d "js 6" 0f8800000000 0x0 (branch (var sf) (jmp (+ (bv 32 0x0) (bv 32 0x6))) nop)
+d "jecxz 0x72" e308 0x68 (branch (is_zero (var ecx)) (jmp (+ (bv 32 0x68) (bv 32 0x72))) nop)
+d "jcxz 0x4d" 67e308 0x42 (branch (is_zero (cast 16 false (var ecx))) (jmp (+ (bv 32 0x42) (bv 32 0x4d))) nop)
 d "lahf" 9f 0x0 (set eax (| (& (var eax) (~ (bv 32 0xff00))) (<< (cast 32 false (| (<< (| (<< (| (<< (| (<< (| (<< (ite (var sf) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x1) false) (ite (var zf) (bv 8 0x1) (bv 8 0x0))) (bv 8 0x2) false) (ite (var af) (bv 8 0x1) (bv 8 0x0))) (bv 8 0x2) false) (ite (var pf) (bv 8 0x1) (bv 8 0x0))) (bv 8 0x1) false) (bv 8 0x1)) (bv 8 0x1) false) (ite (var cf) (bv 8 0x1) (bv 8 0x0)))) (bv 8 0x8) false)))
 d "lar eax, word [eax]" 0f0200
 d "lcall [0]" ff1c2500000000
