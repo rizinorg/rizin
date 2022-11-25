@@ -457,6 +457,11 @@ static const X86Reg gpr_rregs[] = {
 	X86_REG_RSP
 };
 
+/**
+ * \brief Check if \p reg is a general purpose register (this term is quite loosely used here)
+ *
+ * \param reg
+ */
 static bool x86_il_is_gpr(X86Reg reg) {
 	for (unsigned int i = 0; i < GPR_FAMILY_COUNT; i++) {
 		if (reg == gpr_hregs[i] || reg == gpr_lregs[i] || reg == gpr_xregs[i] || reg == gpr_eregs[i] || reg == gpr_rregs[i]) {
@@ -467,6 +472,11 @@ static bool x86_il_is_gpr(X86Reg reg) {
 	return false;
 }
 
+/**
+ * \brief Get size of \p reg
+ *
+ * \param reg
+ */
 static ut8 x86_il_get_reg_size(X86Reg reg) {
 	for (unsigned int i = 0; i < GPR_FAMILY_COUNT; i++) {
 		if (reg == gpr_hregs[i] || reg == gpr_lregs[i]) {
@@ -483,12 +493,30 @@ static ut8 x86_il_get_reg_size(X86Reg reg) {
 	return 0;
 }
 
+/**
+ * \brief  Get the higher 8 bits (8-16) of register \p reg
+ *
+ * \param reg
+ * \param bits bitness
+ */
 static RzILOpPure *x86_il_get_gprh(X86Reg reg, int bits) {
 	return UNSIGNED(8, SHIFTR0(VARG(x86_registers[reg]), U8(8)));
 }
+/**
+ * \brief Get the lower 8 bits (0-8) of register \p reg
+ *
+ * \param reg
+ * \param bits bitness
+ */
 static RzILOpPure *x86_il_get_gprl(X86Reg reg, int bits) {
 	return UNSIGNED(8, VARG(x86_registers[reg]));
 }
+/**
+ * \brief Get the lower 16 bits (0-16) of register \p reg
+ *
+ * \param reg
+ * \param bits bitness
+ */
 static RzILOpPure *x86_il_get_gpr16(X86Reg reg, int bits) {
 	if (bits == 16) {
 		// Don't perform unnecessary casting
@@ -496,28 +524,61 @@ static RzILOpPure *x86_il_get_gpr16(X86Reg reg, int bits) {
 	}
 	return UNSIGNED(16, VARG(x86_registers[reg]));
 }
+/**
+ * \brief Get the lower 32 bits (0-32) of register \p reg
+ *
+ * \param reg
+ * \param bits bitness
+ */
 static RzILOpPure *x86_il_get_gpr32(X86Reg reg, int bits) {
 	if (bits == 32) {
 		return VARG(x86_registers[reg]);
 	}
 	return UNSIGNED(32, VARG(x86_registers[reg]));
 }
+/**
+ * \brief Get 64 bits (0-64) of register \p reg
+ *
+ * \param reg
+ * \param bits bitness
+ */
 static RzILOpPure *x86_il_get_gpr64(X86Reg reg, int bits) {
 	return VARG(x86_registers[reg]);
 }
 
+/**
+ * \brief  Set the higher 8 bits (8-16) of register \p reg to \p val
+ *
+ * \param reg
+ * \param val
+ * \param bits bitness
+ */
 static RzILOpEffect *x86_il_set_gprh(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xff00));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
 	RzILOpPure *final_reg = LOGOR(masked_reg, SHIFTL0(UNSIGNED(bits, val), U8(8)));
 	return SETG(x86_registers[reg], final_reg);
 }
+/**
+ * \brief  Set the lower 8 bits (0-8) of register \p reg to \p val
+ *
+ * \param reg
+ * \param val
+ * \param bits bitness
+ */
 static RzILOpEffect *x86_il_set_gprl(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xff));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
+/**
+ * \brief  Set the lower 16 bits (0-16) of register \p reg to \p val
+ *
+ * \param reg
+ * \param val
+ * \param bits bitness
+ */
 static RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	if (bits == 16) {
 		// Don't perform unnecessary casting
@@ -528,6 +589,13 @@ static RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RZ_OWN RzILOpPure *val, int bi
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
+/**
+ * \brief  Set the lower 32 bits (0-32) of register \p reg to \p val
+ *
+ * \param reg
+ * \param val
+ * \param bits bitness
+ */
 static RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	if (bits == 32) {
 		return SETG(x86_registers[reg], val);
@@ -537,10 +605,23 @@ static RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RZ_OWN RzILOpPure *val, int bi
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
+/**
+ * \brief  Set 64 bits (0-64) of register \p reg to \p val
+ *
+ * \param reg
+ * \param val
+ * \param bits bitness
+ */
 static RzILOpEffect *x86_il_set_gpr64(X86Reg reg, RzILOpPure *val, int bits) {
 	return SETG(x86_registers[reg], val);
 }
 
+/**
+ * \brief Get the widest register corresponding to index \p index and bitness \p bits
+ *
+ * \param index
+ * \param bits
+ */
 static X86Reg get_bitness_reg(unsigned int index, int bits) {
 	if (index >= GPR_FAMILY_COUNT) {
 		return X86_REG_INVALID;
@@ -555,9 +636,9 @@ static X86Reg get_bitness_reg(unsigned int index, int bits) {
 }
 
 struct gpr_lookup_helper_t {
-	unsigned int index;
-	RzILOpPure *(*get_handler)(X86Reg, int);
-	RzILOpEffect *(*set_handler)(X86Reg, RzILOpPure *, int);
+	unsigned int index; ///< register index
+	RzILOpPure *(*get_handler)(X86Reg, int); ///< getter
+	RzILOpEffect *(*set_handler)(X86Reg, RzILOpPure *, int); ///< setter
 };
 
 static const struct gpr_lookup_helper_t gpr_lookup_table[] = {
@@ -601,15 +682,20 @@ static const struct gpr_lookup_helper_t gpr_lookup_table[] = {
 	[X86_REG_RSP] = { 9, x86_il_get_gpr64, x86_il_set_gpr64 }
 };
 
+/**
+ * \brief Check if the register \p reg is an instruction pointer register
+ *
+ * \param reg
+ */
 bool is_pc_reg(X86Reg reg) {
 	return (reg == X86_REG_IP || reg == X86_REG_EIP || reg == X86_REG_RIP);
 }
 
 struct extreg_lookup_helper_t {
-	X86Reg curr_reg;
-	X86Reg base_reg;
-	RzILOpPure *(*get_handler)(X86Reg, int);
-	RzILOpEffect *(*set_handler)(X86Reg, RzILOpPure *, int);
+	X86Reg curr_reg; ///< register being used
+	X86Reg base_reg; ///< base register for `curr_reg`
+	RzILOpPure *(*get_handler)(X86Reg, int); ///< getter
+	RzILOpEffect *(*set_handler)(X86Reg, RzILOpPure *, int); ///< setter
 };
 
 #define extreg_lookup(suff, getter, setter) \
@@ -636,6 +722,11 @@ static const struct extreg_lookup_helper_t extreg_lookup_table[] = {
 	extreg_lookup(D, x86_il_get_gpr32, x86_il_set_gpr32)
 };
 
+/**
+ * \brief Get the index for external register \p reg
+ *
+ * \param reg
+ */
 int get_extreg_ind(X86Reg reg) {
 	for (unsigned int i = 0; i < 8 * 4 /* size of extreg_lookup_table */; i++) {
 		if (extreg_lookup_table[i].curr_reg == reg) {
@@ -646,6 +737,16 @@ int get_extreg_ind(X86Reg reg) {
 	return -1;
 }
 
+/**
+ * \brief Get the value of a register \p reg, in a "smart" way
+ * Just use the `x86_il_get_reg` macro whenever you need to get the
+ * value of a register. This function will take care of all the casting
+ * and extracting of (smaller) registers.
+ *
+ * \param reg
+ * \param bits bitness
+ * \param pc Program counter
+ */
 static RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
 	if (is_pc_reg(reg)) {
 		return UN(bits, pc);
@@ -670,6 +771,16 @@ static RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
 
 #define x86_il_get_reg(reg) x86_il_get_reg_bits(reg, analysis->bits, pc)
 
+/**
+ * \brief Set the value of a register \p reg, in a "smart" way
+ * Just use the `x86_il_set_reg` macro whenever you need to set the
+ * value of a register. This function will take care of all the casting
+ * and storing and compositing values in case of (smaller) registers.
+ *
+ * \param reg
+ * \param val Value to be stored
+ * \param bits bitness
+ */
 static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) {
 	int ind = -1;
 
@@ -686,6 +797,19 @@ static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) 
 
 #define x86_il_set_reg(reg, val) x86_il_set_reg_bits(reg, val, analysis->bits)
 
+/**
+ * @brief Get the memory address as an `RzILOpPure` from X86Mem \p mem
+ * You can also optionally provide a custom segment register as \p segment
+ * This function takes care of all casting and conversion
+ * This has partial segmentation support as of now
+ *
+ * You probably wouldn't need to use it directly, consider using the wrappers
+ * `x86_il_get_memaddr` and `x86_il_set_memaddr`
+ *
+ * \param mem
+ * \param segment
+ * \param bits bitness
+ */
 static RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits) {
 	RzILOpPure *offset = NULL;
 	if (mem.base != X86_REG_INVALID) {
@@ -740,6 +864,15 @@ static RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits) 
 
 #define x86_il_set_mem(mem, val) x86_il_set_mem_bits(mem, val, analysis->bits)
 
+/**
+ * \brief Get the value of the operand \p op
+ * This function takes care of everything, like choosing
+ * the correct type and returning the correct value
+ * Use the wrapper `x86_il_get_op`
+ *
+ * \param op
+ * \param analysis_bits bitness
+ */
 static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits) {
 	RzILOpPure *ret = NULL;
 	switch (op.type) {
@@ -761,6 +894,15 @@ static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits) {
 #define x86_il_get_operand(op) x86_il_get_operand_bits(op, analysis->bits)
 #define x86_il_get_op(opnum)   x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits)
 
+/**
+ * \brief Get the value of the operand \p op
+ * This function takes care of everything, like choosing
+ * the correct type and setting the correct value
+ * Use the wrapper `x86_il_set_op`
+ *
+ * \param op
+ * \param analysis_bits bitness
+ */
 static RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits) {
 	RzILOpEffect *ret = NULL;
 	switch (op.type) {
@@ -783,6 +925,13 @@ static RzILOpEffect *x86_il_set_operand_bits(X86Op op, RzILOpPure *val, int bits
 #define x86_il_set_operand(op, val) x86_il_set_operand_bits(op, val, analysis->bits)
 #define x86_il_set_op(opnum, val)   x86_il_set_operand_bits(ins->structure->operands[opnum], val, analysis->bits)
 
+/**
+ * \brief Return the carry bit when \p x and \p y are added, with result \p res
+ *
+ * \param res
+ * \param x
+ * \param y
+ */
 static RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
@@ -805,6 +954,13 @@ static RzILOpBool *x86_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure
 	return or ;
 }
 
+/**
+ * \brief Return the borrow bit when \p y is subtracted from \p x, with result \p res
+ *
+ * \param res
+ * \param x
+ * \param y
+ */
 static RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
@@ -827,6 +983,13 @@ static RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPur
 	return or ;
 }
 
+/**
+ * \brief Return the overflow bit when \p x and \p y are added, with result \p res
+ *
+ * \param res
+ * \param x
+ * \param y
+ */
 static RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x + y
 	RzILOpBool *xmsb = MSB(x);
@@ -843,6 +1006,13 @@ static RzILOpBool *x86_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpP
 	return or ;
 }
 
+/**
+ * \brief Return the underflow bit when \p y is subtracted from \p x, with result \p res
+ *
+ * \param res
+ * \param x
+ * \param y
+ */
 static RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y) {
 	// res = x - y
 	RzILOpBool *xmsb = MSB(x);
@@ -859,15 +1029,26 @@ static RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOp
 	return or ;
 }
 
+/**
+ * \brief Convert a bool \p b to a bitvector of length \p bits
+ *
+ * \param b
+ * \param bits
+ */
 static RzILOpBitVector *x86_bool_to_bv(RzILOpBool *b, unsigned int bits) {
 	return ITE(b, UN(bits, 1), UN(bits, 0));
 }
 
 struct x86_parity_helper_t {
-	RzILOpBool *val;
-	RzILOpEffect *eff;
+	RzILOpBool *val; ///< value of parity
+	RzILOpEffect *eff; ///< RzILOpEffect used to find the parity
 };
 
+/**
+ * \brief Find the parity of lower 8 bits of \p val
+ *
+ * \param val
+ */
 static struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 	// assumed that val is an 8-bit wide value
 	RzILOpEffect *setvar = SETL("_popcnt", U8(0));
@@ -908,7 +1089,7 @@ static RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RzILOpPure *result, int
 #define x86_il_set_result_flags(result) x86_il_set_result_flags_bits(result, analysis->bits)
 
 /**
- * \brief Sets the value of CF, OF, AF according to the \p result
+ * \brief Sets the value of CF, OF, AF according to the \p res
  */
 static RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
 	RzILOpBool *cf = NULL;
@@ -935,6 +1116,9 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ
 		SETG(EFLAGS(AF), af));
 }
 
+/**
+ * @brief Set OF and AF according to \p res
+ */
 static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
 	RzILOpBool *of = NULL;
 	RzILOpBool *af = NULL;
@@ -959,6 +1143,11 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPur
 #define x86_il_set_arithmetic_flags(res, x, y, addition)           x86_il_set_arithmetic_flags_bits(res, x, y, addition, analysis->bits)
 #define x86_il_set_arithmetic_flags_except_cf(res, x, y, addition) x86_il_set_arithmetic_flags_except_cf_bits(res, x, y, addition, analysis->bits)
 
+/**
+ * \brief Get value of FLAGS register
+ * r
+ * \param size size of flags needed
+ */
 RzILOpPure *x86_il_get_flags(unsigned int size) {
 	/* We really don't care about bits higher than 16 for now */
 	RzILOpPure *val;
@@ -998,6 +1187,12 @@ lower_half:
 	return val;
 }
 
+/**
+ * \brief Set the value of flags register
+ *
+ * \param val value to set the FLAGS register to
+ * \param size size of \p val
+ */
 RzILOpEffect *x86_il_set_flags(RZ_OWN RzILOpPure *val, unsigned int size) {
 	RzILOpEffect *set_val = SETL("_flags", val);
 
