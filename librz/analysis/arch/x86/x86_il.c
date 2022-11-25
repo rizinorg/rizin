@@ -1321,8 +1321,9 @@ RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 			mem_size = 32;
 		}
 
-		RzILOpEffect *src1 = SETL("_src1", LOADW(size, x86_il_get_reg(mem_reg1)));
-		RzILOpEffect *src2 = SETL("_src2", LOADW(size, x86_il_get_reg(mem_reg2)));
+		/* Cast to 64 if necessary (needed when address override prefix present) */
+		RzILOpEffect *src1 = SETL("_src1", LOADW(size, (mem_size == 64 ? x86_il_get_reg(mem_reg1) : UNSIGNED(64, x86_il_get_reg(mem_reg1)))));
+		RzILOpEffect *src2 = SETL("_src2", LOADW(size, (mem_size == 64 ? x86_il_get_reg(mem_reg2) : UNSIGNED(64, x86_il_get_reg(mem_reg2)))));
 		RzILOpEffect *temp = SETL("_temp", SUB(VARL("_src1"), VARL("_src2")));
 
 		RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("_temp"), VARL("_src1"), VARL("_src2"), false);
@@ -1359,6 +1360,7 @@ RzILOpEffect *x86_il_cmp_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analys
 			.segment = X86_REG_ES
 		};
 
+		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
 		RzILOpEffect *src1 = SETL("_src1", LOADW(size, x86_il_get_memaddr(src_mem1)));
 		RzILOpEffect *src2 = SETL("_src2", LOADW(size, x86_il_get_memaddr(src_mem2)));
 		RzILOpEffect *temp = SETL("_temp", SUB(VARL("_src1"), VARL("_src2")));
@@ -1536,7 +1538,7 @@ IL_LIFTER(div) {
 	}
 	case 8: {
 		/* Doublequadword/Quadword operation */
-		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(X86_REG_EDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(X86_REG_EAX))));
+		RzILOpEffect *rdxrax = SETL("_rdxrax", LOGOR(SHIFTL0(UNSIGNED(128, x86_il_get_reg(X86_REG_RDX)), UN(8, 64)), UNSIGNED(128, x86_il_get_reg(X86_REG_RAX))));
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(64, DIV(VARL("_rdxrax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(64, 0xffffffffffffffffULL));
