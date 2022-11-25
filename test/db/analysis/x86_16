@@ -106,7 +106,7 @@ EXPECT=<<EOF
                 "opcode": "var",
                 "value": "ss"
               },
-              "length": 32,
+              "length": 16,
               "fill": {
                 "opcode": "bool",
                 "value": false
