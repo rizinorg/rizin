@@ -424,7 +424,9 @@ jobs:
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
       - name: Install test dependencies
-        run: pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+        run: |
+          pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          apt-get install --yes tzdata
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
