@@ -1485,14 +1485,7 @@ IL_LIFTER(cmc) {
 IL_LIFTER(cmp) {
 	RzILOpEffect *op1 = SETL("op1", x86_il_get_op(0));
 
-	RzILOpPure *second;
-	if (ins->structure->operands[0].size != ins->structure->operands[1].size) {
-		/* second operand can be an immediate value of smaller size,
-		but we need the same bitv size to use RzIL ops */
-		second = SIGNED(ins->structure->operands[0].size * BITS_PER_BYTE, x86_il_get_op(1));
-	} else {
-		second = x86_il_get_op(1);
-	}
+	RzILOpPure *second = x86_il_get_op(1);
 	RzILOpEffect *op2 = SETL("op2", second);
 
 	RzILOpEffect *sub = SETL("sub", SUB(VARL("op1"), VARL("op2")));
