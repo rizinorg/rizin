@@ -374,6 +374,14 @@ static const char *x86_bound_regs_64[] = {
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
 	"rdi", /* X86_REG_RDI */
+	"r8", /* X86_REG_R8 */
+	"r9", /* X86_REG_R9 */
+	"r10", /* X86_REG_R10 */
+	"r11", /* X86_REG_R11 */
+	"r12", /* X86_REG_R12 */
+	"r13", /* X86_REG_R13 */
+	"r14", /* X86_REG_R14 */
+	"r15", /* X86_REG_R15 */
 	"nt", /* X86_EFLAGS_NT */
 	"rf", /* X86_EFLAGS_RF */
 	"vm", /* X86_EFLAGS_VM */
@@ -493,6 +501,7 @@ static RzILOpPure *x86_il_get_gpr32(X86Reg reg, int bits) {
 	if (bits == 32) {
 		return VARG(x86_registers[reg]);
 	}
+	// RZ_LOG_WARN("hhah\n")
 	return UNSIGNED(32, VARG(x86_registers[reg]));
 }
 static RzILOpPure *x86_il_get_gpr64(X86Reg reg, int bits) {
@@ -582,9 +591,6 @@ static const struct gpr_lookup_helper_t gpr_lookup_table[] = {
 	[X86_REG_DI] = { 5, x86_il_get_gpr16, x86_il_set_gpr16 },
 	[X86_REG_EDI] = { 5, x86_il_get_gpr32, x86_il_set_gpr32 },
 	[X86_REG_RDI] = { 5, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[X86_REG_IP] = { 6, x86_il_get_gpr16, x86_il_set_gpr16 },
-	[X86_REG_EIP] = { 6, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[X86_REG_RIP] = { 6, x86_il_get_gpr64, x86_il_set_gpr64 },
 	[X86_REG_EIZ] = { 7, x86_il_get_gpr32, x86_il_set_gpr32 },
 	[X86_REG_RIZ] = { 7, x86_il_get_gpr64, x86_il_set_gpr64 },
 	[X86_REG_SIL] = { 8, x86_il_get_gprl, x86_il_set_gprl },
@@ -597,26 +603,87 @@ static const struct gpr_lookup_helper_t gpr_lookup_table[] = {
 	[X86_REG_RSP] = { 9, x86_il_get_gpr64, x86_il_set_gpr64 }
 };
 
-static RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits) {
-	if (!x86_il_is_gpr(reg)) {
-		return VARG(x86_registers[reg]);
-	}
-	struct gpr_lookup_helper_t entry = gpr_lookup_table[reg];
-	/* Need to use `get_bitness_reg` because not all registers
-	are available in the IL in any particular bitness
-	(For example, "rax" is not a valid IL variable in 32-bit mode)
-	So, we need to use the max width register available */
-	return entry.get_handler(get_bitness_reg(entry.index, bits), bits);
+bool is_pc_reg(X86Reg reg) {
+	return (reg == X86_REG_IP || reg == X86_REG_EIP || reg == X86_REG_RIP);
 }
 
-#define x86_il_get_reg(reg) x86_il_get_reg_bits(reg, analysis->bits)
+struct extreg_lookup_helper_t {
+	X86Reg curr_reg;
+	X86Reg base_reg;
+	RzILOpPure *(*get_handler)(X86Reg, int);
+	RzILOpEffect *(*set_handler)(X86Reg, RzILOpPure *, int);
+};
+
+#define extreg_lookup(suff, getter, setter) \
+	{ X86_REG_R8##suff, X86_REG_R8, getter, setter }, \
+		{ X86_REG_R9##suff, X86_REG_R9, getter, setter }, \
+		{ X86_REG_R10##suff, X86_REG_R10, getter, setter }, \
+		{ X86_REG_R11##suff, X86_REG_R11, getter, setter }, \
+		{ X86_REG_R12##suff, X86_REG_R12, getter, setter }, \
+		{ X86_REG_R13##suff, X86_REG_R13, getter, setter }, \
+		{ X86_REG_R14##suff, X86_REG_R14, getter, setter }, \
+		{ X86_REG_R15##suff, X86_REG_R15, getter, setter },
+
+static const struct extreg_lookup_helper_t extreg_lookup_table[] = {
+	// 64-bit wide
+	extreg_lookup(, x86_il_get_gpr64, x86_il_set_gpr64)
+
+	// 8-bit wide (byte)
+	extreg_lookup(B, x86_il_get_gprl, x86_il_set_gprl)
+
+	// 16-bit wide (word)
+	extreg_lookup(W, x86_il_get_gpr16, x86_il_set_gpr16)
+
+	// 32-bit wide (dword)
+	extreg_lookup(D, x86_il_get_gpr32, x86_il_set_gpr32)
+};
+
+int get_extreg_ind(X86Reg reg) {
+	for (unsigned int i = 0; i < 8 * 4 /* size of extreg_lookup_table */; i++) {
+		if (extreg_lookup_table[i].curr_reg == reg) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
+	if (is_pc_reg(reg)) {
+		return UN(bits, pc);
+	}
+
+	int ind = -1;
+
+	if (x86_il_is_gpr(reg)) {
+		struct gpr_lookup_helper_t entry = gpr_lookup_table[reg];
+		/* Need to use `get_bitness_reg` because not all registers
+		are available in the IL in any particular bitness
+		(For example, "rax" is not a valid IL variable in 32-bit mode)
+		So, we need to use the max width register available */
+		return entry.get_handler(get_bitness_reg(entry.index, bits), bits);
+	} else if ((ind = get_extreg_ind(reg)) != -1 && bits == 64) {
+		struct extreg_lookup_helper_t entry = extreg_lookup_table[ind];
+		return entry.get_handler(entry.base_reg, bits);
+	}
+
+	return VARG(x86_registers[reg]);
+}
+
+#define x86_il_get_reg(reg) x86_il_get_reg_bits(reg, analysis->bits, pc)
 
 static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) {
-	if (!x86_il_is_gpr(reg)) {
-		return SETG(x86_registers[reg], val);
+	int ind = -1;
+
+	if (x86_il_is_gpr(reg)) {
+		struct gpr_lookup_helper_t entry = gpr_lookup_table[reg];
+		return entry.set_handler(get_bitness_reg(entry.index, bits), val, bits);
+	} else if ((ind = get_extreg_ind(reg)) != -1 && bits == 64) {
+		struct extreg_lookup_helper_t entry = extreg_lookup_table[ind];
+		return entry.set_handler(entry.base_reg, val, bits);
 	}
-	struct gpr_lookup_helper_t entry = gpr_lookup_table[reg];
-	return entry.set_handler(get_bitness_reg(entry.index, bits), val, bits);
+	
+	return SETG(x86_registers[reg], val);
 }
 
 #define x86_il_set_reg(reg, val) x86_il_set_reg_bits(reg, val, analysis->bits)
@@ -625,14 +692,14 @@ static RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 	RzILOpPure *offset = NULL;
 	if (mem.base != X86_REG_INVALID) {
 		if (!offset) {
-			offset = x86_il_get_reg_bits(mem.base, bits);
+			offset = x86_il_get_reg_bits(mem.base, bits, 0);
 			if (x86_il_get_reg_size(mem.base) != bits) {
 				offset = UNSIGNED(bits, offset);
 			}
 		}
 	}
 	if (mem.index != X86_REG_INVALID) {
-		RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits);
+		RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits, 0);
 		if (x86_il_get_reg_size(mem.index) != bits) {
 			reg = UNSIGNED(bits, reg);
 		}
@@ -655,7 +722,7 @@ static RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 		 Address = Segment * 0x10 + Offset */
 
 		/* Assuming real mode */
-		offset = ADD(offset, SHIFTL0(UNSIGNED(32, x86_il_get_reg_bits(segment, bits)), U8(4)));
+		offset = ADD(offset, SHIFTL0(UNSIGNED(bits, x86_il_get_reg_bits(segment, bits, 0)), U8(4)));
 	}
 
 	return offset;
@@ -682,7 +749,7 @@ static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits) {
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
 		break;
 	case X86_OP_REG:
-		ret = x86_il_get_reg_bits(op.reg, analysis_bits);
+		ret = x86_il_get_reg_bits(op.reg, analysis_bits, 0);
 		break;
 	case X86_OP_IMM:
 		ret = SN(op.size * BITS_PER_BYTE, op.imm);
@@ -2379,7 +2446,7 @@ PopHelper x86_pop_helper_bits(unsigned int op_size, unsigned int bitness) {
 	PopHelper ret;
 
 	ret.val = LOADW(op_size * BITS_PER_BYTE, x86_il_get_memaddr_bits(stack_mem, bitness));
-	ret.eff = x86_il_set_reg_bits(X86_REG_RSP, ADD(x86_il_get_reg_bits(X86_REG_RSP, bitness), UN(bitness, op_size)), bitness);
+	ret.eff = x86_il_set_reg_bits(X86_REG_RSP, ADD(x86_il_get_reg_bits(X86_REG_RSP, bitness, 0), UN(bitness, op_size)), bitness);
 
 	return ret;
 }
@@ -2474,7 +2541,7 @@ RzILOpEffect *x86_push_helper_impl(RzILOpPure *val, unsigned int user_op_size, u
 	}
 
 	RzILOpEffect *ret = STOREW(x86_il_get_memaddr_bits(stack_mem, bitness), UNSIGNED(op_size * BITS_PER_BYTE, val));
-	ret = SEQ2(x86_il_set_reg_bits(X86_REG_RSP, SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness), UN(bitness, stack_size)), bitness), ret);
+	ret = SEQ2(x86_il_set_reg_bits(X86_REG_RSP, SUB(x86_il_get_reg_bits(X86_REG_RSP, bitness, 0), UN(bitness, stack_size)), bitness), ret);
 
 	return ret;
 }

@@ -5,19 +5,19 @@ ad "aam" d40a 0x0 (seq (set temp_al (cast 8 false (var ax))) (set ax (| (& (var 
 ad "aam 0x42" d442 0x0 (seq (set temp_al (cast 8 false (var ax))) (set ax (| (& (var ax) (~ (bv 16 0xff00))) (<< (cast 16 false (div (var temp_al) (bv 8 0x42))) (bv 8 0x8) false))) (set adjusted (mod (var temp_al) (bv 8 0x42))) (set ax (| (& (var ax) (~ (bv 16 0xff))) (cast 16 false (var adjusted)))) (set _result (var adjusted)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))))
 ad "aas" 3f 0x0 (seq (branch (|| (! (ule (& (cast 8 false (var ax)) (bv 8 0xf)) (bv 8 0x9))) (var af)) (seq (set ax (- (var ax) (bv 16 0x6))) (set ax (| (& (var ax) (~ (bv 16 0xff00))) (<< (cast 16 false (- (cast 8 false (>> (var ax) (bv 8 0x8) false)) (bv 8 0x1))) (bv 8 0x8) false))) (set af true) (set cf true)) (seq (set af false) (set cf false))) (set ax (| (& (var ax) (~ (bv 16 0xff))) (cast 16 false (& (cast 8 false (var ax)) (bv 8 0xf))))))
 adB "cbw" 98
-d "call 0" e8fdff
-a "jmp 0x0" ebfe
-a "jmp 0x10" eb0e
-a "jmp 0x34" eb32
-a "jne 0x14" 7512
-a "jnz 0x94" 660f858d000000
-a "jnz -0x94" 660f8565ffffff
-a "jno -0x34" 71ca
+d "call 0" e8fdff 0x0 (seq (set _cs (cast 16 false (var cs))) (set sp (- (var sp) (bv 16 0x2))) (storew 0 (+ (+ (cast 16 false (var sp)) (bv 16 0x0)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)) (cast 16 false (var _cs))) (set _pc (bv 16 0x0)) (set sp (- (var sp) (bv 16 0x2))) (storew 0 (+ (+ (cast 16 false (var sp)) (bv 16 0x0)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)) (cast 16 false (var _pc))))
+a "jmp 0x0" ebfe 0x0 (jmp (+ (bv 16 0x0) (bv 16 0x0)))
+a "jmp 0x10" eb0e 0x0 (jmp (+ (bv 16 0x0) (bv 16 0x10)))
+a "jmp 0x34" eb32 0x0 (jmp (+ (bv 16 0x0) (bv 16 0x34)))
+a "jne 0x14" 7512 0x0 (branch (! (var zf)) (jmp (+ (bv 16 0x0) (bv 16 0x14))) nop)
+a "jnz 0x94" 660f858d000000 0x0 (branch (! (var zf)) (jmp (+ (bv 16 0x0) (bv 16 0x94))) nop)
+a "jnz -0x94" 660f8565ffffff 0x0 (branch (! (var zf)) (jmp (+ (bv 16 0x0) (bv 16 0xff6c))) nop)
+a "jno -0x34" 71ca 0x0 (branch (! (var of)) (jmp (+ (bv 16 0x0) (bv 16 0xffcc))) nop)
 dB "jmp 0xfec50" e95bec
-d "jmp 0x1fec50" e95bec 0x001ffff2
-a "mov al, [0xbeef]" a0efbe
-a "mov ax, [0xbeef]" a1efbe
-a "test bl, 0x12" f6c312
-a "test bx, 0x1234" f7c33412
+d "jmp 0x1fec50" e95bec 0x1ffff2 (jmp (+ (bv 16 0xfff2) (bv 16 0xec50)))
+a "mov al, [0xbeef]" a0efbe 0x0 (set ax (| (& (var ax) (~ (bv 16 0xff))) (cast 16 false (loadw 0 8 (bv 16 0xbeef)))))
+a "mov ax, [0xbeef]" a1efbe 0x0 (set ax (loadw 0 16 (bv 16 0xbeef)))
+a "test bl, 0x12" f6c312 0x0 (seq (set _res (& (cast 8 false (var bx)) (bv 8 0x12))) (set bx (| (& (var bx) (~ (bv 16 0xff))) (cast 16 false (var _res)))) (set _result (var _res)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))) (set cf false) (set of false))
+a "test bx, 0x1234" f7c33412 0x0 (seq (set _res (& (var bx) (bv 16 0x1234))) (set bx (var _res)) (set _result (var _res)) (set _popcnt (bv 8 0x0)) (set _val (cast 8 false (var _result))) (repeat (is_zero (var _val)) (seq (set _popcnt (+ (var _popcnt) (ite (lsb (var _val)) (bv 8 0x1) (bv 8 0x0)))) (set _val (>> (var _val) (bv 8 0x1) false)))) (set pf (is_zero (mod (var _popcnt) (bv 8 0x2)))) (set zf (is_zero (var _result))) (set sf (msb (var _result))) (set cf false) (set of false))
 aB "test byte [bx], 0x12" f60712
 aB "test word [bx], 0x1234" f7073412
