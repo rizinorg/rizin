@@ -501,7 +501,6 @@ static RzILOpPure *x86_il_get_gpr32(X86Reg reg, int bits) {
 	if (bits == 32) {
 		return VARG(x86_registers[reg]);
 	}
-	// RZ_LOG_WARN("hhah\n")
 	return UNSIGNED(32, VARG(x86_registers[reg]));
 }
 static RzILOpPure *x86_il_get_gpr64(X86Reg reg, int bits) {
@@ -682,7 +681,7 @@ static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) 
 		struct extreg_lookup_helper_t entry = extreg_lookup_table[ind];
 		return entry.set_handler(entry.base_reg, val, bits);
 	}
-	
+
 	return SETG(x86_registers[reg], val);
 }
 
