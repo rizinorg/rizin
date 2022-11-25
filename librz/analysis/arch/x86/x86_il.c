@@ -3381,8 +3381,8 @@ IL_LIFTER(enter) {
 
 	RzILOpEffect *nesting_lvl1 = x86_push_helper(VARL("_frame_tmp"), bp_size);
 
-	RzILOpEffect *continue_eff = x86_il_set_reg(sp_reg, SUB(x86_il_get_reg(sp_reg), UNSIGNED(bp_size * BITS_PER_BYTE, VARL("_alloc_sz"))));
-	if (bp_size == 16) {
+	RzILOpEffect *continue_eff = x86_il_set_reg(sp_reg, SUB(x86_il_get_reg(sp_reg), UNSIGNED(analysis->bits, VARL("_alloc_sz"))));
+	if (bp_size == 2) {
 		continue_eff = SEQ2(continue_eff, x86_il_set_reg(bp_reg, UNSIGNED(16, UNSIGNED(15, VARL("_frame_tmp")))));
 	} else {
 		continue_eff = SEQ2(continue_eff, x86_il_set_reg(bp_reg, VARL("_frame_tmp")));
