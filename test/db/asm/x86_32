@@ -235,7 +235,8 @@ d "lmsw ax" 0f01f0
 d "lmsw word [eax]" 0f0130
 d "lock and word fs:[bx + si], si" 646766f02130
 d "lodsb al, byte [esi]" ac 0x0 (seq (set eax (| (& (var eax) (~ (bv 32 0xff))) (cast 32 false (loadw 0 8 (+ (+ (var esi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))))) (branch (var df) (set esi (- (var esi) (bv 32 0x1))) (set esi (+ (var esi) (bv 32 0x1)))))
-d "lodsd eax, dword [esi]" ad
+d "lodsd eax, dword [esi]" ad 0x0 (seq (set eax (loadw 0 32 (+ (+ (var esi) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))) (branch (var df) (set esi (- (var esi) (bv 32 0x4))) (set esi (+ (var esi) (bv 32 0x4)))))
+d "lodsd eax, dword [si]" 67ad 0x0 (seq (set eax (loadw 0 32 (+ (+ (cast 32 false (cast 16 false (var esi))) (bv 32 0x0)) (<< (cast 32 false (var ds)) (bv 8 0x4) false)))) (branch (var df) (set esi (| (& (var esi) (~ (bv 32 0xffff))) (cast 32 false (- (cast 16 false (var esi)) (bv 16 0x4))))) (set esi (| (& (var esi) (~ (bv 32 0xffff))) (cast 32 false (+ (cast 16 false (var esi)) (bv 16 0x4)))))))
 d "loop 3" 66e200 0x0 empty
 d "lsl eax, dword [eax]" 0f0300
 d "ltr ax" 0f00d8

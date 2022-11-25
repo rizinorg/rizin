@@ -2094,7 +2094,9 @@ RzILOpEffect *x86_il_lods_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 			mem_reg = X86_REG_ESI;
 			mem_size = 32;
 		}
-		RzILOpPure *val = LOADW(size, x86_il_get_reg(mem_reg));
+
+		/* Cast to 64 if necessary (needed when address override prefix present) */
+		RzILOpPure *val = LOADW(size, (mem_size == 64 ? x86_il_get_reg(mem_reg) : UNSIGNED(64, x86_il_get_reg(mem_reg))));
 		RzILOpEffect *inc = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
 		RzILOpEffect *dec = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
 		RzILOpEffect *update_rsi = BRANCH(VARG(EFLAGS(DF)), dec, inc);
@@ -2116,6 +2118,8 @@ RzILOpEffect *x86_il_lods_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		src_mem.index = X86_REG_INVALID;
 		src_mem.scale = 1;
 		src_mem.segment = X86_REG_DS;
+
+		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
 		RzILOpPure *val = LOADW(size, x86_il_get_memaddr(src_mem));
 
 		RzILOpEffect *inc = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
@@ -2234,7 +2238,8 @@ RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 			mem_size = 32;
 		}
 
-		RzILOpPure *val = LOADW(size, x86_il_get_reg(mem_reg1));
+		/* Cast to 64 if necessary (needed when address override prefix present) */
+		RzILOpPure *val = LOADW(size, (mem_size == 64 ? x86_il_get_reg(mem_reg1) : UNSIGNED(64, x86_il_get_reg(mem_reg1))));
 		RzILOpEffect *inc = SEQ2(x86_il_set_reg(mem_reg1, ADD(x86_il_get_reg(mem_reg1), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(mem_reg2, ADD(x86_il_get_reg(mem_reg2), UN(mem_size, size / BITS_PER_BYTE))));
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(mem_reg1, SUB(x86_il_get_reg(mem_reg1), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(mem_reg2, SUB(x86_il_get_reg(mem_reg2), UN(mem_size, size / BITS_PER_BYTE))));
 		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
@@ -2272,6 +2277,7 @@ RzILOpEffect *x86_il_movs_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		RzILOpEffect *dec = SEQ2(x86_il_set_reg(src_reg, SUB(x86_il_get_reg(src_reg), UN(mem_size, size / BITS_PER_BYTE))), x86_il_set_reg(dst_reg, SUB(x86_il_get_reg(dst_reg), UN(mem_size, size / BITS_PER_BYTE))));
 		RzILOpEffect *update = BRANCH(VARG(EFLAGS(DF)), dec, inc);
 
+		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
 		return SEQ2(x86_il_set_mem(dst_mem, LOADW(size, x86_il_get_memaddr(src_mem))), update);
 	}
 }
@@ -2996,8 +3002,9 @@ RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 			mem_size = 32;
 		}
 
+		/* Cast to 64 if necessary (needed when address override prefix present) */
+		RzILOpEffect *src = SETL("_src", LOADW(size, (mem_size == 64 ? x86_il_get_reg(mem_reg) : UNSIGNED(64, x86_il_get_reg(mem_reg)))));
 		RzILOpEffect *reg = SETL("_reg", x86_il_get_reg(sub_reg));
-		RzILOpEffect *src = SETL("_src", LOADW(size, x86_il_get_reg(mem_reg)));
 		RzILOpEffect *temp = SETL("_temp", SUB(VARL("_reg"), VARL("_src")));
 		RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("_temp"), VARL("_reg"), VARL("_src"), false);
 		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_temp"));
@@ -3023,8 +3030,9 @@ RzILOpEffect *x86_il_scas_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		src_mem.index = X86_REG_INVALID;
 		src_mem.scale = 1;
 		src_mem.segment = X86_REG_ES;
-		RzILOpEffect *src = SETL("_src", LOADW(size, x86_il_get_memaddr(src_mem)));
 
+		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
+		RzILOpEffect *src = SETL("_src", LOADW(size, x86_il_get_memaddr(src_mem)));
 		RzILOpEffect *temp = SETL("_temp", SUB(VARL("_reg"), VARL("_src")));
 		RzILOpEffect *arith_flags = x86_il_set_arithmetic_flags(VARL("_temp"), VARL("_reg"), VARL("_src"), false);
 		RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_temp"));
@@ -3138,7 +3146,8 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 			mem_size = 32;
 		}
 
-		RzILOpEffect *store = STOREW(x86_il_get_reg(mem_reg), x86_il_get_reg(store_reg));
+		/* Cast to 64 if necessary (needed when address override prefix present) */
+		RzILOpEffect *store = STOREW((mem_size == 64 ? x86_il_get_reg(mem_reg) : UNSIGNED(64, x86_il_get_reg(mem_reg))), x86_il_get_reg(store_reg));
 
 		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
 		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
@@ -3159,8 +3168,9 @@ RzILOpEffect *x86_il_stos_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analy
 		src_mem.index = X86_REG_INVALID;
 		src_mem.scale = 1;
 		src_mem.segment = X86_REG_ES;
-		RzILOpEffect *store = x86_il_set_mem(src_mem, x86_il_get_reg(store_reg));
 
+		/* No need for casting memaddr here since the casting will be done while calculating the segmented address */
+		RzILOpEffect *store = x86_il_set_mem(src_mem, x86_il_get_reg(store_reg));
 		RzILOpEffect *increment = x86_il_set_reg(mem_reg, ADD(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
 		RzILOpEffect *decrement = x86_il_set_reg(mem_reg, SUB(x86_il_get_reg(mem_reg), UN(mem_size, size / BITS_PER_BYTE)));
 
