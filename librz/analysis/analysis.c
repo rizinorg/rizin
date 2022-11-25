@@ -60,6 +60,10 @@ static void global_kv_free(HtPPKv *kv) {
 	rz_analysis_var_global_free(kv->value);
 }
 
+static void type_link_kv_free(HtUPKv *kv) {
+	rz_type_free(kv->value);
+}
+
 RZ_API RzAnalysis *rz_analysis_new(void) {
 	int i;
 	RzAnalysis *analysis = RZ_NEW0(RzAnalysis);
@@ -89,7 +93,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_analysis_hint_storage_init(analysis);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	analysis->typedb = rz_type_db_new();
-	analysis->type_links = ht_up_new0();
+	analysis->type_links = ht_up_new(NULL, type_link_kv_free, NULL);
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
 	analysis->sdb_classes = sdb_ns(analysis->sdb, "classes", 1);
@@ -434,7 +438,7 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	rz_type_db_purge(analysis->typedb);
 	ht_up_free(analysis->type_links);
-	analysis->type_links = ht_up_new0();
+	analysis->type_links = ht_up_new(NULL, type_link_kv_free, NULL);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
 	sdb_reset(analysis->sdb_cc);

@@ -48,7 +48,7 @@ RZ_API RZ_BORROW RzType *rz_analysis_type_link_at(RzAnalysis *analysis, ut64 add
  * \param type RzType to link
  * \param addr The address to add the type link
  */
-RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_BORROW RzType *type, ut64 addr) {
+RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_OWN RzType *type, ut64 addr) {
 	rz_return_val_if_fail(analysis && type, false);
 	ht_up_insert(analysis->type_links, addr, type);
 	return true;

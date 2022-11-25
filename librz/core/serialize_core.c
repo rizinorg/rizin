@@ -80,14 +80,14 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
 
-	const char *str = sdb_get(db, "offset", 0);
+	const char *str = sdb_const_get(db, "offset", 0);
 	if (!str || !*str) {
 		RZ_SERIALIZE_ERR(res, "missing offset in core");
 		return false;
 	}
 	core->offset = strtoull(str, NULL, 0);
 
-	str = sdb_get(db, "blocksize", 0);
+	str = sdb_const_get(db, "blocksize", 0);
 	if (!str || !*str) {
 		RZ_SERIALIZE_ERR(res, "missing blocksize in core");
 		return false;
