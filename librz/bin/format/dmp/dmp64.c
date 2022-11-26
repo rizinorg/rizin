@@ -46,6 +46,11 @@ static bool rz_bin_dmp64_init_triage(struct rz_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
+static void dmp64_endienness_memory_run(dmp_p_memory_run *run) {
+	run->BasePage = rz_read_le64((ut8 *)&run->BasePage);
+	run->PageCount = rz_read_le64((ut8 *)&run->PageCount);
+}
+
 static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	int i, j;
 	dmp64_p_memory_desc *mem_desc = &obj->header->PhysicalMemoryBlock;
@@ -73,7 +78,8 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	ut64 num_page = 0;
 	ut64 base = sizeof(dmp64_header);
 	for (i = 0; i < num_runs; i++) {
-		dmp_p_memory_run *run = &(runs[i]);
+		dmp_p_memory_run *run = &runs[i];
+		dmp64_endienness_memory_run(run);
 		for (j = 0; j < run->PageCount; j++) {
 			dmp_page_desc *page = RZ_NEW0(dmp_page_desc);
 			if (!page) {
@@ -92,11 +98,6 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 
 	free(runs);
 	return true;
-}
-
-static void dmp64_endienness_memory_run(dmp_p_memory_run *run) {
-	run->BasePage = rz_read_le64((ut8 *)&run->BasePage);
-	run->PageCount = rz_read_le64((ut8 *)&run->PageCount);
 }
 
 static void dmp64_endienness_memory_desc(dmp64_p_memory_desc *desc) {

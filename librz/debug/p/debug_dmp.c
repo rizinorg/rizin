@@ -354,21 +354,28 @@ static int rz_debug_dmp_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	if (ctx->is_arm) {
 		if (ctx->is_64bit) {
 			struct context_type_arm64 *regs = (struct context_type_arm64 *)buf;
-			regs->Sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			regs->Fp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset);
-			regs->Pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 8);
+			ut64 Sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+			ut64 Fp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset);
+			ut64 Pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 8);
+			rz_write_le64((ut8 *)&regs->Sp, Sp);
+			rz_write_le64((ut8 *)&regs->Fp, Fp);
+			rz_write_le64((ut8 *)&regs->Pc, Pc);
 		} else {
 			struct context_type_arm *regs = (struct context_type_arm *)buf;
-			regs->sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			regs->pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 4);
+			ut32 sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+			ut32 pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 4);
+			rz_write_le32((ut8 *)&regs->sp, sp);
+			rz_write_le32((ut8 *)&regs->pc, pc);
 		}
 	} else {
 		if (ctx->is_64bit) {
 			struct context_type_amd64 *regs = (struct context_type_amd64 *)buf;
-			regs->rsp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+			ut64 rsp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+			rz_write_le64((ut8 *)&regs->rsp, rsp);
 		} else {
 			struct context_type_i386 *regs = (struct context_type_i386 *)buf;
-			regs->esp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+			ut32 esp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+			rz_write_le32((ut8 *)&regs->esp, esp);
 		}
 	}
 	return size;

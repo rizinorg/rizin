@@ -164,14 +164,14 @@ ut32 winkd_get_target_thread(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
 }
 
 ut64 winkd_get_target_base(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
-	ut64 base = 0;
+	ut8 tmp[8] = { 0 };
+	ut64 address = ctx->target.peb + O_(P_ImageBaseAddress);
 
-	if (!winkd_read_at_uva(ctx, ctx->target.peb + O_(P_ImageBaseAddress),
-		    (ut8 *)&base, 4 << ctx->is_64bit)) {
+	if (!winkd_read_at_uva(ctx, address, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 		return 0;
 	}
 
-	return base;
+	return rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 }
 
 KdCtx *winkd_kdctx_new(RZ_BORROW RZ_NONNULL io_desc_t *desc) {
@@ -389,7 +389,7 @@ int winkd_wait_packet(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut32 type, RZ_NULLA
 
 void winkd_walk_vadtree(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address, ut64 parent, RzList *out) {
 	ut8 buf[4];
-	const ut8 ptr_size = ctx->is_64bit ? 8 : 4;
+	const ut8 ptr_size = ctx->is_64bit ? sizeof(ut64) : sizeof(ut32);
 	const ut64 self = address;
 	const ut64 tag_addr = self - ptr_size - 4;
 
@@ -627,6 +627,7 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 	if (!ret) {
 		return NULL;
 	}
+	ut8 tmp[8] = { 0 };
 	ut64 ptr, base;
 	int list_entry_off = 0;
 	const bool is_target_kernel = ctx->target.uniqueid <= 4;
@@ -635,11 +636,11 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 			RZ_LOG_ERROR("No PsLoadedModuleList\n");
 			return ret;
 		}
-		ptr = ctx->PsLoadedModuleList;
-		base = ptr;
-		if (!ctx->read_at_kernel_virtual(ctx->user, ptr, (ut8 *)&ptr, 4 << ctx->is_64bit)) {
+		base = ctx->PsLoadedModuleList;
+		if (!ctx->read_at_kernel_virtual(ctx->user, base, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 			RZ_LOG_ERROR("PsLoadedModuleList not present in mappings\n");
 		}
+		ptr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 		if (ptr == base) {
 			return ret;
 		}
@@ -662,11 +663,12 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 
 		// Grab the _PEB_LDR_DATA from PEB
 		ut64 ldroff = ctx->is_64bit ? 0x18 : 0xC;
-		if (!winkd_read_at_uva(ctx, ctx->target.peb + ldroff, (ut8 *)&ptr, 4 << ctx->is_64bit)) {
+		if (!winkd_read_at_uva(ctx, ctx->target.peb + ldroff, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 			RZ_LOG_ERROR("PEB not present in target mappings\n");
 			return ret;
 		}
 
+		ptr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 		RZ_LOG_DEBUG("_PEB_LDR_DATA : 0x%016" PFMT64x "\n", ptr);
 
 		// LIST_ENTRY InMemoryOrderModuleList
@@ -674,10 +676,11 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 
 		base = ptr + mlistoff;
 
-		winkd_read_at_uva(ctx, base, (ut8 *)&ptr, 4 << ctx->is_64bit);
+		winkd_read_at_uva(ctx, base, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
 
+		ptr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 		// Offset of InMemoryOrderLinks inside _LDR_DATA_TABLE_ENTRY
-		list_entry_off = (4 << ctx->is_64bit) * 2;
+		list_entry_off = (ctx->is_64bit ? (sizeof(ut64) << 1) : (sizeof(ut32) << 1));
 	}
 
 	RZ_LOG_DEBUG("InMemoryOrderModuleList : 0x%016" PFMT64x "\n", ptr);
@@ -691,8 +694,8 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 				: 0x44;
 	do {
 
-		ut64 next = 0;
-		read_at_uva_or_kernel(ctx, ptr, (ut8 *)&next, 4 << ctx->is_64bit);
+		read_at_uva_or_kernel(ctx, ptr, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+		ut64 next = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 
 		RZ_LOG_DEBUG("_%sLDR_DATA_TABLE_ENTRY : 0x%016" PFMT64x "\n", is_target_kernel ? "K" : "", next);
 		if (!next || next == UT64_MAX) {
@@ -706,18 +709,24 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 		if (!mod) {
 			break;
 		}
-		read_at_uva_or_kernel(ctx, ptr + baseoff, (ut8 *)&mod->addr, 4 << ctx->is_64bit);
-		read_at_uva_or_kernel(ctx, ptr + sizeoff, (ut8 *)&mod->size, 4);
-		read_at_uva_or_kernel(ctx, ptr + timestampoff, (ut8 *)&mod->timestamp, 4);
 
-		ut16 length;
-		read_at_uva_or_kernel(ctx, ptr + nameoff, (ut8 *)&length, sizeof(ut16));
+		read_at_uva_or_kernel(ctx, ptr + baseoff, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+		mod->addr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 
-		ut64 bufferaddr = 0;
+		read_at_uva_or_kernel(ctx, ptr + sizeoff, tmp, 4);
+		mod->size = rz_read_le32(tmp);
+
+		read_at_uva_or_kernel(ctx, ptr + timestampoff, tmp, 4);
+		mod->timestamp = rz_read_le32(tmp);
+
+		read_at_uva_or_kernel(ctx, ptr + nameoff, tmp, sizeof(ut16));
+		ut64 length = rz_read_le16(tmp);
+
 		int align = ctx->is_64bit ? sizeof(ut64) : sizeof(ut32);
-		read_at_uva_or_kernel(ctx, ptr + nameoff + align, (ut8 *)&bufferaddr, 4 << ctx->is_64bit);
+		read_at_uva_or_kernel(ctx, ptr + nameoff + align, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+		ut64 bufferaddr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 
-		ut8 *unname = calloc((ut64)length + 2, 1);
+		ut8 *unname = calloc(length + 2, 1);
 		if (!unname) {
 			break;
 		}
@@ -753,12 +762,12 @@ WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address)
 		return NULL;
 	}
 	ut64 entrypoint = 0;
-	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Win32StartAddress), (ut8 *)&entrypoint, 4 << ctx->is_64bit)) {
+	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Win32StartAddress), (ut8 *)&entrypoint, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 		RZ_LOG_WARN("Failed to read Win32StartAddress at: 0x%" PFMT64x "\n", address + O_(ET_Win32StartAddress));
 		return NULL;
 	}
 	ut64 uniqueid = 0;
-	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Cid) + O_(C_UniqueThread), (ut8 *)&uniqueid, 4 << ctx->is_64bit)) {
+	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Cid) + O_(C_UniqueThread), (ut8 *)&uniqueid, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 		RZ_LOG_WARN("Failed to read UniqueThread at: 0x%" PFMT64x "\n", address + O_(ET_Cid) + O_(C_UniqueThread));
 		return NULL;
 	}
@@ -794,7 +803,7 @@ RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 	}
 
 	// Grab the ThreadListHead from _EPROCESS
-	ctx->read_at_kernel_virtual(ctx->user, ptr + O_(E_ThreadListHead), (ut8 *)&ptr, 4 << ctx->is_64bit);
+	ctx->read_at_kernel_virtual(ctx->user, ptr + O_(E_ThreadListHead), (ut8 *)&ptr, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
 	if (!ptr) {
 		RZ_LOG_ERROR("No ThreadListHead for target\n");
 		if (ctx->target_thread.ethread) {
@@ -811,7 +820,7 @@ RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 	do {
 		ut64 next = 0;
 
-		ctx->read_at_kernel_virtual(ctx->user, ptr, (ut8 *)&next, 4 << ctx->is_64bit);
+		ctx->read_at_kernel_virtual(ctx->user, ptr, (ut8 *)&next, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
 		if (!next || next == UT64_MAX) {
 			RZ_LOG_WARN("Corrupted ThreadListEntry found at: 0x%" PFMT64x "\n", ptr);
 			break;
