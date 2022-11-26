@@ -208,7 +208,7 @@ static bool rz_bin_dmp64_init_triage_drivers(struct rz_bin_dmp64_obj_t *obj) {
 		}
 		ut8 *file = calloc(str.count + 1, sizeof(ut16));
 		ut8 *file_utf8 = calloc(str.count + 1, sizeof(ut16));
-		if (!file) {
+		if (!file || !file_utf8) {
 			free(driver);
 			free(file);
 			free(file_utf8);
@@ -325,11 +325,16 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 		RZ_LOG_ERROR("Cannot read bmp_header\n");
 		return false;
 	}
-	if (memcmp(obj->bmp_header, DMP_BMP_MAGIC, 8) &&
-		memcmp(obj->bmp_header, DMP_BMP_FULL_MAGIC, 8)) {
+	if (memcmp((ut8 *)obj->bmp_header, DMP_BMP_MAGIC, 8) &&
+		memcmp((ut8 *)obj->bmp_header, DMP_BMP_FULL_MAGIC, 8)) {
 		RZ_LOG_ERROR("Invalid Bitmap Magic\n");
 		return false;
 	}
+
+	obj->bmp_header->FirstPage = rz_read_le64((ut8 *)&obj->bmp_header->FirstPage);
+	obj->bmp_header->TotalPresentPages = rz_read_le64((ut8 *)&obj->bmp_header->TotalPresentPages);
+	obj->bmp_header->Pages = rz_read_le64((ut8 *)&obj->bmp_header->Pages);
+
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc(1, bitmapsize);
 	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
