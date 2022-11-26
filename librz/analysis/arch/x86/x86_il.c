@@ -812,12 +812,10 @@ static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) 
  */
 static RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits) {
 	RzILOpPure *offset = NULL;
-	if (mem.base != X86_REG_INVALID) {
-		if (!offset) {
-			offset = x86_il_get_reg_bits(mem.base, bits, 0);
-			if (x86_il_get_reg_size(mem.base) != bits) {
-				offset = UNSIGNED(bits, offset);
-			}
+	if (mem.base != X86_REG_INVALID && !offset) {
+		offset = x86_il_get_reg_bits(mem.base, bits, 0);
+		if (x86_il_get_reg_size(mem.base) != bits) {
+			offset = UNSIGNED(bits, offset);
 		}
 	}
 	if (mem.index != X86_REG_INVALID) {
