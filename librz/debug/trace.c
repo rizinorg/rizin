@@ -51,20 +51,20 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	// Analyze current instruction
 	ut64 pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	if (!dbg->iob.read_at) {
-		eprintf("Error: dbg->iob.read_at missing\n");
+		RZ_LOG_ERROR("Error: dbg->iob.read_at missing\n");
 		return false;
 	}
 	if (!dbg->iob.read_at(dbg->iob.io, pc, buf_pc, sizeof(buf_pc))) {
-		eprintf("Error: dbg->iob.read_at failure -- pc 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("Error: dbg->iob.read_at failure -- pc 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	dbg->cur_op = RZ_NEW0(RzAnalysisOp);
 	if (!dbg->cur_op) {
-		eprintf("Error: RZ_NEW0 failure\n");
+		RZ_LOG_ERROR("Error: RZ_NEW0 failure\n");
 		return false;
 	}
 	if (rz_analysis_op(dbg->analysis, dbg->cur_op, pc, buf_pc, sizeof(buf_pc), RZ_ANALYSIS_OP_MASK_VAL) < 1) {
-		eprintf("Error: rz_analysis_op failure -- pc 0x%" PFMT64x "\n", pc);
+		RZ_LOG_ERROR("Error: rz_analysis_op failure -- pc 0x%" PFMT64x "\n", pc);
 		rz_analysis_op_free(dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;
