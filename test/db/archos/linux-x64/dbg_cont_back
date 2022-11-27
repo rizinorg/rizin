@@ -43,7 +43,6 @@ db @ 0x004028d1
 db @ 0x0040290d
 db @ 0x0040294b
 dc
-dm
 dts+
 dc
 dc
