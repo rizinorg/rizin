@@ -162,7 +162,8 @@ process_chained_info:
 	}
 	int i = 0;
 	while (i < info->CountOfCodes) {
-		const PE64_UNWIND_CODE code = info->UnwindCode[i];
+		PE64_UNWIND_CODE code = info->UnwindCode[i];
+		code.FrameOffset = rz_read_le16((ut8 *)&code.FrameOffset);
 		i++;
 		// Check if we are already past the prolog instruction
 		// If we are processing a chained scope, always process all of them
