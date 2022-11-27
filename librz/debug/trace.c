@@ -112,7 +112,10 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 }
 
 RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
-	rz_return_val_if_fail(dbg->cur_op, false);
+	// rz_return_val_if_fail(dbg->cur_op, false);
+	if (!dbg->cur_op) { // Can happen if hard stepping is available and code is unknown to Rizin
+		return false;
+	}
 	RzListIter *it;
 	RzAnalysisValue *val;
 
