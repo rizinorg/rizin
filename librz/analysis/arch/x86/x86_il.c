@@ -2358,41 +2358,54 @@ IL_LIFTER(lodsq) {
 	return x86_il_lods_helper(ins, pc, analysis, 64);
 }
 
-// /**
-//  * LOOP
-//  * Loop the following instruction
-//  * Encoding: D
-//  * Decrement count ; jump if count != 0
-//  */
-// IL_LIFTER(loop) {
-// 	/* TODO: Unimplemented */
-// 	/* This is hard to implement currently, since it would require to loop the following instruction
-// 	and the IL currently provides no way to get the effect of another instruction */
-// 	/* Also, it's usage is usually very rare, so not worth all the effort. For now an `EMPTY` opcode is returned */
-// 	return EMPTY();
-// }
+#define LOOP_HELPER(cond) \
+	do { \
+		/* Will automatically be resolved to the widest CX register */ \
+		X86Reg count_reg = X86_REG_RCX; \
+\
+		uint8_t addr_size = analysis->bits; \
+		/* Check address override prefix (67H) */ \
+		if (analysis->bits == 64 && ins->structure->prefix[3]) { \
+			addr_size >>= 1; \
+			count_reg = X86_REG_ECX; \
+		} \
+\
+		RzILOpEffect *dec_counter = x86_il_set_reg(count_reg, SUB(x86_il_get_reg(count_reg), UN(addr_size, 1))); \
+		RzILOpEffect *true_cond = JMP(UN(analysis->bits, pc + ins->structure->operands[0].imm)); \
+		RzILOpEffect *branch = BRANCH(cond, true_cond, NOP()); \
+\
+		return SEQ2(dec_counter, branch); \
+	} while (0)
 
-// /**
-//  * LOOPE
-//  * Loop the following instruction
-//  * Encoding: D
-//  * Decrement count ; jump if count != 0 and ZF = 1
-//  */
-// IL_LIFTER(loope) {
-// 	/* TODO: Unimplemented */
-// 	return EMPTY();
-// }
+/**
+ * LOOP
+ * Loop the following instruction
+ * Encoding: D
+ * Decrement count ; jump if count != 0
+ */
+IL_LIFTER(loop){
+	LOOP_HELPER(NON_ZERO(x86_il_get_reg(count_reg)));
+}
 
-// /**
-//  * LOOPNE
-//  * Loop the following instruction
-//  * Encoding: D
-//  * Decrement count ; jump if count != 0 and ZF = 0
-//  */
-// IL_LIFTER(loopne) {
-// 	/* TODO: Unimplemented */
-// 	return EMPTY();
-// }
+/**
+ * LOOPE
+ * Loop the following instruction
+ * Encoding: D
+ * Decrement count ; jump if count != 0 and ZF = 1
+ */
+IL_LIFTER(loope) {
+	LOOP_HELPER(AND(NON_ZERO(x86_il_get_reg(count_reg)), VARG(EFLAGS(ZF))));
+}
+
+/**
+ * LOOPNE
+ * Loop the following instruction
+ * Encoding: D
+ * Decrement count ; jump if count != 0 and ZF = 0
+ */
+IL_LIFTER(loopne) {
+	LOOP_HELPER(AND(NON_ZERO(x86_il_get_reg(count_reg)), INV(VARG(EFLAGS(ZF)))));
+}
 
 /**
  * MOV
@@ -3698,9 +3711,9 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LODSW] = x86_il_lodsw,
 	[X86_INS_LODSD] = x86_il_lodsd,
 	[X86_INS_LODSQ] = x86_il_lodsq,
-	[X86_INS_LOOP] = x86_il_unimpl,
-	[X86_INS_LOOPE] = x86_il_unimpl,
-	[X86_INS_LOOPNE] = x86_il_unimpl,
+	[X86_INS_LOOP] = x86_il_loop,
+	[X86_INS_LOOPE] = x86_il_loope,
+	[X86_INS_LOOPNE] = x86_il_loopne,
 	[X86_INS_MOV] = x86_il_mov,
 	[X86_INS_MOVSB] = x86_il_movsb,
 	[X86_INS_MOVSW] = x86_il_movsw,
