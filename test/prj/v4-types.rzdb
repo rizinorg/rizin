@@ -1,0 +1,458 @@
+/
+type=rizin rz-db project
+version=4
+
+/core
+blocksize=0x100
+offset=0x80483d0
+
+/core/analysis
+
+/core/analysis/blocks
+
+/core/analysis/callables
+
+/core/analysis/cc
+
+/core/analysis/classes
+
+/core/analysis/classes/attrs
+
+/core/analysis/functions
+
+/core/analysis/hints
+
+/core/analysis/imports
+
+/core/analysis/meta
+0x0=[{"type":"C","str":"[28] ---- section size 584 named .strtab"}]
+0x8048154=[{"type":"C","str":"[01] -r-- section size 19 named .interp"}]
+0x8048168=[{"type":"C","str":"[02] -r-- section size 32 named .note.ABI-tag"}]
+0x8048188=[{"type":"C","str":"[03] -r-- section size 56 named .hash"}]
+0x80481c0=[{"type":"C","str":"[04] -r-- section size 32 named .gnu.hash"}]
+0x80481e0=[{"type":"C","str":"[05] -r-- section size 144 named .dynsym"}]
+0x8048270=[{"type":"C","str":"[06] -r-- section size 95 named .dynstr"}]
+0x80482d0=[{"type":"C","str":"[07] -r-- section size 18 named .gnu.version"}]
+0x80482e4=[{"type":"C","str":"[08] -r-- section size 32 named .gnu.version_r"}]
+0x8048304=[{"type":"C","str":"[09] -r-- section size 8 named .rel.dyn"}]
+0x804830c=[{"type":"C","str":"[10] -r-- section size 48 named .rel.plt"}]
+0x804833c=[{"type":"C","str":"[11] -r-x section size 23 named .init"}]
+0x8048354=[{"type":"C","str":"[12] -r-x section size 112 named .plt"}]
+0x80483d0=[{"type":"C","str":"[13] -r-x section size 628 named .text"}]
+0x8048644=[{"type":"C","str":"[14] -r-x section size 26 named .fini"}]
+0x8048660=[{"type":"C","str":"[15] -r-- section size 85 named .rodata"}]
+0x804866b=[{"size":14,"type":"s","str":"Password OK!\\\\n"}]
+0x8048679=[{"size":21,"type":"s","str":"Password Incorrect!\\\\n"}]
+0x804868e=[{"size":25,"type":"s","str":"IOLI Crackme Level 0x05\\\\n"}]
+0x80486a7=[{"size":11,"type":"s","str":"Password: "}]
+0x80486b8=[{"type":"C","str":"[16] -r-- section size 4 named .eh_frame"}]
+0x8049f0c=[{"type":"C","str":"[17] -rw- section size 8 named .ctors"}]
+0x8049f14=[{"type":"C","str":"[18] -rw- section size 8 named .dtors"}]
+0x8049f1c=[{"type":"C","str":"[19] -rw- section size 4 named .jcr"}]
+0x8049f20=[{"size":4,"type":"d","str":"4[52]"},{"type":"C","str":"[20] -rw- section size 208 named .dynamic"}]
+0x8049f24=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f28=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f2c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f30=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f34=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f38=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f3c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f40=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f44=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f48=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f4c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f50=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f54=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f58=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f5c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f60=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f64=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f68=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f6c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f70=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f74=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f78=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f7c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f80=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f84=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f88=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f8c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f90=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f94=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f98=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049f9c=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fa0=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fa4=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fa8=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fac=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fb0=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fb4=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fb8=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fbc=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fc0=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fc4=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fc8=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fcc=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fd0=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fd4=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fd8=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fdc=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fe0=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fe4=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fe8=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049fec=[{"size":4,"type":"d","str":"4[52]"}]
+0x8049ff0=[{"size":4,"type":"d"},{"type":"C","str":"[21] -rw- section size 4 named .got"}]
+0x8049ff4=[{"type":"C","str":"[22] -rw- section size 36 named .got.plt"}]
+0x804a000=[{"size":4,"type":"d"}]
+0x804a004=[{"size":4,"type":"d"}]
+0x804a008=[{"size":4,"type":"d"}]
+0x804a00c=[{"size":4,"type":"d"}]
+0x804a010=[{"size":4,"type":"d"}]
+0x804a014=[{"size":4,"type":"d"}]
+0x804a018=[{"type":"C","str":"[23] -rw- section size 12 named .data"}]
+0x804a024=[{"type":"C","str":"[24] -rw- section size 4 named .bss"}]
+
+/core/analysis/meta/spaces
+name=CS
+spacestack=["*"]
+
+/core/analysis/meta/spaces/spaces
+bin=s
+
+/core/analysis/noreturn
+
+/core/analysis/pins
+
+/core/analysis/typelinks
+0x08048660=uint32_t
+
+/core/analysis/types
+FILE=typedef
+__div_t=struct
+__idtype=enum
+__imaxdiv_t=struct
+__ldiv_t=struct
+__lldiv_t=struct
+__siginfo_t=struct
+__sigset_t=struct
+_fd_set=struct
+bool=type
+char=type
+char *=type
+char16_t=type
+char32_t=type
+char8_t=type
+clock_t=typedef
+div_t=typedef
+double=type
+enum.__idtype=P_ALL,P_GID,P_PGID
+enum.__idtype.0x0=P_ALL
+enum.__idtype.0x1=P_GID
+enum.__idtype.0x2=P_PGID
+enum.__idtype.P_ALL=0x0
+enum.__idtype.P_GID=0x1
+enum.__idtype.P_PGID=0x2
+fd_mask=typedef
+fd_set=typedef
+fenv_t=typedef
+fexcept_t=typedef
+float=type
+fpos_t=typedef
+gid_t=type
+id_t=type
+idtype_t=typedef
+imaxdiv_t=typedef
+int=type
+int16_t=type
+int32_t=type
+int64_t=type
+int8_t=type
+intmax_t=type
+intptr_t=type
+jmp_buf=typedef
+lconv=struct
+ldiv_t=typedef
+lldiv_t=typedef
+locale_t=typedef
+long=type
+long double=type
+long int=type
+long long=type
+long long int=type
+mbstate_t=typedef
+nl_item=typedef
+pid_t=type
+ptrdiff_t=type
+short=type
+sigaction=struct
+siginfo_t=typedef
+sigset_t=typedef
+sigval=union
+size_t=type
+sockaddr=struct
+socklen_t=typedef
+ssize_t=type
+std__type_info=struct
+struct.__div_t=quot,rem
+struct.__div_t.quot=int,0,0
+struct.__div_t.rem=int,2,0
+struct.__imaxdiv_t=quot,rem
+struct.__imaxdiv_t.quot=intmax_t,0,0
+struct.__imaxdiv_t.rem=intmax_t,8,0
+struct.__ldiv_t=quot,rem
+struct.__ldiv_t.quot=long int,0,0
+struct.__ldiv_t.rem=long int,4,0
+struct.__lldiv_t=quot,rem
+struct.__lldiv_t.quot=long long int,0,0
+struct.__lldiv_t.rem=long long int,4,0
+struct.__siginfo_t=si_signo,si_code,si_value,si_errno,si_pid,si_uid,si_addr,si_status,si_band
+struct.__siginfo_t.si_addr=void *,28,0
+struct.__siginfo_t.si_band=int,36,0
+struct.__siginfo_t.si_code=int,4,0
+struct.__siginfo_t.si_errno=int,16,0
+struct.__siginfo_t.si_pid=pid_t,20,0
+struct.__siginfo_t.si_signo=int,0,0
+struct.__siginfo_t.si_status=int,32,0
+struct.__siginfo_t.si_uid=uid_t,24,0
+struct.__siginfo_t.si_value=union sigval,8,0
+struct.__sigset_t=sig
+struct.__sigset_t.sig=unsigned long,0,0
+struct._fd_set=fds_bits
+struct._fd_set.fds_bits=fd_mask,0,0
+struct.sigaction=sa_handler,sa_flags,sa_restorer,sa_mask
+struct.sigaction.sa_flags=unsigned long,8,0
+struct.sigaction.sa_handler=void *,0,0
+struct.sigaction.sa_mask=sigset_t,20,0
+struct.sigaction.sa_restorer=void *,12,0
+struct.timespec=tv_sec,tv_nsec
+struct.timespec.tv_nsec=long,8,0
+struct.timespec.tv_sec=time_t,0,0
+struct.timeval=tv_sec,tv_usec
+struct.timeval.tv_sec=time_t,0,0
+struct.timeval.tv_usec=suseconds_t,8,0
+struct.tm=tm_sec,tm_min,tm_hour,tm_mday,tm_mon,tm_year,tm_wday,tm_yday,tm_isdst
+struct.tm.tm_hour=int,8,0
+struct.tm.tm_isdst=int,32,0
+struct.tm.tm_mday=int,12,0
+struct.tm.tm_min=int,4,0
+struct.tm.tm_mon=int,16,0
+struct.tm.tm_sec=int,0,0
+struct.tm.tm_wday=int,24,0
+struct.tm.tm_yday=int,28,0
+struct.tm.tm_year=int,20,0
+suseconds_t=typedef
+time_t=typedef
+timespec=struct
+timeval=struct
+tm=struct
+type.bool=b bool bool
+type.bool.size=8
+type.bool.typeclass=None
+type.char=c char char
+type.char *=z char * char *
+type.char *.size=32
+type.char *.typeclass=None
+type.char.size=8
+type.char.typeclass=Signed Integral
+type.char16_t=c char16_t char16_t
+type.char16_t.size=16
+type.char16_t.typeclass=Signed Integral
+type.char32_t=c char32_t char32_t
+type.char32_t.size=32
+type.char32_t.typeclass=Signed Integral
+type.char8_t=c char8_t char8_t
+type.char8_t.size=8
+type.char8_t.typeclass=Signed Integral
+type.double=F double double
+type.double.size=64
+type.double.typeclass=Floating
+type.float=f float float
+type.float.size=32
+type.float.typeclass=Floating
+type.gid_t=d gid_t gid_t
+type.gid_t.size=32
+type.gid_t.typeclass=Integral
+type.id_t=d id_t id_t
+type.id_t.size=32
+type.id_t.typeclass=Integral
+type.int=d int int
+type.int.size=32
+type.int.typeclass=Signed Integral
+type.int16_t=w int16_t int16_t
+type.int16_t.size=16
+type.int16_t.typeclass=Signed Integral
+type.int32_t=d int32_t int32_t
+type.int32_t.size=32
+type.int32_t.typeclass=Signed Integral
+type.int64_t=q int64_t int64_t
+type.int64_t.size=64
+type.int64_t.typeclass=Signed Integral
+type.int8_t=b int8_t int8_t
+type.int8_t.size=8
+type.int8_t.typeclass=Signed Integral
+type.intmax_t=q intmax_t intmax_t
+type.intmax_t.size=64
+type.intmax_t.typeclass=Signed Integral
+type.intptr_t=d intptr_t intptr_t
+type.intptr_t.size=32
+type.intptr_t.typeclass=Signed Integral
+type.long=x long long
+type.long double=F long double long double
+type.long double.size=64
+type.long double.typeclass=Floating
+type.long int=x long int long int
+type.long int.size=64
+type.long int.typeclass=Signed Integral
+type.long long=q long long long long
+type.long long int=q long long int long long int
+type.long long int.size=64
+type.long long int.typeclass=Signed Integral
+type.long long.size=64
+type.long long.typeclass=Signed Integral
+type.long.size=64
+type.long.typeclass=Signed Integral
+type.pid_t=d pid_t pid_t
+type.pid_t.size=32
+type.pid_t.typeclass=Integral
+type.ptrdiff_t=d ptrdiff_t ptrdiff_t
+type.ptrdiff_t.size=32
+type.ptrdiff_t.typeclass=Integral
+type.short=w short short
+type.short.size=16
+type.short.typeclass=Signed Integral
+type.size_t=d size_t size_t
+type.size_t.size=32
+type.size_t.typeclass=Unsigned Integral
+type.ssize_t=d ssize_t ssize_t
+type.ssize_t.size=32
+type.ssize_t.typeclass=Signed Integral
+type.uid_t=d uid_t uid_t
+type.uid_t.size=32
+type.uid_t.typeclass=Integral
+type.uint16_t=w uint16_t uint16_t
+type.uint16_t.size=16
+type.uint16_t.typeclass=Unsigned Integral
+type.uint32_t=d uint32_t uint32_t
+type.uint32_t.size=32
+type.uint32_t.typeclass=Unsigned Integral
+type.uint64_t=q uint64_t uint64_t
+type.uint64_t.size=64
+type.uint64_t.typeclass=Unsigned Integral
+type.uint8_t=b uint8_t uint8_t
+type.uint8_t.size=8
+type.uint8_t.typeclass=Unsigned Integral
+type.uintmax_t=q uintmax_t uintmax_t
+type.uintmax_t.size=64
+type.uintmax_t.typeclass=Unsigned Integral
+type.uintptr_t=d uintptr_t uintptr_t
+type.uintptr_t.size=32
+type.uintptr_t.typeclass=Unsigned Integral
+type.unsigned char=b unsigned char unsigned char
+type.unsigned char.size=8
+type.unsigned char.typeclass=Unsigned Integral
+type.unsigned int=i unsigned int unsigned int
+type.unsigned int.size=32
+type.unsigned int.typeclass=Unsigned Integral
+type.unsigned long=d unsigned long unsigned long
+type.unsigned long long=q unsigned long long unsigned long long
+type.unsigned long long.size=64
+type.unsigned long long.typeclass=Unsigned Integral
+type.unsigned long.size=32
+type.unsigned long.typeclass=Unsigned Integral
+type.unsigned short=w unsigned short unsigned short
+type.unsigned short.size=16
+type.unsigned short.typeclass=Unsigned Integral
+type.void *=p void * void *
+type.void *.size=32
+type.void *.typeclass=None
+type.void.size=0
+type.void.typeclass=None
+typedef.FILE=void
+typedef.clock_t=void
+typedef.div_t=struct __div_t
+typedef.fd_mask=long int
+typedef.fd_set=struct _fd_set
+typedef.fenv_t=void
+typedef.fexcept_t=void
+typedef.fpos_t=void
+typedef.idtype_t=__idtype
+typedef.imaxdiv_t=struct __imaxdiv_t
+typedef.jmp_buf=void
+typedef.ldiv_t=struct __ldiv_t
+typedef.lldiv_t=struct __lldiv_t
+typedef.locale_t=void
+typedef.mbstate_t=void
+typedef.nl_item=int
+typedef.siginfo_t=struct __siginfo_t
+typedef.sigset_t=struct __sigset_t
+typedef.socklen_t=int
+typedef.suseconds_t=long
+typedef.time_t=long
+typedef.va_list=char *
+typedef.wchar_t=int
+typedef.wctrans_t=unsigned int
+typedef.wctype_t=int
+typedef.wint_t=int
+uid_t=type
+uint16_t=type
+uint32_t=type
+uint64_t=type
+uint8_t=type
+uintmax_t=type
+uintptr_t=type
+union.sigval=sival_int,sival_ptr
+union.sigval.sival_int=int,0,0
+union.sigval.sival_ptr=void *,0,0
+unsigned char=type
+unsigned int=type
+unsigned long=type
+unsigned long long=type
+unsigned short=type
+va_list=typedef
+void=type
+void *=type
+wchar_t=typedef
+wctrans_t=typedef
+wctype_t=typedef
+wint_t=typedef
+
+/core/analysis/vars
+
+/core/analysis/xrefs
+
+/core/analysis/zigns
+
+/core/analysis/zigns/spaces
+name=zs
+spacestack=["*"]
+
+/core/analysis/zigns/spaces/spaces
+
+/core/config
+
+/core/file
+relative=../bins/elf/crackme0x05
+
+/core/flags
+base=0
+realnames=0
+
+/core/flags/flags
+
+/core/flags/spaces
+name=fs
+spacestack=["*"]
+
+/core/flags/spaces/spaces
+classes=s
+imports=s
+relocs=s
+sections=s
+segments=s
+strings=s
+symbols=s
+symbols.sections=s
+
+/core/flags/tags
+
+/core/flags/zones
