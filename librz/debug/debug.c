@@ -989,7 +989,11 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!rz_debug_trace_ins_before(dbg)) {
-				eprintf("trace_ins_before: failed\n");
+				rz_debug_map_sync(dbg);
+				eprintf("Retrying trace_ins_before after map sync\n");
+				if (!rz_debug_trace_ins_before(dbg)) {
+					eprintf("trace_ins_before: failed\n");
+				}
 			}
 		}
 
