@@ -24,6 +24,7 @@ static bool typelinks_load_sdb(RzAnalysis *analysis, Sdb *sdb) {
 			free(error_msg);
 		}
 	}
+	ls_free(l);
 	return true;
 }
 
