@@ -168,8 +168,9 @@ RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res)
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
 	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
-	// Remove me in the future
 	sdb_ns(analysis_db, "vars", true);
+	// Typelinks currently still exist. When they will be removed, the following
+	// code can be enabled and moved to the respective migration.
 #if 0
 	V3V4TypesCtx ctx = {
 		.moved_keys = rz_list_newf(free),
@@ -305,7 +306,7 @@ RZ_API bool rz_project_migrate_v7_v8(RzProject *prj, RzSerializeResultInfo *res)
 // --
 // Migration 8 -> 9
 //
-// Changes from <missing>
+// Changes from fbad0b4859802a62dcc96002c2710e696809a0c3
 //	Removed fingerprint from the serialized RzAnalysisFunction & RzAnalysisBlock
 
 RZ_API bool rz_project_migrate_v8_v9(RzProject *prj, RzSerializeResultInfo *res) {
