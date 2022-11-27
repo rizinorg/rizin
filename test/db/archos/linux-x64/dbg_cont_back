@@ -37,7 +37,6 @@ NAME=dbg.manycontback
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
-!sleep 10
 db @ main
 db @ 0x004028ca
 db @ 0x004028d1
