@@ -270,6 +270,15 @@ process_chained_info:
 	return true;
 }
 
+static ut64 get_register_value(RzDebug *dbg, const char *reg_name) {
+	RzRegItem *reg = rz_reg_get(dbg->reg, reg_name, -1);
+	if (!reg) {
+		rz_warn_if_reached();
+		return 0;
+	}
+	return rz_reg_get_value(dbg->reg, reg);
+}
+
 static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList /*<RzDebugFrame *>*/ **out_frames, RZ_INOUT struct context_type_amd64 *context) {
 	RzList *frames = *out_frames ? *out_frames : rz_list_newf(free);
 	*out_frames = frames;
@@ -281,15 +290,41 @@ static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList /*<RzDebug
 		return true;
 	}
 	if (!context->rsp) {
-		int arena_size;
-		ut8 *arena = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_GPR, &arena_size);
-		if (!arena || arena_size < sizeof(*context)) {
-			rz_list_free(modules);
-			free(arena);
-			return true;
-		}
-		memcpy(context, arena, sizeof(*context));
-		free(arena);
+		context->mx_csr = get_register_value(dbg, "mxcsr");
+		context->seg_cs = get_register_value(dbg, "cs");
+		context->seg_ds = get_register_value(dbg, "ds");
+		context->seg_es = get_register_value(dbg, "es");
+		context->seg_fs = get_register_value(dbg, "fs");
+		context->seg_gs = get_register_value(dbg, "gs");
+		context->seg_ss = get_register_value(dbg, "ss");
+
+		context->e_flags = get_register_value(dbg, "eflags");
+
+		context->dr0 = get_register_value(dbg, "dr0");
+		context->dr1 = get_register_value(dbg, "dr1");
+		context->dr2 = get_register_value(dbg, "dr2");
+		context->dr3 = get_register_value(dbg, "dr3");
+		context->dr6 = get_register_value(dbg, "dr6");
+		context->dr7 = get_register_value(dbg, "dr7");
+
+		context->rax = get_register_value(dbg, "rax");
+		context->rcx = get_register_value(dbg, "rcx");
+		context->rdx = get_register_value(dbg, "rdx");
+		context->rbx = get_register_value(dbg, "rbx");
+		context->rsp = get_register_value(dbg, "rsp");
+		context->rbp = get_register_value(dbg, "rbp");
+		context->rsi = get_register_value(dbg, "rsi");
+		context->rdi = get_register_value(dbg, "rdi");
+		context->r8 = get_register_value(dbg, "r8");
+		context->r9 = get_register_value(dbg, "r9");
+		context->r10 = get_register_value(dbg, "r10");
+		context->r11 = get_register_value(dbg, "r11");
+		context->r12 = get_register_value(dbg, "r12");
+		context->r13 = get_register_value(dbg, "r13");
+		context->r14 = get_register_value(dbg, "r14");
+		context->r15 = get_register_value(dbg, "r15");
+
+		context->rip = get_register_value(dbg, "rip");
 	}
 	RzDebugMap *last_module = NULL;
 	RzVector functions;
