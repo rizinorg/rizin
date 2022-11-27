@@ -7,9 +7,9 @@
 #define BITMAP_TEST 0
 
 #if RZ_SYS_BITS == 4
-#define bitword_read  rz_read_le32
+#define bitword_read rz_read_le32
 #else
-#define bitword_read  rz_read_le64
+#define bitword_read rz_read_le64
 #endif
 
 #define BITWORD_BITS       (sizeof(RzBitword) * 8)
