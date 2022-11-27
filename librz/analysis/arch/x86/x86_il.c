@@ -798,7 +798,7 @@ static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) 
 #define x86_il_set_reg(reg, val) x86_il_set_reg_bits(reg, val, analysis->bits)
 
 /**
- * @brief Get the memory address as an `RzILOpPure` from X86Mem \p mem
+ * \brief Get the memory address as an `RzILOpPure` from X86Mem \p mem
  * You can also optionally provide a custom segment register as \p segment
  * This function takes care of all casting and conversion
  * This has partial segmentation support as of now
@@ -1115,7 +1115,7 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_bits(RZ_OWN RzILOpPure *res, RZ
 }
 
 /**
- * @brief Set OF and AF according to \p res
+ * \brief Set OF and AF according to \p res
  */
 static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure *x, RZ_OWN RzILOpPure *y, bool addition, int bits) {
 	RzILOpBool *of = NULL;
@@ -1143,7 +1143,7 @@ static RzILOpEffect *x86_il_set_arithmetic_flags_except_cf_bits(RZ_OWN RzILOpPur
 
 /**
  * \brief Get value of FLAGS register
- * r
+ *
  * \param size size of flags needed
  */
 RzILOpPure *x86_il_get_flags(unsigned int size) {
@@ -1932,15 +1932,22 @@ IL_LIFTER(imul) {
 	return NULL;
 }
 
-// /**
-//  * IN
-//  * Input from port
-//  * Encodings: I, ZO
-//  */
-// IL_LIFTER(in) {
-// 	/* TODO: Implement after I/O ports acccessing implemented in IL */
-// 	return EMPTY();
-// }
+/**
+ * IN
+ * Input from port
+ * Encodings: I, ZO
+ */
+IL_LIFTER(in) {
+	/* It just jumps to an empty goto label "port"
+	Also need an EMPTY() instruction after it to denote
+	the end of analysis and restart all IL analysis */
+	return SEQ2(GOTO("port"), EMPTY());
+}
+
+static void label_port(RzILVM *vm, RzILOpEffect *op) {
+	// empty "port" label
+	return;
+}
 
 /**
  * INC
@@ -2598,15 +2605,17 @@ IL_LIFTER(or) {
 	return SEQ5(or, set_dest, clear_of, clear_cf, set_res_flags);
 }
 
-// /**
-//  * OUT
-//  * Output to port
-//  * Encodings: I, ZO
-//  */
-// IL_LIFTER(out) {
-// 	/* TODO: Implement after I/O ports acccessing implemented in IL */
-// 	return EMPTY();
-// }
+/**
+ * OUT
+ * Output to port
+ * Encodings: I, ZO
+ */
+IL_LIFTER(out) {
+	/* It just jumps to an empty goto label "port"
+	Also need an EMPTY() instruction after it to denote
+	the end of analysis and restart all IL analysis */
+	return SEQ2(GOTO("port"), EMPTY());
+}
 
 typedef struct pop_helper_t {
 	RzILOpPure *val;
@@ -3427,15 +3436,15 @@ IL_LIFTER(test) {
 	return SEQ4(res, test, res_flags, arith_flags);
 }
 
-// /**
-//  * WAIT
-//  * Wait until not busy
-//  * ZO
-//  */
-// IL_LIFTER(wait) {
-// 	/* Unimplemented */
-// 	return EMPTY();
-// }
+/**
+ * WAIT
+ * Wait until not busy
+ * ZO
+ */
+IL_LIFTER(wait) {
+	/* NOP seems to be a reasonable implementation */
+	return NOP();
+}
 
 /**
  * XCHG
@@ -3656,7 +3665,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_HLT] = x86_il_hlt,
 	[X86_INS_IDIV] = x86_il_idiv,
 	[X86_INS_IMUL] = x86_il_imul,
-	[X86_INS_IN] = x86_il_unimpl,
+	[X86_INS_IN] = x86_il_in,
 	[X86_INS_INC] = x86_il_inc,
 	[X86_INS_INT] = x86_il_int,
 	[X86_INS_INTO] = x86_il_into,
@@ -3702,7 +3711,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_NOP] = x86_il_nop,
 	[X86_INS_NOT] = x86_il_not,
 	[X86_INS_OR] = x86_il_or,
-	[X86_INS_OUT] = x86_il_unimpl,
+	[X86_INS_OUT] = x86_il_out,
 	[X86_INS_POP] = x86_il_pop,
 	[X86_INS_POPF] = x86_il_popf,
 	[X86_INS_POPFD] = x86_il_popfd,
@@ -3740,7 +3749,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STOSW] = x86_il_stosw,
 	[X86_INS_SUB] = x86_il_sub,
 	[X86_INS_TEST] = x86_il_test,
-	[X86_INS_WAIT] = x86_il_unimpl,
+	[X86_INS_WAIT] = x86_il_wait,
 	[X86_INS_XCHG] = x86_il_xchg,
 	[X86_INS_XLATB] = x86_il_xlatb,
 	[X86_INS_XOR] = x86_il_xor,
@@ -3800,6 +3809,9 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_analysis_il_config_add_label(r, int_label);
 	RzILEffectLabel *halt_label = rz_il_effect_label_new("halt", EFFECT_LABEL_SYSCALL);
 	halt_label->hook = label_halt;
+	RzILEffectLabel *port_label = rz_il_effect_label_new("port", EFFECT_LABEL_SYSCALL);
+	port_label->hook = label_port;
+
 	rz_analysis_il_config_add_label(r, halt_label);
 
 	return r;
