@@ -2383,7 +2383,7 @@ IL_LIFTER(lodsq) {
  * Encoding: D
  * Decrement count ; jump if count != 0
  */
-IL_LIFTER(loop){
+IL_LIFTER(loop) {
 	LOOP_HELPER(NON_ZERO(x86_il_get_reg(count_reg)));
 }
 
