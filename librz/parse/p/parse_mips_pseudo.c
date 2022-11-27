@@ -141,110 +141,103 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 	return rz_pseudo_convert(&mips_config, assembly, sb);
 }
 
-static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
+static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFunction *f, char *tstr) {
 	const ut64 addr = op->addr;
-	RzListIter *iter;
-	char *oldstr;
-	char *tstr = strdup(data);
-	RzAnalysis *analysis = p->analb.analysis;
 
-	if (!p->varlist) {
-		free(tstr);
-		return false;
+	if (!p->var_expr_for_reg_access || !f) {
+		return tstr;
 	}
-	RzList *bpargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_BPV);
-	RzList *spargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_SPV);
-	const bool ucase = IS_UPPER(*tstr);
-	RzAnalysisVarField *var;
-	rz_list_foreach (spargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at(f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta;
-		} else if (delta == ST64_MAX) {
-			continue;
+
+	const char *re_str;
+	int group_idx_reg;
+	int group_idx_sign;
+	int group_idx_addend;
+	if (!p->pseudo) {
+		// match e.g. -0x18(fp)
+		// capturing "-0x18", "0x", "fp"
+		re_str = "(-?(0x)?[0-9a-f]+)\\(([a-z][0-9a-z]))";
+		group_idx_reg = 3;
+		group_idx_sign = -1;
+		group_idx_addend = 1;
+	} else {
+		// match e.g. fp - 0x42
+		// capturing "fp", "-", "0x42"
+		re_str = "([a-z][0-9a-z])\\s*(\\+|-)\\s*((0x)?[0-9a-f]+h?)";
+		group_idx_reg = 1;
+		group_idx_sign = 2;
+		group_idx_addend = 3;
+	}
+
+	RzRegex var_re;
+	if (rz_regex_comp(&var_re, re_str, RZ_REGEX_EXTENDED | RZ_REGEX_ICASE) != 0) {
+		return tstr;
+	}
+	RzRegexMatch match[4];
+	if (rz_regex_exec(&var_re, tstr, RZ_ARRAY_SIZE(match), match, 0) != 0) {
+		return tstr;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(match); i++) {
+		char *s = rz_regex_match_extract(tstr, &match[i]);
+		free(s);
+	}
+	rz_regex_fini(&var_re);
+
+	rz_return_val_if_fail(match[group_idx_reg].rm_so >= 0, tstr);
+	char *reg_str = rz_regex_match_extract(tstr, &match[group_idx_reg]);
+	if (!reg_str) {
+		return tstr;
+	}
+
+	char *addend_str = rz_regex_match_extract(tstr, &match[group_idx_addend]);
+	if (!addend_str) {
+		free(reg_str);
+		return tstr;
+	}
+	st64 reg_addend = strtoll(addend_str, NULL, 0);
+	free(addend_str);
+
+	if (group_idx_sign >= 0) {
+		rz_return_val_if_fail(match[group_idx_sign].rm_so >= 0, tstr);
+		if (tstr[match[group_idx_sign].rm_so] == '-') {
+			reg_addend = -reg_addend;
 		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at(f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = analysis->reg->name[RZ_REG_NAME_SP];
-		}
-		char *tmpf;
-		// TODO: honor asm pseudo
-		if (RZ_ABS(delta) < 10) {
-			tmpf = "%d(%s)";
-		} else if (delta > 0) {
-			tmpf = "0x%x(%s)";
+	}
+
+	char *varstr = p->var_expr_for_reg_access(f, addr, reg_str, reg_addend);
+	if (!varstr) {
+		free(reg_str);
+		return tstr;
+	}
+
+	// information gathered, now perform the replacement in the string
+	size_t tail_len = strlen(tstr) - match[0].rm_eo;
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_reserve(&sb, match[0].rm_so + strlen(varstr) + tail_len + 32);
+	rz_strbuf_append_n(&sb, tstr, match[0].rm_so);
+	if (p->localvar_only) {
+		if (p->pseudo) {
+			rz_strbuf_append(&sb, varstr);
 		} else {
-			tmpf = "-0x%x(%s)";
+			rz_strbuf_appendf(&sb, "(%s)", varstr);
 		}
-		oldstr = rz_str_newf(tmpf, RZ_ABS(delta), reg);
-		if (ucase) {
-			char *comma = strchr(oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				rz_str_case(oldstr, true);
-				*comma = ',';
-			}
-		}
-		if (strstr(tstr, oldstr)) {
-			char *newstr = (p->localvar_only)
-				? rz_str_newf("(%s)", var->name)
-				: rz_str_newf("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
-			tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-			free(newstr);
-			free(oldstr);
-			break;
-		}
-		free(oldstr);
-	}
-	rz_list_foreach (bpargs, iter, var) {
-		char *tmpf = NULL;
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at(f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta + f->bp_off;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at(f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = analysis->reg->name[RZ_REG_NAME_BP];
-		}
-		if (RZ_ABS(delta) < 10) {
-			tmpf = "%d(%s)";
-		} else if (delta > 0) {
-			tmpf = "0x%x(%s)";
+	} else {
+		if (p->pseudo) {
+			rz_strbuf_appendf(&sb, "%s %c %s", reg_str, reg_addend < 0 ? '-' : '+', varstr);
 		} else {
-			tmpf = "-0x%x(%s)";
+			rz_strbuf_appendf(&sb, "%s(%s)", varstr, reg_str);
 		}
-		oldstr = rz_str_newf(tmpf, RZ_ABS(delta), reg);
-		if (ucase) {
-			char *comma = strchr(oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				rz_str_case(oldstr, true);
-				*comma = ',';
-			}
-		}
-		if (strstr(tstr, oldstr)) {
-			char *newstr = (p->localvar_only)
-				? rz_str_newf("(%s)", var->name)
-				: rz_str_newf("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
-			tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-			free(newstr);
-			free(oldstr);
-			break;
-		}
-		free(oldstr);
 	}
+	rz_strbuf_append_n(&sb, tstr + match[0].rm_eo, tail_len);
+	free(reg_str);
+	free(varstr);
+	free(tstr);
+	return rz_strbuf_drain_nofree(&sb);
+}
+
+static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
+	char *tstr = strdup(data);
+	tstr = subvar_stack(p, op, f, tstr);
 	bool ret = true;
 	if (len > strlen(tstr)) {
 		strcpy(str, tstr);
@@ -253,8 +246,6 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 		ret = false;
 	}
 	free(tstr);
-	rz_list_free(bpargs);
-	rz_list_free(spargs);
 	return ret;
 }
 

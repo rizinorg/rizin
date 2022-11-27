@@ -410,7 +410,6 @@ typedef struct rz_analysis_options_t {
 	int depth;
 	int graph_depth;
 	bool vars; // analysisyze local var and arguments
-	bool varname_stack; // name vars based on their offset in the stack
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
@@ -598,12 +597,6 @@ typedef struct rz_analysis_bind_t {
 
 typedef const char *(*RzAnalysisLabelAt)(RzAnalysisFunction *fcn, ut64);
 
-typedef enum {
-	RZ_ANALYSIS_VAR_KIND_REG = 'r',
-	RZ_ANALYSIS_VAR_KIND_BPV = 'b',
-	RZ_ANALYSIS_VAR_KIND_SPV = 's'
-} RzAnalysisVarKind;
-
 /**
  * \brief An address on the stack
  *
@@ -640,24 +633,70 @@ typedef enum {
 } RzAnalysisVarAccessType;
 
 typedef struct rz_analysis_var_access_t {
-	const char *reg; // register used for access
-	st64 offset; // relative to the function's entrypoint
-	st64 stackptr; // delta added to register to get the var, e.g. [rbp - 0x10]
-	ut8 type; // RzAnalysisVarAccessType bits
+	st64 offset; ///< address relative to the function's entrypoint where the access happens
+
+	/**
+	 * Register used for access.
+	 * For example when accessing some stack variable by `[rbp - 0x10]`, this will be "rbp"
+	 */
+	const char *reg;
+
+	/**
+	 * Delta added to register when the var is accessed,
+	 * For example for `[rbp - 0x10]`, this will be -0x10.
+	 */
+	st64 reg_addend;
+
+	ut8 type; ///< RzAnalysisVarAccessType bits
 } RzAnalysisVarAccess;
 
-// generic for args and locals
+typedef enum {
+	RZ_ANALYSIS_VAR_STORAGE_REG,
+	RZ_ANALYSIS_VAR_STORAGE_STACK
+} RzAnalysisVarStorageType;
+
+/**
+ * Describes the location whether the contents of a variable are stored
+ */
+typedef struct rz_analysis_var_storage_t {
+	RzAnalysisVarStorageType type;
+	union {
+		/**
+		 * Used iff type == RZ_ANALYSIS_VAR_STORAGE_STACK.
+		 * See docs of RzStackAddr for exact meaning.
+		 */
+		RzStackAddr stack_off;
+
+		/**
+		 * Used iff type == RZ_ANALYSIS_VAR_STORAGE_REG.
+		 * When this storage object is part of RzAnalysisVar, this string comes from the
+		 * respective RzAnalysis.constpool.
+		 */
+		const char *reg;
+	};
+} RzAnalysisVarStorage;
+
+static inline void rz_analysis_var_storage_init_reg(RzAnalysisVarStorage *stor, RZ_NONNULL const char *reg) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_REG;
+	stor->reg = reg;
+}
+
+static inline void rz_analysis_var_storage_init_stack(RzAnalysisVarStorage *stor, RzStackAddr stack_off) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+	stor->stack_off = stack_off;
+}
+
+/**
+ * A local variable or parameter as part of a function
+ */
 typedef struct rz_analysis_var_t {
-	RzAnalysisFunction *fcn;
-	char *name; // name of the variable
-	RzAnalysisVarKind kind;
-	bool isarg;
-	int delta; /* delta offset inside stack frame */
-	char *regname; // name of the register
+	RZ_BORROW RzAnalysisFunction *fcn; ///< function containing this variable
+	char *name;
+	RzType *type;
+	RzAnalysisVarStorage storage;
 	RzVector /*<RzAnalysisVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 	char *comment;
 	RzVector /*<RzTypeConstraint>*/ constraints;
-	RzType *type; // var type
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
@@ -674,13 +713,6 @@ typedef struct rz_analysis_var_global_t {
 	RzVector /*<RzTypeConstraint>*/ constraints;
 	RZ_BORROW RzAnalysis *analysis; ///< analysis pertaining to this global variable
 } RzAnalysisVarGlobal;
-
-// Refers to a variable or a struct field inside a variable, only for varsub
-RZ_DEPRECATE typedef struct rz_analysis_var_field_t {
-	char *name;
-	st64 delta;
-	bool field;
-} RzAnalysisVarField;
 
 typedef enum {
 	RZ_ANALYSIS_ACC_UNKNOWN = 0,
@@ -1599,17 +1631,17 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_fcns(RzAnalysis *analysis);
 
 /* var.c */
-RZ_API RZ_OWN char *rz_analysis_function_autoname_var(RzAnalysisFunction *fcn, char kind, const char *pfx, int ptr);
-RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name);
-RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var(RzAnalysisFunction *fcn, char kind, int delta);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisVarStorage *stor, RZ_BORROW RZ_NULLABLE const RzType *type, int size, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_at(RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisVarStorage *stor);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_stack_var_at(RzAnalysisFunction *fcn, RzStackAddr stack_off);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_reg_var_at(RzAnalysisFunction *fcn, RZ_NONNULL const char *reg);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_stack_var_in(RzAnalysisFunction *fcn, RzStackAddr stack_off);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFunction *fcn, const char *name);
-RZ_API void rz_analysis_function_delete_vars_by_kind(RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
+RZ_API void rz_analysis_function_delete_vars_by_storage_type(RzAnalysisFunction *fcn, RzAnalysisVarStorageType stor);
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_function_delete_var(RzAnalysisFunction *fcn, RzAnalysisVar *var);
-RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *fcn);
-RZ_API st64 rz_analysis_function_get_var_stackptr_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
-RZ_API const char *rz_analysis_function_get_var_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
+RZ_API RZ_NULLABLE char *rz_analysis_function_var_expr_for_reg_access_at(RzAnalysisFunction *fcn, ut64 addr, RZ_NONNULL const char *reg, st64 reg_addend);
 RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr);
 
 /* var */
@@ -1624,7 +1656,7 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);
 RZ_API void rz_analysis_var_delete(RzAnalysisVar *var);
 RZ_API ut64 rz_analysis_var_addr(RzAnalysisVar *var);
-RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
+RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 reg_addend);
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address);
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint);
@@ -1644,9 +1676,8 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var);
 
 typedef struct rz_analysis_fcn_vars_cache {
-	RzList /*<RzAnalysisVar *>*/ *bvars;
-	RzList /*<RzAnalysisVar *>*/ *rvars;
-	RzList /*<RzAnalysisVar *>*/ *svars;
+	RzList /*<RzAnalysisVar *>*/ *regvars;
+	RzList /*<RzAnalysisVar *>*/ *stackvars;
 } RzAnalysisFcnVarsCache;
 RZ_API void rz_analysis_fcn_vars_cache_init(RzAnalysis *analysis, RzAnalysisFcnVarsCache *cache, RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache);
@@ -1772,8 +1803,7 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 RZ_API int rz_analysis_reflines_middle(RzAnalysis *analysis, RzList /*<RzAnalysisRefline *>*/ *list, ut64 addr, int len);
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);
-RZ_API RZ_OWN RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
-RZ_DEPRECATE RZ_API RzList /*<RzAnalysisVarField *>*/ *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
+RZ_API RZ_OWN RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind);
 
 // calling conventions API
 RZ_API bool rz_analysis_cc_exist(RzAnalysis *analysis, const char *convention);

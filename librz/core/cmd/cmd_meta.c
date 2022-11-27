@@ -44,7 +44,9 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 		if (!b64) {
 			return;
 		}
-		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n", var->kind, var->name, b64, var->fcn->addr);
+		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n",
+			var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG ? 'r' : 's',
+			var->name, b64, var->fcn->addr);
 		free(b64);
 		break;
 	}
@@ -54,7 +56,7 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 	}
 }
 
-static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarKind kind, RzCmdStateOutput *state) {
+static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
 		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
@@ -63,7 +65,7 @@ static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarKind ki
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
-		if (var->kind != kind || !var->comment) {
+		if (var->storage.type != kind || !var->comment) {
 			continue;
 		}
 		meta_variable_comment_print(core, var, state);
@@ -360,15 +362,11 @@ RZ_IPI RzCmdStatus rz_meta_var_comment_list_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_meta_var_reg_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_KIND_REG, state);
-}
-
-RZ_IPI RzCmdStatus rz_meta_var_bp_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_KIND_BPV, state);
+	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 }
 
 RZ_IPI RzCmdStatus rz_meta_var_stack_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_KIND_SPV, state);
+	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 }
 
 RZ_IPI RzCmdStatus rz_meta_type_current_handler(RzCore *core, int argc, const char **argv) {

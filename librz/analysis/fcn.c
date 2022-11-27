@@ -429,25 +429,18 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 			void **it;
 			rz_pvector_foreach (cloned_vars_used, it) {
 				RzAnalysisVar *other_var = *it;
-				int actual_delta = 0;
-				switch (other_var->kind) {
-				case RZ_ANALYSIS_VAR_KIND_SPV:
-					actual_delta = other_var->delta + ctx->stack_diff;
-					break;
-				case RZ_ANALYSIS_VAR_KIND_BPV:
-					actual_delta = other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
-					break;
-				case RZ_ANALYSIS_VAR_KIND_REG:
-					actual_delta = other_var->delta;
-					break;
+				RzAnalysisVarStorage stor = other_var->storage;
+				if (stor.type == RZ_ANALYSIS_VAR_STORAGE_STACK && other_fcn->bp_frame && our_fcn->bp_frame) {
+					// re-adjust offsets if needed
+					stor.stack_off += other_fcn->bp_off - our_fcn->bp_off;
 				}
-				RzAnalysisVar *our_var = rz_analysis_function_get_var(our_fcn, other_var->kind, actual_delta);
+				RzAnalysisVar *our_var = rz_analysis_function_get_var_at(our_fcn, &stor);
 				if (!our_var) {
-					our_var = rz_analysis_function_set_var(our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
+					our_var = rz_analysis_function_set_var(our_fcn, &stor, other_var->type, 0, other_var->name);
 				}
 				if (our_var) {
 					RzAnalysisVarAccess *acc = rz_analysis_var_get_access_at(other_var, addr);
-					rz_analysis_var_set_access(our_var, acc->reg, addr, acc->type, acc->stackptr);
+					rz_analysis_var_set_access(our_var, acc->reg, addr, acc->type, acc->reg_addend);
 				}
 				rz_analysis_var_remove_access_at(other_var, addr);
 				if (rz_vector_empty(&other_var->accesses)) {
@@ -1911,7 +1904,7 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 	RzPVector *cloned_vars = rz_pvector_clone(&f->vars);
 	rz_pvector_foreach (cloned_vars, it) {
 		RzAnalysisVar *var = *it;
-		if (!var->isarg) {
+		if (!rz_analysis_var_is_arg(var)) {
 			continue;
 		}
 		if (index < args_count) {
@@ -1937,7 +1930,10 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 		if (arg && arg->type) {
 			size_t size = rz_type_db_get_bitsize(a->typedb, arg->type);
 			// For user defined args, we set its delta and kind to its index and stack var by default
-			rz_analysis_function_set_var(f, index, RZ_ANALYSIS_VAR_KIND_BPV, arg->type, size, true, arg->name);
+			RzAnalysisVarStorage stor = { 0 };
+			stor.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+			stor.stack_off = index;
+			rz_analysis_function_set_var(f, &stor, arg->type, size, arg->name);
 		}
 	}
 
@@ -2257,7 +2253,7 @@ static void free_ht_up(HtUPKv *kv) {
 	ht_up_free((HtUP *)kv->value);
 }
 
-static void update_varz_analysisysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block, int align, ut64 from, ut64 to) {
+static void update_vars_analysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block, int align, ut64 from, ut64 to) {
 	RzAnalysis *analysis = fcn->analysis;
 	ut64 cur_addr;
 	int opsz;
@@ -2398,7 +2394,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 					// Special case when instructions are aligned and we don't
 					// need to worry about a write messing with the jump instructions
 					clear_bb_vars(fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
-					update_varz_analysisysis(fcn, bb, align, addr > bb->addr ? addr : bb->addr, end_write);
+					update_vars_analysis(fcn, bb, align, addr > bb->addr ? addr : bb->addr, end_write);
 					rz_analysis_function_delete_unused_vars(fcn);
 					continue;
 				}
@@ -2451,7 +2447,7 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnaly
 	// Resort the pvector to order "reg_arg - stack_arg"
 	rz_pvector_foreach (&fcn->vars, it) {
 		var = *it;
-		if (var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+		if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
 			rz_pvector_insert(tmp, rarg_idx++, var);
 		} else {
 			rz_pvector_push(tmp, var);
@@ -2465,9 +2461,9 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnaly
 	}
 	rz_pvector_foreach (tmp, it) {
 		var = *it;
-		if (var->isarg) {
+		if (rz_analysis_var_is_arg(var)) {
 			int argnum;
-			if (var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+			if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
 				argnum = rz_analysis_var_get_argnum(var);
 				if (argnum < 0) {
 					RZ_LOG_INFO("%s : arg \"%s\" has wrong position: %d\n", fcn->name, var->name, argnum);

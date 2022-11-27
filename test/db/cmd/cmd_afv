@@ -2,8 +2,8 @@ NAME=avr[rbs]- without function
 FILE==
 CMDS=<<EOF
 afvr-*
-afvb- 42
-afvb- ulumulu
+afvs- 42
+afvs- ulumulu
 ?e not segfaulted
 EOF
 EXPECT=<<EOF
@@ -19,8 +19,8 @@ af
 afvf
 EOF
 EXPECT=<<EOF
-0x00000080  var_4h:    int32_t
-0x00000068  var_1ch:   int32_t
+-0x00000068  var_68h:   int32_t
+-0x00000080  var_80h:   int32_t
 EOF
 RUN
 
@@ -32,10 +32,10 @@ af
 afvf
 EOF
 EXPECT=<<EOF
-0x00000028  var_20h:   int64_t
-0x00000024  var_1ch:   int64_t
-0x00000020  var_18h:   int64_t
-0x00000018  var_10h:   int64_t
-0x00000010  var_8h:    int64_t
+-0x00000010  var_10h:   int64_t
+-0x00000018  var_18h:   int64_t
+-0x00000020  var_20h:   int64_t
+-0x00000024  var_24h:   int64_t
+-0x00000028  var_28h:   int64_t
 EOF
 RUN

@@ -291,68 +291,104 @@ static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	return true;
 }
 
-static void parse_localvar(RzParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, const char *ireg, bool att) {
-	RzStrBuf *sb = rz_strbuf_new("");
-	if (att) {
-		if (p->localvar_only) {
-			if (ireg) {
-				rz_strbuf_setf(sb, "(%%%s)", ireg);
-			}
-			snprintf(newstr, newstr_len - 1, "%s%s", var, rz_strbuf_get(sb));
-		} else {
-			if (ireg) {
-				rz_strbuf_setf(sb, ", %%%s", ireg);
-			}
-			snprintf(newstr, newstr_len - 1, "%s(%%%s%s)", var, reg, rz_strbuf_get(sb));
-		}
-	} else {
-		if (ireg) {
-			rz_strbuf_setf(sb, " + %s", ireg);
-		}
-		if (p->localvar_only) {
-			snprintf(newstr, newstr_len - 1, "%s%s", var, rz_strbuf_get(sb));
-		} else {
-			snprintf(newstr, newstr_len - 1, "%s%s %c %s", reg, rz_strbuf_get(sb), sign, var);
-		}
-	}
-	rz_strbuf_free(sb);
-}
+static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFunction *f, char *tstr, bool att) {
+	const ut64 addr = op->addr;
 
-static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, const char *ireg, char *dest, int len) {
-	RzStrBuf *sb = rz_strbuf_new("");
+	if (!p->var_expr_for_reg_access || !f) {
+		return tstr;
+	}
+
+	const char *re_str;
+	int group_idx_reg;
+	int group_idx_sign;
+	int group_idx_addend;
 	if (att) {
-		if (ireg) {
-			rz_strbuf_setf(sb, ", %%%s", ireg);
-		}
-		if (delta == 0) {
-			snprintf(dest, len - 1, "(%%%s%s)", regname, rz_strbuf_get(sb));
-		} else if (delta < 10) {
-			snprintf(dest, len - 1, "%s%d(%%%s%s)", sign ? "" : "-", delta, regname, rz_strbuf_get(sb));
-		} else {
-			snprintf(dest, len - 1, "%s0x%x(%%%s%s)", sign ? "" : "-", delta, regname, rz_strbuf_get(sb));
-		}
+		// match e.g. -0x18(%rbp)
+		// capturing "-0x18", "0x", "rbp"
+		re_str = "(-?(0x)?[0-9a-f]+)\\(%([re][0-9a-z][0-9a-z]))";
+		group_idx_reg = 3;
+		group_idx_sign = -1;
+		group_idx_addend = 1;
 	} else {
-		if (ireg) {
-			rz_strbuf_setf(sb, " + %s", ireg);
-		}
-		if (delta == 0) {
-			snprintf(dest, len - 1, "%s%s", regname, rz_strbuf_get(sb));
-		} else if (delta < 10) {
-			snprintf(dest, len - 1, "%s%s %c %d", regname, rz_strbuf_get(sb), sign ? '+' : '-', delta);
-		} else {
-			snprintf(dest, len - 1, "%s%s %c 0x%x", regname, rz_strbuf_get(sb), sign ? '+' : '-', delta);
+		// match e.g. rbp - 0x42
+		// capturing "rbp", "-", "0x42"
+		re_str = "([re][0-9a-z][0-9a-z])\\s*(\\+|-)\\s*((0x)?[0-9a-f]+h?)";
+		group_idx_reg = 1;
+		group_idx_sign = 2;
+		group_idx_addend = 3;
+	}
+
+	RzRegex var_re;
+	if (rz_regex_comp(&var_re, re_str, RZ_REGEX_EXTENDED | RZ_REGEX_ICASE) != 0) {
+		return tstr;
+	}
+	RzRegexMatch match[4];
+	if (rz_regex_exec(&var_re, tstr, RZ_ARRAY_SIZE(match), match, 0) != 0) {
+		return tstr;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(match); i++) {
+		char *s = rz_regex_match_extract(tstr, &match[i]);
+		free(s);
+	}
+	rz_regex_fini(&var_re);
+
+	rz_return_val_if_fail(match[group_idx_reg].rm_so >= 0, tstr);
+	char *reg_str = rz_regex_match_extract(tstr, &match[group_idx_reg]);
+	if (!reg_str) {
+		return tstr;
+	}
+
+	char *addend_str = rz_regex_match_extract(tstr, &match[group_idx_addend]);
+	if (!addend_str) {
+		free(reg_str);
+		return tstr;
+	}
+	int base = 0;
+	size_t addend_len = strlen(addend_str);
+	if (addend_len && (addend_str[addend_len - 1] == 'h' || addend_str[addend_len - 1] == 'H')) {
+		// MASM syntax prints hex numbers like `1234h`
+		addend_str[addend_len - 1] = '\0';
+		base = 16;
+	}
+	st64 reg_addend = strtoll(addend_str, NULL, base);
+	free(addend_str);
+
+	if (group_idx_sign >= 0) {
+		rz_return_val_if_fail(match[group_idx_sign].rm_so >= 0, tstr);
+		if (tstr[match[group_idx_sign].rm_so] == '-') {
+			reg_addend = -reg_addend;
 		}
 	}
-	rz_strbuf_free(sb);
+
+	char *varstr = p->var_expr_for_reg_access(f, addr, reg_str, reg_addend);
+	if (!varstr) {
+		free(reg_str);
+		return tstr;
+	}
+
+	// replace!
+	size_t tail_len = strlen(tstr) - match[0].rm_eo;
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_reserve(&sb, match[0].rm_so + strlen(varstr) + tail_len + 32);
+	rz_strbuf_append_n(&sb, tstr, match[0].rm_so);
+	if (!p->localvar_only && !att) {
+		rz_strbuf_appendf(&sb, "%s %c ", reg_str, reg_addend < 0 ? '-' : '+');
+	}
+	rz_strbuf_appendf(&sb, "%s", varstr);
+	if (!p->localvar_only && att) {
+		rz_strbuf_appendf(&sb, "(%%%s)", reg_str);
+	}
+	rz_strbuf_append_n(&sb, tstr + match[0].rm_eo, tail_len);
+	free(reg_str);
+	free(varstr);
+	free(tstr);
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
 	const ut64 addr = op->addr;
 	const int oplen = op->size;
-	RzList *bpargs, *spargs;
-	RzAnalysis *analysis = p->analb.analysis;
-	RzListIter *bpargiter, *spiter;
-	char oldstr[64], newstr[64];
 	char *tstr = strdup(data);
 	if (!tstr) {
 		return false;
@@ -410,139 +446,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 		}
 	}
 
-	if (!p->varlist) {
-		free(tstr);
-		return false;
-	}
-	bpargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_BPV);
-	spargs = p->varlist(f, RZ_ANALYSIS_VAR_KIND_SPV);
-	/* Iterate over stack pointer arguments/variables */
-	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
-	if (ucase && tstr[1]) {
-		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
-	}
-	const char *ireg = op->ireg;
-	RzAnalysisVarField *bparg, *sparg;
-	rz_list_foreach (spargs, spiter, sparg) {
-		char sign = '+';
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at(f, sparg->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && sparg->field) {
-			delta = sparg->delta;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		if (delta < 0) {
-			sign = '-';
-			delta = -delta;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at(f, sparg->delta, addr);
-		}
-		if (!reg) {
-			reg = analysis->reg->name[RZ_REG_NAME_SP];
-		}
-		mk_reg_str(reg, delta, sign == '+', att, ireg, oldstr, sizeof(oldstr));
-
-		if (ucase) {
-			rz_str_case(oldstr, true);
-		}
-		parse_localvar(p, newstr, sizeof(newstr), sparg->name, reg, sign, ireg, att);
-		char *ptr = strstr(tstr, oldstr);
-		if (ptr && (!att || *(ptr - 1) == ' ')) {
-			if (delta == 0) {
-				char *end = ptr + strlen(oldstr);
-				if (*end != ']' && *end != '\0') {
-					continue;
-				}
-			}
-			tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-			break;
-		} else {
-			rz_str_case(oldstr, false);
-			ptr = strstr(tstr, oldstr);
-			if (ptr && (!att || *(ptr - 1) == ' ')) {
-				tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-				break;
-			}
-		}
-	}
-	/* iterate over base pointer args/vars */
-	rz_list_foreach (bpargs, bpargiter, bparg) {
-		char sign = '+';
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at(f, bparg->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && bparg->field) {
-			delta = bparg->delta + f->bp_off;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		if (delta < 0) {
-			sign = '-';
-			delta = -delta;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at(f, bparg->delta, addr);
-		}
-		if (!reg) {
-			reg = analysis->reg->name[RZ_REG_NAME_BP];
-		}
-		mk_reg_str(reg, delta, sign == '+', att, ireg, oldstr, sizeof(oldstr));
-		if (ucase) {
-			rz_str_case(oldstr, true);
-		}
-		parse_localvar(p, newstr, sizeof(newstr), bparg->name, reg, sign, ireg, att);
-		char *ptr = strstr(tstr, oldstr);
-		if (ptr && (!att || *(ptr - 1) == ' ')) {
-			if (delta == 0) {
-				char *end = ptr + strlen(oldstr);
-				if (*end != ']' && *end != '\0') {
-					continue;
-				}
-			}
-			tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-			break;
-		} else {
-			rz_str_case(oldstr, false);
-			ptr = strstr(tstr, oldstr);
-			if (ptr && (!att || *(ptr - 1) == ' ')) {
-				tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-				break;
-			}
-		}
-		// Figure out the first hex digit of the delta to know if we need a leading zero
-		st64 delta_first_digit = delta;
-		while (delta_first_digit >= 16) {
-			delta_first_digit /= 16;
-		}
-		// Try with trailing-h notation (if using MASM syntax)
-		snprintf(oldstr, sizeof(oldstr) - 1, "%s %c %s%xh", reg, sign, delta_first_digit > 9 ? "0" : "", (int)delta);
-		if (rz_str_casestr(tstr, oldstr)) {
-			tstr = rz_str_replace_icase(tstr, oldstr, newstr, 1, 0);
-			break;
-		}
-		// Try with no spaces
-		snprintf(oldstr, sizeof(oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
-		if (strstr(tstr, oldstr) != NULL) {
-			tstr = rz_str_replace(tstr, oldstr, newstr, 1);
-			break;
-		}
-	}
-
-	char bp[32];
-	if (analysis->reg->name[RZ_REG_NAME_BP]) {
-		strncpy(bp, analysis->reg->name[RZ_REG_NAME_BP], sizeof(bp) - 1);
-		if (isupper((ut8)*str)) {
-			rz_str_case(bp, true);
-		}
-		bp[sizeof(bp) - 1] = 0;
-	} else {
-		bp[0] = 0;
-	}
+	tstr = subvar_stack(p, op, f, tstr, att);
 
 	bool ret = true;
 	if (len > strlen(tstr)) {
@@ -552,8 +456,6 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *da
 		ret = false;
 	}
 	free(tstr);
-	rz_list_free(spargs);
-	rz_list_free(bpargs);
 	return ret;
 }
 

@@ -207,10 +207,10 @@ EXPECT=<<EOF
 |           0x08049140      mov   ebx, dword [esp]
 
 |           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
-|           0x08049390      mov   ebx, dword [var_4h]
+|           0x08049390      mov   ebx, dword [var_8h]
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
-|           0x08049390      mov   ebx, dword [var_4h]
+|           0x08049390      mov   ebx, dword [var_8h]
 EOF
 RUN
 

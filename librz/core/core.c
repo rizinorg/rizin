@@ -1626,7 +1626,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 		RzList *vars;
 		if (!strncmp(buf->data, "afvn ", 5)) {
-			vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+			vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_STORAGE_STACK);
 		} else {
 			vars = rz_list_new(); // TODO rz_analysis_var_list (fcn, RZ_ANALYSIS_VAR_KIND_ARG);
 		}
@@ -2464,7 +2464,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->core = core;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
-	core->parser->varlist = rz_analysis_function_get_var_fields;
+	core->parser->var_expr_for_reg_access = rz_analysis_function_var_expr_for_reg_access_at;
 	/// XXX shouhld be using coreb
 	rz_parse_set_user_ptr(core->parser, core);
 	core->bin = rz_bin_new();

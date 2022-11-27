@@ -254,17 +254,13 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		return;
 	}
 	if (in_stack) {
-		RzAnalysisVar *var = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_BPV, size - fcn->bp_off + 8);
+		RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, size - fcn->bp_off + 8);
 		if (!var) {
 			return;
 		}
 		var_type_set_resolve_overlaps(analysis, var, type, false);
 	} else {
-		RzRegItem *item = rz_reg_get(analysis->reg, place, -1);
-		if (!item) {
-			return;
-		}
-		RzAnalysisVar *rvar = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_REG, item->index);
+		RzAnalysisVar *rvar = rz_analysis_function_get_reg_var_at(fcn, place);
 		if (!rvar) {
 			return;
 		}
@@ -437,7 +433,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 			// FIXME : It seems also assume only read memory once ?
 			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && (instr_trace->stats & RZ_IL_TRACE_INS_HAS_MEM_R)) {
-				memref = !(!memref && var && (var->kind != RZ_ANALYSIS_VAR_KIND_REG));
+				memref = !(!memref && var && var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK);
 			}
 			// Match type from function param to instr
 			if (type_pos_hit(analysis, instr_trace, in_stack, size, place)) {
@@ -936,12 +932,8 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	void **vit;
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
-		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+		if (rvar->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
 			RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
-			RzRegItem *i = rz_reg_index_get(reg, rvar->delta);
-			if (!i) {
-				continue;
-			}
 			// Note that every `var_type_set_resolve_overlaps()` call could remove some variables
 			// due to the overlaps resolution
 			if (lvar) {

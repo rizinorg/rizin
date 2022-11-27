@@ -190,7 +190,6 @@ NAME=Variable analysis with stp/preindexed str
 FILE==
 ARGS=-a arm -b 64
 CMDS=<<EOF
-e analysis.vars.stackname=true
 wx f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
 aap
 aaef
@@ -210,9 +209,9 @@ afvW
    var_20h  0x0
     var_8h  0x4
 / fcn.00000000 ();
-|           ; var int64_t var_20h @ sp+0x0
-|           ; var int64_t var_10h @ sp+0x10
-|           ; var int64_t var_8h @ sp+0x18
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
 |           0x00000000     0 -= 32      str   x19, [var_20h]!
 |           0x00000004   -32            stp   x29, x30, [var_10h]
 |           0x00000008   -32            add   x29, var_10h

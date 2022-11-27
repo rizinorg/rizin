@@ -802,13 +802,13 @@ afvx
 EOF
 EXPECT=<<EOF
 / sym.varfunc ();
-|           ; var int32_t var_18h @ fp+0x18
-|           ; var int32_t var_1ch @ fp+0x1c
-|           ; var int32_t var_20h @ fp+0x20
-|           ; var int32_t var_24h @ fp+0x24
-|           ; var int32_t var_10h @ sp+0x10
-|           ; var int32_t var_28h @ sp+0x28
-|           ; var int32_t var_2ch @ sp+0x2c
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
 |           0x00000794      lui   gp, 2
 |           0x00000798      addiu gp, gp, -0x7db4
 |           0x0000079c      addu  gp, gp, t9
@@ -840,20 +840,20 @@ EXPECT=<<EOF
 |           0x00000804      jr    ra
 \           0x00000808      nop
 afvR
-   var_2ch  0x7f8
-   var_28h  0x7fc
-   var_10h  0x7e4
+    var_4h  0x7f8
+    var_8h  0x7fc
+   var_20h  0x7e4
    var_18h  0x7f0
-   var_1ch
-   var_20h
-   var_24h  0x7e8
+   var_14h
+   var_10h
+    var_ch  0x7e8
 afvW
-   var_2ch  0x7a4
-   var_28h  0x7a8
-   var_10h  0x7b0
+    var_4h  0x7a4
+    var_8h  0x7a8
+   var_20h  0x7b0
    var_18h  0x7b8
-   var_1ch  0x7c0,0x7ec
-   var_20h  0x7c8
-   var_24h  0x7d0
+   var_14h  0x7c0,0x7ec
+   var_10h  0x7c8
+    var_ch  0x7d0
 EOF
 RUN

@@ -644,9 +644,9 @@ EXPECT=<<EOF
 push rbp
 mov rbp, rsp
 sub rsp, 0x20
-mov dword [var_14h], edi
-mov qword [var_20h], rsi
-mov dword [var_4h], 0
+mov dword [var_1ch], edi
+mov qword [var_28h], rsi
+mov dword [var_ch], 0
 jmp 0x400523
 EOF
 RUN
@@ -661,9 +661,9 @@ pib
 EOF
 EXPECT=<<EOF
 sub rsp, 0x20
-mov dword [var_14h], edi
-mov qword [var_20h], rsi
-mov dword [var_4h], 0
+mov dword [var_1ch], edi
+mov qword [var_28h], rsi
+mov dword [var_ch], 0
 jmp 0x400523
 EOF
 RUN

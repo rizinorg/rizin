@@ -970,9 +970,6 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 	}
 	if (core->analysis->cur && core->analysis->cur->arch && !strcmp(core->analysis->cur->arch, "x86")) {
 		rz_analysis_function_check_bp_use(fcn);
-		if (fcn && !fcn->bp_frame) {
-			rz_analysis_function_delete_vars_by_kind(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
-		}
 	}
 	rz_analysis_hint_free(hint);
 	return true;
@@ -1017,9 +1014,6 @@ error:
 	}
 	if (fcn && core->analysis->cur && core->analysis->cur->arch && !strcmp(core->analysis->cur->arch, "x86")) {
 		rz_analysis_function_check_bp_use(fcn);
-		if (!fcn->bp_frame) {
-			rz_analysis_function_delete_vars_by_kind(fcn, RZ_ANALYSIS_VAR_KIND_BPV);
-		}
 	}
 	rz_analysis_hint_free(hint);
 	return false;
@@ -3004,17 +2998,14 @@ static void handle_var_stack_access(RzAnalysisEsil *esil, ut64 addr, RzAnalysisV
 	if (ctx->fcn && regname) {
 		ut64 spaddr = rz_reg_getv(esil->analysis->reg, ctx->spname);
 		if (addr >= spaddr && addr < ctx->initial_sp) {
-			int stack_off = addr - ctx->initial_sp + ctx->shadow_store;
-			RzAnalysisVar *var = rz_analysis_function_get_var(ctx->fcn, RZ_ANALYSIS_VAR_KIND_SPV, stack_off);
-			if (!var) {
-				var = rz_analysis_function_get_var(ctx->fcn, RZ_ANALYSIS_VAR_KIND_BPV, stack_off);
-			}
+			st64 stack_off = addr - ctx->initial_sp + ctx->shadow_store;
+			RzAnalysisVarStorage stor;
+			rz_analysis_var_storage_init_stack(&stor, stack_off);
+			RzAnalysisVar *var = rz_analysis_function_get_var_at(ctx->fcn, &stor);
 			if (!var && stack_off >= -ctx->fcn->maxstack) {
-				char *varname;
-				varname = ctx->fcn->analysis->opt.varname_stack
-					? rz_str_newf("var_%s%xh", stack_off > 0 ? "s" : "", RZ_ABS(stack_off)) // "s" for positive shadow space to avoid conflicts
-					: rz_analysis_function_autoname_var(ctx->fcn, RZ_ANALYSIS_VAR_KIND_SPV, "var", delta_for_access(ctx->op, type));
-				var = rz_analysis_function_set_var(ctx->fcn, stack_off, RZ_ANALYSIS_VAR_KIND_SPV, NULL, len, false, varname);
+				// "s" for positive shadow space to avoid conflicts
+				char *varname = rz_str_newf("var_%s%" PFMT64x "h", stack_off > 0 ? "s" : "", RZ_ABS(stack_off));
+				var = rz_analysis_function_set_var(ctx->fcn, &stor, NULL, len, varname);
 				free(varname);
 			}
 			if (var) {
@@ -4274,7 +4265,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 			rz_analysis_fcn_vars_cache_init(core->analysis, &cache, fcn);
 			int nargs = 0;
 			RzAnalysisVar *var;
-			rz_list_foreach (cache.rvars, iter, var) {
+			rz_list_foreach (cache.regvars, iter, var) {
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
@@ -4283,20 +4274,8 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				pj_end(j);
 				free(vartype);
 			}
-			rz_list_foreach (cache.bvars, iter, var) {
-				if (var->delta <= 0) {
-					continue;
-				}
-				nargs++;
-				pj_o(j);
-				pj_ks(j, "name", var->name);
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-				pj_ks(j, "type", vartype);
-				pj_end(j);
-				free(vartype);
-			}
-			rz_list_foreach (cache.svars, iter, var) {
-				if (!var->isarg) {
+			rz_list_foreach (cache.stackvars, iter, var) {
+				if (!rz_analysis_var_is_arg(var)) {
 					continue;
 				}
 				nargs++;
@@ -4835,7 +4814,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			RzList *list = rz_analysis_var_list(fcni, RZ_ANALYSIS_VAR_KIND_REG);
+			RzList *list = rz_analysis_var_list(fcni, RZ_ANALYSIS_VAR_STORAGE_REG);
 			if (!rz_list_empty(list)) {
 				rz_list_free(list);
 				continue;
@@ -5081,15 +5060,15 @@ RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE in
 	return true;
 }
 
-RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id) {
+RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, const char *id) {
 	RzAnalysisVar *var = NULL;
-	if (IS_DIGIT(*id)) {
-		int delta = rz_num_math(core->num, id);
-		var = rz_analysis_function_get_var(fcn, kind, delta);
+	if (kind == RZ_ANALYSIS_VAR_STORAGE_STACK && IS_DIGIT(*id)) {
+		st64 delta = rz_num_math(core->num, id);
+		var = rz_analysis_function_get_stack_var_at(fcn, delta);
 	} else {
 		var = rz_analysis_function_get_var_byname(fcn, id);
 	}
-	if (!var || var->kind != kind) {
+	if (!var || var->storage.type != kind) {
 		return false;
 	}
 	rz_analysis_var_delete(var);
@@ -5100,55 +5079,40 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	char *fmt = rz_type_as_format(analysis->typedb, var->type);
-	RzRegItem *i;
 	if (!fmt) {
 		return rz_strbuf_drain(sb);
 	}
 	bool usePxr = rz_type_is_strictly_atomic(core->analysis->typedb, var->type) && rz_type_atomic_str_eq(core->analysis->typedb, var->type, "int");
 	if (add_name) {
-		rz_strbuf_appendf(sb, "%s %s = ", var->isarg ? "arg" : "var", var->name);
+		rz_strbuf_appendf(sb, "%s %s = ", rz_analysis_var_is_arg(var) ? "arg" : "var", var->name);
 	}
-	switch (var->kind) {
-	case RZ_ANALYSIS_VAR_KIND_REG:
-		i = rz_reg_index_get(analysis->reg, var->delta);
-		if (i) {
-			char *r;
-			if (usePxr) {
-				r = rz_core_cmd_strf(core, "pxr $w @r:%s", i->name);
-			} else {
-				r = rz_core_cmd_strf(core, "pf r (%s)", i->name);
-			}
-			rz_strbuf_append(sb, r);
-			free(r);
-		} else {
-			RZ_LOG_DEBUG("register not found\n");
-		}
-		break;
-	case RZ_ANALYSIS_VAR_KIND_BPV: {
-		const st32 real_delta = var->delta + var->fcn->bp_off;
-		const ut32 udelta = RZ_ABS(real_delta);
-		const char sign = real_delta >= 0 ? '+' : '-';
+	switch (var->storage.type) {
+	case RZ_ANALYSIS_VAR_STORAGE_REG: {
 		char *r;
 		if (usePxr) {
-			r = rz_core_cmd_strf(core, "pxr $w @ %s%c0x%x", analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
+			// TODO: convert to API
+			r = rz_core_cmd_strf(core, "pxr $w @r:%s", var->storage.reg);
 		} else {
-			r = rz_core_cmd_strf(core, "pf %s @ %s%c0x%x", fmt, analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
+			// TODO: convert to API
+			r = rz_core_cmd_strf(core, "pf r (%s)", var->storage.reg);
+		}
+		rz_strbuf_append(sb, r);
+		free(r);
+		break;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
+		ut64 addr = rz_analysis_var_addr(var);
+		char *r;
+		if (usePxr) {
+			// TODO: convert to API
+			r = rz_core_cmd_strf(core, "pxr $w @ 0x%" PFMT64x, addr);
+		} else {
+			// TODO: convert to API
+			r = rz_core_cmd_strf(core, "pf %s @ 0x%" PFMT64x, fmt, addr);
 		}
 		rz_strbuf_append(sb, r);
 		free(r);
 	} break;
-	case RZ_ANALYSIS_VAR_KIND_SPV: {
-		ut32 udelta = RZ_ABS(var->delta + var->fcn->maxstack);
-		char *r;
-		if (usePxr) {
-			r = rz_core_cmd_strf(core, "pxr $w @ %s+0x%x", analysis->reg->name[RZ_REG_NAME_SP], udelta);
-		} else {
-			r = rz_core_cmd_strf(core, "pf %s @ %s+0x%x", fmt, analysis->reg->name[RZ_REG_NAME_SP], udelta);
-		}
-		rz_strbuf_append(sb, r);
-		free(r);
-		break;
-	}
 	}
 	free(fmt);
 	return rz_strbuf_drain(sb);
@@ -5850,8 +5814,6 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNU
 		strcpy(asm_buff, an_asm);
 
 		if (asm_sub_var) {
-			core->parser->get_ptr_at = rz_analysis_function_get_var_stackptr_at;
-			core->parser->get_reg_at = rz_analysis_function_get_var_reg_at;
 			rz_parse_subvar(core->parser, fcn, op,
 				asm_buff, asm_buff, sizeof(asmop.buf_asm));
 		}

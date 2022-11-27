@@ -451,7 +451,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
 / int main (int argc, char **argv, char **envp);
-|           ; arg int argc @ R0
+|           ; arg int argc @ r0
 |           0x00005110      ?       allocframe(SP,#0x8):raw
 EOF
 RUN
@@ -468,7 +468,7 @@ EXPECT=<<EOF
           |  0x5110                                           |
           |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
           | int main (int argc, char **argv, char **envp);    |
-          | ; arg int argc @ R0                               |
+          | ; arg int argc @ r0                               |
           | ?   allocframe(SP,#0x8):raw                       |
           | [   R2 = add(FP,##-0x4)                           |
           | [   memw(R2+#0x0) = ##0x0                         |

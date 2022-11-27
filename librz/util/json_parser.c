@@ -540,22 +540,30 @@ static void json_pj_recurse(const RzJson *json, PJ *pj, bool with_key) {
 	}
 }
 
+/**
+ * \brief Print the contents of \p json into \p pj
+ * \param json the data to read from
+ * \param pj the PJ to print into
+ * \param with_key whether to include the root key of \p json, i.e. `"key": <val>`, vs. `<val>`
+ */
+RZ_API void rz_json_to_pj(const RzJson *json, RZ_NONNULL PJ *pj, bool with_key) {
+	rz_return_if_fail(json && pj);
+	json_pj_recurse(json, pj, with_key);
+}
+
 /* \brief returns the string representation of RzJson object
  * \param with_key choose if include the object key name in the output
  */
 RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json, bool with_key) {
 	rz_return_val_if_fail(json, NULL);
-	PJ *pj = pj_new();
-	if (json->type == RZ_JSON_STRING) {
-		if (with_key && json->key) {
-			pj_ks(pj, json->key, json->str_value);
-		} else {
-			// Printing string without surrounding quotes
-			pj_S(pj, json->str_value);
-		}
-	} else {
-		json_pj_recurse(json, pj, with_key);
+	if (json->type == RZ_JSON_STRING && (!with_key || !json->key)) {
+		// Printing string without surrounding quotes
+		return strdup(json->str_value);
 	}
-	char *str = pj_drain(pj);
-	return str;
+	PJ *pj = pj_new();
+	if (!pj) {
+		return NULL;
+	}
+	json_pj_recurse(json, pj, with_key);
+	return pj_drain(pj);
 }

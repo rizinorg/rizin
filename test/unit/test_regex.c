@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2022 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -49,6 +50,41 @@ bool test_rz_reg_exec(void) {
 	mu_end;
 }
 
+bool test_rz_regex_capture(void) {
+	char *str = "abcd PrefixHello42s xyz";
+
+	RzRegex *re = rz_regex_new("[a-zA-Z]*(H[a-z]+)([0-9]*)s", "e");
+	mu_assert_notnull(re, "regex_new");
+
+	RzRegexMatch groups[4];
+	int r = rz_regex_exec(re, str, RZ_ARRAY_SIZE(groups), groups, 0);
+	mu_assert_eq(r, 0, "regex_exec");
+
+	mu_assert_eq(groups[0].rm_so, 5, "full match start");
+	mu_assert_eq(groups[0].rm_eo, 19, "full match end");
+	char *s = rz_regex_match_extract(str, &groups[0]);
+	mu_assert_streq_free(s, "PrefixHello42s", "full match extract");
+
+	mu_assert_eq(groups[1].rm_so, 11, "capture 1 start");
+	mu_assert_eq(groups[1].rm_eo, 16, "capture 1 end");
+	s = rz_regex_match_extract(str, &groups[1]);
+	mu_assert_streq_free(s, "Hello", "capture 1 extract");
+
+	mu_assert_eq(groups[2].rm_so, 16, "capture 2 start");
+	mu_assert_eq(groups[2].rm_eo, 18, "capture 2 end");
+	s = rz_regex_match_extract(str, &groups[2]);
+	mu_assert_streq_free(s, "42", "capture 2 extract");
+
+	mu_assert_eq(groups[3].rm_so, -1, "capture 3 start");
+	mu_assert_eq(groups[3].rm_eo, -1, "capture 3 end");
+	s = rz_regex_match_extract(str, &groups[3]);
+	mu_assert_null(s, "capture 3 extract");
+
+	rz_regex_free(re);
+	mu_end;
+}
+
 int main() {
 	mu_run_test(test_rz_reg_exec);
+	mu_run_test(test_rz_regex_capture);
 }

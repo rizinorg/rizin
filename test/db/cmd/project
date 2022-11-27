@@ -368,6 +368,7 @@ Detailed project load info:
   project migrated from version 7 to 8.
   project migrated from version 8 to 9.
   project migrated from version 9 to 10.
+  project migrated from version 10 to 11.
 EOF
 RUN
 

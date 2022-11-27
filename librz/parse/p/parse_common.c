@@ -160,8 +160,9 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 		} else if (gr->grammar[p] == '#') {
 			rz_strbuf_append_n(sb, gr->grammar + i, p - i);
 			i = p + 1;
-			p++;
-			while (gr->grammar[p] && !IS_WHITESPACE(gr->grammar[p])) {
+			// Fast-forward so after the next p++ done by the for loop p points to the next
+			// whitespace (or the end of the string)
+			while (gr->grammar[p + 1] && !IS_WHITESPACE(gr->grammar[p + 1])) {
 				++p;
 			}
 		}
