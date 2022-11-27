@@ -50,23 +50,28 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	ut64 TopOfStack = 0;
 	ut32 NumberProcessors = 0;
 	ctx->target = TARGET_BACKEND;
-	dbg->corebind.cmd(dbg->corebind.core, "e io.va=0");
-	RzBuffer *b = rz_buf_new_with_io(&dbg->iob);
-	rz_buf_read_le64_at(b, rz_offsetof(dmp64_header, DirectoryTableBase), &ctx->kernelDirectoryTable);
-	rz_buf_read_le64_at(b, rz_offsetof(dmp64_header, PsActiveProcessHead), &ctx->windctx.PsActiveProcessHead);
-	rz_buf_read_le64_at(b, rz_offsetof(dmp64_header, PsLoadedModuleList), &ctx->windctx.PsLoadedModuleList);
-	rz_buf_read_le64_at(b, rz_offsetof(dmp64_header, KdDebuggerDataBlock), &ctx->windctx.KdDebuggerDataBlock);
-	rz_buf_read_le32_at(b, rz_offsetof(dmp64_header, NumberProcessors), &NumberProcessors);
-	rz_buf_read_le32_at(b, rz_offsetof(dmp64_header, DumpType), &ctx->type);
-	rz_buf_read_le32_at(b, rz_offsetof(dmp64_header, MachineImageType), &MachineImageType);
-	rz_buf_read_le32_at(b, rz_offsetof(dmp64_header, MinorVersion), &MinorVersion);
-	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, ServicePackBuild), &ServicePackBuild);
-	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, ProcessOffset), &ProcessOffset);
-	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, ThreadOffset), &ThreadOffset);
-	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, CallStackOffset), &CallStackOffset);
-	rz_buf_read_le32_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, SizeOfCallStack), &SizeOfCallStack);
-	rz_buf_read_le64_at(b, sizeof(dmp64_header) + rz_offsetof(dmp64_triage, TopOfStack), &TopOfStack);
-	rz_buf_free(b);
+
+	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)core->bin->cur->o->bin_obj;
+
+	ctx->kernelDirectoryTable = obj->header->DirectoryTableBase;
+	ctx->windctx.PsActiveProcessHead = obj->header->PsActiveProcessHead;
+	ctx->windctx.PsLoadedModuleList = obj->header->PsLoadedModuleList;
+	ctx->windctx.KdDebuggerDataBlock = obj->header->KdDebuggerDataBlock;
+	NumberProcessors = obj->header->NumberProcessors;
+	ctx->type = obj->header->DumpType;
+	MachineImageType = obj->header->MachineImageType;
+	MinorVersion = obj->header->MinorVersion;
+
+	if (obj->triage64_header) {
+		ServicePackBuild = obj->triage64_header->ServicePackBuild;
+		ProcessOffset = obj->triage64_header->ProcessOffset;
+		ThreadOffset = obj->triage64_header->ThreadOffset;
+		CallStackOffset = obj->triage64_header->CallStackOffset;
+		SizeOfCallStack = obj->triage64_header->SizeOfCallStack;
+		TopOfStack = obj->triage64_header->TopOfStack;
+	}
+
+	dbg->corebind.cfgSetI(dbg->corebind.core, "io.va", 0);
 
 	RzIOMap *map = rz_io_map_get(core->io, 0);
 	if (map) {
