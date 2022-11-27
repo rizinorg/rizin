@@ -125,6 +125,11 @@ static inline PE64_UNWIND_INFO *read_unwind_info(RzDebug *dbg, ut64 at) {
 	}
 	info = tmp;
 	READ_AT(at + rz_offsetof(PE64_UNWIND_INFO, UnwindCode), (ut8 *)info->UnwindCode, unwind_code_array_sz);
+
+	ut8 byte = *((ut8 *)info);
+
+	info->Version = byte & 0x07;
+	info->Flags = byte >> 3;
 	return info;
 }
 
