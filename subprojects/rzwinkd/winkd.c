@@ -638,7 +638,7 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 		}
 		base = ctx->PsLoadedModuleList;
 		if (!ctx->read_at_kernel_virtual(ctx->user, base, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
-			RZ_LOG_ERROR("PsLoadedModuleList not present in mappings\n");
+			RZ_LOG_ERROR("PsLoadedModuleList not present in mappings (0x%08" PFMT64x ")\n", base);
 		}
 		ptr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 		if (ptr == base) {
