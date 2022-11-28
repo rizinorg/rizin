@@ -278,10 +278,9 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	rz_bitmap_set_bytes(bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
-	ut64 i;
 	bool create_new_page = true;
 	dmp_page_desc *page;
-	for (i = 0; i < num_pages; i++) {
+	for (ut64 i = 0; i < num_pages; i++) {
 		if (!rz_bitmap_test(bitmap, i)) {
 			create_new_page = true;
 			continue;
@@ -308,7 +307,9 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		create_new_page = false;
 	}
 	if (obj->bmp_header->TotalPresentPages != num_bitset) {
-		RZ_LOG_ERROR("The total present pages number in the header does not match with the counted one.\n");
+		RZ_LOG_ERROR("The total present pages number (%" PFMT64u ") in the header "
+			     "does not match with the counted one (%" PFMT64u ").\n",
+			obj->bmp_header->TotalPresentPages, num_bitset);
 		rz_bitmap_free(bitmap);
 		return false;
 	}

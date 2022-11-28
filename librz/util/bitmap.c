@@ -7,9 +7,11 @@
 #define BITMAP_TEST 0
 
 #if RZ_SYS_BITS == 4
-#define bitword_read rz_read_le32
+#define bitword_read  rz_read_le32
+#define bitword_write rz_write_le32
 #else
-#define bitword_read rz_read_le64
+#define bitword_read  rz_read_le64
+#define bitword_write rz_write_le64
 #endif
 
 #define BITWORD_BITS       (sizeof(RzBitword) * 8)
@@ -40,13 +42,12 @@ RZ_API RZ_OWN RzBitmap *rz_bitmap_new(size_t len) {
 
 RZ_API void rz_bitmap_set_bytes(RZ_NONNULL RzBitmap *b, RZ_NONNULL const ut8 *buf, size_t len) {
 	rz_return_if_fail(b && buf && len >= 0);
-	if (b->length < len) {
-		len = b->length;
+	size_t blen = b->length << BITWORD_BITS_SHIFT;
+	if (blen < len) {
+		len = blen;
 	}
+
 	memcpy(b->bitmap, buf, len);
-	for (size_t i = 0; i < BITMAP_WORD_COUNT(len); ++i) {
-		b->bitmap[i] = bitword_read(&b->bitmap[i]);
-	}
 }
 
 RZ_API void rz_bitmap_free(RZ_NULLABLE RzBitmap *b) {
@@ -60,23 +61,28 @@ RZ_API void rz_bitmap_free(RZ_NULLABLE RzBitmap *b) {
 RZ_API void rz_bitmap_set(RZ_NONNULL RzBitmap *b, size_t bit) {
 	rz_return_if_fail(b && bit >= 0);
 	if (bit < b->length) {
-		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |=
-			((RzBitword)1 << (bit & BITWORD_BITS_MASK));
+		const size_t pos = bit >> BITWORD_BITS_SHIFT;
+		RzBitword value = bitword_read(&b->bitmap[pos]);
+		value |= ((RzBitword)1 << (bit & BITWORD_BITS_MASK));
+		bitword_write(&b->bitmap[pos], value);
 	}
 }
 
 RZ_API void rz_bitmap_unset(RZ_NONNULL RzBitmap *b, size_t bit) {
 	rz_return_if_fail(b && bit >= 0);
 	if (bit < b->length) {
-		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] &=
-			~((RzBitword)1 << (bit & BITWORD_BITS_MASK));
+		const size_t pos = bit >> BITWORD_BITS_SHIFT;
+		RzBitword value = bitword_read(&b->bitmap[pos]);
+		value &= ~((RzBitword)1 << (bit & BITWORD_BITS_MASK));
+		bitword_write(&b->bitmap[pos], value);
 	}
 }
 
 RZ_API int rz_bitmap_test(RZ_NONNULL RzBitmap *b, size_t bit) {
 	rz_return_val_if_fail(b && bit >= 0, -1);
 	if (bit < b->length) {
-		RzBitword bword = b->bitmap[(bit >> BITWORD_BITS_SHIFT)];
+		const size_t pos = bit >> BITWORD_BITS_SHIFT;
+		RzBitword bword = bitword_read(&b->bitmap[pos]);
 		return BITWORD_TEST(bword, (bit & BITWORD_BITS_MASK));
 	}
 	return -1;
