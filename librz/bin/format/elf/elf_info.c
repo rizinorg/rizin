@@ -1292,6 +1292,10 @@ static Sdb *get_gnu_verneed(ELFOBJ *bin) {
 
 		sdb_free(sdb_version);
 
+		if (!verneed_entry.vn_next) {
+			break;	
+		}
+		
 		verneed_offset += verneed_entry.vn_next;
 	}
 
