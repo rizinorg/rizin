@@ -185,17 +185,7 @@ static void prevPrintCommand(RzCore *core) {
 static const char *stackPrintCommand(RzCore *core) {
 	RzCoreVisual *visual = core->visual;
 	if (visual->current0format == 0) {
-		if (rz_config_get_b(core->config, "dbg.slow")) {
-			return "pxr";
-		}
-		if (rz_config_get_b(core->config, "stack.bytes")) {
-			return "px";
-		}
-		switch (core->rasm->bits) {
-		case 64: return "pxq"; break;
-		case 32: return "pxw"; break;
-		}
-		return "px";
+		return rz_core_print_stack_command(core);
 	}
 	return printHexFormats[visual->current0format % PRINT_HEX_FORMATS];
 }

@@ -727,53 +727,6 @@ static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 	}
 }
 
-static void cmd_pCd(RzCore *core, const char *input) {
-	int h, w = rz_cons_get_size(&h);
-	int colwidth = rz_config_get_i(core->config, "hex.cols") * 2.5;
-	if (colwidth < 1) {
-		colwidth = 16;
-	}
-	int i, columns = w / colwidth;
-	int rows = h - 2;
-	int obsz = core->blocksize;
-	int user_rows = rz_num_math(core->num, input);
-	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
-	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
-	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", "false");
-		// rz_config_set (core->config, "asm.bytes", "false");
-	}
-	rz_config_set(core->config, "asm.bytes", "false");
-	if (user_rows > 0) {
-		rows = user_rows + 1;
-	}
-	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
-	ut64 osek = core->offset;
-	c->color = rz_config_get_i(core->config, "scr.color");
-	rz_core_block_size(core, rows * 32);
-	for (i = 0; i < columns; i++) {
-		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
-		char *cmd = rz_str_newf("pdq %d @i:%d", rows, rows * i);
-		char *dis = rz_core_cmd_str(core, cmd);
-		rz_cons_canvas_write(c, dis);
-		free(cmd);
-		free(dis);
-	}
-	rz_core_block_size(core, obsz);
-	rz_core_seek(core, osek, true);
-
-	rz_cons_canvas_print(c);
-	rz_cons_canvas_free(c);
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", o_ao);
-		rz_config_set(core->config, "asm.bytes", o_ab);
-	}
-	rz_config_set(core->config, "asm.bytes", o_ab);
-	free(o_ao);
-	free(o_ab);
-}
-
 static void findMethodBounds(RzList /*<RzBinSymbol *>*/ *methods, ut64 *min, ut64 *max) {
 	RzBinSymbol *sym;
 	RzListIter *iter;
@@ -810,101 +763,6 @@ static ut64 findClassBounds(RzCore *core, int *len) {
 		return min;
 	}
 	return 0;
-}
-
-static void cmd_pCD(RzCore *core, const char *input) {
-	int h, w = rz_cons_get_size(&h);
-	int i;
-	int rows = h - 2;
-	int obsz = core->blocksize;
-	int user_rows = rz_num_math(core->num, input);
-	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
-	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
-	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", "false");
-		rz_config_set(core->config, "asm.bytes", "false");
-	}
-	rz_config_set(core->config, "asm.bytes", "false");
-	if (user_rows > 0) {
-		rows = user_rows + 1;
-	}
-	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
-	ut64 osek = core->offset;
-	c->color = rz_config_get_i(core->config, "scr.color");
-	rz_core_block_size(core, rows * 32);
-	char *cmd = NULL;
-	int columns = 2;
-	for (i = 0; i < columns; i++) {
-		switch (i) {
-		case 0:
-			(void)rz_cons_canvas_gotoxy(c, 0, 0);
-			cmd = rz_str_newf("dr;?e;?e backtrace:;dbt");
-			break;
-		case 1:
-			(void)rz_cons_canvas_gotoxy(c, 28, 0);
-			// cmd = rz_str_newf ("pxw 128@r:SP;pd@r:PC");
-			cmd = rz_str_newf("%s 128@r:SP;pd@ 0x%" PFMT64x, core->stkcmd, osek);
-			break;
-		}
-		char *dis = rz_core_cmd_str(core, cmd);
-		rz_cons_canvas_write(c, dis);
-		free(cmd);
-		free(dis);
-	}
-	rz_core_block_size(core, obsz);
-	rz_core_seek(core, osek, true);
-
-	rz_cons_canvas_print(c);
-	rz_cons_canvas_free(c);
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", o_ao);
-		rz_config_set(core->config, "asm.bytes", o_ab);
-	}
-	rz_config_set(core->config, "asm.bytes", o_ab);
-	free(o_ao);
-	free(o_ab);
-}
-
-static void cmd_pCx(RzCore *core, const char *input, const char *xcmd) {
-	int h, w = rz_cons_get_size(&h);
-	int hex_cols = rz_config_get_i(core->config, "hex.cols");
-	int colwidth = hex_cols * 5;
-	int i, columns = w / (colwidth * 0.9);
-	int rows = h - 2;
-	int user_rows = rz_num_math(core->num, input);
-	rz_config_set_i(core->config, "hex.cols", colwidth / 5);
-	if (user_rows > 0) {
-		rows = user_rows + 1;
-	}
-	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
-	if (!c) {
-		RZ_LOG_ERROR("core: Couldn't allocate a canvas with %d rows\n", rows);
-		goto err;
-	}
-
-	ut64 tsek = core->offset;
-	c->color = rz_config_get_i(core->config, "scr.color");
-	int bsize = hex_cols * rows;
-	if (!strcmp(xcmd, "pxA")) {
-		bsize *= 12;
-	}
-	for (i = 0; i < columns; i++) {
-		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
-		char *cmd = rz_str_newf("%s %d @ %" PFMT64u, xcmd, bsize, tsek);
-		char *dis = rz_core_cmd_str(core, cmd);
-		if (dis) {
-			rz_cons_canvas_write(c, dis);
-			free(dis);
-		}
-		free(cmd);
-		tsek += bsize - 32;
-	}
-
-	rz_cons_canvas_print(c);
-	rz_cons_canvas_free(c);
-err:
-	rz_config_set_i(core->config, "hex.cols", hex_cols);
 }
 
 static void cmd_print_eq_dict(RzCore *core, const ut8 *block, int bsz) {
@@ -1963,7 +1821,7 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 
 static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	if (!len) {
-		return true;
+		return false;
 	}
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
@@ -3956,38 +3814,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			// XXX: need cmd_magic header for rz_core_magic
 			const char *filename = rz_str_trim_head_ro(input + 1);
 			rz_core_magic(core, filename, true, NULL);
-		}
-		break;
-	case 'C': // "pC"
-		switch (input[1]) {
-		case 0:
-			cmd_pCd(core, "");
-			break;
-		case ' ':
-		case 'd':
-			cmd_pCd(core, input + 2);
-			break;
-		case 'D':
-			cmd_pCD(core, input + 2);
-			break;
-		case 'a':
-			cmd_pCx(core, input + 2, "pxa");
-			break;
-		case 'A':
-			cmd_pCx(core, input + 2, "pxA");
-			break;
-		case 'x':
-			cmd_pCx(core, input + 2, "px");
-			break;
-		case 'w':
-			cmd_pCx(core, input + 2, "pxw");
-			break;
-		case 'c':
-			cmd_pCx(core, input + 2, "pc");
-			break;
-		default:
-			RZ_LOG_ERROR("core: Usage: pCd\n");
-			break;
 		}
 		break;
 	case 'r': // "pr"
@@ -6476,4 +6302,179 @@ RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const ch
 	rz_cmd_state_output_array_end(state);
 	analysis_stats_range_free(srange);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, const char **argv) {
+	int h, w = rz_cons_get_size(&h);
+	int colwidth = rz_config_get_i(core->config, "hex.cols") * 2.5;
+	if (colwidth < 1) {
+		colwidth = 16;
+	}
+	int i, columns = w / colwidth;
+	int rows = h - 2;
+	int obsz = core->blocksize;
+	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	if (user_rows > 0) {
+		rows = user_rows;
+	}
+	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
+	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
+	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
+	if (asm_minicols) {
+		rz_config_set(core->config, "asm.offset", "false");
+		// rz_config_set (core->config, "asm.bytes", "false");
+	}
+	rz_config_set(core->config, "asm.bytes", "false");
+	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
+	ut64 osek = core->offset;
+	c->color = rz_config_get_i(core->config, "scr.color");
+	rz_core_block_size(core, rows * 32);
+	for (i = 0; i < columns; i++) {
+		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
+		// TODO: Use the API directly
+		char *cmd = rz_str_newf("pdq %d @i:%d", rows, rows * i);
+		char *dis = rz_core_cmd_str(core, cmd);
+		rz_cons_canvas_write(c, dis);
+		free(cmd);
+		free(dis);
+	}
+	rz_core_block_size(core, obsz);
+	rz_core_seek(core, osek, true);
+
+	rz_cons_canvas_print(c);
+	rz_cons_canvas_free(c);
+	if (asm_minicols) {
+		rz_config_set(core->config, "asm.offset", o_ao);
+		rz_config_set(core->config, "asm.bytes", o_ab);
+	}
+	rz_config_set(core->config, "asm.bytes", o_ab);
+	free(o_ao);
+	free(o_ab);
+	rz_cons_printf("\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
+		RZ_LOG_ERROR("Command works only in debug mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int h, w = rz_cons_get_size(&h);
+	int i;
+	int rows = h - 2;
+	int obsz = core->blocksize;
+	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	if (user_rows > 0) {
+		rows = user_rows;
+	}
+	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
+	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
+	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
+	if (asm_minicols) {
+		rz_config_set(core->config, "asm.offset", "false");
+		rz_config_set(core->config, "asm.bytes", "false");
+	}
+	rz_config_set(core->config, "asm.bytes", "false");
+	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
+	ut64 osek = core->offset;
+	c->color = rz_config_get_i(core->config, "scr.color");
+	rz_core_block_size(core, rows * 32);
+	char *cmd = NULL;
+	int columns = 2;
+	for (i = 0; i < columns; i++) {
+		switch (i) {
+		case 0:
+			(void)rz_cons_canvas_gotoxy(c, 0, 0);
+			// TODO: Use the API directly
+			cmd = rz_str_newf("dr; ?e; ?e backtrace:; dbt");
+			break;
+		case 1:
+			(void)rz_cons_canvas_gotoxy(c, 28, 0);
+			// TODO: Use the API directly
+			// cmd = rz_str_newf ("pxw 128@r:SP;pd@r:PC");
+			cmd = rz_str_newf("%s 128 @r:SP; pd @ 0x%" PFMT64x, rz_core_print_stack_command(core), osek);
+			break;
+		}
+		char *dis = rz_core_cmd_str(core, cmd);
+		rz_cons_canvas_write(c, dis);
+		free(cmd);
+		free(dis);
+	}
+	rz_core_block_size(core, obsz);
+	rz_core_seek(core, osek, true);
+
+	rz_cons_canvas_print(c);
+	rz_cons_canvas_free(c);
+	if (asm_minicols) {
+		rz_config_set(core->config, "asm.offset", o_ao);
+		rz_config_set(core->config, "asm.bytes", o_ab);
+	}
+	rz_config_set(core->config, "asm.bytes", o_ab);
+	free(o_ao);
+	free(o_ab);
+	rz_cons_printf("\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool print_hexdump_columns(RzCore *core, int user_rows, const char *xcmd) {
+	int h, w = rz_cons_get_size(&h);
+	int hex_cols = rz_config_get_i(core->config, "hex.cols");
+	int colwidth = hex_cols * 5;
+	int i, columns = w / (colwidth * 0.9);
+	int rows = h - 2;
+	rz_config_set_i(core->config, "hex.cols", colwidth / 5);
+	if (user_rows > 0) {
+		// Add one more line for the hexdump header
+		rows = user_rows + 1;
+	}
+	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
+	if (!c) {
+		RZ_LOG_ERROR("core: Couldn't allocate a canvas with %d rows\n", rows);
+		rz_config_set_i(core->config, "hex.cols", hex_cols);
+		return false;
+	}
+
+	ut64 tsek = core->offset;
+	c->color = rz_config_get_i(core->config, "scr.color");
+	int bsize = hex_cols * rows;
+	if (!strcmp(xcmd, "pxAl")) {
+		bsize *= 12;
+	}
+	for (i = 0; i < columns; i++) {
+		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
+		char *cmd = rz_str_newf("%s %d @ %" PFMT64u, xcmd, bsize, tsek);
+		char *dis = rz_core_cmd_str(core, cmd);
+		if (dis) {
+			rz_cons_canvas_write(c, dis);
+			free(dis);
+		}
+		free(cmd);
+		tsek += bsize - 32;
+	}
+
+	rz_cons_canvas_print(c);
+	rz_cons_canvas_free(c);
+	rz_config_set_i(core->config, "hex.cols", hex_cols);
+	rz_cons_printf("\n");
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_print_columns_hex_annotated_handler(RzCore *core, int argc, const char **argv) {
+	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	return bool2status(print_hexdump_columns(core, user_rows, "pxa"));
+}
+
+RZ_IPI RzCmdStatus rz_print_columns_hex_op_colored_handler(RzCore *core, int argc, const char **argv) {
+	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	return bool2status(print_hexdump_columns(core, user_rows, "pxAl"));
+}
+
+RZ_IPI RzCmdStatus rz_print_columns_hex_handler(RzCore *core, int argc, const char **argv) {
+	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	return bool2status(print_hexdump_columns(core, user_rows, "px"));
+}
+
+RZ_IPI RzCmdStatus rz_print_columns_hex_words_handler(RzCore *core, int argc, const char **argv) {
+	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	return bool2status(print_hexdump_columns(core, user_rows, "pxw"));
 }
