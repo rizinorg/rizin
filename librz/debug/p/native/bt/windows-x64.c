@@ -97,7 +97,9 @@ static inline ut64 get_frame_base(const PE64_UNWIND_INFO *info, const struct con
 		int i;
 		// Find unwind of where frame register is being set
 		for (i = 0; i < info->CountOfCodes; i++) {
-			if (info->UnwindCode[i].UnwindOp == UWOP_SET_FPREG) {
+			ut8 *code = (ut8 *)&info->UnwindCode[i];
+			ut8 UnwindOp = code[1] & 0x0F;
+			if (UnwindOp == UWOP_SET_FPREG) {
 				break;
 			}
 		}
@@ -166,19 +168,22 @@ process_chained_info:
 		free(info);
 		return false;
 	}
+
 	int i = 0;
 	while (i < info->CountOfCodes) {
-		PE64_UNWIND_CODE code = info->UnwindCode[i];
-		code.FrameOffset = rz_read_le16((ut8 *)&code.FrameOffset);
+		ut8 *code = (ut8 *)&info->UnwindCode[i];
+		ut8 CodeOffset = code[0];
+		ut8 UnwindOp = code[1] & 0x0F;
+		ut8 OpInfo = code[1] >> 4;
 		i++;
 		// Check if we are already past the prolog instruction
 		// If we are processing a chained scope, always process all of them
-		if (!is_chained && context->rip < function_address + code.CodeOffset) {
+		if (!is_chained && context->rip < function_address + CodeOffset) {
 			// Skip, as it wasn't executed yet
-			switch (code.UnwindOp) {
+			switch (UnwindOp) {
 			case UWOP_ALLOC_LARGE:
 				i++;
-				if (code.OpInfo) {
+				if (OpInfo) {
 					i++;
 				}
 				break;
@@ -198,20 +203,20 @@ process_chained_info:
 			continue;
 		}
 		ut16 offset;
-		switch (code.UnwindOp) {
+		switch (UnwindOp) {
 		case UWOP_PUSH_NONVOL: /* info == register number */
-			integer_registers[code.OpInfo] = read_register(dbg, context->rsp);
+			integer_registers[OpInfo] = read_register(dbg, context->rsp);
 			context->rsp += 8;
 			break;
 		case UWOP_ALLOC_LARGE: /* info == unscaled or scaled, alloc size in next 1 or 2 slots */
-			if (code.OpInfo) {
+			if (OpInfo) {
 				context->rsp += read_slot32(dbg, info, &i);
 			} else {
 				context->rsp += read_slot16(dbg, info, &i) * 8;
 			}
 			break;
 		case UWOP_ALLOC_SMALL: /* info == size of allocation / 8 - 1 */
-			context->rsp += code.OpInfo * 8 + 8;
+			context->rsp += OpInfo * 8 + 8;
 			break;
 		case UWOP_SET_FPREG: /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
 			frame->bp = integer_registers[info->FrameRegister];
@@ -219,7 +224,7 @@ process_chained_info:
 			break;
 		case UWOP_SAVE_NONVOL: /* info == register number, offset in next slot */
 			offset = read_slot16(dbg, info, &i) * 8;
-			integer_registers[code.OpInfo] = read_register(dbg, frame_base + offset);
+			integer_registers[OpInfo] = read_register(dbg, frame_base + offset);
 			break;
 		case UWOP_SAVE_XMM128: /* info == XMM reg number, offset in next slot */
 		case UWOP_UNKNOWN1: /* 1 extra slot */
@@ -227,14 +232,14 @@ process_chained_info:
 			break;
 		case UWOP_SAVE_NONVOL_FAR: /* info == register number, offset in next 2 slots */
 			offset = read_slot32(dbg, info, &i);
-			integer_registers[code.OpInfo] = read_register(dbg, frame_base + offset);
+			integer_registers[OpInfo] = read_register(dbg, frame_base + offset);
 			break;
 		case UWOP_SAVE_XMM128_FAR: /* info == XMM reg number, offset in next 2 slots */
 		case UWOP_UNKNOWN2: /* 2 extra slots */
 			i += 2;
 			break;
 		case UWOP_PUSH_MACHFRAME: /* info == 0: no error-code, 1: error-code */
-			if (code.OpInfo) {
+			if (OpInfo) {
 				context->rsp += 8;
 			}
 			is_machine_frame = true;
