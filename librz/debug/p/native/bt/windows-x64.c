@@ -95,16 +95,23 @@ static inline ut64 get_frame_base(const PE64_UNWIND_INFO *info, const struct con
 	} else {
 		// There is a register being used as a frame base, unknown if we set it yet
 		int i;
+		ut8 *code = NULL;
 		// Find unwind of where frame register is being set
 		for (i = 0; i < info->CountOfCodes; i++) {
-			ut8 *code = (ut8 *)&info->UnwindCode[i];
+			// The ordering of bits in C bitfields is implementation defined.
+			// this ensures the endianness (here is little endian) is kept
+			code = (ut8 *)&info->UnwindCode[i];
 			ut8 UnwindOp = code[1] & 0x0F;
 			if (UnwindOp == UWOP_SET_FPREG) {
 				break;
 			}
 		}
+		// The ordering of bits in C bitfields is implementation defined.
+		// this ensures the endianness (here is little endian) is kept
+		code = (ut8 *)&info->UnwindCode[i];
+		ut8 CodeOffset = code[0];
 		// Check if we already set the frame register
-		if (rip_offset_to_function >= info->UnwindCode[i].CodeOffset) {
+		if (rip_offset_to_function >= CodeOffset) {
 			return integer_registers[info->FrameRegister] - info->FrameOffset * 16;
 		} else {
 			return context->rsp;
@@ -127,8 +134,9 @@ static inline PE64_UNWIND_INFO *read_unwind_info(RzDebug *dbg, ut64 at) {
 	info = tmp;
 	READ_AT(at + rz_offsetof(PE64_UNWIND_INFO, UnwindCode), (ut8 *)info->UnwindCode, unwind_code_array_sz);
 
+	// The ordering of bits in C bitfields is implementation defined.
+	// this ensures the endianness (here is little endian) is kept
 	ut8 *byte = ((ut8 *)info);
-
 	info->Version = byte[0] & 0x07;
 	info->Flags = byte[0] >> 3;
 	info->FrameRegister = byte[3] & 0x0F;
@@ -146,7 +154,7 @@ static inline bool unwind_function(
 
 	bool is_chained = false;
 	ut64 *integer_registers = &context->rax;
-	ut64 machine_frame_start;
+	ut64 machine_frame_start = 0;
 	bool is_machine_frame = false;
 
 	ut64 unwind_info_address = module_address + rfcn->UnwindInfoAddress;
@@ -171,6 +179,8 @@ process_chained_info:
 
 	int i = 0;
 	while (i < info->CountOfCodes) {
+		// The ordering of bits in C bitfields is implementation defined.
+		// this ensures the endianness (here is little endian) is kept
 		ut8 *code = (ut8 *)&info->UnwindCode[i];
 		ut8 CodeOffset = code[0];
 		ut8 UnwindOp = code[1] & 0x0F;
@@ -260,7 +270,7 @@ process_chained_info:
 		READ_AT(chained_fcn_address, buf, sizeof(buf));
 
 		// Get unwind info from the chained RUNTIME_FUNCTION
-		unwind_info_address = module_address + rz_read_le32(buf + rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindInfoAddress));
+		unwind_info_address = module_address + rz_read_at_le32(buf, rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindInfoAddress));
 		free(info);
 		info = read_unwind_info(dbg, unwind_info_address);
 		if (!info) {
