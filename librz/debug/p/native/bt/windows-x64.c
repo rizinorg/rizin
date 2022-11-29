@@ -50,8 +50,7 @@ static inline bool init_module_runtime_functions(RzDebug *dbg, RzVector /*<PE64_
 		return false;
 	}
 
-	ut64 offset;
-	for (offset = 0; offset < exception_table_size; offset += sizeof(PE64_RUNTIME_FUNCTION)) {
+	for (ut64 offset = 0; offset < exception_table_size; offset += sizeof(PE64_RUNTIME_FUNCTION)) {
 		PE64_RUNTIME_FUNCTION rfcn;
 		rfcn.BeginAddress = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, BeginAddress));
 		rfcn.EndAddress = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, EndAddress));
@@ -126,10 +125,12 @@ static inline PE64_UNWIND_INFO *read_unwind_info(RzDebug *dbg, ut64 at) {
 	info = tmp;
 	READ_AT(at + rz_offsetof(PE64_UNWIND_INFO, UnwindCode), (ut8 *)info->UnwindCode, unwind_code_array_sz);
 
-	ut8 byte = *((ut8 *)info);
+	ut8 *byte = ((ut8 *)info);
 
-	info->Version = byte & 0x07;
-	info->Flags = byte >> 3;
+	info->Version = byte[0] & 0x07;
+	info->Flags = byte[0] >> 3;
+	info->FrameRegister = byte[3] & 0x0F;
+	info->FrameOffset = byte[3] >> 4;
 	return info;
 }
 
