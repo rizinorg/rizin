@@ -28,18 +28,18 @@ static int rz_debug_winkd_reg_write(RZ_BORROW RZ_NONNULL RzDebug *dbg, int type,
 	if (kdctx->windctx.is_arm) {
 		if (kdctx->windctx.is_64bit) {
 			const struct context_type_arm64 *ctx = (void *)buf;
-			flags = ctx->ContextFlags;
+			flags = rz_read_le32(&ctx->ContextFlags);
 		} else {
 			const struct context_type_arm *ctx = (void *)buf;
-			flags = ctx->context_flags;
+			flags = rz_read_le32(&ctx->context_flags);
 		}
 	} else {
 		if (kdctx->windctx.is_64bit) {
 			const struct context_type_amd64 *ctx = (void *)buf;
-			flags = ctx->context_flags;
+			flags = rz_read_le32(&ctx->context_flags);
 		} else {
 			const struct context_type_i386 *ctx = (void *)buf;
-			flags = ctx->context_flags;
+			flags = rz_read_le32(&ctx->context_flags);
 		}
 	}
 	return winkd_write_reg(kdctx, flags, buf, size);
