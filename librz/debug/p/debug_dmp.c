@@ -517,8 +517,8 @@ static bool rz_debug_dmp_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int is_pc_inside_windmodule(const void *value, const void *list_data) {
-	const ut64 pc = *(const ut64 *)value;
+static int is_pc_inside_windmodule(const struct context_type_amd64 *context, const void *list_data) {
+	const ut64 pc = context->rip;
 	const WindModule *module = list_data;
 	return !(pc >= module->addr && pc < (module->addr + module->size));
 }
@@ -543,7 +543,7 @@ RzList /*<RzDebugFrame *>*/ *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
 			if (!modules) {
 				modules = dmp_get_modules(ctx);
 			}
-			RzListIter *it = rz_list_find(modules, &context.rip, is_pc_inside_windmodule);
+			RzListIter *it = rz_list_find(modules, &context, (RzListComparator)is_pc_inside_windmodule);
 			if (!it) {
 				break;
 			}
