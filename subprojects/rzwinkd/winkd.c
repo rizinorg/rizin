@@ -746,6 +746,7 @@ RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 }
 
 WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address) {
+	ut8 tmp[8] = { 0 };
 	int running_offset;
 	if (ctx->profile->build < 9200) {
 		running_offset = ctx->is_64bit ? 0x49 : 0x39;
@@ -761,18 +762,19 @@ WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address)
 		RZ_LOG_WARN("KOBJECT at 0x%" PFMT64x " is not a thread.\n", address);
 		return NULL;
 	}
-	ut64 entrypoint = 0;
-	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Win32StartAddress), (ut8 *)&entrypoint, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
+	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Win32StartAddress), tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 		RZ_LOG_WARN("Failed to read Win32StartAddress at: 0x%" PFMT64x "\n", address + O_(ET_Win32StartAddress));
 		return NULL;
 	}
-	ut64 uniqueid = 0;
-	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Cid) + O_(C_UniqueThread), (ut8 *)&uniqueid, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
+	ut64 entrypoint = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
+
+	if (!ctx->read_at_kernel_virtual(ctx->user, address + O_(ET_Cid) + O_(C_UniqueThread), tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32))) {
 		RZ_LOG_WARN("Failed to read UniqueThread at: 0x%" PFMT64x "\n", address + O_(ET_Cid) + O_(C_UniqueThread));
 		return NULL;
 	}
-	bool running = false;
-	if (!ctx->read_at_kernel_virtual(ctx->user, address + running_offset, (ut8 *)&running, 1)) {
+	ut64 uniqueid = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
+	ut8 running = 0;
+	if (!ctx->read_at_kernel_virtual(ctx->user, address + running_offset, &running, 1)) {
 		RZ_LOG_WARN("Failed to read KTHREAD.Running at: 0x%" PFMT64x "\n", address + running_offset);
 		return NULL;
 	}
@@ -789,6 +791,7 @@ WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address)
 }
 
 RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
+	ut8 tmp[8] = { 0 };
 	RzList *ret;
 	ut64 ptr, base;
 	bool current_thread_found = false;
@@ -803,7 +806,8 @@ RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 	}
 
 	// Grab the ThreadListHead from _EPROCESS
-	ctx->read_at_kernel_virtual(ctx->user, ptr + O_(E_ThreadListHead), (ut8 *)&ptr, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+	ctx->read_at_kernel_virtual(ctx->user, ptr + O_(E_ThreadListHead), tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+	ptr = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 	if (!ptr) {
 		RZ_LOG_ERROR("No ThreadListHead for target\n");
 		if (ctx->target_thread.ethread) {
@@ -818,9 +822,8 @@ RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx)
 	ret = rz_list_newf(free);
 
 	do {
-		ut64 next = 0;
-
-		ctx->read_at_kernel_virtual(ctx->user, ptr, (ut8 *)&next, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+		ctx->read_at_kernel_virtual(ctx->user, ptr, tmp, ctx->is_64bit ? sizeof(ut64) : sizeof(ut32));
+		ut64 next = rz_read_ble(tmp, false, ctx->is_64bit ? 64 : 32);
 		if (!next || next == UT64_MAX) {
 			RZ_LOG_WARN("Corrupted ThreadListEntry found at: 0x%" PFMT64x "\n", ptr);
 			break;
