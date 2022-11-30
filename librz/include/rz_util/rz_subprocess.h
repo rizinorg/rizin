@@ -95,4 +95,26 @@ RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#include <utmp.h>
+#endif
+
+typedef struct rz_pty_t {
+	int master_fd;
+	int slave_fd;
+	char *name;
+} RzPty;
+
+RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_OWN char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params);
+RZ_API void rz_subprocess_login_tty(void);
+RZ_API void rz_subprocess_forkpty(void);
+#endif // pty API
+
 #endif
