@@ -583,7 +583,7 @@ RZ_API void rz_debug_session_deserialize(RzDebugSession *session, Sdb *db);
 RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *file);
 RZ_API bool rz_debug_session_load(RzDebug *dbg, const char *file);
 RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg);
-RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg);
+RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg);
 
 RZ_API RzDebugSession *rz_debug_session_new(void);
 RZ_API void rz_debug_session_free(RzDebugSession *session);
