@@ -111,8 +111,15 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	return true;
 }
 
-RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
-	// rz_return_val_if_fail(dbg->cur_op, false);
+/**
+ * \brief Add register/memory changes to the debug session.
+ *
+ * \param dbg RzDebug instance containing the session.
+ * \return false The current instruction is not known so no changes can be recorded.
+ * \return true Otherwise.
+ */
+RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg) {
+	rz_return_val_if_fail(dbg, false);
 	if (!dbg->cur_op) { // Can happen if hard stepping is available and code is unknown to Rizin
 		return false;
 	}
