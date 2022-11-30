@@ -1374,8 +1374,19 @@ RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_N
 	if (slave_name) {
 		pty->name = strdup(slave_name);
 	}
-
 	return pty;
+}
+
+RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
+	rz_return_val_if_fail(false, pty);
+
+	int ret = login_tty(pty->slave_fd);
+	if (ret == -1) {
+		perror("login_tty");
+		return false;
+	}
+
+	return true;
 }
 
 #endif // pty API
