@@ -112,7 +112,7 @@ typedef struct rz_pty_t {
 	char *name;
 } RzPty;
 
-RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_OWN char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params);
+RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params);
 RZ_API void rz_subprocess_login_tty(void);
 RZ_API void rz_subprocess_forkpty(void);
 #endif // pty API
