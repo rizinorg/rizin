@@ -388,6 +388,7 @@ typedef struct rz_debug_plugin_t {
 	// XXX: specify, pid, tid, or RzDebug ?
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); // XXX struct rz_regset_t regs);
+	bool (*sync_registers)(RzDebug *dbg, RzReg *reg, bool to_debugger);
 	char *(*reg_profile)(RzDebug *dbg);
 	int (*set_reg_profile)(RzDebug *dbg, const char *str);
 	/* memory */

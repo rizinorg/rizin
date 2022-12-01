@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2011-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -13,21 +14,10 @@ typedef struct {
 	BfvmCPU *bfvm;
 } RzIOBdescbg;
 
-struct bfvm_regs {
-	ut32 pc;
-	ut32 ptr;
-	ut32 sp;
-	ut32 scr;
-	ut32 scri;
-	ut32 inp;
-	ut32 inpi;
-	ut32 mem;
-	ut32 memi;
-};
-
-static struct bfvm_regs r;
-
-static bool is_io_bf(RzDebug *dbg) {
+static bool brainfuck_is_valid_io(RzDebug *dbg) {
+	if (!dbg->iob.io) {
+		return false;
+	}
 	RzIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
 		if (!strcmp("bfdbg", d->plugin->name)) {
@@ -38,7 +28,7 @@ static bool is_io_bf(RzDebug *dbg) {
 	return false;
 }
 
-static int rz_debug_bf_step_over(RzDebug *dbg) {
+static int brainfuck_step_over(RzDebug *dbg) {
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
 	int op, oop = 0;
 	for (;;) {
@@ -55,89 +45,84 @@ static int rz_debug_bf_step_over(RzDebug *dbg) {
 	return true;
 }
 
-static int rz_debug_bf_step(RzDebug *dbg) {
+static int brainfuck_step(RzDebug *dbg) {
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_step(o->bfvm, 0);
 	return true;
 }
 
-static int rz_debug_bf_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
-	rz_return_val_if_fail(dbg && buf && size > 0, -1);
-	if (!is_io_bf(dbg)) {
-		return 0;
-	}
-	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
-		return 0;
-	}
-	RzIOBdescbg *o = dbg->iob.io->desc->data;
-	r.pc = o->bfvm->eip;
-	r.ptr = o->bfvm->ptr;
-	r.sp = o->bfvm->esp;
-	r.scr = o->bfvm->screen;
-	r.scri = o->bfvm->screen_idx;
-	r.inp = o->bfvm->input;
-	r.inpi = o->bfvm->input_idx;
-	r.mem = o->bfvm->base;
-	r.memi = o->bfvm->ptr;
-	memcpy(buf, &r, sizeof(r));
-	// rz_io_system (dbg->iob.io, "dr");
-	return sizeof(r);
+static void reg_set(RzReg *reg, const char *name, ut32 value) {
+	RzRegItem *item = rz_reg_get(reg, name, -1);
+	rz_reg_set_value(reg, item, value);
 }
 
-static int rz_debug_bf_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
-	if (!dbg) {
+static ut32 reg_get(RzReg *reg, const char *name) {
+	RzRegItem *item = rz_reg_get(reg, name, -1);
+	return rz_reg_get_value(reg, item);
+}
+
+static bool brainfuck_sync_registers(RzDebug *dbg, RzReg *reg, bool to_debugger) {
+	rz_return_val_if_fail(dbg && reg, false);
+	if (!brainfuck_is_valid_io(dbg) || !dbg->iob.io->desc->data) {
 		return false;
 	}
-	if (!is_io_bf(dbg)) {
-		return 0;
-	}
-	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
-		return 0;
-	}
+
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
-	memcpy(&r, buf, sizeof(r));
-	o->bfvm->eip = r.pc;
-	o->bfvm->ptr = r.ptr; // dup
-	o->bfvm->esp = r.sp;
-	o->bfvm->screen = r.scr;
-	o->bfvm->screen_idx = r.scri;
-	o->bfvm->input = r.inp;
-	o->bfvm->input_idx = r.inpi;
-	o->bfvm->base = r.mem;
-	o->bfvm->ptr = r.memi; // dup
+
+	if (to_debugger) {
+		o->bfvm->eip = reg_get(reg, "pc");
+		o->bfvm->ptr = reg_get(reg, "ptr");
+		o->bfvm->esp = reg_get(reg, "esp");
+		o->bfvm->screen = reg_get(reg, "scr");
+		o->bfvm->screen_idx = reg_get(reg, "scri");
+		o->bfvm->input = reg_get(reg, "inp");
+		o->bfvm->input_idx = reg_get(reg, "inpi");
+		o->bfvm->base = reg_get(reg, "mem");
+		o->bfvm->ptr = reg_get(reg, "memi");
+	} else {
+		reg_set(reg, "pc", o->bfvm->eip);
+		reg_set(reg, "ptr", o->bfvm->ptr);
+		reg_set(reg, "esp", o->bfvm->esp);
+		reg_set(reg, "scr", o->bfvm->screen);
+		reg_set(reg, "scri", o->bfvm->screen_idx);
+		reg_set(reg, "inp", o->bfvm->input);
+		reg_set(reg, "inpi", o->bfvm->input_idx);
+		reg_set(reg, "mem", o->bfvm->base);
+		reg_set(reg, "memi", o->bfvm->ptr);
+	}
 	return true;
 }
 
-static int rz_debug_bf_continue(RzDebug *dbg, int pid, int tid, int sig) {
+static int brainfuck_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_cont(o->bfvm, UT64_MAX);
 	return true;
 }
 
-static int rz_debug_bf_continue_syscall(RzDebug *dbg, int pid, int num) {
+static int brainfuck_continue_syscall(RzDebug *dbg, int pid, int num) {
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_contsc(o->bfvm);
 	return true;
 }
 
-static RzDebugReasonType rz_debug_bf_wait(RzDebug *dbg, int pid) {
+static RzDebugReasonType brainfuck_wait(RzDebug *dbg, int pid) {
 	/* do nothing */
 	return RZ_DEBUG_REASON_NONE;
 }
 
-static int rz_debug_bf_attach(RzDebug *dbg, int pid) {
-	if (!is_io_bf(dbg)) {
+static int brainfuck_attach(RzDebug *dbg, int pid) {
+	if (!brainfuck_is_valid_io(dbg)) {
 		return false;
 	}
 	return true;
 }
 
-static int rz_debug_bf_detach(RzDebug *dbg, int pid) {
+static int brainfuck_detach(RzDebug *dbg, int pid) {
 	// reset vm?
 	return true;
 }
 
-static char *rz_debug_bf_reg_profile(RzDebug *dbg) {
+static char *brainfuck_reg_profile(RzDebug *dbg) {
 	return strdup(
 		"=PC	pc\n"
 		"=SP	esp\n"
@@ -154,13 +139,13 @@ static char *rz_debug_bf_reg_profile(RzDebug *dbg) {
 		"gpr	memi	.32	32	0\n");
 }
 
-static int rz_debug_bf_breakpoint(struct rz_bp_t *bp, RzBreakpointItem *b, bool set) {
+static int brainfuck_breakpoint(struct rz_bp_t *bp, RzBreakpointItem *b, bool set) {
 	// rz_io_system (dbg->iob.io, "db");
 	return false;
 }
 
-static bool rz_debug_bf_kill(RzDebug *dbg, int pid, int tid, int sig) {
-	if (!is_io_bf(dbg)) {
+static bool brainfuck_kill(RzDebug *dbg, int pid, int tid, int sig) {
+	if (!brainfuck_is_valid_io(dbg)) {
 		return false;
 	}
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
@@ -170,8 +155,8 @@ static bool rz_debug_bf_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
-	if (!is_io_bf(dbg)) {
+static RzList /*<RzDebugMap *>*/ *brainfuck_map_get(RzDebug *dbg) {
+	if (!brainfuck_is_valid_io(dbg)) {
 		return false;
 	}
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
@@ -187,8 +172,8 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	return list;
 }
 
-static int rz_debug_bf_stop(RzDebug *dbg) {
-	if (!is_io_bf(dbg)) {
+static int brainfuck_stop(RzDebug *dbg) {
+	if (!brainfuck_is_valid_io(dbg)) {
 		return false;
 	}
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
@@ -202,20 +187,19 @@ RzDebugPlugin rz_debug_plugin_bf = {
 	.arch = "bf",
 	.license = "LGPL3",
 	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
-	.step = rz_debug_bf_step,
-	.step_over = rz_debug_bf_step_over,
-	.cont = rz_debug_bf_continue,
-	.contsc = rz_debug_bf_continue_syscall,
-	.attach = &rz_debug_bf_attach,
-	.detach = &rz_debug_bf_detach,
-	.wait = &rz_debug_bf_wait,
-	.stop = rz_debug_bf_stop,
-	.kill = rz_debug_bf_kill,
-	.breakpoint = &rz_debug_bf_breakpoint,
-	.reg_read = &rz_debug_bf_reg_read,
-	.reg_write = &rz_debug_bf_reg_write,
-	.reg_profile = rz_debug_bf_reg_profile,
-	.map_get = rz_debug_native_map_get,
+	.step = brainfuck_step,
+	.step_over = brainfuck_step_over,
+	.cont = brainfuck_continue,
+	.contsc = brainfuck_continue_syscall,
+	.attach = &brainfuck_attach,
+	.detach = &brainfuck_detach,
+	.wait = &brainfuck_wait,
+	.stop = brainfuck_stop,
+	.kill = brainfuck_kill,
+	.breakpoint = &brainfuck_breakpoint,
+	.sync_registers = &brainfuck_sync_registers,
+	.reg_profile = brainfuck_reg_profile,
+	.map_get = brainfuck_map_get,
 };
 
 #ifndef RZ_PLUGIN_INCORE
