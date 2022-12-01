@@ -568,17 +568,6 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 	return (ra0);
 }
 
-RZ_API int rz_debug_startv(struct rz_debug_t *dbg, int argc, char **argv) {
-	/* TODO : rz_debug_startv unimplemented */
-	return false;
-}
-
-RZ_API int rz_debug_start(RzDebug *dbg, const char *cmd) {
-	/* TODO: this argc/argv parser is done in rz_io */
-	// TODO: parse cmd and generate argc and argv
-	return false;
-}
-
 RZ_API int rz_debug_detach(RzDebug *dbg, int pid) {
 	int ret = 0;
 	if (dbg->cur && dbg->cur->detach) {

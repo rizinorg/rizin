@@ -437,8 +437,6 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid);
 RZ_API int rz_debug_detach(RzDebug *dbg, int pid);
-RZ_API int rz_debug_startv(RzDebug *dbg, int argc, char **argv);
-RZ_API int rz_debug_start(RzDebug *dbg, const char *cmd);
 
 /* reason we stopped */
 RZ_API RzDebugReasonType rz_debug_stop_reason(RzDebug *dbg);
