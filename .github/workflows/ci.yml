@@ -235,7 +235,7 @@ jobs:
               export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
             else
-              export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+              export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
             fi
           fi
           meson test -C build --suite unit
@@ -267,7 +267,7 @@ jobs:
               export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
             else
-              export ASAN_LD_PRELOAD=$(gcc -print-file-name=libasan.so)
+              export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
             fi
           fi
           meson test -C build --suite integration
