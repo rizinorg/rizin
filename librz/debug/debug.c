@@ -381,7 +381,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
 	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
-	dbg->swstep = 0;
+	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
 	dbg->cb_printf = (void *)printf;
@@ -989,7 +989,7 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!rz_debug_trace_ins_before(dbg)) {
-				eprintf("trace_ins_before: failed\n");
+				RZ_LOG_ERROR("debug: trace insert before has failed\n");
 			}
 		}
 
@@ -999,13 +999,13 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 			ret = rz_debug_step_hard(dbg, &bp);
 		}
 		if (!ret) {
-			eprintf("Stepping failed!\n");
+			RZ_LOG_ERROR("debug: failed to step\n");
 			return steps_taken;
 		}
 
 		if (dbg->session && dbg->recoil_mode == RZ_DBG_RECOIL_NONE) {
 			if (!rz_debug_trace_ins_after(dbg)) {
-				eprintf("trace_ins_after: failed\n");
+				RZ_LOG_ERROR("debug: trace insert after has failed\n");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;
