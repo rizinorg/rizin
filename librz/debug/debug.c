@@ -1628,6 +1628,12 @@ RZ_API int rz_debug_child_clone(RzDebug *dbg) {
 	return 0;
 }
 
+static bool debug_is_not_remote_debugger(RzDebug *dbg) {
+	return dbg->pid == -1 &&
+		strncmp(dbg->cur->name, "gdb", 3) &&
+		strncmp(dbg->cur->name, "bochs", 5);
+}
+
 RZ_API bool rz_debug_is_dead(RzDebug *dbg) {
 	if (!dbg->cur) {
 		return false;
@@ -1636,15 +1642,10 @@ RZ_API bool rz_debug_is_dead(RzDebug *dbg) {
 	if (!strcmp(dbg->cur->name, "io")) {
 		return false;
 	}
-	bool is_dead = (dbg->pid == -1 && strncmp(dbg->cur->name, "gdb", 3)) || (dbg->reason.type == RZ_DEBUG_REASON_DEAD);
+	bool is_dead = debug_is_not_remote_debugger(dbg) || (dbg->reason.type == RZ_DEBUG_REASON_DEAD);
 	if (dbg->pid > 0 && dbg->cur && dbg->cur->kill) {
 		is_dead = !dbg->cur->kill(dbg, dbg->pid, false, 0);
 	}
-#if 0
-	if (!is_dead && dbg->cur && dbg->cur->kill) {
-		is_dead = !dbg->cur->kill (dbg, dbg->pid, false, 0);
-	}
-#endif
 	if (is_dead) {
 		dbg->reason.type = RZ_DEBUG_REASON_DEAD;
 	}
