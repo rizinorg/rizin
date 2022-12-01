@@ -26,6 +26,11 @@
 #undef XOR
 #undef AND
 
+#undef UNSIGNED
+#undef SIGNED
+#undef APPEND
+#undef DUP
+
 #undef ADD
 #undef SUB
 #undef MUL
@@ -87,7 +92,5 @@
 #undef REPEAT
 #undef JMP
 #undef GOTO
-
-#undef NOT_IMPLEMENTED
 
 #undef RZ_IL_OPBUILDER_BEGIN_H

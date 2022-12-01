@@ -1052,6 +1052,20 @@ static int opaam(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opaad(RzAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
+	int l = 0;
+	int immediate = op->operands[0].immediate * op->operands[0].sign;
+	data[l++] = 0xd5;
+	if (immediate == 0) {
+		data[l++] = 0x0a;
+	} else if (immediate < 256 && immediate > -129) {
+		data[l++] = immediate;
+	}
+
+	return l;
+}
+
 static int opdec(RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
 		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
@@ -4267,7 +4281,7 @@ typedef struct lookup_t {
 
 LookupTable oplookup[] = {
 	{ "aaa", 0, NULL, 0x37, 1 },
-	{ "aad", 0, NULL, 0xd50a, 2 },
+	{ "aad", 0, opaad, 0 },
 	{ "aam", 0, opaam, 0 },
 	{ "aas", 0, NULL, 0x3f, 1 },
 	{ "adc", 0, &opadc, 0 },
