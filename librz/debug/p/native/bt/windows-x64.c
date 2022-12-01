@@ -5,6 +5,26 @@
 #include <mdmp_windefs.h>
 #include <librz/bin/format/pe/pe64.h>
 
+enum {
+	AMD64_INDEX_RAX = 0,
+	AMD64_INDEX_RCX,
+	AMD64_INDEX_RDX,
+	AMD64_INDEX_RBX,
+	AMD64_INDEX_RSP,
+	AMD64_INDEX_RBP,
+	AMD64_INDEX_RSI,
+	AMD64_INDEX_RDI,
+	AMD64_INDEX_R8,
+	AMD64_INDEX_R9,
+	AMD64_INDEX_R10,
+	AMD64_INDEX_R11,
+	AMD64_INDEX_R12,
+	AMD64_INDEX_R13,
+	AMD64_INDEX_R14,
+	AMD64_INDEX_R15,
+	AMD64_INDEX_RIP,
+};
+
 static int is_pc_inside_module(const void *value, const void *list_data) {
 	const ut64 pc = *(const ut64 *)value;
 	const RzDebugMap *module = list_data;
@@ -144,6 +164,107 @@ static inline PE64_UNWIND_INFO *read_unwind_info(RzDebug *dbg, ut64 at) {
 	return info;
 }
 
+static void set_amd64_register(struct context_type_amd64 *context, ut8 reg_idx, ut64 value) {
+	switch (reg_idx) {
+	case AMD64_INDEX_RAX:
+		context->rax = value;
+		return;
+	case AMD64_INDEX_RCX:
+		context->rcx = value;
+		return;
+	case AMD64_INDEX_RDX:
+		context->rdx = value;
+		return;
+	case AMD64_INDEX_RBX:
+		context->rbx = value;
+		return;
+	case AMD64_INDEX_RSP:
+		context->rsp = value;
+		return;
+	case AMD64_INDEX_RBP:
+		context->rbp = value;
+		return;
+	case AMD64_INDEX_RSI:
+		context->rsi = value;
+		return;
+	case AMD64_INDEX_RDI:
+		context->rdi = value;
+		return;
+	case AMD64_INDEX_R8:
+		context->r8 = value;
+		return;
+	case AMD64_INDEX_R9:
+		context->r9 = value;
+		return;
+	case AMD64_INDEX_R10:
+		context->r10 = value;
+		return;
+	case AMD64_INDEX_R11:
+		context->r11 = value;
+		return;
+	case AMD64_INDEX_R12:
+		context->r12 = value;
+		return;
+	case AMD64_INDEX_R13:
+		context->r13 = value;
+		return;
+	case AMD64_INDEX_R14:
+		context->r14 = value;
+		return;
+	case AMD64_INDEX_R15:
+		context->r15 = value;
+		return;
+	case AMD64_INDEX_RIP:
+		context->rip = value;
+		return;
+	default:
+		RZ_LOG_ERROR("debug: cannot set amd64 register due unknown index %u\n", reg_idx);
+		return;
+	}
+}
+
+static ut64 get_amd64_register(struct context_type_amd64 *context, ut8 reg_idx) {
+	switch (reg_idx) {
+	case AMD64_INDEX_RAX:
+		return context->rax;
+	case AMD64_INDEX_RCX:
+		return context->rcx;
+	case AMD64_INDEX_RDX:
+		return context->rdx;
+	case AMD64_INDEX_RBX:
+		return context->rbx;
+	case AMD64_INDEX_RSP:
+		return context->rsp;
+	case AMD64_INDEX_RBP:
+		return context->rbp;
+	case AMD64_INDEX_RSI:
+		return context->rsi;
+	case AMD64_INDEX_RDI:
+		return context->rdi;
+	case AMD64_INDEX_R8:
+		return context->r8;
+	case AMD64_INDEX_R9:
+		return context->r9;
+	case AMD64_INDEX_R10:
+		return context->r10;
+	case AMD64_INDEX_R11:
+		return context->r11;
+	case AMD64_INDEX_R12:
+		return context->r12;
+	case AMD64_INDEX_R13:
+		return context->r13;
+	case AMD64_INDEX_R14:
+		return context->r14;
+	case AMD64_INDEX_R15:
+		return context->r15;
+	case AMD64_INDEX_RIP:
+		return context->rip;
+	default:
+		RZ_LOG_ERROR("debug: cannot get amd64 register due unknown index %u\n", reg_idx);
+		return 0;
+	}
+}
+
 static inline bool unwind_function(
 	RzDebug *dbg,
 	RzDebugFrame *frame,
@@ -153,7 +274,6 @@ static inline bool unwind_function(
 	const ut64 function_address) {
 
 	bool is_chained = false;
-	ut64 *integer_registers = &context->rax;
 	ut64 machine_frame_start = 0;
 	bool is_machine_frame = false;
 
@@ -215,7 +335,7 @@ process_chained_info:
 		ut16 offset;
 		switch (UnwindOp) {
 		case UWOP_PUSH_NONVOL: /* info == register number */
-			integer_registers[OpInfo] = read_register(dbg, context->rsp);
+			set_amd64_register(context, OpInfo, read_register(dbg, context->rsp));
 			context->rsp += 8;
 			break;
 		case UWOP_ALLOC_LARGE: /* info == unscaled or scaled, alloc size in next 1 or 2 slots */
@@ -229,12 +349,12 @@ process_chained_info:
 			context->rsp += OpInfo * 8 + 8;
 			break;
 		case UWOP_SET_FPREG: /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
-			frame->bp = integer_registers[info->FrameRegister];
-			context->rsp = integer_registers[info->FrameRegister] - info->FrameOffset * 16;
+			frame->bp = get_amd64_register(context, info->FrameRegister);
+			context->rsp = frame->bp - info->FrameOffset * 16;
 			break;
 		case UWOP_SAVE_NONVOL: /* info == register number, offset in next slot */
 			offset = read_slot16(dbg, info, &i) * 8;
-			integer_registers[OpInfo] = read_register(dbg, frame_base + offset);
+			set_amd64_register(context, OpInfo, read_register(dbg, frame_base + offset));
 			break;
 		case UWOP_SAVE_XMM128: /* info == XMM reg number, offset in next slot */
 		case UWOP_UNKNOWN1: /* 1 extra slot */
@@ -242,7 +362,7 @@ process_chained_info:
 			break;
 		case UWOP_SAVE_NONVOL_FAR: /* info == register number, offset in next 2 slots */
 			offset = read_slot32(dbg, info, &i);
-			integer_registers[OpInfo] = read_register(dbg, frame_base + offset);
+			set_amd64_register(context, OpInfo, read_register(dbg, frame_base + offset));
 			break;
 		case UWOP_SAVE_XMM128_FAR: /* info == XMM reg number, offset in next 2 slots */
 		case UWOP_UNKNOWN2: /* 2 extra slots */
