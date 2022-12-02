@@ -587,6 +587,18 @@ static void addVar(RzCore *core, int ch, const char *msg) {
 	free(type);
 }
 
+static void set_current_option_to_seek(RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	int i = 0;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		if (core->offset == fcn->addr) {
+			option = i;
+		}
+		i++;
+	}
+}
+
 /* Like emenu but for real */
 RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
@@ -602,6 +614,8 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 	core->cons->event_resize = (RzConsEvent)rz_core_visual_analysis_refresh_oneshot;
 
 	level = 0;
+
+	set_current_option_to_seek(core);
 
 	int asmbytes = rz_config_get_i(core->config, "asm.bytes");
 	rz_config_set_i(core->config, "asm.bytes", 0);
@@ -786,7 +800,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			delta = 0;
 			break;
 		case 'R':
-			rz_core_theme_nextpal(core, 'n');
+			rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			break;
 		case 'p':
 			printMode++;
@@ -914,15 +928,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case 'g': {
 			rz_core_visual_showcursor(core, true);
 			rz_core_visual_offset(core); // change the seek to selected offset
-			RzListIter *iter; // change the current option to selected seek
-			RzAnalysisFunction *fcn;
-			int i = 0;
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
-				if (core->offset == fcn->addr) {
-					option = i;
-				}
-				i++;
-			}
+			set_current_option_to_seek(core);
 			rz_core_visual_showcursor(core, false);
 		} break;
 		case 'G':

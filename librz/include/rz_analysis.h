@@ -1625,7 +1625,7 @@ RZ_API RZ_OWN char *rz_analysis_var_global_get_constraints_readable(RzAnalysisVa
 // Maintaining type links
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_BORROW RzType *rz_analysis_type_link_at(RzAnalysis *analysis, ut64 addr);
-RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_BORROW RzType *type, ut64 addr);
+RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_OWN RzType *type, ut64 addr);
 RZ_API bool rz_analysis_type_unlink(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_type_unlink_all(RzAnalysis *analysis);
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_type_links(RzAnalysis *analysis);

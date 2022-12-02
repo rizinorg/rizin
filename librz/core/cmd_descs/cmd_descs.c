@@ -525,6 +525,10 @@ static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
 static const RzCmdDescArg cmd_print_gadget_add_args[6];
 static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg cmd_print_hash_cfg_args[2];
+static const RzCmdDescArg print_instr_args[2];
+static const RzCmdDescArg print_instr_opcodes_args[2];
+static const RzCmdDescArg print_instr_esil_args[2];
+static const RzCmdDescArg print_instr_until_args[2];
 static const RzCmdDescArg assembly_of_hex_alias_args[2];
 static const RzCmdDescArg print_instructions_args[2];
 static const RzCmdDescArg print_pattern0_args[2];
@@ -588,6 +592,9 @@ static const RzCmdDescArg print_hexdump_n_lines_args[2];
 static const RzCmdDescArg print_url_encode_args[2];
 static const RzCmdDescArg print_url_encode_wide_args[2];
 static const RzCmdDescArg print_url_encode_zero_args[2];
+static const RzCmdDescArg print_minus_args[2];
+static const RzCmdDescArg print_minus_entropy_args[2];
+static const RzCmdDescArg print_minus_table_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -12276,6 +12283,109 @@ static const RzCmdDescHelp cmd_print_hash_cfg_algo_list_help = {
 	.args = cmd_print_hash_cfg_algo_list_args,
 };
 
+static const RzCmdDescHelp pi_help = {
+	.summary = "Print instructions",
+};
+static const RzCmdDescArg print_instr_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_help = {
+	.summary = "Print <N> instructions/bytes",
+	.args = print_instr_args,
+};
+
+static const RzCmdDescArg print_instr_opcodes_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_opcodes_help = {
+	.summary = "Print all possible opcodes (byte by byte)",
+	.args = print_instr_opcodes_args,
+};
+
+static const RzCmdDescArg print_instr_block_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_block_help = {
+	.summary = "Print all instructions in a basic block",
+	.args = print_instr_block_args,
+};
+
+static const RzCmdDescArg print_instr_esil_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_esil_help = {
+	.summary = "Print offset and ESIL expression",
+	.args = print_instr_esil_args,
+};
+
+static const RzCmdDescArg print_instr_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_function_help = {
+	.summary = "Print all instructions at the current function",
+	.args = print_instr_function_args,
+};
+
+static const RzCmdDescArg print_calls_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_calls_function_help = {
+	.summary = "Print only call instructions at the current function",
+	.args = print_calls_function_args,
+};
+
+static const RzCmdDescArg print_instr_recursive_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_recursive_help = {
+	.summary = "Print instructions using recursive disassembly algorithm",
+	.args = print_instr_recursive_args,
+};
+
+static const RzCmdDescArg print_instr_recursive_at_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_recursive_at_help = {
+	.summary = "Print instructions using recursive disassembly algorithm from the current position",
+	.args = print_instr_recursive_at_args,
+};
+
+static const RzCmdDescArg print_instr_until_args[] = {
+	{
+		.name = "limit",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_instr_until_help = {
+	.summary = "Print all instructions until first ret/jmp",
+	.args = print_instr_until_args,
+};
+
 static const RzCmdDescArg assembly_of_hex_alias_args[] = {
 	{
 		.name = "hexpair",
@@ -13343,6 +13453,54 @@ static const RzCmdDescArg print_url_encode_zero_args[] = {
 static const RzCmdDescHelp print_url_encode_zero_help = {
 	.summary = "Print <N> bytes as URL-encoded string and stop at zero",
 	.args = print_url_encode_zero_args,
+};
+
+static const RzCmdDescHelp p_minus__help = {
+	.summary = "Blocks information representation as a horisontal bar and summary",
+};
+static const RzCmdDescArg print_minus_args[] = {
+	{
+		.name = "width",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_minus_help = {
+	.summary = "Show horisontal bar of metadata in file boundaries",
+	.args = print_minus_args,
+};
+
+static const RzCmdDescArg print_minus_entropy_args[] = {
+	{
+		.name = "width",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_minus_entropy_help = {
+	.summary = "Show horisontal bar of entropy per block in file boundaries",
+	.args = print_minus_entropy_args,
+};
+
+static const RzCmdDescArg print_minus_table_args[] = {
+	{
+		.name = "depth",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_minus_table_help = {
+	.summary = "Show statistics table about blocks in the file",
+	.args = print_minus_table_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -15899,7 +16057,7 @@ static const RzCmdDescDetailEntry grep_Columns_detail_entries[] = {
 
 static const RzCmdDescDetailEntry grep_Examples_detail_entries[] = {
 	{ .text = "i", .arg_str = "~:0", .comment = "Show first line of 'i' output" },
-	{ .text = "i", .arg_str = "~:-2", .comment = "Show from the second to the last line of 'i' output" },
+	{ .text = "i", .arg_str = "~:-2..", .comment = "Show from the second-last line to the last line of 'i' output" },
 	{ .text = "i", .arg_str = "~:0..3", .comment = "Show first three lines of 'i' output" },
 	{ .text = "pd", .arg_str = "~mov", .comment = "Disasm and grep for mov" },
 	{ .text = "pi", .arg_str = "~[0]", .comment = "Show only opcode" },
@@ -18865,7 +19023,33 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_hash_cfg_algo_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_default_cd, "phl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_hash_cfg_algo_list_handler, &cmd_print_hash_cfg_algo_list_help);
 	rz_warn_if_fail(cmd_print_hash_cfg_algo_list_cd);
 
-	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_print_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
+	RzCmdDesc *pi_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pi", rz_print_instr_handler, &print_instr_help, &pi_help);
+	rz_warn_if_fail(pi_cd);
+	RzCmdDesc *print_instr_opcodes_cd = rz_cmd_desc_argv_new(core->rcmd, pi_cd, "pia", rz_print_instr_opcodes_handler, &print_instr_opcodes_help);
+	rz_warn_if_fail(print_instr_opcodes_cd);
+
+	RzCmdDesc *print_instr_block_cd = rz_cmd_desc_argv_new(core->rcmd, pi_cd, "pib", rz_print_instr_block_handler, &print_instr_block_help);
+	rz_warn_if_fail(print_instr_block_cd);
+
+	RzCmdDesc *print_instr_esil_cd = rz_cmd_desc_argv_new(core->rcmd, pi_cd, "pie", rz_print_instr_esil_handler, &print_instr_esil_help);
+	rz_warn_if_fail(print_instr_esil_cd);
+
+	RzCmdDesc *print_instr_function_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "pif", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_instr_function_handler, &print_instr_function_help);
+	rz_warn_if_fail(print_instr_function_cd);
+
+	RzCmdDesc *print_calls_function_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "pifc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_calls_function_handler, &print_calls_function_help);
+	rz_warn_if_fail(print_calls_function_cd);
+
+	RzCmdDesc *print_instr_recursive_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "pir", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_instr_recursive_handler, &print_instr_recursive_help);
+	rz_warn_if_fail(print_instr_recursive_cd);
+
+	RzCmdDesc *print_instr_recursive_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "pir.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_instr_recursive_at_handler, &print_instr_recursive_at_help);
+	rz_warn_if_fail(print_instr_recursive_at_cd);
+
+	RzCmdDesc *print_instr_until_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "piu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_print_instr_until_handler, &print_instr_until_help);
+	rz_warn_if_fail(print_instr_until_cd);
+
+	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pi_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
 	rz_warn_if_fail(assembly_of_hex_alias_cd);
 
 	RzCmdDesc *pI_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pI", rz_print_instructions_handler, &print_instructions_help, &pI_help);
@@ -19094,6 +19278,15 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_url_encode_zero_cd = rz_cmd_desc_argv_new(core->rcmd, pu_cd, "pu0", rz_print_url_encode_zero_handler, &print_url_encode_zero_help);
 	rz_warn_if_fail(print_url_encode_zero_cd);
+
+	RzCmdDesc *p_minus__cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "p-", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_minus_handler, &print_minus_help, &p_minus__help);
+	rz_warn_if_fail(p_minus__cd);
+	RzCmdDesc *print_minus_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_minus__cd, "p-e", rz_print_minus_entropy_handler, &print_minus_entropy_help);
+	rz_warn_if_fail(print_minus_entropy_cd);
+
+	RzCmdDesc *print_minus_table_cd = rz_cmd_desc_argv_state_new(core->rcmd, p_minus__cd, "p-h", RZ_OUTPUT_MODE_TABLE, rz_print_minus_table_handler, &print_minus_table_help);
+	rz_warn_if_fail(print_minus_table_cd);
+	rz_cmd_desc_set_default_mode(print_minus_table_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

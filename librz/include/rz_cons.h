@@ -818,6 +818,29 @@ typedef struct rz_cons_canvas_line_style_t {
 #define ARROW_LEFT  9
 #define SELF_LOOP   10
 
+typedef struct rz_histogram_options_t {
+	bool unicode; //<< Use Unicode characters instead of ASCII
+	bool thinline; //<< Use thin lines instead of block lines
+	bool legend; //<< Show axes and legend
+	bool offset; //<< Show offsets
+	ut64 offpos; //<< Starting offset value
+	bool cursor; //<< Show cursor position
+	ut64 curpos; //<< Cursor position
+	bool color; //<< Use colors
+	RzConsPrintablePalette *pal; //<< Colors palette if color is enabled
+} RzHistogramOptions;
+
+typedef struct rz_bar_options_t {
+	bool unicode; //<< Use Unicode characters instead of ASCII
+	bool thinline; //<< Use thin lines instead of block lines
+	bool legend; //<< Show axes and legend
+	bool offset; //<< Show offsets
+	ut64 offpos; //<< Starting offset value
+	bool cursor; //<< Show cursor position
+	ut64 curpos; //<< Cursor position
+	bool color; //<< Use colors
+} RzBarOptions;
+
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
@@ -1000,7 +1023,16 @@ RZ_API bool rz_cons_enable_mouse(const bool enable);
 RZ_API void rz_cons_enable_highlight(const bool enable);
 RZ_API void rz_cons_bind(RzConsBind *bind);
 RZ_API const char *rz_cons_get_rune(const ut8 ch);
+
+/* Histograms */
+RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
 #endif
+
+/* Bars */
+RZ_API RZ_OWN RzStrBuf *rz_progressbar(RZ_NONNULL RzBarOptions *opts, int pc, int width);
+RZ_API RZ_OWN RzStrBuf *rz_rangebar(RZ_NONNULL RzBarOptions *opts, ut64 startA, ut64 endA, ut64 min,
+	ut64 max, int width);
 
 /* rz_line */
 #define RZ_LINE_BUFSIZE  4096

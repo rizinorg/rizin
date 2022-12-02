@@ -51,16 +51,20 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	// Analyze current instruction
 	ut64 pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	if (!dbg->iob.read_at) {
+		RZ_LOG_ERROR("dbg->iob.read_at missing\n");
 		return false;
 	}
 	if (!dbg->iob.read_at(dbg->iob.io, pc, buf_pc, sizeof(buf_pc))) {
+		RZ_LOG_ERROR("dbg->iob.read_at failure -- pc 0x%" PFMT64x "\n", pc);
 		return false;
 	}
 	dbg->cur_op = RZ_NEW0(RzAnalysisOp);
 	if (!dbg->cur_op) {
+		RZ_LOG_ERROR("RZ_NEW0 failure\n");
 		return false;
 	}
 	if (rz_analysis_op(dbg->analysis, dbg->cur_op, pc, buf_pc, sizeof(buf_pc), RZ_ANALYSIS_OP_MASK_VAL) < 1) {
+		RZ_LOG_ERROR("rz_analysis_op failure -- pc 0x%" PFMT64x "\n", pc);
 		rz_analysis_op_free(dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;
@@ -107,8 +111,18 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	return true;
 }
 
-RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
-	rz_return_val_if_fail(dbg->cur_op, false);
+/**
+ * \brief Add register/memory changes to the debug session.
+ *
+ * \param dbg RzDebug instance containing the session.
+ * \return false The current instruction is not known so no changes can be recorded.
+ * \return true Otherwise.
+ */
+RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg) {
+	rz_return_val_if_fail(dbg, false);
+	if (!dbg->cur_op) { // Can happen if hard stepping is available and code is unknown to Rizin
+		return false;
+	}
 	RzListIter *it;
 	RzAnalysisValue *val;
 

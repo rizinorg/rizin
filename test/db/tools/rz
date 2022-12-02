@@ -205,7 +205,7 @@ RUN
 
 NAME=color prompt
 FILE==
-CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -c "< \nq\n" =
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -N -c "< \nq\n" =
 EXPECT=<<EOF
 [2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[33m[0x00000000]>[0m 
 [2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q

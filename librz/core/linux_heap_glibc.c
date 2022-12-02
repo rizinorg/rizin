@@ -58,9 +58,11 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	return vaddr;
 }
 
+#if 0
 static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
 	return addr + ((align - (addr % align)) % align);
 }
+#endif
 
 static inline GHT GH(get_next_pointer)(RzCore *core, GHT pos, GHT next) {
 	return (core->dbg->glibc_version < 232) ? next : (GHT)((pos >> 12) ^ next);
@@ -72,25 +74,51 @@ static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
 	rz_return_val_if_fail(base_addr != GHT_MAX, GHT_MAX);
 
 	GHT main_arena = GHT_MAX;
-	GHT vaddr = GHT_MAX;
+	GHT off = GHT_MAX;
 	char *path = strdup(map->name);
 	if (path && rz_file_exists(path)) {
-		vaddr = GH(get_va_symbol)(core, path, "main_arena");
-		if (vaddr != GHT_MAX) {
-			main_arena = base_addr + vaddr;
-		} else {
-			vaddr = GH(get_va_symbol)(core, path, "__malloc_hook");
-			if (vaddr == GHT_MAX) {
-				return main_arena;
+		off = GH(get_va_symbol)(core, path, "main_arena");
+		if (off != GHT_MAX) {
+			main_arena = base_addr + off;
+			goto beach;
+		}
+		RzBinInfo *info = rz_bin_get_info(core->bin);
+		if (!strcmp(info->arch, "x86") && info->bits == 64 &&
+			// Assumes that the vaddr of LOAD0 is 0x0
+			(off = GH(get_va_symbol)(core, path, "mallopt")) != GHT_MAX) {
+			// This code looks for the following instructions:
+			//     mov edx, 1
+			//     (lock) cmpxchg dword [<main_arena_addr>], edx
+			//
+			// The instructions should be part of the following C
+			// code in mallopt():
+			//     __libc_lock_lock (av->mutex);
+			ut64 mallopt_addr = base_addr + off;
+			ut8 bytes[200] = { 0 };
+			rz_io_read_at(core->io, mallopt_addr, bytes, sizeof(bytes));
+			const ut8 mov[] = { 0xba, 0x1, 0x0, 0x0, 0x0 };
+			const ut8 cmpxchg[] = { 0x0f, 0xb1, 0x15 };
+			const ut8 *mov_ptr = rz_mem_mem(bytes, sizeof(bytes), mov, sizeof(mov));
+			if (!mov_ptr ||
+				sizeof(bytes) - (mov_ptr - bytes) <
+					sizeof(mov) + 1 /* LOCK */ + sizeof(cmpxchg) + sizeof(ut32)) {
+				goto beach;
 			}
-			RzBinInfo *info = rz_bin_get_info(core->bin);
-			if (!strcmp(info->arch, "x86")) {
-				main_arena = GH(align_address_to_size)(vaddr + base_addr + sizeof(GHT), 0x20);
-			} else if (!strcmp(info->arch, "arm")) {
-				main_arena = vaddr + base_addr - sizeof(GHT) * 2 - sizeof(MallocState);
+			const ut8 *cmpxchg_ptr = mov_ptr + sizeof(mov);
+			if (*cmpxchg_ptr == 0xf0) { // LOCK prefix
+				cmpxchg_ptr++;
 			}
+			if (memcmp(cmpxchg_ptr, cmpxchg, sizeof(cmpxchg))) {
+				goto beach;
+			}
+			const ut8 *main_arena_off_ptr = cmpxchg_ptr + sizeof(cmpxchg);
+			ut32 main_arena_off = rz_read_le32(main_arena_off_ptr);
+			ut64 rip_addr = (main_arena_off_ptr + sizeof(ut32) - bytes) + mallopt_addr;
+			main_arena = rip_addr + main_arena_off;
+			goto beach;
 		}
 	}
+beach:
 	free(path);
 	return main_arena;
 }
@@ -399,6 +427,10 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	PRINT_GA("}\n\n");
 }
 
+static inline bool GH(is_map_name_libc)(const char *map_name) {
+	return strstr(map_name, "/libc-") || strstr(map_name, "/libc.");
+}
+
 /**
  * \brief Store the base address of main arena at m_arena
  * \param core RzCore pointer
@@ -422,11 +454,11 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		rz_debug_map_sync(core->dbg);
 		rz_list_foreach (core->dbg->maps, iter, map) {
 			/* Try to find the main arena address using the glibc's symbols. */
-			if (strstr(map->name, "/libc-") && first_libc && main_arena_sym == GHT_MAX) {
+			if (GH(is_map_name_libc)(map->name) && first_libc && main_arena_sym == GHT_MAX) {
 				first_libc = false;
 				main_arena_sym = GH(get_main_arena_with_symbol)(core, map);
 			}
-			if (strstr(map->name, "/libc-") && map->perm == RZ_PERM_RW) {
+			if (GH(is_map_name_libc)(map->name) && map->perm == RZ_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;

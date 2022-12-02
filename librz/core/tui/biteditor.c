@@ -223,7 +223,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			if (rz_config_get_b(core->config, "scr.randpal")) {
 				rz_cons_pal_random();
 			} else {
-				rz_core_theme_nextpal(core, 'n');
+				rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			}
 			break;
 		case '+':

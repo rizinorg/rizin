@@ -4416,7 +4416,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				       " Page-UP/DOWN - scroll canvas up/down\n"
 				       " b            - visual browse things\n"
 				       " c            - toggle graph cursor mode\n"
-				       " C            - toggle scr.colors\n"
+				       " C            - toggle scr.color\n"
 				       " d            - rename function\n"
 				       " D            - toggle the mixed graph+disasm mode\n"
 				       " e            - rotate graph.edges (show/hide edges)\n"
@@ -4536,7 +4536,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (rz_config_get_i(core->config, "scr.randpal")) {
 				rz_cons_pal_random();
 			} else {
-				rz_core_theme_nextpal(core, 'n');
+				rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			}
 			if (!fcn) {
 				break;

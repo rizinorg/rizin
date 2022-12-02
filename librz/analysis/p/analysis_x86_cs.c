@@ -5,6 +5,7 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
+#include "../arch/x86/x86_il.h"
 
 #if 0
 CYCLES:
@@ -3214,8 +3215,16 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			op_fillval(a, op, &ctx->handle, ctx->insn, mode);
 		}
 	}
-	//#if X86_GRP_PRIVILEGE>0
+
 	if (ctx->insn) {
+		// x86 RzIL uplifting
+		X86ILIns x86_il_ins = {
+			.structure = &ctx->insn->detail->x86,
+			.mnem = ctx->insn->id
+		};
+		rz_x86_il_opcode(a, op, addr, &x86_il_ins);
+
+		//#if X86_GRP_PRIVILEGE>0
 #if HAVE_CSGRP_PRIVILEGE
 		if (cs_insn_group(ctx->handle, ctx->insn, X86_GRP_PRIVILEGE)) {
 			op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
@@ -3296,15 +3305,15 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			 "seg	es	.16	58	0\n"
 			 "gpr	flags	.16	56	0\n"
 			 "flg	cf	.1	.448	0\n"
-			 "flg	pf	.1	.449	0\n"
-			 "flg	af	.1	.450	0\n"
-			 "flg	zf	.1	.451	0\n"
-			 "flg	sf	.1	.452	0\n"
-			 "flg	tf	.1	.453	0\n"
-			 "flg	if	.1	.454	0\n"
-			 "flg	df	.1	.455	0\n"
-			 "flg	of	.1	.456	0\n"
-			 "flg	rf	.1	.457	0\n";
+			 "flg	pf	.1	.450	0\n"
+			 "flg	af	.1	.452	0\n"
+			 "flg	zf	.1	.454	0\n"
+			 "flg	sf	.1	.455	0\n"
+			 "flg	tf	.1	.456	0\n"
+			 "flg	if	.1	.457	0\n"
+			 "flg	df	.1	.458	0\n"
+			 "flg	of	.1	.459	0\n"
+			 "flg	nt	.1	.462	0\n";
 #if 0
 		"drx	dr0	.32	0	0\n"
 		"drx	dr1	.32	4	0\n"
@@ -3355,11 +3364,18 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	bp	.16	20	0\n"
 			"gpr	eip	.32	48	0\n"
 			"gpr	ip	.16	48	0\n"
+			"seg	xds	.32	28	0\n"
+			"seg	ds	.16	28	0\n"
+			"seg	xes	.32	32	0\n"
+			"seg	es	.16	32	0\n"
 			"seg	xfs	.32	36	0\n"
+			"seg	fs	.16	36	0\n"
 			"seg	xgs	.32	40	0\n"
+			"seg	gs	.16	40	0\n"
+			"seg	xss	.32	64	0\n"
+			"seg	ss	.16	64	0\n"
 			"seg	xcs	.32	52	0\n"
 			"seg	cs	.16	52	0\n"
-			"seg	xss	.32	52	0\n"
 			"flg	eflags	.32	.448	0	c1p.a.zstido.n.rv\n"
 			"flg	flags	.16	.448	0\n"
 			"flg	cf	.1	.448	0\n"
@@ -3374,14 +3390,23 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	nt	.1	.462	0\n"
 			"flg	rf	.1	.464	0\n"
 			"flg	vm	.1	.465	0\n"
+			"flg	ac	.1	.466	0\n"
 			"drx	dr0	.32	0	0\n"
 			"drx	dr1	.32	4	0\n"
 			"drx	dr2	.32	8	0\n"
 			"drx	dr3	.32	12	0\n"
-			//"drx	dr4	.32	16	0\n"
-			//"drx	dr5	.32	20	0\n"
+			"drx	dr4	.32	16	0\n"
+			"drx	dr5	.32	20	0\n"
 			"drx	dr6	.32	24	0\n"
 			"drx	dr7	.32	28	0\n"
+			"ctr	cr0	.32	0	0\n"
+			"ctr	cr1	.32	4	0\n"
+			"ctr	cr2	.32	8	0\n"
+			"ctr	cr3	.32	12	0\n"
+			"ctr	cr4	.32	16	0\n"
+			"ctr	cr5	.32	20	0\n"
+			"ctr	cr6	.32	24	0\n"
+			"ctr	cr7	.32	28	0\n"
 			"xmm@fpu    xmm0  .128 160  4\n"
 			"fpu    xmm0l .64 160  0\n"
 			"fpu    xmm0h .64 168  0\n"
@@ -3530,6 +3555,10 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	if	.1	.1161	0	interrupt\n"
 			"flg	df	.1	.1162	0	direction\n"
 			"flg	of	.1	.1163	0	overflow\n"
+			"flg	nt	.1	.1166	0\n"
+			"flg	rf	.1	.1168	0\n"
+			"flg	vm	.1	.1169	0\n"
+			"flg	ac	.1	.1170	0\n"
 
 			"gpr	rsp	.64	152	0\n"
 			"gpr	esp	.32	152	0\n"
@@ -3546,10 +3575,18 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"drx	dr1	.64	8	0\n"
 			"drx	dr2	.64	16	0\n"
 			"drx	dr3	.64	24	0\n"
-			// dr4 32
-			// dr5 40
+			"drx	dr4	.64	32	0\n"
+			"drx	dr5	.64	40	0\n"
 			"drx	dr6	.64	48	0\n"
 			"drx	dr7	.64	56	0\n"
+			"ctr	cr0	.64	0	0\n"
+			"ctr	cr1	.64	8	0\n"
+			"ctr	cr2	.64	16	0\n"
+			"ctr	cr3	.64	24	0\n"
+			"ctr	cr4	.64	32	0\n"
+			"ctr	cr5	.64	40	0\n"
+			"ctr	cr6	.64	48	0\n"
+			"ctr	cr7	.64	56	0\n"
 
 			/*0030 struct user_fpregs_struct
 		   0031 {
@@ -3743,6 +3780,7 @@ RzAnalysisPlugin rz_analysis_plugin_x86_cs = {
 	.fini = x86_fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
+	.il_config = rz_x86_il_config,
 	//	.esil_intr = esil_x86_cs_intr,
 };
 
