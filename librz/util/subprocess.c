@@ -1359,9 +1359,8 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	return rz_subprocess_start_opt(&opt);
 }
 
-#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-
 RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	RzPty *pty = RZ_NEW0(RzPty);
 	int ret = openpty(&pty->master_fd, &pty->master_fd, slave_name, NULL, NULL);
 
@@ -1375,9 +1374,13 @@ RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_N
 		pty->name = strdup(slave_name);
 	}
 	return pty;
+#else
+	RZ_LOG_ERROR("Cannot find \"openpty\" utility\n");
+#endif
 }
 
 RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	rz_return_val_if_fail(false, pty);
 
 	int ret = login_tty(pty->slave_fd);
@@ -1387,6 +1390,7 @@ RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
 	}
 
 	return true;
+#else
+	RZ_LOG_ERROR("Cannot find \"openpty\" utility\n");
+#endif
 }
-
-#endif // pty API
