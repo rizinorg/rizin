@@ -60,7 +60,6 @@ rz_debug_sources = [
 
 rz_debug_deps = [
   dependency('rzgdb'),
-  dependency('rzbochs'),
   dependency('rzwinkd'),
   rz_util_dep,
   rz_cons_dep,

@@ -15,7 +15,6 @@ dirlist = [
     "binrz",
     "librz",
     "subprojects/rzar",
-    "subprojects/rzbochs",
     "subprojects/rzgdb",
     "subprojects/ptrace-wrap",
     "subprojects/rzqnx",

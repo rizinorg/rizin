@@ -100,7 +100,6 @@ if host_machine.system() == 'windows'
 endif
 
 rz_io_deps = [
-  dependency('rzbochs'),
   dependency('rzgdb'),
   dependency('rzwinkd'),
   libzip_dep,
