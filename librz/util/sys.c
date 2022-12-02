@@ -74,6 +74,18 @@ extern char **environ;
 #endif
 #endif
 
+/* For "openpty" family of funtcions */
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#include <utmp.h>
+#endif
+#endif
+
 RZ_LIB_VERSION(rz_util);
 
 #ifdef __x86_64__
@@ -1680,6 +1692,33 @@ RZ_API int rz_sys_fork(void) {
 	return -1;
 }
 #endif
+
+RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* struct termios */ *termp, const void /* struct winsize */ *winp) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	return forkpty(amaster, name, (const struct termios *)termp, (const struct winsize *)winp);
+#else
+	RZ_LOG_ERROR("\"forkpty\" not found\n");
+	return -1;
+#endif
+}
+
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* struct termios */ *termp, const void /* struct winsize */ *winp) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	return openpty(amaster, aslave, name, (const struct termios *)termp, (const struct winsize *)winp);
+#else
+	RZ_LOG_ERROR("\"openpty\" not found\n");
+	return -1;
+#endif
+}
+
+RZ_API int rz_sys_login_tty(int fd) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	return login_tty(fd);
+#else
+	RZ_LOG_ERROR("\"login_tty\" not found\n");
+	return -1;
+#endif
+}
 
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
