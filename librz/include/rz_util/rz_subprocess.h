@@ -33,6 +33,12 @@ typedef enum rz_process_wait_reason_t {
 	RZ_SUBPROCESS_BYTESREAD,
 } RzSubprocessWaitReason;
 
+typedef enum rz_subprocess_fork_mode_t {
+	RZ_SUBPROCESS_FORK,
+	RZ_SUBPROCESS_FORKPTY,
+	RZ_SUBPROCESS_FORKPTY_USE_OPEN,
+} RzSubprocessForkMode;
+
 /**
  * Provide results from running a sub-process, like output, return value, etc.
  */
@@ -50,6 +56,12 @@ typedef struct rz_process_output_t {
 	///< True if the process has exited because of a timeout
 	bool timeout;
 } RzSubprocessOutput;
+
+typedef struct rz_pty_t {
+	int master_fd;
+	int slave_fd;
+	char *name;
+} RzPty;
 
 /**
  * Specify how the new subprocess should be created.
@@ -73,6 +85,11 @@ typedef struct rz_subprocess_opt_t {
 	RzSubprocessPipeCreate stdout_pipe;
 	///< Specify how to deal with subprocess stderr
 	RzSubprocessPipeCreate stderr_pipe;
+
+	///< Fork mode to be used
+	RzSubprocessForkMode fork_mode;
+	///< PTY to be use for the subprocess (RZ_NULLABLE)
+	RzPty *pty;
 } RzSubprocessOpt;
 
 typedef struct rz_subprocess_t RzSubprocess;
@@ -95,8 +112,6 @@ RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
-#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
@@ -105,16 +120,12 @@ RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 #include <pty.h>
 #include <utmp.h>
 #endif
-
-typedef struct rz_pty_t {
-	int master_fd;
-	int slave_fd;
-	char *name;
-} RzPty;
+#else
+/* Need dummy definitions for the prototypes to compile */
+struct termios {};
+struct winsize {};
+#endif
 
 RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params);
 RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty);
-RZ_API void rz_subprocess_forkpty(void);
-#endif // pty API
-
-#endif
+RZ_API RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size);
