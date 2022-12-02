@@ -966,14 +966,34 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
+	int master_fd = -1;
 
-	proc->pid = rz_sys_fork();
+	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY && !opt->pty) {
+		/* Fork to a new PTY if opt->pty is NULL */
+		proc->pid = rz_sys_forkpty(&master_fd, NULL, NULL, NULL);
+	} else {
+		proc->pid = rz_sys_fork();
+	}
+
 	if (proc->pid == -1) {
 		// fail
 		perror("fork");
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
+		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
+			if (opt->pty) {
+				if (!rz_subprocess_login_tty(opt->pty)) {
+					RZ_LOG_ERROR("login_tty failed, falling back to normal forking\n");
+					goto normal;
+				}
+				master_fd = opt->pty->master_fd;
+			}
+
+			/* Assign fd properly to stdin and stdout of slave */
+		}
+
+		normal:
 		if (stderr_pipe[1] != -1) {
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
@@ -1355,14 +1375,15 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.fork_mode = RZ_SUBPROCESS_FORK,
+		.pty = NULL
 	};
 	return rz_subprocess_start_opt(&opt);
 }
 
-RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params) {
-#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params) {
 	RzPty *pty = RZ_NEW0(RzPty);
-	int ret = openpty(&pty->master_fd, &pty->master_fd, slave_name, NULL, NULL);
+	int ret = rz_sys_openpty(&pty->master_fd, &pty->master_fd, slave_name, NULL, NULL);
 
 	if (ret == -1) {
 		perror("openpty");
@@ -1374,23 +1395,34 @@ RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_N
 		pty->name = strdup(slave_name);
 	}
 	return pty;
-#else
-	RZ_LOG_ERROR("Cannot find \"openpty\" utility\n");
-#endif
 }
 
 RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
-#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	rz_return_val_if_fail(false, pty);
 
-	int ret = login_tty(pty->slave_fd);
+	int ret = rz_sys_login_tty(pty->slave_fd);
 	if (ret == -1) {
 		perror("login_tty");
 		return false;
 	}
 
 	return true;
-#else
-	RZ_LOG_ERROR("Cannot find \"openpty\" utility\n");
-#endif
+}
+
+RZ_API RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
+	const char *envvars[], const char *envvals[], size_t env_size, RzPty *pty) {
+	RzSubprocessOpt opt = {
+		.file = file,
+		.args = args,
+		.args_size = args_size,
+		.envvars = envvars,
+		.envvals = envvals,
+		.env_size = env_size,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.fork_mode = RZ_SUBPROCESS_FORK,
+		.pty = pty,
+	};
+	return rz_subprocess_start_opt(&opt);
 }

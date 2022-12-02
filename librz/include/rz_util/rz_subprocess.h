@@ -36,7 +36,6 @@ typedef enum rz_process_wait_reason_t {
 typedef enum rz_subprocess_fork_mode_t {
 	RZ_SUBPROCESS_FORK,
 	RZ_SUBPROCESS_FORKPTY,
-	RZ_SUBPROCESS_FORKPTY_USE_OPEN,
 } RzSubprocessForkMode;
 
 /**
@@ -88,7 +87,7 @@ typedef struct rz_subprocess_opt_t {
 
 	///< Fork mode to be used
 	RzSubprocessForkMode fork_mode;
-	///< PTY to be use for the subprocess (RZ_NULLABLE)
+	///< PTY to be use for the subprocess (RZ_NULLABLE, if NULL, then a new PTY is used)
 	RzPty *pty;
 } RzSubprocessOpt;
 
@@ -112,20 +111,8 @@ RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
-#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#include <util.h>
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-#include <libutil.h>
-#else
-#include <pty.h>
-#include <utmp.h>
-#endif
-#else
-/* Need dummy definitions for the prototypes to compile */
-struct termios {};
-struct winsize {};
-#endif
-
-RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const struct termios *term_params, RZ_NULLABLE const struct winsize *win_params);
+RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params);
 RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty);
-RZ_API RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size);
+RZ_API RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RzPty *pty);
+
+#endif // RZ_UTIL_SUBPROCESS_H
