@@ -263,6 +263,7 @@ bool test_interactive(void) {
 	mu_end;
 }
 
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
 bool test_interactive_pty(void) {
 	rz_subprocess_init();
 	const char *exe_path = get_auxiliary_path("subprocess-interactive");
@@ -362,6 +363,19 @@ bool test_interactive_custom_pty(void) {
 	rz_subprocess_fini();
 	mu_end;
 }
+#else
+bool test_interactive_pty(void) {
+	mu_end;
+}
+
+bool test_interactive_pipe_pty(void) {
+	mu_end;
+}
+
+bool test_interactive_custom_pty(void) {
+	mu_end;
+}
+#endif // PTY functions
 
 bool all_tests() {
 	mu_run_test(test_noargs_noinput_outerr);
