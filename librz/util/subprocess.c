@@ -1457,8 +1457,23 @@ RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
 	return true;
 }
 
+/**
+ * Start a program in a new child process (in a PTY, forked using forkpty) with the specified parameters.
+ *
+ * \param file Name of the program to start. It is also evaluated against PATH
+ * \param args Array of arguments to pass to the new program. It does not include argv[0]
+ * \param args_size Number of arguments in the \p args array
+ * \param envvars Name of environment variables that the newprocess has different from the parent
+ * \param envvals Values of environment variables that the newprocess has
+ * different from the parent. Elements are evaluated in parallel with \p
+ * envvars, so envvals[0] specifies the value of the environment variable named
+ * envvars[0] and so on.
+ * \param env_size Number of environment variables in arrays \p envvars and \p envvals
+ * \param pty RzPty instance to use for the slave/child
+ * pty == NULL implies a new PTY will be requested and used using openpty
+ */
 RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size, RzPty *pty) {
+	const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
 	RzSubprocessOpt opt = {
 		.file = file,
 		.args = args,
