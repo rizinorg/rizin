@@ -714,6 +714,7 @@ struct rz_subprocess_t {
 	int ret;
 	RzStrBuf out;
 	RzStrBuf err;
+	int master_fd; ///< Needed to check whether PTY
 };
 
 static RzPVector subprocs;
@@ -912,6 +913,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	proc->stdin_fd = -1;
 	proc->stdout_fd = -1;
 	proc->stderr_fd = -1;
+	proc->master_fd = -1;
 	rz_strbuf_init(&proc->out);
 	rz_strbuf_init(&proc->err);
 
@@ -966,16 +968,26 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
-	int master_fd = -1;
 
+	void *term_params = NULL;
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
+	struct termios t;
+	/* Needed to avoid reading back the writes again from the TTY */
+	tcgetattr(STDIN_FILENO, &t);
+	cfmakeraw(&t);
+	term_params = &t;
+#endif
+
+	int master_fd = -1;
 	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 		if (opt->pty) {
 			/* fork normally for now, use login_tty later with opt->pty */
 			proc->pid = rz_sys_fork();
-			master_fd = opt->pty->master_fd;
+			proc->master_fd = master_fd = opt->pty->master_fd;
 		} else {
 			/* Fork to a new PTY if opt->pty is NULL */
-			proc->pid = rz_sys_forkpty(&master_fd, NULL, NULL, NULL);
+			proc->pid = rz_sys_forkpty(&master_fd, NULL, term_params, NULL);
+			proc->master_fd = master_fd;
 		}
 	} else {
 		proc->pid = rz_sys_fork();
@@ -1099,17 +1111,18 @@ error:
 	return NULL;
 }
 
-static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes) {
+static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes, bool is_pty) {
 	char buf[BUFFER_SIZE];
 	size_t to_read = sizeof(buf);
 	if (n_bytes && to_read > n_bytes) {
 		to_read = n_bytes;
 	}
 	ssize_t sz = read(fd, buf, to_read);
-	if (sz < 0) {
-		perror("read");
-	} else if (sz == 0) {
+	if (sz == 0 || (is_pty && sz == -1 && errno == EIO)) {
+		/* In case of PTY, EIO (input/output error) denotes EOF, hence the manual checking */
 		*fd_eof = true;
+	} else if (sz < 0) {
+		perror("read");
 	} else {
 		rz_strbuf_append_n(sb, buf, (int)sz);
 	}
@@ -1143,6 +1156,13 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool child_dead = false;
 	bool timedout = true;
 	bool bytes_enabled = n_bytes != 0;
+
+	/* Check if stdout and stderr are connected to a PTY
+	If yes, then set true if we n_bytes == 0,
+	i.e. waiing for subprocess to end */
+	bool stdout_pty = proc->stdout_fd == proc->master_fd && n_bytes == 0;
+	bool stderr_pty = proc->stderr_fd == proc->master_fd && n_bytes == 0;
+
 	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
 		fd_set rfds;
 		FD_ZERO(&rfds);
@@ -1190,14 +1210,14 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		timedout = true;
 		if (stdout_enabled && FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes);
+			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes, stdout_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
 		}
 		if (stderr_enabled && FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes);
+			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes, stderr_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
@@ -1230,7 +1250,8 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
  * \param timeout_ms Wait for at most this amount of millisecond
  */
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
-	if (proc->stdin_fd != -1) {
+	/* Should not close proc->stdin_fd if it points to a PTY */
+	if (proc->stdin_fd != -1 && proc->stdin_fd != proc->master_fd) {
 		// Close subprocess stdin to tell it that no more input will come from us
 		rz_sys_pipe_close(proc->stdin_fd);
 		proc->stdin_fd = -1;
@@ -1285,7 +1306,7 @@ RZ_API RzStrBuf *rz_subprocess_stdout_read(RzSubprocess *proc, size_t n, ut64 ti
  * \param proc Subprocess to communicate with
  * \param timeout_ms Wait for at most this amount of millisecond to read subprocess' stdout
  */
-RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms) {
+RZ_API RZ_BORROW RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms) {
 	rz_strbuf_fini(&proc->out);
 	rz_strbuf_init(&proc->out);
 	if (proc->stdout_fd != -1) {

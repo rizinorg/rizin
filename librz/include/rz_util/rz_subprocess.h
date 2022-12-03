@@ -107,7 +107,7 @@ RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length);
 RZ_API ut8 *rz_subprocess_err(RzSubprocess *proc, int *length);
 RZ_API ssize_t rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size);
 RZ_API RzStrBuf *rz_subprocess_stdout_read(RzSubprocess *proc, size_t n, ut64 timeout_ms);
-RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms);
+RZ_API RZ_BORROW RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms);
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
