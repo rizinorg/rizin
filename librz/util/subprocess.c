@@ -1009,31 +1009,16 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
-		int stderr_fd = STDERR_FILENO, stdout_fd = STDOUT_FILENO, stdin_fd = STDIN_FILENO;
 		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
-			if (opt->pty) {
-				if (!rz_subprocess_login_tty(opt->pty)) {
-					RZ_LOG_ERROR("login_tty failed, falling back to normal forking\n");
-					goto normal;
-				}
-			}
-
-			stderr_fd = stdout_fd = stdin_fd = master_fd;
-
-			if (stderr_pipe[1] == -1) {
-				proc->stderr_fd = master_fd;
-			}
-			if (stdout_pipe[1] == -1) {
-				proc->stdout_fd = master_fd;
-			}
-			if (stdin_pipe[1] == -1) {
-				proc->stdin_fd = master_fd;
+			if (opt->pty && !rz_subprocess_login_tty(opt->pty)) {
+				RZ_LOG_ERROR("login_tty failed, falling back to normal forking\n");
+				goto normal;
 			}
 		}
 
 	normal:
 		if (stderr_pipe[1] != -1) {
-			while ((dup2(stderr_pipe[1], stderr_fd) == -1) && (errno == EINTR)) {
+			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
 			if (proc->stderr_fd != proc->stdout_fd) {
 				rz_sys_pipe_close(stderr_pipe[1]);
@@ -1042,13 +1027,13 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		}
 
 		if (stdout_pipe[1] != -1) {
-			while ((dup2(stdout_pipe[1], stdout_fd) == -1) && (errno == EINTR)) {
+			while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
 			}
 			rz_sys_pipe_close(stdout_pipe[1]);
 			rz_sys_pipe_close(stdout_pipe[0]);
 		}
 		if (stdin_pipe[0] != -1) {
-			while ((dup2(stdin_pipe[0], stdin_fd) == -1) && (errno == EINTR)) {
+			while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
 			}
 			rz_sys_pipe_close(stdin_pipe[0]);
 			rz_sys_pipe_close(stdin_pipe[1]);
@@ -1431,7 +1416,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 
 RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params) {
 	RzPty *pty = RZ_NEW0(RzPty);
-	int ret = rz_sys_openpty(&pty->master_fd, &pty->master_fd, slave_name, NULL, NULL);
+	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
 
 	if (ret == -1) {
 		perror("openpty");
@@ -1446,7 +1431,7 @@ RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_nam
 }
 
 RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
-	rz_return_val_if_fail(false, pty);
+	rz_return_val_if_fail(pty, false);
 
 	int ret = rz_sys_login_tty(pty->slave_fd);
 	if (ret == -1) {
