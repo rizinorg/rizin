@@ -1697,7 +1697,7 @@ RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* struct termi
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	return forkpty(amaster, name, (const struct termios *)termp, (const struct winsize *)winp);
 #else
-	RZ_LOG_ERROR("\"forkpty\" not found\n");
+	RZ_LOG_ERROR("forkpty() not found\n");
 	return -1;
 #endif
 }
@@ -1706,7 +1706,7 @@ RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* s
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	return openpty(amaster, aslave, name, (const struct termios *)termp, (const struct winsize *)winp);
 #else
-	RZ_LOG_ERROR("\"openpty\" not found\n");
+	RZ_LOG_ERROR("openpty() not found\n");
 	return -1;
 #endif
 }
@@ -1715,7 +1715,7 @@ RZ_API int rz_sys_login_tty(int fd) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	return login_tty(fd);
 #else
-	RZ_LOG_ERROR("\"login_tty\" not found\n");
+	RZ_LOG_ERROR("login_tty() not found\n");
 	return -1;
 #endif
 }
