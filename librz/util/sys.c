@@ -1693,18 +1693,18 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
-RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* struct termios */ *termp, const void /* struct winsize */ *winp) {
+RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-	return forkpty(amaster, name, (const struct termios *)termp, (const struct winsize *)winp);
+	return forkpty(amaster, name, termp, winp);
 #else
 	RZ_LOG_ERROR("forkpty() not found\n");
 	return -1;
 #endif
 }
 
-RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* struct termios */ *termp, const void /* struct winsize */ *winp) {
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-	return openpty(amaster, aslave, name, (const struct termios *)termp, (const struct winsize *)winp);
+	return openpty(amaster, aslave, name, termp, winp);
 #else
 	RZ_LOG_ERROR("openpty() not found\n");
 	return -1;
