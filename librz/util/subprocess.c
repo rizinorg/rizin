@@ -968,48 +968,75 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
 	int master_fd = -1;
 
-	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY && !opt->pty) {
-		/* Fork to a new PTY if opt->pty is NULL */
-		proc->pid = rz_sys_forkpty(&master_fd, NULL, NULL, NULL);
+	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
+		if (opt->pty) {
+			/* fork normally for now, use login_tty later with opt->pty */
+			proc->pid = rz_sys_fork();
+			master_fd = opt->pty->master_fd;
+		} else {
+			/* Fork to a new PTY if opt->pty is NULL */
+			proc->pid = rz_sys_forkpty(&master_fd, NULL, NULL, NULL);
+		}
 	} else {
 		proc->pid = rz_sys_fork();
 	}
 
+	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
+		proc->stderr_fd = (proc->stderr_fd == -1) ? master_fd : proc->stderr_fd;
+		proc->stdout_fd = (proc->stdout_fd == -1) ? master_fd : proc->stdout_fd;
+		proc->stdin_fd = (proc->stdin_fd == -1) ? master_fd : proc->stdin_fd;
+	}
+
 	if (proc->pid == -1) {
 		// fail
-		perror("fork");
+		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
+			perror("forkpty");
+		} else {
+			perror("fork");
+		}
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
+		int stderr_fd = STDERR_FILENO, stdout_fd = STDOUT_FILENO, stdin_fd = STDIN_FILENO;
 		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 			if (opt->pty) {
 				if (!rz_subprocess_login_tty(opt->pty)) {
 					RZ_LOG_ERROR("login_tty failed, falling back to normal forking\n");
 					goto normal;
 				}
-				master_fd = opt->pty->master_fd;
 			}
 
-			/* Assign fd properly to stdin and stdout of slave */
+			stderr_fd = stdout_fd = stdin_fd = master_fd;
+
+			if (stderr_pipe[1] == -1) {
+				proc->stderr_fd = master_fd;
+			}
+			if (stdout_pipe[1] == -1) {
+				proc->stdout_fd = master_fd;
+			}
+			if (stdin_pipe[1] == -1) {
+				proc->stdin_fd = master_fd;
+			}
 		}
 
-		normal:
+	normal:
 		if (stderr_pipe[1] != -1) {
-			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
+			while ((dup2(stderr_pipe[1], stderr_fd) == -1) && (errno == EINTR)) {
 			}
 			if (proc->stderr_fd != proc->stdout_fd) {
 				rz_sys_pipe_close(stderr_pipe[1]);
 				rz_sys_pipe_close(stderr_pipe[0]);
 			}
 		}
+
 		if (stdout_pipe[1] != -1) {
-			while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
+			while ((dup2(stdout_pipe[1], stdout_fd) == -1) && (errno == EINTR)) {
 			}
 			rz_sys_pipe_close(stdout_pipe[1]);
 			rz_sys_pipe_close(stdout_pipe[0]);
 		}
 		if (stdin_pipe[0] != -1) {
-			while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
+			while ((dup2(stdin_pipe[0], stdin_fd) == -1) && (errno == EINTR)) {
 			}
 			rz_sys_pipe_close(stdin_pipe[0]);
 			rz_sys_pipe_close(stdin_pipe[1]);
@@ -1381,7 +1408,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	return rz_subprocess_start_opt(&opt);
 }
 
-RZ_API RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params) {
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params) {
 	RzPty *pty = RZ_NEW0(RzPty);
 	int ret = rz_sys_openpty(&pty->master_fd, &pty->master_fd, slave_name, NULL, NULL);
 
@@ -1409,7 +1436,7 @@ RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
 	return true;
 }
 
-RZ_API RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, RzPty *pty) {
 	RzSubprocessOpt opt = {
 		.file = file,
@@ -1422,7 +1449,7 @@ RZ_API RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[],
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.fork_mode = RZ_SUBPROCESS_FORK,
-		.pty = pty,
+		.pty = pty
 	};
 	return rz_subprocess_start_opt(&opt);
 }
