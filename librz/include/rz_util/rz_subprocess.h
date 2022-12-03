@@ -113,6 +113,6 @@ RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
 RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params);
 RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty);
-RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RzPty *pty);
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty);
 
 #endif // RZ_UTIL_SUBPROCESS_H
