@@ -364,8 +364,6 @@ RUN
 NAME=FLIRT apply pat signature
 FILE=bins/flirt/elf-x86/curl-example
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 aaa
 Fs bins/flirt/elf-x86/libcurl.a.pat
 EOF
@@ -377,8 +375,6 @@ RUN
 NAME=FLIRT apply pat signature
 FILE=bins/flirt/elf-x86/curl-example
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 aaa
 Fs bins/flirt/elf-x86/libcurl.a.sig
 EOF
@@ -400,8 +396,6 @@ RUN
 NAME=FLIRT verify correctness of main (PAT)
 FILE=bins/flirt/elf-x86/test.stripped
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 aaa
 Fs bins/flirt/elf-x86/test.stripped.pat~silence
 af @ data.004011a5
@@ -455,8 +449,6 @@ RUN
 NAME=FLIRT verify correctness of main (SIG)
 FILE=bins/flirt/elf-x86/test.stripped
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 aaa
 Fs bins/flirt/elf-x86/test.stripped.sig~silence
 af @ data.004011a5
@@ -509,8 +501,6 @@ RUN
 NAME=Print SigDB contents
 FILE==
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 e flirt.sigdb.path=bins/sigdb/fake-db
 Fl
 EOF
@@ -525,8 +515,6 @@ RUN
 NAME=Do analysis and apply SigDB automatically
 FILE=bins/sigdb/elf-x86-64-static-libc
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 e flirt.sigdb.path=bins/sigdb/fake-db
 aaa
 afl~flirt
@@ -542,8 +530,6 @@ RUN
 NAME=Do analysis and apply SigDB manually
 FILE=bins/sigdb/elf-x86-64-static-libc
 CMDS=<<EOF
-e flirt.sigdb.load.system=false
-e flirt.sigdb.load.home=false
 aaa
 e flirt.sigdb.path=bins/sigdb/fake-db
 Fa match.sig
