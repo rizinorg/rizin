@@ -130,6 +130,7 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 			char *error_msg = NULL;
 			RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
 			if (!ttype || error_msg) {
+				free(error_msg);
 				free(values);
 				goto error;
 			}

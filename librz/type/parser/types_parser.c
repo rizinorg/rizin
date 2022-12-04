@@ -566,6 +566,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				.offset = 0, // FIXME
 				.size = 0, // FIXME
 			};
+			free(membtpair);
 			void *element = rz_vector_push(members, &memb); // returns null if no space available
 			if (!element) {
 				parser_error(state, "Error appending struct member to the base type\n");
@@ -856,6 +857,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				.offset = 0, // Always 0 for unions
 				.size = 0, // FIXME
 			};
+			free(membtpair);
 			void *element = rz_vector_push(members, &memb); // returns null if no space available
 			if (!element) {
 				parser_error(state, "Error appending union member to the base type\n");
@@ -1273,6 +1275,7 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 			return -1;
 		}
 		if (!argtpair || !argtpair->type) {
+			free(argtpair);
 			return -1;
 		}
 		// Store the parameters if available
@@ -1281,7 +1284,9 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 			identifier = rz_str_newf("arg%d", i);
 		}
 		parser_debug(state, "Adding \"%s\" parameter\n", identifier);
-		if (!c_parser_new_callable_argument(state, (*tpair)->type->callable, identifier, argtpair->type)) {
+		RzType *argtp = argtpair->type;
+		free(argtpair);
+		if (!c_parser_new_callable_argument(state, (*tpair)->type->callable, identifier, argtp)) {
 			parser_error(state, "ERROR: Cannot add the parameter to the function!\n");
 			free(identifier);
 			return -1;
@@ -1904,6 +1909,11 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 		if (result || !tpair) {
 			return -1;
 		}
+	}
+
+	if (tpair) {
+		rz_type_free(tpair->type);
+		free(tpair);
 	}
 
 	if (result) {
