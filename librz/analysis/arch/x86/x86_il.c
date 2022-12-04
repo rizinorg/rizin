@@ -267,6 +267,25 @@ static const char *x86_registers[] = {
 	[X86_REG_R15W] = "r15w"
 };
 
+// Namespace clash with android-ndk-25b's x86_64-linux-android/asm/processor-flags.h
+#undef X86_EFLAGS_CF
+#undef X86_EFLAGS_PF
+#undef X86_EFLAGS_AF
+#undef X86_EFLAGS_ZF
+#undef X86_EFLAGS_SF
+#undef X86_EFLAGS_TF
+#undef X86_EFLAGS_IF
+#undef X86_EFLAGS_DF
+#undef X86_EFLAGS_OF
+#undef X86_EFLAGS_IOPL
+#undef X86_EFLAGS_NT
+#undef X86_EFLAGS_RF
+#undef X86_EFLAGS_VM
+#undef X86_EFLAGS_AC
+#undef X86_EFLAGS_VIF
+#undef X86_EFLAGS_VIP
+#undef X86_EFLAGS_ID
+
 typedef enum x86_eflags_t {
 	X86_EFLAGS_CF = 0,
 	X86_EFLAGS_PF = 2,
