@@ -333,57 +333,377 @@ static inline bool is_kernel_address_present(WindCtx *ctx, ut64 at) {
 	return true;
 }
 
-static int rz_debug_dmp_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
+#define reg_set(r, n, v) reg_set_bitv(r, n, (const ut8 *)&v)
+
+static void reg_set_bitv(RzReg *reg, const char *name, const ut8 *buf) {
+	RzRegItem *item = rz_reg_get(reg, name, -1);
+	if (!item) {
+		RZ_LOG_ERROR("debug: dmp: find register '%s'\n", name);
+		return;
+	}
+	RzBitVector *bv = rz_bv_new_from_bytes_le(buf, 0, item->size);
+	if (!bv) {
+		RZ_LOG_ERROR("debug: dmp: Failed to allocate RzBitVector for register '%s'\n", name);
+		return;
+	}
+	rz_reg_set_bv(reg, item, bv);
+	rz_bv_free(bv);
+}
+
+static void debug_dmp_set_arm64_registers(RzReg *reg, struct context_type_arm64 *ctx) {
+	reg_set(reg, "cpsr", ctx->Cpsr);
+	reg_set(reg, "x0", ctx->X0);
+	reg_set(reg, "x1", ctx->X1);
+	reg_set(reg, "x2", ctx->X2);
+	reg_set(reg, "x3", ctx->X3);
+	reg_set(reg, "x4", ctx->X4);
+	reg_set(reg, "x5", ctx->X5);
+	reg_set(reg, "x6", ctx->X6);
+	reg_set(reg, "x7", ctx->X7);
+	reg_set(reg, "x8", ctx->X8);
+	reg_set(reg, "x9", ctx->X9);
+	reg_set(reg, "x10", ctx->X10);
+	reg_set(reg, "x11", ctx->X11);
+	reg_set(reg, "x12", ctx->X12);
+	reg_set(reg, "x13", ctx->X13);
+	reg_set(reg, "x14", ctx->X14);
+	reg_set(reg, "x15", ctx->X15);
+	reg_set(reg, "x16", ctx->X16);
+	reg_set(reg, "x17", ctx->X17);
+	reg_set(reg, "x18", ctx->X18);
+	reg_set(reg, "x19", ctx->X19);
+	reg_set(reg, "x20", ctx->X20);
+	reg_set(reg, "x21", ctx->X21);
+	reg_set(reg, "x22", ctx->X22);
+	reg_set(reg, "x23", ctx->X23);
+	reg_set(reg, "x24", ctx->X24);
+	reg_set(reg, "x25", ctx->X25);
+	reg_set(reg, "x26", ctx->X26);
+	reg_set(reg, "x27", ctx->X27);
+	reg_set(reg, "x28", ctx->X28);
+	reg_set(reg, "fp", ctx->Fp);
+	reg_set(reg, "lr", ctx->Lr);
+	reg_set(reg, "sp", ctx->Sp);
+	reg_set(reg, "pc", ctx->Pc);
+
+	// floating point/neon registers
+	reg_set(reg, "v0", ctx->V[0]);
+	reg_set(reg, "v1", ctx->V[1]);
+	reg_set(reg, "v2", ctx->V[2]);
+	reg_set(reg, "v3", ctx->V[3]);
+	reg_set(reg, "v4", ctx->V[4]);
+	reg_set(reg, "v5", ctx->V[5]);
+	reg_set(reg, "v6", ctx->V[6]);
+	reg_set(reg, "v7", ctx->V[7]);
+	reg_set(reg, "v8", ctx->V[8]);
+	reg_set(reg, "v9", ctx->V[9]);
+	reg_set(reg, "v10", ctx->V[10]);
+	reg_set(reg, "v11", ctx->V[11]);
+	reg_set(reg, "v12", ctx->V[12]);
+	reg_set(reg, "v13", ctx->V[13]);
+	reg_set(reg, "v14", ctx->V[14]);
+	reg_set(reg, "v15", ctx->V[15]);
+	reg_set(reg, "v16", ctx->V[16]);
+	reg_set(reg, "v17", ctx->V[17]);
+	reg_set(reg, "v18", ctx->V[18]);
+	reg_set(reg, "v19", ctx->V[19]);
+	reg_set(reg, "v20", ctx->V[20]);
+	reg_set(reg, "v21", ctx->V[21]);
+	reg_set(reg, "v22", ctx->V[22]);
+	reg_set(reg, "v23", ctx->V[23]);
+	reg_set(reg, "v24", ctx->V[24]);
+	reg_set(reg, "v25", ctx->V[25]);
+	reg_set(reg, "v26", ctx->V[26]);
+	reg_set(reg, "v27", ctx->V[27]);
+	reg_set(reg, "v28", ctx->V[28]);
+	reg_set(reg, "v29", ctx->V[29]);
+	reg_set(reg, "v30", ctx->V[30]);
+	reg_set(reg, "v31", ctx->V[31]);
+	reg_set(reg, "fpcr", ctx->Fpcr);
+	reg_set(reg, "fpsr", ctx->Fpsr);
+
+	// debug registers
+	reg_set(reg, "bcr0", ctx->Bcr[0]);
+	reg_set(reg, "bcr1", ctx->Bcr[1]);
+	reg_set(reg, "bcr2", ctx->Bcr[2]);
+	reg_set(reg, "bcr3", ctx->Bcr[3]);
+	reg_set(reg, "bcr4", ctx->Bcr[4]);
+	reg_set(reg, "bcr5", ctx->Bcr[5]);
+	reg_set(reg, "bcr6", ctx->Bcr[6]);
+	reg_set(reg, "bcr7", ctx->Bcr[7]);
+	reg_set(reg, "bvr0", ctx->Bvr[0]);
+	reg_set(reg, "bvr1", ctx->Bvr[1]);
+	reg_set(reg, "bvr2", ctx->Bvr[2]);
+	reg_set(reg, "bvr3", ctx->Bvr[3]);
+	reg_set(reg, "bvr4", ctx->Bvr[4]);
+	reg_set(reg, "bvr5", ctx->Bvr[5]);
+	reg_set(reg, "bvr6", ctx->Bvr[6]);
+	reg_set(reg, "bvr7", ctx->Bvr[7]);
+	reg_set(reg, "wcr0", ctx->Wcr[0]);
+	reg_set(reg, "wcr1", ctx->Wcr[1]);
+	reg_set(reg, "wvr0", ctx->Wvr[0]);
+	reg_set(reg, "wvr1", ctx->Wvr[1]);
+}
+
+static void debug_dmp_set_arm32_registers(RzReg *reg, struct context_type_arm *ctx) {
+	reg_set(reg, "r0", ctx->r0);
+	reg_set(reg, "r1", ctx->r1);
+	reg_set(reg, "r2", ctx->r2);
+	reg_set(reg, "r3", ctx->r3);
+	reg_set(reg, "r4", ctx->r4);
+	reg_set(reg, "r5", ctx->r5);
+	reg_set(reg, "r6", ctx->r6);
+	reg_set(reg, "r7", ctx->r7);
+	reg_set(reg, "r8", ctx->r8);
+	reg_set(reg, "r9", ctx->r9);
+	reg_set(reg, "r10", ctx->r10);
+	reg_set(reg, "r11", ctx->r11);
+	reg_set(reg, "ip", ctx->r12); // ip = r12
+	reg_set(reg, "sp", ctx->sp);
+	reg_set(reg, "lr", ctx->lr);
+	reg_set(reg, "pc", ctx->pc);
+	reg_set(reg, "cpsr", ctx->cpsr);
+	reg_set(reg, "fpscr", ctx->fpscr);
+
+	// neon registers
+	reg_set(reg, "q0", ctx->q[0]);
+	reg_set(reg, "q1", ctx->q[1]);
+	reg_set(reg, "q2", ctx->q[2]);
+	reg_set(reg, "q3", ctx->q[3]);
+	reg_set(reg, "q4", ctx->q[4]);
+	reg_set(reg, "q5", ctx->q[5]);
+	reg_set(reg, "q6", ctx->q[6]);
+	reg_set(reg, "q7", ctx->q[7]);
+	reg_set(reg, "q8", ctx->q[8]);
+	reg_set(reg, "q9", ctx->q[9]);
+	reg_set(reg, "q10", ctx->q[10]);
+	reg_set(reg, "q11", ctx->q[11]);
+	reg_set(reg, "q12", ctx->q[12]);
+	reg_set(reg, "q13", ctx->q[13]);
+	reg_set(reg, "q14", ctx->q[14]);
+	reg_set(reg, "q15", ctx->q[15]);
+
+	// debug registers
+	reg_set(reg, "bcr0", ctx->bcr[0]);
+	reg_set(reg, "bcr1", ctx->bcr[1]);
+	reg_set(reg, "bcr2", ctx->bcr[2]);
+	reg_set(reg, "bcr3", ctx->bcr[3]);
+	reg_set(reg, "bcr4", ctx->bcr[4]);
+	reg_set(reg, "bcr5", ctx->bcr[5]);
+	reg_set(reg, "bcr6", ctx->bcr[6]);
+	reg_set(reg, "bcr7", ctx->bcr[7]);
+	reg_set(reg, "bvr0", ctx->bvr[0]);
+	reg_set(reg, "bvr1", ctx->bvr[1]);
+	reg_set(reg, "bvr2", ctx->bvr[2]);
+	reg_set(reg, "bvr3", ctx->bvr[3]);
+	reg_set(reg, "bvr4", ctx->bvr[4]);
+	reg_set(reg, "bvr5", ctx->bvr[5]);
+	reg_set(reg, "bvr6", ctx->bvr[6]);
+	reg_set(reg, "bvr7", ctx->bvr[7]);
+	reg_set(reg, "wcr0", ctx->wcr[0]);
+	reg_set(reg, "wvr0", ctx->wvr[0]);
+}
+
+static void debug_dmp_set_amd64_registers(RzReg *reg, struct context_type_amd64 *ctx) {
+	// segment + flags registers
+	reg_set(reg, "mxcsr", ctx->mx_csr);
+	reg_set(reg, "cs", ctx->seg_cs);
+	reg_set(reg, "ds", ctx->seg_ds);
+	reg_set(reg, "es", ctx->seg_es);
+	reg_set(reg, "fs", ctx->seg_fs);
+	reg_set(reg, "gs", ctx->seg_gs);
+	reg_set(reg, "ss", ctx->seg_ss);
+	reg_set(reg, "eflags", ctx->e_flags);
+
+	// debug registers
+	reg_set(reg, "dr0", ctx->dr0);
+	reg_set(reg, "dr1", ctx->dr1);
+	reg_set(reg, "dr2", ctx->dr2);
+	reg_set(reg, "dr3", ctx->dr3);
+	reg_set(reg, "dr6", ctx->dr6);
+	reg_set(reg, "dr7", ctx->dr7);
+
+	// gpr registers
+	reg_set(reg, "rax", ctx->rax);
+	reg_set(reg, "rcx", ctx->rcx);
+	reg_set(reg, "rdx", ctx->rdx);
+	reg_set(reg, "rbx", ctx->rbx);
+	reg_set(reg, "rsp", ctx->rsp);
+	reg_set(reg, "rbp", ctx->rbp);
+	reg_set(reg, "rsi", ctx->rsi);
+	reg_set(reg, "rdi", ctx->rdi);
+	reg_set(reg, "r8", ctx->r8);
+	reg_set(reg, "r9", ctx->r9);
+	reg_set(reg, "r10", ctx->r10);
+	reg_set(reg, "r11", ctx->r11);
+	reg_set(reg, "r12", ctx->r12);
+	reg_set(reg, "r13", ctx->r13);
+	reg_set(reg, "r14", ctx->r14);
+	reg_set(reg, "r15", ctx->r15);
+	reg_set(reg, "rip", ctx->rip);
+}
+
+static void debug_dmp_set_i386_registers(RzReg *reg, struct context_type_i386 *ctx) {
+	// debug registers
+	reg_set(reg, "dr0", ctx->dr0);
+	reg_set(reg, "dr1", ctx->dr1);
+	reg_set(reg, "dr2", ctx->dr2);
+	reg_set(reg, "dr3", ctx->dr3);
+	reg_set(reg, "dr6", ctx->dr6);
+	reg_set(reg, "dr7", ctx->dr7);
+
+	// windows floating point save area
+	reg_set(reg, "ctw", ctx->float_save.control_word);
+	reg_set(reg, "stw", ctx->float_save.status_word);
+	reg_set(reg, "tag", ctx->float_save.tag_word);
+	reg_set(reg, "ero", ctx->float_save.error_offset);
+	reg_set(reg, "ers", ctx->float_save.error_selector);
+	reg_set(reg, "dao", ctx->float_save.data_offset);
+	reg_set(reg, "das", ctx->float_save.data_selector);
+	reg_set(reg, "st0", ctx->float_save.register_area[0]);
+	reg_set(reg, "st1", ctx->float_save.register_area[10]);
+	reg_set(reg, "st2", ctx->float_save.register_area[20]);
+	reg_set(reg, "st3", ctx->float_save.register_area[30]);
+	reg_set(reg, "st4", ctx->float_save.register_area[40]);
+	reg_set(reg, "st5", ctx->float_save.register_area[50]);
+	reg_set(reg, "st6", ctx->float_save.register_area[60]);
+	reg_set(reg, "st7", ctx->float_save.register_area[70]);
+	reg_set(reg, "spare", ctx->float_save.spare_0);
+
+	// segment registers
+	reg_set(reg, "gs", ctx->seg_gs);
+	reg_set(reg, "fs", ctx->seg_fs);
+	reg_set(reg, "es", ctx->seg_es);
+	reg_set(reg, "ds", ctx->seg_ds);
+	reg_set(reg, "cs", ctx->seg_cs);
+	reg_set(reg, "ss", ctx->seg_ss);
+
+	// gpr registers
+	reg_set(reg, "edi", ctx->edi);
+	reg_set(reg, "esi", ctx->esi);
+	reg_set(reg, "ebx", ctx->ebx);
+	reg_set(reg, "edx", ctx->edx);
+	reg_set(reg, "ecx", ctx->ecx);
+	reg_set(reg, "eax", ctx->eax);
+	reg_set(reg, "ebp", ctx->ebp);
+	reg_set(reg, "eip", ctx->eip);
+	reg_set(reg, "esp", ctx->esp);
+	reg_set(reg, "eflags", ctx->e_flags);
+
+	// mmx regs
+	reg_set(reg, "xmm0", ctx->extended_registers[0]);
+	reg_set(reg, "xmm1", ctx->extended_registers[16]);
+	reg_set(reg, "xmm2", ctx->extended_registers[32]);
+	reg_set(reg, "xmm3", ctx->extended_registers[48]);
+	reg_set(reg, "xmm4", ctx->extended_registers[64]);
+	reg_set(reg, "xmm5", ctx->extended_registers[80]);
+	reg_set(reg, "xmm6", ctx->extended_registers[96]);
+	reg_set(reg, "xmm7", ctx->extended_registers[112]);
+}
+
+static void debug_dmp_set_current_context(WindCtx *ctx, RzReg *reg, ut8 *buf) {
+	if (ctx->is_arm && ctx->is_64bit) {
+		// ARM 64
+		return debug_dmp_set_arm64_registers(reg, (struct context_type_arm64 *)buf);
+	} else if (ctx->is_arm && !ctx->is_64bit) {
+		// ARM 32
+		return debug_dmp_set_arm32_registers(reg, (struct context_type_arm *)buf);
+	} else if (ctx->is_64bit) {
+		// AMD 64
+		return debug_dmp_set_amd64_registers(reg, (struct context_type_amd64 *)buf);
+	}
+	// i386
+	return debug_dmp_set_i386_registers(reg, (struct context_type_i386 *)buf);
+}
+
+static size_t debug_dmp_get_current_context_size(WindCtx *ctx) {
+	if (ctx->is_arm && ctx->is_64bit) {
+		// ARM 64
+		return sizeof(struct context_type_arm64);
+	} else if (ctx->is_arm && !ctx->is_64bit) {
+		// ARM 32
+		return sizeof(struct context_type_arm);
+	} else if (ctx->is_64bit) {
+		// AMD 64
+		return sizeof(struct context_type_amd64);
+	}
+	// i386
+	return sizeof(struct context_type_i386);
+}
+
+static bool debug_dmp_sync_registers(RzDebug *dbg, RzReg *reg, bool to_debugger) {
+	if (to_debugger) {
+		// the dmp plugin does not allow to write to the debugger, since it is not a real debugger.
+		return false;
+	}
+
 	DmpCtx *dmp = dbg->plugin_data;
 	WindCtx *ctx = &dmp->windctx;
 	if (!is_kernel_address_present(ctx, ctx->target_thread.ethread)) {
-		return 0;
+		return false;
 	}
+
 	const ut64 current_thread_offset = ctx->is_64bit ? 8 : 4;
 	ut64 *kprcb;
 	rz_vector_foreach(&dmp->KiProcessorBlock, kprcb) {
 		const ut64 current_thread = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, *kprcb + current_thread_offset);
-		if (current_thread == ctx->target_thread.ethread) {
-			const ut64 current_context = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, *kprcb + dmp->kprcb_context_offset);
-			if (current_context) {
-				return ctx->read_at_kernel_virtual(ctx->user, current_context, buf, size);
-			}
-			RZ_LOG_WARN("Failed to get KPRCB Context pointer at 0x%" PFMT64x "\n", current_context);
+		if (current_thread != ctx->target_thread.ethread) {
+			continue;
 		}
+
+		const ut64 current_context = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, *kprcb + dmp->kprcb_context_offset);
+		if (!current_context) {
+			RZ_LOG_WARN("debug: dmp: KPRCB context pointer is zero at 0x%" PFMT64x "\n", *kprcb + dmp->kprcb_context_offset);
+			continue;
+		}
+
+		const size_t size = debug_dmp_get_current_context_size(ctx);
+		ut8 *buffer = malloc(size);
+		if (!buffer) {
+			RZ_LOG_ERROR("debug: dmp: Failed to allocate buffer for setting rizin registers\n");
+			return false;
+		}
+
+		bool success = false;
+		if (ctx->read_at_kernel_virtual(ctx->user, current_context, buffer, size)) {
+			debug_dmp_set_current_context(ctx, reg, buffer);
+			success = true;
+		}
+
+		free(buffer);
+		return success;
 	}
+
 	if (dmp->type == DMP_DUMPTYPE_TRIAGE || !ctx->target_thread.uniqueid) {
-		memcpy(buf, dmp->context, RZ_MIN(size, dmp->context_sz));
-		return size;
+		debug_dmp_set_current_context(ctx, reg, dmp->context);
+		return true;
 	}
+
 	const int kernel_stack_offset = ctx->is_64bit ? 0x58 : 0x48;
-	if (ctx->is_arm) {
-		if (ctx->is_64bit) {
-			struct context_type_arm64 *regs = (struct context_type_arm64 *)buf;
-			ut64 Sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			ut64 Fp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset);
-			ut64 Pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 8);
-			rz_write_le64((ut8 *)&regs->Sp, Sp);
-			rz_write_le64((ut8 *)&regs->Fp, Fp);
-			rz_write_le64((ut8 *)&regs->Pc, Pc);
-		} else {
-			struct context_type_arm *regs = (struct context_type_arm *)buf;
-			ut32 sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			ut32 pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 4);
-			rz_write_le32((ut8 *)&regs->sp, sp);
-			rz_write_le32((ut8 *)&regs->pc, pc);
-		}
+	if (ctx->is_arm && ctx->is_64bit) {
+		// ARM 64
+		ut64 Sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+		ut64 Fp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset);
+		ut64 Pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 8);
+		reg_set(reg, "fp", Fp);
+		reg_set(reg, "sp", Sp);
+		reg_set(reg, "pc", Pc);
+	} else if (ctx->is_arm && !ctx->is_64bit) {
+		// ARM 32
+		ut32 sp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+		ut32 pc = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + dmp->kthread_switch_frame_offset + 4);
+		reg_set(reg, "sp", sp);
+		reg_set(reg, "pc", pc);
+	} else if (ctx->is_64bit) {
+		// AMD 64
+		ut64 rsp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+		reg_set(reg, "rsp", rsp);
 	} else {
-		if (ctx->is_64bit) {
-			struct context_type_amd64 *regs = (struct context_type_amd64 *)buf;
-			ut64 rsp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			rz_write_le64((ut8 *)&regs->rsp, rsp);
-		} else {
-			struct context_type_i386 *regs = (struct context_type_i386 *)buf;
-			ut32 esp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
-			rz_write_le32((ut8 *)&regs->esp, esp);
-		}
+		// i386
+		ut32 esp = winkd_read_ptr_at(ctx, ctx->read_at_kernel_virtual, ctx->target_thread.ethread + kernel_stack_offset);
+		reg_set(reg, "esp", esp);
 	}
-	return size;
+	return true;
 }
 
 static char *rz_debug_dmp_reg_profile(RzDebug *dbg) {
@@ -582,7 +902,7 @@ RzDebugPlugin rz_debug_plugin_dmp = {
 	.attach = &rz_debug_dmp_attach,
 	.pids = &rz_debug_dmp_pids,
 	.select = &rz_debug_dmp_select,
-	.reg_read = &rz_debug_dmp_reg_read,
+	.sync_registers = &debug_dmp_sync_registers,
 	.reg_profile = &rz_debug_dmp_reg_profile,
 	.threads = &rz_debug_dmp_threads,
 	.modules_get = &rz_debug_dmp_modules,
