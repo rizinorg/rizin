@@ -100,14 +100,14 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of struct \"lappa\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -139,13 +139,13 @@ static bool test_types_get_base_type_union(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of union \"lappa\"");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -599,7 +599,7 @@ static bool test_type_as_pretty_string(void) {
 	char *pretty_str = rz_type_as_pretty_string(typedb, ttype, "c", RZ_TYPE_PRINT_NO_OPTS, 1);
 	mu_assert_streq(pretty_str, pretty_complex_const_pointer, "complex const pointer type is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_array_ptr_func_ptr, &error_msg);
@@ -611,7 +611,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "leet", RZ_TYPE_PRINT_MULTILINE, 1);
 	mu_assert_streq(pretty_str, pretty_struct_array_ptr_func_ptr_multiline, "struct array ptr func ptr type multiline is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_in_struct, &error_msg);
@@ -638,7 +638,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, -1);
 	mu_assert_streq(pretty_str, pretty_struct_in_struct, "struct in struct type anon unfold is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_union_of_struct, &error_msg);
@@ -656,7 +656,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "maxmult", RZ_TYPE_PRINT_MULTILINE, -3);
 	mu_assert_streq(pretty_str, pretty_union_of_struct_max_multiline, "union of struct type max multiline is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_enum, &error_msg);
@@ -668,7 +668,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "enumult", RZ_TYPE_PRINT_MULTILINE, -2);
 	mu_assert_streq(pretty_str, pretty_enum_multiline, "enum type multiline is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, "time_t;", &error_msg);
@@ -677,6 +677,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
 	mu_assert_streq(pretty_str, pretty_simple_typedef, "simple typedef type is ugly");
 	free(pretty_str);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, "non_t existent;", &error_msg);
@@ -685,7 +686,9 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
 	mu_assert_streq(pretty_str, "unknown_t;", "unknown type is ugly");
 	free(pretty_str);
+	rz_type_free(ttype);
 
+	rz_type_db_free(typedb);
 	mu_end;
 }
 
@@ -775,7 +778,7 @@ static bool test_struct_func_types(void) {
 	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->kind, "not function pointer");
 
 	RzCallable *call = member->type->pointer.type->callable;
-	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
+	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	RzCallableArg *arg;
 	arg = *rz_pvector_index_ptr(call->args, 0);
@@ -846,6 +849,7 @@ static bool test_struct_array_types(void) {
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "albalb", "albalb struct");
+	rz_type_free(ttype);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "albalb");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
@@ -869,13 +873,13 @@ static bool test_struct_array_types(void) {
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "alb", "albalb struct");
+	rz_type_free(ttype);
 
 	base = rz_type_db_get_base_type(typedb, "alb");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "alb", "type name");
 	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_ptr_struct_test, "type as string with multidimensional array of pointers");
 
-	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -952,6 +956,7 @@ static bool test_edit_types(void) {
 	mu_assert_notnull(ttype, "array type parse successfull");
 	const char *id1 = rz_type_identifier(ttype);
 	mu_assert_false(rz_type_db_edit_base_type(typedb, id1, edit_array_old), "edit atomic base type");
+	rz_type_free(ttype);
 
 	ttype = rz_type_parse_string_single(typedb->parser, edit_struct_array_ptr_old, &error_msg);
 	mu_assert_notnull(ttype, "struct type parse successfull");
@@ -1014,6 +1019,7 @@ bool test_addr_bits(void) {
 	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
 	rz_type_db_set_bits(typedb, 16);
 	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	rz_type_db_free(typedb);
 	mu_end;
 }
 

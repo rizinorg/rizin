@@ -286,7 +286,9 @@ RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error
 		return -1;
 	}
 	state->verbose = verbose;
-	return type_parse_string(state, code, error_msg);
+	int ret = type_parse_string(state, code, error_msg);
+	c_parser_state_free_keep_ht(state);
+	return ret;
 }
 
 /**
