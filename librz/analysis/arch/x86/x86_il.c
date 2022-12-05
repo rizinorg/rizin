@@ -2587,6 +2587,9 @@ IL_LIFTER(mul) {
 	}
 
 	rz_warn_if_reached();
+	rz_il_op_pure_free(op);
+	rz_il_op_effect_free(true_cond);
+	rz_il_op_effect_free(false_cond);
 	return NULL;
 }
 
