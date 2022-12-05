@@ -874,6 +874,8 @@ bool winkd_va_to_pa(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 directory_table, ut6
 	ut64 pml4i, pdpi, pdi, pti;
 	ut64 tmp, mask;
 
+	ut8 buf64[sizeof(ut64)] = { 0 };
+
 	if (ctx->is_64bit) {
 		pti = (va >> 12) & 0x1ff;
 		pdi = (va >> 21) & 0x1ff;
@@ -902,26 +904,30 @@ bool winkd_va_to_pa(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 directory_table, ut6
 
 	if (ctx->is_64bit) {
 		// PML4 lookup
-		if (!ctx->read_at_physical(ctx->user, tmp + pml4i * 8, (ut8 *)&tmp, 8)) {
+		if (!ctx->read_at_physical(ctx->user, tmp + pml4i * 8, buf64, sizeof(buf64))) {
 			return false;
 		}
+		tmp = rz_read_le64(buf64);
 		tmp &= mask;
 	}
 
 	if (ctx->is_pae) {
 		// PDPT lookup
-		if (!ctx->read_at_physical(ctx->user, tmp + pdpi * 8, (ut8 *)&tmp, 8)) {
+		if (!ctx->read_at_physical(ctx->user, tmp + pdpi * 8, buf64, sizeof(buf64))) {
 			return false;
 		}
+		tmp = rz_read_le64(buf64);
 		tmp &= mask;
 	}
 
 	const int read_size = ctx->is_pae ? 8 : 4;
 
 	// PDT lookup
-	if (!ctx->read_at_physical(ctx->user, tmp + pdi * read_size, (ut8 *)&tmp, read_size)) {
+	if (!ctx->read_at_physical(ctx->user, tmp + pdi * read_size, buf64, read_size)) {
 		return false;
 	}
+
+	tmp = ctx->is_pae ? rz_read_le64(buf64) : rz_read_le32(buf64);
 
 	// Large page entry
 	// The page size differs between pae and non-pae systems, the former points to 2MB pages while
@@ -933,9 +939,11 @@ bool winkd_va_to_pa(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 directory_table, ut6
 	}
 
 	// PT lookup
-	if (!ctx->read_at_physical(ctx->user, (tmp & mask) + pti * read_size, (ut8 *)&tmp, read_size)) {
+	if (!ctx->read_at_physical(ctx->user, (tmp & mask) + pti * read_size, buf64, read_size)) {
 		return false;
 	}
+
+	tmp = ctx->is_pae ? rz_read_le64(buf64) : rz_read_le32(buf64);
 
 	if (tmp & PTE_VALID) {
 		*pa = (tmp & mask) | (va & 0xfff);
