@@ -45,7 +45,7 @@
 /* Mips instructions are at maximum this many bytes long.  */
 #define INSNLEN 4
 
-
+
 /* FIXME: These should be shared with gdb somehow.  */
 
 struct mips_cp0sel_name
@@ -460,7 +460,7 @@ static const char * const *mips_hwr_names;
 
 /* Other options */
 static int no_aliases;	/* If set disassemble as most general inst.  */
-
+
 static const struct mips_abi_choice *
 choose_abi_by_name (const char *name, unsigned int namelen)
 {
@@ -747,7 +747,7 @@ lookup_mips_cp0sel_name (const struct mips_cp0sel_name *names,
   }
   return NULL;
 }
-
+
 /* Print insn arguments for 32/64-bit code.  */
 
 static void
@@ -1266,7 +1266,7 @@ print_insn_args (const char *d,
 	}
     }
 }
-
+
 /* Print the mips instruction at address MEMADDR in debugged memory,
    on using INFO.  Returns length of the instruction, in bytes, which is
    always INSNLEN.  BIGENDIAN must be 1 if this is big-endian code, 0 if
@@ -1369,7 +1369,7 @@ print_insn_mips (bfd_vma memaddr,
   (*info->fprintf_func) (info->stream, "0x%lx", word);
   return INSNLEN;
 }
-
+
 /* Disassemble an operand for a mips16 instruction.  */
 
 static void
@@ -2105,7 +2105,7 @@ print_insn_little_mips (bfd_vma memaddr, struct disassemble_info *info)
 {
   return _print_insn_mips (memaddr, info, BFD_ENDIAN_LITTLE);
 }
-
+
 void
 print_mips_disassembler_options (FILE *stream)
 {
