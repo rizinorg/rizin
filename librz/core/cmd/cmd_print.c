@@ -5721,6 +5721,7 @@ static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput 
 	int blocksize = core->blocksize;
 	ut8 *block_end = core->block + blocksize;
 
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	if (block + 8 >= block_end) {
 		RZ_LOG_ERROR("core: block is truncated.\n");
 		return false;
@@ -5741,19 +5742,19 @@ static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput 
 			block += opts->size;
 			break;
 		case 2:
-			v = rz_read_ble16(block, core->print->big_endian);
+			v = rz_read_ble16(block, big_endian);
 			block += opts->size;
 			break;
 		case 4:
-			v = rz_read_ble32(block, core->print->big_endian);
+			v = rz_read_ble32(block, big_endian);
 			block += opts->size;
 			break;
 		case 8:
-			v = rz_read_ble64(block, core->print->big_endian);
+			v = rz_read_ble64(block, big_endian);
 			block += opts->size;
 			break;
 		case 0:
-			v = rz_read_ble64(block, core->print->big_endian);
+			v = rz_read_ble64(block, big_endian);
 			opts->size = core->rasm->bits / 8;
 			switch (core->rasm->bits / 8) {
 			case 1: v &= UT8_MAX; break;
