@@ -5,6 +5,25 @@
 #include <mdmp_windefs.h>
 #include <librz/bin/format/pe/pe64.h>
 
+// the original PE64_UNWIND_CODE is a union
+typedef struct windows_x64_unwind_code_t {
+	ut8 CodeOffset;
+	ut8 UnwindOp; // : 4;
+	ut8 OpInfo; // : 4;
+	ut16 FrameOffset;
+	ut64 offset;
+} Win64UnwindCode;
+
+typedef struct windows_x64_unwind_info_t {
+	ut8 Version; // : 3;
+	ut8 Flags; // : 5;
+	ut8 SizeOfProlog;
+	ut8 CountOfCodes;
+	ut8 FrameRegister; // : 4;
+	ut8 FrameOffset; // : 4;
+	Win64UnwindCode *code;
+} Win64UnwindInfo;
+
 enum {
 	AMD64_INDEX_RAX = 0,
 	AMD64_INDEX_RCX,
@@ -25,143 +44,65 @@ enum {
 	AMD64_INDEX_RIP,
 };
 
-static int is_pc_inside_module(const void *value, const void *list_data) {
-	const ut64 pc = *(const ut64 *)value;
-	const RzDebugMap *module = list_data;
-	return !(pc >= module->addr && pc < module->addr_end);
-}
+static Win64UnwindCode *windows_x64_unwind_code_new(RzDebug *dbg, ut64 at, ut32 count) {
+	ut8 code[sizeof(ut16)] = { 0 };
 
-#define CMP(x, y)                   (st64)((st64)x - ((PE64_RUNTIME_FUNCTION *)y)->EndAddress)
-#define READ_AT(address, buf, size) dbg->iob.read_at(dbg->iob.io, address, buf, size)
-
-static inline bool init_module_runtime_functions(RzDebug *dbg, RzVector /*<PE64_RUNTIME_FUNCTION>*/ *functions, ut64 module_base) {
-	ut8 buf[4];
-
-	const ut64 lfanew_offset = module_base + rz_offsetof(Pe64_image_dos_header, e_lfanew);
-	READ_AT(lfanew_offset, buf, sizeof(buf));
-	const ut64 pe_offset = module_base + rz_read_le32(buf);
-
-	const ut64 exception_entry_offset = pe_offset + rz_offsetof(Pe64_image_nt_headers, optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION]);
-	READ_AT(exception_entry_offset, buf, sizeof(buf));
-	const ut64 exception_table_va = module_base + rz_read_le32(buf);
-
-	READ_AT(exception_entry_offset + 4, buf, sizeof(buf));
-	const ut32 exception_table_size = rz_read_le32(buf);
-	if (!exception_table_size || exception_table_size == UT32_MAX) {
-		return false;
+	Win64UnwindCode *uc = RZ_NEWS0(Win64UnwindCode, count);
+	if (!uc) {
+		return NULL;
 	}
 
-	ut8 *section = malloc(exception_table_size);
-	if (!section) {
-		return false;
-	}
-
-	rz_vector_fini(functions);
-	rz_vector_init(functions, sizeof(PE64_RUNTIME_FUNCTION), NULL, NULL);
-	if (!rz_vector_reserve(functions, exception_table_size / sizeof(PE64_RUNTIME_FUNCTION))) {
-		rz_vector_fini(functions);
-		free(section);
-		return false;
-	}
-
-	if (!READ_AT(exception_table_va, section, exception_table_size)) {
-		rz_vector_fini(functions);
-		free(section);
-		return false;
-	}
-
-	for (ut64 offset = 0; offset < exception_table_size; offset += sizeof(PE64_RUNTIME_FUNCTION)) {
-		PE64_RUNTIME_FUNCTION rfcn;
-		rfcn.BeginAddress = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, BeginAddress));
-		rfcn.EndAddress = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, EndAddress));
-		rfcn.UnwindData = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindData));
-		if (!rfcn.BeginAddress) {
-			break;
+	for (ut32 i = 0; i < count; ++i, at += sizeof(ut16)) {
+		if (!dbg->iob.read_at(dbg->iob.io, at, code, sizeof(code))) {
+			free(uc);
+			return NULL;
 		}
-		rz_vector_push(functions, &rfcn);
+		uc[i].CodeOffset = code[0];
+		uc[i].UnwindOp = code[1] & 0x0F;
+		uc[i].OpInfo = code[1] >> 4;
+		uc[i].FrameOffset = rz_read_le16(code);
+		uc[i].offset = at;
 	}
-	free(section);
-	return true;
+
+	return uc;
 }
 
-static inline ut64 read_register(RzDebug *dbg, ut64 at) {
-	ut8 buf[8];
-	dbg->iob.read_at(dbg->iob.io, at, buf, sizeof(buf));
-	return rz_read_le64(buf);
-}
-
-static inline ut32 read_slot32(RzDebug *dbg, PE64_UNWIND_INFO *info, int *index) {
-	ut32 ret = rz_read_le32(&info->UnwindCode[*index]);
-	*index += 2;
-	return ret;
-}
-
-static inline ut16 read_slot16(RzDebug *dbg, PE64_UNWIND_INFO *info, int *index) {
-	ut16 ret = rz_read_le16(&info->UnwindCode[*index]);
-	*index += 1;
-	return ret;
-}
-
-// Decides if current rsp or another register is used as the frame base (eg. rbp, etc)
-static inline ut64 get_frame_base(const PE64_UNWIND_INFO *info, const struct context_type_amd64 *context, const ut64 function_address) {
-	const ut64 rip_offset_to_function = context->rip - function_address;
-	const ut64 *integer_registers = &context->rax;
-	if (!info->FrameRegister) {
-		// There is no register being used as the frame base, use rsp
-		return context->rsp;
-	} else if ((rip_offset_to_function >= info->SizeOfProlog) || ((info->Flags & PE64_UNW_FLAG_CHAININFO) != 0)) {
-		// There is a register being used as a frame base, and we definetly already set it
-		return integer_registers[info->FrameRegister] - info->FrameOffset * 16;
-	} else {
-		// There is a register being used as a frame base, unknown if we set it yet
-		int i;
-		ut8 *code = NULL;
-		// Find unwind of where frame register is being set
-		for (i = 0; i < info->CountOfCodes; i++) {
-			// The ordering of bits in C bitfields is implementation defined.
-			// this ensures the endianness (here is little endian) is kept
-			code = (ut8 *)&info->UnwindCode[i];
-			ut8 UnwindOp = code[1] & 0x0F;
-			if (UnwindOp == UWOP_SET_FPREG) {
-				break;
-			}
-		}
-		// The ordering of bits in C bitfields is implementation defined.
-		// this ensures the endianness (here is little endian) is kept
-		code = (ut8 *)&info->UnwindCode[i];
-		ut8 CodeOffset = code[0];
-		// Check if we already set the frame register
-		if (rip_offset_to_function >= CodeOffset) {
-			return integer_registers[info->FrameRegister] - info->FrameOffset * 16;
-		} else {
-			return context->rsp;
-		}
+static Win64UnwindInfo *windows_x64_unwind_info_new(RzDebug *dbg, ut64 at) {
+	ut8 tmp[sizeof(PE64_UNWIND_INFO)] = { 0 };
+	if (!dbg->iob.read_at(dbg->iob.io, at, tmp, sizeof(tmp))) {
+		return NULL;
 	}
-}
 
-static inline PE64_UNWIND_INFO *read_unwind_info(RzDebug *dbg, ut64 at) {
-	PE64_UNWIND_INFO *info = RZ_NEW0(PE64_UNWIND_INFO);
+	Win64UnwindInfo *info = RZ_NEW0(Win64UnwindInfo);
 	if (!info) {
 		return NULL;
 	}
-	READ_AT(at, (ut8 *)info, sizeof(*info));
-	const size_t unwind_code_array_sz = info->CountOfCodes * sizeof(PE64_UNWIND_CODE);
-	void *tmp = realloc(info, sizeof(PE64_UNWIND_INFO) + unwind_code_array_sz);
-	if (!tmp) {
-		free(info);
-		return NULL;
-	}
-	info = tmp;
-	READ_AT(at + rz_offsetof(PE64_UNWIND_INFO, UnwindCode), (ut8 *)info->UnwindCode, unwind_code_array_sz);
 
 	// The ordering of bits in C bitfields is implementation defined.
 	// this ensures the endianness (here is little endian) is kept
-	ut8 *byte = ((ut8 *)info);
-	info->Version = byte[0] & 0x07;
-	info->Flags = byte[0] >> 3;
-	info->FrameRegister = byte[3] & 0x0F;
-	info->FrameOffset = byte[3] >> 4;
+	info->Version = tmp[0] & 0x07;
+	info->Flags = tmp[0] >> 3;
+	info->SizeOfProlog = tmp[1];
+	info->CountOfCodes = tmp[2];
+	info->FrameRegister = tmp[3] & 0x0F;
+	info->FrameOffset = tmp[3] >> 4;
+
+	info->code = windows_x64_unwind_code_new(dbg, at + 4, info->CountOfCodes);
+	if (!info->code) {
+		free(info);
+		return NULL;
+	}
 	return info;
+}
+
+#define windows_x64_unwind_code_free free
+
+static void windows_x64_unwind_info_free(Win64UnwindInfo *info) {
+	if (!info) {
+		return;
+	}
+	windows_x64_unwind_code_free(info->code);
+	free(info);
 }
 
 static void set_amd64_register(struct context_type_amd64 *context, ut8 reg_idx, ut64 value) {
@@ -223,7 +164,7 @@ static void set_amd64_register(struct context_type_amd64 *context, ut8 reg_idx, 
 	}
 }
 
-static ut64 get_amd64_register(struct context_type_amd64 *context, ut8 reg_idx) {
+static ut64 get_amd64_register(const struct context_type_amd64 *context, ut8 reg_idx) {
 	switch (reg_idx) {
 	case AMD64_INDEX_RAX:
 		return context->rax;
@@ -265,7 +206,127 @@ static ut64 get_amd64_register(struct context_type_amd64 *context, ut8 reg_idx) 
 	}
 }
 
-static inline bool unwind_function(
+static int is_pc_inside_module(const void *value, const void *list_data) {
+	const ut64 pc = *(const ut64 *)value;
+	const RzDebugMap *module = list_data;
+	return !(pc >= module->addr && pc < module->addr_end);
+}
+
+#define CMP(x, y)                   (st64)((st64)x - ((PE64_RUNTIME_FUNCTION *)y)->EndAddress)
+#define READ_AT(address, buf, size) dbg->iob.read_at(dbg->iob.io, address, buf, size)
+
+static bool init_module_runtime_functions(RzDebug *dbg, RzVector /*<PE64_RUNTIME_FUNCTION>*/ *functions, ut64 module_base) {
+	ut8 buf[sizeof(ut32)] = { 0 };
+
+	const ut64 lfanew_offset = module_base + rz_offsetof(Pe64_image_dos_header, e_lfanew);
+	READ_AT(lfanew_offset, buf, sizeof(buf));
+	const ut64 pe_offset = module_base + rz_read_le32(buf);
+
+	const ut64 exception_entry_offset = pe_offset + rz_offsetof(Pe64_image_nt_headers, optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION]);
+	READ_AT(exception_entry_offset, buf, sizeof(buf));
+	const ut64 exception_table_va = module_base + rz_read_le32(buf);
+
+	READ_AT(exception_entry_offset + 4, buf, sizeof(buf));
+	const ut32 exception_table_size = rz_read_le32(buf);
+	if (!exception_table_size || exception_table_size == UT32_MAX) {
+		return false;
+	}
+
+	ut8 *section = malloc(exception_table_size);
+	if (!section) {
+		return false;
+	}
+
+	rz_vector_fini(functions);
+	rz_vector_init(functions, sizeof(PE64_RUNTIME_FUNCTION), NULL, NULL);
+	if (!rz_vector_reserve(functions, exception_table_size / sizeof(PE64_RUNTIME_FUNCTION))) {
+		rz_vector_fini(functions);
+		free(section);
+		return false;
+	}
+
+	if (!READ_AT(exception_table_va, section, exception_table_size)) {
+		rz_vector_fini(functions);
+		free(section);
+		return false;
+	}
+
+	for (ut64 offset = 0; offset < exception_table_size; offset += sizeof(PE64_RUNTIME_FUNCTION)) {
+		PE64_RUNTIME_FUNCTION rfcn;
+		rfcn.BeginAddress = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, BeginAddress));
+		rfcn.EndAddress = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, EndAddress));
+		rfcn.UnwindData = rz_read_le32(section + offset + rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindData));
+		if (!rfcn.BeginAddress) {
+			break;
+		}
+		rz_vector_push(functions, &rfcn);
+	}
+	free(section);
+	return true;
+}
+
+static ut64 read_register_from_memory(RzDebug *dbg, ut64 at) {
+	ut8 buf[8] = { 0 };
+	if (!dbg->iob.read_at(dbg->iob.io, at, buf, sizeof(buf))) {
+		return 0;
+	}
+	return rz_read_le64(buf);
+}
+
+static ut32 read_unwind_code_slot_32(RzDebug *dbg, const Win64UnwindInfo *info, int *index) {
+	ut8 tmp[sizeof(ut32)] = { 0 };
+	ut64 offset = info->code[*index].offset;
+	if (!dbg->iob.read_at(dbg->iob.io, offset, tmp, sizeof(tmp))) {
+		return 0;
+	}
+	ut32 ret = rz_read_le32(tmp);
+	*index += 2;
+	return ret;
+}
+
+static ut16 read_unwind_code_slot_16(RzDebug *dbg, const Win64UnwindInfo *info, int *index) {
+	ut8 tmp[sizeof(ut16)] = { 0 };
+	ut64 offset = info->code[*index].offset;
+	if (!dbg->iob.read_at(dbg->iob.io, offset, tmp, sizeof(tmp))) {
+		return 0;
+	}
+	ut16 ret = rz_read_le16(tmp);
+	*index += 1;
+	return ret;
+}
+
+// Decides if current rsp or another register is used as the frame base (eg. rbp, etc)
+static ut64 get_frame_base(const Win64UnwindInfo *info, const struct context_type_amd64 *context, const ut64 function_address) {
+	const ut64 rip_offset_to_function = context->rip - function_address;
+	if (!info->FrameRegister) {
+		// There is no register being used as the frame base, use rsp
+		return context->rsp;
+	} else if ((rip_offset_to_function >= info->SizeOfProlog) || ((info->Flags & PE64_UNW_FLAG_CHAININFO) != 0)) {
+		// There is a register being used as a frame base, and we definetly already set it
+		ut64 value = get_amd64_register(context, info->FrameRegister);
+		return value - info->FrameOffset * 16;
+	}
+
+	// There is a register being used as a frame base, unknown if we set it yet
+	int i;
+	Win64UnwindCode *code = NULL;
+	// Find unwind of where frame register is being set
+	for (i = 0; i < info->CountOfCodes; i++) {
+		if (code[i].UnwindOp == UWOP_SET_FPREG) {
+			break;
+		}
+	}
+
+	// Check if we already set the frame register
+	if (rip_offset_to_function >= code[i].CodeOffset) {
+		ut64 value = get_amd64_register(context, info->FrameRegister);
+		return value - info->FrameOffset * 16;
+	}
+	return context->rsp;
+}
+
+static inline bool
+unwind_function(
 	RzDebug *dbg,
 	RzDebugFrame *frame,
 	PE64_RUNTIME_FUNCTION *rfcn,
@@ -278,108 +339,106 @@ static inline bool unwind_function(
 	bool is_machine_frame = false;
 
 	ut64 unwind_info_address = module_address + rfcn->UnwindInfoAddress;
+	Win64UnwindInfo *info = NULL;
 
-	// Read initial unwind info structure
-	PE64_UNWIND_INFO *info = read_unwind_info(dbg, unwind_info_address);
-	if (!info) {
-		return false;
-	}
+	do {
+		// Read initial unwind info structure
+		info = windows_x64_unwind_info_new(dbg, unwind_info_address);
+		if (!info) {
+			return false;
+		}
 
-	// Get address that is used as the base for stack accesses
-	ut64 frame_base = get_frame_base(info, context, function_address);
+		// Get address that is used as the base for stack accesses
+		ut64 frame_base = get_frame_base(info, context, function_address);
 
-process_chained_info:
-	if (info->Version != 1 && info->Version != 2) {
-		// Version 1 found in user-space, version 2 in kernel
-		RZ_LOG_ERROR("Unwind info version (%" PFMT32d ") for function 0x%" PFMT64x " is not recognized\n",
-			(ut32)info->Version, function_address);
-		free(info);
-		return false;
-	}
+		if (info->Version != 1 && info->Version != 2) {
+			// Version 1 found in user-space, version 2 in kernel
+			RZ_LOG_ERROR("Unwind info version (%" PFMT32d ") for function 0x%" PFMT64x " is not recognized\n",
+				(ut32)info->Version, function_address);
+			free(info);
+			return false;
+		}
 
-	int i = 0;
-	while (i < info->CountOfCodes) {
-		// The ordering of bits in C bitfields is implementation defined.
-		// this ensures the endianness (here is little endian) is kept
-		ut8 *code = (ut8 *)&info->UnwindCode[i];
-		ut8 CodeOffset = code[0];
-		ut8 UnwindOp = code[1] & 0x0F;
-		ut8 OpInfo = code[1] >> 4;
-		i++;
-		// Check if we are already past the prolog instruction
-		// If we are processing a chained scope, always process all of them
-		if (!is_chained && context->rip < function_address + CodeOffset) {
-			// Skip, as it wasn't executed yet
-			switch (UnwindOp) {
-			case UWOP_ALLOC_LARGE:
-				i++;
-				if (OpInfo) {
+		int i = 0;
+		while (i < info->CountOfCodes) {
+			Win64UnwindCode *code = &info->code[i];
+			i++;
+			// Check if we are already past the prolog instruction
+			// If we are processing a chained scope, always process all of them
+			if (!is_chained && context->rip < function_address + code->CodeOffset) {
+				// Skip, as it wasn't executed yet
+				switch (code->UnwindOp) {
+				case UWOP_ALLOC_LARGE:
 					i++;
+					if (code->OpInfo) {
+						i++;
+					}
+					break;
+				case UWOP_SAVE_XMM128:
+				case UWOP_SAVE_NONVOL:
+				case UWOP_UNKNOWN1:
+					i++;
+					break;
+				case UWOP_SAVE_XMM128_FAR:
+				case UWOP_SAVE_NONVOL_FAR:
+				case UWOP_UNKNOWN2:
+					i += 2;
+					break;
+				default:
+					break;
+				}
+				continue;
+			}
+			ut16 offset;
+			switch (code->UnwindOp) {
+			case UWOP_PUSH_NONVOL: /* info == register number */
+				set_amd64_register(context, code->OpInfo, read_register_from_memory(dbg, context->rsp));
+				context->rsp += 8;
+				break;
+			case UWOP_ALLOC_LARGE: /* info == unscaled or scaled, alloc size in next 1 or 2 slots */
+				if (code->OpInfo) {
+					context->rsp += read_unwind_code_slot_32(dbg, info, &i);
+				} else {
+					context->rsp += read_unwind_code_slot_16(dbg, info, &i) * 8;
 				}
 				break;
-			case UWOP_SAVE_XMM128:
-			case UWOP_SAVE_NONVOL:
-			case UWOP_UNKNOWN1:
+			case UWOP_ALLOC_SMALL: /* info == size of allocation / 8 - 1 */
+				context->rsp += (code->OpInfo * 8) + 8;
+				break;
+			case UWOP_SET_FPREG: /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
+				frame->bp = get_amd64_register(context, info->FrameRegister);
+				context->rsp = frame->bp - info->FrameOffset * 16;
+				break;
+			case UWOP_SAVE_NONVOL: /* info == register number, offset in next slot */
+				offset = read_unwind_code_slot_16(dbg, info, &i) * 8;
+				set_amd64_register(context, code->OpInfo, read_register_from_memory(dbg, frame_base + offset));
+				break;
+			case UWOP_SAVE_XMM128: /* info == XMM reg number, offset in next slot */
+			case UWOP_UNKNOWN1: /* 1 extra slot */
 				i++;
 				break;
-			case UWOP_SAVE_XMM128_FAR:
-			case UWOP_SAVE_NONVOL_FAR:
-			case UWOP_UNKNOWN2:
+			case UWOP_SAVE_NONVOL_FAR: /* info == register number, offset in next 2 slots */
+				offset = read_unwind_code_slot_32(dbg, info, &i);
+				set_amd64_register(context, code->OpInfo, read_register_from_memory(dbg, frame_base + offset));
+				break;
+			case UWOP_SAVE_XMM128_FAR: /* info == XMM reg number, offset in next 2 slots */
+			case UWOP_UNKNOWN2: /* 2 extra slots */
 				i += 2;
 				break;
-			default:
+			case UWOP_PUSH_MACHFRAME: /* info == 0: no error-code, 1: error-code */
+				if (code->OpInfo) {
+					context->rsp += 8;
+				}
+				is_machine_frame = true;
+				machine_frame_start = context->rsp + 40;
+				context->rip = read_register_from_memory(dbg, context->rsp);
+				context->rsp = read_register_from_memory(dbg, context->rsp + 24);
 				break;
 			}
-			continue;
 		}
-		ut16 offset;
-		switch (UnwindOp) {
-		case UWOP_PUSH_NONVOL: /* info == register number */
-			set_amd64_register(context, OpInfo, read_register(dbg, context->rsp));
-			context->rsp += 8;
-			break;
-		case UWOP_ALLOC_LARGE: /* info == unscaled or scaled, alloc size in next 1 or 2 slots */
-			if (OpInfo) {
-				context->rsp += read_slot32(dbg, info, &i);
-			} else {
-				context->rsp += read_slot16(dbg, info, &i) * 8;
-			}
-			break;
-		case UWOP_ALLOC_SMALL: /* info == size of allocation / 8 - 1 */
-			context->rsp += OpInfo * 8 + 8;
-			break;
-		case UWOP_SET_FPREG: /* no info, FP = RSP + UNWIND_INFO.FPRegOffset*16 */
-			frame->bp = get_amd64_register(context, info->FrameRegister);
-			context->rsp = frame->bp - info->FrameOffset * 16;
-			break;
-		case UWOP_SAVE_NONVOL: /* info == register number, offset in next slot */
-			offset = read_slot16(dbg, info, &i) * 8;
-			set_amd64_register(context, OpInfo, read_register(dbg, frame_base + offset));
-			break;
-		case UWOP_SAVE_XMM128: /* info == XMM reg number, offset in next slot */
-		case UWOP_UNKNOWN1: /* 1 extra slot */
-			i++;
-			break;
-		case UWOP_SAVE_NONVOL_FAR: /* info == register number, offset in next 2 slots */
-			offset = read_slot32(dbg, info, &i);
-			set_amd64_register(context, OpInfo, read_register(dbg, frame_base + offset));
-			break;
-		case UWOP_SAVE_XMM128_FAR: /* info == XMM reg number, offset in next 2 slots */
-		case UWOP_UNKNOWN2: /* 2 extra slots */
-			i += 2;
-			break;
-		case UWOP_PUSH_MACHFRAME: /* info == 0: no error-code, 1: error-code */
-			if (OpInfo) {
-				context->rsp += 8;
-			}
-			is_machine_frame = true;
-			machine_frame_start = context->rsp + 40;
-			context->rip = read_register(dbg, context->rsp);
-			context->rsp = read_register(dbg, context->rsp + 24);
+		if (!(info->Flags & PE64_UNW_FLAG_CHAININFO)) {
 			break;
 		}
-	}
-	if (info->Flags & PE64_UNW_FLAG_CHAININFO) {
 		if (i % 2) {
 			i++;
 		}
@@ -391,24 +450,20 @@ process_chained_info:
 
 		// Get unwind info from the chained RUNTIME_FUNCTION
 		unwind_info_address = module_address + rz_read_at_le32(buf, rz_offsetof(PE64_RUNTIME_FUNCTION, UnwindInfoAddress));
-		free(info);
-		info = read_unwind_info(dbg, unwind_info_address);
-		if (!info) {
-			return false;
-		}
 
+		RZ_FREE_CUSTOM(info, windows_x64_unwind_info_free);
 		// Make sure we process all the chained unwind ops
 		is_chained = true;
-		goto process_chained_info;
-	}
+	} while (1);
+
 	if (is_machine_frame) {
 		frame->size = machine_frame_start - frame->sp;
 	} else {
 		frame->size = context->rsp - frame->sp;
-		context->rip = read_register(dbg, context->rsp);
+		context->rip = read_register_from_memory(dbg, context->rsp);
 		context->rsp += 8;
 	}
-	free(info);
+	windows_x64_unwind_info_free(info);
 	return true;
 }
 
@@ -506,7 +561,7 @@ static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList /*<RzDebug
 		if (index == rz_vector_len(&functions)) {
 			// Leaf function
 			frame->size = 0;
-			context->rip = read_register(dbg, context->rsp);
+			context->rip = read_register_from_memory(dbg, context->rsp);
 			context->rsp += 8;
 		} else {
 			// Not a leaf function
