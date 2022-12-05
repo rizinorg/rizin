@@ -38,17 +38,18 @@ bool winkd_lock_leave(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 }
 
 int winkd_get_sp(RZ_BORROW RZ_NONNULL WindCtx *ctx) {
-	ut64 ptr = 0;
+	ut8 buf[sizeof(ut64)] = { 0 };
 	// Grab the CmNtCSDVersion field to extract the Service Pack number
-	if (!ctx->read_at_kernel_virtual(ctx->user, ctx->KdDebuggerDataBlock + K_CmNtCSDVersion, (ut8 *)&ptr, 8)) {
+	if (!ctx->read_at_kernel_virtual(ctx->user, ctx->KdDebuggerDataBlock + K_CmNtCSDVersion, buf, sizeof(ut64))) {
 		RZ_LOG_DEBUG("Failed to read at %" PFMT64x "\n", ctx->KdDebuggerDataBlock + K_CmNtCSDVersion);
 		return 0;
 	}
-	ut64 res;
-	if (!ctx->read_at_kernel_virtual(ctx->user, ptr, (ut8 *)&res, 8)) {
+	ut64 ptr = rz_read_le64(buf);
+	if (!ctx->read_at_kernel_virtual(ctx->user, ptr, buf, sizeof(ut64))) {
 		RZ_LOG_DEBUG("Failed to read at %" PFMT64x "\n", ptr);
 		return 0;
 	}
+	ut64 res = rz_read_le64(buf);
 	if (res == UT64_MAX) {
 		return 0;
 	}
