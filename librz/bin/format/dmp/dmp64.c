@@ -46,7 +46,7 @@ static bool rz_bin_dmp64_init_triage(struct rz_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
-static void dmp64_endienness_memory_run(dmp_p_memory_run *run) {
+static void dmp64_memory_run_endian_to_host(dmp_p_memory_run *run) {
 	run->BasePage = rz_read_le64((ut8 *)&run->BasePage);
 	run->PageCount = rz_read_le64((ut8 *)&run->PageCount);
 }
@@ -79,7 +79,7 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	ut64 base = sizeof(dmp64_header);
 	for (i = 0; i < num_runs; i++) {
 		dmp_p_memory_run *run = &runs[i];
-		dmp64_endienness_memory_run(run);
+		dmp64_memory_run_endian_to_host(run);
 		for (j = 0; j < run->PageCount; j++) {
 			dmp_page_desc *page = RZ_NEW0(dmp_page_desc);
 			if (!page) {
@@ -100,13 +100,13 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
-static void dmp64_endienness_memory_desc(dmp64_p_memory_desc *desc) {
+static void dmp64_memory_desc_endian_to_host(dmp64_p_memory_desc *desc) {
 	desc->NumberOfRuns = rz_read_le32((ut8 *)&desc->NumberOfRuns);
 	desc->NumberOfPages = rz_read_le64((ut8 *)&desc->NumberOfPages);
-	dmp64_endienness_memory_run(&desc->Run[0]);
+	dmp64_memory_run_endian_to_host(&desc->Run[0]);
 }
 
-static void dmp64_endienness_windows_exception_record64(struct windows_exception_record64 *rec) {
+static void dmp64_windows_exception_record64_endian_to_host(struct windows_exception_record64 *rec) {
 	rec->exception_code = rz_read_le32((ut8 *)&rec->exception_code);
 	rec->exception_flags = rz_read_le32((ut8 *)&rec->exception_flags);
 	rec->exception_record = rz_read_le64((ut8 *)&rec->exception_record);
@@ -152,10 +152,10 @@ static int rz_bin_dmp64_init_header(struct rz_bin_dmp64_obj_t *obj) {
 
 	if (memcmp(dhdr->PhysicalMemoryBlockBuffer, DMP_UNUSED_MAGIC, 4)) {
 		// it's a valid PhysicalMemoryBlock
-		dmp64_endienness_memory_desc(&dhdr->PhysicalMemoryBlock);
+		dmp64_memory_desc_endian_to_host(&dhdr->PhysicalMemoryBlock);
 	}
 
-	dmp64_endienness_windows_exception_record64(&dhdr->Exception);
+	dmp64_windows_exception_record64_endian_to_host(&dhdr->Exception);
 
 	dhdr->DumpType = rz_read_le32((ut8 *)&dhdr->DumpType);
 	dhdr->RequiredDumpSpace = rz_read_le64((ut8 *)&dhdr->RequiredDumpSpace);
