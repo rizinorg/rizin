@@ -3850,12 +3850,14 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	RzILEffectLabel *int_label = rz_il_effect_label_new("int", EFFECT_LABEL_SYSCALL);
 	int_label->hook = label_int;
 	rz_analysis_il_config_add_label(r, int_label);
+
 	RzILEffectLabel *halt_label = rz_il_effect_label_new("halt", EFFECT_LABEL_SYSCALL);
 	halt_label->hook = label_halt;
+	rz_analysis_il_config_add_label(r, halt_label);
+
 	RzILEffectLabel *port_label = rz_il_effect_label_new("port", EFFECT_LABEL_SYSCALL);
 	port_label->hook = label_port;
-
-	rz_analysis_il_config_add_label(r, halt_label);
+	rz_analysis_il_config_add_label(r, port_label);
 
 	return r;
 }
