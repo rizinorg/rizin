@@ -3809,7 +3809,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins) {
 	rz_return_val_if_fail(analysis && aop && ins, false);
-	if (ins->mnem > X86_INS_ENDING) {
+	if (ins->mnem >= X86_INS_ENDING) {
 		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d", ins->mnem);
 		return false;
 	}
