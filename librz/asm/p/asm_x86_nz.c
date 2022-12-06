@@ -4763,7 +4763,7 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	}
 	// Debug registers
 	if (length == 3 && token[0] == 'd') {
-		for (i = 0; cregs[i]; i++) {
+		for (i = 0; dregs[i]; i++) {
 			if (!rz_str_ncasecmp(dregs[i], token, length)) {
 				*type = (OT_DEBUGREG & OT_REG(i)) | OT_DWORD;
 				return i;
