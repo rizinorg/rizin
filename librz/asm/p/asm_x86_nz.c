@@ -4738,7 +4738,11 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	// Get token (especially the length)
 	size_t nextpos, length;
 	const char *token;
-	getToken(str, pos, &nextpos);
+	if (getToken(str, pos, &nextpos) != TT_WORD) {
+		/* We expect a word, anything else means invalid register */
+		return X86R_UNDEFINED;
+	}
+
 	token = str + *pos;
 	length = nextpos - *pos;
 	*pos = nextpos;
