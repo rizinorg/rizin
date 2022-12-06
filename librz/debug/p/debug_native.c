@@ -1642,6 +1642,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.bits = 0,
 	.arch = 0,
 	.canstep = 0,
+	.arch = "unsupported",
 #ifdef _MSC_VER
 #pragma message("Unsupported architecture")
 #else
