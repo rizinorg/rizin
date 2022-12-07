@@ -929,6 +929,13 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	int stdin_pipe[2] = { -1, -1 };
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
+
+	/* There seems to be no reasonable use case for having pipes when forking
+	using forkpty, hence we will bypass all the pipe creation logic */
+	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
+		goto no_pipes;
+	}
+
 	if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
 		if (rz_sys_pipe(stdin_pipe, true) == -1) {
 			perror("pipe");
@@ -965,29 +972,23 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		proc->stderr_fd = proc->stdout_fd;
 	}
 
+no_pipes:
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
 
 	int master_fd = -1;
 	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
-		if (opt->pty) {
-			/* fork normally for now, use login_tty later with opt->pty */
-			proc->pid = rz_sys_fork();
-			proc->master_fd = master_fd = opt->pty->master_fd;
-		} else {
-			void *term_params = NULL;
+		void *term_params = NULL;
 #if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
-			struct termios t;
-			/* Needed to avoid reading back the writes again from the TTY */
-			tcgetattr(STDIN_FILENO, &t);
-			cfmakeraw(&t);
-			term_params = &t;
+		struct termios t;
+		/* Needed to avoid reading back the writes again from the TTY */
+		tcgetattr(STDIN_FILENO, &t);
+		cfmakeraw(&t);
+		term_params = &t;
 #endif
-			/* Fork to a new PTY if opt->pty is NULL */
-			proc->pid = rz_sys_forkpty(&master_fd, NULL, term_params, NULL);
-			proc->master_fd = master_fd;
-		}
+		proc->pid = rz_sys_forkpty(&master_fd, NULL, term_params, NULL);
+		proc->master_fd = master_fd;
 
 		proc->stderr_fd = (proc->stderr_fd == -1) ? master_fd : proc->stderr_fd;
 		proc->stdout_fd = (proc->stdout_fd == -1) ? master_fd : proc->stdout_fd;
@@ -1006,12 +1007,6 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
-		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
-			if (opt->pty && !rz_subprocess_login_tty(opt->pty)) {
-				RZ_LOG_ERROR("login_tty failed, falling back to normal forking\n");
-			}
-		}
-
 		if (stderr_pipe[1] != -1) {
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
@@ -1405,8 +1400,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.fork_mode = RZ_SUBPROCESS_FORK,
-		.pty = NULL
+		.fork_mode = RZ_SUBPROCESS_FORK
 	};
 	return rz_subprocess_start_opt(&opt);
 }
@@ -1451,11 +1445,11 @@ RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
  * envvars, so envvals[0] specifies the value of the environment variable named
  * envvars[0] and so on.
  * \param env_size Number of environment variables in arrays \p envvars and \p envvals
- * \param pty RzPty instance to use for the slave/child
- * pty == NULL implies a new PTY will be requested and used using openpty
+ *
+ * In forkpty mode, no pipes will be created, and std{in,out,err}_pipe values will be ignored
  */
 RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
+	const char *envvars[], const char *envvals[], size_t env_size) {
 	RzSubprocessOpt opt = {
 		.file = file,
 		.args = args,
@@ -1463,11 +1457,10 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *
 		.envvars = envvars,
 		.envvals = envvals,
 		.env_size = env_size,
-		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-		.fork_mode = RZ_SUBPROCESS_FORK,
-		.pty = pty
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.fork_mode = RZ_SUBPROCESS_FORKPTY
 	};
 	return rz_subprocess_start_opt(&opt);
 }

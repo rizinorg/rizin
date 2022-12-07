@@ -44,8 +44,8 @@ RZ_API int rz_sys_kill(int pid, int sig);
 RZ_API void rz_sys_exit(int status, bool nocleanup);
 
 /* openpty family of functions */
-RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp);
-RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp);
+RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* const struct termios */ *termp, const void /* const struct winsize */ *winp);
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* const struct termios */ *termp, const void /* const struct winsize */ *winp);
 RZ_API int rz_sys_login_tty(int fd);
 
 RZ_API bool rz_is_heap(void *p);
