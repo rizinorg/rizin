@@ -1138,8 +1138,10 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool bytes_enabled = n_bytes != 0;
 
 	/* Check if stdout and stderr are connected to a PTY
-	If yes, then set true if we n_bytes == 0,
-	i.e. waiing for subprocess to end */
+	If yes, then set true if we n_bytes == 0, i.e. waiing for subprocess to end */
+	/* The reason why we care about `n_bytes == 0` is because this flag only matters
+	when we are waiting for the process to die, and hence, the caller is `rz_subprocess_wait`,
+	which passes `n_bytes == 0`. */
 	bool stdout_pty = proc->stdout_fd == proc->master_fd && n_bytes == 0;
 	bool stderr_pty = proc->stderr_fd == proc->master_fd && n_bytes == 0;
 
