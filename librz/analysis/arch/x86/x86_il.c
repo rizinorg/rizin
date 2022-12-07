@@ -2587,6 +2587,9 @@ IL_LIFTER(mul) {
 	}
 
 	rz_warn_if_reached();
+	rz_il_op_pure_free(op);
+	rz_il_op_effect_free(true_cond);
+	rz_il_op_effect_free(false_cond);
 	return NULL;
 }
 
@@ -3806,7 +3809,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins) {
 	rz_return_val_if_fail(analysis && aop && ins, false);
-	if (ins->mnem > X86_INS_ENDING) {
+	if (ins->mnem >= X86_INS_ENDING) {
 		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d", ins->mnem);
 		return false;
 	}
@@ -3847,12 +3850,14 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	RzILEffectLabel *int_label = rz_il_effect_label_new("int", EFFECT_LABEL_SYSCALL);
 	int_label->hook = label_int;
 	rz_analysis_il_config_add_label(r, int_label);
+
 	RzILEffectLabel *halt_label = rz_il_effect_label_new("halt", EFFECT_LABEL_SYSCALL);
 	halt_label->hook = label_halt;
+	rz_analysis_il_config_add_label(r, halt_label);
+
 	RzILEffectLabel *port_label = rz_il_effect_label_new("port", EFFECT_LABEL_SYSCALL);
 	port_label->hook = label_port;
-
-	rz_analysis_il_config_add_label(r, halt_label);
+	rz_analysis_il_config_add_label(r, port_label);
 
 	return r;
 }
