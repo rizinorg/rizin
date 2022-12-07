@@ -969,15 +969,6 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
 
-	void *term_params = NULL;
-#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
-	struct termios t;
-	/* Needed to avoid reading back the writes again from the TTY */
-	tcgetattr(STDIN_FILENO, &t);
-	cfmakeraw(&t);
-	term_params = &t;
-#endif
-
 	int master_fd = -1;
 	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 		if (opt->pty) {
@@ -985,18 +976,24 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 			proc->pid = rz_sys_fork();
 			proc->master_fd = master_fd = opt->pty->master_fd;
 		} else {
+			void *term_params = NULL;
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
+			struct termios t;
+			/* Needed to avoid reading back the writes again from the TTY */
+			tcgetattr(STDIN_FILENO, &t);
+			cfmakeraw(&t);
+			term_params = &t;
+#endif
 			/* Fork to a new PTY if opt->pty is NULL */
 			proc->pid = rz_sys_forkpty(&master_fd, NULL, term_params, NULL);
 			proc->master_fd = master_fd;
 		}
-	} else {
-		proc->pid = rz_sys_fork();
-	}
 
-	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 		proc->stderr_fd = (proc->stderr_fd == -1) ? master_fd : proc->stderr_fd;
 		proc->stdout_fd = (proc->stdout_fd == -1) ? master_fd : proc->stdout_fd;
 		proc->stdin_fd = (proc->stdin_fd == -1) ? master_fd : proc->stdin_fd;
+	} else {
+		proc->pid = rz_sys_fork();
 	}
 
 	if (proc->pid == -1) {
@@ -1012,11 +1009,9 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 			if (opt->pty && !rz_subprocess_login_tty(opt->pty)) {
 				RZ_LOG_ERROR("login_tty failed, falling back to normal forking\n");
-				goto normal;
 			}
 		}
 
-	normal:
 		if (stderr_pipe[1] != -1) {
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
