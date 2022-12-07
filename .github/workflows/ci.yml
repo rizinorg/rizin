@@ -412,7 +412,6 @@ jobs:
     name: Build on gcc 11 ASAN
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'gcc11') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-22.04
-    container: ubuntu:jammy
     timeout-minutes: 120
     steps:
       - name: Set timezone to UTC
