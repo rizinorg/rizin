@@ -415,17 +415,17 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Set timezone to UTC
-        run: ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo 'UTC' > /etc/timezone
+        run: sudo ln -snf /usr/share/zoneinfo/UTC /etc/localtime && sudo echo 'UTC' > /etc/timezone
       - name: Install tools
-        run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+        run: sudo apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
       - name: Install python and other dependencies
-        run: apt-get install --yes python3-wheel python3-setuptools python3-pip
+        run: sudo apt-get install --yes python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
-        run: pip3 install meson ninja PyYAML
+        run: sudo pip3 install meson ninja PyYAML
       - name: Install test dependencies
         run: |
-          pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
-          apt-get install --yes tzdata
+          sudo pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+          sudo apt-get install --yes tzdata
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
