@@ -246,3 +246,44 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb
 	}
 	return t;
 }
+
+/**
+ * \brief Recursively resolve a typedef to its pointed-to type
+ *
+ * The case where the typedef chain contains a loop, meaning a typedef eventually points
+ * to itself, is safely handled here and NULL is returned.
+ *
+ * \param btype a base type that must be of kind RZ_TYPE_KIND_TYPEDEF
+ * \return the first non-typedef type in the chain started by \p btype, or NULL on error or if there is a loop
+ */
+RZ_API RZ_BORROW RzType *rz_type_db_base_type_unwrap_typedef(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, NULL);
+	RzPVector visited_btypes; // for detecting self-referential typedefs (maybe in multiple steps)
+	rz_pvector_init(&visited_btypes, NULL);
+	RzType *ttype;
+	while (true) {
+		if (rz_pvector_contains(&visited_btypes, (void *)btype)) {
+			// loop detected
+			ttype = NULL;
+			goto end;
+		}
+		ttype = btype->type;
+		rz_return_val_if_fail(ttype, NULL);
+		if (ttype->kind != RZ_TYPE_KIND_IDENTIFIER) {
+			goto end;
+		}
+		RzBaseType *next_btype = rz_type_db_get_base_type(typedb, ttype->identifier.name);
+		if (!next_btype || next_btype->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
+			goto end;
+		}
+		// push to the vector as late as possible to avoid heap usage if possible
+		if (!rz_pvector_push(&visited_btypes, (void *)btype)) {
+			ttype = NULL;
+			goto end;
+		}
+		btype = next_btype;
+	}
+end:
+	rz_pvector_fini(&visited_btypes);
+	return ttype;
+}

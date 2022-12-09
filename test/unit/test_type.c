@@ -1023,6 +1023,64 @@ bool test_addr_bits(void) {
 	mu_end;
 }
 
+bool test_typedef_loop(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// Test typedefs with loops. This makes no sense in practice, but
+	// it is hard to guarantee that it will never happen.
+	//
+	// Test case:
+	//
+	// La --> Te --> Ra --> Lus
+	//        ^               |
+	//        |               |
+	//        \_______________/
+
+	RzBaseType *btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Lus");
+	btype->type = RZ_NEW0(RzType);
+	btype->type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	btype->type->identifier.name = strdup("Te");
+	rz_type_db_save_base_type(typedb, btype);
+	RzBaseType *prev = btype;
+
+	btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Ra");
+	btype->type = rz_type_identifier_of_base_type(typedb, prev, false);
+	rz_type_db_save_base_type(typedb, btype);
+	prev = btype;
+
+	btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Te");
+	btype->type = rz_type_identifier_of_base_type(typedb, prev, false);
+	rz_type_db_save_base_type(typedb, btype);
+	prev = btype;
+
+	btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("La");
+	btype->type = rz_type_identifier_of_base_type(typedb, prev, false);
+	rz_type_db_save_base_type(typedb, btype);
+
+	RzType *ttype = rz_type_identifier_of_base_type(typedb, btype, false);
+	mu_assert_notnull(ttype, "identifier");
+
+	// -- try all kinds of operations that may have issues with the loop created above
+
+	ut64 sz = rz_type_db_base_get_bitsize(typedb, btype);
+	mu_assert_eq(sz, 0, "no size");
+
+	char *str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, -1);
+	mu_assert_streq_free(str, "typedef Te La;", "pretty str");
+
+	str = rz_base_type_as_format(typedb, btype);
+	mu_assert_streq_free(str, "", "format");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_types_get_base_type_struct);
 	mu_run_test(test_types_get_base_type_union);
@@ -1044,6 +1102,7 @@ int all_tests() {
 	mu_run_test(test_edit_types);
 	mu_run_test(test_references);
 	mu_run_test(test_addr_bits);
+	mu_run_test(test_typedef_loop);
 	return tests_passed != tests_run;
 }
 
