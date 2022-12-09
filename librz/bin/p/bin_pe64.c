@@ -4,6 +4,34 @@
 #define RZ_BIN_PE64 1
 #include "bin_pe.inc"
 
+// equivalent of PE64_UNWIND_INFO but endian-free
+typedef struct windows_x64_unwind_info_t {
+	ut8 Version; // : 3;
+	ut8 Flags; // : 5;
+	ut8 SizeOfProlog;
+	ut8 CountOfCodes;
+	ut8 FrameRegister; // : 4;
+	ut8 FrameOffset; // : 4;
+} WinUnwindInfo;
+
+static bool windows_unwind_info_read(WinUnwindInfo *info, RzBuffer *b, ut64 at) {
+	ut8 tmp[sizeof(PE64_UNWIND_INFO)] = { 0 };
+
+	if (!rz_buf_read_at(b, at, tmp, sizeof(tmp))) {
+		return false;
+	}
+
+	// The ordering of bits in C bitfields is implementation defined.
+	// this ensures the endianness (here is little endian) is kept
+	info->Version = tmp[0] & 0x07;
+	info->Flags = tmp[0] >> 3;
+	info->SizeOfProlog = tmp[1];
+	info->CountOfCodes = tmp[2];
+	info->FrameRegister = tmp[3] & 0x0F;
+	info->FrameOffset = tmp[3] >> 4;
+	return true;
+}
+
 static bool check_buffer(RzBuffer *b) {
 	ut64 length = rz_buf_size(b);
 	if (length <= 0x3d) {
@@ -462,8 +490,8 @@ static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 		if (unwind_data_paddr > unwind_data_section->paddr + unwind_data_section->size) {
 			continue;
 		}
-		PE64_UNWIND_INFO info;
-		suc = rz_buf_read_at(bin->b, unwind_data_paddr, (ut8 *)&info, sizeof(info));
+		WinUnwindInfo info;
+		suc = windows_unwind_info_read(&info, bin->b, unwind_data_paddr);
 		if (!suc || info.Version != 1 || (!(info.Flags & PE64_UNW_FLAG_EHANDLER) && !(info.Flags & PE64_UNW_FLAG_CHAININFO))) {
 			continue;
 		}
@@ -484,7 +512,7 @@ static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 					break;
 				}
 				unwind_data_paddr = rva_to_paddr(unwind_data_section, rfcn.UnwindData);
-				suc = rz_buf_read_at(bin->b, unwind_data_paddr, (ut8 *)&info, sizeof(info));
+				suc = windows_unwind_info_read(&info, bin->b, unwind_data_paddr);
 				if (!suc || info.Version != 1) {
 					break;
 				}

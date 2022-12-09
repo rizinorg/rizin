@@ -42,16 +42,6 @@ jobs:
             - binutils-x86-64-linux-gnu
             - binutils-powerpc64le-linux-gnu
 
-  allow_failures:
-    # Linux with GCC on System Z
-    - os: linux
-      arch: s390x
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_X86_AS=x86_64-w64-mingw32-as
-      addons:
-        apt:
-          packages:
-            - binutils-mingw-w64-x86-64
-
 cache:
   - ccache
 
