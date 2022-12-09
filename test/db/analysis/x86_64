@@ -4509,3 +4509,27 @@ addr    size jump    fail
 0xa3de6 23   -1      -1
 EOF
 RUN
+
+NAME=X86_INSTR_POP wrong order
+FILE==
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=64
+aei
+aeim
+ar rdi=0x178000
+ar rsp=rdi-0x30
+wa "push rbp ; mov rbp,rsp ;  lea rsp,[rdi+8] ; push rsp; pop rsp ; push 0x1337 ; pop qword ptr [rsp] ; pop qword ptr [rsp] ; pop qword ptr [rsp] ; pop qword ptr [rsp] ; mov rsp,rbp ; pop rbp ; ret"
+13aes
+pxQ 0x28 @ 0+rdi
+EOF
+EXPECT=<<EOF
+0x00178000 0x0000000000001337 rax+4919
+0x00178008 0x0000000000001337 rax+4919
+0x00178010 0x0000000000001337 rax+4919
+0x00178018 0x0000000000001337 rax+4919
+0x00178020 0x0000000000001337 rax+4919
+EOF
+RUN
+
