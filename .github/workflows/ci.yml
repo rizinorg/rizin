@@ -464,7 +464,7 @@ jobs:
           ASAN: true
           ASAN_OPTIONS: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
 
-  test-ubuntu-20.04-debug:
+  test-ubuntu-focal-debug:
     name: Run debug tests on Ubuntu 20.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debug') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
