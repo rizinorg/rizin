@@ -348,7 +348,7 @@ RZ_API void rz_pvector_free(RzPVector *vec) {
 	free(vec);
 }
 
-RZ_API void **rz_pvector_contains(RzPVector *vec, void *x) {
+RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 	rz_return_val_if_fail(vec, NULL);
 	size_t i;
 	for (i = 0; i < vec->v.len; i++) {
