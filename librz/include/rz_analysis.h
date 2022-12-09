@@ -1629,8 +1629,7 @@ RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_OWN RzType *type,
 RZ_API bool rz_analysis_type_unlink(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_type_unlink_all(RzAnalysis *analysis);
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_type_links(RzAnalysis *analysis);
-RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_links_by_offset(RzAnalysis *analysis, ut64 offset);
-RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr);
+RZ_API RZ_OWN RzList /*<RzTypePathTuple *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr);
 
 /* project */
 RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);
