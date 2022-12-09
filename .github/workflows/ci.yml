@@ -467,7 +467,7 @@ jobs:
   test-ubuntu-20.04-debug:
     name: Run debug tests on Ubuntu 20.04
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debug') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
       - name: Install meson and ninja
