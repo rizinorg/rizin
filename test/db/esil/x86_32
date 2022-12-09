@@ -2434,3 +2434,26 @@ aes
 ar eflags
 EOF
 RUN
+
+NAME=X86_INSTR_POP wrong order
+FILE==
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=32
+aei
+aeim
+ar edi=0x178000
+ar esp=edi-0x30
+wa "push ebp ; mov ebp,esp ; lea esp,[edi+8] ; push esp; pop esp ; push 0x1337 ; pop word ptr [esp] ; pop word ptr [esp] ; pop word ptr [esp] ; pop word ptr [esp] ; mov esp,ebp ; pop ebp ; ret"
+13aes
+pxW 20 @ 4+edi
+EOF
+EXPECT=<<EOF
+0x00178004 0x00001337 oeax+4919
+0x00178008 0x00001337 oeax+4919
+0x0017800c 0x00001337 oeax+4919
+0x00178010 0x00001337 oeax+4919
+0x00178014 0x00001337 oeax+4919
+EOF
+RUN
