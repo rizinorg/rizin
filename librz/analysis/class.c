@@ -86,7 +86,9 @@ RZ_API RzAnalysisClassErr rz_analysis_class_create(RzAnalysis *analysis, const c
 	if (!sdb_exists(analysis->sdb_classes, key)) {
 		sdb_set(analysis->sdb_classes, key, "c", 0);
 		RzEventClass event = { .name = name_sanitized };
-		rz_event_send(analysis->ev, RZ_EVENT_CLASS_NEW, &event);
+		if (analysis->ev) {
+			rz_event_send(analysis->ev, RZ_EVENT_CLASS_NEW, &event);
+		}
 	} else {
 		err = RZ_ANALYSIS_CLASS_ERR_CLASH;
 	}
@@ -155,7 +157,9 @@ RZ_API void rz_analysis_class_delete(RzAnalysis *analysis, const char *name) {
 	}
 
 	RzEventClass event = { .name = class_name_sanitized };
-	rz_event_send(analysis->ev, RZ_EVENT_CLASS_DEL, &event);
+	if (analysis->ev) {
+		rz_event_send(analysis->ev, RZ_EVENT_CLASS_DEL, &event);
+	}
 
 	free(class_name_sanitized);
 }
@@ -265,7 +269,9 @@ RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const c
 		.name_old = old_name_sanitized,
 		.name_new = new_name_sanitized
 	};
-	rz_event_send(analysis->ev, RZ_EVENT_CLASS_RENAME, &event);
+	if (analysis->ev) {
+		rz_event_send(analysis->ev, RZ_EVENT_CLASS_RENAME, &event);
+	}
 
 beach:
 	free(old_name_sanitized);
@@ -338,7 +344,9 @@ static RzAnalysisClassErr rz_analysis_class_set_attr_raw(RzAnalysis *analysis, c
 			.attr_id = attr_id },
 		.content = content
 	};
-	rz_event_send(analysis->ev, RZ_EVENT_CLASS_ATTR_SET, &event);
+	if (analysis->ev) {
+		rz_event_send(analysis->ev, RZ_EVENT_CLASS_ATTR_SET, &event);
+	}
 
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
@@ -392,7 +400,9 @@ static RzAnalysisClassErr rz_analysis_class_delete_attr_raw(RzAnalysis *analysis
 		.attr_type = attr_type,
 		.attr_id = attr_id
 	};
-	rz_event_send(analysis->ev, RZ_EVENT_CLASS_ATTR_DEL, &event);
+	if (analysis->ev) {
+		rz_event_send(analysis->ev, RZ_EVENT_CLASS_ATTR_DEL, &event);
+	}
 
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
@@ -467,7 +477,9 @@ static RzAnalysisClassErr rz_analysis_class_rename_attr_raw(RzAnalysis *analysis
 			.attr_id = attr_id_old },
 		.attr_id_new = attr_id_new
 	};
-	rz_event_send(analysis->ev, RZ_EVENT_CLASS_ATTR_RENAME, &event);
+	if (analysis->ev) {
+		rz_event_send(analysis->ev, RZ_EVENT_CLASS_ATTR_RENAME, &event);
+	}
 
 	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
