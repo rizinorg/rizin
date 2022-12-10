@@ -891,7 +891,17 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL RzSubprocessOpt *opt) {
+	rz_return_val_if_fail(opt, NULL);
+
+	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
+		/* Check that we are not using any pipes in forkpty mode */
+		/* Separate assertions for better warning */
+		rz_return_val_if_fail(opt->stderr_pipe == RZ_SUBPROCESS_PIPE_NONE, NULL);
+		rz_return_val_if_fail(opt->stdout_pipe == RZ_SUBPROCESS_PIPE_NONE, NULL);
+		rz_return_val_if_fail(opt->stdin_pipe == RZ_SUBPROCESS_PIPE_NONE, NULL);
+	}
+
 	RzSubprocess *proc = NULL;
 	char **child_env = NULL;
 	char **argv = calloc(opt->args_size + 2, sizeof(char *));

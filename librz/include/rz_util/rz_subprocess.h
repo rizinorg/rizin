@@ -96,7 +96,7 @@ RZ_API void rz_subprocess_fini(void);
 RZ_API RzSubprocess *rz_subprocess_start(
 	const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size);
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt);
+RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL RzSubprocessOpt *opt);
 RZ_API void rz_subprocess_free(RzSubprocess *proc);
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms);
 RZ_API void rz_subprocess_kill(RzSubprocess *proc);
