@@ -464,6 +464,37 @@ jobs:
           ASAN: true
           ASAN_OPTIONS: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
 
+  test-ubuntu-focal-debug:
+    name: Run debug tests on Ubuntu 20.04
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debug') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    runs-on: ubuntu-20.04
+    timeout-minutes: 45
+    steps:
+      - name: Install meson and ninja
+        run: sudo pip3 install meson ninja
+      - name: Checkout rizin
+        run: |
+          git clone https://github.com/${{ github.repository }}
+          cd rizin
+          git fetch origin ${{ github.ref }}
+          git checkout -b local_branch FETCH_HEAD
+      - name: Checkout our Testsuite Binaries
+        run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+        working-directory: rizin
+      - name: Build with Meson + Ninja
+        run: meson --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
+        working-directory: rizin
+        env:
+          CFLAGS: -Wno-cpp
+      - name: Install with Ninja
+        run: sudo ninja -C build install
+        working-directory: rizin
+      - name: Run debug tests
+        run: |
+          cd test
+          rz-test -L -o results.json db/archos/linux-x64
+        working-directory: rizin
+
   build-static:
     name: Build static
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
