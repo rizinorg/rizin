@@ -1000,9 +1000,9 @@ no_pipes:
 		proc->pid = rz_sys_forkpty(&master_fd, NULL, term_params, NULL);
 		proc->master_fd = master_fd;
 
-		proc->stderr_fd = (proc->stderr_fd == -1) ? master_fd : proc->stderr_fd;
-		proc->stdout_fd = (proc->stdout_fd == -1) ? master_fd : proc->stdout_fd;
-		proc->stdin_fd = (proc->stdin_fd == -1) ? master_fd : proc->stdin_fd;
+		proc->stderr_fd = master_fd;
+		proc->stdout_fd = master_fd;
+		proc->stdin_fd = master_fd;
 	} else {
 		proc->pid = rz_sys_fork();
 	}
@@ -1142,13 +1142,9 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool timedout = true;
 	bool bytes_enabled = n_bytes != 0;
 
-	/* Check if stdout and stderr are connected to a PTY
-	If yes, then set true if we n_bytes == 0, i.e. waiing for subprocess to end */
-	/* The reason why we care about `n_bytes == 0` is because this flag only matters
-	when we are waiting for the process to die, and hence, the caller is `rz_subprocess_wait`,
-	which passes `n_bytes == 0`. */
-	bool stdout_pty = proc->stdout_fd == proc->master_fd && n_bytes == 0;
-	bool stderr_pty = proc->stderr_fd == proc->master_fd && n_bytes == 0;
+	/* Check if stdout and stderr are connected to a PTY */
+	bool stdout_pty = proc->stdout_fd == proc->master_fd;
+	bool stderr_pty = proc->stderr_fd == proc->master_fd;
 
 	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
 		fd_set rfds;
