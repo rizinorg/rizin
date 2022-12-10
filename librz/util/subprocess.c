@@ -891,7 +891,47 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL RzSubprocessOpt *opt) {
+static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[]) {
+	if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
+		if (rz_sys_pipe(stdin_pipe, true) == -1) {
+			perror("pipe");
+			return false;
+		}
+		proc->stdin_fd = stdin_pipe[1];
+	}
+
+	if (opt->stdout_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
+		if (rz_sys_pipe(stdout_pipe, true) == -1) {
+			perror("pipe");
+			return false;
+		}
+		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			return false;
+		}
+		proc->stdout_fd = stdout_pipe[0];
+	}
+
+	if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
+		if (rz_sys_pipe(stderr_pipe, true) == -1) {
+			perror("pipe");
+			return false;
+		}
+		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			return false;
+		}
+		proc->stderr_fd = stderr_pipe[0];
+	} else if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_STDOUT) {
+		stderr_pipe[0] = stdout_pipe[0];
+		stderr_pipe[1] = stdout_pipe[1];
+		proc->stderr_fd = proc->stdout_fd;
+	}
+
+	return true;
+}
+
+RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	rz_return_val_if_fail(opt, NULL);
 
 	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
@@ -942,47 +982,10 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL RzSubprocessOpt *opt) {
 
 	/* There seems to be no reasonable use case for having pipes when forking
 	using forkpty, hence we will bypass all the pipe creation logic */
-	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
-		goto no_pipes;
+	if (opt->fork_mode != RZ_SUBPROCESS_FORKPTY && !init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe)) {
+		goto error;
 	}
 
-	if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stdin_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		proc->stdin_fd = stdin_pipe[1];
-	}
-
-	if (opt->stdout_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stdout_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-			perror("fcntl");
-			goto error;
-		}
-		proc->stdout_fd = stdout_pipe[0];
-	}
-
-	if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stderr_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-			perror("fcntl");
-			goto error;
-		}
-		proc->stderr_fd = stderr_pipe[0];
-	} else if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_STDOUT) {
-		stderr_pipe[0] = stdout_pipe[0];
-		stderr_pipe[1] = stdout_pipe[1];
-		proc->stderr_fd = proc->stdout_fd;
-	}
-
-no_pipes:
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
