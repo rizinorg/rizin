@@ -2449,11 +2449,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.cmt.il
+NAME=asm.cmt.rzil
 FILE=bins/prg/t01.prg
 ARGS=-F prg
 CMDS=<<EOF
-e asm.cmt.il=1
+e asm.cmt.rzil=1
 e asm.cmt.right=0
 pd 3 @ 0x80e
 ?e --

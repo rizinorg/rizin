@@ -22,7 +22,7 @@
 #define COLOR_RESET(ds)        COLOR_CONST(ds, RESET)
 
 #define DS_ANALYSIS_OP_MASK (RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL | \
-	RZ_ANALYSIS_OP_MASK_VAL | (ds->show_cmt_il ? RZ_ANALYSIS_OP_MASK_IL : 0))
+	RZ_ANALYSIS_OP_MASK_VAL | (ds->show_cmt_rzil ? RZ_ANALYSIS_OP_MASK_IL : 0))
 
 // ugly globals but meh
 static ut64 emustack_min = 0LL;
@@ -171,7 +171,7 @@ typedef struct {
 	bool show_calls;
 	bool show_cmtflgrefs;
 	bool show_cmt_esil;
-	bool show_cmt_il;
+	bool show_cmt_rzil;
 	bool show_cycles;
 	bool show_refptr;
 	bool show_stackptr;
@@ -792,7 +792,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_family = rz_config_get_b(core->config, "asm.family");
 	ds->cmtcol = rz_config_get_i(core->config, "asm.cmt.col");
 	ds->show_cmt_esil = rz_config_get_b(core->config, "asm.cmt.esil");
-	ds->show_cmt_il = rz_config_get_b(core->config, "asm.cmt.il");
+	ds->show_cmt_rzil = rz_config_get_b(core->config, "asm.cmt.rzil");
 	ds->show_cmtflgrefs = rz_config_get_b(core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = rz_config_get_b(core->config, "asm.cycles");
 	ds->show_stackptr = rz_config_get_b(core->config, "asm.stackptr");
@@ -4326,8 +4326,8 @@ static void ds_print_cmt_esil(RzDisasmState *ds) {
 	ds_comment(ds, true, "; %s", esil);
 }
 
-static void ds_print_cmt_il(RzDisasmState *ds) {
-	if (!ds->show_cmt_il || !ds->analysis_op.il_op) {
+static void ds_print_cmt_rzil(RzDisasmState *ds) {
+	if (!ds->show_cmt_rzil || !ds->analysis_op.il_op) {
 		return;
 	}
 	RzStrBuf sb;
@@ -5568,7 +5568,7 @@ toro:
 			ds_show_refs(ds);
 			ds_build_op_str(ds, false);
 			ds_print_cmt_esil(ds);
-			ds_print_cmt_il(ds);
+			ds_print_cmt_rzil(ds);
 			ds_print_ptr(ds, len + 256, idx);
 			ds_print_sysregs(ds);
 			ds_print_fcn_name(ds);
@@ -5685,7 +5685,7 @@ toro:
 			ds_cdiv_optimization(ds);
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_cmt_esil(ds);
-				ds_print_cmt_il(ds);
+				ds_print_cmt_rzil(ds);
 				ds_print_ptr(ds, len + 256, idx);
 				ds_print_sysregs(ds);
 				ds_print_fcn_name(ds);
