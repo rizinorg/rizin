@@ -745,6 +745,8 @@ bool test_rz_str_isXutf8(void) {
 	mu_assert_false(rz_str_isXutf8(broken_u4, 4), "Broken 4 byte UTF-8");
 	mu_assert_false(rz_str_isXutf8(null, 4), "0x00 checks");
 	mu_assert_false(rz_str_isXutf8(ascii, 5), "Invalid UTF-8 length");
+
+	mu_end;
 }
 
 bool test_rz_str_extract_printable(void) {

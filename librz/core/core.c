@@ -2025,11 +2025,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 			case 2:
 				r = rz_utf8_encode_str((const RzRune *)buf, widebuf, sizeof(widebuf) - 1);
 				if (r == -1) {
-<<<<<<< HEAD
 					RZ_LOG_ERROR("core: something was wrong with refs\n");
-=======
-					RZ_LOG_ERROR("Something was wrong with refs\n");
->>>>>>> 1222d09384 (Rearrange functions and remove "currently" unused functions)
 				} else {
 					if (pj) {
 						pj_ks(pj, "string", (const char *)widebuf);
@@ -3906,7 +3902,7 @@ static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *)user;
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
 	preludecnt++;
 	return 1;
 }

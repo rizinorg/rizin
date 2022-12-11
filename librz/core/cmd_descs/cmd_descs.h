@@ -59,9 +59,13 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv);
 // "..("
 RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv);
+// "/"
 RZ_IPI RzCmdStatus rz_cmd_search_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/x"
 RZ_IPI RzCmdStatus rz_cmd_search_hex_string_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/a"
 RZ_IPI RzCmdStatus rz_cmd_search_assembly_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "R"
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 // "R<"
 RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **argv);

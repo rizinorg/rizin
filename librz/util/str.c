@@ -2366,10 +2366,13 @@ RZ_API void rz_str_filter(char *str) {
 }
 
 /**
- * \brief Extract all printable characters in \p str, and return a string of maximum length \p len
+ * \brief Extract all printable characters in \p str, and return a string of length \p len
  * 
  * \param str String to extract printable characters from
- * \param len The maximum length of the resulting string
+ * \param len The length of the resulting string
+ * \p len is the length, excluding the NULL terminator
+ * If the number of printable characters in \p str is less than \p len,
+ * then the resulting string will also be of length less than \p len
  * \return char* Extracted printable string
  */
 RZ_API RZ_OWN char *rz_str_extract_printable(RZ_NONNULL const char *str, int len) {
@@ -2379,9 +2382,13 @@ RZ_API RZ_OWN char *rz_str_extract_printable(RZ_NONNULL const char *str, int len
 		return NULL;
 	}
 	int i;
-	for (i = 0, r = res; i < len; str++, i++) {
+	for (i = 0, r = res; i < len; str++) {
+		if (*str == 0) {
+			break;
+		}
 		if (IS_PRINTABLE(*str)) {
 			*r++ = *str;
+			i++;
 		}
 	}
 	*r = 0;

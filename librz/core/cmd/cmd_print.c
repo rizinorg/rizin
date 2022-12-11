@@ -631,6 +631,36 @@ static const ut32 colormap[256] = {
 	0xffffff,
 };
 
+static void incAlphaBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isalpha(buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
+static void incDigitBuffer(ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i]++;
+		if (buf[i] && isdigit(buf[i])) {
+			break;
+		}
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
 // colordump
 static void cmd_prc(RzCore *core, const ut8 *block, int len) {
 	const char *chars = " .,:;!O@#";

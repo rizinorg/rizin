@@ -195,15 +195,7 @@ RZ_API char *rz_str_dup(char *ptr, const char *string);
 RZ_API int rz_str_delta(char *p, char a, char b);
 RZ_API void rz_str_filter(char *str);
 RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);
-<<<<<<< HEAD
-RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y);
-=======
-RZ_API wchar_t *rz_str_mb_to_wc(const char *buf);
-RZ_API char *rz_str_wc_to_mb(const wchar_t *buf);
-RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len);
-RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len);
 RZ_API const char *rz_str_str_xy(RZ_NONNULL const char *s, RZ_NONNULL const char *word, const char *prev, RZ_NONNULL int *x, RZ_NONNULL int *y);
->>>>>>> 04ffa57ecf (Add `RZ_NONNULL` decoration for function arguments in `str.c`)
 
 typedef void (*str_operation)(char *c);
 
@@ -263,11 +255,7 @@ RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep);
 RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep);
-<<<<<<< HEAD
-RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width);
-=======
-RZ_API RzList *rz_str_wrap(RZ_NONNULL char *str, size_t width);
->>>>>>> 04ffa57ecf (Add `RZ_NONNULL` decoration for function arguments in `str.c`)
+RZ_API RzList /*<char *>*/ *rz_str_wrap(RZ_NONNULL char *str, size_t width);
 
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
