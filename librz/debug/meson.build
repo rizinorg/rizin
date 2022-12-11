@@ -2,7 +2,6 @@ debug_plugins_list = [
   'bf',
   'bochs',
   'dmp',
-  'esil',
   'gdb',
   'io',
   'null',
@@ -44,7 +43,6 @@ rz_debug_sources = [
   'p/debug_bf.c',
   'p/debug_bochs.c',
   'p/debug_dmp.c',
-  'p/debug_esil.c',
   'p/debug_gdb.c',
   'p/debug_io.c',
   'p/debug_null.c',
@@ -62,7 +60,6 @@ rz_debug_sources = [
 
 rz_debug_deps = [
   dependency('rzgdb'),
-  dependency('rzbochs'),
   dependency('rzwinkd'),
   rz_util_dep,
   rz_cons_dep,

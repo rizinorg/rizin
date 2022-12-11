@@ -227,7 +227,7 @@ RZ_API ut64 rz_reg_get_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role);
 RZ_API bool rz_reg_set_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role, ut64 value);
 
 /* byte arena */
-RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size);
+RZ_API RZ_OWN ut8 *rz_reg_get_bytes(RZ_NONNULL RzReg *reg, int type, RZ_NULLABLE int *size);
 RZ_API bool rz_reg_set_bytes(RzReg *reg, int type, const ut8 *buf, const int len);
 RZ_API bool rz_reg_read_regs(RzReg *reg, ut8 *buf, const int len);
 RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str);

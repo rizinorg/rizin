@@ -27,6 +27,7 @@ sign: false
 type: mov
 cycles: 1
 esil: 0,0xc,rbp,-,=[4]
+rzil: (storew 0 (+ (var rbp) (bv 64 0xfffffffffffffff4)) (bv 32 0x0))
 direction: write
 family: cpu
 stackop: set
@@ -40,6 +41,27 @@ stackptr: 8
     "mnemonic": "mov",
     "mask": "ffffffffffffff",
     "esil": "0,0xc,rbp,-,=[4]",
+    "rzil": {
+      "opcode": "storew",
+      "mem": 0,
+      "key": {
+        "opcode": "+",
+        "x": {
+          "opcode": "var",
+          "value": "rbp"
+        },
+        "y": {
+          "opcode": "bitv",
+          "bits": "0xfffffffffffffff4",
+          "len": 64
+        }
+      },
+      "value": {
+        "opcode": "bitv",
+        "bits": "0x0",
+        "len": 32
+      }
+    },
     "sign": false,
     "prefix": 0,
     "id": 449,

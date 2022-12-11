@@ -647,21 +647,22 @@ beach:
 	return;
 }
 
-static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath *tpath, ut64 laddr, ut64 at, int offimm) {
+static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePathTuple *tpath, ut64 laddr, ut64 at, int offimm) {
 	rz_return_if_fail(core && op && tpath);
-	if (tpath->typ->kind != RZ_TYPE_KIND_IDENTIFIER) {
+	if (tpath->root->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	char *cmt = (offimm == 0) ? strdup(tpath->path) : rz_type_as_string(core->analysis->typedb, tpath->typ);
+	char *cmt = (offimm == 0) ? strdup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
 		// possible member offset and the type linked to the laddr
 		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
 		if (paths && rz_list_length(paths)) {
-			RzTypePath *link = rz_list_get_top(paths);
-			rz_analysis_hint_set_offset(core->analysis, at, link->path);
+			RzTypePathTuple *link = rz_list_get_top(paths);
+			rz_analysis_hint_set_offset(core->analysis, at, link->path->path);
 		}
+		rz_list_free(paths);
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
 	}
@@ -685,33 +686,37 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
 	// TODO: Handle register based arg for struct offset propgation
 	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->kind != 'r') {
-		RzTypePath *vlink = rz_list_get_top(vlinks);
+		RzTypePathTuple *vlink = rz_list_get_top(vlinks);
 		// FIXME: For now we only propagate simple type identifiers,
 		// no pointers or arrays
-		if (vlink->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
-			if (!vlink->typ->identifier.name) {
+		if (vlink->root->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			if (!vlink->root->identifier.name) {
 				rz_warn_if_reached();
 				return;
 			}
-			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->typ->identifier.name);
+			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->root->identifier.name);
 			if (varbtype) {
 				// if a var addr matches with struct , change it's type and name
 				// var int local_e0h --> var struct foo
 				// if (strcmp(var->name, vlink) && !*resolved) {
 				if (!*resolved) {
 					*resolved = true;
-					rz_analysis_var_set_type(ctx->var, vlink->typ, true);
-					rz_analysis_var_rename(ctx->var, vlink->typ->identifier.name, false);
+					rz_analysis_var_set_type(ctx->var, vlink->root, true);
+					rz_analysis_var_rename(ctx->var, vlink->root->identifier.name, false);
+					vlink->root = NULL;
 				}
 			}
 		}
 	} else if (slinks && rz_list_length(slinks)) {
-		RzTypePath *slink = rz_list_get_top(slinks);
+		RzTypePathTuple *slink = rz_list_get_top(slinks);
 		set_offset_hint(core, ctx->aop, slink, ctx->src_addr, at - ret, ctx->src_imm);
 	} else if (dlinks && rz_list_length(dlinks)) {
-		RzTypePath *dlink = rz_list_get_top(dlinks);
+		RzTypePathTuple *dlink = rz_list_get_top(dlinks);
 		set_offset_hint(core, ctx->aop, dlink, ctx->dst_addr, at - ret, ctx->dst_imm);
 	}
+	rz_list_free(slinks);
+	rz_list_free(dlinks);
+	rz_list_free(vlinks);
 }
 
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {

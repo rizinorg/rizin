@@ -95,7 +95,7 @@ RZ_API void rz_bv_free(RZ_NULLABLE RzBitVector *bv) {
  * \param bv RzBitVector, pointer to bitvector
  * \return str char*, bitvector string
  */
-RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL const RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
 	char *str = (char *)malloc(bv->len + 1);
@@ -118,7 +118,7 @@ RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL RzBitVector *bv) {
  * \param pad whether to prepend leading zeroes to indicate the bitvector size
  * \return str char*, bitvector string in hexadecimal format
  */
-RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL RzBitVector *bv, bool pad) {
+RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL const RzBitVector *bv, bool pad) {
 	rz_return_val_if_fail(bv, NULL);
 
 	if (bv->len <= 64) {

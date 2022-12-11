@@ -76,6 +76,7 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 }
 
 static void cmd_write_bits(RzCore *core, int set, ut64 val) {
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut8 buf[sizeof(ut64)];
 	ut64 ret, orig;
 	// used to set/unset bit in current address
@@ -83,13 +84,13 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 		cmd_write_fail(core);
 		return;
 	}
-	orig = rz_read_ble64(buf, core->rasm->big_endian);
+	orig = rz_read_ble64(buf, big_endian);
 	if (set) {
 		ret = orig | val;
 	} else {
 		ret = orig & (~(val));
 	}
-	rz_write_ble64(buf, ret, core->rasm->big_endian);
+	rz_write_ble64(buf, ret, big_endian);
 	if (!rz_core_write_at(core, core->offset, buf, sizeof(buf))) {
 		cmd_write_fail(core);
 	}

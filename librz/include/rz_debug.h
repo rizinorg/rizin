@@ -388,6 +388,7 @@ typedef struct rz_debug_plugin_t {
 	// XXX: specify, pid, tid, or RzDebug ?
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); // XXX struct rz_regset_t regs);
+	bool (*sync_registers)(RzDebug *dbg, RzReg *reg, bool to_debugger);
 	char *(*reg_profile)(RzDebug *dbg);
 	int (*set_reg_profile)(RzDebug *dbg, const char *str);
 	/* memory */
@@ -436,8 +437,6 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid);
 RZ_API int rz_debug_detach(RzDebug *dbg, int pid);
-RZ_API int rz_debug_startv(RzDebug *dbg, int argc, char **argv);
-RZ_API int rz_debug_start(RzDebug *dbg, const char *cmd);
 
 /* reason we stopped */
 RZ_API RzDebugReasonType rz_debug_stop_reason(RzDebug *dbg);
@@ -583,7 +582,7 @@ RZ_API void rz_debug_session_deserialize(RzDebugSession *session, Sdb *db);
 RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *file);
 RZ_API bool rz_debug_session_load(RzDebug *dbg, const char *file);
 RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg);
-RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg);
+RZ_API bool rz_debug_trace_ins_after(RZ_NONNULL RzDebug *dbg);
 
 RZ_API RzDebugSession *rz_debug_session_new(void);
 RZ_API void rz_debug_session_free(RzDebugSession *session);

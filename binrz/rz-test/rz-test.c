@@ -623,7 +623,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD:
 		pj_s(pj, "cmd");
-		pj_ks(pj, "name", test->cmd_test->name.value);
+		pj_ks(pj, "name", test->cmd_test->name.value ? test->cmd_test->name.value : "missing name");
 		break;
 	case RZ_TEST_TYPE_ASM:
 		pj_s(pj, "asm");

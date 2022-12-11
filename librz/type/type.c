@@ -14,6 +14,10 @@ static void types_ht_free(HtPPKv *kv) {
 	rz_type_base_type_free(kv->value);
 }
 
+static void types_ht_free_keep_val(HtPPKv *kv) {
+	free(kv->key);
+}
+
 static void formats_ht_free(HtPPKv *kv) {
 	free(kv->key);
 	free(kv->value);
@@ -740,10 +744,11 @@ RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseTy
 RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, 0);
 	rz_return_val_if_fail(btype->type, 0);
-	if (btype->type->kind == RZ_TYPE_KIND_IDENTIFIER && !strcmp(btype->type->identifier.name, btype->name)) {
-		return btype->size;
+	RzType *unwrapped = rz_type_db_base_type_unwrap_typedef(typedb, btype);
+	if (!unwrapped) {
+		return 0;
 	}
-	return rz_type_db_get_bitsize(typedb, btype->type);
+	return rz_type_db_get_bitsize(typedb, unwrapped);
 }
 
 /**
@@ -1311,7 +1316,7 @@ RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *n
 	// Remove the original type first
 	// but do not free them
 	void *freefn = (void *)typedb->types->opt.freefn;
-	typedb->types->opt.freefn = NULL;
+	typedb->types->opt.freefn = types_ht_free_keep_val;
 	ht_pp_delete(typedb->types, t->name);
 	typedb->types->opt.freefn = freefn;
 	char *error_msg = NULL;

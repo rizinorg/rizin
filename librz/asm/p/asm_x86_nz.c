@@ -1052,6 +1052,20 @@ static int opaam(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
+static int opaad(RzAsm *a, ut8 *data, const Opcode *op) {
+	is_valid_registers(op);
+	int l = 0;
+	int immediate = op->operands[0].immediate * op->operands[0].sign;
+	data[l++] = 0xd5;
+	if (immediate == 0) {
+		data[l++] = 0x0a;
+	} else if (immediate < 256 && immediate > -129) {
+		data[l++] = immediate;
+	}
+
+	return l;
+}
+
 static int opdec(RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
 		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
@@ -4267,7 +4281,7 @@ typedef struct lookup_t {
 
 LookupTable oplookup[] = {
 	{ "aaa", 0, NULL, 0x37, 1 },
-	{ "aad", 0, NULL, 0xd50a, 2 },
+	{ "aad", 0, opaad, 0 },
 	{ "aam", 0, opaam, 0 },
 	{ "aas", 0, NULL, 0x3f, 1 },
 	{ "adc", 0, &opadc, 0 },
@@ -4724,7 +4738,11 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	// Get token (especially the length)
 	size_t nextpos, length;
 	const char *token;
-	getToken(str, pos, &nextpos);
+	if (getToken(str, pos, &nextpos) != TT_WORD) {
+		/* We expect a word, anything else means invalid register */
+		return X86R_UNDEFINED;
+	}
+
 	token = str + *pos;
 	length = nextpos - *pos;
 	*pos = nextpos;
@@ -4749,7 +4767,7 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	}
 	// Debug registers
 	if (length == 3 && token[0] == 'd') {
-		for (i = 0; cregs[i]; i++) {
+		for (i = 0; dregs[i]; i++) {
 			if (!rz_str_ncasecmp(dregs[i], token, length)) {
 				*type = (OT_DEBUGREG & OT_REG(i)) | OT_DWORD;
 				return i;

@@ -172,9 +172,15 @@ struct rz_type_t {
 };
 
 typedef struct rz_type_path_t {
-	RzType *typ;
+	RzType *typ; ///< type at the leaf
 	char *path;
 } RzTypePath;
+
+/// A path and the type that the path came from
+typedef struct rz_type_path_tuple_t {
+	RzTypePath *path;
+	RzType *root;
+} RzTypePathTuple;
 
 /**
  * \brief Type Conditions
@@ -266,6 +272,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeD
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
 RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
 RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
+RZ_API RZ_BORROW RzType *rz_type_db_base_type_unwrap_typedef(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
 
 // Compound types
 
@@ -303,7 +310,8 @@ RZ_API RZ_OWN RzBaseType *rz_type_typeclass_get_default_sized(const RzTypeDB *ty
 RZ_API RZ_OWN RzTypePath *rz_type_path_new(RZ_BORROW RZ_NONNULL RzType *type, RZ_OWN RZ_NONNULL char *path);
 RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath);
 RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char *path);
-RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_base_type_path_by_offset(const RzTypeDB *typedb, const RzBaseType *btype, ut64 offset, unsigned int max_depth);
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_path_by_offset(const RzTypeDB *typedb, const RzType *type, ut64 offset, unsigned int max_depth);
 RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
 RZ_API ut64 rz_type_db_struct_member_packed_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
 RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);

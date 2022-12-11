@@ -1,6 +1,7 @@
 NAME=wB
 FILE==
 CMDS=<<EOF
+e cfg.bigendian=false
 wB 0x55
 pv1
 wB 0x55

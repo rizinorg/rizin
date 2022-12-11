@@ -33,7 +33,7 @@ RUN
 
 NAME=ELF_ABI : gcc O0 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O0
-ARGS=-A -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl~functions
 EOF
@@ -44,7 +44,7 @@ RUN
 
 NAME=ELF_ABI : gcc O1 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O1
-ARGS=-A -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl~functions
 EOF
@@ -55,7 +55,7 @@ RUN
 
 NAME=ELF_ABI : gcc O2 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O2
-ARGS=-A -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl~functions
 EOF
@@ -66,7 +66,7 @@ RUN
 
 NAME=ELF_ABI : gcc O3 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O3
-ARGS=-A -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl~functions
 EOF
@@ -77,7 +77,7 @@ RUN
 
 NAME=ELF_ABI : gcc Of flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Of
-ARGS=-A -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl~functions
 EOF
@@ -88,7 +88,7 @@ RUN
 
 NAME=ELF_ABI : gcc Os flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Os
-ARGS=-A -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl~functions
 EOF

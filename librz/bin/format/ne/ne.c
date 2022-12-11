@@ -560,7 +560,8 @@ RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				if (rel.index > bin->ne_header->ModRefs || !rel.index) {
 					name = rz_str_newf("UnknownModule%d_%x", rel.index, off); // ????
 				} else {
-					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
+					ut16 modref_val = rz_read_le16(&modref[rel.index - 1]);
+					offset = modref_val + bin->header_offset + bin->ne_header->ImportNameTable;
 					name = __read_nonnull_str_at(bin->buf, offset);
 				}
 				if (rel.flags & IMPORTED_ORD) {
