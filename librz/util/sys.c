@@ -1678,6 +1678,9 @@ RZ_API int rz_sys_fork(void) {
 	parent_lock_enter();
 #endif
 	pid_t child = fork();
+	if (child == -1) {
+		perror("fork");
+	}
 #if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
 	if (child == 0) {
 		is_child = true;
@@ -1695,7 +1698,11 @@ RZ_API int rz_sys_fork(void) {
 
 RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* const struct termios */ *termp, const void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-	return forkpty(amaster, name, termp, winp);
+	pid_t ret = forkpty(amaster, name, termp, winp);
+	if (ret == -1) {
+		perror("forkpty");
+	}
+	return ret;
 #else
 	RZ_LOG_ERROR("forkpty() not found\n");
 	return -1;
@@ -1704,7 +1711,11 @@ RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* const struct
 
 RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* const struct termios */ *termp, const void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-	return openpty(amaster, aslave, name, termp, winp);
+	int ret = openpty(amaster, aslave, name, termp, winp);
+	if (ret == -1) {
+		perror("openpty");
+	}
+	return ret;
 #else
 	RZ_LOG_ERROR("openpty() not found\n");
 	return -1;
@@ -1713,7 +1724,11 @@ RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* c
 
 RZ_API int rz_sys_login_tty(int fd) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
-	return login_tty(fd);
+	int ret = login_tty(fd);
+	if (ret == -1) {
+		perror("login_tty");
+	}
+	return ret;
 #else
 	RZ_LOG_ERROR("login_tty() not found\n");
 	return -1;

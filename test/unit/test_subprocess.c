@@ -268,7 +268,7 @@ bool test_interactive_pty(void) {
 	rz_subprocess_init();
 	const char *exe_path = get_auxiliary_path("subprocess-interactive");
 
-	RzSubprocess *sp = rz_subprocess_forkpty(exe_path, NULL, 0, NULL, NULL, 0);
+	RzSubprocess *sp = rz_subprocess_forkpty(exe_path, NULL, 0, NULL, NULL, 0, NULL);
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_stdin_write(sp, (const ut8 *)"3\n", strlen("3\n"));
 	rz_subprocess_stdin_write(sp, (const ut8 *)"5\n", strlen("5\n"));
@@ -290,18 +290,18 @@ bool test_interactive_pty(void) {
 	mu_end;
 }
 
-bool test_interactive_pipe_pty(void) {
-	/* This does NOT use pipes, this just checks whether forkpty ignores pipes */
+bool test_interactive_custom_pty(void) {
 	rz_subprocess_init();
 	const char *exe_path = get_auxiliary_path("subprocess-interactive");
 
 	RzSubprocessOpt opt = { 0 };
 	opt.file = exe_path;
+	/* All the pipes need to be NONE in forkpty mode */
 	opt.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE;
-	/* These won't matter since in forkpty no pipes are created */
-	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE;
-	opt.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE;
+	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE;
+	opt.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE;
 	opt.fork_mode = RZ_SUBPROCESS_FORKPTY;
+	opt.pty = rz_subprocess_openpty(NULL, NULL, NULL);
 
 	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
 	mu_assert_notnull(sp, "the subprocess should be created");
@@ -328,6 +328,9 @@ bool test_interactive_pipe_pty(void) {
 bool test_interactive_pty(void) {
 	mu_end;
 }
+bool test_interactive_custom_pty(void) {
+	mu_end;
+}
 #endif // PTY functions
 
 bool all_tests() {
@@ -343,7 +346,7 @@ bool all_tests() {
 	mu_run_test(test_stdoutstderr);
 	mu_run_test(test_interactive);
 	mu_run_test(test_interactive_pty);
-	mu_run_test(test_interactive_pipe_pty);
+	mu_run_test(test_interactive_custom_pty);
 	return tests_passed != tests_run;
 }
 
