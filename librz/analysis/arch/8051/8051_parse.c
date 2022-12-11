@@ -69,9 +69,13 @@ static inline I8051OpAddressing *addressing_register_b() {
 }
 
 /**
+ * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
+ * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
+ * Only used in rz_8051_op_parse.
+ * 
  * 0x05 iram addr
  * 0x06-0x07 @(R0-R1)
- * 0x08-0x0f, R0-R7
+ * 0x08-0x0f R0-R7
  */
 static I8051OpAddressing *addressing_pattern1(const ut8 *buf) {
 	ut8 lo = buf[0] & 0x0f;
@@ -87,8 +91,12 @@ static I8051OpAddressing *addressing_pattern1(const ut8 *buf) {
 }
 
 /**
- * \brief 0x00 \@DPTR
- *        0x02-0x03 @(R0|R1)
+ * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
+ * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
+ * Only used in rz_8051_op_parse.
+ * 
+ * 0x00 \@DPTR
+ * 0x02-0x03 @(R0|R1)
  */
 static I8051OpAddressing *addressing_pattern11(const ut8 *buf) {
 	ut8 lo = buf[0] & 0x0f;
@@ -105,10 +113,14 @@ static I8051OpAddressing *addressing_pattern11(const ut8 *buf) {
 }
 
 /**
- * \brief 0x04 #data
- *        0x05 iram addr
- *        0x06-0x07 @(R0|R1)
- *        0x08-0x0f, R0-R7
+ * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
+ * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
+ * Only used in rz_8051_op_parse.
+ *
+ * 0x04 #data
+ * 0x05 iram addr
+ * 0x06-0x07 @(R0|R1)
+ * 0x08-0x0f R0-R7
  */
 static I8051OpAddressing *addressing_pattern1_imm(const ut8 *buf) {
 	ut8 lo = buf[0] & 0x0f;
@@ -122,12 +134,16 @@ static I8051OpAddressing *addressing_pattern1_imm(const ut8 *buf) {
 }
 
 /**
- * \brief 0x02      iram addr, A
- *        0x03      iram addr, #data
- *        0x04      A, #data
- *        0x05      A, iram addr
- *        0x06-0x07 A, @R0/@R1
- *        0x08-0x0f A, R0-R7
+ * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
+ * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
+ * Only used in rz_8051_op_parse.
+ * 
+ * 0x02      iram addr, A
+ * 0x03      iram addr, #data
+ * 0x04      A, #data
+ * 0x05      A, iram addr
+ * 0x06-0x07 A, @R0/@R1
+ * 0x08-0x0f A, R0-R7
  */
 static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
 	op->argc = 2;
