@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rz_il_opbuilder_begin.h>
-#include "8051_op.h"
+#include "8051_il.h"
 
 static const char *i8051_registers_str[0xff] = {
 	[I8051_R0] = "r0",
@@ -436,8 +436,9 @@ static inline RzILOpEffect *i_op_dispatch(I8051Op *op) {
 	}
 }
 
-static RzILOpEffect *i_8051_il_op(const ut8 *buf, ut8 len, ut64 pc) {
-	I8051Op *op = rz_analysis_8051_op_parse(buf, len, pc);
+RZ_IPI RzILOpEffect *rz_8051_il_op(const ut8 *buf, ut8 len, ut64 pc) {
+	rz_return_val_if_fail(buf && len > 0, NULL);
+	I8051Op *op = rz_8051_op_parse(buf, len, pc);
 	if (!op) {
 		return NULL;
 	}

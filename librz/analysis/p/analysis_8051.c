@@ -11,7 +11,7 @@
 
 #include <8051_ops.h>
 #include "../asm/arch/8051/8051_disas.c"
-#include "../arch/8051/8051_il.c"
+#include "../arch/8051/8051_il.h"
 
 typedef struct {
 	const char *name;
@@ -1265,7 +1265,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	}
 
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = i_8051_il_op(buf, len, addr);
+		op->il_op = rz_8051_il_op(buf, len, addr);
 	}
 
 	int olen = 0;
