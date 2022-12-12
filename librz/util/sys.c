@@ -1696,7 +1696,7 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
-RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* const struct termios */ *termp, const void /* const struct winsize */ *winp) {
+RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	pid_t ret = forkpty(amaster, name, termp, winp);
 	if (ret == -1) {
@@ -1709,7 +1709,7 @@ RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, const void /* const struct
 #endif
 }
 
-RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, const void /* const struct termios */ *termp, const void /* const struct winsize */ *winp) {
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	int ret = openpty(amaster, aslave, name, termp, winp);
 	if (ret == -1) {

@@ -1437,7 +1437,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	return rz_subprocess_start_opt(&opt);
 }
 
-RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE const void /* struct termios */ *term_params, RZ_NULLABLE const void /* struct winsize */ *win_params) {
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
 	RzPty *pty = RZ_NEW0(RzPty);
 	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
 
