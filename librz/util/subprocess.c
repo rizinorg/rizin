@@ -246,7 +246,7 @@ error:
 	return ret;
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
 	const HANDLE curr_stdin_handle = (HANDLE)_get_osfhandle(fileno(stdin));
 	const HANDLE curr_stdout_handle = (HANDLE)_get_osfhandle(fileno(stdout));
@@ -700,6 +700,19 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	CloseHandle(proc->proc);
 	free(proc);
 }
+
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RZ_LOG_ERROR("Not implemented for Windows!");
+}
+
+RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
+	RZ_LOG_ERROR("Not implemented for Windows!");
+}
+
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
+	RZ_LOG_ERROR("Not implemented for Windows!");
+}
+
 #else // __WINDOWS__
 
 #include <errno.h>

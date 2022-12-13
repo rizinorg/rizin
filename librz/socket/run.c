@@ -63,6 +63,7 @@
 #ifdef _MSC_VER
 #include <direct.h> // to compile chdir in msvc windows
 #include <process.h> // to compile execv in msvc windows
+#define pid_t int
 #endif
 
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
