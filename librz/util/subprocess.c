@@ -1381,6 +1381,70 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	}
 	free(proc);
 }
+
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RzPty *pty = RZ_NEW0(RzPty);
+	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
+
+	if (ret == -1) {
+		perror("openpty");
+		RZ_FREE(pty);
+		return NULL;
+	}
+
+	if (slave_name) {
+		pty->name = strdup(slave_name);
+	}
+	return pty;
+}
+
+RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
+	rz_return_val_if_fail(pty, false);
+
+	int ret = rz_sys_login_tty(pty->slave_fd);
+	if (ret == -1) {
+		perror("login_tty");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Start a program in a new child process (in a PTY, forked using forkpty) with the specified parameters.
+ *
+ * \param file Name of the program to start. It is also evaluated against PATH
+ * \param args Array of arguments to pass to the new program. It does not include argv[0]
+ * \param args_size Number of arguments in the \p args array
+ * \param envvars Name of environment variables that the newprocess has different from the parent
+ * \param envvals Values of environment variables that the newprocess has
+ * different from the parent. Elements are evaluated in parallel with \p
+ * envvars, so envvals[0] specifies the value of the environment variable named
+ * envvars[0] and so on.
+ * \param env_size Number of environment variables in arrays \p envvars and \p envvals
+ * \param pty RzPTY instance to use for slave, if NULL, then a new PTY is opened
+ * Also, `pty` must be NULL is forking type is not forkpty
+ *
+ * In forkpty mode, no pipes will be created, and std{in,out,err}_pipe values will be ignored
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
+	const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
+	RzSubprocessOpt opt = {
+		.file = file,
+		.args = args,
+		.args_size = args_size,
+		.envvars = envvars,
+		.envvals = envvals,
+		.env_size = env_size,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.fork_mode = RZ_SUBPROCESS_FORKPTY,
+		.pty = pty
+	};
+	return rz_subprocess_start_opt(&opt);
+}
+
 #endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
@@ -1444,71 +1508,11 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+#ifndef __WINDOWS__
+		/* We don't have forking PTY support in Windows, yet */
 		.fork_mode = RZ_SUBPROCESS_FORK,
 		.pty = NULL
-	};
-	return rz_subprocess_start_opt(&opt);
-}
-
-RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
-	RzPty *pty = RZ_NEW0(RzPty);
-	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
-
-	if (ret == -1) {
-		perror("openpty");
-		RZ_FREE(pty);
-		return NULL;
-	}
-
-	if (slave_name) {
-		pty->name = strdup(slave_name);
-	}
-	return pty;
-}
-
-RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
-	rz_return_val_if_fail(pty, false);
-
-	int ret = rz_sys_login_tty(pty->slave_fd);
-	if (ret == -1) {
-		perror("login_tty");
-		return false;
-	}
-
-	return true;
-}
-
-/**
- * Start a program in a new child process (in a PTY, forked using forkpty) with the specified parameters.
- *
- * \param file Name of the program to start. It is also evaluated against PATH
- * \param args Array of arguments to pass to the new program. It does not include argv[0]
- * \param args_size Number of arguments in the \p args array
- * \param envvars Name of environment variables that the newprocess has different from the parent
- * \param envvals Values of environment variables that the newprocess has
- * different from the parent. Elements are evaluated in parallel with \p
- * envvars, so envvals[0] specifies the value of the environment variable named
- * envvars[0] and so on.
- * \param env_size Number of environment variables in arrays \p envvars and \p envvals
- * \param pty RzPTY instance to use for slave, if NULL, then a new PTY is opened
- * Also, `pty` must be NULL is forking type is not forkpty
- *
- * In forkpty mode, no pipes will be created, and std{in,out,err}_pipe values will be ignored
- */
-RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
-	RzSubprocessOpt opt = {
-		.file = file,
-		.args = args,
-		.args_size = args_size,
-		.envvars = envvars,
-		.envvals = envvals,
-		.env_size = env_size,
-		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
-		.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
-		.fork_mode = RZ_SUBPROCESS_FORKPTY,
-		.pty = pty
+#endif
 	};
 	return rz_subprocess_start_opt(&opt);
 }
