@@ -1696,7 +1696,7 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
-RZ_API pid_t rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
+RZ_API /* pid_t */ int rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	pid_t ret = forkpty(amaster, name, termp, winp);
 	if (ret == -1) {
