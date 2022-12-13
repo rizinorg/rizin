@@ -72,7 +72,7 @@ static inline I8051OpAddressing *addressing_register_b() {
  * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
  * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
  * Only used in rz_8051_op_parse.
- * 
+ *
  * 0x05 iram addr
  * 0x06-0x07 @(R0-R1)
  * 0x08-0x0f R0-R7
@@ -94,7 +94,7 @@ static I8051OpAddressing *addressing_pattern1(const ut8 *buf) {
  * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
  * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
  * Only used in rz_8051_op_parse.
- * 
+ *
  * 0x00 \@DPTR
  * 0x02-0x03 @(R0|R1)
  */
@@ -137,7 +137,7 @@ static I8051OpAddressing *addressing_pattern1_imm(const ut8 *buf) {
  * \brief Parse some of the patterns commonly found in the 8051 Instruction Set,
  * get the parameters and addressing mode of the instruction by (opcode & 0x0f).
  * Only used in rz_8051_op_parse.
- * 
+ *
  * 0x02      iram addr, A
  * 0x03      iram addr, #data
  * 0x04      A, #data
@@ -155,7 +155,7 @@ static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
 	}
 
 	if (lo >= 0x02 && lo <= 0x03) {
-		op->argv[0] = addressing_direct(buf[1]);
+		op->argv[0] = addressing_direct(*(buf - 1));
 		if (lo == 0x02) {
 			op->len = 2;
 			op->argv[1] = addressing_register_a();
