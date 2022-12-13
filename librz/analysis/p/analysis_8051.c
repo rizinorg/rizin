@@ -1264,7 +1264,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		analop_esil(analysis, op, addr, copy);
 	}
 
-	if ((mask & RZ_ANALYSIS_OP_MASK_IL) && len > 0) {
+	if ((mask & RZ_ANALYSIS_OP_MASK_IL) && buf && len > 0) {
 		op->il_op = rz_8051_il_op(analysis, buf, len, addr);
 	}
 
