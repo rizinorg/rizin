@@ -4,7 +4,17 @@
 #include "8051_il.h"
 #include <rz_util.h>
 
-static I8051OpAddressing *addressing_addr(I8051AddressingMode mode, ut16 addr) {
+static I8051OpAddressing *addressing_addr(I8051AddressingMode mode, ut8 addr) {
+	I8051OpAddressing *a = RZ_NEW0(I8051OpAddressing);
+	if (!a) {
+		return NULL;
+	}
+	a->mode = mode;
+	a->d.addr = addr;
+	return a;
+}
+
+static I8051OpAddressing *addressing_addr16(I8051AddressingMode mode, ut16 addr) {
 	I8051OpAddressing *a = RZ_NEW0(I8051OpAddressing);
 	if (!a) {
 		return NULL;
@@ -155,7 +165,7 @@ static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
 	}
 
 	if (lo >= 0x02 && lo <= 0x03) {
-		op->argv[0] = addressing_direct(*(buf - 1));
+		op->argv[0] = addressing_direct(buf[1]);
 		if (lo == 0x02) {
 			op->len = 2;
 			op->argv[1] = addressing_register_a();
@@ -382,7 +392,7 @@ RZ_IPI I8051Op *rz_8051_op_parse(const ut8 *buf, ut64 len, ut64 pc) {
 			switch (lo) {
 			case 0x0: {
 				op->argv[0] = addressing_register(I8051_DPTR);
-				op->argv[1] = addressing_addr(I8051_ADDRESSING_IMMEDIATE16, (buf[1] << 8) | buf[2]);
+				op->argv[1] = addressing_addr16(I8051_ADDRESSING_IMMEDIATE16, (buf[1] << 8) | buf[2]);
 				op->len = 3;
 				break;
 			}
