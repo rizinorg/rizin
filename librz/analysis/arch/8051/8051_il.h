@@ -6,6 +6,7 @@
 
 #include <rz_types.h>
 #include <rz_il.h>
+#include <rz_analysis.h>
 
 typedef enum {
 	I_UNDEFINED = 0,
@@ -144,7 +145,7 @@ typedef struct i8051_op_t {
 	I8051OpAddressing **argv;
 } I8051Op;
 
-RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL const ut8 *buf, ut64 len, ut64 pc);
-RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL const ut8 *buf, ut8 len, ut64 pc);
+RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, ut64 len, ut64 pc);
+RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, ut8 len, ut64 pc);
 
 #endif //_8051_IL_H_

@@ -42,8 +42,8 @@ static I8051OpAddressing *addressing_relative(ut8 addr) {
 	return addressing_addr(I8051_ADDRESSING_RELATIVE, addr);
 }
 
-static I8051OpAddressing *addressing_immediate(ut8 imm) {
-	return addressing_addr(I8051_ADDRESSING_IMMEDIATE, imm);
+static I8051OpAddressing *addressing_immediate(ut16 imm) {
+	return addressing_addr16(I8051_ADDRESSING_IMMEDIATE, imm);
 }
 
 static I8051OpAddressing *addressing_bit(ut8 addr) {
@@ -181,8 +181,8 @@ static bool addressing_pattern2(I8051Op *op, const ut8 *buf) {
 	return true;
 }
 
-RZ_IPI I8051Op *rz_8051_op_parse(const ut8 *buf, ut64 len, ut64 pc) {
-	rz_return_val_if_fail(buf && len > 0, NULL);
+RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, ut64 len, ut64 pc) {
+	rz_return_val_if_fail(analysis && buf && len > 0, NULL);
 	I8051Op *op = RZ_NEW0(I8051Op);
 	if (!op) {
 		return NULL;
@@ -392,7 +392,9 @@ RZ_IPI I8051Op *rz_8051_op_parse(const ut8 *buf, ut64 len, ut64 pc) {
 			switch (lo) {
 			case 0x0: {
 				op->argv[0] = addressing_register(I8051_DPTR);
-				op->argv[1] = addressing_addr16(I8051_ADDRESSING_IMMEDIATE16, (buf[1] << 8) | buf[2]);
+				ut16 imm = analysis->big_endian ? (buf[1] | (buf[2] << 8))
+								: ((buf[1] << 8) | buf[2]);
+				op->argv[1] = addressing_addr16(I8051_ADDRESSING_IMMEDIATE16, imm);
 				op->len = 3;
 				break;
 			}
