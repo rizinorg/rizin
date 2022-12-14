@@ -1122,7 +1122,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
 			free(param);
 			rz_strbuf_free(bw_asm);
-			rz_return_if_fail(colored_asm);
+			if (!colored_asm) {
+				return;
+			}
 			source = rz_strbuf_drain(colored_asm);
 		} else {
 			source = strdup(source);
@@ -1163,7 +1165,9 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
 			free(param);
 			rz_strbuf_free(bw_asm);
-			rz_return_if_fail(colored_asm);
+			if (!colored_asm) {
+				return;
+			}
 			source = rz_strbuf_drain(colored_asm);
 		} else {
 			source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
@@ -6520,7 +6524,7 @@ toro:
 					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
 					colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 					free(param);
-					rz_cons_printf("%s" Color_RESET "\n", rz_strbuf_get(colored_asm));
+					rz_cons_printf("%s" Color_RESET "\n", colored_asm ? rz_strbuf_get(colored_asm) : "");
 					rz_strbuf_free(colored_asm);
 					rz_analysis_op_fini(&aop);
 				} else {
@@ -6796,7 +6800,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, op.type);
 		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 		free(param);
-		return rz_strbuf_drain(colored_asm);
+		return colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
 	} else {
 		buf_asm = rz_str_new(str);
 	}
@@ -6849,7 +6853,7 @@ RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opco
 		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asm_op.asm_toks);
 		rz_strbuf_free(bw_str);
 		free(param);
-		op->assembly_colored = rz_strbuf_drain(colored_asm);
+		op->assembly_colored = colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
 		rz_analysis_op_fini(&aop);
 	}
 	return vec;

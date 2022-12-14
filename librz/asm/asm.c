@@ -1745,6 +1745,9 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
 		colored_asm = rz_print_colorize_asm_str(p, toks);
 	} else {
 		RzAsmTokenString *ts = rz_asm_tokenize_asm_string(asm_str, param);
+		if (!ts) {
+			return NULL;
+		}
 		ts->op_type = param ? param->ana_op_type : 0;
 		colored_asm = rz_print_colorize_asm_str(p, ts);
 		rz_asm_token_string_free(ts);
