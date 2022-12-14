@@ -229,7 +229,7 @@ static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW
 			def->flags = strdup(comment_flag);
 		}
 	}
-
+	RZ_LOG_DEBUG("profile: register def: %s %d %d %s\n", def->name, def->size, def->offset, def->flags);
 	rz_list_append(def_list, def);
 
 	return true;

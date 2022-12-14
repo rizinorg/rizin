@@ -11,6 +11,7 @@
 
 #include <8051_ops.h>
 #include "../asm/arch/8051/8051_disas.c"
+#include "../arch/8051/8051_il.h"
 
 typedef struct {
 	const char *name;
@@ -1058,13 +1059,19 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	dptr	.16	10	0\n"
 		"gpr	dpl	.8	10	0\n"
 		"gpr	dph	.8	11	0\n"
-		"gpr	psw	.8	12	0\n"
-		"gpr	p	.1	.96	0\n"
-		"gpr	ov	.1	.98	0\n"
-		"gpr	ac	.1	.102	0\n"
-		"gpr	c	.1	.103	0\n"
+		"flg	psw	.8	12	0\n"
+		"flg	p	.1	.96	0\n"
+		"flg	z	.1	.97	0\n"
+		"flg	ov	.1	.98	0\n"
+		"flg	s0	.1	.99	0\n"
+		"flg	s1	.1	.100	0\n"
+		"flg	n	.1	.101	0\n"
+		"flg	ac	.1	.102	0\n"
+		"flg	cy	.1	.103	0\n"
 		"gpr	sp	.8	13	0\n"
 		"gpr	pc	.16	15	0\n"
+		// aliases
+		"flg	c	.1	.103	0\n"
 		// ---------------------------------------------------
 		// 8051 memory emulation control registers
 		// These registers map 8051 memory classes to r2's
@@ -1257,6 +1264,10 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		analop_esil(analysis, op, addr, copy);
 	}
 
+	if ((mask & RZ_ANALYSIS_OP_MASK_IL) && (analysis && buf && len > 0)) {
+		op->il_op = rz_8051_il_op(analysis, buf, len, addr);
+	}
+
 	int olen = 0;
 	op->mnemonic = rz_8051_disas(addr, buf, len, &olen);
 	op->size = olen;
@@ -1285,6 +1296,10 @@ static bool i8051_fini(void *user) {
 	return true;
 }
 
+static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+	return rz_analysis_il_config_new(16, false, 16);
+}
+
 RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -1298,6 +1313,7 @@ RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.esil_fini = esil_i8051_fini,
 	.init = &i8051_init,
 	.fini = &i8051_fini,
+	.il_config = il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE
