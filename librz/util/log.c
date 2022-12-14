@@ -85,17 +85,21 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	// TODO: Colors
 
 	// Build output string with src info, and formatted output
-	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
 	if (!tag) {
 		tag = RZ_BETWEEN(0, level, RZ_ARRAY_SIZE(level_tags) - 1) ? level_tags[level] : "";
 	}
-	int offset = snprintf(output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
+	rz_strbuf_append(&sb, tag);
+	rz_strbuf_append(&sb, ": ");
 	if (cfg_logsrcinfo) {
-		offset += snprintf(output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, "%s in %s:%i: ", funcname, filename, lineno);
+		rz_strbuf_appendf(&sb, "%s in %s:%i: ", funcname, filename, lineno);
 	}
-	vsnprintf(output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
+	rz_strbuf_vappendf(&sb, fmtstr, args);
 
 	// Actually print out the string with our callbacks
+	char *output_buf = rz_strbuf_drain_nofree(&sb);
 	if (log_cbs && rz_list_length(log_cbs) > 0) {
 		RzListIter *it;
 		RzLogCallback cb;
