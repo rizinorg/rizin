@@ -3582,7 +3582,7 @@ static void get_help_wrong_cmd(RzCore *core, const char *cmdname) {
 	if (!help_msg) {
 		goto help_pra_err;
 	}
-	RZ_LOG_ERROR("core: %s", help_msg);
+	RZ_LOG_ERROR("%s", help_msg);
 	free(help_msg);
 help_pra_err:
 	rz_cmd_parsed_args_free(help_pra);
@@ -3646,19 +3646,19 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	res = rz_cmd_call_parsed_args(state->core->rcmd, pr_args);
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		RZ_LOG_ERROR("core: Wrong number of arguments passed to `%s`, see its help with `%s?`\n\n", cmdname, cmdname);
+		RZ_LOG_ERROR("Wrong number of arguments passed to `%s`, see its help with `%s?`\n\n", cmdname, cmdname);
 		get_help_wrong_cmd(state->core, cmdname);
 	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
 		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
-		RZ_LOG_ERROR("core: Command '%s' does not exist.\n", cmdname);
+		RZ_LOG_ERROR("Command '%s' does not exist.\n", cmdname);
 		if (rz_str_endswith(cmdname, "?") && pr_args->argc > 1) {
-			RZ_LOG_ERROR("core: Did you want to see the help? Try `%s` without any argument.\n", cmdname);
+			RZ_LOG_ERROR("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
 		} else {
 			// Let's try to find the first command/group in the ancestor chain
 			// that could provide some help
 			RzCmdDesc *hcd = rz_cmd_get_desc_best(state->core->rcmd, cmdname);
 			if (hcd) {
-				RZ_LOG_ERROR("core: Displaying the help of command '%s'.\n\n", hcd->name);
+				RZ_LOG_ERROR("Displaying the help of command '%s'.\n\n", hcd->name);
 				get_help_wrong_cmd(state->core, hcd->name);
 			}
 		}
