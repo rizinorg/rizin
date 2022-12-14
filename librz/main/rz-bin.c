@@ -1159,9 +1159,16 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);
 	if (!bf) {
-		eprintf("rz-bin: Cannot open file\n");
-		result = 1;
-		goto err;
+		/* Try opening as a binary file */
+		bo.pluginname = "any";
+		RZ_LOG_INFO("Treating input file as a binary file...\n");
+
+		bf = rz_bin_open(bin, file, &bo);
+		if (!bf) {
+			RZ_LOG_ERROR("rz-bin: Cannot open file\n");
+			result = 1;
+			goto err;
+		}
 	}
 	/* required to automatically select a sub-bin when not specified */
 	(void)rz_core_bin_update_arch_bits(&core);
