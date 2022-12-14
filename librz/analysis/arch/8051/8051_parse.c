@@ -43,8 +43,12 @@ static I8051OpAddressing *addressing_relative(ut8 addr) {
 	return addressing_addr(I8051_ADDRESSING_RELATIVE, addr);
 }
 
-static I8051OpAddressing *addressing_immediate(ut16 imm) {
-	return addressing_addr16(I8051_ADDRESSING_IMMEDIATE, imm);
+static I8051OpAddressing *addressing_immediate(ut8 imm) {
+	return addressing_addr(I8051_ADDRESSING_IMMEDIATE, imm);
+}
+
+static I8051OpAddressing *addressing_immediate16(ut16 imm) {
+	return addressing_addr16(I8051_ADDRESSING_IMMEDIATE16, imm);
 }
 
 static I8051OpAddressing *addressing_bit(ut8 addr) {
@@ -393,8 +397,8 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 			switch (lo) {
 			case 0x0: {
 				op->argv[0] = addressing_register(I8051_DPTR);
-				ut16 imm = rz_read_ble16(buf + 1, analysis->big_endian);
-				op->argv[1] = addressing_addr16(I8051_ADDRESSING_IMMEDIATE16, imm);
+				ut16 imm = ((ut16)buf[1] << 8) | ((ut16)buf[2]);
+				op->argv[1] = addressing_immediate16(imm);
 				op->len = 3;
 				break;
 			}

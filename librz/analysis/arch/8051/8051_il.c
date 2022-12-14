@@ -99,7 +99,7 @@ static RzILOpPure *get_any(I8051OpAddressing *a) {
 	case I8051_ADDRESSING_INDIRECT:
 		return LOAD(UNSIGNED(16, get_any(a->d.indirect)));
 	case I8051_ADDRESSING_IMMEDIATE:
-		return U8(a->d.constant & 0xff);
+		return U8(a->d.addr);
 	case I8051_ADDRESSING_IMMEDIATE16:
 		return U16(a->d.constant);
 	case I8051_ADDRESSING_RELATIVE:
