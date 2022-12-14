@@ -436,7 +436,7 @@ static inline RzILOpEffect *i_op_dispatch(I8051Op *op) {
 	}
 }
 
-RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, ut8 len, ut64 pc) {
+RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, int len, ut64 pc) {
 	rz_return_val_if_fail(analysis && buf && len > 0, NULL);
 	I8051Op *op = rz_8051_op_parse(analysis, buf, len, pc);
 	if (!op) {
