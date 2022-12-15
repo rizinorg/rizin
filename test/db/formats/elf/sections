@@ -174,3 +174,11 @@ EXPECT=<<EOF
 131073
 EOF
 RUN
+
+NAME=no section headers - stripped
+FILE=bins/elf/analysis/no_sections.elf
+CMDS=iIj~{.stripped}
+EXPECT=<<EOF
+true
+EOF
+RUN

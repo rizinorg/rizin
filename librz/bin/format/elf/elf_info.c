@@ -1596,7 +1596,7 @@ bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
 	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return false;
+		return true;
 	}
 
 	RzBinElfSection *section;
