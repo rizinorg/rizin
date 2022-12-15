@@ -209,7 +209,6 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 		return NULL;
 	}
 	opt->sz = 0;
-	opt->pluginname = NULL;
 	return rz_bin_open_io(bin, opt);
 }
 
