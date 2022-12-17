@@ -709,8 +709,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	bin = core.bin;
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
-		// TODO: remove after 0.4.0 is released
-		char *oldhomeplugindir = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
 		char *plugindir = rz_path_system(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
@@ -725,10 +723,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_lib_opendir(l, path, false);
 		}
 		rz_lib_opendir(l, homeplugindir, false);
-		rz_lib_opendir(l, oldhomeplugindir, false);
 		rz_lib_opendir(l, plugindir, false);
 		free(homeplugindir);
-		free(oldhomeplugindir);
 		free(plugindir);
 		free(path);
 		rz_lib_free(l);
@@ -1163,9 +1159,16 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);
 	if (!bf) {
-		eprintf("rz-bin: Cannot open file\n");
-		result = 1;
-		goto err;
+		/* Try opening as a binary file */
+		bo.pluginname = "any";
+		RZ_LOG_INFO("Treating input file as a binary file...\n");
+
+		bf = rz_bin_open(bin, file, &bo);
+		if (!bf) {
+			RZ_LOG_ERROR("rz-bin: Cannot open file\n");
+			result = 1;
+			goto err;
+		}
 	}
 	/* required to automatically select a sub-bin when not specified */
 	(void)rz_core_bin_update_arch_bits(&core);

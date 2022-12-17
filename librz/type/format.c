@@ -2912,14 +2912,11 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
-		// Avoid infinite recursion in case of self-referential typedefs
-		if (rz_type_is_identifier(type->type)) {
-			const char *ttype = type_to_identifier(typedb, type->type);
-			if (!strcmp(ttype, type->name)) {
-				break;
-			}
+		RzType *unwrapped = rz_type_db_base_type_unwrap_typedef(typedb, type);
+		if (!unwrapped) {
+			break;
 		}
-		type_to_format_pair(typedb, format, fields, identifier, type->type);
+		type_to_format_pair(typedb, format, fields, identifier, unwrapped);
 		break;
 	}
 	default:

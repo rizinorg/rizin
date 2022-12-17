@@ -4,8 +4,19 @@
 #include <rz_reg.h>
 #include <rz_util/rz_str.h>
 
-/* non-endian safe - used for raw mapping with system registers */
-RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size) {
+/**
+ * \brief      Returns a copy of the raw arena memory area
+ * non-endian safe - used for raw mapping with system registers
+ *
+ * \param      reg   The register
+ * \param[in]  type  The type
+ * \param      size  The size
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN ut8 *rz_reg_get_bytes(RZ_NONNULL RzReg *reg, int type, RZ_NULLABLE int *size) {
+	rz_return_val_if_fail(reg, NULL);
+
 	RzRegArena *arena;
 	int i, sz, osize;
 	ut8 *buf, *newbuf;

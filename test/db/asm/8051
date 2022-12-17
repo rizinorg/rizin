@@ -1,133 +1,133 @@
-ad "acall 0x1723" f123 0x1200
-ad "add a, #0x03" 2403 0x1200
-ad "add a, 0x20" 2520 0x1200
-ad "add a, @r1" 27 0x1200
-a  "add a, [r1]" 27 0x1200
-ad "add a, r3" 2b 0x1200
-ad "addc a, #0x38" 3438 0x1200
-ad "addc a, 0x30" 3530 0x1200
-ad "addc a, @r0" 36 0x1200
-a  "addc a, [r0]" 36 0x1200
-ad "addc a, r5" 3d 0x1200
-ad "ajmp 0x1723" e123 0x1200
-ad "anl a, #0x01" 5401 0x1200
-ad "anl a, 0x40" 5540 0x1200
-ad "anl a, @r0" 56 0x1200
-a  "anl a, [r0]" 56 0x1200
-ad "anl a, r4" 5c 0x1200
-ad "anl c, 0x24.2" 8222 0x1200
-ad "anl c, /0x24.2" b022 0x1200
-ad "anl 0x40, a" 5240 0x1200
-ad "anl 0xc9, #0xdf" 53c9df 0x1200
-ad "cjne a, #0xab, 0x1216" b4ab13 0x1200
-ad "cjne a, 0x60, 0x121b" b56018 0x1200
-ad "cjne @r1, #0x24, 0x1235" b72432 0x1200
-a  "cjne [r1], #0x24, 0x1235" b72432 0x1200
-ad "cjne r7, #0x02, 0x1208" bf0205 0x1200
-ad "clr a" e4 0x1200
-ad "clr 0xc8.7" c2cf 0x1200
-ad "clr c" c3 0x1200
-ad "cpl a" f4 0x1200
-ad "cpl 0x2a.5" b255 0x1200
-ad "cpl c" b3 0x1200
-ad "da a" d4 0x1200
-ad "dec a" 14 0x1200
-ad "dec 0x35" 1535 0x1200
-ad "dec @r1" 17 0x1200
-a  "dec [r1]" 17 0x1200
-ad "dec r7" 1f 0x1200
-ad "div ab" 84 0x1200
-ad "djnz 0x40, 0x118b" d54088 0x1200
-ad "djnz r0, 0x11fe" d8fc 0x1200
-ad "djnz r7, 0x11fc" dffa 0x1200
-ad "inc a" 04 0x1200
-ad "inc 0x34" 0534 0x1200
-ad "inc dptr" a3 0x1200
-ad "inc r0" 08 0x1200
-ad "jb 0x2f.5, 0x1206" 207d03 0x1200
-ad "jbc 0x22.5, 0x120b" 101508 0x1200
-ad "jc 0x1205" 4003 0x1200
-ad "jmp @a+dptr" 73 0x1200
-a  "jmp [a+dptr]" 73 0x1200
-ad "jnb 0x2a.1, 0x120b" 305108 0x1200
-ad "jnc 0x1209" 5007 0x1200
-ad "jnz 0x1215" 7013 0x1200
-ad "jz 0x1217" 6015 0x1200
-ad "lcall 0xb6cf" 12b6cf 0x1200
-ad "ljmp 0x2c0d" 022c0d 0x1200
-ad "mov a, #0xff" 74ff 0x1200
-ad "mov a, 0x20" e520 0x1200
-ad "mov a, @r1" e7 0x1200
-a  "mov a, [r1]" e7 0x1200
-ad "mov a, r6" ee 0x1200
-ad "mov 0x24.2, c" 9222 0x1200
-ad "mov c, 0x24.2" a222 0x1200
-ad "mov 0x44, a" f544 0x1200
-ad "mov 0xc0, #0x7f" 75c07f 0x1200
-ad "mov 0x55, 0x44" 854455 0x1200
-ad "mov 0x44, @r1" 8744 0x1200
-a  "mov 0x44, [r1]" 8744 0x1200
-ad "mov 0x93, r4" 8c93 0x1200
-ad "mov dptr, #0x1234" 901234 0x1200
-ad "mov @r0, a" f6 0x1200
-a  "mov [r0], a" f6 0x1200
-ad "mov @r1, #0x00" 7700 0x1200
-a  "mov [r1], #0x00" 7700 0x1200
-ad "mov @r0, 0x20" a620 0x1200
-a  "mov [r0], 0x20" a620 0x1200
-ad "mov r5, a" fd 0x1200
-ad "mov r1, #0x00" 7900 0x1200
-ad "mov r2, 0x32" aa32 0x1200
-ad "movc a, @a+pc" 83 0x1200
-a  "movc a, [a+pc]" 83 0x1200
-ad "movc a, @a+dptr" 93 0x1200
-a  "movc a, [a+dptr]" 93 0x1200
-ad "movx a, @dptr" e0 0x1200
-a  "movx a, [dptr]" e0 0x1200
-ad "movx a, @r1" e3 0x1200
-a  "movx a, [r1]" e3 0x1200
-ad "movx @dptr, a" f0 0x1200
-a  "movx [dptr], a" f0 0x1200
-ad "movx @r0, a" f2 0x1200
-a  "movx [r0], a" f2 0x1200
-ad "mul ab" a4 0x1200
-ad "nop" 00 0x1200
-ad "orl a, #0x80" 4480 0x1200
-ad "orl a, 0x32" 4532 0x1200
-ad "orl a, @r0" 46 0x1200
-a  "orl a, [r0]" 46 0x1200
-ad "orl a, r5" 4d 0x1200
-ad "orl c, 0x24.2" 7222 0x1200
-ad "orl c, /0x24.2" a022 0x1200
-ad "orl 0x22, a" 4222 0x1200
-ad "orl 0xdc, #0x02" 43dc02 0x1200
-ad "pop 0x93" d093 0x1200
-ad "push 0x93" c093 0x1200
-ad "ret" 22 0x1200
-ad "reti" 32 0x1200
-ad "rl a" 23 0x1200
-ad "rlc a" 33 0x1200
-ad "rr a" 03 0x1200
-ad "rrc a" 13 0x1200
-ad "setb 0x28.2" d242 0x1200
-ad "setb c" d3 0x1200
-ad "sjmp 0x1216" 8014 0x1200
-ad "subb a, #0x01" 9401 0x1200
-ad "subb a, 0x44" 9544 0x1200
-ad "subb a, @r0" 96 0x1200
-a  "subb a, [r0]" 96 0x1200
-ad "subb a, r5" 9d 0x1200
-ad "swap a" c4 0x1200
-ad "xch a, 0x45" c545 0x1200
-ad "xch a, @r0" c6 0x1200
-a  "xch a, [r0]" c6 0x1200
-ad "xch a, r6" ce 0x1200
-ad "xchd a, @r1" d7 0x1200
-a  "xchd a, [r1]" d7 0x1200
-ad "xrl a, #0xfa" 64fa 0x1200
-ad "xrl a, 0x34" 6534 0x1200
-ad "xrl a, @r0" 66 0x1200
-a  "xrl a, [r0]" 66 0x1200
-ad "xrl a, r7" 6f 0x1200
-ad "xrl 0x34, a" 6234 0x1200
-ad "xrl 0x34, #0xff" 6334ff 0x1200
+ad "acall 0x1723" f123 0x1200 (seq (store 0 (cast 16 false (var sp)) (cast 8 false (>> (bv 16 0x1202) (bv 8 0x8) false))) (set sp (+ (var sp) (bv 8 0x1))) (store 0 (cast 16 false (var sp)) (cast 8 false (& (bv 16 0x1202) (bv 16 0xff)))) (set sp (+ (var sp) (bv 8 0x1))) (jmp (bv 16 0x723)))
+ad "add a, #0x03" 2403 0x1200 (seq (set arg1 (bv 8 0x3)) (set res (+ (var a) (var arg1))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "add a, 0x20" 2520 0x1200 (seq (set arg1 (load 0 (bv 16 0x20))) (set res (+ (var a) (var arg1))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "add a, @r1" 27 0x1200 (seq (set arg1 (load 0 (cast 16 false (var r1)))) (set res (+ (var a) (var arg1))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+a "add a, [r1]" 27 0x1200 (seq (set arg1 (load 0 (cast 16 false (var r1)))) (set res (+ (var a) (var arg1))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "add a, r3" 2b 0x1200 (seq (set arg1 (var r3)) (set res (+ (var a) (var arg1))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "addc a, #0x38" 3438 0x1200 (seq (set arg1 (bv 8 0x38)) (set res (+ (var a) (+ (var arg1) (ite (var cy) (bv 8 0x1) (bv 8 0x0))))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "addc a, 0x30" 3530 0x1200 (seq (set arg1 (load 0 (bv 16 0x30))) (set res (+ (var a) (+ (var arg1) (ite (var cy) (bv 8 0x1) (bv 8 0x0))))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "addc a, @r0" 36 0x1200 (seq (set arg1 (load 0 (cast 16 false (var r0)))) (set res (+ (var a) (+ (var arg1) (ite (var cy) (bv 8 0x1) (bv 8 0x0))))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+a "addc a, [r0]" 36 0x1200 (seq (set arg1 (load 0 (cast 16 false (var r0)))) (set res (+ (var a) (+ (var arg1) (ite (var cy) (bv 8 0x1) (bv 8 0x0))))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "addc a, r5" 3d 0x1200 (seq (set arg1 (var r5)) (set res (+ (var a) (+ (var arg1) (ite (var cy) (bv 8 0x1) (bv 8 0x0))))) (set carry (| (& (var a) (var arg1)) (& (~- (var res)) (| (var a) (var arg1))))) (set cy (! (is_zero (& (var carry) (bv 8 0x80))))) (set ac (! (is_zero (& (var carry) (bv 8 0x8))))) (set ov (|| (&& (msb (var a)) (&& (msb (var arg1)) (! (msb (var res))))) (&& (! (msb (var a))) (&& (! (msb (var arg1))) (msb (var res)))))) (set a (var res)))
+ad "ajmp 0x1723" e123 0x1200 (jmp (+ (cast 16 false (var a)) (var dptr)))
+ad "anl a, #0x01" 5401 0x1200 (set a (& (var a) (bv 8 0x1)))
+ad "anl a, 0x40" 5540 0x1200 (set a (& (var a) (load 0 (bv 16 0x40))))
+ad "anl a, @r0" 56 0x1200 (set a (& (var a) (load 0 (cast 16 false (var r0)))))
+a "anl a, [r0]" 56 0x1200 (set a (& (var a) (load 0 (cast 16 false (var r0)))))
+ad "anl a, r4" 5c 0x1200 (set a (& (var a) (var r4)))
+ad "anl c, 0x24.2" 8222 0x1200 (set cy (&& (var cy) (! (is_zero (loadw 0 1 (bv 16 0x22))))))
+ad "anl c, /0x24.2" b022 0x1200 (set cy (&& (var cy) (! (is_zero (loadw 0 1 (bv 16 0x22))))))
+ad "anl 0x40, a" 5240 0x1200 (store 0 (bv 16 0x40) (& (load 0 (bv 16 0x40)) (var a)))
+ad "anl 0xc9, #0xdf" 53c9df 0x1200 (store 0 (bv 16 0xc9) (& (load 0 (bv 16 0xc9)) (bv 8 0xdf)))
+ad "cjne a, #0xab, 0x1216" b4ab13 0x1200 (branch (! (== (var a) (bv 8 0xab))) (jmp (bv 16 0x1213)) nop)
+ad "cjne a, 0x60, 0x121b" b56018 0x1200 (branch (! (== (var a) (load 0 (bv 16 0x60)))) (jmp (bv 16 0x1218)) nop)
+ad "cjne @r1, #0x24, 0x1235" b72432 0x1200 (branch (! (== (load 0 (cast 16 false (var r1))) (bv 8 0x24))) (jmp (bv 16 0x1232)) nop)
+a "cjne [r1], #0x24, 0x1235" b72432 0x1200 (branch (! (== (load 0 (cast 16 false (var r1))) (bv 8 0x24))) (jmp (bv 16 0x1232)) nop)
+ad "cjne r7, #0x02, 0x1208" bf0205 0x1200 (branch (! (== (var r7) (bv 8 0x2))) (jmp (bv 16 0x1205)) nop)
+ad "clr a" e4 0x1200 (set a (bv 8 0x0))
+ad "clr 0xc8.7" c2cf 0x1200 (storew 0 (bv 16 0xcf) (ite false (bv 1 0x1) (bv 1 0x0)))
+ad "clr c" c3 0x1200 (set cy false)
+ad "cpl a" f4 0x1200 (set a (~ (var a)))
+ad "cpl 0x2a.5" b255 0x1200 (storew 0 (bv 16 0x55) (ite (! (! (is_zero (loadw 0 1 (bv 16 0x55))))) (bv 1 0x1) (bv 1 0x0)))
+ad "cpl c" b3 0x1200 (set cy (! (var cy)))
+ad "da a" d4 0x1200 (seq (set s0 (|| (var cy) (! (ule (& (var a) (bv 8 0xf)) (bv 8 0x9))))) (set s1 (|| (var s0) (! (ule (& (var a) (bv 8 0xf0)) (bv 8 0x90))))) (set @a (var a)) (branch (var s0) (set @a (+ (var @a) (bv 8 0x6))) nop) (branch (var s1) (set @a (+ (var @a) (bv 8 0x60))) nop) (set cy (! (ule (var @a) (bv 8 0x99)))) (set a (var @a)))
+ad "dec a" 14 0x1200 (seq (set arg0 (var a)) (set a (- (var arg0) (bv 8 0x1))))
+ad "dec 0x35" 1535 0x1200 (seq (set arg0 (load 0 (bv 16 0x35))) (store 0 (bv 16 0x35) (- (var arg0) (bv 8 0x1))))
+ad "dec @r1" 17 0x1200 (seq (set arg0 (load 0 (cast 16 false (var r1)))) (store 0 (cast 16 false (var r1)) (- (var arg0) (bv 8 0x1))))
+a "dec [r1]" 17 0x1200 (seq (set arg0 (load 0 (cast 16 false (var r1)))) (store 0 (cast 16 false (var r1)) (- (var arg0) (bv 8 0x1))))
+ad "dec r7" 1f 0x1200 (seq (set arg0 (var r7)) (set r7 (- (var arg0) (bv 8 0x1))))
+ad "div ab" 84 0x1200 (seq (set @a (var a)) (set @b (var b)) (set a (div (var @a) (var @b))) (set b (mod (var @a) (var @b))) (set cy false) (set ov (is_zero (var @b))))
+ad "djnz 0x40, 0x118b" d54088 0x1200 (seq (set res (- (load 0 (bv 16 0x40)) (bv 8 0x1))) (store 0 (bv 16 0x40) (var res)) (branch (! (is_zero (var res))) (jmp (bv 16 0x1288)) nop))
+ad "djnz r0, 0x11fe" d8fc 0x1200 (seq (set res (- (var r0) (bv 8 0x1))) (set r0 (var res)) (branch (! (is_zero (var res))) (jmp (bv 16 0x12fc)) nop))
+ad "djnz r7, 0x11fc" dffa 0x1200 (seq (set res (- (var r7) (bv 8 0x1))) (set r7 (var res)) (branch (! (is_zero (var res))) (jmp (bv 16 0x12fa)) nop))
+ad "inc a" 04 0x1200 (seq (set arg0 (var a)) (set a (+ (var arg0) (bv 8 0x1))))
+ad "inc 0x34" 0534 0x1200 (seq (set arg0 (load 0 (bv 16 0x34))) (store 0 (bv 16 0x34) (+ (var arg0) (bv 8 0x1))))
+ad "inc dptr" a3 0x1200 (seq (set arg0 (var dptr)) (set dptr (+ (var arg0) (bv 16 0x1))))
+ad "inc r0" 08 0x1200 (seq (set arg0 (var r0)) (set r0 (+ (var arg0) (bv 8 0x1))))
+ad "jb 0x2f.5, 0x1206" 207d03 0x1200 (branch (! (is_zero (loadw 0 1 (bv 16 0x7d)))) (jmp (bv 16 0x1203)) nop)
+ad "jbc 0x22.5, 0x120b" 101508 0x1200 (branch (! (is_zero (loadw 0 1 (bv 16 0x15)))) (seq (storew 0 (bv 16 0x15) (ite false (bv 1 0x1) (bv 1 0x0))) (jmp (bv 16 0x1208))) nop)
+ad "jc 0x1205" 4003 0x1200 (branch (var cy) (jmp (bv 16 0x1203)) nop)
+ad "jmp @a+dptr" 73 0x1200 (jmp (+ (cast 16 false (var a)) (var dptr)))
+a "jmp [a+dptr]" 73 0x1200 (jmp (+ (cast 16 false (var a)) (var dptr)))
+ad "jnb 0x2a.1, 0x120b" 305108 0x1200 (branch (! (is_zero (loadw 0 1 (bv 16 0x51)))) (jmp (bv 16 0x1208)) nop)
+ad "jnc 0x1209" 5007 0x1200 (branch (! (var cy)) (jmp (bv 16 0x1207)) nop)
+ad "jnz 0x1215" 7013 0x1200 (branch (! (is_zero (var a))) (jmp (bv 16 0x1213)) nop)
+ad "jz 0x1217" 6015 0x1200 (branch (is_zero (var a)) (jmp (bv 16 0x1215)) nop)
+ad "lcall 0xb6cf" 12b6cf 0x1200 (seq (store 0 (cast 16 false (var sp)) (cast 8 false (>> (bv 16 0x1203) (bv 8 0x8) false))) (set sp (+ (var sp) (bv 8 0x1))) (store 0 (cast 16 false (var sp)) (cast 8 false (& (bv 16 0x1203) (bv 16 0xff)))) (set sp (+ (var sp) (bv 8 0x1))) (jmp (bv 16 0xb6cf)))
+ad "ljmp 0x2c0d" 022c0d 0x1200 (jmp (+ (cast 16 false (var a)) (var dptr)))
+ad "mov a, #0xff" 74ff 0x1200 (set a (bv 8 0xff))
+ad "mov a, 0x20" e520 0x1200 (set a (load 0 (bv 16 0x20)))
+ad "mov a, @r1" e7 0x1200 (set a (load 0 (cast 16 false (var r1))))
+a "mov a, [r1]" e7 0x1200 (set a (load 0 (cast 16 false (var r1))))
+ad "mov a, r6" ee 0x1200 (set a (var r6))
+ad "mov 0x24.2, c" 9222 0x1200 (storew 0 (bv 16 0x22) (ite (var cy) (bv 1 0x1) (bv 1 0x0)))
+ad "mov c, 0x24.2" a222 0x1200 (set cy (! (is_zero (loadw 0 1 (bv 16 0x22)))))
+ad "mov 0x44, a" f544 0x1200 (store 0 (bv 16 0x44) (var a))
+ad "mov 0xc0, #0x7f" 75c07f 0x1200 (store 0 (bv 16 0xc0) (bv 8 0xc0))
+ad "mov 0x55, 0x44" 854455 0x1200 (store 0 (bv 16 0x44) (load 0 (bv 16 0x55)))
+ad "mov 0x44, @r1" 8744 0x1200 (store 0 (bv 16 0x44) (load 0 (cast 16 false (var r1))))
+a "mov 0x44, [r1]" 8744 0x1200 (store 0 (bv 16 0x44) (load 0 (cast 16 false (var r1))))
+ad "mov 0x93, r4" 8c93 0x1200 (store 0 (bv 16 0x93) (var r4))
+ad "mov dptr, #0x1234" 901234 0x1200 (set dptr (bv 16 0x1234))
+ad "mov @r0, a" f6 0x1200 (store 0 (cast 16 false (var r0)) (var a))
+a "mov [r0], a" f6 0x1200 (store 0 (cast 16 false (var r0)) (var a))
+ad "mov @r1, #0x00" 7700 0x1200 (store 0 (cast 16 false (var r1)) (bv 8 0x0))
+a "mov [r1], #0x00" 7700 0x1200 (store 0 (cast 16 false (var r1)) (bv 8 0x0))
+ad "mov @r0, 0x20" a620 0x1200 (store 0 (cast 16 false (var r0)) (load 0 (bv 16 0x20)))
+a "mov [r0], 0x20" a620 0x1200 (store 0 (cast 16 false (var r0)) (load 0 (bv 16 0x20)))
+ad "mov r5, a" fd 0x1200 (set r5 (var a))
+ad "mov r1, #0x00" 7900 0x1200 (set r1 (bv 8 0x0))
+ad "mov r2, 0x32" aa32 0x1200 (set r2 (load 0 (bv 16 0x32)))
+ad "movc a, @a+pc" 83 0x1200 (set a (cast 8 false (+ (cast 16 false (load 0 (cast 16 false (var a)))) (bv 16 0x1200))))
+a "movc a, [a+pc]" 83 0x1200 (set a (cast 8 false (+ (cast 16 false (load 0 (cast 16 false (var a)))) (bv 16 0x1200))))
+ad "movc a, @a+dptr" 93 0x1200 (set a (cast 8 false (+ (cast 16 false (load 0 (cast 16 false (var a)))) (var dptr))))
+a "movc a, [a+dptr]" 93 0x1200 (set a (cast 8 false (+ (cast 16 false (load 0 (cast 16 false (var a)))) (var dptr))))
+ad "movx a, @dptr" e0 0x1200 (set a (load 0 (cast 16 false (var dptr))))
+a "movx a, [dptr]" e0 0x1200 (set a (load 0 (cast 16 false (var dptr))))
+ad "movx a, @r1" e3 0x1200 (set a (load 0 (cast 16 false (var r1))))
+a "movx a, [r1]" e3 0x1200 (set a (load 0 (cast 16 false (var r1))))
+ad "movx @dptr, a" f0 0x1200 (set a (load 0 (cast 16 false (var dptr))))
+a "movx [dptr], a" f0 0x1200 (set a (load 0 (cast 16 false (var dptr))))
+ad "movx @r0, a" f2 0x1200 (set a (load 0 (cast 16 false (var r0))))
+a "movx [r0], a" f2 0x1200 (set a (load 0 (cast 16 false (var r0))))
+ad "mul ab" a4 0x1200 (seq (set v (div (cast 16 false (var a)) (cast 16 false (var b)))) (set mbv (cast 8 false (>> (var v) (bv 16 0x8) false))) (set a (cast 8 false (var v))) (set b (var mbv)) (set cy false) (set ov (! (is_zero (var mbv)))))
+ad "nop" 00 0x1200 nop
+ad "orl a, #0x80" 4480 0x1200 (set a (| (var a) (bv 8 0x80)))
+ad "orl a, 0x32" 4532 0x1200 (set a (| (var a) (load 0 (bv 16 0x32))))
+ad "orl a, @r0" 46 0x1200 (set a (| (var a) (load 0 (cast 16 false (var r0)))))
+a "orl a, [r0]" 46 0x1200 (set a (| (var a) (load 0 (cast 16 false (var r0)))))
+ad "orl a, r5" 4d 0x1200 (set a (| (var a) (var r5)))
+ad "orl c, 0x24.2" 7222 0x1200 (set cy (|| (var cy) (! (is_zero (loadw 0 1 (bv 16 0x22))))))
+ad "orl c, /0x24.2" a022 0x1200 (set cy (|| (var cy) (! (is_zero (loadw 0 1 (bv 16 0x22))))))
+ad "orl 0x22, a" 4222 0x1200 (store 0 (bv 16 0x22) (| (load 0 (bv 16 0x22)) (var a)))
+ad "orl 0xdc, #0x02" 43dc02 0x1200 (store 0 (bv 16 0xdc) (| (load 0 (bv 16 0xdc)) (bv 8 0x2)))
+ad "pop 0x93" d093 0x1200 (seq (store 0 (bv 16 0x93) (load 0 (cast 16 false (var sp)))) (set sp (- (var sp) (bv 8 0x1))))
+ad "push 0x93" c093 0x1200 (seq (store 0 (cast 16 false (var sp)) (load 0 (bv 16 0x93))) (set sp (+ (var sp) (bv 8 0x1))))
+ad "ret" 22 0x1200 (seq (set @hb (load 0 (cast 16 false (var sp)))) (set @lb (load 0 (cast 16 false (- (var sp) (bv 8 0x1))))) (set @pc (& (cast 16 false (var @lb)) (cast 16 false (<< (var @hb) (bv 8 0x8) false)))) (set sp (- (var sp) (bv 8 0x2))) (jmp (var @pc)))
+ad "reti" 32 0x1200 (seq (set @hb (load 0 (cast 16 false (var sp)))) (set @lb (load 0 (cast 16 false (- (var sp) (bv 8 0x1))))) (set @pc (& (cast 16 false (var @lb)) (cast 16 false (<< (var @hb) (bv 8 0x8) false)))) (set sp (- (var sp) (bv 8 0x2))) (jmp (var @pc)))
+ad "rl a" 23 0x1200 (set a (| (<< (var a) (bv 8 0x1) false) (>> (var a) (bv 8 0x7) false)))
+ad "rlc a" 33 0x1200 (seq (set cy (ite (var cy) (bv 8 0x1) (bv 8 0x0))) (set cy (! (is_zero (>> (var a) (bv 8 0x7) false)))) (set a (| (<< (var a) (bv 8 0x1) false) (var cy))))
+ad "rr a" 03 0x1200 (set a (| (>> (var a) (bv 8 0x1) false) (<< (var a) (bv 8 0x7) false)))
+ad "rrc a" 13 0x1200 (seq (set cy (ite (var cy) (bv 8 0x1) (bv 8 0x0))) (set cy (! (is_zero (& (var a) (bv 8 0x1))))) (set a (| (<< (var a) (bv 8 0x1) false) (<< (var cy) (bv 8 0x7) false))))
+ad "setb 0x28.2" d242 0x1200 (storew 0 (bv 16 0x42) (ite true (bv 1 0x1) (bv 1 0x0)))
+ad "setb c" d3 0x1200 (set cy true)
+ad "sjmp 0x1216" 8014 0x1200 (jmp (+ (cast 16 false (var a)) (var dptr)))
+ad "subb a, #0x01" 9401 0x1200 (seq (set arg1 (bv 8 0x1)) (set res (- (- (var a) (var arg1)) (ite (var cy) (bv 8 0x1) (bv 8 0x0)))) (set borrow (| (& (~- (var a)) (var arg1)) (& (var res) (| (var arg1) (~- (var a)))))) (set b6 (! (is_zero (& (var borrow) (bv 8 0x40))))) (set b7 (! (is_zero (& (var borrow) (bv 8 0x80))))) (set cy (var b7)) (set ac (! (is_zero (& (var borrow) (bv 8 0x8))))) (set ov (|| (&& (var b6) (! (var b7))) (&& (! (var b6)) (var b7)))) (set a (var res)))
+ad "subb a, 0x44" 9544 0x1200 (seq (set arg1 (load 0 (bv 16 0x44))) (set res (- (- (var a) (var arg1)) (ite (var cy) (bv 8 0x1) (bv 8 0x0)))) (set borrow (| (& (~- (var a)) (var arg1)) (& (var res) (| (var arg1) (~- (var a)))))) (set b6 (! (is_zero (& (var borrow) (bv 8 0x40))))) (set b7 (! (is_zero (& (var borrow) (bv 8 0x80))))) (set cy (var b7)) (set ac (! (is_zero (& (var borrow) (bv 8 0x8))))) (set ov (|| (&& (var b6) (! (var b7))) (&& (! (var b6)) (var b7)))) (set a (var res)))
+ad "subb a, @r0" 96 0x1200 (seq (set arg1 (load 0 (cast 16 false (var r0)))) (set res (- (- (var a) (var arg1)) (ite (var cy) (bv 8 0x1) (bv 8 0x0)))) (set borrow (| (& (~- (var a)) (var arg1)) (& (var res) (| (var arg1) (~- (var a)))))) (set b6 (! (is_zero (& (var borrow) (bv 8 0x40))))) (set b7 (! (is_zero (& (var borrow) (bv 8 0x80))))) (set cy (var b7)) (set ac (! (is_zero (& (var borrow) (bv 8 0x8))))) (set ov (|| (&& (var b6) (! (var b7))) (&& (! (var b6)) (var b7)))) (set a (var res)))
+a "subb a, [r0]" 96 0x1200 (seq (set arg1 (load 0 (cast 16 false (var r0)))) (set res (- (- (var a) (var arg1)) (ite (var cy) (bv 8 0x1) (bv 8 0x0)))) (set borrow (| (& (~- (var a)) (var arg1)) (& (var res) (| (var arg1) (~- (var a)))))) (set b6 (! (is_zero (& (var borrow) (bv 8 0x40))))) (set b7 (! (is_zero (& (var borrow) (bv 8 0x80))))) (set cy (var b7)) (set ac (! (is_zero (& (var borrow) (bv 8 0x8))))) (set ov (|| (&& (var b6) (! (var b7))) (&& (! (var b6)) (var b7)))) (set a (var res)))
+ad "subb a, r5" 9d 0x1200 (seq (set arg1 (var r5)) (set res (- (- (var a) (var arg1)) (ite (var cy) (bv 8 0x1) (bv 8 0x0)))) (set borrow (| (& (~- (var a)) (var arg1)) (& (var res) (| (var arg1) (~- (var a)))))) (set b6 (! (is_zero (& (var borrow) (bv 8 0x40))))) (set b7 (! (is_zero (& (var borrow) (bv 8 0x80))))) (set cy (var b7)) (set ac (! (is_zero (& (var borrow) (bv 8 0x8))))) (set ov (|| (&& (var b6) (! (var b7))) (&& (! (var b6)) (var b7)))) (set a (var res)))
+ad "swap a" c4 0x1200 (set a (| (<< (var a) (bv 8 0x4) false) (>> (var a) (bv 8 0x4) false)))
+ad "xch a, 0x45" c545 0x1200 (seq (set @a (var a)) (set a (load 0 (bv 16 0x45))) (store 0 (bv 16 0x45) (var @a)))
+ad "xch a, @r0" c6 0x1200 (seq (set @a (var a)) (set a (load 0 (cast 16 false (var r0)))) (store 0 (cast 16 false (var r0)) (var @a)))
+a "xch a, [r0]" c6 0x1200 (seq (set @a (var a)) (set a (load 0 (cast 16 false (var r0)))) (store 0 (cast 16 false (var r0)) (var @a)))
+ad "xch a, r6" ce 0x1200 (seq (set @a (var a)) (set a (var r6)) (set r6 (var @a)))
+ad "xchd a, @r1" d7 0x1200 (seq (set @a (var a)) (set @b (load 0 (cast 16 false (var r1)))) (set a (| (& (var @a) (bv 8 0xf0)) (& (var @b) (bv 8 0xf)))) (store 0 (cast 16 false (var r1)) (| (& (var @b) (bv 8 0xf0)) (& (var @a) (bv 8 0xf)))))
+a "xchd a, [r1]" d7 0x1200 (seq (set @a (var a)) (set @b (load 0 (cast 16 false (var r1)))) (set a (| (& (var @a) (bv 8 0xf0)) (& (var @b) (bv 8 0xf)))) (store 0 (cast 16 false (var r1)) (| (& (var @b) (bv 8 0xf0)) (& (var @a) (bv 8 0xf)))))
+ad "xrl a, #0xfa" 64fa 0x1200 (set a (^ (var a) (bv 8 0xfa)))
+ad "xrl a, 0x34" 6534 0x1200 (set a (^ (var a) (load 0 (bv 16 0x34))))
+ad "xrl a, @r0" 66 0x1200 (set a (^ (var a) (load 0 (cast 16 false (var r0)))))
+a "xrl a, [r0]" 66 0x1200 (set a (^ (var a) (load 0 (cast 16 false (var r0)))))
+ad "xrl a, r7" 6f 0x1200 (set a (^ (var a) (var r7)))
+ad "xrl 0x34, a" 6234 0x1200 (store 0 (bv 16 0x34) (^ (load 0 (bv 16 0x34)) (var a)))
+ad "xrl 0x34, #0xff" 6334ff 0x1200 (store 0 (bv 16 0x34) (^ (load 0 (bv 16 0x34)) (bv 8 0xff)))

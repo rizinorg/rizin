@@ -46,6 +46,11 @@ static bool rz_bin_dmp64_init_triage(struct rz_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
+static void dmp64_memory_run_endian_to_host(dmp_p_memory_run *run) {
+	run->BasePage = rz_read_le64((ut8 *)&run->BasePage);
+	run->PageCount = rz_read_le64((ut8 *)&run->PageCount);
+}
+
 static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	int i, j;
 	dmp64_p_memory_desc *mem_desc = &obj->header->PhysicalMemoryBlock;
@@ -73,7 +78,8 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	ut64 num_page = 0;
 	ut64 base = sizeof(dmp64_header);
 	for (i = 0; i < num_runs; i++) {
-		dmp_p_memory_run *run = &(runs[i]);
+		dmp_p_memory_run *run = &runs[i];
+		dmp64_memory_run_endian_to_host(run);
 		for (j = 0; j < run->PageCount; j++) {
 			dmp_page_desc *page = RZ_NEW0(dmp_page_desc);
 			if (!page) {
@@ -94,17 +100,75 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
+static void dmp64_memory_desc_endian_to_host(dmp64_p_memory_desc *desc) {
+	desc->NumberOfRuns = rz_read_le32((ut8 *)&desc->NumberOfRuns);
+	desc->NumberOfPages = rz_read_le64((ut8 *)&desc->NumberOfPages);
+	dmp64_memory_run_endian_to_host(&desc->Run[0]);
+}
+
+static void dmp64_windows_exception_record64_endian_to_host(struct windows_exception_record64 *rec) {
+	rec->exception_code = rz_read_le32((ut8 *)&rec->exception_code);
+	rec->exception_flags = rz_read_le32((ut8 *)&rec->exception_flags);
+	rec->exception_record = rz_read_le64((ut8 *)&rec->exception_record);
+	rec->exception_address = rz_read_le64((ut8 *)&rec->exception_address);
+	rec->number_parameters = rz_read_le32((ut8 *)&rec->number_parameters);
+
+	for (size_t i = 0; i < EXCEPTION_MAXIMUM_PARAMETERS; ++i) {
+		rec->exception_information[i] = rz_read_le64((ut8 *)&rec->exception_information[i]);
+	}
+}
+
 static int rz_bin_dmp64_init_header(struct rz_bin_dmp64_obj_t *obj) {
-	if (!(obj->header = RZ_NEW0(dmp64_header))) {
+	dmp64_header *dhdr = NULL;
+
+	if (!(dhdr = RZ_NEW0(dmp64_header))) {
 		RZ_LOG_ERROR("Cannot allocate dmp64_header.\n");
 		return false;
 	}
-	if (rz_buf_read_at(obj->b, 0, (ut8 *)obj->header, sizeof(dmp64_header)) < 0) {
+
+	if (rz_buf_read_at(obj->b, 0, (ut8 *)dhdr, sizeof(dmp64_header)) != sizeof(dmp64_header)) {
 		RZ_LOG_ERROR("cannot read dmp64 header\n");
 		return false;
 	}
-	obj->dtb = obj->header->DirectoryTableBase;
 
+	dhdr->MajorVersion = rz_read_le32((ut8 *)&dhdr->MajorVersion);
+	dhdr->MinorVersion = rz_read_le32((ut8 *)&dhdr->MinorVersion);
+
+	dhdr->DirectoryTableBase = rz_read_le64((ut8 *)&dhdr->DirectoryTableBase);
+	dhdr->PfnDataBase = rz_read_le64((ut8 *)&dhdr->PfnDataBase);
+	dhdr->PsLoadedModuleList = rz_read_le64((ut8 *)&dhdr->PsLoadedModuleList);
+	dhdr->PsActiveProcessHead = rz_read_le64((ut8 *)&dhdr->PsActiveProcessHead);
+
+	dhdr->MachineImageType = rz_read_le32((ut8 *)&dhdr->MachineImageType);
+	dhdr->NumberProcessors = rz_read_le32((ut8 *)&dhdr->NumberProcessors);
+	dhdr->BugCheckCode = rz_read_le32((ut8 *)&dhdr->BugCheckCode);
+
+	dhdr->BugCheckParameter1 = rz_read_le64((ut8 *)&dhdr->BugCheckParameter1);
+	dhdr->BugCheckParameter2 = rz_read_le64((ut8 *)&dhdr->BugCheckParameter2);
+	dhdr->BugCheckParameter3 = rz_read_le64((ut8 *)&dhdr->BugCheckParameter3);
+	dhdr->BugCheckParameter4 = rz_read_le64((ut8 *)&dhdr->BugCheckParameter4);
+
+	dhdr->KdDebuggerDataBlock = rz_read_le64((ut8 *)&dhdr->KdDebuggerDataBlock);
+
+	if (memcmp(dhdr->PhysicalMemoryBlockBuffer, DMP_UNUSED_MAGIC, 4)) {
+		// it's a valid PhysicalMemoryBlock
+		dmp64_memory_desc_endian_to_host(&dhdr->PhysicalMemoryBlock);
+	}
+
+	dmp64_windows_exception_record64_endian_to_host(&dhdr->Exception);
+
+	dhdr->DumpType = rz_read_le32((ut8 *)&dhdr->DumpType);
+	dhdr->RequiredDumpSpace = rz_read_le64((ut8 *)&dhdr->RequiredDumpSpace);
+	dhdr->SystemTime = rz_read_le64((ut8 *)&dhdr->SystemTime);
+	dhdr->SystemUpTime = rz_read_le64((ut8 *)&dhdr->SystemUpTime);
+	dhdr->MiniDumpFields = rz_read_le32((ut8 *)&dhdr->MiniDumpFields);
+	dhdr->SecondaryDataState = rz_read_le32((ut8 *)&dhdr->SecondaryDataState);
+	dhdr->ProductType = rz_read_le32((ut8 *)&dhdr->ProductType);
+	dhdr->SuiteMask = rz_read_le32((ut8 *)&dhdr->SuiteMask);
+	dhdr->WriterStatus = rz_read_le32((ut8 *)&dhdr->WriterStatus);
+
+	obj->header = dhdr;
+	obj->dtb = dhdr->DirectoryTableBase;
 	return true;
 }
 
@@ -145,7 +209,7 @@ static bool rz_bin_dmp64_init_triage_drivers(struct rz_bin_dmp64_obj_t *obj) {
 		}
 		ut8 *file = calloc(str.count + 1, sizeof(ut16));
 		ut8 *file_utf8 = calloc(str.count + 1, sizeof(ut16));
-		if (!file) {
+		if (!file || !file_utf8) {
 			free(driver);
 			free(file);
 			free(file_utf8);
@@ -214,10 +278,9 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	rz_bitmap_set_bytes(bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
-	ut64 i;
 	bool create_new_page = true;
 	dmp_page_desc *page;
-	for (i = 0; i < num_pages; i++) {
+	for (ut64 i = 0; i < num_pages; i++) {
 		if (!rz_bitmap_test(bitmap, i)) {
 			create_new_page = true;
 			continue;
@@ -244,7 +307,9 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		create_new_page = false;
 	}
 	if (obj->bmp_header->TotalPresentPages != num_bitset) {
-		RZ_LOG_ERROR("The total present pages number in the header does not match with the counted one.\n");
+		RZ_LOG_ERROR("The total present pages number (%" PFMT64u ") in the header "
+			     "does not match with the counted one (%" PFMT64u ").\n",
+			obj->bmp_header->TotalPresentPages, num_bitset);
 		rz_bitmap_free(bitmap);
 		return false;
 	}
@@ -262,11 +327,16 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 		RZ_LOG_ERROR("Cannot read bmp_header\n");
 		return false;
 	}
-	if (memcmp(obj->bmp_header, DMP_BMP_MAGIC, 8) &&
-		memcmp(obj->bmp_header, DMP_BMP_FULL_MAGIC, 8)) {
+	if (memcmp((ut8 *)obj->bmp_header, DMP_BMP_MAGIC, 8) &&
+		memcmp((ut8 *)obj->bmp_header, DMP_BMP_FULL_MAGIC, 8)) {
 		RZ_LOG_ERROR("Invalid Bitmap Magic\n");
 		return false;
 	}
+
+	obj->bmp_header->FirstPage = rz_read_le64((ut8 *)&obj->bmp_header->FirstPage);
+	obj->bmp_header->TotalPresentPages = rz_read_le64((ut8 *)&obj->bmp_header->TotalPresentPages);
+	obj->bmp_header->Pages = rz_read_le64((ut8 *)&obj->bmp_header->Pages);
+
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc(1, bitmapsize);
 	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {

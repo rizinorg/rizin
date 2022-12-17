@@ -166,6 +166,8 @@ rz_analysis_sources = [
   'arch/ppc/ppc_il_flag_ops.c',
   'arch/sh/sh_il.c',
   'arch/x86/x86_il.c',
+  'arch/8051/8051_il.c',
+  'arch/8051/8051_parse.c',
   '../asm/arch/amd29k/amd29k.c',
   '../asm/arch/avr/disassembler.c',
   '../asm/arch/cil/cil_dis.c',

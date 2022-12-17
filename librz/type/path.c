@@ -122,91 +122,140 @@ RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char
 	return path_walker(typedb, path);
 }
 
-// TODO: Handle arrays
-static bool structured_member_walker(const RzTypeDB *typedb, RzList /*<RzTypePath *>*/ *list, RzType *parent, RzType *type, char *path, ut64 offset) {
-	rz_return_val_if_fail(list && type, false);
-	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return false;
+static void collect_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath *>*/ *list, const RzType *type, char *prefix, ut64 offset, unsigned int depth);
+
+static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath *>*/ *list, const RzBaseType *btype, char *prefix, ut64 offset, unsigned int depth) {
+	rz_return_if_fail(typedb && list && btype && prefix);
+	if (!depth) {
+		return;
 	}
-	rz_return_val_if_fail(type->identifier.name, false);
-	bool result = true;
-	if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
-		// Get the base type
-		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-		if (!btype) {
-			return false;
-		}
+	switch (btype->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
 		ut64 memb_offset = 0;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
 			if (memb_offset == offset) {
-				RzTypePath *tpath = rz_type_path_new(parent, rz_str_newf("%s.%s.%s", path, btype->name, memb->name));
+				RzTypePath *tpath = rz_type_path_new(memb->type, rz_str_newf("%s.%s", prefix, memb->name));
 				if (tpath) {
 					rz_list_append(list, tpath);
 				}
 			}
-			char *newpath = rz_str_newf("%s.%s", path, memb->name);
-			result &= structured_member_walker(typedb, list, parent, memb->type, newpath, memb_offset + offset);
-			memb_offset += rz_type_db_get_bitsize(typedb, memb->type) / 8;
-			free(newpath);
+			ut64 bytesz = rz_type_db_get_bitsize(typedb, memb->type) / 8;
+			if (memb_offset + bytesz > offset) {
+				char *newpath = rz_str_newf("%s.%s", prefix, memb->name);
+				collect_type_paths(typedb, list, memb->type, newpath, offset - memb_offset, depth - 1);
+				free(newpath);
+				break;
+			}
+			memb_offset += bytesz;
 		}
-	} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
-		// Get the base type
-		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-		if (!btype) {
-			return false;
-		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_UNION: {
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *newpath = rz_str_newf("%s.%s", path, memb->name);
-			result &= structured_member_walker(typedb, list, parent, memb->type, path, offset);
+			char *newpath = rz_str_newf("%s.%s", prefix, memb->name);
+			if (offset == 0) {
+				RzTypePath *tpath = rz_type_path_new(memb->type, newpath);
+				if (tpath) {
+					rz_list_append(list, tpath);
+				}
+			}
+			collect_type_paths(typedb, list, memb->type, newpath, offset, depth - 1);
+			if (offset != 0) {
+				free(newpath);
+			}
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_TYPEDEF: {
+		RzType *ttype = rz_type_db_base_type_unwrap_typedef(typedb, btype);
+		if (!ttype) {
+			return;
+		}
+		collect_type_paths(typedb, list, ttype, prefix, offset, depth); // depth not decreased because this is not a visible step in the path
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+static void collect_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath *>*/ *list, const RzType *type, char *prefix, ut64 offset, unsigned int depth) {
+	rz_return_if_fail(typedb && list && type && prefix);
+	if (!depth) {
+		return;
+	}
+	switch (type->kind) {
+	case RZ_TYPE_KIND_IDENTIFIER: {
+		rz_return_if_fail(type->identifier.name);
+		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+		if (!btype) {
+			return;
+		}
+		collect_base_type_paths(typedb, list, btype, prefix, offset, depth); // depth not decreased because this is not a visible step in the path
+		break;
+	}
+	case RZ_TYPE_KIND_ARRAY: {
+		rz_return_if_fail(type->array.type);
+		ut64 stride = rz_type_db_get_bitsize(typedb, type->array.type) / 8;
+		if (!stride) {
+			break;
+		}
+		ut64 idx = offset / stride;
+		if (idx >= type->array.count) {
+			break;
+		}
+		ut64 idx_offset = offset - idx * stride;
+		char *newpath = rz_str_newf("%s[%" PFMT64u "]", prefix, idx);
+		if (idx_offset == 0) {
+			RzTypePath *tpath = rz_type_path_new(type->array.type, newpath);
+			if (tpath) {
+				rz_list_append(list, tpath);
+			}
+		}
+		collect_type_paths(typedb, list, type->array.type, newpath, idx_offset, depth - 1);
+		if (idx_offset != 0) {
 			free(newpath);
 		}
+		break;
 	}
-	return result;
+	default:
+		break;
+	}
 }
 
 /**
- * \brief Returns the list of all type paths matching the offset
+ * \brief Returns the list of all paths into the base type matching the offset
  *
- * \param typedb Types Database instance
- * \param btype The base type
- * \param offset The offset of the path to match against
+ * \param btype The root type from which paths are searched
+ * \param offset The offset into \p btype to match against
+ * \param max_depth Maximum number of components a path may have
  */
-RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_base_type_path_by_offset(const RzTypeDB *typedb, const RzBaseType *btype, ut64 offset, unsigned int max_depth) {
+	rz_return_val_if_fail(typedb && btype && btype->name, NULL);
 	RzList *list = rz_list_newf((RzListFree)rz_type_path_free);
-	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
-		RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
-		RzTypeStructMember *memb;
-		ut64 memb_offset = 0;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
-			if (memb_offset == offset) {
-				RzTypePath *tpath = rz_type_path_new(t, rz_str_newf("%s.%s", btype->name, memb->name));
-				if (tpath) {
-					rz_list_append(list, tpath);
-				}
-			}
-			// We go into the nested structures/unions if they are members of the structure
-			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			structured_member_walker(typedb, list, t, memb->type, path, memb_offset + offset);
-			memb_offset += rz_type_db_get_bitsize(typedb, memb->type) / 8;
-			free(path);
-		}
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
-		// This function makes sense only for structures since union
-		// members have exact same offset
-		// But if the union has compound members, e.g. structures, their
-		// internal offsets can be different
-		RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
-		RzTypeUnionMember *memb;
-		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			structured_member_walker(typedb, list, t, memb->type, path, offset);
-			free(path);
-		}
-	} else {
-		rz_warn_if_reached();
+	if (!list) {
+		return NULL;
 	}
+	collect_base_type_paths(typedb, list, btype, "", offset, max_depth);
+	return list;
+}
+
+/**
+ * \brief Returns the list of all paths into the type matching the offset
+ *
+ * \param type The root type from which paths are searched
+ * \param offset The offset into \p btype to match against
+ * \param max_depth Maximum number of components a path may have
+ */
+RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_path_by_offset(const RzTypeDB *typedb, const RzType *type, ut64 offset, unsigned int max_depth) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	RzList *list = rz_list_newf((RzListFree)rz_type_path_free);
+	if (!list) {
+		return NULL;
+	}
+	collect_type_paths(typedb, list, type, "", offset, max_depth);
 	return list;
 }
 
@@ -224,10 +273,7 @@ RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_type_db_get_by_offset(const RzTypeDB
 	RzBaseType *t;
 	rz_list_foreach (types, iter, t) {
 		if (t->kind == RZ_BASE_TYPE_KIND_STRUCT || t->kind == RZ_BASE_TYPE_KIND_UNION) {
-			RzList *list = rz_type_path_by_offset(typedb, t, offset);
-			if (list) {
-				rz_list_join(result, list);
-			}
+			collect_base_type_paths(typedb, result, t, t->name, offset, 1);
 		}
 	}
 	rz_list_free(types);

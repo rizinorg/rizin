@@ -107,55 +107,6 @@ struct TListMeta {
 	ut64 offset;
 };
 
-// TODO: Also resolve pointers and arrays
-static bool type_paths_collect_by_offset_cb(void *user, ut64 k, const void *v) {
-	rz_return_val_if_fail(user && v, false);
-	struct TListMeta *tl = (struct TListMeta *)user;
-	RzType *t = (RzType *)v;
-	// Handle only identifiers here
-	if (t->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return true;
-	}
-	if (!t->identifier.name) {
-		return true;
-	}
-	// Get the base type
-	RzBaseType *btype = rz_type_db_get_base_type(tl->typedb, t->identifier.name);
-	if (!btype) {
-		return true;
-	}
-	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
-		RzList *list = rz_type_path_by_offset(tl->typedb, btype, tl->offset);
-		if (list) {
-			rz_list_join(tl->l, list);
-		}
-	}
-	return true;
-}
-
-/**
- * \brief Returns the list of all structured types that are linked and have members matching the offset
- *
- * \param analysis RzAnalysis instance
- * \param offset The offset of the member to match against
- */
-RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_links_by_offset(RzAnalysis *analysis, ut64 offset) {
-	rz_return_val_if_fail(analysis, NULL);
-	if (offset == UT64_MAX) {
-		return NULL;
-	}
-	RzList *typepaths = rz_list_new();
-	struct TListMeta tl = {
-		.typedb = analysis->typedb,
-		.l = typepaths,
-		.addr = 0,
-		.offset = offset
-	};
-	ht_up_foreach(analysis->type_links, type_paths_collect_by_offset_cb, &tl);
-	return typepaths;
-}
-
-// TODO: Also resolve pointers and arrays
 static bool type_paths_collect_by_address_cb(void *user, ut64 k, const void *v) {
 	rz_return_val_if_fail(user && v, false);
 	struct TListMeta *tl = (struct TListMeta *)user;
@@ -184,12 +135,46 @@ static bool type_paths_collect_by_address_cb(void *user, ut64 k, const void *v) 
 		return true;
 	}
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
-		RzList *list = rz_type_path_by_offset(tl->typedb, btype, offset);
+		RzList *list = rz_base_type_path_by_offset(tl->typedb, btype, offset, 1);
 		if (list) {
-			rz_list_join(tl->l, list);
+			RzListIter *iter;
+			RzTypePath *path;
+			list->free = NULL;
+			rz_list_foreach (list, iter, path) {
+				if (!path->path) {
+					rz_type_path_free(path);
+					continue;
+				}
+				char *s = rz_str_newf("%s%s", btype->name, path->path);
+				if (!s) {
+					rz_type_path_free(path);
+					continue;
+				}
+				free(path->path);
+				path->path = s;
+				RzTypePathTuple *tpl = RZ_NEW(RzTypePathTuple);
+				if (!tpl) {
+					rz_type_path_free(path);
+					continue;
+				}
+				tpl->path = path;
+				tpl->root = rz_type_identifier_of_base_type(tl->typedb, btype, false);
+				rz_list_append(tl->l, tpl);
+			}
+			rz_list_free(list);
 		}
 	}
 	return true;
+}
+
+static void type_path_tuple_free(void *p) {
+	if (!p) {
+		return;
+	}
+	RzTypePathTuple *tuple = p;
+	rz_type_path_free(tuple->path);
+	rz_type_free(tuple->root);
+	free(tuple);
 }
 
 /**
@@ -198,12 +183,12 @@ static bool type_paths_collect_by_address_cb(void *user, ut64 k, const void *v) 
  * \param analysis RzAnalysis instance
  * \param addr The address to check against possible matches
  */
-RZ_API RZ_OWN RzList /*<RzTypePath *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr) {
+RZ_API RZ_OWN RzList /*<RzTypePathTuple *>*/ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	RzList *typepaths = rz_list_new();
+	RzList *typepaths = rz_list_newf(type_path_tuple_free);
 	struct TListMeta tl = {
 		.typedb = analysis->typedb,
 		.l = typepaths,

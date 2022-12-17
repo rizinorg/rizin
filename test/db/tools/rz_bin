@@ -1213,3 +1213,12 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=rz-bin broken MZ file
+FILE=bins/mz/broken.exe
+CMDS=!rz-bin -zzj ${RZ_FILE} ; echo ""
+EXPECT=<<EOF
+{}
+[{"vaddr":77,"paddr":77,"ordinal":0,"size":45,"length":44,"section":"","type":"ascii","string":"!This program cannot be run in DOS mode.\r\r\n$"},{"vaddr":155,"paddr":155,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"Q\fb.Q"},{"vaddr":189,"paddr":189,"ordinal":2,"size":5,"length":4,"section":"","type":"ascii","string":"b.Q{"},{"vaddr":205,"paddr":205,"ordinal":3,"size":8,"length":7,"section":"","type":"ascii","string":"b.Q4<*P"},{"vaddr":213,"paddr":213,"ordinal":4,"size":6,"length":5,"section":"","type":"ascii","string":"b.Q4<"},{"vaddr":221,"paddr":221,"ordinal":5,"size":8,"length":7,"section":"","type":"ascii","string":"b.Q4<,P"},{"vaddr":229,"paddr":229,"ordinal":6,"size":8,"length":7,"section":"","type":"ascii","string":"b.QRich"},{"vaddr":241,"paddr":241,"ordinal":7,"size":30,"length":29,"section":"","type":"ascii","string":"https://malwarec2.com/drd.exe"}]
+EOF
+RUN

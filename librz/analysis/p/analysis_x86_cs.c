@@ -1087,16 +1087,16 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case X86_OP_MEM: {
 			dst = getarg(&gop, 0, 1, NULL, DST_AR, NULL);
 			esilprintf(op,
-				"%s,[%d],%s,%d,%s,+=",
-				sp, rs, dst, rs, sp);
+				"%s,[%d],%d,%s,+=,%s",
+				sp, rs, rs, sp, dst);
 			break;
 		}
 		case X86_OP_REG:
 		default: {
 			dst = getarg(&gop, 0, 0, NULL, DST_AR, NULL);
 			esilprintf(op,
-				"%s,[%d],%s,=,%d,%s,+=",
-				sp, rs, dst, rs, sp);
+				"%s,[%d],%d,%s,+=,%s,=",
+				sp, rs, rs, sp, dst);
 			break;
 		}
 		}

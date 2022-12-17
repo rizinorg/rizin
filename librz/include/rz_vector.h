@@ -276,7 +276,7 @@ static inline void *rz_pvector_tail(RzPVector *vec) {
 }
 
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
-RZ_API void **rz_pvector_contains(RzPVector *vec, void *x);
+RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x);
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
