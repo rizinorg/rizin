@@ -570,36 +570,38 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			ptr = ptr1 + 1;
 			continue;
 		}
-		// Parse group
-		gptr = groups;
 		type_bits = 0;
-		while (1) {
-			if ((gptr1 = strchr(gptr, ','))) {
-				*gptr1 = '\0';
+		// Parse group
+		if (ret >= 7) {
+			gptr = groups;
+			while (1) {
+				if ((gptr1 = strchr(gptr, ','))) {
+					*gptr1 = '\0';
+				}
+				if (rz_str_startswith(gptr, "general")) {
+					type_bits |= gpr;
+				} else if (rz_str_startswith(gptr, "all")) {
+					type_bits |= all;
+				} else if (rz_str_startswith(gptr, "save")) {
+					type_bits |= save;
+				} else if (rz_str_startswith(gptr, "restore")) {
+					type_bits |= restore;
+				} else if (rz_str_startswith(gptr, "float")) {
+					type_bits |= float_;
+				} else if (rz_str_startswith(gptr, "sse")) {
+					type_bits |= sse;
+				} else if (rz_str_startswith(gptr, "mmx")) {
+					type_bits |= mmx;
+				} else if (rz_str_startswith(gptr, "vector")) {
+					type_bits |= vector;
+				} else if (rz_str_startswith(gptr, "system")) {
+					type_bits |= system;
+				}
+				if (!gptr1) {
+					break;
+				}
+				gptr = gptr1 + 1;
 			}
-			if (rz_str_startswith(gptr, "general")) {
-				type_bits |= gpr;
-			} else if (rz_str_startswith(gptr, "all")) {
-				type_bits |= all;
-			} else if (rz_str_startswith(gptr, "save")) {
-				type_bits |= save;
-			} else if (rz_str_startswith(gptr, "restore")) {
-				type_bits |= restore;
-			} else if (rz_str_startswith(gptr, "float")) {
-				type_bits |= float_;
-			} else if (rz_str_startswith(gptr, "sse")) {
-				type_bits |= sse;
-			} else if (rz_str_startswith(gptr, "mmx")) {
-				type_bits |= mmx;
-			} else if (rz_str_startswith(gptr, "vector")) {
-				type_bits |= vector;
-			} else if (rz_str_startswith(gptr, "system")) {
-				type_bits |= system;
-			}
-			if (!gptr1) {
-				break;
-			}
-			gptr = gptr1 + 1;
 		}
 		// If type is not defined, skip
 		if (!*type) {
