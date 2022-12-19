@@ -727,7 +727,7 @@ struct rz_subprocess_t {
 	int ret;
 	RzStrBuf out;
 	RzStrBuf err;
-	int master_fd; ///< Needed to check whether PTY
+	int master_fd; ///< Needed to check whether PTY (user code should not access this directly)
 };
 
 static RzPVector subprocs;
