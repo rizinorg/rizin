@@ -330,6 +330,8 @@ static const char *pure_type_name(RzILTypePure type) {
 		return "bitvector";
 	case RZ_IL_TYPE_PURE_BOOL:
 		return "bool";
+	case RZ_IL_TYPE_PURE_FLOAT:
+		return "float";
 	default:
 		return "unknown";
 	}
@@ -393,6 +395,8 @@ RZ_API RZ_NULLABLE RZ_OWN RzILVal *rz_il_evaluate_val(RZ_NONNULL RzILVM *vm, RZ_
 		return rz_il_value_new_bool(res);
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_il_value_new_bitv(res);
+	case RZ_IL_TYPE_PURE_FLOAT:
+		return rz_il_value_new_float(res);
 	default:
 		RZ_LOG_ERROR("RzIL: type error: got %s\n", pure_type_name(type));
 		return NULL;

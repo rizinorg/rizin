@@ -475,6 +475,10 @@ RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 
 	case RZ_IL_TYPE_PURE_BOOL:
 		val = rz_il_value_new_bool(rz_il_bool_new(value != 0));
 		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		// TODO : ut64 value is enough for user input ?
+		// TODO : type is different with given value ?
+		break;
 	}
 	if (val) {
 		rz_il_vm_set_global_var(vm->vm, var_name, val);
@@ -577,6 +581,9 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 				break;
 			case RZ_IL_TYPE_PURE_BOOL:
 				rzil_print_register_bool(val->data.b->b, &p);
+				break;
+			case RZ_IL_TYPE_PURE_FLOAT:
+				// TODO : print register float ?
 				break;
 			default:
 				rz_warn_if_reached();
