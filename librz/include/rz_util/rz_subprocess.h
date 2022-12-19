@@ -88,8 +88,8 @@ typedef struct rz_subprocess_opt_t {
 	///< Fork mode to be used
 	RzSubprocessForkMode fork_mode;
 	///< PTY to be used for the subprocess (RZ_NULLABLE, if NULL, then a new PTY is used)
-	///< Not owned by the `RzSubprocessOpts` or the `RzSubprocess` instance
-	RZ_BORROW RzPty *pty;
+	///< Not owned by the `RzSubprocessOpts` or the `RzSubprocess` instance (RZ_BORROW)
+	const RzPty *pty;
 } RzSubprocessOpt;
 
 typedef struct rz_subprocess_t RzSubprocess;
@@ -112,8 +112,8 @@ RZ_API RZ_BORROW RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut6
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
-RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params);
-RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty);
-RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty);
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params);
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty);
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_BORROW RZ_NULLABLE const RzPty *pty);
 
 #endif // RZ_UTIL_SUBPROCESS_H

@@ -947,17 +947,6 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	rz_return_val_if_fail(opt, NULL);
 
-	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
-		/* Check that we are not using any pipes in forkpty mode */
-		/* Separate assertions for better warning */
-		rz_return_val_if_fail(opt->stderr_pipe == RZ_SUBPROCESS_PIPE_NONE, NULL);
-		rz_return_val_if_fail(opt->stdout_pipe == RZ_SUBPROCESS_PIPE_NONE, NULL);
-		rz_return_val_if_fail(opt->stdin_pipe == RZ_SUBPROCESS_PIPE_NONE, NULL);
-	} else { /* opt->fork_mode == RZ_SUBPROCESS_FORK */
-		/* `opt->pty` must be NULL if no forking using forkpty */
-		rz_return_val_if_fail(!opt->pty, NULL);
-	}
-
 	RzSubprocess *proc = NULL;
 	char **child_env = NULL;
 	char **argv = calloc(opt->args_size + 2, sizeof(char *));
@@ -996,8 +985,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
 
-	/* There seems to be no reasonable use case for having pipes when forking
-	using forkpty, hence we will bypass all the pipe creation logic */
+	/* We won't be creating any new pipes in case of forkpty */
 	if (opt->fork_mode != RZ_SUBPROCESS_FORKPTY && !init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe)) {
 		goto error;
 	}
@@ -1008,6 +996,8 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 
 	int master_fd = -1;
 	void *term_params = NULL;
+	const RzPty *pty = opt->pty;
+
 	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 #if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
 		struct termios t;
@@ -1016,31 +1006,45 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 		cfmakeraw(&t);
 		term_params = &t;
 #endif
-		if (opt->pty) {
-			master_fd = opt->pty->master_fd;
+		if (!pty) {
+			pty = rz_subprocess_openpty(NULL, term_params, NULL);
+		}
+
+		if (pty) {
+			master_fd = pty->master_fd;
 			proc->pid = rz_sys_fork();
-			if (tcsetattr(opt->pty->slave_fd, TCSANOW, term_params) == -1) {
+			if (tcsetattr(pty->slave_fd, TCSANOW, term_params) == -1) {
 				perror("tcsetattr");
 			}
 		} else {
-			proc->pid = rz_sys_forkpty(&master_fd, NULL, term_params, NULL);
+			RZ_LOG_ERROR("No PTY found!\n");
+			goto error;
 		}
 
-		proc->stderr_fd = proc->stdout_fd = proc->stdin_fd = proc->master_fd = master_fd;
+		/* Only assign the master fd to the streams which
+		have pipe create as the piping option, rest all will remain -1 */
+		if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
+			proc->stdin_fd = master_fd;
+		}
+		if (opt->stdout_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
+			proc->stdout_fd = master_fd;
+		}
+		if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
+			proc->stderr_fd = master_fd;
+		} else if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_STDOUT) {
+			proc->stderr_fd = proc->stdout_fd;
+		}
 	} else {
 		proc->pid = rz_sys_fork();
 	}
 
 	if (proc->pid == -1) {
 		// fail
-		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
-			perror("forkpty");
-		} else {
-			perror("fork");
-		}
+		perror("fork");
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
+
 		if (stderr_pipe[1] != -1) {
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
@@ -1063,11 +1067,11 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 			rz_sys_pipe_close(stdin_pipe[1]);
 		}
 
-		if (/* RZ_SUBPROCESS_FORKPTY */ opt->pty) {
+		if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 			if (close(master_fd) == -1) {
 				perror("close");
 			}
-			if (rz_sys_login_tty(opt->pty->slave_fd) == -1) {
+			if (rz_sys_login_tty(pty->slave_fd) == -1) {
 				perror("login_tty");
 				rz_sys_exit(-1, true);
 			}
@@ -1083,7 +1087,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 	destroy_child_env(child_env);
 	free(argv);
 
-	if (opt->pty && close(opt->pty->slave_fd) == -1) {
+	if (pty && close(pty->slave_fd) == -1) {
 		perror("close");
 	}
 
@@ -1181,8 +1185,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool bytes_enabled = n_bytes != 0;
 
 	/* Check if stdout and stderr are connected to a PTY */
-	bool stdout_pty = proc->stdout_fd == proc->master_fd;
-	bool stderr_pty = proc->stderr_fd == proc->master_fd;
+	bool is_pty = proc->master_fd;
 
 	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
 		fd_set rfds;
@@ -1231,14 +1234,14 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		timedout = true;
 		if (stdout_enabled && FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes, stdout_pty);
+			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes, is_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
 		}
 		if (stderr_enabled && FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes, stderr_pty);
+			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes, is_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
@@ -1271,8 +1274,9 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
  * \param timeout_ms Wait for at most this amount of millisecond
  */
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
-	/* Should not close proc->stdin_fd if it points to a PTY */
-	if (proc->stdin_fd != -1 && proc->stdin_fd != proc->master_fd) {
+	/* Should not close proc->stdin_fd if the fork mode was PTY
+	(because it might point to the master fd, which needs to stay open to get the std{out,err}) */
+	if (proc->stdin_fd != -1 && !proc->master_fd) {
 		// Close subprocess stdin to tell it that no more input will come from us
 		rz_sys_pipe_close(proc->stdin_fd);
 		proc->stdin_fd = -1;
@@ -1370,19 +1374,24 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	rz_strbuf_fini(&proc->err);
 	rz_sys_pipe_close(proc->killpipe[0]);
 	rz_sys_pipe_close(proc->killpipe[1]);
-	if (proc->stdin_fd != -1) {
-		rz_sys_pipe_close(proc->stdin_fd);
-	}
-	if (proc->stdout_fd != -1) {
-		rz_sys_pipe_close(proc->stdout_fd);
-	}
-	if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd) {
-		rz_sys_pipe_close(proc->stderr_fd);
+
+	if (proc->master_fd /* RZ_SUBPROCESS_FORKPTY */) {
+		rz_sys_pipe_close(proc->master_fd);
+	} else {
+		if (proc->stdin_fd != -1) {
+			rz_sys_pipe_close(proc->stdin_fd);
+		}
+		if (proc->stdout_fd != -1) {
+			rz_sys_pipe_close(proc->stdout_fd);
+		}
+		if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd) {
+			rz_sys_pipe_close(proc->stderr_fd);
+		}
 	}
 	free(proc);
 }
 
-RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
 	RzPty *pty = RZ_NEW0(RzPty);
 	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
 
@@ -1398,7 +1407,7 @@ RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_nam
 	return pty;
 }
 
-RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
 	rz_return_val_if_fail(pty, false);
 
 	int ret = rz_sys_login_tty(pty->slave_fd);
@@ -1423,12 +1432,12 @@ RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
  * envvars[0] and so on.
  * \param env_size Number of environment variables in arrays \p envvars and \p envvals
  * \param pty RzPTY instance to use for slave, if NULL, then a new PTY is opened
- * Also, `pty` must be NULL is forking type is not forkpty
  *
- * In forkpty mode, no pipes will be created, and std{in,out,err}_pipe values will be ignored
+ * In forkpty mode, no new pipes will be created, and std{in,out,err}_pipe values will be used to expose the
+ * master file descriptor of the PTY
  */
 RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
+	const char *envvars[], const char *envvals[], size_t env_size, RZ_BORROW RZ_NULLABLE const RzPty *pty) {
 	RzSubprocessOpt opt = {
 		.file = file,
 		.args = args,
@@ -1436,9 +1445,9 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *
 		.envvars = envvars,
 		.envvals = envvals,
 		.env_size = env_size,
-		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
-		.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE,
-		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.fork_mode = RZ_SUBPROCESS_FORKPTY,
 		.pty = pty
 	};

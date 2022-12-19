@@ -297,8 +297,8 @@ bool test_interactive_custom_pty(void) {
 	RzSubprocessOpt opt = { 0 };
 	opt.file = exe_path;
 	/* All the pipes need to be NONE in forkpty mode */
-	opt.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE;
-	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE;
+	opt.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE;
+	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE;
 	opt.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE;
 	opt.fork_mode = RZ_SUBPROCESS_FORKPTY;
 	opt.pty = rz_subprocess_openpty(NULL, NULL, NULL);
