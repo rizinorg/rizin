@@ -1013,8 +1013,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 		}
 
 		if (pty) {
-			master_fd = pty->master_fd;
-			proc->pid = rz_sys_fork();
+			proc->master_fd = master_fd = pty->master_fd;
 			if (tcsetattr(pty->slave_fd, TCSANOW, term_params) == -1) {
 				perror("tcsetattr");
 			}
@@ -1036,9 +1035,9 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 		} else if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_STDOUT) {
 			proc->stderr_fd = proc->stdout_fd;
 		}
-	} else {
-		proc->pid = rz_sys_fork();
 	}
+
+	proc->pid = rz_sys_fork();
 
 	if (proc->pid == -1) {
 		// fail
@@ -1198,7 +1197,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool bytes_enabled = n_bytes != 0;
 
 	/* Check if stdout and stderr are connected to a PTY */
-	bool is_pty = proc->master_fd;
+	bool is_pty = proc->master_fd != -1;
 
 	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
 		fd_set rfds;
@@ -1530,11 +1529,8 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
-#ifndef __WINDOWS__
-		/* We don't have forking PTY support in Windows, yet */
 		.fork_mode = RZ_SUBPROCESS_FORK,
 		.pty = NULL
-#endif
 	};
 	return rz_subprocess_start_opt(&opt);
 }

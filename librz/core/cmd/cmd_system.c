@@ -154,6 +154,8 @@ static int system_exec(RzCore *core, int argc, const char **argv, char **output,
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
 		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.fork_mode = RZ_SUBPROCESS_FORK,
+		.pty = NULL
 	};
 
 	RzSubprocess *proc = rz_subprocess_start_opt(&opt);

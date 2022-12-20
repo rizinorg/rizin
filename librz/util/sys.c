@@ -615,6 +615,8 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		.stdin_pipe = input ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stderr_pipe = sterr ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
+		.fork_mode = RZ_SUBPROCESS_FORK,
+		.pty = NULL
 	};
 
 	if (!rz_subprocess_init()) {
