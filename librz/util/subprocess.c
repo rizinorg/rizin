@@ -950,6 +950,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 	RzSubprocess *proc = NULL;
 	char **child_env = NULL;
 	char **argv = calloc(opt->args_size + 2, sizeof(char *));
+	const RzPty *pty = NULL;
 	if (!argv) {
 		return NULL;
 	}
@@ -996,7 +997,6 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 
 	int master_fd = -1;
 	void *term_params = NULL;
-	const RzPty *pty = opt->pty;
 
 	if (opt->fork_mode == RZ_SUBPROCESS_FORKPTY) {
 #if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
@@ -1006,7 +1006,9 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 		cfmakeraw(&t);
 		term_params = &t;
 #endif
-		if (!pty) {
+		if (opt->pty) {
+			pty = opt->pty;
+		} else {
 			pty = rz_subprocess_openpty(NULL, term_params, NULL);
 		}
 
@@ -1091,6 +1093,11 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 		perror("close");
 	}
 
+	if (!opt->pty) {
+		/* Free the RzPTY if we created it */
+		RZ_FREE(pty);
+	}
+
 	if (stdin_pipe[0] != -1) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
@@ -1133,6 +1140,12 @@ error:
 	if (stdin_pipe[1] != -1) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
+
+	if (!opt->pty) {
+		/* Free the RzPTY if we created it */
+		RZ_FREE(pty);
+	}
+
 	destroy_child_env(child_env);
 	subprocess_unlock();
 	return NULL;
