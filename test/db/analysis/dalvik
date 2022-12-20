@@ -197,18 +197,28 @@ EOF
 RUN
 
 NAME=Dalvik disassemble single opcode pdfj
-FILE=apk://bins/dex/14d9f1a92dd984d6040cc41ed06e273e.apk
-CMDS=aa; pdfj @ 549755814276
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 0e00
+af
+pdfj
+EOF
 EXPECT=<<EOF
-{"name":"sym.Lcom_android_internal_telephony_ITelephony_Stub_.updateServiceLocation__V","size":2,"addr":549755814276,"ops":[{"offset":549755814276,"esil":"sp,[8],ip,=,8,sp,+=","refptr":false,"fcn_addr":549755814276,"fcn_last":549755814276,"size":2,"opcode":"return-void","disasm":"return-void","bytes":"0e00","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0,"flags":["sym.Lcom_android_internal_telephony_ITelephony_Stub_.updateServiceLocation__V"]}]}
+{"name":"fcn.00000000","size":2,"addr":0,"ops":[{"offset":0,"esil":"sp,[8],ip,=,8,sp,+=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"return-void","disasm":"return-void","bytes":"0e00","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0,"flags":["fcn.00000000"]}]}
 EOF
 RUN
 
 NAME=Dalvik disassemble single opcode pdf
-FILE=apk://bins/dex/14d9f1a92dd984d6040cc41ed06e273e.apk
-CMDS=aa; pdf @ 549755814276
+FILE=
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 0e00
+af
+pdf
+EOF
 EXPECT=<<EOF
-/ sym.Lcom_android_internal_telephony_ITelephony_Stub_.updateServiceLocation__V ();
-\           0x8000000184      return-void
+/ fcn.00000000 ();
+\           0x00000000      return-void
 EOF
 RUN
