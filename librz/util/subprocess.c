@@ -705,11 +705,11 @@ RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_nam
 	RZ_LOG_ERROR("openpty: Not implemented for Windows!");
 }
 
-RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL RzPty *pty) {
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
 	RZ_LOG_ERROR("login_tty: Not implemented for Windows!");
 }
 
-RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_BORROW RZ_NULLABLE RzPty *pty) {
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_BORROW RZ_NULLABLE const RzPty *pty) {
 	RZ_LOG_ERROR("forkpty: Not implemented for Windows!");
 }
 
