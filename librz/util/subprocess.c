@@ -701,16 +701,16 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	free(proc);
 }
 
-RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_NULLABLE RZ_BORROW char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
-	RZ_LOG_ERROR("Not implemented for Windows!");
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RZ_LOG_ERROR("openpty: Not implemented for Windows!");
 }
 
-RZ_API bool rz_subprocess_login_tty(RZ_NONNULL RzPty *pty) {
-	RZ_LOG_ERROR("Not implemented for Windows!");
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL RzPty *pty) {
+	RZ_LOG_ERROR("login_tty: Not implemented for Windows!");
 }
 
-RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_NULLABLE RzPty *pty) {
-	RZ_LOG_ERROR("Not implemented for Windows!");
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_BORROW RZ_NULLABLE RzPty *pty) {
+	RZ_LOG_ERROR("forkpty: Not implemented for Windows!");
 }
 
 #else // __WINDOWS__
