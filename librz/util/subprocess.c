@@ -1288,7 +1288,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 	/* Should not close proc->stdin_fd if the fork mode was PTY
 	(because it might point to the master fd, which needs to stay open to get the std{out,err}) */
-	if (proc->stdin_fd != -1 && !proc->master_fd) {
+	if (proc->stdin_fd != -1 && proc->master_fd == -1) {
 		// Close subprocess stdin to tell it that no more input will come from us
 		rz_sys_pipe_close(proc->stdin_fd);
 		proc->stdin_fd = -1;
@@ -1387,7 +1387,7 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	rz_sys_pipe_close(proc->killpipe[0]);
 	rz_sys_pipe_close(proc->killpipe[1]);
 
-	if (proc->master_fd /* RZ_SUBPROCESS_FORKPTY */) {
+	if (proc->master_fd != -1 /* RZ_SUBPROCESS_FORKPTY */) {
 		rz_sys_pipe_close(proc->master_fd);
 	} else {
 		if (proc->stdin_fd != -1) {
