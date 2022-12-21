@@ -1014,6 +1014,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 
 		if (pty) {
 			proc->master_fd = master_fd = pty->master_fd;
+			/* This avoids ECHO, so we don't read back whatever we wrote */
 			if (tcsetattr(pty->slave_fd, TCSANOW, term_params) == -1) {
 				perror("tcsetattr");
 			}
