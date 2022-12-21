@@ -128,8 +128,6 @@ static RzIODesc *io_bochs_open(RzIO *io, const char *file, int rw, int mode) {
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_STDOUT,
-		.fork_mode = RZ_SUBPROCESS_FORK,
-		.pty = NULL
 	};
 	rz_subprocess_init();
 

@@ -3196,8 +3196,6 @@ static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *i
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = is_pipe ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
 		.stderr_pipe = is_pipe ? RZ_SUBPROCESS_PIPE_STDOUT : RZ_SUBPROCESS_PIPE_NONE,
-		.fork_mode = RZ_SUBPROCESS_FORK,
-		.pty = NULL
 	};
 
 	RzSubprocess *proc = rz_subprocess_start_opt(&opt);

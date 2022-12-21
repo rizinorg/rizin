@@ -16,7 +16,9 @@ typedef enum rz_subprocess_pipe_create_t {
 	RZ_SUBPROCESS_PIPE_NONE,
 	///< A new pipe should be created. It can be used for stdin, stdout and stderr.
 	RZ_SUBPROCESS_PIPE_CREATE,
-	///< Re-use the same pipe as stdout. It can be used for stderr only.
+	///< A new PTY should be created. It can be used for stdin, stdout and stderr.
+	RZ_SUBPROCESS_PIPE_PTY,
+	///< Re-use the same pipe/PTY as stdout. It can be used for stderr only.
 	RZ_SUBPROCESS_PIPE_STDOUT,
 } RzSubprocessPipeCreate;
 
@@ -85,11 +87,13 @@ typedef struct rz_subprocess_opt_t {
 	///< Specify how to deal with subprocess stderr
 	RzSubprocessPipeCreate stderr_pipe;
 
-	///< Fork mode to be used
-	RzSubprocessForkMode fork_mode;
-	///< PTY to be used for the subprocess (RZ_NULLABLE, if NULL, then a new PTY is used)
-	///< Not owned by the `RzSubprocessOpts` or the `RzSubprocess` instance (RZ_BORROW)
-	const RzPty *pty;
+	/* Both the following fields only matter when using PTY in the pipe options */
+	///< Provide the PTY to use (if NULL, then a new one will be created, if required)
+	///< No need to close the PTY once it has been used, you can free it directly
+	RzPty *pty;
+	///< Use raw mode for the created PTY (disable echo, control characters, etc.)
+	///< If you don't know what to put here, put true here.
+	bool make_raw;
 } RzSubprocessOpt;
 
 typedef struct rz_subprocess_t RzSubprocess;
@@ -113,7 +117,8 @@ RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
 RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params);
+RZ_API void rz_subprocess_close_pty(RZ_BORROW RZ_NONNULL const RzPty *pty);
 RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty);
-RZ_API RZ_OWN RzSubprocess *rz_subprocess_forkpty(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, RZ_BORROW RZ_NULLABLE const RzPty *pty);
+RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty);
 
 #endif // RZ_UTIL_SUBPROCESS_H
