@@ -1139,7 +1139,6 @@ error:
 	if (proc && proc->killpipe[1] == -1) {
 		rz_sys_pipe_close(proc->killpipe[1]);
 	}
-	free(proc);
 	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && stderr_pipe[0] != proc->master_fd) {
 		rz_sys_pipe_close(stderr_pipe[0]);
 	}
@@ -1164,6 +1163,7 @@ error:
 	if (proc->slave_fd != -1) {
 		close(proc->slave_fd);
 	}
+	free(proc);
 
 	if (new_pty) {
 		/* Free the RzPTY if we created it */
