@@ -102,6 +102,7 @@ static int main_help(int line) {
 			" -=           perform R=! command to run all commands remotely\n"
 			" -0           print \\x00 after init and every command\n"
 			" -2           close stderr file descriptor (silent warning messages)\n"
+			" -21          redirect stderr to stdout\n"
 			" -a [arch]    set asm.arch\n"
 			" -A           run 'aaa' command to analyze all referenced code\n"
 			" -b [bits]    set asm.bits\n"
@@ -419,6 +420,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	bool noStderr = false;
+	bool err2out = false;
 
 #ifdef __UNIX
 	sigset_t sigBlockMask;
@@ -483,7 +485,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *debugbackend = strdup("native");
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -497,6 +499,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case '2':
 			noStderr = true;
+			err2out = false;
+			break;
+		case '1':
+			if (noStderr) {
+				noStderr = false;
+				err2out = true;
+			} else {
+				help++;
+			}
 			break;
 		case '0':
 			zerosep = true;
@@ -725,6 +736,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				return 1;
 			}
 		}
+	}
+	if (err2out) {
+		dup2(1, 2);
 	}
 	{
 		const char *dbg_profile = rz_config_get(r->config, "dbg.profile");

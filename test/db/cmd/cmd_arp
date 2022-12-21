@@ -1,5 +1,6 @@
 NAME=arpg
 FILE==
+ARGS=-21
 CMDS=<<EOF
 arpg scripts/gdb-reg-profile.txt > $a
 ?v $?
@@ -11,6 +12,8 @@ EOF
 EXPECT=<<EOF
 0x0
 98
+Could not parse line: 0      0       4 uint32_t
+ERROR: Cannot parse gdb profile.
 0x1
 0
 EOF
