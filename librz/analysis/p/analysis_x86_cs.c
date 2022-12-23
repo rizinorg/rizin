@@ -2695,8 +2695,10 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		break;
 	case X86_INS_LEAVE:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
-		op->stackop = RZ_ANALYSIS_STACK_INC;
-		op->stackptr = -regsz;
+		// leave is mov rsp, rbp; pop rbp
+		// which may not be exactly a reset depending on the context,
+		// but usually it is and this is the best guess we can make here.
+		op->stackop = RZ_ANALYSIS_STACK_RESET;
 		break;
 	case X86_INS_POP:
 	case X86_INS_POPF:

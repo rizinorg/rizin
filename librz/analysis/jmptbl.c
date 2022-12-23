@@ -43,7 +43,7 @@ static void apply_switch(RzAnalysis *analysis, ut64 switch_addr, ut64 jmptbl_add
 }
 
 // analyze a jmptablle inside a function // maybe rename to rz_analysis_fcn_jmptbl() ?
-RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
+RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr, RzStackAddr sp) {
 	RzAnalysisJmpTableParams params = {
 		.jmp_address = jmpaddr,
 		.case_shift = 0,
@@ -53,6 +53,7 @@ RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, Rz
 		.entry_size = tablesize,
 		.table_count = tablesize,
 		.default_case = default_addr,
+		.sp = sp
 	};
 	return rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params);
 }
@@ -147,7 +148,7 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 		rz_analysis_hint_set_immbase(analysis, jmpptr_idx_off, 10);
 
 		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, case_idx + params->case_shift, params->jmptbl_loc + jmpptr_idx * params->entry_size);
-		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr, params->sp);
 	}
 
 	if (case_idx > 0) {
@@ -238,7 +239,7 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 			}
 		}
 		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, (offs / params->entry_size) + params->case_shift, params->jmptbl_loc + offs);
-		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr, params->sp);
 	}
 
 	if (offs > 0) {
@@ -417,7 +418,7 @@ RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *anal
 	for (offs = 0; offs + params->entry_size - 1 < params->table_count * params->entry_size; offs += params->entry_size) {
 		jmpptr = params->jmptbl_loc + offs;
 		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, offs / params->entry_size, params->jmptbl_loc + offs);
-		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr, params->sp);
 	}
 
 	if (offs > 0) {

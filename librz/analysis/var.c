@@ -676,7 +676,10 @@ static RzAnalysisVar *get_stack_var(RzAnalysisFunction *fcn, int delta) {
 	return NULL;
 }
 
-static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, const char *reg, const char *sign, char type) {
+static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, const char *reg, const char *sign, char type, RzStackAddr sp, RzStackAddr shadow_store) {
+	if (type == RZ_ANALYSIS_VAR_KIND_SPV && sp == RZ_STACK_ADDR_INVALID) {
+		return;
+	}
 	st64 ptr = 0;
 	char *addr, *esil_buf = NULL;
 
@@ -754,11 +757,11 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 
 	int rw = (op->direction == RZ_ANALYSIS_OP_DIR_WRITE) ? RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE : RZ_ANALYSIS_VAR_ACCESS_TYPE_READ;
 	if (*sign == '+') {
-		const bool isarg = type == RZ_ANALYSIS_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
+		const bool isarg = ptr + (type == RZ_ANALYSIS_VAR_KIND_SPV ? sp : -fcn->bp_off) >= shadow_store;
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		st64 frame_off;
 		if (type == RZ_ANALYSIS_VAR_KIND_SPV) {
-			frame_off = ptr - fcn->stack;
+			frame_off = sp + ptr;
 		} else {
 			frame_off = ptr - fcn->bp_off;
 		}
@@ -1123,17 +1126,21 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 	free(fname);
 }
 
-RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op) {
+/**
+ * Analyze \p op for variable-like accesses to the stack and create variables
+ * \p sp value of the stack pointer before \p op is executed in the context of \p fcn
+ */
+RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, RzStackAddr sp) {
 	rz_return_if_fail(analysis && fcn && op);
-
+	RzStackAddr shadow_store = fcn->cc ? rz_analysis_cc_shadow_store(analysis, fcn->cc) : 0;
 	const char *BP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
 	const char *SP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 	if (BP) {
-		extract_arg(analysis, fcn, op, BP, "+", RZ_ANALYSIS_VAR_KIND_BPV);
-		extract_arg(analysis, fcn, op, BP, "-", RZ_ANALYSIS_VAR_KIND_BPV);
+		extract_arg(analysis, fcn, op, BP, "+", RZ_ANALYSIS_VAR_KIND_BPV, sp, shadow_store);
+		extract_arg(analysis, fcn, op, BP, "-", RZ_ANALYSIS_VAR_KIND_BPV, sp, shadow_store);
 	}
 	if (SP) {
-		extract_arg(analysis, fcn, op, SP, "+", RZ_ANALYSIS_VAR_KIND_SPV);
+		extract_arg(analysis, fcn, op, SP, "+", RZ_ANALYSIS_VAR_KIND_SPV, sp, shadow_store);
 	}
 }
 

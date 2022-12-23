@@ -568,7 +568,7 @@ var var_28h = 0x00177fd0 = (qword)0x0000000000000000
 var var_bp_30h = 0x00177fc8 = (qword)0x0000000000000000
 var var_3ch = 0x00177fbc = (qword)0x1111111100000000
 var var_bp_20h = 0x00177fd8 = (qword)0x0000000000000000
-var var_fh = 0x00177fc7 = (qword)0x0000000000000011
+var var_fh = 0x00177ff1 = (qword)0x0000000000000000
 EOF
 RUN
 
@@ -1286,24 +1286,25 @@ af
 e asm.lines.bb=false
 e asm.lines.fcn=false
 e asm.stackptr=true
-pdr~0x100003b27[1]
-pdf~0x100003b27[1]
-pdr~0x100003b3d[1]
-pdr~0x100003b3e[1]
-pdr~0x100003b40[1]
-pdr~0x100003b42[1]
-pdr~0x100003b44[1]
-pdr~0x100003b46[1]
+e asm.comments=false
+pdr~0x100003b27
+pdf~0x100003b27
+pdr~0x100003b3d
+pdr~0x100003b3e
+pdr~0x100003b40
+pdr~0x100003b42
+pdr~0x100003b44
+pdr~0x100003b46
 EOF
 EXPECT=<<EOF
-104
-104
-48-
-40-
-32-
-24-
-16-
-8-
+0x100003b27  -104            add   rsi, 0xc
+0x100003b27  -104            add   rsi, 0xc
+0x100003b3d   -48 += 8       pop   rbx
+0x100003b3e   -40 += 8       pop   r12
+0x100003b40   -32 += 8       pop   r13
+0x100003b42   -24 += 8       pop   r14
+0x100003b44   -16 += 8       pop   r15
+0x100003b46    -8 += 8       pop   rbp
 EOF
 RUN
 
@@ -4142,31 +4143,31 @@ pdf
 EOF
 EXPECT=<<EOF
 / fcn.140001080 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
-|           ; var int64_t var_50h @ rsp+0x20
-|           ; var int64_t var_20h @ rsp+0x50
-|           ; var int64_t var_18h @ rsp+0x58
-|           ; var int64_t var_10h @ rsp+0x60
-|           ; var int64_t var_8h @ rsp+0x68
+|           ; var int64_t var_28h @ rsp+0x20
+|           ; var int64_t var_8h @ rsp+0x50
+|           ; var int64_t var_10h @ rsp+0x58
+|           ; var int64_t var_18h @ rsp+0x60
+|           ; var int64_t var_20h @ rsp+0x68
 |           ; arg int64_t arg1 @ rcx
 |           ; arg int64_t arg2 @ rdx
 |           ; arg int64_t arg3 @ r8
 |           ; arg int64_t arg4 @ r9
-|           0x140001080      48894c2408     mov   qword [var_20h], rcx
-|           0x140001085      4889542410     mov   qword [var_18h], rdx
-|           0x14000108a      4c89442418     mov   qword [var_10h], r8
-|           0x14000108f      4c894c2420     mov   qword [var_8h], r9
+|           0x140001080      48894c2408     mov   qword [var_8h], rcx
+|           0x140001085      4889542410     mov   qword [var_10h], rdx
+|           0x14000108a      4c89442418     mov   qword [var_18h], r8
+|           0x14000108f      4c894c2420     mov   qword [var_20h], r9
 |           0x140001094      53             push  rbx
 |           0x140001095      56             push  rsi
 |           0x140001096      57             push  rdi
 |           0x140001097      4883ec30       sub   rsp, 0x30
 |           0x14000109b      488bf9         mov   rdi, rcx
-|           0x14000109e      488d742458     lea   rsi, [var_18h]
+|           0x14000109e      488d742458     lea   rsi, [var_10h]
 |           0x1400010a3      33c9           xor   ecx, ecx
 |           0x1400010a5      ff15cd100000   call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll___acrt_iob_func]
 |           0x1400010ab      488bd8         mov   rbx, rax
 |           0x1400010ae      e85dffffff     call  fcn.140001010
 |           0x1400010b3      4533c9         xor   r9d, r9d
-|           0x1400010b6      4889742420     mov   qword [var_50h], rsi
+|           0x1400010b6      4889742420     mov   qword [var_28h], rsi
 |           0x1400010bb      4c8bc7         mov   r8, rdi
 |           0x1400010be      488bd3         mov   rdx, rbx
 |           0x1400010c1      488b08         mov   rcx, qword [rax]

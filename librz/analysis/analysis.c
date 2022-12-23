@@ -107,7 +107,6 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_flag_bind_init(analysis->flb);
 	analysis->reg = rz_reg_new();
 	analysis->last_disasm_reg = NULL;
-	analysis->stackptr = 0;
 	analysis->lineswidth = 0;
 	analysis->fcns = rz_list_newf(rz_analysis_function_free);
 	analysis->leaddrs = NULL;

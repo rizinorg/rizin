@@ -536,6 +536,40 @@ RZ_API const char *rz_analysis_stackop_tostring(int s) {
 	return "unk";
 }
 
+/**
+ * Modify the given stack pointer value as the instruction \p op would when being executed.
+ */
+RZ_API RzStackAddr rz_analysis_op_apply_sp_effect(RzAnalysisOp *op, RzStackAddr sp) {
+	rz_return_val_if_fail(op, sp);
+	// When changing something here, also update rz_analysis_op_describe_sp_effect() to describe
+	// the same effect in a textual form.
+	switch (op->stackop) {
+	case RZ_ANALYSIS_STACK_INC:
+		return sp - op->stackptr;
+	case RZ_ANALYSIS_STACK_RESET:
+		return 0;
+	default:
+		return sp;
+	}
+}
+
+/**
+ * Generate a textual description of the effect on the stack pointer that \p op has.
+ * \return a description like "-= 8" or NULL if the op has no effect on the stack pointer
+ */
+RZ_API RZ_NULLABLE RZ_OWN char *rz_analysis_op_describe_sp_effect(RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, NULL);
+	// Keep this in sync with what rz_analysis_op_apply_sp_effect() does!
+	switch (op->stackop) {
+	case RZ_ANALYSIS_STACK_INC:
+		return rz_str_newf("%c= %" PFMT64d, op->stackptr > 0 ? '-' : '+', RZ_ABS(op->stackptr));
+	case RZ_ANALYSIS_STACK_RESET:
+		return strdup(":= 0");
+	default:
+		return NULL;
+	}
+}
+
 static const struct {
 	int id;
 	const char *name;

@@ -131,8 +131,6 @@ static RzAnalysisBlock *fcn_append_basic_block(RzAnalysis *analysis, RzAnalysisF
 		return NULL;
 	}
 	rz_analysis_function_add_block(fcn, bb);
-	bb->stackptr = fcn->stack;
-	bb->parent_stackptr = fcn->stack;
 	return bb;
 }
 
@@ -406,7 +404,7 @@ static RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
 
 typedef struct {
 	RzAnalysisFunction *fcn;
-	const int stack_diff;
+	const st64 stack_diff;
 } BlockTakeoverCtx;
 
 static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block, void *user) {
@@ -462,8 +460,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 		// TODO: remove block->ninstr from other_fcn considering delay slots
 		rz_analysis_function_remove_block(other_fcn, block);
 	}
-	block->stackptr -= ctx->stack_diff;
-	block->parent_stackptr -= ctx->stack_diff;
+	block->sp_entry += ctx->stack_diff;
 	rz_analysis_function_add_block(our_fcn, block);
 	// TODO: add block->ninstr from our_fcn considering delay slots
 	rz_analysis_block_unref(block);
@@ -471,8 +468,8 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 }
 
 // Remove block and all of its recursive successors from all its functions and add them only to fcn
-static void fcn_takeover_block_recursive(RzAnalysisFunction *fcn, RzAnalysisBlock *start_block) {
-	BlockTakeoverCtx ctx = { fcn, start_block->parent_stackptr - fcn->stack };
+static void fcn_takeover_block_recursive(RzAnalysisFunction *fcn, RzAnalysisBlock *start_block, RzStackAddr sp) {
+	BlockTakeoverCtx ctx = { fcn, sp - start_block->sp_entry };
 	rz_analysis_block_recurse_followthrough(start_block, fcn_takeover_block_recursive_followthrough_cb, &ctx);
 }
 
@@ -560,7 +557,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	rz_return_val_if_fail(item && tasks, RZ_ANALYSIS_RET_ERROR);
 	RzAnalysis *analysis = item->fcn->analysis;
 	RzAnalysisFunction *fcn = item->fcn;
-	fcn->stack = item->stack;
+	RzStackAddr sp = item->sp;
 	ut64 addr = item->start_address;
 	ut64 len = analysis->opt.bb_max_size;
 	const int continue_after_jump = analysis->opt.afterjmp;
@@ -605,7 +602,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool has_variadic_reg = !!variadic_reg;
 
 	if (rz_cons_is_breaked()) {
-		rz_analysis_task_item_new(analysis, tasks, fcn, bb, addr);
+		rz_analysis_task_item_new(analysis, tasks, fcn, bb, addr, sp);
 		return RZ_ANALYSIS_RET_END;
 	}
 	if (analysis->sleep) {
@@ -633,7 +630,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (!existing_in_fcn && existing_bb) {
 				if (existing_bb->addr == fcn->addr) {
 					// our function starts directly there, so we steal what is ours!
-					fcn_takeover_block_recursive(fcn, existing_bb);
+					fcn_takeover_block_recursive(fcn, existing_bb, sp);
 				}
 			}
 			if (existing_bb) {
@@ -650,6 +647,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		// we checked before whether there is a bb at addr, so the create should have succeeded
 		rz_return_val_if_fail(bb, RZ_ANALYSIS_RET_ERROR);
 	}
+	// We are currently at the entrypoint of the basic block, so we may initialize
+	// its entry sp value to our current tracked sp.
+	bb->sp_entry = sp;
 
 	if (!analysis->leaddrs) {
 		analysis->leaddrs = rz_list_newf(free_leaddr_pair);
@@ -710,7 +710,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		at_delta = addrbytes * idx;
 		at = addr + at_delta;
 		if (rz_cons_is_breaked()) {
-			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at);
+			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
 			break;
 		}
 		ut64 bytes_read = RZ_MIN(len - at_delta, sizeof(buf));
@@ -782,7 +782,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (newbbsize > MAX_FCN_SIZE) {
 				gotoBeach(RZ_ANALYSIS_RET_ERROR);
 			}
-			rz_analysis_block_set_op_offset(bb, bb->ninstr++, at - bb->addr);
+			bb->ninstr++;
+			rz_analysis_block_set_op_offset(bb, bb->ninstr - 1, at - bb->addr);
 			rz_analysis_block_set_size(bb, newbbsize);
 			fcn->ninstr++;
 		}
@@ -866,35 +867,27 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		// Note: if we got two branch delay instructions in a row due to an
 		// compiler bug or junk or something it wont get treated as a delay
 		if (analysis->opt.vars && !varset) {
-			rz_analysis_extract_vars(analysis, fcn, &op);
+			rz_analysis_extract_vars(analysis, fcn, &op, sp);
 		}
 		if (has_stack_regs && arch_destroys_dst) {
 			if (op_is_set_bp(&op, bp_reg, sp_reg) && op.src[1]) {
 				switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 				case RZ_ANALYSIS_OP_TYPE_ADD:
-					fcn->bp_off = fcn->stack - op.src[1]->imm;
+					fcn->bp_off = -sp - op.src[1]->imm;
 					break;
 				case RZ_ANALYSIS_OP_TYPE_SUB:
-					fcn->bp_off = fcn->stack + op.src[1]->imm;
+					fcn->bp_off = -sp + op.src[1]->imm;
 					break;
 				}
 			}
 		}
-		switch (op.stackop) {
-		case RZ_ANALYSIS_STACK_INC:
-			if (RZ_ABS(op.stackptr) < 8096) {
-				fcn->stack += op.stackptr;
-				if (fcn->stack > fcn->maxstack) {
-					fcn->maxstack = fcn->stack;
-				}
-			}
-			bb->stackptr += op.stackptr;
-			break;
-		case RZ_ANALYSIS_STACK_RESET:
-			bb->stackptr = 0;
-			break;
-		default:
-			break;
+		sp = rz_analysis_op_apply_sp_effect(&op, sp);
+		fcn->stack = -sp;
+		if (-sp > fcn->maxstack) {
+			fcn->maxstack = -sp;
+		}
+		if (!overlapped) {
+			rz_analysis_block_set_op_sp_delta(bb, bb->ninstr - 1, sp - bb->sp_entry);
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters
@@ -913,7 +906,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 			}
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
-				fcn->bp_off = fcn->stack;
+				fcn->bp_off = -sp;
 			}
 			// Is this a mov of immediate value into a register?
 			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
@@ -964,7 +957,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				rz_list_append(analysis->leaddrs, pair);
 			}
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
-				fcn->bp_off = fcn->stack - op.src[0]->delta;
+				fcn->bp_off = -sp - op.src[0]->delta;
 			}
 			if (op.dst && op.dst->reg && op.dst->reg->name && op.ptr > 0 && op.ptr != UT64_MAX) {
 				free(last_reg_mov_lea_name);
@@ -1000,6 +993,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						.casetbl_loc = casetbl_addr,
 						.entry_size = 4,
 						.jmptbl_off = op.ptr,
+						.sp = sp,
 						.tasks = tasks
 					};
 					if (rz_analysis_get_jmptbl_info(analysis, fcn, bb, jmp_aop.addr, &params) || rz_analysis_get_delta_jmptbl_info(analysis, fcn, jmp_aop.addr, op.addr, &params)) {
@@ -1062,8 +1056,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			if (rz_analysis_noreturn_at(analysis, op.jump)) {
 				if (continue_after_jump && is_hexagon) {
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 					if (!overlapped) {
 						set_bb_branches(bb, op.jump, op.addr + op.size);
 					}
@@ -1079,8 +1073,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 				if (must_eob) {
 					if (continue_after_jump && is_hexagon) {
-						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
-						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
+						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 						if (!overlapped) {
 							set_bb_branches(bb, op.jump, op.addr + op.size);
 						}
@@ -1093,9 +1087,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (!overlapped) {
 				set_bb_branches(bb, op.jump, UT64_MAX);
 			}
-			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 			if (continue_after_jump && (is_hexagon || (is_dalvik && op.cond == RZ_TYPE_COND_EXCEPTION))) {
-				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 			}
 			int tc = analysis->opt.tailcall;
@@ -1105,11 +1099,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					ut8 buf[32];
 					(void)analysis->iob.read_at(analysis->iob.io, op.jump, (ut8 *)buf, sizeof(buf));
 					if (rz_analysis_is_prelude(analysis, buf, sizeof(buf))) {
-						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 					}
 				} else if (RZ_ABS(diff) > tc) {
 					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL);
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
 			}
@@ -1145,7 +1139,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
 				}
 				if (continue_after_jump) {
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 				}
 				if (!overlapped) {
 					// If it is an endloop01 instruction the jump to the inner loop is not added yet.
@@ -1177,6 +1171,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 							.table_count = cmpval + 1,
 							.jmptbl_off = op.ptr,
 							.default_case = op.fail,
+							.sp = sp,
 							.tasks = tasks
 						};
 						if (op.ireg) {
@@ -1195,13 +1190,13 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					}
 				}
 			}
-			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail);
-			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail, sp);
+			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 			if (continue_after_jump && is_hexagon) {
 				if (op.type == RZ_ANALYSIS_OP_TYPE_RCJMP) {
 					break;
 				}
-				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 			}
 			if (!continue_after_jump) {
@@ -1283,6 +1278,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					.entry_size = analysis->bits >> 3,
 					.jmptbl_loc = op.ptr,
 					.jmptbl_off = op.ptr,
+					.sp = sp,
 					.tasks = tasks
 				};
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
@@ -1375,8 +1371,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			if (analysis->opt.ijmp) {
 				if (continue_after_jump) {
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail);
-					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail, sp);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 					if (overlapped) {
 						goto analopfinish;
 					}
@@ -1417,7 +1413,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				op.type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op.jump = last_push_addr;
 				bb->jump = op.jump;
-				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 				goto beach;
 			}
 			if (!op.cond) {
@@ -1429,7 +1425,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CRET:
 			if (continue_after_jump && is_hexagon) {
-				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.addr + op.size, sp);
 				set_bb_branches(bb, op.addr + op.size, UT64_MAX);
 				gotoBeach(RZ_ANALYSIS_RET_COND);
 			}
@@ -1482,10 +1478,11 @@ beach:
  * \param fcn Pointer to RzAnalysisFunction in which analysis will be performed on.
  * \param block Pointer to RzAnalysisBlock in which analysis will be performed on. If null, analysis will take care of block creation.
  * \param address Address where analysis will start from
+ * \param sp Tracked stack pointer value at \p address
  */
-RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address) {
+RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address, RzStackAddr sp) {
 	rz_return_val_if_fail(analysis && tasks && fcn, false);
-	RzAnalysisTaskItem item = { fcn, block, fcn->stack, address };
+	RzAnalysisTaskItem item = { fcn, block, sp, address };
 	RzAnalysisTaskItem *it;
 	rz_vector_foreach(tasks, it) {
 		if (item.start_address == it->start_address) {
@@ -1638,14 +1635,9 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 		fcn->addr = addr;
 	}
 	fcn->maxstack = 0;
-	if (fcn->cc && !strcmp(fcn->cc, "ms")) {
-		// Probably should put this on the cc sdb
-		const int shadow_store = 0x28; // First 4 args + retaddr
-		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
-	}
 	RzVector tasks;
 	rz_vector_init(&tasks, sizeof(RzAnalysisTaskItem), NULL, NULL);
-	rz_analysis_task_item_new(analysis, &tasks, fcn, NULL, addr);
+	rz_analysis_task_item_new(analysis, &tasks, fcn, NULL, addr, 0);
 	int ret = rz_analysis_run_tasks(&tasks);
 	rz_vector_fini(&tasks);
 	return ret;
@@ -2265,7 +2257,7 @@ static void free_ht_up(HtUPKv *kv) {
 	ht_up_free((HtUP *)kv->value);
 }
 
-static void update_varz_analysisysis(RzAnalysisFunction *fcn, int align, ut64 from, ut64 to) {
+static void update_varz_analysisysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block, int align, ut64 from, ut64 to) {
 	RzAnalysis *analysis = fcn->analysis;
 	ut64 cur_addr;
 	int opsz;
@@ -2290,7 +2282,7 @@ static void update_varz_analysisysis(RzAnalysisFunction *fcn, int align, ut64 fr
 			break;
 		}
 		opsz = op.size;
-		rz_analysis_extract_vars(analysis, fcn, &op);
+		rz_analysis_extract_vars(analysis, fcn, &op, rz_analysis_block_get_sp_at(block, cur_addr));
 		rz_analysis_op_fini(&op);
 	}
 	free(buf);
@@ -2406,7 +2398,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 					// Special case when instructions are aligned and we don't
 					// need to worry about a write messing with the jump instructions
 					clear_bb_vars(fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
-					update_varz_analysisysis(fcn, align, addr > bb->addr ? addr : bb->addr, end_write);
+					update_varz_analysisysis(fcn, bb, align, addr > bb->addr ? addr : bb->addr, end_write);
 					rz_analysis_function_delete_unused_vars(fcn);
 					continue;
 				}

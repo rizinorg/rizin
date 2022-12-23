@@ -69,7 +69,7 @@ bool test_analysis_switch_op_load() {
 Sdb *blocks_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"size\":42}", 0);
-	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"stackptr\":43,\"parent_stackptr\":57,\"cmpval\":3735928559,\"cmpreg\":\"rax\"}", 0);
+	sdb_set(db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"sp_delta\":[8,-8,16],\"sp\":256,\"cmpval\":262254561,\"cmpreg\":\"rax\"}", 0);
 	return db;
 }
 
@@ -88,9 +88,11 @@ bool test_analysis_block_save() {
 	mu_assert("enough size for op_pos test", block->op_pos_size >= 2); // if this fails, just change the test
 	block->op_pos[0] = 4;
 	block->op_pos[1] = 7;
-	block->stackptr = 43;
-	block->parent_stackptr = 57;
-	block->cmpval = 0xdeadbeef;
+	block->sp_entry = -0x100;
+	rz_analysis_block_set_op_sp_delta(block, 0, -8);
+	rz_analysis_block_set_op_sp_delta(block, 1, 8);
+	rz_analysis_block_set_op_sp_delta(block, 2, -0x10);
+	block->cmpval = 0xfa1afe1;
 	block->cmpreg = "rax";
 
 	Sdb *db = sdb_new0();
@@ -135,8 +137,7 @@ bool test_analysis_block_load() {
 	mu_assert_eq(a->colorize, 0, "colorize");
 	mu_assert_null(a->switch_op, "switch op");
 	mu_assert_eq(a->ninstr, 0, "ninstr");
-	mu_assert_eq(a->stackptr, 0, "stackptr");
-	mu_assert_eq(a->parent_stackptr, INT_MAX, "parent_stackptr");
+	mu_assert_eq(a->sp_entry, RZ_STACK_ADDR_INVALID, "sp_entry");
 	mu_assert_eq(a->cmpval, UT64_MAX, "cmpval");
 	mu_assert_null(a->cmpreg, "cmpreg");
 
@@ -152,9 +153,11 @@ bool test_analysis_block_load() {
 	mu_assert("op_pos_size", b->op_pos_size >= b->ninstr - 1);
 	mu_assert_eq(b->op_pos[0], 4, "op_pos[0]");
 	mu_assert_eq(b->op_pos[1], 7, "op_pos[1]");
-	mu_assert_eq(b->stackptr, 43, "stackptr");
-	mu_assert_eq(b->parent_stackptr, 57, "parent_stackptr");
-	mu_assert_eq(b->cmpval, 0xdeadbeef, "cmpval");
+	mu_assert_eq(b->sp_entry, -0x100, "sp_entry");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(b, 0), -8, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(b, 1), 8, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(b, 2), -0x10, "sp delta");
+	mu_assert_eq(b->cmpval, 0xfa1afe1, "cmpval");
 	mu_assert_ptreq(b->cmpreg, rz_str_constpool_get(&analysis->constpool, "rax"), "cmpreg from pool");
 
 	rz_analysis_free(analysis);

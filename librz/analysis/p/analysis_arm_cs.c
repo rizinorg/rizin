@@ -673,9 +673,6 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 				op->stackptr = IMM64(2);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = RZ_ANALYSIS_STACK_RESET;
-			op->stackptr = 0;
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -702,18 +699,14 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM64(1)) {
 				// add sp, 0x54
-				op->stackptr = -IMM(1);
+				op->stackptr = -(st64)IMM(1);
 			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
 				// add sp, sp, 0x10
-				op->stackptr = -IMM64(2);
+				op->stackptr = -(st64)IMM64(2);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = RZ_ANALYSIS_STACK_RESET;
-			op->stackptr = 0;
-			if (ISIMM64(2)) {
-				op->val = IMM64(2);
-			}
+		} else if (ISIMM64(2)) {
+			op->val = IMM64(2);
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -1153,10 +1146,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM(1)) {
 				// add sp, 0x54
-				op->stackptr = -IMM(1);
+				op->stackptr = -(st64)IMM(1);
 			} else if (ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
 				// add sp, sp, 0x10
-				op->stackptr = -IMM(2);
+				op->stackptr = -(st64)IMM(2);
 			}
 			op->val = op->stackptr;
 		}

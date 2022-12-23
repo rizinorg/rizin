@@ -4558,7 +4558,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_analyze_jmptable_handler(RzCore *core, i
 	if (block && !rz_list_empty(block->fcns)) {
 		ut64 table = rz_num_math(core->num, argv[1]);
 		ut64 elements = rz_num_math(core->num, argv[2]);
-		rz_analysis_jmptbl(core->analysis, rz_list_first(block->fcns), block, core->offset, table, elements, UT64_MAX);
+		RzStackAddr sp = rz_analysis_block_get_sp_at(block, core->offset);
+		rz_analysis_jmptbl(core->analysis, rz_list_first(block->fcns), block, core->offset, table, elements, UT64_MAX, sp);
 	} else {
 		RZ_LOG_ERROR("No function defined here\n");
 	}
