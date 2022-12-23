@@ -26,7 +26,6 @@ typedef struct {
 	char *buf;
 	int buf_len;
 	int buf_size;
-	RzConsGrep *grep;
 	bool noflush;
 } RzConsStack;
 
@@ -35,8 +34,6 @@ typedef struct {
 	RzConsEvent event_interrupt;
 	void *event_interrupt_data;
 } RzConsBreakStack;
-
-static void cons_grep_reset(RzConsGrep *grep);
 
 static void ctx_rowcol_calc_reset(void) {
 	CTX(row) = 0;
@@ -52,11 +49,6 @@ static void break_stack_free(void *ptr) {
 static void cons_stack_free(void *ptr) {
 	RzConsStack *s = (RzConsStack *)ptr;
 	free(s->buf);
-	if (s->grep) {
-		RZ_FREE(s->grep->str);
-		CTX(grep.str) = NULL;
-	}
-	free(s->grep);
 	free(s);
 }
 
@@ -69,13 +61,6 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 			data->buf_size = CTX(buffer_sz);
 		}
 		data->noflush = CTX(noflush);
-		data->grep = RZ_NEW0(RzConsGrep);
-		if (data->grep) {
-			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
-			if (CTX(grep).str) {
-				data->grep->str = strdup(CTX(grep).str);
-			}
-		}
 		if (recreate && CTX(buffer_sz) > 0) {
 			CTX(buffer) = malloc(CTX(buffer_sz));
 			ctx_rowcol_calc_reset();
@@ -100,10 +85,6 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 	data->buf = NULL;
 	CTX(buffer_len) = data->buf_len;
 	CTX(buffer_sz) = data->buf_size;
-	if (data->grep) {
-		free(CTX(grep).str);
-		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
-	}
 	CTX(noflush) = data->noflush;
 	ctx_rowcol_calc_reset();
 }
@@ -131,8 +112,6 @@ static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext 
 		context->color_mode = COLOR_MODE_DISABLED;
 		rz_cons_pal_init(context);
 	}
-
-	cons_grep_reset(&context->grep);
 }
 
 static void cons_context_deinit(RzConsContext *context) {
@@ -799,14 +778,6 @@ RZ_API void rz_cons_clear(void) {
 #endif
 }
 
-static void cons_grep_reset(RzConsGrep *grep) {
-	RZ_FREE(grep->str);
-	ZERO_FILL(*grep);
-	grep->line = -1;
-	grep->sort = -1;
-	grep->sort_invert = false;
-}
-
 RZ_API void rz_cons_reset(void) {
 	if (CTX(buffer)) {
 		(CTX(buffer))[0] = '\0';
@@ -814,7 +785,6 @@ RZ_API void rz_cons_reset(void) {
 	CTX(buffer_len) = 0;
 	I.lines = 0;
 	I.lastline = CTX(buffer);
-	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
 	ctx_rowcol_calc_reset();
 }
@@ -840,11 +810,6 @@ RZ_API int rz_cons_get_buffer_len(void) {
 }
 
 RZ_API void rz_cons_filter(void) {
-	/* grep */
-	if (I.filter || CTX(grep).nstrings > 0 || CTX(grep).tokens_used || CTX(grep).less || CTX(grep).json) {
-		(void)rz_cons_grepbuf();
-		I.filter = false;
-	}
 	/* html */
 	if (I.is_html) {
 		int newlen = 0;
@@ -939,7 +904,7 @@ RZ_API void rz_cons_last(void) {
 }
 
 static bool lastMatters(void) {
-	return (CTX(buffer_len) > 0) && (CTX(lastEnabled) && !I.filter && CTX(grep).nstrings < 1 && !CTX(grep).tokens_used && !CTX(grep).less && !CTX(grep).json && !I.is_html);
+	return (CTX(buffer_len) > 0) && (CTX(lastEnabled) && !I.filter && !I.is_html);
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
@@ -1963,7 +1928,6 @@ RZ_API void rz_cons_bind(RzConsBind *bind) {
 	bind->get_cursor = rz_cons_get_cursor;
 	bind->cb_printf = rz_cons_printf;
 	bind->cb_flush = rz_cons_flush;
-	bind->cb_grep = rz_cons_grep;
 	bind->is_breaked = rz_cons_is_breaked;
 }
 

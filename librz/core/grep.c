@@ -6,8 +6,6 @@
 #include <rz_util/rz_print.h>
 #include <sdb.h>
 
-#define I(x) rz_cons_singleton()->x
-
 static char *strchr_ns(char *s, const char ch) {
 	char *p = strchr(s, ch);
 	if (p && p > s) {
@@ -62,19 +60,14 @@ static const char *help_detail_tilde[] = {
 	NULL
 };
 
-/* TODO: remove globals */
-static RzList *sorted_lines = NULL;
-static RzList *unsorted_lines = NULL;
-static int sorted_column = -1;
-
-RZ_API void rz_cons_grep_help(void) {
+RZ_API void rz_core_grep_help(void) {
 	rz_cons_cmd_help(help_detail_tilde, true);
 }
 
-#define RZ_CONS_GREP_BUFSIZE 4096
+#define RZ_CORE_GREP_BUFSIZE 4096
 
 static void parse_grep_expression(const char *str) {
-	static char buf[RZ_CONS_GREP_BUFSIZE];
+	static char buf[RZ_CORE_GREP_BUFSIZE];
 	int wlen, len, is_range, num_is_parsed, fail = 0;
 	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;
@@ -83,8 +76,8 @@ static void parse_grep_expression(const char *str) {
 		return;
 	}
 	RzCons *cons = rz_cons_singleton();
-	RzConsGrep *grep = &cons->context->grep;
-	sorted_column = 0;
+	RzCoreGrep *grep = &cons->context->grep;
+	grep->sorted_column = 0;
 	bool first = true;
 	while (*str) {
 		switch (*str) {
@@ -180,7 +173,7 @@ static void parse_grep_expression(const char *str) {
 				str++;
 			} else if (*str == '?') {
 				cons->filter = true;
-				rz_cons_grep_help();
+				rz_core_grep_help();
 				return;
 			}
 			break;
@@ -192,8 +185,8 @@ static void parse_grep_expression(const char *str) {
 while_end:
 
 	len = strlen(str) - 1;
-	if (len > RZ_CONS_GREP_BUFSIZE - 1) {
-		eprintf("rz_cons_grep: too long!\n");
+	if (len > RZ_CORE_GREP_BUFSIZE - 1) {
+		eprintf("rz_core_grep: too long!\n");
 		return;
 	}
 	if (len > 0 && str[len] == '?') {
@@ -233,7 +226,7 @@ while_end:
 			case ']': // fallthrough to handle ']' like ','
 			case ',':
 				for (; range_begin <= range_end; range_begin++) {
-					if (range_begin >= RZ_CONS_GREP_TOKENS) {
+					if (range_begin >= RZ_CORE_GREP_TOKENS) {
 						fail = 1;
 						break;
 					}
@@ -314,17 +307,17 @@ while_end:
 			if (!wlen) {
 				continue;
 			}
-			if (wlen >= RZ_CONS_GREP_WORD_SIZE - 1) {
+			if (wlen >= RZ_CORE_GREP_WORD_SIZE - 1) {
 				eprintf("grep string too long\n");
 				continue;
 			}
 			grep->nstrings++;
-			if (grep->nstrings > RZ_CONS_GREP_WORDS - 1) {
+			if (grep->nstrings > RZ_CORE_GREP_WORDS - 1) {
 				eprintf("too many grep strings\n");
 				break;
 			}
 			rz_str_ncpy(grep->strings[grep->nstrings - 1],
-				optr, RZ_CONS_GREP_WORD_SIZE);
+				optr, RZ_CORE_GREP_WORD_SIZE);
 		} while (ptr);
 	} else {
 		grep->str = strdup(ptr);
@@ -398,8 +391,8 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 	return ns;
 }
 
-RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr) {
-	rz_return_if_fail(cmd && quotestr);
+RZ_API void rz_core_grep_parsecmd(RzCore *core, char *cmd, const char *quotestr) {
+	rz_return_if_fail(core && cmd && quotestr);
 	char *ptr = preprocess_filter_expr(cmd, quotestr);
 	if (ptr) {
 		rz_str_trim(cmd);
@@ -408,7 +401,7 @@ RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr) {
 	}
 }
 
-RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr) {
+RZ_API char *rz_core_grep_strip(RzCore *core, char *cmd, const char *quotestr) {
 	char *ptr = NULL;
 
 	if (cmd) {
@@ -418,7 +411,7 @@ RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr) {
 	return ptr;
 }
 
-RZ_API void rz_cons_grep_process(char *grep) {
+RZ_API void rz_core_grep_process(RzCore *core, char *grep) {
 	if (grep) {
 		parse_grep_expression(grep);
 		free(grep);
@@ -433,13 +426,13 @@ static int cmp(const void *a, const void *b) {
 	if (!a || !b) {
 		return (int)(size_t)((char *)a - (char *)b);
 	}
-	if (sorted_column > 0) {
+	if (grep->sorted_column > 0) {
 		da = strdup(ca);
 		db = strdup(cb);
 		int colsa = rz_str_word_set0(da);
 		int colsb = rz_str_word_set0(db);
-		ca = (colsa > sorted_column) ? rz_str_word_get0(da, sorted_column) : "";
-		cb = (colsb > sorted_column) ? rz_str_word_get0(db, sorted_column) : "";
+		ca = (colsa > grep->sorted_column) ? rz_str_word_get0(da, grep->sorted_column) : "";
+		cb = (colsb > grep->sorted_column) ? rz_str_word_get0(db, grep->sorted_column) : "";
 	}
 	if (IS_DIGIT(*ca) && IS_DIGIT(*cb)) {
 		ut64 na = rz_num_get(NULL, ca);
@@ -460,14 +453,14 @@ static int cmp(const void *a, const void *b) {
 	return strcmp(a, b);
 }
 
-RZ_API void rz_cons_grepbuf(void) {
-	RzCons *cons = rz_cons_singleton();
+RZ_API void rz_core_grepbuf(RzCore *core) {
+	RzCons *cons = core->cons;
 	cons->context->row = 0;
 	cons->context->col = 0;
 	cons->context->rowcol_calc_start = 0;
 	const char *buf = cons->context->buffer;
 	const int len = cons->context->buffer_len;
-	RzConsGrep *grep = &cons->context->grep;
+	RzCoreGrep *grep = &cons->context->grep;
 	const char *in = buf;
 	int ret, total_lines = 0, l = 0, tl = 0;
 	bool show = false;
@@ -546,7 +539,7 @@ RZ_API void rz_cons_grepbuf(void) {
 			rz_str_ansi_filter(bb, NULL, NULL, -1);
 			char *out = (cons->context->grep.human)
 				? rz_print_json_human(bb)
-				: rz_print_json_indent(bb, I(context->color_mode), "  ", palette);
+				: rz_print_json_indent(bb, cons->context->color_mode), "  ", palette);
 			free(bb);
 			if (!out) {
 				return;
@@ -637,7 +630,7 @@ RZ_API void rz_cons_grepbuf(void) {
 			if (tl < 0) {
 				ret = -1;
 			} else {
-				ret = rz_cons_grep_line(tline, tl);
+				ret = rz_core_grep_line(tline, tl);
 				if (!grep->range_line) {
 					if (grep->line == cons->lines) {
 						show = true;
@@ -731,24 +724,24 @@ RZ_API void rz_cons_grepbuf(void) {
 		int nl = 0;
 		char *ptr = cons->context->buffer;
 		char *str;
-		sorted_column = grep->sort;
-		rz_list_sort(sorted_lines, cmp);
+		grep->sorted_column = grep->sort;
+		rz_list_sort(grep->sorted_lines, cmp);
 		if (grep->sort_invert) {
-			rz_list_reverse(sorted_lines);
+			rz_list_reverse(grep->sorted_lines);
 		}
-		INSERT_LINES(unsorted_lines);
-		INSERT_LINES(sorted_lines);
+		INSERT_LINES(grep->unsorted_lines);
+		INSERT_LINES(grep->sorted_lines);
 		cons->lines = nl;
-		rz_list_free(sorted_lines);
-		sorted_lines = NULL;
-		rz_list_free(unsorted_lines);
-		unsorted_lines = NULL;
+		rz_list_free(grep->sorted_lines);
+		grep->sorted_lines = NULL;
+		rz_list_free(grep->unsorted_lines);
+		grep->unsorted_lines = NULL;
 	}
 }
 
-RZ_API int rz_cons_grep_line(char *buf, int len) {
-	RzCons *cons = rz_cons_singleton();
-	RzConsGrep *grep = &cons->context->grep;
+RZ_API int rz_core_grep_line(RzCore *core, char *buf, int len) {
+	RzCons *cons = core->cons;
+	RzCoreGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
 	char *tok = NULL;
 	bool hit = grep->neg;
@@ -816,7 +809,7 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 			use_tok = true;
 		}
 		if (use_tok && grep->tokens_used) {
-			for (i = 0; i < RZ_CONS_GREP_TOKENS; i++) {
+			for (i = 0; i < RZ_CORE_GREP_TOKENS; i++) {
 				tok = strtok(i ? NULL : in, delims);
 				if (tok) {
 					if (grep->tokens[i]) {
@@ -841,7 +834,7 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 			}
 			outlen = outlen > 0 ? outlen - 1 : 0;
 			if (outlen > len) { // should never happen
-				eprintf("rz_cons_grep_line: how you have reached this?\n");
+				eprintf("rz_core_grep_line: how you have reached this?\n");
 				free(in);
 				free(out);
 				return -1;
@@ -857,16 +850,16 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 	if (grep->sort != -1) {
 		char ch = buf[len];
 		buf[len] = 0;
-		if (!sorted_lines) {
-			sorted_lines = rz_list_newf(free);
+		if (!grep->sorted_lines) {
+			grep->sorted_lines = rz_list_newf(free);
 		}
-		if (!unsorted_lines) {
-			unsorted_lines = rz_list_newf(free);
+		if (!grep->unsorted_lines) {
+			grep->unsorted_lines = rz_list_newf(free);
 		}
 		if (cons->lines >= grep->sort_row) {
-			rz_list_append(sorted_lines, strdup(buf));
+			rz_list_append(grep->sorted_lines, strdup(buf));
 		} else {
-			rz_list_append(unsorted_lines, strdup(buf));
+			rz_list_append(grep->unsorted_lines, strdup(buf));
 		}
 		buf[len] = ch;
 	}
@@ -874,7 +867,7 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 	return len;
 }
 
-RZ_API void rz_cons_grep(const char *grep) {
+RZ_API void rz_core_grep(RzCore *core, const char *grep) {
 	parse_grep_expression(grep);
-	rz_cons_grepbuf();
+	rz_core_grepbuf(core);
 }

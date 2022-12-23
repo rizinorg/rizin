@@ -48,6 +48,7 @@ rz_core_sources = [
   'disasm.c',
   'fortune.c',
   'golang.c',
+  'grep.c',
   'hack.c',
   'libs.c',
   'linux_heap_glibc.c',

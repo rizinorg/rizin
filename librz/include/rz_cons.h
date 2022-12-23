@@ -46,10 +46,6 @@ extern "C" {
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE  21
 
-#define RZ_CONS_GREP_WORDS     10
-#define RZ_CONS_GREP_WORD_SIZE 64
-#define RZ_CONS_GREP_TOKENS    64
-
 RZ_LIB_VERSION_HEADER(rz_cons);
 
 #define RZ_CONS_CMD_DEPTH 100
@@ -58,7 +54,6 @@ typedef int (*RzConsGetSize)(int *rows);
 typedef int (*RzConsGetCursor)(RZ_NONNULL int *rows);
 typedef bool (*RzConsIsBreaked)(void);
 typedef void (*RzConsFlush)(void);
-typedef void (*RzConsGrepCallback)(const char *grep);
 
 typedef struct rz_cons_bind_t {
 	RzConsGetSize get_size;
@@ -66,37 +61,7 @@ typedef struct rz_cons_bind_t {
 	PrintfCallback cb_printf;
 	RzConsIsBreaked is_breaked;
 	RzConsFlush cb_flush;
-	RzConsGrepCallback cb_grep;
 } RzConsBind;
-
-typedef struct rz_cons_grep_t {
-	char strings[RZ_CONS_GREP_WORDS][RZ_CONS_GREP_WORD_SIZE];
-	int nstrings;
-	char *str;
-	int counter;
-	bool charCounter;
-	int less;
-	bool hud;
-	bool human;
-	int json;
-	char *json_path;
-	int range_line;
-	int line;
-	int sort;
-	int sort_row;
-	bool sort_invert;
-	int f_line; // first line
-	int l_line; // last line
-	int tokens[RZ_CONS_GREP_TOKENS];
-	int tokens_used;
-	int amp;
-	int zoom;
-	int zoomy; // if set then its scaled unproportionally
-	int neg;
-	int begin;
-	int end;
-	int icase;
-} RzConsGrep;
 
 #if 0
 // TODO Might be better than using rz_cons_pal_get_i
@@ -463,7 +428,6 @@ typedef enum {
 } RzConsPalSeekMode;
 
 typedef struct rz_cons_context_t {
-	RzConsGrep grep;
 	RzStack *cons_stack;
 	char *buffer;
 	size_t buffer_len;
@@ -928,7 +892,6 @@ RZ_API void rz_cons_set_raw(bool b);
 RZ_API void rz_cons_set_interactive(bool b);
 RZ_API void rz_cons_set_last_interactive(void);
 RZ_API void rz_cons_set_utf8(bool b);
-RZ_API void rz_cons_grep(const char *grep);
 
 /* output */
 RZ_API int rz_cons_printf(const char *format, ...) RZ_PRINTF_CHECK(1, 2);
@@ -997,13 +960,6 @@ RZ_API char *rz_cons_hud_file(const char *f);
 RZ_API const char *rz_cons_get_buffer(void);
 RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void);
 RZ_API int rz_cons_get_buffer_len(void);
-RZ_API void rz_cons_grep_help(void);
-RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
-RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr);
-RZ_API void rz_cons_grep_process(char *grep);
-RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
-RZ_API void rz_cons_grepbuf(void);
-
 RZ_API void rz_cons_rgb_init(void);
 RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, const RzColor *rcolor);
 RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, const RzColor *rcolor);
