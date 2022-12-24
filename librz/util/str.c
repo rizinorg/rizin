@@ -866,7 +866,8 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
  * \param find pointer to the string to search for
  * \param slen the maximum number of characters to search
  */
-RZ_API const char *rz_str_case_nstr(const char *s, const char *find, int slen) {
+RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const char *find, int slen) {
+	rz_return_val_if_fail(s && find, NULL);
 	char *new_s = strdup(s), *new_find = strdup(find);
 	const char *res = NULL;
 	rz_str_case(new_s, false);
@@ -2765,7 +2766,8 @@ RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
  * \param b pointer to the string to search for
  * \param icase whether ignore case
  */
-RZ_API const char *rz_strstr_ansi(const char *a, const char *b, bool icase) {
+RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase) {
+	rz_return_val_if_fail(a && b, NULL);
 	const char *ch, *p = a;
 	do {
 		ch = strchr(p, '\x1b');
