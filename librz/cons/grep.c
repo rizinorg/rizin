@@ -100,11 +100,7 @@ static void parse_grep_expression(const char *str) {
 			grep_str++;
 		}
 
-		if (has_upper) {
-			cons->context->grep.icase = CASE_SENSITIVE;
-		} else {
-			cons->context->grep.icase = CASE_INSENSITIVE;
-		}
+		cons->context->grep.icase = has_upper ? CASE_SENSITIVE : CASE_INSENSITIVE;
 	} else {
 		cons->context->grep.icase = cons->grep_icase;
 	}
