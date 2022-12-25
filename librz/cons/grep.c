@@ -93,7 +93,7 @@ static void parse_grep_expression(const char *str) {
 		// instead if the search term is uppercase or a mix, do a case-sensitive search.
 		bool has_upper = false;
 		const char *grep_str = str;
-		while (*grep_str != '\0') {
+		while (*grep_str) {
 			if (isupper(*grep_str)) {
 				has_upper = true;
 			}
