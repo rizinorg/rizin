@@ -86,6 +86,29 @@ static void parse_grep_expression(const char *str) {
 	RzConsGrep *grep = &cons->context->grep;
 	sorted_column = 0;
 	bool first = true;
+
+	// setup cons->context->grep.icase according to cons->grep_icase
+	if (cons->grep_icase == CASE_SMART) {
+		// smartcase - when the search term is all lowercase, ignore the case,
+		// instead if the search term is uppercase or a mix, do a case-sensitive search.
+		bool has_upper = false;
+		const char *grep_str = str;
+		while (*grep_str != '\0') {
+			if (isupper(*grep_str)) {
+				has_upper = true;
+			}
+			grep_str++;
+		}
+
+		if (has_upper) {
+			cons->context->grep.icase = CASE_SENSITIVE;
+		} else {
+			cons->context->grep.icase = CASE_INSENSITIVE;
+		}
+	} else {
+		cons->context->grep.icase = cons->grep_icase;
+	}
+
 	while (*str) {
 		switch (*str) {
 		case '.':
@@ -159,7 +182,7 @@ static void parse_grep_expression(const char *str) {
 		case '+':
 			if (first) {
 				str++;
-				grep->icase = 1;
+				grep->icase = grep->icase ? 0 : 1;
 			} else {
 				goto while_end;
 			}

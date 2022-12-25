@@ -4434,6 +4434,7 @@ iz~123456
 EOF
 EXPECT=<<EOF
 1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
+1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
 2   0x00000650 0x00400650 6   25   .rodata utf32le abcdef
 3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
 EOF

@@ -579,6 +579,7 @@ typedef struct rz_cons_t {
 	ut64 timeout; // must come from rz_time_now_mono()
 	bool grep_color;
 	bool grep_highlight;
+	int grep_icase;
 	bool filter;
 	char *(*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
@@ -587,6 +588,10 @@ typedef struct rz_cons_t {
 	bool show_vals; // show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
+
+#define CASE_SENSITIVE   0
+#define CASE_INSENSITIVE 1
+#define CASE_SMART       2
 
 #define RZ_CONS_KEY_F1  0xf1
 #define RZ_CONS_KEY_F2  0xf2

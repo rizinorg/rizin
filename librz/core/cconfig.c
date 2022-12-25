@@ -77,6 +77,27 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b)
 	return (sa > sb) - (sa < sb);
 }
 
+static bool cb_search_case_sensitive(void *_core, void *_node) {
+	RzConfigNode *node = _node;
+	const char *case_sensitive = node->value;
+	RzCore *core = _core;
+	if (case_sensitive) {
+		if (!strcmp(case_sensitive, "smart")) {
+			core->cons->grep_icase = CASE_SMART;
+		} else if (!strcmp(case_sensitive, "insensitive")) {
+			core->cons->grep_icase = CASE_INSENSITIVE;
+		} else if (!strcmp(case_sensitive, "sensitive")) {
+			core->cons->grep_icase = CASE_SENSITIVE;
+		} else {
+			goto err;
+		}
+		return true;
+	}
+err:
+	RZ_LOG_ERROR("grep: search.sensitive: invalid value (%s), support only `smart, sensitive, insensitive`\n", case_sensitive);
+	return false;
+}
+
 static bool cb_diff_sort(void *_core, void *_node) {
 	RzConfigNode *node = _node;
 	const char *column = node->value;
@@ -3581,6 +3602,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETBPREF("search.show", "true", "Show search results");
 	SETI("search.to", -1, "Search end address");
+	n = NODECB("search.case_sensitive", "smart", &cb_search_case_sensitive);
+	SETDESC(n, "Set grep(~) as case smart/sensitive/insensitive");
+	SETOPTIONS(n, "smart", "sensitive", "insensitive", NULL);
 
 	/* rop */
 	SETI("rop.len", 5, "Maximum ROP gadget length");
