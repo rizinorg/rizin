@@ -96,6 +96,7 @@ static void parse_grep_expression(const char *str) {
 		while (*grep_str) {
 			if (isupper(*grep_str)) {
 				has_upper = true;
+				break;
 			}
 			grep_str++;
 		}
