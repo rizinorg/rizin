@@ -860,6 +860,27 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
 	return (char *)s;
 }
 
+/**
+ * \brief Finds the first occurrence of \p find in \p s, ignore case.
+ * \param s pointer to the string to examine
+ * \param find pointer to the string to search for
+ * \param slen the maximum number of characters to search
+ */
+RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const char *find, int slen) {
+	rz_return_val_if_fail(s && find, NULL);
+	char *new_s = strdup(s), *new_find = strdup(find);
+	const char *res = NULL;
+	rz_str_case(new_s, false);
+	rz_str_case(new_find, false);
+	const char *pos = rz_str_nstr(new_s, new_find, slen);
+	if (pos) {
+		res = s + (pos - new_s);
+	}
+	free(new_s);
+	free(new_find);
+	return res;
+}
+
 // Returns a new heap-allocated copy of str.
 // XXX what's the diff with rz_str_dup ?
 RZ_API char *rz_str_new(const char *str) {
@@ -2739,18 +2760,33 @@ RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
 }
 
 // XXX must find across the ansi tags, as well as support utf8
-RZ_API const char *rz_strstr_ansi(const char *a, const char *b) {
+/**
+ * \brief Finds the first occurrence of \p b in \p a, skip ansi sequence.
+ * \param a pointer to the string to examine
+ * \param b pointer to the string to search for
+ * \param icase whether ignore case
+ */
+RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase) {
+	rz_return_val_if_fail(a && b, NULL);
 	const char *ch, *p = a;
 	do {
 		ch = strchr(p, '\x1b');
 		if (ch) {
-			const char *v = rz_str_nstr(p, b, ch - p);
+			const char *v;
+			if (icase) {
+				v = rz_str_case_nstr(p, b, ch - p);
+			} else {
+				v = rz_str_nstr(p, b, ch - p);
+			}
 			if (v) {
 				return v;
 			}
 			p = ch + __str_ansi_length(ch);
 		}
 	} while (ch);
+	if (icase) {
+		return rz_str_casestr(p, b);
+	}
 	return strstr(p, b);
 }
 
@@ -2759,8 +2795,8 @@ RZ_API const char *rz_str_casestr(const char *a, const char *b) {
 	// return strcasestr (a, b);
 	size_t hay_len = strlen(a);
 	size_t needle_len = strlen(b);
-	if (!hay_len || !needle_len) {
-		return NULL;
+	if (!needle_len) {
+		return a;
 	}
 	while (hay_len >= needle_len) {
 		if (!rz_str_ncasecmp(a, b, needle_len)) {

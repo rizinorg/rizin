@@ -769,15 +769,8 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 
 	if (grep->nstrings > 0) {
 		int ampfail = grep->amp;
-		if (grep->icase) {
-			rz_str_case(in, false);
-		}
 		for (i = 0; i < grep->nstrings; i++) {
-			char *str = grep->strings[i];
-			if (grep->icase) {
-				rz_str_case(str, false);
-			}
-			const char *p = rz_strstr_ansi(in, grep->strings[i]);
+			const char *p = rz_strstr_ansi(in, grep->strings[i], grep->icase);
 			if (!p) {
 				ampfail = 0;
 				continue;

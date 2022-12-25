@@ -170,6 +170,17 @@ bool test_rz_str_case(void) {
 	mu_end;
 }
 
+bool test_rz_str_case_nstr(void) {
+	const char *str = "AbcD1!sqQ";
+	const char *substr = "sq";
+	const char *substr_case = "Sq";
+	mu_assert_null(rz_str_case_nstr(str, substr, 5), "not contain");
+	mu_assert_eq(rz_str_case_nstr(str, substr, 8), str + 6, "contain");
+	mu_assert_null(rz_str_case_nstr(str, substr_case, 6), "not contain (ignore case)");
+	mu_assert_eq(rz_str_case_nstr(str, substr_case, 8), str + 6, "contain (ignore case)");
+	mu_end;
+}
+
 // TODO test rz_str_hash64, rz_str_hash
 // TODO test rz_str_delta (WHAT!)
 
@@ -761,6 +772,7 @@ bool all_tests() {
 	mu_run_test(test_rz_str_bool);
 	mu_run_test(test_rz_str_trim);
 	mu_run_test(test_rz_str_case);
+	mu_run_test(test_rz_str_case_nstr);
 	mu_run_test(test_rz_str_split);
 	mu_run_test(test_rz_str_split_list);
 	mu_run_test(test_rz_str_split_lines);
