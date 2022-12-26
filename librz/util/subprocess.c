@@ -1039,24 +1039,6 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 		goto error;
 	}
 
-#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
-	struct termios term_params;
-	/* Needed to avoid reading back the writes again from the TTY */
-	if (tcgetattr(STDIN_FILENO, &term_params) == -1) {
-		perror("tcgetattr");
-		goto no_term_change;
-	}
-	cfmakeraw(&term_params);
-
-	if (opt->make_raw && proc->slave_fd != -1) {
-		/* This avoids ECHO, so we don't read back whatever we wrote */
-		if (tcsetattr(proc->slave_fd, TCSANOW, &term_params) == -1) {
-			perror("tcsetattr");
-		}
-	}
-#endif
-
-no_term_change:
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
@@ -1112,6 +1094,25 @@ no_term_change:
 	destroy_child_env(child_env);
 	free(argv);
 
+	if (!opt->make_raw || proc->slave_fd == -1) {
+		goto no_term_change;
+	}
+
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
+	struct termios term_params;
+	/* Needed to avoid reading back the writes again from the TTY */
+	if (tcgetattr(proc->slave_fd, &term_params) != 0) {
+		perror("tcgetattr");
+		goto no_term_change;
+	}
+	cfmakeraw(&term_params);
+	/* This avoids ECHO, so we don't read back whatever we wrote */
+	if (tcsetattr(proc->slave_fd, TCSANOW, &term_params) != 0) {
+		perror("tcsetattr");
+	}
+#endif
+
+no_term_change:
 	if (proc->slave_fd != -1 && close(proc->slave_fd) == -1) {
 		perror("close");
 	}
@@ -1572,7 +1573,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.pty = NULL,
-		.make_raw = /* does not matter */ true
+		.make_raw = /* does not matter */ false
 	};
 	return rz_subprocess_start_opt(&opt);
 }
