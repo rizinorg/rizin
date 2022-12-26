@@ -589,9 +589,9 @@ typedef struct rz_cons_t {
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
 
-#define CASE_SENSITIVE   0
-#define CASE_INSENSITIVE 1
-#define CASE_SMART       2
+#define RZ_CONS_SEARCH_CASE_SENSITIVE   0
+#define RZ_CONS_SEARCH_CASE_INSENSITIVE 1
+#define RZ_CONS_SEARCH_CASE_SMART       2
 
 #define RZ_CONS_KEY_F1  0xf1
 #define RZ_CONS_KEY_F2  0xf2

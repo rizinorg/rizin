@@ -88,7 +88,7 @@ static void parse_grep_expression(const char *str) {
 	bool first = true;
 
 	// setup cons->context->grep.icase according to cons->grep_icase
-	if (cons->grep_icase == CASE_SMART) {
+	if (cons->grep_icase == RZ_CONS_SEARCH_CASE_SMART) {
 		// smartcase - when the search term is all lowercase, ignore the case,
 		// instead if the search term is uppercase or a mix, do a case-sensitive search.
 		bool has_upper = false;
@@ -101,7 +101,7 @@ static void parse_grep_expression(const char *str) {
 			grep_str++;
 		}
 
-		cons->context->grep.icase = has_upper ? CASE_SENSITIVE : CASE_INSENSITIVE;
+		cons->context->grep.icase = has_upper ? RZ_CONS_SEARCH_CASE_SENSITIVE : RZ_CONS_SEARCH_CASE_INSENSITIVE;
 	} else {
 		cons->context->grep.icase = cons->grep_icase;
 	}

@@ -83,11 +83,11 @@ static bool cb_search_case_sensitive(void *_core, void *_node) {
 	RzCore *core = _core;
 	if (case_sensitive) {
 		if (!strcmp(case_sensitive, "smart")) {
-			core->cons->grep_icase = CASE_SMART;
+			core->cons->grep_icase = RZ_CONS_SEARCH_CASE_SMART;
 		} else if (!strcmp(case_sensitive, "insensitive")) {
-			core->cons->grep_icase = CASE_INSENSITIVE;
+			core->cons->grep_icase = RZ_CONS_SEARCH_CASE_INSENSITIVE;
 		} else if (!strcmp(case_sensitive, "sensitive")) {
-			core->cons->grep_icase = CASE_SENSITIVE;
+			core->cons->grep_icase = RZ_CONS_SEARCH_CASE_SENSITIVE;
 		} else {
 			goto err;
 		}
