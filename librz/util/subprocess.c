@@ -1042,7 +1042,10 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 #if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
 	struct termios term_params;
 	/* Needed to avoid reading back the writes again from the TTY */
-	tcgetattr(STDIN_FILENO, &term_params);
+	if (tcgetattr(STDIN_FILENO, &term_params) == -1) {
+		perror("tcgetattr");
+		goto no_term_change;
+	}
 	cfmakeraw(&term_params);
 
 	if (opt->make_raw && proc->slave_fd != -1) {
@@ -1053,6 +1056,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *o
 	}
 #endif
 
+no_term_change:
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
