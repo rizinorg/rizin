@@ -1745,7 +1745,7 @@ RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const s
 
 /**
  * \brief Wrapper for login_tty(3)
- * 
+ *
  * \param fd File descriptor for the slave end of the PTY; To be made the controlling terminal
  * \return int Return code
  */

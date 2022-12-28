@@ -249,7 +249,7 @@ error:
 
 /**
  * \brief Start a subprocess, using the options provided in \p opt
- * 
+ *
  * \param opt RzSubprocessOpt struct
  * \return RzSubprocess* The newly created subprocess
  */
@@ -1012,7 +1012,7 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 
 /**
  * \brief Start a subprocess, using the options provided in \p opt
- * 
+ *
  * \param opt RzSubprocessOpt struct
  * \return RzSubprocess* The newly created subprocess
  */
