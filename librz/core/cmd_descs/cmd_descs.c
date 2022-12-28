@@ -16023,7 +16023,7 @@ static const RzCmdDescDetailEntry grep_Modifiers_detail_entries[] = {
 	{ .text = "$[n]", .arg_str = NULL, .comment = "Sort numerically / alphabetically the Nth column" },
 	{ .text = "$!", .arg_str = NULL, .comment = "Sort in inverse order" },
 	{ .text = ",", .arg_str = NULL, .comment = "Token to define another keyword" },
-	{ .text = "+", .arg_str = NULL, .comment = "Case insensitive grep (grep -i)" },
+	{ .text = "+", .arg_str = NULL, .comment = "Set the grep as the opposite of search.case_sensitive" },
 	{ .text = "^", .arg_str = NULL, .comment = "Words must be placed at the beginning of line" },
 	{ .text = "<", .arg_str = NULL, .comment = "Perform zoom operation on the buffer" },
 	{ .text = "!", .arg_str = NULL, .comment = "Negate grep" },

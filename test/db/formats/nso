@@ -2,7 +2,7 @@ NAME=nso detection
 FILE=bins/nso/application.nso
 CMDS=iI~?switch
 EXPECT=<<EOF
-1
+2
 EOF
 RUN
 

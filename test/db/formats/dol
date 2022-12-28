@@ -9,6 +9,6 @@ NAME=DOL: sqrxz4 - iI
 FILE=bins/dol/sqrxz4-gc.dol
 CMDS=iI~?wii
 EXPECT=<<EOF
-1
+2
 EOF
 RUN

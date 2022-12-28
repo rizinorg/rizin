@@ -262,6 +262,7 @@ EXPECT=<<EOF
 0x000003d0 1 CGA
 0x000003f0 1 FDC_1
 0x00000018 CCu "PS/2 extended function register"
+0x00000022 CCu "Cyrix Cx486SLC/DLC processor Cache Configuration Registers (0022-0023)"
 0x0000006b CCu "SSGA control registers (006B-006F)"
 0x00000080 CCu "DMA page registers (0080-008F)"
 EOF

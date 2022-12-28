@@ -497,7 +497,7 @@ commands:
           - text: ","
             comment: "Token to define another keyword"
           - text: "+"
-            comment: "Case insensitive grep (grep -i)"
+            comment: "Set the grep as the opposite of search.case_sensitive"
           - text: "^"
             comment: "Words must be placed at the beginning of line"
           - text: "<"
