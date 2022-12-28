@@ -247,7 +247,13 @@ error:
 	return ret;
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
+/**
+ * \brief Start a subprocess, using the options provided in \p opt
+ * 
+ * \param opt RzSubprocessOpt struct
+ * \return RzSubprocess* The newly created subprocess
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
 	const HANDLE curr_stdin_handle = (HANDLE)_get_osfhandle(fileno(stdin));
 	const HANDLE curr_stdout_handle = (HANDLE)_get_osfhandle(fileno(stdout));
@@ -702,12 +708,24 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	free(proc);
 }
 
+/**
+ * \brief Unimplemented on Windows
+ *
+ * \return RzPty* NULL pointer until it has been implemented
+ */
 RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
 	RZ_LOG_ERROR("openpty: Not implemented for Windows!");
+	return NULL;
 }
 
+/**
+ * \brief Unimplemented on Windows
+ *
+ * \return bool false
+ */
 RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
 	RZ_LOG_ERROR("login_tty: Not implemented for Windows!");
+	return false;
 }
 
 #else // __WINDOWS__
@@ -992,7 +1010,13 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	return true;
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
+/**
+ * \brief Start a subprocess, using the options provided in \p opt
+ * 
+ * \param opt RzSubprocessOpt struct
+ * \return RzSubprocess* The newly created subprocess
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	rz_return_val_if_fail(opt, NULL);
 
 	RzSubprocess *proc = NULL;

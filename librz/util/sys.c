@@ -1696,6 +1696,16 @@ RZ_API int rz_sys_fork(void) {
 }
 #endif
 
+/**
+ * \brief Wrapper for forkpty(3)
+ *
+ * \param amaster The master end of the PTY is stored here
+ * \param name The name of the slave end of the PTY is stored here
+ * \param termp (const struct termios) The terminal attributes
+ * \param winp (const struct winsize) The window size attributes
+ *
+ * \return int (pid_t) PID of the forked process
+ */
 RZ_API /* pid_t */ int rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	pid_t ret = forkpty(amaster, name, termp, winp);
@@ -1709,6 +1719,17 @@ RZ_API /* pid_t */ int rz_sys_forkpty(int *amaster, char *name, void /* const st
 #endif
 }
 
+/**
+ * \brief Wrapper for openpty(3)
+ *
+ * \param amaster The master end of the PTY is stored here
+ * \param aslave The slave end of the PTY is stored here
+ * \param name The name of the slave end of the PTY is stored here
+ * \param termp (const struct termios) The terminal attributes
+ * \param winp (const struct winsize) The window size attributes
+ *
+ * \return int Return code
+ */
 RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	int ret = openpty(amaster, aslave, name, termp, winp);
@@ -1722,6 +1743,12 @@ RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const s
 #endif
 }
 
+/**
+ * \brief Wrapper for login_tty(3)
+ * 
+ * \param fd File descriptor for the slave end of the PTY; To be made the controlling terminal
+ * \return int Return code
+ */
 RZ_API int rz_sys_login_tty(int fd) {
 #if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
 	int ret = login_tty(fd);
