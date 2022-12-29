@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
@@ -246,7 +247,13 @@ error:
 	return ret;
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+/**
+ * \brief Start a subprocess, using the options provided in \p opt
+ *
+ * \param opt RzSubprocessOpt struct
+ * \return RzSubprocess* The newly created subprocess
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
 	const HANDLE curr_stdin_handle = (HANDLE)_get_osfhandle(fileno(stdin));
 	const HANDLE curr_stdout_handle = (HANDLE)_get_osfhandle(fileno(stdout));
@@ -700,6 +707,27 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	CloseHandle(proc->proc);
 	free(proc);
 }
+
+/**
+ * \brief Unimplemented on Windows
+ *
+ * \return RzPty* NULL pointer until it has been implemented
+ */
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RZ_LOG_ERROR("openpty: Not implemented for Windows!");
+	return NULL;
+}
+
+/**
+ * \brief Unimplemented on Windows
+ *
+ * \return bool false
+ */
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
+	RZ_LOG_ERROR("login_tty: Not implemented for Windows!");
+	return false;
+}
+
 #else // __WINDOWS__
 
 #include <errno.h>
@@ -714,6 +742,8 @@ struct rz_subprocess_t {
 	int ret;
 	RzStrBuf out;
 	RzStrBuf err;
+	int master_fd; ///< Needed to check whether PTY
+	int slave_fd;
 };
 
 static RzPVector subprocs;
@@ -890,10 +920,109 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[], RzPty *new_pty) {
+	RzPty *pty = opt->pty;
+
+	/* If we need to use a PTY, we should create one right now */
+	if (!pty && (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stdout_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stderr_pipe == RZ_SUBPROCESS_PIPE_PTY)) {
+		pty = rz_subprocess_openpty(NULL, NULL, NULL);
+		if (!pty) {
+			return false;
+		}
+		new_pty = pty;
+	}
+
+	if (pty) {
+		proc->master_fd = pty->master_fd;
+		proc->slave_fd = pty->slave_fd;
+	}
+
+	switch (opt->stdin_pipe) {
+	case RZ_SUBPROCESS_PIPE_CREATE:
+		if (rz_sys_pipe(stdin_pipe, true) == -1) {
+			perror("pipe");
+			return false;
+		}
+		proc->stdin_fd = stdin_pipe[1];
+		break;
+	case RZ_SUBPROCESS_PIPE_PTY:
+		stdin_pipe[0] = pty->slave_fd;
+		stdin_pipe[1] = pty->master_fd;
+		proc->stdin_fd = stdin_pipe[1];
+		break;
+	case RZ_SUBPROCESS_PIPE_STDOUT:
+		RZ_LOG_ERROR("Invalid pipe option 'RZ_SUBPROCESS_PIPE_STDOUT' for stdin. Ignoring...\n");
+		break;
+	case RZ_SUBPROCESS_PIPE_NONE:
+		break;
+	}
+
+	switch (opt->stdout_pipe) {
+	case RZ_SUBPROCESS_PIPE_CREATE:
+		if (rz_sys_pipe(stdout_pipe, true) == -1) {
+			perror("pipe");
+			return false;
+		}
+		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			return false;
+		}
+		proc->stdout_fd = stdout_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_PTY:
+		stdout_pipe[0] = pty->master_fd;
+		stdout_pipe[1] = pty->slave_fd;
+		proc->stdout_fd = stdout_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_STDOUT:
+		RZ_LOG_ERROR("Invalid pipe option 'RZ_SUBPROCESS_PIPE_STDOUT' for stdout. Ignoring...\n");
+		break;
+	case RZ_SUBPROCESS_PIPE_NONE:
+		break;
+	}
+
+	switch (opt->stderr_pipe) {
+	case RZ_SUBPROCESS_PIPE_CREATE:
+		if (rz_sys_pipe(stderr_pipe, true) == -1) {
+			perror("pipe");
+			return false;
+		}
+		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			return false;
+		}
+		proc->stderr_fd = stderr_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_PTY:
+		stdout_pipe[0] = pty->master_fd;
+		stdout_pipe[1] = pty->slave_fd;
+		proc->stdout_fd = stdout_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_STDOUT:
+		stderr_pipe[0] = stdout_pipe[0];
+		stderr_pipe[1] = stdout_pipe[1];
+		proc->stderr_fd = proc->stdout_fd;
+		break;
+	case RZ_SUBPROCESS_PIPE_NONE:
+		break;
+	}
+
+	return true;
+}
+
+/**
+ * \brief Start a subprocess, using the options provided in \p opt
+ *
+ * \param opt RzSubprocessOpt struct
+ * \return RzSubprocess* The newly created subprocess
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
+	rz_return_val_if_fail(opt, NULL);
+
 	RzSubprocess *proc = NULL;
 	char **child_env = NULL;
 	char **argv = calloc(opt->args_size + 2, sizeof(char *));
+	RzPty *new_pty = NULL;
 	if (!argv) {
 		return NULL;
 	}
@@ -912,6 +1041,8 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	proc->stdin_fd = -1;
 	proc->stdout_fd = -1;
 	proc->stderr_fd = -1;
+	proc->master_fd = -1;
+	proc->slave_fd = -1;
 	rz_strbuf_init(&proc->out);
 	rz_strbuf_init(&proc->err);
 
@@ -927,72 +1058,54 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	int stdin_pipe[2] = { -1, -1 };
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
-	if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stdin_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		proc->stdin_fd = stdin_pipe[1];
-	}
 
-	if (opt->stdout_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stdout_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-			perror("fcntl");
-			goto error;
-		}
-		proc->stdout_fd = stdout_pipe[0];
-	}
-
-	if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stderr_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-			perror("fcntl");
-			goto error;
-		}
-		proc->stderr_fd = stderr_pipe[0];
-	} else if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_STDOUT) {
-		stderr_pipe[0] = stdout_pipe[0];
-		stderr_pipe[1] = stdout_pipe[1];
-		proc->stderr_fd = proc->stdout_fd;
+	if (!init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe, new_pty)) {
+		goto error;
 	}
 
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
-
 	proc->pid = rz_sys_fork();
+
 	if (proc->pid == -1) {
 		// fail
 		perror("fork");
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
+
 		if (stderr_pipe[1] != -1) {
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
-			if (proc->stderr_fd != proc->stdout_fd) {
+			if (proc->stderr_fd != proc->stdout_fd && proc->stderr_fd != proc->master_fd) {
 				rz_sys_pipe_close(stderr_pipe[1]);
 				rz_sys_pipe_close(stderr_pipe[0]);
 			}
 		}
+
 		if (stdout_pipe[1] != -1) {
 			while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
 			}
-			rz_sys_pipe_close(stdout_pipe[1]);
-			rz_sys_pipe_close(stdout_pipe[0]);
+			if (proc->stdout_fd != proc->master_fd) {
+				rz_sys_pipe_close(stdout_pipe[1]);
+				rz_sys_pipe_close(stdout_pipe[0]);
+			}
 		}
 		if (stdin_pipe[0] != -1) {
 			while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
 			}
-			rz_sys_pipe_close(stdin_pipe[0]);
-			rz_sys_pipe_close(stdin_pipe[1]);
+			if (proc->stdin_fd != proc->master_fd) {
+				rz_sys_pipe_close(stdin_pipe[0]);
+				rz_sys_pipe_close(stdin_pipe[1]);
+			}
+		}
+
+		if (proc->master_fd != -1 && close(proc->master_fd)) {
+			perror("close");
+		}
+		if (proc->slave_fd != -1 && close(proc->slave_fd)) {
+			perror("close");
 		}
 
 		// Use the previously created environment
@@ -1005,18 +1118,45 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	destroy_child_env(child_env);
 	free(argv);
 
-	if (stdin_pipe[0] != -1) {
+	if (!opt->make_raw || proc->slave_fd == -1) {
+		goto no_term_change;
+	}
+
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
+	struct termios term_params;
+	/* Needed to avoid reading back the writes again from the TTY */
+	if (tcgetattr(proc->slave_fd, &term_params) != 0) {
+		perror("tcgetattr");
+		goto no_term_change;
+	}
+	cfmakeraw(&term_params);
+	/* This avoids ECHO, so we don't read back whatever we wrote */
+	if (tcsetattr(proc->slave_fd, TCSANOW, &term_params) != 0) {
+		perror("tcsetattr");
+	}
+#endif
+
+no_term_change:
+	if (proc->slave_fd != -1 && close(proc->slave_fd) == -1) {
+		perror("close");
+	}
+
+	if (new_pty) {
+		/* Free the RzPTY if we created it */
+		rz_subprocess_pty_free(new_pty);
+	}
+
+	if (stdin_pipe[0] != -1 && stdin_pipe[0] != proc->slave_fd) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
-	if (stdout_pipe[1] != -1) {
+	if (stdout_pipe[1] != -1 && stdout_pipe[1] != proc->slave_fd) {
 		rz_sys_pipe_close(stdout_pipe[1]);
 	}
-	if (stderr_pipe[1] != -1 && proc->stderr_fd != proc->stdout_fd) {
+	if (stderr_pipe[1] != -1 && proc->stderr_fd != proc->stdout_fd && stderr_pipe[1] != proc->slave_fd) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
 
 	rz_pvector_push(&subprocs, proc);
-
 	subprocess_unlock();
 
 	return proc;
@@ -1028,41 +1168,54 @@ error:
 	if (proc && proc->killpipe[1] == -1) {
 		rz_sys_pipe_close(proc->killpipe[1]);
 	}
-	free(proc);
-	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0]) {
+	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && stderr_pipe[0] != proc->master_fd) {
 		rz_sys_pipe_close(stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1]) {
+	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1] && stderr_pipe[0] != proc->slave_fd) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
-	if (stdout_pipe[0] != -1) {
+	if (stdout_pipe[0] != -1 && stdout_pipe[0] != proc->master_fd) {
 		rz_sys_pipe_close(stdout_pipe[0]);
 	}
-	if (stdout_pipe[1] != -1) {
+	if (stdout_pipe[1] != -1 && stdout_pipe[1] != proc->slave_fd) {
 		rz_sys_pipe_close(stdout_pipe[1]);
 	}
-	if (stdin_pipe[0] != -1) {
+	if (stdin_pipe[0] != -1 && stdin_pipe[0] != proc->slave_fd) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] != -1) {
+	if (stdin_pipe[1] != -1 && stdin_pipe[1] != proc->master_fd) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
+	if (proc->master_fd != -1) {
+		close(proc->master_fd);
+	}
+	if (proc->slave_fd != -1) {
+		close(proc->slave_fd);
+	}
+	free(proc);
+
+	if (new_pty) {
+		/* Free the RzPTY if we created it */
+		RZ_FREE(new_pty);
+	}
+
 	destroy_child_env(child_env);
 	subprocess_unlock();
 	return NULL;
 }
 
-static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes) {
+static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes, bool is_pty) {
 	char buf[BUFFER_SIZE];
 	size_t to_read = sizeof(buf);
 	if (n_bytes && to_read > n_bytes) {
 		to_read = n_bytes;
 	}
 	ssize_t sz = read(fd, buf, to_read);
-	if (sz < 0) {
-		perror("read");
-	} else if (sz == 0) {
+	if (sz == 0 || (is_pty && sz == -1 && errno == EIO)) {
+		/* In case of PTY, EIO (input/output error) denotes EOF, hence the manual checking */
 		*fd_eof = true;
+	} else if (sz < 0) {
+		perror("read");
 	} else {
 		rz_strbuf_append_n(sb, buf, (int)sz);
 	}
@@ -1096,6 +1249,11 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool child_dead = false;
 	bool timedout = true;
 	bool bytes_enabled = n_bytes != 0;
+
+	/* Check if stdout and stderr are connected to a PTY */
+	bool stdout_pty = proc->stdout_fd != -1 && proc->stdout_fd == proc->master_fd;
+	bool stderr_pty = proc->stderr_fd != -1 && proc->stderr_fd == proc->master_fd;
+
 	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
 		fd_set rfds;
 		FD_ZERO(&rfds);
@@ -1143,14 +1301,14 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		timedout = true;
 		if (stdout_enabled && FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes);
+			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes, stdout_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
 		}
 		if (stderr_enabled && FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes);
+			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes, stderr_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
@@ -1183,7 +1341,9 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
  * \param timeout_ms Wait for at most this amount of millisecond
  */
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
-	if (proc->stdin_fd != -1) {
+	/* Should not close proc->stdin_fd if the fork mode was PTY
+	(because it might point to the master fd, which needs to stay open to get the std{out,err}) */
+	if (proc->stdin_fd != -1 && proc->stdin_fd != proc->master_fd) {
 		// Close subprocess stdin to tell it that no more input will come from us
 		rz_sys_pipe_close(proc->stdin_fd);
 		proc->stdin_fd = -1;
@@ -1238,7 +1398,7 @@ RZ_API RzStrBuf *rz_subprocess_stdout_read(RzSubprocess *proc, size_t n, ut64 ti
  * \param proc Subprocess to communicate with
  * \param timeout_ms Wait for at most this amount of millisecond to read subprocess' stdout
  */
-RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms) {
+RZ_API RZ_BORROW RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms) {
 	rz_strbuf_fini(&proc->out);
 	rz_strbuf_init(&proc->out);
 	if (proc->stdout_fd != -1) {
@@ -1281,17 +1441,98 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	rz_strbuf_fini(&proc->err);
 	rz_sys_pipe_close(proc->killpipe[0]);
 	rz_sys_pipe_close(proc->killpipe[1]);
-	if (proc->stdin_fd != -1) {
+
+	if (proc->master_fd != -1) {
+		rz_sys_pipe_close(proc->master_fd);
+	}
+	if (proc->stdin_fd != -1 && proc->stdin_fd != proc->master_fd) {
 		rz_sys_pipe_close(proc->stdin_fd);
 	}
-	if (proc->stdout_fd != -1) {
+	if (proc->stdout_fd != -1 && proc->stdout_fd != proc->master_fd) {
 		rz_sys_pipe_close(proc->stdout_fd);
 	}
-	if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd) {
+	if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd && proc->stderr_fd != proc->master_fd) {
 		rz_sys_pipe_close(proc->stderr_fd);
 	}
 	free(proc);
 }
+
+/**
+ * \brief Call openpty(3) with the provided arguments
+ *
+ * \param slave_name The name of the slave PTY is stored in this
+ * This is marked as RZ_BORROW, so it's ownership no longer stays with the caller
+ * and is now owned by the returned RzPty struct
+ *
+ * \param term_params Terminal attributes (struct termios) for the forked process
+ * \param win_params Window attributes (struct winsize) for the forked process
+ *
+ * \return RzPty*
+ */
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RzPty *pty = RZ_NEW0(RzPty);
+	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
+
+	if (ret == -1) {
+		perror("openpty");
+		RZ_FREE(pty);
+		return NULL;
+	}
+
+	return pty;
+}
+
+/**
+ * \brief Call login_tty(3) on the provided \p pty
+ *
+ * \param pty RzPty struct
+ * \return bool true if login_tty succeeded, false otherwise
+ */
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
+	rz_return_val_if_fail(pty, false);
+
+	int ret = rz_sys_login_tty(pty->slave_fd);
+	if (ret == -1) {
+		perror("login_tty");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * \brief Closes the file descriptors associated with \p pty
+ *
+ * \param pty RzPty struct
+ * \return void
+ *
+ * No need to call this after you've used the \p pty in `rz_subprocess_start_opt`,
+ * since the file descriptors would already have been correctly closed
+ */
+RZ_API void rz_subprocess_close_pty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
+	if (close(pty->master_fd) == -1) {
+		perror("close");
+	}
+	if (close(pty->slave_fd) == -1) {
+		perror("close");
+	}
+}
+
+/**
+ * \brief Free the \p pty
+ *
+ * \param pty RzPty struct
+ * \return void
+ */
+RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty) {
+	if (!pty) {
+		return;
+	}
+
+	RZ_FREE(pty->name);
+	free(pty);
+}
+
 #endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
@@ -1355,6 +1596,8 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.pty = NULL,
+		.make_raw = /* does not matter */ false
 	};
 	return rz_subprocess_start_opt(&opt);
 }

@@ -74,6 +74,18 @@ extern char **environ;
 #endif
 #endif
 
+/* For "openpty" family of funtcions */
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#include <utmp.h>
+#endif
+#endif
+
 RZ_LIB_VERSION(rz_util);
 
 #ifdef __x86_64__
@@ -1666,6 +1678,9 @@ RZ_API int rz_sys_fork(void) {
 	parent_lock_enter();
 #endif
 	pid_t child = fork();
+	if (child == -1) {
+		perror("fork");
+	}
 #if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
 	if (child == 0) {
 		is_child = true;
@@ -1680,6 +1695,72 @@ RZ_API int rz_sys_fork(void) {
 	return -1;
 }
 #endif
+
+/**
+ * \brief Wrapper for forkpty(3)
+ *
+ * \param amaster The master end of the PTY is stored here
+ * \param name The name of the slave end of the PTY is stored here
+ * \param termp (const struct termios) The terminal attributes
+ * \param winp (const struct winsize) The window size attributes
+ *
+ * \return int (pid_t) PID of the forked process
+ */
+RZ_API /* pid_t */ int rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	pid_t ret = forkpty(amaster, name, termp, winp);
+	if (ret == -1) {
+		perror("forkpty");
+	}
+	return ret;
+#else
+	RZ_LOG_ERROR("forkpty() not found\n");
+	return -1;
+#endif
+}
+
+/**
+ * \brief Wrapper for openpty(3)
+ *
+ * \param amaster The master end of the PTY is stored here
+ * \param aslave The slave end of the PTY is stored here
+ * \param name The name of the slave end of the PTY is stored here
+ * \param termp (const struct termios) The terminal attributes
+ * \param winp (const struct winsize) The window size attributes
+ *
+ * \return int Return code
+ */
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	int ret = openpty(amaster, aslave, name, termp, winp);
+	if (ret == -1) {
+		perror("openpty");
+	}
+	return ret;
+#else
+	RZ_LOG_ERROR("openpty() not found\n");
+	return -1;
+#endif
+}
+
+/**
+ * \brief Wrapper for login_tty(3)
+ *
+ * \param fd File descriptor for the slave end of the PTY; To be made the controlling terminal
+ * \return int Return code
+ */
+RZ_API int rz_sys_login_tty(int fd) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	int ret = login_tty(fd);
+	if (ret == -1) {
+		perror("login_tty");
+	}
+	return ret;
+#else
+	RZ_LOG_ERROR("login_tty() not found\n");
+	return -1;
+#endif
+}
 
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
