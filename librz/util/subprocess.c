@@ -1196,7 +1196,7 @@ error:
 
 	if (new_pty) {
 		/* Free the RzPTY if we created it */
-		RZ_FREE(new_pty);
+		rz_subprocess_pty_free(new_pty);
 	}
 
 	destroy_child_env(child_env);
