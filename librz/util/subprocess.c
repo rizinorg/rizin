@@ -920,8 +920,11 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[], RzPty *new_pty) {
+static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[], RzPty **new_pty) {
 	RzPty *pty = opt->pty;
+	if (new_pty) {
+		*new_pty = NULL;
+	}
 
 	/* If we need to use a PTY, we should create one right now */
 	if (!pty && (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stdout_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stderr_pipe == RZ_SUBPROCESS_PIPE_PTY)) {
@@ -929,7 +932,9 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 		if (!pty) {
 			return false;
 		}
-		new_pty = pty;
+		if (new_pty) {
+			*new_pty = pty;
+		}
 	}
 
 	if (pty) {
@@ -1059,7 +1064,7 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
 
-	if (!init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe, new_pty)) {
+	if (!init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe, &new_pty)) {
 		goto error;
 	}
 
