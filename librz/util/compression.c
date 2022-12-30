@@ -204,7 +204,7 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 	int err = 0, flush = Z_NO_FLUSH;
 	bool ret = true;
 	ut64 dst_cursor = 0, src_cursor = 0;
-	ut64 src_readlen = 0;
+	st64 src_readlen = 0;
 	z_stream stream;
 
 	memset(&stream, 0, sizeof(z_stream));
