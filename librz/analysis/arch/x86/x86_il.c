@@ -349,6 +349,7 @@ static const char *x86_bound_regs_16[] = {
 	"bx", /* X86_REG_BX */
 	"cx", /* X86_REG_CX */
 	"dx", /* X86_REG_DX */
+	// "ip", /* X86_REG_IP */
 	"sp", /* X86_REG_SP */
 	"bp", /* X86_REG_BP */
 	"si", /* X86_REG_SI */
@@ -365,6 +366,7 @@ static const char *x86_bound_regs_32[] = {
 	"ebx", /* X86_REG_EBX */
 	"ecx", /* X86_REG_ECX */
 	"edx", /* X86_REG_EDX */
+	// "eip", /* X86_REG_EIP */
 	"esp", /* X86_REG_ESP */
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
@@ -388,6 +390,7 @@ static const char *x86_bound_regs_64[] = {
 	"rbx", /* X86_REG_RBX */
 	"rcx", /* X86_REG_RCX */
 	"rdx", /* X86_REG_RDX */
+	// "rip", /* X86_REG_RIP */
 	"rsp", /* X86_REG_RSP */
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
@@ -2787,17 +2790,21 @@ IL_LIFTER(call) {
 	 * Like whether the call is a near or far call, absolute or relative call, etc.
 	 * Implementing it accurately will require exceptions, task switching,
 	 * shadow stack, CPU internal flags, segmentation support
-	 * Just pushing the current program counter is a good approcimation for now
+	 * Just pushing the current program counter is a good approximation for now
 	 * shadow stack, CPU internal flags, segmentation support
 	 * Just pushing the current program counter is a good approcimation for now
 	 * We also need to push the code segment register in case 16 and 32 bit modes.
 	 */
 
+	RzILOpEffect *push_stuff = NULL;
+
 	if (analysis->bits == 64) {
-		return x86_push_helper(U64(pc), 2);
+		push_stuff = x86_push_helper(U64(pc), 2);
 	} else {
-		return SEQ4(SETL("_cs", UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_CS))), x86_push_helper(VARL("_cs"), analysis->bits / BITS_PER_BYTE), SETL("_pc", UN(analysis->bits, pc)), x86_push_helper(VARL("_pc"), analysis->bits / BITS_PER_BYTE));
+		push_stuff = SEQ4(SETL("_cs", UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_CS))), x86_push_helper(VARL("_cs"), analysis->bits / BITS_PER_BYTE), SETL("_pc", UN(analysis->bits, pc)), x86_push_helper(VARL("_pc"), analysis->bits / BITS_PER_BYTE));
 	}
+
+	return SEQ2(push_stuff, JMP(x86_il_get_op(0)));
 }
 
 /**
