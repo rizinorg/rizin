@@ -946,7 +946,7 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	case RZ_SUBPROCESS_PIPE_CREATE:
 		if (rz_sys_pipe(stdin_pipe, true) == -1) {
 			perror("pipe");
-			return false;
+			goto abort;
 		}
 		proc->stdin_fd = stdin_pipe[1];
 		break;
@@ -966,11 +966,11 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	case RZ_SUBPROCESS_PIPE_CREATE:
 		if (rz_sys_pipe(stdout_pipe, true) == -1) {
 			perror("pipe");
-			return false;
+			goto abort;
 		}
 		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
 			perror("fcntl");
-			return false;
+			goto abort;
 		}
 		proc->stdout_fd = stdout_pipe[0];
 		break;
@@ -990,11 +990,11 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	case RZ_SUBPROCESS_PIPE_CREATE:
 		if (rz_sys_pipe(stderr_pipe, true) == -1) {
 			perror("pipe");
-			return false;
+			goto abort;
 		}
 		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
 			perror("fcntl");
-			return false;
+			goto abort;
 		}
 		proc->stderr_fd = stderr_pipe[0];
 		break;
@@ -1013,6 +1013,13 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	}
 
 	return true;
+
+abort:
+	rz_subprocess_pty_free(pty);
+	if (new_pty) {
+		*new_pty = NULL;
+	}
+	return false;
 }
 
 /**
