@@ -1180,28 +1180,28 @@ error:
 	if (proc && proc->killpipe[1] == -1) {
 		rz_sys_pipe_close(proc->killpipe[1]);
 	}
-	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && stderr_pipe[0] != proc->master_fd) {
+	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && !(proc && stderr_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1] && stderr_pipe[0] != proc->slave_fd) {
+	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1] && !(proc && stderr_pipe[1] == proc->slave_fd)) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
-	if (stdout_pipe[0] != -1 && stdout_pipe[0] != proc->master_fd) {
+	if (stdout_pipe[0] != -1 && !(proc && stdout_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stdout_pipe[0]);
 	}
-	if (stdout_pipe[1] != -1 && stdout_pipe[1] != proc->slave_fd) {
+	if (stdout_pipe[1] != -1 && !(proc && stdout_pipe[1] == proc->slave_fd)) {
 		rz_sys_pipe_close(stdout_pipe[1]);
 	}
-	if (stdin_pipe[0] != -1 && stdin_pipe[0] != proc->slave_fd) {
+	if (stdin_pipe[0] != -1 && !(proc && stdin_pipe[0] == proc->slave_fd)) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] != -1 && stdin_pipe[1] != proc->master_fd) {
+	if (stdin_pipe[1] != -1 && !(proc && stdin_pipe[1] == proc->master_fd)) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
-	if (proc->master_fd != -1) {
+	if (proc && proc->master_fd != -1) {
 		close(proc->master_fd);
 	}
-	if (proc->slave_fd != -1) {
+	if (proc && proc->slave_fd != -1) {
 		close(proc->slave_fd);
 	}
 	free(proc);
