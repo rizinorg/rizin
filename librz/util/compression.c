@@ -58,7 +58,7 @@ static const char *gzerr(int n) {
  * \param srcLen source bytes length
  * \param srcConsumed consumed source bytes length
  * \param dstLen uncompressed bytes length
- * \param wbits the size of the history buffer (or “window size”), and what header and trailer format is expected.
+ * \param wbits the size of the history buffer (or "window size"), and what header and trailer format is expected.
  * \return ptr to uncompressed
  */
 RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
@@ -126,7 +126,7 @@ err_exit:
  * \param srcLen source bytes length
  * \param srcConsumed consumed source bytes length
  * \param dstLen compressed bytes length
- * \param wbits the size of the history buffer (or “window size”), and what header and trailer format is expected.
+ * \param wbits the size of the history buffer (or "window size"), and what header and trailer format is expected.
  * \return ptr to compressed
  */
 RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
@@ -194,7 +194,7 @@ err_exit:
  * \param dst destination buffer
  * \param block_size block sizes to use while deflating data
  * \param src_consumed consumed source buffer length
- * \param wbits the size of the history buffer (or “window size”), and what header and trailer format is expected.
+ * \param wbits the size of the history buffer (or "window size"), and what header and trailer format is expected.
  * \return true if successful; false otherwise
  */
 RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits) {
@@ -260,7 +260,7 @@ return_goto:
  * \param dst destination buffer
  * \param block_size block sizes to use while inflating data
  * \param src_consumed consumed source buffer length
- * \param wbits the size of the history buffer (or “window size”), and what header and trailer format is expected.
+ * \param wbits the size of the history buffer (or "window size"), and what header and trailer format is expected.
  * \return true if successful; false otherwise
  */
 RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits) {
