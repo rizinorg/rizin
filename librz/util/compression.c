@@ -388,7 +388,7 @@ static bool lzma_action_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 	ut8 *inbuf = RZ_NEWS(ut8, block_size);
 	ut8 *outbuf = RZ_NEWS(ut8, block_size);
 	ut64 src_cursor = 0;
-	ut64 src_readlen = 0;
+	st64 src_readlen = 0;
 
 	strm.next_in = NULL;
 	strm.avail_in = 0;
