@@ -439,6 +439,8 @@ static bool test_autocmplt_global(void) {
 	mu_assert_notnull(parser, "create type parser");
 	char *errmsg = NULL;
 	RzType *typ = rz_type_parse_string_single(parser, "int", &errmsg);
+	free(errmsg);
+
 	mu_assert_notnull(typ, "parsed type");
 	rz_analysis_var_global_set_type(glob2, typ);
 
@@ -457,6 +459,7 @@ static bool test_autocmplt_global(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "GCHR", "GCHR found");
 	rz_line_ns_completion_result_free(r);
 
+	rz_type_parser_free(parser);
 	rz_core_free(core);
 	mu_end;
 }

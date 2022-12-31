@@ -111,7 +111,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **
 // cd
 RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv) {
 	static char *olddir = NULL;
-	bool ret = true;
+	bool ret = false;
 	const char *dir = "~";
 	if (argc > 1) {
 		dir = argv[1];
