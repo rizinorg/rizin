@@ -920,8 +920,11 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[], RzPty *new_pty) {
+static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[], RzPty **new_pty) {
 	RzPty *pty = opt->pty;
+	if (new_pty) {
+		*new_pty = NULL;
+	}
 
 	/* If we need to use a PTY, we should create one right now */
 	if (!pty && (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stdout_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stderr_pipe == RZ_SUBPROCESS_PIPE_PTY)) {
@@ -929,7 +932,9 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 		if (!pty) {
 			return false;
 		}
-		new_pty = pty;
+		if (new_pty) {
+			*new_pty = pty;
+		}
 	}
 
 	if (pty) {
@@ -941,7 +946,7 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	case RZ_SUBPROCESS_PIPE_CREATE:
 		if (rz_sys_pipe(stdin_pipe, true) == -1) {
 			perror("pipe");
-			return false;
+			goto abort;
 		}
 		proc->stdin_fd = stdin_pipe[1];
 		break;
@@ -961,11 +966,11 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	case RZ_SUBPROCESS_PIPE_CREATE:
 		if (rz_sys_pipe(stdout_pipe, true) == -1) {
 			perror("pipe");
-			return false;
+			goto abort;
 		}
 		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
 			perror("fcntl");
-			return false;
+			goto abort;
 		}
 		proc->stdout_fd = stdout_pipe[0];
 		break;
@@ -985,11 +990,11 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	case RZ_SUBPROCESS_PIPE_CREATE:
 		if (rz_sys_pipe(stderr_pipe, true) == -1) {
 			perror("pipe");
-			return false;
+			goto abort;
 		}
 		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
 			perror("fcntl");
-			return false;
+			goto abort;
 		}
 		proc->stderr_fd = stderr_pipe[0];
 		break;
@@ -1008,6 +1013,13 @@ static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin
 	}
 
 	return true;
+
+abort:
+	rz_subprocess_pty_free(pty);
+	if (new_pty) {
+		*new_pty = NULL;
+	}
+	return false;
 }
 
 /**
@@ -1059,7 +1071,7 @@ RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubproces
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
 
-	if (!init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe, new_pty)) {
+	if (!init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe, &new_pty)) {
 		goto error;
 	}
 
@@ -1168,35 +1180,35 @@ error:
 	if (proc && proc->killpipe[1] == -1) {
 		rz_sys_pipe_close(proc->killpipe[1]);
 	}
-	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && stderr_pipe[0] != proc->master_fd) {
+	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && !(proc && stderr_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1] && stderr_pipe[0] != proc->slave_fd) {
+	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1] && !(proc && stderr_pipe[1] == proc->slave_fd)) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
-	if (stdout_pipe[0] != -1 && stdout_pipe[0] != proc->master_fd) {
+	if (stdout_pipe[0] != -1 && !(proc && stdout_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stdout_pipe[0]);
 	}
-	if (stdout_pipe[1] != -1 && stdout_pipe[1] != proc->slave_fd) {
+	if (stdout_pipe[1] != -1 && !(proc && stdout_pipe[1] == proc->slave_fd)) {
 		rz_sys_pipe_close(stdout_pipe[1]);
 	}
-	if (stdin_pipe[0] != -1 && stdin_pipe[0] != proc->slave_fd) {
+	if (stdin_pipe[0] != -1 && !(proc && stdin_pipe[0] == proc->slave_fd)) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] != -1 && stdin_pipe[1] != proc->master_fd) {
+	if (stdin_pipe[1] != -1 && !(proc && stdin_pipe[1] == proc->master_fd)) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
-	if (proc->master_fd != -1) {
+	if (proc && proc->master_fd != -1) {
 		close(proc->master_fd);
 	}
-	if (proc->slave_fd != -1) {
+	if (proc && proc->slave_fd != -1) {
 		close(proc->slave_fd);
 	}
 	free(proc);
 
 	if (new_pty) {
 		/* Free the RzPTY if we created it */
-		RZ_FREE(new_pty);
+		rz_subprocess_pty_free(new_pty);
 	}
 
 	destroy_child_env(child_env);
