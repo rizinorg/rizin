@@ -40,7 +40,6 @@
  *     /attrs
  *       <direct dump of RzAnalysis.sdb_classes_attrs>
  *
- *
  *   /imports
  *     <str>=i
  *
@@ -51,7 +50,7 @@
  * {addr:<ut64>, jump:<ut64>, value:<ut64>}
  *
  * RzAnalysisVar JSON:
- * {name:<str>, type:<str>, kind:"s|b|r", arg?:<bool>, delta?:<st64>, reg?:<str>, cmt?:<str>,
+ * {name:<str>, type:<str>, stack?:<st64>, reg?:<str>, cmt?:<str>,
  *   accs?: [{off:<st64>, type:"r|w|rw", reg:<str>, sp?:<st64>}], constrs?:[<int>,<ut64>,...]}
  *
  */
@@ -432,25 +431,13 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	// TODO: Save it properly instead of using the C representation
 	pj_ks(j, "type", vartype);
 	free(vartype);
-	switch (var->kind) {
-	case RZ_ANALYSIS_VAR_KIND_REG:
-		pj_ks(j, "kind", "r");
+	switch (var->storage.type) {
+	case RZ_ANALYSIS_VAR_STORAGE_STACK:
+		pj_kN(j, "stack", var->storage.stack_off);
 		break;
-	case RZ_ANALYSIS_VAR_KIND_SPV:
-		pj_ks(j, "kind", "s");
+	case RZ_ANALYSIS_VAR_STORAGE_REG:
+		pj_ks(j, "reg", var->storage.reg);
 		break;
-	case RZ_ANALYSIS_VAR_KIND_BPV:
-		pj_ks(j, "kind", "b");
-		break;
-	}
-	if (var->kind != RZ_ANALYSIS_VAR_KIND_REG) {
-		pj_kN(j, "delta", var->delta);
-	}
-	if (var->regname) {
-		pj_ks(j, "reg", var->regname);
-	}
-	if (var->isarg) {
-		pj_kb(j, "arg", true);
 	}
 	if (var->comment) {
 		pj_ks(j, "cmt", var->comment);
@@ -472,8 +459,8 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 				pj_ks(j, "type", "rw");
 				break;
 			}
-			if (acc->stackptr) {
-				pj_kn(j, "sp", acc->stackptr);
+			if (acc->reg_addend) {
+				pj_kN(j, "sp", acc->reg_addend);
 			}
 			if (acc->reg) {
 				pj_ks(j, "reg", acc->reg);
@@ -499,9 +486,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 enum {
 	VAR_FIELD_NAME,
 	VAR_FIELD_TYPE,
-	VAR_FIELD_KIND,
-	VAR_FIELD_ARG,
-	VAR_FIELD_DELTA,
+	VAR_FIELD_STACK,
 	VAR_FIELD_REG,
 	VAR_FIELD_COMMENT,
 	VAR_FIELD_ACCS,
@@ -515,9 +500,7 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
 	}
 	rz_key_parser_add(parser, "name", VAR_FIELD_NAME);
 	rz_key_parser_add(parser, "type", VAR_FIELD_TYPE);
-	rz_key_parser_add(parser, "kind", VAR_FIELD_KIND);
-	rz_key_parser_add(parser, "arg", VAR_FIELD_ARG);
-	rz_key_parser_add(parser, "delta", VAR_FIELD_DELTA);
+	rz_key_parser_add(parser, "stack", VAR_FIELD_STACK);
 	rz_key_parser_add(parser, "reg", VAR_FIELD_REG);
 	rz_key_parser_add(parser, "cmt", VAR_FIELD_COMMENT);
 	rz_key_parser_add(parser, "accs", VAR_FIELD_ACCS);
@@ -535,10 +518,8 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	}
 	const char *name = NULL;
 	const char *type = NULL;
-	RzAnalysisVarKind kind = -1;
-	bool arg = false;
-	st64 delta = ST64_MAX;
-	const char *regname = NULL;
+	bool have_storage = false;
+	RzAnalysisVarStorage storage;
 	const char *comment = NULL;
 	RzVector accesses;
 	rz_vector_init(&accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
@@ -560,42 +541,21 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			}
 			type = child->str_value;
 			break;
-		case VAR_FIELD_KIND:
-			if (child->type != RZ_JSON_STRING || !*child->str_value || child->str_value[1]) {
-				// must be a string of exactly 1 char
-				break;
-			}
-			switch (*child->str_value) {
-			case 'r':
-				kind = RZ_ANALYSIS_VAR_KIND_REG;
-				break;
-			case 's':
-				kind = RZ_ANALYSIS_VAR_KIND_SPV;
-				break;
-			case 'b':
-				kind = RZ_ANALYSIS_VAR_KIND_BPV;
-				break;
-			default:
-				break;
-			}
-			break;
-		case VAR_FIELD_ARG:
-			if (child->type != RZ_JSON_BOOLEAN) {
-				break;
-			}
-			arg = child->num.u_value ? true : false;
-			break;
-		case VAR_FIELD_DELTA:
+		case VAR_FIELD_STACK:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
 			}
-			delta = child->num.s_value;
+			storage.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+			storage.stack_off = child->num.s_value;
+			have_storage = true;
 			break;
 		case VAR_FIELD_REG:
 			if (child->type != RZ_JSON_STRING) {
 				break;
 			}
-			regname = child->str_value;
+			storage.type = RZ_ANALYSIS_VAR_STORAGE_REG;
+			storage.reg = child->str_value;
+			have_storage = true;
 			break;
 		case VAR_FIELD_COMMENT:
 			if (child->type != RZ_JSON_STRING) {
@@ -650,7 +610,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 				RzAnalysisVarAccess *acc = rz_vector_push(&accesses, NULL);
 				acc->offset = offv->num.s_value;
 				acc->type = acctype;
-				acc->stackptr = spv ? spv->num.s_value : 0;
+				acc->reg_addend = spv ? spv->num.s_value : 0;
 				acc->reg = regv->str_value;
 			}
 			break;
@@ -684,27 +644,17 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			break;
 	})
 
-	if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
-		if (!regname) {
-			goto beach;
-		}
-		RzRegItem *reg = rz_reg_get(fcn->analysis->reg, regname, -1);
-		if (!reg) {
-			goto beach;
-		}
-		delta = reg->index;
-	}
-	if (!name || !type || kind == -1 || delta == ST64_MAX) {
+	if (!name || !type || !have_storage) {
 		goto beach;
 	}
 	char *error_msg = NULL;
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
-	if (error_msg) {
+	if (!vartype || error_msg) {
 		RZ_LOG_ERROR("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
-		RZ_FREE(error_msg);
+		free(error_msg);
 		goto beach;
 	}
-	ret = rz_analysis_function_set_var(fcn, delta, kind, vartype, 0, arg, name);
+	ret = rz_analysis_function_set_var(fcn, &storage, vartype, 0, name);
 	rz_type_free(vartype);
 	if (!ret) {
 		goto beach;
@@ -715,7 +665,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	}
 	RzAnalysisVarAccess *acc;
 	rz_vector_foreach(&accesses, acc) {
-		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->stackptr);
+		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->reg_addend);
 	}
 	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {

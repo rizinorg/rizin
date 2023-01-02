@@ -973,14 +973,6 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
-static st64 get_ptr_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
-	return rz_analysis_function_get_var_stackptr_at(fcn, delta, addr);
-}
-
-static const char *get_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
-	return rz_analysis_function_get_var_reg_at(fcn, delta, addr);
-}
-
 static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	RzCore *core = ds->core;
 	bool colorize_asm = print_color && ds->show_color && ds->colorop;
@@ -1057,8 +1049,6 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	if (ds->subvar && ds->opstr) {
 		ut64 at = ds->vat;
 		RzAnalysisFunction *f = fcnIn(ds, at, RZ_ANALYSIS_FCN_TYPE_NULL);
-		core->parser->get_ptr_at = get_ptr_at;
-		core->parser->get_reg_at = get_reg_at;
 		rz_parse_subvar(core->parser, f, &ds->analysis_op, ds->opstr, ds->strsub, sizeof(ds->strsub));
 		if (*ds->strsub) {
 			free(ds->opstr);
@@ -1775,19 +1765,22 @@ static void ds_pre_xrefs(RzDisasmState *ds, bool no_fcnlines) {
 	ds->line_col = tmp_col;
 }
 
-static void ds_show_functions_argvar(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var, const char *base, bool is_var, char sign) {
-	int delta = var->kind == 'b' ? RZ_ABS(var->delta + fcn->bp_off) : RZ_ABS(var->delta);
-	const char *pfx = is_var ? "var" : "arg";
+static void ds_show_functions_stack_argvar(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var) {
+	rz_return_if_fail(var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK);
+	st64 off = var->storage.stack_off;
+	char sign = off >= 0 ? '+' : '-';
+	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
 	char *constr = rz_analysis_var_get_constraints_readable(var);
 	char *vartype = rz_type_as_string(ds->core->analysis->typedb, var->type);
-	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG(ds, color_func_var), pfx,
+	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ stack %c 0x%" PFMT64x,
+		COLOR_ARG(ds, color_func_var), pfx,
 		COLOR_ARG(ds, color_func_var_type), vartype,
 		rz_str_endswith(vartype, "*") ? "" : " ",
 		var->name, COLOR_ARG(ds, color_func_var_addr),
 		constr ? " { " : "",
 		constr ? constr : "",
 		constr ? "} " : "",
-		base, sign, delta);
+		sign, RZ_ABS(off));
 	if (ds->show_varsum == -1) {
 		char *val = rz_core_analysis_var_display(ds->core, var, false);
 		if (val) {
@@ -1804,100 +1797,75 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 	const char *numColor = ds->core->cons->context->pal.num;
 	RzAnalysisVar *var;
 	RzListIter *iter;
-	int bp_vars = 0;
-	int sp_vars = 0;
-	int rg_vars = 0;
-	int bp_args = 0;
-	int sp_args = 0;
-	int rg_args = 0;
-	const char *bp_vars_color = COLOR_RESET(ds);
-	const char *sp_vars_color = COLOR_RESET(ds);
-	const char *rg_vars_color = COLOR_RESET(ds);
-	const char *bp_args_color = COLOR_RESET(ds);
-	const char *sp_args_color = COLOR_RESET(ds);
-	const char *rg_args_color = COLOR_RESET(ds);
+	int stack_vars = 0;
+	int reg_vars = 0;
+	int stack_args = 0;
+	int reg_args = 0;
+	const char *stack_vars_color = COLOR_RESET(ds);
+	const char *reg_vars_color = COLOR_RESET(ds);
+	const char *stack_args_color = COLOR_RESET(ds);
+	const char *reg_args_color = COLOR_RESET(ds);
 	rz_list_foreach (list, iter, var) {
-		if (var->isarg) {
-			switch (var->kind) {
-			case 'b':
-				bp_args++;
+		if (rz_analysis_var_is_arg(var)) {
+			switch (var->storage.type) {
+			case RZ_ANALYSIS_VAR_STORAGE_STACK:
+				stack_args++;
 				break;
-			case 's':
-				sp_args++;
-				break;
-			case 'r':
-				rg_args++;
+			case RZ_ANALYSIS_VAR_STORAGE_REG:
+				reg_args++;
 				break;
 			}
 		} else {
-			switch (var->kind) {
-			case 'b':
-				bp_vars++;
+			switch (var->storage.type) {
+			case RZ_ANALYSIS_VAR_STORAGE_STACK:
+				stack_vars++;
 				break;
-			case 's':
-				sp_vars++;
-				break;
-			case 'r':
-				rg_vars++;
+			case RZ_ANALYSIS_VAR_STORAGE_REG:
+				reg_vars++;
 				break;
 			}
 		}
 	}
-	if (bp_vars) {
-		bp_vars_color = numColor;
+	if (stack_vars) {
+		stack_vars_color = numColor;
 	}
-	if (sp_vars) {
-		sp_vars_color = numColor;
+	if (reg_vars) {
+		reg_vars_color = numColor;
 	}
-	if (rg_vars) {
-		rg_vars_color = numColor;
+	if (stack_args) {
+		stack_args_color = numColor;
 	}
-	if (bp_args) {
-		bp_args_color = numColor;
-	}
-	if (sp_args) {
-		sp_args_color = numColor;
-	}
-	if (rg_args) {
-		rg_args_color = numColor;
+	if (reg_args) {
+		reg_args_color = numColor;
 	}
 	if (ds->show_varsum == 2) {
 		ds_begin_line(ds);
 		ds_print_pre(ds, true);
-		rz_cons_printf("vars: %s%d%s %s%d%s %s%d%s",
-			bp_vars_color, bp_vars, COLOR_RESET(ds),
-			sp_vars_color, sp_vars, COLOR_RESET(ds),
-			rg_vars_color, rg_vars, COLOR_RESET(ds));
+		rz_cons_printf("vars: %s%d%s %s%d%s",
+			stack_vars_color, stack_vars, COLOR_RESET(ds),
+			reg_vars_color, reg_vars, COLOR_RESET(ds));
 		ds_newline(ds);
 		ds_begin_line(ds);
 		ds_print_pre(ds, true);
-		rz_cons_printf("args: %s%d%s %s%d%s %s%d%s",
-			bp_args_color, bp_args, COLOR_RESET(ds),
-			sp_args_color, sp_args, COLOR_RESET(ds),
-			rg_args_color, rg_args, COLOR_RESET(ds));
+		rz_cons_printf("args: %s%d%s %s%d%s",
+			stack_args_color, stack_args, COLOR_RESET(ds),
+			reg_args_color, reg_args, COLOR_RESET(ds));
 		ds_newline(ds);
 		return;
 	}
 	ds_begin_line(ds);
 	ds_print_pre(ds, true);
-	rz_cons_printf("bp: %s%d%s (vars %s%d%s, args %s%d%s)",
-		bp_args || bp_vars ? numColor : COLOR_RESET(ds), bp_args + bp_vars, COLOR_RESET(ds),
-		bp_vars_color, bp_vars, COLOR_RESET(ds),
-		bp_args_color, bp_args, COLOR_RESET(ds));
-	ds_newline(ds);
-	ds_begin_line(ds);
-	ds_print_pre(ds, true);
-	rz_cons_printf("sp: %s%d%s (vars %s%d%s, args %s%d%s)",
-		sp_args || sp_vars ? numColor : COLOR_RESET(ds), sp_args + sp_vars, COLOR_RESET(ds),
-		sp_vars_color, sp_vars, COLOR_RESET(ds),
-		sp_args_color, sp_args, COLOR_RESET(ds));
+	rz_cons_printf("stack: %s%d%s (vars %s%d%s, args %s%d%s)",
+		stack_args || stack_vars ? numColor : COLOR_RESET(ds), stack_args + stack_vars, COLOR_RESET(ds),
+		stack_vars_color, stack_vars, COLOR_RESET(ds),
+		stack_args_color, stack_args, COLOR_RESET(ds));
 	ds_newline(ds);
 	ds_begin_line(ds);
 	ds_print_pre(ds, true);
 	rz_cons_printf("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
-		rg_args || rg_vars ? numColor : COLOR_RESET(ds), rg_args + rg_vars, COLOR_RESET(ds),
-		rg_vars_color, rg_vars, COLOR_RESET(ds),
-		rg_args_color, rg_args, COLOR_RESET(ds));
+		reg_args || reg_vars ? numColor : COLOR_RESET(ds), reg_args + reg_vars, COLOR_RESET(ds),
+		reg_vars_color, reg_vars, COLOR_RESET(ds),
+		reg_args_color, reg_args, COLOR_RESET(ds));
 	ds_newline(ds);
 }
 
@@ -1946,7 +1914,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 	int o_varsum = ds->show_varsum;
 	if (ds->interactive && !o_varsum) {
 		int padding = 10;
-		int numvars = vars_cache.bvars->length + vars_cache.rvars->length + vars_cache.svars->length + padding;
+		int numvars = vars_cache.stackvars->length + vars_cache.regvars->length + padding;
 		if (numvars > ds->l) {
 			ds->show_varsum = 1;
 		} else {
@@ -2024,17 +1992,15 @@ static void ds_show_functions(RzDisasmState *ds) {
 
 	if (ds->show_vars) {
 		if (ds->show_varsum && ds->show_varsum != -1) {
-			RzList *all_vars = vars_cache.bvars;
-			rz_list_join(all_vars, vars_cache.svars);
-			rz_list_join(all_vars, vars_cache.rvars);
+			RzList *all_vars = vars_cache.stackvars;
+			rz_list_join(all_vars, vars_cache.regvars);
 			printVarSummary(ds, all_vars);
 		} else {
 			char spaces[32];
 			RzAnalysisVar *var;
 			RzListIter *iter;
-			RzList *all_vars = vars_cache.bvars;
-			rz_list_join(all_vars, vars_cache.svars);
-			rz_list_join(all_vars, vars_cache.rvars);
+			RzList *all_vars = vars_cache.regvars;
+			rz_list_join(all_vars, vars_cache.stackvars);
 			rz_list_foreach (all_vars, iter, var) {
 				ds_begin_line(ds);
 				int idx;
@@ -2051,24 +2017,16 @@ static void ds_show_functions(RzDisasmState *ds) {
 					ds_print_offset(ds);
 				}
 				rz_cons_printf("%s; ", COLOR_ARG(ds, color_func_var));
-				switch (var->kind) {
-				case RZ_ANALYSIS_VAR_KIND_BPV: {
-					char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
-					bool is_var = !var->isarg;
-					ds_show_functions_argvar(ds, f, var,
-						analysis->reg->name[RZ_REG_NAME_BP], is_var, sign);
-				} break;
-				case RZ_ANALYSIS_VAR_KIND_REG: {
-					RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
-					if (!i) {
-						RZ_LOG_ERROR("core: a register could not be found");
-						break;
-					}
+				switch (var->storage.type) {
+				case RZ_ANALYSIS_VAR_STORAGE_STACK:
+					ds_show_functions_stack_argvar(ds, f, var);
+					break;
+				case RZ_ANALYSIS_VAR_STORAGE_REG: {
 					char *vartype = rz_type_as_string(analysis->typedb, var->type);
 					rz_cons_printf("%sarg %s%s%s%s %s@ %s", COLOR_ARG(ds, color_func_var),
 						COLOR_ARG(ds, color_func_var_type),
 						vartype, rz_str_endswith(vartype, "*") ? "" : " ",
-						var->name, COLOR_ARG(ds, color_func_var_addr), i->name);
+						var->name, COLOR_ARG(ds, color_func_var_addr), var->storage.reg);
 					if (ds->show_varsum == -1) {
 						char *val = rz_core_analysis_var_display(ds->core, var, false);
 						if (val) {
@@ -2078,16 +2036,6 @@ static void ds_show_functions(RzDisasmState *ds) {
 						}
 					}
 					free(vartype);
-				} break;
-				case RZ_ANALYSIS_VAR_KIND_SPV: {
-					bool is_var = !var->isarg;
-					int saved_delta = var->delta;
-					var->delta = f->maxstack + var->delta;
-					char sign = var->isarg || (-var->delta <= f->maxstack) ? '+' : '-';
-					ds_show_functions_argvar(ds, f, var,
-						analysis->reg->name[RZ_REG_NAME_SP],
-						is_var, sign);
-					var->delta = saved_delta;
 				} break;
 				}
 				if (var->comment) {
@@ -4286,25 +4234,11 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 					ds_begin_comment(ds);
 					ds_comment(ds, true, "; '%c'", ch);
 				}
-			} else if (refaddr > 10) {
-				if ((st64)refaddr < 0) {
-					// resolve local var if possible
-					RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, ds->at);
-					RzAnalysisVar *v = fcn ? rz_analysis_function_get_var(fcn, 'v', (int)refaddr) : NULL;
-					ds_begin_comment(ds);
-					if (v) {
-						ds_comment(ds, true, "; var %s", v->name);
-					} else {
-						ds_comment(ds, true, "; var %d", -(int)refaddr);
-					}
-				} else {
-					if (rz_core_analysis_address(core, refaddr) & RZ_ANALYSIS_ADDR_TYPE_ASCII) {
-						if (!string_printed && print_msg) {
-							ds_print_str(ds, msg, len, refaddr);
-							string_printed = true;
-						}
-					}
-				}
+			} else if ((st64)refaddr > 10 &&
+				(rz_core_analysis_address(core, refaddr) & RZ_ANALYSIS_ADDR_TYPE_ASCII) &&
+				!string_printed && print_msg) {
+				ds_print_str(ds, msg, len, refaddr);
+				string_printed = true;
 			}
 			// XXX this should be refactored with along the above
 			kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg, len - 1);
@@ -6814,8 +6748,6 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	RzAnalysisOp op;
 	rz_analysis_op(core->analysis, &op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 	if (asm_subvar) {
-		core->parser->get_ptr_at = rz_analysis_function_get_var_stackptr_at;
-		core->parser->get_reg_at = rz_analysis_function_get_var_reg_at;
 		rz_parse_subvar(core->parser, fcn, &op,
 			ba, ba, sizeof(asmop.buf_asm));
 		rz_analysis_op_fini(&op);

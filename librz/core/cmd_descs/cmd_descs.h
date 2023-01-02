@@ -233,16 +233,16 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_args_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "afvxv"
 RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_vars_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-// "afvb"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "afvb-"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_del_handler(RzCore *core, int argc, const char **argv);
-// "afvb-*"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_del_all_handler(RzCore *core, int argc, const char **argv);
-// "afvbg"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_getref_handler(RzCore *core, int argc, const char **argv);
-// "afvbs"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_setref_handler(RzCore *core, int argc, const char **argv);
+// "afvs"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "afvs-"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_stack_del_handler(RzCore *core, int argc, const char **argv);
+// "afvs-*"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_stack_del_all_handler(RzCore *core, int argc, const char **argv);
+// "afvsg"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_stack_getref_handler(RzCore *core, int argc, const char **argv);
+// "afvss"
+RZ_IPI RzCmdStatus rz_analysis_function_vars_stack_setref_handler(RzCore *core, int argc, const char **argv);
 // "afvr"
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "afvr-"
@@ -253,14 +253,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_del_all_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_getref_handler(RzCore *core, int argc, const char **argv);
 // "afvrs"
 RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_setref_handler(RzCore *core, int argc, const char **argv);
-// "afvs"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "afvs-"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_del_handler(RzCore *core, int argc, const char **argv);
-// "afvsg"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_getref_handler(RzCore *core, int argc, const char **argv);
-// "afvss"
-RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_setref_handler(RzCore *core, int argc, const char **argv);
 // "afl"
 RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "afl."
@@ -836,8 +828,6 @@ RZ_IPI RzCmdStatus rz_meta_var_comment_remove_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_meta_var_comment_editor_handler(RzCore *core, int argc, const char **argv);
 // "Cvl"
 RZ_IPI RzCmdStatus rz_meta_var_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "Cvb"
-RZ_IPI RzCmdStatus rz_meta_var_bp_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "Cvr"
 RZ_IPI RzCmdStatus rz_meta_var_reg_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "Cvs"

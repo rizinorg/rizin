@@ -19,13 +19,12 @@ NAME=hang-on-aa/-aac fix (#15004)
 FILE=bins/pe/15004.file
 CMDS=<<EOF
 e asm.bytes=true
-e analysis.vars.stackname=true
 aa
 e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ (loc) entry0 (int32_t arg_44h);
+/ (loc) entry0 (int32_t arg_31h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne   0x648456
@@ -177,26 +176,26 @@ NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
-/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
-|           ; var int32_t var_20h @ ebp-0x20
-|           ; var int32_t var_1ch @ ebp-0x1c
-|           ; var int32_t var_10h @ ebp-0x10
-|           ; var int32_t var_ch @ ebp-0xc
-|           ; arg int32_t arg_8h @ ebp+0x8
-|           ; arg int32_t arg_ch @ ebp+0xc
+/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
 |           ; arg int32_t arg1 @ ecx
 |           ; arg int32_t arg2 @ edx
-|           0x08048421      894de4         mov   dword [var_1ch], ecx  ; arg1
-|           0x08048424      8955e0         mov   dword [var_20h], edx  ; arg2
-|           0x08048427      8b55e4         mov   edx, dword [var_1ch]
-|           0x0804842a      8b45e0         mov   eax, dword [var_20h]
-|           0x0804842f      8945f4         mov   dword [var_ch], eax
-|           0x08048432      8b45e0         mov   eax, dword [var_20h]
-|           0x08048435      2b450c         sub   eax, dword [arg_ch]
-|           0x08048438      8945f0         mov   dword [var_10h], eax
-|           0x0804843b      ff7508         push  dword [arg_8h]
-|           0x0804843e      ff75f0         push  dword [var_10h]
-|           0x08048441      ff75f4         push  dword [var_ch]
+|           ; var int32_t var_24h @ stack - 0x24
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; arg int32_t arg_4h @ stack + 0x4
+|           ; arg int32_t arg_8h @ stack + 0x8
+|           0x08048421      894de4         mov   dword [var_20h], ecx  ; arg1
+|           0x08048424      8955e0         mov   dword [var_24h], edx  ; arg2
+|           0x08048427      8b55e4         mov   edx, dword [var_20h]
+|           0x0804842a      8b45e0         mov   eax, dword [var_24h]
+|           0x0804842f      8945f4         mov   dword [var_10h], eax
+|           0x08048432      8b45e0         mov   eax, dword [var_24h]
+|           0x08048435      2b450c         sub   eax, dword [arg_8h]
+|           0x08048438      8945f0         mov   dword [var_14h], eax
+|           0x0804843b      ff7508         push  dword [arg_4h]
+|           0x0804843e      ff75f0         push  dword [var_14h]
+|           0x08048441      ff75f4         push  dword [var_10h]
 EOF
 RUN
 
@@ -1430,7 +1429,7 @@ aar
 axt @ str.john
 EOF
 EXPECT=<<EOF
-main 0x804831a [DATA] mov dword [var_ch], str.john
+main 0x804831a [DATA] mov dword [var_14h], str.john
 EOF
 RUN
 
@@ -2926,9 +2925,9 @@ mov ebp, esp
 dec eax
 and esp, 0xfffffff0
 dec eax
-mov edi, dword [arg_8h]
+mov edi, dword [arg_4h]
 dec eax
-lea esi, [arg_10h]
+lea esi, [arg_ch]
 mov edx, edi
 add edx, 1
 shl edx, 3
@@ -2973,9 +2972,9 @@ mov ebp, esp
 dec eax
 and esp, 0xfffffff0
 dec eax
-mov edi, dword [arg_8h]
+mov edi, dword [arg_4h]
 dec eax
-lea esi, [arg_10h]
+lea esi, [arg_ch]
 mov edx, edi
 add edx, 1
 shl edx, 3
@@ -3823,7 +3822,6 @@ e asm.hint.lea=false
 e asm.cpu=x86
 e asm.arch=x86
 e scr.utf8=true
-e analysis.vars.stackname=true
 e asm.comments=false
 e asm.bytes=false
 wx 31c039d6724aeb72908db426000000008d7e0131d289e8f7f131d28944241c89f8f7f13944241c76678b93080200008b028b50143b5018736dc6020983c20189501489f031d201cef7f129d639f5762a8b8b8c05000085c975b683c6018b93080200008b028b50143b50187327c6022083c20139f589501477d68b44242c65330514000000753783c43c5b5e5f5dc39089feebc9c744240420000000890424e87cc9ffffeba6c744240409000000890424e86ac9ffff8b8b8c050000eb84e87d1001008db6000000008dbc270000000055575653e8f7f0ffff81c32b9d010083ec3c658b0d14000000894c242c31c98b6a0c8b720889e929f1c1e90285c9894c241c0f848100000039f50f84930000008b7a1801fdf7d721fd8b7a1089e9896a0c2b4a0489fd2b6a0439e97f718b7a0c31ed
@@ -3832,11 +3830,11 @@ pd 38
 EOF
 EXPECT=<<EOF
 ┌ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
-│           ; var int32_t var_30h @ esp+0x1c
-│           ; var int32_t var_20h @ esp+0x2c
-│           ; arg int32_t arg_4h @ esp+0x50
-│           ; arg int32_t arg_1ch @ esp+0x68
-│           ; arg int32_t arg_2ch @ esp+0x78
+│           ; var int32_t var_30h @ stack - 0x30
+│           ; var int32_t var_20h @ stack - 0x20
+│           ; arg int32_t arg_4h @ stack + 0x4
+│           ; arg int32_t arg_1ch @ stack + 0x1c
+│           ; arg int32_t arg_2ch @ stack + 0x2c
 │           0x00000000      xor   eax, eax
 │           0x00000002      cmp   esi, edx
 │       ┌─< 0x00000004      jb    0x50
@@ -3886,7 +3884,6 @@ e asm.bits=32
 e asm.hint.lea=false
 e asm.cpu=x86
 e analysis.cpu=x86
-e analysis.vars.stackname=true
 e asm.arch=x86
 e asm.comments=false
 e asm.bytes=false
@@ -3896,11 +3893,11 @@ pd 38
 EOF
 EXPECT=<<EOF
 / fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
-|           ; var int32_t var_30h @ esp+0x1c
-|           ; var int32_t var_20h @ esp+0x2c
-|           ; arg int32_t arg_4h @ esp+0x50
-|           ; arg int32_t arg_1ch @ esp+0x68
-|           ; arg int32_t arg_2ch @ esp+0x78
+|           ; var int32_t var_30h @ stack - 0x30
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; arg int32_t arg_4h @ stack + 0x4
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_2ch @ stack + 0x2c
 |           0x00000000      xor   eax, eax
 |           0x00000002      cmp   esi, edx
 |       ,=< 0x00000004      jb    0x50
@@ -3965,7 +3962,6 @@ e asm.bytes=true
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
-e analysis.vars.stackname=true
 e asm.calls=false
 wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
 e asm.bits=32
@@ -3976,15 +3972,15 @@ pdf
 EOF
 EXPECT=<<EOF
 / fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
-|           ; var int32_t var_ch @ esp+0x4
-|           ; var int32_t var_8h @ esp+0x8
-|           ; var int32_t var_4h @ esp+0xc
-|           ; arg int32_t arg_4h @ esp+0x14
-|           ; arg int32_t arg_8h @ esp+0x18
-|           ; arg int32_t arg_ch @ esp+0x1c
-|           ; arg int32_t arg_10h @ esp+0x20
-|           ; arg int32_t arg_18h @ esp+0x28
-|           ; arg int32_t arg_1ch @ esp+0x2c
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_4h @ stack + 0x4
+|           ; arg int32_t arg_8h @ stack + 0x8
+|           ; arg int32_t arg_ch @ stack + 0xc
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
 |           0x00000000      83ec10         sub   esp, 0x10
 |           0x00000003      8b442418       mov   eax, dword [arg_8h]
 |           0x00000007      99             cdq
@@ -4210,16 +4206,16 @@ pdf
 EOF
 EXPECT=<<EOF
 / fcn.00000000 ();
-|           ; var int32_t var_4h @ esp+0x8
-|           ; var int32_t var_8h @ esp+0xc
-|           ; var int32_t var_ch @ esp+0x10
+|           ; var int32_t var_40h @ stack - 0x40
+|           ; var int32_t var_3ch @ stack - 0x3c
+|           ; var int32_t var_38h @ stack - 0x38
 |           0x00000000      push  ebp
 |           0x00000001      mov   esp, ebp
 |           0x00000003      sub   esp, 0x40
-|           0x00000006      mov   dword [var_4h], 4
-|           0x0000000e      mov   dword [var_8h], 8
-|           0x00000016      mov   dword [var_ch], 0xc                  ; [0xc:4]=0x44c70000
-|           0x0000001e      push  dword [var_8h]
+|           0x00000006      mov   dword [var_40h], 4
+|           0x0000000e      mov   dword [var_3ch], 8
+|           0x00000016      mov   dword [var_38h], 0xc                 ; [0xc:4]=0x44c70000
+|           0x0000001e      push  dword [var_3ch]
 \           0x00000022      ret
 EOF
 RUN
@@ -4265,23 +4261,23 @@ EXPECT=<<EOF
 |           0x080491d8   -12 -= 36      sub   esp, 0x24
 |           0x080491db   -48            mov   eax, ecx
 |           0x080491dd   -48            mov   edx, dword [eax + 4]
-|           0x080491e0   -48            mov   dword [var_1ch], edx
+|           0x080491e0   -48            mov   dword [var_24h], edx
 |           0x080491e3   -48            mov   ecx, dword gs:[0x14]
-|           0x080491ea   -48            mov   dword [var_ch], ecx
+|           0x080491ea   -48            mov   dword [var_14h], ecx
 |           0x080491ed   -48            xor   ecx, ecx
 |           0x080491ef   -48 -= 4       sub   esp, 4
-|           0x080491f2   -52 -= 4       push  dword [var_1ch]
+|           0x080491f2   -52 -= 4       push  dword [var_24h]
 |           0x080491f5   -56 -= 4       push  dword [eax]
-|           0x080491f7   -60            lea   eax, [var_18h]
+|           0x080491f7   -60            lea   eax, [var_20h]
 |           0x080491fa   -60 -= 4       push  eax
 |           0x080491fb   -64            call  sym.Aeropause
 |           0x08049200   -64 += 16      add   esp, 0x10
 |           0x08049203   -48            mov   eax, 0
-|           0x08049208   -48            mov   edx, dword [var_ch]
+|           0x08049208   -48            mov   edx, dword [var_14h]
 |           0x0804920b   -48            xor   edx, dword gs:[0x14]
 |       ,=< 0x08049212   -48            je    0x8049219
 |       |   0x08049214   -48            call  sym.imp.__stack_chk_fail ; void __stack_chk_fail(void)
-|       `-> 0x08049219   -48            mov   ecx, dword [var_4h]
+|       `-> 0x08049219   -48            mov   ecx, dword [var_ch]
 |           0x0804921c   -48 := 0       leave
 |           0x0804921d     0            lea   esp, [ecx - 4]
 \           0x08049220     0 += 4       ret

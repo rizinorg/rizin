@@ -4,20 +4,20 @@ CMDS=aa ; Fs bins/other/sigs/libc-v7.sig ; pd 10 @ flirt.libc_start_main
 EXPECT=<<EOF
 Found 1 FLIRT signatures via bins/other/sigs/libc-v7.sig
             ; CALL XREF from entry0 @ 0x401384
-/ flirt.libc_start_main (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_c0h);
-|           ; var int64_t var_ch @ rsp+0xc
-|           ; var int64_t var_10h @ rsp+0x10
-|           ; var int64_t var_18h @ rsp+0x18
-|           ; var int64_t var_20h @ rsp+0x20
-|           ; var int64_t var_68h @ rsp+0x68
-|           ; var int64_t var_70h @ rsp+0x70
-|           ; arg int64_t arg_c0h @ rsp+0xc0
+/ flirt.libc_start_main (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; arg int64_t arg3 @ rdx
 |           ; arg int64_t arg4 @ rcx
 |           ; arg int64_t arg5 @ r8
 |           ; arg int64_t arg6 @ r9
+|           ; var int64_t var_ach @ stack - 0xac
+|           ; var int64_t var_a8h @ stack - 0xa8
+|           ; var int64_t var_a0h @ stack - 0xa0
+|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; arg int64_t arg_8h @ stack + 0x8
 |           0x004e2420      push  r14
 |           0x004e2422      push  r13
 |           0x004e2424      mov   eax, 0
@@ -404,27 +404,27 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40105f
 / data.004011a5 (int64_t arg1, int64_t arg2);
-|           ; var int64_t var_70h @ rbp-0x70
-|           ; var int64_t var_64h @ rbp-0x64
-|           ; var int64_t var_60h @ rbp-0x60
-|           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_78h @ stack - 0x78
+|           ; var int64_t var_6ch @ stack - 0x6c
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_10h @ stack - 0x10
 |           0x004011a5      push  rbp
 |           0x004011a6      mov   rbp, rsp
 |           0x004011a9      sub   rsp, 0x70
-|           0x004011ad      mov   dword [var_64h], edi                 ; arg1
-|           0x004011b0      mov   qword [var_70h], rsi                 ; arg2
+|           0x004011ad      mov   dword [var_6ch], edi                 ; arg1
+|           0x004011b0      mov   qword [var_78h], rsi                 ; arg2
 |           0x004011b4      mov   rax, qword fs:[0x28]
-|           0x004011bd      mov   qword [var_8h], rax
+|           0x004011bd      mov   qword [var_10h], rax
 |           0x004011c1      xor   eax, eax
-|           0x004011c3      mov   rax, qword [var_70h]
+|           0x004011c3      mov   rax, qword [var_78h]
 |           0x004011c7      add   rax, 8
 |           0x004011cb      mov   rax, qword [rax]
 |           0x004011ce      mov   rdi, rax
 |           0x004011d1      call  flirt.atoi
 |           0x004011d6      mov   edx, eax
-|           0x004011d8      lea   rax, [var_60h]
+|           0x004011d8      lea   rax, [var_68h]
 |           0x004011dc      mov   ecx, edx
 |           0x004011de      lea   rdx, str.Hello__d                    ; segment.LOAD2
 |                                                                      ; 0x404000 ; "Hello %d\n"
@@ -432,11 +432,11 @@ EXPECT=<<EOF
 |           0x004011ea      mov   rdi, rax
 |           0x004011ed      mov   eax, 0
 |           0x004011f2      call  flirt.snprintf
-|           0x004011f7      lea   rax, [var_60h]
+|           0x004011f7      lea   rax, [var_68h]
 |           0x004011fb      mov   rdi, rax
 |           0x004011fe      call  flirt.puts
 |           0x00401203      mov   eax, 0
-|           0x00401208      mov   rdx, qword [var_8h]
+|           0x00401208      mov   rdx, qword [var_10h]
 |           0x0040120c      sub   rdx, qword fs:[0x28]
 |       ,=< 0x00401215      je    0x40121c
 |       |   0x00401217      call  fcn.0040146f
@@ -457,27 +457,27 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40105f
 / data.004011a5 (int64_t arg1, int64_t arg2);
-|           ; var int64_t var_70h @ rbp-0x70
-|           ; var int64_t var_64h @ rbp-0x64
-|           ; var int64_t var_60h @ rbp-0x60
-|           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_78h @ stack - 0x78
+|           ; var int64_t var_6ch @ stack - 0x6c
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_10h @ stack - 0x10
 |           0x004011a5      push  rbp
 |           0x004011a6      mov   rbp, rsp
 |           0x004011a9      sub   rsp, 0x70
-|           0x004011ad      mov   dword [var_64h], edi                 ; arg1
-|           0x004011b0      mov   qword [var_70h], rsi                 ; arg2
+|           0x004011ad      mov   dword [var_6ch], edi                 ; arg1
+|           0x004011b0      mov   qword [var_78h], rsi                 ; arg2
 |           0x004011b4      mov   rax, qword fs:[0x28]
-|           0x004011bd      mov   qword [var_8h], rax
+|           0x004011bd      mov   qword [var_10h], rax
 |           0x004011c1      xor   eax, eax
-|           0x004011c3      mov   rax, qword [var_70h]
+|           0x004011c3      mov   rax, qword [var_78h]
 |           0x004011c7      add   rax, 8
 |           0x004011cb      mov   rax, qword [rax]
 |           0x004011ce      mov   rdi, rax
 |           0x004011d1      call  flirt.atoi
 |           0x004011d6      mov   edx, eax
-|           0x004011d8      lea   rax, [var_60h]
+|           0x004011d8      lea   rax, [var_68h]
 |           0x004011dc      mov   ecx, edx
 |           0x004011de      lea   rdx, str.Hello__d                    ; segment.LOAD2
 |                                                                      ; 0x404000 ; "Hello %d\n"
@@ -485,11 +485,11 @@ EXPECT=<<EOF
 |           0x004011ea      mov   rdi, rax
 |           0x004011ed      mov   eax, 0
 |           0x004011f2      call  flirt.snprintf
-|           0x004011f7      lea   rax, [var_60h]
+|           0x004011f7      lea   rax, [var_68h]
 |           0x004011fb      mov   rdi, rax
 |           0x004011fe      call  flirt.puts
 |           0x00401203      mov   eax, 0
-|           0x00401208      mov   rdx, qword [var_8h]
+|           0x00401208      mov   rdx, qword [var_10h]
 |           0x0040120c      sub   rdx, qword fs:[0x28]
 |       ,=< 0x00401215      je    0x40121c
 |       |   0x00401217      call  fcn.0040146f

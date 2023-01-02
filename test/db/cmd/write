@@ -487,7 +487,7 @@ EXPECT=<<EOF
 \ 0x00000008      c3             ret
 
 / fcn.00000000 ();
-| ; var int64_t var_4h @ rbp-0x4
+| ; var int64_t var_4h @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [var_4h]
 | 0x00000004      7502           jne   8
 | ----------- true: 0x00000008  false: 0x00000006
@@ -496,7 +496,7 @@ EXPECT=<<EOF
 \ 0x00000008      c3             ret
 
 / fcn.00000000 ();
-| ; var int64_t test @ rbp-0x4
+| ; var int64_t test @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [test]
 | 0x00000004      75fa           jne   fcn.00000000
 | ----------- true: 0x00000000  false: 0x00000006
@@ -530,7 +530,7 @@ EXPECT=<<EOF
 \ 0x00000009      c3             ret
 
 / fcn.00000000 (int64_t arg_2h);
-| ; arg int64_t arg_2h @ rbp+0x2
+| ; arg int64_t arg_2h @ stack + 0x2
 | 0x00000000      7507           jne   9
 | ----------- true: 0x00000009  false: 0x00000002
 | 0x00000002      0000           add   byte [rax], al
@@ -541,7 +541,7 @@ EXPECT=<<EOF
 \ 0x00000009      c3             ret
 
 / fcn.00000000 (int64_t arg_2h);
-| ; arg int64_t arg_2h @ rbp+0x2
+| ; arg int64_t arg_2h @ stack + 0x2
 | 0x00000000      e802000000     call  7
 | 0x00000005      7502           jne   9
 | ----------- true: 0x00000009  false: 0x00000007

@@ -37,6 +37,7 @@ typedef enum dwarf_location_kind {
 	LOCATION_BP = 2,
 	LOCATION_SP = 3,
 	LOCATION_REGISTER = 4,
+	LOCATION_CFA = 5
 } VariableLocationKind;
 typedef struct dwarf_var_location_t {
 	VariableLocationKind kind;
@@ -1197,9 +1198,15 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr
 			kind = LOCATION_GLOBAL; // address
 		} break;
 		case DW_OP_call_frame_cfa: {
-			// REMOVE XXX
-			kind = LOCATION_BP;
-			offset += 16;
+			// From the DWARF specs:
+			//   The call frame is identified by an address on the stack. We refer to this address as the Canonical
+			//   Frame Address or CFA. Typically, the CFA is defined to be the value of the stack
+			//   pointer at the call site in the previous frame (which may be different from its value
+			//   on entry to the current frame).
+			// TODO: The following is only an educated guess. There is actually more involved in calculating the
+			//       CFA correctly.
+			kind = LOCATION_CFA;
+			offset += ctx->analysis->bits / 8; // guessed return address size
 		} break;
 		default:
 			break;
@@ -1342,12 +1349,15 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/
 		char *key = NULL;
 		char *val = NULL;
 		switch (var->location->kind) {
-		case LOCATION_BP: {
+		case LOCATION_BP:
+		case LOCATION_CFA: {
 			/* value = "type, storage, additional info based on storage (offset)" */
 
 			rz_strbuf_appendf(&vars, "%s,", var->name);
 			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
-			val = rz_str_newf("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
+			val = rz_str_newf("%s,%" PFMT64d ",%s",
+				var->location->kind == LOCATION_CFA ? "c" : "b",
+				var->location->offset, var->type);
 			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_SP: {
@@ -1687,6 +1697,9 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			char *kind = sdb_anext(var_data, &extra);
 			char *type = NULL;
 			extra = sdb_anext(extra, &type);
+			if (!extra) {
+				goto loop_end;
+			}
 			RzType *ttype = rz_type_parse_string_single(analysis->typedb->parser, type, NULL);
 			if (!ttype) {
 				goto loop_end;
@@ -1700,16 +1713,22 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 				rz_flag_unset_off(flags, offset);
 				rz_flag_set_next(flags, global_name, offset, 4);
 				free(global_name);
-			} else if (*kind == 's' && fcn) {
-				rz_analysis_function_set_var(fcn, offset - fcn->maxstack, *kind, ttype, 4, false, var_name);
 			} else if (*kind == 'r' && fcn) {
 				RzRegItem *i = rz_reg_get(analysis->reg, extra, -1);
 				if (!i) {
 					goto loop_end;
 				}
-				rz_analysis_function_set_var(fcn, i->index, *kind, ttype, 4, false, var_name);
-			} else if (fcn) { /* kind == 'b' */
-				rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, ttype, 4, false, var_name);
+				RzAnalysisVarStorage stor;
+				rz_analysis_var_storage_init_reg(&stor, extra);
+				rz_analysis_function_set_var(fcn, &stor, ttype, 4, var_name);
+			} else if (fcn) { /* kind == 'b' || kind == 's' || kind == 'c' (stack variables) */
+				RzAnalysisVarStorage stor;
+				RzStackAddr addr = offset;
+				if (*kind == 'b') {
+					addr -= fcn->bp_off;
+				}
+				rz_analysis_var_storage_init_stack(&stor, addr);
+				rz_analysis_function_set_var(fcn, &stor, ttype, 4, var_name);
 			}
 			rz_type_free(ttype);
 			free(var_key);

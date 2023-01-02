@@ -685,7 +685,7 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 	RzList *dlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
 	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
 	// TODO: Handle register based arg for struct offset propgation
-	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->kind != 'r') {
+	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
 		RzTypePathTuple *vlink = rz_list_get_top(vlinks);
 		// FIXME: For now we only propagate simple type identifiers,
 		// no pointers or arrays

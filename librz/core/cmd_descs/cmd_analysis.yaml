@@ -508,12 +508,12 @@ commands:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
                     optional: true
-          - name: afvb
-            summary: Manipulate BP based arguments/locals
+          - name: afvs
+            summary: Manipulate stack-based arguments/locals
             subcommands:
-              - name: afvb
-                cname: analysis_function_vars_bp
-                summary: List base pointer based arguments and locals / Define a new one
+              - name: afvs
+                cname: analysis_function_vars_stack
+                summary: List stack-based arguments and locals / Define a new one
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -528,26 +528,26 @@ commands:
                   - name: type
                     type: RZ_CMD_ARG_TYPE_STRING
                     optional: true
-              - name: afvb-
-                cname: analysis_function_vars_bp_del
+              - name: afvs-
+                cname: analysis_function_vars_stack_del
                 summary: Delete argument/local with the given name
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
-              - name: afvb-*
-                cname: analysis_function_vars_bp_del_all
+              - name: afvs-*
+                cname: analysis_function_vars_stack_del_all
                 summary: Delete all arguments/locals
                 args: []
-              - name: afvbg
-                cname: analysis_function_vars_bp_getref
+              - name: afvsg
+                cname: analysis_function_vars_stack_getref
                 summary: Define var get reference
                 args:
                   - name: delta
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
-              - name: afvbs
-                cname: analysis_function_vars_bp_setref
+              - name: afvss
+                cname: analysis_function_vars_stack_setref
                 summary: Define var set reference
                 args:
                   - name: delta
@@ -598,48 +598,6 @@ commands:
                 args:
                   - name: reg
                     type: RZ_CMD_ARG_TYPE_STRING
-                  - name: addr
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-          - name: afvs
-            summary: Manipulate SP based arguments/locals
-            subcommands:
-              - name: afvs
-                cname: analysis_function_vars_sp
-                type: RZ_CMD_DESC_TYPE_ARGV_STATE
-                summary: List stack based arguments and locals / Define a new one
-                modes:
-                  - RZ_OUTPUT_MODE_STANDARD
-                  - RZ_OUTPUT_MODE_RIZIN
-                  - RZ_OUTPUT_MODE_JSON
-                args:
-                  - name: delta
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-                    optional: true
-                  - name: name
-                    type: RZ_CMD_ARG_TYPE_STRING
-                  - name: type
-                    type: RZ_CMD_ARG_TYPE_STRING
-                    optional: true
-              - name: afvs-
-                cname: analysis_function_vars_sp_del
-                summary: Delete argument/local with the given name
-                args:
-                  - name: varname
-                    type: RZ_CMD_ARG_TYPE_FCN_VAR
-              - name: afvsg
-                cname: analysis_function_vars_sp_getref
-                summary: Define var get reference
-                args:
-                  - name: delta
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-                  - name: addr
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-              - name: afvss
-                cname: analysis_function_vars_sp_setref
-                summary: Define var set reference
-                args:
-                  - name: delta
-                    type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
       - name: afl

@@ -95,7 +95,6 @@ RUN
 NAME=realign after sparse (#11810)
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
-e analysis.vars.stackname=true
 e asm.bytes=false
 e asm.comments=false
 s 0x560e67
@@ -441,7 +440,6 @@ RUN
 NAME=asm.bb.line glitch fix (#12516)
 FILE=bins/elf/ls
 CMDS=<<EOF
-e analysis.vars.stackname=true
 e asm.bb.line=true
 e asm.bytes=false
 e asm.comments=false
@@ -882,9 +880,9 @@ ARGS=-A
 CMDS=pdf
 EXPECT=<<EOF
 / entry0 ();
-|       :   ; var int32_t var_24h @ ebp-0x24
-|       :   ; var int32_t var_19h @ ebp-0x19
-|       :   ; var int32_t var_4h @ ebp-0x4
+|       :   ; var int32_t var_24h @ stack - 0x24
+|       :   ; var int32_t var_19h @ stack - 0x19
+|       :   ; var int32_t var_4h @ stack - 0x4
 |       :   0x0040149e      call  fcn.00401836
 |       `=< 0x004014a3      jmp   0x401322
 EOF

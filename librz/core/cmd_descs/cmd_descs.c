@@ -126,18 +126,14 @@ static const RzCmdDescArg analysis_function_vars_type_args[3];
 static const RzCmdDescArg analysis_function_vars_xrefs_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_args_args[2];
 static const RzCmdDescArg analysis_function_vars_xrefs_vars_args[2];
-static const RzCmdDescArg analysis_function_vars_bp_args[4];
-static const RzCmdDescArg analysis_function_vars_bp_del_args[2];
-static const RzCmdDescArg analysis_function_vars_bp_getref_args[3];
-static const RzCmdDescArg analysis_function_vars_bp_setref_args[3];
+static const RzCmdDescArg analysis_function_vars_stack_args[4];
+static const RzCmdDescArg analysis_function_vars_stack_del_args[2];
+static const RzCmdDescArg analysis_function_vars_stack_getref_args[3];
+static const RzCmdDescArg analysis_function_vars_stack_setref_args[3];
 static const RzCmdDescArg analysis_function_vars_regs_args[4];
 static const RzCmdDescArg analysis_function_vars_regs_del_args[2];
 static const RzCmdDescArg analysis_function_vars_regs_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_regs_setref_args[3];
-static const RzCmdDescArg analysis_function_vars_sp_args[4];
-static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
-static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
-static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
 static const RzCmdDescArg analysis_function_import_list_args[2];
 static const RzCmdDescArg analysis_function_opcode_stat_args[2];
 static const RzCmdDescArg analysis_function_all_opcode_stat_args[2];
@@ -2276,10 +2272,10 @@ static const RzCmdDescHelp analysis_function_vars_xrefs_vars_help = {
 	.args = analysis_function_vars_xrefs_vars_args,
 };
 
-static const RzCmdDescHelp afvb_help = {
-	.summary = "Manipulate BP based arguments/locals",
+static const RzCmdDescHelp afvs_help = {
+	.summary = "Manipulate stack-based arguments/locals",
 };
-static const RzCmdDescArg analysis_function_vars_bp_args[] = {
+static const RzCmdDescArg analysis_function_vars_stack_args[] = {
 	{
 		.name = "delta",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -2300,12 +2296,12 @@ static const RzCmdDescArg analysis_function_vars_bp_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_function_vars_bp_help = {
-	.summary = "List base pointer based arguments and locals / Define a new one",
-	.args = analysis_function_vars_bp_args,
+static const RzCmdDescHelp analysis_function_vars_stack_help = {
+	.summary = "List stack-based arguments and locals / Define a new one",
+	.args = analysis_function_vars_stack_args,
 };
 
-static const RzCmdDescArg analysis_function_vars_bp_del_args[] = {
+static const RzCmdDescArg analysis_function_vars_stack_del_args[] = {
 	{
 		.name = "varname",
 		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
@@ -2313,20 +2309,20 @@ static const RzCmdDescArg analysis_function_vars_bp_del_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_function_vars_bp_del_help = {
+static const RzCmdDescHelp analysis_function_vars_stack_del_help = {
 	.summary = "Delete argument/local with the given name",
-	.args = analysis_function_vars_bp_del_args,
+	.args = analysis_function_vars_stack_del_args,
 };
 
-static const RzCmdDescArg analysis_function_vars_bp_del_all_args[] = {
+static const RzCmdDescArg analysis_function_vars_stack_del_all_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_function_vars_bp_del_all_help = {
+static const RzCmdDescHelp analysis_function_vars_stack_del_all_help = {
 	.summary = "Delete all arguments/locals",
-	.args = analysis_function_vars_bp_del_all_args,
+	.args = analysis_function_vars_stack_del_all_args,
 };
 
-static const RzCmdDescArg analysis_function_vars_bp_getref_args[] = {
+static const RzCmdDescArg analysis_function_vars_stack_getref_args[] = {
 	{
 		.name = "delta",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -2340,12 +2336,12 @@ static const RzCmdDescArg analysis_function_vars_bp_getref_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_function_vars_bp_getref_help = {
+static const RzCmdDescHelp analysis_function_vars_stack_getref_help = {
 	.summary = "Define var get reference",
-	.args = analysis_function_vars_bp_getref_args,
+	.args = analysis_function_vars_stack_getref_args,
 };
 
-static const RzCmdDescArg analysis_function_vars_bp_setref_args[] = {
+static const RzCmdDescArg analysis_function_vars_stack_setref_args[] = {
 	{
 		.name = "delta",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -2359,9 +2355,9 @@ static const RzCmdDescArg analysis_function_vars_bp_setref_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp analysis_function_vars_bp_setref_help = {
+static const RzCmdDescHelp analysis_function_vars_stack_setref_help = {
 	.summary = "Define var set reference",
-	.args = analysis_function_vars_bp_setref_args,
+	.args = analysis_function_vars_stack_setref_args,
 };
 
 static const RzCmdDescHelp afvr_help = {
@@ -2450,86 +2446,6 @@ static const RzCmdDescArg analysis_function_vars_regs_setref_args[] = {
 static const RzCmdDescHelp analysis_function_vars_regs_setref_help = {
 	.summary = "Define register-based arguments and locals set references",
 	.args = analysis_function_vars_regs_setref_args,
-};
-
-static const RzCmdDescHelp afvs_help = {
-	.summary = "Manipulate SP based arguments/locals",
-};
-static const RzCmdDescArg analysis_function_vars_sp_args[] = {
-	{
-		.name = "delta",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = true,
-
-	},
-	{
-		.name = "name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_function_vars_sp_help = {
-	.summary = "List stack based arguments and locals / Define a new one",
-	.args = analysis_function_vars_sp_args,
-};
-
-static const RzCmdDescArg analysis_function_vars_sp_del_args[] = {
-	{
-		.name = "varname",
-		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_function_vars_sp_del_help = {
-	.summary = "Delete argument/local with the given name",
-	.args = analysis_function_vars_sp_del_args,
-};
-
-static const RzCmdDescArg analysis_function_vars_sp_getref_args[] = {
-	{
-		.name = "delta",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-
-	},
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_function_vars_sp_getref_help = {
-	.summary = "Define var get reference",
-	.args = analysis_function_vars_sp_getref_args,
-};
-
-static const RzCmdDescArg analysis_function_vars_sp_setref_args[] = {
-	{
-		.name = "delta",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-
-	},
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_function_vars_sp_setref_help = {
-	.summary = "Define var set reference",
-	.args = analysis_function_vars_sp_setref_args,
 };
 
 static const RzCmdDescHelp afl_help = {
@@ -6433,14 +6349,6 @@ static const RzCmdDescArg meta_var_comment_list_args[] = {
 static const RzCmdDescHelp meta_var_comment_list_help = {
 	.summary = "List all comments for all barguments and variables",
 	.args = meta_var_comment_list_args,
-};
-
-static const RzCmdDescArg meta_var_bp_comment_list_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp meta_var_bp_comment_list_help = {
-	.summary = "List all comments for all bp-based arguments and variables",
-	.args = meta_var_bp_comment_list_args,
 };
 
 static const RzCmdDescArg meta_var_reg_comment_list_args[] = {
@@ -16802,19 +16710,19 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_xrefs_vars_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_vars_handler, &analysis_function_vars_xrefs_vars_help);
 	rz_warn_if_fail(analysis_function_vars_xrefs_vars_cd);
 
-	RzCmdDesc *afvb_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_bp_handler, &analysis_function_vars_bp_help, &afvb_help);
-	rz_warn_if_fail(afvb_cd);
-	RzCmdDesc *analysis_function_vars_bp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-", rz_analysis_function_vars_bp_del_handler, &analysis_function_vars_bp_del_help);
-	rz_warn_if_fail(analysis_function_vars_bp_del_cd);
+	RzCmdDesc *afvs_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_stack_handler, &analysis_function_vars_stack_help, &afvs_help);
+	rz_warn_if_fail(afvs_cd);
+	RzCmdDesc *analysis_function_vars_stack_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvs-", rz_analysis_function_vars_stack_del_handler, &analysis_function_vars_stack_del_help);
+	rz_warn_if_fail(analysis_function_vars_stack_del_cd);
 
-	RzCmdDesc *analysis_function_vars_bp_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvb-*", rz_analysis_function_vars_bp_del_all_handler, &analysis_function_vars_bp_del_all_help);
-	rz_warn_if_fail(analysis_function_vars_bp_del_all_cd);
+	RzCmdDesc *analysis_function_vars_stack_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvs-*", rz_analysis_function_vars_stack_del_all_handler, &analysis_function_vars_stack_del_all_help);
+	rz_warn_if_fail(analysis_function_vars_stack_del_all_cd);
 
-	RzCmdDesc *analysis_function_vars_bp_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvbg", rz_analysis_function_vars_bp_getref_handler, &analysis_function_vars_bp_getref_help);
-	rz_warn_if_fail(analysis_function_vars_bp_getref_cd);
+	RzCmdDesc *analysis_function_vars_stack_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvsg", rz_analysis_function_vars_stack_getref_handler, &analysis_function_vars_stack_getref_help);
+	rz_warn_if_fail(analysis_function_vars_stack_getref_cd);
 
-	RzCmdDesc *analysis_function_vars_bp_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvb_cd, "afvbs", rz_analysis_function_vars_bp_setref_handler, &analysis_function_vars_bp_setref_help);
-	rz_warn_if_fail(analysis_function_vars_bp_setref_cd);
+	RzCmdDesc *analysis_function_vars_stack_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvss", rz_analysis_function_vars_stack_setref_handler, &analysis_function_vars_stack_setref_help);
+	rz_warn_if_fail(analysis_function_vars_stack_setref_cd);
 
 	RzCmdDesc *afvr_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_regs_handler, &analysis_function_vars_regs_help, &afvr_help);
 	rz_warn_if_fail(afvr_cd);
@@ -16829,17 +16737,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_vars_regs_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvr_cd, "afvrs", rz_analysis_function_vars_regs_setref_handler, &analysis_function_vars_regs_setref_help);
 	rz_warn_if_fail(analysis_function_vars_regs_setref_cd);
-
-	RzCmdDesc *afvs_cd = rz_cmd_desc_group_state_new(core->rcmd, afv_cd, "afvs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_sp_handler, &analysis_function_vars_sp_help, &afvs_help);
-	rz_warn_if_fail(afvs_cd);
-	RzCmdDesc *analysis_function_vars_sp_del_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvs-", rz_analysis_function_vars_sp_del_handler, &analysis_function_vars_sp_del_help);
-	rz_warn_if_fail(analysis_function_vars_sp_del_cd);
-
-	RzCmdDesc *analysis_function_vars_sp_getref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvsg", rz_analysis_function_vars_sp_getref_handler, &analysis_function_vars_sp_getref_help);
-	rz_warn_if_fail(analysis_function_vars_sp_getref_cd);
-
-	RzCmdDesc *analysis_function_vars_sp_setref_cd = rz_cmd_desc_argv_new(core->rcmd, afvs_cd, "afvss", rz_analysis_function_vars_sp_setref_handler, &analysis_function_vars_sp_setref_help);
-	rz_warn_if_fail(analysis_function_vars_sp_setref_cd);
 
 	RzCmdDesc *afl_cd = rz_cmd_desc_group_state_new(core->rcmd, af_cd, "afl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_list_handler, &analysis_function_list_help, &afl_help);
 	rz_warn_if_fail(afl_cd);
@@ -17665,9 +17562,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *meta_var_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_comment_list_handler, &meta_var_comment_list_help);
 	rz_warn_if_fail(meta_var_comment_list_cd);
-
-	RzCmdDesc *meta_var_bp_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_bp_comment_list_handler, &meta_var_bp_comment_list_help);
-	rz_warn_if_fail(meta_var_bp_comment_list_cd);
 
 	RzCmdDesc *meta_var_reg_comment_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, Cv_cd, "Cvr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_meta_var_reg_comment_list_handler, &meta_var_reg_comment_list_help);
 	rz_warn_if_fail(meta_var_reg_comment_list_cd);

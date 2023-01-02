@@ -425,10 +425,10 @@ Sdb *vars_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":64,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[],"
 			     "\"vars\":["
-			     "{\"name\":\"arg_rax\",\"type\":\"int64_t\",\"kind\":\"r\",\"reg\":\"rax\",\"arg\":true,\"accs\":[{\"off\":3,\"type\":\"r\",\"sp\":42,\"reg\":\"rax\"},{\"off\":13,\"type\":\"rw\",\"sp\":13,\"reg\":\"rbx\"},{\"off\":23,\"type\":\"w\",\"sp\":123,\"reg\":\"rcx\"}],\"constrs\":[0,42,1,84,2,126,3,168,4,210,5,252,6,294,7,336,8,378,9,420,10,462,11,504,12,546,13,588,14,630,15,672]},"
-			     "{\"name\":\"var_sp\",\"type\":\"const char *\",\"kind\":\"s\",\"delta\":16,\"accs\":[{\"off\":3,\"type\":\"w\",\"sp\":321,\"reg\":\"rsp\"}]},"
-			     "{\"name\":\"var_bp\",\"type\":\"struct something\",\"kind\":\"b\",\"delta\":-16},"
-			     "{\"name\":\"arg_bp\",\"type\":\"uint64_t\",\"kind\":\"b\",\"delta\":16,\"arg\":true,\"cmt\":\"I have no idea what this var does\"}]}",
+			     "{\"name\":\"arg_rax\",\"type\":\"int64_t\",\"reg\":\"rax\",\"accs\":[{\"off\":3,\"type\":\"r\",\"reg\":\"rax\"},{\"off\":13,\"type\":\"rw\",\"sp\":-13,\"reg\":\"rbx\"},{\"off\":23,\"type\":\"w\",\"sp\":123,\"reg\":\"rcx\"}],\"constrs\":[0,42,1,84,2,126,3,168,4,210,5,252,6,294,7,336,8,378,9,420,10,462,11,504,12,546,13,588,14,630,15,672]},"
+			     "{\"name\":\"var_0h\",\"type\":\"const char *\",\"stack\":0,\"accs\":[{\"off\":3,\"type\":\"w\",\"sp\":321,\"reg\":\"rsp\"}]},"
+			     "{\"name\":\"var_10h\",\"type\":\"struct something\",\"stack\":-16},"
+			     "{\"name\":\"arg_8h\",\"type\":\"uint64_t\",\"stack\":8,\"cmt\":\"I have no idea what this var does\"}]}",
 		0);
 	return db;
 }
@@ -441,8 +441,6 @@ bool test_analysis_var_save() {
 	rz_type_db_init(analysis->typedb, types_dir, "x86", 64, "linux");
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL);
-
-	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
 
 	RzType *t_int64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t");
 	mu_assert_notnull(t_int64_t, "has int64_t type");
@@ -459,9 +457,11 @@ bool test_analysis_var_save() {
 	mu_assert_notnull(t_struct_something, "create struct something type");
 	t_struct_something->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 
-	RzAnalysisVar *v = rz_analysis_function_set_var(f, rax->index, RZ_ANALYSIS_VAR_KIND_REG, t_int64_t, 0, true, "arg_rax");
-	rz_analysis_var_set_access(v, "rax", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 42);
-	rz_analysis_var_set_access(v, "rbx", 1350, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 13);
+	RzAnalysisVarStorage stor;
+	rz_analysis_var_storage_init_reg(&stor, "rax");
+	RzAnalysisVar *v = rz_analysis_function_set_var(f, &stor, t_int64_t, 0, "arg_rax");
+	rz_analysis_var_set_access(v, "rax", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 0);
+	rz_analysis_var_set_access(v, "rbx", 1350, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, -13);
 	rz_analysis_var_set_access(v, "rcx", 1360, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 123);
 
 	ut64 val = 0;
@@ -475,11 +475,14 @@ bool test_analysis_var_save() {
 		rz_analysis_var_add_constraint(v, &constr);
 	}
 
-	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_SPV, t_const_char_ptr, 0, false, "var_sp");
+	rz_analysis_var_storage_init_stack(&stor, 0);
+	v = rz_analysis_function_set_var(f, &stor, t_const_char_ptr, 0, "var_0h");
 	rz_analysis_var_set_access(v, "rsp", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 321);
 
-	rz_analysis_function_set_var(f, -0x10, RZ_ANALYSIS_VAR_KIND_BPV, t_struct_something, 0, false, "var_bp");
-	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_BPV, t_uint64_t, 0, true, "arg_bp");
+	rz_analysis_var_storage_init_stack(&stor, -0x10);
+	rz_analysis_function_set_var(f, &stor, t_struct_something, 0, "var_10h");
+	rz_analysis_var_storage_init_stack(&stor, 8);
+	v = rz_analysis_function_set_var(f, &stor, t_uint64_t, 0, "arg_8h");
 	v->comment = strdup("I have no idea what this var does");
 
 	Sdb *db = sdb_new0();
@@ -516,23 +519,22 @@ bool test_analysis_var_load() {
 	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
 	mu_assert_notnull(t_const_char_ptr, "has \"const char *\" type");
 
-	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
-	RzAnalysisVar *v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_REG, rax->index);
+	RzAnalysisVar *v = rz_analysis_function_get_reg_var_at(f, "rax");
 	mu_assert_notnull(v, "var");
-	mu_assert_streq(v->regname, "rax", "var regname");
+	mu_assert_eq(v->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "var storage");
+	mu_assert_streq(v->storage.reg, "rax", "var regname");
 	mu_assert_streq(v->name, "arg_rax", "var name");
 	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "int64_t"), "var type");
-	mu_assert("var arg", v->isarg);
 
 	mu_assert_eq(v->accesses.len, 3, "accesses count");
 	bool found[3] = { false, false, false };
 	RzAnalysisVarAccess *acc;
 	rz_vector_foreach(&v->accesses, acc) {
-		if (acc->offset == 3 && acc->type == RZ_ANALYSIS_VAR_ACCESS_TYPE_READ && acc->stackptr == 42 && !strcmp(acc->reg, "rax")) {
+		if (acc->offset == 3 && acc->type == RZ_ANALYSIS_VAR_ACCESS_TYPE_READ && acc->reg_addend == 0 && !strcmp(acc->reg, "rax")) {
 			found[0] = true;
-		} else if (acc->offset == 13 && acc->type == (RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE) && acc->stackptr == 13 && !strcmp(acc->reg, "rbx")) {
+		} else if (acc->offset == 13 && acc->type == (RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE) && acc->reg_addend == -13 && !strcmp(acc->reg, "rbx")) {
 			found[1] = true;
-		} else if (acc->offset == 23 && acc->type == RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE && acc->stackptr == 123 && !strcmp(acc->reg, "rcx")) {
+		} else if (acc->offset == 23 && acc->type == RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE && acc->reg_addend == 123 && !strcmp(acc->reg, "rcx")) {
 			found[2] = true;
 		}
 	}
@@ -550,37 +552,40 @@ bool test_analysis_var_load() {
 		mu_assert_eq(constr->val, val, "constraint val");
 	}
 
-	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_SPV, 0x10);
+	v = rz_analysis_function_get_stack_var_at(f, 0);
 	mu_assert_notnull(v, "var");
-	mu_assert_streq(v->name, "var_sp", "var name");
+	mu_assert_eq(v->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage");
+	mu_assert_eq(v->storage.stack_off, 0, "var stack_off");
+	mu_assert_streq(v->name, "var_0h", "var name");
 	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_POINTER, "var type");
 	mu_assert_notnull(v->type->pointer.type, "var type");
 	mu_assert_eq(v->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
 	mu_assert_true(v->type->pointer.type->identifier.is_const, "var type");
 	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type->pointer.type, "char"), "var type");
-	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 1, "accesses count");
 	acc = rz_vector_index_ptr(&v->accesses, 0);
 	mu_assert_eq(acc->offset, 3, "access offset");
 	mu_assert_eq(acc->type, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, "access type");
-	mu_assert_eq(acc->stackptr, 321, "access stackptr");
+	mu_assert_eq(acc->reg_addend, 321, "access reg_addend");
 	mu_assert_streq(acc->reg, "rsp", "access reg");
 	mu_assert("var used", rz_pvector_contains(used, v)); // used at the same var as the reg one
 
-	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, -0x10);
+	v = rz_analysis_function_get_stack_var_at(f, -0x10);
 	mu_assert_notnull(v, "var");
-	mu_assert_streq(v->name, "var_bp", "var name");
+	mu_assert_eq(v->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage");
+	mu_assert_eq(v->storage.stack_off, -0x10, "var stack_off");
+	mu_assert_streq(v->name, "var_10h", "var name");
 	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
 	mu_assert_eq(v->type->identifier.kind, RZ_TYPE_IDENTIFIER_KIND_STRUCT, "var type");
 	mu_assert_streq(v->type->identifier.name, "something", "var type");
-	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 
-	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, 0x10);
+	v = rz_analysis_function_get_stack_var_at(f, 8);
 	mu_assert_notnull(v, "var");
-	mu_assert_streq(v->name, "arg_bp", "var name");
+	mu_assert_eq(v->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage");
+	mu_assert_eq(v->storage.stack_off, 8, "var stack_off");
+	mu_assert_streq(v->name, "arg_8h", "var name");
 	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "uint64_t"), "var type");
-	mu_assert("var arg", v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 	mu_assert_streq(v->comment, "I have no idea what this var does", "var comment");
 

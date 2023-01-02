@@ -195,13 +195,6 @@ static bool cb_analysis_vars(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analysis_vars_stackname(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.varname_stack = node->i_value;
-	return true;
-}
-
 static bool cb_analysis_nonull(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -2922,7 +2915,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("analysis.types.verbose", "false", "Verbose output from type analysis");
 	SETBPREF("analysis.types.constraint", "false", "Enable constraint types analysis for variables");
 	SETCB("analysis.vars", "true", &cb_analysis_vars, "Analyze local variables and arguments");
-	SETCB("analysis.vars.stackname", "false", &cb_analysis_vars_stackname, "Name variables based on their offset on the stack");
 	SETBPREF("analysis.vinfun", "true", "Search values in functions (aav) (false by default to only find on non-code)");
 	SETBPREF("analysis.vinfunrange", "false", "Search values outside function ranges (requires analysis.vinfun=false)\n");
 	SETCB("analysis.norevisit", "false", &cb_analysis_norevisit, "Do not visit function analysis twice (EXPERIMENTAL)");

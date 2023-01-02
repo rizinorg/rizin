@@ -15,8 +15,6 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_parse);
 
-typedef RzList *(*RzAnalysisVarList)(RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
-
 typedef struct rz_parse_t {
 	void *user;
 	RzSpace *flagspace;
@@ -33,9 +31,7 @@ typedef struct rz_parse_t {
 	struct rz_parse_plugin_t *cur;
 	// RzAnalysis *analysis; // weak analysis ref XXX do not use. use analb.anal
 	RzList /*<RzParsePlugin *>*/ *parsers;
-	RzAnalysisVarList varlist;
-	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
-	const char *(*get_reg_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
+	RZ_OWN char *(*var_expr_for_reg_access)(RzAnalysisFunction *fcn, ut64 addr, const char *reg, st64 reg_addend);
 	RzAnalysisBind analb;
 	RzFlagGetAtAddr flag_get; // XXX
 	RzAnalysisLabelAt label_get;

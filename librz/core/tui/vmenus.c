@@ -236,35 +236,21 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 			}
 			if (show) {
 				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-				switch (var->kind & 0xff) {
-				case 'r': {
-					RzRegItem *r = rz_reg_index_get(core->analysis->reg, var->delta);
-					if (!r) {
-						eprintf("Register not found");
-						break;
-					}
+				switch (var->storage.type) {
+				case RZ_ANALYSIS_VAR_STORAGE_REG: {
 					rz_cons_printf("%sarg %s %s @ %s\n",
 						i == *vindex ? "* " : "  ",
 						vartype, var->name,
-						r->name);
+						var->storage.reg);
 				} break;
-				case 'b':
-					rz_cons_printf("%s%s %s %s @ %s%s0x%x\n",
+				case RZ_ANALYSIS_VAR_STORAGE_STACK:
+					rz_cons_printf("%s%s %s %s @ %s%s0x%" PFMT64x "\n",
 						i == *vindex ? "* " : "  ",
-						var->delta < 0 ? "var" : "arg",
+						rz_analysis_var_is_arg(var) ? "arg" : "var",
 						vartype, var->name,
 						core->analysis->reg->name[RZ_REG_NAME_BP],
-						(var->kind == 'v') ? "-" : "+",
-						var->delta);
-					break;
-				case 's':
-					rz_cons_printf("%s%s %s %s @ %s%s0x%x\n",
-						i == *vindex ? "* " : "  ",
-						var->delta < 0 ? "var" : "arg",
-						vartype, var->name,
-						core->analysis->reg->name[RZ_REG_NAME_BP],
-						(var->kind == 'v') ? "-" : "+",
-						var->delta);
+						"+",
+						var->storage.stack_off);
 					break;
 				}
 				free(vartype);
