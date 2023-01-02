@@ -2799,7 +2799,7 @@ IL_LIFTER(call) {
 	RzILOpEffect *push_stuff = NULL;
 
 	if (analysis->bits == 64) {
-		push_stuff = x86_push_helper(U64(pc), 2);
+		push_stuff = x86_push_helper(U64(pc + ins->ins_size), 8);
 	} else {
 		push_stuff = SEQ4(SETL("_cs", UNSIGNED(analysis->bits, x86_il_get_reg(X86_REG_CS))), x86_push_helper(VARL("_cs"), analysis->bits / BITS_PER_BYTE), SETL("_pc", UN(analysis->bits, pc)), x86_push_helper(VARL("_pc"), analysis->bits / BITS_PER_BYTE));
 	}
@@ -3812,7 +3812,7 @@ static x86_il_ins x86_ins[X86_INS_ENDING] = {
 #include <rz_il/rz_il_opbuilder_end.h>
 
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins) {
-	rz_return_val_if_fail(analysis && aop && ins, false);
+	rz_return_val_if_fail(analysis && aop && ins && ins->ins_size > 0, false);
 	if (ins->mnem >= X86_INS_ENDING) {
 		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d", ins->mnem);
 		return false;
@@ -3821,7 +3821,6 @@ RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnaly
 	x86_il_ins lifter = x86_ins[ins->mnem];
 
 	RzILOpEffect *lifted;
-
 	if (!lifter) {
 		/* For unimplemented instructions */
 		lifter = x86_il_unimpl;

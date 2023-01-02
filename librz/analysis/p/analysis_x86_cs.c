@@ -3230,7 +3230,8 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			// x86 RzIL uplifting
 			X86ILIns x86_il_ins = {
 				.structure = &ctx->insn->detail->x86,
-				.mnem = ctx->insn->id
+				.mnem = ctx->insn->id,
+				.ins_size = op->size
 			};
 			rz_x86_il_opcode(a, op, addr, &x86_il_ins);
 		}

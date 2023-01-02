@@ -19,8 +19,9 @@ typedef cs_x86 X86Ins;
 typedef x86_insn X86InsMnem;
 
 typedef struct x86_il_instruction_t {
-	const X86Ins *structure;
-	X86InsMnem mnem;
+	const X86Ins *structure; ///< Capstone instruction data
+	X86InsMnem mnem; ///< Instruction mnemonic (enum)
+	ut8 ins_size; ///< Sie of instruction (in bytes)
 } X86ILIns;
 
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins);
