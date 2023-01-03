@@ -679,76 +679,82 @@ RZ_API RzBaseType *rz_type_db_get_typedef(const RzTypeDB *typedb, RZ_NONNULL con
 	return btype;
 }
 
-/**
- * \brief Returns the atomic type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+static ut64 type_get_bitsize_recurse(const RzTypeDB *typedb, RZ_NONNULL RzType *type, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes);
+
+static ut64 atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ATOMIC, 0);
 	return btype->size;
 }
 
-/**
- * \brief Returns the enum type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+static ut64 enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ENUM, 0);
 	// FIXME: Need a proper way to determine size of enum
 	return 32;
 }
 
-/**
- * \brief Returns the struct type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_struct_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
-	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_STRUCT, 0);
-	RzTypeStructMember *memb;
+static ut64 struct_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
+	rz_return_val_if_fail(typedb && btype && (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION), 0);
+	RzPVector visited_btypes_owned; // for detecting self-referential typedefs (maybe in multiple steps)
+	if (!visited_btypes) {
+		// Lazy allocation of the visited_btypes stack, only at this point we will actually need it
+		rz_pvector_init(&visited_btypes_owned, NULL);
+		visited_btypes = &visited_btypes_owned;
+	} else {
+		if (rz_pvector_contains(visited_btypes, btype)) {
+			// loop detected
+			return 0;
+		}
+	}
+	rz_pvector_push(visited_btypes, btype);
 	ut64 size = 0;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
-		size += rz_type_db_get_bitsize(typedb, memb->type);
+	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&btype->struct_data.members, memb) {
+			size += type_get_bitsize_recurse(typedb, memb->type, visited_btypes);
+		}
+	} else {
+		RzTypeUnionMember *memb;
+		// Union has the size of the maximum size of its elements
+		rz_vector_foreach(&btype->union_data.members, memb) {
+			size = RZ_MAX(type_get_bitsize_recurse(typedb, memb->type, visited_btypes), size);
+		}
+	}
+	if (visited_btypes == &visited_btypes_owned) {
+		rz_pvector_fini(&visited_btypes_owned);
+	} else {
+		rz_pvector_pop(visited_btypes);
 	}
 	return size;
 }
 
-/**
- * \brief Returns the union type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
-	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_UNION, 0);
-	RzTypeUnionMember *memb;
-	ut64 size = 0;
-	// Union has the size of the maximum size of its elements
-	rz_vector_foreach(&btype->union_data.members, memb) {
-		size = RZ_MAX(rz_type_db_get_bitsize(typedb, memb->type), size);
-	}
-	return size;
-}
-
-/**
- * \brief Returns the typedef type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+static ut64 typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, 0);
 	rz_return_val_if_fail(btype->type, 0);
 	RzType *unwrapped = rz_type_db_base_type_unwrap_typedef(typedb, btype);
 	if (!unwrapped) {
 		return 0;
 	}
-	return rz_type_db_get_bitsize(typedb, unwrapped);
+	return type_get_bitsize_recurse(typedb, unwrapped, visited_btypes);
+}
+
+/**
+ * \param visited_btypes Stack of struct/union types visited higher up in the recursion, for loop detection
+ * \return the base type size in bits (target dependent)
+ */
+static ut64 base_type_get_bitsize_recurse(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
+	rz_return_val_if_fail(typedb && btype, 0);
+	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM) {
+		return enum_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
+		return struct_union_bitsize(typedb, btype, visited_btypes);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+		return atomic_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
+		return typedef_bitsize(typedb, btype, visited_btypes);
+	}
+	// Should not happen
+	rz_warn_if_reached();
+	return 0;
 }
 
 /**
@@ -758,21 +764,30 @@ RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBase
  * \param btype The base type
  */
 RZ_API ut64 rz_type_db_base_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
-	rz_return_val_if_fail(typedb && btype, 0);
-	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM) {
-		return rz_type_db_enum_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
-		return rz_type_db_struct_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
-		return rz_type_db_union_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
-		return rz_type_db_atomic_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
-		return rz_type_db_typedef_bitsize(typedb, btype);
+	return base_type_get_bitsize_recurse(typedb, btype, NULL);
+}
+
+/**
+ * \param visited_btypes Stack of struct/union types visited higher up in the recursion, for loop detection
+ * \return the type size in bits (target dependent)
+ */
+static ut64 type_get_bitsize_recurse(const RzTypeDB *typedb, RZ_NONNULL RzType *type, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
+	rz_return_val_if_fail(typedb && type, 0);
+	// Detect if the pointer and return the corresponding size
+	if (type->kind == RZ_TYPE_KIND_POINTER || type->kind == RZ_TYPE_KIND_CALLABLE) {
+		// Note, that function types (RzCallable) are in fact pointers too
+		return rz_type_db_pointer_size(typedb);
+		// Detect if the pointer is array, then return the bitsize of the base type
+		// multiplied to the array size
+	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
+		return type->array.count * type_get_bitsize_recurse(typedb, type->array.type, visited_btypes);
 	}
-	// Should not happen
-	rz_warn_if_reached();
-	return 0;
+	// The rest of the logic is for the normal, identifier types
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+	if (!btype) {
+		return 0;
+	}
+	return base_type_get_bitsize_recurse(typedb, btype, visited_btypes);
 }
 
 /**
@@ -782,22 +797,7 @@ RZ_API ut64 rz_type_db_base_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBas
  * \param type The type
  */
 RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *type) {
-	rz_return_val_if_fail(typedb && type, 0);
-	// Detect if the pointer and return the corresponding size
-	if (type->kind == RZ_TYPE_KIND_POINTER || type->kind == RZ_TYPE_KIND_CALLABLE) {
-		// Note, that function types (RzCallable) are in fact pointers too
-		return rz_type_db_pointer_size(typedb);
-		// Detect if the pointer is array, then return the bitsize of the base type
-		// multiplied to the array size
-	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
-		return type->array.count * rz_type_db_get_bitsize(typedb, type->array.type);
-	}
-	// The rest of the logic is for the normal, identifier types
-	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-	if (!btype) {
-		return 0;
-	}
-	return rz_type_db_base_get_bitsize(typedb, btype);
+	return type_get_bitsize_recurse(typedb, type, NULL);
 }
 
 /**
