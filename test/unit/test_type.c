@@ -409,6 +409,8 @@ static bool test_enum_types(void) {
 	mu_assert_streq(cas->name, "GOO", "Incorrect name for enum case 2");
 	mu_assert_eq(cas->val, 0xFFFF, "Incorrect value for enum case 2");
 
+	mu_assert_eq(rz_type_db_base_get_bitsize(typedb, base), 32, "bitsize");
+
 	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
@@ -698,6 +700,7 @@ static bool test_array_types(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	// Zero-sized array
@@ -708,6 +711,7 @@ static bool test_array_types(void) {
 	mu_assert_notnull(ttype->array.type, "array type is not null");
 	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array type is identifier");
 	mu_assert_streq("int32_t", ttype->array.type->identifier.name, "identifer is \"int32_t\"");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 0, "bitsize");
 	rz_type_free(ttype);
 
 	// Real-sized array of arrays
@@ -721,6 +725,7 @@ static bool test_array_types(void) {
 	mu_assert_notnull(ttype->array.type->array.type, "array's array type is not null");
 	mu_assert_true(ttype->array.type->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array's array type is identifier");
 	mu_assert_streq("unsigned short", ttype->array.type->array.type->identifier.name, "identifer is \"unsigned short\"");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 6 * 7 * 2 * 8, "bitsize");
 	rz_type_free(ttype);
 
 	// Real-sized array of pointers
@@ -734,6 +739,9 @@ static bool test_array_types(void) {
 	mu_assert_notnull(ttype->array.type->pointer.type, "pointer type is not null");
 	mu_assert_true(ttype->array.type->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
 	mu_assert_false(ttype->array.type->pointer.type->identifier.is_const, "identifer is not const");
+
+	int sz = rz_type_db_get_bitsize(typedb, ttype);
+	mu_assert_eq(sz, 8 * 5 * 8, "bitsize");
 
 	mu_assert_streq("float", ttype->array.type->pointer.type->identifier.name, "identifer is \"float\"");
 	rz_type_free(ttype);
@@ -751,6 +759,7 @@ static bool test_struct_func_types(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	// Sturcture type with a function pointer
@@ -789,6 +798,8 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), (4 + 8) * 8, "bitsize");
+
 	rz_type_free(ttype);
 
 	// Structure type with a pointer to a function pointer
@@ -825,6 +836,8 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), (4 + 8) * 8, "bitsize");
+
 	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
@@ -841,6 +854,7 @@ static bool test_struct_array_types(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	// Structure type with a pointer to a function pointer and array
@@ -849,6 +863,7 @@ static bool test_struct_array_types(void) {
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "albalb", "albalb struct");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 0, "bitsize");
 	rz_type_free(ttype);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "albalb");
@@ -873,6 +888,7 @@ static bool test_struct_array_types(void) {
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "alb", "albalb struct");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
 	rz_type_free(ttype);
 
 	base = rz_type_db_get_base_type(typedb, "alb");
@@ -890,6 +906,7 @@ static bool test_struct_identifier_without_specifier(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "struct bla { int a; };", &error_msg);
@@ -905,6 +922,11 @@ static bool test_struct_identifier_without_specifier(void) {
 	mu_assert_eq(ttype->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "pointing to identifier");
 	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->pointer.type->identifier.name, "bla", "bla struct");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
+	ttype->pointer.type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED; // operations should still work without the specifier
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
 
 	rz_type_free(ttype);
 
@@ -918,6 +940,7 @@ static bool test_union_identifier_without_specifier(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "union bla { int a; };", &error_msg);
@@ -933,6 +956,11 @@ static bool test_union_identifier_without_specifier(void) {
 	mu_assert_eq(ttype->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "pointing to identifier");
 	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->pointer.type->identifier.name, "bla", "bla union");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
+	ttype->pointer.type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED; // operations should still work without the specifier
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
 
 	rz_type_free(ttype);
 
