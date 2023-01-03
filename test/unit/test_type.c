@@ -1116,6 +1116,80 @@ bool test_typedef_loop(void) {
 	mu_end;
 }
 
+static void struct_union_add_member(RzTypeDB *typedb, RzBaseType *btype, const char *member_name, RzType *member_type) {
+	if (btype->type == RZ_BASE_TYPE_KIND_STRUCT) {
+		RzTypeStructMember *memb = rz_vector_push(&btype->struct_data.members, NULL);
+		memb->type = member_type;
+		memb->name = strdup(member_name);
+		memb->offset = 0;
+		memb->size = 0;
+	} else { // if (btype->type == RZ_BASE_TYPE_KIND_UNION)
+		RzTypeUnionMember *memb = rz_vector_push(&btype->union_data.members, NULL);
+		memb->type = member_type;
+		memb->name = strdup(member_name);
+		memb->offset = 0;
+		memb->size = 0;
+	}
+}
+
+bool test_struct_union_loop(RzBaseTypeKind kind) {
+	mu_assert_true(kind == RZ_BASE_TYPE_KIND_STRUCT || kind == RZ_BASE_TYPE_KIND_UNION, "test param");
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// Test structs or unions with loops in their members. This makes no sense in practice, but
+	// it is hard to guarantee that it will never happen.
+	//
+	// Test case:
+	//
+	// La --> Te -typedef+array-> Ra --> Lus
+	//        ^                            |
+	//        |                            |
+	//        \____________________________/
+
+	RzBaseType *la = rz_type_base_type_new(kind);
+	la->name = strdup("La");
+	rz_type_db_save_base_type(typedb, la);
+	RzBaseType *te = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	te->name = strdup("Te");
+	te->type = RZ_NEW0(RzType);
+	te->type->kind = RZ_TYPE_KIND_ARRAY;
+	te->type->array.count = 3;
+	te->type->array.type = RZ_NEW0(RzType);
+	te->type->array.type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	te->type->array.type->identifier.name = strdup("Ra");
+	rz_type_db_save_base_type(typedb, te);
+	RzBaseType *ra = rz_type_base_type_new(kind);
+	ra->name = strdup("Ra");
+	rz_type_db_save_base_type(typedb, ra);
+	RzBaseType *lus = rz_type_base_type_new(kind);
+	lus->name = strdup("Lus");
+	rz_type_db_save_base_type(typedb, lus);
+
+	struct_union_add_member(typedb, la, "member", rz_type_identifier_of_base_type_str(typedb, "Te"));
+	struct_union_add_member(typedb, ra, "member", rz_type_identifier_of_base_type_str(typedb, "Lus"));
+	struct_union_add_member(typedb, lus, "member", rz_type_identifier_of_base_type_str(typedb, "int"));
+
+	// No loop at this point, still ok
+
+	ut64 sz = rz_type_db_base_get_bitsize(typedb, la);
+	mu_assert_eq(sz, 3 * 4 * 8, "size");
+
+	// Now close the loop
+	struct_union_add_member(typedb, lus, "closure", rz_type_identifier_of_base_type_str(typedb, "Te"));
+
+	// -- try all kinds of operations that may have issues with the loop created above
+
+	sz = rz_type_db_base_get_bitsize(typedb, la);
+	// the actual size returned here is less important than the fact that it does not
+	// recurse infinitely.
+	mu_assert_eq(sz, 3 * 4 * 8, "size");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 bool test_path_by_offset_struct(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
@@ -1652,6 +1726,8 @@ int all_tests() {
 	mu_run_test(test_references);
 	mu_run_test(test_addr_bits);
 	mu_run_test(test_typedef_loop);
+	mu_run_test(test_struct_union_loop, RZ_BASE_TYPE_KIND_STRUCT);
+	mu_run_test(test_struct_union_loop, RZ_BASE_TYPE_KIND_UNION);
 	mu_run_test(test_path_by_offset_struct);
 	mu_run_test(test_path_by_offset_union);
 	mu_run_test(test_path_by_offset_array);
