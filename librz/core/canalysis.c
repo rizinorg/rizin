@@ -5809,7 +5809,7 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisBytes *>*/ *rz_core_analysis_bytes(RZ_NONNU
 		}
 		op->mnemonic = mnem;
 
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 		char *asm_buff = calloc(strlen(an_asm) + 128, sizeof(char));
 		strcpy(asm_buff, an_asm);
 
