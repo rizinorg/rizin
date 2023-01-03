@@ -797,20 +797,7 @@ RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *ty
 	if (!btype) {
 		return 0;
 	}
-	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
-		return rz_type_db_enum_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
-		return rz_type_db_struct_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
-		return rz_type_db_union_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
-		return rz_type_db_atomic_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
-		return rz_type_db_typedef_bitsize(typedb, btype);
-	}
-	// Should not happen
-	rz_warn_if_reached();
-	return 0;
+	return rz_type_db_base_get_bitsize(typedb, btype);
 }
 
 /**
