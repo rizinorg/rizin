@@ -259,6 +259,7 @@ static const char *help_visual[] = {
 	"?", "full help",
 	"!", "enter panels",
 	"a", "code analysis",
+	"b", "browse mode",
 	"c", "toggle cursor",
 	"d", "debugger / emulator",
 	"e", "toggle configurations",
