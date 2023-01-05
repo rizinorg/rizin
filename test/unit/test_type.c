@@ -686,8 +686,9 @@ static bool test_type_as_pretty_string(void) {
 	mu_assert_notnull(ttype, "unknown type parse unsuccessfull");
 	mu_assert_null(error_msg, "parsing errors");
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
-	mu_assert_streq(pretty_str, "unknown_t;", "unknown type is ugly");
-	free(pretty_str);
+	mu_assert_streq_free(pretty_str, "unknown_t;", "non-existent type in database");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF | RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE, 10);
+	mu_assert_streq_free(pretty_str, "non_t;", "non-existent type in database");
 	rz_type_free(ttype);
 
 	rz_type_db_free(typedb);
