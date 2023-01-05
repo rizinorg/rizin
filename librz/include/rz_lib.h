@@ -107,7 +107,7 @@ RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc);
 RZ_API void rz_lib_free(RzLib *lib);
 RZ_API bool rz_lib_open(RzLib *lib, const char *file);
 RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force);
-RZ_API bool rz_lib_add_handler(RzLib *lib, int type, const char *desc, RzLibCallback ct, RzLibCallback dt, void *user);
+RZ_API bool rz_lib_add_handler(RzLib *lib, RzLibType type, const char *desc, RzLibCallback ct, RzLibCallback dt, void *user);
 RZ_API bool rz_lib_close(RzLib *lib, const char *file);
 #endif
 
