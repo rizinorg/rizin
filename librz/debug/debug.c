@@ -1215,7 +1215,7 @@ repeat:
 		/// until this code gets fixed
 		static bool (*linux_attach_new_process)(RzDebug * dbg, int pid) = NULL;
 		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_lib_dl_sym(NULL, "linux_attach_new_process");
+			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
 		}
 		if (linux_attach_new_process) {
 			linux_attach_new_process(dbg, dbg->forked_pid);

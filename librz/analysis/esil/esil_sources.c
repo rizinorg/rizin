@@ -16,7 +16,7 @@ RZ_API ut32 rz_analysis_esil_load_source(RzAnalysisEsil *esil, const char *path)
 	RzAnalysisEsilSource *src;
 
 	src = RZ_NEW0(RzAnalysisEsilSource);
-	src->content = rz_lib_dl_open(path);
+	src->content = rz_sys_dlopen(path);
 	if (!src->content) {
 		RZ_LOG_ERROR("esil: cannot load library (no content)\n");
 		free(src);
@@ -26,7 +26,7 @@ RZ_API ut32 rz_analysis_esil_load_source(RzAnalysisEsil *esil, const char *path)
 	rz_analysis_esil_sources_init(esil);
 	if (!rz_id_storage_add(esil->sources, src, &src->id)) {
 		RZ_LOG_ERROR("esil: cannot add to id storage\n");
-		rz_lib_dl_close(src->content);
+		rz_sys_dlclose(src->content);
 		free(src);
 		return 0;
 	}
@@ -65,7 +65,7 @@ RZ_API void rz_analysis_esil_release_source(RzAnalysisEsil *esil, ut32 src_id) {
 	}
 	if (src->claimed <= 1) {
 		rz_id_storage_delete(esil->sources, src_id);
-		rz_lib_dl_close(src->content);
+		rz_sys_dlclose(src->content);
 		free(src);
 	} else {
 		src->claimed--;
@@ -76,7 +76,7 @@ static bool _free_source_cb(void *user, void *data, ut32 id) {
 	RzAnalysisEsilSource *src = (RzAnalysisEsilSource *)data;
 
 	if (src) {
-		rz_lib_dl_close(src->content);
+		rz_sys_dlclose(src->content);
 	}
 	free(src);
 	return true;

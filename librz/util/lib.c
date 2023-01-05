@@ -7,64 +7,6 @@
 
 RZ_LIB_VERSION(rz_lib);
 
-RZ_API void *rz_lib_dl_open(const char *libname) {
-	void *ret = NULL;
-#if WANT_DYLINK
-#if __UNIX__
-	if (libname) {
-		ret = dlopen(libname, RTLD_GLOBAL | RTLD_LAZY);
-	} else {
-		ret = dlopen(NULL, RTLD_NOW);
-	}
-	if (!ret) {
-		RZ_LOG_ERROR("rz_lib_dl_open: error: %s (%s)\n", libname, dlerror());
-	}
-#elif __WINDOWS__
-	LPTSTR libname_;
-	if (libname && *libname) {
-		libname_ = rz_sys_conv_utf8_to_win(libname);
-	} else {
-		libname_ = calloc(MAX_PATH, sizeof(TCHAR));
-		if (!libname_) {
-			RZ_LOG_ERROR("lib/rz_lib_dl_open: Failed to allocate memory.\n");
-			return NULL;
-		}
-		if (!GetModuleFileName(NULL, libname_, MAX_PATH)) {
-			libname_[0] = '\0';
-		}
-	}
-	ret = LoadLibrary(libname_);
-	free(libname_);
-	if (!ret) {
-		RZ_LOG_ERROR("rz_lib_dl_open: error: %s\n", libname);
-	}
-#endif
-#endif
-	return ret;
-}
-
-RZ_API void *rz_lib_dl_sym(void *handler, const char *name) {
-#if WANT_DYLINK
-#if __UNIX__
-	return dlsym(handler, name);
-#elif __WINDOWS__
-	return GetProcAddress(handler, name);
-#else
-	return NULL;
-#endif
-#else
-	return NULL;
-#endif
-}
-
-RZ_API int rz_lib_dl_close(void *handler) {
-#if __UNIX__
-	return dlclose(handler);
-#else
-	return handler ? 0 : -1;
-#endif
-}
-
 /**
  * \brief Create a new \p RzLib instance
  *
@@ -229,14 +171,14 @@ static int lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct
 		// we skip this library (this happens when not loading
 		// all the plugins types, like rz-bin does).
 		RZ_LOG_DEBUG("rz_lib_open: no handler was defined for %s with type %d\n", file, stru->type);
-		rz_lib_dl_close(handler);
+		rz_sys_dlclose(handler);
 		return -1;
 	}
 
 	RzLibPlugin *p = RZ_NEW0(RzLibPlugin);
 	if (!p) {
 		RZ_LOG_ERROR("rz_lib_open: Cannot allocate RzLibPlugin\n");
-		rz_lib_dl_close(handler);
+		rz_sys_dlclose(handler);
 		return -1;
 	}
 
@@ -251,7 +193,7 @@ static int lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct
 		RZ_LOG_INFO("Library handler has failed for '%s'\n", file);
 		free(p->file);
 		free(p);
-		rz_lib_dl_close(handler);
+		rz_sys_dlclose(handler);
 	} else {
 		rz_list_append(lib->plugins, p);
 	}
@@ -271,24 +213,24 @@ RZ_API int rz_lib_open(RzLib *lib, const char *file) {
 		return -1;
 	}
 
-	void *handler = rz_lib_dl_open(file);
+	void *handler = rz_sys_dlopen(file);
 	if (!handler) {
 		RZ_LOG_INFO("Cannot open library: '%s'\n", file);
 		return -1;
 	}
 
-	RzLibStructFunc strf = (RzLibStructFunc)rz_lib_dl_sym(handler, lib->symnamefunc);
+	RzLibStructFunc strf = (RzLibStructFunc)rz_sys_dlsym(handler, lib->symnamefunc);
 	RzLibStruct *stru = NULL;
 	if (strf) {
 		stru = strf();
 	}
 	if (!stru) {
-		stru = (RzLibStruct *)rz_lib_dl_sym(handler, lib->symname);
+		stru = (RzLibStruct *)rz_sys_dlsym(handler, lib->symname);
 	}
 	if (!stru) {
 		RZ_LOG_INFO("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
-		rz_lib_dl_close(handler);
+		rz_sys_dlclose(handler);
 		return -1;
 	}
 

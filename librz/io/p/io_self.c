@@ -347,14 +347,14 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		const char *sym = rz_str_word_get0(argv, 0);
 		if (sym) {
 			const char *symbol = cmd + 6;
-			void *lib = rz_lib_dl_open(NULL);
-			void *ptr = rz_lib_dl_sym(lib, symbol);
+			void *lib = rz_sys_dlopen(NULL);
+			void *ptr = rz_sys_dlsym(lib, symbol);
 			if (ptr) {
 				cbptr = (ut64)(size_t)ptr;
 			} else {
 				cbptr = rz_num_math(NULL, symbol);
 			}
-			rz_lib_dl_close(lib);
+			rz_sys_dlclose(lib);
 		}
 		if (argc == 1) {
 			size_t (*cb)() = (size_t(*)())cbptr;
@@ -440,13 +440,13 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 #endif
 	} else if (!strncmp(cmd, "dlsym ", 6)) {
 		const char *symbol = cmd + 6;
-		void *lib = rz_lib_dl_open(NULL);
-		void *ptr = rz_lib_dl_sym(lib, symbol);
+		void *lib = rz_sys_dlopen(NULL);
+		void *ptr = rz_sys_dlsym(lib, symbol);
 		eprintf("(%s) 0x%08" PFMT64x "\n", symbol, (ut64)(size_t)ptr);
-		rz_lib_dl_close(lib);
+		rz_sys_dlclose(lib);
 	} else if (!strcmp(cmd, "mameio")) {
-		void *lib = rz_lib_dl_open(NULL);
-		void *ptr = rz_lib_dl_sym(lib, "_ZN12device_debug2goEj");
+		void *lib = rz_sys_dlopen(NULL);
+		void *ptr = rz_sys_dlsym(lib, "_ZN12device_debug2goEj");
 		//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		// readmem(0, )
 		if (ptr) {
@@ -456,7 +456,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		} else {
 			eprintf("This process is not a MAME!");
 		}
-		rz_lib_dl_close(lib);
+		rz_sys_dlclose(lib);
 	} else if (!strcmp(cmd, "maps")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {

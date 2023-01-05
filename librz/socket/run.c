@@ -72,13 +72,13 @@ static int (*dyn_login_tty)(int fd) = NULL;
 static id_t (*dyn_forkpty)(int *amaster, char *name, struct termios *termp, struct winsize *winp) = NULL;
 static void dyn_init(void) {
 	if (!dyn_openpty) {
-		dyn_openpty = rz_lib_dl_sym(NULL, "openpty");
+		dyn_openpty = rz_sys_dlsym(NULL, "openpty");
 	}
 	if (!dyn_login_tty) {
-		dyn_openpty = rz_lib_dl_sym(NULL, "login_tty");
+		dyn_openpty = rz_sys_dlsym(NULL, "login_tty");
 	}
 	if (!dyn_forkpty) {
-		dyn_openpty = rz_lib_dl_sym(NULL, "forkpty");
+		dyn_openpty = rz_sys_dlsym(NULL, "forkpty");
 	}
 }
 
@@ -1336,12 +1336,12 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 			RZ_LOG_ERROR("rz-run: no function specified. Please set runlib.fcn\n");
 			return 1;
 		}
-		void *addr = rz_lib_dl_open(p->_runlib);
+		void *addr = rz_sys_dlopen(p->_runlib);
 		if (!addr) {
 			RZ_LOG_ERROR("rz-run: could not load the library '%s'\n", p->_runlib);
 			return 1;
 		}
-		void (*fcn)(void) = rz_lib_dl_sym(addr, p->_runlib_fcn);
+		void (*fcn)(void) = rz_sys_dlsym(addr, p->_runlib_fcn);
 		if (!fcn) {
 			RZ_LOG_ERROR("rz-run: could not find the function '%s'\n", p->_runlib_fcn);
 			return 1;
@@ -1390,7 +1390,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 			RZ_LOG_ERROR("rz-run: too many arguments.\n");
 			return 1;
 		}
-		rz_lib_dl_close(addr);
+		rz_sys_dlclose(addr);
 	}
 	return 0;
 }

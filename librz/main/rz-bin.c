@@ -1117,10 +1117,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			return waitpid(child, NULL, 0);
 		}
 #endif
-		void *addr = rz_lib_dl_open(file);
+		void *addr = rz_sys_dlopen(file);
 		if (addr) {
 			eprintf("%s is loaded at 0x%" PFMT64x "\n", file, (ut64)(size_t)(addr));
-			rz_lib_dl_close(addr);
+			rz_sys_dlclose(addr);
 			rz_core_fini(&core);
 			return 0;
 		}

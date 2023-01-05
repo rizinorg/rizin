@@ -103,12 +103,6 @@ typedef struct rz_lib_t {
 } RzLib;
 
 #ifdef RZ_API
-/* low level api */
-RZ_API void *rz_lib_dl_open(const char *libname);
-RZ_API void *rz_lib_dl_sym(void *handler, const char *name);
-RZ_API int rz_lib_dl_close(void *handler);
-
-/* high level api */
 RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc);
 RZ_API void rz_lib_free(RzLib *lib);
 RZ_API int rz_lib_open(RzLib *lib, const char *file);
