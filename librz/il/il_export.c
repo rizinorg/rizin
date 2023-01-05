@@ -335,6 +335,147 @@ static void il_opdmp_append(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_2("append", op->op.append, pure, high, pure, low);
 }
 
+static void il_opdmp_float(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsFloat *opx = &op->op.float_;
+	if (sb) {
+		rz_strbuf_appendf(sb, "(float %d ", opx->r);
+		il_op_pure_resolve(opx->bv, sb, pj);
+		rz_strbuf_append(sb, " )");
+	}
+	else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "float");
+		pj_kn(pj, "format", opx->r);
+		pj_k(pj, "bv");
+		il_op_pure_resolve(opx->bv, sb, pj);
+		pj_end(pj);
+	}
+}
+
+static void il_opdmp_fbits(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("fbits", op->op.fbits, f);
+}
+
+static void il_opdmp_is_finite(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_finite", op->op.is_finite, f);
+}
+
+static void il_opdmp_is_nan(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_nan", op->op.is_nan, f);
+}
+
+static void il_opdmp_is_inf(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_inf", op->op.is_inf, f);
+}
+
+static void il_opdmp_is_fzero(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_fzero", op->op.is_fzero, f);
+}
+
+static void il_opdmp_is_fneg(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_fneg", op->op.is_fneg, f);
+}
+
+static void il_opdmp_is_fpos(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("is_fpos", op->op.is_fpos, f);
+}
+
+static void il_opdmp_fneg(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("fneg", op->op.fneg, f);
+}
+
+static void il_opdmp_fabs(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("fpos", op->op.fabs, f);
+}
+
+// TODO-start : use pj* functions to handle cast dmp
+static void il_opdmp_fcast_int(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+}
+static void il_opdmp_fcast_sint(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+
+}
+static void il_opdmp_fcast_float(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+
+}
+static void il_opdmp_fcast_sfloat(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+
+}
+static void il_opdmp_fconvert(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+
+}
+static void il_opdmp_fround(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+
+}
+
+static void il_opdmp_frequal(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+
+}
+// TODO-end
+
+
+static void il_opdmp_fsucc(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("fsucc", op->op.fsucc, f);
+}
+static void il_opdmp_fpred(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("fpred", op->op.fpred, f);
+}
+
+static void il_opdmp_forder(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("forder", op->op.forder, pure, x, pure, y);
+}
+
+static void il_opdmp_fsqrt(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("fsqrt", op->op.fsqrt, f);
+}
+
+static void il_opdmp_frsqrt(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_1("frsqrt", op->op.frsqrt, f);
+}
+
+static void il_opdmp_fadd(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("+.", op->op.fadd, pure, x, pure, y);
+}
+
+static void il_opdmp_fsub(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("-.", op->op.fsub, pure, x, pure, y);
+}
+
+static void il_opdmp_fmul(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("*.", op->op.fmul, pure, x, pure, y);
+}
+
+static void il_opdmp_fdiv(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("/.", op->op.fdiv, pure, x, pure, y);
+}
+
+static void il_opdmp_fmod(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("%.", op->op.fmod, pure, x, pure, y);
+}
+
+static void il_opdmp_fhypot(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("hypot", op->op.fhypot, pure, x, pure, y);
+}
+
+static void il_opdmp_fpow(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("pow", op->op.fpow, pure, x, pure, y);
+}
+
+static void il_opdmp_fmad(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_3("fmad", op->op.fmad, pure, x, pure, y, pure, z);
+}
+
+static void il_opdmp_fpown(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("fpown", op->op.fpown, pure, f, pure, n);
+}
+
+static void il_opdmp_frootn(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("frootn", op->op.frootn, pure, f, pure, n);
+}
+
+static void il_opdmp_fcompound(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	il_op_param_2("fcompound", op->op.fcompound, pure, f, pure, n);
+}
+
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsLoad *opx = &op->op.load;
 	if (sb) {
