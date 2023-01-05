@@ -3233,7 +3233,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 				.mnem = ctx->insn->id,
 				.ins_size = op->size
 			};
-			rz_x86_il_opcode(a, op, addr, &x86_il_ins);
+			rz_x86_il_opcode(a, op, addr + op->size, &x86_il_ins);
 		}
 
 		// #if X86_GRP_PRIVILEGE>0
