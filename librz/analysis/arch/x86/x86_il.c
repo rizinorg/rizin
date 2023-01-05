@@ -1268,10 +1268,10 @@ IL_LIFTER(invalid) {
 }
 
 /**
- * \brief Unimplemnted instruction
+ * \brief Unimplemented instruction
  */
 IL_LIFTER(unimpl) {
-	return EMPTY();
+	return NULL;
 }
 
 /* 8086/8088/80186/80286/80386/80486 instructions*/
@@ -3092,7 +3092,7 @@ IL_LIFTER(sahf) {
 	RzILOpEffect *count = SETL("_cnt", x86_il_get_op(1)); \
 	RzILOpEffect *count_mask = NULL; \
 	unsigned int count_size = ins->structure->operands[1].size * BITS_PER_BYTE; \
-	if (analysis->bits) { \
+	if (analysis->bits == 64 && ins->structure->rex) { \
 		count_mask = SETL("_cnt_mask", UN(count_size, 0x3f)); \
 	} else { \
 		count_mask = SETL("_cnt_mask", UN(count_size, 0x1f)); \
@@ -3122,7 +3122,7 @@ IL_LIFTER(sal) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
 
-	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
 }
 
 /**
@@ -3142,7 +3142,7 @@ IL_LIFTER(sar) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), IL_FALSE);
 
-	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
 }
 
 /**
@@ -3163,7 +3163,7 @@ IL_LIFTER(shl) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
 
-	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
 }
 
 /**
@@ -3183,7 +3183,7 @@ IL_LIFTER(shr) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), MSB(VARL("_tmp_dest")));
 
-	return SEQ2(ret, BRANCH(cond, set_overflow, NULL));
+	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
 }
 
 /**
