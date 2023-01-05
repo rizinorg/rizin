@@ -57,7 +57,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **
 // sleep
 RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char **argv) {
 	void *bed = rz_cons_sleep_begin();
-	rz_sys_sleep(atoi(argv[1] + 1));
+	rz_sys_sleep(atoi(argv[1]));
 	rz_cons_sleep_end(bed);
 	return RZ_CMD_STATUS_OK;
 }
