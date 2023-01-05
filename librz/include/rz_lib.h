@@ -63,7 +63,7 @@ typedef struct rz_lib_plugin_t {
 	void (*free)(void *data);
 } RzLibPlugin;
 
-typedef int (*RzLibCallback)(RzLibPlugin *, void *, void *);
+typedef bool (*RzLibCallback)(RzLibPlugin *, void *, void *);
 
 /**
  * \brief Identify how a type of plugins should be handled.
@@ -105,10 +105,10 @@ typedef struct rz_lib_t {
 #ifdef RZ_API
 RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc);
 RZ_API void rz_lib_free(RzLib *lib);
-RZ_API int rz_lib_open(RzLib *lib, const char *file);
+RZ_API bool rz_lib_open(RzLib *lib, const char *file);
 RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force);
 RZ_API bool rz_lib_add_handler(RzLib *lib, int type, const char *desc, RzLibCallback ct, RzLibCallback dt, void *user);
-RZ_API int rz_lib_close(RzLib *lib, const char *file);
+RZ_API bool rz_lib_close(RzLib *lib, const char *file);
 #endif
 
 #ifdef __cplusplus

@@ -444,14 +444,14 @@ static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 }
 
 /* asm callback */
-static int __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAsmPlugin *hand = (RzAsmPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
 	return rz_asm_add(as->a, hand);
 }
 
 /* analysis callback */
-static int __lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
 	return rz_analysis_add(as->analysis, hand);

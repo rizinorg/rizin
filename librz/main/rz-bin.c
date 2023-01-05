@@ -573,28 +573,28 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 }
 
 /* bin callback */
-static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
 	rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
 	return true;
 }
 
-static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
+static bool __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
 	RzBin *bin = user;
 	rz_bin_plugin_add(bin, hand);
 	return true;
 }
 
-static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
+static bool __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
 /* binxtr callback */
-static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
 	RzBin *bin = user;
 	// printf(" * Added (dis)assembly plugin\n");
@@ -602,7 +602,7 @@ static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
+static bool __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 

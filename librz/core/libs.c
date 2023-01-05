@@ -6,28 +6,28 @@
 #include "config.h"
 
 #define CB(x, y) \
-	static int __lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
+	static bool __lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
 		struct rz_##x##_plugin_t *hand = (struct rz_##x##_plugin_t *)data; \
 		RzCore *core = (RzCore *)user; \
 		pl->free = NULL; \
 		rz_##x##_add(core->y, hand); \
 		return true; \
 	} \
-	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { \
+	static bool __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { \
 		return true; \
 	}
 
-static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	rz_demangler_plugin_add(core->bin->demangler, (RzDemanglerPlugin *)data);
 	return true;
 }
 
-static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
+static bool __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static int __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_core_plugin_t *hand = (struct rz_core_plugin_t *)data;
 	RzCore *core = (RzCore *)user;
 	pl->free = NULL;
@@ -35,7 +35,7 @@ static int __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int __lib_core_dt(RzLibPlugin *pl, void *p, void *u) {
+static bool __lib_core_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 

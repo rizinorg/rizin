@@ -1170,7 +1170,7 @@ static bool calculate_luhn(RzHashContext *ctx, RzIO *io, const char *filename) {
 	return true;
 }
 
-static int lib_hash_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool lib_hash_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzHashPlugin *hand = (RzHashPlugin *)data;
 	RzHashContext *ctx = (RzHashContext *)user;
 	return rz_hash_plugin_add(ctx->rh, hand);

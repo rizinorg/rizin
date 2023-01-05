@@ -56,14 +56,14 @@ static bool __lib_dl_check_filename(const char *file) {
 	return rz_str_endswith(file, "." RZ_LIB_EXT);
 }
 
-static int lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symbol) {
+static bool lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symbol) {
 	RzLibHandler *h = plugin->handler;
 	if (h && h->constructor) {
 		RZ_LOG_DEBUG("PLUGIN LOADED %p fcn %p\n", h, h->constructor);
 		return h->constructor(plugin, h->user, symbol->data);
 	}
 	RZ_LOG_WARN("Cannot find plugin constructor\n");
-	return -1;
+	return false;
 }
 
 static RzLibHandler *lib_get_handler(RzLib *lib, int type) {
@@ -82,14 +82,14 @@ static RzLibHandler *lib_get_handler(RzLib *lib, int type) {
  *
  * \param lib The \p RzLib instance keeping track of loaded plugins
  * \param file The plugin to remove
- * \return 0 for success, the rest of failure.
+ * \return true for success, false otherwise
  */
-RZ_API int rz_lib_close(RzLib *lib, const char *file) {
+RZ_API bool rz_lib_close(RzLib *lib, const char *file) {
 	RzLibPlugin *p;
 	RzListIter *iter, *iter2;
 	rz_list_foreach_safe (lib->plugins, iter, iter2, p) {
 		if ((!file || !strcmp(file, p->file))) {
-			int ret = 0;
+			bool ret = true;
 			if (p->handler && p->handler->destructor) {
 				ret = p->handler->destructor(p, p->handler->user, p->data);
 			}
@@ -104,12 +104,12 @@ RZ_API int rz_lib_close(RzLib *lib, const char *file) {
 		}
 	}
 	if (!file) {
-		return 0;
+		return true;
 	}
 	// delete similar plugin name
 	rz_list_foreach (lib->plugins, iter, p) {
 		if (strstr(p->file, file)) {
-			int ret = 0;
+			bool ret = true;
 			if (p->handler && p->handler->destructor) {
 				ret = p->handler->destructor(p,
 					p->handler->user, p->data);
@@ -120,7 +120,7 @@ RZ_API int rz_lib_close(RzLib *lib, const char *file) {
 			return ret;
 		}
 	}
-	return -1;
+	return false;
 }
 
 static bool __already_loaded(RzLib *lib, const char *file) {
@@ -150,8 +150,8 @@ static char *major_minor(const char *s) {
 	return a;
 }
 
-static int lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru) {
-	rz_return_val_if_fail(lib && file && stru, -1);
+static bool lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru) {
+	rz_return_val_if_fail(lib && file && stru, false);
 	if (stru->version) {
 		char *mm0 = major_minor(stru->version);
 		char *mm1 = major_minor(RZ_VERSION);
@@ -161,7 +161,7 @@ static int lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct
 		if (mismatch) {
 			RZ_LOG_WARN("Module version mismatch %s (%s) vs (%s)\n",
 				file, stru->version, RZ_VERSION);
-			return -1;
+			return false;
 		}
 	}
 
@@ -172,14 +172,14 @@ static int lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct
 		// all the plugins types, like rz-bin does).
 		RZ_LOG_DEBUG("rz_lib_open: no handler was defined for %s with type %d\n", file, stru->type);
 		rz_sys_dlclose(handler);
-		return -1;
+		return false;
 	}
 
 	RzLibPlugin *p = RZ_NEW0(RzLibPlugin);
 	if (!p) {
 		RZ_LOG_ERROR("rz_lib_open: Cannot allocate RzLibPlugin\n");
 		rz_sys_dlclose(handler);
-		return -1;
+		return false;
 	}
 
 	p->type = stru->type;
@@ -201,16 +201,23 @@ static int lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct
 	return ret;
 }
 
-RZ_API int rz_lib_open(RzLib *lib, const char *file) {
+/**
+ * \brief Open a plugin file
+ *
+ * \param lib \p RzLib instance
+ * \param file Dynamic library to load
+ * \return true if the plugin is correctly loaded, false otherwise
+ */
+RZ_API bool rz_lib_open(RzLib *lib, const char *file) {
 	/* ignored by filename */
 	if (!__lib_dl_check_filename(file)) {
 		RZ_LOG_ERROR("Invalid library extension: %s\n", file);
-		return -1;
+		return false;
 	}
 
 	if (__already_loaded(lib, file)) {
 		RZ_LOG_INFO("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
-		return -1;
+		return false;
 	}
 
 	void *handler = rz_sys_dlopen(file);
@@ -231,10 +238,10 @@ RZ_API int rz_lib_open(RzLib *lib, const char *file) {
 		RZ_LOG_INFO("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
 		rz_sys_dlclose(handler);
-		return -1;
+		return false;
 	}
 
-	int res = lib_open_ptr(lib, file, handler, stru);
+	bool res = lib_open_ptr(lib, file, handler, stru);
 	if (strf) {
 		free(stru);
 	}
@@ -335,8 +342,8 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
 
 RZ_API bool rz_lib_add_handler(RzLib *lib,
 	int type, const char *desc,
-	int (*cb)(RzLibPlugin *, void *, void *), /* constructor */
-	int (*dt)(RzLibPlugin *, void *, void *), /* destructor */
+	RzLibCallback cb,
+	RzLibCallback dt,
 	void *user) {
 	RzLibHandler *h;
 	RzListIter *iter;
