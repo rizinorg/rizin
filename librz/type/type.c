@@ -842,7 +842,7 @@ struct PrettyHelperBufs {
 	RzStrBuf *arraybuf;
 };
 
-static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs) {
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs, bool allow_non_exist) {
 	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
 
 	bool is_anon = false;
@@ -858,8 +858,10 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		*self_ref_typename = *self_ref ? strdup(type->identifier.name) : NULL;
 
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-		if (!btype) {
+		if (!btype && !allow_non_exist) {
 			rz_strbuf_append(phbuf.typename, "unknown_t");
+		} else if (!btype || btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+			rz_strbuf_appendf(phbuf.typename, "%s%s", type->identifier.is_const ? "const " : "", type->identifier.name);
 		} else {
 			switch (btype->kind) {
 			case RZ_BASE_TYPE_KIND_STRUCT:
@@ -894,9 +896,6 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 				}
 				break;
 			}
-			case RZ_BASE_TYPE_KIND_ATOMIC:
-				rz_strbuf_appendf(phbuf.typename, "%s%s", type->identifier.is_const ? "const " : "", btype->name);
-				break;
 			default:
 				rz_warn_if_reached();
 				break;
@@ -910,7 +909,8 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
 		} else {
-			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
+			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename,
+				zero_vla, print_anon, show_typedefs, allow_non_exist);
 			rz_strbuf_append(phbuf.pointerbuf, "*");
 			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? " const " : "");
 		}
@@ -921,7 +921,8 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		} else { // variable length arrays
 			rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
 		}
-		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
+		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename,
+			zero_vla, print_anon, show_typedefs, allow_non_exist);
 		break;
 	case RZ_TYPE_KIND_CALLABLE: {
 		char *callstr = rz_type_callable_as_string(typedb, type->callable);
@@ -953,6 +954,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	bool end_newline = opts & RZ_TYPE_PRINT_END_NEWLINE;
 	end_newline = end_newline && (indent_level == 0); // only append newline for the outer type
 	bool show_typedefs = opts & RZ_TYPE_PRINT_SHOW_TYPEDEF;
+	bool allow_non_exist = opts & RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE;
 	if (indent_level == 0) { // for the root type, disregard anon_only
 		anon_only = false;
 	}
@@ -976,7 +978,8 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	struct PrettyHelperBufs phbuf = { typename, pointer_buf, array_buf };
 	bool self_ref = false;
 	char *self_ref_typename = NULL;
-	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla, print_anon, show_typedefs);
+	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename,
+		zero_vla, print_anon, show_typedefs, allow_non_exist);
 	if (!decl) {
 		rz_strbuf_free(buf);
 		rz_strbuf_free(typename);

@@ -226,7 +226,8 @@ typedef enum {
 	RZ_TYPE_PRINT_NO_END_SEMICOLON = 1 << 4, // return a string without a semicolon at end
 	RZ_TYPE_PRINT_ANONYMOUS = 1 << 5, // use "[struct|union|enum] anonymous" as the typename for anonymous structs/unions/enums
 	RZ_TYPE_PRINT_END_NEWLINE = 1 << 6, // return a string with a newline at the end
-	RZ_TYPE_PRINT_SHOW_TYPEDEF = 1 << 7 // show typedefs wherever found
+	RZ_TYPE_PRINT_SHOW_TYPEDEF = 1 << 7, // show typedefs wherever found
+	RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE = 1 << 8 // print identifiers even if there is no base type of that name in the db (otherwise "unknown_t")
 } RzTypePrintOpts;
 
 #ifdef RZ_API
@@ -375,6 +376,7 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_type(const RzTypeDB *typedb, RZ_NONNULL
 RZ_API RZ_OWN RzType *rz_type_array_of_base_type(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, size_t count);
 RZ_API RZ_OWN RzType *rz_type_array_of_base_type_str(const RzTypeDB *typedb, RZ_NONNULL const char *name, size_t count);
 RZ_API RZ_OWN RzType *rz_type_array_of_type(const RzTypeDB *typedb, RZ_NONNULL RzType *type, size_t count);
+RZ_API RZ_OWN RzType *rz_type_callable(RZ_NONNULL RZ_OWN RzCallable *callable);
 
 RZ_API RZ_BORROW RzBaseType *rz_type_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 

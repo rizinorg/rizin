@@ -101,9 +101,6 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_base_type_str(const RzTypeDB *typedb, R
  */
 RZ_API RZ_OWN RzType *rz_type_pointer_of_type(const RzTypeDB *typedb, RZ_NONNULL RzType *type, bool is_const) {
 	rz_return_val_if_fail(typedb && type, NULL);
-	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
-		return rz_type_pointer_of_base_type_str(typedb, type->identifier.name, is_const);
-	}
 	RzType *newtype = RZ_NEW0(RzType);
 	if (!newtype) {
 		return NULL;
@@ -168,6 +165,22 @@ RZ_API RZ_OWN RzType *rz_type_array_of_type(const RzTypeDB *typedb, RZ_NONNULL R
 	newtype->kind = RZ_TYPE_KIND_ARRAY;
 	newtype->array.type = type;
 	newtype->array.count = count;
+	return newtype;
+}
+
+/**
+ * \brief Creates a new callable RzType of the given callable
+ *
+ * \param callable ownership transferred into the returned type
+ */
+RZ_API RZ_OWN RzType *rz_type_callable(RZ_NONNULL RZ_OWN RzCallable *callable) {
+	rz_return_val_if_fail(callable, NULL);
+	RzType *newtype = RZ_NEW0(RzType);
+	if (!newtype) {
+		return NULL;
+	}
+	newtype->kind = RZ_TYPE_KIND_CALLABLE;
+	newtype->callable = callable;
 	return newtype;
 }
 
