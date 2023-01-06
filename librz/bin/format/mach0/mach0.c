@@ -2189,18 +2189,7 @@ RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf) {
 		return NULL;
 	}
 
-	// rebasing+stripping for arm64e
 	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
-	if (MACH0_(needs_rebasing_and_stripping)(obj)) {
-		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
-		if (!vf) {
-			return ret;
-		}
-		vf->buf = MACH0_(new_rebasing_and_stripping_buf)(obj);
-		vf->buf_owned = true;
-		vf->name = strdup(MACH0_VFILE_NAME_REBASED_STRIPPED);
-		rz_list_push(ret, vf);
-	}
 
 	// clang-format off
 	// relocs
@@ -2259,14 +2248,9 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf) {
 		map->name = rz_str_ndup(seg->segname, 16);
 		rz_str_filter(map->name);
 		map->perm = prot2perm(seg->initprot);
-		if (MACH0_(segment_needs_rebasing_and_stripping)(bin, i)) {
-			map->vfile_name = strdup(MACH0_VFILE_NAME_REBASED_STRIPPED);
-			map->paddr = seg->fileoff;
-		} else {
-			// boffset is relevant for fatmach0 where the mach0 is located boffset into the whole file
-			// the rebasing vfile above however is based at the mach0 already
-			map->paddr = seg->fileoff + bf->o->boffset;
-		}
+		// boffset is relevant for fatmach0 where the mach0 is located boffset into the whole file
+		// the rebasing vfile above however is based at the mach0 already
+		map->paddr = seg->fileoff + bf->o->boffset;
 		rz_list_append(ret, map);
 	}
 	return ret;

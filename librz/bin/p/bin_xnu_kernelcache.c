@@ -12,7 +12,7 @@
 #include "../format/mach0/kernelcache.h"
 #include "../format/xnu/mig_index.h"
 
-#define VFILE_NAME_REBASED "rebased"
+#define VFILE_NAME_PATCHED "patched"
 
 typedef struct _RPrelinkRange {
 	RzXNUKernelCacheFileRange range;
@@ -175,7 +175,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) 
 	o->bin_obj = obj;
 
 	if (rz_xnu_kernelcache_needs_rebasing(obj)) {
-		obj->rebased_buf = rz_xnu_kernelcache_new_rebasing_buf(obj);
+		obj->patched_buf = rz_xnu_kernelcache_new_patched_buf(obj);
 	}
 
 	return true;
@@ -992,14 +992,14 @@ static RzList /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		return NULL;
 	}
 	RzXNUKernelCacheObj *kobj = bf->o->bin_obj;
-	if (kobj->rebased_buf) {
+	if (kobj->patched_buf) {
 		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
 		if (!vf) {
 			return ret;
 		}
-		vf->buf = kobj->rebased_buf;
+		vf->buf = kobj->patched_buf;
 		vf->buf_owned = false;
-		vf->name = strdup(VFILE_NAME_REBASED);
+		vf->name = strdup(VFILE_NAME_PATCHED);
 		rz_list_push(ret, vf);
 	}
 	return ret;
@@ -1038,7 +1038,7 @@ static RzList /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			map->vaddr = map->paddr;
 		}
 		map->perm = prot2perm(seg->initprot);
-		map->vfile_name = kobj->rebased_buf ? strdup(VFILE_NAME_REBASED) : NULL;
+		map->vfile_name = kobj->patched_buf ? strdup(VFILE_NAME_PATCHED) : NULL;
 		rz_list_append(ret, map);
 	}
 
