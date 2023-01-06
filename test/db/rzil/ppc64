@@ -574,6 +574,7 @@ RUN
 NAME=emulateme-big-endian
 FILE=bins/elf/ppc/emulateme-ppc64be
 TIMEOUT=30
+ARGS=-T
 CMDS=<<EOF
 s sym.decrypt
 ps @ obj.seckrit
@@ -598,6 +599,7 @@ RUN
 NAME=emulateme-little-endian
 FILE=bins/elf/ppc/emulateme-ppc64le
 TIMEOUT=30
+ARGS=-T
 CMDS=<<EOF
 s sym.decrypt
 ps @ obj.seckrit
