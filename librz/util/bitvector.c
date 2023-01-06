@@ -1278,6 +1278,22 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 		rz_bv_set_from_ut64(bv, val);
 		return;
 	}
+	if (!bit_offset) {
+		ut32 full_bytes = size / 8;
+		for (ut32 i = 0; i < bv->_elem_len; i++) {
+			if (i < full_bytes) {
+				// fully copied bytes
+				bv->bits.large_a[i] = buf[i];
+			} else if (i == full_bytes && size % BV_ELEM_SIZE) {
+				// partially copied byte
+				bv->bits.large_a[i] = buf[i] & rz_num_bitmask(size % BV_ELEM_SIZE);
+			} else {
+				// padding
+				bv->bits.large_a[i] = 0;
+			}
+		}
+		return;
+	}
 	for (ut32 i = 0; i < bv->len; i++) {
 		bool bit = false;
 		if (i < size) {
