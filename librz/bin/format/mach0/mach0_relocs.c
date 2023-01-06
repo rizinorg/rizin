@@ -636,37 +636,50 @@ static bool _patch_reloc(struct MACH0_(obj_t) * bin, struct reloc_t *reloc, ut64
 /**
  * \brief Patching of external relocs in a sparse overlay buffer
  *
- * see also mach0_rebase.c for additional modification of the data that might happen.
+ * This patches both classic Mach-O relocs and modern dyld chained pointers
  */
 RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
 	rz_return_if_fail(obj);
-	if (obj->relocs_patched || !MACH0_(needs_reloc_patching)(obj)) {
+	if (obj->relocs_patched) {
+		return;
+	}
+	bool needs_reloc_patch = MACH0_(needs_reloc_patching)(obj);
+	bool needs_rebasing = MACH0_(needs_rebasing_and_stripping)(obj);
+	if (obj->relocs_patched || (!needs_reloc_patch && !needs_rebasing)) {
 		return;
 	}
 	obj->relocs_patched = true; // run this function just once (lazy relocs patching)
-	ut64 cdsz = reloc_target_size(obj);
-	ut64 size = MACH0_(reloc_targets_vfile_size)(obj);
-	if (!size) {
-		return;
-	}
-	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, MACH0_(reloc_targets_map_base)(bf, obj));
-	if (!targets) {
-		return;
-	}
 	obj->buf_patched = rz_buf_new_sparse_overlay(obj->b, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
 	if (!obj->buf_patched) {
-		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
-	RzPVector *patchable_relocs = get_patchable_relocs(obj);
-	void **it;
-	rz_pvector_foreach (patchable_relocs, it) {
-		struct reloc_t *reloc = *it;
-		ut64 sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->ord);
-		reloc->target = sym_addr;
-		_patch_reloc(obj, reloc, sym_addr);
+
+	if (needs_reloc_patch) {
+		ut64 cdsz = reloc_target_size(obj);
+		ut64 size = MACH0_(reloc_targets_vfile_size)(obj);
+		if (!size) {
+			return;
+		}
+		RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, MACH0_(reloc_targets_map_base)(bf, obj));
+		if (!targets) {
+			return;
+		}
+		RzPVector *patchable_relocs = get_patchable_relocs(obj);
+		void **it;
+		rz_pvector_foreach (patchable_relocs, it) {
+			struct reloc_t *reloc = *it;
+			ut64 sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->ord);
+			reloc->target = sym_addr;
+			_patch_reloc(obj, reloc, sym_addr);
+		}
+		rz_bin_reloc_target_builder_free(targets);
 	}
-	rz_bin_reloc_target_builder_free(targets);
+
+	if (needs_rebasing) {
+		MACH0_(rebase_buffer)
+		(obj, obj->buf_patched);
+	}
+
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(obj->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }

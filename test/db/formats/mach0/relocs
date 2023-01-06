@@ -1402,7 +1402,7 @@ vaddr paddr type name
 ----------------------
 --
  3 * r-x 0x0001e290 bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
- 4 - r-x 0x0001e290 vfile://0/rebased_stripped
+ 4 - r-x 0x0001e290 vfile://0/patched
  1 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-- fmap.__TEXT
  2 fd: 3 +0x00004000 0x00004000 * 0x00007fff r-x fmap.__TEXT_EXEC
  3 fd: 4 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA

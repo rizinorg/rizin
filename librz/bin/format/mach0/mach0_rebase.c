@@ -21,9 +21,9 @@
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
-RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, ut64 count) {
-	rz_return_if_fail(obj && buf);
-	ut64 eob = off + count;
+RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
+	rz_return_if_fail(obj && dst);
+	ut64 eob = rz_buf_size(obj->b);
 	ut64 nsegs_to_rebase = RZ_MIN(obj->nchained_starts, obj->nsegs);
 	for (int i = 0; i < nsegs_to_rebase; i++) {
 		if (!obj->chained_starts[i]) {
@@ -33,10 +33,10 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 		ut64 page_size = segment->page_size;
 		ut64 start = obj->segs[i].fileoff;
 		ut64 end = start + obj->segs[i].filesize;
-		if (end < off || start > eob || page_size < 1) {
+		if (start > eob || page_size < 1) {
 			continue;
 		}
-		ut64 page_idx = (RZ_MAX(start, off) - start) / page_size;
+		ut64 page_idx = 0;
 		ut64 page_end_idx = (RZ_MIN(eob, end) - start) / page_size;
 		for (; page_idx <= page_end_idx; page_idx++) {
 			if (!segment->page_start || page_idx >= segment->page_count) {
@@ -141,9 +141,8 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 						segment->pointer_format, cursor);
 					goto break_it_all;
 				}
-				ut64 in_buf = cursor - off;
-				if (cursor >= off && cursor <= eob - 8) {
-					rz_write_le64(&buf[in_buf], ptr_value);
+				if (cursor <= eob - 8) {
+					rz_buf_write_le64_at(dst, cursor, ptr_value);
 				}
 				cursor += delta * stride;
 				if (!delta) {
@@ -155,78 +154,6 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf
 			}
 		}
 	}
-}
-
-typedef struct {
-	struct MACH0_(obj_t) * obj;
-	ut64 off;
-} BufCtx;
-
-static bool buf_init(RzBuffer *b, const void *user) {
-	BufCtx *ctx = RZ_NEW0(BufCtx);
-	if (!ctx) {
-		return false;
-	}
-	ctx->obj = (void *)user;
-	b->priv = ctx;
-	return true;
-}
-
-static bool buf_fini(RzBuffer *b) {
-	BufCtx *ctx = b->priv;
-	free(ctx);
-	return true;
-}
-
-static bool buf_resize(RzBuffer *b, ut64 newsize) {
-	BufCtx *ctx = b->priv;
-	return rz_buf_resize(ctx->obj->b, newsize);
-}
-
-static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
-	BufCtx *ctx = b->priv;
-	st64 r = rz_buf_read_at(ctx->obj->b, ctx->off, buf, len);
-	if (r <= 0 || !len) {
-		return r;
-	}
-	MACH0_(rebase_buffer)
-	(ctx->obj, ctx->off, buf, RZ_MIN(r, len));
-	return r;
-}
-
-static st64 buf_write(RzBuffer *b, const ut8 *buf, ut64 len) {
-	BufCtx *ctx = b->priv;
-	return rz_buf_write_at(ctx->obj->b, ctx->off, buf, len);
-}
-
-static ut64 buf_get_size(RzBuffer *b) {
-	BufCtx *ctx = b->priv;
-	return rz_buf_size(ctx->obj->b);
-}
-
-static st64 buf_seek(RzBuffer *b, st64 addr, int whence) {
-	BufCtx *ctx = b->priv;
-	return ctx->off = rz_seek_offset(ctx->off, rz_buf_size(b), addr, whence);
-}
-
-static ut8 *buf_get_whole_buf(RzBuffer *b, ut64 *sz) {
-	BufCtx *ctx = b->priv;
-	return (ut8 *)rz_buf_data(ctx->obj->b, sz);
-}
-
-static const RzBufferMethods buf_methods = {
-	.init = buf_init,
-	.fini = buf_fini,
-	.read = buf_read,
-	.write = buf_write,
-	.get_size = buf_get_size,
-	.resize = buf_resize,
-	.seek = buf_seek,
-	.get_whole_buf = buf_get_whole_buf
-};
-
-RZ_API RzBuffer *MACH0_(new_rebasing_and_stripping_buf)(struct MACH0_(obj_t) * obj) {
-	return rz_buf_new_with_methods(&buf_methods, obj);
 }
 
 RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj) {

@@ -1251,16 +1251,9 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 		return NULL;
 	}
 	bigendian = bf->o->info->big_endian;
+	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
 
-	RzBuffer *buf = bf->buf;
-	RzBuffer *owned_buf = NULL;
-	if (MACH0_(needs_rebasing_and_stripping)(bf->o->bin_obj)) {
-		owned_buf = MACH0_(new_rebasing_and_stripping_buf)(bf->o->bin_obj);
-		if (!owned_buf) {
-			return NULL;
-		}
-		buf = owned_buf;
-	}
+	RzBuffer *buf = obj->buf_patched ? obj->buf_patched : bf->buf;
 
 	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);
 
@@ -1273,7 +1266,6 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(bf->o->bin_obj))) {
-		rz_buf_free(owned_buf);
 		return ret;
 	}
 
@@ -1350,7 +1342,6 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 get_classes_error:
 	rz_list_free(sctns);
 	rz_list_free(ret);
-	rz_buf_free(owned_buf);
 	// XXX DOUBLE FREE rz_bin_class_free (klass);
 	return NULL;
 }
