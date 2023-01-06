@@ -622,16 +622,15 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 #undef p_tbl
 #undef p_pj
 
-/**
- * Perform a single step at the PC given by analysis->reg in RzIL
- * \return false if an error occured (e.g. invalid op)
- */
-RZ_IPI bool rz_core_il_step(RzCore *core) {
+static bool step_assert_vm(RzCore *core) {
 	if (!core->analysis || !core->analysis->il_vm) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
 		return false;
 	}
-	RzAnalysisILStepResult r = rz_analysis_il_vm_step(core->analysis, core->analysis->il_vm, core->analysis->reg);
+	return true;
+}
+
+static bool step_handle_result(RzCore *core, RzAnalysisILStepResult r) {
 	switch (r) {
 	case RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS:
 		rz_core_reg_update_flags(core);
@@ -647,12 +646,63 @@ RZ_IPI bool rz_core_il_step(RzCore *core) {
 	return false;
 }
 
+static bool step_cond_n(RzAnalysisILVM *vm, void *user) {
+	if (rz_cons_is_breaked()) {
+		rz_cons_printf("Stepping was interrupted.\n");
+		return false;
+	}
+	ut64 *n = user;
+	if (!*n) {
+		return false;
+	}
+	(*n)--;
+	return true;
+}
+
+/**
+ * Perform \p n steps starting at the PC given by analysis->reg in RzIL
+ * \return false if an error occured (e.g. invalid op)
+ */
+RZ_IPI bool rz_core_il_step(RzCore *core, ut64 n) {
+	if (!step_assert_vm(core)) {
+		return false;
+	}
+	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, core->analysis->il_vm, core->analysis->reg,
+		step_cond_n, &n);
+	return step_handle_result(core, r);
+}
+
+static bool step_cond_until(RzAnalysisILVM *vm, void *user) {
+	if (rz_cons_is_breaked()) {
+		rz_cons_printf("Stepping was interrupted.\n");
+		return false;
+	}
+	ut64 *until = user;
+	ut64 pc = rz_bv_to_ut64(vm->vm->pc);
+	return pc != *until;
+}
+
+/**
+ * Perform zero or more steps starting at the PC given by analysis->reg in RzIL
+ * until reaching the given PC
+ * \param until destination address where to stop
+ * \return false if an error occured (e.g. invalid op)
+ */
+RZ_IPI bool rz_core_il_step_until(RzCore *core, ut64 until) {
+	if (!step_assert_vm(core)) {
+		return false;
+	}
+	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, core->analysis->il_vm, core->analysis->reg,
+		step_cond_until, &until);
+	return step_handle_result(core, r);
+}
+
 /**
  * Perform a single step at the PC given by analysis->reg in RzIL and print any events that happened
  * \return false if an error occured (e.g. invalid op)
  */
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
-	if (!rz_core_il_step(core)) {
+	if (!rz_core_il_step(core, 1)) {
 		return false;
 	}
 

@@ -4504,11 +4504,7 @@ RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
-	for (ut64 i = 0; i < repeat_times; ++i) {
-		if (!rz_core_il_step(core)) {
-			break;
-		}
-	}
+	rz_core_il_step(core, repeat_times);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4538,25 +4534,7 @@ RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
 	ut64 address = rz_num_math(core->num, argv[1]);
-
-	if (!core->analysis->il_vm) {
-		RZ_LOG_ERROR("RzIL: the VM is not initialized.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	while (1) {
-		ut64 pc = rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC);
-		if (pc == address) {
-			break;
-		}
-		if (rz_cons_is_breaked()) {
-			rz_cons_printf("CTRL+C was pressed.\n");
-			break;
-		}
-		if (!rz_core_il_step(core)) {
-			break;
-		}
-	}
+	rz_core_il_step_until(core, address);
 	return RZ_CMD_STATUS_OK;
 }
 
