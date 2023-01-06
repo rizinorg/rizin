@@ -35,8 +35,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNU
 	return f;
 }
 
-RZ_API RZ_OWN RzFloat *rz_il_float_neg(RZ_NONNULL RzFloat *f)
-{
+RZ_API RZ_OWN RzFloat *rz_il_float_neg(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 
 	RzFloat *ret = rz_float_dup(f);
@@ -45,8 +44,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_neg(RZ_NONNULL RzFloat *f)
 	return ret;
 }
 
-RZ_API RZ_OWN RzFloat *rz_il_float_succ(RZ_NONNULL RzFloat *f)
-{
+RZ_API RZ_OWN RzFloat *rz_il_float_succ(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 
 	ut32 len = rz_bv_len(f->s);
@@ -57,8 +55,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_succ(RZ_NONNULL RzFloat *f)
 	if (rz_float_is_negative(f)) {
 		// neg succ is x - unit(1)
 		bv_next = rz_bv_sub(bv, one, NULL);
-	}
-	else {
+	} else {
 		// pos succ is x + unit(1)
 		bv_next = rz_bv_add(bv, one, NULL);
 	}
@@ -72,8 +69,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_succ(RZ_NONNULL RzFloat *f)
 	return ret;
 }
 
-RZ_API RZ_OWN RzFloat *rz_il_float_pred(RZ_NONNULL RzFloat *f)
-{
+RZ_API RZ_OWN RzFloat *rz_il_float_pred(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 
 	ut32 len = rz_bv_len(f->s);
@@ -84,8 +80,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_pred(RZ_NONNULL RzFloat *f)
 	if (rz_float_is_negative(f)) {
 		// neg pred is x + unit(1)
 		bv_next = rz_bv_add(bv, one, NULL);
-	}
-	else {
+	} else {
 		// pos pred is x - unit(1)
 		bv_next = rz_bv_sub(bv, one, NULL);
 	}
@@ -99,8 +94,7 @@ RZ_API RZ_OWN RzFloat *rz_il_float_pred(RZ_NONNULL RzFloat *f)
 	return ret;
 }
 
-RZ_API RZ_OWN st32 rz_il_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y)
-{
+RZ_API RZ_OWN st32 rz_il_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 	rz_return_val_if_fail(x && y, -2);
 
 	RZ_BORROW RzBitVector *x_bv = x->s;
@@ -109,12 +103,13 @@ RZ_API RZ_OWN st32 rz_il_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y)
 	if (!rz_bv_sle(x_bv, y_bv)) {
 		// x > y
 		return 1;
-	}
-	else if (rz_bv_eq(x_bv, y_bv)) {
+	} else if (rz_bv_eq(x_bv, y_bv)) {
 		// x == y
 		return 0;
-	}
-	else {
+	} else {
 		return -1;
 	}
 }
+
+RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode);
+RZ_API const char *rz_il_float_stringify_format(RzFloatFormat format);

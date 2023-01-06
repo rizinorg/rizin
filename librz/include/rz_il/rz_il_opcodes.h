@@ -395,20 +395,13 @@ typedef struct rz_il_op_args_float_unary_t RzILOpArgsFpred;
  * [FCAST_SINT] `f_cast_sint s rm x` returns an integer closest to x.
  */
 struct rz_il_op_args_float_cast_int_t {
-	RzFloatFormat format;
+	ut32 length;
 	RzFloatRMode mode;
 	RzILOpFloat *f;
 };
 
 typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastint;
 typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFCastsint;
-
-/**
- * \brief convert between different float format
- * 'f Float.t Value.sort -> rmode -> _ float -> 'f float
- * [FCONVERT] `fconvert f r x` is the closest to x floating number in format f.
- */
-typedef struct rz_il_op_args_float_cast_int_t RzILOpArgsFconvert;
 
 /**
  * \brief for cast to float from bv
@@ -426,6 +419,18 @@ struct rz_il_op_args_float_cast_float_t {
 
 typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastfloat;
 typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastsfloat;
+
+/**
+ * \brief convert between different float format
+ * 'f Float.t Value.sort -> rmode -> _ float -> 'f float
+ * [FCONVERT] `fconvert f r x` is the closest to x floating number in format f.
+ */
+struct rz_il_op_args_float_fconvert_t {
+	RzFloatFormat format;
+	RzFloatRMode mode;
+	RzILOpFloat *f;
+};
+typedef struct rz_il_op_args_float_fconvert_t RzILOpArgsFconvert;
 
 /**
  * \brief op structure of requal
@@ -738,8 +743,8 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fneg(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fpos(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fneg(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);

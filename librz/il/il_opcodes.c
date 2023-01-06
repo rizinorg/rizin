@@ -823,17 +823,17 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f) {
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, format, mode, f);
+	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_INT, RzILOpArgsFCastint, fcast_int, length, mode, f);
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, format, mode, f);
+	rz_il_op_new_3(BitVector, RZ_IL_OP_FCAST_SINT, RzILOpArgsFCastsint, fcast_sint, length, mode, f);
 	return ret;
 }
 
@@ -1180,11 +1180,11 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		DUP_OP1(fabs, f);
 		break;
 	case RZ_IL_OP_FCAST_INT:
-		CONST_CP2(fcast_int, format, mode);
+		CONST_CP2(fcast_int, length, mode);
 		DUP_OP1(fcast_int, f);
 		break;
 	case RZ_IL_OP_FCAST_SINT:
-		CONST_CP2(fcast_sint, format, mode);
+		CONST_CP2(fcast_sint, length, mode);
 		DUP_OP1(fcast_sint, f);
 		break;
 	case RZ_IL_OP_FCAST_FLOAT:
@@ -1192,7 +1192,7 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		DUP_OP1(fcast_float, bv);
 		break;
 	case RZ_IL_OP_FCAST_SFLOAT:
-		CONST_CP2(fcast_sint, format, mode);
+		CONST_CP2(fcast_sfloat, format, mode);
 		DUP_OP1(fcast_sfloat, bv);
 		break;
 	case RZ_IL_OP_FCONVERT:

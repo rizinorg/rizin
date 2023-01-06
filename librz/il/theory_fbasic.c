@@ -110,7 +110,7 @@ void *rz_il_handler_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFneg fneg = op->op.fneg;
 	RzFloat *f = rz_il_evaluate_float(vm, fneg.f);
-	RzFloat *ret =rz_il_float_neg(f);
+	RzFloat *ret = rz_il_float_neg(f);
 
 	rz_float_free(f);
 

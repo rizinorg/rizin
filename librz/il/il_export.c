@@ -142,6 +142,75 @@ static void il_op_effect_resolve(RzILOpEffect *op, RzStrBuf *sb, PJ *pj);
 		} \
 	} while (0)
 
+#define il_op_param_1_with_rmode(name, opx, v0, vr) \
+	do { \
+		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
+		if (sb) { \
+			rz_strbuf_append(sb, "(" name " "); \
+			rz_strbuf_append(sb, rmode_str); \
+			rz_strbuf_append(sb, " "); \
+			il_op_pure_resolve(opx.v0, sb, pj); \
+			rz_strbuf_append(sb, ")"); \
+		} else { \
+			pj_o(pj); \
+			pj_ks(pj, "opcode", name); \
+			pj_ks(pj, "rmode", rmode_str); \
+			pj_k(pj, #v0); \
+			il_op_pure_resolve(opx.v0, sb, pj); \
+			pj_end(pj); \
+		} \
+	} while (0)
+
+#define il_op_param_2_with_rmode(name, opx, sort0, v0, sort1, v1, vr) \
+	do { \
+		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
+		if (sb) { \
+			rz_strbuf_append(sb, "(" name " "); \
+			rz_strbuf_append(sb, rmode_str); \
+			rz_strbuf_append(sb, " "); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
+			rz_strbuf_append(sb, " "); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
+			rz_strbuf_append(sb, ")"); \
+		} else { \
+			pj_o(pj); \
+			pj_ks(pj, "opcode", name); \
+			pj_ks(pj, "rmode", rmode_str); \
+			pj_k(pj, #v0); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
+			pj_k(pj, #v1); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
+			pj_end(pj); \
+		} \
+	} while (0)
+
+#define il_op_param_3_with_rmode(name, opx, sort0, v0, sort1, v1, sort2, v2, vr) \
+	do { \
+		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
+		if (sb) { \
+			rz_strbuf_append(sb, "(" name " "); \
+			rz_strbuf_append(sb, rmode_str); \
+			rz_strbuf_append(sb, " "); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
+			rz_strbuf_append(sb, " "); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
+			rz_strbuf_append(sb, " "); \
+			il_op_##sort2##_resolve(opx.v2, sb, pj); \
+			rz_strbuf_append(sb, ")"); \
+		} else { \
+			pj_o(pj); \
+			pj_ks(pj, "opcode", name); \
+			pj_ks(pj, "rmode", rmode_str); \
+			pj_k(pj, #v0); \
+			il_op_##sort0##_resolve(opx.v0, sb, pj); \
+			pj_k(pj, #v1); \
+			il_op_##sort1##_resolve(opx.v1, sb, pj); \
+			pj_k(pj, #v2); \
+			il_op_##sort2##_resolve(opx.v2, sb, pj); \
+			pj_end(pj); \
+		} \
+	} while (0)
+
 static void il_opdmp_var(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	RzILOpArgsVar *opx = &op->op.var;
 	if (sb) {
@@ -341,8 +410,7 @@ static void il_opdmp_float(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		rz_strbuf_appendf(sb, "(float %d ", opx->r);
 		il_op_pure_resolve(opx->bv, sb, pj);
 		rz_strbuf_append(sb, " )");
-	}
-	else {
+	} else {
 		pj_o(pj);
 		pj_ks(pj, "opcode", "float");
 		pj_kn(pj, "format", opx->r);
@@ -388,30 +456,141 @@ static void il_opdmp_fabs(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_1("fpos", op->op.fabs, f);
 }
 
-// TODO-start : use pj* functions to handle cast dmp
 static void il_opdmp_fcast_int(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsFCastint *opx = &op->op.fcast_int;
+	if (sb) {
+		rz_strbuf_appendf(sb, "(fcast_int %u ", opx->length);
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode));
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->f, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "fcast_int");
+		pj_kn(pj, "length", opx->length);
+		pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->f, sb, pj);
+		pj_end(pj);
+	}
 }
+
 static void il_opdmp_fcast_sint(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-
+	RzILOpArgsFCastsint *opx = &op->op.fcast_sint;
+	if (sb) {
+		rz_strbuf_appendf(sb, "(fcast_sint %u ", opx->length);
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode));
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->f, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "fcast_sint");
+		pj_kn(pj, "length", opx->length);
+		pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->f, sb, pj);
+		pj_end(pj);
+	}
 }
+
 static void il_opdmp_fcast_float(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-
+	RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
+	if (sb) {
+		rz_strbuf_append(sb, "(fcast_float ");
+		rz_strbuf_append(sb, rz_il_float_stringify_format(opx->format));
+		rz_strbuf_append(sb, " ");
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode));
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->bv, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "fcast_float");
+		pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
+		pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->bv, sb, pj);
+		pj_end(pj);
+	}
 }
+
 static void il_opdmp_fcast_sfloat(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-
+	RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
+	if (sb) {
+		rz_strbuf_append(sb, "(fcast_sfloat ");
+		rz_strbuf_append(sb, rz_il_float_stringify_format(opx->format));
+		rz_strbuf_append(sb, " ");
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode));
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->bv, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "fcast_sfloat");
+		pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
+		pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->bv, sb, pj);
+		pj_end(pj);
+	}
 }
+
 static void il_opdmp_fconvert(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-
+	RzILOpArgsFconvert *opx = &op->op.fconvert;
+	if (sb) {
+		rz_strbuf_append(sb, "(fconvert ");
+		rz_strbuf_append(sb, rz_il_float_stringify_format(opx->format));
+		rz_strbuf_append(sb, " ");
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->mode));
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->f, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "fconvert");
+		pj_ks(pj, "format", rz_il_float_stringify_format(opx->format));
+		pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->mode));
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->f, sb, pj);
+		pj_end(pj);
+	}
 }
-static void il_opdmp_fround(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 
+static void il_opdmp_fround(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
+	RzILOpArgsFround *opx = &op->op.fround;
+	if (sb) {
+		rz_strbuf_append(sb, "(fround ");
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->rmode));
+		rz_strbuf_append(sb, " ");
+		il_op_pure_resolve(opx->f, sb, pj);
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "fround");
+		pj_ks(pj, "rmode", rz_il_float_stringify_rmode(opx->rmode));
+		pj_k(pj, "value");
+		il_op_pure_resolve(opx->f, sb, pj);
+		pj_end(pj);
+	}
 }
 
 static void il_opdmp_frequal(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-
+	RzILOpArgsFrequal *opx = &op->op.frequal;
+	if (sb) {
+		rz_strbuf_append(sb, "(frequal ");
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->x));
+		rz_strbuf_append(sb, " ");
+		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->x));
+		rz_strbuf_append(sb, ")");
+	} else {
+		pj_o(pj);
+		pj_ks(pj, "opcode", "frequal");
+		pj_ks(pj, "rmode_x", rz_il_float_stringify_rmode(opx->x));
+		pj_ks(pj, "rmode_y", rz_il_float_stringify_rmode(opx->y));
+		pj_end(pj);
+	}
 }
-// TODO-end
-
 
 static void il_opdmp_fsucc(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	il_op_param_1("fsucc", op->op.fsucc, f);
@@ -421,59 +600,59 @@ static void il_opdmp_fpred(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 }
 
 static void il_opdmp_forder(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("forder", op->op.forder, pure, x, pure, y);
+	il_op_param_2("<.", op->op.forder, pure, x, pure, y);
 }
 
 static void il_opdmp_fsqrt(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("fsqrt", op->op.fsqrt, f);
+	il_op_param_1_with_rmode("fsqrt", op->op.fsqrt, f, rmode);
 }
 
 static void il_opdmp_frsqrt(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_1("frsqrt", op->op.frsqrt, f);
+	il_op_param_1_with_rmode("frsqrt", op->op.frsqrt, f, rmode);
 }
 
 static void il_opdmp_fadd(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("+.", op->op.fadd, pure, x, pure, y);
+	il_op_param_2_with_rmode("+.", op->op.fadd, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fsub(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("-.", op->op.fsub, pure, x, pure, y);
+	il_op_param_2_with_rmode("-.", op->op.fsub, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fmul(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("*.", op->op.fmul, pure, x, pure, y);
+	il_op_param_2_with_rmode("*.", op->op.fmul, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fdiv(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("/.", op->op.fdiv, pure, x, pure, y);
+	il_op_param_2_with_rmode("/.", op->op.fdiv, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fmod(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("%.", op->op.fmod, pure, x, pure, y);
+	il_op_param_2_with_rmode("%.", op->op.fmod, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fhypot(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("hypot", op->op.fhypot, pure, x, pure, y);
+	il_op_param_2_with_rmode("hypot", op->op.fhypot, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fpow(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("pow", op->op.fpow, pure, x, pure, y);
+	il_op_param_2_with_rmode("pow", op->op.fpow, pure, x, pure, y, rmode);
 }
 
 static void il_opdmp_fmad(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_3("fmad", op->op.fmad, pure, x, pure, y, pure, z);
+	il_op_param_3_with_rmode("fmad", op->op.fmad, pure, x, pure, y, pure, z, rmode);
 }
 
 static void il_opdmp_fpown(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("fpown", op->op.fpown, pure, f, pure, n);
+	il_op_param_2_with_rmode("fpown", op->op.fpown, pure, f, pure, n, rmode);
 }
 
 static void il_opdmp_frootn(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("frootn", op->op.frootn, pure, f, pure, n);
+	il_op_param_2_with_rmode("frootn", op->op.frootn, pure, f, pure, n, rmode);
 }
 
 static void il_opdmp_fcompound(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
-	il_op_param_2("fcompound", op->op.fcompound, pure, f, pure, n);
+	il_op_param_2_with_rmode("fcompound", op->op.fcompound, pure, f, pure, n, rmode);
 }
 
 static void il_opdmp_load(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
@@ -760,6 +939,106 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 	case RZ_IL_OP_LOADW:
 		il_opdmp_loadw(op, sb, pj);
 		return;
+	case RZ_IL_OP_FLOAT:
+		il_opdmp_float(op, sb, pj);
+		return;
+	case RZ_IL_OP_FBITS:
+		il_opdmp_fbits(op, sb, pj);
+		return;
+	case RZ_IL_OP_IS_FINITE:
+		il_opdmp_is_finite(op, sb, pj);
+		return;
+	case RZ_IL_OP_IS_NAN:
+		il_opdmp_is_nan(op, sb, pj);
+		return;
+	case RZ_IL_OP_IS_INF:
+		il_opdmp_is_inf(op, sb, pj);
+		return;
+	case RZ_IL_OP_IS_FZERO:
+		il_opdmp_is_fzero(op, sb, pj);
+		return;
+	case RZ_IL_OP_IS_FNEG:
+		il_opdmp_is_fneg(op, sb, pj);
+		return;
+	case RZ_IL_OP_IS_FPOS:
+		il_opdmp_is_fpos(op, sb, pj);
+		return;
+	case RZ_IL_OP_FNEG:
+		il_opdmp_is_fneg(op, sb, pj);
+		return;
+	case RZ_IL_OP_FABS:
+		il_opdmp_fabs(op, sb, pj);
+		return;
+	case RZ_IL_OP_FCAST_INT:
+		il_opdmp_fcast_int(op, sb, pj);
+		return;
+	case RZ_IL_OP_FCAST_SINT:
+		il_opdmp_fcast_sint(op, sb, pj);
+		return;
+	case RZ_IL_OP_FCAST_FLOAT:
+		il_opdmp_fcast_float(op, sb, pj);
+		return;
+	case RZ_IL_OP_FCAST_SFLOAT:
+		il_opdmp_fcast_sfloat(op, sb, pj);
+		return;
+	case RZ_IL_OP_FCONVERT:
+		il_opdmp_fconvert(op, sb, pj);
+		return;
+	case RZ_IL_OP_FREQUAL:
+		il_opdmp_frequal(op, sb, pj);
+		return;
+	case RZ_IL_OP_FSUCC:
+		il_opdmp_fsucc(op, sb, pj);
+		return;
+	case RZ_IL_OP_FPRED:
+		il_opdmp_fpred(op, sb, pj);
+		return;
+	case RZ_IL_OP_FORDER:
+		il_opdmp_forder(op, sb, pj);
+		return;
+	case RZ_IL_OP_FROUND:
+		il_opdmp_fround(op, sb, pj);
+		return;
+	case RZ_IL_OP_FSQRT:
+		il_opdmp_fsqrt(op, sb, pj);
+		return;
+	case RZ_IL_OP_FRSQRT:
+		il_opdmp_frsqrt(op, sb, pj);
+		return;
+	case RZ_IL_OP_FADD:
+		il_opdmp_fadd(op, sb, pj);
+		return;
+	case RZ_IL_OP_FSUB:
+		il_opdmp_fsub(op, sb, pj);
+		return;
+	case RZ_IL_OP_FMUL:
+		il_opdmp_fmul(op, sb, pj);
+		return;
+	case RZ_IL_OP_FDIV:
+		il_opdmp_fdiv(op, sb, pj);
+		return;
+	case RZ_IL_OP_FMOD:
+		il_opdmp_fmod(op, sb, pj);
+		return;
+	case RZ_IL_OP_FHYPOT:
+		il_opdmp_fhypot(op, sb, pj);
+		return;
+	case RZ_IL_OP_FPOW:
+		il_opdmp_fpow(op, sb, pj);
+		return;
+	case RZ_IL_OP_FMAD:
+		il_opdmp_fmad(op, sb, pj);
+		return;
+	case RZ_IL_OP_FPOWN:
+		il_opdmp_fpown(op, sb, pj);
+		return;
+	case RZ_IL_OP_FROOTN:
+		il_opdmp_frootn(op, sb, pj);
+		return;
+	case RZ_IL_OP_FCOMPOUND:
+		il_opdmp_fcompound(op, sb, pj);
+		return;
+
 	default:
 		rz_warn_if_reached();
 		if (sb) {
