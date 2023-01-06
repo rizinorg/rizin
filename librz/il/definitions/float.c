@@ -111,5 +111,36 @@ RZ_API RZ_OWN st32 rz_il_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y)
 	}
 }
 
-RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode);
-RZ_API const char *rz_il_float_stringify_format(RzFloatFormat format);
+RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode) {
+	switch (mode) {
+	case RZ_FLOAT_RMODE_RNA:
+		return "rna";
+	case RZ_FLOAT_RMODE_RNE:
+		return "rne";
+	case RZ_FLOAT_RMODE_RTN:
+		return "rtn";
+	case RZ_FLOAT_RMODE_RTZ:
+		return "rtz";
+	case RZ_FLOAT_RMODE_RTP:
+		return "rtp";
+	default:
+		return "unk_round";
+	}
+}
+
+RZ_API const char *rz_il_float_stringify_format(RzFloatFormat format) {
+	switch (format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		return "ieee754-bin32";
+	case RZ_FLOAT_IEEE754_BIN_64:
+		return "ieee754-bin64";
+	case RZ_FLOAT_IEEE754_BIN_80:
+		return "ieee754-bin80";
+	case RZ_FLOAT_IEEE754_DEC_64:
+		return "ieee754-dec64";
+	case RZ_FLOAT_IEEE754_DEC_128:
+		return "ieee754-dec128";
+	default:
+		return "unk_format";
+	}
+}

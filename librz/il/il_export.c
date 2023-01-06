@@ -964,7 +964,7 @@ static void il_op_pure_resolve(RzILOpPure *op, RzStrBuf *sb, PJ *pj) {
 		il_opdmp_is_fpos(op, sb, pj);
 		return;
 	case RZ_IL_OP_FNEG:
-		il_opdmp_is_fneg(op, sb, pj);
+		il_opdmp_fneg(op, sb, pj);
 		return;
 	case RZ_IL_OP_FABS:
 		il_opdmp_fabs(op, sb, pj);
