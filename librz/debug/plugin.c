@@ -49,6 +49,8 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 	if (dbg->cur->init) {
 		dbg->cur->init(dbg, &dbg->plugin_data);
 	}
+	// Syncing the reg profile here may fail if the plugin is not ready, but it should
+	// at least clean up the old RzReg contents.
 	rz_debug_reg_profile_sync(dbg);
 	return true;
 }

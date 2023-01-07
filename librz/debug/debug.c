@@ -448,6 +448,11 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 		if (ret != -1) {
 			dbg->reason.type = RZ_DEBUG_REASON_NONE; // after a successful attach, the process is not dead
 			rz_debug_select(dbg, pid, ret); // dbg->pid, dbg->tid);
+			// After an attach, all relevant info to build the reg profile should be available in the plugin.
+			// E.g. in the xnu debugger, the profile may not be available before the attach and cpu type is known.
+			if (!rz_debug_reg_profile_sync(dbg)) {
+				RZ_LOG_WARN("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
+			}
 		}
 	}
 	return ret;

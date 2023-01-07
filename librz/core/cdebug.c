@@ -275,7 +275,6 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	char buf[20];
 
-	rz_debug_reg_profile_sync(core->dbg);
 	if (pid > 0) {
 		rz_debug_attach(core->dbg, pid);
 	} else {
