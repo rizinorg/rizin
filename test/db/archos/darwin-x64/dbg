@@ -120,3 +120,75 @@ hit breakpoint at: 0x100000f0c
 hit breakpoint at: 0x100000f17
 EOF
 RUN
+
+NAME=break multiple times and check regs (fat arm64-x86_64)
+FILE=bins/mach0/calculate-macos-fat-arm64-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 20
+db @ main + 24
+dc
+dr rip
+?e --
+dc
+dr rip
+dr rax
+?e --
+dc
+dr rip
+dr rax
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|r[^i][a-z]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+rip = f20
+--
+rip = f34
+rax = 0x0000000000000000
+--
+rip = f38
+rax = 0x0000000000000064
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: f20
+hit breakpoint at: f34
+hit breakpoint at: f38
+EOF
+RUN
+
+NAME=break multiple times and check regs (fat i386-x86_64)
+FILE=bins/mach0/calculate-macos-fat-i386-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 61
+db @ main + 67
+dc
+dr rip
+?e --
+dc
+dr rip
+dr rax
+?e --
+dc
+dr rip
+dr rax
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|r[^i][a-z]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+rip = ea0
+--
+rip = edd
+rax = 0x0000000000000190
+--
+rip = ee3
+rax = 0x00000000000000a0
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: ea0
+hit breakpoint at: edd
+hit breakpoint at: ee3
+EOF
+RUN

@@ -123,7 +123,14 @@ RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {
 	return rz_reg_get_value(dbg->reg, ri);
 }
 
+/**
+ * Load the register profile from the current plugin into dbg->reg and
+ * if successful also sync all register contents into it.
+ *
+ * \return whether the register profile was provided by the plugin
+ */
 RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
+	rz_return_val_if_fail(dbg, false);
 	if (dbg->cur->reg_profile) {
 		char *p = dbg->cur->reg_profile(dbg);
 		if (p) {
@@ -131,7 +138,9 @@ RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 			free(p);
 		} else {
-			RZ_LOG_WARN("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
+			// May happen when the plugin does not yet have enough info
+			// to determine the reg profile
+			rz_reg_set_profile_string(dbg->reg, "");
 			return false;
 		}
 	}
