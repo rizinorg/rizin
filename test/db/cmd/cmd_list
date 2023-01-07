@@ -321,7 +321,7 @@ NAME=Set the debug backend
 FILE==
 CMDS=<<EOF
 Ld null
-Ld~!windbg
+Ld~!windbg,native
 EOF
 EXPECT=<<EOF
 0  ---  bf       LGPL3
@@ -333,13 +333,12 @@ EXPECT=<<EOF
 6  ---  rap      LGPL3
 7  ---  winkd    LGPL3
 8  ---  qnx      LGPL3
-9  ---  native   LGPL3
 EOF
 RUN
 
 NAME=Print the debug plugins
 FILE==
-CMDS=Ld~!windbg
+CMDS=Ld~!windbg,native
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
@@ -350,7 +349,6 @@ EXPECT=<<EOF
 6  ---  rap      LGPL3
 7  ---  winkd    LGPL3
 8  ---  qnx      LGPL3
-9  dbg  native   LGPL3
 EOF
 RUN
 
@@ -366,8 +364,6 @@ Ldj~{[5]}
 Ldj~{[6]}
 Ldj~{[7]}
 Ldj~{[8]}
-Ldj~{[9].name}
-Ldj~{[9].license}
 EOF
 EXPECT=<<EOF
 {"arch":"bf","name":"bf","license":"LGPL3"}
@@ -379,8 +375,6 @@ EXPECT=<<EOF
 {"arch":"any","name":"rap","license":"LGPL3"}
 {"arch":"x86","name":"winkd","license":"LGPL3"}
 {"arch":"x86,arm","name":"qnx","license":"LGPL3"}
-native
-LGPL3
 EOF
 RUN
 
