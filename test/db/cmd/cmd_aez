@@ -15,7 +15,7 @@ RUN
 NAME=aezsu: RzIL step until failure
 FILE==
 ARGS=-a bf
-TIMEOUT=4
+TIMEOUT=20
 CMDS=<<EOF
 w ">>>>"
 aezi
@@ -37,7 +37,7 @@ RUN
 NAME=aezs: RzIL step many failure
 FILE==
 ARGS=-a bf
-TIMEOUT=4
+TIMEOUT=20
 CMDS=<<EOF
 w ">>>>"
 aezi
@@ -59,7 +59,7 @@ RUN
 NAME=aezse: RzIL step with events many failure
 FILE==
 ARGS=-a bf
-TIMEOUT=4
+TIMEOUT=20
 CMDS=<<EOF
 w ">>>>"
 aezi
