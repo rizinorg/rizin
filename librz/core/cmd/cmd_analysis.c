@@ -4504,7 +4504,7 @@ RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
-	rz_core_il_step(core, repeat_times);
+	rz_core_il_step(core, repeat_times, false, false, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4514,15 +4514,17 @@ RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, con
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
-			RZ_LOG_ERROR("cannot allocate PJ.\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		pj_a(pj);
 	}
-	for (ut64 i = 0; i < repeat_times; ++i) {
-		if (!rz_core_analysis_il_step_with_events(core, pj)) {
-			break;
-		}
+	bool evt_read = rz_config_get_b(core->config, "rzil.step.events.read");
+	bool evt_write = rz_config_get_b(core->config, "rzil.step.events.write");
+	if (evt_read || evt_write) {
+		rz_core_il_step(core, repeat_times, evt_read, evt_write, pj);
+	} else {
+		RZ_LOG_ERROR("RzIL: cannot print events when all the events are disabled.");
+		RZ_LOG_ERROR("RzIL: please set 'rzil.step.events.read' or/and 'rzil.step.events.write' to true and try again.");
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);

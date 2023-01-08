@@ -623,7 +623,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 #undef p_pj
 
 static bool step_assert_vm(RzCore *core) {
-	if (!core->analysis || !core->analysis->il_vm) {
+	if (!core->analysis || !core->analysis->il_vm || !core->analysis->il_vm->vm) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
 		return false;
 	}
@@ -646,29 +646,73 @@ static bool step_handle_result(RzCore *core, RzAnalysisILStepResult r) {
 	return false;
 }
 
+typedef struct {
+	ut64 steps_left;
+	bool print_events_read;
+	bool print_events_write;
+	PJ *pj;
+} StepCtx;
+
 static bool step_cond_n(RzAnalysisILVM *vm, void *user) {
 	if (rz_cons_is_breaked()) {
 		rz_cons_printf("Stepping was interrupted.\n");
 		return false;
 	}
-	ut64 *n = user;
-	if (!*n) {
+	StepCtx *ctx = user;
+	if (ctx->print_events_read || ctx->print_events_write) {
+		RzStrBuf sb;
+		if (!ctx->pj) {
+			rz_strbuf_init(&sb);
+		}
+		RzListIter *it;
+		RzILEvent *evt;
+		rz_list_foreach (vm->vm->events, it, evt) {
+			if (!ctx->print_events_read && (evt->type == RZ_IL_EVENT_MEM_READ || evt->type == RZ_IL_EVENT_VAR_READ)) {
+				continue;
+			} else if (!ctx->print_events_write && (evt->type != RZ_IL_EVENT_MEM_READ && evt->type != RZ_IL_EVENT_VAR_READ)) {
+				continue;
+			}
+			if (!ctx->pj) {
+				rz_il_event_stringify(evt, &sb);
+				rz_strbuf_append(&sb, "\n");
+			} else {
+				rz_il_event_json(evt, ctx->pj);
+			}
+		}
+		if (!ctx->pj) {
+			rz_cons_print(rz_strbuf_get(&sb));
+			rz_strbuf_fini(&sb);
+		}
+	}
+	if (!ctx->steps_left) {
 		return false;
 	}
-	(*n)--;
+	ctx->steps_left--;
 	return true;
 }
 
 /**
  * Perform \p n steps starting at the PC given by analysis->reg in RzIL
+ * \param n number of steps to perform
+ * \param print_events_read whether to print the read events that happened after each step
+ * \param print_events_write whether to print the write events that happened after each step
+ * \param pj if not NULL and either print_events_read or print_events write is true, events will be
+ *        written as json into this instead of readable text
  * \return false if an error occured (e.g. invalid op)
  */
-RZ_IPI bool rz_core_il_step(RzCore *core, ut64 n) {
+RZ_IPI bool rz_core_il_step(RzCore *core, ut64 n, bool print_events_read, bool print_events_write, PJ *pj) {
 	if (!step_assert_vm(core)) {
 		return false;
 	}
+	rz_il_vm_clear_events(core->analysis->il_vm->vm); // avoid printing any old events on the first callback
+	StepCtx ctx = {
+		.steps_left = n,
+		.print_events_read = print_events_read,
+		.print_events_write = print_events_write,
+		.pj = pj
+	};
 	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, core->analysis->il_vm, core->analysis->reg,
-		step_cond_n, &n);
+		step_cond_n, &ctx);
 	return step_handle_result(core, r);
 }
 
@@ -695,55 +739,4 @@ RZ_IPI bool rz_core_il_step_until(RzCore *core, ut64 until) {
 	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, core->analysis->il_vm, core->analysis->reg,
 		step_cond_until, &until);
 	return step_handle_result(core, r);
-}
-
-/**
- * Perform a single step at the PC given by analysis->reg in RzIL and print any events that happened
- * \return false if an error occured (e.g. invalid op)
- */
-RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
-	if (!rz_core_il_step(core, 1)) {
-		return false;
-	}
-
-	if (!core->analysis || !core->analysis->il_vm) {
-		return false;
-	}
-
-	RzILVM *vm = core->analysis->il_vm->vm;
-
-	RzStrBuf *sb = NULL;
-	RzListIter *it;
-	RzILEvent *evt;
-
-	bool evt_read = rz_config_get_b(core->config, "rzil.step.events.read");
-	bool evt_write = rz_config_get_b(core->config, "rzil.step.events.write");
-
-	if (!evt_read && !evt_write) {
-		RZ_LOG_ERROR("RzIL: cannot print events when all the events are disabled.");
-		RZ_LOG_ERROR("RzIL: please set 'rzil.step.events.read' or/and 'rzil.step.events.write' to true and try again.");
-		return false;
-	}
-
-	if (!pj) {
-		sb = rz_strbuf_new("");
-	}
-	rz_list_foreach (vm->events, it, evt) {
-		if (!evt_read && (evt->type == RZ_IL_EVENT_MEM_READ || evt->type == RZ_IL_EVENT_VAR_READ)) {
-			continue;
-		} else if (!evt_write && (evt->type != RZ_IL_EVENT_MEM_READ && evt->type != RZ_IL_EVENT_VAR_READ)) {
-			continue;
-		}
-		if (!pj) {
-			rz_il_event_stringify(evt, sb);
-			rz_strbuf_append(sb, "\n");
-		} else {
-			rz_il_event_json(evt, pj);
-		}
-	}
-	if (!pj) {
-		rz_cons_print(rz_strbuf_get(sb));
-		rz_strbuf_free(sb);
-	}
-	return true;
 }
