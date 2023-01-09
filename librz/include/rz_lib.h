@@ -41,7 +41,10 @@ typedef enum {
 	RZ_LIB_TYPE_PARSE, ///< parsers
 	RZ_LIB_TYPE_BIN, ///< bin headers
 	RZ_LIB_TYPE_BIN_XTR, ///< bin extractors
+	RZ_LIB_TYPE_BIN_LDR, ///< DEPRECATED
 	RZ_LIB_TYPE_BP, ///< breakpoint
+	RZ_LIB_TYPE_SYSCALL, ///< DEPRECATED
+	RZ_LIB_TYPE_FASTCALL, ///< DEPRECATED
 	RZ_LIB_TYPE_CRYPTO, ///< cryptography
 	RZ_LIB_TYPE_HASH, ///< hashes / message digests
 	RZ_LIB_TYPE_CORE, ///< RzCore commands

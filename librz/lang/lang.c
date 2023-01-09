@@ -37,7 +37,7 @@ RZ_API RzLang *rz_lang_new(void) {
 	lang->defs->free = (RzListFree)rz_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
 	for (int i = 0; i < RZ_ARRAY_SIZE(lang_static_plugins); i++) {
-		rz_lang_add(lang, lang_static_plugins[i]);
+		rz_lang_plugin_add(lang, lang_static_plugins[i]);
 	}
 
 	return lang;
@@ -112,7 +112,7 @@ RZ_API bool rz_lang_setup(RzLang *lang) {
 	return false;
 }
 
-RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo) {
+RZ_API bool rz_lang_plugin_add(RzLang *lang, RzLangPlugin *foo) {
 	if (foo && (!rz_lang_get_by_name(lang, foo->name))) {
 		if (foo->init) {
 			foo->init(lang);
@@ -121,6 +121,11 @@ RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo) {
 		return true;
 	}
 	return false;
+}
+
+RZ_API bool rz_lang_plugin_del(RzLang *lang, RzLangPlugin *plugin) {
+	rz_return_val_if_fail(lang && plugin, false);
+	return rz_list_delete_data(lang->langs, plugin);
 }
 
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {

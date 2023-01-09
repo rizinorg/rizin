@@ -65,6 +65,16 @@ RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo) {
 	return true;
 }
 
+RZ_API bool rz_debug_plugin_del(RzDebug *dbg, RzDebugPlugin *plugin) {
+	rz_return_val_if_fail(dbg && plugin, false);
+	if (dbg->cur == plugin) {
+		dbg->cur->fini(dbg, dbg->plugin_data);
+		dbg->cur = NULL;
+		dbg->plugin_data = NULL;
+	}
+	return rz_list_delete_data(dbg->plugins, plugin);
+}
+
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *profile) {
 	char *str = rz_file_slurp(profile, NULL);
 	if (!str) {

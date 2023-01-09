@@ -115,7 +115,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->plugins = rz_list_newf(NULL);
 	if (analysis->plugins) {
 		for (i = 0; i < RZ_ARRAY_SIZE(analysis_static_plugins); i++) {
-			rz_analysis_add(analysis, analysis_static_plugins[i]);
+			rz_analysis_plugin_add(analysis, analysis_static_plugins[i]);
 		}
 	}
 	analysis->ht_global_var = ht_pp_new(NULL, global_kv_free, NULL);
@@ -177,9 +177,18 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	return NULL;
 }
 
-RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *p) {
+RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RzAnalysisPlugin *p) {
 	rz_list_append(analysis->plugins, p);
 	return true;
+}
+
+RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RzAnalysisPlugin *p) {
+	rz_return_val_if_fail(analysis && p, false);
+	if (analysis->cur == p) {
+		plugin_fini(analysis);
+		analysis->cur = NULL;
+	}
+	return rz_list_delete_data(analysis->plugins, p);
 }
 
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {

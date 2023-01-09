@@ -79,7 +79,7 @@ static RzLibHandler *lib_get_handler(RzLib *lib, RzLibType type) {
  * \brief Call the plugin destructor and remove it
  *
  * \param lib The \p RzLib instance keeping track of loaded plugins
- * \param file The plugin to remove
+ * \param file The plugin to remove or NULL to remove all of them
  * \return true for success, false otherwise
  */
 RZ_API bool rz_lib_close(RzLib *lib, const char *file) {
@@ -88,7 +88,7 @@ RZ_API bool rz_lib_close(RzLib *lib, const char *file) {
 	rz_list_foreach_safe (lib->plugins, iter, iter2, p) {
 		if ((!file || !strcmp(file, p->file))) {
 			bool ret = true;
-			if (p->handler && p->handler->destructor) {
+			if (p->handler->destructor) {
 				ret = p->handler->destructor(p, p->handler->user, p->data);
 			}
 			if (p->free) {
@@ -101,24 +101,7 @@ RZ_API bool rz_lib_close(RzLib *lib, const char *file) {
 			}
 		}
 	}
-	if (!file) {
-		return true;
-	}
-	// delete similar plugin name
-	rz_list_foreach (lib->plugins, iter, p) {
-		if (strstr(p->file, file)) {
-			bool ret = true;
-			if (p->handler && p->handler->destructor) {
-				ret = p->handler->destructor(p,
-					p->handler->user, p->data);
-			}
-			RZ_LOG_INFO("Unloaded %s\n", p->file);
-			free(p->file);
-			rz_list_delete(lib->plugins, iter);
-			return ret;
-		}
-	}
-	return false;
+	return file == NULL;
 }
 
 static bool lib_already_loaded(RzLib *lib, const char *file) {

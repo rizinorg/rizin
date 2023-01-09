@@ -32,7 +32,7 @@ RZ_API RzParse *rz_parse_new(void) {
 	p->minval = 0x100;
 	p->localvar_only = false;
 	for (i = 0; i < RZ_ARRAY_SIZE(parse_static_plugins); i++) {
-		rz_parse_add(p, parse_static_plugins[i]);
+		rz_parse_plugin_add(p, parse_static_plugins[i]);
 	}
 	return p;
 }
@@ -42,7 +42,7 @@ RZ_API void rz_parse_free(RzParse *p) {
 	free(p);
 }
 
-RZ_API bool rz_parse_add(RzParse *p, RzParsePlugin *foo) {
+RZ_API bool rz_parse_plugin_add(RzParse *p, RzParsePlugin *foo) {
 	bool itsFine = true;
 	if (foo->init) {
 		itsFine = foo->init(p, p->user);
@@ -51,6 +51,11 @@ RZ_API bool rz_parse_add(RzParse *p, RzParsePlugin *foo) {
 		rz_list_append(p->parsers, foo);
 	}
 	return true;
+}
+
+RZ_API bool rz_parse_plugin_del(RzParse *p, RzParsePlugin *plugin) {
+	rz_return_val_if_fail(p && plugin, false);
+	return rz_list_delete_data(p->parsers, plugin);
 }
 
 RZ_API bool rz_parse_use(RzParse *p, const char *name) {

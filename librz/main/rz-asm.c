@@ -444,17 +444,17 @@ static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 }
 
 /* asm callback */
-static bool __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAsmPlugin *hand = (RzAsmPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	return rz_asm_add(as->a, hand);
+	return rz_asm_plugin_add(as->a, hand);
 }
 
 /* analysis callback */
-static bool __lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	return rz_analysis_add(as->analysis, hand);
+	return rz_analysis_plugin_add(as->analysis, hand);
 }
 
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
@@ -482,8 +482,8 @@ static void __load_plugins(RzAsmState *as) {
 		free(tmp);
 		return;
 	}
-	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
-	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &__lib_analysis_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &lib_asm_cb, NULL, as);
+	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &lib_analysis_cb, NULL, as);
 
 	char *path = rz_sys_getenv(RZ_LIB_ENV);
 	if (!RZ_STR_ISEMPTY(path)) {

@@ -2599,6 +2599,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	if (!c) {
 		return;
 	}
+	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
 	rz_core_plugin_fini(c);
 	rz_core_task_break_all(&c->tasks);
 	rz_core_task_join(&c->tasks, NULL, -1);
@@ -2641,7 +2642,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->search, rz_search_free);
 	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
 	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
-	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
 	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
 	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
 	RZ_FREE(c->asmqjmps);

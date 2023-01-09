@@ -34,6 +34,11 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin) {
 	return true;
 }
 
+RZ_API bool rz_core_plugin_del(RzCore *core, RzCorePlugin *plugin) {
+	rz_return_val_if_fail(core && plugin, false);
+	return rz_list_delete_data(core->plugins, plugin);
+}
+
 RZ_API bool rz_core_plugin_init(RzCore *core) {
 	int i;
 	core->plugins = rz_list_newf(NULL); // memleak or dblfree

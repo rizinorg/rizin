@@ -168,6 +168,11 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDe
 	return rz_list_append(dem->plugins, plugin);
 }
 
+RZ_API bool rz_demangler_plugin_del(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDemanglerPlugin *plugin) {
+	rz_return_val_if_fail(dem && dem->plugins && plugin && plugin->language, false);
+	return rz_list_delete_data(dem->plugins, plugin);
+}
+
 /**
  * \brief Returns a demangler plugin pointer based on the language that is found
  *

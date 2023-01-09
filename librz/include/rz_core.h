@@ -405,6 +405,7 @@ RZ_API void rz_core_gadget_print(RzCore *core);
 
 RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
+RZ_API bool rz_core_plugin_del(RzCore *core, RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)

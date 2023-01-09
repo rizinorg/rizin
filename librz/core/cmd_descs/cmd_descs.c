@@ -10528,15 +10528,14 @@ static const RzCmdDescHelp plugins_load_help = {
 
 static const RzCmdDescArg plugins_unload_args[] = {
 	{
-		.name = "plugin_name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "plugin_file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_unload_help = {
-	.summary = "Unload core plugin by name",
+	.summary = "Unload a plugin from file",
 	.args = plugins_unload_args,
 };
 

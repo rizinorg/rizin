@@ -692,3 +692,8 @@ RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN const Rz
 	rz_list_append(rh->plugins, (RzHashPlugin *)plugin);
 	return true;
 }
+
+RZ_API bool rz_hash_plugin_del(RZ_NONNULL RzHash *rh, RZ_NONNULL RzHashPlugin *plugin) {
+	rz_return_val_if_fail(rh && plugin, false);
+	return rz_list_delete_data(rh->plugins, plugin);
+}

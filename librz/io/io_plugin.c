@@ -29,6 +29,21 @@ RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
 	return true;
 }
 
+static bool close_if_plugin(void *user, void *data, ut32 id) {
+	RzIOPlugin *plugin = (RzIOPlugin *)user;
+	RzIODesc *desc = (RzIODesc *)data;
+	if (desc->plugin == plugin) {
+		rz_io_desc_close(desc);
+	}
+	return true;
+}
+
+RZ_API bool rz_io_plugin_del(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
+	rz_return_val_if_fail(io && plugin, false);
+	rz_id_storage_foreach(io->files, close_if_plugin, plugin);
+	return rz_list_delete_data(io->plugins, plugin);
+}
+
 RZ_API bool rz_io_plugin_init(RzIO *io) {
 	int i;
 	if (!io) {

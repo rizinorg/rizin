@@ -11,10 +11,10 @@ commands:
         type: RZ_CMD_ARG_TYPE_FILE
   - name: L-
     cname: plugins_unload
-    summary: Unload core plugin by name
+    summary: Unload a plugin from file
     args:
-      - name: plugin_name
-        type: RZ_CMD_ARG_TYPE_STRING
+      - name: plugin_file
+        type: RZ_CMD_ARG_TYPE_FILE
   - name: Ll
     cname: plugins_lang_print
     summary: List the lang plugins

@@ -417,7 +417,21 @@ RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo) {
 	return true;
 }
 
-RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo) {
+RZ_API bool rz_bin_plugin_del(RzBin *bin, RzBinPlugin *plugin) {
+	rz_return_val_if_fail(bin && plugin, false);
+
+	RzListIter *it, *tmp;
+	RzBinFile *bf;
+
+	rz_list_foreach_safe (bin->binfiles, it, tmp, bf) {
+		if (bf->o && bf->o->plugin == plugin) {
+			rz_bin_file_delete(bin, bf);
+		}
+	}
+	return rz_list_delete_data(bin->plugins, plugin);
+}
+
+RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RzBinXtrPlugin *foo) {
 	RzListIter *it;
 	RzBinXtrPlugin *xtr;
 
@@ -434,6 +448,20 @@ RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo) {
 	}
 	rz_list_append(bin->binxtrs, foo);
 	return true;
+}
+
+RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RzBinXtrPlugin *plugin) {
+	rz_return_val_if_fail(bin && plugin, false);
+
+	RzListIter *it, *tmp;
+	RzBinFile *bf;
+
+	rz_list_foreach_safe (bin->binfiles, it, tmp, bf) {
+		if (bf->curxtr == plugin) {
+			rz_bin_file_delete(bin, bf);
+		}
+	}
+	return rz_list_delete_data(bin->binxtrs, plugin);
 }
 
 RZ_API void rz_bin_free(RzBin *bin) {
@@ -762,7 +790,7 @@ RZ_API RzBin *rz_bin_new(void) {
 			goto trashbin_binxtrs;
 		}
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
-		if (!rz_bin_xtr_add(bin, static_xtr_plugin)) {
+		if (!rz_bin_xtr_plugin_add(bin, static_xtr_plugin)) {
 			free(static_xtr_plugin);
 		}
 	}

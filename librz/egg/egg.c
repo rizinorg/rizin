@@ -80,7 +80,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 	}
 	egg->plugins = rz_list_new();
 	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
-		rz_egg_add(egg, egg_static_plugins[i]);
+		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
 	return egg;
 
@@ -89,7 +89,7 @@ beach:
 	return NULL;
 }
 
-RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo) {
+RZ_API int rz_egg_plugin_add(RzEgg *a, RzEggPlugin *foo) {
 	RzListIter *iter;
 	RzAsmPlugin *h;
 	if (!foo->name) {
@@ -102,6 +102,11 @@ RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo) {
 	}
 	rz_list_append(a->plugins, foo);
 	return true;
+}
+
+RZ_API int rz_egg_plugin_del(RzEgg *a, RzEggPlugin *plugin) {
+	rz_return_val_if_fail(a && plugin, false);
+	return rz_list_delete_data(a->plugins, plugin);
 }
 
 RZ_API char *rz_egg_to_string(RzEgg *egg) {
