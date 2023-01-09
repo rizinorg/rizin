@@ -309,6 +309,13 @@ static bool rz_cmd_dex_init_handler(RzCore *core) {
 	return true;
 }
 
+static bool rz_cmd_dex_fini_handler(RzCore *core) {
+	RzCmd *rcmd = core->rcmd;
+	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "dex");
+	rz_return_val_if_fail(cd, false);
+	return rz_cmd_desc_remove(rcmd, cd);
+}
+
 RzCorePlugin rz_core_plugin_dex = {
 	.name = "dex",
 	.desc = "Suite of dex commands, type `dex` for more info",
@@ -316,6 +323,7 @@ RzCorePlugin rz_core_plugin_dex = {
 	.author = "deroad",
 	.version = "1.0",
 	.init = rz_cmd_dex_init_handler,
+	.fini = rz_cmd_dex_fini_handler,
 };
 
 #ifndef RZ_PLUGIN_INCORE
