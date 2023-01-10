@@ -36,6 +36,9 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin) {
 
 RZ_API bool rz_core_plugin_del(RzCore *core, RzCorePlugin *plugin) {
 	rz_return_val_if_fail(core && plugin, false);
+	if (plugin->fini && !plugin->fini(core)) {
+		return false;
+	}
 	return rz_list_delete_data(core->plugins, plugin);
 }
 

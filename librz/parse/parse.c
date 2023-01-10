@@ -55,6 +55,9 @@ RZ_API bool rz_parse_plugin_add(RzParse *p, RzParsePlugin *foo) {
 
 RZ_API bool rz_parse_plugin_del(RzParse *p, RzParsePlugin *plugin) {
 	rz_return_val_if_fail(p && plugin, false);
+	if (plugin->fini && !plugin->fini(p, p->user)) {
+		return false;
+	}
 	return rz_list_delete_data(p->parsers, plugin);
 }
 

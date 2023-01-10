@@ -125,6 +125,9 @@ RZ_API bool rz_lang_plugin_add(RzLang *lang, RzLangPlugin *foo) {
 
 RZ_API bool rz_lang_plugin_del(RzLang *lang, RzLangPlugin *plugin) {
 	rz_return_val_if_fail(lang && plugin, false);
+	if (plugin->fini && !plugin->fini(lang)) {
+		return false;
+	}
 	return rz_list_delete_data(lang->langs, plugin);
 }
 

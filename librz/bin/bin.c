@@ -461,6 +461,9 @@ RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RzBinXtrPlugin *plugin) {
 			rz_bin_file_delete(bin, bf);
 		}
 	}
+	if (plugin->fini && !plugin->fini(bin->user)) {
+		return false;
+	}
 	return rz_list_delete_data(bin->binxtrs, plugin);
 }
 
