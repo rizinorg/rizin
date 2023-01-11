@@ -2197,6 +2197,30 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
+	rz_return_val_if_fail(f, NULL);
+	RzBitVector *exp_bv = rz_float_get_exponent(f);
+	RzFloatFormat format = f->r;
+
+	ut32 exp = rz_bv_to_ut32(exp_bv);
+	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 exp_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_EXP_LEN);
+
+	bool sign = get_sign(f->s, format);
+	RzBitVector *mantissa = rz_float_get_mantissa(f);
+
+	// constructing 01MMMMMMM ...
+	rz_bv_set(mantissa, man_len, true);
+	rz_bv_lshift(mantissa, exp_len - 1);
+
+	RzFloat *round_f = round_float_bv(sign, exp - 1, mantissa, format, mode);
+
+	rz_bv_free(exp_bv);
+	rz_bv_free(mantissa);
+
+	return round_f;
+}
+
 /**
  * calculate \p left + \p right and round the result after, return the result
  * \param mode rounding mode
