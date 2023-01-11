@@ -396,10 +396,6 @@ RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name
 	return NULL;
 }
 
-static void rz_bin_plugin_free(RzBinPlugin *p) {
-	RZ_FREE(p);
-}
-
 RZ_API bool rz_bin_plugin_add(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 	RzListIter *it;
 	RzBinPlugin *p;
@@ -764,7 +760,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = rz_list_newf((RzListFree)rz_bin_plugin_free);
+	bin->plugins = rz_list_new();
 	bin->minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;

@@ -269,7 +269,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 	a->bits = RZ_SYS_BITS;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
-	a->plugins = rz_list_newf(NULL);
+	a->plugins = rz_list_new();
 	if (!a->plugins) {
 		free(a);
 		return NULL;

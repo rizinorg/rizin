@@ -8,7 +8,7 @@ static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 	int i;
-	dbg->plugins = rz_list_newf(free);
+	dbg->plugins = rz_list_new();
 	for (i = 0; i < RZ_ARRAY_SIZE(debug_static_plugins); i++) {
 		rz_debug_plugin_add(dbg, debug_static_plugins[i]);
 	}
@@ -57,9 +57,7 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
 	rz_return_val_if_fail(dbg && plugin && plugin->name, false);
-	RzDebugPlugin *dp = RZ_NEW(RzDebugPlugin);
-	memcpy(dp, plugin, sizeof(RzDebugPlugin));
-	rz_list_append(dbg->plugins, dp);
+	rz_list_append(dbg->plugins, plugin);
 	return true;
 }
 

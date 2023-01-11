@@ -31,13 +31,8 @@ RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpoint
 			return false;
 		}
 	}
-	RzBreakpointPlugin *dup = RZ_NEW(RzBreakpointPlugin);
-	if (!dup) {
-		return false;
-	}
-	memcpy(dup, plugin, sizeof(RzBreakpointPlugin));
 	bp->nbps++;
-	rz_list_append(bp->plugins, dup);
+	rz_list_append(bp->plugins, plugin);
 	return true;
 }
 
