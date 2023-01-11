@@ -689,7 +689,7 @@ Sdb *meta_ref_db() {
 	sdb_set(db, "0x1337",
 		"[{\"size\":16,\"type\":\"d\"},"
 		"{\"size\":17,\"type\":\"c\"},"
-		"{\"size\":18,\"type\":\"s\",\"str\":\"some string\"},"
+		"{\"size\":18,\"type\":\"s\",\"subtype\":56,\"str\":\"some string\"},"
 		"{\"size\":19,\"type\":\"f\"},"
 		"{\"size\":20,\"type\":\"m\"},"
 		"{\"size\":21,\"type\":\"h\"},"
@@ -773,7 +773,7 @@ bool test_analysis_meta_load() {
 	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_STRING, &size);
 	mu_assert_notnull(meta, "meta item");
 	mu_assert_eq(size, 0x12, "meta item size");
-	mu_assert_eq(meta->subtype, 0, "meta item subtype");
+	mu_assert_eq(meta->subtype, 56, "meta item subtype");
 	mu_assert_streq(meta->str, "some string", "meta item string");
 	meta = rz_meta_get_at(analysis, 0x1337, RZ_META_TYPE_FORMAT, &size);
 	mu_assert_notnull(meta, "meta item");
