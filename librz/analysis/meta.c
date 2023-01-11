@@ -189,7 +189,8 @@ RZ_API void rz_meta_del(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 
 }
 
 RZ_API bool rz_meta_set(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 size, const char *str) {
-	return rz_meta_set_with_subtype(a, type, 0, addr, size, str);
+	int subtype = type == RZ_META_TYPE_STRING ? RZ_STRING_ENC_UTF8 : 0;
+	return rz_meta_set_with_subtype(a, type, subtype, addr, size, str);
 }
 
 RZ_API bool rz_meta_set_with_subtype(RzAnalysis *m, RzAnalysisMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {
