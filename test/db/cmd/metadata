@@ -727,3 +727,20 @@ EXPECT=<<EOF
 0x00000049 utf8[26] " and a codepoint position "
 EOF
 RUN
+
+NAME=Csl
+FILE=bins/arm/crackme.arm32.bin
+ARGS=-A -a arm -b 32 -m 0x8000000
+CMDS=<<EOF
+Csl
+EOF
+EXPECT=<<EOF
+0x08002364 utf8[22] "Bare_Metal_Crackme_01"
+0x0800237c utf8[58] "Enter_the_correct_combination_of_signals_and_press_button."
+0x080023b8 utf8[18] "__________________"
+0x080023cc utf8[18] "Success"
+0x080023e0 utf8[32] "The_flag_is:_XXXXXXXXXXXXXXXXXX"
+0x08002404 utf8[35] "Unlock_criteria_not_met._Try_again"
+EOF
+RUN
+
