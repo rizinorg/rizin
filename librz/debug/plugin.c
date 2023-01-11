@@ -55,17 +55,15 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 	return true;
 }
 
-RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo) {
-	if (!dbg || !foo || !foo->name) {
-		return false;
-	}
+RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
+	rz_return_val_if_fail(dbg && plugin && plugin->name, false);
 	RzDebugPlugin *dp = RZ_NEW(RzDebugPlugin);
-	memcpy(dp, foo, sizeof(RzDebugPlugin));
+	memcpy(dp, plugin, sizeof(RzDebugPlugin));
 	rz_list_append(dbg->plugins, dp);
 	return true;
 }
 
-RZ_API bool rz_debug_plugin_del(RzDebug *dbg, RzDebugPlugin *plugin) {
+RZ_API bool rz_debug_plugin_del(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
 	rz_return_val_if_fail(dbg && plugin, false);
 	if (dbg->cur == plugin) {
 		dbg->cur->fini(dbg, dbg->plugin_data);

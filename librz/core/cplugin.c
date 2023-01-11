@@ -24,7 +24,7 @@ RZ_API bool rz_core_plugin_fini(RzCore *core) {
 	return true;
 }
 
-RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin) {
+RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 	rz_return_val_if_fail(core, false);
 	rz_return_val_if_fail(plugin && plugin->init && plugin->name && plugin->author && plugin->license, false);
 	if (!plugin->init(core)) {
@@ -34,7 +34,7 @@ RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin) {
 	return true;
 }
 
-RZ_API bool rz_core_plugin_del(RzCore *core, RzCorePlugin *plugin) {
+RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 	rz_return_val_if_fail(core && plugin, false);
 	if (plugin->fini && !plugin->fini(core)) {
 		return false;

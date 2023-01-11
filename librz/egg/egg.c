@@ -89,22 +89,21 @@ beach:
 	return NULL;
 }
 
-RZ_API int rz_egg_plugin_add(RzEgg *a, RzEggPlugin *foo) {
+RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
+	rz_return_val_if_fail(a && plugin && plugin->name, false);
+
 	RzListIter *iter;
 	RzAsmPlugin *h;
-	if (!foo->name) {
-		return false;
-	}
 	rz_list_foreach (a->plugins, iter, h) {
-		if (!strcmp(h->name, foo->name)) {
+		if (!strcmp(h->name, plugin->name)) {
 			return false;
 		}
 	}
-	rz_list_append(a->plugins, foo);
+	rz_list_append(a->plugins, plugin);
 	return true;
 }
 
-RZ_API int rz_egg_plugin_del(RzEgg *a, RzEggPlugin *plugin) {
+RZ_API bool rz_egg_plugin_del(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin, false);
 	return rz_list_delete_data(a->plugins, plugin);
 }

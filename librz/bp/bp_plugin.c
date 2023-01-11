@@ -3,19 +3,19 @@
 
 #include <rz_bp.h>
 
-RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, const char *name) {
+RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(bp && name, false);
+
 	RzListIter *iter;
 	RzBreakpointPlugin *h;
-	if (name && *name) {
-		rz_list_foreach (bp->plugins, iter, h) {
-			if (!strcmp(h->name, name)) {
-				if (bp->cur == h) {
-					bp->cur = NULL;
-				}
-				rz_list_delete(bp->plugins, iter);
-				bp->nbps--;
-				return true;
+	rz_list_foreach (bp->plugins, iter, h) {
+		if (!strcmp(h->name, name)) {
+			if (bp->cur == h) {
+				bp->cur = NULL;
 			}
+			rz_list_delete(bp->plugins, iter);
+			bp->nbps--;
+			return true;
 		}
 	}
 	return false;

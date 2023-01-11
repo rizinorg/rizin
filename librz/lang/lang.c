@@ -112,18 +112,19 @@ RZ_API bool rz_lang_setup(RzLang *lang) {
 	return false;
 }
 
-RZ_API bool rz_lang_plugin_add(RzLang *lang, RzLangPlugin *foo) {
-	if (foo && (!rz_lang_get_by_name(lang, foo->name))) {
-		if (foo->init) {
-			foo->init(lang);
+RZ_API bool rz_lang_plugin_add(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
+	rz_return_val_if_fail(lang && plugin && plugin->name, false);
+	if (!rz_lang_get_by_name(lang, plugin->name)) {
+		if (plugin->init) {
+			plugin->init(lang);
 		}
-		rz_list_append(lang->langs, foo);
+		rz_list_append(lang->langs, plugin);
 		return true;
 	}
 	return false;
 }
 
-RZ_API bool rz_lang_plugin_del(RzLang *lang, RzLangPlugin *plugin) {
+RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	rz_return_val_if_fail(lang && plugin, false);
 	if (plugin->fini && !plugin->fini(lang)) {
 		return false;

@@ -330,7 +330,8 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	free(a);
 }
 
-RZ_API bool rz_asm_plugin_add(RzAsm *a, RzAsmPlugin *p) {
+RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
+	rz_return_val_if_fail(a && p, false);
 	if (!p->name) {
 		return false;
 	}
@@ -341,7 +342,7 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RzAsmPlugin *p) {
 	return true;
 }
 
-RZ_API bool rz_asm_plugin_del(RzAsm *a, RzAsmPlugin *p) {
+RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	rz_return_val_if_fail(a && p, false);
 	if (a->cur == p) {
 		plugin_fini(a);

@@ -400,24 +400,22 @@ static void rz_bin_plugin_free(RzBinPlugin *p) {
 	RZ_FREE(p);
 }
 
-RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo) {
+RZ_API bool rz_bin_plugin_add(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 	RzListIter *it;
-	RzBinPlugin *plugin;
+	RzBinPlugin *p;
 
-	rz_return_val_if_fail(bin && foo, false);
+	rz_return_val_if_fail(bin && plugin, false);
 
-	rz_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp(plugin->name, foo->name)) {
+	rz_list_foreach (bin->plugins, it, p) {
+		if (!strcmp(p->name, plugin->name)) {
 			return false;
 		}
 	}
-	plugin = RZ_NEW0(RzBinPlugin);
-	memcpy(plugin, foo, sizeof(RzBinPlugin));
 	rz_list_append(bin->plugins, plugin);
 	return true;
 }
 
-RZ_API bool rz_bin_plugin_del(RzBin *bin, RzBinPlugin *plugin) {
+RZ_API bool rz_bin_plugin_del(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
 
 	RzListIter *it, *tmp;
@@ -431,26 +429,26 @@ RZ_API bool rz_bin_plugin_del(RzBin *bin, RzBinPlugin *plugin) {
 	return rz_list_delete_data(bin->plugins, plugin);
 }
 
-RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RzBinXtrPlugin *foo) {
+RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin) {
 	RzListIter *it;
 	RzBinXtrPlugin *xtr;
 
-	rz_return_val_if_fail(bin && foo, false);
+	rz_return_val_if_fail(bin && plugin, false);
 
-	if (foo->init) {
-		foo->init(bin->user);
+	if (plugin->init) {
+		plugin->init(bin->user);
 	}
 	// avoid duplicates
 	rz_list_foreach (bin->binxtrs, it, xtr) {
-		if (!strcmp(xtr->name, foo->name)) {
+		if (!strcmp(xtr->name, plugin->name)) {
 			return false;
 		}
 	}
-	rz_list_append(bin->binxtrs, foo);
+	rz_list_append(bin->binxtrs, plugin);
 	return true;
 }
 
-RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RzBinXtrPlugin *plugin) {
+RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
 
 	RzListIter *it, *tmp;

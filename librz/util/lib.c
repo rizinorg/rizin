@@ -21,7 +21,7 @@ RZ_LIB_VERSION(rz_lib);
  * \param symnamefunc Name of the symbol pointing to a \p RzLibStructFunc function
  * \return The new \p RzLib instance
  */
-RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc) {
+RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char *symnamefunc) {
 	RzLib *lib = RZ_NEW(RzLib);
 	if (!lib) {
 		return NULL;
@@ -182,7 +182,8 @@ static bool lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruc
  * \param file Dynamic library to load
  * \return true if the plugin is correctly loaded, false otherwise
  */
-RZ_API bool rz_lib_open(RzLib *lib, const char *file) {
+RZ_API bool rz_lib_open(RzLib *lib, RZ_NONNULL const char *file) {
+	rz_return_val_if_fail(lib && file, false);
 	/* ignored by filename */
 	if (!lib_dl_check_filename(file)) {
 		RZ_LOG_ERROR("Invalid library extension: %s\n", file);
@@ -272,18 +273,18 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
 	}
 	do {
 		int cx = swprintf(file, _countof(file), L"%ls/%ls", wcpath, dir.cFileName);
-		if (cx >= 0) {
-			wctocbuff = rz_utf16_to_utf8(file);
-			if (wctocbuff) {
-				if (lib_dl_check_filename(wctocbuff)) {
-					rz_lib_open(lib, wctocbuff);
-				} else {
-					RZ_LOG_INFO("Cannot open %ls\n", dir.cFileName);
-				}
-				free(wctocbuff);
-			}
-		} else {
+		if (cx < 0) {
 			RZ_LOG_ERROR("Cannot create full path for %ls (too long?)\n", dir.cFileName);
+			continue;
+		}
+		wctocbuff = rz_utf16_to_utf8(file);
+		if (wctocbuff) {
+			if (lib_dl_check_filename(wctocbuff)) {
+				rz_lib_open(lib, wctocbuff);
+			} else {
+				RZ_LOG_INFO("Cannot open %ls\n", dir.cFileName);
+			}
+			free(wctocbuff);
 		}
 	} while (FindNextFileW(fh, &dir));
 	FindClose(fh);
@@ -332,10 +333,12 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path, bool force) {
  * \return true if the handler is correctly added, false otherwise
  */
 RZ_API bool rz_lib_add_handler(RzLib *lib,
-	RzLibType type, const char *desc,
+	RzLibType type, RZ_NONNULL const char *desc,
 	RzLibCallback cb,
 	RzLibCallback dt,
 	void *user) {
+	rz_return_val_if_fail(lib && desc, false);
+
 	RzLibHandler *handler = lib_get_handler(lib, type);
 	if (!handler) {
 		handler = RZ_NEW0(RzLibHandler);

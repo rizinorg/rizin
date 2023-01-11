@@ -42,18 +42,20 @@ RZ_API void rz_parse_free(RzParse *p) {
 	free(p);
 }
 
-RZ_API bool rz_parse_plugin_add(RzParse *p, RzParsePlugin *foo) {
+RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
+	rz_return_val_if_fail(p && plugin, false);
+
 	bool itsFine = true;
-	if (foo->init) {
-		itsFine = foo->init(p, p->user);
+	if (plugin->init) {
+		itsFine = plugin->init(p, p->user);
 	}
 	if (itsFine) {
-		rz_list_append(p->parsers, foo);
+		rz_list_append(p->parsers, plugin);
 	}
 	return true;
 }
 
-RZ_API bool rz_parse_plugin_del(RzParse *p, RzParsePlugin *plugin) {
+RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 	rz_return_val_if_fail(p && plugin, false);
 	if (plugin->fini && !plugin->fini(p, p->user)) {
 		return false;

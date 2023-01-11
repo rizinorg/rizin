@@ -10,9 +10,8 @@ static volatile RzIOPlugin *default_plugin = NULL;
 static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
 RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
-	if (!io || !io->plugins || !plugin || !plugin->name) {
-		return false;
-	}
+	rz_return_val_if_fail(io && plugin && plugin->name, false);
+
 	RzListIter *it;
 	RzIOPlugin *nplugin;
 	rz_list_foreach (io->plugins, it, nplugin) {
@@ -38,7 +37,7 @@ static bool close_if_plugin(void *user, void *data, ut32 id) {
 	return true;
 }
 
-RZ_API bool rz_io_plugin_del(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
+RZ_API bool rz_io_plugin_del(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
 	rz_return_val_if_fail(io && plugin, false);
 	rz_id_storage_foreach(io->files, close_if_plugin, plugin);
 	return rz_list_delete_data(io->plugins, plugin);

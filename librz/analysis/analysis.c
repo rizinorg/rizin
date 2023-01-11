@@ -177,12 +177,13 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	return NULL;
 }
 
-RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RzAnalysisPlugin *p) {
+RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
+	rz_return_val_if_fail(analysis && p, false);
 	rz_list_append(analysis->plugins, p);
 	return true;
 }
 
-RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RzAnalysisPlugin *p) {
+RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
 	rz_return_val_if_fail(analysis && p, false);
 	if (analysis->cur == p) {
 		plugin_fini(analysis);

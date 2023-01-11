@@ -1953,7 +1953,7 @@ RZ_API bool rz_sys_stop(void) {
 /**
  * \brief Implementation across systems to open a dynamic library
  */
-RZ_API void *rz_sys_dlopen(const char *libname) {
+RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname) {
 	void *ret = NULL;
 #if WANT_DYLINK
 #if __UNIX__

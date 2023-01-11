@@ -1428,8 +1428,8 @@ RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL
 RZ_API RzAnalysis *rz_analysis_new(void);
 RZ_API void rz_analysis_purge(RzAnalysis *analysis);
 RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *r);
-RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RzAnalysisPlugin *foo);
-RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RzAnalysisPlugin *foo);
+RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
+RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
 RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis);

@@ -882,10 +882,10 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr);
 
 // plugins/bind functions
 RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
-RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
-RZ_API bool rz_bin_plugin_del(RzBin *bin, RzBinPlugin *foo);
-RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RzBinXtrPlugin *foo);
-RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RzBinXtrPlugin *foo);
+RZ_API bool rz_bin_plugin_add(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin);
+RZ_API bool rz_bin_plugin_del(RzBin *bin, RZ_NONNULL RzBinPlugin *plugin);
+RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin);
+RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);
 RZ_API const RzBinPlugin *rz_bin_plugin_get(RZ_NONNULL RzBin *bin, RZ_NONNULL const char *name);
