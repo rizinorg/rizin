@@ -36,6 +36,7 @@ typedef struct iobnet_t {
 	// KDNet Protocol version of the debuggee
 	ut8 version;
 	RzHash *hash;
+	RzCrypto *crypto;
 } iobnet_t;
 
 // Constants to convert ASCII to its base36 value
@@ -116,6 +117,7 @@ static void *iob_net_open(const char *path) {
 		return NULL;
 	}
 	obj->hash = rz_hash_new();
+	obj->crypto = rz_crypto_new();
 	obj->key_lock = rz_th_lock_new(false);
 	if (!obj->key_lock) {
 		free(obj);
@@ -175,29 +177,26 @@ static bool iob_net_close(void *p) {
 
 	rz_socket_free(obj->sock);
 	rz_hash_free(obj->hash);
+	rz_crypto_free(obj->crypto);
 	free(obj);
 	return ret;
 }
 
 static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RzCrypto *cry = rz_crypto_new();
-	if (!cry) {
-		return false;
-	}
-	if (!rz_crypto_use(cry, "aes-cbc")) {
+	if (!rz_crypto_use(obj->crypto, "aes-cbc")) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!rz_crypto_set_key(cry, obj->datakey, sizeof(obj->datakey), 0, 0)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->datakey, sizeof(obj->datakey), 0, 0)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL: // Control Channel
-		if (!rz_crypto_set_key(cry, obj->key, sizeof(obj->key), 0, 0)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->key, sizeof(obj->key), 0, 0)) {
 			goto end;
 		}
 		break;
@@ -206,17 +205,17 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!rz_crypto_set_iv(cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!rz_crypto_set_iv(obj->crypto, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Encrypt the buffer except HMAC
-	if (rz_crypto_final(cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (rz_crypto_final(obj->crypto, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite the buffer with encrypted data
 	int sz;
-	const ut8 *encbuf = rz_crypto_get_output(cry, &sz);
+	const ut8 *encbuf = rz_crypto_get_output(obj->crypto, &sz);
 	if (!encbuf) {
 		goto end;
 	}
@@ -224,7 +223,6 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 
 	ret = true;
 end:
-	rz_crypto_free(cry);
 	return ret;
 }
 
@@ -297,23 +295,19 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RzCrypto *cry = rz_crypto_new();
-	if (!cry) {
-		return false;
-	}
-	if (!rz_crypto_use(cry, "aes-cbc")) {
+	if (!rz_crypto_use(obj->crypto, "aes-cbc")) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!rz_crypto_set_key(cry, obj->datakey, sizeof(obj->datakey), 0, 1)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->datakey, sizeof(obj->datakey), 0, 1)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL:
-		if (!rz_crypto_set_key(cry, obj->key, sizeof(obj->key), 0, 1)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->key, sizeof(obj->key), 0, 1)) {
 			goto end;
 		}
 		break;
@@ -322,17 +316,17 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!rz_crypto_set_iv(cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!rz_crypto_set_iv(obj->crypto, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Decrypt the buffer except HMAC
-	if (rz_crypto_final(cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (rz_crypto_final(obj->crypto, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite it with decrypted data
 	int sz;
-	const ut8 *decbuf = rz_crypto_get_output(cry, &sz);
+	const ut8 *decbuf = rz_crypto_get_output(obj->crypto, &sz);
 	if (!decbuf) {
 		goto end;
 	}
@@ -340,7 +334,6 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	ret = true;
 
 end:
-	rz_crypto_free(cry);
 	return ret;
 }
 

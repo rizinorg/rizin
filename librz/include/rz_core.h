@@ -277,6 +277,7 @@ struct rz_core_t {
 	RzFlag *flags;
 	RzSearch *search;
 	RzEgg *egg;
+	RzCrypto *crypto;
 	RzAGraph *graph;
 	RzPanelsRoot *panels_root;
 	RzPanels *panels;

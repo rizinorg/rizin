@@ -46,6 +46,7 @@ typedef struct {
 
 typedef struct rz_hash_context {
 	RzHash *rh;
+	RzCrypto *rc;
 	bool as_prefix;
 	bool little_endian;
 	bool show_blocks;
@@ -495,6 +496,7 @@ static void hash_context_fini(RzHashContext *ctx) {
 	free(ctx->seed.buf);
 	pj_free(ctx->pj);
 	rz_hash_free(ctx->rh);
+	rz_crypto_free(ctx->rc);
 }
 
 static RzIODesc *hash_context_create_desc_io_stdin(RzIO *io) {
@@ -975,7 +977,6 @@ calculate_hash_end:
 }
 
 static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename) {
-	RzCrypto *cry = NULL;
 	bool result = false;
 	ut8 *iv = NULL;
 	size_t ivlen = 0;
@@ -995,23 +996,17 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 		}
 	}
 
-	cry = rz_crypto_new();
-	if (!cry) {
-		RZ_LOG_ERROR("rz-hash: error, failed to allocate memory\n");
-		goto calculate_decrypt_end;
-	}
-
-	if (!rz_crypto_use(cry, ctx->algorithm)) {
+	if (!rz_crypto_use(ctx->rc, ctx->algorithm)) {
 		RZ_LOG_ERROR("rz-hash: error, unknown encryption algorithm '%s'\n", ctx->algorithm);
 		goto calculate_decrypt_end;
 	}
 
-	if (!rz_crypto_set_key(cry, ctx->key.buf, ctx->key.len, 0, RZ_CRYPTO_DIR_DECRYPT)) {
+	if (!rz_crypto_set_key(ctx->rc, ctx->key.buf, ctx->key.len, 0, RZ_CRYPTO_DIR_DECRYPT)) {
 		RZ_LOG_ERROR("rz-hash: error, invalid key\n");
 		goto calculate_decrypt_end;
 	}
 
-	if (iv && !rz_crypto_set_iv(cry, iv, ivlen)) {
+	if (iv && !rz_crypto_set_iv(ctx->rc, iv, ivlen)) {
 		RZ_LOG_ERROR("rz-hash: error, invalid IV.\n");
 		goto calculate_decrypt_end;
 	}
@@ -1032,13 +1027,13 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 	ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
 	for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 		int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-		rz_crypto_update(cry, block, read);
+		rz_crypto_update(ctx->rc, block, read);
 	}
 
-	rz_crypto_final(cry, NULL, 0);
+	rz_crypto_final(ctx->rc, NULL, 0);
 
 	int plaintext_size = 0;
-	const ut8 *plaintext = rz_crypto_get_output(cry, &plaintext_size);
+	const ut8 *plaintext = rz_crypto_get_output(ctx->rc, &plaintext_size);
 
 	hash_print_crypto(ctx, ctx->algorithm, plaintext, plaintext_size, ctx->offset.from, to);
 	result = true;
@@ -1046,12 +1041,10 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 calculate_decrypt_end:
 	free(block);
 	free(iv);
-	rz_crypto_free(cry);
 	return result;
 }
 
 static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename) {
-	RzCrypto *cry = NULL;
 	bool result = false;
 	ut8 *iv = NULL;
 	size_t ivlen = 0;
@@ -1077,23 +1070,17 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 		}
 	}
 
-	cry = rz_crypto_new();
-	if (!cry) {
-		RZ_LOG_ERROR("rz-hash: error, failed to allocate memory\n");
-		goto calculate_encrypt_end;
-	}
-
-	if (!rz_crypto_use(cry, ctx->algorithm)) {
+	if (!rz_crypto_use(ctx->rc, ctx->algorithm)) {
 		RZ_LOG_ERROR("rz-hash: error, unknown encryption algorithm '%s'\n", ctx->algorithm);
 		goto calculate_encrypt_end;
 	}
 
-	if (!rz_crypto_set_key(cry, ctx->key.buf, ctx->key.len, 0, RZ_CRYPTO_DIR_ENCRYPT)) {
+	if (!rz_crypto_set_key(ctx->rc, ctx->key.buf, ctx->key.len, 0, RZ_CRYPTO_DIR_ENCRYPT)) {
 		RZ_LOG_ERROR("rz-hash: error, invalid key\n");
 		goto calculate_encrypt_end;
 	}
 
-	if (iv && !rz_crypto_set_iv(cry, iv, ivlen)) {
+	if (iv && !rz_crypto_set_iv(ctx->rc, iv, ivlen)) {
 		RZ_LOG_ERROR("rz-hash: error, invalid IV.\n");
 		goto calculate_encrypt_end;
 	}
@@ -1114,13 +1101,13 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 	ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
 	for (ut64 j = ctx->offset.from; j < to; j += bsize) {
 		int read = rz_io_pread_at(io, j, block, to - j > bsize ? bsize : (to - j));
-		rz_crypto_update(cry, block, read);
+		rz_crypto_update(ctx->rc, block, read);
 	}
 
-	rz_crypto_final(cry, NULL, 0);
+	rz_crypto_final(ctx->rc, NULL, 0);
 
 	int ciphertext_size = 0;
-	const ut8 *ciphertext = rz_crypto_get_output(cry, &ciphertext_size);
+	const ut8 *ciphertext = rz_crypto_get_output(ctx->rc, &ciphertext_size);
 
 	hash_print_crypto(ctx, ctx->algorithm, ciphertext, ciphertext_size, ctx->offset.from, to);
 	result = true;
@@ -1128,7 +1115,6 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 calculate_encrypt_end:
 	free(block);
 	free(iv);
-	rz_crypto_free(cry);
 	return result;
 }
 
@@ -1176,6 +1162,11 @@ static bool lib_hash_cb(RzLibPlugin *pl, void *user, void *data) {
 	return rz_hash_plugin_add(ctx->rh, hand);
 }
 
+static bool lib_crypto_cb(RzLibPlugin *pl, void *user, void *data) {
+	RzHashContext *ctx = (RzHashContext *)user;
+	return rz_crypto_plugin_add(ctx->rc, data);
+}
+
 static void hash_load_plugins(RzHashContext *ctx) {
 	char *tmp = rz_sys_getenv("RZ_ASM_NOPLUGINS");
 	if (tmp) {
@@ -1184,6 +1175,7 @@ static void hash_load_plugins(RzHashContext *ctx) {
 	}
 	RzLib *rl = rz_lib_new(NULL, NULL);
 	rz_lib_add_handler(rl, RZ_LIB_TYPE_HASH, "hash plugins", &lib_hash_cb, NULL, ctx);
+	rz_lib_add_handler(rl, RZ_LIB_TYPE_CRYPTO, "crypto plugins", &lib_crypto_cb, NULL, ctx);
 
 	char *path = rz_sys_getenv(RZ_LIB_ENV);
 	if (!RZ_STR_ISEMPTY(path)) {
@@ -1206,6 +1198,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	int result = 1;
 	RzHashContext ctx = { 0 };
 	ctx.rh = rz_hash_new();
+	ctx.rc = rz_crypto_new();
 	hash_load_plugins(&ctx);
 
 	hash_parse_cmdline(argc, argv, &ctx);

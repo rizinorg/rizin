@@ -69,14 +69,17 @@ RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index) {
 	return crypto_static_plugins[index];
 }
 
-RZ_API int rz_crypto_add(RzCrypto *cry, RzCryptoPlugin *h) {
-	// add a check ?
+RZ_API bool rz_crypto_plugin_add(RzCrypto *cry, RzCryptoPlugin *h) {
 	rz_list_append(cry->plugins, h);
 	return true;
 }
 
-RZ_API int rz_crypto_del(RzCrypto *cry, RzCryptoPlugin *h) {
-	rz_list_delete_data(cry->plugins, h);
+RZ_API bool rz_crypto_plugin_del(RzCrypto *cry, RzCryptoPlugin *h) {
+	if (cry->h == h && cry->h->fini) {
+		cry->h->fini(cry);
+		cry->h = NULL;
+	}
+	rz_list_append(cry->plugins, h);
 	return true;
 }
 
@@ -103,7 +106,7 @@ RZ_API RzCrypto *rz_crypto_new(void) {
 			goto rz_crypto_new_bad;
 		}
 		memcpy(p, crypto_static_plugins[i], sizeof(RzCryptoPlugin));
-		rz_crypto_add(cry, p);
+		rz_crypto_plugin_add(cry, p);
 	}
 	return cry;
 
