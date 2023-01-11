@@ -5,6 +5,13 @@
  */
 #include <rz_il/definitions/float.h>
 
+/**
+ * create a float by specifying `format` and `bitv`
+ * BAP ref : ('r, 's) format Float.t Value.sort -> 's bitv -> ('r, 's) format float
+ * \param format format of float, see RzFloatFormat enum
+ * \param bv bitvector representation of float
+ * \return float instance
+ */
 RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail((format != RZ_FLOAT_UNK) && bv, NULL);
 	// Task :
@@ -35,6 +42,12 @@ RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNU
 	return f;
 }
 
+/**
+ * get the negative one of given float
+ * BAP ref: val fneg : 'f float -> 'f float
+ * \param f float number
+ * \return negative float `f`
+ */
 RZ_API RZ_OWN RzFloat *rz_il_float_neg(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 
@@ -44,6 +57,12 @@ RZ_API RZ_OWN RzFloat *rz_il_float_neg(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+/**
+ * get least floating-point number representable in (sort x) that is greater than given float
+ * BAP ref: val fsucc : 'f float -> 'f float
+ * \param f float number
+ * \return next float number (least number that is greater than current)
+ */
 RZ_API RZ_OWN RzFloat *rz_il_float_succ(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 
@@ -69,6 +88,12 @@ RZ_API RZ_OWN RzFloat *rz_il_float_succ(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+/**
+ * get greatest floating-point number representable in (sort x) that is less than given float
+ * BAP ref: fpred : 'f float -> 'f float
+ * \param f float number
+ * \return previous float number (greatest number that is less than current)
+ */
 RZ_API RZ_OWN RzFloat *rz_il_float_pred(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 
@@ -94,6 +119,13 @@ RZ_API RZ_OWN RzFloat *rz_il_float_pred(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+/**
+ * compare two float number, if
+ * used for forder val forder : 'f float -> 'f float -> bool
+ * \param x float number
+ * \param y float number
+ * \return 1 if x > y, 0 if x == y, -1 if x < y
+ */
 RZ_API RZ_OWN st32 rz_il_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 	rz_return_val_if_fail(x && y, -2);
 
@@ -111,6 +143,11 @@ RZ_API RZ_OWN st32 rz_il_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y)
 	}
 }
 
+/**
+ * convert rmode into const string for exporting info
+ * \param mode round mode
+ * \return round mode string
+ */
 RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode) {
 	switch (mode) {
 	case RZ_FLOAT_RMODE_RNA:
@@ -128,6 +165,11 @@ RZ_API const char *rz_il_float_stringify_rmode(RzFloatRMode mode) {
 	}
 }
 
+/**
+ * convert format to human readable string
+ * \param format float format
+ * \return float format string
+ */
 RZ_API const char *rz_il_float_stringify_format(RzFloatFormat format) {
 	switch (format) {
 	case RZ_FLOAT_IEEE754_BIN_32:
