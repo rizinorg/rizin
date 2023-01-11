@@ -2761,6 +2761,9 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList /*
 					pj_end(state->d.pj);
 					RZ_FREE(block_list);
 				}
+				break;
+			default:
+				break;
 			}
 			pj_end(state->d.pj);
 			break;
@@ -2816,6 +2819,8 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzList /*
 					}
 					free(block_list);
 				}
+				break;
+			default:
 				break;
 			}
 			char *bufstr = rz_strbuf_drain(buf);

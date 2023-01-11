@@ -61,107 +61,113 @@ static char *getFunctionNamePrefix(RzCore *core, ut64 off, const char *name) {
 	return strdup(name);
 }
 
-// XXX: copypaste from analysis/data.c
-#define MINLEN 1
-static int is_string(const ut8 *buf, int size, int *len) {
-	int i, fakeLen = 0;
-	if (size < 1) {
-		return 0;
+static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char **string, size_t *length, RzStrEnc *encoding) {
+	RzBin *bin = core->bin;
+	ut8 buffer[512] = { 0 };
+	bool ret = false;
+	RzDetectedString *detected = NULL;
+
+	RzList *strings = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!strings) {
+		return false;
 	}
-	if (!len) {
-		len = &fakeLen;
+
+	int min_str_length = bin->minstrlen;
+	if (min_str_length < 1) {
+		min_str_length = 4;
 	}
-	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
-		*len = 1; // XXX: TODO: Measure wide string length
-		return 2; // is wide
+
+	RzStrEnc strenc = rz_str_enc_string_as_type(bin->strenc);
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = sizeof(buffer),
+		.max_uni_blocks = 4,
+		.min_str_length = min_str_length,
+		.prefer_big_endian = false,
+		.check_ascii_freq = bin->strseach_check_ascii_freq,
+	};
+
+	rz_io_pread_at(core->io, pointer, buffer, sizeof(buffer));
+	if (rz_scan_strings_raw(buffer, strings, &scan_opt, 0, sizeof(buffer), strenc) < 1 ||
+		!(detected = rz_list_first(strings)) ||
+		// ignore any address that is not address 0
+		// because we only want strings starting at 0
+		detected->addr) {
+		goto end;
 	}
-	for (i = 0; i < size; i++) {
-		if (!buf[i] && i > MINLEN) {
-			*len = i;
-			return 1;
-		}
-		if (buf[i] == 10 || buf[i] == 13 || buf[i] == 9) {
-			continue;
-		}
-		if (buf[i] < 32 || buf[i] > 127) {
-			// not ascii text
-			return 0;
-		}
-		if (!IS_PRINTABLE(buf[i])) {
-			*len = i;
-			return 0;
-		}
+
+	if (string) {
+		*string = detected->string;
+		detected->string = NULL;
 	}
-	*len = i;
-	return 1;
+	if (length) {
+		*length = detected->size;
+	}
+	if (encoding) {
+		*encoding = detected->type;
+	}
+	ret = true;
+
+end:
+	rz_list_free(strings);
+	return ret;
 }
 
-static char *is_string_at(RzCore *core, ut64 addr, int *olen) {
-	ut8 rstr[128] = { 0 };
-	int ret = 0, len = 0;
-	ut8 *str = calloc(256, 1);
-	if (!str) {
-		if (olen) {
-			*olen = 0;
-		}
-		return NULL;
-	}
-	rz_io_read_at(core->io, addr, str, 255);
-
-	str[255] = 0;
-	if (is_string(str, 256, &len)) {
-		if (olen) {
-			*olen = len;
-		}
-		return (char *)str;
+static bool get_string_at(RzCore *core, ut64 address, char **string, size_t *length, RzStrEnc *encoding, bool can_search) {
+	ut8 tmp64[32] = { 0 };
+	ut64 pointer = UT64_MAX, paddress = 0;
+	RzIOMap *map = NULL;
+	RzBinString *bstr = NULL;
+	RzBinObject *bobj = rz_bin_cur_object(core->bin);
+	if (!bobj) {
+		return false;
 	}
 
-	ut64 *cstr = (ut64 *)str;
-	ut64 lowptr = cstr[0];
-	if (lowptr >> 32) { // must be pa mode only
-		lowptr &= UT32_MAX;
+	map = rz_io_map_get(core->io, address);
+	if (map && (map->perm & RZ_PERM_RX) != RZ_PERM_RX && (map->perm & RZ_PERM_X)) {
+		return false;
 	}
-	// cstring
-	if (cstr[0] == 0 && cstr[1] < 0x1000) {
-		ut64 ptr = cstr[2];
-		if (ptr >> 32) { // must be pa mode only
-			ptr &= UT32_MAX;
-		}
-		if (ptr) {
-			rz_io_read_at(core->io, ptr, rstr, sizeof(rstr));
-			rstr[127] = 0;
-			ret = is_string(rstr, 128, &len);
-			if (ret) {
-				strcpy((char *)str, (char *)rstr);
-				if (olen) {
-					*olen = len;
-				}
-				return (char *)str;
+
+	if (core->io->va && (paddress = rz_io_v2p(core->io, address)) != UT64_MAX) {
+		address = paddress;
+	}
+
+	if (rz_io_read_at(core->io, address, tmp64, sizeof(tmp64))) {
+		// checks if is a pointer to a string structure
+		pointer = rz_read_ble(tmp64, core->analysis->big_endian, core->analysis->bits);
+	}
+
+	bstr = rz_bin_object_get_string_at(bobj, address, false);
+	if (!bstr) {
+		if (!pointer) {
+			// maybe is a cstring
+			// usually a cstring has a header set to 0, then the length and then the actual pointer to the string.
+			ut32 n_bytes = core->analysis->bits / 8;
+			ut64 clength = rz_read_ble(&tmp64[n_bytes], core->analysis->big_endian, core->analysis->bits);
+			if (clength < 1000) {
+				pointer = rz_read_ble(tmp64, core->analysis->big_endian, core->analysis->bits);
 			}
 		}
-	} else {
-		// pstring
-		rz_io_read_at(core->io, lowptr, rstr, sizeof(rstr));
-		rstr[127] = 0;
-		ret = is_string(rstr, sizeof(rstr), &len);
-		if (ret) {
-			strcpy((char *)str, (char *)rstr);
-			if (olen) {
-				*olen = len;
-			}
-			return (char *)str;
+
+		if (core->io->va && (paddress = rz_io_v2p(core->io, pointer)) != UT64_MAX) {
+			pointer = paddress;
+		}
+
+		bstr = rz_bin_object_get_string_at(bobj, pointer, false);
+		if (!bstr) {
+			return can_search && (find_string_at(core, bobj, address, string, length, encoding) || find_string_at(core, bobj, pointer, string, length, encoding));
 		}
 	}
-	// check if current section have no exec bit
-	if (len < 1) {
-		ret = 0;
-		free(str);
-		len = -1;
-	} else if (olen) {
-		*olen = len;
+
+	if (string) {
+		*string = rz_str_ndup(bstr->string, bstr->length);
 	}
-	// NOTE: coverity says that ret is always 0 here, so str is dead code
-	return ret ? (char *)str : NULL;
+	if (length) {
+		*length = bstr->size;
+	}
+	if (encoding) {
+		*encoding = bstr->type;
+	}
+	return true;
 }
 
 /* returns the RZ_ANALYSIS_ADDR_TYPE_* of the address 'addr' */
@@ -2166,24 +2172,21 @@ static bool is_valid_xref(RzCore *core, ut64 xref_to, RzAnalysisXRefType type, i
  * \param xref_from  The address where the xref is located.
  * \param xref_to    The target address of the xref.
  * \param type       The xref type.
- * \param decode_str When set to true, checks if the RZ_ANALYSIS_XREF_TYPE_DATA address is a string and adds a flag.
+ * \param can_search When true, search and set the new string.
  */
-static void set_new_xref(RzCore *core, ut64 xref_from, ut64 xref_to, RzAnalysisXRefType type, bool decode_str) {
-	if (decode_str && type == RZ_ANALYSIS_XREF_TYPE_DATA) {
-		int len = 0;
-		char *str_string = is_string_at(core, xref_to, &len);
-		if (str_string) {
-			rz_name_filter(str_string, -1, true);
-			char *str_flagname = rz_str_newf("str.%s", str_string);
-			rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
-			(void)rz_flag_set(core->flags, str_flagname, xref_to, 1);
-			rz_flag_space_pop(core->flags);
-			free(str_flagname);
-			if (len > 0) {
-				rz_meta_set(core->analysis, RZ_META_TYPE_STRING, xref_to, len, (const char *)str_string);
-			}
-			free(str_string);
-		}
+static void set_new_xref(RzCore *core, ut64 xref_from, ut64 xref_to, RzAnalysisXRefType type, bool can_search) {
+	size_t length = 0;
+	char *string = NULL;
+	RzStrEnc encoding = 0;
+	if (type == RZ_ANALYSIS_XREF_TYPE_DATA && get_string_at(core, xref_to, &string, &length, &encoding, can_search)) {
+		rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, xref_to, length, string);
+		rz_name_filter(string, -1, true);
+		char *flagname = rz_str_newf("str.%s", string);
+		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
+		(void)rz_flag_set(core->flags, flagname, xref_to, 1);
+		rz_flag_space_pop(core->flags);
+		free(flagname);
+		free(string);
 	}
 	// Add to SDB
 	if (xref_to) {
@@ -2203,7 +2206,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 	rz_return_val_if_fail(core, -1);
 
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
-	bool decode_str = rz_config_get_i(core->config, "analysis.strings");
+	bool can_search_string = rz_config_get_b(core->config, "analysis.strings");
 	ut64 at;
 	int count = 0;
 	const int bsz = 8096;
@@ -2262,7 +2265,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
 				if (is_valid_xref(core, op.val, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
-					set_new_xref(core, op.addr, op.val, RZ_ANALYSIS_XREF_TYPE_DATA, decode_str);
+					set_new_xref(core, op.addr, op.val, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
 					count++;
 				}
 			}
@@ -2270,7 +2273,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 				st64 aval = op.analysis_vals[i].imm;
 				if (aval > asm_sub_varmin && aval != UT64_MAX && aval != UT32_MAX) {
 					if (is_valid_xref(core, aval, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
-						set_new_xref(core, op.addr, aval, RZ_ANALYSIS_XREF_TYPE_DATA, decode_str);
+						set_new_xref(core, op.addr, aval, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
 						count++;
 					}
 				}
@@ -2278,35 +2281,35 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
-					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA, decode_str);
+					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
 				if (is_valid_xref(core, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
-					set_new_xref(core, op.addr, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, decode_str);
+					set_new_xref(core, op.addr, op.disp, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
 					count++;
 				}
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, cfg_debug)) {
-					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, decode_str);
+					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, can_search_string);
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
 				if (rz_config_get_b(core->config, "analysis.jmp.cref") &&
 					is_valid_xref(core, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, cfg_debug)) {
-					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, decode_str);
+					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CODE, can_search_string);
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
 				if (is_valid_xref(core, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL, cfg_debug)) {
-					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL, decode_str);
+					set_new_xref(core, op.addr, op.jump, RZ_ANALYSIS_XREF_TYPE_CALL, can_search_string);
 					count++;
 				}
 				break;
@@ -2318,7 +2321,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			case RZ_ANALYSIS_OP_TYPE_UCJMP:
 				count++;
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_XREF_TYPE_CODE, cfg_debug)) {
-					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CODE, decode_str);
+					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CODE, can_search_string);
 					count++;
 				}
 				break;
@@ -2328,7 +2331,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			case RZ_ANALYSIS_OP_TYPE_UCCALL:
 				if (is_valid_xref(core, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL, cfg_debug)) {
-					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL, decode_str);
+					set_new_xref(core, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_CALL, can_search_string);
 					count++;
 				}
 				break;
@@ -2921,23 +2924,24 @@ static void cccb(void *u) {
 }
 
 static void add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
-	int len = 0;
 	if (xref_to == UT64_MAX || !xref_to) {
 		return;
 	}
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->analysis->esil->address;
 	}
-	char *str_flagname = is_string_at(core, xref_to, &len);
-	if (str_flagname) {
+	size_t length = 0;
+	char *string = NULL;
+	RzStrEnc encoding = 0;
+	if (get_string_at(core, xref_to, &string, &length, &encoding, true)) {
 		rz_analysis_xrefs_set(core->analysis, xref_from, xref_to, RZ_ANALYSIS_XREF_TYPE_DATA);
-		rz_name_filter(str_flagname, -1, true);
-		char *flagname = sdb_fmt("str.%s", str_flagname);
+		rz_name_filter(string, -1, true);
+		char *flagname = sdb_fmt("str.%s", string);
 		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
-		rz_flag_set(core->flags, flagname, xref_to, len);
+		rz_flag_set(core->flags, flagname, xref_to, length);
 		rz_flag_space_pop(core->flags);
-		rz_meta_set(core->analysis, 's', xref_to, len, str_flagname);
-		free(str_flagname);
+		rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, xref_to, length, string);
+		free(string);
 	}
 }
 
@@ -3564,7 +3568,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 				}
 				if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) && myvalid(core->io, dst)) {
 					RzFlagItem *f;
-					char *str;
+					char *str = NULL;
 					if (CHECKREF(dst) || CHECKREF(cur)) {
 						rz_analysis_xrefs_set(core->analysis, cur, dst, RZ_ANALYSIS_XREF_TYPE_DATA);
 						if (cfg_analysis_strings) {
@@ -3572,7 +3576,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 						}
 						if ((f = rz_core_flag_get_by_spaces(core->flags, dst))) {
 							rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, cur, f->name);
-						} else if ((str = is_string_at(core, dst, NULL))) {
+						} else if (get_string_at(core, dst, &str, NULL, NULL, true)) {
 							char *str2 = sdb_fmt("esilref: '%s'", str);
 							// HACK avoid format string inside string used later as format
 							// string crashes disasm inside agf under some conditions.
@@ -3696,16 +3700,6 @@ static bool isValidAddress(RzCore *core, ut64 addr) {
 	return true;
 }
 
-static bool stringAt(RzCore *core, ut64 addr) {
-	ut8 buf[32];
-	rz_io_read_at(core->io, addr - 1, buf, sizeof(buf));
-	// check if previous byte is a null byte, all strings, except pascal ones should be like this
-	if (buf[0] != 0) {
-		return false;
-	}
-	return is_string(buf + 1, 31, NULL);
-}
-
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 	ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
@@ -3819,7 +3813,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				}
 				if (isValidMatch) {
 					cb(core, addr, value, vsize, cb_user);
-					if (analyze_strings && stringAt(core, addr)) {
+					if (analyze_strings) {
 						add_string_ref(core, addr, value);
 					}
 					hitctr++;
