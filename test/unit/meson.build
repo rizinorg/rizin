@@ -39,6 +39,7 @@ if get_option('enable_tests')
     'core_cmd',
     'core_seek',
     'core_task',
+    'crypto',
     'debruijn',
     'debug',
     'debug_session',

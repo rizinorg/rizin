@@ -132,6 +132,26 @@ RZ_API void rz_crypto_free(RzCrypto *cry) {
 	free(cry);
 }
 
+/**
+ * \brief Reset the internal state of RzCrypto.
+ *
+ * Prepare the RzCrypto instance to be run on a new input. This includes
+ * resetting the current plugin, the output, key, iv.
+ *
+ * \param cry RzCrypto reference
+ */
+RZ_API void rz_crypto_reset(RzCrypto *cry) {
+	rz_return_if_fail(cry);
+
+	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
+		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);
+	}
+	cry->h = NULL;
+	RZ_FREE(cry->key);
+	RZ_FREE(cry->iv);
+	cry->output_len = 0;
+}
+
 RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo) {
 	RzListIter *iter;
 	RzCryptoPlugin *h;

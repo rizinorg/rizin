@@ -996,6 +996,7 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 		}
 	}
 
+	rz_crypto_reset(ctx->rc);
 	if (!rz_crypto_use(ctx->rc, ctx->algorithm)) {
 		RZ_LOG_ERROR("rz-hash: error, unknown encryption algorithm '%s'\n", ctx->algorithm);
 		goto calculate_decrypt_end;
@@ -1070,6 +1071,7 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 		}
 	}
 
+	rz_crypto_reset(ctx->rc);
 	if (!rz_crypto_use(ctx->rc, ctx->algorithm)) {
 		RZ_LOG_ERROR("rz-hash: error, unknown encryption algorithm '%s'\n", ctx->algorithm);
 		goto calculate_encrypt_end;

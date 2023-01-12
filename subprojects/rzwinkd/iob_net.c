@@ -184,6 +184,7 @@ static bool iob_net_close(void *p) {
 
 static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
+	rz_crypto_reset(obj->crypto);
 	if (!rz_crypto_use(obj->crypto, "aes-cbc")) {
 		goto end;
 	}
@@ -295,6 +296,7 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
+	rz_crypto_reset(obj->crypto);
 	if (!rz_crypto_use(obj->crypto, "aes-cbc")) {
 		goto end;
 	}

@@ -31,44 +31,45 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 		free(binkey);
 		return false;
 	}
-	if (rz_crypto_use(core->crypto, algo)) {
-		if (!binkey) {
-			RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", keylen);
-			return false;
-		}
-		if (rz_crypto_set_key(core->crypto, binkey, keylen, 0, direction)) {
-			if (iv) {
-				ut8 *biniv = malloc(strlen(iv) + 1);
-				int ivlen = rz_hex_str2bin(iv, biniv);
-				if (ivlen < 1) {
-					ivlen = strlen(iv);
-					strcpy((char *)biniv, iv);
-				}
-				if (!rz_crypto_set_iv(core->crypto, biniv, ivlen)) {
-					RZ_LOG_ERROR("core: Invalid IV.\n");
-					return 0;
-				}
-			}
-			rz_crypto_update(core->crypto, (const ut8 *)core->block, core->blocksize);
-			rz_crypto_final(core->crypto, NULL, 0);
-
-			int result_size = 0;
-			const ut8 *result = rz_crypto_get_output(core->crypto, &result_size);
-			if (result) {
-				if (!rz_core_write_at(core, core->offset, result, result_size)) {
-					RZ_LOG_ERROR("core: rz_core_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-				}
-				RZ_LOG_WARN("core: Written %d byte(s)\n", result_size);
-			}
-		} else {
-			RZ_LOG_ERROR("core: Invalid key\n");
-		}
-		free(binkey);
-		return 0;
-	} else {
+	rz_crypto_reset(core->crypto);
+	if (!rz_crypto_use(core->crypto, algo)) {
 		RZ_LOG_ERROR("core: Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption"), algo);
+		free(binkey);
+		return false;
 	}
-	return 1;
+	if (!binkey) {
+		RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", keylen);
+		return false;
+	}
+	if (rz_crypto_set_key(core->crypto, binkey, keylen, 0, direction)) {
+		if (iv) {
+			ut8 *biniv = malloc(strlen(iv) + 1);
+			int ivlen = rz_hex_str2bin(iv, biniv);
+			if (ivlen < 1) {
+				ivlen = strlen(iv);
+				strcpy((char *)biniv, iv);
+			}
+			if (!rz_crypto_set_iv(core->crypto, biniv, ivlen)) {
+				RZ_LOG_ERROR("core: Invalid IV.\n");
+				return 0;
+			}
+		}
+		rz_crypto_update(core->crypto, (const ut8 *)core->block, core->blocksize);
+		rz_crypto_final(core->crypto, NULL, 0);
+
+		int result_size = 0;
+		const ut8 *result = rz_crypto_get_output(core->crypto, &result_size);
+		if (result) {
+			if (!rz_core_write_at(core, core->offset, result, result_size)) {
+				RZ_LOG_ERROR("core: rz_core_write_at failed at 0x%08" PFMT64x "\n", core->offset);
+			}
+			RZ_LOG_WARN("core: Written %d byte(s)\n", result_size);
+		}
+	} else {
+		RZ_LOG_ERROR("core: Invalid key\n");
+	}
+	free(binkey);
+	return 0;
 }
 
 static void cmd_write_bits(RzCore *core, int set, ut64 val) {
