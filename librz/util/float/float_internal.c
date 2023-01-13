@@ -436,3 +436,172 @@ round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFl
 
 	return ret;
 }
+
+/**
+ * detect if should drop extra tailing bits in rounding
+ * GRS konwn as G(guard bit), R(round bit), and S(sticky bit)
+ * they are 3 bits after the LSB bit of rounded result, which is drop in rounding
+ * \param sign sign of given significant bitvector, 1 is negative
+ * \param sig bitvector, required to have 0..01M..M form, exponent is managed by caller
+ * assumption1: radix point is right after 1, that means the real value of such a bitvector is 1.MMM..M
+ * assumption2: `sig` is an unsigned bitvector
+ * \param precision number of how many `M` bits to be reserved in rounding
+ * \param mode rounding mode
+ * \param should_inc pointer to a bool:
+ * 0 if drop GRS,
+ * 1 means caller should round by adding ULP to `return bitv`
+ * \return new bitvector would be 0001MM...M, which length is `precision + 1 + 3`
+ */
+static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc)
+{
+	rz_return_val_if_fail(sig && should_inc, NULL);
+
+	ut32 sig_len = rz_bv_len(sig) - rz_bv_clz(sig);
+	ut32 mantissa_len = sig_len - 1;
+	ut32 ret_len = precision + 3 + 1;
+	RzBitVector *ret;
+
+	if (mantissa_len < ret_len) {
+		// copy and shift in one operation
+		// equal to the following operations
+		// 1. copy bv from sig to ret
+		// 2. align `ret` to `1 MM..M 000` form by shifting left
+		ret = rz_bv_new(ret_len);
+		rz_bv_copy_nbits(sig, 0, ret, ret_len - sig_len, sig_len);
+	} else {
+		// if it's greater than `ret`, right shift and cut
+		// use jammed version of right shift to get sticky bit
+		ut32 shift_dist = sig_len - ret_len;
+		RzBitVector *sig_dup = rz_bv_dup(sig);
+		rz_bv_shift_right_jammed(sig_dup, shift_dist);
+		ret = rz_bv_cut_head(sig_dup, shift_dist);
+	}
+
+	// default is drop
+	*should_inc = false;
+
+	if (mode == RZ_FLOAT_RMODE_RNE || mode == RZ_FLOAT_RMODE_RNA) {
+		bool guard_bit = rz_bv_get(ret, 2);
+		bool round_bit = rz_bv_get(ret, 1);
+		bool sticky_bit = rz_bv_get(ret, 0);
+
+		// for G R S bits
+		//     > 1 0 0 : round up
+		//     = 1 0 0 : ties
+		//     < 1 0 0 : round down
+		if (guard_bit == 0) {
+			*should_inc = 0;
+		}
+		else if (!round_bit && !sticky_bit){
+			// ties
+			if (mode == RZ_FLOAT_RMODE_RNE) {
+				bool is_odd = rz_bv_get(sig, 0);
+				*should_inc = is_odd ? 1 : 0;
+			}
+			if (mode == RZ_FLOAT_RMODE_RNA) {
+				*should_inc = 1;
+			}
+		} else {
+			*should_inc = 1;
+		}
+
+		return ret;
+	}
+
+	if (mode == (sign ? RZ_FLOAT_RMODE_RTN : RZ_FLOAT_RMODE_RTP)) {
+		*should_inc = 1;
+		// rshift to remove RGS
+		rz_bv_rshift(ret, 3);
+		return ret;
+	}
+
+	// mode == RTZ or others, simply drop bits
+	rz_bv_rshift(ret, 3);
+	return ret;
+}
+
+/**
+ * new version of rounding
+ * this function is a wrapper of round_significant, it manage the rounded result and exponent change
+ * TODO : report exception
+ * TODO : test and then replace the old version
+ * \param sign sign of bitvector
+ * \param exp exponent value
+ * \param sig significant, expect unsigned bitvector
+ * \param format format of float type
+ * \param mode rounding mode
+ * \return a float of type `format`, converted from `sig`
+ */
+static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode)
+{
+	rz_return_val_if_fail(sig, NULL);
+	RzFloat *ret;
+
+	ut32 sig_len = rz_bv_len(sig) - rz_bv_clz(sig);
+	if (sig_len == 0) {
+		// TODO: add set_sign and use set_sign function
+		ret = rz_float_new_zero(format);
+		rz_bv_set(ret->s, rz_bv_len(ret->s) - 1, sign);
+		return ret;
+	}
+
+	exp += sig_len - 1;
+	ut32 exp_max = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+
+	// check overflow
+	if (exp > exp_max) {
+		ret = rz_float_new_inf(format, sign);
+		return ret;
+	}
+
+	bool should_inc;
+	ut32 bit_prec = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+	RzBitVector *rounded_tmp = round_significant(sign, sig, bit_prec, mode, &should_inc);
+
+	if (rounded_tmp == NULL) {
+		// TODO: error and report in code
+		// should_inc / sig is NULL
+		return NULL;
+	}
+
+	// convert rounded bitv to fit given format
+	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+	RzBitVector *rounded_sig = rz_bv_prepend_zero(rounded_tmp, total_len - rz_bv_len(rounded_tmp));
+
+	// free rounded tmp result
+	rz_bv_free(rounded_tmp);
+	rounded_tmp = NULL;
+
+	if (should_inc) {
+		ut32 sig_carry_pos = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN) + 1;
+		RzBitVector *one = rz_bv_new_one(total_len);
+		rounded_tmp = rz_bv_add(rounded_sig, one, NULL);
+		bool sig_carry = rz_bv_get(rounded_tmp, sig_carry_pos);
+
+		if (sig_carry) {
+			// change exponent, renormalize
+			exp += 1;
+			if (exp > exp_max) {
+				// overflow
+				ret = rz_float_new_inf(format, sign);
+				rz_bv_free(rounded_sig);
+				rz_bv_free(rounded_tmp);
+				return ret;
+			}
+
+			// renormalize significant
+			rz_bv_rshift(rounded_tmp, 1);
+		}
+
+		rz_bv_free(rounded_sig);
+		rounded_sig = rounded_tmp;
+		rounded_tmp = NULL;
+	}
+
+	// pack to float
+	ret = rz_float_new(format);
+	rz_bv_copy(rounded_sig, ret->s);
+
+	rz_bv_free(rounded_sig);
+	return ret;
+}

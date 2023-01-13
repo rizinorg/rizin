@@ -121,6 +121,8 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
 
 RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode);
+
 RZ_API RZ_OWN RzFloat *rz_float_new_from_ut64_as_f64(ut64 value);
 RZ_API RZ_OWN RzFloat *rz_float_new_from_ut32_as_f32(ut32 value);
 RZ_API RZ_OWN char *rz_float_as_string(RZ_NULLABLE RzFloat *f);

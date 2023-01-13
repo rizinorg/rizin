@@ -2197,6 +2197,12 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+/**
+ * round method for ieee754 float
+ * \param f float
+ * \param mode round mode
+ * \return round float
+ */
 RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 	RzBitVector *exp_bv = rz_float_get_exponent(f);
@@ -2219,6 +2225,49 @@ RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode) 
 	rz_bv_free(mantissa);
 
 	return round_f;
+}
+
+RZ_API RzFloat *rz_il_float_cast_float(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode)
+{
+	ut32 sig_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN) + 1;
+	ut32 exp_max = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+
+	ut32 bv_len = rz_bv_len(bv);
+	ut32 clz = rz_bv_clz(bv);
+	ut32 ctz = rz_bv_ctz(bv);
+
+	ut32 width = bv_len - clz;
+	ut32 order = width - 1;
+	if (order > exp_max) {
+		// not representable
+		// TODO : return what ?
+		return NULL;
+	}
+
+	// pack bv to float
+	if (width <= sig_len) {
+		// easy, directly pack it
+	}
+
+	// shift and cut tail
+	// construct 01 MMMM ...
+	round_float_bv()
+}
+
+
+RZ_API RzFloat *rz_il_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode)
+{
+
+}
+
+RZ_API RzBitVector *rz_il_float_cast_int(RzFloat *f, RzFloatFormat format, RzFloatRMode mode)
+{
+
+}
+
+RZ_API RzBitVector *rz_il_float_cast_sint(RzFloat *f, RzFloatFormat format, RzFloatRMode mode)
+{
+
 }
 
 /**
