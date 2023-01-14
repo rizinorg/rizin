@@ -203,6 +203,23 @@ RZ_API void rz_analysis_function_delete_vars_by_storage_type(RzAnalysisFunction 
 	}
 }
 
+/**
+ * Delete all variables from \p fcn that are arguments
+ */
+RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn) {
+	rz_return_if_fail(fcn);
+	size_t i;
+	for (i = 0; i < rz_pvector_len(&fcn->vars);) {
+		RzAnalysisVar *var = rz_pvector_at(&fcn->vars, i);
+		if (rz_analysis_var_is_arg(var)) {
+			rz_pvector_remove_at(&fcn->vars, i);
+			var_free(var);
+			continue;
+		}
+		i++;
+	}
+}
+
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {

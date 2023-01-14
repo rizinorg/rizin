@@ -115,7 +115,7 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	ht_up_free(fcn->inst_vars);
 	ht_up_free(fcn->labels);
 	ht_pp_free(fcn->label_addrs);
-
+	rz_type_free(fcn->ret_type);
 	free(fcn->name);
 	rz_list_free(fcn->imports);
 	free(fcn);

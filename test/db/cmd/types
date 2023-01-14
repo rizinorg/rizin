@@ -2028,6 +2028,32 @@ size_t strlen(const char *s);
 EOF
 RUN
 
+NAME=afs fastcall
+FILE=bins/elf/analysis/fast
+CMDS=<<EOF
+s sym.fastcaslled
+af
+afc fastcall
+afs "int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3)"
+afs
+afv
+afi~name,convention
+EOF
+EXPECT=<<EOF
+int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3);
+var int32_t var_24h @ stack - 0x24
+var int32_t var_20h @ stack - 0x20
+var int32_t var_14h @ stack - 0x14
+var int32_t var_10h @ stack - 0x10
+arg int sarg2 @ stack + 0x4
+arg int sarg3 @ stack + 0x8
+arg int sarg0 @ ecx
+arg int sarg1 @ edx
+name: fastcalled
+call-convention: fastcall
+EOF
+RUN
+
 NAME=td crash
 FILE==
 CMDS=<<EOF

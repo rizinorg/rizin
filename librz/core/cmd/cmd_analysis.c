@@ -2344,8 +2344,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 	}
 	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, ret_type)) {
 		RZ_LOG_ERROR("core: Cannot find type %s\n", argv[1]);
+		rz_type_free(ret_type);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_type_free(fcn->ret_type);
 	fcn->ret_type = ret_type;
 	return RZ_CMD_STATUS_OK;
 }
