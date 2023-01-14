@@ -153,7 +153,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_interval_tree_fini(&a->meta);
 	free(a->cpu);
 	free(a->os);
-	rz_list_free(a->plugins);
 	rz_rbtree_free(a->bb_tree, __block_free_rb, NULL);
 	rz_spaces_fini(&a->meta_spaces);
 	rz_syscall_free(a->syscall);
@@ -174,6 +173,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->imports);
 	rz_str_constpool_fini(&a->constpool);
 	ht_pp_free(a->ht_global_var);
+	rz_list_free(a->plugins);
 	free(a);
 	return NULL;
 }
