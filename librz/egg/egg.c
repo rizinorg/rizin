@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2011-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_lib.h>
 #include <rz_egg.h>
 #include <config.h>
 
@@ -78,7 +79,7 @@ RZ_API RzEgg *rz_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = rz_list_new();
+	egg->plugins = rz_list_newf(free);
 	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
 		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
@@ -91,15 +92,7 @@ beach:
 
 RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin && plugin->name, false);
-
-	RzListIter *iter;
-	RzAsmPlugin *h;
-	rz_list_foreach (a->plugins, iter, h) {
-		if (!strcmp(h->name, plugin->name)) {
-			return false;
-		}
-	}
-	rz_list_append(a->plugins, plugin);
+	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, plugin, RzEggPlugin);
 	return true;
 }
 

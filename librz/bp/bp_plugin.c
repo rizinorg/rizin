@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bp.h>
+#include <rz_lib.h>
 
 RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(bp && name, false);
@@ -23,16 +24,7 @@ RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name
 
 RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin) {
 	rz_return_val_if_fail(bp && plugin, false);
-	RzListIter *iter;
-	RzBreakpointPlugin *h;
-	/* avoid dupped plugins */
-	rz_list_foreach (bp->plugins, iter, h) {
-		if (!strcmp(h->name, plugin->name)) {
-			return false;
-		}
-	}
-	bp->nbps++;
-	rz_list_append(bp->plugins, plugin);
+	RZ_PLUGIN_CHECK_AND_ADD(bp->plugins, plugin, RzBreakpointPlugin);
 	return true;
 }
 

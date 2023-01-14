@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_crypto.h>
 #include "config.h"
+#include <rz_crypto.h>
+#include <rz_lib.h>
 #include <rz_util.h>
 
 #define RZ_CRYPTO_OUTPUT_SIZE 4096
@@ -71,7 +72,7 @@ RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index) {
 
 RZ_API bool rz_crypto_plugin_add(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *plugin) {
 	rz_return_val_if_fail(cry && plugin, false);
-	rz_list_append(cry->plugins, plugin);
+	RZ_PLUGIN_CHECK_AND_ADD(cry->plugins, plugin, RzCryptoPlugin);
 	return true;
 }
 
@@ -97,7 +98,7 @@ RZ_API RzCrypto *rz_crypto_new(void) {
 		goto rz_crypto_new_bad;
 	}
 
-	cry->plugins = rz_list_new();
+	cry->plugins = rz_list_newf(free);
 	if (!cry->plugins) {
 		goto rz_crypto_new_bad;
 	}

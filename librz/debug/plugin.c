@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
+#include <rz_lib.h>
 #include <config.h>
 
 static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 	int i;
-	dbg->plugins = rz_list_new();
+	dbg->plugins = rz_list_newf(free);
 	for (i = 0; i < RZ_ARRAY_SIZE(debug_static_plugins); i++) {
 		rz_debug_plugin_add(dbg, debug_static_plugins[i]);
 	}
@@ -57,7 +58,7 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
 	rz_return_val_if_fail(dbg && plugin && plugin->name, false);
-	rz_list_append(dbg->plugins, plugin);
+	RZ_PLUGIN_CHECK_AND_ADD(dbg->plugins, plugin, RzDebugPlugin);
 	return true;
 }
 

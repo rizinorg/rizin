@@ -5,6 +5,7 @@
 #include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_libdemangle.h>
+#include <rz_lib.h>
 #include <config.h>
 
 #define DEFINE_DEMANGLER_PLUGIN(name, lang, lic, auth, handler) \
@@ -165,7 +166,8 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDe
 		}
 	}
 
-	return rz_list_append(dem->plugins, plugin);
+	RZ_PLUGIN_ADD(dem->plugins, plugin, RzDemanglerPlugin);
+	return true;
 }
 
 RZ_API bool rz_demangler_plugin_del(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDemanglerPlugin *plugin) {

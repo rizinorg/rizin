@@ -7,6 +7,7 @@
 
 #include <rz_types.h>
 #include <rz_parse.h>
+#include <rz_lib.h>
 #include <config.h>
 
 RZ_LIB_VERSION(rz_parse);
@@ -50,7 +51,7 @@ RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 		itsFine = plugin->init(p, p->user);
 	}
 	if (itsFine) {
-		rz_list_append(p->parsers, plugin);
+		RZ_PLUGIN_ADD(p->parsers, plugin, RzParsePlugin);
 	}
 	return true;
 }

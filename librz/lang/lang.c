@@ -5,6 +5,7 @@
 #include <rz_lang.h>
 #include <rz_util.h>
 #include <rz_cons.h>
+#include <rz_lib.h>
 
 RZ_LIB_VERSION(rz_lang);
 
@@ -114,14 +115,14 @@ RZ_API bool rz_lang_setup(RzLang *lang) {
 
 RZ_API bool rz_lang_plugin_add(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	rz_return_val_if_fail(lang && plugin && plugin->name, false);
-	if (!rz_lang_get_by_name(lang, plugin->name)) {
-		if (plugin->init) {
-			plugin->init(lang);
-		}
-		rz_list_append(lang->langs, plugin);
-		return true;
+	if (rz_lang_get_by_name(lang, plugin->name)) {
+		return false;
 	}
-	return false;
+	RZ_PLUGIN_ADD(lang->langs, plugin, RzLangPlugin);
+	if (plugin->init) {
+		plugin->init(lang);
+	}
+	return true;
 }
 
 RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {

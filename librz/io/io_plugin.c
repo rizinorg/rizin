@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2008-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_io.h"
 #include "config.h"
+#include <rz_io.h>
+#include <rz_lib.h>
 #include <stdio.h>
 
 static volatile RzIOPlugin *default_plugin = NULL;
@@ -11,15 +12,7 @@ static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
 RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
 	rz_return_val_if_fail(io && plugin && plugin->name, false);
-
-	RzListIter *it;
-	RzIOPlugin *nplugin;
-	rz_list_foreach (io->plugins, it, nplugin) {
-		if (!strcmp(nplugin->name, plugin->name)) {
-			return false;
-		}
-	}
-	rz_list_append(io->plugins, plugin);
+	RZ_PLUGIN_CHECK_AND_ADD(io->plugins, plugin, RzIOPlugin);
 	return true;
 }
 
@@ -43,7 +36,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = rz_list_new();
+	io->plugins = rz_list_newf(free);
 	for (i = 0; i < RZ_ARRAY_SIZE(io_static_plugins); i++) {
 		if (!io_static_plugins[i]->name) {
 			continue;

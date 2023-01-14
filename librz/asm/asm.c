@@ -12,6 +12,7 @@
 #include <rz_core.h>
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_lib.h>
 #include <rz_asm.h>
 #define USE_R2 1
 #include <spp.h>
@@ -269,7 +270,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 	a->bits = RZ_SYS_BITS;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
-	a->plugins = rz_list_new();
+	a->plugins = rz_list_newf(free);
 	if (!a->plugins) {
 		free(a);
 		return NULL;
@@ -338,7 +339,7 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	if (rz_asm_is_valid(a, p->name)) {
 		return false;
 	}
-	rz_list_append(a->plugins, p);
+	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, p, RzAsmPlugin);
 	return true;
 }
 

@@ -6,6 +6,7 @@
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_util/rz_path.h>
+#include <rz_lib.h>
 #include <config.h>
 
 RZ_LIB_VERSION(rz_analysis);
@@ -112,7 +113,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->leaddrs = NULL;
 	analysis->imports = rz_list_newf(free);
 	rz_analysis_set_bits(analysis, 32);
-	analysis->plugins = rz_list_new();
+	analysis->plugins = rz_list_newf(free);
 	if (analysis->plugins) {
 		for (i = 0; i < RZ_ARRAY_SIZE(analysis_static_plugins); i++) {
 			rz_analysis_plugin_add(analysis, analysis_static_plugins[i]);
@@ -179,7 +180,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
 	rz_return_val_if_fail(analysis && p, false);
-	rz_list_append(analysis->plugins, p);
+	RZ_PLUGIN_CHECK_AND_ADD(analysis->plugins, p, RzAnalysisPlugin);
 	return true;
 }
 
