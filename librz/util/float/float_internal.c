@@ -452,8 +452,7 @@ round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFl
  * 1 means caller should round by adding ULP to `return bitv`
  * \return new bitvector would be 0001MM...M, which length is `precision + 1 + 3`
  */
-static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc)
-{
+static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc) {
 	rz_return_val_if_fail(sig && should_inc, NULL);
 
 	ut32 sig_len = rz_bv_len(sig) - rz_bv_clz(sig);
@@ -491,8 +490,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		//     < 1 0 0 : round down
 		if (guard_bit == 0) {
 			*should_inc = 0;
-		}
-		else if (!round_bit && !sticky_bit){
+		} else if (!round_bit && !sticky_bit) {
 			// ties
 			if (mode == RZ_FLOAT_RMODE_RNE) {
 				bool is_odd = rz_bv_get(sig, 0);
@@ -526,14 +524,13 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
  * TODO : report exception
  * TODO : test and then replace the old version
  * \param sign sign of bitvector
- * \param exp exponent value
+ * \param exp exponent value, no bias
  * \param sig significant, expect unsigned bitvector
  * \param format format of float type
  * \param mode rounding mode
  * \return a float of type `format`, converted from `sig`
  */
-static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode)
-{
+static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(sig, NULL);
 	RzFloat *ret;
 
@@ -576,8 +573,9 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp, RzBitVector *sig,
 		ut32 sig_carry_pos = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN) + 1;
 		RzBitVector *one = rz_bv_new_one(total_len);
 		rounded_tmp = rz_bv_add(rounded_sig, one, NULL);
-		bool sig_carry = rz_bv_get(rounded_tmp, sig_carry_pos);
+		rz_bv_free(one);
 
+		bool sig_carry = rz_bv_get(rounded_tmp, sig_carry_pos);
 		if (sig_carry) {
 			// change exponent, renormalize
 			exp += 1;
