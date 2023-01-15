@@ -413,7 +413,7 @@ RZ_API void rz_type_func_delete_all(RzTypeDB *typedb);
 RZ_API bool rz_type_func_exist(RzTypeDB *typedb, RZ_NONNULL const char *func_name);
 
 RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, RZ_NONNULL const char *func_name);
-RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, RZ_OWN RZ_NONNULL RzType *type);
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, RZ_BORROW RZ_NONNULL RzType *type);
 
 RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, RZ_NONNULL const char *func_name);
 RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *cc);

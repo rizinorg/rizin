@@ -1883,67 +1883,47 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunc
 /**
  * \brief Sets the RzCallable type for the given function
  *
- * Checks if the type is defined already for this function, if yes -
- * it removes the existing one and sets the one defined by the RzCallable.
- * If there is a mismatch between existing arguments - it overwrites
- * their types and names, removes arguments if necessary.
+ * Overwrites all arguments, the return type, calling convention and noreturn property of \p f to
+ * match the contents of \p callable. This is done according to the calling convention in
+ * \p callable, or \p f if it is not defined in \p callable.
  *
  * \param a RzAnalysis instance
  * \param f Function to update
- * \param callable A function type
+ * \param callable A function type to apply to \p f
  */
-RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL RzCallable *callable) {
-	rz_return_val_if_fail(a && f && callable, false);
-	// At first, we check if the arguments match, and rename/retype them
-	void **it;
-	size_t index = 0;
-	if (rz_pvector_empty(callable->args)) {
-		rz_analysis_function_delete_all_vars(f);
+RZ_API void rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL RzCallable *callable) {
+	rz_return_if_fail(a && f && callable);
+	// Set the cc first, it will be used further down.
+	if (callable->cc) {
+		f->cc = rz_str_constpool_get(&a->constpool, callable->cc);
+	}
+	// All args will be overwritten
+	rz_analysis_function_delete_arg_vars(f);
+	RzStackAddr stack_off = rz_type_db_pointer_size(a->typedb) / 8; // return val
+	if (f->cc) {
+		stack_off += rz_analysis_cc_shadow_store(a, f->cc);
 	}
 	size_t args_count = rz_pvector_len(callable->args);
-	RzPVector *cloned_vars = rz_pvector_clone(&f->vars);
-	rz_pvector_foreach (cloned_vars, it) {
-		RzAnalysisVar *var = *it;
-		if (!rz_analysis_var_is_arg(var)) {
+	for (size_t index = 0; index < args_count; index++) {
+		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
+		if (!arg || !arg->type) {
 			continue;
 		}
-		if (index < args_count) {
-			RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
-			if (arg) {
-				free(var->name);
-				if (arg->name) {
-					var->name = strdup(arg->name);
-				}
-				rz_type_free(var->type);
-				var->type = rz_type_clone(arg->type);
-			}
-			index++;
-		} else {
-			// There is no match for this argument in the RzCallable type,
-			// thus we remove it from the function
-			rz_analysis_function_delete_var(f, var);
-		}
-	}
-	// For f->vars is already empty, add args into it
-	for (; index < args_count; index++) {
-		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
-		if (arg && arg->type) {
-			size_t size = rz_type_db_get_bitsize(a->typedb, arg->type);
-			// For user defined args, we set its delta and kind to its index and stack var by default
-			RzAnalysisVarStorage stor = { 0 };
+		RzAnalysisVarStorage stor = { 0 };
+		const char *loc = f->cc ? rz_analysis_cc_arg(a, f->cc, index) : "stack";
+		if (!loc || rz_str_startswith(loc, "stack")) {
 			stor.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
-			stor.stack_off = index;
-			rz_analysis_function_set_var(f, &stor, arg->type, size, arg->name);
+			stor.stack_off = stack_off;
+			stack_off += (rz_type_db_get_bitsize(a->typedb, arg->type) + 7) / 8;
+		} else {
+			stor.type = RZ_ANALYSIS_VAR_STORAGE_REG;
+			stor.reg = rz_str_constpool_get(&a->constpool, loc);
 		}
+		rz_analysis_function_set_var(f, &stor, arg->type, 0, arg->name);
 	}
-
-	if (callable->noret) {
-		f->is_noreturn = true;
-	} else {
-		f->ret_type = callable->ret;
-	}
-	rz_pvector_free(cloned_vars);
-	return true;
+	f->is_noreturn = callable->noret;
+	rz_type_free(f->ret_type);
+	f->ret_type = callable->ret ? rz_type_clone(callable->ret) : NULL;
 }
 
 /**
@@ -1985,7 +1965,8 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 		RZ_LOG_ERROR("Parsed function signature should not be NULL\n");
 		return false;
 	}
-	return rz_analysis_function_set_type(a, f, result->callable);
+	rz_analysis_function_set_type(a, f, result->callable);
+	return true;
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr) {
