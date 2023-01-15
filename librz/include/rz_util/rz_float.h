@@ -138,4 +138,9 @@ RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);
 
+RZ_API RzFloat *rz_float_cast_float(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
+RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
+RZ_API RzBitVector *rz_float_cast_int(RzFloat *f, ut32 length, RzFloatRMode mode);
+RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mode);
+RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
 #endif // RZ_FLOAT_H

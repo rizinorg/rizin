@@ -2266,16 +2266,7 @@ RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFl
 
 	// make absolute value if neg
 	bool sign = rz_bv_msb(bv);
-	if (sign) {
-		RzBitVector *bv_tmp = rz_bv_not(bv);
-		RzBitVector *one = rz_bv_new_one(rz_bv_len(bv_tmp));
-		bv_abs = rz_bv_add(bv_tmp, one, NULL);
-
-		rz_bv_free(bv_tmp);
-		rz_bv_free(one);
-	} else {
-		bv_abs = rz_bv_dup(bv);
-	}
+	bv_abs = sign ? rz_bv_complement_2(bv) : rz_bv_dup(bv);
 
 	RzFloat *cast_float = rz_float_cast_float(bv_abs, format, mode);
 	if (!cast_float) {
@@ -2287,12 +2278,28 @@ RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFl
 	return cast_float;
 }
 
+/**
+ * cast_int s rm x returns an integer closest to x.
+ * The resulting bitvector should be interpreted as an unsigned two-complement integer.
+ * \param f float
+ * \param length length of returned bitvector
+ * \param mode rounding mode
+ * \return unsigned bitvector converted from f
+ */
 RZ_API RzBitVector *rz_float_cast_int(RzFloat *f, ut32 length, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 	// TODO: ask semantic for neg float -> unsigned int
 	return NULL;
 }
 
+/**
+ * cast_sint s rm x returns an integer closest to x.
+ * The resulting bitvector should be interpreted as a signed two-complement integer.
+ * \param f float
+ * \param length length of returnded bitvector
+ * \param mode rounding mode
+ * \return signed bitvector in 2's complement
+ */
 RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 
@@ -2305,9 +2312,6 @@ RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mod
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 
 	ut32 exp_no_bias = exp == 0 ? (1 - bias) : (exp - bias);
-	if (exp_no_bias + 1 > length) {
-		// TODO: not representable, currently just cut it
-	}
 
 	// rounding float to get an integer means
 	// we should try to reserve `exponent` bits of mantissa
@@ -2356,7 +2360,8 @@ RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mod
 		tmp = NULL;
 	}
 
-	// possible overflow if length < exp_no_bias
+	// WARN: possible overflow if length < exp_no_bias
+	// WARN: higher bits may be cut off
 	rz_bv_copy(rounded, ret);
 
 	rz_bv_free(rounded);
@@ -2364,14 +2369,34 @@ RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mod
 	return ret;
 }
 
+/**
+ * convert float from format A to a new format B
+ * \param f float
+ * \param format new format
+ * \param mode rounding mode
+ * \return converted float with format B
+ */
 RZ_API RZ_OWN RzFloat *rz_float_convert(RzFloat *f, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
-	bool sign = get_sign(f->s, format);
-	ut32 exp_no_bias = float_exponent(f) - rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
-	exp_no_bias += rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 
+	// TODO: preprocess special float here
+
+	ut32 exp = float_exponent(f);
+	RzFloatFormat old_format = f->r;
+	bool sign = get_sign(f->s, old_format);
+	ut32 old_bias = rz_float_get_format_info(old_format, RZ_FLOAT_INFO_BIAS);
+	ut32 man_len = rz_float_get_format_info(old_format, RZ_FLOAT_INFO_MAN_LEN);
+
+	ut32 exp_no_bias = exp == 0 ? (1 - old_bias) : (exp - old_bias);
+
+	// recover hidden bit if it's a normal float
 	RzBitVector *sig = rz_float_get_mantissa(f);
-	rz_bv_set(sig, rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN), true);
+	rz_bv_set(sig, man_len, exp == 0 ? 0 : 1);
+
+	// shift to make significant a integer
+	// 1.MM..M * 2^exp_no_bias == 1MM..M * 2^(exp_no_bias - man_len)
+	// 0.MM..M * 2^exp_no_bias == 00..1X..X * 2^(exp_no_bias - man_len)
+	exp_no_bias -= man_len;
 
 	return round_float_bv_new(sign, exp_no_bias, sig, format, mode);
 }
