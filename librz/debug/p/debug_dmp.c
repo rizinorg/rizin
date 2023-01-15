@@ -105,7 +105,12 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 
-	ctx->windctx.profile = winkd_get_profile(dbg->bits * 8, MinorVersion, ServicePackBuild);
+	// dbg->bits is deprecated but unfortunately some things like dbt output formatting still depend on it
+	dbg->bits = ctx->windctx.is_64bit ? RZ_SYS_BITS_64 : RZ_SYS_BITS_32;
+
+	ut32 bits = ctx->windctx.is_64bit ? 64 : 32;
+
+	ctx->windctx.profile = winkd_get_profile(bits, MinorVersion, ServicePackBuild);
 
 	// Find ntoskrnl.exe module
 	RzListIter *it;
@@ -161,7 +166,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 
 	if (!ctx->windctx.profile) {
 		RZ_LOG_ERROR("Could not find a profile for this Windows: %s %" PFMT32d "-bit %" PFMT32u " SP %" PFMT32u "\n",
-			ctx->windctx.is_arm ? "ARM" : "x86", dbg->bits * 8, MinorVersion, ServicePackBuild);
+			ctx->windctx.is_arm ? "ARM" : "x86", bits, MinorVersion, ServicePackBuild);
 		return false;
 	}
 
