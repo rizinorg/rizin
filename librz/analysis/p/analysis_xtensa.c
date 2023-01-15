@@ -118,6 +118,7 @@ static void xtensa_shr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 static void xtensa_l32r_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	op->ptr = ((addr + 3) & ~3) + ((buf[2] << 8 | buf[1]) << 2) - 0x40000;
+	op->refptr = 4;
 }
 
 static void xtensa_snm0_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
