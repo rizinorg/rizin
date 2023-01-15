@@ -13,7 +13,11 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
  |___|___|
 */
 #if defined(__arm64__)
+	if (dbg->bits == RZ_SYS_BITS_64) {
 #include "reg/windows-arm64.h"
+	} else {
+#include "reg/windows-arm64_32.h"
+	}
 #elif defined(__arm__)
 #include "reg/windows-arm.h"
 #elif defined(__x86_64__)
