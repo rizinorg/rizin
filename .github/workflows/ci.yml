@@ -808,6 +808,49 @@ jobs:
         run: |
           go install github.com/rizinorg/rz-pipe/go/example@latest
 
+  build-bindgen:
+    name: Build rz-bindgen
+    if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    needs: [test-tarball]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: rizin-src.tar.xz
+      - name: Extract source tarball
+        run: |
+          mkdir rizin && pwd && ls -l
+          tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
+      - name: Install dependencies
+        run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+      - name: Install rizin
+        run: |
+          export PATH=$PATH:/usr/local/bin
+          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+        working-directory: rizin
+      - name: Checkout rz-bindgen
+        uses: actions/checkout@v3
+        with:
+          repository: rizinorg/rz-bindgen
+          path: rz-bindgen
+      - name: Install dependencies
+        run: |
+          sudo apt install --assume-yes libclang-14-dev
+      - name: Build rz-bindgen
+        run: |
+          meson setup --prefix=/usr -Dplugin=enabled build
+          meson compile -C build
+          sudo meson install -C build
+        working-directory: rz-bindgen
+      - name: Test python lang plugin
+        run: |
+          rizin -qc "Ll" | grep "Python SWIG"
+        working-directory: rz-bindgen
+      - name: Test rizin.py
+        run: |
+          echo "import rizin" > testimport.py
+          python3 testimport.py
+
   test-osx-pkg:
     name: Test OSX pkg
     strategy:
