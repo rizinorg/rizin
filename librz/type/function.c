@@ -345,13 +345,14 @@ RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_n
  * \param name Name of the callable to search
  * \param type RzType return type
  */
-RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_OWN RZ_NONNULL RzType *type) {
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_BORROW RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && name && type, false);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
 		return false;
 	}
-	callable->ret = type;
+	rz_type_free(callable->ret);
+	callable->ret = rz_type_clone(type);
 	return true;
 }
 

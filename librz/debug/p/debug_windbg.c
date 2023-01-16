@@ -281,7 +281,14 @@ static char *windbg_reg_profile(RzDebug *dbg) {
 	} else if (type == IMAGE_FILE_MACHINE_ARM) {
 #include "native/reg/windows-arm.h"
 	} else if (type == IMAGE_FILE_MACHINE_ARM64) {
+		if (dbg->bits == RZ_SYS_BITS_64) {
 #include "native/reg/windows-arm64.h"
+		} else {
+			// TODO: it is questionable whether this branch actually makes sense,
+			// it was adopted 1:1 during refactoring and only less visible before.
+			// (64bit machine in 32bit mode maybe?)
+#include "native/reg/windows-arm64_32.h"
+		}
 	}
 	return NULL;
 }

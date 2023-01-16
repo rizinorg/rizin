@@ -336,9 +336,8 @@ RUN
 
 NAME=oblj
 FILE==
+ARGS=-a x86 -b 64
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
 oblj~{}
 EOF
 EXPECT=<<EOF
@@ -385,9 +384,8 @@ RUN
 
 NAME=o--
 FILE==
+ARGS=-a x86 -b 64
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
 o =
 ol~?
 obl
