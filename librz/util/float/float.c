@@ -707,6 +707,42 @@ RZ_API bool rz_float_is_negative(RZ_NONNULL RzFloat *f) {
 }
 
 /**
+ * \brief alias of rz_float_is_negative, return sign bit
+ * \param f float num
+ * \return bool value of sign bit
+ */
+RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f) {
+	return rz_float_is_negative(f);
+}
+
+/**
+ * \brief set sign bit of a given float
+ * \param f float num
+ * \param new_sign sign bit
+ * \return true if success
+ */
+RZ_API bool rz_float_set_sign(RZ_NONNULL RzFloat *f, bool new_sign) {
+	rz_return_val_if_fail(f, false);
+	rz_bv_set(f->s, rz_bv_len(f->s) - 1, new_sign);
+	return true;
+}
+
+/**
+ * \brief assume float number has the form of (sig * 2^exp), return real exponent
+ * \param f float number
+ * \return real exponent value (without bias), as integer
+ */
+RZ_API RZ_OWN ut32 rz_float_get_exponent_val_no_bias(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, 0);
+	RzFloatFormat format = f->r;
+	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+	ut32 exp = float_exponent(f);
+	ut32 exp_no_bias = exp == 0 ? (1 - bias) : (exp - bias);
+
+	return exp_no_bias;
+}
+
+/**
  * \brief detect special num type of a float
  * \param f float
  * \return RZ_FLOAT_SPEC_NOT if f is not NaN/Zero/Infinity, else return a RzFloatSpec enum
@@ -2235,7 +2271,7 @@ RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode) 
  * \param mode rounding mode
  * \return closest float of given integer
  */
-RZ_API RzFloat *rz_float_cast_float(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(bv, NULL);
 	ut32 exp_max = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 
@@ -2259,7 +2295,7 @@ RZ_API RzFloat *rz_float_cast_float(RzBitVector *bv, RzFloatFormat format, RzFlo
  * \param mode rounding mode
  * \return float closest to given integer
  */
-RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(bv, NULL);
 
 	RzBitVector *bv_abs;
@@ -2286,7 +2322,7 @@ RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFl
  * \param mode rounding mode
  * \return unsigned bitvector converted from f
  */
-RZ_API RzBitVector *rz_float_cast_int(RzFloat *f, ut32 length, RzFloatRMode mode) {
+RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 	// TODO: ask semantic for neg float -> unsigned int
 	return NULL;
@@ -2300,7 +2336,7 @@ RZ_API RzBitVector *rz_float_cast_int(RzFloat *f, ut32 length, RzFloatRMode mode
  * \param mode rounding mode
  * \return signed bitvector in 2's complement
  */
-RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mode) {
+RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 
 	RzBitVector *ret = rz_bv_new(length);
@@ -2376,7 +2412,7 @@ RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mod
  * \param mode rounding mode
  * \return converted float with format B
  */
-RZ_API RZ_OWN RzFloat *rz_float_convert(RzFloat *f, RzFloatFormat format, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 
 	// TODO: preprocess special float here

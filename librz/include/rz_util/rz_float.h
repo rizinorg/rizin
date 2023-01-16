@@ -92,7 +92,10 @@ RZ_API bool rz_float_set_from_f128(RZ_NONNULL RzFloat *f, long double value);
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent_squashed(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_squashed(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_stretched(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f);
+RZ_API bool rz_float_set_sign(RZ_NONNULL RzFloat *f, bool new_sign);
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN ut32 rz_float_get_exponent_val_no_bias(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_negative(RZ_NONNULL RzFloat *f);
 RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f);
@@ -138,9 +141,9 @@ RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);
 
-RZ_API RzFloat *rz_float_cast_float(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
-RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
-RZ_API RzBitVector *rz_float_cast_int(RzFloat *f, ut32 length, RzFloatRMode mode);
-RZ_API RzBitVector *rz_float_cast_sint(RzFloat *f, ut32 length, RzFloatRMode mode);
-RZ_API RzFloat *rz_float_cast_sfloat(RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_cast_float(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatFormat format, RzFloatRMode mode);
+RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
+RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat format, RzFloatRMode mode);
 #endif // RZ_FLOAT_H
