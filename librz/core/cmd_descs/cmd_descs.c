@@ -10528,15 +10528,14 @@ static const RzCmdDescHelp plugins_load_help = {
 
 static const RzCmdDescArg plugins_unload_args[] = {
 	{
-		.name = "plugin_name",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "plugin_file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_unload_help = {
-	.summary = "Unload core plugin by name",
+	.summary = "Unload a plugin from file",
 	.args = plugins_unload_args,
 };
 
@@ -10544,7 +10543,7 @@ static const RzCmdDescArg plugins_lang_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_lang_print_help = {
-	.summary = "Print the lang plugins",
+	.summary = "List the lang plugins",
 	.args = plugins_lang_print_args,
 };
 
@@ -10552,7 +10551,7 @@ static const RzCmdDescArg plugins_asm_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_asm_print_help = {
-	.summary = "Print the asm/analysis plugins",
+	.summary = "List the asm/analysis plugins",
 	.args = plugins_asm_print_args,
 };
 
@@ -10560,7 +10559,7 @@ static const RzCmdDescArg plugins_core_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_core_print_help = {
-	.summary = "Print the core plugins",
+	.summary = "List the core plugins",
 	.args = plugins_core_print_args,
 };
 
@@ -10575,7 +10574,7 @@ static const RzCmdDescArg plugins_debug_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_debug_print_help = {
-	.summary = "Print the debug plugins",
+	.summary = "List debug plugins / Set debug backend (e dbg.backend)",
 	.args = plugins_debug_print_args,
 };
 
@@ -10583,7 +10582,7 @@ static const RzCmdDescArg plugins_hash_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_hash_print_help = {
-	.summary = "Print the hash plugins",
+	.summary = "List the hash plugins",
 	.args = plugins_hash_print_args,
 };
 
@@ -10591,7 +10590,7 @@ static const RzCmdDescArg plugins_bin_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_bin_print_help = {
-	.summary = "Print the bin plugins",
+	.summary = "List the bin plugins",
 	.args = plugins_bin_print_args,
 };
 
@@ -10605,7 +10604,7 @@ static const RzCmdDescArg plugins_io_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_io_print_help = {
-	.summary = "Print IO plugins / Register IO plugin from <path>",
+	.summary = "List IO plugins / Register IO plugin from <path>",
 	.args = plugins_io_print_args,
 };
 
@@ -10613,7 +10612,7 @@ static const RzCmdDescArg plugins_parser_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp plugins_parser_print_help = {
-	.summary = "Print the parser plugins",
+	.summary = "List the parser plugins",
 	.args = plugins_parser_print_args,
 };
 

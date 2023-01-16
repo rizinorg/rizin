@@ -46,7 +46,7 @@ extern char ***_NSGetEnviron(void);
 #ifndef PROC_PIDPATHINFO_MAXSIZE
 #define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void *buffer, ut32 buffersize);
-//#  include <libproc.h>
+// #  include <libproc.h>
 #endif
 #endif
 #if __UNIX__
@@ -1132,7 +1132,7 @@ RZ_API char **rz_sys_get_environ(void) {
 #endif
 	// return environ if available??
 	if (!env) {
-		env = rz_lib_dl_sym(NULL, "environ");
+		env = rz_sys_dlsym(NULL, "environ");
 	}
 	return env;
 }
@@ -1947,5 +1947,74 @@ RZ_API bool rz_sys_stop(void) {
 	return !rz_sys_kill(0, SIGTSTP);
 #else
 	return false;
+#endif
+}
+
+/**
+ * \brief Implementation across systems to open a dynamic library
+ */
+RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname) {
+	void *ret = NULL;
+#if WANT_DYLINK
+#if __UNIX__
+	if (libname) {
+		ret = dlopen(libname, RTLD_GLOBAL | RTLD_LAZY);
+	} else {
+		ret = dlopen(NULL, RTLD_NOW);
+	}
+	if (!ret) {
+		RZ_LOG_ERROR("rz_sys_dlopen: error: %s (%s)\n", libname, dlerror());
+	}
+#elif __WINDOWS__
+	LPTSTR libname_;
+	if (libname && *libname) {
+		libname_ = rz_sys_conv_utf8_to_win(libname);
+	} else {
+		libname_ = calloc(MAX_PATH, sizeof(TCHAR));
+		if (!libname_) {
+			RZ_LOG_ERROR("lib/rz_sys_dlopen: Failed to allocate memory.\n");
+			return NULL;
+		}
+		if (!GetModuleFileName(NULL, libname_, MAX_PATH)) {
+			libname_[0] = '\0';
+		}
+	}
+	ret = LoadLibrary(libname_);
+	free(libname_);
+	if (!ret) {
+		RZ_LOG_ERROR("rz_sys_dlopen: error: %s\n", libname);
+	}
+#endif
+#endif
+	return ret;
+}
+
+/**
+ * \brief Implementation across systems to get the address of a symbol in a
+ * dynamic library
+ */
+RZ_API void *rz_sys_dlsym(void *handler, const char *name) {
+#if WANT_DYLINK
+#if __UNIX__
+	return dlsym(handler, name);
+#elif __WINDOWS__
+	return GetProcAddress(handler, name);
+#else
+	return NULL;
+#endif
+#else
+	return NULL;
+#endif
+}
+
+/**
+ * \brief Implementation across systems to close a previously opened dynamic
+ * library.
+ */
+RZ_API int rz_sys_dlclose(void *handler) {
+#if __UNIX__
+	return dlclose(handler);
+#else
+	return handler ? 0 : -1;
 #endif
 }

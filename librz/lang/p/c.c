@@ -74,10 +74,10 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	}
 	free(buf);
 	buf = rz_str_newf("%s/lib%s." RZ_LIB_EXT, libpath, libname);
-	lib = rz_lib_dl_open(buf);
+	lib = rz_sys_dlopen(buf);
 	if (lib) {
 		void (*fcn)(RzCore *, int argc, const char **argv);
-		fcn = rz_lib_dl_sym(lib, "entry");
+		fcn = rz_sys_dlsym(lib, "entry");
 		if (fcn) {
 			fcn(lang->user, ac, av);
 			ac = 0;
@@ -85,7 +85,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 		} else {
 			eprintf("Cannot find 'entry' symbol in library\n");
 		}
-		rz_lib_dl_close(lib);
+		rz_sys_dlclose(lib);
 	} else {
 		eprintf("Cannot open library\n");
 	}

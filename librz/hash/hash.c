@@ -4,6 +4,7 @@
 #include "config.h"
 #include <rz_hash.h>
 #include <rz_util.h>
+#include <rz_lib.h>
 #include <xxhash.h>
 #include "algorithms/ssdeep/ssdeep.h"
 
@@ -658,7 +659,7 @@ RZ_API RzHash *rz_hash_new(void) {
 	if (!rh) {
 		return NULL;
 	}
-	rh->plugins = rz_list_new();
+	rh->plugins = rz_list_newf(free);
 	for (int i = 0; i < RZ_ARRAY_SIZE(hash_static_plugins); i++) {
 		rz_hash_plugin_add(rh, hash_static_plugins[i]);
 	}
@@ -678,17 +679,12 @@ RZ_API void rz_hash_free(RzHash *rh) {
  * specific algorithms.
  */
 RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN const RzHashPlugin *plugin) {
-	if (!plugin) {
-		return false;
-	}
-	RzListIter *it;
-	RzHashPlugin *p;
-
-	rz_list_foreach (rh->plugins, it, p) {
-		if (!strcmp(p->name, plugin->name)) {
-			return false;
-		}
-	}
-	rz_list_append(rh->plugins, (RzHashPlugin *)plugin);
+	rz_return_val_if_fail(rh && plugin && plugin->name, false);
+	RZ_PLUGIN_CHECK_AND_ADD(rh->plugins, plugin, RzHashPlugin);
 	return true;
+}
+
+RZ_API bool rz_hash_plugin_del(RZ_NONNULL RzHash *rh, RZ_NONNULL RzHashPlugin *plugin) {
+	rz_return_val_if_fail(rh && plugin, false);
+	return rz_list_delete_data(rh->plugins, plugin);
 }

@@ -2148,7 +2148,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const 
 // dbh-
 RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
 	for (int i = 1; i < argc; i++) {
-		if (!rz_bp_plugin_del(core->dbg->bp, argv[i])) {
+		if (!rz_bp_plugin_del_byname(core->dbg->bp, argv[i])) {
 			RZ_LOG_ERROR("Failed to delete breakpoint plugin handler: %s\n", argv[i]);
 		}
 	}

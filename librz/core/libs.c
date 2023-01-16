@@ -6,53 +6,38 @@
 #include "config.h"
 
 #define CB(x, y) \
-	static int __lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
+	static bool lib_##x##_cb(RzLibPlugin *pl, void *user, void *data) { \
 		struct rz_##x##_plugin_t *hand = (struct rz_##x##_plugin_t *)data; \
 		RzCore *core = (RzCore *)user; \
-		pl->free = NULL; \
-		rz_##x##_add(core->y, hand); \
-		return true; \
+		return rz_##x##_plugin_add(core->y, hand); \
 	} \
-	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { \
-		return true; \
+	static bool lib_##x##_dt(RzLibPlugin *pl, void *user, void *data) { \
+		struct rz_##x##_plugin_t *hand = (struct rz_##x##_plugin_t *)data; \
+		RzCore *core = (RzCore *)user; \
+		return rz_##x##_plugin_del(core->y, hand); \
 	}
 
-static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+static bool lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	rz_demangler_plugin_add(core->bin->demangler, (RzDemanglerPlugin *)data);
-	return true;
+	return rz_core_plugin_add(core, (RzCorePlugin *)data);
 }
 
-static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
-}
-
-static int __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_core_plugin_t *hand = (struct rz_core_plugin_t *)data;
+static bool lib_core_dt(RzLibPlugin *pl, void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	pl->free = NULL;
-	rz_core_plugin_add(core, hand);
-	return true;
+	return rz_core_plugin_del(core, (RzCorePlugin *)data);
 }
 
-static int __lib_core_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
-}
-
-#define rz_io_add rz_io_plugin_add
 CB(io, io)
-#define rz_debug_add rz_debug_plugin_add
+CB(crypto, crypto)
 CB(debug, dbg)
-#define rz_bp_add rz_bp_plugin_add
 CB(bp, dbg->bp)
 CB(lang, lang)
 CB(analysis, analysis)
 CB(asm, rasm)
 CB(parse, parser)
-#define rz_bin_add rz_bin_plugin_add
 CB(bin, bin)
+CB(demangler, bin->demangler)
 CB(egg, egg)
-#define rz_hash_add rz_hash_plugin_add
 CB(hash, hash)
 
 static void loadSystemPlugins(RzCore *core, int where) {
@@ -83,11 +68,12 @@ static void loadSystemPlugins(RzCore *core, int where) {
 
 RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	ut64 prev = rz_time_now_mono();
-#define DF(x, y, z) rz_lib_add_handler(core->lib, RZ_LIB_TYPE_##x, y, &__lib_##z##_cb, &__lib_##z##_dt, core);
+#define DF(x, y, z) rz_lib_add_handler(core->lib, RZ_LIB_TYPE_##x, y, &lib_##z##_cb, &lib_##z##_dt, core);
 	core->lib = rz_lib_new(NULL, NULL);
 	DF(DEMANGLER, "demangler plugins", demangler);
 	DF(IO, "io plugins", io);
 	DF(CORE, "core plugins", core);
+	DF(CRYPTO, "crypto plugins", crypto);
 	DF(DBG, "debugger plugins", debug);
 	DF(BP, "debugger breakpoint plugins", bp);
 	DF(LANG, "language plugins", lang);

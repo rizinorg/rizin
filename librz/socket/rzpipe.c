@@ -113,7 +113,7 @@ RZ_API int rzpipe_close(RzPipe *rzpipe) {
 	}
 	/*
 	if (rzpipe->coreb.core && !rzpipe->coreb.puts) {
-		void (*rfre)(void *c) = rz_lib_dl_sym (librz, "rz_core_free");
+		void (*rfre)(void *c) = rz_sys_dlsym (librz, "rz_core_free");
 		if (rfre) {
 			rfre (rzpipe->coreb.core);
 		}
@@ -215,9 +215,9 @@ RZ_API RzPipe *rzpipe_open_corebind(RzCoreBind *coreb) {
 }
 
 RZ_API RzPipe *rzpipe_open_dl(const char *libr_path) {
-	void *librz = rz_lib_dl_open(libr_path);
-	void *(*rnew)() = rz_lib_dl_sym(librz, "rz_core_new");
-	char *(*rcmd)(void *c, const char *cmd) = rz_lib_dl_sym(librz, "rz_core_cmd_str");
+	void *librz = rz_sys_dlopen(libr_path);
+	void *(*rnew)() = rz_sys_dlsym(librz, "rz_core_new");
+	char *(*rcmd)(void *c, const char *cmd) = rz_sys_dlsym(librz, "rz_core_cmd_str");
 
 	if (rnew && rcmd) {
 		RzPipe *rzpipe = rzpipe_new();

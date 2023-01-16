@@ -277,6 +277,7 @@ struct rz_core_t {
 	RzFlag *flags;
 	RzSearch *search;
 	RzEgg *egg;
+	RzCrypto *crypto;
 	RzAGraph *graph;
 	RzPanelsRoot *panels_root;
 	RzPanels *panels;
@@ -404,7 +405,8 @@ RZ_API void rz_core_gadget_free(RzCoreGadget *g);
 RZ_API void rz_core_gadget_print(RzCore *core);
 
 RZ_API bool rz_core_plugin_init(RzCore *core);
-RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
+RZ_API bool rz_core_plugin_add(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
+RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
 
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)

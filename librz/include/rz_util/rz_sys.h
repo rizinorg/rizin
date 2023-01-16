@@ -107,6 +107,9 @@ RZ_API char *rz_sys_whoami(char *buf);
 RZ_API char *rz_sys_getdir(void);
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s);
 RZ_API bool rz_sys_aslr(int val);
+RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname);
+RZ_API void *rz_sys_dlsym(void *handler, const char *name);
+RZ_API int rz_sys_dlclose(void *handler);
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
 #if UNICODE
@@ -139,7 +142,7 @@ RZ_API int rz_sys_cmdbg(const char *cmd);
 RZ_API int rz_sys_cmdf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
 RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
-//#define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
+// #define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
 RZ_API void rz_sys_backtrace(void);
 
 #ifndef __has_builtin

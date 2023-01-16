@@ -114,8 +114,9 @@ RZ_API bool rz_bp_del(RzBreakpoint *bp, ut64 addr);
 RZ_API bool rz_bp_del_all(RzBreakpoint *bp);
 
 RZ_API bool rz_bp_plugin_add(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin);
+RZ_API bool rz_bp_plugin_del(RzBreakpoint *bp, RZ_BORROW RZ_NONNULL RzBreakpointPlugin *plugin);
 RZ_API int rz_bp_use(RZ_NONNULL RzBreakpoint *bp, RZ_NONNULL const char *name);
-RZ_API int rz_bp_plugin_del(RzBreakpoint *bp, const char *name);
+RZ_API int rz_bp_plugin_del_byname(RzBreakpoint *bp, RZ_NONNULL const char *name);
 RZ_API void rz_bp_plugin_list(RzBreakpoint *bp);
 
 RZ_API int rz_bp_size(RZ_NONNULL RzBreakpoint *bp, int bits);

@@ -116,6 +116,5 @@ _RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_CORE,
 	.data = &rz_core_plugin_example,
 	.version = RZ_VERSION,
-	.pkgname = "example_package"
 };
 #endif

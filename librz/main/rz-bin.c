@@ -573,37 +573,29 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 }
 
 /* bin callback */
-static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
-	rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
-	return true;
+static bool lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+	return rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
 }
 
-static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
+static bool lib_demangler_dt(RzLibPlugin *pl, void *user, void *data) {
+	return rz_demangler_plugin_del(user, (RzDemanglerPlugin *)data);
 }
 
-static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
-	RzBin *bin = user;
-	rz_bin_plugin_add(bin, hand);
-	return true;
+static bool lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_plugin_add(user, (RzBinPlugin *)data);
 }
 
-static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
+static bool lib_bin_dt(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_plugin_del(user, (RzBinPlugin *)data);
 }
 
 /* binxtr callback */
-static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
-	RzBin *bin = user;
-	// printf(" * Added (dis)assembly plugin\n");
-	rz_bin_xtr_add(bin, hand);
-	return true;
+static bool lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_xtr_plugin_add(user, (RzBinXtrPlugin *)data);
 }
 
-static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
+static bool lib_bin_xtr_dt(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_xtr_plugin_del(user, (RzBinXtrPlugin *)data);
 }
 
 static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
@@ -712,11 +704,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		char *plugindir = rz_path_system(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
-			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
+			&lib_demangler_cb, &lib_demangler_dt, bin->demangler);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",
-			&__lib_bin_cb, &__lib_bin_dt, bin);
+			&lib_bin_cb, &lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
+			&lib_bin_xtr_cb, &lib_bin_xtr_dt, bin);
 		/* load plugins everywhere */
 		char *path = rz_sys_getenv(RZ_LIB_ENV);
 		if (!RZ_STR_ISEMPTY(path)) {
@@ -1117,10 +1109,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			return waitpid(child, NULL, 0);
 		}
 #endif
-		void *addr = rz_lib_dl_open(file);
+		void *addr = rz_sys_dlopen(file);
 		if (addr) {
 			eprintf("%s is loaded at 0x%" PFMT64x "\n", file, (ut64)(size_t)(addr));
-			rz_lib_dl_close(addr);
+			rz_sys_dlclose(addr);
 			rz_core_fini(&core);
 			return 0;
 		}

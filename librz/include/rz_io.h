@@ -344,7 +344,8 @@ RZ_API void rz_io_free(RzIO *io);
 #define rz_io_bind_init(x) memset(&x, 0, sizeof(x))
 
 RZ_API bool rz_io_plugin_init(RzIO *io);
-RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin);
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin);
+RZ_API bool rz_io_plugin_del(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len);
 RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len);
 RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len);

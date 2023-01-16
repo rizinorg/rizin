@@ -7,6 +7,7 @@
 
 #include <rz_types.h>
 #include <rz_parse.h>
+#include <rz_lib.h>
 #include <config.h>
 
 RZ_LIB_VERSION(rz_parse);
@@ -32,7 +33,7 @@ RZ_API RzParse *rz_parse_new(void) {
 	p->minval = 0x100;
 	p->localvar_only = false;
 	for (i = 0; i < RZ_ARRAY_SIZE(parse_static_plugins); i++) {
-		rz_parse_add(p, parse_static_plugins[i]);
+		rz_parse_plugin_add(p, parse_static_plugins[i]);
 	}
 	return p;
 }
@@ -42,15 +43,25 @@ RZ_API void rz_parse_free(RzParse *p) {
 	free(p);
 }
 
-RZ_API bool rz_parse_add(RzParse *p, RzParsePlugin *foo) {
+RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
+	rz_return_val_if_fail(p && plugin, false);
+
 	bool itsFine = true;
-	if (foo->init) {
-		itsFine = foo->init(p, p->user);
+	if (plugin->init) {
+		itsFine = plugin->init(p, p->user);
 	}
 	if (itsFine) {
-		rz_list_append(p->parsers, foo);
+		RZ_PLUGIN_ADD(p->parsers, plugin, RzParsePlugin);
 	}
 	return true;
+}
+
+RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
+	rz_return_val_if_fail(p && plugin, false);
+	if (plugin->fini && !plugin->fini(p, p->user)) {
+		return false;
+	}
+	return rz_list_delete_data(p->parsers, plugin);
 }
 
 RZ_API bool rz_parse_use(RzParse *p, const char *name) {

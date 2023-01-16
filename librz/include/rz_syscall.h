@@ -67,26 +67,6 @@ typedef struct rz_sysregs_t {
 } RSysregs;
 #endif
 
-/* plugin struct */
-typedef struct rz_syscall_plugin_t {
-	char *name;
-	char *arch;
-	char *os;
-	char *desc;
-	int bits;
-	int nargs;
-	struct rz_syscall_args_t *args;
-} RzSyscallPlugin;
-
-typedef struct rz_syscall_arch_plugin_t {
-	char *name;
-	char *arch;
-	char *desc;
-	int *bits;
-	int nargs;
-	struct rz_syscall_args_t **args;
-} RzSyscallArchPlugin;
-
 #ifdef RZ_API
 RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const char *s);
 RZ_API void rz_syscall_item_free(RzSyscallItem *si);

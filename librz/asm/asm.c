@@ -12,6 +12,7 @@
 #include <rz_core.h>
 #include <rz_types.h>
 #include <rz_util.h>
+#include <rz_lib.h>
 #include <rz_asm.h>
 #define USE_R2 1
 #include <spp.h>
@@ -269,13 +270,13 @@ RZ_API RzAsm *rz_asm_new(void) {
 	a->bits = RZ_SYS_BITS;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
-	a->plugins = rz_list_newf(NULL);
+	a->plugins = rz_list_newf(free);
 	if (!a->plugins) {
 		free(a);
 		return NULL;
 	}
 	for (i = 0; i < RZ_ARRAY_SIZE(asm_static_plugins); i++) {
-		rz_asm_add(a, asm_static_plugins[i]);
+		rz_asm_plugin_add(a, asm_static_plugins[i]);
 	}
 	return a;
 }
@@ -330,20 +331,31 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	free(a);
 }
 
-RZ_API bool rz_asm_add(RzAsm *a, RzAsmPlugin *p) {
+RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
+	rz_return_val_if_fail(a && p, false);
 	if (!p->name) {
 		return false;
 	}
 	if (rz_asm_is_valid(a, p->name)) {
 		return false;
 	}
-	rz_list_append(a->plugins, p);
+	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, p, RzAsmPlugin);
 	return true;
 }
 
-RZ_API int rz_asm_del(RzAsm *a, const char *name) {
-	/* TODO: Implement rz_asm_del */
-	return false;
+RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
+	rz_return_val_if_fail(a && p, false);
+	if (a->cur == p) {
+		plugin_fini(a);
+		a->cur = NULL;
+	}
+	if (a->acur == p) {
+		a->acur = NULL;
+	}
+	if (p->fini && !p->fini(a->plugin_data)) {
+		return false;
+	}
+	return rz_list_delete_data(a->plugins, p);
 }
 
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {

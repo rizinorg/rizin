@@ -57,7 +57,8 @@ RZ_API void rz_parse_free(RzParse *p);
 
 /* plugins */
 RZ_API void rz_parse_set_user_ptr(RzParse *p, void *user);
-RZ_API bool rz_parse_add(RzParse *p, RzParsePlugin *foo);
+RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin);
+RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin);
 RZ_API bool rz_parse_use(RzParse *p, const char *name);
 
 /* action */

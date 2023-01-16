@@ -95,7 +95,7 @@ RZ_API bool rz_analysis_esil_load_interrupts_from_lib(RzAnalysisEsil *esil, cons
 		return false;
 	}
 	RzAnalysisEsilInterruptHandler **handlers = (RzAnalysisEsilInterruptHandler **)
-		rz_lib_dl_sym(rz_analysis_esil_get_source(esil, src_id), "interrupts");
+		rz_sys_dlsym(rz_analysis_esil_get_source(esil, src_id), "interrupts");
 	if (!handlers) {
 		rz_analysis_esil_release_source(esil, src_id); // unload
 		return false;
