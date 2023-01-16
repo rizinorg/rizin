@@ -10,7 +10,7 @@ static volatile RzIOPlugin *default_plugin = NULL;
 
 static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
-RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
 	rz_return_val_if_fail(io && plugin && plugin->name, false);
 	RZ_PLUGIN_CHECK_AND_ADD(io->plugins, plugin, RzIOPlugin);
 	return true;
