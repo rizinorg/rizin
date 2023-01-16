@@ -132,33 +132,78 @@ void *rz_il_handler_fabs(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 }
 
 void *rz_il_handler_fcast_int(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : implement cast
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+
+	RzILOpArgsFCastint cast_int = op->op.fcast_int;
+	RzFloat *f = rz_il_evaluate_float(vm, cast_int.f);
+	ut32 length = cast_int.length;
+	RzFloatRMode mode = cast_int.mode;
+	RzBitVector *ret = rz_float_cast_int(f, length, mode);
+
+	rz_float_free(f);
+
+	*type = RZ_IL_TYPE_PURE_BITVECTOR;
+	return ret;
 }
 
 void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : implement cast
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+
+	RzILOpArgsFCastint cast_sint = op->op.fcast_sint;
+	RzFloat *f = rz_il_evaluate_float(vm, cast_sint.f);
+	ut32 length = cast_sint.length;
+	RzFloatRMode mode = cast_sint.mode;
+	RzBitVector *ret = rz_float_cast_sint(f, length, mode);
+
+	rz_float_free(f);
+
+	*type = RZ_IL_TYPE_PURE_BITVECTOR;
+	return ret;
 }
 
 void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : implement cast
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+
+	RzILOpArgsFCastfloat cast = op->op.fcast_float;
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, cast.bv);
+	RzFloatFormat format = cast.format;
+	RzFloatRMode mode = cast.mode;
+	RzFloat *ret = rz_float_cast_float(bv, format, mode);
+
+	rz_bv_free(bv);
+
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
 }
 
 void *rz_il_handler_fcast_sfloat(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : implement cast
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+
+	RzILOpArgsFCastsfloat cast = op->op.fcast_sfloat;
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, cast.bv);
+	RzFloatFormat format = cast.format;
+	RzFloatRMode mode = cast.mode;
+	RzFloat *ret = rz_float_cast_float(bv, format, mode);
+
+	rz_bv_free(bv);
+
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
 }
 
 void *rz_il_handler_fconvert(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : implement cast
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+
+	RzILOpArgsFconvert convert = op->op.fconvert;
+	RzFloat *f = rz_il_evaluate_float(vm, convert.f);
+	RzFloatFormat format = convert.format;
+	RzFloatRMode mode = convert.mode;
+	RzFloat *ret = rz_float_convert(f, format, mode);
+
+	rz_float_free(f);
+
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
 }
 
 void *rz_il_handler_frequal(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
@@ -197,7 +242,6 @@ void *rz_il_handler_fpred(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 }
 
 void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : implement forder (fcmp), do not use bv directly
 	rz_return_val_if_fail(vm && op && type, NULL);
 
 	RzILOpArgsForder forder = op->op.forder;
@@ -213,9 +257,17 @@ void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 }
 
 void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	// TODO : float todo unimplemented
 	rz_return_val_if_fail(vm && op && type, NULL);
-	return NULL;
+
+	RzILOpArgsFround fround = op->op.fround;
+	RzFloat *f = rz_il_evaluate_float(vm, fround.f);
+	RzFloatRMode mode = fround.rmode;
+	RzFloat *ret = rz_float_round(f, mode);
+
+	rz_float_free(f);
+
+	*type = RZ_IL_TYPE_PURE_FLOAT;
+	return ret;
 }
 
 void *rz_il_handler_fsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
