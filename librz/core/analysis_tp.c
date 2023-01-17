@@ -809,6 +809,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	}
 }
 
+#define OP_CACHE_LIMIT 8192
+
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
 	RzListIter *it;
 
@@ -925,6 +927,15 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			}
 			addr += aop->size;
 			rz_list_free(fcns);
+			// Recreate op_cache if it grows too large to avoid
+			// excessive memory usage.
+			if (op_cache->count > OP_CACHE_LIMIT) {
+				ht_up_free(op_cache);
+				op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
+				if (!op_cache) {
+					break;
+				}
+			}
 		}
 	}
 
