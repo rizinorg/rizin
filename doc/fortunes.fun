@@ -108,7 +108,7 @@ command not found: calc.exe
 See you at the defcon CTF
 Don't waste your time
 getdruid to get eclectic uid
-Welcome to "IDA - the rogue like"
+Welcome to "IDA - the roguelike"
 255 shades of (truecolor) grey
 When you sold that exploit, what they really bought, was your silence.
 Greetings, human.
