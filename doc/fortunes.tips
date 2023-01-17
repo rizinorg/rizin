@@ -34,7 +34,6 @@ Interpret rizin scripts with '. <path-to-script>'. Similar to the bash source al
 Most of commands accept '?' as a suffix. Use it to understand how they work :)
 Find hexpairs with '/x a0 cc 33'
 Step through your seek history with the commands 'u' (undo) and 'U' (redo)
-Use hasher to calculate hashes of portion blocks of a file
 Use zoom.byte=entropy and press 'z' in visual mode to zoom out to see the entropy of the whole file
 Use 'zoom.byte=printable' in zoom mode ('z' in Visual mode) to find strings
 Add colors to your screen with 'e scr.color=X' where 1 is 16 colors, 2 is 256 colors and 3 is 16M colors
@@ -49,8 +48,8 @@ Disassemble in intel syntax with 'e asm.syntax=intel'.
 Change the UID of the debugged process with child.uid (requires root)
 Enhance your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
-Emulate the base address of a file with e file.baddr.
-Bindiff two files with '$ rz-diff /bin/true /bin/false'
+Use `rizin -B 0x123456 /bin/ls` option to set the base address of a PIE file.
+Bindiff two files with '$ rz-diff -H /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
@@ -61,7 +60,7 @@ Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
 To debug a program, you can call rizin with 'dbg://<path-to-program>' or '-d <path..>'
 Use 'e' and 't' in Visual mode to edit configuration and track flags.
 Use 'rz-bin -ris' to get the import/export symbols of any binary.
-Remember to maintain your ~/.rizin_history
+Remember to maintain your `$(rizin -H RZ_RCACHEHOME)/history` file!
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
@@ -71,7 +70,6 @@ You can redefine descriptive commands in the hud file and using the 'V_' command
 Pass '-j' to rz-bin to get the information of the binary in JSON format.
 Use rz-run to launch your programs with a predefined environment.
 You are probably using an old version of rizin, go checkout the git!
-Run your own rizin scripts in awk using the rizinawk program.
 Use '-e bin.strings=false' to disable automatic string search when loading the binary.
 The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch=ws'
@@ -84,6 +82,6 @@ The more 'a' you add after 'aa' the more analysis steps are executed.
 Review all the subcommands of aa to see better ways to analyze your targets.
 Use /m to carve for known magic headers. speedup with search.
 You can use registers in math expressions. For example: 'wx 1234 @ esp - 2'
-For HTTP authentification 'e http.auth=1', 'e http.authfile=<path>'
+For HTTP authentication 'e http.auth=1', 'e http.authfile=<path>'
 Save your project in compressed format with 'e prj.compress=true'
 Use 'avg?' to know how you can use global variables in rizin

@@ -70,7 +70,7 @@ This should be documented, since it's not that obvious.
 The Hard ROP Cafe
 Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
-Well this is embarrasing ...
+Well this is embarrassing ...
 THIS IS NOT FUNNY
 ♥ --
 Can you stand on your head?
@@ -114,8 +114,6 @@ When you sold that exploit, what they really bought, was your silence.
 Greetings, human.
 nothing personal, just bitness
 Too old to crash
-ESIL ruined my life
-ESIL: The Aftersleep
 Insert coin to continue ...
 See you in shell
 Mess with the best, die like the rest.
@@ -141,7 +139,7 @@ rizin is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
 Have you seen the latest rizin TV spot?
 scp ~/.idapro/ida.key rizin.org:/var/www/rizin.org/pub/losers/
-Too bad there is no gif support in rizin. Yet. -- @rizingif
+Too bad there is no gif support in rizin. Yet.
 Almost 5am, maybe you should go to bed.
 Jingle sploits, jingle sploits, ropchain all the way.
 256 colors ought to be enough for anybody
@@ -157,7 +155,7 @@ You haxor! Me jane?
 rizin talks to you. tries to make you feel well.
 Now i'm like an evil engineer. MUAHAHAH
 We only have bugs, features are an unintended side-effect
-Quantum dissasemble: it's there as long as you don't observe it
+Quantum disassemble: it's there as long as you don't observe it
 Ceci n'est pas une rzpipe
 (gdb) ^D
 ((fn [f s n] (str (f f s n) "zin")) (fn [f s n] (pr s) (if (> n 0) (f f (str s "ri") (dec n)) s)) "" (/ 1.0 0))
@@ -165,7 +163,6 @@ There's no way you could crash rizin. No. Way.
 When in doubt, try 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; pd;'
 .-. .- -.. .- .-. . ..---
 You crackme up!
-Welcome, "reenigne"
 Search returned no hits. Did you mean 'Misassemble'?
 We fix bugs while you sleep.
 You find bugs while we sleep.
