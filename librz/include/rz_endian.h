@@ -591,37 +591,68 @@ static inline void rz_write_ble_double(void *src, double val, bool big_endian) {
 	big_endian ? rz_write_be_double(src, val) : rz_write_le_double(src, val);
 }
 
+#ifndef __has_builtin
+#define __has_builtin(n) (0)
+#endif
+
 /*swap*/
+
+/* Use compiler intrinsics if present */
+
+#if __has_builtin(__builtin_bswap16)
+#define rz_swap_ut16 __builtin_bswap16
+#else
 static inline ut16 rz_swap_ut16(ut16 val) {
 	return (val << 8) | (val >> 8);
 }
+#endif
 
+#if __has_builtin(__builtin_bswap16)
+#define rz_swap_st16 __builtin_bswap16
+#else
 static inline st16 rz_swap_st16(st16 val) {
 	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
 	return (val << 16) | (val >> 16);
 }
+#endif
 
+#if __has_builtin(__builtin_bswap32)
+#define rz_swap_ut32 __builtin_bswap32
+#else
 static inline ut32 rz_swap_ut32(ut32 val) {
 	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
 	return (val << 16) | (val >> 16);
 }
+#endif
 
+#if __has_builtin(__builtin_bswap32)
+#define rz_swap_st32 __builtin_bswap32
+#else
 static inline st32 rz_swap_st32(st32 val) {
 	val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
 	return (val << 16) | ((val >> 16) & 0xFFFF);
 }
+#endif
 
+#if __has_builtin(__builtin_bswap64)
+#define rz_swap_ut64 __builtin_bswap64
+#else
 static inline ut64 rz_swap_ut64(ut64 val) {
 	val = ((val << 8) & 0xFF00FF00FF00FF00ULL) | ((val >> 8) & 0x00FF00FF00FF00FFULL);
 	val = ((val << 16) & 0xFFFF0000FFFF0000ULL) | ((val >> 16) & 0x0000FFFF0000FFFFULL);
 	return (val << 32) | (val >> 32);
 }
+#endif
 
+#if __has_builtin(__builtin_bswap64)
+#define rz_swap_st64 __builtin_bswap64
+#else
 static inline st64 rz_swap_st64(st64 val) {
 	val = ((val << 8) & 0xFF00FF00FF00FF00ULL) | ((val >> 8) & 0x00FF00FF00FF00FFULL);
 	val = ((val << 16) & 0xFFFF0000FFFF0000ULL) | ((val >> 16) & 0x0000FFFF0000FFFFULL);
 	return (val << 32) | ((val >> 32) & 0xFFFFFFFFULL);
 }
+#endif
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
