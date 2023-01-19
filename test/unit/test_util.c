@@ -40,7 +40,6 @@ bool test_file_slurp(void) {
 	mu_end;
 }
 
-
 int all_tests() {
 	mu_run_test(test_file_slurp);
 	return tests_passed != tests_run;
