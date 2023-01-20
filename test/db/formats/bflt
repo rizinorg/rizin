@@ -552,7 +552,7 @@ EXPECT=<<EOF
 ------ string (reloc target of above)
             ; UNKNOWN XREFS from fcn.0408aafc @ +0xc84, +0xc88, +0xd80, +0xd88
             ;-- str.Success:
-            0x040af7c4     .string "Success" ; len=7                   ; RELOC TARGET 32 
+            0x040af7c4     .string "Success" ; len=8                   ; RELOC TARGET 32 
 ------ nice disassembly showing the string and xrefs
             0x0408b780      ldr   r3, str.Success                      ; [0x40af7c4:4]=0x63637553 ; "Success"
 d 0x408b884 streq pc, [sl], -str.Success

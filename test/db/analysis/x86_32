@@ -4055,7 +4055,7 @@ s 0x00402130
 axt
 EOF
 EXPECT=<<EOF
-(nofunc) 0x4010d1 [DATA] lea edx, [ebx*4 + 0x402130]
+(nofunc) 0x4010d1 [DATA] lea edx, [ebx*4 + str.Y_B]
 EOF
 RUN
 

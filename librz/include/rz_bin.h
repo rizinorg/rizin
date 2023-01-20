@@ -757,7 +757,7 @@ typedef struct rz_bin_string_t {
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
-	char type; // Ascii Wide cp850 utf8 mutf8 base64 ...
+	RzStrEnc type; // Ascii Wide cp850 utf8 mutf8 base64 ...
 } RzBinString;
 
 typedef struct rz_bin_field_t {
