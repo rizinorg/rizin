@@ -784,6 +784,10 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 			return NULL;
 		}
 
+		if (UT32_MUL_OVFCHK(slide_info.page_starts_count, 2) || UT64_ADD_OVFCHK(offset, size)) {
+			return NULL;
+		}
+
 		ut64 page_starts_offset = offset + size;
 		ut64 page_starts_size = slide_info.page_starts_count * 2;
 
