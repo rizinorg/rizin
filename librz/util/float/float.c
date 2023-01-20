@@ -2324,8 +2324,7 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
  */
 RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
-	// TODO: ask semantic for neg float -> unsigned int
-	return NULL;
+	return rz_float_cast_sint(f, length, mode);
 }
 
 /**
@@ -2340,7 +2339,6 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	rz_return_val_if_fail(f, NULL);
 
 	RzBitVector *ret = rz_bv_new(length);
-	RzBitVector *bv_one;
 	RzBitVector *tmp, *rounded;
 	ut32 exp = float_exponent(f);
 	RzFloatFormat format = f->r;
@@ -2382,7 +2380,10 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	// rounded result
 	if (should_inc) {
 		// WARN: possible overflow => no enough length
+		RzBitVector *bv_one;
+		bv_one = rz_bv_new_one(rz_bv_len(tmp));
 		rounded = rz_bv_add(tmp, bv_one, NULL);
+		rz_bv_free(bv_one);
 	} else {
 		rounded = rz_bv_dup(tmp);
 	}
@@ -2401,7 +2402,6 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	rz_bv_copy(rounded, ret);
 
 	rz_bv_free(rounded);
-	rz_bv_free(bv_one);
 	return ret;
 }
 
