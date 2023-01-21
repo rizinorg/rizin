@@ -467,6 +467,16 @@ foreach it : ccs
     it_userconf.set10('HAVE_HEADER_@0@'.format(hdr.underscorify().to_upper()), ok)
   endforeach
 
+  foreach intrin : [
+      ['__builtin_bswap16', 'BSWAP16'],
+      ['__builtin_bswap32', 'BSWAP32'],
+      ['__builtin_bswap64', 'BSWAP64'],
+    ]
+    has_intrin = it_cc.has_function(intrin[0])
+    define_name = 'HAVE_' + intrin[1]
+    it_userconf.set10(define_name, has_intrin)
+  endforeach
+
   if it_userconf.get('HAVE_PIPE2') == 1
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'], native: it_native)
   endif
@@ -794,3 +804,4 @@ summary({
   'Parse Plugins': parse_plugins.get('list'),
   'Demangler Plugins': demangler_plugins.get('list'),
 }, section: 'Plugins', list_sep: ', ')
+
