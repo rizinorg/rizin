@@ -667,8 +667,8 @@ EOF
 EXPECT=<<EOF
             0x00000000      ?       R1 = ##0xc                         ; "Where is Wally?"
             0x00000004      [   memw(R17+#0x0) = ##0x1c                ; "There is Wally!"
-0x0000000c 1 str.Where_is_Wally
-0x0000001c 1 str.There_is_Wally
+0x0000000c 16 str.Where_is_Wally
+0x0000001c 16 str.There_is_Wally
 EOF
 RUN
 
