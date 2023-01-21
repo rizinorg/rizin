@@ -592,10 +592,6 @@ static inline void rz_write_ble_double(void *src, double val, bool big_endian) {
 	big_endian ? rz_write_be_double(src, val) : rz_write_le_double(src, val);
 }
 
-#ifndef __has_builtin
-#define __has_builtin(n) (0)
-#endif
-
 /*swap*/
 
 /* Use compiler intrinsics if present */
