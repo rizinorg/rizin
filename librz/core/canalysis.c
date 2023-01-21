@@ -2183,7 +2183,7 @@ static void set_new_xref(RzCore *core, ut64 xref_from, ut64 xref_to, RzAnalysisX
 		rz_name_filter(string, -1, true);
 		char *flagname = rz_str_newf("str.%s", string);
 		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
-		(void)rz_flag_set(core->flags, flagname, xref_to, 1);
+		(void)rz_flag_set(core->flags, flagname, xref_to, length);
 		rz_flag_space_pop(core->flags);
 		free(flagname);
 		free(string);
