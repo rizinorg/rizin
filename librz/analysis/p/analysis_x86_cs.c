@@ -3228,7 +3228,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			rz_x86_il_opcode(a, op, addr, &x86_il_ins);
 		}
 
-		//#if X86_GRP_PRIVILEGE>0
+		// #if X86_GRP_PRIVILEGE>0
 #if HAVE_CSGRP_PRIVILEGE
 		if (cs_insn_group(ctx->handle, ctx->insn, X86_GRP_PRIVILEGE)) {
 			op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;

@@ -1689,7 +1689,7 @@ RZ_API RzLibStruct rizin_plugin = {
 };
 #endif // RZ_PLUGIN_INCORE
 
-//#endif
+// #endif
 #else // DEBUGGER
 RzDebugPlugin rz_debug_plugin_native = {
 	NULL // .name = "native",

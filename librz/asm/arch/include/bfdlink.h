@@ -143,7 +143,7 @@ struct bfd_link_hash_entry {
 			struct bfd_link_hash_common_entry {
 				unsigned int alignment_power; /* Alignment.  */
 				asection *section; /* Symbol section.  */
-			} * p;
+			} *p;
 			bfd_size_type size; /* Common symbol size.  */
 		} c;
 	} u;

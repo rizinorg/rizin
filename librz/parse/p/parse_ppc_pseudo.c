@@ -86,7 +86,7 @@
 #define SPR_DABR    0x3f5
 #define SPR_HID5    0x3f6 /* Hardware Implementation Register 5 */
 #define SPR_HID6    0x3f9 /* Hardware Implementation Register 6 */
-//#define SPR_L2CR        0x3f9
+// #define SPR_L2CR        0x3f9
 #define SPR_ICTC  0x3fb
 #define SPR_THRM1 0x3fc
 #define SPR_THRM2 0x3fd

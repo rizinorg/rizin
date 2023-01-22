@@ -36,14 +36,14 @@ extern char *strdup(const char *);
 #include <malloc.h> // for _aligned_malloc
 #endif
 
-//#define SDB_MODE 0
+// #define SDB_MODE 0
 #define SDB_MODE _S_IWRITE | _S_IREAD
 #else
 #define SDB_MODE 0644
-//#define SDB_MODE 0600
+// #define SDB_MODE 0600
 #endif
 
-//#define SDB_RS '\x1e'
+// #define SDB_RS '\x1e'
 #define SDB_RS        ','
 #define SDB_SS        ","
 #define SDB_MAX_PATH  256

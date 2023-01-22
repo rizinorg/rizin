@@ -311,7 +311,9 @@ bool java_attribute_set_module(Attribute *attr, RzBuffer *buf) {
 	}
 
 	if (am->requires_count > 0) {
-		am->requires = RZ_NEWS0(ModuleRequire, am->requires_count);
+		am->
+			requires
+		= RZ_NEWS0(ModuleRequire, am->requires_count);
 		if (!am->requires) {
 			goto java_attribute_set_module_bad;
 		}

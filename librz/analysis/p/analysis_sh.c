@@ -53,12 +53,12 @@
 #define IS_STSMACH(x)           (((x)&0xF0FF) == 0x000A)
 #define IS_STSMACL(x)           (((x)&0xF0FF) == 0x001A)
 #define IS_STSPR(x)             (((x)&0xF0FF) == 0x002A)
-//#define IS_STSFPUL(x)	(((x) & 0xF0FF) == 0x005A)	//FP*: todo maybe someday
-//#define IS_STSFPSCR(x)	(((x) & 0xF0FF) == 0x006A)
+// #define IS_STSFPUL(x)	(((x) & 0xF0FF) == 0x005A)	//FP*: todo maybe someday
+// #define IS_STSFPSCR(x)	(((x) & 0xF0FF) == 0x006A)
 #define IS_MOVB_REG_TO_REGREF(x) (((x)&0xF00F) == 0x2000)
 #define IS_MOVW_REG_TO_REGREF(x) (((x)&0xF00F) == 0x2001)
 #define IS_MOVL_REG_TO_REGREF(x) (((x)&0xF00F) == 0x2002)
-//#define invalid?(x)	(((x) & 0xF00F) == 0x2003)	//illegal on sh2e
+// #define invalid?(x)	(((x) & 0xF00F) == 0x2003)	//illegal on sh2e
 #define IS_PUSHB(x)    (((x)&0xF00F) == 0x2004)
 #define IS_PUSHW(x)    (((x)&0xF00F) == 0x2005)
 #define IS_PUSHL(x)    (((x)&0xF00F) == 0x2006)
@@ -72,7 +72,7 @@
 #define IS_MULUW(x)    (((x)&0xF00F) == 0x200E)
 #define IS_MULSW(x)    (((x)&0xF00F) == 0x200F)
 #define IS_CMPEQ(x)    (((x)&0xF00F) == 0x3000)
-//#define invalid?(x)	(((x) & 0xF00F) == 0x3001)
+// #define invalid?(x)	(((x) & 0xF00F) == 0x3001)
 #define IS_CMPHS(x) (((x)&0xF00F) == 0x3002)
 #define IS_CMPGE(x) (((x)&0xF00F) == 0x3003)
 #define IS_CMPHI(x) (((x)&0xF00F) == 0x3006)
@@ -81,7 +81,7 @@
 #define IS_DMULU(x) (((x)&0xF00F) == 0x3005)
 #define IS_DMULS(x) (((x)&0xF00F) == 0x300D)
 #define IS_SUB(x)   (((x)&0xF00F) == 0x3008)
-//#define invalid?(x)	(((x) & 0xF00F) == 0x3009)
+// #define invalid?(x)	(((x) & 0xF00F) == 0x3009)
 #define IS_SUBC(x)      (((x)&0xF00F) == 0x300A)
 #define IS_SUBV(x)      (((x)&0xF00F) == 0x300B)
 #define IS_ADD(x)       (((x)&0xF00F) == 0x300C)
@@ -104,18 +104,18 @@
 #define IS_LDSLMACL(x)  (((x)&0xF0FF) == 0x4016)
 #define IS_LDSPR(x)     (((x)&0xF0FF) == 0x402A)
 #define IS_LDSLPR(x)    (((x)&0xF0FF) == 0x4026)
-//#define IS_LDSFPUL(x)	(((x) & 0xF0FF) == 0x405A)	//FP*: todo maybe someday
-//#define IS_LDSFPSCR(x)	(((x) & 0xF0FF) == 0x406A)
-//#define IS_LDSLFPUL(x)	(((x) & 0xF0FF) == 0x4066)
-//#define IS_LDSLFPSCR(x)	(((x) & 0xF0FF) == 0x4056)
+// #define IS_LDSFPUL(x)	(((x) & 0xF0FF) == 0x405A)	//FP*: todo maybe someday
+// #define IS_LDSFPSCR(x)	(((x) & 0xF0FF) == 0x406A)
+// #define IS_LDSLFPUL(x)	(((x) & 0xF0FF) == 0x4066)
+// #define IS_LDSLFPSCR(x)	(((x) & 0xF0FF) == 0x4056)
 #define IS_ROTCR(x) (((x)&0xF0FF) == 0x4025)
 #define IS_ROTCL(x) (((x)&0xF0FF) == 0x4024)
 #define IS_ROTL(x)  (((x)&0xF0FF) == 0x4004)
 #define IS_ROTR(x)  (((x)&0xF0FF) == 0x4005)
 // not on sh2e : shad, shld
 
-//#define IS_SHIFT1(x)	(((x) & 0xF0DE) == 0x4000)	//unused (treated as switch-case)
-// other shl{l,r}{,2,8,16} in switch case also.
+// #define IS_SHIFT1(x)	(((x) & 0xF0DE) == 0x4000)	//unused (treated as switch-case)
+//  other shl{l,r}{,2,8,16} in switch case also.
 
 #define IS_STSLMACL(x) (((x)&0xF0FF) == 0x4012)
 #define IS_STSLMACH(x) (((x)&0xF0FF) == 0x4002)
@@ -124,8 +124,8 @@
 #define IS_STCLVBR(x)  (((x)&0xF0FF) == 0x4023)
 // todo: other stc.l not on sh2e
 #define IS_STSLPR(x) (((x)&0xF0FF) == 0x4022)
-//#define IS_STSLFPUL(x)	(((x) & 0xF0FF) == 0x4052)
-//#define IS_STSLFPSCR(x)	(((x) & 0xF0FF) == 0x4062)
+// #define IS_STSLFPUL(x)	(((x) & 0xF0FF) == 0x4052)
+// #define IS_STSLFPSCR(x)	(((x) & 0xF0FF) == 0x4062)
 #define IS_TASB(x) (((x)&0xF0FF) == 0x401B)
 #define IS_DT(x)   (((x)&0xF0FF) == 0x4010)
 
@@ -145,11 +145,11 @@
 
 #define IS_MOVB_R0_REGDISP(x) (((x)&0xFF00) == 0x8000)
 #define IS_MOVW_R0_REGDISP(x) (((x)&0xFF00) == 0x8100)
-//#define illegal?(x)	(((x) & 0xF900) == 0x8000)	//match 8{2,3,6,7}00
+// #define illegal?(x)	(((x) & 0xF900) == 0x8000)	//match 8{2,3,6,7}00
 #define IS_MOVB_REGDISP_R0(x) (((x)&0xFF00) == 0x8400)
 #define IS_MOVW_REGDISP_R0(x) (((x)&0xFF00) == 0x8500)
 #define IS_CMPIMM(x)          (((x)&0xFF00) == 0x8800)
-//#define illegal?(x)	(((x) & 0xFB00) == 0x8A00)	//match 8{A,E}00
+// #define illegal?(x)	(((x) & 0xFB00) == 0x8A00)	//match 8{A,E}00
 #define IS_BT(x)       (((x)&0xff00) == 0x8900)
 #define IS_BF(x)       (((x)&0xff00) == 0x8B00)
 #define IS_BTS(x)      (((x)&0xff00) == 0x8D00)

@@ -11,7 +11,9 @@
 #define UTF_BLOCKS_COUNT              RZ_ARRAY_SIZE(utf_blocks)
 #define UTF_NONPRINTABLE_RANGES_COUNT RZ_ARRAY_SIZE(nonprintable_ranges)
 
-const struct { ut32 from, to; } nonprintable_ranges[] = {
+const struct {
+	ut32 from, to;
+} nonprintable_ranges[] = {
 	{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
 	{ 0x0378, 0x0379 }, { 0x037F, 0x0383 }, { 0x038B, 0x038B },
 	{ 0x038D, 0x038D }, { 0x03A2, 0x03A2 }, { 0x0528, 0x0530 },

@@ -107,18 +107,18 @@ jobs:
     - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
       run: sudo apt --assume-yes install wget software-properties-common lsb-release
 
-    - name: Install automatic LLVM 14
-      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 14
+    - name: Install automatic LLVM 15
+      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 15
 
-    - name: Install clang-format-14
-      run: sudo apt --assume-yes install clang-format-14
+    - name: Install clang-format-15
+      run: sudo apt --assume-yes install clang-format-15
 
     - name: Install gitpython
       run: sudo pip install gitpython
 
     - name: Run clang-format
       run: |
-        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 140
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-15 150
         clang-format --version
         python sys/clang-format.py --check --verbose
 
