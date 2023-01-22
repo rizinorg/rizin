@@ -449,6 +449,9 @@ foreach it : ccs
       # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
       ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
       ['backtrace', '', []],
+      ['__builtin_bswap16', '', []],
+      ['__builtin_bswap32', '', []],
+      ['__builtin_bswap64', '', []],
     ]
     func = item[0]
     ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])
@@ -794,3 +797,4 @@ summary({
   'Parse Plugins': parse_plugins.get('list'),
   'Demangler Plugins': demangler_plugins.get('list'),
 }, section: 'Plugins', list_sep: ', ')
+

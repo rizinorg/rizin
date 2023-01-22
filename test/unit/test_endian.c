@@ -6,6 +6,47 @@
 #include <stdlib.h>
 #include "minunit.h"
 
+bool test_endian(void) {
+	ut8 buf[8];
+	rz_write_be16(buf, 0x1122);
+	mu_assert_memeq((ut8 *)"\x11\x22", buf, 2, "be16");
+	rz_write_le16(buf, 0x1122);
+	mu_assert_memeq((ut8 *)"\x22\x11", buf, 2, "le16");
+
+	rz_write_be32(buf, 0x11223344);
+	mu_assert_memeq((ut8 *)"\x11\x22\x33\x44", buf, 4, "be32");
+	rz_write_le32(buf, 0x11223344);
+	mu_assert_memeq((ut8 *)"\x44\x33\x22\x11", buf, 4, "le32");
+
+	rz_write_ble(buf, 0x1122, true, 16);
+	mu_assert_memeq((ut8 *)"\x11\x22", buf, 2, "ble 16 true");
+	rz_write_ble(buf, 0x1122, false, 16);
+	mu_assert_memeq((ut8 *)"\x22\x11", buf, 2, "ble 16 false");
+
+	mu_end;
+}
+
+bool test_rz_swap_ut64(void) {
+	ut64 a = 0x1122334455667788;
+	ut64 b = rz_swap_ut64(a);
+	mu_assert_eq(b, 0x8877665544332211, "rz_swap_ut64");
+	mu_end;
+}
+
+bool test_rz_swap_ut32(void) {
+	ut32 a = 0x11223344;
+	ut32 b = rz_swap_ut32(a);
+	mu_assert_eq(b, 0x44332211, "rz_swap_ut32");
+	mu_end;
+}
+
+bool test_rz_swap_ut16(void) {
+	ut16 a = 0x1122;
+	ut16 b = rz_swap_ut16(a);
+	mu_assert_eq(b, 0x2211, "rz_swap_ut16");
+	mu_end;
+}
+
 bool test_be(void) {
 	const float f32 = 5.728f;
 	const ut8 bf32[4] = { 0x40, 0xb7, 0x4b, 0xc7 };
@@ -85,6 +126,10 @@ bool test_me(void) {
 }
 
 int all_tests() {
+	mu_run_test(test_endian);
+	mu_run_test(test_rz_swap_ut64);
+	mu_run_test(test_rz_swap_ut32);
+	mu_run_test(test_rz_swap_ut16);
 	mu_run_test(test_be);
 	mu_run_test(test_le);
 	mu_run_test(test_me);
