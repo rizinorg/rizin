@@ -596,7 +596,7 @@ static inline void rz_write_ble_double(void *src, double val, bool big_endian) {
 
 /* Use compiler intrinsics if present */
 
-#if HAVE_BSWAP16
+#if HAVE___BUILTIN_BSWAP16
 #define rz_swap_ut16 __builtin_bswap16
 #else
 static inline ut16 rz_swap_ut16(ut16 val) {
@@ -604,7 +604,7 @@ static inline ut16 rz_swap_ut16(ut16 val) {
 }
 #endif
 
-#if HAVE_BSWAP16
+#if HAVE___BUILTIN_BSWAP16
 #define rz_swap_st16 __builtin_bswap16
 #else
 static inline st16 rz_swap_st16(st16 val) {
@@ -613,7 +613,7 @@ static inline st16 rz_swap_st16(st16 val) {
 }
 #endif
 
-#if HAVE_BSWAP32
+#if HAVE___BUILTIN_BSWAP32
 #define rz_swap_ut32 __builtin_bswap32
 #else
 static inline ut32 rz_swap_ut32(ut32 val) {
@@ -622,7 +622,7 @@ static inline ut32 rz_swap_ut32(ut32 val) {
 }
 #endif
 
-#if HAVE_BSWAP32
+#if HAVE___BUILTIN_BSWAP32
 #define rz_swap_st32 __builtin_bswap32
 #else
 static inline st32 rz_swap_st32(st32 val) {
@@ -631,7 +631,7 @@ static inline st32 rz_swap_st32(st32 val) {
 }
 #endif
 
-#if HAVE_BSWAP64
+#if HAVE___BUILTIN_BSWAP64
 #define rz_swap_ut64 __builtin_bswap64
 #else
 static inline ut64 rz_swap_ut64(ut64 val) {
@@ -641,7 +641,7 @@ static inline ut64 rz_swap_ut64(ut64 val) {
 }
 #endif
 
-#if HAVE_BSWAP64
+#if HAVE___BUILTIN_BSWAP64
 #define rz_swap_st64 __builtin_bswap64
 #else
 static inline st64 rz_swap_st64(st64 val) {

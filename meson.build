@@ -449,6 +449,9 @@ foreach it : ccs
       # copy_file_range for now disable on freebsd as it s not reliable even for small chunks
       ['copy_file_range', '#ifdef __linux__\n#define _GNU_SOURCE\n#include <unistd.h>\n#endif', []],
       ['backtrace', '', []],
+      ['__builtin_bswap16', '', []],
+      ['__builtin_bswap32', '', []],
+      ['__builtin_bswap64', '', []],
     ]
     func = item[0]
     ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])
@@ -465,16 +468,6 @@ foreach it : ccs
     hdr = item[0]
     ok = it_cc.has_header(hdr, prefix: item[1], dependencies: item[2])
     it_userconf.set10('HAVE_HEADER_@0@'.format(hdr.underscorify().to_upper()), ok)
-  endforeach
-
-  foreach intrin : [
-      ['__builtin_bswap16', 'BSWAP16'],
-      ['__builtin_bswap32', 'BSWAP32'],
-      ['__builtin_bswap64', 'BSWAP64'],
-    ]
-    has_intrin = it_cc.has_function(intrin[0])
-    define_name = 'HAVE_' + intrin[1]
-    it_userconf.set10(define_name, has_intrin)
   endforeach
 
   if it_userconf.get('HAVE_PIPE2') == 1
