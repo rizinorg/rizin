@@ -24,7 +24,7 @@ typedef struct hash_cfg_config_t {
 	const RzHashPlugin *plugin;
 } HashCfgConfig;
 
-const static RzHashPlugin *hash_static_plugins[] = { RZ_HASH_STATIC_PLUGINS };
+static RzHashPlugin *hash_static_plugins[] = { RZ_HASH_STATIC_PLUGINS };
 
 /**
  * \brief      Calculates the ssdeep digest of the given input
@@ -659,7 +659,7 @@ RZ_API RzHash *rz_hash_new(void) {
 	if (!rh) {
 		return NULL;
 	}
-	rh->plugins = rz_list_newf(free);
+	rh->plugins = rz_list_new();
 	for (int i = 0; i < RZ_ARRAY_SIZE(hash_static_plugins); i++) {
 		rz_hash_plugin_add(rh, hash_static_plugins[i]);
 	}
@@ -678,7 +678,7 @@ RZ_API void rz_hash_free(RzHash *rh) {
  * \brief Add a new plugin to \p rh so that \p RzHashCfg can be created using
  * specific algorithms.
  */
-RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN const RzHashPlugin *plugin) {
+RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN RzHashPlugin *plugin) {
 	rz_return_val_if_fail(rh && plugin && plugin->name, false);
 	RZ_PLUGIN_CHECK_AND_ADD(rh->plugins, plugin, RzHashPlugin);
 	return true;

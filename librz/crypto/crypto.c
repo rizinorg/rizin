@@ -98,7 +98,7 @@ RZ_API RzCrypto *rz_crypto_new(void) {
 		goto rz_crypto_new_bad;
 	}
 
-	cry->plugins = rz_list_newf(free);
+	cry->plugins = rz_list_new();
 	if (!cry->plugins) {
 		goto rz_crypto_new_bad;
 	}
