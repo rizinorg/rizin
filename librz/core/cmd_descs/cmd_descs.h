@@ -1669,6 +1669,18 @@ RZ_IPI RzCmdStatus rz_cmd_print_byte_array_yara_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_cmd_print_byte_array_rizin_handler(RzCore *core, int argc, const char **argv);
 // "pD"
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pCd"
+RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, const char **argv);
+// "pCD"
+RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const char **argv);
+// "pCa"
+RZ_IPI RzCmdStatus rz_print_columns_hex_annotated_handler(RzCore *core, int argc, const char **argv);
+// "pCA"
+RZ_IPI RzCmdStatus rz_print_columns_hex_op_colored_handler(RzCore *core, int argc, const char **argv);
+// "pCx"
+RZ_IPI RzCmdStatus rz_print_columns_hex_handler(RzCore *core, int argc, const char **argv);
+// "pCw"
+RZ_IPI RzCmdStatus rz_print_columns_hex_words_handler(RzCore *core, int argc, const char **argv);
 // "pd"
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instructions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pda"
