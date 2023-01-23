@@ -126,7 +126,7 @@ RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
  * \brief Empties the list and frees the list pointer
  *
  **/
-RZ_API void rz_list_free(RZ_NONNULL RzList *list) {
+RZ_API void rz_list_free(RzList *list) {
 	if (list) {
 		rz_list_purge(list);
 		free(list);

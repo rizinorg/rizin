@@ -39,6 +39,9 @@ RZ_API RzParse *rz_parse_new(void) {
 }
 
 RZ_API void rz_parse_free(RzParse *p) {
+	if (!p) {
+		return;
+	}
 	RzListIter *it, *tmp;
 	RzParsePlugin *plugin;
 	rz_list_foreach_safe (p->parsers, it, tmp, plugin) {

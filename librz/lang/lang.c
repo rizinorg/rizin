@@ -44,19 +44,20 @@ RZ_API RzLang *rz_lang_new(void) {
 }
 
 RZ_API void rz_lang_free(RzLang *lang) {
-	if (lang) {
-		RzListIter *it;
-		RzLangPlugin *p;
-
-		rz_list_foreach (lang->langs, it, p) {
-			plugin_fini(lang, p);
-		}
-
-		rz_lang_undef(lang, NULL);
-		rz_list_free(lang->langs);
-		rz_list_free(lang->defs);
-		free(lang);
+	if (!lang) {
+		return;
 	}
+	RzListIter *it;
+	RzLangPlugin *p;
+
+	rz_list_foreach (lang->langs, it, p) {
+		plugin_fini(lang, p);
+	}
+
+	rz_lang_undef(lang, NULL);
+	rz_list_free(lang->langs);
+	rz_list_free(lang->defs);
+	free(lang);
 }
 
 // XXX: This is only used actually to pass 'core' structure
