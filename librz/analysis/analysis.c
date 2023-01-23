@@ -113,7 +113,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->leaddrs = NULL;
 	analysis->imports = rz_list_newf(free);
 	rz_analysis_set_bits(analysis, 32);
-	analysis->plugins = rz_list_newf(free);
+	analysis->plugins = rz_list_new();
 	if (analysis->plugins) {
 		for (i = 0; i < RZ_ARRAY_SIZE(analysis_static_plugins); i++) {
 			rz_analysis_plugin_add(analysis, analysis_static_plugins[i]);

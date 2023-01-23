@@ -36,7 +36,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = rz_list_newf(free);
+	io->plugins = rz_list_new();
 	for (i = 0; i < RZ_ARRAY_SIZE(io_static_plugins); i++) {
 		if (!io_static_plugins[i]->name) {
 			continue;

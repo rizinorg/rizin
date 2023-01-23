@@ -105,16 +105,6 @@ typedef struct rz_lib_t {
 	HtPU *opened_dirs; ///< Hashtable to keep track of already opened directories
 } RzLib;
 
-#define RZ_PLUGIN_ADD(plugins, plugin, py_type) \
-	do { \
-		py_type *_dup = RZ_NEW(py_type); \
-		if (!_dup) { \
-			return false; \
-		} \
-		memcpy(_dup, (plugin), sizeof(py_type)); \
-		rz_list_append(plugins, _dup); \
-	} while (0)
-
 #define RZ_PLUGIN_CHECK_AND_ADD(plugins, plugin, py_type) \
 	do { \
 		RzListIter *_it; \
@@ -124,7 +114,7 @@ typedef struct rz_lib_t {
 				return false; \
 			} \
 		} \
-		RZ_PLUGIN_ADD(plugins, plugin, py_type); \
+		rz_list_append(plugins, plugin); \
 	} while (0)
 
 #ifdef RZ_API

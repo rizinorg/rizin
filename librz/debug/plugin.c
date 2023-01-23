@@ -9,7 +9,7 @@ static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 	int i;
-	dbg->plugins = rz_list_newf(free);
+	dbg->plugins = rz_list_new();
 	for (i = 0; i < RZ_ARRAY_SIZE(debug_static_plugins); i++) {
 		rz_debug_plugin_add(dbg, debug_static_plugins[i]);
 	}

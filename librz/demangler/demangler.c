@@ -166,7 +166,7 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDe
 		}
 	}
 
-	RZ_PLUGIN_ADD(dem->plugins, plugin, RzDemanglerPlugin);
+	rz_list_append(dem->plugins, plugin);
 	return true;
 }
 
