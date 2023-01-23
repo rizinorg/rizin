@@ -944,7 +944,7 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 			shift = 48;
 		}
 		ut64 shifted_imm = IMM64(1) << shift;
-		ut64 mask = ~(0xffffLL << shift);
+		ut64 mask = ~(0xffffULL << shift);
 
 		rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",%s,&,%" PFMT64u ",|,%s,=",
 			mask,
