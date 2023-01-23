@@ -2028,8 +2028,7 @@ IL_LIFTER(into) {
 
 #define JUMP_IL() \
 	do { \
-		RzILOpPure *jmp_addr = UN(analysis->bits, pc); \
-		jmp_addr = ADD(jmp_addr, SN(analysis->bits, ins->structure->operands[0].imm)); \
+		RzILOpPure *jmp_addr = UN(analysis->bits, ins->structure->operands[0].imm); \
 		if (ins->structure->operands[0].size == 16 && analysis->bits != 64) { \
 			jmp_addr = LOGAND(jmp_addr, UN(analysis->bits, 0x0000ffff)); \
 		} \
@@ -2238,14 +2237,7 @@ IL_LIFTER(js) {
  *  - M
  */
 IL_LIFTER(jmp) {
-	RzILOpPure *target;
-	if (ins->structure->operands[0].type == X86_OP_IMM) {
-		target = ADD(UN(analysis->bits, pc), SN(analysis->bits, ins->structure->operands[0].imm));
-	} else {
-		target = UNSIGNED(analysis->bits, x86_il_get_op(0));
-	}
-
-	return JMP(target);
+	return JMP(UNSIGNED(analysis->bits, x86_il_get_op(0)));
 }
 
 /**
