@@ -1372,6 +1372,8 @@ RZ_IPI RzCmdStatus rz_egg_encoder_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_egg_reset_handler(RzCore *core, int argc, const char **argv);
 // "gS"
 RZ_IPI RzCmdStatus rz_egg_show_config_handler(RzCore *core, int argc, const char **argv);
+// "help"
+RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv);
 // "H"
 RZ_IPI RzCmdStatus rz_history_list_or_exec_handler(RzCore *core, int argc, const char **argv);
 // "H-"
