@@ -3114,7 +3114,7 @@ IL_LIFTER(sal) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
 
-	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
+	return SEQ4(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")), x86_il_set_result_flags(VARL("_dest")));
 }
 
 /**
@@ -3134,7 +3134,7 @@ IL_LIFTER(sar) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), IL_FALSE);
 
-	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
+	return SEQ4(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")), x86_il_set_result_flags(VARL("_dest")));
 }
 
 /**
@@ -3155,7 +3155,7 @@ IL_LIFTER(shl) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), XOR(MSB(VARL("_dest")), VARG(EFLAGS(CF))));
 
-	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
+	return SEQ4(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")), x86_il_set_result_flags(VARL("_dest")));
 }
 
 /**
@@ -3175,7 +3175,7 @@ IL_LIFTER(shr) {
 	RzILOpBool *cond = EQ(VARL("_masked"), UN(count_size, 1));
 	RzILOpEffect *set_overflow = SETG(EFLAGS(OF), MSB(VARL("_tmp_dest")));
 
-	return SEQ3(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")));
+	return SEQ4(ret, BRANCH(cond, set_overflow, NULL), x86_il_set_op(0, VARL("_dest")), x86_il_set_result_flags(VARL("_dest")));
 }
 
 /**
