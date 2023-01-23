@@ -1,0 +1,84 @@
+NAME=pC - crash
+FILE==
+CMDS=<<EOF
+e scr.null=true
+pCd 0x200
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pCa
+FILE==
+CMDS=<<EOF
+wx 55aa55aa909055aa9090ff20000ffffffff55fffffaaffffffffff
+pCa 3
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  55aa 55aa 9090 55aa 9090 ff20 000f ffff  U.U...U.... ....
+0x00000010  fff5 5fff ffaa ffff ffff ff00 0000 0000  .._.............
+0x00000020  0000 0000 0000 0000 0000 0000 0000 0000  ................
+EOF
+RUN
+
+NAME=pCA
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 55aa55aa909055aa9090ff20000ffffffff55fffffaaffffffffff
+pCA 4
+EOF
+EXPECT=<<EOF
+0x00000000  ->  ->  ....->  ...._J++    -><-  _J++++++++++++++++++++++++++++  54
+0x00000036  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  64
+0x00000076  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  64
+0x000000b6  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  64
+0x000000f6  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  64
+EOF
+RUN
+
+NAME=pCd
+FILE==
+ARGS=-a arm -b 32
+CMDS=<<EOF
+wx 55aa55aa909055aa9090ff20000ff34534ff55f45eaac0c0c0cdf534
+pCd 3
+EOF
+EXPECT=<<EOF
+0x00000000 bge 0x156a95c                0x0000000c ldrbmi r0, [r3, 0xf00]!
+0x00000004 bge 0x156424c                0x00000010 pli [r5, -0xf34]
+0x00000008 smlalshs sb, pc, r0, r0      0x00000014 sbcgt sl, r0, lr, asr sl
+EOF
+RUN
+
+NAME=pCx
+FILE==
+CMDS=<<EOF
+wx 55aa55aa909055aa9090ff20000ffffffff55fffffaaffffffffff
+pCx 5
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  55aa 55aa 9090 55aa 9090 ff20 000f ffff  U.U...U.... ....
+0x00000010  fff5 5fff ffaa ffff ffff ff00 0000 0000  .._.............
+0x00000020  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000030  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000040  0000 0000 0000 0000 0000 0000 0000 0000  ................
+EOF
+RUN
+
+NAME=pCw
+FILE==
+CMDS=<<EOF
+wx 55aa55aa909055aa9090ff20000ffffffff55fffffaaffffffffff
+pCw 4
+EOF
+EXPECT=<<EOF
+0x00000000  0xaa55aa55 0xaa559090 0x20ff9090 0xffff0f00  U.U...U.... ....
+0x00000010  0xff5ff5ff 0xffffaaff 0x00ffffff 0x00000000  .._.............
+0x00000020  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000030  0x00000000 0x00000000 0x00000000 0x00000000  ................
+0x00000040  0x00000000 0x00000000 0x00000000 0x00000000  ................
+EOF
+RUN

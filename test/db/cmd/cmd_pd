@@ -1552,16 +1552,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pC - crash
-FILE==
-CMDS=<<EOF
-e scr.null=true
-pC 0x200
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=pd bin.str.purge
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF

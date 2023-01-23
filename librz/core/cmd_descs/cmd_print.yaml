@@ -165,6 +165,51 @@ commands:
       - name: n_bytes
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
+  - name: pC
+    summary: Print disassembly in columns
+    subcommands:
+      - name: pCd
+        summary: Print <N> lines of instructions disassembly in columns
+        cname: print_columns_disassembly
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCD
+        summary: Print <N> lines of the debug registers and stack in columns
+        cname: print_columns_debug
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCa
+        summary: Print <N> lines of annotated hexdump in columns
+        cname: print_columns_hex_annotated
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCA
+        summary: Print <N> lines of op analysis color map in columns
+        cname: print_columns_hex_op_colored
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCx
+        summary: Print <N> lines of hexdump in columns
+        cname: print_columns_hex
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCw
+        summary: Print <N> lines of 4-byte integer hexdump in columns
+        cname: print_columns_hex_words
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: pd
     summary: Print Disassembly
     cname: cmd_print_disassembly
