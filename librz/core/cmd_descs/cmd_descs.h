@@ -1453,7 +1453,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_info_segments_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iSS."
 RZ_IPI RzCmdStatus rz_cmd_info_cur_segment_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "it"
+// "iT"
 RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "iV"
 RZ_IPI RzCmdStatus rz_cmd_info_versions_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);

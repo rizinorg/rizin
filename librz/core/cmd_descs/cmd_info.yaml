@@ -387,7 +387,7 @@ commands:
       - RZ_OUTPUT_MODE_TABLE
       - RZ_OUTPUT_MODE_JSON
     args: []
-  - name: it
+  - name: iT
     cname: cmd_info_hashes
     summary: Show file hashes
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
