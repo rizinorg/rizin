@@ -37,7 +37,7 @@ RZ_IPI RzCmdStatus rz_resize_handler(RzCore *core, int argc, const char **argv, 
 	if (!core->file) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ut64 oldsize = (core->file) ? rz_io_fd_size(core->io, core->file->fd) : 0;
+	ut64 oldsize = rz_io_fd_size(core->io, core->file->fd);
 	if (oldsize == -1) {
 		return RZ_CMD_STATUS_ERROR;
 	}

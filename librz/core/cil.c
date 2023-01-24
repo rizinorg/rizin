@@ -101,7 +101,7 @@ static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 				break;
 			case 'z': // "zero"
 			case '0':
-				rz_core_cmdf(core, "wow 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				rz_core_cmdf(core, "wb 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
 				break;
 			}
 		}
