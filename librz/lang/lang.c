@@ -10,12 +10,12 @@
 RZ_LIB_VERSION(rz_lang);
 
 static RzLangPlugin *lang_static_plugins[] = { RZ_LANG_STATIC_PLUGINS };
-static RzLang *__lang = NULL;
 
-RZ_API void rz_lang_plugin_free(RzLangPlugin *p) {
-	if (p && p->fini) {
-		p->fini(__lang);
+static bool plugin_fini(RzLang *lang, RzLangPlugin *plugin) {
+	if (plugin->fini) {
+		return plugin->fini(lang);
 	}
+	return true;
 }
 
 RZ_API RzLang *rz_lang_new(void) {
@@ -29,7 +29,6 @@ RZ_API RzLang *rz_lang_new(void) {
 		rz_lang_free(lang);
 		return NULL;
 	}
-	lang->langs->free = (RzListFree)rz_lang_plugin_free;
 	lang->defs = rz_list_new();
 	if (!lang->defs) {
 		rz_lang_free(lang);
@@ -45,14 +44,20 @@ RZ_API RzLang *rz_lang_new(void) {
 }
 
 RZ_API void rz_lang_free(RzLang *lang) {
-	if (lang) {
-		__lang = NULL;
-		rz_lang_undef(lang, NULL);
-		rz_list_free(lang->langs);
-		rz_list_free(lang->defs);
-		// TODO: remove langs plugins
-		free(lang);
+	if (!lang) {
+		return;
 	}
+	RzListIter *it;
+	RzLangPlugin *p;
+
+	rz_list_foreach (lang->langs, it, p) {
+		plugin_fini(lang, p);
+	}
+
+	rz_lang_undef(lang, NULL);
+	rz_list_free(lang->langs);
+	rz_list_free(lang->defs);
+	free(lang);
 }
 
 // XXX: This is only used actually to pass 'core' structure
@@ -118,7 +123,7 @@ RZ_API bool rz_lang_plugin_add(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	if (rz_lang_get_by_name(lang, plugin->name)) {
 		return false;
 	}
-	RZ_PLUGIN_ADD(lang->langs, plugin, RzLangPlugin);
+	rz_list_append(lang->langs, plugin);
 	if (plugin->init) {
 		plugin->init(lang);
 	}
@@ -127,7 +132,7 @@ RZ_API bool rz_lang_plugin_add(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 
 RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	rz_return_val_if_fail(lang && plugin, false);
-	if (plugin->fini && !plugin->fini(lang)) {
+	if (!plugin_fini(lang, plugin)) {
 		return false;
 	}
 	return rz_list_delete_data(lang->langs, plugin);

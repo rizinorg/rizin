@@ -426,6 +426,10 @@ RZ_API bool rz_bin_xtr_plugin_add(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin)
 	return true;
 }
 
+static bool plugin_fini(RzBin *bin, RzBinXtrPlugin *p) {
+	return !p->fini || p->fini(bin->user);
+}
+
 RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin) {
 	rz_return_val_if_fail(bin && plugin, false);
 
@@ -437,7 +441,7 @@ RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin)
 			rz_bin_file_delete(bin, bf);
 		}
 	}
-	if (plugin->fini && !plugin->fini(bin->user)) {
+	if (!plugin_fini(bin, plugin)) {
 		return false;
 	}
 	return rz_list_delete_data(bin->binxtrs, plugin);
@@ -453,6 +457,12 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	free(bin->strenc);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
+
+	RzListIter *it, *tmp;
+	RzBinXtrPlugin *p;
+	rz_list_foreach_safe (bin->binxtrs, it, tmp, p) {
+		plugin_fini(bin, p);
+	}
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->plugins);
 	sdb_free(bin->sdb);
@@ -742,7 +752,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = rz_list_newf(free);
+	bin->plugins = rz_list_new();
 	bin->minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
@@ -761,7 +771,7 @@ RZ_API RzBin *rz_bin_new(void) {
 		rz_bin_plugin_add(bin, bin_static_plugins[i]);
 	}
 	/* extractors */
-	bin->binxtrs = rz_list_newf(free);
+	bin->binxtrs = rz_list_new();
 	for (i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); i++) {
 		static_xtr_plugin = RZ_NEW0(RzBinXtrPlugin);
 		if (!static_xtr_plugin) {

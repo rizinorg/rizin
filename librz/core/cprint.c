@@ -870,3 +870,18 @@ restore_conf:
 	rz_config_hold_free(hc);
 	return rz_strbuf_drain(sb);
 }
+
+RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, NULL);
+	if (rz_config_get_b(core->config, "dbg.slow")) {
+		return "pxr";
+	}
+	if (rz_config_get_b(core->config, "stack.bytes")) {
+		return "px";
+	}
+	switch (core->rasm->bits) {
+	case 64: return "pxq"; break;
+	case 32: return "pxw"; break;
+	}
+	return "px";
+}

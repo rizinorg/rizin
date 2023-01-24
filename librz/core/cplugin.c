@@ -45,7 +45,7 @@ RZ_API bool rz_core_plugin_del(RzCore *core, RZ_NONNULL RzCorePlugin *plugin) {
 
 RZ_API bool rz_core_plugin_init(RzCore *core) {
 	int i;
-	core->plugins = rz_list_newf(free);
+	core->plugins = rz_list_new();
 	for (i = 0; i < RZ_ARRAY_SIZE(core_static_plugins); i++) {
 		if (!rz_core_plugin_add(core, core_static_plugins[i])) {
 			RZ_LOG_ERROR("core: error loading core plugin\n");

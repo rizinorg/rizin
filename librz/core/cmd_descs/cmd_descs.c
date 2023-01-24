@@ -509,6 +509,12 @@ static const RzCmdDescArg esil_of_assembly_args[2];
 static const RzCmdDescArg assembly_of_hex_args[2];
 static const RzCmdDescArg esil_of_hex_args[2];
 static const RzCmdDescArg cmd_disassembly_n_bytes_args[2];
+static const RzCmdDescArg print_columns_disassembly_args[2];
+static const RzCmdDescArg print_columns_debug_args[2];
+static const RzCmdDescArg print_columns_hex_annotated_args[2];
+static const RzCmdDescArg print_columns_hex_op_colored_args[2];
+static const RzCmdDescArg print_columns_hex_args[2];
+static const RzCmdDescArg print_columns_hex_words_args[2];
 static const RzCmdDescArg cmd_disassembly_n_instructions_args[2];
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_args[2];
 static const RzCmdDescArg cmd_disassembly_all_possible_opcodes_treeview_args[2];
@@ -9979,6 +9985,14 @@ static const RzCmdDescHelp egg_show_config_help = {
 	.args = egg_show_config_args,
 };
 
+static const RzCmdDescArg help_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp help_help = {
+	.summary = "Generic help",
+	.args = help_args,
+};
+
 static const RzCmdDescHelp H_help = {
 	.summary = "Rizin history commands.",
 };
@@ -11786,6 +11800,99 @@ static const RzCmdDescArg cmd_disassembly_n_bytes_args[] = {
 static const RzCmdDescHelp cmd_disassembly_n_bytes_help = {
 	.summary = "Disassemble N bytes (can be negative)",
 	.args = cmd_disassembly_n_bytes_args,
+};
+
+static const RzCmdDescHelp pC_help = {
+	.summary = "Print disassembly in columns",
+};
+static const RzCmdDescArg print_columns_disassembly_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_columns_disassembly_help = {
+	.summary = "Print <N> lines of instructions disassembly in columns",
+	.args = print_columns_disassembly_args,
+};
+
+static const RzCmdDescArg print_columns_debug_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_columns_debug_help = {
+	.summary = "Print <N> lines of the debug registers and stack in columns",
+	.args = print_columns_debug_args,
+};
+
+static const RzCmdDescArg print_columns_hex_annotated_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_columns_hex_annotated_help = {
+	.summary = "Print <N> lines of annotated hexdump in columns",
+	.args = print_columns_hex_annotated_args,
+};
+
+static const RzCmdDescArg print_columns_hex_op_colored_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_columns_hex_op_colored_help = {
+	.summary = "Print <N> lines of op analysis color map in columns",
+	.args = print_columns_hex_op_colored_args,
+};
+
+static const RzCmdDescArg print_columns_hex_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_columns_hex_help = {
+	.summary = "Print <N> lines of hexdump in columns",
+	.args = print_columns_hex_args,
+};
+
+static const RzCmdDescArg print_columns_hex_words_args[] = {
+	{
+		.name = "N",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_columns_hex_words_help = {
+	.summary = "Print <N> lines of 4-byte integer hexdump in columns",
+	.args = print_columns_hex_words_args,
 };
 
 static const RzCmdDescHelp cmd_print_disassembly_help = {
@@ -18372,6 +18479,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *egg_show_config_cd = rz_cmd_desc_argv_new(core->rcmd, g_cd, "gS", rz_egg_show_config_handler, &egg_show_config_help);
 	rz_warn_if_fail(egg_show_config_cd);
 
+	RzCmdDesc *help_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "help", rz_help_handler, &help_help);
+	rz_warn_if_fail(help_cd);
+
 	RzCmdDesc *H_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "H", rz_history_list_or_exec_handler, &history_list_or_exec_help, &H_help);
 	rz_warn_if_fail(H_cd);
 	RzCmdDesc *history_clear_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H-", rz_history_clear_handler, &history_clear_help);
@@ -18829,6 +18939,26 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_disassembly_n_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_cd, "pD", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_bytes_handler, &cmd_disassembly_n_bytes_help);
 	rz_warn_if_fail(cmd_disassembly_n_bytes_cd);
+
+	RzCmdDesc *pC_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pC", NULL, NULL, &pC_help);
+	rz_warn_if_fail(pC_cd);
+	RzCmdDesc *print_columns_disassembly_cd = rz_cmd_desc_argv_new(core->rcmd, pC_cd, "pCd", rz_print_columns_disassembly_handler, &print_columns_disassembly_help);
+	rz_warn_if_fail(print_columns_disassembly_cd);
+
+	RzCmdDesc *print_columns_debug_cd = rz_cmd_desc_argv_new(core->rcmd, pC_cd, "pCD", rz_print_columns_debug_handler, &print_columns_debug_help);
+	rz_warn_if_fail(print_columns_debug_cd);
+
+	RzCmdDesc *print_columns_hex_annotated_cd = rz_cmd_desc_argv_new(core->rcmd, pC_cd, "pCa", rz_print_columns_hex_annotated_handler, &print_columns_hex_annotated_help);
+	rz_warn_if_fail(print_columns_hex_annotated_cd);
+
+	RzCmdDesc *print_columns_hex_op_colored_cd = rz_cmd_desc_argv_new(core->rcmd, pC_cd, "pCA", rz_print_columns_hex_op_colored_handler, &print_columns_hex_op_colored_help);
+	rz_warn_if_fail(print_columns_hex_op_colored_cd);
+
+	RzCmdDesc *print_columns_hex_cd = rz_cmd_desc_argv_new(core->rcmd, pC_cd, "pCx", rz_print_columns_hex_handler, &print_columns_hex_help);
+	rz_warn_if_fail(print_columns_hex_cd);
+
+	RzCmdDesc *print_columns_hex_words_cd = rz_cmd_desc_argv_new(core->rcmd, pC_cd, "pCw", rz_print_columns_hex_words_handler, &print_columns_hex_words_help);
+	rz_warn_if_fail(print_columns_hex_words_cd);
 
 	RzCmdDesc *cmd_print_disassembly_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_print_cd, "pd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_instructions_handler, &cmd_disassembly_n_instructions_help, &cmd_print_disassembly_help);
 	rz_warn_if_fail(cmd_print_disassembly_cd);

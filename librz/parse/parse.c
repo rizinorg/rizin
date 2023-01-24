@@ -20,7 +20,7 @@ RZ_API RzParse *rz_parse_new(void) {
 	if (!p) {
 		return NULL;
 	}
-	p->parsers = rz_list_newf(NULL); // memleak
+	p->parsers = rz_list_new();
 	if (!p->parsers) {
 		rz_parse_free(p);
 		return NULL;
@@ -39,6 +39,16 @@ RZ_API RzParse *rz_parse_new(void) {
 }
 
 RZ_API void rz_parse_free(RzParse *p) {
+	if (!p) {
+		return;
+	}
+	RzListIter *it, *tmp;
+	RzParsePlugin *plugin;
+	rz_list_foreach_safe (p->parsers, it, tmp, plugin) {
+		if (plugin->fini) {
+			plugin->fini(p, p->user);
+		}
+	}
 	rz_list_free(p->parsers);
 	free(p);
 }
@@ -51,7 +61,7 @@ RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 		itsFine = plugin->init(p, p->user);
 	}
 	if (itsFine) {
-		RZ_PLUGIN_ADD(p->parsers, plugin, RzParsePlugin);
+		rz_list_append(p->parsers, plugin);
 	}
 	return true;
 }

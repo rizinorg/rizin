@@ -27,7 +27,7 @@ RZ_API RzLib *rz_lib_new(RZ_NULLABLE const char *symname, RZ_NULLABLE const char
 		return NULL;
 	}
 	lib->handlers = rz_list_newf(free);
-	lib->plugins = rz_list_newf(free);
+	lib->plugins = rz_list_new();
 	lib->symname = strdup(symname ? symname : RZ_LIB_SYMNAME);
 	lib->symnamefunc = strdup(symnamefunc ? symnamefunc : RZ_LIB_SYMFUNC);
 	lib->opened_dirs = ht_pu_new0();

@@ -2122,9 +2122,6 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
 static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
-	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
-	char *pos;
-	strncat(str_to_find, analysis->reg->name[RZ_REG_NAME_BP], 39);
 	if (!fcn) {
 		return;
 	}
@@ -2138,7 +2135,7 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 		(void)analysis->iob.read_at(analysis->iob.io, bb->addr, (ut8 *)buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
-			rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_OPEX);
+			rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_VAL);
 			if (op.size < 1) {
 				op.size = 1;
 			}
@@ -2165,24 +2162,13 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_SUB:
 			case RZ_ANALYSIS_OP_TYPE_XOR:
 			case RZ_ANALYSIS_OP_TYPE_SHL:
-				// op.dst is not filled for these operations, so for now, check for bp as dst looks like this; in the future it may be just replaced with call to can_affect_bp
-				pos = op.opex.ptr ? strstr(op.opex.ptr, str_to_find) : NULL;
-				if (pos && pos - op.opex.ptr < 60) {
-					fcn->bp_frame = false;
-					rz_analysis_op_fini(&op);
-					free(buf);
-					return;
-				}
-				break;
 			case RZ_ANALYSIS_OP_TYPE_XCHG:
-				if (op.opex.ptr && strstr(op.opex.ptr, str_to_find)) {
+				if (can_affect_bp(analysis, &op)) {
 					fcn->bp_frame = false;
 					rz_analysis_op_fini(&op);
 					free(buf);
 					return;
 				}
-				break;
-			case RZ_ANALYSIS_OP_TYPE_POP:
 				break;
 			default:
 				break;

@@ -652,7 +652,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 static ut32 decode_one_opcode_size(GoStrRecover *ctx) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(ctx->core->analysis, &aop, ctx->pc, ctx->bytes, ctx->size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(ctx->core->analysis, &aop, ctx->pc, ctx->bytes, ctx->size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return 0;
 	}
@@ -681,7 +681,7 @@ static bool decode_from_table(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 
 static bool decode_val_set_size(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -693,7 +693,7 @@ static bool decode_val_set_size(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 static bool decode_val_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -705,7 +705,7 @@ static bool decode_val_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 static bool decode_val_add_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -717,7 +717,7 @@ static bool decode_val_add_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 static bool decode_ptr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -729,7 +729,7 @@ static bool decode_ptr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 static bool decode_disp_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -1046,7 +1046,7 @@ static bool decode_ldr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 	ut64 addr = 0;
 
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -1119,7 +1119,7 @@ static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
 static bool decode_lui_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
@@ -1503,7 +1503,7 @@ static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
 static bool decode_auipc_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
 	RzAnalysisOp aop;
 	rz_analysis_op_init(&aop);
-	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_DISASM) < 1) {
+	if (rz_analysis_op(core->analysis, &aop, pc, buffer, size, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
