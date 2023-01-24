@@ -230,6 +230,10 @@ commands:
   - name: g
     summary: Generate shellcodes with rz_egg
     subcommands: cmd_egg
+  - name: help
+    summary: Generic help
+    cname: help
+    args: []
   - name: H
     summary: Rizin history commands.
     subcommands: cmd_history
