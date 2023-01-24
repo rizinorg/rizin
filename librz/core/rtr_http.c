@@ -127,7 +127,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		so.accept_timeout = 1;
 	}
 
-	origcfg = core->config;
+	origcfg = rz_config_clone(core->config);
 	newcfg = rz_config_clone(core->config);
 	core->config = newcfg;
 
@@ -500,7 +500,7 @@ the_end : {
 	rz_config_free(newcfg);
 	/* refresh settings - run callbacks */
 	rz_config_set(origcfg, "scr.html", rz_config_get(origcfg, "scr.html"));
-	rz_config_set_i(origcfg, "scr.color", COLOR_MODE_16M);
+	rz_config_set_i(origcfg, "scr.color", rz_config_get_i(origcfg, "scr.color"));
 	rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
 	return ret;
 }
