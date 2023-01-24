@@ -3207,7 +3207,7 @@ int __assemble_cb(void *user) {
 
 int __fill_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	__add_cmdf_panel(core, "Fill with: ", "wow %s");
+	__add_cmdf_panel(core, "Fill with: ", "wb %s");
 	return 0;
 }
 
