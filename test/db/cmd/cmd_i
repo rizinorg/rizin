@@ -5230,10 +5230,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=it
+NAME=iT
 FILE==
 ARGS=-w
-CMDS=it ; wx 0x90 ; it
+CMDS=iT ; wx 0x90 ; iT
 EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
@@ -5262,9 +5262,9 @@ mkdir .tmp
 cp bins/mach0/fatmach0-3true .tmp/it2-modfile
 o .tmp/it2-modfile
 oo+
-it
+iT
 wx 0x90
-it
+iT
 o--
 rm .tmp/it2-modfile
 EOF
