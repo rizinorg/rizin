@@ -427,7 +427,7 @@ RZ_IPI RzCmdStatus rz_write_random_handler(RzCore *core, int argc, const char **
 		return RZ_CMD_STATUS_ERROR;
 	}
 	size_t length = rz_num_math(core->num, argv[1]);
-	return rz_core_write_random_at(core, core->offset, length) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_write_random_at(core, core->offset, length));
 }
 
 RZ_IPI RzCmdStatus rz_write_handler(RzCore *core, int argc, const char **argv) {
@@ -443,7 +443,7 @@ RZ_IPI RzCmdStatus rz_write_wide_string_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_write_hex_handler(RzCore *core, int argc, const char **argv) {
-	return rz_core_write_hexpair(core, core->offset, argv[1]) > 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return bool2status(rz_core_write_hexpair(core, core->offset, argv[1]) > 0);
 }
 
 RZ_IPI RzCmdStatus rz_write_hex_from_file_handler(RzCore *core, int argc, const char **argv) {
