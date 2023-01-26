@@ -63,7 +63,7 @@
 	(control & (1 << (DR_LOCAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i))))
 /* enable/disable */
 #define I386_DR_IS_ENABLED(control, i) \
-	control &(3 << (DR_ENABLE_SIZE * (i)))
+	control & (3 << (DR_ENABLE_SIZE * (i)))
 
 #define I386_DR_ENABLE(control, i) \
 	control |= (3 << (DR_ENABLE_SIZE * (i)))

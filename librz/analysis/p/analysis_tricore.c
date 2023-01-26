@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-//#include "../../asm/arch/tricore/gnu/tricore-opc.c"
+// #include "../../asm/arch/tricore/gnu/tricore-opc.c"
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p =

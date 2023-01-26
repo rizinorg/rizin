@@ -598,19 +598,19 @@ static void analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	case 0x23: /* rl a */
 		e("7,a,0x101,*,>>,a,=," flag_p);
 		break;
-		template_alu4(0x20, "+", flag_c flag_ac flag_ov flag_p) /* 0x24..0x2f add a,.. */
-			case 0x33 : /* rlc a */
-				    e("c,1,&,a,a,+=,7,$c,c,:=,a,+=," flag_p);
+	template_alu4(0x20, "+", flag_c flag_ac flag_ov flag_p) /* 0x24..0x2f add a,.. */
+		case 0x33: /* rlc a */
+		e("c,1,&,a,a,+=,7,$c,c,:=,a,+=," flag_p);
 		break;
-		template_alu4_c(0x30, "+", flag_c flag_ac flag_ov flag_p) /* 0x34..0x3f addc a,.. */
-			template_alu2(0x40, "|") /* 0x42..0x43 orl direct,.. */
-			template_alu4(0x40, "|", flag_p) /* 0x44..0x4f orl a,.. */
-			template_alu2(0x50, "&") /* 0x52..0x53 anl direct,.. */
-			template_alu4(0x50, "&", flag_p) /* 0x54..0x5f anl a,.. */
-			template_alu2(0x60, "^") /* 0x62..0x63 xrl direct,.. */
-			template_alu4(0x60, "^", flag_p) /* 0x64..0x6f xrl a,.. */
-			case 0x72 : /* orl C, bit */
-				    bit_r;
+	template_alu4_c(0x30, "+", flag_c flag_ac flag_ov flag_p) /* 0x34..0x3f addc a,.. */
+		template_alu2(0x40, "|") /* 0x42..0x43 orl direct,.. */
+		template_alu4(0x40, "|", flag_p) /* 0x44..0x4f orl a,.. */
+		template_alu2(0x50, "&") /* 0x52..0x53 anl direct,.. */
+		template_alu4(0x50, "&", flag_p) /* 0x54..0x5f anl a,.. */
+		template_alu2(0x60, "^") /* 0x62..0x63 xrl direct,.. */
+		template_alu4(0x60, "^", flag_p) /* 0x64..0x6f xrl a,.. */
+		case 0x72: /* orl C, bit */
+		bit_r;
 		xi(c, "|");
 		break;
 	case 0x73: /* jmp @a+dptr */
@@ -686,9 +686,9 @@ static void analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	case 0x93: /* movc a, @a+dptr */
 		e("a,dptr,+,[1],a,=," flag_p);
 		break;
-		template_alu4_c(0x90, "-", flag_b flag_ab flag_ob flag_p) /* 0x94..0x9f subb a,.. */
-			case 0xA0 : /* orl C, /bit */
-				    bit_r;
+	template_alu4_c(0x90, "-", flag_b flag_ab flag_ob flag_p) /* 0x94..0x9f subb a,.. */
+		case 0xA0: /* orl C, /bit */
+		bit_r;
 		e("!,");
 		xi(c, "|");
 		break;

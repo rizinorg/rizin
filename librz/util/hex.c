@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-/* int c; ret = hex_to_byte(&c, 'c'); */
+/* int c = 0; ret = hex_to_byte(&c, 'c'); */
 RZ_API bool rz_hex_to_byte(ut8 *val, ut8 c) {
 	if (IS_DIGIT(c)) {
 		*val = (ut8)(*val) * 16 + (c - '0');
