@@ -1825,9 +1825,13 @@ static bool insert_mode_enabled(RzCore *core) {
 	case 'f':
 		if (visual->insertNibble != -1) {
 			char hexpair[3] = { visual->insertNibble, ch, 0 };
-			rz_core_write_hexpair(core, core->offset + core->print->cur, hexpair);
-			core->print->cur++;
+			bool res = rz_core_write_hexpair(core, core->offset + core->print->cur, hexpair);
 			visual->insertNibble = -1;
+			if (!res) {
+				RZ_LOG_ERROR("Cannot write at address %" PFMT64x ".\n", core->offset + core->print->cur);
+				break;
+			}
+			core->print->cur++;
 		} else {
 			visual->insertNibble = ch;
 		}

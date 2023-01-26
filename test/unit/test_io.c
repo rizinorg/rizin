@@ -476,7 +476,7 @@ bool test_rz_io_map_del(void) {
 
 	ut8 buf[4] = { 0x42, 0x42, 0x42, 0x42 };
 	bool red = rz_io_read_at_mapped(io, 0x300, buf, sizeof(buf));
-	mu_assert_true(red, "read before map");
+	mu_assert_false(red, "read before map");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read before map contents");
 	FILL_DUMMY_IO
 	mu_assert_false(tracker.failed_unexpected, "unexpected del event");
@@ -493,7 +493,7 @@ bool test_rz_io_map_del(void) {
 	mu_assert_false(tracker.failed_unexpected, "unexpected del event");
 	mu_assert_false(rz_pvector_contains(maps, map01), "map unregistered");
 	red = rz_io_read_at_mapped(io, 0x300, buf, sizeof(buf));
-	mu_assert_true(red, "read after unmap");
+	mu_assert_false(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
 	rz_list_push(tracker.expect, map00);
@@ -536,7 +536,7 @@ bool test_rz_io_map_del_for_fd(void) {
 	mu_assert_false(rz_pvector_contains(maps, map02), "map unregistered");
 	ut8 buf[4] = { 0x42, 0x42, 0x42, 0x42 };
 	bool red = rz_io_read_at_mapped(io, 0x300, buf, sizeof(buf));
-	mu_assert_true(red, "read after unmap");
+	mu_assert_false(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
 	rz_list_push(tracker.expect, map10);
@@ -577,7 +577,7 @@ bool test_rz_io_map_del_on_close(void) {
 	mu_assert_false(rz_pvector_contains(maps, map02), "map unregistered");
 	ut8 buf[4] = { 0x42, 0x42, 0x42, 0x42 };
 	bool red = rz_io_read_at_mapped(io, 0x300, buf, sizeof(buf));
-	mu_assert_true(red, "read after unmap");
+	mu_assert_false(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
 	rz_list_push(tracker.expect, map10);
@@ -619,7 +619,7 @@ bool test_rz_io_map_del_on_close_all(void) {
 	mu_assert_true(rz_pvector_empty(maps), "map unregistered");
 	ut8 buf[4] = { 0x42, 0x42, 0x42, 0x42 };
 	bool red = rz_io_read_at_mapped(io, 0x300, buf, sizeof(buf));
-	mu_assert_true(red, "read after unmap");
+	mu_assert_false(red, "read after unmap");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff", 4, "read after unmap");
 
 	rz_io_free(io);

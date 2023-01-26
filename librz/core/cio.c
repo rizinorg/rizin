@@ -141,7 +141,6 @@ RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr) {
 	}
 }
 
-// TODO: kill this wrapper
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) {
 	rz_return_val_if_fail(core && buf && addr != UT64_MAX, false);
 	if (size < 1) {
