@@ -597,6 +597,33 @@ static const RzCmdDescArg print_url_encode_zero_args[2];
 static const RzCmdDescArg print_minus_args[2];
 static const RzCmdDescArg print_minus_entropy_args[2];
 static const RzCmdDescArg print_minus_table_args[2];
+static const RzCmdDescArg print_equal_args[4];
+static const RzCmdDescArg print_equal_two_args[2];
+static const RzCmdDescArg print_equal_0x00_args[4];
+static const RzCmdDescArg print_equal_0xff_args[4];
+static const RzCmdDescArg print_equal_bbs_args[4];
+static const RzCmdDescArg print_equal_stats_args[4];
+static const RzCmdDescArg print_equal_call_args[4];
+static const RzCmdDescArg print_equal_entropy_args[4];
+static const RzCmdDescArg print_equal_invalid_args[4];
+static const RzCmdDescArg print_equal_jump_args[4];
+static const RzCmdDescArg print_equal_m_args[2];
+static const RzCmdDescArg print_equal_printable_args[4];
+static const RzCmdDescArg print_equal_priv_args[4];
+static const RzCmdDescArg print_equal_z_args[4];
+static const RzCmdDescArg print_equal_equal_args[4];
+static const RzCmdDescArg print_equal_equal_0x00_args[4];
+static const RzCmdDescArg print_equal_equal_0xff_args[4];
+static const RzCmdDescArg print_equal_equal_bbs_args[4];
+static const RzCmdDescArg print_equal_equal_stats_args[4];
+static const RzCmdDescArg print_equal_equal_call_args[4];
+static const RzCmdDescArg print_equal_equal_entropy_args[4];
+static const RzCmdDescArg print_equal_equal_invalid_args[4];
+static const RzCmdDescArg print_equal_equal_jump_args[4];
+static const RzCmdDescArg print_equal_equal_m_args[4];
+static const RzCmdDescArg print_equal_equal_printable_args[4];
+static const RzCmdDescArg print_equal_equal_priv_args[4];
+static const RzCmdDescArg print_equal_equal_z_args[4];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -13517,6 +13544,725 @@ static const RzCmdDescHelp print_minus_table_help = {
 	.args = print_minus_table_args,
 };
 
+static const RzCmdDescHelp p_equal__help = {
+	.summary = "Blocks information representation as a histogram",
+};
+static const RzCmdDescArg print_equal_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_help = {
+	.summary = "Show a vertical histogram of bytes in current block",
+	.args = print_equal_args,
+};
+
+static const RzCmdDescArg print_equal_d_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_d_help = {
+	.summary = "Show a summary of min/max/number of unique bytes in the current block",
+	.args = print_equal_d_args,
+};
+
+static const RzCmdDescArg print_equal_two_args[] = {
+	{
+		.name = "step",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_two_help = {
+	.summary = "Show progress bars of int16 values",
+	.args = print_equal_two_args,
+};
+
+static const RzCmdDescArg print_equal_0x00_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_0x00_help = {
+	.summary = "Show a vertical histogram of 0x00 bytes per each block",
+	.args = print_equal_0x00_args,
+};
+
+static const RzCmdDescArg print_equal_0xff_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_0xff_help = {
+	.summary = "Show a vertical histogram of 0xFF bytes per each block",
+	.args = print_equal_0xff_args,
+};
+
+static const RzCmdDescArg print_equal_bbs_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_bbs_help = {
+	.summary = "Show a vertical histogram of basic blocks per each block",
+	.args = print_equal_bbs_args,
+};
+
+static const RzCmdDescArg print_equal_stats_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_stats_help = {
+	.summary = "Show a vertical histogram of statistical maps per each block",
+	.args = print_equal_stats_args,
+};
+
+static const RzCmdDescArg print_equal_call_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_call_help = {
+	.summary = "Show a vertical histogram of calls per each block",
+	.args = print_equal_call_args,
+};
+
+static const RzCmdDescArg print_equal_entropy_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_entropy_help = {
+	.summary = "Show a vertical histogram of entropy per each block",
+	.args = print_equal_entropy_args,
+};
+
+static const RzCmdDescArg print_equal_invalid_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_invalid_help = {
+	.summary = "Show a vertical histogram of invalid instructions per each block",
+	.args = print_equal_invalid_args,
+};
+
+static const RzCmdDescArg print_equal_jump_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_jump_help = {
+	.summary = "Show a vertical histogram of jumps and conditional jumps per each block",
+	.args = print_equal_jump_args,
+};
+
+static const RzCmdDescArg print_equal_m_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_m_help = {
+	.summary = "Show a vertical histogram of number of flags and marks per each block",
+	.args = print_equal_m_args,
+};
+
+static const RzCmdDescArg print_equal_printable_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_printable_help = {
+	.summary = "Show a vertical histogram of printable bytes per each block",
+	.args = print_equal_printable_args,
+};
+
+static const RzCmdDescArg print_equal_priv_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_priv_help = {
+	.summary = "Show a vertical histogram of syscalls and privileged instructions per each block",
+	.args = print_equal_priv_args,
+};
+
+static const RzCmdDescArg print_equal_z_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_z_help = {
+	.summary = "Show a vertical histogram of number of chars in strings per each block",
+	.args = print_equal_z_args,
+};
+
+static const RzCmdDescHelp p_equal__equal__help = {
+	.summary = "Blocks information representation as a horizontal histogram",
+};
+static const RzCmdDescArg print_equal_equal_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_help = {
+	.summary = "Show a horizontal histogram of bytes in current block",
+	.args = print_equal_equal_args,
+};
+
+static const RzCmdDescArg print_equal_equal_0x00_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_0x00_help = {
+	.summary = "Show a horizontal histogram of 0x00 bytes per each block",
+	.args = print_equal_equal_0x00_args,
+};
+
+static const RzCmdDescArg print_equal_equal_0xff_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_0xff_help = {
+	.summary = "Show a horizontal histogram of 0xFF bytes per each block",
+	.args = print_equal_equal_0xff_args,
+};
+
+static const RzCmdDescArg print_equal_equal_bbs_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_bbs_help = {
+	.summary = "Show a horizontal histogram of basic blocks per each block",
+	.args = print_equal_equal_bbs_args,
+};
+
+static const RzCmdDescArg print_equal_equal_stats_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_stats_help = {
+	.summary = "Show a horizontal histogram of statistical maps per each block",
+	.args = print_equal_equal_stats_args,
+};
+
+static const RzCmdDescArg print_equal_equal_call_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_call_help = {
+	.summary = "Show a horizontal histogram of calls per each block",
+	.args = print_equal_equal_call_args,
+};
+
+static const RzCmdDescArg print_equal_equal_entropy_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_entropy_help = {
+	.summary = "Show a horizontal histogram of entropy per each block",
+	.args = print_equal_equal_entropy_args,
+};
+
+static const RzCmdDescArg print_equal_equal_invalid_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_invalid_help = {
+	.summary = "Show a vertical histogram of invalid instructions per each block",
+	.args = print_equal_equal_invalid_args,
+};
+
+static const RzCmdDescArg print_equal_equal_jump_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_jump_help = {
+	.summary = "Show a horizontal histogram of jumps and conditional jumps per each block",
+	.args = print_equal_equal_jump_args,
+};
+
+static const RzCmdDescArg print_equal_equal_m_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_m_help = {
+	.summary = "Show a horizontal histogram of number of flags and marks per each block",
+	.args = print_equal_equal_m_args,
+};
+
+static const RzCmdDescArg print_equal_equal_printable_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_printable_help = {
+	.summary = "Show a horizontal histogram of printable bytes per each block",
+	.args = print_equal_equal_printable_args,
+};
+
+static const RzCmdDescArg print_equal_equal_priv_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_priv_help = {
+	.summary = "Show a vertical histogram of syscalls and privileged instructions per each block",
+	.args = print_equal_equal_priv_args,
+};
+
+static const RzCmdDescArg print_equal_equal_z_args[] = {
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_z_help = {
+	.summary = "Show a vertical histogram of number of chars in strings per each block",
+	.args = print_equal_equal_z_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -19310,6 +20056,88 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_minus_table_cd = rz_cmd_desc_argv_state_new(core->rcmd, p_minus__cd, "p-h", RZ_OUTPUT_MODE_TABLE, rz_print_minus_table_handler, &print_minus_table_help);
 	rz_warn_if_fail(print_minus_table_cd);
 	rz_cmd_desc_set_default_mode(print_minus_table_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *p_equal__cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "p=", rz_print_equal_handler, &print_equal_help, &p_equal__help);
+	rz_warn_if_fail(p_equal__cd);
+	RzCmdDesc *print_equal_d_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=d", rz_print_equal_d_handler, &print_equal_d_help);
+	rz_warn_if_fail(print_equal_d_cd);
+
+	RzCmdDesc *print_equal_two_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=2", rz_print_equal_two_handler, &print_equal_two_help);
+	rz_warn_if_fail(print_equal_two_cd);
+
+	RzCmdDesc *print_equal_0x00_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=0", rz_print_equal_0x00_handler, &print_equal_0x00_help);
+	rz_warn_if_fail(print_equal_0x00_cd);
+
+	RzCmdDesc *print_equal_0xff_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=F", rz_print_equal_0xff_handler, &print_equal_0xff_help);
+	rz_warn_if_fail(print_equal_0xff_cd);
+
+	RzCmdDesc *print_equal_bbs_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=a", rz_print_equal_bbs_handler, &print_equal_bbs_help);
+	rz_warn_if_fail(print_equal_bbs_cd);
+
+	RzCmdDesc *print_equal_stats_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=A", rz_print_equal_stats_handler, &print_equal_stats_help);
+	rz_warn_if_fail(print_equal_stats_cd);
+
+	RzCmdDesc *print_equal_call_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=c", rz_print_equal_call_handler, &print_equal_call_help);
+	rz_warn_if_fail(print_equal_call_cd);
+
+	RzCmdDesc *print_equal_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=e", rz_print_equal_entropy_handler, &print_equal_entropy_help);
+	rz_warn_if_fail(print_equal_entropy_cd);
+
+	RzCmdDesc *print_equal_invalid_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=i", rz_print_equal_invalid_handler, &print_equal_invalid_help);
+	rz_warn_if_fail(print_equal_invalid_cd);
+
+	RzCmdDesc *print_equal_jump_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=j", rz_print_equal_jump_handler, &print_equal_jump_help);
+	rz_warn_if_fail(print_equal_jump_cd);
+
+	RzCmdDesc *print_equal_m_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=m", rz_print_equal_m_handler, &print_equal_m_help);
+	rz_warn_if_fail(print_equal_m_cd);
+
+	RzCmdDesc *print_equal_printable_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=p", rz_print_equal_printable_handler, &print_equal_printable_help);
+	rz_warn_if_fail(print_equal_printable_cd);
+
+	RzCmdDesc *print_equal_priv_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=s", rz_print_equal_priv_handler, &print_equal_priv_help);
+	rz_warn_if_fail(print_equal_priv_cd);
+
+	RzCmdDesc *print_equal_z_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=z", rz_print_equal_z_handler, &print_equal_z_help);
+	rz_warn_if_fail(print_equal_z_cd);
+
+	RzCmdDesc *p_equal__equal__cd = rz_cmd_desc_group_new(core->rcmd, p_equal__cd, "p==", rz_print_equal_equal_handler, &print_equal_equal_help, &p_equal__equal__help);
+	rz_warn_if_fail(p_equal__equal__cd);
+	RzCmdDesc *print_equal_equal_0x00_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==0", rz_print_equal_equal_0x00_handler, &print_equal_equal_0x00_help);
+	rz_warn_if_fail(print_equal_equal_0x00_cd);
+
+	RzCmdDesc *print_equal_equal_0xff_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==F", rz_print_equal_equal_0xff_handler, &print_equal_equal_0xff_help);
+	rz_warn_if_fail(print_equal_equal_0xff_cd);
+
+	RzCmdDesc *print_equal_equal_bbs_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==a", rz_print_equal_equal_bbs_handler, &print_equal_equal_bbs_help);
+	rz_warn_if_fail(print_equal_equal_bbs_cd);
+
+	RzCmdDesc *print_equal_equal_stats_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==A", rz_print_equal_equal_stats_handler, &print_equal_equal_stats_help);
+	rz_warn_if_fail(print_equal_equal_stats_cd);
+
+	RzCmdDesc *print_equal_equal_call_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==c", rz_print_equal_equal_call_handler, &print_equal_equal_call_help);
+	rz_warn_if_fail(print_equal_equal_call_cd);
+
+	RzCmdDesc *print_equal_equal_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==e", rz_print_equal_equal_entropy_handler, &print_equal_equal_entropy_help);
+	rz_warn_if_fail(print_equal_equal_entropy_cd);
+
+	RzCmdDesc *print_equal_equal_invalid_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==i", rz_print_equal_equal_invalid_handler, &print_equal_equal_invalid_help);
+	rz_warn_if_fail(print_equal_equal_invalid_cd);
+
+	RzCmdDesc *print_equal_equal_jump_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==j", rz_print_equal_equal_jump_handler, &print_equal_equal_jump_help);
+	rz_warn_if_fail(print_equal_equal_jump_cd);
+
+	RzCmdDesc *print_equal_equal_m_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==m", rz_print_equal_equal_m_handler, &print_equal_equal_m_help);
+	rz_warn_if_fail(print_equal_equal_m_cd);
+
+	RzCmdDesc *print_equal_equal_printable_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==p", rz_print_equal_equal_printable_handler, &print_equal_equal_printable_help);
+	rz_warn_if_fail(print_equal_equal_printable_cd);
+
+	RzCmdDesc *print_equal_equal_priv_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==s", rz_print_equal_equal_priv_handler, &print_equal_equal_priv_help);
+	rz_warn_if_fail(print_equal_equal_priv_cd);
+
+	RzCmdDesc *print_equal_equal_z_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==z", rz_print_equal_equal_z_handler, &print_equal_equal_z_help);
+	rz_warn_if_fail(print_equal_equal_z_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

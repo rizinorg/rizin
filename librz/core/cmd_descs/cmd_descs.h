@@ -1923,6 +1923,62 @@ RZ_IPI RzCmdStatus rz_print_minus_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_print_minus_entropy_handler(RzCore *core, int argc, const char **argv);
 // "p-h"
 RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "p="
+RZ_IPI RzCmdStatus rz_print_equal_handler(RzCore *core, int argc, const char **argv);
+// "p=d"
+RZ_IPI RzCmdStatus rz_print_equal_d_handler(RzCore *core, int argc, const char **argv);
+// "p=2"
+RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char **argv);
+// "p=0"
+RZ_IPI RzCmdStatus rz_print_equal_0x00_handler(RzCore *core, int argc, const char **argv);
+// "p=F"
+RZ_IPI RzCmdStatus rz_print_equal_0xff_handler(RzCore *core, int argc, const char **argv);
+// "p=a"
+RZ_IPI RzCmdStatus rz_print_equal_bbs_handler(RzCore *core, int argc, const char **argv);
+// "p=A"
+RZ_IPI RzCmdStatus rz_print_equal_stats_handler(RzCore *core, int argc, const char **argv);
+// "p=c"
+RZ_IPI RzCmdStatus rz_print_equal_call_handler(RzCore *core, int argc, const char **argv);
+// "p=e"
+RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const char **argv);
+// "p=i"
+RZ_IPI RzCmdStatus rz_print_equal_invalid_handler(RzCore *core, int argc, const char **argv);
+// "p=j"
+RZ_IPI RzCmdStatus rz_print_equal_jump_handler(RzCore *core, int argc, const char **argv);
+// "p=m"
+RZ_IPI RzCmdStatus rz_print_equal_m_handler(RzCore *core, int argc, const char **argv);
+// "p=p"
+RZ_IPI RzCmdStatus rz_print_equal_printable_handler(RzCore *core, int argc, const char **argv);
+// "p=s"
+RZ_IPI RzCmdStatus rz_print_equal_priv_handler(RzCore *core, int argc, const char **argv);
+// "p=z"
+RZ_IPI RzCmdStatus rz_print_equal_z_handler(RzCore *core, int argc, const char **argv);
+// "p=="
+RZ_IPI RzCmdStatus rz_print_equal_equal_handler(RzCore *core, int argc, const char **argv);
+// "p==0"
+RZ_IPI RzCmdStatus rz_print_equal_equal_0x00_handler(RzCore *core, int argc, const char **argv);
+// "p==F"
+RZ_IPI RzCmdStatus rz_print_equal_equal_0xff_handler(RzCore *core, int argc, const char **argv);
+// "p==a"
+RZ_IPI RzCmdStatus rz_print_equal_equal_bbs_handler(RzCore *core, int argc, const char **argv);
+// "p==A"
+RZ_IPI RzCmdStatus rz_print_equal_equal_stats_handler(RzCore *core, int argc, const char **argv);
+// "p==c"
+RZ_IPI RzCmdStatus rz_print_equal_equal_call_handler(RzCore *core, int argc, const char **argv);
+// "p==e"
+RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_handler(RzCore *core, int argc, const char **argv);
+// "p==i"
+RZ_IPI RzCmdStatus rz_print_equal_equal_invalid_handler(RzCore *core, int argc, const char **argv);
+// "p==j"
+RZ_IPI RzCmdStatus rz_print_equal_equal_jump_handler(RzCore *core, int argc, const char **argv);
+// "p==m"
+RZ_IPI RzCmdStatus rz_print_equal_equal_m_handler(RzCore *core, int argc, const char **argv);
+// "p==p"
+RZ_IPI RzCmdStatus rz_print_equal_equal_printable_handler(RzCore *core, int argc, const char **argv);
+// "p==s"
+RZ_IPI RzCmdStatus rz_print_equal_equal_priv_handler(RzCore *core, int argc, const char **argv);
+// "p==z"
+RZ_IPI RzCmdStatus rz_print_equal_equal_z_handler(RzCore *core, int argc, const char **argv);
 // "p"
 RZ_IPI int rz_cmd_print(void *data, const char *input);
 // "Ps"
