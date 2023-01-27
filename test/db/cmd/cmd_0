@@ -5,13 +5,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p=b 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=p=b 0
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=p=d 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=p=d 0
