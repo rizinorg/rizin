@@ -121,6 +121,14 @@ static void histogram_block(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL RzSt
 /**
  * \brief Create the string buffer with the vertical histogram
  *
+ * │████████████████████████████████████████████████
+ * │███
+ * │████████████████████████████████████████████
+ * │█████████████████████
+ * │███████████████████████████████████████████████
+ * │█████████████
+ * │██████████████
+ *
  * \param opts Histogram options: color, style, legend and cursor position
  * \param data A buffer with the numerical data in the format of one byte per value
  * \param width Width of the histogram
