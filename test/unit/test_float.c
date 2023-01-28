@@ -705,6 +705,91 @@ bool float_print_num(void) {
 	mu_end;
 }
 
+bool f32_ieee_format_extra_test(void) {
+	// normal float
+	RzFloat *a = rz_float_new_from_f32(12.24f);
+	RzFloat *b = rz_float_new_from_f32(0.02f);
+	RzFloat *c = rz_float_new_from_f32(7.890332E9f);
+	ut32 exp_a = rz_float_get_exponent_val(a);
+	ut32 exp_b = rz_float_get_exponent_val(b);
+	ut32 exp_c = rz_float_get_exponent_val(c);
+
+	mu_assert_eq(exp_a, 130, "test float exponent value: normal");
+	mu_assert_eq(exp_b, 121, "test float exponent value: small");
+	mu_assert_eq(exp_c, 159, "test float exponent value: huge");
+
+	st32 nexp_a = rz_float_get_exponent_val_no_bias(a);
+	st32 nexp_b = rz_float_get_exponent_val_no_bias(b);
+	st32 nexp_c = rz_float_get_exponent_val_no_bias(c);
+
+	mu_assert_eq(nexp_a, 3, "test float exponent value no bias: normal");
+	mu_assert_eq(nexp_b, -6, "test float exponent value no bias: small");
+	mu_assert_eq(nexp_c, 32, "test float exponent value no bias: huge");
+
+	// sub-normal -> -126
+	RzFloat *s = rz_float_new_from_f32(9.892046E-39f);
+	ut32 exp_s = rz_float_get_exponent_val(s);
+	st32 nexp_s = rz_float_get_exponent_val_no_bias(s);
+	mu_assert_eq(exp_s, 0, "test float exponent value: sub normal");
+	mu_assert_eq(nexp_s, -126, "test float exponent value no bias: sub normal");
+
+	// get sign and set sign to float
+	rz_float_set_sign(a, true);
+	mu_assert_true(rz_float_is_negative(a), "test float set sign");
+	mu_assert_true(rz_float_get_sign(a) == true, "test float get sign");
+
+	rz_float_free(a);
+	rz_float_free(b);
+	rz_float_free(c);
+	rz_float_free(s);
+	mu_end;
+}
+
+bool f32_ieee_cmp_test(void) {
+	RzFloat *a = rz_float_new_from_f32(1.12f);
+	RzFloat *b = rz_float_new_from_f32(1.11f);
+	RzFloat *c = rz_float_new_from_f32(-0.07f);
+	RzFloat *d = rz_float_new_from_f32(-1111.1f);
+	RzFloat *e = rz_float_new_from_ut32_as_f32(0x3F8F5C29);	// 1.12f
+
+	mu_assert_true(rz_float_cmp(a, b) > 0, "test float cmp transitivity 1");
+	mu_assert_true(rz_float_cmp(b, c) > 0, "test float cmp transitivity 2");
+	mu_assert_true(rz_float_cmp(a, c) > 0, "test float cmp transitivity 3");
+
+	mu_assert_true(rz_float_cmp(b, a) < 0, "test float cmp reverse");
+
+	mu_assert_true(rz_float_cmp(c, d) > 0, "test float cmp in negative");
+
+	mu_assert_true(rz_float_cmp(a, e) == 0, "test float cmp equality");
+
+	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, false);
+	RzFloat *ninf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_32, true);
+	mu_assert_true(rz_float_cmp(pinf, a) > 0, "test positive inf");
+	mu_assert_true(rz_float_cmp(ninf, b) < 0, "test negative inf");
+
+	rz_float_free(a);
+	rz_float_free(b);
+	rz_float_free(c);
+	rz_float_free(d);
+	rz_float_free(e);
+	rz_float_free(pinf);
+	rz_float_free(ninf);
+
+	mu_end;
+}
+
+bool f32_ieee_generating_op_test(void) {
+	// test for pred, succ, and neg
+}
+
+bool f32_new_round_test(void) {
+	// new version rounding
+}
+
+bool f32_ieee_cast_test(void) {
+	// cast and convert
+}
+
 bool all_tests() {
 	mu_run_test(rz_float_new_from_hex_test);
 	mu_run_test(f32_ieee_format_test);
@@ -722,6 +807,8 @@ bool all_tests() {
 	mu_run_test(f32_ieee_special_num_test);
 	mu_run_test(float_load_from_bitvector);
 	mu_run_test(float_print_num);
+	mu_run_test(f32_ieee_format_extra_test);
+	mu_run_test(f32_ieee_cmp_test);
 	return tests_passed != tests_run;
 }
 

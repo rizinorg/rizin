@@ -727,17 +727,28 @@ RZ_API bool rz_float_set_sign(RZ_NONNULL RzFloat *f, bool new_sign) {
 	return true;
 }
 
+
+/**
+ * \brief return the unsigned value of exponent part bitvector, aka biased exp in ieee
+ * @param f float
+ * @return biased exponent value, as unsigned integer
+ */
+RZ_API RZ_OWN ut32 rz_float_get_exponent_val(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, 0);
+	return float_exponent(f);
+}
+
 /**
  * \brief assume float number has the form of (sig * 2^exp), return real exponent
  * \param f float number
- * \return real exponent value (without bias), as integer
+ * \return real exponent value (without bias), as unsigned integer
  */
-RZ_API RZ_OWN ut32 rz_float_get_exponent_val_no_bias(RZ_NONNULL RzFloat *f) {
+RZ_API RZ_OWN st32 rz_float_get_exponent_val_no_bias(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, 0);
 	RzFloatFormat format = f->r;
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	ut32 exp = float_exponent(f);
-	ut32 exp_no_bias = exp == 0 ? (1 - bias) : (exp - bias);
+	st32 exp_no_bias = exp == 0 ? (1 - bias) : (exp - bias);
 
 	return exp_no_bias;
 }
@@ -2612,16 +2623,31 @@ RZ_API RZ_OWN RzFloat *rz_float_pred(RZ_NONNULL RzFloat *f) {
 RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 	rz_return_val_if_fail(x && y, -2);
 
-	RZ_BORROW RzBitVector *x_bv = x->s;
-	RZ_BORROW RzBitVector *y_bv = y->s;
+	RZ_BORROW RzBitVector *x_bv = rz_bv_dup(x->s);
+	RZ_BORROW RzBitVector *y_bv = rz_bv_dup(y->s);
 
-	if (!rz_bv_sle(x_bv, y_bv)) {
-		// x > y
-		return 1;
-	} else if (rz_bv_eq(x_bv, y_bv)) {
-		// x == y
+	bool x_sign = rz_bv_msb(x_bv);
+	bool y_sign = rz_bv_msb(y_bv);
+	st32 cmp;
+
+	if (rz_bv_eq(x_bv, y_bv)) {
+		rz_bv_free(x_bv);
+		rz_bv_free(y_bv);
 		return 0;
-	} else {
-		return -1;
 	}
+
+	if (x_sign == y_sign) {
+		cmp = rz_bv_ule(x_bv, y_bv) ? -1 : 1;
+		if (x_sign) {
+			// negative
+			cmp = -cmp;
+		}
+	}
+	else {
+		cmp = rz_bv_ule(x_bv, y_bv) ? 1 : -1;
+	}
+
+	rz_bv_free(x_bv);
+	rz_bv_free(y_bv);
+	return cmp;
 }

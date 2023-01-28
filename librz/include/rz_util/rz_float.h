@@ -95,7 +95,8 @@ RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa_stretched(RZ_NONNULL RzFloat *f
 RZ_API bool rz_float_get_sign(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_set_sign(RZ_NONNULL RzFloat *f, bool new_sign);
 RZ_API RZ_OWN RzBitVector *rz_float_get_exponent(RZ_NONNULL RzFloat *f);
-RZ_API RZ_OWN ut32 rz_float_get_exponent_val_no_bias(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN ut32 rz_float_get_exponent_val(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN st32 rz_float_get_exponent_val_no_bias(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzBitVector *rz_float_get_mantissa(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_negative(RZ_NONNULL RzFloat *f);
 RZ_API RzFloatSpec rz_float_detect_spec(RZ_NONNULL RzFloat *f);
