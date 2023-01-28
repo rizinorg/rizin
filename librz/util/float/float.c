@@ -2524,3 +2524,104 @@ RZ_API RZ_OWN RzFloat *rz_float_fma(RZ_NONNULL RzFloat *a, RZ_NONNULL RzFloat *b
 RZ_API RZ_OWN RzFloat *rz_float_sqrt(RZ_NONNULL RzFloat *n, RzFloatRMode mode) {
 	return rz_float_sqrt_ieee_bin(n, mode);
 }
+
+/**
+ * get the negative one of given float
+ * BAP ref: val fneg : 'f float -> 'f float
+ * \param f float number
+ * \return negative float `f`
+ */
+RZ_API RZ_OWN RzFloat *rz_float_neg(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+
+	RzFloat *ret = rz_float_dup(f);
+	rz_bv_toggle(ret->s, rz_bv_len(ret->s) - 1);
+
+	return ret;
+}
+
+/**
+ * get least floating-point number representable in (sort x) that is greater than given float
+ * BAP ref: val fsucc : 'f float -> 'f float
+ * \param f float number
+ * \return next float number (least number that is greater than current)
+ */
+RZ_API RZ_OWN RzFloat *rz_float_succ(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+
+	ut32 len = rz_bv_len(f->s);
+	RzBitVector *bv = rz_bv_dup(f->s);
+	RzBitVector *one = rz_bv_new_one(len);
+	RzBitVector *bv_next;
+	RzFloat *ret = NULL;
+	if (rz_float_is_negative(f)) {
+		// neg succ is x - unit(1)
+		bv_next = rz_bv_sub(bv, one, NULL);
+	} else {
+		// pos succ is x + unit(1)
+		bv_next = rz_bv_add(bv, one, NULL);
+	}
+
+	ret = rz_float_new_from_bv(bv_next);
+
+	rz_bv_free(one);
+	rz_bv_free(bv);
+	rz_bv_free(bv_next);
+
+	return ret;
+}
+
+/**
+ * get greatest floating-point number representable in (sort x) that is less than given float
+ * BAP ref: fpred : 'f float -> 'f float
+ * \param f float number
+ * \return previous float number (greatest number that is less than current)
+ */
+RZ_API RZ_OWN RzFloat *rz_float_pred(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+
+	ut32 len = rz_bv_len(f->s);
+	RzBitVector *bv = rz_bv_dup(f->s);
+	RzBitVector *one = rz_bv_new_one(len);
+	RzBitVector *bv_next;
+	RzFloat *ret = NULL;
+	if (rz_float_is_negative(f)) {
+		// neg pred is x + unit(1)
+		bv_next = rz_bv_add(bv, one, NULL);
+	} else {
+		// pos pred is x - unit(1)
+		bv_next = rz_bv_sub(bv, one, NULL);
+	}
+
+	ret = rz_float_new_from_bv(bv_next);
+
+	rz_bv_free(one);
+	rz_bv_free(bv);
+	rz_bv_free(bv_next);
+
+	return ret;
+}
+
+/**
+ * compare two float number, if
+ * used for forder val forder : 'f float -> 'f float -> bool
+ * \param x float number
+ * \param y float number
+ * \return 1 if x > y, 0 if x == y, -1 if x < y
+ */
+RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
+	rz_return_val_if_fail(x && y, -2);
+
+	RZ_BORROW RzBitVector *x_bv = x->s;
+	RZ_BORROW RzBitVector *y_bv = y->s;
+
+	if (!rz_bv_sle(x_bv, y_bv)) {
+		// x > y
+		return 1;
+	} else if (rz_bv_eq(x_bv, y_bv)) {
+		// x == y
+		return 0;
+	} else {
+		return -1;
+	}
+}

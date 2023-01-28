@@ -110,7 +110,7 @@ void *rz_il_handler_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFneg fneg = op->op.fneg;
 	RzFloat *f = rz_il_evaluate_float(vm, fneg.f);
-	RzFloat *ret = rz_il_float_neg(f);
+	RzFloat *ret = rz_float_neg(f);
 
 	rz_float_free(f);
 
@@ -220,7 +220,7 @@ void *rz_il_handler_fsucc(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFsucc fsucc = op->op.fsucc;
 	RzFloat *f = rz_il_evaluate_float(vm, fsucc.f);
-	RzFloat *ret = rz_il_float_succ(f);
+	RzFloat *ret = rz_float_succ(f);
 
 	rz_float_free(f);
 
@@ -233,7 +233,7 @@ void *rz_il_handler_fpred(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 
 	RzILOpArgsFpred fpred = op->op.fpred;
 	RzFloat *f = rz_il_evaluate_float(vm, fpred.f);
-	RzFloat *ret = rz_il_float_pred(f);
+	RzFloat *ret = rz_float_pred(f);
 
 	rz_float_free(f);
 
@@ -247,7 +247,7 @@ void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzILOpArgsForder forder = op->op.forder;
 	RzFloat *x = rz_il_evaluate_float(vm, forder.x);
 	RzFloat *y = rz_il_evaluate_float(vm, forder.y);
-	RzILBool *order = rz_il_bool_new(rz_il_float_cmp(x, y) == -1);
+	RzILBool *order = rz_il_bool_new(rz_float_cmp(x, y) == -1);
 
 	rz_float_free(x);
 	rz_float_free(y);

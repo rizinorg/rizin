@@ -103,6 +103,10 @@ RZ_API bool rz_float_is_inf(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_nan(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_zero(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_is_equal(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y);
+RZ_API RZ_OWN RzFloat *rz_float_neg(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_succ(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN RzFloat *rz_float_pred(RZ_NONNULL RzFloat *f);
+RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y);
 
 RZ_API RZ_OWN RzFloat *rz_float_add_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
 RZ_API RZ_OWN RzFloat *rz_float_sub_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *right, RzFloatRMode mode);
