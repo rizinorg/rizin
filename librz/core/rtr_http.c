@@ -129,7 +129,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	// store current configs
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
-		return NULL;
+		return 0;
 	}
 	rz_config_hold_i(hc, "scr.color", "scr.html", "scr.interactive", "asm.cmt.right", "asm.bytes", NULL);
 
