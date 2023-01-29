@@ -1483,11 +1483,11 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	if (tcache) {
 		offset = 16;
 		const int fc_offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
-		base = m_arena + offset + SZ * bin_num * 2 + 10 * SZ;
+		base = m_arena + offset + SZ * (ut64)bin_num * 2 + 10 * SZ;
 		initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 	} else {
 		offset = 12 * SZ + sizeof(int) * 2;
-		base = m_arena + offset + SZ * bin_num * 2 - SZ * 2;
+		base = m_arena + offset + SZ * (ut64)bin_num * 2 - SZ * 2;
 		initial_brk = (brk_start >> 12) << 12;
 	}
 	bin->addr = base;
