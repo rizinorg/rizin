@@ -473,7 +473,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		ut32 shift_dist = sig_len - ret_len;
 		RzBitVector *sig_dup = rz_bv_dup(sig);
 		rz_bv_shift_right_jammed(sig_dup, shift_dist);
-		ret = rz_bv_cut_head(sig_dup, shift_dist);
+		ret = rz_bv_cut_head(sig_dup, rz_bv_len(sig) - ret_len);
 	}
 
 	// default is drop
@@ -503,6 +503,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 			*should_inc = 1;
 		}
 
+		rz_bv_rshift(ret, 3);
 		return ret;
 	}
 

@@ -840,7 +840,30 @@ bool f32_ieee_generating_op_test(void) {
 }
 
 bool f32_new_round_test(void) {
-	// new version rounding
+	// test round_significant
+	// round 12-bit to 8-bit precision: 1 MMMM MMMM MMMM -> 1 PPPP PPPP
+	// 0001 0101 0011 1000 -> 0001 0101 0011, should_inc = 0
+	unsigned char buffer[8] = {0x15, 0x38};
+	RzBitVector *sig;
+	RzBitVector *round_sig;
+	bool should_inc = false;
+
+	sig = rz_bv_new_from_bytes_be(buffer, 0, 16);
+	mu_assert_streq_free(rz_bv_as_string(sig), "0001010100111000", "test sig from bytes");
+
+	// rne
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
+	mu_assert_false(should_inc, "test should not increase case");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit");
+
+	rz_bv_free(sig);
+	rz_bv_free(round_sig);
+
+	// test round_bv_and_pack
+
+	// test round operation in core theory
+
+
 	mu_end;
 }
 

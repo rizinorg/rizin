@@ -2649,3 +2649,41 @@ RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 	rz_bv_free(y_bv);
 	return cmp;
 }
+
+/**
+ * \brief packer of round_significant
+ * \details detect if should drop extra tailing bits in rounding
+ * GRS konwn as G(guard bit), R(round bit), and S(sticky bit)
+ * they are 3 bits after the LSB bit of rounded result, which is drop in rounding
+ * \param sign sign of given significant bitvector, 1 is negative
+ * \param sig bitvector, required to have 0..01M..M form, exponent is managed by caller
+ * assumption1: radix point is right after 1, that means the real value of such a bitvector is 1.MMM..M
+ * assumption2: `sig` is an unsigned bitvector
+ * \param precision number of how many `M` bits to be reserved in rounding
+ * \param mode rounding mode
+ * \param should_inc pointer to a bool:
+ * 0 if drop GRS,
+ * 1 means caller should round by adding ULP to `return bitv`
+ * \return new bitvector would be 0001MM...M, which length is `precision + 1 + 3`
+ */
+RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc) {
+	return round_significant(sign, sig, precision, mode, should_inc);
+}
+
+/**
+ * \brief packer of round_float_bv_new
+ * \details new version of rounding
+ * this function is a wrapper of round_significant, it manage the rounded result and exponent change
+ * |f| = sig * 2^exp_no_bias
+ * TODO : report exception
+ * TODO : test and then replace the old version
+ * \param sign sign of bitvector
+ * \param exp_no_bias exponent value, no bias
+ * \param sig significant, expect unsigned bitvector, treated as integer
+ * \param format format of float type
+ * \param mode rounding mode
+ * \return a float of type `format`, converted from `sig`
+ */
+RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, ut32 exp_no_bias, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
+	return round_float_bv_new(sign, exp_no_bias, sig, format, mode);
+}
