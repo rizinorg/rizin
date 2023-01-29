@@ -128,11 +128,10 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	// store current configs
 	RzConfigHold *hc = rz_config_hold_new(core->config);
-	rz_config_hold_i(hc, "scr.color", NULL);
-	rz_config_hold_i(hc, "scr.html", NULL);
-	rz_config_hold_i(hc, "scr.interactive", NULL);
-	rz_config_hold_i(hc, "asm.cmt.right", NULL);
-	rz_config_hold_i(hc, "asm.bytes", NULL);
+	if (!hc) {
+		return NULL;
+	}
+	rz_config_hold_i(hc, "scr.color", "scr.html", "scr.interactive", "asm.cmt.right", "asm.bytes", NULL);
 
 	// set new configs
 	rz_config_set(core->config, "asm.cmt.right", "false");
@@ -140,9 +139,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "scr.interactive", "false");
 
-	RZ_LOG_INFO("core: Starting http server...\n");
-	RZ_LOG_INFO("core: open http://%s:%d/\n", host, atoi(port));
-	RZ_LOG_INFO("core: rizin -C http://%s:%d/cmd/\n", host, atoi(port));
+	RZ_LOG_WARN("core: Starting http server...\nTo open a remote session, please use `rizin -C http://%s:%s/cmd/`\n", host, port);
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;
@@ -477,19 +474,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		rz_socket_http_close(rs);
 		free(dir);
 	}
-the_end : {
-	int timeout = rz_config_get_i(core->config, "http.timeout");
-	const char *host = rz_config_get(core->config, "http.bind");
-	const char *port = rz_config_get(core->config, "http.port");
-	const char *cors = rz_config_get(core->config, "http.cors");
-	const char *allow = rz_config_get(core->config, "http.allow");
-
-	rz_config_set_i(core->config, "http.timeout", timeout);
-	rz_config_set(core->config, "http.bind", host);
-	rz_config_set(core->config, "http.port", port);
-	rz_config_set(core->config, "http.cors", cors);
-	rz_config_set(core->config, "http.allow", allow);
-}
+the_end :
 	rz_cons_break_pop();
 	core->http_up = false;
 	free(pfile);
