@@ -727,7 +727,6 @@ RZ_API bool rz_float_set_sign(RZ_NONNULL RzFloat *f, bool new_sign) {
 	return true;
 }
 
-
 /**
  * \brief return the unsigned value of exponent part bitvector, aka biased exp in ieee
  * @param f float
@@ -2642,8 +2641,7 @@ RZ_API RZ_OWN st32 rz_float_cmp(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y) {
 			// negative
 			cmp = -cmp;
 		}
-	}
-	else {
+	} else {
 		cmp = rz_bv_ule(x_bv, y_bv) ? 1 : -1;
 	}
 
