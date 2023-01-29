@@ -312,7 +312,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #define RZ_BIT_UNSET(x, y)  (((ut8 *)x)[y >> 4] &= ~(1 << (y & 0xf)))
 #define RZ_BIT_TOGGLE(x, y) (RZ_BIT_CHK(x, y) ? RZ_BIT_UNSET(x, y) : RZ_BIT_SET(x, y))
 
-//#define RZ_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
+// #define RZ_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
 #define RZ_BIT_CHK(x, y) (*(x) & (1 << (y)))
 
 /* try for C99, but provide backwards compatibility */
@@ -569,8 +569,8 @@ typedef enum {
 /* os */
 #if defined(__QNX__)
 #define RZ_SYS_OS "qnx"
-//#elif TARGET_OS_IPHONE
-//#define RZ_SYS_OS "ios"
+// #elif TARGET_OS_IPHONE
+// #define RZ_SYS_OS "ios"
 #elif defined(__APPLE__)
 #define RZ_SYS_OS "darwin"
 #elif defined(__linux__)

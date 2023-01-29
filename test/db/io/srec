@@ -81,7 +81,6 @@ RUN
 
 NAME=arm1.bin.srec
 FILE=srec://bins/srec/arm1.bin.srec
-TIMEOUT=1320
 CMDS=<<EOF
 iI
 iS

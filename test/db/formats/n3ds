@@ -1,6 +1,6 @@
 NAME=Load Nintendo 3DS boot.firm file
 FILE=bins/firmware/luma3ds_boot.firm
-CMDS=iI ; iS ; ie ; it
+CMDS=iI ; iS ; ie ; iT
 EXPECT=<<EOF
 arch     arm
 cpu      N/A

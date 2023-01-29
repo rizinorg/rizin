@@ -656,6 +656,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
 	bool last_is_mov_lr_pc = false;
+	bool last_is_add_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
 	if (analysis->limit && addr + idx < analysis->limit->from) {
 		gotoBeach(RZ_ANALYSIS_RET_END);
@@ -1010,6 +1011,13 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			break;
 			// Case of valid but unused "add [rax], al"
 		case RZ_ANALYSIS_OP_TYPE_ADD:
+			if (is_arm && analysis->bits == 32) {
+				if (!memcmp(buf, "\x00\xe0\x8f\xe2", 4)) {
+					// TODO: support different values, not just 0
+					// add lr, pc, 0 //
+					last_is_add_lr_pc = true;
+				}
+			}
 			if (analysis->opt.ijmp) {
 				if ((op.size + 4 <= bytes_read) && !memcmp(buf + op.size, "\x00\x00\x00\x00", 4)) {
 					rz_analysis_block_set_size(bb, bb->size - oplen);
@@ -1252,8 +1260,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					// Ignore
 					break;
 				}
-			}
-			if (is_arm && last_is_mov_lr_pc) {
+			} else if (is_arm && analysis->bits == 32 && last_is_mov_lr_pc) {
+				break;
+			} else if (is_arm && analysis->bits == 32 && last_is_add_lr_pc) {
+				op.type = RZ_ANALYSIS_OP_TYPE_CALL;
+				op.fail = op.addr + 4;
 				break;
 			}
 			/* fall through */

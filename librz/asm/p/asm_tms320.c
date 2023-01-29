@@ -9,7 +9,7 @@
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1
-//#include "cs_mnemonics.c"
+// #include "cs_mnemonics.c"
 #else
 #define CAPSTONE_HAS_TMS320C64X 0
 #warning Cannot find capstone-tms320c64x support

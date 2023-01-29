@@ -2,8 +2,8 @@ NAME=check invalid authentihash
 FILE=bins/pe/signature.exe
 CMDS=<<EOF
 k bin/cur/pe/is_authhash_valid
-it
-itj
+iT
+iTj
 EOF
 EXPECT=<<EOF
 false
@@ -21,8 +21,8 @@ NAME=check valid authentihash
 FILE=bins/pe/authentihash.exe
 CMDS=<<EOF
 k bin/cur/pe/is_authhash_valid
-it
-itj
+iT
+iTj
 EOF
 EXPECT=<<EOF
 true
