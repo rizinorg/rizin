@@ -324,7 +324,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 							if (out) {
 								char *res = rz_str_uri_encode(out);
 								char *newheaders = rz_str_newf(
-									"Content-Type: text/plain\n%s", headers);
+									"Content-Type: text/plain; charset=utf-8\n%s", headers);
 								rz_socket_http_response(rs, 200, out, 0, newheaders);
 								free(out);
 								free(newheaders);
@@ -399,13 +399,13 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 					if (f) {
 						const char *ct = NULL;
 						if (strstr(path, ".js")) {
-							ct = "Content-Type: application/javascript\n";
+							ct = "Content-Type: application/javascript; charset=utf-8\n";
 						}
 						if (strstr(path, ".css")) {
-							ct = "Content-Type: text/css\n";
+							ct = "Content-Type: text/css; charset=utf-8\n";
 						}
 						if (strstr(path, ".html")) {
-							ct = "Content-Type: text/html\n";
+							ct = "Content-Type: text/html; charset=utf-8\n";
 						}
 						char *hdr = rz_str_newf("%s%s", ct, headers);
 						rz_socket_http_response(rs, 200, f, (int)sz, hdr);
