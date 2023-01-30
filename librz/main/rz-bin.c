@@ -935,13 +935,16 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'n':
 			name = opt.arg;
 			break;
-		case 'N':
+		case 'N': {
 			tmp = strchr(opt.arg, ':');
-			rz_config_set(core.config, "bin.minstr", opt.arg);
+			int bin_strlen = rz_num_math(NULL, opt.arg);
+			rz_config_set_i(core.config, "bin.minstr", bin_strlen);
 			if (tmp) {
-				rz_config_set(core.config, "bin.maxstr", tmp + 1);
+				bin_strlen = rz_num_math(NULL, tmp + 1);
+				rz_config_set_i(core.config, "bin.maxstr", bin_strlen);
 			}
 			break;
+		}
 		case 'h':
 			rz_core_fini(&core);
 			return rabin_show_help(1);
@@ -1135,8 +1138,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			return 1;
 		}
 	}
-	bin->minstrlen = rz_config_get_i(core.config, "bin.minstr");
-	bin->maxstrbuf = rz_config_get_i(core.config, "bin.maxstrbuf");
 
 	rz_bin_force_plugin(bin, forcebin);
 	rz_bin_load_filter(bin, action);
@@ -1168,6 +1169,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (baddr != UT64_MAX) {
 		rz_bin_set_baddr(bin, baddr);
 	}
+
+	bf->minstrlen = bin->minstrlen = rz_config_get_i(core.config, "bin.minstr");
+	bf->maxstrlen = bin->maxstrlen = rz_config_get_i(core.config, "bin.maxstr");
+	bin->maxstrbuf = rz_config_get_i(core.config, "bin.maxstrbuf");
+
 	if (rawstr) {
 		PJ *pj = NULL;
 		if (out_mode == RZ_MODE_JSON) {
@@ -1191,6 +1197,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			printf("%s", pj_string(pj));
 			pj_free(pj);
 		}
+	} else if (bf && bf->o) {
+		rz_bin_object_reset_strings(bin, bf, bf->o);
 	}
 	if (query) {
 		if (out_mode) {

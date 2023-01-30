@@ -1963,5 +1963,5 @@ static ut64 size(RzBinFile *bf) {
 }
 
 static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, 4, false);
+	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
