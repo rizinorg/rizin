@@ -3343,6 +3343,7 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	rz_config_set_i(core->config, "scr.color", ocolor);
 	free(inn_str);
 	if (!o_out) {
+		RZ_LOG_DEBUG("Something wrong with inner command\n");
 		return NULL;
 	}
 
@@ -3357,12 +3358,12 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	return out;
 }
 
-static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
+static bool handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
 	TSNode inn_cmd = ts_node_child(arg, 1);
-	rz_return_if_fail(!ts_node_is_null(inn_cmd));
+	rz_return_val_if_fail(!ts_node_is_null(inn_cmd), false);
 	char *out = do_handle_substitution_cmd(state, inn_cmd);
 	if (!out) {
-		return;
+		return false;
 	}
 
 	char *res = NULL;
@@ -3375,8 +3376,12 @@ static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg,
 		res = rz_cmd_escape_arg(out, RZ_CMD_ESCAPE_MULTI_ARG);
 	}
 	free(out);
+	if (!res) {
+		return false;
+	}
 	struct tsr2cmd_edit *e = create_cmd_edit(state, arg, res);
 	rz_list_append(edits, e);
+	return true;
 }
 
 static bool is_group_of_args(TSNode args) {
@@ -3396,20 +3401,24 @@ static bool is_handled_args(TSNode args) {
 		is_ts_cmd_substitution_arg(args) || is_ts_grep_specifier(args);
 }
 
-static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
+static bool handle_substitution_args(struct tsr2cmd_state *state, TSNode args, RzList /*<struct tsr2cmd_edit *>*/ *edits) {
 	if (is_group_of_args(args)) {
 		uint32_t n_children = ts_node_named_child_count(args);
 		uint32_t i;
 		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child(args, i);
-			handle_substitution_args(state, arg, edits);
+			bool res = handle_substitution_args(state, arg, edits);
+			if (!res) {
+				return false;
+			}
 		}
 	} else if (is_ts_cmd_substitution_arg(args)) {
-		handle_cmd_substitution_arg(state, args, edits);
+		return handle_cmd_substitution_arg(state, args, edits);
 	} else if (is_arg(args)) {
 		TSNode arg = ts_node_named_child(args, 0);
-		handle_substitution_args(state, arg, edits);
+		return handle_substitution_args(state, arg, edits);
 	}
+	return true;
 }
 
 static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, bool do_unwrap) {
@@ -3530,12 +3539,16 @@ static bool substitute_args_do(struct tsr2cmd_state *state, RzList /*<struct tsr
 
 static bool substitute_args(struct tsr2cmd_state *state, TSNode args, TSNode *new_command) {
 	RzList *edits = rz_list_newf((RzListFree)free_tsr2cmd_edit);
+	bool res = false;
 
 	if (is_handled_args(args)) {
-		handle_substitution_args(state, args, edits);
+		if (!handle_substitution_args(state, args, edits)) {
+			goto err;
+		}
 	}
 
-	bool res = substitute_args_do(state, edits, new_command);
+	res = substitute_args_do(state, edits, new_command);
+err:
 	rz_list_free(edits);
 	return res;
 }
