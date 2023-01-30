@@ -841,8 +841,10 @@ bool f32_ieee_generating_op_test(void) {
 
 bool f32_new_round_test(void) {
 	// test round_significant
-	// round 12-bit to 8-bit precision: 1 MMMM MMMM MMMM -> 1 PPPP PPPP
-	// 0001 0101 0011 1000 -> 0001 0101 0011, should_inc = 0
+	// 1. round 12-bit to 8-bit precision: 1 MMMM MMMM MMMM -> 1 PPPP PPPP
+	// round 0001 0101 0011 1000 to 8-bit precision
+	// XXXX 1PPP PPPP PGRS (shift to align, P: precision bit, G: guard, R: round, S: sticky
+	// 0000 1010 1001 1100
 	unsigned char buffer[8] = {0x15, 0x38};
 	RzBitVector *sig;
 	RzBitVector *round_sig;
@@ -851,13 +853,114 @@ bool f32_new_round_test(void) {
 	sig = rz_bv_new_from_bytes_be(buffer, 0, 16);
 	mu_assert_streq_free(rz_bv_as_string(sig), "0001010100111000", "test sig from bytes");
 
-	// rne
+	// rne, ties case, already even
+	// 0001 0101 0011 1000 -> 0001 0101 0011, should_inc = 0
 	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
-	mu_assert_false(should_inc, "test should not increase case");
-	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit");
-
-	rz_bv_free(sig);
+	mu_assert_false(should_inc, "test rne should not increase case");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit, rne");
 	rz_bv_free(round_sig);
+
+	// rna, ties case, round up when ties
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNA, &should_inc);
+	mu_assert_true(should_inc, "test rna, always round up (increase abs) when ties");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit, rna");
+	rz_bv_free(round_sig);
+
+	// rtz
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RTZ, &should_inc);
+	mu_assert_false(should_inc, "test rtz, always drop, no need to increase");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit, rtz");
+	rz_bv_free(round_sig);
+
+	// rtp
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RTP, &should_inc);
+	mu_assert_true(should_inc, "test rtp, always inc if positive");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit, rtp");
+	rz_bv_free(round_sig);
+
+	// rtn
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RTN, &should_inc);
+	mu_assert_false(should_inc, "test rtn, always drop if negative");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit, rtn");
+	rz_bv_free(round_sig);
+
+	// neg case, ties, rne, should not increase abs value
+	round_sig = rz_float_round_significant(true, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
+	mu_assert_false(should_inc, "test rne in negative");
+	rz_bv_free(round_sig);
+
+	// neg case, ties, rna, should increase
+	round_sig = rz_float_round_significant(true, sig, 8, RZ_FLOAT_RMODE_RNA, &should_inc);
+	mu_assert_true(should_inc, "test rna in negative");
+	rz_bv_free(round_sig);
+
+	// neg case, rtz, should not increase
+	round_sig = rz_float_round_significant(true, sig, 8, RZ_FLOAT_RMODE_RTZ, &should_inc);
+	mu_assert_false(should_inc, "test rtz in negative");
+	rz_bv_free(round_sig);
+
+	// neg case, rtp, should not increase since it's negative
+	round_sig = rz_float_round_significant(true, sig, 8, RZ_FLOAT_RMODE_RTP, &should_inc);
+	mu_assert_false(should_inc, "test rtp in negative");
+	rz_bv_free(round_sig);
+
+	// neg case, rtn, should increase
+	round_sig = rz_float_round_significant(true, sig, 8, RZ_FLOAT_RMODE_RTN, &should_inc);
+	mu_assert_true(should_inc, "test rtn in negative");
+	rz_bv_free(round_sig);
+
+	// basic test end
+	rz_bv_free(sig);
+
+	// test rne, when it's odd, should increse
+	// 0001 0101 0010 1000
+	buffer[1] = 0x28;
+	sig = rz_bv_new_from_bytes_be(buffer, 0, 16);
+	mu_assert_streq_free(rz_bv_as_string(sig), "0001010100101000", "test sig from bytes be, odd significant");
+
+	// rne, inc
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
+	mu_assert_true(should_inc, "test rne, should round to even");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010010", "test rne when significant is odd");
+	rz_bv_free(round_sig);
+
+	// rna, should inc
+	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNA, &should_inc);
+	mu_assert_true(should_inc, "test rna, always should round up");
+	rz_bv_free(round_sig);
+
+	// 2. test round to 0-bit precision (1.MMM... -> round to integer)
+	// rne, 0001 0101 0010 1000 -> 0001 011(GRS) -> 0001, should not inc
+	round_sig = rz_float_round_significant(false, sig, 0, RZ_FLOAT_RMODE_RNE, &should_inc);
+	mu_assert_false(should_inc, "test round to 0-bit, rne");
+	rz_bv_free(round_sig);
+
+	// rna, not ties, round down, not increase
+	round_sig = rz_float_round_significant(false, sig, 0, RZ_FLOAT_RMODE_RNA, &should_inc);
+	mu_assert_false(should_inc, "test round to 0-bit, rna");
+	rz_bv_free(round_sig);
+
+	// rtz, not increase
+	round_sig = rz_float_round_significant(false, sig, 0, RZ_FLOAT_RMODE_RTZ, &should_inc);
+	mu_assert_false(should_inc, "test round to 0-bit, rtz");
+	rz_bv_free(round_sig);
+
+	// rtp, increase
+	round_sig = rz_float_round_significant(false, sig, 0, RZ_FLOAT_RMODE_RTP, &should_inc);
+	mu_assert_true(should_inc, "test round to 0-bit, rtp");
+	rz_bv_free(round_sig);
+
+	// rtn, not increase
+	round_sig = rz_float_round_significant(false, sig, 0, RZ_FLOAT_RMODE_RTN, &should_inc);
+	mu_assert_false(should_inc, "test round to 0-bit, rtn");
+	rz_bv_free(round_sig);
+
+	// 3. test precision > mantissa length
+	// round 0001 0101 0010 1000 (12-bit precision) to 23-bit precision
+	// 0001 0101 0010 1000 0000 0000 000
+	round_sig = rz_float_round_significant(false, sig, 23, RZ_FLOAT_RMODE_RNE, &should_inc);
+	mu_assert_false(should_inc, "test round to higher precision, no need to increase");
+	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010010100000000000000", "test round to higher prec");
 
 	// test round_bv_and_pack
 

@@ -474,6 +474,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		RzBitVector *sig_dup = rz_bv_dup(sig);
 		rz_bv_shift_right_jammed(sig_dup, shift_dist);
 		ret = rz_bv_cut_head(sig_dup, rz_bv_len(sig) - ret_len);
+		rz_bv_free(sig_dup);
 	}
 
 	// default is drop
@@ -483,6 +484,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		bool guard_bit = rz_bv_get(ret, 2);
 		bool round_bit = rz_bv_get(ret, 1);
 		bool sticky_bit = rz_bv_get(ret, 0);
+		rz_bv_rshift(ret, 3);
 
 		// for G R S bits
 		//     > 1 0 0 : round up
@@ -493,7 +495,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		} else if (!round_bit && !sticky_bit) {
 			// ties
 			if (mode == RZ_FLOAT_RMODE_RNE) {
-				bool is_odd = rz_bv_get(sig, 0);
+				bool is_odd = !rz_bv_get(ret, 0);
 				*should_inc = is_odd ? 1 : 0;
 			}
 			if (mode == RZ_FLOAT_RMODE_RNA) {
@@ -503,7 +505,6 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 			*should_inc = 1;
 		}
 
-		rz_bv_rshift(ret, 3);
 		return ret;
 	}
 
