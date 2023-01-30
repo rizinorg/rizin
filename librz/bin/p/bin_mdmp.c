@@ -466,7 +466,7 @@ static bool mdmp_check_buffer(RzBuffer *b) {
 }
 
 static RzList /*<RzBinString *>*/ *mdmp_strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, 0, false);
+	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 RzBinPlugin rz_bin_plugin_mdmp = {
