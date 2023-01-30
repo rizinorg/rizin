@@ -3433,7 +3433,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	free(wwwroot);
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
-	SETPREF("http.maxport", "9999", "Last HTTP server port");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI("http.dietime", 0, "Kill server after N seconds with no client");
 	SETBPREF("http.verbose", "false", "Output server logs to stdout");
