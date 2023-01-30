@@ -2496,6 +2496,7 @@ static bool cb_binmaxstr(void *user, void *data) {
 		core->bin->maxstrlen = v;
 		RzBinFile *bf = rz_bin_cur(core->bin);
 		if (bf && bf->o) {
+			bf->maxstrlen = v;
 			rz_bin_object_reset_strings(core->bin, bf, bf->o);
 		}
 		return true;
@@ -2507,13 +2508,15 @@ static bool cb_binminstr(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
-		int v = node->i_value;
+		int v = (int)node->i_value;
 		if (v < 1) {
-			v = 4; // HACK
+			// when less than 1 always enforce 4 as the min string length.
+			v = 4;
 		}
 		core->bin->minstrlen = v;
 		RzBinFile *bf = rz_bin_cur(core->bin);
 		if (bf && bf->o) {
+			bf->minstrlen = v;
 			rz_bin_object_reset_strings(core->bin, bf, bf->o);
 		}
 		return true;

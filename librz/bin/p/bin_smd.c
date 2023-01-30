@@ -316,7 +316,7 @@ static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets
 }
 
 static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, 0, false);
+	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 RzBinPlugin rz_bin_plugin_smd = {
