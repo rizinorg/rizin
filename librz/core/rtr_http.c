@@ -188,7 +188,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 		core->http_up = 1;
 
-
 		if (!rs) {
 			bed = rz_cons_sleep_begin();
 			rz_sys_usleep(100);
@@ -474,13 +473,13 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		rz_socket_http_close(rs);
 		free(dir);
 	}
-the_end :
+the_end:
 	rz_cons_break_pop();
 	core->http_up = false;
 	free(pfile);
 	rz_socket_free(s);
 
-	//restore saved configs
+	// restore saved configs
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	return ret;
