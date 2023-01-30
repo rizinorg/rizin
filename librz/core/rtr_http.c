@@ -2,6 +2,16 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // included from rtr.c
 
+static bool is_localhost(const char *address) {
+	if (RZ_STR_ISEMPTY(address)) {
+		return false;
+	}
+	return !strcmp(address, "::1") ||
+		!strcmp(address, "localhost") ||
+		!strcmp(address, "127.0.0.1") ||
+		!strcmp(address, "local");
+}
+
 static int rtr_http_stop(RzCore *u) {
 	RzCore *core = (RzCore *)u;
 	const int timeout = 1; // 1 second
@@ -14,8 +24,7 @@ static int rtr_http_stop(RzCore *u) {
 	if (((size_t)u) > 0xff) {
 		port = rz_config_get(core->config, "http.port");
 		sock = rz_socket_new(0);
-		(void)rz_socket_connect(sock, "localhost",
-			port, RZ_SOCKET_PROTO_TCP, timeout);
+		(void)rz_socket_connect(sock, "localhost", port, RZ_SOCKET_PROTO_TCP, timeout);
 		rz_socket_free(sock);
 	}
 	rz_socket_free(s);
@@ -33,7 +42,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	RzSocketHTTPOptions so;
 	char *dir;
 	int iport;
-	const char *host = rz_config_get(core->config, "http.bind");
+	const char *bind = rz_config_get(core->config, "http.bind");
 	const char *index = rz_config_get(core->config, "http.index");
 	const char *root = rz_config_get(core->config, "http.root");
 	const char *homeroot = rz_config_get(core->config, "http.homeroot");
@@ -67,30 +76,8 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		port = buf;
 	}
 	s = rz_socket_new(false);
-	{
-		if (host && *host) {
-			if (!strcmp(host, "::1")) {
-				s->local = true;
-			} else if (!strcmp(host, "localhost")) {
-				s->local = true;
-			} else if (!strcmp(host, "127.0.0.1")) {
-				s->local = true;
-			} else if (!strcmp(host, "local")) {
-				s->local = true;
-				rz_config_set(core->config, "http.bind", "localhost");
-			} else if (host[0] == '0' || !strcmp(host, "public")) {
-				// public
-				host = "127.0.0.1";
-				rz_config_set(core->config, "http.bind", "0.0.0.0");
-				s->local = false;
-			} else {
-				s->local = true;
-			}
-		} else {
-			s->local = true;
-		}
-		memset(&so, 0, sizeof(so));
-	}
+	s->local = is_localhost(bind);
+	memset(&so, 0, sizeof(so));
 	if (!rz_socket_listen(s, port, NULL)) {
 		rz_socket_free(s);
 		RZ_LOG_ERROR("core: cannot listen on http.port\n");
@@ -100,7 +87,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	if (browse == 'H') {
 		const char *browser = rz_config_get(core->config, "http.browser");
 		rz_sys_cmdf("%s http://%s:%d/%s &",
-			browser, host, atoi(port), path ? path : "");
+			browser, bind, atoi(port), path ? path : "");
 	}
 
 	so.httpauth = rz_config_get_i(core->config, "http.auth");
@@ -139,7 +126,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "scr.interactive", "false");
 
-	RZ_LOG_WARN("core: Starting http server...\nTo open a remote session, please use `rizin -C http://%s:%s/cmd/`\n", host, port);
+	RZ_LOG_WARN("core: Starting http server...\nTo open a remote session, please use `rizin -C http://%s:%s/cmd/`\n", bind, port);
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;
@@ -207,7 +194,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			}
 			for (i = 0; i < count; i++) {
 				allows_host = rz_str_word_get0(allows, i);
-				// eprintf ("--- (%s) (%s)\n", host, peer);
+				// eprintf ("--- (%s) (%s)\n", bind, peer);
 				if (!strcmp(allows_host, peer)) {
 					accepted = true;
 					break;
