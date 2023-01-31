@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /**
  * \file this file contains some float function used in rzil fbasic theory
  * To avoid conflict during developing, I put some float operation here at first
