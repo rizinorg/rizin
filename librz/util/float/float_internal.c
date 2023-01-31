@@ -495,7 +495,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		} else if (!round_bit && !sticky_bit) {
 			// ties
 			if (mode == RZ_FLOAT_RMODE_RNE) {
-				bool is_odd = !rz_bv_get(ret, 0);
+				bool is_odd = rz_bv_get(ret, 0);
 				*should_inc = is_odd ? 1 : 0;
 			}
 			if (mode == RZ_FLOAT_RMODE_RNA) {
@@ -527,28 +527,29 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
  * TODO : report exception
  * TODO : test and then replace the old version
  * \param sign sign of bitvector
- * \param exp_no_bias exponent value, no bias
- * \param sig significant, expect unsigned bitvector, treated as integer
+ * \param exp exponent value, biased
+ * \param sig significant, form: 1.MMMM....
  * \param format format of float type
  * \param mode rounding mode
  * \return a float of type `format`, converted from `sig`
  */
-static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp_no_bias, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
+static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(sig, NULL);
 	RzFloat *ret;
 
 	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
-	exp_no_bias += man_len;
-	ut32 exp_max = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
-	ut32 exp_min = 1 - exp_max;
+	st32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+	st32 exp_val = exp;
+	st32 exp_max = bias + bias;
+	st32 exp_min = 0;
 
 	// check overflow and underflow
-	if (exp_no_bias > exp_max) {
+	if (exp_val > exp_max) {
 		ret = rz_float_new_inf(format, sign);
 		ret->exception = RZ_FLOAT_E_OVERFLOW;
 		return ret;
 	}
-	if (exp_no_bias < exp_min) {
+	if (exp_val < exp_min) {
 		ret = rz_float_new_qnan(format);
 		ret->exception = RZ_FLOAT_E_UNDERFLOW;
 		return ret;
@@ -581,8 +582,8 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp_no_bias, RzBitVect
 		bool sig_carry = rz_bv_get(rounded_tmp, sig_carry_pos);
 		if (sig_carry) {
 			// change exponent, renormalize
-			exp_no_bias += 1;
-			if (exp_no_bias > exp_max) {
+			exp_val += 1;
+			if (exp_val > exp_max) {
 				// overflow
 				ret = rz_float_new_inf(format, sign);
 				ret->exception = RZ_FLOAT_E_OVERFLOW;
@@ -603,14 +604,14 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, ut32 exp_no_bias, RzBitVect
 	}
 
 	RzBitVector *exp_bv;
-	if (exp_no_bias == exp_min) {
+	if (exp_val == 0) {
 		// sub normal one
 		exp_bv = rz_bv_new_zero(total_len);
-	} else {
-		// normal one
-		exp_bv = rz_bv_new_from_ut64(total_len, exp_no_bias);
 		// hidden bit set to 0
 		rz_bv_set(rounded_sig, man_len, 0);
+	} else {
+		// normal one
+		exp_bv = rz_bv_new_from_ut64(total_len, exp_val);
 	}
 
 	// pack to float

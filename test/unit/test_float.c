@@ -853,10 +853,10 @@ bool f32_new_round_test(void) {
 	sig = rz_bv_new_from_bytes_be(buffer, 0, 16);
 	mu_assert_streq_free(rz_bv_as_string(sig), "0001010100111000", "test sig from bytes");
 
-	// rne, ties case, already even
-	// 0001 0101 0011 1000 -> 0001 0101 0011, should_inc = 0
+	// rne, ties case, round to even
+	// 0001 0101 0011 1000 -> 0001 0101 0011, should_inc
 	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
-	mu_assert_false(should_inc, "test rne should not increase case");
+	mu_assert_true(should_inc, "test rne should not increase case");
 	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010011", "test round sig to 12-bit, rne");
 	rz_bv_free(round_sig);
 
@@ -886,7 +886,7 @@ bool f32_new_round_test(void) {
 
 	// neg case, ties, rne, should not increase abs value
 	round_sig = rz_float_round_significant(true, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
-	mu_assert_false(should_inc, "test rne in negative");
+	mu_assert_true(should_inc, "test rne in negative");
 	rz_bv_free(round_sig);
 
 	// neg case, ties, rna, should increase
@@ -920,7 +920,7 @@ bool f32_new_round_test(void) {
 
 	// rne, inc
 	round_sig = rz_float_round_significant(false, sig, 8, RZ_FLOAT_RMODE_RNE, &should_inc);
-	mu_assert_true(should_inc, "test rne, should round to even");
+	mu_assert_false(should_inc, "test rne, already even");
 	mu_assert_streq_free(rz_bv_as_string(round_sig), "000101010010", "test rne when significant is odd");
 	rz_bv_free(round_sig);
 
@@ -966,7 +966,7 @@ bool f32_new_round_test(void) {
 
 	// 4. test round_bv_and_pack
 	RzFloat *expected_fval, *round_fval;
-	// 0101 1100 0000 0000 0000 0000 1100 -> 28-bit vector round to 23-bit precision
+	// 0101 1100 0000 0000 0000 0000 1100 -> 26-bit precision round to 23-bit precision
 	buffer[0] = 0x5C;
 	buffer[1] = 0x00;
 	buffer[2] = 0x00;
@@ -975,32 +975,33 @@ bool f32_new_round_test(void) {
 	mu_assert_streq_free(rz_bv_as_string(sig), "0101110000000000000000001100", "test pack float : init significant as expected");
 
 	// rne, rna and rtp, round up
+	// note that cmp == 0 is equal
 	expected_fval = rz_float_new_from_f32(11.500002f);
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RNE);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500001, rne");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500002, rne");
 	rz_float_free(round_fval);
 
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RNA);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500001, rna");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500002, rna");
 	rz_float_free(round_fval);
 
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RTP);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500001, rtp");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500002, rtp");
 	rz_float_free(round_fval);
 	rz_float_free(expected_fval);
 
@@ -1008,20 +1009,20 @@ bool f32_new_round_test(void) {
 	expected_fval = rz_float_new_from_f32(11.500001f);
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RTZ);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500000, rtz");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500001, rtz");
 	rz_float_free(round_fval);
 
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RTN);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500000, rtn");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round and pack to 11.500001, rtn");
 	rz_float_free(round_fval);
 	rz_float_free(expected_fval);
 
@@ -1030,29 +1031,29 @@ bool f32_new_round_test(void) {
 	expected_fval = rz_float_new_from_f32(-11.500002f);
 	round_fval = rz_float_round_bv_and_pack(
 		true,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RNE);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to 11.500002, rne");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to -11.500002, rne");
 	rz_float_free(round_fval);
 
 	round_fval = rz_float_round_bv_and_pack(
 		true,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RNA);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to 11.500002, rna");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to -11.500002, rna");
 	rz_float_free(round_fval);
 
 	round_fval = rz_float_round_bv_and_pack(
 		true,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RTN);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to 11.500002, rtn");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to -11.500002, rtn");
 	rz_float_free(round_fval);
 	rz_float_free(expected_fval);
 
@@ -1060,20 +1061,20 @@ bool f32_new_round_test(void) {
 	expected_fval = rz_float_new_from_f32(-11.500001f);
 	round_fval = rz_float_round_bv_and_pack(
 		true,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RTP);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to 11.500002, rtp");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to -11.500002, rtp");
 	rz_float_free(round_fval);
 
 	round_fval = rz_float_round_bv_and_pack(
 		true,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RTZ);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to 11.500002, rtz");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test negative round and pack to -11.500002, rtz");
 	rz_float_free(round_fval);
 	rz_float_free(expected_fval);
 	rz_bv_free(sig);
@@ -1088,29 +1089,93 @@ bool f32_new_round_test(void) {
 	expected_fval = rz_float_new_from_f32(11.5f);
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RNE);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test another rne 1");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test another rne 1");
 	rz_float_free(round_fval);
 	rz_float_free(expected_fval);
 
 	expected_fval = rz_float_new_from_f32(11.500001f);
 	round_fval = rz_float_round_bv_and_pack(
 		false,
-		3,
+		3 + 127,
 		sig,
 		RZ_FLOAT_IEEE754_BIN_32,
 		RZ_FLOAT_RMODE_RNA);
-	mu_assert_true(rz_float_cmp(expected_fval, round_fval), "test another rna 1");
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test another rna 1");
 	rz_float_free(round_fval);
 	rz_float_free(expected_fval);
 	rz_bv_free(sig);
 
 	// 7. test significant carry to exponent case
+	// 1111 1111 1111 1111 1111 1111 100(GRS) = 15.999999f, exp = 3
+	buffer[0] = 0xFF;
+	buffer[1] = 0xFF;
+	buffer[2] = 0xFF;
+	buffer[3] = 0x80;
+	sig = rz_bv_new_from_bytes_be(buffer, 0, 27);
+	mu_assert_streq_free(rz_bv_as_string(sig), "111111111111111111111111100", "test sig carry : init significant as expected");
+	expected_fval = rz_float_new_from_f32(16.0f);
+	round_fval = rz_float_round_bv_and_pack(
+		false,
+		3 + 127,
+		sig,
+		RZ_FLOAT_IEEE754_BIN_32,
+		RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round sig carry, rne");
+	rz_float_free(round_fval);
+	rz_float_free(expected_fval);
+
+	expected_fval = rz_float_new_from_f32(15.999999f);
+	round_fval = rz_float_round_bv_and_pack(
+		false,
+		3 + 127,
+		sig,
+		RZ_FLOAT_IEEE754_BIN_32,
+		RZ_FLOAT_RMODE_RTZ);
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round sig carry, rtz");
+	rz_float_free(round_fval);
+	rz_float_free(expected_fval);
+	rz_bv_free(sig);
 
 	// 8. test sub-normal case
+	// 0101 1100 0000 0000 0000 0000 1100 -> 26-bit precision round to 23-bit precision
+	buffer[0] = 0x5C;
+	buffer[1] = 0x00;
+	buffer[2] = 0x00;
+	buffer[3] = 0xC0;
+	sig = rz_bv_new_from_bytes_be(buffer, 0, 27);
+	expected_fval = rz_float_new_from_f32(5.14279E-39f);
+	round_fval = rz_float_round_bv_and_pack(
+		false,
+		0,
+		sig,
+		RZ_FLOAT_IEEE754_BIN_32,
+		RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round to sub-normal, rne");
+	rz_float_free(round_fval);
+	rz_float_free(expected_fval);
+	rz_bv_free(sig);
+
+	// test sub-normal carry, 1.1754942E-38 round to 1.1754944E-38
+	buffer[0] = 0xFF;
+	buffer[1] = 0xFF;
+	buffer[2] = 0xFF;
+	buffer[3] = 0x80;
+	sig = rz_bv_new_from_bytes_be(buffer, 0, 27);
+	expected_fval = rz_float_new_from_f32(1.1754944E-38f);
+	round_fval = rz_float_round_bv_and_pack(
+		false,
+		0,
+		sig,
+		RZ_FLOAT_IEEE754_BIN_32,
+		RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expected_fval, round_fval), "test round to sub-normal carry case, rne");
+	rz_float_free(round_fval);
+	rz_float_free(expected_fval);
+	rz_bv_free(sig);
 
 	mu_end;
 }

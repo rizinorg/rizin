@@ -2678,12 +2678,12 @@ RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *si
  * TODO : report exception
  * TODO : test and then replace the old version
  * \param sign sign of bitvector
- * \param exp_no_bias exponent value, no bias
+ * \param exp exponent value, biased one
  * \param sig significant, expect unsigned bitvector, treated as integer
  * \param format format of float type
  * \param mode rounding mode
  * \return a float of type `format`, converted from `sig`
  */
-RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, ut32 exp_no_bias, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
-	return round_float_bv_new(sign, exp_no_bias, sig, format, mode);
+RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
+	return round_float_bv_new(sign, exp, sig, format, mode);
 }
