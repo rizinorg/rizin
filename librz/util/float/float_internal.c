@@ -441,6 +441,7 @@ round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFl
  * detect if should drop extra tailing bits in rounding
  * GRS konwn as G(guard bit), R(round bit), and S(sticky bit)
  * they are 3 bits after the LSB bit of rounded result, which is drop in rounding
+ * note that this function has no concept to float format
  * \param sign sign of given significant bitvector, 1 is negative
  * \param sig bitvector, required to have 0..01M..M form, exponent is managed by caller
  * assumption1: radix point is right after 1, that means the real value of such a bitvector is 1.MMM..M
@@ -533,30 +534,32 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
  * \param mode rounding mode
  * \return a float of type `format`, converted from `sig`
  */
-static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
+static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatFormat new_format, RzFloatRMode mode) {
 	rz_return_val_if_fail(sig, NULL);
 	RzFloat *ret;
 
-	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 new_man_len = rz_float_get_format_info(new_format, RZ_FLOAT_INFO_MAN_LEN);
+	ut32 new_total_len = rz_float_get_format_info(new_format, RZ_FLOAT_INFO_TOTAL_LEN);
 	st32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+	st32 new_bias = rz_float_get_format_info(new_format, RZ_FLOAT_INFO_BIAS);
 	st32 exp_val = exp;
 	st32 exp_max = bias + bias;
 	st32 exp_min = 0;
 
 	// check overflow and underflow
 	if (exp_val > exp_max) {
-		ret = rz_float_new_inf(format, sign);
+		ret = rz_float_new_inf(new_format, sign);
 		ret->exception = RZ_FLOAT_E_OVERFLOW;
 		return ret;
 	}
 	if (exp_val < exp_min) {
-		ret = rz_float_new_qnan(format);
+		ret = rz_float_new_qnan(new_format);
 		ret->exception = RZ_FLOAT_E_UNDERFLOW;
 		return ret;
 	}
 
 	bool should_inc = false;
-	ut32 bit_prec = man_len;
+	ut32 bit_prec = new_man_len;
 	RzBitVector *rounded_tmp = round_significant(sign, sig, bit_prec, mode, &should_inc);
 
 	if (rounded_tmp == NULL) {
@@ -566,16 +569,15 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 	}
 
 	// convert rounded bitv to fit given format
-	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
-	RzBitVector *rounded_sig = rz_bv_prepend_zero(rounded_tmp, total_len - rz_bv_len(rounded_tmp));
+	RzBitVector *rounded_sig = rz_bv_prepend_zero(rounded_tmp, new_total_len - rz_bv_len(rounded_tmp));
 
 	// free rounded tmp result
 	rz_bv_free(rounded_tmp);
 	rounded_tmp = NULL;
 
 	if (should_inc) {
-		ut32 sig_carry_pos = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN) + 1;
-		RzBitVector *one = rz_bv_new_one(total_len);
+		ut32 sig_carry_pos = new_man_len + 1;
+		RzBitVector *one = rz_bv_new_one(new_total_len);
 		rounded_tmp = rz_bv_add(rounded_sig, one, NULL);
 		rz_bv_free(one);
 
@@ -585,7 +587,7 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 			exp_val += 1;
 			if (exp_val > exp_max) {
 				// overflow
-				ret = rz_float_new_inf(format, sign);
+				ret = rz_float_new_inf(new_format, sign);
 				ret->exception = RZ_FLOAT_E_OVERFLOW;
 				rz_bv_free(rounded_sig);
 				rz_bv_free(rounded_tmp);
@@ -605,18 +607,18 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 
 	RzBitVector *exp_bv;
 	if (exp_val == 0) {
-		// sub normal one
-		exp_bv = rz_bv_new_zero(total_len);
+		// sub normal one, zero exp bv
+		exp_bv = rz_bv_new_zero(new_total_len - new_man_len - 1);
 		// hidden bit set to 0
-		rz_bv_set(rounded_sig, man_len, 0);
+		rz_bv_set(rounded_sig, new_man_len, 0);
 	} else {
 		// normal one
-		exp_bv = rz_bv_new_from_ut64(total_len, exp_val);
+		exp_bv = rz_bv_new_from_ut64(new_total_len, exp_val - bias + new_bias);
 	}
 
 	// pack to float
 	ret = RZ_NEW0(RzFloat);
-	ret->s = pack_float_bv(sign, exp_bv, rounded_sig, format);
+	ret->s = pack_float_bv(sign, exp_bv, rounded_sig, new_format);
 	ret->r = format;
 
 	rz_bv_free(exp_bv);

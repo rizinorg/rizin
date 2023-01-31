@@ -1187,6 +1187,139 @@ bool f32_ieee_fround_test(void) {
 
 bool f32_ieee_cast_test(void) {
 	// cast and convert
+	RzFloat *expect, *cast_val;
+	RzBitVector *val;
+
+	// 1. cast to float
+	// 1-1. simple
+	val = rz_bv_new_one(10);
+	expect = rz_float_new_from_f32(1.0f);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-float 1)");
+	rz_float_free(cast_val);
+
+	cast_val = rz_float_cast_sfloat(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-sfloat 1)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+	rz_bv_free(val);
+
+	// 1-2. normal
+	val = rz_bv_new_from_ut64(32, 12345678);
+	expect = rz_float_new_from_f32(12345678.0f);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-float 12345678)");
+	rz_float_free(cast_val);
+
+	cast_val = rz_float_cast_sfloat(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-sfloat 12345678)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+	rz_bv_free(val);
+
+	// 1-3. big num, inexact
+	val = rz_bv_new_from_ut64(32, 123456789);
+	expect = rz_float_new_from_f32(1.2345679E8f);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-float 123456789)");
+	rz_float_free(cast_val);
+
+	cast_val = rz_float_cast_sfloat(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-sfloat 123456789)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+	rz_bv_free(val);
+
+	// 1-4. cast-float negative
+	// 1111 1111 1111 1111 -> unsigned : 2^16 - 1 = 65535, signed : -1
+	val = rz_bv_new_from_st64(16, -1);
+	expect = rz_float_new_from_f32(-1.0f);
+	cast_val = rz_float_cast_sfloat(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-sfloat -1)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+
+	expect = rz_float_new_from_f32(65535.0f);
+	cast_val = rz_float_cast_float(val, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, cast_val), "test (cast-float -1)");
+	rz_float_free(cast_val);
+	rz_float_free(expect);
+	rz_bv_free(val);
+
+	// 2. test cast to integer
+	// 2-1. simple
+	RzFloat *fval;
+	RzBitVector *expect_bv, *cast_bv;
+
+	// test cast_sint only, since cast_int is a wrapper of cast_sint
+	fval = rz_float_new_from_f32(1.0f);
+	expect_bv = rz_bv_new_one(32);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 1.0f)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 2-2. normal
+	fval = rz_float_new_from_f32(12345678.0f);
+	expect_bv = rz_bv_new_from_ut64(32, 12345678);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 12345678.0f)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 2-3. huge
+	fval = rz_float_new_from_f32(1.2345679E8f);
+	expect_bv = rz_bv_new_from_ut64(32, 123456792);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 1.2345679E8)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 2-4. negative
+	fval = rz_float_new_from_f32(-1.0f);
+	expect_bv = rz_bv_new_from_ut64(32, 0xFFFFFFFF);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -1.0f)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 2-5 normal negative
+	fval = rz_float_new_from_f32(-1234.0f);
+	expect_bv = rz_bv_new_from_ut64(64, 0xFFFFFFFFFFFFFB2E);
+	cast_bv = rz_float_cast_sint(fval, 64, RZ_FLOAT_RMODE_RNE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -1234.0f)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 3. convert
+	RzFloat *old_f = rz_float_new_from_f32(42.0f);
+	RzFloat *expect_f = rz_float_new_from_f64(42.0);
+	RzFloat *new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 42.0f to 42.0 double");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+
+	old_f = rz_float_new_from_f64(42.0);
+	expect_f = rz_float_new_from_f32(42.0f);
+	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert 42.0d to 42.0f ");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
+
+	old_f = rz_float_new_from_f64(3.1415926535);
+	expect_f = rz_float_new_from_f32(3.1415927f);
+	new_cast = rz_float_convert(old_f, RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect_f, new_cast), "test convert pi from double to float");
+	rz_float_free(old_f);
+	rz_float_free(expect_f);
+	rz_float_free(new_cast);
 	mu_end;
 }
 
