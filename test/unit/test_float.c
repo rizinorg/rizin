@@ -1181,7 +1181,7 @@ bool f32_new_round_test(void) {
 }
 
 bool f32_ieee_fround_test(void) {
-	// test core theory operation fround
+	// test bap core theory operation fround
 	mu_end;
 }
 
