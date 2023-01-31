@@ -3433,9 +3433,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	free(wwwroot);
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
-	SETPREF("http.maxport", "9999", "Last HTTP server port");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
-	SETI("http.dietime", 0, "Kill server after N seconds with no client");
+	SETI("http.stop.after", 0, "Stops the http server after N seconds if there are no client connected");
 	SETBPREF("http.verbose", "false", "Output server logs to stdout");
 	SETBPREF("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETBPREF("http.upload", "false", "Enable file uploads to /up/<filename>");
