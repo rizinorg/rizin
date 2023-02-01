@@ -6475,7 +6475,9 @@ RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char
 		if (!strbuf) {
 			RZ_LOG_ERROR("Cannot generate vertical histogram\n");
 		} else {
-			rz_cons_print(rz_strbuf_drain(strbuf));
+			char *bar = rz_strbuf_drain(strbuf);
+			rz_cons_print(bar);
+			free(bar);
 		}
 		rz_cons_printf(" %" PFMT64d, word64 - oldword);
 		oldword = word64;
