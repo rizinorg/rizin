@@ -830,6 +830,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 	}
 	if (!stack_off) {
 		// Do not create a var/arg for the return address
+		free(esil_buf);
 		return;
 	}
 
