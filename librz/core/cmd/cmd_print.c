@@ -6104,9 +6104,9 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	ut8 *data = calloc(1, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6117,9 +6117,11 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	free(tmp);
 	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
 		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	free(data);
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
