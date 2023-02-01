@@ -5389,10 +5389,12 @@ static RzCoreAnalysisStatsRange *analysis_stats_range(RzCore *core, int width) {
 	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "search");
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No range to calculate stats for.\n");
+		rz_list_free(list);
 		return NULL;
 	}
 	RzCoreAnalysisStatsRange *srange = RZ_NEW0(RzCoreAnalysisStatsRange);
 	if (!srange) {
+		rz_list_free(list);
 		return NULL;
 	}
 	RzListIter *iter;
