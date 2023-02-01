@@ -2243,18 +2243,115 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
+static void debug_print_bv(RzBitVector *bv) {
+	char *s = rz_bv_as_string(bv);
+	puts(s);
+	free(s);
+}
+
 /**
- * [fround m x] is the floating-point number closest to [x]
+ * \brief round float to an integral valued float with the same format
+ * \detail [fround m x] is the floating-point number closest to [x]
  * rounded to an integral, using the rounding mode [m].
  * \param f float
  * \param mode round mode
  * \return round float
  */
-RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
+RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
-	// WARN: fround operation is unimplemented in BAP
-	// TODO: Ask the semantic of fround, and check if the function signature is correct.
-	return NULL;
+	RzFloat *ret;
+	RzBitVector *tmp, *rounded;
+	ut32 exp = float_exponent(f);
+	RzFloatFormat format = f->r;
+	bool sign = get_sign(f->s, format);
+	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
+	bool is_subnormal = exp == 0;
+	st32 exp_no_bias = is_subnormal ? (1 - bias) : (exp - bias);
+	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
+	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
+
+	// rounding float to get an integer means
+	// we should try to reserve `exponent` bits of mantissa
+	// drop extra bits or append zeros
+	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
+	bool should_inc = false;
+	RzBitVector *sig = rz_float_get_mantissa(f);
+
+	// sub normal one has no hidden bit, others should set to 1
+	if (!is_subnormal) {
+		rz_bv_set(sig, man_len, true);
+	}
+
+	if (exp_no_bias >= 0) {
+		// has `exp_no_bias` + 3 + 1 length
+		tmp = round_significant(sign, sig, exp_no_bias, mode, &should_inc);
+	} else {
+		// float 1.M..M * 2^exp, when exp < 0
+		// flatten it and we have 0.0..1M..M (|exp|+1 zeros before 1MMM...)
+		// set a fake 1 before radix point, and we can use round_significant to round
+		ut32 remained_zeros = total_len - man_len - 1;
+		RzBitVector *fake_f;
+		if (-exp_no_bias > remained_zeros) {
+			// prepend
+			fake_f = rz_bv_prepend_zero(sig, -exp_no_bias - remained_zeros);
+		} else {
+			fake_f = rz_bv_dup(sig);
+		}
+		rz_bv_set(fake_f, rz_bv_len(fake_f) - 1, true);
+		tmp = round_significant(sign, fake_f, 0, mode, &should_inc);
+
+		// unset the fake 1 in tmp
+		// tmp has 3 + 1 + precision = 4
+		rz_bv_set(tmp, 0, false);
+		rz_bv_free(fake_f);
+	}
+	rz_bv_free(sig);
+	sig = NULL;
+
+	// rounded result, rounded has (3 + 1 + precision) length
+	if (should_inc) {
+		// WARN: possible overflow => no enough length
+		RzBitVector *bv_one;
+		bv_one = rz_bv_new_one(rz_bv_len(tmp));
+		rounded = rz_bv_add(tmp, bv_one, NULL);
+		rz_bv_free(bv_one);
+	} else {
+		rounded = rz_bv_dup(tmp);
+	}
+	rz_bv_free(tmp);
+	tmp = NULL;
+
+	// now we have an integer bitv, convert it to significant
+	// 0001 MMMM = 1.MMMM * 2^4
+	st32 integral_exp_val = rz_bv_len(rounded) - rz_bv_clz(rounded) - 1;
+	if (integral_exp_val < 0) {
+		// -1, means rounded is all zero
+		ret = rz_float_new_zero(format);
+		rz_float_set_sign(ret, sign);
+
+		rz_bv_free(rounded);
+		return ret;
+	}
+	RzBitVector *integeral_exp = rz_bv_new_from_ut64(32, integral_exp_val + bias);
+
+	if (man_len > integral_exp_val) {
+		sig = rz_bv_append_zero(rounded, man_len - integral_exp_val);
+		rz_bv_free(rounded);
+		rounded = NULL;
+	} else {
+		// right shift zero bits
+		rz_bv_rshift(rounded, integral_exp_val - man_len);
+		sig = rounded;
+		rounded = NULL;
+	}
+
+	ret = RZ_NEW0(RzFloat);
+	ret->r = format;
+	ret->s = pack_float_bv(sign, integeral_exp, sig, format);
+
+	rz_bv_free(integeral_exp);
+	rz_bv_free(sig);
+	return ret;
 }
 
 /**
@@ -2340,7 +2437,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	bool sign = get_sign(f->s, format);
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	bool is_subnormal = exp == 0;
-	ut32 exp_no_bias = is_subnormal ? (1 - bias) : (exp - bias);
+	st32 exp_no_bias = is_subnormal ? (1 - bias) : (exp - bias);
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 

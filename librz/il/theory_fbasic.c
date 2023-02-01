@@ -265,7 +265,7 @@ void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	RzILOpArgsFround fround = op->op.fround;
 	RzFloat *f = rz_il_evaluate_float(vm, fround.f);
 	RzFloatRMode mode = fround.rmode;
-	RzFloat *ret = rz_float_round(f, mode);
+	RzFloat *ret = rz_float_round_to_integral(f, mode);
 
 	rz_float_free(f);
 

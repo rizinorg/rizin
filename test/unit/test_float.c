@@ -784,10 +784,10 @@ bool f32_ieee_generating_op_test(void) {
 	RzFloat *pi_pred = rz_float_pred(pi);
 	RzFloat *pi_neg = rz_float_neg(pi);
 
-	mu_assert_streq_free(rz_float_as_hex_string(pi, true), "0x40490FDA", "test pi");
-	mu_assert_streq_free(rz_float_as_hex_string(pi_next, true), "0x40490FDB", "test next float number of pi");
-	mu_assert_streq_free(rz_float_as_hex_string(pi_pred, true), "0x40490FD9", "test previous float number of pi");
-	mu_assert_streq_free(rz_float_as_hex_string(pi_neg, true), "0xC0490FDA", "test neg pi");
+	mu_assert_streq_free(rz_float_as_hex_string(pi, true), "0x40490fda", "test pi");
+	mu_assert_streq_free(rz_float_as_hex_string(pi_next, true), "0x40490fdb", "test next float number of pi");
+	mu_assert_streq_free(rz_float_as_hex_string(pi_pred, true), "0x40490fd9", "test previous float number of pi");
+	mu_assert_streq_free(rz_float_as_hex_string(pi_neg, true), "0xc0490fda", "test neg pi");
 
 	rz_float_free(pi);
 	rz_float_free(pi_next);
@@ -799,10 +799,10 @@ bool f32_ieee_generating_op_test(void) {
 	RzFloat *ne_pred = rz_float_pred(ne);
 	RzFloat *ne_neg = rz_float_neg(ne);
 
-	mu_assert_streq_free(rz_float_as_hex_string(ne, true), "0xC02DF854", "test euler");
-	mu_assert_streq_free(rz_float_as_hex_string(ne_next, true), "0xC02DF853", "test euler");
-	mu_assert_streq_free(rz_float_as_hex_string(ne_pred, true), "0xC02DF855", "test euler");
-	mu_assert_streq_free(rz_float_as_hex_string(ne_neg, true), "0x402DF854", "test euler");
+	mu_assert_streq_free(rz_float_as_hex_string(ne, true), "0xc02df854", "test euler");
+	mu_assert_streq_free(rz_float_as_hex_string(ne_next, true), "0xc02df853", "test euler");
+	mu_assert_streq_free(rz_float_as_hex_string(ne_pred, true), "0xc02df855", "test euler");
+	mu_assert_streq_free(rz_float_as_hex_string(ne_neg, true), "0x402df854", "test euler");
 
 	rz_float_free(ne);
 	rz_float_free(ne_next);
@@ -817,15 +817,15 @@ bool f32_ieee_generating_op_test(void) {
 	RzFloat *pred = rz_float_pred(borrow_case);
 
 	mu_assert_streq_free(rz_float_as_hex_string(succ, true), "0x44000000", "test carry case");
-	mu_assert_streq_free(rz_float_as_hex_string(pred, true), "0x47FFFFFF", "test borrow case");
+	mu_assert_streq_free(rz_float_as_hex_string(pred, true), "0x47ffffff", "test borrow case");
 
 	RzFloat *neg_carry_case = rz_float_neg(carry_case);
 	RzFloat *neg_borrow_case = rz_float_neg(borrow_case);
 	RzFloat *neg_pred = rz_float_pred(neg_carry_case);
 	RzFloat *neg_succ = rz_float_succ(neg_borrow_case);
 
-	mu_assert_streq_free(rz_float_as_hex_string(neg_pred, true), "0xC4000000", "test pred of neg carry");
-	mu_assert_streq_free(rz_float_as_hex_string(neg_succ, true), "0xC7FFFFFF", "test succ of neg borrow");
+	mu_assert_streq_free(rz_float_as_hex_string(neg_pred, true), "0xc4000000", "test pred of neg carry");
+	mu_assert_streq_free(rz_float_as_hex_string(neg_succ, true), "0xc7ffffff", "test succ of neg borrow");
 
 	rz_float_free(carry_case);
 	rz_float_free(borrow_case);
@@ -1181,7 +1181,54 @@ bool f32_new_round_test(void) {
 }
 
 bool f32_ieee_fround_test(void) {
-	// test bap core theory operation fround
+	// test round to interal
+	RzFloat *expect, *round, *val;
+	val = rz_float_new_from_f32(1.1111f);
+	expect = rz_float_new_from_f32(1.0f);
+	round = rz_float_round_to_integral(val, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, round), "test round to integral 1.0f");
+	rz_float_free(val);
+	rz_float_free(expect);
+	rz_float_free(round);
+
+	val = rz_float_new_from_f32(42.131432f);
+	expect = rz_float_new_from_f32(42.0f);
+	round = rz_float_round_to_integral(val, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, round), "test round to integral 42.0f");
+	rz_float_free(val);
+	rz_float_free(expect);
+	rz_float_free(round);
+
+	val = rz_float_new_from_f32(1.2345679E8f);
+	expect = rz_float_new_from_f32(1.2345679E8f);
+	round = rz_float_round_to_integral(val, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, round), "test round to integral 1.2345679E8f");
+	rz_float_free(val);
+	rz_float_free(expect);
+	rz_float_free(round);
+
+	val = rz_float_new_from_f32(0.23751f);
+	expect = rz_float_new_from_f32(0.0f);
+	round = rz_float_round_to_integral(val, RZ_FLOAT_RMODE_RNE);
+	mu_assert_false(rz_float_cmp(expect, round), "test round to integral 0.23751f, rne");
+	rz_float_free(expect);
+	rz_float_free(round);
+
+	expect = rz_float_new_from_f32(1.0f);
+	round = rz_float_round_to_integral(val, RZ_FLOAT_RMODE_RTP);
+	mu_assert_false(rz_float_cmp(expect, round), "test round to integral 0.23751f, rtp");
+	rz_float_free(val);
+	rz_float_free(expect);
+	rz_float_free(round);
+
+	val = rz_float_new_from_f32(-5.11234f);
+	expect = rz_float_new_from_f32(-5.0f);
+	round = rz_float_round_to_integral(val, RZ_FLOAT_RMODE_RTP);
+	mu_assert_false(rz_float_cmp(expect, round), "test round to integral -5.11234f");
+	rz_float_free(val);
+	rz_float_free(expect);
+	rz_float_free(round);
+
 	mu_end;
 }
 
@@ -1342,6 +1389,7 @@ bool all_tests() {
 	mu_run_test(float_print_num);
 	mu_run_test(f32_ieee_format_extra_test);
 	mu_run_test(f32_ieee_cmp_test);
+	mu_run_test(f32_ieee_generating_op_test);
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);

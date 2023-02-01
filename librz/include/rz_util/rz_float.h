@@ -129,7 +129,7 @@ RZ_API RZ_OWN RzFloat *rz_float_sqrt(RZ_NONNULL RzFloat *n, RzFloatRMode mode);
 
 RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_abs(RZ_NONNULL RzFloat *f);
-RZ_API RZ_OWN RzFloat *rz_float_round(RZ_NONNULL RzFloat *f, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloatRMode mode);
 RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *sig, ut32 precision, RzFloatRMode mode, bool *should_inc);
 RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode);
 
