@@ -1433,6 +1433,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	if (!ret_type) { /* DW_AT_type is omitted in case of `void` ret type */
 		ret_type = rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
 		if (!ret_type) {
+			rz_list_free(variables);
 			goto cleanup;
 		}
 	}
