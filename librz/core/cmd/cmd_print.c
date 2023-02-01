@@ -5327,6 +5327,7 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 			pj_kn(state->d.pj, "at", xrefi->from);
 			pj_end(state->d.pj);
 			rz_analysis_op_free(op);
+			free(dst);
 		} else {
 			ut64 off = core->offset;
 			rz_core_seek(core, xrefi->from, true);
