@@ -1533,6 +1533,7 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 					bbi->addr, fillcolor, font, diffstr, fcn_a->name,
 					bbi->addr);
 				free(diffstr);
+				free(original);
 				continue;
 			}
 
