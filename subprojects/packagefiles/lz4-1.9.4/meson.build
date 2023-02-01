@@ -1,6 +1,6 @@
 project('lz4', ['c'],
   license: ['BSD', 'GPLv2'],
-  version: '1.9.3',
+  version: '1.9.4',
   meson_version: '>=0.47.0')
 
 lz4_files = [
