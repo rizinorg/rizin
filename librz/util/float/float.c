@@ -2243,12 +2243,6 @@ RZ_API RZ_OWN RzFloat *rz_float_trunc(RZ_NONNULL RzFloat *f) {
 	return ret;
 }
 
-static void debug_print_bv(RzBitVector *bv) {
-	char *s = rz_bv_as_string(bv);
-	puts(s);
-	free(s);
-}
-
 /**
  * \brief round float to an integral valued float with the same format
  * \detail [fround m x] is the floating-point number closest to [x]
