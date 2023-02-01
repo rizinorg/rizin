@@ -5958,6 +5958,7 @@ static ut8 *analysis_stats_histogram_data(RzCore *core, CoreBlockRange *brange) 
 	// FIXME: Should we just use the value from brange instead?
 	ut64 to = brange->from + (brange->blocksize * brange->nblocks) - 1;
 	if (to < brange->from) {
+		free(data);
 		return NULL;
 	}
 	RzCoreAnalysisStats *as = rz_core_analysis_get_stats(core, brange->from, to, brange->blocksize);
