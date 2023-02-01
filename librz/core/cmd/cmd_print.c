@@ -6057,7 +6057,9 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 	if (!strbuf) {
 		return false;
 	} else {
-		rz_cons_print(rz_strbuf_drain(strbuf));
+		char *histogram = rz_strbuf_drain(strbuf);
+		rz_cons_print(histogram);
+		free(histogram);
 	}
 	return true;
 }
