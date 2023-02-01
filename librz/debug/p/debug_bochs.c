@@ -178,8 +178,8 @@ static int bochs_find_breakpoint_index(RzSubprocess *bochs, ut64 address) {
 		line = end;
 	}
 
-	free(output);
 	ut64 index = rz_num_math(NULL, line);
+	free(output);
 	return index;
 }
 
