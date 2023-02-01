@@ -5284,6 +5284,7 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 	refs = rz_core_analysis_fcn_get_calls(core, f);
 	if (rz_list_empty(refs)) {
 		rz_cmd_state_output_array_end(state);
+		rz_list_free(refs);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -5333,6 +5334,8 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 			rz_core_seek(core, off, true);
 		}
 	}
+
+	rz_list_free(refs);
 
 	// restore saved configuration
 	rz_config_hold_restore(hc);

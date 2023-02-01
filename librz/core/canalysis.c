@@ -1608,7 +1608,7 @@ RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn) {
 /**
  * \brief for a given function returns an RzList of all functions that were called in it
  */
-RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisXRef *xrefi;
 	RzListIter *iter, *iter2;
 
