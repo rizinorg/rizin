@@ -135,6 +135,8 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	newblk = malloc(core->blocksize);
 	if (!newblk) {
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
 		rz_socket_free(s);
 		rz_list_free(so.authtokens);
 		free(pfile);

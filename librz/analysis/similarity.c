@@ -46,6 +46,7 @@ static bool shared_context_init(SharedContext *context, RzAnalysis *analysis_a, 
 		rz_th_lock_free(lock_b);
 		rz_th_queue_free(queue);
 		rz_th_queue_free(matches);
+		rz_th_queue_free(unmatch);
 		return false;
 	}
 	context->queue = queue;

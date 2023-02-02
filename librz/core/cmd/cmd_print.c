@@ -5188,6 +5188,7 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 	refs = rz_core_analysis_fcn_get_calls(core, f);
 	if (rz_list_empty(refs)) {
 		rz_cmd_state_output_array_end(state);
+		rz_list_free(refs);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -5230,6 +5231,7 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 			pj_kn(state->d.pj, "at", xrefi->from);
 			pj_end(state->d.pj);
 			rz_analysis_op_free(op);
+			free(dst);
 		} else {
 			ut64 off = core->offset;
 			rz_core_seek(core, xrefi->from, true);
@@ -5237,6 +5239,8 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 			rz_core_seek(core, off, true);
 		}
 	}
+
+	rz_list_free(refs);
 
 	// restore saved configuration
 	rz_config_hold_restore(hc);
@@ -5293,10 +5297,12 @@ static RzCoreAnalysisStatsRange *analysis_stats_range(RzCore *core, int width) {
 	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "search");
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No range to calculate stats for.\n");
+		rz_list_free(list);
 		return NULL;
 	}
 	RzCoreAnalysisStatsRange *srange = RZ_NEW0(RzCoreAnalysisStatsRange);
 	if (!srange) {
+		rz_list_free(list);
 		return NULL;
 	}
 	RzListIter *iter;
@@ -5862,6 +5868,7 @@ static ut8 *analysis_stats_histogram_data(RzCore *core, CoreBlockRange *brange) 
 	// FIXME: Should we just use the value from brange instead?
 	ut64 to = brange->from + (brange->blocksize * brange->nblocks) - 1;
 	if (to < brange->from) {
+		free(data);
 		return NULL;
 	}
 	RzCoreAnalysisStats *as = rz_core_analysis_get_stats(core, brange->from, to, brange->blocksize);
@@ -5960,7 +5967,9 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 	if (!strbuf) {
 		return false;
 	} else {
-		rz_cons_print(rz_strbuf_drain(strbuf));
+		char *histogram = rz_strbuf_drain(strbuf);
+		rz_cons_print(histogram);
+		free(histogram);
 	}
 	return true;
 }
@@ -6008,9 +6017,9 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	ut8 *data = calloc(1, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
 		free(data);
 		free(brange);
-		RZ_LOG_ERROR("core: failed to malloc memory");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
@@ -6021,9 +6030,11 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	free(tmp);
 	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
 		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	free(data);
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
@@ -6376,7 +6387,9 @@ RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char
 		if (!strbuf) {
 			RZ_LOG_ERROR("Cannot generate vertical histogram\n");
 		} else {
-			rz_cons_print(rz_strbuf_drain(strbuf));
+			char *bar = rz_strbuf_drain(strbuf);
+			rz_cons_print(bar);
+			free(bar);
 		}
 		rz_cons_printf(" %" PFMT64d, word64 - oldword);
 		oldword = word64;

@@ -61,7 +61,9 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	if (!strbuf) {
 		RZ_LOG_ERROR("Cannot generate progressbar\n");
 	} else {
-		rz_cons_print(rz_strbuf_drain(strbuf));
+		char *bar = rz_strbuf_drain(strbuf);
+		rz_cons_print(bar);
+		free(bar);
 	}
 	rz_cons_printf(" %s\n", desc->uri);
 	return true;

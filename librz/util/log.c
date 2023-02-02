@@ -132,6 +132,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 		// TODO: call rz_cons_flush if librz_cons is being used
 		rz_sys_breakpoint(); // *oof*
 	}
+	free(output_buf);
 }
 
 /**

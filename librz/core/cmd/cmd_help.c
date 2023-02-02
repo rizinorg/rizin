@@ -937,7 +937,9 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			if (!strbuf) {
 				RZ_LOG_ERROR("Cannot generate progressbar\n");
 			} else {
-				rz_cons_print(rz_strbuf_drain(strbuf));
+				char *bar = rz_strbuf_drain(strbuf);
+				rz_cons_print(bar);
+				free(bar);
 			}
 			rz_cons_newline();
 			break;

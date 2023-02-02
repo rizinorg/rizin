@@ -178,8 +178,8 @@ static int bochs_find_breakpoint_index(RzSubprocess *bochs, ut64 address) {
 		line = end;
 	}
 
-	free(output);
 	ut64 index = rz_num_math(NULL, line);
+	free(output);
 	return index;
 }
 
@@ -469,6 +469,7 @@ static RzList /*<RzDebugMap *>*/ *bochs_map_get(RzDebug *dbg) {
 	char *output = debug_bochs_send_command(bochs, true, "info tab\n");
 	if (!output) {
 		RZ_LOG_ERROR("io: bochs: Failed to get pages.\n");
+		rz_list_free(list);
 		return NULL;
 	}
 
