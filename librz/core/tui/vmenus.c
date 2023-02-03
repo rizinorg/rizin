@@ -725,17 +725,14 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				rz_core_analysis_function_add(core, NULL, core->offset, false);
 				break;
 			case 1: {
-				eprintf("Select variable source ('r'egister, 's'tackptr or 'b'aseptr): ");
+				eprintf("Select variable source ('r'egister or 's'tack): ");
 				int type = rz_cons_readchar();
 				switch (type) {
 				case 'r':
 					addVar(core, type, "Source Register Name: ");
 					break;
 				case 's':
-					addVar(core, type, "BP Relative Delta: ");
-					break;
-				case 'b':
-					addVar(core, type, "SP Relative Delta: ");
+					addVar(core, type, "Stack Relative Delta: ");
 					break;
 				}
 			} break;
