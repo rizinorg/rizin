@@ -1275,10 +1275,10 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		/* This make sure the structure will be printed entirely */
 		const char *fmt = rz_str_trim_head_ro(input + 1);
 		int struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
-		int size = RZ_MAX(core->blocksize, struct_sz);
+		size_t size = RZ_MAX(core->blocksize, struct_sz);
 		ut8 *buf = calloc(1, size);
 		if (!buf) {
-			RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", size);
+			RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", size);
 			goto stage_left;
 		}
 		memcpy(buf, core->block, core->blocksize);
