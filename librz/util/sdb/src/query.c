@@ -165,7 +165,7 @@ RZ_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
 	const char *p, *q, *val = NULL;
 	char *eq, *next, *quot, *slash, *res,
-		*cmd, *newcmd = NULL, *original_cmd = NULL;
+		*cmd = NULL, *newcmd = NULL, *original_cmd = NULL;
 	StrBuf *out;
 	Sdb *s = r;
 	ut64 n;
