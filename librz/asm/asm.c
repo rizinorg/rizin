@@ -1311,7 +1311,10 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str) {
 	}
 	s->tokens = rz_vector_new(sizeof(RzAsmToken), NULL, NULL);
 	s->str = rz_strbuf_new(asm_str);
-	rz_return_val_if_fail(s->tokens && s->str, NULL);
+	if (!s->tokens || !s->str) {
+		rz_asm_token_string_free(s);
+		return NULL;
+	}
 	return s;
 }
 
