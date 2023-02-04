@@ -169,7 +169,7 @@ static void error(RzNum *num, const char *err_str) {
 
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
-RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
+RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 	int i, j, ok;
 	char lch, len;
 	ut64 ret = 0LL;
@@ -232,7 +232,7 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 		ret = 0;
 		for (j = 0, i = strlen(str) - 1; i > 0; i--, j++) {
 			if (str[i] == '1') {
-				ret |= 1 << j;
+				ret |= 1ULL << j;
 			} else if (str[i] != '0') {
 				break;
 			}
