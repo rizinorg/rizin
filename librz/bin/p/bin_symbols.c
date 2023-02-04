@@ -107,7 +107,7 @@ static bool parseMetadata(RzBuffer *buf, ut64 address, SymbolsMetadata *sm) {
 		RZ_LOG_ERROR("bin_sym: detected symbols_metadata_t segments size overflow (mul).\n");
 		return false;
 	}
-	segments_size = sm->n_segments * 32;
+	segments_size = (ut64)sm->n_segments * 32;
 	if (UT64_ADD_OVFCHK(segments_size, (sm->namelen + 16))) {
 		RZ_LOG_ERROR("bin_sym: detected symbols_metadata_t segments size overflow (mul).\n");
 		return false;
