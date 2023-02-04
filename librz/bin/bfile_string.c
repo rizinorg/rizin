@@ -90,6 +90,7 @@ static RzList /*<RzDetectedString *>*/ *string_scan_range(SearchThreadData *std,
 	ut8 *buf = calloc(size, 1);
 	if (!buf) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate string seac buffer.\n");
+		rz_list_free(found);
 		return NULL;
 	}
 
