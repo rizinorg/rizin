@@ -49,7 +49,9 @@ static ut64 buf_file_get_size(RzBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file(b);
 	int pos = lseek(priv->fd, 0, SEEK_CUR);
 	int res = lseek(priv->fd, 0, SEEK_END);
-	lseek(priv->fd, (off_t)pos, SEEK_SET);
+	if (pos >= 0) {
+		lseek(priv->fd, (off_t)pos, SEEK_SET);
+	}
 	return (ut64)res;
 }
 

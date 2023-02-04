@@ -175,6 +175,9 @@ const char *skip_comment_c(const char *code) {
 }
 
 RZ_API char *rz_hex_from_c_array(char *out, const char *code) {
+	if (!code) {
+		return NULL;
+	}
 	const char abc[] = "0123456789abcdef";
 	if (*code != '{' || !strchr(code, '}')) {
 		return NULL;

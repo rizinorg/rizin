@@ -130,8 +130,10 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_json_str(RZ_NONNULL RzGraph /*<RzGraphN
 	}
 
 	rz_graph_drawable_to_json(graph, pj, use_offset);
-	rz_strbuf_append(sb, pj_drain(pj));
+	char *pj_str = pj_drain(pj);
+	rz_strbuf_append(sb, pj_str);
 	rz_strbuf_append(sb, "\n");
+	free(pj_str);
 	return rz_strbuf_drain(sb);
 }
 

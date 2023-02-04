@@ -153,7 +153,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 	return true;
 }
 
-static RzList /*<rtti_base_class_descriptor *>*/ *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
+static RZ_OWN RzList /*<rtti_base_class_descriptor *>*/ *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
 	if (base == UT64_MAX || offset == UT32_MAX || num_base_classes == UT32_MAX) {
 		return NULL;
 	}
@@ -610,6 +610,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 		pj_free(pj);
 	}
 
+	rz_list_free(baseClassArray);
 	rtti_type_descriptor_fini(&td);
 	return true;
 }

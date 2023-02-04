@@ -1027,7 +1027,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 	bool is_call = (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_UCALL;
 	if (is_call && *count < max_count) {
 		RzList *callee_rargs_l = NULL;
-		int callee_rargs = 0;
+		size_t callee_rargs = 0;
 		char *callee = NULL;
 		ut64 offset = op->jump == UT64_MAX ? op->ptr : op->jump;
 		RzAnalysisFunction *f = rz_analysis_get_function_at(analysis, offset);

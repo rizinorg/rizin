@@ -114,9 +114,6 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzPlatformTargetIndex *t, 
  */
 RZ_API bool rz_platform_target_index_load_sdb(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(t && path, false);
-	if (!path) {
-		return false;
-	}
 	if (!rz_file_exists(path)) {
 		return false;
 	}

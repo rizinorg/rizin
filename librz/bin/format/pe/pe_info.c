@@ -791,7 +791,7 @@ struct rz_bin_pe_addr_t *PE_(check_msvcseh)(RzBinPEObj *bin) {
 		// 48 8B 54 24 30              mov rdx, qword [rsp + 0x30]
 		// 8B 4C 24 20                 mov ecx, dword [rsp + 0x20]
 		// E8 xx xx xx xx              call    main
-		for (n = 0; n < sizeof(b) - 13; n++) {
+		for (n = 0; n < sizeof(b) - 14; n++) {
 			if (b[n] == 0x4c && b[n + 3] == 0x48 && b[n + 6] == 0x8b && b[n + 8] == 0xe8) {
 				follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 8);
 				return entry;
