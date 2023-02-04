@@ -4728,6 +4728,7 @@ static void print_value_single(RzCore *core, PrintValueOptions *opts, ut64 addre
 			break;
 		}
 		pj_ks(state->d.pj, "string", str);
+		free(str);
 		pj_end(state->d.pj);
 		break;
 	}
