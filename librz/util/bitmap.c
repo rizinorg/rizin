@@ -59,7 +59,7 @@ RZ_API void rz_bitmap_free(RZ_NULLABLE RzBitmap *b) {
 }
 
 RZ_API void rz_bitmap_set(RZ_NONNULL RzBitmap *b, size_t bit) {
-	rz_return_if_fail(b && bit >= 0);
+	rz_return_if_fail(b);
 	if (bit < b->length) {
 		const size_t pos = bit >> BITWORD_BITS_SHIFT;
 		RzBitword value = bitword_read(&b->bitmap[pos]);
