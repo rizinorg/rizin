@@ -198,7 +198,7 @@ static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
 	ut32 immr = (size - i) & (size - 1);
 	// If size has a 1 in the n'th bit, create a value that has zeroes in
 	// bits [0, n] and ones above that.
-	ut64 nimms = ~(size - 1) << 1;
+	ut64 nimms = ~(size - 1ULL) << 1;
 	// Or the cto value into the low bits, which must be below the Nth bit
 	// bit mentioned above.
 	nimms |= (cto - 1);
