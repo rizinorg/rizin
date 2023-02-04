@@ -405,6 +405,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		entry = RZ_NEW0(RzBinAddr);
 		if (!entry) {
 			rz_list_free(entries);
+			rz_list_free(segments);
 			return NULL;
 		}
 		entry->bits = 16;
@@ -429,6 +430,7 @@ RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 			entry = RZ_NEW0(RzBinAddr);
 			if (!entry) {
 				rz_list_free(entries);
+				rz_list_free(segments);
 				return NULL;
 			}
 			off++;
