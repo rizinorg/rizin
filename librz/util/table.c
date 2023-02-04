@@ -754,16 +754,24 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 			}
 			break;
 		case '~':
-			match = strstr(nn, un) != NULL;
+			if (nn != NULL && un != NULL) {
+				match = strstr(nn, un) != NULL;
+			}
 			break;
 		case 's':
-			match = strlen(nn) == atoi(un);
+			if (nn != NULL && un != NULL) {
+				match = strlen(nn) == atoi(un);
+			}
 			break;
 		case 'l':
-			match = strlen(nn) > atoi(un);
+			if (nn != NULL && un != NULL) {
+				match = strlen(nn) > atoi(un);
+			}
 			break;
 		case 'L':
-			match = strlen(nn) < atoi(un);
+			if (nn != NULL && un != NULL) {
+				match = strlen(nn) < atoi(un);
+			}
 			break;
 		case '\0':
 			break;
