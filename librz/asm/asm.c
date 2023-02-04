@@ -1498,7 +1498,10 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 	void **it;
 	rz_pvector_foreach (patterns, it) {
 		RzAsmTokenPattern *pat = *it;
-		rz_return_val_if_fail(pat && pat->regex, NULL);
+		if (!pat || !pat->regex) {
+			rz_asm_token_string_free(toks);
+			return NULL;
+		}
 		j = 0;
 		if (!pat->regex) {
 			continue;
