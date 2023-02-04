@@ -1008,7 +1008,9 @@ RZ_API void rz_file_mmap_free(RzMmap *m) {
 	}
 #elif __UNIX__
 	munmap(m->buf, m->len);
-	close(m->fd);
+	if (m->fd != -1) {
+		close(m->fd);
+	}
 #endif
 	free(m->filename);
 	free(m);
