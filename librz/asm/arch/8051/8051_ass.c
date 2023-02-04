@@ -244,7 +244,7 @@ static bool terminates_asm_line(char c) {
  */
 static int str_iwhitecasecmp(char const *a, char const *b) {
 	if (!a && !b) {
-		return *a - *b;
+		return 0;
 	}
 	while (a && b) {
 		if (!*a && !*b) {
