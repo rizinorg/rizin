@@ -941,7 +941,7 @@ err:
 #elif __UNIX__
 static RzMmap *file_mmap(RzMmap *m) {
 	m->len = lseek(m->fd, (off_t)0, SEEK_END);
-	if (m->len) {
+	if (m->len > 0) {
 		bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
 		m->buf = mmap((void *)(size_t)m->base,
 			m->len,
