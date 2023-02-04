@@ -41,7 +41,7 @@ RZ_API RZ_OWN RzBitmap *rz_bitmap_new(size_t len) {
 }
 
 RZ_API void rz_bitmap_set_bytes(RZ_NONNULL RzBitmap *b, RZ_NONNULL const ut8 *buf, size_t len) {
-	rz_return_if_fail(b && buf && len >= 0);
+	rz_return_if_fail(b && buf);
 	size_t blen = b->length << BITWORD_BITS_SHIFT;
 	if (blen < len) {
 		len = blen;
