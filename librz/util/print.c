@@ -1176,7 +1176,6 @@ RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONN
 	int color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	int diffskip = p->flags & RZ_PRINT_FLAGS_DIFFOUT;
 	int i, j, min;
-	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!((a = M(_a, len)))) {
 		return NULL;
 	}
@@ -1184,6 +1183,7 @@ RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONN
 		free(a);
 		return NULL;
 	}
+	RzStrBuf *sb = rz_strbuf_new(NULL);
 	for (i = 0; i < len; i += 16) {
 		min = RZ_MIN(16, len - i);
 		linediff = (memcmp(a + i, b + i, min)) ? '!' : '|';
