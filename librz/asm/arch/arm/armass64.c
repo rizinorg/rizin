@@ -1133,6 +1133,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 				token++;
 			}
 			if (!*token || !isdigit(*token)) {
+				free(t);
 				return false;
 			}
 			op->operands[operand].shift_amount = rz_num_math(NULL, token);
