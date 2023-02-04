@@ -1321,6 +1321,9 @@ stage_left:
 		strcat(x, y); \
 		x += strlen(y); \
 	}
+
+#define Pal(x, y) (x->cons && x->cons->context->pal.y) ? x->cons->context->pal.y
+
 static void annotated_hexdump(RzCore *core, int len) {
 	if (!len) {
 		return;
@@ -1404,7 +1407,9 @@ static void annotated_hexdump(RzCore *core, int len) {
 		sprintf(bytes + j + i, "%0X", i % 17);
 	}
 	if (usecolor) {
-		rz_cons_strcat(Color_GREEN);
+		const char *color_title = Pal(core, offset)
+		    : Color_MAGENTA;
+		rz_cons_strcat(color_title);
 		rz_cons_strcat(bytes);
 		rz_cons_strcat(Color_RESET);
 	} else {
