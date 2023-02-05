@@ -561,8 +561,7 @@ jobs:
         run: pip3 install --user ninja PyYAML
       - uses: actions/checkout@v3
       - name: Extract rizin version
-        shell: bash
-        run: echo "##[set-output name=version;]$(python sys/version.py)"
+        run: echo "version=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
       - name: Create archive
         run: |
@@ -668,8 +667,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install meson ninja PyYAML
       - name: Extract rizin version
-        shell: pwsh
-        run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+        run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
       - name: Build and create zip/installer
         shell: pwsh
@@ -897,8 +895,7 @@ jobs:
           choco install -y pkgconfiglite --download-checksum 2038c49d23b5ca19e2218ca89f06df18fe6d870b4c6b54c0498548ef88771f6f --download-checksum-type sha256
           choco install -y cmake
       - name: Extract rizin version
-        shell: pwsh
-        run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+        run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
       - uses: actions/download-artifact@v3
         with:
@@ -953,8 +950,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Extract rizin version
-        shell: bash
-        run: echo "##[set-output name=branch;]$(python sys/version.py)"
+        run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
       - name: Create Release
         id: create_release
