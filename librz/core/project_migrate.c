@@ -419,6 +419,7 @@ bool v10_v11_functions_foreach_cb(void *user, const char *k, const char *v) {
 		if (!strcmp(func_member->key, "vars")) {
 			if (func_member->type != RZ_JSON_ARRAY) {
 				RZ_SERIALIZE_ERR(ctx->res, "invalid json contents for function -> vars");
+				pj_free(pj);
 				goto end;
 			}
 			pj_ka(pj, "vars");

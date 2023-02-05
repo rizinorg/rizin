@@ -11,6 +11,7 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 	}
 	if (RZ_STR_ISEMPTY(as)) {
 		RZ_LOG_ERROR("Please set '%s' env to define a '%s' assembler program\n", env, a->cur->arch);
+		free(user_as);
 		return 1;
 	}
 

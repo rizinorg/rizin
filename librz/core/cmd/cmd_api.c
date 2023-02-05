@@ -1642,6 +1642,7 @@ err:
 	for (size_t i = 0; i < new_nargs; i++) {
 		free(new_args[i]);
 	}
+	free(new_args);
 	free(new_code);
 	free(new_name);
 	return false;
