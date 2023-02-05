@@ -3414,7 +3414,6 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 	if (!rz_cons_canvas_resize(g->can, w, h)) {
 		return false;
 	}
-	// rz_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
 		g->can->sy = -g->y - 1;
@@ -3884,16 +3883,17 @@ RZ_API void rz_agraph_reset(RzAGraph *g) {
 }
 
 RZ_API void rz_agraph_free(RzAGraph *g) {
-	if (g) {
-		ht_pp_free(g->nodes);
-		rz_list_free(g->dummy_nodes);
-		rz_graph_free(g->graph);
-		rz_list_free(g->edges);
-		rz_agraph_set_title(g, NULL);
-		sdb_free(g->db);
-		rz_cons_canvas_free(g->can);
-		free(g);
+	if (!g) {
+		return;
 	}
+	ht_pp_free(g->nodes);
+	rz_list_free(g->dummy_nodes);
+	rz_graph_free(g->graph);
+	rz_list_free(g->edges);
+	rz_agraph_set_title(g, NULL);
+	sdb_free(g->db);
+	rz_cons_canvas_free(g->can);
+	free(g);
 }
 
 RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can) {
