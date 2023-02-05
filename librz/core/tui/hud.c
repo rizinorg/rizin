@@ -34,6 +34,7 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 	}
 	if (!res) {
 		rz_cons_message("Cannot find hud file");
+		free(f);
 		return false;
 	}
 
