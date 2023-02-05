@@ -1306,6 +1306,10 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		ta->next = main_arena->next;
 		while (GH(is_arena)(core, m_arena, ta->next) && ta->next != m_arena) {
 			ut64 ta_addr = ta->next;
+			/* If the pointer is equal to unsigned -1, we assume it is invalid */
+			if (ta->next == GHT_MAX) {
+				break;
+			}
 			if (!GH(rz_heap_update_main_arena)(core, ta->next, ta)) {
 				goto end;
 			}
