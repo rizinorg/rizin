@@ -173,8 +173,7 @@ static bool attribute_delete_cb(void *user, const ut64 key, const void *value) {
 
 RZ_API void rz_cons_canvas_clear(RzConsCanvas *c) {
 	rz_return_if_fail(c && c->b);
-	int y;
-	for (y = 0; y < c->h; y++) {
+	for (size_t y = 0; y < c->h; y++) {
 		memset(c->b[y], '\n', c->bsize[y]);
 	}
 
@@ -234,15 +233,15 @@ RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h) {
 	c->color = 0;
 	c->sx = 0;
 	c->sy = 0;
-	c->b = malloc(sizeof *c->b * h);
+	c->b = RZ_NEWS(char *, h);
 	if (!c->b) {
 		goto beach;
 	}
-	c->blen = malloc(sizeof *c->blen * h);
+	c->blen = RZ_NEWS(int, h);
 	if (!c->blen) {
 		goto beach;
 	}
-	c->bsize = malloc(sizeof *c->bsize * h);
+	c->bsize = RZ_NEWS(int, h);
 	if (!c->bsize) {
 		goto beach;
 	}
@@ -433,47 +432,45 @@ RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h) {
 	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
-	int *newblen = realloc(c->blen, sizeof *c->blen * h);
+	// If new height is smaller than the old one - free unnecessary lines
+	if (h < c->h) {
+		for (size_t i = h; i < c->h; i++) {
+			free(c->b[i]);
+			c->b[i] = NULL;
+		}
+	}
+	int *newblen = realloc(c->blen, sizeof(int) * h);
 	if (!newblen) {
 		rz_cons_canvas_free(c);
 		return false;
 	}
 	c->blen = newblen;
-	int *newbsize = realloc(c->bsize, sizeof *c->bsize * h);
+	int *newbsize = realloc(c->bsize, sizeof(int) * h);
 	if (!newbsize) {
 		rz_cons_canvas_free(c);
 		return false;
 	}
 	c->bsize = newbsize;
-	char **newb = realloc(c->b, sizeof *c->b * h);
+	char **newb = realloc(c->b, sizeof(char *) * h);
 	if (!newb) {
 		rz_cons_canvas_free(c);
 		return false;
 	}
 	c->b = newb;
-	int i;
 	char *newline = NULL;
-	for (i = 0; i < h; i++) {
+	for (size_t i = 0; i < h; i++) {
 		if (i < c->h) {
-			newline = realloc(c->b[i], sizeof *c->b[i] * (w + 1));
+			newline = realloc(c->b[i], sizeof(char) * (w + 1));
 		} else {
-			newline = malloc(w + 1);
+			newline = RZ_NEWS(char, w + 1);
 		}
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
+		c->b[i] = newline;
 		if (!newline) {
-			size_t j;
-			for (j = 0; j <= i; j++) {
-				free(c->b[i]);
-			}
-			ht_up_free(c->attrs);
-			free(c->blen);
-			free(c->bsize);
-			free(c->b);
-			free(c);
+			rz_cons_canvas_free(c);
 			return false;
 		}
-		c->b[i] = newline;
 	}
 	c->w = w;
 	c->h = h;

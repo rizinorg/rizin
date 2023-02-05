@@ -1,6 +1,8 @@
 #ifndef RZ_STRBUF_H
 #define RZ_STRBUF_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,7 +18,7 @@ typedef struct {
 #define RZ_STRBUF_SAFEGET(sb) (rz_strbuf_get(sb) ? rz_strbuf_get(sb) : "")
 RZ_API RzStrBuf *rz_strbuf_new(const char *s);
 RZ_API const char *rz_strbuf_set(RzStrBuf *sb, const char *s); // return = the string or NULL on fail
-RZ_API bool rz_strbuf_slice(RzStrBuf *sb, size_t from, size_t len);
+RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, size_t from, size_t len);
 RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t len);
 RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len);
 RZ_API const char *rz_strbuf_setf(RzStrBuf *sb, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3); // return = the string or NULL on fail
@@ -30,7 +32,6 @@ RZ_API char *rz_strbuf_get(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb);
 RZ_API int rz_strbuf_length(RzStrBuf *sb);
-RZ_API int rz_strbuf_size(RzStrBuf *sb);
 RZ_API void rz_strbuf_free(RzStrBuf *sb);
 RZ_API void rz_strbuf_fini(RzStrBuf *sb);
 RZ_API void rz_strbuf_init(RzStrBuf *sb);

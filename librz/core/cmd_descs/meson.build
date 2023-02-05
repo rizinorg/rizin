@@ -8,10 +8,12 @@ cmd_descs_yaml = files(
   'cmd_egg.yaml',
   'cmd_eval.yaml',
   'cmd_flag.yaml',
+  'cmd_flirt.yaml',
   'cmd_heap_glibc.yaml',
   'cmd_history.yaml',
   'cmd_info.yaml',
   'cmd_interpret.yaml',
+  'cmd_macro.yaml',
   'cmd_meta.yaml',
   'cmd_open.yaml',
   'cmd_plugins.yaml',
@@ -27,7 +29,6 @@ cmd_descs_yaml = files(
   'cmd_type.yaml',
   'cmd_write.yaml',
   'cmd_yank.yaml',
-  'cmd_zign.yaml',
 )
 cmd_descs_src_c = files('cmd_descs.c', 'cmd_descs.h')
 

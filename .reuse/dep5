@@ -75,6 +75,10 @@ Files: **/meson_options.txt
 Copyright: 2021 RizinOrg <info@rizin.re>
 License: LGPL-3.0-only
 
+Files: doc/examples/egg/*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
 Files: doc/fortunes*
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
@@ -177,7 +181,7 @@ License: GPL-2.0-or-later
 
 Files: librz/include/sflib/*
 Copyright: 2004 Philippe Biondi <phil@secdev.org>
-License: GPL-2.0-only
+License: LGPL-3.0-only
 
 Files: librz/magic/*
 Copyright: 1986-1995 Ian F. Darwin
@@ -218,8 +222,4 @@ License: LGPL-3.0-only
 
 Files: .prettierignore
 Copyright: 2020 RizinOrg <info@rizin.re>
-License: LGPL-3.0-only
-
-Files: librz/reg/p/x86-linux.regs
-Copyright: 2009 pancake <pancake@nopcode.org>
 License: LGPL-3.0-only

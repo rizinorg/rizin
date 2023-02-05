@@ -20,6 +20,12 @@
 
 #define RO_DATA_PTR(x) ((x)&FAST_DATA_MASK)
 
+#if RZ_BIN_MACH064
+#define rz_buf_read_mach0_ut_offset rz_buf_read_ble64_offset
+#else
+#define rz_buf_read_mach0_ut_offset rz_buf_read_ble32_offset
+#endif
+
 struct MACH0_(SMethodList) {
 	ut32 entsize;
 	ut32 count;
@@ -113,7 +119,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *class_name, RzBinClass *klass, bool is_static, objc_cache_opt_info *oi);
 static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, objc_cache_opt_info *oi);
 static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_meta_class, RzBinClass *klass, objc_cache_opt_info *oi);
-static RzList *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi);
+static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RzBinFile *bf, RzBuffer *buf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RzBinFile *bf, RzBuffer *buf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RzBinFile *bf, RzBuffer *buf, mach0_ut p, ut32 *offset, ut32 *left);
@@ -134,7 +140,6 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	mach0_ut r;
 	mach0_ut addr;
 
-	static RzList *sctns = NULL;
 	RzListIter *iter = NULL;
 	RzBinSection *s = NULL;
 	RzBinObject *obj = bf->o;
@@ -144,6 +149,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 		return bin->va2pa(p, offset, left, bf);
 	}
 
+	const RzList *sctns = bin->sections_cache;
 	if (!sctns) {
 		sctns = rz_bin_plugin_mach.sections(bf);
 		if (!sctns) {
@@ -189,6 +195,21 @@ static int sort_by_offset(const void *_a, const void *_b) {
 	return a->offset - b->offset;
 }
 
+static bool read_sivarlist(struct MACH0_(SIVarList) * il, RzBuffer *buf, ut64 base, bool bigendian) {
+	ut64 offset = base;
+	return rz_buf_read_ble32_offset(buf, &offset, &il->entsize, bigendian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &il->count, bigendian);
+}
+
+static bool read_sivar(struct MACH0_(SIVar) * i, RzBuffer *buf, ut64 base, bool bigendian) {
+	ut64 offset = base;
+	return rz_buf_read_mach0_ut_offset(buf, &offset, &i->offset, bigendian) &&
+		rz_buf_read_mach0_ut_offset(buf, &offset, &i->name, bigendian) &&
+		rz_buf_read_mach0_ut_offset(buf, &offset, &i->type, bigendian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &i->alignment, bigendian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &i->size, bigendian);
+}
+
 static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass) {
 	struct MACH0_(SIVarList) il = { 0 };
 	struct MACH0_(SIVar) i;
@@ -199,8 +220,6 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	bool bigendian;
 	mach0_ut ivar_offset;
 	RzBinField *field = NULL;
-	ut8 sivarlist[sizeof(struct MACH0_(SIVarList))] = { 0 };
-	ut8 sivar[sizeof(struct MACH0_(SIVar))] = { 0 };
 	ut8 offs[sizeof(mach0_ut)] = { 0 };
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
@@ -220,18 +239,9 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	if (r + sizeof(struct MACH0_(SIVarList)) > bf->size) {
 		return;
 	}
-	if (left < sizeof(struct MACH0_(SIVarList))) {
-		if (rz_buf_read_at(buf, r, sivarlist, left) != left) {
-			return;
-		}
-	} else {
-		len = rz_buf_read_at(buf, r, sivarlist, sizeof(struct MACH0_(SIVarList)));
-		if (len != sizeof(struct MACH0_(SIVarList))) {
-			return;
-		}
+	if (!read_sivarlist(&il, buf, r, bigendian)) {
+		return;
 	}
-	il.entsize = rz_read_ble(&sivarlist[0], bigendian, 32);
-	il.count = rz_read_ble(&sivarlist[4], bigendian, 32);
 	p += sizeof(struct MACH0_(SIVarList));
 	offset += sizeof(struct MACH0_(SIVarList));
 
@@ -251,29 +261,9 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		if (r + sizeof(struct MACH0_(SIVar)) > bf->size) {
 			goto error;
 		}
-		if (left < sizeof(struct MACH0_(SIVar))) {
-			if (rz_buf_read_at(buf, r, sivar, left) != left) {
-				goto error;
-			}
-		} else {
-			len = rz_buf_read_at(buf, r, sivar, sizeof(struct MACH0_(SIVar)));
-			if (len != sizeof(struct MACH0_(SIVar))) {
-				goto error;
-			}
+		if (!read_sivar(&i, buf, r, bigendian)) {
+			goto error;
 		}
-#if RZ_BIN_MACH064
-		i.offset = rz_read_ble(&sivar[0], bigendian, 64);
-		i.name = rz_read_ble(&sivar[8], bigendian, 64);
-		i.type = rz_read_ble(&sivar[16], bigendian, 64);
-		i.alignment = rz_read_ble(&sivar[24], bigendian, 32);
-		i.size = rz_read_ble(&sivar[28], bigendian, 32);
-#else
-		i.offset = rz_read_ble(&sivar[0], bigendian, 32);
-		i.name = rz_read_ble(&sivar[4], bigendian, 32);
-		i.type = rz_read_ble(&sivar[8], bigendian, 32);
-		i.alignment = rz_read_ble(&sivar[12], bigendian, 32);
-		i.size = rz_read_ble(&sivar[16], bigendian, 32);
-#endif
 		field->vaddr = i.offset;
 		mach0_ut offset_at = va2pa(i.offset, NULL, &left, bf);
 
@@ -414,8 +404,8 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 		}
 	}
 
-	opl.entsize = rz_read_ble(&sopl[0], bigendian, 32);
-	opl.count = rz_read_ble(&sopl[4], bigendian, 32);
+	opl.entsize = rz_read_ble32(&sopl[0], bigendian);
+	opl.count = rz_read_ble32(&sopl[4], bigendian);
 
 	p += sizeof(struct MACH0_(SObjcPropertyList));
 	offset += sizeof(struct MACH0_(SObjcPropertyList));
@@ -1124,7 +1114,7 @@ static mach0_ut get_isa_value(void) {
 	return 0;
 }
 
-void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, bool dupe, RzSkipList *relocs, objc_cache_opt_info *oi) {
+RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, bool dupe, RzSkipList *relocs, objc_cache_opt_info *oi) {
 	struct MACH0_(SClass) c = { 0 };
 	const int size = sizeof(struct MACH0_(SClass));
 	mach0_ut r = 0;
@@ -1240,8 +1230,8 @@ static RzList *parse_swift_classes(RzBinFile *bf) {
 }
 #endif
 
-RzList *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
-	RzList /*<RzBinClass>*/ *ret = NULL;
+RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
+	RzList /*<RzBinClass *>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RzBinClass *klass = NULL;
 	ut32 i = 0, size = 0;
@@ -1261,16 +1251,9 @@ RzList *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
 		return NULL;
 	}
 	bigendian = bf->o->info->big_endian;
+	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
 
-	RzBuffer *buf = bf->buf;
-	RzBuffer *owned_buf = NULL;
-	if (MACH0_(needs_rebasing_and_stripping)(bf->o->bin_obj)) {
-		owned_buf = MACH0_(new_rebasing_and_stripping_buf)(bf->o->bin_obj);
-		if (!owned_buf) {
-			return NULL;
-		}
-		buf = owned_buf;
-	}
+	RzBuffer *buf = obj->buf_patched ? obj->buf_patched : bf->buf;
 
 	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);
 
@@ -1283,7 +1266,6 @@ RzList *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
 
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(bf->o->bin_obj))) {
-		rz_buf_free(owned_buf);
 		return ret;
 	}
 
@@ -1360,12 +1342,11 @@ RzList *MACH0_(parse_classes)(RzBinFile *bf, objc_cache_opt_info *oi) {
 get_classes_error:
 	rz_list_free(sctns);
 	rz_list_free(ret);
-	rz_buf_free(owned_buf);
 	// XXX DOUBLE FREE rz_bin_class_free (klass);
 	return NULL;
 }
 
-static RzList *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi) {
+static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuffer *buf, RzSkipList *relocs, objc_cache_opt_info *oi) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
 
 	RzList /*<RzBinClass>*/ *ret = NULL;
@@ -1442,7 +1423,7 @@ error:
 	return NULL;
 }
 
-void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, RzSkipList *relocs, objc_cache_opt_info *oi) {
+RZ_API void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass *klass, RzSkipList *relocs, objc_cache_opt_info *oi) {
 	rz_return_if_fail(bf && bf->o && bf->o->info);
 
 	struct MACH0_(SCategory) c = { 0 };

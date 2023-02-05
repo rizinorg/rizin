@@ -14,7 +14,7 @@
  *
  * \param newly_added list of strings where str is appended if it has been added to the cache in this pass
  */
-static RzType *parse_type_string_cached(RzTypeParser *parser, HtPP *cache, const char *str, char **error_msg, RZ_OUT RzList *newly_added) {
+static RzType *parse_type_string_cached(RzTypeParser *parser, HtPP *cache, const char *str, char **error_msg, RZ_OUT RzList /*<char *>*/ *newly_added) {
 	rz_return_val_if_fail(str, NULL);
 	RzType *r = ht_pp_find(cache, str, NULL);
 	if (r) {
@@ -32,7 +32,7 @@ static RzType *parse_type_string_cached(RzTypeParser *parser, HtPP *cache, const
 	return r;
 }
 
-static void type_string_cache_rollback(HtPP *cache, RzList *newly_added) {
+static void type_string_cache_rollback(HtPP *cache, RzList /*<char *>*/ *newly_added) {
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (newly_added, it, s) {

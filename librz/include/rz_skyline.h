@@ -10,7 +10,7 @@ typedef struct rz_skyline_item_t {
 } RzSkylineItem;
 
 typedef struct rz_skyline_t {
-	RzVector v;
+	RzVector /*<RzSkylineItem>*/ v;
 } RzSkyline;
 
 RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user);

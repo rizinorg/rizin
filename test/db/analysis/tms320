@@ -1,0 +1,107 @@
+
+NAME=arp TMS320 c55x
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e analysis.cpu=c55x
+arp
+ar
+EOF
+EXPECT=<<EOF
+=PC	pc
+=A0	ar0
+=A1	ar1
+=A2	ar2
+=A3	ar3
+=A4	ar4
+=R0	ar0
+ctr ac0    .40 496 0 # Accumulator 0
+ctr ac1    .40 498 0 # Accumulator 1
+ctr ac2    .40 500 0 # Accumulator 2
+ctr ac3    .40 502 0 # Accumulator 3
+gpr ar0    .16 504 0 # Auxiliary registers 0
+gpr ar1    .16 505 0 # Auxiliary registers 1
+gpr ar2    .16 506 0 # Auxiliary registers 2
+gpr ar3    .16 507 0 # Auxiliary registers 3
+gpr ar4    .16 508 0 # Auxiliary registers 4
+gpr ar5    .16 509 0 # Auxiliary registers 5
+gpr ar6    .16 510 0 # Auxiliary registers 6
+gpr ar7    .16 511 0 # Auxiliary registers 7
+gpr xar0   .23 512 0 # Extended auxiliary registers 0
+gpr xar1   .23 513 0 # Extended auxiliary registers 1
+gpr xar2   .23 514 0 # Extended auxiliary registers 2
+gpr xar3   .23 515 0 # Extended auxiliary registers 3
+gpr xar4   .23 516 0 # Extended auxiliary registers 4
+gpr xar5   .23 517 0 # Extended auxiliary registers 5
+gpr xar6   .23 518 0 # Extended auxiliary registers 6
+gpr xar7   .23 519 0 # Extended auxiliary registers 7
+ctr bk03   .16 520 0 # Circular buffer size registers
+ctr bk47   .16 521 0 # Circular buffer size registers
+ctr bkc    .16 522 0 # Circular buffer size registers
+ctr brc0   .16 523 0 # Block-repeat counters 0
+ctr brc1   .16 524 0 # Block-repeat counters 1
+ctr brs1   .16 525 0 # BRC1 save register
+ctr bsa01  .16 526 0 # Circular buffer start address registers
+ctr bsa23  .16 527 0 # Circular buffer start address registers
+ctr bsa45  .16 528 0 # Circular buffer start address registers
+ctr bsa67  .16 529 0 # Circular buffer start address registers
+ctr bsac   .16 530 0 # Circular buffer start address registers
+ctr cdp    .16 531 0 # Coefficient data pointer (low part of XCDP)
+ctr cdph   .7  532 0 # High part of XCDP
+ctr cfct   .8  533 0 # Control-flow context register
+ctr csr    .16 534 0 # Computed single-repeat register
+ctr dbier0 .16 535 0 # Debug interrupt enable registers 0
+ctr dbier1 .16 536 0 # Debug interrupt enable registers 1
+ctr dp     .16 537 0 # Data page register (low part of XDP)
+ctr dph    .7  538 0 # High part of XDP
+ctr ier0   .16 539 0 # Interrupt enable registers 0
+ctr ier1   .16 540 0 # Interrupt enable registers 1
+ctr ifr0   .16 541 0 # Interrupt flag registers 0
+ctr ifr1   .16 542 0 # Interrupt flag registers 1
+ctr ivpd   .16 543 0 # Interrupt vector pointers
+ctr ivph   .16 544 0 # Interrupt vector pointers
+ctr pc     .24 545 0 # Program counter
+ctr pdp    .9  546 0 # Peripheral data page register
+ctr rea0   .24 547 0 # Block-repeat end address registers 0
+ctr rea1   .24 548 0 # Block-repeat end address registers 1
+ctr reta   .24 549 0 # Return address register
+ctr rptc   .16 550 0 # Single-repeat counter
+ctr rsa0   .24 551 0 # Block-repeat start address registers 0
+ctr rsa1   .24 552 0 # Block-repeat start address registers 1
+ctr sp     .16 553 0 # Data stack pointer (low part of XSP)
+ctr sph    .7  554 0 # High part of XSP and XSSP
+ctr ssp    .16 555 0 # System stack pointer (low part of XSSP)
+ctr st0_55 .16 556 0 # Status registers 0
+ctr st1_55 .16 557 0 # Status registers 1
+ctr st2_55 .16 558 0 # Status registers 2
+ctr st3_55 .16 559 0 # Status registers 3
+ctr t0     .16 560 0 # Temporary register 0
+ctr t1     .16 561 0 # Temporary register 1
+ctr t2     .16 562 0 # Temporary register 2
+ctr t3     .16 563 0 # Temporary register 3
+ctr trn0   .16 564 0 # Transition registers 1
+ctr trn1   .16 565 0 # Transition registers 1
+ctr xcdp   .23 566 0 # Extended coefficient data pointer
+ctr xdp    .23 567 0 # Extended data page register
+ctr xsp    .23 568 0 # Extended data stack pointer
+ctr xssp   .23 569 0 # Extended system stack pointer
+
+ar0 = 0x0000
+ar1 = 0x0000
+ar2 = 0x0000
+ar3 = 0x0000
+ar4 = 0x0000
+ar5 = 0x0000
+ar6 = 0x0000
+ar7 = 0x0000
+xar0 = 0x000000
+xar1 = 0x000000
+xar2 = 0x000000
+xar3 = 0x000000
+xar4 = 0x000000
+xar5 = 0x000000
+xar6 = 0x000000
+xar7 = 0x000000
+EOF
+RUN

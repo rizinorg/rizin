@@ -6,7 +6,7 @@
 #include <rz_cons.h>
 #include "pager_private.h"
 
-RZ_IPI void pager_color_line(const char *line, RzStrpool *p, RzList *ml) {
+RZ_IPI void pager_color_line(const char *line, RzStrpool *p, RzList /*<RzRegexMatch *>*/ *ml) {
 	int m_len, offset = 0;
 	char *m_addr;
 	RzListIter *it;
@@ -45,7 +45,7 @@ RZ_IPI void pager_color_line(const char *line, RzStrpool *p, RzList *ml) {
 	rz_strpool_append(p, line + offset);
 }
 
-RZ_IPI void pager_printpage(const char *line, int *index, RzList **mla, int from, int to, int w) {
+RZ_IPI void pager_printpage(const char *line, int *index, RzList /*<RzRegexMatch *>*/ **mla, int from, int to, int w) {
 	int i;
 
 	rz_cons_clear00();
@@ -71,7 +71,7 @@ RZ_IPI void pager_printpage(const char *line, int *index, RzList **mla, int from
 	rz_cons_flush();
 }
 
-RZ_IPI int pager_next_match(int from, RzList **mla, int lcount) {
+RZ_IPI int pager_next_match(int from, RzList /*<RzRegexMatch *>*/ **mla, int lcount) {
 	int l;
 	if (from > lcount - 2) {
 		return from;
@@ -85,7 +85,7 @@ RZ_IPI int pager_next_match(int from, RzList **mla, int lcount) {
 	return from;
 }
 
-RZ_IPI int pager_prev_match(int from, RzList **mla) {
+RZ_IPI int pager_prev_match(int from, RzList /*<RzRegexMatch *>*/ **mla) {
 	int l;
 	if (from < 1) {
 		return from;
@@ -98,7 +98,7 @@ RZ_IPI int pager_prev_match(int from, RzList **mla) {
 	return from;
 }
 
-RZ_IPI bool pager_all_matches(const char *s, RzRegex *rx, RzList **mla, int *lines, int lcount) {
+RZ_IPI bool pager_all_matches(const char *s, RzRegex *rx, RzList /*<RzRegexMatch *>*/ **mla, int *lines, int lcount) {
 	bool res = false;
 	RzRegexMatch m = { 0 };
 	int l, slen;

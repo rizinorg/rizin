@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2011-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_lib.h>
 #include <rz_egg.h>
 #include <config.h>
 
@@ -79,8 +80,8 @@ RZ_API RzEgg *rz_egg_new(void) {
 		goto beach;
 	}
 	egg->plugins = rz_list_new();
-	for (i = 0; egg_static_plugins[i]; i++) {
-		rz_egg_add(egg, egg_static_plugins[i]);
+	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
+		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
 	return egg;
 
@@ -89,19 +90,15 @@ beach:
 	return NULL;
 }
 
-RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo) {
-	RzListIter *iter;
-	RzAsmPlugin *h;
-	if (!foo->name) {
-		return false;
-	}
-	rz_list_foreach (a->plugins, iter, h) {
-		if (!strcmp(h->name, foo->name)) {
-			return false;
-		}
-	}
-	rz_list_append(a->plugins, foo);
+RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
+	rz_return_val_if_fail(a && plugin && plugin->name, false);
+	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, plugin, RzEggPlugin);
 	return true;
+}
+
+RZ_API bool rz_egg_plugin_del(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
+	rz_return_val_if_fail(a && plugin, false);
+	return rz_list_delete_data(a->plugins, plugin);
 }
 
 RZ_API char *rz_egg_to_string(RzEgg *egg) {
@@ -115,7 +112,6 @@ RZ_API void rz_egg_free(RzEgg *egg) {
 	rz_buf_free(egg->src);
 	rz_buf_free(egg->buf);
 	rz_buf_free(egg->bin);
-	rz_list_free(egg->list);
 	rz_asm_free(egg->rasm);
 	rz_syscall_free(egg->syscall);
 	sdb_free(egg->db);

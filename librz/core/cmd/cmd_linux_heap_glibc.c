@@ -79,7 +79,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, 
  * \param core RzCore pointer
  * \return RzList of arenas
  */
-RZ_API RzList *rz_heap_arenas_list(RzCore *core) {
+RZ_API RzList /*<MallocState *>*/ *rz_heap_arenas_list(RzCore *core) {
 	call_handler(rz_heap_arena_list_wrapper);
 }
 
@@ -89,7 +89,7 @@ RZ_API RzList *rz_heap_arenas_list(RzCore *core) {
  * \param m_arena Base Address of the arena
  * \return RzList of heap chunks
  */
-RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena) {
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut64 m_arena) {
 	call_handler(rz_heap_chunks_list_wrapper, m_arena);
 }
 
@@ -146,7 +146,7 @@ RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state) {
  * \param arena_base Base address of the arena
  * \return RzList of RzHeapBin pointers
  */
-RZ_API RzList *rz_heap_tcache_content(RzCore *core, ut64 arena_base) {
+RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content(RzCore *core, ut64 arena_base) {
 	call_handler(rz_heap_tcache_content, arena_base);
 }
 

@@ -1,34 +1,34 @@
 // SPDX-FileCopyrightText: 2008-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_io.h"
 #include "config.h"
+#include <rz_io.h>
+#include <rz_lib.h>
 #include <stdio.h>
 
 static volatile RzIOPlugin *default_plugin = NULL;
 
-static RzIOPlugin *io_static_plugins[] = {
-	RZ_IO_STATIC_PLUGINS
-};
+static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
-RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
-	if (!io || !io->plugins || !plugin || !plugin->name) {
-		return false;
-	}
-	RzListIter *it;
-	RzIOPlugin *nplugin;
-	rz_list_foreach (io->plugins, it, nplugin) {
-		if (!strcmp(nplugin->name, plugin->name)) {
-			return false;
-		}
-	}
-	nplugin = RZ_NEW0(RzIOPlugin);
-	if (!nplugin) {
-		return false;
-	}
-	memcpy(nplugin, plugin, sizeof(RzIOPlugin));
-	rz_list_append(io->plugins, nplugin);
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
+	rz_return_val_if_fail(io && plugin && plugin->name, false);
+	RZ_PLUGIN_CHECK_AND_ADD(io->plugins, plugin, RzIOPlugin);
 	return true;
+}
+
+static bool close_if_plugin(void *user, void *data, ut32 id) {
+	RzIOPlugin *plugin = (RzIOPlugin *)user;
+	RzIODesc *desc = (RzIODesc *)data;
+	if (desc->plugin == plugin) {
+		rz_io_desc_close(desc);
+	}
+	return true;
+}
+
+RZ_API bool rz_io_plugin_del(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
+	rz_return_val_if_fail(io && plugin, false);
+	rz_id_storage_foreach(io->files, close_if_plugin, plugin);
+	return rz_list_delete_data(io->plugins, plugin);
 }
 
 RZ_API bool rz_io_plugin_init(RzIO *io) {
@@ -36,8 +36,8 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = rz_list_newf(free);
-	for (i = 0; io_static_plugins[i]; i++) {
+	io->plugins = rz_list_new();
+	for (i = 0; i < RZ_ARRAY_SIZE(io_static_plugins); i++) {
 		if (!io_static_plugins[i]->name) {
 			continue;
 		}

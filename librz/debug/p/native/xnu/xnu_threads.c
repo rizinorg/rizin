@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_userconf.h>
+#include <rz_debug.h>
 
-// TODO much work remains to be done
 #include "xnu_debug.h"
 #include "xnu_threads.h"
 
@@ -22,21 +21,20 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 	free(thread);
 }
 
-// XXX this should work as long as in arm trace bit relies on this
-static bool xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread) {
-	rz_return_val_if_fail(dbg && thread, false);
+RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
+	rz_return_val_if_fail(ctx && thread, false);
 	kern_return_t rc;
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
-	thread->state_size = (dbg->bits == RZ_SYS_BITS_64)
+	thread->state_size = ctx->cpu == CPU_TYPE_X86_64
 		? sizeof(x86_debug_state64_t)
 		: sizeof(x86_debug_state32_t);
 	thread->state = &thread->drx.uds;
 	rc = thread_get_state(thread->port, thread->flavor,
 		(thread_state_t)&thread->drx, &thread->count);
 #elif __arm64__ || __arm64 || __aarch64 || __aarch64__
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	if (ctx->cpu == CPU_TYPE_ARM64) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_get_state(thread->port, thread->flavor,
@@ -67,8 +65,8 @@ static bool xnu_thread_get_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
-	rz_return_val_if_fail(dbg && thread, false);
+RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread) {
+	rz_return_val_if_fail(ctx && thread, false);
 	kern_return_t rc;
 #if __i386__ || __x86_64__
 	x86_debug_state_t *regs = &thread->drx;
@@ -77,7 +75,7 @@ static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	}
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	if (ctx->cpu == CPU_TYPE_X86_64) {
 		regs->dsh.flavor = x86_DEBUG_STATE64;
 		regs->dsh.count = x86_DEBUG_STATE64_COUNT;
 	} else {
@@ -87,7 +85,7 @@ static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_set_state(thread->port, thread->flavor,
 		(thread_state_t)regs, thread->count);
 #elif __arm64__ || __arm64 || __aarch64 || __aarch64__
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	if (ctx->cpu == CPU_TYPE_ARM64) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_set_state(thread->port, thread->flavor,
@@ -127,8 +125,8 @@ static bool xnu_thread_set_drx(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
-	rz_return_val_if_fail(dbg && thread, false);
+RZ_IPI bool rz_xnu_thread_set_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
+	rz_return_val_if_fail(ctx && thread, false);
 	kern_return_t rc;
 	RZ_REG_T *regs = (RZ_REG_T *)&thread->gpr;
 	if (!regs) {
@@ -141,7 +139,7 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	// thread->state = regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	if (ctx->cpu == CPU_TYPE_X86_64) {
 		regs->tsh.flavor = x86_THREAD_STATE64;
 		regs->tsh.count = x86_THREAD_STATE64_COUNT;
 	} else {
@@ -154,9 +152,8 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	thread->flavor = ARM_UNIFIED_THREAD_STATE;
 	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #endif
-	// thread->state = regs;
-	thread->state = &regs->uts;
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	thread->state = &regs;
+	if (ctx->cpu == CPU_TYPE_ARM64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
 		thread->state_size = sizeof(arm_thread_state64_t);
@@ -181,8 +178,8 @@ static bool xnu_thread_set_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
-	rz_return_val_if_fail(dbg && thread, false);
+RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread) {
+	rz_return_val_if_fail(ctx && thread, false);
 	RZ_REG_T *regs = &thread->gpr;
 	if (!regs) {
 		return false;
@@ -191,9 +188,8 @@ static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->state = regs;
 #elif __arm64 || __aarch64 || __aarch64__ || __arm64__
-	// thread->state = regs;
-	thread->state = &regs->uts;
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	thread->state = regs;
+	if (ctx->cpu == CPU_TYPE_ARM64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
 		thread->state_size = sizeof(arm_thread_state64_t);
@@ -211,7 +207,7 @@ static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread) {
 	thread->state = &regs->uts;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
-	thread->state_size = (dbg->bits == RZ_SYS_BITS_64) ? sizeof(x86_thread_state64_t) : sizeof(x86_thread_state32_t);
+	thread->state_size = (ctx->cpu == CPU_TYPE_X86_64) ? sizeof(x86_thread_state64_t) : sizeof(x86_thread_state32_t);
 #endif
 	rc = thread_get_state(thread->port, thread->flavor,
 		(thread_state_t)regs, &thread->count);
@@ -287,7 +283,9 @@ static int thread_find(thread_t *port, xnu_thread_t *a) {
 	return (a && port && (a->port == *port)) ? 0 : 1;
 }
 
-static int xnu_update_thread_list(RzDebug *dbg) {
+RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	thread_array_t thread_list = NULL;
 	unsigned int thread_count = 0;
 	xnu_thread_t *thread;
@@ -303,7 +301,7 @@ static int xnu_update_thread_list(RzDebug *dbg) {
 	}
 	// ok we have the list that will hold our threads, now is time to get
 	// them
-	task = pid_to_task(dbg->pid);
+	task = pid_to_task(ctx, dbg->pid);
 	if (!task) {
 		return false;
 	}
@@ -373,4 +371,50 @@ static int xnu_update_thread_list(RzDebug *dbg) {
 	(void)vm_deallocate(mach_task_self(), (mach_vm_address_t)thread_list,
 		thread_count * sizeof(thread_t));
 	return true;
+}
+
+RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid) {
+	if (!dbg || tid < 0) {
+		return NULL;
+	}
+	if (!rz_xnu_update_thread_list(dbg)) {
+		eprintf("Failed to update thread_list xnu_udpate_thread_list\n");
+		return NULL;
+	}
+	// TODO get the current thread
+	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
+		(RzListComparator)&thread_find);
+	if (!it) {
+		tid = rz_xnu_get_cur_thread(dbg);
+		it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
+			(RzListComparator)&thread_find);
+		if (!it) {
+			eprintf("Thread not found get_xnu_thread\n");
+			return NULL;
+		}
+	}
+	return (xnu_thread_t *)it->data;
+}
+
+/* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
+RZ_IPI thread_t rz_xnu_get_cur_thread(RzDebug *dbg) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
+	RzXnuDebug *ctx = dbg->plugin_data;
+	thread_t th;
+	thread_array_t threads = NULL;
+	unsigned int n_threads = 0;
+	task_t t = pid_to_task(ctx, dbg->pid);
+	if (!t) {
+		return -1;
+	}
+	if (task_threads(t, &threads, &n_threads) != KERN_SUCCESS) {
+		return -1;
+	}
+	if (n_threads > 0) {
+		memcpy(&th, threads, sizeof(th));
+	} else {
+		th = -1;
+	}
+	vm_deallocate(mach_task_self(), (vm_address_t)threads, n_threads * sizeof(thread_act_t));
+	return th;
 }

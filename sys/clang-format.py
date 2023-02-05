@@ -15,7 +15,6 @@ dirlist = [
     "binrz",
     "librz",
     "subprojects/rzar",
-    "subprojects/rzbochs",
     "subprojects/rzgdb",
     "subprojects/ptrace-wrap",
     "subprojects/rzqnx",
@@ -38,6 +37,8 @@ skiplist = [
     "librz/bin/d/jni.h",
     "librz/util/bdiff.c",
     "librz/asm/arch/tms320/c55x/table.h",
+    "librz/include/sflib/",
+    "librz/asm/arch/include/opcode/",
 ]
 
 patterns = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]

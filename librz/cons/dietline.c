@@ -11,7 +11,6 @@
 #include <windows.h>
 #define printf(...) rz_cons_win_printf(false, __VA_ARGS__)
 #define USE_UTF8    1
-static int rz_line_readchar_win(ut8 *s, int slen);
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -156,9 +155,6 @@ RZ_API int rz_line_dietline_init(void) {
 #if USE_UTF8
 /* read utf8 char into 's', return the length in bytes */
 static int rz_line_readchar_utf8(ut8 *s, int slen) {
-#if __WINDOWS__
-	return rz_line_readchar_win(s, slen);
-#else
 	// TODO: add support for w32
 	ssize_t len, i;
 	if (slen < 1) {
@@ -199,94 +195,7 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 		}
 	}
 	return len;
-#endif
 }
-#endif
-
-#if __WINDOWS__
-static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
-	if (slen > 0 && rz_cons_readbuffer_readchar((char *)s)) {
-		if (s[0] == '\x1b' && rz_cons_readbuffer_readchar((char *)s + 1)) {
-			if (s[1] == '\x31' && rz_cons_readbuffer_readchar((char *)s + 2)) {
-				return 3;
-			}
-			return 2;
-		}
-		return 1;
-	}
-	INPUT_RECORD irInBuf = { 0 };
-	BOOL ret, bCtrl = FALSE;
-	DWORD mode, out;
-	char buf[5] = { 0 };
-	HANDLE h;
-	void *bed;
-
-	h = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD new_mode = I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE ? ENABLE_VIRTUAL_TERMINAL_INPUT : 0;
-	GetConsoleMode(h, &mode);
-	SetConsoleMode(h, new_mode);
-	if (I.zerosep) {
-		bed = rz_cons_sleep_begin();
-		DWORD rsz = 0;
-		BOOL ret = ReadFile(h, s, 1, &rsz, NULL);
-		rz_cons_sleep_end(bed);
-		SetConsoleMode(h, mode);
-		if (!ret || rsz != 1) {
-			return 0;
-		}
-		return 1;
-	}
-do_it_again:
-	bed = rz_cons_sleep_begin();
-	if (rz_cons_singleton()->term_xterm) {
-		ret = ReadFile(h, buf, 1, &out, NULL);
-	} else {
-		ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
-	}
-	rz_cons_sleep_end(bed);
-	if (ret < 1) {
-		return 0;
-	}
-	if (irInBuf.EventType == KEY_EVENT) {
-		if (irInBuf.Event.KeyEvent.bKeyDown) {
-			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
-				char *tmp = rz_utf16_to_utf8_l(&irInBuf.Event.KeyEvent.uChar.UnicodeChar, 1);
-				if (!tmp) {
-					return 0;
-				}
-				strncpy_s(buf, sizeof(buf), tmp, strlen(tmp));
-				free(tmp);
-			} else {
-				int idx = 0;
-				buf[idx++] = 27;
-				buf[idx++] = '['; // Simulate escaping
-				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
-				if (bCtrl) {
-					buf[idx++] = 0x31;
-				}
-				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
-				case VK_UP: buf[idx++] = 'A'; break;
-				case VK_DOWN: buf[idx++] = 'B'; break;
-				case VK_RIGHT: buf[idx++] = 'C'; break;
-				case VK_LEFT: buf[idx++] = 'D'; break;
-				case VK_PRIOR: buf[idx++] = '5'; break; // PAGE UP
-				case VK_NEXT: buf[idx++] = '6'; break; // PAGE DOWN
-				case VK_DELETE: buf[idx++] = '3'; break; // SUPR KEY
-				case VK_HOME: buf[idx++] = 'H'; break; // HOME KEY
-				case VK_END: buf[idx++] = 'F'; break; // END KEY
-				default: buf[0] = 0; break;
-				}
-			}
-		}
-	}
-	if (!buf[0]) {
-		goto do_it_again;
-	}
-	strncpy_s((char *)s, slen, buf, sizeof(buf));
-	SetConsoleMode(h, mode);
-	return strlen((char *)s);
-}
-
 #endif
 
 RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb up, RzLineHistoryDownCb down) {
@@ -494,7 +403,7 @@ RZ_API int rz_line_hist_load(RZ_NONNULL const char *path) {
  *             will be saved
  * \return false(0) if it fails, true(!0) otherwise
  */
-RZ_API int rz_line_hist_save(const char *path) {
+RZ_API int rz_line_hist_save(RZ_NONNULL const char *path) {
 	FILE *fd;
 	int i, ret = false;
 	if (RZ_STR_ISEMPTY(path)) {
@@ -723,7 +632,7 @@ static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, con
 	buf->data[buf->length] = '\0';
 }
 
-static char *get_max_common_pfx(RzPVector *options) {
+static char *get_max_common_pfx(RzPVector /*<char *>*/ *options) {
 	const char *ref = rz_pvector_at(options, 0);
 	size_t min_common_len = strlen(ref);
 	void **it;
@@ -1423,7 +1332,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		if (I.echo) {
 			rz_cons_clear_line(0);
 		}
-		(void)rz_cons_get_size(&rows);
 		switch (*buf) {
 		case 0: // control-space
 			/* ignore atm */
@@ -1618,18 +1526,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
-#if __WINDOWS__
-			if (I.vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
-				memmove(buf, buf + 1, strlen(buf));
-				if (!buf[0]) {
-					buf[0] = -1;
-				}
-			} else {
-#endif
-				buf[0] = rz_cons_readchar_timeout(50);
-#if __WINDOWS__
-			}
-#endif
+			buf[0] = rz_cons_readchar_timeout(50);
 			switch (buf[0]) {
 			case 127: // alt+bkspace
 				backward_kill_word(MINOR_BREAK);
@@ -1681,31 +1578,26 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				}
 				break;
 			default:
-				if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
-					buf[1] = rz_cons_readchar_timeout(50);
-					if (buf[1] == -1) { // alt+e
-						rz_cons_break_pop();
-						__print_prompt();
-						continue;
-					}
+				buf[1] = rz_cons_readchar_timeout(50);
+				if (buf[1] == -1) { // alt+e
+					rz_cons_break_pop();
+					__print_prompt();
+					continue;
 				}
 				if (buf[0] == 0x5b) { // [
 					switch (buf[1]) {
 					case '3': // supr
 						__delete_next_char();
-						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
-							buf[1] = rz_cons_readchar();
-							if (buf[1] == -1) {
-								rz_cons_break_pop();
-								return NULL;
-							}
+						buf[1] = rz_cons_readchar();
+						if (buf[1] == -1) {
+							rz_cons_break_pop();
+							return NULL;
 						}
 						break;
 					case '5': // pag up
-						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
-							buf[1] = rz_cons_readchar();
-						}
+						buf[1] = rz_cons_readchar();
 						if (I.hud) {
+							rz_cons_get_size(&rows);
 							I.hud->top_entry_n -= (rows - 1);
 							if (I.hud->top_entry_n < 0) {
 								I.hud->top_entry_n = 0;
@@ -1717,10 +1609,9 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						}
 						break;
 					case '6': // pag down
-						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
-							buf[1] = rz_cons_readchar();
-						}
+						buf[1] = rz_cons_readchar();
 						if (I.hud) {
+							rz_cons_get_size(&rows);
 							I.hud->top_entry_n += (rows - 1);
 							if (I.hud->top_entry_n >= I.hud->current_entry_n) {
 								I.hud->top_entry_n = I.hud->current_entry_n - 1;
@@ -1733,7 +1624,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						break;
 					case '9': // handle mouse wheel
 						key = rz_cons_readchar();
-						cons->mouse_event = 1;
+						cons->mouse_event = MOUSE_DEFAULT;
 						if (key == '6') { // up
 							if (I.hud && I.hud->top_entry_n + 1 < I.hud->current_entry_n) {
 								I.hud->top_entry_n--;
@@ -1792,21 +1683,14 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						__move_cursor_left();
 						break;
 					case 0x31: // control + arrow
-						if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
-							ch = rz_cons_readchar();
-							if (ch == 0x7e) { // HOME in screen/tmux
-								// corresponding END is 0x34 below (the 0x7e is ignored there)
-								I.buffer.index = 0;
-								break;
-							}
-							rz_cons_readchar();
-							ch = rz_cons_readchar();
+						ch = rz_cons_readchar();
+						if (ch == 0x7e) { // HOME in screen/tmux
+							// corresponding END is 0x34 below (the 0x7e is ignored there)
+							I.buffer.index = 0;
+							break;
 						}
-#if __WINDOWS__
-						else {
-							ch = buf[2];
-						}
-#endif
+						rz_cons_readchar();
+						ch = rz_cons_readchar();
 						int fkey = ch - '0';
 						switch (ch) {
 						case 0x41:
@@ -1842,10 +1726,8 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							}
 							break;
 						default:
-							if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
-								if (I.cb_fkey) {
-									I.cb_fkey(I.user, fkey);
-								}
+							if (I.cb_fkey) {
+								I.cb_fkey(I.user, fkey);
 							}
 							break;
 						}

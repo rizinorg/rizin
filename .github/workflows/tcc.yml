@@ -35,9 +35,9 @@ on:
 jobs:
   build:
     name: ubuntu-tcc-test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Checkout TinyCC repository
       run: |
@@ -45,7 +45,7 @@ jobs:
           cd tinycc
           #git checkout mob
           # Well-tested commit
-          git checkout 675046bd59bc6977bb2016c7d2e115ace8a6ae6c
+          git checkout aea2b53123b987a14d99126be22947ebda455082
           chmod +x ./configure
 
     - name: Compiling and installing TinyCC
@@ -69,7 +69,7 @@ jobs:
           sudo python3 setup.py install
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins

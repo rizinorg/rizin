@@ -2,7 +2,7 @@ NAME=nro detection
 FILE=bins/nro/appstore.nro
 CMDS=iI~?switch
 EXPECT=<<EOF
-1
+2
 EOF
 RUN
 

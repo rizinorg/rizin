@@ -495,7 +495,7 @@ static int listcb(RzSearchKeyword *k, void *user, ut64 addr) {
 	return 1;
 }
 
-RZ_API RzList *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len) {
+RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len) {
 	RzList *ret = rz_list_new();
 	rz_search_set_callback(s, listcb, ret);
 	rz_search_update(s, addr, buf, len);

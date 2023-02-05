@@ -100,8 +100,8 @@ typedef struct _KdCtx {
 	int syncd;
 	int cpu_count;
 	int cpu;
-	RzList *plist_cache;
-	RzList *tlist_cache;
+	RzList /*<WindProc *>*/ *plist_cache;
+	RzList /*<WindThread *>*/ *tlist_cache;
 	RzThreadLock *dontmix;
 	WindModule kernel_module;
 	ut8 *context_cache;
@@ -154,11 +154,11 @@ ut32 winkd_get_target_thread(RZ_BORROW RZ_NONNULL WindCtx *ctx);
 bool winkd_set_target(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut32 pid, ut32 tid);
 WindProc *winkd_get_process_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address);
 WindThread *winkd_get_thread_at(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 address);
-RzList *winkd_list_process(RZ_BORROW RZ_NONNULL WindCtx *ctx);
-RzList *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+RzList /*<WindProc *>*/ *winkd_list_process(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+RzList /*<WindThread *>*/ *winkd_list_threads(RZ_BORROW RZ_NONNULL WindCtx *ctx);
 void winkd_windmodule_free(void *ptr);
-RzList *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx);
-RzList *winkd_list_maps(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+RzList /*<WindModule *>*/ *winkd_list_modules(RZ_BORROW RZ_NONNULL WindCtx *ctx);
+RzList /*<WindMap *>*/ *winkd_list_maps(RZ_BORROW RZ_NONNULL WindCtx *ctx);
 int winkd_read_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 offset, RZ_BORROW RZ_NONNULL RZ_OUT ut8 *buf, int count);
 int winkd_write_at_uva(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut64 offset, RZ_BORROW RZ_NONNULL RZ_IN const ut8 *buf, int count);
 

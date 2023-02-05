@@ -220,7 +220,7 @@ ar al
 EOF
 EXPECT=<<EOF
 esi = 0x10000001
-al = 0x00000012
+al = 0x12
 EOF
 RUN
 
@@ -245,7 +245,7 @@ ar al
 EOF
 EXPECT=<<EOF
 esi = 0x0fffffff
-al = 0x00000012
+al = 0x12
 EOF
 RUN
 
@@ -270,7 +270,7 @@ ar ax
 EOF
 EXPECT=<<EOF
 esi = 0x10000002
-ax = 0x00001234
+ax = 0x1234
 EOF
 RUN
 
@@ -295,7 +295,7 @@ ar ax
 EOF
 EXPECT=<<EOF
 esi = 0x0ffffffe
-ax = 0x00001234
+ax = 0x1234
 EOF
 RUN
 
@@ -520,7 +520,7 @@ ar cf
 EOF
 EXPECT=<<EOF
 eax = 0x00000004
-cf = 0x00000001
+cf = 0x1
 EOF
 RUN
 
@@ -545,7 +545,7 @@ ar cf
 EOF
 EXPECT=<<EOF
 eax = 0x0000000d
-cf = 0x00000001
+cf = 0x1
 EOF
 RUN
 
@@ -570,7 +570,7 @@ ar cf
 EOF
 EXPECT=<<EOF
 eax = 0x00000001
-cf = 0x00000000
+cf = 0x0
 EOF
 RUN
 
@@ -594,7 +594,7 @@ ar cf
 EOF
 EXPECT=<<EOF
 0x00000001
-cf = 0x00000000
+cf = 0x0
 EOF
 RUN
 
@@ -618,7 +618,7 @@ ar cf
 EOF
 EXPECT=<<EOF
 0x00000009
-cf = 0x00000001
+cf = 0x1
 EOF
 RUN
 
@@ -685,9 +685,9 @@ ar cf
 ar zf
 EOF
 EXPECT=<<EOF
-dl = 0x00000000
-cf = 0x00000001
-zf = 0x00000001
+dl = 0x00
+cf = 0x1
+zf = 0x1
 EOF
 RUN
 
@@ -710,9 +710,9 @@ ar cf
 ar zf
 EOF
 EXPECT=<<EOF
-dx = 0x00000000
-cf = 0x00000001
-zf = 0x00000001
+dx = 0x0000
+cf = 0x1
+zf = 0x1
 EOF
 RUN
 
@@ -736,8 +736,8 @@ ar zf
 EOF
 EXPECT=<<EOF
 edx = 0x00000000
-cf = 0x00000001
-zf = 0x00000001
+cf = 0x1
+zf = 0x1
 EOF
 RUN
 
@@ -761,9 +761,9 @@ ar cf
 ar zf
 EOF
 EXPECT=<<EOF
-dl = 0x00000001
-cf = 0x00000001
-zf = 0x00000000
+dl = 0x01
+cf = 0x1
+zf = 0x0
 EOF
 RUN
 
@@ -787,9 +787,9 @@ ar cf
 ar zf
 EOF
 EXPECT=<<EOF
-dx = 0x00000001
-cf = 0x00000001
-zf = 0x00000000
+dx = 0x0001
+cf = 0x1
+zf = 0x0
 EOF
 RUN
 
@@ -814,8 +814,8 @@ ar zf
 EOF
 EXPECT=<<EOF
 edx = 0x00000001
-cf = 0x00000001
-zf = 0x00000000
+cf = 0x1
+zf = 0x0
 EOF
 RUN
 
@@ -840,7 +840,7 @@ ar zf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-zf = 0x00000001
+zf = 0x1
 0x00000000
 EOF
 RUN
@@ -866,7 +866,7 @@ ar sf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-sf = 0x00000001
+sf = 0x1
 0x000000ff
 EOF
 RUN
@@ -893,8 +893,8 @@ ar sf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-zf = 0x00000001
-sf = 0x00000000
+zf = 0x1
+sf = 0x0
 0x00000000
 EOF
 RUN
@@ -920,7 +920,7 @@ ar sf
 pv @ 0x20000000
 EOF
 EXPECT=<<EOF
-sf = 0x00000000
+sf = 0x0
 0x00000001
 EOF
 RUN
@@ -1142,18 +1142,18 @@ ar rf
 ar vm
 EOF
 EXPECT=<<EOF
-cf = 0x00000001
-pf = 0x00000001
-af = 0x00000001
-zf = 0x00000001
-sf = 0x00000001
-tf = 0x00000001
-if = 0x00000001
-df = 0x00000001
-of = 0x00000001
-nt = 0x00000001
-rf = 0x00000001
-vm = 0x00000001
+cf = 0x1
+pf = 0x1
+af = 0x1
+zf = 0x1
+sf = 0x1
+tf = 0x1
+if = 0x1
+df = 0x1
+of = 0x1
+nt = 0x1
+rf = 0x1
+vm = 0x1
 EOF
 RUN
 
@@ -2359,11 +2359,11 @@ ar zf
 EOF
 EXPECT=<<EOF
 eax = 0x00000000
-zf = 0x00000001
+zf = 0x1
 eax = 0x00000000
-zf = 0x00000000
+zf = 0x0
 eax = 0x0000001f
-zf = 0x00000000
+zf = 0x0
 EOF
 RUN
 
@@ -2408,11 +2408,11 @@ ar zf
 EOF
 EXPECT=<<EOF
 eax = 0x00000000
-zf = 0x00000001
+zf = 0x1
 eax = 0x00000000
-zf = 0x00000000
+zf = 0x0
 eax = 0x0000001f
-zf = 0x00000000
+zf = 0x0
 EOF
 RUN
 
@@ -2432,5 +2432,28 @@ wa cmc
 ar eflags
 aes
 ar eflags
+EOF
+RUN
+
+NAME=X86_INSTR_POP wrong order
+FILE==
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=32
+aei
+aeim
+ar edi=0x178000
+ar esp=edi-0x30
+wa "push ebp ; mov ebp,esp ; lea esp,[edi+8] ; push esp; pop esp ; push 0x1337 ; pop word ptr [esp] ; pop word ptr [esp] ; pop word ptr [esp] ; pop word ptr [esp] ; mov esp,ebp ; pop ebp ; ret"
+13aes
+pxW 20 @ 4+edi
+EOF
+EXPECT=<<EOF
+0x00178004 0x00001337 oeax+4919
+0x00178008 0x00001337 oeax+4919
+0x0017800c 0x00001337 oeax+4919
+0x00178010 0x00001337 oeax+4919
+0x00178014 0x00001337 oeax+4919
 EOF
 RUN

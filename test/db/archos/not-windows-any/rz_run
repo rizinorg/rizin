@@ -1,0 +1,32 @@
+
+NAME=rz-run encoded input
+FILE==
+CMDS=!rz-run input='A\'AA\x33\x00CCCC' -- rz-ax -S
+EXPECT=<<EOF
+41274141330043434343
+EOF
+RUN
+
+NAME=rz-run hex encoding input
+FILE==
+CMDS=!rz-run input=':31313131' -- rz-ax -S
+EXPECT=<<EOF
+31313131
+EOF
+RUN
+
+NAME=rz-run hex encoding input
+FILE==
+CMDS=!rz-run input=':!rz-ax -s 3431343134313431' -- rz-ax -S
+EXPECT=<<EOF
+41414141
+EOF
+RUN
+
+NAME=rz-run repeat
+FILE==
+CMDS=!rz-run arg1='@32@A' -- echo
+EXPECT=<<EOF
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+EOF
+RUN

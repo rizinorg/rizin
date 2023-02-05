@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include "core_private.h"
 
 static const char *fortunes[] = {
 	"tips", "fun"
@@ -64,7 +65,7 @@ RZ_API void rz_core_fortune_print_random(RzCore *core) {
 	}
 	if (line) {
 		if (rz_config_get_i(core->config, "cfg.fortunes.clippy")) {
-			rz_core_clippy(core, line);
+			rz_core_clippy_print(core, line);
 		} else {
 			rz_cons_printf(" -- %s\n", line);
 		}

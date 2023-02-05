@@ -4,6 +4,8 @@
 #ifndef _INCLUDE_XNU_THREADS_H_
 #define _INCLUDE_XNU_THREADS_H_
 
+#include "xnu_debug.h"
+
 #if __POWERPC__
 // TODO add better support for PPC
 #define RZ_REG_T        ppc_thread_state_t
@@ -18,7 +20,12 @@
 #ifndef ARM_THREAD_STATE64
 #define ARM_THREAD_STATE64 6
 #endif
-#define RZ_REG_T        arm_unified_thread_state_t
+typedef union rz_xnu_arm_reg_state_t {
+	// which one is used here is determined by RzXnuDebug.cpu
+	arm_thread_state32_t arm32;
+	arm_thread_state64_t arm64;
+} RzXnuArmRegState;
+#define RZ_REG_T        RzXnuArmRegState
 #define RZ_REG_STATE_T  MACHINE_THREAD_STATE
 #define RZ_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
 #elif __x86_64__ || __i386__
@@ -33,17 +40,6 @@
 		return ((retval)); \
 	}
 
-typedef struct _exception_info {
-	exception_mask_t masks[EXC_TYPES_COUNT];
-	mach_port_t ports[EXC_TYPES_COUNT];
-	exception_behavior_t behaviors[EXC_TYPES_COUNT];
-	thread_state_flavor_t flavors[EXC_TYPES_COUNT];
-	mach_msg_type_number_t count;
-	pthread_t thread;
-	mach_port_t exception_port;
-} xnu_exception_info;
-
-// XXX use rizin types
 typedef struct _xnu_thread {
 	thread_t port; // mach_port // XXX bad naming here
 	char *name; // name of thread
@@ -78,9 +74,14 @@ typedef struct _exc_msg {
 	NDR_record_t NDR;
 	exception_type_t exception;
 	mach_msg_type_number_t code_cnt;
-#if !__POWERPC__
-	mach_exception_data_t code;
-#endif
+
+	/*!
+	 * code and subcode,
+	 * two 64-bit values here because of MACH_EXCEPTION_CODES,
+	 * but not 64-bit aligned, so we use ut32.
+	 */
+	ut32 code[0x4];
+
 	/* some times RCV_TO_LARGE probs */
 	char pad[512];
 } exc_msg;
@@ -90,5 +91,25 @@ typedef struct _rep_msg {
 	NDR_record_t NDR;
 	kern_return_t ret_code;
 } rep_msg;
+
+RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg);
+RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid);
+RZ_IPI thread_t rz_xnu_get_cur_thread(RzDebug *dbg);
+RZ_IPI bool rz_xnu_thread_set_gpr(RzXnuDebug *ctx, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_get_gpr(RzXnuDebug *ctx, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread);
+RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread);
+
+RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable);
+static inline bool xnu_set_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
+	return xnu_modify_trace_bit(dbg, th, 1);
+}
+static inline bool xnu_clear_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
+	return xnu_modify_trace_bit(dbg, th, 0);
+}
+
+RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg);
+RZ_IPI bool xnu_restore_exception_ports(RzXnuDebug *ctx, int pid);
+RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 timeout_ms, bool quiet_signal);
 
 #endif

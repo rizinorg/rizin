@@ -9,13 +9,13 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
 
 	p = fd ? fd->data : NULL;
-	rz_config_set_i(r->config, "cfg.debug", 1);
 	if (!p) {
-		eprintf("Invalid debug io\n");
+		RZ_LOG_ERROR("core: invalid debug io descriptor\n");
 		return false;
 	}
 
-	rz_config_set(r->config, "io.ff", "true");
+	rz_config_set_b(r->config, "cfg.debug", true);
+	rz_config_set_b(r->config, "io.ff", true);
 	rz_config_set(r->config, "dbg.backend", debugbackend);
 	pid = rz_io_desc_get_pid(fd);
 	rz_debug_select(r->dbg, pid, r->dbg->tid);
@@ -59,7 +59,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		fd = rz_sys_fopen(file, "wb");
 	}
 	if (!fd) {
-		eprintf("Cannot open '%s' for writing\n", file);
+		RZ_LOG_ERROR("core: cannot open '%s' for writing\n", file);
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */
@@ -68,7 +68,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 	}
 	buf = malloc(bs);
 	if (!buf) {
-		eprintf("Cannot alloc %d byte(s)\n", bs);
+		RZ_LOG_ERROR("core: cannot alloc %d byte(s)\n", bs);
 		fclose(fd);
 		return false;
 	}
@@ -82,7 +82,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		}
 		rz_io_read_at(core->io, addr + i, buf, bs);
 		if (fwrite(buf, bs, 1, fd) < 1) {
-			eprintf("write error\n");
+			RZ_LOG_ERROR("core: cannot write to buffer\n");
 			break;
 		}
 	}
@@ -221,7 +221,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 	}
 	shift_buf = calloc(b_size, 1);
 	if (!shift_buf) {
-		eprintf("Cannot allocated %d byte(s)\n", (int)b_size);
+		RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", (int)b_size);
 		return false;
 	}
 
@@ -247,12 +247,8 @@ RZ_API int rz_core_block_read(RzCore *core) {
 	return -1;
 }
 
-RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset) {
-	if (!core) {
-		eprintf("rz_core_is_valid_offset: core is NULL\n");
-		rz_sys_backtrace();
-		return -1;
-	}
+RZ_API int rz_core_is_valid_offset(RZ_NONNULL RzCore *core, ut64 offset) {
+	rz_return_val_if_fail(core, -1);
 	return rz_io_is_valid_offset(core->io, offset, 0);
 }
 
@@ -324,7 +320,7 @@ err:
  * \param instructions List of instructions to assemble as a string
  * \return Returns the length of the written data or -1 in case of error
  */
-RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions) {
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions) {
 	rz_return_val_if_fail(core && instructions, -1);
 
 	int ret = -1;
@@ -362,7 +358,7 @@ err:
  * \param instructions List of instructions to assemble as a string
  * \return Returns the length of the written data or -1 in case of error (e.g. the new instruction does not fit)
  */
-RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *instructions) {
+RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, RZ_NONNULL const char *instructions) {
 	rz_return_val_if_fail(core && instructions, -1);
 
 	int ret = -1;
@@ -378,7 +374,7 @@ RZ_API int rz_core_write_assembly_fill(RzCore *core, ut64 addr, const char *inst
 	}
 
 	RzAnalysisOp op = { 0 };
-	if (!rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+	if (rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		RZ_LOG_ERROR("Invalid instruction at %" PFMT64x "\n", core->offset);
 		goto err;
 	}
@@ -602,7 +598,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
  * \param addr Address where to write the string
  * \param s String to write. The string is unescaped, meaning that if there is `\n` it becomes 0x0a
  */
-RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, const char *s) {
+RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
 	char *str = strdup(s);
@@ -697,7 +693,7 @@ RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *
  * \param addr Address where to write the string
  * \param s String to encode as base64 and then written.
  */
-RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, const char *s) {
+RZ_API bool rz_core_write_base64_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;
@@ -742,7 +738,7 @@ err:
  * \param addr Address where to write the string
  * \param s String to decode from base64 and then written
  */
-RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, const char *s) {
+RZ_API bool rz_core_write_base64d_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;
@@ -931,9 +927,8 @@ RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s)
  * \param buflen Used to return the length of the returned buffer
  * \return The transformed buffer
  */
-RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen, int *buflen) {
+RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp op, RZ_NULLABLE ut8 *hex, size_t hexlen, size_t *buflen) {
 	rz_return_val_if_fail(core, NULL);
-	rz_return_val_if_fail(!hex || hexlen >= 0, NULL);
 	rz_return_val_if_fail(buflen, NULL);
 
 	switch (op) {
@@ -946,7 +941,7 @@ RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp o
 	case RZ_CORE_WRITE_OP_XOR:
 	case RZ_CORE_WRITE_OP_SHIFT_LEFT:
 	case RZ_CORE_WRITE_OP_SHIFT_RIGHT:
-		rz_return_val_if_fail(hex && hexlen >= 0, NULL);
+		rz_return_val_if_fail(hex, NULL);
 		break;
 	default:
 		break;
@@ -1021,7 +1016,7 @@ RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp o
 			break;
 		}
 	}
-	*buflen = len;
+	*buflen = (size_t)len;
 	return buf;
 }
 
@@ -1035,8 +1030,8 @@ RZ_API RZ_OWN ut8 *rz_core_transform_op(RzCore *core, ut64 addr, RzCoreWriteOp o
  * \param hexlen Optional length of the \p hex string. Must be present if \p hex is specified.
  * \return true if the write operation succeeds, false otherwise
  */
-RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, ut8 *hex, int hexlen) {
-	int buflen;
+RZ_API bool rz_core_write_block_op_at(RzCore *core, ut64 addr, RzCoreWriteOp op, RZ_NULLABLE ut8 *hex, size_t hexlen) {
+	size_t buflen;
 	ut8 *buf = rz_core_transform_op(core, addr, op, hex, hexlen, &buflen);
 	if (!buf) {
 		return false;

@@ -55,7 +55,7 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 /* accelerate binary load */
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -87,7 +87,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
@@ -161,7 +161,7 @@ static RzList* relocs(RzBinFile *bf) {
 }
 #endif
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinAddr *ptr = NULL;
 	RzList *ret;
 	PebbleAppInfo pai;

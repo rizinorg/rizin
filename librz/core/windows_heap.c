@@ -60,7 +60,7 @@ static size_t RtlpLFHKeyOffset = 0;
 
 #define CHECK_INFO(heapInfo) \
 	if (!heapInfo) { \
-		eprintf("It wasn't possible to get the heap information\n"); \
+		RZ_LOG_ERROR("core: It wasn't possible to get the heap information\n"); \
 		return; \
 	} \
 	if (!heapInfo->count) { \
@@ -70,7 +70,7 @@ static size_t RtlpLFHKeyOffset = 0;
 
 #define CHECK_INFO_RETURN_NULL(heapInfo) \
 	if (!heapInfo) { \
-		eprintf("It wasn't possible to get the heap information\n"); \
+		RZ_LOG_ERROR("core: It wasn't possible to get the heap information\n"); \
 		return NULL; \
 	} \
 	if (!heapInfo->count) { \
@@ -284,7 +284,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 		}
 	}
 	if (!found) {
-		eprintf("ntdll.dll not loaded.\n");
+		RZ_LOG_ERROR("core: ntdll.dll not loaded.\n");
 		rz_list_free(modules);
 		return false;
 	}
@@ -327,7 +327,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 		opts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
 		opts.symbol_server = rz_config_get(core->config, "pdb.server");
 		if (rz_bin_pdb_download(core->bin, NULL, false, &opts)) {
-			eprintf("Failed to download ntdll.pdb file\n");
+			RZ_LOG_ERROR("core: Failed to download ntdll.pdb file\n");
 			free(pdb_path);
 			goto fail;
 		}
@@ -345,7 +345,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
 		baddr = core->bin->cur->o->opts.baseaddr;
 	} else {
-		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
+		RZ_LOG_WARN("core: Cannot find base address, flags will probably be misplaced\n");
 	}
 	PJ *pj = pj_new();
 	if (!pj) {
@@ -362,7 +362,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	rz_bin_pdb_free(pdb);
 	RzJson *json = rz_json_parse(j);
 	if (!json) {
-		RZ_LOG_ERROR("rz_core_pdb_info returned invalid JSON");
+		RZ_LOG_ERROR("core: rz_core_pdb_info returned invalid JSON");
 		free(j);
 		goto fail;
 	}
@@ -406,7 +406,7 @@ static bool GetLFHKey(RzDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey)
 	}
 	if (!ReadProcessMemory(h_proc, (PVOID)lfhKeyLocation, lfhKey, sizeof(WPARAM), NULL)) {
 		rz_sys_perror("ReadProcessMemory");
-		eprintf("LFH key not found.\n");
+		RZ_LOG_ERROR("core: LFH key not found.\n");
 		*lfhKey = 0;
 		return false;
 	}
@@ -519,7 +519,7 @@ static PDEBUG_BUFFER InitHeapInfo(RzDebug *dbg, DWORD mask) {
 		// It stops blocking if i pause rizin in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
 		params->hanged = true;
-		eprintf("RtlQueryProcessDebugInformation hanged\n");
+		RZ_LOG_ERROR("core: RtlQueryProcessDebugInformation hanged\n");
 		db = NULL;
 	} else if (params->ret) {
 		RtlDestroyQueryDebugBuffer(db);
@@ -651,7 +651,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 	WPARAM lfhKeyLocation = RtlpHpHeapGlobalsOffset + sizeof(WPARAM);
 	if (!ReadProcessMemory(h_proc, (PVOID)lfhKeyLocation, &lfhKey, sizeof(WPARAM), &bytesRead)) {
 		rz_sys_perror("ReadProcessMemory");
-		eprintf("LFH key not found.\n");
+		RZ_LOG_ERROR("core: LFH key not found.\n");
 		return false;
 	}
 
@@ -803,7 +803,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 	if (!GetLFHKey(dbg, h_proc, false, &lfhKey)) {
 		RtlDestroyQueryDebugBuffer(db);
 		CloseHandle(h_proc);
-		eprintf("GetHeapBlocks: Failed to get LFH key.\n");
+		RZ_LOG_ERROR("core: GetHeapBlocks: Failed to get LFH key.\n");
 		return NULL;
 	}
 
@@ -1243,7 +1243,7 @@ RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 			db = GetHeapBlocks(pid, core->dbg);
 		}
 		if (!db) {
-			eprintf("Couldn't get heap info.\n");
+			RZ_LOG_ERROR("core: Couldn't get heap info.\n");
 			return;
 		}
 	}
@@ -1294,7 +1294,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 		db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
 	if (!db) {
-		eprintf("Couldn't get heap info.\n");
+		RZ_LOG_ERROR("core: Couldn't get heap info.\n");
 		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
@@ -1330,7 +1330,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 				if (flag) {
 					char *name = rz_str_newf("alloc.%" PFMT64x "", address);
 					if (!rz_flag_set(core->flags, name, address, block->dwSize)) {
-						eprintf("Flag couldn't be set for block at 0x%" PFMT64x, address);
+						RZ_LOG_ERROR("core: flag cannot be set for block at 0x%" PFMT64x, address);
 					}
 					free(name);
 				} else if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -1420,7 +1420,7 @@ RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
 		db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
 	if (!db) {
-		eprintf("Couldn't get heap info.\n");
+		RZ_LOG_ERROR("core: Couldn't get heap info.\n");
 		return blocks_list;
 	}
 
@@ -1476,7 +1476,7 @@ RZ_IPI RzList *rz_heap_list(RzCore *core) {
 			db = GetHeapBlocks(pid, core->dbg);
 		}
 		if (!db) {
-			eprintf("Couldn't get heap info.\n");
+			RZ_LOG_ERROR("core: Couldn't get heap info.\n");
 			return NULL;
 		}
 	}

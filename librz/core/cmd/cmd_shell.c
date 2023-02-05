@@ -57,7 +57,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **
 // sleep
 RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char **argv) {
 	void *bed = rz_cons_sleep_begin();
-	rz_sys_sleep(atoi(argv[1] + 1));
+	rz_sys_sleep(atoi(argv[1]));
 	rz_cons_sleep_end(bed);
 	return RZ_CMD_STATUS_OK;
 }
@@ -111,7 +111,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **
 // cd
 RZ_IPI RzCmdStatus rz_cmd_shell_cd_handler(RzCore *core, int argc, const char **argv) {
 	static char *olddir = NULL;
-	bool ret = true;
+	bool ret = false;
 	const char *dir = "~";
 	if (argc > 1) {
 		dir = argv[1];
@@ -231,5 +231,53 @@ RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char
 // fortune
 RZ_IPI RzCmdStatus rz_cmd_shell_fortune_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_fortune_print_random(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// diff
+RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv) {
+	char *a = rz_file_slurp(argv[1], NULL);
+	if (!a) {
+		RZ_LOG_ERROR("core: Cannot open file A: \"%s\"\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *b = rz_file_slurp(argv[2], NULL);
+	if (!b) {
+		RZ_LOG_ERROR("core: Cannot open file B: \"%s\"\n", argv[2]);
+		free(a);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzDiff *dff = rz_diff_lines_new(a, b, NULL);
+	bool color = rz_config_get_i(core->config, "scr.color") > 0;
+	char *uni = rz_diff_unified_text(dff, argv[1], argv[2], false, color);
+	rz_diff_free(dff);
+	rz_cons_printf("%s\n", uni);
+	free(uni);
+	free(a);
+	free(b);
+	return RZ_CMD_STATUS_OK;
+}
+
+// date
+RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char **argv) {
+	char *now = rz_time_date_now_to_string();
+	rz_cons_printf("%s\n", now);
+	free(now);
+	return RZ_CMD_STATUS_OK;
+}
+
+// pkill
+RZ_IPI RzCmdStatus rz_cmd_shell_pkill_handler(RzCore *core, int argc, const char **argv) {
+	RzListIter *iter;
+	RzDebugPid *pid;
+	RzList *pids = (core->dbg->cur && core->dbg->cur->pids)
+		? core->dbg->cur->pids(core->dbg, 0)
+		: NULL;
+	rz_list_foreach (pids, iter, pid) {
+		if (strstr(pid->path, argv[1])) {
+			rz_debug_kill(core->dbg, pid->pid, 0, 9);
+		}
+	}
+	rz_list_free(pids);
 	return RZ_CMD_STATUS_OK;
 }

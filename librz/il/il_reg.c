@@ -108,8 +108,9 @@ RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 		RzRegItem *prev = NULL;
 		rz_list_foreach (items, iter, item) {
 			if (prev && prev->offset + prev->size > item->offset) {
-				// overlap where one reg is not fully contained in another.
-				// this is not supported yet.
+				RZ_LOG_WARN("Could not bind register \"%s\"\n"
+					    "\t It is not fully contained in another but overlaps with one.\n",
+					item->name);
 				continue;
 			}
 			if (pc && !strcmp(item->name, pc)) {
@@ -313,7 +314,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBindin
  * Set the values of all variables in \p vm that are bound to registers and PC to the respective contents from \p reg.
  * Contents of variables that are not bound to a register are left unchanged.
  */
-RZ_API void rz_il_vm_sync_from_reg(RzILVM *vm, RZ_NONNULL RzILRegBinding *rb, RZ_NONNULL RzReg *reg) {
+RZ_API void rz_il_vm_sync_from_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBinding *rb, RZ_NONNULL RzReg *reg) {
 	rz_return_if_fail(vm && rb && reg);
 	const char *pc = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	if (pc) {

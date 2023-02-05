@@ -6,7 +6,6 @@ CMDS=<<EOF
 dbw 0x80484b0 r
 dc
 dr rip
-dk 9
 EOF
 EXPECT=<<EOF
 0x08048409

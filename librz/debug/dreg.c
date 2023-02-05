@@ -16,12 +16,22 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		return false;
 	}
 	// Check if the functions needed are available
-	if (write && !dbg->cur->reg_write) {
+	if (write && !dbg->cur->reg_write && !dbg->cur->sync_registers) {
 		return false;
 	}
-	if (!write && !dbg->cur->reg_read) {
+	if (!write && !dbg->cur->reg_read && !dbg->cur->sync_registers) {
 		return false;
 	}
+
+	bool errored = false;
+	if (dbg->cur->sync_registers) {
+		if (!dbg->cur->sync_registers(dbg, dbg->reg, write)) {
+			RZ_LOG_ERROR("debug: sync: failed to sync registers (%s debugger)\n", write ? "to" : "from");
+			errored = true;
+		}
+		return !errored;
+	}
+
 	// Sync all the types sequentially if asked
 	i = (type == RZ_REG_TYPE_ANY) ? RZ_REG_TYPE_GPR : type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
@@ -113,7 +123,14 @@ RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {
 	return rz_reg_get_value(dbg->reg, ri);
 }
 
+/**
+ * Load the register profile from the current plugin into dbg->reg and
+ * if successful also sync all register contents into it.
+ *
+ * \return whether the register profile was provided by the plugin
+ */
 RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
+	rz_return_val_if_fail(dbg, false);
 	if (dbg->cur->reg_profile) {
 		char *p = dbg->cur->reg_profile(dbg);
 		if (p) {
@@ -121,7 +138,9 @@ RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg) {
 			rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 			free(p);
 		} else {
-			RZ_LOG_WARN("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
+			// May happen when the plugin does not yet have enough info
+			// to determine the reg profile
+			rz_reg_set_profile_string(dbg->reg, "");
 			return false;
 		}
 	}

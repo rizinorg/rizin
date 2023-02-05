@@ -1,0 +1,4 @@
+[wrap-git]
+url = https://github.com/kyz/libmspack.git
+revision = c1bf7c66ad5debadcc93619ea0bb9acd86a5f69c
+patch_directory = libmspack

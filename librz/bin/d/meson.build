@@ -13,7 +13,9 @@ sdb_files = [
   'gsprop32',
   'iertutil',
   'kernel32',
+  'mfc100u',
   'mfc120',
+  'mfc140u',
   'mfc30',
   'mfc40',
   'mfc42',
@@ -146,7 +148,7 @@ sdb_files = [
   'WPSAPD',
   'WPSUNI',
   'WPSUNIRE',
-  'WSASRV'
+  'WSASRV',
 ]
 
 foreach file : sdb_files

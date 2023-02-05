@@ -236,7 +236,7 @@ bitmap_unset(bitmap_t *bitmap, const bitmap_info_t *binfo, size_t bit)
 	size_t goff;
 	bitmap_t *gp;
 	bitmap_t g;
-	UNUSED bool propagate;
+	RZ_UNUSED bool propagate;
 
 	assert(bit < binfo->nbits);
 	assert(bitmap_get(bitmap, binfo, bit));

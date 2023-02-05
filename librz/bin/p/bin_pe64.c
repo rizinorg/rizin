@@ -4,6 +4,34 @@
 #define RZ_BIN_PE64 1
 #include "bin_pe.inc"
 
+// equivalent of PE64_UNWIND_INFO but endian-free
+typedef struct windows_x64_unwind_info_t {
+	ut8 Version; // : 3;
+	ut8 Flags; // : 5;
+	ut8 SizeOfProlog;
+	ut8 CountOfCodes;
+	ut8 FrameRegister; // : 4;
+	ut8 FrameOffset; // : 4;
+} WinUnwindInfo;
+
+static bool windows_unwind_info_read(WinUnwindInfo *info, RzBuffer *b, ut64 at) {
+	ut8 tmp[sizeof(PE64_UNWIND_INFO)] = { 0 };
+
+	if (!rz_buf_read_at(b, at, tmp, sizeof(tmp))) {
+		return false;
+	}
+
+	// The ordering of bits in C bitfields is implementation defined.
+	// this ensures the endianness (here is little endian) is kept
+	info->Version = tmp[0] & 0x07;
+	info->Flags = tmp[0] >> 3;
+	info->SizeOfProlog = tmp[1];
+	info->CountOfCodes = tmp[2];
+	info->FrameRegister = tmp[3] & 0x0F;
+	info->FrameOffset = tmp[3] >> 4;
+	return true;
+}
+
 static bool check_buffer(RzBuffer *b) {
 	ut64 length = rz_buf_size(b);
 	if (length <= 0x3d) {
@@ -34,7 +62,7 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
@@ -390,7 +418,22 @@ static inline const struct rz_bin_pe_section_t *get_section(RzBinPEObj *bin, con
 	return unwind_data_section;
 }
 
-static RzList *trycatch(RzBinFile *bf) {
+static bool read_pe64_runtime_function(RzBuffer *buf, ut64 base, PE64_RUNTIME_FUNCTION *rfcn, bool big_endian) {
+	ut64 offset = base;
+	return rz_buf_read_ble32_offset(buf, &offset, &rfcn->BeginAddress, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &rfcn->EndAddress, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &rfcn->UnwindInfoAddress, big_endian);
+}
+
+static bool read_pe64_scope_record(RzBuffer *buf, ut64 base, PE64_SCOPE_RECORD *record, bool big_endian) {
+	ut64 offset = base;
+	return rz_buf_read_ble32_offset(buf, &offset, &record->BeginAddress, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &record->EndAddress, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &record->HandlerAddress, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &offset, &record->JumpTarget, big_endian);
+}
+
+static RzList /*<RzBinTrycatch *>*/ *trycatch(RzBinFile *bf) {
 	ut64 baseAddr = bf->o->opts.baseaddr;
 	ut64 offset;
 
@@ -423,19 +466,16 @@ static RzList *trycatch(RzBinFile *bf) {
 	const ut64 end = RZ_MIN(rz_buf_size(bin->b), pdata->paddr + pdata->size);
 
 	for (offset = paddr; offset < end; offset += sizeof(PE64_RUNTIME_FUNCTION)) {
-		PE64_RUNTIME_FUNCTION rfcn;
-		bool suc = rz_buf_read_at(bin->b, offset, (ut8 *)&rfcn, sizeof(rfcn));
+		PE64_RUNTIME_FUNCTION rfcn = { 0 };
+		bool suc = read_pe64_runtime_function(bin->b, offset, &rfcn, bin->big_endian);
 		if (!rfcn.BeginAddress) {
 			break;
 		}
-		rfcn.BeginAddress = rz_read_ble32((ut8 *)&rfcn.BeginAddress, bin->big_endian);
-		rfcn.EndAddress = rz_read_ble32((ut8 *)&rfcn.EndAddress, bin->big_endian);
-		rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
 		ut32 savedBeginOff = rfcn.BeginAddress;
 		ut32 savedEndOff = rfcn.EndAddress;
 		while (suc && rfcn.UnwindData & 1) {
-			suc = rz_buf_read_at(bin->b, rva_to_paddr(pdata, rfcn.UnwindData & ~1), (ut8 *)&rfcn, sizeof(rfcn));
-			rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
+			ut64 paddr = rva_to_paddr(pdata, rfcn.UnwindData & ~1);
+			suc = read_pe64_runtime_function(bin->b, paddr, &rfcn, bin->big_endian);
 		}
 		rfcn.BeginAddress = savedBeginOff;
 		rfcn.EndAddress = savedEndOff;
@@ -450,8 +490,8 @@ static RzList *trycatch(RzBinFile *bf) {
 		if (unwind_data_paddr > unwind_data_section->paddr + unwind_data_section->size) {
 			continue;
 		}
-		PE64_UNWIND_INFO info;
-		suc = rz_buf_read_at(bin->b, unwind_data_paddr, (ut8 *)&info, sizeof(info));
+		WinUnwindInfo info;
+		suc = windows_unwind_info_read(&info, bin->b, unwind_data_paddr);
 		if (!suc || info.Version != 1 || (!(info.Flags & PE64_UNW_FLAG_EHANDLER) && !(info.Flags & PE64_UNW_FLAG_CHAININFO))) {
 			continue;
 		}
@@ -464,24 +504,20 @@ static RzList *trycatch(RzBinFile *bf) {
 			savedBeginOff = rfcn.BeginAddress;
 			savedEndOff = rfcn.EndAddress;
 			do {
-				if (!rz_buf_read_at(bin->b, exceptionDataOff, (ut8 *)&rfcn, sizeof(rfcn))) {
+				if (!read_pe64_runtime_function(bin->b, exceptionDataOff, &rfcn, bin->big_endian)) {
 					break;
 				}
-				rfcn.BeginAddress = rz_read_ble32((ut8 *)&rfcn.BeginAddress, bin->big_endian);
-				rfcn.EndAddress = rz_read_ble32((ut8 *)&rfcn.EndAddress, bin->big_endian);
-				rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
 				unwind_data_section = get_section(bin, unwind_data_section, rfcn.UnwindData);
 				if (!unwind_data_section) {
 					break;
 				}
 				unwind_data_paddr = rva_to_paddr(unwind_data_section, rfcn.UnwindData);
-				suc = rz_buf_read_at(bin->b, unwind_data_paddr, (ut8 *)&info, sizeof(info));
+				suc = windows_unwind_info_read(&info, bin->b, unwind_data_paddr);
 				if (!suc || info.Version != 1) {
 					break;
 				}
 				while (suc && (unwind_data_paddr & 1)) {
-					suc = rz_buf_read_at(bin->b, unwind_data_paddr & ~1, (ut8 *)&rfcn, sizeof(rfcn));
-					rfcn.UnwindData = rz_read_ble32((ut8 *)&rfcn.UnwindData, bin->big_endian);
+					suc = read_pe64_runtime_function(bin->b, unwind_data_paddr & ~1, &rfcn, bin->big_endian);
 					unwind_data_paddr = rva_to_paddr(unwind_data_section, rfcn.UnwindData);
 				}
 				if (!suc || info.Version != 1) {
@@ -498,29 +534,24 @@ static RzList *trycatch(RzBinFile *bf) {
 			rfcn.EndAddress = savedEndOff;
 		}
 
-		ut32 handler;
-		if (!rz_buf_read_at(bin->b, exceptionDataOff, (ut8 *)&handler, sizeof(handler))) {
+		ut32 handler = 0;
+		if (!rz_buf_read_ble32_at(bin->b, exceptionDataOff, &handler, bin->big_endian)) {
 			continue;
 		}
 		exceptionDataOff += sizeof(ut32);
 
 		PE64_SCOPE_TABLE tbl;
-		if (!rz_buf_read_at(bin->b, exceptionDataOff, (ut8 *)&tbl, sizeof(tbl))) {
+		if (!rz_buf_read_ble32_at(bin->b, exceptionDataOff, &tbl.Count, bin->big_endian)) {
 			continue;
 		}
-		tbl.Count = rz_read_ble32((ut8 *)&tbl.Count, bin->big_endian);
 		const ut64 last_scope_addr = RZ_MIN(rz_buf_size(bin->b), unwind_data_section->paddr + unwind_data_section->size) - sizeof(PE64_SCOPE_RECORD);
 		PE64_SCOPE_RECORD scope;
 		ut64 scopeRecOff = exceptionDataOff + sizeof(tbl);
 		int i;
 		for (i = 0; i < tbl.Count && scopeRecOff <= last_scope_addr; i++, scopeRecOff += sizeof(PE64_SCOPE_RECORD)) {
-			if (!rz_buf_read_at(bin->b, scopeRecOff, (ut8 *)&scope, sizeof(PE64_SCOPE_RECORD))) {
+			if (!read_pe64_scope_record(bin->b, scopeRecOff, &scope, bin->big_endian)) {
 				break;
 			}
-			scope.BeginAddress = rz_read_ble32((ut8 *)&scope.BeginAddress, bin->big_endian);
-			scope.EndAddress = rz_read_ble32((ut8 *)&scope.EndAddress, bin->big_endian);
-			scope.HandlerAddress = rz_read_ble32((ut8 *)&scope.HandlerAddress, bin->big_endian);
-			scope.JumpTarget = rz_read_ble32((ut8 *)&scope.JumpTarget, bin->big_endian);
 			if (scope.BeginAddress > scope.EndAddress || scope.BeginAddress == UT32_MAX || scope.EndAddress == UT32_MAX || !scope.BeginAddress || !scope.EndAddress) {
 				break;
 			}
@@ -566,6 +597,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.fields = &fields,
 	.libs = &libs,
 	.relocs = &relocs,
+	.get_offset = &get_offset,
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.hashes = &compute_hashes,

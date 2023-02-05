@@ -148,18 +148,18 @@ ar r17
 ar sp
 EOF
 EXPECT=<<EOF
-r16 = 0x000000c0
-r17 = 0x000000a0
-sp = 0x0000003e
+r16 = 0xc0
+r17 = 0xa0
+sp = 0x003e
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000030  0000 0000 0000 0000 0000 0000 0000 00c0  ................
-sp = 0x0000003d
+sp = 0x003d
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000030  0000 0000 0000 0000 0000 0000 0000 a0c0  ................
-r16 = 0x000000a0
-sp = 0x0000003e
-r17 = 0x000000c0
-sp = 0x0000003f
+r16 = 0xa0
+sp = 0x003e
+r17 = 0xc0
+sp = 0x003f
 EOF
 RUN
 
@@ -177,8 +177,8 @@ ar r31
 ar r30
 EOF
 EXPECT=<<EOF
-r31 = 0x00000011
-r30 = 0x000000ee
+r31 = 0x11
+r30 = 0xee
 var_write(name: zf, old: 0x0, new: 0x0)
 var_write(name: hf, old: 0x0, new: 0x0)
 var_write(name: vf, old: 0x0, new: 0x0)
@@ -193,8 +193,8 @@ var_write(name: nf, old: 0x1, new: 0x1)
 var_write(name: cf, old: 0x0, new: 0x1)
 var_write(name: sf, old: 0x1, new: 0x1)
 var_write(name: r31, old: 0x11, new: 0x9f)
-r31 = 0x0000009f
-r30 = 0x0000009e
+r31 = 0x9f
+r30 = 0x9e
 EOF
 RUN
 
@@ -222,15 +222,15 @@ ar r1
 EOF
 EXPECT=<<EOF
 increase r1
-r1 = 0x00000001
+r1 = 0x01
 swap nibbles
-r1 = 0x00000010
+r1 = 0x10
 increase r1
-r1 = 0x00000011
+r1 = 0x11
 swap nibbles
-r1 = 0x00000011
+r1 = 0x11
 increase r1
-r1 = 0x00000012
+r1 = 0x12
 EOF
 RUN
 
@@ -404,22 +404,22 @@ aezse 1~name
 ar vf
 EOF
 EXPECT=<<EOF
-r16 = 0x00000004
+r16 = 0x04
 var_write(name: tf, old: 0x0, new: 0x1)
-tf = 0x00000001
+tf = 0x1
 var_write(name: r0, old: 0x0, new: 0x10)
-r0 = 0x00000010
-tf = 0x00000001
+r0 = 0x10
+tf = 0x1
 var_write(name: vf, old: 0x0, new: 0x1)
-vf = 0x00000001
+vf = 0x1
 var_write(name: if, old: 0x0, new: 0x1)
-if = 0x00000001
+if = 0x1
 var_write(name: if, old: 0x1, new: 0x0)
-if = 0x00000000
+if = 0x0
 var_write(name: tf, old: 0x1, new: 0x0)
-tf = 0x00000000
+tf = 0x0
 var_write(name: vf, old: 0x1, new: 0x0)
-vf = 0x00000000
+vf = 0x0
 EOF
 RUN
 
@@ -437,8 +437,8 @@ aezs 8
 ar sreg
 EOF
 EXPECT=<<EOF
-sreg = 0x000000ff
-sreg = 0x00000000
+sreg = 0xff
+sreg = 0x00
 EOF
 RUN
 
@@ -462,8 +462,8 @@ wa "pop r16" @ 22
 wa "ret" @ 24
 
 ?e instructions
-pdi 5
-pdi 5 @ 16
+pdq 5
+pdq 5 @ 16
 ?e
 ?e initial machine status
 px 16 @ 0x70
@@ -513,9 +513,9 @@ initial machine status
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000070  eeee eeee eeee eeee eeee eeee eeee eeee  ................
 pc = 0x00000006
-sp = 0x0000007f
-r16 = 0x0000007f
-r17 = 0x000000fc
+sp = 0x007f
+r16 = 0x7f
+r17 = 0xfc
 
 call subroutine & stack pointer
 pc_write(old: 0x6, new: 0xa)
@@ -523,23 +523,23 @@ mem_write(addr: 0x7c, old: 0xeeeeeeee, new: 0xa)
 var_write(name: sp, old: 0x7f, new: 0x7b)
 pc_write(old: 0xa, new: 0x10)
 pc = 0x00000010
-sp = 0x0000007b
+sp = 0x007b
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000070  eeee eeee eeee eeee eeee eeee 0a00 0000  ................
 
 execute subroutine
 pc = 0x00000018
-sp = 0x0000007b
-r16 = 0x0000007f
-r17 = 0x00000008
+sp = 0x007b
+r16 = 0x7f
+r17 = 0x08
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000070  eeee eeee eeee eeee eeee ee7f 0a00 0000  ................
 
 execute return
 pc = 0x0000000a
-sp = 0x0000007f
-r16 = 0x0000007f
-r17 = 0x00000008
+sp = 0x007f
+r16 = 0x7f
+r17 = 0x08
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000070  eeee eeee eeee eeee eeee ee7f 0a00 0000  ................
 EOF

@@ -416,7 +416,7 @@ RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64
  * Writes the integer \p value in the config variable of \p name only and only if
  * the variable is integer.
  */
-RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64 i) {
+RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
 	rz_return_val_if_fail(cfg && name, NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);

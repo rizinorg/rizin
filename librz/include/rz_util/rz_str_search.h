@@ -28,12 +28,15 @@ typedef struct {
 	size_t buf_size; ///< Maximum size of a detected string
 	size_t max_uni_blocks; ///< Maximum number of unicode blocks
 	size_t min_str_length; ///< Minimum string length
-	bool prefer_big_endian; //< True if the preferred endianess for UTF strings is big-endian
+	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
+	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);
 
-RZ_API int rz_scan_strings(RzBuffer *buf_to_scan, RzList *list, const RzUtilStrScanOptions *opt,
+RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
+	const ut64 from, const ut64 to, RzStrEnc type);
+RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type);
 
 #ifdef __cplusplus

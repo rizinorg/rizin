@@ -2354,9 +2354,13 @@ RUN
 
 NAME=Test iD
 FILE==
-CMDS=iD java "Fake([BCDFIJSZ)Ltest/class/name;"
+CMDS=<<EOF
+iD java "Fake([BCDFIJSZ)Ltest/class/name;"
+iD pascal "EXAMPLE$_$SUMOFSQUARES$LONGINT$$LONGINT"
+EOF
 EXPECT=<<EOF
 test.class.name Fake(byte[], char, double, float, int, long, short, boolean)
+unit example sumofsquares(longint)longint
 EOF
 RUN
 
@@ -3900,19 +3904,19 @@ nth paddr      vaddr       len size section             type  string
 12  0x00000dd0 0x100000dd0 10  11   2.__TEXT.__cstring  ascii v24@0:8Q16
 13  0x00000ddb 0x100000ddb 7   8    2.__TEXT.__cstring  ascii @16@0:8
 14  0x00000de3 0x100000de3 4   5    2.__TEXT.__cstring  ascii Test
-3   0x00001058 0x100001058 5   6    9.__DATA.__cfstring ascii cstr.Hahha
-4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
+15  0x00001058 0x100001058 5   6    9.__DATA.__cfstring ascii cstr.Hahha
+16  0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 -- geq 12 --
 nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
-10  0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
-4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
+0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+1   0x00000db9 0x100000db9 13  14   2.__TEXT.__cstring  ascii v24@0:8i16i20
+2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 -- leq 13 --
 nth paddr      vaddr       len size section             type  string            
 --------------------------------------------------------------------------------
-4   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
-4   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
+0   0x00000d73 0x100000d73 12  13   2.__TEXT.__cstring  ascii Hello World 
+2   0x00001078 0x100001078 12  13   9.__DATA.__cfstring ascii cstr.Hello World 
 EOF
 RUN
 
@@ -4351,19 +4355,21 @@ RUN
 
 NAME=iz utf16le
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~green
 iz~wall
 EOF
 EXPECT=<<EOF
-5   0x00002248 0x00402248 48  97   .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m 
-8   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
+5   0x00002248 0x00402248 57  118  .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+7   0x000022c8 0x004022c8 33  68   .rodata utf16le is a wall with no embedded zeros\n
 EOF
 RUN
 
 NAME=iz/izz utf32le
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 iz~cyan
@@ -4371,9 +4377,9 @@ iz~Mountain
 izz~Linux_wide
 EOF
 EXPECT=<<EOF
-17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
-18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
-136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+16  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+17  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
+135 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -4385,23 +4391,23 @@ iz~SRSPRHEX
 iz~SRSTASK
 EOF
 EXPECT=<<EOF
-14  0x000002f6 0x000002f6 8   9            ibm037  SRSGENER
-19  0x000004dc 0x000004dc 8   9            ibm037  SRSGENER
-22  0x00000668 0x00000668 92  93           ibm037  SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
-66  0x00001682 0x00001682 30  31           ibm037  SRSGENERNO     *SRS>   NONHELD
-132 0x00002faa 0x00002faa 49  50           ibm037  SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
-10  0x0000029a 0x0000029a 8   9            ibm037  SRSPRHEX
-17  0x00000362 0x00000362 8   9            ibm037  SRSPRHEX
-67  0x000016d4 0x000016d4 8   9            ibm037  SRSPRHEX
-70  0x00001861 0x00001861 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-74  0x0000191f 0x0000191f 9   10           ibm037  ÏSRSPRHEX
-138 0x0000315b 0x0000315b 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-142 0x0000323f 0x0000323f 9   10           ibm037  3SRSPRHEX
-217 0x00004c0f 0x00004c0f 27  28           ibm037  SRSPRHEX_03/06/08_14.17°Ö}\f
-18  0x000003ba 0x000003ba 8   9            ibm037  SRSTASK 
-98  0x00002540 0x00002540 17  18           ibm037  ­bå0­«SRSTASK  \-
-141 0x00003230 0x00003230 8   9            ibm037  SRSTASK 
-147 0x000033e4 0x000033e4 103 104          ibm037  SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
+14  0x000002f6 0x000002f6 8   9            ibm037 SRSGENER
+19  0x000004dc 0x000004dc 8   9            ibm037 SRSGENER
+22  0x00000668 0x00000668 92  93           ibm037 SRSGENER_03/06/08_14.16 SRS Version 1.3.0_BASE    COPYRIGHT 1998-2008 DAVID W DANNER ALL RIG
+63  0x00001682 0x00001682 30  31           ibm037 SRSGENERNO     *SRS>   NONHELD
+114 0x00002faa 0x00002faa 49  50           ibm037 SHUTDOWNSRSOPTS SRSTBLK SRSGENERALL     STARTINGS
+10  0x0000029a 0x0000029a 8   9            ibm037 SRSPRHEX
+17  0x00000362 0x00000362 8   9            ibm037 SRSPRHEX
+64  0x000016d4 0x000016d4 8   9            ibm037 SRSPRHEX
+67  0x00001861 0x00001861 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
+71  0x0000191f 0x0000191f 9   10           ibm037 ÏSRSPRHEX
+120 0x0000315b 0x0000315b 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
+124 0x0000323f 0x0000323f 9   10           ibm037 3SRSPRHEX
+190 0x00004c0f 0x00004c0f 27  28           ibm037 SRSPRHEX_03/06/08_14.17°Ö}\f
+18  0x000003ba 0x000003ba 8   9            ibm037 SRSTASK 
+90  0x00002540 0x00002540 17  18           ibm037 ­bå0­«SRSTASK  \-
+123 0x00003230 0x00003230 8   9            ibm037 SRSTASK 
+129 0x000033e4 0x000033e4 103 104          ibm037 SRSTASK_12/31/08_20.31 SRS Version 1.3.0_A13001  COPYRIGHT 1998-2008 DAVID W DANNER ALL RIGHTS RESERVED
 EOF
 RUN
 
@@ -4414,8 +4420,8 @@ e str.escbslash=false
 iz~Linux_wide
 EOF
 EXPECT=<<EOF
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
-16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+17  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+17  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
 EOF
 RUN
 
@@ -4428,7 +4434,8 @@ iz~123456
 EOF
 EXPECT=<<EOF
 1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
-2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
+2   0x00000650 0x00400650 6   25   .rodata utf32le abcdef
 3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
 EOF
 RUN
@@ -4463,7 +4470,7 @@ NAME=izz and bin.str.enc
 FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
-(izzenc enc; e bin.str.enc=$0; izz:quiet)
+(izzenc enc; e bin.str.enc=${enc}; izz:quiet)
 .(izzenc guess)
 .(izzenc ascii)
 .(izzenc utf8)
@@ -4500,7 +4507,7 @@ o+ .tmp/strenc-bin
 iz:quiet
 s 0x080484b0
 wz k\0i\0abcdefgh
-(izenc enc; e bin.str.enc=$0; iz:quiet)
+(izenc enc; e bin.str.enc=${enc}; iz:quiet)
 .(izenc guess)
 .(izenc utf8)
 o--
@@ -4574,12 +4581,13 @@ RUN
 
 NAME=izj unicode blocks
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e bin.str.purge=all,!4202996,!4203007,!4203208
 izj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":7,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
 EOF
 RUN
 
@@ -4590,7 +4598,7 @@ e bin.str.purge=all,!4195920
 izzj
 EOF
 EXPECT=<<EOF
-[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":25,"length":6,"section":".rodata","type":"utf32le","string":"abcdef"}]
 EOF
 RUN
 
@@ -4643,7 +4651,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1100 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+1089 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
 --2--
 --3--
 0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
@@ -5218,14 +5226,14 @@ NAME=izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF
-97  0x00003f3c 0x100002f3c 47  48                           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
+93  0x00003f3c 0x100002f3c 47  48                           ascii  ,http://www.apple.com/appleca/codesigning.crl0\r
 EOF
 RUN
 
-NAME=it
+NAME=iT
 FILE==
 ARGS=-w
-CMDS=it ; wx 0x90 ; it
+CMDS=iT ; wx 0x90 ; iT
 EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
@@ -5234,7 +5242,6 @@ crc32 b2aa7578
 entropy 0.000000
 EOF
 EXPECT_ERR=<<EOF
-File has been modified.
 - md5 bf619eac0cdf3f68d496ea9344137e8b
 + md5 afd010a5a5456c232dee59d59bd75cf6
 - sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
@@ -5255,14 +5262,13 @@ mkdir .tmp
 cp bins/mach0/fatmach0-3true .tmp/it2-modfile
 o .tmp/it2-modfile
 oo+
-it
+iT
 wx 0x90
-it
+iT
 o--
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
-File has been modified.
 - md5 84144530144b53a704c84d9c65ab5f92
 + md5 9a99cca7bf3e27ee1c8964141cfad053
 - sha1 9016e215a321184c42c28ab03847554851932713
@@ -5601,7 +5607,7 @@ RUN
 NAME=flat bin bits
 FILE=bins/flat/=.bin
 CMDS=<<EOF
-(pI_all; e asm.bits; iI~^bits; iIq~^bits; iIj~{bits})
+(pI_all; e asm.bits; iI~^bits; iIq~^bits; iIj~{.bits})
 . bins/flat/=.bin.rz
 .(pI_all)
 ?e
@@ -5622,5 +5628,24 @@ bits 32
 bits     64
 bits 64
 64
+EOF
+RUN
+
+NAME=print elf strings but with bin.minstr=2
+FILE=bins/elf/smallstrings.elf
+CMDS=<<EOF
+iz
+iz @e:bin.minstr=2
+EOF
+EXPECT=<<EOF
+nth paddr      vaddr      len size section type  string 
+--------------------------------------------------------
+0   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
+nth paddr      vaddr      len size section type  string 
+--------------------------------------------------------
+0   0x00002006 0x00002006 2   3    .rodata ascii 22
+1   0x00002009 0x00002009 3   4    .rodata ascii 333
+2   0x0000200d 0x0000200d 4   5    .rodata ascii 4444
+3   0x00003008 0x00004008 2   3    .data   ascii \b@
 EOF
 RUN

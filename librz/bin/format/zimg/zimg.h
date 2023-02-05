@@ -25,8 +25,6 @@ typedef struct rz_bin_zimg_obj_t {
 	RzBuffer *b;
 	struct zimg_header_t header;
 	ut32 *strings;
-	RzList *methods_list;
-	RzList *imports_list;
 	ut64 code_from;
 	ut64 code_to;
 	Sdb *kv;

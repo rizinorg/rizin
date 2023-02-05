@@ -4,6 +4,9 @@
 #ifndef RZ_UTIL_SUBPROCESS_H
 #define RZ_UTIL_SUBPROCESS_H
 
+#include <rz_types.h>
+#include <rz_util/rz_strbuf.h>
+
 /**
  * Enum used to determine how pipes should be created, if at all, in the
  * subprocess.
@@ -13,7 +16,9 @@ typedef enum rz_subprocess_pipe_create_t {
 	RZ_SUBPROCESS_PIPE_NONE,
 	///< A new pipe should be created. It can be used for stdin, stdout and stderr.
 	RZ_SUBPROCESS_PIPE_CREATE,
-	///< Re-use the same pipe as stdout. It can be used for stderr only.
+	///< A new PTY should be created. It can be used for stdin, stdout and stderr.
+	RZ_SUBPROCESS_PIPE_PTY,
+	///< Re-use the same pipe/PTY as stdout. It can be used for stderr only.
 	RZ_SUBPROCESS_PIPE_STDOUT,
 } RzSubprocessPipeCreate;
 
@@ -29,6 +34,11 @@ typedef enum rz_process_wait_reason_t {
 	RZ_SUBPROCESS_TIMEDOUT,
 	RZ_SUBPROCESS_BYTESREAD,
 } RzSubprocessWaitReason;
+
+typedef enum rz_subprocess_fork_mode_t {
+	RZ_SUBPROCESS_FORK,
+	RZ_SUBPROCESS_FORKPTY,
+} RzSubprocessForkMode;
 
 /**
  * Provide results from running a sub-process, like output, return value, etc.
@@ -47,6 +57,12 @@ typedef struct rz_process_output_t {
 	///< True if the process has exited because of a timeout
 	bool timeout;
 } RzSubprocessOutput;
+
+typedef struct rz_pty_t {
+	int master_fd;
+	int slave_fd;
+	char *name;
+} RzPty;
 
 /**
  * Specify how the new subprocess should be created.
@@ -70,6 +86,14 @@ typedef struct rz_subprocess_opt_t {
 	RzSubprocessPipeCreate stdout_pipe;
 	///< Specify how to deal with subprocess stderr
 	RzSubprocessPipeCreate stderr_pipe;
+
+	/* Both the following fields only matter when using PTY in the pipe options */
+	///< Provide the PTY to use (if NULL, then a new one will be created, if required)
+	///< No need to close the PTY once it has been used, you can free it directly
+	RzPty *pty;
+	///< Use raw mode for the created PTY (disable echo, control characters, etc.)
+	///< If you don't know what to put here, put true here.
+	bool make_raw;
 } RzSubprocessOpt;
 
 typedef struct rz_subprocess_t RzSubprocess;
@@ -79,7 +103,7 @@ RZ_API void rz_subprocess_fini(void);
 RZ_API RzSubprocess *rz_subprocess_start(
 	const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size);
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt);
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt);
 RZ_API void rz_subprocess_free(RzSubprocess *proc);
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms);
 RZ_API void rz_subprocess_kill(RzSubprocess *proc);
@@ -88,8 +112,13 @@ RZ_API ut8 *rz_subprocess_out(RzSubprocess *proc, int *length);
 RZ_API ut8 *rz_subprocess_err(RzSubprocess *proc, int *length);
 RZ_API ssize_t rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size);
 RZ_API RzStrBuf *rz_subprocess_stdout_read(RzSubprocess *proc, size_t n, ut64 timeout_ms);
-RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms);
+RZ_API RZ_BORROW RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms);
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
 
-#endif
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params);
+RZ_API void rz_subprocess_close_pty(RZ_BORROW RZ_NONNULL const RzPty *pty);
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty);
+RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty);
+
+#endif // RZ_UTIL_SUBPROCESS_H

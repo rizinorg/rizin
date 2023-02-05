@@ -46,7 +46,7 @@ extern char ***_NSGetEnviron(void);
 #ifndef PROC_PIDPATHINFO_MAXSIZE
 #define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void *buffer, ut32 buffersize);
-//#  include <libproc.h>
+// #  include <libproc.h>
 #endif
 #endif
 #if __UNIX__
@@ -71,6 +71,18 @@ extern char **environ;
 #include <psapi.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
+#endif
+#endif
+
+/* For "openpty" family of funtcions */
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#else
+#include <pty.h>
+#include <utmp.h>
 #endif
 #endif
 
@@ -213,7 +225,7 @@ static DIR *sys_opendir(const char *path) {
 }
 #endif
 
-RZ_API RzList *rz_sys_dir(const char *path) {
+RZ_API RzList /*<char *>*/ *rz_sys_dir(const char *path) {
 	RzList *list = NULL;
 #if __WINDOWS__
 	WIN32_FIND_DATAW entry;
@@ -259,6 +271,9 @@ RZ_API char *rz_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
+/**
+ * \brief Print the backtrace at the point this function is called from.
+ */
 RZ_API void rz_sys_backtrace(void) {
 #if HAVE_BACKTRACE
 	void *array[10];
@@ -291,6 +306,9 @@ RZ_API void rz_sys_backtrace(void) {
 #endif
 }
 
+/**
+ * \brief Sleep for \p secs seconds
+ */
 RZ_API int rz_sys_sleep(int secs) {
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
@@ -305,6 +323,9 @@ RZ_API int rz_sys_sleep(int secs) {
 #endif
 }
 
+/**
+ * \brief Sleep for \p usecs microseconds
+ */
 RZ_API int rz_sys_usleep(int usecs) {
 #if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC)
 	struct timespec rqtp;
@@ -327,6 +348,13 @@ RZ_API int rz_sys_usleep(int usecs) {
 #endif
 }
 
+/**
+ * \brief Clean all environment variables in the calling process.
+ *
+ * Please note that environment variables should not be used to store sensitive
+ * info as they might be kept elsewhere and there is no access control over that
+ * data.
+ */
 RZ_API int rz_sys_clearenv(void) {
 #if __UNIX__
 #if __APPLE__ && !HAVE_ENVIRON
@@ -349,8 +377,33 @@ RZ_API int rz_sys_clearenv(void) {
 #endif
 	return 0;
 #else
-#ifdef _MSC_VER
-#pragma message("rz_sys_clearenv : unimplemented for this platform")
+#ifdef __WINDOWS__
+	LPWCH env = GetEnvironmentStringsW();
+	LPWCH var = env;
+	while (*var) {
+		wchar_t *eq = wcschr(var, L'=');
+		if (!eq) {
+			FreeEnvironmentStringsW(env);
+			return -1;
+		}
+		const size_t len = eq - var;
+		if (!len) {
+			var += wcslen(var) + 1;
+			continue;
+		}
+		wchar_t *v = RZ_NEWS0(wchar_t, len + 1);
+		if (!v) {
+			return -1;
+		}
+		wcsncpy(v, var, len);
+		if (_wputenv_s(v, L"")) {
+			free(v);
+			break;
+		}
+		free(v);
+		var += wcslen(var) + 1;
+	}
+	FreeEnvironmentStringsW(env);
 #else
 #warning rz_sys_clearenv : unimplemented for this platform
 #endif
@@ -358,6 +411,9 @@ RZ_API int rz_sys_clearenv(void) {
 #endif
 }
 
+/**
+ * \brief Set an environment variable in the calling process
+ */
 RZ_API int rz_sys_setenv(const char *key, const char *value) {
 	if (!key) {
 		return 0;
@@ -369,14 +425,13 @@ RZ_API int rz_sys_setenv(const char *key, const char *value) {
 	}
 	return setenv(key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = rz_sys_conv_utf8_to_win(key);
-	LPTSTR value_ = rz_sys_conv_utf8_to_win(value);
-	int ret = SetEnvironmentVariable(key_, value_);
-	if (!ret) {
-		rz_sys_perror("rz_sys_setenv/SetEnvironmentVariable");
-	}
+	LPWSTR key_ = rz_utf8_to_utf16(key);
+	LPWSTR value_ = value ? rz_utf8_to_utf16(value) : L"";
+	bool ret = !_wputenv_s(key_, value_);
 	free(key_);
-	free(value_);
+	if (value) {
+		free(value_);
+	}
 	return ret ? 0 : -1;
 #else
 #warning rz_sys_setenv : unimplemented for this platform
@@ -434,41 +489,24 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
 	return true;
 }
 
+/**
+ * \brief Get the value of an environment variable named \p key or NULL if none exists.
+ */
 RZ_API char *rz_sys_getenv(const char *key) {
 #if __WINDOWS__
-	DWORD dwRet;
-	LPTSTR envbuf = NULL, key_ = NULL, tmp_ptr;
-	char *val = NULL;
-
 	if (!key) {
 		return NULL;
 	}
-	envbuf = (LPTSTR)malloc(sizeof(TCHAR) * TMP_BUFSIZE);
-	if (!envbuf) {
-		goto err_r_sys_get_env;
+	wchar_t *val;
+	wchar_t *wkey = rz_utf8_to_utf16(key);
+	if (_wdupenv_s(&val, NULL, wkey) || !val) {
+		free(wkey);
+		return NULL;
 	}
-	key_ = rz_sys_conv_utf8_to_win(key);
-	dwRet = GetEnvironmentVariable(key_, envbuf, TMP_BUFSIZE);
-	if (dwRet == 0) {
-		if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
-			goto err_r_sys_get_env;
-		}
-	} else if (TMP_BUFSIZE < dwRet) {
-		tmp_ptr = (LPTSTR)realloc(envbuf, dwRet * sizeof(TCHAR));
-		if (!tmp_ptr) {
-			goto err_r_sys_get_env;
-		}
-		envbuf = tmp_ptr;
-		dwRet = GetEnvironmentVariable(key_, envbuf, dwRet);
-		if (!dwRet) {
-			goto err_r_sys_get_env;
-		}
-	}
-	val = rz_sys_conv_win_to_utf8_l(envbuf, (int)dwRet);
-err_r_sys_get_env:
-	free(key_);
-	free(envbuf);
-	return val;
+	free(wkey);
+	char *ret = rz_utf16_to_utf8(val);
+	free(val);
+	return ret;
 #else
 	char *b;
 	if (!key) {
@@ -479,6 +517,9 @@ err_r_sys_get_env:
 #endif
 }
 
+/**
+ * \brief Return true if the environment variable has the value 1, false otherwise
+ */
 RZ_API bool rz_sys_getenv_asbool(const char *key) {
 	char *env = rz_sys_getenv(key);
 	const bool res = (env && *env == '1');
@@ -486,6 +527,9 @@ RZ_API bool rz_sys_getenv_asbool(const char *key) {
 	return res;
 }
 
+/**
+ * \brief Get current working directory
+ */
 RZ_API char *rz_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd(NULL, 0);
@@ -494,6 +538,9 @@ RZ_API char *rz_sys_getdir(void) {
 #endif
 }
 
+/**
+ * \brief Change current directory to \p s, taking care of home expansion ~.
+ */
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(s, false);
 	char *homepath = rz_path_home_expand(s);
@@ -505,6 +552,9 @@ RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s) {
 	return chdir(s) == 0;
 }
 
+/**
+ * \brief Enable or disable ASLR for the calling process
+ */
 RZ_API bool rz_sys_aslr(int val) {
 	bool ret = true;
 #if __linux__
@@ -884,7 +934,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	// TODO: add maximum path length support
 	HANDLE processHandle;
 	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
+	WCHAR filename[MAX_PATH];
 	char *result = NULL;
 
 	processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
@@ -892,17 +942,17 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		eprintf("rz_sys_pid_to_path: Cannot open process.\n");
 		return NULL;
 	}
-	DWORD length = GetModuleFileNameEx(processHandle, NULL, filename, maxlength);
+	DWORD length = GetModuleFileNameExW(processHandle, NULL, filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		length = GetProcessImageFileName(processHandle, filename, maxlength);
+		length = GetProcessImageFileNameW(processHandle, filename, maxlength);
 		CloseHandle(processHandle);
 		if (length == 0) {
 			eprintf("rz_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 			return NULL;
 		}
 		// Convert NT path to win32 path
-		char *name = rz_sys_conv_win_to_utf8(filename);
+		char *name = rz_utf16_to_utf8(filename);
 		if (!name) {
 			eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
 			return NULL;
@@ -928,10 +978,10 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		}
 		strncpy(tmp, name, length);
 		tmp[length] = '\0';
-		TCHAR device[MAX_PATH];
-		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-			if (QueryDosDevice(drv, device, maxlength) > 0) {
-				char *dvc = rz_sys_conv_win_to_utf8(device);
+		WCHAR device[MAX_PATH];
+		for (WCHAR drv[] = L"A:"; drv[0] <= L'Z'; drv[0]++) {
+			if (QueryDosDeviceW(drv, device, maxlength) > 0) {
+				char *dvc = rz_utf16_to_utf8(device);
 				if (!dvc) {
 					free(name);
 					free(tmp);
@@ -941,7 +991,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 				if (!strcmp(tmp, dvc)) {
 					free(tmp);
 					free(dvc);
-					char *d = rz_sys_conv_win_to_utf8(drv);
+					char *d = rz_utf16_to_utf8(drv);
 					if (!d) {
 						free(name);
 						eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
@@ -964,7 +1014,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		free(tmp);
 	} else {
 		CloseHandle(processHandle);
-		result = rz_sys_conv_win_to_utf8(filename);
+		result = rz_utf16_to_utf8(filename);
 	}
 	return result;
 #elif __APPLE__
@@ -1077,12 +1127,12 @@ RZ_API void rz_sys_env_init(void) {
 RZ_API char **rz_sys_get_environ(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
-#else
+#elif HAVE_ENVIRON
 	env = environ;
 #endif
 	// return environ if available??
 	if (!env) {
-		env = rz_lib_dl_sym(NULL, "environ");
+		env = rz_sys_dlsym(NULL, "environ");
 	}
 	return env;
 }
@@ -1091,6 +1141,22 @@ RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
 #if __APPLE__ && !HAVE_ENVIRON
 	*_NSGetEnviron() = e;
+#elif __WINDOWS__
+	char **oe = e;
+	rz_sys_clearenv();
+	while (*e) {
+		char *var = *e;
+		char *val = strchr(var, '=');
+		wchar_t *val_utf16 = NULL;
+		if (*val) {
+			*val++ = '\0';
+		}
+		rz_sys_setenv(var, val);
+		free(*e);
+		e++;
+	}
+	free(oe);
+	env = environ;
 #elif HAVE_ENVIRON
 	environ = e;
 #endif
@@ -1392,6 +1458,14 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 RZ_API int rz_sys_pipe_close(int fd) {
 	return close(fd);
 }
+#elif __WINDOWS__
+RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
+	return _pipe(pipefd, 0x1000, O_TEXT);
+}
+
+RZ_API int rz_sys_pipe_close(int fd) {
+	return _close(fd);
+}
 #else
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	return -1;
@@ -1604,6 +1678,9 @@ RZ_API int rz_sys_fork(void) {
 	parent_lock_enter();
 #endif
 	pid_t child = fork();
+	if (child == -1) {
+		perror("fork");
+	}
 #if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
 	if (child == 0) {
 		is_child = true;
@@ -1618,6 +1695,72 @@ RZ_API int rz_sys_fork(void) {
 	return -1;
 }
 #endif
+
+/**
+ * \brief Wrapper for forkpty(3)
+ *
+ * \param amaster The master end of the PTY is stored here
+ * \param name The name of the slave end of the PTY is stored here
+ * \param termp (const struct termios) The terminal attributes
+ * \param winp (const struct winsize) The window size attributes
+ *
+ * \return int (pid_t) PID of the forked process
+ */
+RZ_API /* pid_t */ int rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	pid_t ret = forkpty(amaster, name, termp, winp);
+	if (ret == -1) {
+		perror("forkpty");
+	}
+	return ret;
+#else
+	RZ_LOG_ERROR("forkpty() not found\n");
+	return -1;
+#endif
+}
+
+/**
+ * \brief Wrapper for openpty(3)
+ *
+ * \param amaster The master end of the PTY is stored here
+ * \param aslave The slave end of the PTY is stored here
+ * \param name The name of the slave end of the PTY is stored here
+ * \param termp (const struct termios) The terminal attributes
+ * \param winp (const struct winsize) The window size attributes
+ *
+ * \return int Return code
+ */
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	int ret = openpty(amaster, aslave, name, termp, winp);
+	if (ret == -1) {
+		perror("openpty");
+	}
+	return ret;
+#else
+	RZ_LOG_ERROR("openpty() not found\n");
+	return -1;
+#endif
+}
+
+/**
+ * \brief Wrapper for login_tty(3)
+ *
+ * \param fd File descriptor for the slave end of the PTY; To be made the controlling terminal
+ * \return int Return code
+ */
+RZ_API int rz_sys_login_tty(int fd) {
+#if HAVE_OPENPTY && HAVE_FORKPTY && HAVE_LOGIN_TTY
+	int ret = login_tty(fd);
+	if (ret == -1) {
+		perror("login_tty");
+	}
+	return ret;
+#else
+	RZ_LOG_ERROR("login_tty() not found\n");
+	return -1;
+#endif
+}
 
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
@@ -1804,5 +1947,74 @@ RZ_API bool rz_sys_stop(void) {
 	return !rz_sys_kill(0, SIGTSTP);
 #else
 	return false;
+#endif
+}
+
+/**
+ * \brief Implementation across systems to open a dynamic library
+ */
+RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname) {
+	void *ret = NULL;
+#if WANT_DYLINK
+#if __UNIX__
+	if (libname) {
+		ret = dlopen(libname, RTLD_GLOBAL | RTLD_LAZY);
+	} else {
+		ret = dlopen(NULL, RTLD_NOW);
+	}
+	if (!ret) {
+		RZ_LOG_ERROR("rz_sys_dlopen: error: %s (%s)\n", libname, dlerror());
+	}
+#elif __WINDOWS__
+	LPTSTR libname_;
+	if (libname && *libname) {
+		libname_ = rz_sys_conv_utf8_to_win(libname);
+	} else {
+		libname_ = calloc(MAX_PATH, sizeof(TCHAR));
+		if (!libname_) {
+			RZ_LOG_ERROR("lib/rz_sys_dlopen: Failed to allocate memory.\n");
+			return NULL;
+		}
+		if (!GetModuleFileName(NULL, libname_, MAX_PATH)) {
+			libname_[0] = '\0';
+		}
+	}
+	ret = LoadLibrary(libname_);
+	free(libname_);
+	if (!ret) {
+		RZ_LOG_ERROR("rz_sys_dlopen: error: %s\n", libname);
+	}
+#endif
+#endif
+	return ret;
+}
+
+/**
+ * \brief Implementation across systems to get the address of a symbol in a
+ * dynamic library
+ */
+RZ_API void *rz_sys_dlsym(void *handler, const char *name) {
+#if WANT_DYLINK
+#if __UNIX__
+	return dlsym(handler, name);
+#elif __WINDOWS__
+	return GetProcAddress(handler, name);
+#else
+	return NULL;
+#endif
+#else
+	return NULL;
+#endif
+}
+
+/**
+ * \brief Implementation across systems to close a previously opened dynamic
+ * library.
+ */
+RZ_API int rz_sys_dlclose(void *handler) {
+#if __UNIX__
+	return dlclose(handler);
+#else
+	return handler ? 0 : -1;
 #endif
 }

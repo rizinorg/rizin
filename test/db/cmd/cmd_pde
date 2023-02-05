@@ -108,7 +108,6 @@ EXPECT=<<EOF
 ;-- section..text:
 ;-- .text:
 ;-- _start:
-;-- pc:
 0x10000308      mr    r9, r1                                           ; start.S:62
 0x1000030c      rlwinm r1, r1, 0, 0, 0x1b                              ; start.S:64
 0x10000310      li    r0, 0                                            ; start.S:69
@@ -128,7 +127,7 @@ ARGS=-a x86 -b 32
 FILE==
 CMDS=<<EOF
 wx 31c0c700ffff0000ffe0
-pdeqq
+pdeQ
 pi 1
 ar eax
 EOF
@@ -151,7 +150,7 @@ wx 20 @ 0x30
 wx ff @ 0x40
 wx ffff @ 0x20
 wx 31C0C60020C64040008A484038C90F85FC0F0000A030000000FFE0
-pdeqq
+pdeQ
 s
 pi 1
 p8 1 @ 0x40

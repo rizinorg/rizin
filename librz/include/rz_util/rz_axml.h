@@ -4,6 +4,8 @@
 #ifndef RZ_AXML_H
 #define RZ_AXML_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

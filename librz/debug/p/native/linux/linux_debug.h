@@ -164,13 +164,13 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int pid, int status, bool dow
 int linux_attach(RzDebug *dbg, int pid);
 bool linux_attach_new_process(RzDebug *dbg, int pid);
 RzDebugInfo *linux_info(RzDebug *dbg, const char *arg);
-RzList *linux_pid_list(int pid, RzList *list);
-RzList *linux_thread_list(RzDebug *dbg, int pid, RzList *list);
+RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *list);
+RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugPid *>*/ *list);
 bool linux_select(RzDebug *dbg, int pid, int tid);
 RzDebugPid *fill_pid_info(const char *info, const char *path, int tid);
 int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size);
-RzList *linux_desc_list(int pid);
+RzList /*<RzDebugDesc *>*/ *linux_desc_list(int pid);
 bool linux_stop_threads(RzDebug *dbg, int except);
 int linux_handle_signals(RzDebug *dbg, int tid);
 int linux_dbg_wait(RzDebug *dbg, int pid);

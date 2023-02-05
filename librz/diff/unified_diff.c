@@ -38,7 +38,7 @@ static inline ut32 count_newlines(RzDiff *diff, const void *array, st32 beg, st3
 	return count;
 }
 
-static inline void diff_unified_append_ranges(RzList *opcodes, RzStrBuf *sb, bool color) {
+static inline void diff_unified_append_ranges(RzList /*<RzDiffOp *>*/ *opcodes, RzStrBuf *sb, bool color) {
 	const char *color_beg = color ? Color_RANGE : "";
 	const char *color_end = color ? Color_RESET : "";
 
@@ -50,7 +50,7 @@ static inline void diff_unified_append_ranges(RzList *opcodes, RzStrBuf *sb, boo
 	rz_strbuf_appendf(sb, "%s@@ -%d,%d +%d,%d @@%s\n", color_beg, first->a_beg + 1, a_len, first->b_beg + 1, b_len, color_end);
 }
 
-static inline void diff_unified_json_ranges(RzList *opcodes, PJ *pj) {
+static inline void diff_unified_json_ranges(RzList /*<RzDiffOp *>*/ *opcodes, PJ *pj) {
 	RzDiffOp *first = rz_list_first(opcodes);
 	RzDiffOp *last = rz_list_last(opcodes);
 	st32 a_len = last->a_end - first->a_beg;
@@ -182,13 +182,13 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 			if (len && len_b && (p[0] == p_b[0] || p[len - 1] == p_b[len_b - 1])) {
 				// Get left bound.
 				st32 left = 0;
-				for (; left < R_MIN(len, len_b) && p[left] == p_b[left]; left++)
+				for (; left < RZ_MIN(len, len_b) && p[left] == p_b[left]; left++)
 					;
 				char_bounds[bounds_idx * 2] = left;
 				// Get right bound (offset). "- left" chops off
 				// the left portion that has already matched.
 				st32 right = 0;
-				for (; right < R_MIN(len, len_b) - left && p[len - 1 - right] == p_b[len_b - 1 - right];
+				for (; right < RZ_MIN(len, len_b) - left && p[len - 1 - right] == p_b[len_b - 1 - right];
 					right++)
 					;
 				char_bounds[bounds_idx * 2 + 1] = right;

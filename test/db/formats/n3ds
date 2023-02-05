@@ -1,0 +1,62 @@
+NAME=Load Nintendo 3DS boot.firm file
+FILE=bins/firmware/luma3ds_boot.firm
+CMDS=iI ; iS ; ie ; iT
+EXPECT=<<EOF
+arch     arm
+cpu      N/A
+baddr    ----------
+binsz    0x0002d800
+bintype  N/A
+bits     32
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Nintendo 3DS
+maxopsz  4
+minopsz  4
+os       n3ds
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+paddr      size    vaddr      vsize   align perm name             type                    flags 
+------------------------------------------------------------------------------------------------
+0x00000200 0x17c00 0x18180000 0x17c00 0x0   -rwx sysmodule.arm11  Arm11 SysModule         xdma
+0x00017e00 0x600   0x1ff80000 0x600   0x0   -rwx entry.arm11      Arm11 Kernel            xdma
+0x00018400 0xfa00  0x08006000 0xfa00  0x0   -rwx entry.arm9       Arm9 Kernel             ndma
+0x00027e00 0x5a00  0x18000000 0x5a00  0x0   -rwx extensions.arm11 Arm11 Kernel Extensions xdma
+vaddr      paddr      hvaddr     haddr      type    
+----------------------------------------------------
+0x08006000 0x00018400 ---------- ---------- program
+0x1ff80000 0x00017e00 ---------- ---------- program
+md5 f7c0d04ab092e3707a4020154f49b4d5
+sha1 67dde28ca87305199542ace0b1b5632e585cd92c
+sha256 21a50466c73aa2bf255a167424586aed456e970e3ac69ebb0a930abd9075b31b
+crc32 69cc31af
+entropy 6.631698
+rsa2048:firmware b6724531c448657a2a2ee306457e350a10d544b42859b0e5b0bed27534cccc2a4d47edea60a7dd99939950a6357b1e35dfc7fac773b7e12e7c1481234af141b31cf08e9f62293aa6baae246c15095f8b78402a684d852c680549fa5b3f14d9e838a2fb9c09a15abb40dca25e40a3ddc1f58e79cec901974363a946e99b4346e8a372b6cd55a707e1eab9bec0200b5ba0b661236a8708d704517f43c6c38ee9560111e1405e5e8ed356c49c4ff6823d1219afaeeb3df3c36b62bba88fc15ba8648f9333fd9fc092b8146c3d908f73155d48be89d72612e18e4aa8eb9b7fd2a5f7328c4ecbfb0083833cbd5c983a25ceb8b941cc68eb017ce87f5d793aca09acf7
+sha256:sysmodule a6ccf14d2c36372f341e731352212ab79d06808cf9ab4e0d8e5f078539518cb2
+sha256:arm11 58a797011ef9bdda35c8c8157670c05845a047136c0ec4f02bd06ede4570d969
+sha256:arm9 57716545b2a545f482ef9651d341613d98e80b67e8a00ac1ef95a4fbd417ea4e
+sha256:k11ext 58e96b23faf996ada4333ae3e27f1bd15ec93ee046afbe91c00489b2af53f623
+EOF
+RUN

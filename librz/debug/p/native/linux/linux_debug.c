@@ -706,7 +706,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-static RzList *get_pid_thread_list(RzDebug *dbg, int main_pid) {
+static RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RzDebug *dbg, int main_pid) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list = linux_thread_list(dbg, main_pid, list);
@@ -835,7 +835,7 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	return pid_info;
 }
 
-RzList *linux_pid_list(int pid, RzList *list) {
+RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *list) {
 	list->free = (RzListFree)&rz_debug_pid_free;
 	DIR *dh = NULL;
 	struct dirent *de = NULL;
@@ -872,7 +872,7 @@ RzList *linux_pid_list(int pid, RzList *list) {
 	return list;
 }
 
-RzList *linux_thread_list(RzDebug *dbg, int pid, RzList *list) {
+RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugPid *>*/ *list) {
 	int i = 0, thid = 0;
 	char *ptr, buf[PATH_MAX];
 	RzDebugPid *pid_info = NULL;
@@ -1316,7 +1316,7 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	return false;
 }
 
-RzList *linux_desc_list(int pid) {
+RzList /*<RzDebugDesc *>*/ *linux_desc_list(int pid) {
 	RzList *ret = NULL;
 	char path[512], file[512], buf[512];
 	struct dirent *de;

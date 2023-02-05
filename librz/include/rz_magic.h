@@ -245,7 +245,7 @@ struct rz_magic_set {
 			int got_match;
 			int last_match;
 			int last_cond; /* used for error checking by parse() */
-		} * li;
+		} *li;
 	} c;
 	struct out {
 		char *buf; /* Accumulation buffer */

@@ -152,7 +152,7 @@ hash_x86_32(const void *key, int len, uint32_t seed)
 	return (h1);
 }
 
-UNUSED JEMALLOC_INLINE void
+RZ_UNUSED JEMALLOC_INLINE void
 hash_x86_128(const void *key, const int len, uint32_t seed,
     uint64_t rz_out[2])
 {
@@ -254,7 +254,7 @@ hash_x86_128(const void *key, const int len, uint32_t seed,
 	rz_out[1] = (((uint64_t) h4) << 32) | h3;
 }
 
-UNUSED JEMALLOC_INLINE void
+RZ_UNUSED JEMALLOC_INLINE void
 hash_x64_128(const void *key, const int len, const uint32_t seed,
     uint64_t rz_out[2])
 {

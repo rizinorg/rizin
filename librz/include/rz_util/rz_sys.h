@@ -42,6 +42,12 @@ RZ_API int rz_sys_fork(void);
 RZ_API int rz_sys_kill(int pid, int sig);
 // nocleanup = false => exit(); true => _exit()
 RZ_API void rz_sys_exit(int status, bool nocleanup);
+
+/* openpty family of functions */
+RZ_API /* pid_t */ int rz_sys_forkpty(int *amaster, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp);
+RZ_API int rz_sys_openpty(int *amaster, int *aslave, char *name, void /* const struct termios */ *termp, void /* const struct winsize */ *winp);
+RZ_API int rz_sys_login_tty(int fd);
+
 RZ_API bool rz_is_heap(void *p);
 RZ_API bool rz_sys_stop(void);
 RZ_API char *rz_sys_pid_to_path(int pid);
@@ -86,7 +92,7 @@ RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);
 RZ_API int rz_sys_arch_id(const char *arch);
 RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch);
-RZ_API RzList *rz_sys_dir(const char *path);
+RZ_API RzList /*<char *>*/ *rz_sys_dir(const char *path);
 RZ_API void rz_sys_perror_str(const char *fun);
 #define rz_sys_mkdir_failed() (errno != EEXIST)
 RZ_API bool rz_sys_mkdir(const char *dir);
@@ -101,7 +107,9 @@ RZ_API char *rz_sys_whoami(char *buf);
 RZ_API char *rz_sys_getdir(void);
 RZ_API bool rz_sys_chdir(RZ_NONNULL const char *s);
 RZ_API bool rz_sys_aslr(int val);
-RZ_API int rz_sys_thp_mode(void);
+RZ_API void *rz_sys_dlopen(RZ_NULLABLE const char *libname);
+RZ_API void *rz_sys_dlsym(void *handler, const char *name);
+RZ_API int rz_sys_dlclose(void *handler);
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
 #if UNICODE
@@ -134,9 +142,18 @@ RZ_API int rz_sys_cmdbg(const char *cmd);
 RZ_API int rz_sys_cmdf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
 RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
-//#define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
+// #define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
 RZ_API void rz_sys_backtrace(void);
 
+#ifndef __has_builtin
+#define __has_builtin(n) (0)
+#endif
+
+#if __has_builtin(__builtin_debugtrap)
+#define rz_sys_breakpoint() __builtin_debugtrap()
+#endif
+
+#ifndef rz_sys_breakpoint
 #if __WINDOWS__
 #define rz_sys_breakpoint() \
 	{ __debugbreak(); }
@@ -172,6 +189,7 @@ RZ_API void rz_sys_backtrace(void);
 		char *a = NULL; \
 		*a = 0; \
 	}
+#endif
 #endif
 #endif
 

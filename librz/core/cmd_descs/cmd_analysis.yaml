@@ -79,24 +79,6 @@ commands:
             summary: Performs recursive type matching in all functions
             cname: analyze_recursively_all_function_types
             args: []
-      - name: aaF
-        summary: Signature database commands
-        subcommands:
-          - name: aaF
-            summary: Apply signatures from sigdb
-            cname: apply_signatures_from_sigdb
-            args:
-              - name: filter
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: aaFl
-            summary: Lists all available signatures in sigdb
-            cname: list_signatures_in_sigdb
-            type: RZ_CMD_DESC_TYPE_ARGV_STATE
-            default_mode: RZ_OUTPUT_MODE_TABLE
-            modes:
-              - RZ_OUTPUT_MODE_TABLE
-            args: []
       - name: aai
         summary: Print preformed analysis details
         cname: print_analysis_details
@@ -128,7 +110,7 @@ commands:
             cname: autoname_all_functions
             args: []
           - name: aanr
-            summary: Renames all functions which does not return 
+            summary: Renames all functions which does not return
             cname: autoname_all_functions_noreturn
             args: []
       - name: aap
@@ -188,6 +170,44 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
         args: []
+  - name: ad
+    summary: Analyze data
+    subcommands:
+      - name: ad
+        summary: Analyze <count> data words with <depth>
+        cname: analysis_data
+        args:
+          - name: count
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: depth
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: wordsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: adf
+        summary: Analyze data in function
+        cname: analysis_data_function
+        args: []
+      - name: adfg
+        summary: Analyze data in function gaps
+        cname: analysis_data_function_gaps
+        args: []
+      - name: adk
+        summary: Analyze data kind (code, text, data, invalid, etc)
+        cname: analysis_data_kind
+        args: []
+      - name: adt
+        summary: Analyze data trampolines
+        cname: analysis_data_trampoline
+        args:
+          - name: minimum
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 0
+          - name: maximum
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            default_value: 0
   - name: af
     summary: Analyze Functions commands
     subcommands:
@@ -216,10 +236,6 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             optional: true
             choices: ["l", "i", "s"]
-          - name: diff
-            type: RZ_CMD_ARG_TYPE_CHOICES
-            optional: true
-            choices: ["m", "u"]
       - name: af-
         summary: Delete function
         cname: analysis_function_del
@@ -275,10 +291,6 @@ commands:
               - name: fail
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-              - name: diff
-                type: RZ_CMD_ARG_TYPE_CHOICES
-                optional: true
-                choices: ["m", "u"]
           - name: afb-
             summary: Remove basic block from function
             cname: analysis_function_blocks_del
@@ -295,6 +307,14 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
               - name: case_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: afbet
+            summary: Set basic-block switch-case enum type
+            cname: analysis_function_blocks_switch_type
+            args:
+              - name: switch_addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: enum_name
+                type: RZ_CMD_ARG_TYPE_ENUM_TYPE
           - name: afbr
             summary: Show addresses of instructions which leave the function
             cname: analysis_function_returns
@@ -342,6 +362,14 @@ commands:
               - name: signature
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
+          - name: afsb
+            cname: analysis_function_signature_bytes
+            summary: Outputs the function signature bytes, mask and search mask at current address
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            args: []
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
           - name: afs!
             cname: analysis_function_signature_editor
             summary: Set function signature at current address by using the editor
@@ -480,12 +508,12 @@ commands:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
                     optional: true
-          - name: afvb
-            summary: Manipulate BP based arguments/locals
+          - name: afvs
+            summary: Manipulate stack-based arguments/locals
             subcommands:
-              - name: afvb
-                cname: analysis_function_vars_bp
-                summary: List base pointer based arguments and locals / Define a new one
+              - name: afvs
+                cname: analysis_function_vars_stack
+                summary: List stack-based arguments and locals / Define a new one
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
@@ -500,26 +528,26 @@ commands:
                   - name: type
                     type: RZ_CMD_ARG_TYPE_STRING
                     optional: true
-              - name: afvb-
-                cname: analysis_function_vars_bp_del
+              - name: afvs-
+                cname: analysis_function_vars_stack_del
                 summary: Delete argument/local with the given name
                 args:
                   - name: varname
                     type: RZ_CMD_ARG_TYPE_FCN_VAR
-              - name: afvb-*
-                cname: analysis_function_vars_bp_del_all
+              - name: afvs-*
+                cname: analysis_function_vars_stack_del_all
                 summary: Delete all arguments/locals
                 args: []
-              - name: afvbg
-                cname: analysis_function_vars_bp_getref
+              - name: afvsg
+                cname: analysis_function_vars_stack_getref
                 summary: Define var get reference
                 args:
                   - name: delta
                     type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
-              - name: afvbs
-                cname: analysis_function_vars_bp_setref
+              - name: afvss
+                cname: analysis_function_vars_stack_setref
                 summary: Define var set reference
                 args:
                   - name: delta
@@ -570,48 +598,6 @@ commands:
                 args:
                   - name: reg
                     type: RZ_CMD_ARG_TYPE_STRING
-                  - name: addr
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-          - name: afvs
-            summary: Manipulate SP based arguments/locals
-            subcommands:
-              - name: afvs
-                cname: analysis_function_vars_sp
-                type: RZ_CMD_DESC_TYPE_ARGV_STATE
-                summary: List stack based arguments and locals / Define a new one
-                modes:
-                  - RZ_OUTPUT_MODE_STANDARD
-                  - RZ_OUTPUT_MODE_RIZIN
-                  - RZ_OUTPUT_MODE_JSON
-                args:
-                  - name: delta
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-                    optional: true
-                  - name: name
-                    type: RZ_CMD_ARG_TYPE_STRING
-                  - name: type
-                    type: RZ_CMD_ARG_TYPE_STRING
-                    optional: true
-              - name: afvs-
-                cname: analysis_function_vars_sp_del
-                summary: Delete argument/local with the given name
-                args:
-                  - name: varname
-                    type: RZ_CMD_ARG_TYPE_FCN_VAR
-              - name: afvsg
-                cname: analysis_function_vars_sp_getref
-                summary: Define var get reference
-                args:
-                  - name: delta
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-                  - name: addr
-                    type: RZ_CMD_ARG_TYPE_RZNUM
-              - name: afvss
-                cname: analysis_function_vars_sp_setref
-                summary: Define var set reference
-                args:
-                  - name: delta
-                    type: RZ_CMD_ARG_TYPE_RZNUM
                   - name: addr
                     type: RZ_CMD_ARG_TYPE_RZNUM
       - name: afl
@@ -785,6 +771,10 @@ commands:
         summary: Show function + delta for given offset
         cname: analysis_function_describe_offset
         args: []
+  - name: aF
+    summary: Analyze function non-recursively
+    cname: analysis_function_add_nodepth
+    args: []
   - name: aeC
     summary: appcall in esil
     cname: analysis_appcall
@@ -1005,6 +995,181 @@ commands:
             optional: true
           - name: number
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: ag
+    summary: Analysis graph commands
+    details:
+      - name: "Formats"
+        entries:
+          - text: "ascii"
+            comment: "Ascii art"
+          - text: "cmd"
+            comment: "rizin commands"
+          - text: "dot"
+            comment: "Graphviz dot"
+          - text: "gml"
+            comment: "Graph Modelling Language"
+          - text: "json"
+            comment: "json"
+          - text: "json_disasm"
+            comment: "json formatted disassembly"
+          - text: "sdb"
+            comment: "SDB key-value"
+          - text: "tiny"
+            comment: "Tiny ascii art"
+          - text: "interactive"
+            comment: "Interactive ascii art"
+    subcommands:
+      - name: aga
+        summary: Data reference graph
+        cname: analysis_graph_dataref
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agA
+        summary: Global data references graph
+        cname: analysis_graph_dataref_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agc
+        summary: Function callgraph
+        cname: analysis_graph_callgraph_function
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agC
+        summary: Global callgraph
+        cname: analysis_graph_callgraph_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agf
+        summary: Basic blocks function graph
+        cname: analysis_graph_bb_function
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agi
+        summary: Imports graph
+        cname: analysis_graph_imports
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agr
+        summary: References graph
+        cname: analysis_graph_refs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agR
+        summary: Global references graph
+        cname: analysis_graph_refs_global
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: ags
+        summary: Normal graph
+        cname: analysis_graph_normal
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agl
+        summary: Line graph
+        cname: analysis_graph_line
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agx
+        summary: Cross-references graph
+        cname: analysis_graph_xrefs
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: agg
+        summary: Custom graph
+        cname: analysis_graph_custom
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
+      - name: ag-
+        summary: Clear the custom graph
+        cname: analysis_graph_custom_clear
+        args: []
+      - name: agn
+        summary: Managing custom graph nodes
+        subcommands:
+          - name: agn
+            summary: Add a node to the custom graph
+            cname: analysis_graph_custom_node_add
+            args:
+              - name: title
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: body
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: agn-
+            summary: Remove a node from the custom graph
+            cname: analysis_graph_custom_node_remove
+            args:
+              - name: title
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: age
+        summary: Managing custom graph edges
+        subcommands:
+          - name: age
+            summary: Add an edge to the custom graph
+            cname: analysis_graph_custom_edge_add
+            args:
+              - name: title1
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: title2
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: age-
+            summary: Remove an edge from the custom graph
+            cname: analysis_graph_custom_edge_remove
+            args:
+              - name: title1
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: title2
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: agw
+        summary: Write to path or display graph image (see graph.gv.format)
+        cname: analysis_graph_write
+        args:
+          - name: graphtype
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "dataref"
+            choices: ["dataref", "funcall", "diff", "funblock", "import", "ref", "line", "xref", "custom"]
+          - name: path
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: global
+            type: RZ_CMD_ARG_TYPE_OPTION
+            flags: RZ_CMD_ARG_FLAG_OPTION
             optional: true
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
@@ -1273,6 +1438,37 @@ commands:
         args: []
   # ... to here
   #####################################################
+  - name: ai
+    summary: analysis/address information/imports
+    subcommands:
+      - name: ai
+        summary: show address information
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        cname: analysis_info_show
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: aii
+        summary: global import (like afii, but global)
+        subcommands:
+          - name: aii
+            summary: list/add global import (like afii, but global)
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: global_imports
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args:
+              - name: namespace
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: aii-
+            summary: delete all global imports
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            cname: delete_global_imports
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args: []
   - name: av
     summary: C++ vtables and RTTI
     subcommands:
@@ -2102,3 +2298,11 @@ commands:
         args:
           - name: number
             type: RZ_CMD_ARG_TYPE_NUM
+  - name: aL
+    summary: List all asm/analysis plugins (e asm.arch=?)
+    cname: list_plugins
+    args: []
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON

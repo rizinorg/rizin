@@ -171,7 +171,7 @@
  * only.
  */
 void SHA512_Last(RZ_SHA512_CTX *);
-void SHA256_Transform(RZ_SHA256_CTX *, const ut32 *);
+void SHA256_Transform(RZ_SHA256_CTX *, const ut8 *);
 void SHA512_Transform(RZ_SHA512_CTX *, const ut64 *);
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
@@ -295,26 +295,13 @@ void SHA256_Init(RZ_SHA256_CTX *context) {
 
 /* Unrolled SHA-256 round macros: */
 
-#if BYTE_ORDER == LITTLE_ENDIAN
-
 #define ROUND256_0_TO_15(a, b, c, d, e, f, g, h) \
-	REVERSE32(*data++, W256[j]); \
 	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + \
-		K256[j] + W256[j]; \
+		K256[j] + (W256[j] = rz_read_be32(data)); \
+	data += 4; \
 	(d) += T1; \
 	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); \
 	j++
-
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
-
-#define ROUND256_0_TO_15(a, b, c, d, e, f, g, h) \
-	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + \
-		K256[j] + (W256[j] = *data++); \
-	(d) += T1; \
-	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); \
-	j++
-
-#endif /* BYTE_ORDER == LITTLE_ENDIAN */
 
 #define ROUND256(a, b, c, d, e, f, g, h) \
 	s0 = W256[(j + 1) & 0x0f]; \
@@ -327,7 +314,7 @@ void SHA256_Init(RZ_SHA256_CTX *context) {
 	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); \
 	j++
 
-void SHA256_Transform(RZ_SHA256_CTX *context, const ut32 *data) {
+void SHA256_Transform(RZ_SHA256_CTX *context, const ut8 *data) {
 	ut32 a, b, c, d, e, f, g, h, s0, s1;
 	ut32 T1, *W256;
 	int j;
@@ -382,7 +369,7 @@ void SHA256_Transform(RZ_SHA256_CTX *context, const ut32 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-void SHA256_Transform(RZ_SHA256_CTX *context, const ut32 *data) {
+void SHA256_Transform(RZ_SHA256_CTX *context, const ut8 *data) {
 	ut32 a, b, c, d, e, f, g, h, s0, s1;
 	ut32 T1, T2, *W256;
 	int j;
@@ -401,15 +388,9 @@ void SHA256_Transform(RZ_SHA256_CTX *context, const ut32 *data) {
 
 	j = 0;
 	do {
-#if BYTE_ORDER == LITTLE_ENDIAN
-		/* Copy data while converting to host byte order */
-		REVERSE32(*data++, W256[j]);
-		/* Apply the SHA-256 compression function to update a..h */
-		T1 = h + Sigma1_256(e) + Ch(e, f, g) + K256[j] + W256[j];
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
 		/* Apply the SHA-256 compression function to update a..h with copy */
-		T1 = h + Sigma1_256(e) + Ch(e, f, g) + K256[j] + (W256[j] = *data++);
-#endif /* BYTE_ORDER == LITTLE_ENDIAN */
+		T1 = h + Sigma1_256(e) + Ch(e, f, g) + K256[j] + (W256[j] = rz_read_be32(data));
+		data += 4;
 		T2 = Sigma0_256(a) + Maj(a, b, c);
 		h = g;
 		g = f;
@@ -478,7 +459,7 @@ void SHA256_Update(RZ_SHA256_CTX *context, const ut8 *data, size_t len) {
 			context->bitcount += freespace << 3;
 			len -= freespace;
 			data += freespace;
-			SHA256_Transform(context, (ut32 *)context->buffer);
+			SHA256_Transform(context, context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy(&context->buffer[usedspace], data, len);
@@ -488,7 +469,7 @@ void SHA256_Update(RZ_SHA256_CTX *context, const ut8 *data, size_t len) {
 	}
 	while (len >= SHA256_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		SHA256_Transform(context, (ut32 *)data);
+		SHA256_Transform(context, data);
 		context->bitcount += SHA256_BLOCK_LENGTH << 3;
 		len -= SHA256_BLOCK_LENGTH;
 		data += SHA256_BLOCK_LENGTH;
@@ -528,7 +509,7 @@ void SHA256_Final(ut8 *digest, RZ_SHA256_CTX *context) {
 					memset(&context->buffer[usedspace], 0, SHA256_BLOCK_LENGTH - usedspace);
 				}
 				/* Do second-to-last transform: */
-				SHA256_Transform(context, (ut32 *)context->buffer);
+				SHA256_Transform(context, context->buffer);
 
 				/* And set-up for the last transform: */
 				memset(context->buffer, 0, SHA256_SHORT_BLOCK_LENGTH);
@@ -551,7 +532,7 @@ void SHA256_Final(ut8 *digest, RZ_SHA256_CTX *context) {
 #endif
 
 		/* Final transform: */
-		SHA256_Transform(context, (ut32 *)context->buffer);
+		SHA256_Transform(context, context->buffer);
 
 #if BYTE_ORDER == LITTLE_ENDIAN
 		{

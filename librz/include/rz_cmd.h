@@ -9,13 +9,7 @@
 extern "C" {
 #endif
 
-typedef struct rz_core_t RzCore;
-
 // RZ_LIB_VERSION_HEADER (rz_cmd);
-
-#define MACRO_LIMIT   1024
-#define MACRO_LABELS  20
-#define RZ_CMD_MAXLEN 4096
 
 /**
  * Value returned by a command handler.
@@ -39,8 +33,6 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
-	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
-	RZ_CMD_ARG_TYPE_ZIGN_SPACE, ///< Argument can be the name of an existing zignature space
 	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
 	RZ_CMD_ARG_TYPE_FILE, ///< Argument is a filename
@@ -110,6 +102,7 @@ typedef int (*RzCmdCb)(void *user, const char *input);
 typedef RzCmdStatus (*RzCmdArgvCb)(RzCore *core, int argc, const char **argv);
 typedef RzCmdStatus (*RzCmdArgvModesCb)(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 typedef RzCmdStatus (*RzCmdArgvStateCb)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+typedef RzCmdStatus (*RzCmdMacroCb)(RzCore *core, int argc, const char **argv, int macro);
 typedef int (*RzCmdNullCb)(void *user);
 
 /**
@@ -122,32 +115,11 @@ typedef struct rz_cmd_parsed_args_t {
 	char *extra; ///< Extra data that is neither a command name nor an argument (e.g. command modifiers/specifiers, table queries, etc.)
 } RzCmdParsedArgs;
 
-typedef struct rz_cmd_macro_label_t {
-	char name[80];
-	char *ptr;
-} RzCmdMacroLabel;
-
-typedef struct rz_cmd_macro_item_t {
-	char *name;
-	char *args;
-	char *code;
-	int codelen;
-	int nargs;
-} RzCmdMacroItem;
-
 typedef struct rz_cmd_macro_t {
-	int counter;
-	ut64 *brk_value;
-	ut64 _brk_value;
-	int brk;
-	// 	int (*cmd)(void *user, const char *cmd);
-	RzCoreCmd cmd;
-	PrintfCallback cb_printf;
-	void *user;
-	RzNum *num;
-	int labels_n;
-	RzCmdMacroLabel labels[MACRO_LABELS];
-	RzList *macros;
+	char *name;
+	char **args;
+	size_t nargs;
+	char *code;
 } RzCmdMacro;
 
 typedef struct rz_cmd_item_t {
@@ -267,14 +239,19 @@ typedef struct rz_cmd_desc_arg_t {
 	 */
 	union {
 		/**
-		 * List of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 * Data associated with an argument of \p type RZ_CMD_ARG_TYPE_CHOICES.
 		 */
-		const char **choices;
-		/**
-		 * Callback used to generate a list of possible values in case \p type is RZ_CMD_ARG_TYPE_CHOICES.
-		 * When this is specified, \p choices is ignored.
-		 */
-		RzCmdArgChoiceCb choices_cb;
+		struct {
+			/**
+			 * Predefined list of possible values.
+			 */
+			const char **choices;
+			/**
+			 * Callback used to generate a list of possible values.
+			 * When this is specified, \p choices is ignored.
+			 */
+			RzCmdArgChoiceCb choices_cb;
+		} choices;
 	};
 } RzCmdDescArg;
 
@@ -439,7 +416,7 @@ typedef struct rz_cmd_desc_t {
 	/**
 	 * Vector of childrens command descriptors.
 	 */
-	RzPVector children;
+	RzPVector /*<RzCmdDesc *>*/ children;
 	/**
 	 * Reference to the help structure of this command descriptor.
 	 */
@@ -478,12 +455,11 @@ typedef struct rz_cmd_desc_t {
 } RzCmdDesc;
 
 typedef struct rz_cmd_t {
-	void *data;
+	RzCore *core;
 	RzCmdNullCb nullcallback;
 	RzCmdItem *cmds[UT8_MAX];
-	RzCmdMacro macro;
-	RzList *lcmds;
 	RzCmdAlias aliases;
+	HtPP *macros; ///< Map of macros (char *)name -> RzCmdMacro
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
 	RzCmdDesc *root_cmd_desc;
@@ -513,15 +489,14 @@ typedef struct rz_cmd_descriptor_t {
 } RzCmdDescriptor;
 
 typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
+typedef bool (*RzCmdForeachMacroCb)(RzCmd *cmd, const RzCmdMacro *macro, void *user);
 
 #ifdef RZ_API
-RZ_API RzCmd *rz_cmd_new(bool has_cons);
+RZ_API RzCmd *rz_cmd_new(RzCore *core, bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
-RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API void rz_cmd_batch_start(RzCmd *cmd);
 RZ_API void rz_cmd_batch_end(RzCmd *cmd);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
-RZ_API int rz_core_del(RzCmd *cmd, const char *command);
 RZ_API int rz_cmd_call(RzCmd *cmd, const char *command);
 RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args);
 RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd);
@@ -604,23 +579,20 @@ RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state);
 #define rz_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 
 /* rz_cmd_macro */
-RZ_API RzCmdMacroItem *rz_cmd_macro_item_new(void);
-RZ_API void rz_cmd_macro_item_free(RzCmdMacroItem *item);
-RZ_API void rz_cmd_macro_init(RzCmdMacro *mac);
-RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *name);
-RZ_API int rz_cmd_macro_rm(RzCmdMacro *mac, const char *_name);
-RZ_API void rz_cmd_macro_list(RzCmdMacro *mac);
-RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac);
-RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name);
-RZ_API int rz_cmd_macro_call_multiple(RzCmdMacro *mac, const char *name);
-RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value);
+RZ_API bool rz_cmd_macro_add(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, const char **args, RZ_NONNULL const char *code);
+RZ_API bool rz_cmd_macro_update(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, const char **args, RZ_NONNULL const char *code);
+RZ_API bool rz_cmd_macro_rm(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name);
+RZ_API const RzCmdMacro *rz_cmd_macro_get(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name);
+RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd);
+RZ_API RzCmdStatus rz_cmd_macro_call(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv);
+RZ_API RzCmdStatus rz_cmd_macro_call_multiple(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv);
+RZ_API void rz_cmd_macro_foreach(RZ_NONNULL RzCmd *cmd, RzCmdForeachMacroCb cb, void *user);
 
 RZ_API bool rz_cmd_alias_del(RzCmd *cmd, const char *k);
 RZ_API char **rz_cmd_alias_keys(RzCmd *cmd, int *sz);
 RZ_API int rz_cmd_alias_set(RzCmd *cmd, const char *k, const char *v, int remote);
 RZ_API char *rz_cmd_alias_get(RzCmd *cmd, const char *k, int remote);
 RZ_API void rz_cmd_alias_free(RzCmd *cmd);
-RZ_API void rz_cmd_macro_fini(RzCmdMacro *mac);
 
 #ifdef __cplusplus
 }

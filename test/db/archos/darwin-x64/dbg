@@ -1,0 +1,194 @@
+NAME=spawn + attach and suspend
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+# when spawning the process ourselves, it should be
+# suspended right away and stop at the entry in dyld.
+# This is a bit hard to check automatically, so let's
+# just make sure pc is in a map of dyld even after sleeping.
+!sleep 0.5
+dm @ rip~*~[9]
+EOF
+EXPECT=<<EOF
+/usr/lib/dyld
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dcu + read
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 8 @ rip
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+sub rsp, 0x10
+mov rax, qword [section.13.__DATA.__objc_classrefs]
+mov rdi, rax
+lea rax, reloc.objc_msgSend_fixup
+mov rax, qword [rax]
+lea rsi, reloc.objc_msgSend_fixup
+EOF
+EXPECT_ERR=<<EOF
+Continue until 0x100000bf8
+hit breakpoint at: 0x100000bf8
+EOF
+RUN
+
+NAME=maps
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+dm~hello
+EOF
+REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
+EXPECT=<<EOF
+0x0000000100000000 - 0x0000000100001000 - usr     4K u r-x hello-objc-osx hello-objc-osx hello_objc_osx.r_x
+0x0000000100001000 - 0x0000000100002000 - usr     4K u rw- hello-objc-osx hello-objc-osx hello_objc_osx.rw
+0x0000000100002000 - 0x0000000100003000 - usr     4K u r-- hello-objc-osx hello-objc-osx hello_objc_osx.r
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=maps as flags
+FILE=bins/mach0/hello-objc-osx
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~hello
+?e --
+dm*~hello,fss
+EOF
+EXPECT=<<EOF
+0x100000000 4096 hello_objc_osx.r_x
+0x100001000 4096 hello_objc_osx.rw
+0x100002000 4096 hello_objc_osx.r
+--
+fss+ maps
+f+ map.hello_objc_osx.r_x 0x00001000 @ 0x100000000
+f+ map.hello_objc_osx.rw 0x00001000 @ 0x100001000
+f+ map.hello_objc_osx.r 0x00001000 @ 0x100002000
+fss-
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=step and check regs
+FILE=bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+3 ds
+dr rip
+dr rdi
+ps @ rdi
+EOF
+EXPECT=<<EOF
+rip = 0x0000000100000f17
+rdi = 0x0000000100000f30
+Hello World
+EOF
+EXPECT_ERR=<<EOF
+Continue until 0x100000f0c
+hit breakpoint at: 0x100000f0c
+EOF
+RUN
+
+NAME=break multiple times and check regs
+FILE=bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ 0x100000f17
+dc
+dr rip
+?e --
+dc
+dr rip
+dr rdi
+EOF
+EXPECT=<<EOF
+rip = 0x0000000100000f0c
+--
+rip = 0x0000000100000f17
+rdi = 0x0000000100000f30
+EOF
+EXPECT_ERR=<<EOF
+hit breakpoint at: 0x100000f0c
+hit breakpoint at: 0x100000f17
+EOF
+RUN
+
+NAME=break multiple times and check regs (fat arm64-x86_64)
+FILE=bins/mach0/calculate-macos-fat-arm64-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 20
+db @ main + 24
+dc
+dr rip
+?e --
+dc
+dr rip
+dr rax
+?e --
+dc
+dr rip
+dr rax
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|r[^i][a-z]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+rip = f20
+--
+rip = f34
+rax = 0x0000000000000000
+--
+rip = f38
+rax = 0x0000000000000064
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: f20
+hit breakpoint at: f34
+hit breakpoint at: f38
+EOF
+RUN
+
+NAME=break multiple times and check regs (fat i386-x86_64)
+FILE=bins/mach0/calculate-macos-fat-i386-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 61
+db @ main + 67
+dc
+dr rip
+?e --
+dc
+dr rip
+dr rax
+?e --
+dc
+dr rip
+dr rax
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|r[^i][a-z]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+rip = ea0
+--
+rip = edd
+rax = 0x0000000000000190
+--
+rip = ee3
+rax = 0x00000000000000a0
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: ea0
+hit breakpoint at: edd
+hit breakpoint at: ee3
+EOF
+RUN

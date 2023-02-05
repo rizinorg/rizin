@@ -5,13 +5,13 @@ on:
 
 jobs:
   latest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Determine current repository
         id: "determine-repo"
-        run: "echo \"::set-output name=repo::${GITHUB_REPOSITORY}\""
+        run: echo "repo=${GITHUB_REPOSITORY}" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizinorg%2Frizin" -O cov-analysis-linux64.tar.gz
@@ -29,7 +29,7 @@ jobs:
         
       - name: Installing build dependencies
         run: |
-           sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+           sudo apt-get --assume-yes install python3-wheel python3-setuptools
            pip3 install --user meson ninja PyYAML
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 

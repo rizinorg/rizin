@@ -33,7 +33,7 @@ HEAPTYPE(ut64);
 		rz_core_reg_update_flags(core); \
 	} while (0)
 
-static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
+static RzList /*<RzRegItem *>*/ *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(reg, NULL);
 	// default
 	if (RZ_STR_ISEMPTY(filter)) {
@@ -66,6 +66,7 @@ static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
 	if (type >= 0) {
 		return rz_list_clone(reg->regset[type].regs);
 	}
+	// role
 	int role = rz_reg_role_by_name(filter);
 	if (role >= 0) {
 		const char *itemname = rz_reg_get_name(reg, role);
@@ -84,31 +85,23 @@ static RzList *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
 
 /// Format the value of a register as a nice hex string
 static void format_reg_value(RzReg *reg, RzRegItem *item, char *out, size_t out_size) {
-	// TODO: This could be done much nicer with RzBitVector, but it's not in RzUtil yet :-(
-	if (item->size < 80) {
-		ut64 value = rz_reg_get_value(reg, item);
-		snprintf(out, out_size, "0x%08" PFMT64x, value);
-	} else {
-		utX valueBig;
-		rz_reg_get_value_big(reg, item, &valueBig);
-		switch (item->size) {
-		case 80:
-			snprintf(out, out_size, "0x%04x%016" PFMT64x "", valueBig.v80.High, valueBig.v80.Low);
-			break;
-		case 96:
-			snprintf(out, out_size, "0x%08x%016" PFMT64x "", valueBig.v96.High, valueBig.v96.Low);
-			break;
-		case 128:
-			snprintf(out, out_size, "0x%016" PFMT64x "%016" PFMT64x "", valueBig.v128.High, valueBig.v128.Low);
-			break;
-		case 256:
-			snprintf(out, out_size, "0x%016" PFMT64x "%016" PFMT64x "%016" PFMT64x "%016" PFMT64x "",
-				valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
-			break;
-		default:
-			snprintf(out, out_size, "ERROR");
-		}
+	RzBitVector *bv = rz_reg_get_bv(reg, item);
+	if (!bv) {
+		RZ_LOG_ERROR("core: Failed to read register\n");
+		snprintf(out, out_size, "ERROR");
+		return;
 	}
+	char *num = rz_bv_as_hex_string(bv, true);
+	if (!num) {
+		RZ_LOG_ERROR("core: Failed to convert bitvector register value to string\n");
+		snprintf(out, out_size, "ERROR");
+		goto fail;
+	}
+	snprintf(out, out_size, "%s", num);
+
+fail:
+	free(num);
+	rz_bv_free(bv);
 }
 
 /// Check whether the given item's value has changed in the last step
@@ -199,7 +192,7 @@ static const char *get_reg_role_name(RzReg *reg, RzRegItem *item) {
  * \param filter Filter registers
  * \return List of RzRegItem
  */
-RZ_API RZ_OWN RzList *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter) {
+RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(core && reg, NULL);
 	RzList *ritems = filter_reg_items(reg, filter);
 	if (!ritems) {
@@ -342,7 +335,7 @@ RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSyn
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RzList *ritems, RzOutputMode mode) {
+static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RzList /*<RzRegItem *>*/ *ritems, RzOutputMode mode) {
 	bool failed;
 	SYNC_READ_LIST(ritems, failed);
 	if (failed) {
@@ -419,7 +412,7 @@ static bool valgroup_regcb(void *u, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList *list) {
+RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList /*<RzRegItem *>*/ *list) {
 	int use_colors = rz_config_get_i(core->config, "scr.color");
 
 	RzListIter *iter;
@@ -557,7 +550,7 @@ RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmd
 	int len = 0;
 	ut8 *buf = rz_reg_get_bytes(reg, t, &len);
 	if (buf) {
-		rz_print_hexdump(core->print, 0LL, buf, len, 32, 4, 1);
+		rz_core_print_hexdump(core, 0LL, buf, len, 32, 4, 1);
 		free(buf);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -628,7 +621,7 @@ RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	}
 	RzCmdStatus r = RZ_CMD_STATUS_OK;
 	if (rz_list_empty(ritems)) {
-		eprintf("No argument roles defined.\n");
+		RZ_LOG_ERROR("core: No argument roles defined.\n");
 	} else {
 		r = references_handler(core, reg, sync_cb, ritems, mode);
 	}
@@ -701,7 +694,7 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 		if (reg->reg_profile_str) {
 			rz_cons_println(reg->reg_profile_str);
 		} else {
-			eprintf("No register profile defined.\n");
+			RZ_LOG_ERROR("core: No register profile defined.\n");
 		}
 		break;
 	case RZ_OUTPUT_MODE_JSON: {
@@ -863,7 +856,33 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 #else
 			sscanf(eq, "%Lf", &val);
 #endif
-			rz_reg_set_double(reg, item, val);
+			RzFloat *fnum = NULL;
+			switch (item->size) {
+			case 32:
+				fnum = rz_float_new_from_f32(val);
+				break;
+			case 64:
+				fnum = rz_float_new_from_f64(val);
+				break;
+			case 80:
+				fnum = rz_float_new_from_f80(val);
+				break;
+			case 128:
+				fnum = rz_float_new_from_f128(val);
+				break;
+			default:
+				goto error;
+			}
+			if (!fnum) {
+				goto error;
+			}
+
+			bool set_result = rz_reg_set_bv(reg, item, fnum->s);
+			rz_float_free(fnum);
+			if (!set_result) {
+				goto error;
+			}
+
 			SYNC_WRITE(RZ_REG_TYPE_GPR, failed);
 			if (failed) {
 				goto error;
@@ -873,12 +892,24 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 				goto error;
 			}
 		} else {
-			long double res = rz_reg_get_longdouble(reg, item);
-			rz_cons_printf("%Lf\n", res);
+			RzBitVector *bv = rz_reg_get_bv(reg, item);
+			if (!bv) {
+				goto error;
+			}
+
+			RzFloat *fnum = rz_float_new_from_bv(bv);
+			rz_bv_free(bv);
+			if (!fnum) {
+				goto error;
+			}
+			char *numeric = rz_float_as_dec_string(fnum);
+			rz_cons_printf("%s\n", numeric);
+			free(numeric);
+			rz_float_free(fnum);
 		}
 	} else {
 		/* note, that negative type forces sync to print the regs from the backend */
-		eprintf("cannot find multimedia register '%s'\n", name);
+		RZ_LOG_ERROR("core: cannot find multimedia register '%s'\n", name);
 	}
 
 error:

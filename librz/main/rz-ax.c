@@ -523,11 +523,11 @@ dotherax:
 		}
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_BASE64_DECODE)) { // -D
-		const int n = strlen(str);
+		int n = strlen(str);
 		ut8 *out = calloc(1, n / 4 * 3 + 1);
 		if (out) {
-			rz_base64_decode(out, str, n);
-			printf("%s%s", out, nl);
+			n = rz_base64_decode(out, str, n);
+			fwrite(out, n, 1, stdout);
 			fflush(stdout);
 			free(out);
 		}

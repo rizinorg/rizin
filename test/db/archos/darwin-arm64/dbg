@@ -1,0 +1,198 @@
+NAME=spawn + attach and suspend
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+# when spawning the process ourselves, it should be
+# suspended right away and stop at the entry in dyld.
+# This is a bit hard to check automatically, so let's
+# just make sure pc is in a map of dyld even after sleeping.
+!sleep 0.5
+dm @ pc~*~[9]
+EOF
+EXPECT=<<EOF
+/usr/lib/dyld
+EOF
+RUN
+
+NAME=dcu + read
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 8 @ pc
+EOF
+EXPECT=<<EOF
+sub sp, sp, 0x50
+stp x29, x30, [sp, 0x40]
+add x29, sp, 0x40
+adrp x8, reloc.NSLog
+add x8, x8, 0x180
+stur w0, [x29, -4]
+stur x1, [x29, -0x10]
+str x8, [sp, 0x10]
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+Continue until c88
+hit breakpoint at: c88
+EOF
+RUN
+
+NAME=maps
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+dm~hello~[3-]
+EOF
+REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
+EXPECT=<<EOF
+- usr 16K u r-x hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.r_x
+- usr 16K u rw- hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.rw
+- usr 16K u rw- hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.rw.0
+- usr 16K u r-- hello-macos-arm64 hello-macos-arm64 hello_macos_arm64.r
+EOF
+RUN
+
+NAME=maps as flags
+FILE=bins/mach0/hello-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~hello~[1-]
+?e --
+dm*~hello~[0-2]
+EOF
+EXPECT=<<EOF
+16384 hello_macos_arm64.r_x
+16384 hello_macos_arm64.rw
+16384 hello_macos_arm64.rw.0
+16384 hello_macos_arm64.r
+--
+f+ map.hello_macos_arm64.r_x 0x00004000
+f+ map.hello_macos_arm64.rw 0x00004000
+f+ map.hello_macos_arm64.rw 0x00004000
+f+ map.hello_macos_arm64.r 0x00004000
+EOF
+RUN
+
+NAME=step and check pc
+FILE=bins/mach0/calculate-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+5 ds
+dr pc
+dr x8
+?e --
+ds
+dr pc
+dr x8
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+pc = f44
+x8 = 0x0000000000000000
+--
+pc = f48
+x8 = 0x0000000000000064
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+Continue until f30
+hit breakpoint at: f30
+EOF
+RUN
+
+NAME=break multiple times and check regs
+FILE=bins/mach0/calculate-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 20
+db @ main + 24
+dc
+dr pc
+?e --
+dc
+dr pc
+dr x8
+?e --
+dc
+dr pc
+dr x8
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+pc = f30
+--
+pc = f44
+x8 = 0x0000000000000000
+--
+pc = f48
+x8 = 0x0000000000000064
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: f30
+hit breakpoint at: f44
+hit breakpoint at: f48
+EOF
+RUN
+
+NAME=write gpr
+FILE=bins/mach0/calculate-macos-arm64
+ARGS=-d
+CMDS=<<EOF
+db @ main + 64
+dc
+dr x8
+dr x8 = 1337
+dc
+EOF
+EXPECT=<<EOF
+x8 = 0x000000000000002a
+Result = 1337
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: f70
+
+Process finished
+
+EOF
+RUN
+
+NAME=break multiple times and check regs (fat)
+FILE=bins/mach0/calculate-macos-fat-arm64-x86_64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 20
+db @ main + 24
+dc
+dr pc
+?e --
+dc
+dr pc
+dr x8
+?e --
+dc
+dr pc
+dr x8
+EOF
+REGEXP_FILTER_OUT=(([a-zA-Z:=-]+|[0-9a-f][0-9a-f][0-9a-f]|x[0-9]+ = [a-z0-9]+)\s+)
+EXPECT=<<EOF
+pc = f30
+--
+pc = f44
+x8 = 0x0000000000000000
+--
+pc = f48
+x8 = 0x0000000000000064
+EOF
+REGEXP_FILTER_ERR=(([a-zA-Z:]+|[0-9a-f][0-9a-f][0-9a-f])\s+)
+EXPECT_ERR=<<EOF
+hit breakpoint at: f30
+hit breakpoint at: f44
+hit breakpoint at: f48
+EOF
+RUN

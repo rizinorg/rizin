@@ -231,3 +231,22 @@ EXPECT=<<EOF
             0x080484c8      55             push  ebp
 EOF
 RUN
+
+NAME=pxj 4 expects 4 bytes
+FILE=malloc://128
+CMDS=<<EOF
+wx 9030405011223344
+px 4
+pxj 4
+px 6 @ 2
+pxj 6 @ 2
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  9030 4050                                .0@P
+[144,48,64,80]
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000002  4050 1122 3344                           @P."3D
+[64,80,17,34,51,68]
+EOF
+RUN

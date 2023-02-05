@@ -4,9 +4,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_log.h>
-#include <rz_util/rz_str_search.h>
 #include "i/private.h"
 
 static RzBinClass *__getClass(RzBinFile *bf, const char *name) {
@@ -18,174 +17,6 @@ static RzBinSymbol *__getMethod(RzBinFile *bf, const char *klass, const char *me
 	rz_return_val_if_fail(bf && bf->o && bf->o->methods_ht && klass && method, NULL);
 	const char *name = sdb_fmt("%s::%s", klass, method);
 	return ht_pp_find(bf->o->methods_ht, name, NULL);
-}
-
-static RzBinString *__stringAt(RzBinFile *bf, RzList *ret, ut64 addr) {
-	if (addr != 0 && addr != UT64_MAX) {
-		return ht_up_find(bf->o->strings_db, addr, NULL);
-	}
-	return NULL;
-}
-
-static inline void detected_string_to_bin_string(RzBinString *dst, RzDetectedString *src) {
-	int type = -1;
-	switch (src->type) {
-	case RZ_STRING_ENC_8BIT:
-		type = RZ_BIN_STRING_ENC_8BIT;
-		break;
-	case RZ_STRING_ENC_UTF8:
-		type = RZ_BIN_STRING_ENC_UTF8;
-		break;
-	case RZ_STRING_ENC_UTF16LE:
-		type = RZ_BIN_STRING_ENC_WIDE_LE;
-		break;
-	case RZ_STRING_ENC_UTF32LE:
-		type = RZ_BIN_STRING_ENC_WIDE32_LE;
-		break;
-	case RZ_STRING_ENC_UTF16BE:
-		type = RZ_BIN_STRING_ENC_WIDE_BE;
-		break;
-	case RZ_STRING_ENC_UTF32BE:
-		type = RZ_BIN_STRING_ENC_WIDE32_BE;
-		break;
-	case RZ_STRING_ENC_IBM037:
-		type = RZ_BIN_STRING_ENC_IBM037;
-		break;
-	case RZ_STRING_ENC_IBM290:
-		type = RZ_BIN_STRING_ENC_IBM290;
-		break;
-	case RZ_STRING_ENC_EBCDIC_ES:
-		type = RZ_BIN_STRING_ENC_EBCDIC_ES;
-		break;
-	case RZ_STRING_ENC_EBCDIC_UK:
-		type = RZ_BIN_STRING_ENC_EBCDIC_UK;
-		break;
-	case RZ_STRING_ENC_EBCDIC_US:
-		type = RZ_BIN_STRING_ENC_EBCDIC_US;
-		break;
-	case RZ_STRING_ENC_GUESS:
-		type = RZ_BIN_STRING_ENC_DETECT;
-		break;
-	default:
-		break;
-	}
-
-	dst->string = src->string;
-	dst->size = src->size;
-	dst->length = src->length;
-	dst->type = type;
-	dst->paddr = src->addr;
-	dst->vaddr = src->addr;
-
-	free(src);
-}
-
-static void string_scan_range(RzList *list, RzBinFile *bf, size_t min, const ut64 from, const ut64 to, RzStrEnc type) {
-	RzListIter *it;
-	RzDetectedString *str;
-
-	RzList *str_list = rz_list_new();
-	if (!str_list) {
-		return;
-	}
-
-	RzUtilStrScanOptions scan_opt = {
-		.buf_size = 2048,
-		.max_uni_blocks = 4,
-		.min_str_length = min,
-		.prefer_big_endian = false
-	};
-
-	int count = rz_scan_strings(bf->buf, str_list, &scan_opt, from, to, type);
-	if (count <= 0) {
-		rz_list_free(str_list);
-		return;
-	}
-
-	int ord = 0;
-	rz_list_foreach (str_list, it, str) {
-		RzBinString *bs = RZ_NEW0(RzBinString);
-		detected_string_to_bin_string(bs, str);
-		bs->ordinal = ord++;
-		if (bf->o) {
-			bs->paddr += bf->o->boffset;
-			bs->vaddr = rz_bin_object_p2v(bf->o, bs->paddr);
-			ht_up_insert(bf->o->strings_db, bs->vaddr, bs);
-		}
-		rz_list_append(list, bs);
-	}
-
-	rz_list_free(str_list);
-}
-
-static bool __isDataSection(RzBinFile *a, RzBinSection *s) {
-	if (s->has_strings || s->is_data) {
-		return true;
-	} else if (!s->name) {
-		return false;
-	}
-	// Rust
-	return strstr(s->name, "_const") != NULL;
-}
-
-static void get_strings_range(RzBinFile *bf, RzList *list, size_t min, ut64 from, ut64 to) {
-	rz_return_if_fail(bf && bf->buf && bf->rbin);
-
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
-
-	if (plugin && !min) {
-		min = plugin->minstrlen > 0 ? plugin->minstrlen : 4;
-	} else if (!min) {
-		min = 4;
-	}
-
-	if (!bf->rbin->is_debugger) {
-		if (!to || to > rz_buf_size(bf->buf)) {
-			to = rz_buf_size(bf->buf);
-		}
-		if (!to) {
-			return;
-		}
-	}
-
-	ut64 size = to - from;
-	// in case of dump ignore here
-	if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
-		RZ_LOG_INFO("bin: buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RZ_BIN_MAXSTRBUF) in rizin (rz-bin)\n", size);
-		return;
-	}
-
-	RzStrEnc type;
-	const char *enc = bf->rbin->strenc;
-	if (!enc) {
-		type = RZ_STRING_ENC_GUESS;
-	} else if (!strcmp(enc, "8bit")) {
-		type = RZ_STRING_ENC_8BIT;
-	} else if (!strcmp(enc, "utf8")) {
-		type = RZ_STRING_ENC_UTF8;
-	} else if (!strcmp(enc, "utf16le")) {
-		type = RZ_STRING_ENC_UTF16LE;
-	} else if (!strcmp(enc, "utf32le")) {
-		type = RZ_STRING_ENC_UTF32LE;
-	} else if (!strcmp(enc, "utf16be")) {
-		type = RZ_STRING_ENC_UTF16BE;
-	} else if (!strcmp(enc, "utf32be")) {
-		type = RZ_STRING_ENC_UTF32BE;
-	} else if (!strcmp(enc, "ibm037")) {
-		type = RZ_STRING_ENC_IBM037;
-	} else if (!strcmp(enc, "ibm290")) {
-		type = RZ_STRING_ENC_IBM290;
-	} else if (!strcmp(enc, "ebcdices")) {
-		type = RZ_STRING_ENC_EBCDIC_ES;
-	} else if (!strcmp(enc, "ebcdicuk")) {
-		type = RZ_STRING_ENC_EBCDIC_UK;
-	} else if (!strcmp(enc, "ebcdicus")) {
-		type = RZ_STRING_ENC_EBCDIC_US;
-	} else {
-		RZ_LOG_ERROR("bin: encoding %s not supported\n", enc);
-		return;
-	}
-	string_scan_range(list, bf, min, from, to, type);
 }
 
 RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr) {
@@ -354,7 +185,7 @@ RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, in
 	return binfile;
 }
 
-RZ_IPI RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bf_id) {
+RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bf_id) {
 	RzBinFile *bf;
 	RzListIter *iter;
 	rz_list_foreach (bin->binfiles, iter, bf) {
@@ -518,91 +349,6 @@ RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *bf) {
 	return (bf && bf->o) ? bf->o->plugin : NULL;
 }
 
-/**
- * \brief  Generates a RzList struct containing RzBinString from a given RzBinFile
- *
- * \param  bf           The RzBinFile to use for searching for strings
- * \param  min_length   The string minimum length
- * \param  raw_strings  When set to false, it will search for strings only in the data section
- *
- * \return On success returns RzList pointer, otherwise NULL
- */
-RZ_API RzList *rz_bin_file_strings(RzBinFile *bf, size_t min_length, bool raw_strings) {
-	rz_return_val_if_fail(bf, NULL);
-	RzListIter *iter;
-	RzBinSection *section;
-	RzList *ret = rz_list_newf(rz_bin_string_free);
-	if (!ret) {
-		RZ_LOG_ERROR("bin: cannot allocate RzList\n");
-		return NULL;
-	}
-
-	if (raw_strings) {
-		// returns all the strings found on the RzBinFile
-		get_strings_range(bf, ret, min_length, 0, bf->size);
-	} else if (bf->o && bf->o->sections && !rz_list_empty(bf->o->sections)) {
-		// returns only the strings found on the RzBinFile but within the data section
-		RzBinObject *o = bf->o;
-		rz_list_foreach (o->sections, iter, section) {
-			if (__isDataSection(bf, section)) {
-				get_strings_range(bf, ret, min_length, section->paddr, section->paddr + section->size);
-			}
-		}
-		rz_list_foreach (o->sections, iter, section) {
-			if (!section->name) {
-				continue;
-			}
-			/* load objc/swift strings */
-			const int bits = (bf->o && bf->o->info) ? bf->o->info->bits : 32;
-			const int cfstr_size = (bits == 64) ? 32 : 16;
-			const int cfstr_offs = (bits == 64) ? 16 : 8;
-			if (!strstr(section->name, "__cfstring")) {
-				continue;
-			}
-			// XXX do not walk if bin.strings == 0
-			if (section->size > bf->size) {
-				continue;
-			}
-			ut8 *sbuf = malloc(section->size);
-			if (!sbuf) {
-				continue;
-			}
-			rz_buf_read_at(bf->buf, section->paddr + cfstr_offs, sbuf, section->size);
-			for (ut64 i = 0; i < section->size; i += cfstr_size) {
-				ut8 *buf = sbuf;
-				ut8 *p = buf + i;
-				if ((i + ((bits == 64) ? 8 : 4)) >= section->size) {
-					break;
-				}
-				ut64 cfstr_vaddr = section->vaddr + i;
-				ut64 cstr_vaddr = (bits == 64) ? rz_read_le64(p) : rz_read_le32(p);
-				RzBinString *s = __stringAt(bf, ret, cstr_vaddr);
-				if (!s) {
-					continue;
-				}
-				RzBinString *bs = RZ_NEW0(RzBinString);
-				if (!bs) {
-					RZ_LOG_ERROR("bin: cannot allocate RzBinString\n");
-					free(sbuf);
-					goto fail;
-				}
-				bs->type = s->type;
-				bs->length = s->length;
-				bs->size = s->size;
-				bs->ordinal = s->ordinal;
-				bs->vaddr = cfstr_vaddr;
-				bs->paddr = rz_bin_object_v2p(o, bs->vaddr);
-				bs->string = rz_str_newf("cstr.%s", s->string);
-				rz_list_append(ret, bs);
-				ht_up_insert(o->strings_db, bs->vaddr, bs);
-			}
-			free(sbuf);
-		}
-	}
-fail:
-	return ret;
-}
-
 RZ_API ut64 rz_bin_file_get_baddr(RzBinFile *bf) {
 	if (bf && bf->o) {
 		return bf->o->opts.baseaddr;
@@ -622,19 +368,21 @@ RZ_API bool rz_bin_file_close(RzBin *bin, int bd) {
 	return false;
 }
 
-static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list) {
-	char hash[128];
+static inline bool add_file_hash(RzHashCfg *md, const char *name, RzList /*<RzBinFileHash *>*/ *list) {
+	char hash[256];
 	const ut8 *digest = NULL;
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 
-	digest = rz_msg_digest_get_result(md, name, &digest_size);
+	digest = rz_hash_cfg_get_result(md, name, &digest_size);
 	if (!digest) {
 		return false;
 	}
 
-	if (!strcmp(name, "entropy")) {
+	if (!strncmp(name, "entropy", strlen("entropy"))) {
 		double entropy = rz_read_be_double(digest);
 		rz_strf(hash, "%f", entropy);
+	} else if (!strcmp(name, "ssdeep")) {
+		rz_strf(hash, "%s", (const char *)digest);
 	} else {
 		rz_hex_bin2str(digest, digest_size, hash);
 	}
@@ -651,82 +399,61 @@ static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list
 	return true;
 }
 
+static ut64 buf_compute_hashes(const ut8 *buf, ut64 size, void *user) {
+	if (!rz_hash_cfg_update((RzHashCfg *)user, buf, size)) {
+		return 0;
+	}
+	return size;
+}
+
 /**
  * Return a list of RzBinFileHash structures with the hashes md5, sha1, sha256, crc32 and entropy
  * computed over the whole \p bf .
  */
-RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
+RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64 limit) {
 	rz_return_val_if_fail(bin && bf && bf->o, NULL);
-	ut64 buf_len = 0, r = 0;
 	RzBinObject *o = bf->o;
 	RzList *file_hashes = NULL;
-	ut8 *buf = NULL;
-	RzMsgDigest *md = NULL;
-	const size_t blocksize = 64000;
-
-	RzIODesc *iod = rz_io_desc_get(bin->iob.io, bf->fd);
-	if (!iod) {
+	RzHashCfg *md = NULL;
+	RzBuffer *buf = rz_buf_new_with_io_fd(&bin->iob, bf->fd);
+	const ut64 buf_size = rz_buf_size(buf);
+	if (!buf_size) {
+		rz_buf_free(buf);
 		return NULL;
 	}
-
-	buf_len = rz_io_desc_size(iod);
-	if (buf_len > limit) {
+	if (buf_size > limit) {
 		if (bin->verbose) {
 			RZ_LOG_WARN("rz_bin_file_hash: file exceeds bin.hashlimit\n");
 		}
 		return NULL;
 	}
-	buf = malloc(blocksize);
-	if (!buf) {
-		RZ_LOG_ERROR("Cannot allocate buffer for hash computation\n");
-		return NULL;
-	}
-
 	file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	if (!file_hashes) {
 		RZ_LOG_ERROR("Cannot allocate file hash list\n");
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	md = rz_msg_digest_new();
+	md = rz_hash_cfg_new(bin->hash);
 	if (!md) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	if (!rz_msg_digest_configure(md, "md5") ||
-		!rz_msg_digest_configure(md, "sha1") ||
-		!rz_msg_digest_configure(md, "sha256") ||
-		!rz_msg_digest_configure(md, "crc32") ||
-		!rz_msg_digest_configure(md, "entropy")) {
+	if (!rz_hash_cfg_configure(md, "md5") ||
+		!rz_hash_cfg_configure(md, "sha1") ||
+		!rz_hash_cfg_configure(md, "sha256") ||
+		!rz_hash_cfg_configure(md, "crc32") ||
+		!rz_hash_cfg_configure(md, "entropy")) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
-	if (!rz_msg_digest_init(md)) {
+	if (!rz_hash_cfg_init(md)) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	while (r + blocksize < buf_len) {
-		rz_io_desc_seek(iod, r, RZ_IO_SEEK_SET);
-		int b = rz_io_desc_read(iod, buf, blocksize);
-		if (b < 0) {
-			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
-			goto rz_bin_file_compute_hashes_bad;
-		} else if (!rz_msg_digest_update(md, buf, b)) {
-			goto rz_bin_file_compute_hashes_bad;
-		}
-		r += b;
-	}
-	if (r < buf_len) {
-		rz_io_desc_seek(iod, r, RZ_IO_SEEK_SET);
-		const size_t rem_len = buf_len - r;
-		int b = rz_io_desc_read(iod, buf, rem_len);
-		if (b < 1) {
-			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
-		} else if (!rz_msg_digest_update(md, buf, b)) {
-			goto rz_bin_file_compute_hashes_bad;
-		}
+	if (rz_buf_fwd_scan(buf, 0, buf_size, buf_compute_hashes, md) != buf_size) {
+		goto rz_bin_file_compute_hashes_bad;
 	}
 
-	if (!rz_msg_digest_final(md)) {
+	if (!rz_hash_cfg_final(md)) {
 		goto rz_bin_file_compute_hashes_bad;
 	}
 
@@ -745,19 +472,22 @@ RZ_API RZ_OWN RzList *rz_bin_file_compute_hashes(RzBin *bin, RzBinFile *bf, ut64
 	}
 
 	// TODO: add here more rows
-	free(buf);
-	rz_msg_digest_free(md);
+	rz_buf_free(buf);
+	rz_hash_cfg_free(md);
 	return file_hashes;
 
 rz_bin_file_compute_hashes_bad:
-	free(buf);
-	rz_msg_digest_free(md);
+	rz_buf_free(buf);
+	rz_hash_cfg_free(md);
 	rz_list_free(file_hashes);
 	return NULL;
 }
 
-// Set new hashes to current RzBinInfo, caller should free the returned RzList
-RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList /*<RzBinFileHash*/ *new_hashes) {
+/**
+ * \brief Set \p file_hashes on current RzBinInfo
+ * \return RzList of previous file_hashes
+ */
+RZ_API RZ_OWN RzList /*<RzBinFileHash *>*/ *rz_bin_file_set_hashes(RzBin *bin, RZ_OWN RzList /*<RzBinFileHash *>*/ *new_hashes) {
 	rz_return_val_if_fail(bin && bin->cur && bin->cur->o && bin->cur->o->info, NULL);
 	RzBinFile *bf = bin->cur;
 	RzBinInfo *info = bf->o->info;
@@ -833,7 +563,7 @@ RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *klass, con
 	return sym;
 }
 
-RZ_API RzList *rz_bin_file_get_trycatch(RzBinFile *bf) {
+RZ_API RzList /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->plugin, NULL);
 	if (bf->o->plugin->trycatch) {
 		return bf->o->plugin->trycatch(bf);
@@ -841,7 +571,7 @@ RZ_API RzList *rz_bin_file_get_trycatch(RzBinFile *bf) {
 	return NULL;
 }
 
-RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf) {
+RZ_API RzList /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 	RzBinObject *o = bf->o;
 	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;

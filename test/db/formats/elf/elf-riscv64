@@ -422,7 +422,7 @@ laddr    0x00000000
 lang     c
 machine  RISC V
 maxopsz  6
-minopsz  2
+minopsz  4
 os       linux
 cc       N/A
 pcalign  2
@@ -447,7 +447,6 @@ NAME=ELF: riscv64: main analysis
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
 e asm.bytes=true
-e analysis.vars.stackname=true
 e asm.calls=false
 s main
 af
@@ -455,10 +454,10 @@ pdf
 EOF
 EXPECT=<<EOF
 / int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_18h @ s0-0x18
-|           ; var int64_t var_14h @ s0-0x14
-|           ; var int64_t var_10h @ sp+0x10
-|           ; var int64_t var_8h @ sp+0x18
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
 |           0x00010150      130101fe       addi  sp, sp, -32
 |           0x00010154      233c1100       sd    ra, 24(sp)
 |           0x00010158      23388100       sd    s0, 16(sp)
@@ -516,10 +515,10 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x10040
 / int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_18h @ s0-0x18
-|           ; var int64_t var_14h @ s0-0x14
-|           ; var int64_t var_10h @ sp+0x10
-|           ; var int64_t var_sp_18h @ sp+0x18
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_14h @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack - 0x8
 |           0x00010150      130101fe       addi  sp, sp, -32
 |           0x00010154      233c1100       sd    ra, 24(sp)
 |           0x00010158      23388100       sd    s0, 16(sp)

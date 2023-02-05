@@ -92,17 +92,39 @@ typedef enum {
 #define RZ_REG_COND_LE   12
 #define RZ_REG_COND_LAST 13
 
+typedef struct {
+	RzRegisterId role; ///< Register role (PC, Argument etc.)
+	char *alias; ///< Alias of register.
+	char *reg_name; ///< Real register name of alias.
+} RzRegProfileAlias;
+
+typedef struct {
+	RzRegisterType type; ///< Reg type.
+	RzRegisterType arena_type; ///< The arena the register belongs to (e.g. flags belong to gpr; xmm into fpu).
+	char *name; ///< Register name.
+	ut32 size; ///< Register size in bits.
+	ut32 packed; ///< Packet size of register in tes.
+	ut32 offset; ///< Offset into profile in bits.
+	char *comment; ///< Comment about register.
+	char *flags; ///< String describing the flags of the register.
+} RzRegProfileDef;
+
+typedef struct {
+	RzList /*<RzRegProfileAlias *>*/ *alias;
+	RzList /*<RzRegProfileDef *>*/ *defs;
+} RzRegProfile;
+
 typedef struct rz_reg_item_t {
 	char *name;
-	int /*RzRegisterType*/ type;
-	int size; /* 8,16,32,64 ... 128/256 ??? */
-	int offset; /* offset in data structure */
-	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
-	bool is_float;
+	RzRegisterType type; ///< Register type.
+	int size; ///< in bits> 8,16,32,64 ... 128/256
+	int offset; ///< Offset into register profile in bits.
+	int packed_size; ///< 0 means no packed register, 1byte pack, 2b pack...
+	bool is_float; ///< Flag for float registers.
 	char *flags;
-	char *comment;
-	int index;
-	int arena; /* in which arena is this reg living */
+	char *comment; ///< Comment to register.
+	int index; ///< Index in register profile.
+	int arena; ///< In which arena is this reg living. Usually equals type.
 } RzRegItem;
 
 typedef struct rz_reg_arena_t {
@@ -112,21 +134,22 @@ typedef struct rz_reg_arena_t {
 
 typedef struct rz_reg_set_t {
 	RzRegArena *arena;
-	RzList *pool; /* RzRegArena */
-	RzList *regs; /* RzRegItem */
-	HtPP *ht_regs; /* name:RzRegItem */
-	RzListIter *cur;
-	int maskregstype; /* which type of regs have this reg set (logic mask with RzRegisterType  RZ_REG_TYPE_XXX) */
+	RzList /*<RzRegArena *>*/ *pool; ///< RzRegArena
+	RzList /*<RzRegItem *>*/ *regs; ///< RzRegItem
+	HtPP *ht_regs; ///< name:RzRegItem
+	RzListIter /*<RzRegArena *>*/ *cur;
+	ut32 maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;
 
 typedef struct rz_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
+	RzRegProfile reg_profile;
 	char *name[RZ_REG_NAME_LAST]; // aliases
 	RzRegSet regset[RZ_REG_TYPE_LAST];
-	RzList *allregs;
-	RzList *roregs;
+	RzList /*<RzRegItem *>*/ *allregs;
+	RzList /*<char *>*/ *roregs;
 	int iters;
 	int arch;
 	int bits;
@@ -148,9 +171,10 @@ typedef struct rz_reg_flags_t {
 RZ_API void rz_reg_free(RzReg *reg);
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init);
 RZ_API RzReg *rz_reg_new(void);
-RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name);
-RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile);
+RZ_API bool rz_reg_set_name(RZ_NONNULL RzReg *reg, RzRegisterId role, RZ_NONNULL const char *name);
+RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const char *profile);
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg);
+RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg);
 RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile);
 RZ_API char *rz_reg_parse_gdb_profile(const char *profile);
 RZ_API bool rz_reg_is_readonly(RzReg *reg, RzRegItem *item);
@@ -169,7 +193,7 @@ RZ_API const char *rz_reg_get_role(int role);
 RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str);
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
 RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name);
-RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type);
+RZ_API const RzList /*<RzRegItem *>*/ *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);
 RZ_API RzRegItem *rz_reg_next_diff(RzReg *reg, int type, const ut8 *buf, int buflen, RzRegItem *prev_ri, int regsize);
 
@@ -189,42 +213,21 @@ RZ_API bool rz_reg_cond_set(RzReg *reg, const char *name, bool val);
 RZ_API int rz_reg_cond_get_value(RzReg *r, const char *name);
 RZ_API bool rz_reg_cond_bits_set(RzReg *r, int type, RzRegFlags *f, bool v);
 RZ_API int rz_reg_cond_bits(RzReg *r, int type, RzRegFlags *f);
-RZ_API RzRegFlags *rz_reg_cond_retrieve(RzReg *r, RzRegFlags *);
+RZ_API RzRegFlags *rz_reg_cond_retrieve(RzReg *r, RzRegFlags *f);
 RZ_API int rz_reg_cond(RzReg *r, int type);
 
 /* bitvector, for everything */
-RZ_API RzBitVector *rz_reg_get_bv(RzReg *reg, RzRegItem *item);
+RZ_API RZ_OWN RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item);
 RZ_API bool rz_reg_set_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, RZ_NONNULL const RzBitVector *bv);
 
 /* integer value 8-64 bits */
-RZ_API ut64 rz_reg_get_value(RzReg *reg, RzRegItem *item);
-RZ_API ut64 rz_reg_get_value_big(RzReg *reg, RzRegItem *item, utX *val);
-RZ_API ut64 rz_reg_get_value_by_role(RzReg *reg, RzRegisterId role);
-RZ_API bool rz_reg_set_value(RzReg *reg, RzRegItem *item, ut64 value);
-RZ_API bool rz_reg_set_value_by_role(RzReg *reg, RzRegisterId role, ut64 value);
-
-/* float */
-RZ_API float rz_reg_get_float(RzReg *reg, RzRegItem *item);
-RZ_API bool rz_reg_set_float(RzReg *reg, RzRegItem *item, float value);
-
-/* double */
-RZ_API double rz_reg_get_double(RzReg *reg, RzRegItem *item);
-RZ_API bool rz_reg_set_double(RzReg *reg, RzRegItem *item, double value);
-
-/* long double */
-RZ_API long double rz_reg_get_longdouble(RzReg *reg, RzRegItem *item);
-RZ_API bool rz_reg_set_longdouble(RzReg *reg, RzRegItem *item, long double value);
-
-/* boolean */
-RZ_API char *rz_reg_get_bvalue(RzReg *reg, RzRegItem *item);
-RZ_API ut64 rz_reg_set_bvalue(RzReg *reg, RzRegItem *item, const char *str);
-
-/* packed registers */
-RZ_API int rz_reg_set_pack(RzReg *reg, RzRegItem *item, int packidx, int packbits, ut64 val);
-RZ_API ut64 rz_reg_get_pack(RzReg *reg, RzRegItem *item, int packidx, int packbits);
+RZ_API ut64 rz_reg_get_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item);
+RZ_API bool rz_reg_set_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, ut64 value);
+RZ_API ut64 rz_reg_get_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role);
+RZ_API bool rz_reg_set_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role, ut64 value);
 
 /* byte arena */
-RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size);
+RZ_API RZ_OWN ut8 *rz_reg_get_bytes(RZ_NONNULL RzReg *reg, int type, RZ_NULLABLE int *size);
 RZ_API bool rz_reg_set_bytes(RzReg *reg, int type, const ut8 *buf, const int len);
 RZ_API bool rz_reg_read_regs(RzReg *reg, ut8 *buf, const int len);
 RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str);
@@ -243,7 +246,7 @@ RZ_API const char *rz_reg_cond_to_string(int n);
 RZ_API int rz_reg_cond_from_string(const char *str);
 RZ_API void rz_reg_arena_shrink(RzReg *reg);
 
-RZ_API RZ_OWN RzList *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /* <RzRegItem> */ *regs);
+RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_reg_filter_items_covered(RZ_BORROW RZ_NONNULL const RzList /*<RzRegItem *>*/ *regs);
 
 #ifdef __cplusplus
 }

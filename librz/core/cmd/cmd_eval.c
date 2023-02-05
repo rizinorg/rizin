@@ -19,7 +19,7 @@ static bool load_theme(RzCore *core, const char *path) {
 	return res;
 }
 
-static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzListIter *iter) {
+static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzListIter /*<char *>*/ *iter) {
 	const char *fn = rz_str_lchr(file, '/');
 	if (!fn) {
 		fn = file;
@@ -78,7 +78,7 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 			if (load_theme(core, name)) {
 				core->curtheme = rz_str_dup(core->curtheme, name);
 			} else {
-				eprintf("eco: cannot open colorscheme profile (%s)\n", name);
+				RZ_LOG_ERROR("core: eco: cannot open colorscheme profile (%s)\n", name);
 				failed = true;
 			}
 		}
@@ -116,7 +116,7 @@ static bool dict2keylist(void *user, const void *key, const ut64 value) {
  * \param      core  The RzCore struct to use
  * \return     On success, an RzList pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 
 	HtPU *themes = ht_pu_new0();
@@ -145,7 +145,7 @@ RZ_API RZ_OWN RzList *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	return list;
 }
 
-RZ_IPI void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
+RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	RzListIter *iter;
 	const char *fn;
 	RzList *files = rz_core_theme_list(core);
@@ -287,7 +287,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_current_instruction_handler(RzCor
 	char *color_code = rz_cons_pal_parse(dup, NULL);
 	RZ_FREE(dup);
 	if (!color_code) {
-		eprintf("Unknown color %s\n", argv[1]);
+		RZ_LOG_ERROR("core: Unknown color %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
@@ -306,7 +306,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *
 		color_code = rz_cons_pal_parse(dup, NULL);
 		RZ_FREE(dup);
 		if (!color_code) {
-			eprintf("Unknown color %s\n", argv[2]);
+			RZ_LOG_ERROR("core: Unknown color %s\n", argv[2]);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
@@ -351,7 +351,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 		}
 		char *key = rz_list_get_n(l, 0);
 		if (RZ_STR_ISEMPTY(key)) {
-			eprintf("No string specified before `=`. Make sure to use the format <key>=<value> without spaces.\n");
+			RZ_LOG_ERROR("core: No string specified before `=`. Make sure to use the format <key>=<value> without spaces.\n");
 			continue;
 		}
 
@@ -366,7 +366,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			// no value was set, show the value of the key
 			const char *v = rz_config_get(core->config, key);
 			if (!v) {
-				eprintf("Invalid config key '%s'\n", key);
+				RZ_LOG_ERROR("core: Invalid config key '%s'\n", key);
 				return RZ_CMD_STATUS_ERROR;
 			}
 			rz_cons_printf("%s\n", v);
@@ -391,7 +391,7 @@ RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **ar
 
 RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_config_toggle(core->config, argv[1])) {
-		eprintf("Cannot toggle config key '%s'\n", argv[1]);
+		RZ_LOG_ERROR("core: Cannot toggle config key '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -400,7 +400,7 @@ RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv) {
 	const char *val = rz_config_get(core->config, argv[1]);
 	if (!val) {
-		eprintf("Invalid config key '%s'", argv[1]);
+		RZ_LOG_ERROR("core: Invalid config key '%s'", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *p = rz_core_editor(core, NULL, val);
@@ -414,55 +414,37 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 
 RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv) {
 	if (!rz_config_readonly(core->config, argv[1])) {
-		eprintf("Cannot make eval '%s' readonly.\n", argv[1]);
+		RZ_LOG_ERROR("core: Cannot make eval '%s' readonly.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
-	const char *arg = argc > 1 ? argv[1] : "";
-	RzConfigNode *node;
-	RzListIter *iter;
-	char *oldSpace = NULL;
-	rz_list_foreach (core->config->nodes, iter, node) {
-		char *space = strdup(node->name);
-		char *dot = strchr(space, '.');
-		if (dot) {
-			*dot = 0;
-		}
-		if (arg && *arg) {
-			if (!strcmp(arg, space)) {
-				rz_cons_println(dot + 1);
-			}
-			free(space);
-			continue;
-		} else if (oldSpace) {
-			if (!strcmp(space, oldSpace)) {
-				free(space);
-				continue;
-			}
-			free(oldSpace);
-			oldSpace = space;
-		} else {
-			oldSpace = space;
-		}
-		rz_cons_println(space);
+	const char *arg = argc > 1 ? argv[1] : NULL;
+	RzList *list = rz_core_config_in_space(core, arg);
+	if (!list) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	free(oldSpace);
+	RzListIter *iter;
+	char *name;
+	rz_list_foreach (list, iter, name) {
+		rz_cons_println(name);
+	}
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv) {
 	RzConfigNode *node = rz_config_node_get(core->config, argv[1]);
 	if (!node) {
-		eprintf("Cannot find eval '%s'.\n", argv[1]);
+		RZ_LOG_ERROR("core: Cannot find eval '%s'.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
 	const char *type = rz_config_node_type(node);
 	if (!type) {
-		eprintf("Cannot find type of eval '%s'.\n", argv[1]);
+		RZ_LOG_ERROR("core: Cannot find type of eval '%s'.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(type);

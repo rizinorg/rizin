@@ -28,13 +28,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p=b 0xff 0x00
+NAME=p= 0xff 0x00
 FILE==
 CMDS=<<EOF
 b 2
 wx 0xff
 e zoom.in=raw
-p=b 2 2@ 0
+p= 2 2@ 0
 EOF
 EXPECT=<<EOF
 0x00000000 000 00ff |###################################################
@@ -56,7 +56,7 @@ RUN
 NAME=p=d
 FILE=bins/elf/arm1.bin
 ARGS=-n
-CMDS=p=d 10 @ 0
+CMDS=p=d @!10 @ 0
 EXPECT=<<EOF
 min:              0  0x0
 max:              127  0x7f
@@ -155,34 +155,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p=Aq
-FILE==
-CMDS=<<EOF
-f test @ 0
-f ulu @ 2
-f mulu @ 0x100
-p=Aq 0x10
-EOF
-EXPECT=<<EOF
-0x00000000 0 2
-0x00000020 1 0
-0x00000040 2 0
-0x00000060 3 0
-0x00000080 4 0
-0x000000a0 5 0
-0x000000c0 6 0
-0x000000e0 7 0
-0x00000100 8 1
-0x00000120 9 0
-0x00000140 10 0
-0x00000160 11 0
-0x00000180 12 0
-0x000001a0 13 0
-0x000001c0 14 0
-0x000001e0 15 0
-EOF
-RUN
-
 NAME=p8 10
 FILE=malloc://1024
 CMDS=wx 90909090909090909090 ; p8 10
@@ -214,13 +186,13 @@ jg 0xa
 EOF
 RUN
 
-NAME=pij 3
+NAME=pdj 3
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f
-pij 3
+pdj 3
 EOF
 EXPECT=<<EOF
 [{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
@@ -278,12 +250,12 @@ mov edi, str.Hello_World
 EOF
 RUN
 
-NAME=pij -5 @ 0x0040050f
+NAME=pdj -5 @ 0x0040050f
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-pij -3 @ 0x0040050f
+pdj -3 @ 0x0040050f
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
@@ -385,13 +357,13 @@ jg 0xa
 EOF
 RUN
 
-NAME=pij 3 (2)
+NAME=pdj 3 (2)
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f
-pij 3
+pdj 3
 EOF
 EXPECT=<<EOF
 [{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
@@ -416,7 +388,7 @@ jg 0x14
 EOF
 RUN
 
-NAME=pi -3 @ 3
+NAME=pi -3 @ 10
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
@@ -425,36 +397,37 @@ wx b8010000004839ca7f00
 pi -3 @ 10
 EOF
 EXPECT=<<EOF
-add byte [rax], al
+mov eax, 1
 cmp rdx, rcx
 jg 0xa
 EOF
 RUN
 
-NAME=pij -3 @ 3
+NAME=pdj -3 @ 10
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f00
-pij -3 @ 10~{}
+pdj -3 @ 10~{}
 EOF
 EXPECT=<<EOF
 [
   {
-    "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-    "refptr": true,
+    "offset": 0,
+    "val": 1,
+    "esil": "1,rax,=",
+    "refptr": false,
     "fcn_addr": 0,
     "fcn_last": 0,
-    "size": 2,
-    "opcode": "add byte [rax], al",
-    "disasm": "add byte [rax], al",
-    "bytes": "0000",
+    "size": 5,
+    "opcode": "mov eax, 1",
+    "disasm": "mov eax, 1",
+    "bytes": "b801000000",
     "family": "cpu",
-    "type": "add",
+    "type": "mov",
     "reloc": false,
-    "type_num": 17,
+    "type_num": 9,
     "type2_num": 0
   },
   {
@@ -643,9 +616,9 @@ EXPECT=<<EOF
 push rbp
 mov rbp, rsp
 sub rsp, 0x20
-mov dword [var_14h], edi
-mov qword [var_20h], rsi
-mov dword [var_4h], 0
+mov dword [var_1ch], edi
+mov qword [var_28h], rsi
+mov dword [var_ch], 0
 jmp 0x400523
 EOF
 RUN
@@ -660,9 +633,9 @@ pib
 EOF
 EXPECT=<<EOF
 sub rsp, 0x20
-mov dword [var_14h], edi
-mov qword [var_20h], rsi
-mov dword [var_4h], 0
+mov dword [var_1ch], edi
+mov qword [var_28h], rsi
+mov dword [var_ch], 0
 jmp 0x400523
 EOF
 RUN

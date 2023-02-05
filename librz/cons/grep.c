@@ -86,6 +86,26 @@ static void parse_grep_expression(const char *str) {
 	RzConsGrep *grep = &cons->context->grep;
 	sorted_column = 0;
 	bool first = true;
+
+	// setup cons->context->grep.icase according to cons->grep_icase
+	if (cons->grep_icase == RZ_CONS_SEARCH_CASE_SMART) {
+		// smartcase - when the search term is all lowercase, ignore the case,
+		// instead if the search term is uppercase or a mix, do a case-sensitive search.
+		bool has_upper = false;
+		const char *grep_str = str;
+		while (*grep_str) {
+			if (isupper(*grep_str)) {
+				has_upper = true;
+				break;
+			}
+			grep_str++;
+		}
+
+		cons->context->grep.icase = has_upper ? RZ_CONS_SEARCH_CASE_SENSITIVE : RZ_CONS_SEARCH_CASE_INSENSITIVE;
+	} else {
+		cons->context->grep.icase = cons->grep_icase;
+	}
+
 	while (*str) {
 		switch (*str) {
 		case '.':
@@ -159,7 +179,7 @@ static void parse_grep_expression(const char *str) {
 		case '+':
 			if (first) {
 				str++;
-				grep->icase = 1;
+				grep->icase = grep->icase ? 0 : 1;
 			} else {
 				goto while_end;
 			}
@@ -462,6 +482,9 @@ static int cmp(const void *a, const void *b) {
 
 RZ_API void rz_cons_grepbuf(void) {
 	RzCons *cons = rz_cons_singleton();
+	cons->context->row = 0;
+	cons->context->col = 0;
+	cons->context->rowcol_calc_start = 0;
 	const char *buf = cons->context->buffer;
 	const int len = cons->context->buffer_len;
 	RzConsGrep *grep = &cons->context->grep;
@@ -498,14 +521,37 @@ RZ_API void rz_cons_grepbuf(void) {
 	}
 	if (grep->json) {
 		if (grep->json_path) {
-			char *u = sdb_json_get_str(cons->context->buffer, grep->json_path);
-			if (u) {
+			RzJson *json = rz_json_parse(cons->context->buffer);
+			if (!json) {
+				RZ_FREE(grep->json_path);
+				return;
+			}
+			const RzJson *excerpt;
+			// To simplify grep syntax we omit brackets in `[0]` for JSON paths
+			if (*grep->json_path != '[' && *grep->json_path != '.') {
+				char *tmppath = rz_str_newf("[%s]", grep->json_path);
+				excerpt = rz_json_get_path(json, tmppath);
+				free(tmppath);
+			} else {
+				excerpt = rz_json_get_path(json, grep->json_path);
+			}
+			if (excerpt) {
+				// When we receive the path, it's fetched with the key name
+				// We should get only the value
+				char *u = rz_json_as_string(excerpt, false);
+				if (!u) {
+					RZ_FREE(grep->json_path);
+					rz_json_free(json);
+					return;
+				}
+				free(cons->context->buffer);
 				cons->context->buffer = u;
 				cons->context->buffer_len = strlen(u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = 0;
 				rz_cons_newline();
 			}
+			rz_json_free(json);
 			RZ_FREE(grep->json_path);
 		} else {
 			const char *palette[] = {
@@ -743,15 +789,8 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 
 	if (grep->nstrings > 0) {
 		int ampfail = grep->amp;
-		if (grep->icase) {
-			rz_str_case(in, false);
-		}
 		for (i = 0; i < grep->nstrings; i++) {
-			char *str = grep->strings[i];
-			if (grep->icase) {
-				rz_str_case(str, false);
-			}
-			const char *p = rz_strstr_ansi(in, grep->strings[i]);
+			const char *p = rz_strstr_ansi(in, grep->strings[i], grep->icase);
 			if (!p) {
 				ampfail = 0;
 				continue;

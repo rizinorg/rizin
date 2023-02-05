@@ -457,7 +457,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_sdiv(RZ_NONNULL RzILOpBitVector *x, 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_smod(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_2(BitVector, RZ_IL_OP_MOD, RzILOpArgsSmod, smod, x, y);
+	rz_il_op_new_2(BitVector, RZ_IL_OP_SMOD, RzILOpArgsSmod, smod, x, y);
 	return ret;
 }
 
@@ -469,7 +469,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_smod(RZ_NONNULL RzILOpBitVector *x, 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_mod(RZ_NONNULL RzILOpBitVector *x, RZ_NONNULL RzILOpBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 	RzILOpBitVector *ret;
-	rz_il_op_new_2(BitVector, RZ_IL_OP_SMOD, RzILOpArgsMod, mod, x, y);
+	rz_il_op_new_2(BitVector, RZ_IL_OP_MOD, RzILOpArgsMod, mod, x, y);
 	return ret;
 }
 
@@ -548,6 +548,18 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *h
 	rz_return_val_if_fail(high && low, NULL);
 	RzILOpBitVector *ret;
 	rz_il_op_new_2(BitVector, RZ_IL_OP_APPEND, RzILOpArgsAppend, append, high, low);
+	return ret;
+}
+
+/**
+ *  \brief oop structure for an empty effect (val empty : 'a sort -> 'a t)
+ *
+ *  empty s creates an empty effect value.
+ *  The empty effect denotes an absence of any specific knowledge about the effects produced by a term.
+ */
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_empty() {
+	RzILOpEffect *ret;
+	rz_il_op_new_0(Effect, RZ_IL_OP_EMPTY);
 	return ret;
 }
 
@@ -673,7 +685,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_blk(RZ_NONNULL const char *label, RZ_NO
 /**
  *  \brief op structure for `repeat` (bool -> data eff -> data eff)
  *
- *  repeat c data repeats data effects until the condition c holds.
+ *  repeat c data repeats data effects until the condition c evaluates to false.
  */
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_repeat(RZ_NONNULL RzILOpBool *condition, RZ_NONNULL RzILOpEffect *data_eff) {
 	rz_return_val_if_fail(condition && data_eff, NULL);
@@ -1026,6 +1038,8 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op) {
 		return;
 	}
 	switch (op->code) {
+	case RZ_IL_OP_EMPTY:
+		break;
 	case RZ_IL_OP_STORE:
 		rz_il_op_free_2(pure, store, key, value);
 		break;

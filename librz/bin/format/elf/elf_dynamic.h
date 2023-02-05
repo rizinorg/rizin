@@ -10,7 +10,7 @@
 
 struct rz_bin_elf_dt_dynamic_t {
 	HtUU *info;
-	RzVector /* <ut64> */ dt_needed;
+	RzVector /*<ut64>*/ dt_needed;
 };
 
 #endif

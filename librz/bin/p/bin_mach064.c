@@ -287,8 +287,8 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return ret;
 }
 
-static RzList *strings(RzBinFile *bf) {
-	return rz_bin_file_strings(bf, 4, false);
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	return rz_bin_file_strings(bf, bf->minstrlen, false);
 }
 
 RzBinPlugin rz_bin_plugin_mach064 = {

@@ -2,8 +2,7 @@ NAME=dbg.fds.count
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
-dd~?
-dk 9
+ddl~?
 EOF
 EXPECT=<<EOF
 3
@@ -15,10 +14,9 @@ FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 BROKEN=1
 CMDS=<<EOF
-dd~?
-dd-1
-dd~?
-dk 9
+ddl~?
+dd- 1
+ddl~?
 EOF
 EXPECT=<<EOF
 3
@@ -30,8 +28,7 @@ NAME=dbg.fds.count
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
-dd~?
-dk 9
+ddl~?
 EOF
 EXPECT=<<EOF
 3

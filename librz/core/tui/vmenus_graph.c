@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+
+#include "../core_private.h"
+
 #define SORT_ADDRESS 0
 #define SORT_NAME    1
 
 // find a better name and move to rz_util or rz_cons?
-RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, PrintItemCallback cb) {
+RZ_API char *rz_str_widget_list(void *user, RzList /*<void *>*/ *list, int rows, int cur, PrintItemCallback cb) {
 	void *item;
 	RzStrBuf *sb = rz_strbuf_new("");
 	RzListIter *iter;
@@ -42,9 +45,9 @@ typedef struct {
 	int cur; // current row selected
 	int cur_sort; // holds current sort
 	RzCore *core;
-	RzList *mainCol;
-	RzList *xrefsCol;
-	RzList *refsCol;
+	RzList /*<RzCoreVisualViewGraphItem *>*/ *mainCol;
+	RzList /*<RzCoreVisualViewGraphItem *>*/ *xrefsCol;
+	RzList /*<RzCoreVisualViewGraphItem *>*/ *refsCol;
 } RzCoreVisualViewGraph;
 
 typedef struct {
@@ -66,7 +69,7 @@ static char *print_item(void *_core, void *_item, bool selected) {
 	return rz_str_newf("%c 0x%08" PFMT64x "\n", selected ? '>' : ' ', item->addr);
 }
 
-static RzList *__xrefs(RzCore *core, ut64 addr) {
+static RzList /*<RzCoreVisualViewGraphItem *>*/ *__xrefs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
@@ -89,7 +92,7 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 	return r;
 }
 
-static RzList *__refs(RzCore *core, ut64 addr) {
+static RzList /*<RzCoreVisualViewGraphItem *>*/ *__refs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
@@ -116,7 +119,7 @@ static RzList *__refs(RzCore *core, ut64 addr) {
 	return r;
 }
 
-static RzList *__fcns(RzCore *core) {
+static RzList /*<RzCoreVisualViewGraphItem *>*/ *__fcns(RzCore *core) {
 	RzList *r = rz_list_newf(free);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
@@ -163,7 +166,7 @@ static int cmpname(const void *_a, const void *_b) {
 	return (int)strcmp(a->name, b->name);
 }
 
-static void __sort(RzCoreVisualViewGraph *status, RzList *list) {
+static void __sort(RzCoreVisualViewGraph *status, RzList /*<RzCoreVisualViewGraphItem *>*/ *list) {
 	rz_return_if_fail(status && list);
 	RzListComparator cmp = (status->cur_sort == SORT_ADDRESS) ? cmpaddr : cmpname;
 	list->sorted = false;
@@ -213,7 +216,7 @@ static void __sync_status_with_cursor(RzCoreVisualViewGraph *status) {
 	__sort(status, status->refsCol);
 }
 
-RZ_API int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *status) {
+RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *status) {
 	int h, w = rz_cons_get_size(&h);
 	const int colw = w / 4;
 	const int colh = h / 2;
@@ -252,7 +255,7 @@ RZ_API int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 	return 0;
 }
 
-RZ_API int rz_core_visual_view_graph(RzCore *core) {
+RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 	RzCoreVisualViewGraph status = { 0 };
 	status.core = core;
 	status.cur_sort = SORT_NAME;

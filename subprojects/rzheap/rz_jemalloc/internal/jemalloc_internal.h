@@ -283,6 +283,9 @@ typedef unsigned szind_t;
 #  ifdef __le32__
 #    define LG_QUANTUM		4
 #  endif
+#  ifdef __e2k__
+#    define LG_QUANTUM		4
+#  endif
 #  ifndef LG_QUANTUM
 #    error "Unknown minimum alignment for architecture; specify via "
 	 "--with-lg-quantum"

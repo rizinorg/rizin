@@ -49,7 +49,7 @@ static int rz_main_version_verify(int show) {
 		{ "rz_bp", rz_bp_version },
 		{ "rz_debug", rz_debug_version },
 		{ "rz_main", rz_main_version },
-		{ "rz_msg_digest", rz_msg_digest_version },
+		{ "rz_hash", rz_hash_version },
 		{ "rz_io", rz_io_version },
 #if !USE_LIB_MAGIC
 		{ "rz_magic", rz_magic_version },
@@ -156,7 +156,6 @@ static int main_help(int line) {
 		char *system_magic = rz_path_system(RZ_SDB_MAGIC);
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
 		char *system_plugins = rz_path_system(RZ_PLUGINS);
-		char *home_zigns = rz_path_home_prefix(RZ_ZIGNS);
 		char *system_sigdb = rz_path_system(RZ_SIGDB);
 		char *dirPrefix = rz_path_prefix(NULL);
 		// clang-format off
@@ -169,7 +168,6 @@ static int main_help(int line) {
 			" binrc        %s (elf, elf64, mach0, ..)\n"
 			" RZ_USER_PLUGINS %s\n"
 			" RZ_LIBR_PLUGINS %s\n"
-			" RZ_USER_ZIGNS %s\n"
 			"Environment:\n"
 			" RZ_DEBUG      if defined, show error messages and crash signal\n"
 			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
@@ -189,7 +187,6 @@ static int main_help(int line) {
 			binrc,
 			home_plugins,
 			system_plugins,
-			home_zigns,
 			system_magic,
 			home_rc,
 			datahome,
@@ -210,7 +207,6 @@ static int main_help(int line) {
 		free(system_magic);
 		free(home_plugins);
 		free(system_plugins);
-		free(home_zigns);
 		free(system_sigdb);
 		free(dirPrefix);
 	}
@@ -226,7 +222,6 @@ static int main_print_var(const char *var_name) {
 	char *datahome = rz_path_home_prefix(RZ_DATADIR);
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
-	char *homezigns = rz_path_home_prefix(RZ_ZIGNS);
 	char *sigdbdir = rz_path_system(RZ_SIGDB);
 	char *plugins = rz_path_system(RZ_PLUGINS);
 	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
@@ -247,7 +242,6 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_RCACHEHOME", cachehome },
 		{ "RZ_LIBR_PLUGINS", plugins },
 		{ "RZ_USER_PLUGINS", homeplugins },
-		{ "RZ_USER_ZIGNS", homezigns },
 		{ "RZ_IS_PORTABLE", is_portable },
 		{ NULL, NULL }
 	};
@@ -275,7 +269,6 @@ static int main_print_var(const char *var_name) {
 	free(datahome);
 	free(cachehome);
 	free(homeplugins);
-	free(homezigns);
 	free(sigdbdir);
 	free(plugins);
 	free(magicpath);
@@ -283,7 +276,7 @@ static int main_print_var(const char *var_name) {
 	return 0;
 }
 
-static bool run_commands(RzCore *r, RzList *cmds, RzList *files, bool quiet, int do_analysis) {
+static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>*/ *files, bool quiet, int do_analysis) {
 	RzListIter *iter;
 	const char *cmdn;
 	const char *file;
@@ -885,27 +878,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_config_set(r->config, "scr.utf8", "false");
 	}
 
-	if (rz_config_get_i(r->config, "zign.autoload")) {
-		char *path = rz_file_abspath(rz_config_get(r->config, "dir->zigns"));
-		char *complete_path = NULL;
-		RzList *list = rz_sys_dir(path);
-		RzListIter *iter;
-		char *file = NULL;
-		rz_list_foreach (list, iter, file) {
-			if (file && *file && *file != '.') {
-				complete_path = rz_str_newf("%s" RZ_SYS_DIR "%s", path, file);
-				if (rz_str_endswith(complete_path, "gz")) {
-					rz_sign_load_gz(r->analysis, complete_path);
-				} else {
-					rz_sign_load(r->analysis, complete_path);
-				}
-				free(complete_path);
-			}
-		}
-		rz_list_free(list);
-		free(path);
-	}
-
 	if (pfile && rz_file_is_directory(pfile)) {
 		if (debug) {
 			RZ_LOG_ERROR("Error: Cannot debug directories, yet.\n");
@@ -1216,7 +1188,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				}
 			}
-			rz_core_cmd0(r, ".dm*");
+			rz_core_debug_map_update_flags(r);
 			// Set Thumb Mode if necessary
 			RzRegItem *thumb_reg = rz_reg_get(r->dbg->reg, "thumb", RZ_REG_TYPE_ANY);
 			if (thumb_reg && rz_reg_get_value(r->dbg->reg, thumb_reg)) {
@@ -1465,8 +1437,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							rz_debug_can_kill(r->dbg) &&
 							rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
 							rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-						} else {
-							rz_debug_detach(r->dbg, r->dbg->pid);
 						}
 					} else {
 						continue;
@@ -1516,6 +1486,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	/* capture return value */
 	ret = r->num->value;
 beach:
+	if (!rz_debug_is_dead(r->dbg)) {
+		if (!rz_cons_is_interactive() && rz_config_get_i(r->config, "dbg.exitkills") &&
+			rz_debug_can_kill(r->dbg)) {
+			rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+		}
+		// Always detach properly if still attached, even if we already killed the process,
+		// otherwise there will be a zombie on macOS!
+		rz_debug_detach(r->dbg, r->dbg->pid);
+	}
 	if (quietLeak) {
 		exit(ret);
 		return ret;

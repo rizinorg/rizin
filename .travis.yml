@@ -19,7 +19,6 @@ jobs:
             - binutils-aarch64-linux-gnu
             - binutils-arm-linux-gnueabi
             - binutils-x86-64-linux-gnu
-            - cabextract
     # Linux with GCC on System Z
     - os: linux
       name: S390X
@@ -30,7 +29,6 @@ jobs:
         apt:
           packages:
             - binutils-mingw-w64-x86-64
-            - cabextract
     # Linux with GCC on ARMv8 (64bit)
     - os: linux
       name: ARM64
@@ -43,18 +41,6 @@ jobs:
             - binutils-arm-linux-gnueabi
             - binutils-x86-64-linux-gnu
             - binutils-powerpc64le-linux-gnu
-            - cabextract
-
-  allow_failures:
-    # Linux with GCC on System Z
-    - os: linux
-      arch: s390x
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_X86_AS=x86_64-w64-mingw32-as
-      addons:
-        apt:
-          packages:
-            - binutils-mingw-w64-x86-64
-            - cabextract
 
 cache:
   - ccache

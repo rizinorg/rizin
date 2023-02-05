@@ -157,7 +157,7 @@ static int rz_io_zip_slurp_file(RzIOZipFileObj *zfo) {
 	return res;
 }
 
-RzList *rz_io_zip_get_files(const char *archivename, ut32 perm, int mode, int rw) {
+RzList /*<char *>*/ *rz_io_zip_get_files(const char *archivename, ut32 perm, int mode, int rw) {
 	struct zip *zipArch = rz_io_zip_open_archive(archivename, perm, mode, rw);
 	ut64 num_entries = 0, i = 0;
 	struct zip_stat sb;
@@ -281,7 +281,7 @@ RzIOZipFileObj *rz_io_zip_alloc_zipfileobj(const char *archivename, const char *
 }
 
 // Below this line are the rz_io_zip plugin APIs
-static RzList *rz_io_zip_open_many(RzIO *io, const char *file, int rw, int mode) {
+static RzList /*<RzIODesc *>*/ *rz_io_zip_open_many(RzIO *io, const char *file, int rw, int mode) {
 	RzList *list_fds = NULL;
 	RzListIter *iter;
 	RzList *filenames = NULL;

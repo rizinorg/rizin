@@ -1467,48 +1467,6 @@ extern const struct bfd_symbol *const bfd_ind_symbol;
 #define bfd_section_removed_from_list(ABFD, S) \
 	((S)->next ? (S)->next->prev != (S) : (ABFD)->section_last != (S))
 
-#define BFD_FAKE_SECTION(SEC, FLAGS, SYM, SYM_PTR, NAME, IDX) \
-	/* name, id,  index, next, prev, flags, user_set_vma,            */ \
-	{ \
-		NAME, IDX, 0, NULL, NULL, FLAGS, 0, \
-\
-			/* linker_mark, linker_has_input, gc_mark, gc_mark_from_eh,      */ \
-			0, 0, 1, 0, \
-\
-			/* segment_mark, sec_info_type, use_rela_p, has_tls_reloc,       */ \
-			0, 0, 0, 0, \
-\
-			/* has_gp_reloc, need_finalize_relax, reloc_done,                */ \
-			0, 0, 0, \
-\
-			/* vma, lma, size, rawsize                                       */ \
-			0, 0, 0, 0, \
-\
-			/* output_offset, output_section,              alignment_power,  */ \
-			0, (struct bfd_section *)&SEC, 0, \
-\
-			/* relocation, orelocation, reloc_count, filepos, rel_filepos,   */ \
-			NULL, NULL, 0, 0, 0, \
-\
-			/* line_filepos, userdata, contents, lineno, lineno_count,       */ \
-			0, NULL, NULL, NULL, 0, \
-\
-			/* entsize, kept_section, moving_line_filepos,                    */ \
-			0, NULL, 0, \
-\
-			/* target_index, used_by_bfd, constructor_chain, owner,          */ \
-			0, NULL, NULL, NULL, \
-\
-			/* symbol,                                                       */ \
-			(struct bfd_symbol *)SYM, \
-\
-			/* symbol_ptr_ptr,                                               */ \
-			(struct bfd_symbol **)SYM_PTR, \
-\
-			/* map_head, map_tail                                            */ \
-			{ NULL }, { NULL } \
-	}
-
 void bfd_section_list_clear(bfd *);
 
 asection *bfd_get_section_by_name(bfd *abfd, const char *name);

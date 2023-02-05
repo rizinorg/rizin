@@ -13,7 +13,7 @@
 
 #include "parse_common.c"
 
-static RzList *z80_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *z80_tokenize(const char *assembly, size_t length);
 
 // https://wikiti.brandonw.net/index.php?title=Z80_Instruction_Set
 static const RzPseudoGrammar z80_lexicon[] = {
@@ -92,7 +92,7 @@ static const RzPseudoGrammar z80_lexicon[] = {
 
 static const RzPseudoConfig z80_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(z80_lexicon, 3, z80_tokenize);
 
-RzList *z80_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *z80_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	const char *comma_replace = NULL;

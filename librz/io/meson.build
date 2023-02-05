@@ -1,4 +1,4 @@
-io_plugins = [
+io_plugins_list = [
   'ar',
   'fd',
   'bfdbg',
@@ -31,16 +31,22 @@ io_plugins = [
 ]
 
 if get_option('use_gpl')
-  io_plugins += 'qnx'
+  io_plugins_list += 'qnx'
 endif
 
 if host_machine.system() == 'windows'
-  io_plugins += [
+  io_plugins_list+= [
     'windbg',
     'w32dbg',
     'w32',
   ]
 endif
+
+io_plugins = {
+  'conf_name': 'plugins_io',
+  'base_cname': 'rz_io_plugin_',
+  'list': io_plugins_list,
+}
 
 rz_io_sources = [
   'io.c',
@@ -94,7 +100,6 @@ if host_machine.system() == 'windows'
 endif
 
 rz_io_deps = [
-  dependency('rzbochs'),
   dependency('rzgdb'),
   dependency('rzwinkd'),
   libzip_dep,
@@ -106,6 +111,7 @@ rz_io_deps = [
   rz_hash_dep,
   rz_crypto_dep,
   rz_cons_dep,
+  platform_deps,
 ]
 
 if get_option('use_gpl')
@@ -132,11 +138,9 @@ endif
 rz_io = library('rz_io', rz_io_sources,
   include_directories: platform_inc,
   dependencies: rz_io_deps,
-  c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
@@ -147,36 +151,8 @@ rz_io_dep = declare_dependency(link_with: rz_io,
                               include_directories: platform_inc)
 meson.override_dependency('rz_io', rz_io_dep)
 
-pkgconfig_mod.generate(rz_io,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_io',
-  filebase: 'rz_io',
-  requires: [
-    'rz_util',
-    'rz_socket'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_io.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_socket', 'rz_hash', 'rz_crypto', 'rz_cons']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_io.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_io': {
+    'target': rz_io,
+    'dependencies': ['rz_util', 'rz_socket', 'rz_hash', 'rz_crypto', 'rz_cons'],
+    'plugins': [io_plugins]
+}}

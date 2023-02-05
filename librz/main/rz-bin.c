@@ -573,50 +573,29 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 }
 
 /* bin callback */
-static int __lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
-	rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
-	return true;
+static bool lib_demangler_cb(RzLibPlugin *pl, void *user, void *data) {
+	return rz_demangler_plugin_add(user, (RzDemanglerPlugin *)data);
 }
 
-static int __lib_demangler_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
+static bool lib_demangler_dt(RzLibPlugin *pl, void *user, void *data) {
+	return rz_demangler_plugin_del(user, (RzDemanglerPlugin *)data);
 }
 
-static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
-	RzBin *bin = user;
-	rz_bin_plugin_add(bin, hand);
-	return true;
+static bool lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_plugin_add(user, (RzBinPlugin *)data);
 }
 
-static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
+static bool lib_bin_dt(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_plugin_del(user, (RzBinPlugin *)data);
 }
 
 /* binxtr callback */
-static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
-	RzBin *bin = user;
-	// printf(" * Added (dis)assembly plugin\n");
-	rz_bin_xtr_add(bin, hand);
-	return true;
+static bool lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_xtr_plugin_add(user, (RzBinXtrPlugin *)data);
 }
 
-static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
-}
-
-/* binldr callback */
-static int __lib_bin_ldr_cb(RzLibPlugin *pl, void *user, void *data) {
-	struct rz_bin_ldr_plugin_t *hand = (struct rz_bin_ldr_plugin_t *)data;
-	RzBin *bin = user;
-	// printf(" * Added (dis)assembly plugin\n");
-	rz_bin_ldr_add(bin, hand);
-	return true;
-}
-
-static int __lib_bin_ldr_dt(RzLibPlugin *pl, void *p, void *u) {
-	return true;
+static bool lib_bin_xtr_dt(RzLibPlugin *pl, void *user, void *data) {
+	return rz_bin_xtr_plugin_del(user, (RzBinXtrPlugin *)data);
 }
 
 static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
@@ -657,7 +636,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, PJ *pj, int mode) {
 		string->vaddr = s->vaddr + (string->paddr - s->paddr);
 	}
 	vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
-	const char *type_string = rz_bin_string_type(string->type);
+	const char *type_string = rz_str_enc_as_string(string->type);
 	const char *section_name = s ? s->name : "";
 
 	switch (mode) {
@@ -722,28 +701,22 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	bin = core.bin;
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
-		// TODO: remove after 0.4.0 is released
-		char *oldhomeplugindir = rz_path_home_prefix(RZ_HOME_OLD_PLUGINS);
 		char *plugindir = rz_path_system(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
-			&__lib_demangler_cb, &__lib_demangler_dt, bin->demangler);
+			&lib_demangler_cb, &lib_demangler_dt, bin->demangler);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",
-			&__lib_bin_cb, &__lib_bin_dt, bin);
+			&lib_bin_cb, &lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
-		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_LDR, "bin ldr plugins",
-			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
+			&lib_bin_xtr_cb, &lib_bin_xtr_dt, bin);
 		/* load plugins everywhere */
 		char *path = rz_sys_getenv(RZ_LIB_ENV);
 		if (!RZ_STR_ISEMPTY(path)) {
 			rz_lib_opendir(l, path, false);
 		}
 		rz_lib_opendir(l, homeplugindir, false);
-		rz_lib_opendir(l, oldhomeplugindir, false);
 		rz_lib_opendir(l, plugindir, false);
 		free(homeplugindir);
-		free(oldhomeplugindir);
 		free(plugindir);
 		free(path);
 		rz_lib_free(l);
@@ -962,13 +935,16 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'n':
 			name = opt.arg;
 			break;
-		case 'N':
+		case 'N': {
 			tmp = strchr(opt.arg, ':');
-			rz_config_set(core.config, "bin.minstr", opt.arg);
+			int bin_strlen = rz_num_math(NULL, opt.arg);
+			rz_config_set_i(core.config, "bin.minstr", bin_strlen);
 			if (tmp) {
-				rz_config_set(core.config, "bin.maxstr", tmp + 1);
+				bin_strlen = rz_num_math(NULL, tmp + 1);
+				rz_config_set_i(core.config, "bin.maxstr", bin_strlen);
 			}
 			break;
+		}
 		case 'h':
 			rz_core_fini(&core);
 			return rabin_show_help(1);
@@ -1136,10 +1112,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			return waitpid(child, NULL, 0);
 		}
 #endif
-		void *addr = rz_lib_dl_open(file);
+		void *addr = rz_sys_dlopen(file);
 		if (addr) {
 			eprintf("%s is loaded at 0x%" PFMT64x "\n", file, (ut64)(size_t)(addr));
-			rz_lib_dl_close(addr);
+			rz_sys_dlclose(addr);
 			rz_core_fini(&core);
 			return 0;
 		}
@@ -1162,8 +1138,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			return 1;
 		}
 	}
-	bin->minstrlen = rz_config_get_i(core.config, "bin.minstr");
-	bin->maxstrbuf = rz_config_get_i(core.config, "bin.maxstrbuf");
 
 	rz_bin_force_plugin(bin, forcebin);
 	rz_bin_load_filter(bin, action);
@@ -1178,9 +1152,16 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);
 	if (!bf) {
-		eprintf("rz-bin: Cannot open file\n");
-		result = 1;
-		goto err;
+		/* Try opening as a binary file */
+		bo.pluginname = "any";
+		RZ_LOG_INFO("Treating input file as a binary file...\n");
+
+		bf = rz_bin_open(bin, file, &bo);
+		if (!bf) {
+			RZ_LOG_ERROR("rz-bin: Cannot open file\n");
+			result = 1;
+			goto err;
+		}
 	}
 	/* required to automatically select a sub-bin when not specified */
 	(void)rz_core_bin_update_arch_bits(&core);
@@ -1188,6 +1169,11 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (baddr != UT64_MAX) {
 		rz_bin_set_baddr(bin, baddr);
 	}
+
+	bf->minstrlen = bin->minstrlen = rz_config_get_i(core.config, "bin.minstr");
+	bf->maxstrlen = bin->maxstrlen = rz_config_get_i(core.config, "bin.maxstr");
+	bin->maxstrbuf = rz_config_get_i(core.config, "bin.maxstrbuf");
+
 	if (rawstr) {
 		PJ *pj = NULL;
 		if (out_mode == RZ_MODE_JSON) {
@@ -1211,6 +1197,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			printf("%s", pj_string(pj));
 			pj_free(pj);
 		}
+	} else if (bf && bf->o) {
+		rz_bin_object_reset_strings(bin, bf, bf->o);
 	}
 	if (query) {
 		if (out_mode) {

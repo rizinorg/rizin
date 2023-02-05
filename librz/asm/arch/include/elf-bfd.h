@@ -210,7 +210,7 @@ struct elf_link_hash_entry {
 
 		/* Virtual table derivation info.  */
 		struct elf_link_hash_entry *parent;
-	} * vtable;
+	} *vtable;
 };
 
 /* Will references to this symbol always reference the symbol

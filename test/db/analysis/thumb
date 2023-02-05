@@ -11,7 +11,7 @@ pdr~case
 EOF
 EXPECT=<<EOF
 | 0x00000008                    bhs   case.0xa.0
-| 0x0000000a      switch.0x000  tbb   [0x00000010]                     ; switch table (6 cases) at 0xe
+| 0x0000000a      switch.0x000  tbb   [pc, r0]                         ; switch table (6 cases) at 0xe
 | 0x00000014       case.0xa.2:  ldr   r0, [0x00000050]                 ; [0x50:4]=0x200001a1
 | 0x0000001a                    beq   case.0xa.0
 | 0x0000002a       case.0xa.3:  movs  r0, 0

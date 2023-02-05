@@ -5,7 +5,6 @@
 #include <rz_vector.h>
 #include <rz_util/rz_serialize.h>
 #include <rz_type.h>
-#include <rz_sign.h>
 #include <rz_util/rz_path.h>
 #include "test_config.h"
 #include "minunit.h"
@@ -29,6 +28,13 @@ Sdb *types_ref_db() {
 	sdb_set(db, "enum.mika.ELIJAH", "0x2a", 0);
 	sdb_set(db, "enum.mika.0x2a", "ELIJAH", 0);
 	sdb_set(db, "enum.mika.0x539", "MODNAR", 0);
+	sdb_set(db, "my_sint_t", "type", 0);
+	sdb_set(db, "type.my_sint_t", "d", 0);
+	sdb_set(db, "type.my_sint_t.size", "32", 0);
+	sdb_set(db, "type.my_sint_t.typeclass", "Signed Integral", 0);
+	sdb_set(db, "my_float_t", "type", 0);
+	sdb_set(db, "type.my_float_t.size", "16", 0);
+	sdb_set(db, "type.my_float_t.typeclass", "Floating", 0);
 	return db;
 }
 
@@ -124,6 +130,20 @@ bool test_types_save() {
 	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
 
+	// atomic
+	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
+	type->name = strdup("my_sint_t");
+	type->attrs = RZ_TYPE_TYPECLASS_INTEGRAL_SIGNED;
+	type->size = 32;
+	rz_type_db_save_base_type(typedb, type);
+	rz_type_db_format_set(typedb, "my_sint_t", "d");
+
+	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
+	type->name = strdup("my_float_t");
+	type->attrs = RZ_TYPE_TYPECLASS_FLOATING;
+	type->size = 16;
+	rz_type_db_save_base_type(typedb, type);
+
 	Sdb *db = sdb_new0();
 	rz_serialize_types_save(db, typedb);
 
@@ -143,6 +163,14 @@ bool test_types_save() {
 	mu_assert_true(sdb_has_record(db, "enum.mika.ELIJAH", "0x2a"), "mika.ELIJAH");
 	mu_assert_true(sdb_has_record(db, "enum.mika.0x2a", "ELIJAH"), "mika.0x2a");
 	mu_assert_true(sdb_has_record(db, "enum.mika.0x539", "MODNAR"), "mika.0x539");
+	mu_assert_true(sdb_has_record(db, "my_sint_t", "type"), "atomic type");
+	mu_assert_true(sdb_has_record(db, "type.my_sint_t", "d"), "atomic type");
+	mu_assert_true(sdb_has_record(db, "type.my_sint_t.size", "32"), "atomic type");
+	mu_assert_true(sdb_has_record(db, "type.my_sint_t.typeclass", "Signed Integral"), "atomic type");
+	mu_assert_true(sdb_has_record(db, "my_float_t", "type"), "atomic type");
+	mu_assert_null(sdb_get(db, "type.my_float_t", 0), "atomic type");
+	mu_assert_true(sdb_has_record(db, "type.my_float_t.size", "16"), "atomic type");
+	mu_assert_true(sdb_has_record(db, "type.my_float_t.typeclass", "Floating"), "atomic type");
 
 	sdb_free(db);
 	rz_type_db_free(typedb);
@@ -220,6 +248,19 @@ bool test_types_load() {
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->type->identifier.name);
 	mu_assert_notnull(btype, "get union type");
 	mu_assert_eq(btype->kind, RZ_BASE_TYPE_KIND_UNION, "union type kind");
+
+	// atomic
+	type = rz_type_db_get_base_type(typedb, "my_sint_t");
+	mu_assert_notnull(type, "get type");
+	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
+	mu_assert_eq(type->size, 32, "type size");
+	mu_assert_eq(rz_base_type_typeclass(typedb, type), RZ_TYPE_TYPECLASS_INTEGRAL_SIGNED, "type typeclass");
+
+	type = rz_type_db_get_base_type(typedb, "my_float_t");
+	mu_assert_notnull(type, "get type");
+	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
+	mu_assert_eq(type->size, 16, "type size");
+	mu_assert_eq(rz_base_type_typeclass(typedb, type), RZ_TYPE_TYPECLASS_FLOATING, "type typeclass");
 
 	rz_type_db_free(typedb);
 	mu_end;

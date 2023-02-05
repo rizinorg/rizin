@@ -17,14 +17,12 @@
  * /
  *   /blocks
  *     0x<addr>={size:<ut64>, jump?:<ut64>, fail?:<ut64>, traced?:true, colorize?:<ut32>,
- *               fingerprint?:"<base64>", diff?: <RzAnalysisDiff>, switch_op?:<RzAnalysisSwitchOp>,
- *               ninstr:<int>, op_pos?:[<ut16>], stackptr:<int>, parent_stackptr:<int>,
- *               cmpval:<ut64>, cmpreg?:<str>}
+ *               switch_op?:<RzAnalysisSwitchOp>, ninstr:<int>, op_pos?:[<ut16>], sp?:<st64>,
+ *               sp_delta?:[<st16>], cmpval:<ut64>, cmpreg?:<str>}
  *   /functions
  *     0x<addr>={name:<str>, bits?:<int>, type:<int>, cc?:<str>, stack:<int>, maxstack:<int>,
  *               ninstr:<int>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
- *               fingerprint?:"<base64>", diff?:<RzAnalysisDiff>, bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>],
- *               labels?: {<str>:<ut64>}}
+ *               bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>], labels?: {<str>:<ut64>}}
  *   /xrefs
  *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"s"}]
  *
@@ -42,16 +40,8 @@
  *     /attrs
  *       <direct dump of RzAnalysis.sdb_classes_attrs>
  *
- *   /zigns
- *     <direct dump of RzAnalysis.sdb_zigns>
- *     /spaces
- *       see spaces.c
- *
  *   /imports
  *     <str>=i
- *
- * RzAnalysisDiff JSON:
- * {type?:"m"|"u", addr:<ut64>, dist:<double>, name?:<str>, size:<ut32>}
  *
  * RzAnalysisSwitchOp JSON:
  * {addr:<ut64>, min:<ut64>, max:<ut64>, def:<ut64>, cases:[<RzAnalysisCaseOp>]}
@@ -60,111 +50,10 @@
  * {addr:<ut64>, jump:<ut64>, value:<ut64>}
  *
  * RzAnalysisVar JSON:
- * {name:<str>, type:<str>, kind:"s|b|r", arg?:<bool>, delta?:<st64>, reg?:<str>, cmt?:<str>,
+ * {name:<str>, type:<str>, stack?:<st64>, reg?:<str>, cmt?:<str>,
  *   accs?: [{off:<st64>, type:"r|w|rw", reg:<str>, sp?:<st64>}], constrs?:[<int>,<ut64>,...]}
  *
  */
-
-RZ_API void rz_serialize_analysis_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisDiff *diff) {
-	pj_o(j);
-	switch (diff->type) {
-	case RZ_ANALYSIS_DIFF_TYPE_MATCH:
-		pj_ks(j, "type", "m");
-		break;
-	case RZ_ANALYSIS_DIFF_TYPE_UNMATCH:
-		pj_ks(j, "type", "u");
-		break;
-	}
-	if (diff->addr != UT64_MAX) {
-		pj_kn(j, "addr", diff->addr);
-	}
-	if (diff->dist != 0.0) {
-		pj_kd(j, "dist", diff->dist);
-	}
-	if (diff->name) {
-		pj_ks(j, "name", diff->name);
-	}
-	if (diff->size) {
-		pj_kn(j, "size", (ut64)diff->size);
-	}
-	pj_end(j);
-}
-
-enum {
-	DIFF_FIELD_TYPE,
-	DIFF_FIELD_ADDR,
-	DIFF_FIELD_DIST,
-	DIFF_FIELD_NAME,
-	DIFF_FIELD_SIZE
-};
-
-RZ_API RzSerializeAnalDiffParser rz_serialize_analysis_diff_parser_new(void) {
-	RzSerializeAnalDiffParser parser = rz_key_parser_new();
-	if (!parser) {
-		return NULL;
-	}
-	rz_key_parser_add(parser, "type", DIFF_FIELD_TYPE);
-	rz_key_parser_add(parser, "addr", DIFF_FIELD_ADDR);
-	rz_key_parser_add(parser, "dist", DIFF_FIELD_DIST);
-	rz_key_parser_add(parser, "name", DIFF_FIELD_NAME);
-	rz_key_parser_add(parser, "size", DIFF_FIELD_SIZE);
-	return parser;
-}
-
-RZ_API void rz_serialize_analysis_diff_parser_free(RzSerializeAnalDiffParser parser) {
-	rz_key_parser_free(parser);
-}
-
-RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RzJson *json) {
-	if (json->type != RZ_JSON_OBJECT) {
-		return NULL;
-	}
-	RzAnalysisDiff *diff = rz_analysis_diff_new();
-	if (!diff) {
-		return NULL;
-	}
-	RZ_KEY_PARSER_JSON(parser, json, child, {
-		case DIFF_FIELD_TYPE:
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			if (strcmp(child->str_value, "m") == 0) {
-				diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
-			} else if (strcmp(child->str_value, "u") == 0) {
-				diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-			}
-			break;
-		case DIFF_FIELD_ADDR:
-			if (child->type != RZ_JSON_INTEGER) {
-				break;
-			}
-			diff->addr = child->num.u_value;
-			break;
-		case DIFF_FIELD_DIST:
-			if (child->type == RZ_JSON_INTEGER) {
-				diff->dist = child->num.u_value;
-			} else if (child->type == RZ_JSON_DOUBLE) {
-				diff->dist = child->num.dbl_value;
-			}
-			break;
-		case DIFF_FIELD_NAME:
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			free(diff->name);
-			diff->name = strdup(child->str_value);
-			break;
-		case DIFF_FIELD_SIZE:
-			if (child->type != RZ_JSON_INTEGER) {
-				break;
-			}
-			diff->size = child->num.u_value;
-			break;
-		default:
-			break;
-	})
-	return diff;
-}
 
 RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op) {
 	pj_o(j);
@@ -260,17 +149,6 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	if (block->colorize) {
 		pj_kn(j, "colorize", (ut64)block->colorize);
 	}
-	if (block->fingerprint) {
-		char *b64 = rz_base64_encode_dyn(block->fingerprint, block->size);
-		if (b64) {
-			pj_ks(j, "fingerprint", b64);
-			free(b64);
-		}
-	}
-	if (block->diff) {
-		pj_k(j, "diff");
-		rz_serialize_analysis_diff_save(j, block->diff);
-	}
 
 	// TODO: cond? It's used nowhere...
 
@@ -282,24 +160,37 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	if (block->ninstr) {
 		pj_ki(j, "ninstr", block->ninstr);
 	}
-	if (block->op_pos && block->ninstr > 1) {
-		pj_k(j, "op_pos");
-		pj_a(j);
-		size_t i;
-		for (i = 0; i < block->ninstr - 1; i++) {
-			pj_n(j, block->op_pos[i]);
+	if (block->ninstr > 1) {
+		if (block->op_pos) {
+			pj_k(j, "op_pos");
+			pj_a(j);
+			for (size_t i = 0; i < block->ninstr - 1; i++) {
+				pj_n(j, block->op_pos[i]);
+			}
+			pj_end(j);
 		}
-		pj_end(j);
+		if (rz_vector_len(&block->sp_delta)) {
+			pj_k(j, "sp_delta");
+			pj_a(j);
+			for (size_t i = 0; i < block->ninstr; i++) {
+				if (i >= rz_vector_len(&block->sp_delta)) {
+					break;
+				}
+				// We save this negated, because most practical sp_delta vals are negative
+				// and so we can spare the '-' char.
+				pj_N(j, -*(st16 *)rz_vector_index_ptr(&block->sp_delta, i));
+			}
+			pj_end(j);
+		}
 	}
 
 	// op_bytes is only java, never set
 	// parent_reg_arena is never set
 
-	if (block->stackptr) {
-		pj_ki(j, "stackptr", block->stackptr);
-	}
-	if (block->parent_stackptr != INT_MAX) {
-		pj_ki(j, "parent_stackptr", block->parent_stackptr);
+	if (block->sp_entry != RZ_STACK_ADDR_INVALID) {
+		// We save this negated, because most practical sp_entry vals are negative
+		// and so we can spare the '-' char.
+		pj_kN(j, "sp", -block->sp_entry);
 	}
 	if (block->cmpval != UT64_MAX) {
 		pj_kn(j, "cmpval", block->cmpval);
@@ -330,13 +221,11 @@ enum {
 	BLOCK_FIELD_FAIL,
 	BLOCK_FIELD_TRACED,
 	BLOCK_FIELD_COLORIZE,
-	BLOCK_FIELD_FINGERPRINT,
-	BLOCK_FIELD_DIFF,
 	BLOCK_FIELD_SWITCH_OP,
 	BLOCK_FIELD_NINSTR,
 	BLOCK_FIELD_OP_POS,
-	BLOCK_FIELD_STACKPTR,
-	BLOCK_FIELD_PARENT_STACKPTR,
+	BLOCK_FIELD_SP_ENTRY,
+	BLOCK_FIELD_SP_DELTA,
 	BLOCK_FIELD_CMPVAL,
 	BLOCK_FIELD_CMPREG
 };
@@ -344,7 +233,6 @@ enum {
 typedef struct {
 	RzAnalysis *analysis;
 	RzKeyParser *parser;
-	RzSerializeAnalDiffParser diff_parser;
 } BlockLoadCtx;
 
 static bool block_load_cb(void *user, const char *k, const char *v) {
@@ -364,9 +252,9 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	proto.jump = UT64_MAX;
 	proto.fail = UT64_MAX;
 	proto.size = UT64_MAX;
-	proto.parent_stackptr = INT_MAX;
+	proto.sp_entry = RZ_STACK_ADDR_INVALID;
 	proto.cmpval = UT64_MAX;
-	size_t fingerprint_size = SIZE_MAX;
+	rz_vector_init(&proto.sp_delta, sizeof(st16), NULL, NULL);
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BLOCK_FIELD_SIZE:
 			if (child->type != RZ_JSON_INTEGER) {
@@ -397,40 +285,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 				break;
 			}
 			proto.colorize = (ut32)child->num.u_value;
-			break;
-		case BLOCK_FIELD_FINGERPRINT: {
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			if (proto.fingerprint) {
-				free(proto.fingerprint);
-				proto.fingerprint = NULL;
-			}
-			fingerprint_size = strlen(child->str_value);
-			if (!fingerprint_size) {
-				break;
-			}
-			proto.fingerprint = malloc(fingerprint_size);
-			if (!proto.fingerprint) {
-				break;
-			}
-			int decsz = rz_base64_decode(proto.fingerprint, child->str_value, fingerprint_size);
-			if (decsz <= 0) {
-				free(proto.fingerprint);
-				proto.fingerprint = NULL;
-				fingerprint_size = 0;
-			} else if (decsz < fingerprint_size) {
-				ut8 *n = realloc(proto.fingerprint, (size_t)decsz);
-				if (n) {
-					proto.fingerprint = n;
-					fingerprint_size = decsz;
-				}
-			}
-			break;
-		}
-		case BLOCK_FIELD_DIFF:
-			rz_analysis_diff_free(proto.diff);
-			proto.diff = rz_serialize_analysis_diff_load(ctx->diff_parser, child);
 			break;
 		case BLOCK_FIELD_SWITCH_OP:
 			rz_analysis_switch_op_free(proto.switch_op);
@@ -464,18 +318,28 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 			}
 			break;
 		}
-		case BLOCK_FIELD_STACKPTR:
+		case BLOCK_FIELD_SP_ENTRY:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
 			}
-			proto.stackptr = (int)child->num.s_value;
+			proto.sp_entry = -child->num.s_value;
 			break;
-		case BLOCK_FIELD_PARENT_STACKPTR:
-			if (child->type != RZ_JSON_INTEGER) {
+		case BLOCK_FIELD_SP_DELTA: {
+			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			proto.parent_stackptr = (int)child->num.s_value;
+			rz_vector_clear(&proto.sp_delta);
+			rz_vector_reserve(&proto.sp_delta, child->children.count);
+			RzJson *baby;
+			for (baby = child->children.first; baby; baby = baby->next) {
+				if (baby->type != RZ_JSON_INTEGER) {
+					break;
+				}
+				st16 val = -baby->num.s_value;
+				rz_vector_push(&proto.sp_delta, &val);
+			}
 			break;
+		}
 		case BLOCK_FIELD_CMPVAL:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
@@ -496,7 +360,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 
 	errno = 0;
 	ut64 addr = strtoull(k, NULL, 0);
-	if (errno || proto.size == UT64_MAX || (fingerprint_size != SIZE_MAX && fingerprint_size != proto.size) || (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
+	if (errno || proto.size == UT64_MAX || (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
 		goto error;
 	}
 
@@ -508,8 +372,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	block->fail = proto.fail;
 	block->traced = proto.traced;
 	block->colorize = proto.colorize;
-	block->fingerprint = proto.fingerprint;
-	block->diff = proto.diff;
 	block->switch_op = proto.switch_op;
 	block->ninstr = proto.ninstr;
 	if (proto.op_pos) {
@@ -517,22 +379,22 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 		block->op_pos = proto.op_pos;
 		block->op_pos_size = proto.op_pos_size;
 	}
-	block->stackptr = proto.stackptr;
-	block->parent_stackptr = proto.parent_stackptr;
+	block->sp_entry = proto.sp_entry;
+	rz_vector_fini(&block->sp_delta); // This should be a nop with a new block, but let's be safe
+	block->sp_delta = proto.sp_delta;
 	block->cmpval = proto.cmpval;
 	block->cmpreg = proto.cmpreg;
 
 	return true;
 error:
-	free(proto.fingerprint);
-	rz_analysis_diff_free(proto.diff);
 	rz_analysis_switch_op_free(proto.switch_op);
 	free(proto.op_pos);
+	rz_vector_fini(&proto.sp_delta);
 	return false;
 }
 
-RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
-	BlockLoadCtx ctx = { analysis, rz_key_parser_new(), diff_parser };
+RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
+	BlockLoadCtx ctx = { analysis, rz_key_parser_new() };
 	if (!ctx.parser) {
 		RZ_SERIALIZE_ERR(res, "parser init failed");
 		return false;
@@ -542,13 +404,11 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 	rz_key_parser_add(ctx.parser, "fail", BLOCK_FIELD_FAIL);
 	rz_key_parser_add(ctx.parser, "traced", BLOCK_FIELD_TRACED);
 	rz_key_parser_add(ctx.parser, "colorize", BLOCK_FIELD_COLORIZE);
-	rz_key_parser_add(ctx.parser, "fingerprint", BLOCK_FIELD_FINGERPRINT);
-	rz_key_parser_add(ctx.parser, "diff", BLOCK_FIELD_DIFF);
 	rz_key_parser_add(ctx.parser, "switch_op", BLOCK_FIELD_SWITCH_OP);
 	rz_key_parser_add(ctx.parser, "ninstr", BLOCK_FIELD_NINSTR);
 	rz_key_parser_add(ctx.parser, "op_pos", BLOCK_FIELD_OP_POS);
-	rz_key_parser_add(ctx.parser, "stackptr", BLOCK_FIELD_STACKPTR);
-	rz_key_parser_add(ctx.parser, "parent_stackptr", BLOCK_FIELD_PARENT_STACKPTR);
+	rz_key_parser_add(ctx.parser, "sp", BLOCK_FIELD_SP_ENTRY);
+	rz_key_parser_add(ctx.parser, "sp_delta", BLOCK_FIELD_SP_DELTA);
 	rz_key_parser_add(ctx.parser, "cmpval", BLOCK_FIELD_CMPVAL);
 	rz_key_parser_add(ctx.parser, "cmpreg", BLOCK_FIELD_CMPREG);
 	bool ret = sdb_foreach(db, block_load_cb, &ctx);
@@ -571,25 +431,13 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	// TODO: Save it properly instead of using the C representation
 	pj_ks(j, "type", vartype);
 	free(vartype);
-	switch (var->kind) {
-	case RZ_ANALYSIS_VAR_KIND_REG:
-		pj_ks(j, "kind", "r");
+	switch (var->storage.type) {
+	case RZ_ANALYSIS_VAR_STORAGE_STACK:
+		pj_kN(j, "stack", var->storage.stack_off);
 		break;
-	case RZ_ANALYSIS_VAR_KIND_SPV:
-		pj_ks(j, "kind", "s");
+	case RZ_ANALYSIS_VAR_STORAGE_REG:
+		pj_ks(j, "reg", var->storage.reg);
 		break;
-	case RZ_ANALYSIS_VAR_KIND_BPV:
-		pj_ks(j, "kind", "b");
-		break;
-	}
-	if (var->kind != RZ_ANALYSIS_VAR_KIND_REG) {
-		pj_kN(j, "delta", var->delta);
-	}
-	if (var->regname) {
-		pj_ks(j, "reg", var->regname);
-	}
-	if (var->isarg) {
-		pj_kb(j, "arg", true);
 	}
 	if (var->comment) {
 		pj_ks(j, "cmt", var->comment);
@@ -611,8 +459,8 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 				pj_ks(j, "type", "rw");
 				break;
 			}
-			if (acc->stackptr) {
-				pj_kn(j, "sp", acc->stackptr);
+			if (acc->reg_addend) {
+				pj_kN(j, "sp", acc->reg_addend);
 			}
 			if (acc->reg) {
 				pj_ks(j, "reg", acc->reg);
@@ -638,9 +486,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 enum {
 	VAR_FIELD_NAME,
 	VAR_FIELD_TYPE,
-	VAR_FIELD_KIND,
-	VAR_FIELD_ARG,
-	VAR_FIELD_DELTA,
+	VAR_FIELD_STACK,
 	VAR_FIELD_REG,
 	VAR_FIELD_COMMENT,
 	VAR_FIELD_ACCS,
@@ -648,15 +494,13 @@ enum {
 };
 
 RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
-	RzSerializeAnalDiffParser parser = rz_key_parser_new();
+	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
 	}
 	rz_key_parser_add(parser, "name", VAR_FIELD_NAME);
 	rz_key_parser_add(parser, "type", VAR_FIELD_TYPE);
-	rz_key_parser_add(parser, "kind", VAR_FIELD_KIND);
-	rz_key_parser_add(parser, "arg", VAR_FIELD_ARG);
-	rz_key_parser_add(parser, "delta", VAR_FIELD_DELTA);
+	rz_key_parser_add(parser, "stack", VAR_FIELD_STACK);
 	rz_key_parser_add(parser, "reg", VAR_FIELD_REG);
 	rz_key_parser_add(parser, "cmt", VAR_FIELD_COMMENT);
 	rz_key_parser_add(parser, "accs", VAR_FIELD_ACCS);
@@ -674,10 +518,8 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	}
 	const char *name = NULL;
 	const char *type = NULL;
-	RzAnalysisVarKind kind = -1;
-	bool arg = false;
-	st64 delta = ST64_MAX;
-	const char *regname = NULL;
+	bool have_storage = false;
+	RzAnalysisVarStorage storage;
 	const char *comment = NULL;
 	RzVector accesses;
 	rz_vector_init(&accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
@@ -699,42 +541,21 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			}
 			type = child->str_value;
 			break;
-		case VAR_FIELD_KIND:
-			if (child->type != RZ_JSON_STRING || !*child->str_value || child->str_value[1]) {
-				// must be a string of exactly 1 char
-				break;
-			}
-			switch (*child->str_value) {
-			case 'r':
-				kind = RZ_ANALYSIS_VAR_KIND_REG;
-				break;
-			case 's':
-				kind = RZ_ANALYSIS_VAR_KIND_SPV;
-				break;
-			case 'b':
-				kind = RZ_ANALYSIS_VAR_KIND_BPV;
-				break;
-			default:
-				break;
-			}
-			break;
-		case VAR_FIELD_ARG:
-			if (child->type != RZ_JSON_BOOLEAN) {
-				break;
-			}
-			arg = child->num.u_value ? true : false;
-			break;
-		case VAR_FIELD_DELTA:
+		case VAR_FIELD_STACK:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
 			}
-			delta = child->num.s_value;
+			storage.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+			storage.stack_off = child->num.s_value;
+			have_storage = true;
 			break;
 		case VAR_FIELD_REG:
 			if (child->type != RZ_JSON_STRING) {
 				break;
 			}
-			regname = child->str_value;
+			storage.type = RZ_ANALYSIS_VAR_STORAGE_REG;
+			storage.reg = child->str_value;
+			have_storage = true;
 			break;
 		case VAR_FIELD_COMMENT:
 			if (child->type != RZ_JSON_STRING) {
@@ -789,7 +610,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 				RzAnalysisVarAccess *acc = rz_vector_push(&accesses, NULL);
 				acc->offset = offv->num.s_value;
 				acc->type = acctype;
-				acc->stackptr = spv ? spv->num.s_value : 0;
+				acc->reg_addend = spv ? spv->num.s_value : 0;
 				acc->reg = regv->str_value;
 			}
 			break;
@@ -823,27 +644,17 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			break;
 	})
 
-	if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
-		if (!regname) {
-			goto beach;
-		}
-		RzRegItem *reg = rz_reg_get(fcn->analysis->reg, regname, -1);
-		if (!reg) {
-			goto beach;
-		}
-		delta = reg->index;
-	}
-	if (!name || !type || kind == -1 || delta == ST64_MAX) {
+	if (!name || !type || !have_storage) {
 		goto beach;
 	}
 	char *error_msg = NULL;
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
-	if (error_msg) {
+	if (!vartype || error_msg) {
 		RZ_LOG_ERROR("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
-		RZ_FREE(error_msg);
+		free(error_msg);
 		goto beach;
 	}
-	ret = rz_analysis_function_set_var(fcn, delta, kind, vartype, 0, arg, name);
+	ret = rz_analysis_function_set_var(fcn, &storage, vartype, 0, name);
 	rz_type_free(vartype);
 	if (!ret) {
 		goto beach;
@@ -854,7 +665,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	}
 	RzAnalysisVarAccess *acc;
 	rz_vector_foreach(&accesses, acc) {
-		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->stackptr);
+		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->reg_addend);
 	}
 	RzTypeConstraint *constr;
 	rz_vector_foreach(&constraints, constr) {
@@ -917,7 +728,7 @@ enum {
 };
 
 RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_new(void) {
-	RzSerializeAnalDiffParser parser = rz_key_parser_new();
+	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
 	}
@@ -1091,17 +902,6 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 	if (function->is_noreturn) {
 		pj_kb(j, "noreturn", true);
 	}
-	if (function->fingerprint) {
-		char *b64 = rz_base64_encode_dyn(function->fingerprint, function->fingerprint_size);
-		if (b64) {
-			pj_ks(j, "fingerprint", b64);
-			free(b64);
-		}
-	}
-	if (function->diff) {
-		pj_k(j, "diff");
-		rz_serialize_analysis_diff_save(j, function->diff);
-	}
 
 	pj_ka(j, "bbs");
 	RzListIter *it;
@@ -1165,8 +965,6 @@ enum {
 	FUNCTION_FIELD_BP_FRAME,
 	FUNCTION_FIELD_BP_OFF,
 	FUNCTION_FIELD_NORETURN,
-	FUNCTION_FIELD_FINGERPRINT,
-	FUNCTION_FIELD_DIFF,
 	FUNCTION_FIELD_BBS,
 	FUNCTION_FIELD_IMPORTS,
 	FUNCTION_FIELD_VARS,
@@ -1176,7 +974,6 @@ enum {
 typedef struct {
 	RzAnalysis *analysis;
 	RzKeyParser *parser;
-	RzSerializeAnalDiffParser diff_parser;
 	RzSerializeAnalVarParser var_parser;
 } FunctionLoadCtx;
 
@@ -1269,43 +1066,6 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 			}
 			noreturn = child->num.u_value ? true : false;
 			break;
-		case FUNCTION_FIELD_FINGERPRINT:
-			if (child->type != RZ_JSON_STRING) {
-				break;
-			}
-			if (function->fingerprint) {
-				free(function->fingerprint);
-				function->fingerprint = NULL;
-			}
-			function->fingerprint_size = strlen(child->str_value);
-			if (!function->fingerprint_size) {
-				break;
-			}
-			function->fingerprint = malloc(function->fingerprint_size);
-			if (!function->fingerprint) {
-				function->fingerprint_size = 0;
-				break;
-			}
-			int decsz = rz_base64_decode(function->fingerprint, child->str_value, function->fingerprint_size);
-			if (decsz <= 0) {
-				free(function->fingerprint);
-				function->fingerprint = NULL;
-				function->fingerprint_size = 0;
-			} else if (decsz < function->fingerprint_size) {
-				ut8 *n = realloc(function->fingerprint, (size_t)decsz);
-				if (!n) {
-					free(function->fingerprint);
-					function->fingerprint = NULL;
-					function->fingerprint_size = 0;
-				}
-				function->fingerprint = n;
-				function->fingerprint_size = (size_t)decsz;
-			}
-			break;
-		case FUNCTION_FIELD_DIFF:
-			rz_analysis_diff_free(function->diff);
-			function->diff = rz_serialize_analysis_diff_load(ctx->diff_parser, child);
-			break;
 		case FUNCTION_FIELD_BBS: {
 			if (child->type != RZ_JSON_ARRAY) {
 				break;
@@ -1394,11 +1154,10 @@ beach:
 	return ret;
 }
 
-RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	FunctionLoadCtx ctx = {
 		.analysis = analysis,
 		.parser = rz_key_parser_new(),
-		.diff_parser = diff_parser,
 		.var_parser = rz_serialize_analysis_var_parser_new()
 	};
 	bool ret;
@@ -1418,8 +1177,6 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	rz_key_parser_add(ctx.parser, "bp_frame", FUNCTION_FIELD_BP_FRAME);
 	rz_key_parser_add(ctx.parser, "bp_off", FUNCTION_FIELD_BP_OFF);
 	rz_key_parser_add(ctx.parser, "noreturn", FUNCTION_FIELD_NORETURN);
-	rz_key_parser_add(ctx.parser, "fingerprint", FUNCTION_FIELD_FINGERPRINT);
-	rz_key_parser_add(ctx.parser, "diff", FUNCTION_FIELD_DIFF);
 	rz_key_parser_add(ctx.parser, "bbs", FUNCTION_FIELD_BBS);
 	rz_key_parser_add(ctx.parser, "imports", FUNCTION_FIELD_IMPORTS);
 	rz_key_parser_add(ctx.parser, "vars", FUNCTION_FIELD_VARS);
@@ -2169,25 +1926,6 @@ RZ_API bool rz_serialize_analysis_typelinks_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	return rz_serialize_typelinks_load(db, analysis, res);
 }
 
-RZ_API void rz_serialize_analysis_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	sdb_copy(analysis->sdb_zigns, db);
-	rz_serialize_spaces_save(sdb_ns(db, "spaces", true), &analysis->zign_spaces);
-}
-
-RZ_API bool rz_serialize_analysis_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_reset(analysis->sdb_zigns);
-	sdb_copy(db, analysis->sdb_zigns);
-	Sdb *spaces_db = sdb_ns(db, "spaces", false);
-	if (!spaces_db) {
-		RZ_SERIALIZE_ERR(res, "missing spaces namespace");
-		return false;
-	}
-	if (!rz_serialize_spaces_load(spaces_db, &analysis->zign_spaces, false, res)) {
-		return false;
-	}
-	return true;
-}
-
 RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	RzListIter *it;
 	const char *imp;
@@ -2225,7 +1963,6 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_types_save(sdb_ns(db, "types", true), analysis);
 	rz_serialize_analysis_callables_save(sdb_ns(db, "callables", true), analysis);
 	rz_serialize_analysis_typelinks_save(sdb_ns(db, "typelinks", true), analysis);
-	rz_serialize_analysis_sign_save(sdb_ns(db, "zigns", true), analysis);
 	rz_serialize_analysis_imports_save(sdb_ns(db, "imports", true), analysis);
 	rz_serialize_analysis_cc_save(sdb_ns(db, "cc", true), analysis);
 	rz_serialize_analysis_global_var_save(sdb_ns(db, "vars", true), analysis);
@@ -2233,18 +1970,14 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = false;
-	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
-	if (!diff_parser) {
-		goto beach;
-	}
+	Sdb *subdb = NULL;
 
 	rz_analysis_purge(analysis);
 
-	Sdb *subdb;
 #define SUB(ns, call) RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, goto beach;)
 	SUB("xrefs", rz_serialize_analysis_xrefs_load(subdb, analysis, res));
 
-	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));
+	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, res));
 
 	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
 	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
@@ -2252,7 +1985,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
 
 	// All bbs have ref=1 now
-	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, diff_parser, res));
+	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, res));
 	SUB("noreturn", rz_serialize_analysis_function_noreturn_load(subdb, analysis, res));
 	// BB's refs have increased if they are part of a function.
 	// We must subtract from each to hold our invariant again.
@@ -2273,13 +2006,11 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 
 	SUB("meta", rz_serialize_analysis_meta_load(subdb, analysis, res));
 	SUB("hints", rz_serialize_analysis_hints_load(subdb, analysis, res));
-	SUB("zigns", rz_serialize_analysis_sign_load(subdb, analysis, res));
 	SUB("imports", rz_serialize_analysis_imports_load(subdb, analysis, res));
 	SUB("cc", rz_serialize_analysis_cc_load(subdb, analysis, res));
 	SUB("vars", rz_serialize_analysis_global_var_load(subdb, analysis, res));
 
 	ret = true;
 beach:
-	rz_serialize_analysis_diff_parser_free(diff_parser);
 	return ret;
 }

@@ -14,7 +14,7 @@ To learn more on Rizin you may want to read the
 
 # How to install
 
-Look at [INSTALL.md](./INSTALL.md).
+Look at [install instructions](https://rizin.re/install/) on our web page.
 
 # How to build
 
@@ -62,17 +62,18 @@ Look at [test/README.md][].
 
 ## Supported Operating Systems
 
-Windows (since XP), GNU/Linux, GNU/Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
-[Dragonfly|Net|Free|Open]BSD, Android, QNX, Solaris, Haiku, FirefoxOS.
+Windows 7 and higher, Apple macOS/iOS/iPadOS, GNU/Linux,
+[Dragonfly|Net|Free|Open]BSD, Android, QNX, Solaris/Illumos, Haiku,
+GNU/Darwin, GNU/Hurd.
 
 ## Supported Architectures
 
-i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
-XAP, System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
-V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
+i386, x86-64, ARM/ARM64, RISC-V, PowerPC, MIPS, AVR, SPARC, System Z (S390),
+SuperH, m68k, m680x, XAP, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300,
+V810, V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, TMS320 (c54x, c55x, c55+, c66), Hexagon, DCPU16, LANAI,
-MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
+MCORE, mcs96, RSP, C-SKY(MCore), VAX, AMD Am29000.
 
 There is also support for the following bytecode formats:
 
@@ -80,9 +81,9 @@ Dalvik, EBC, Java, Lua, Python, WebAssembly, Brainfuck, Malbolge
 
 ## Supported File Formats
 
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
-Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, NE, LE, TE, XBE, BIOS/UEFI,
+Dyldcache, DEX, ART, CGC, ELF, Java class, Android boot image, Plan9 executable,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), DMP (Windows pagedump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 

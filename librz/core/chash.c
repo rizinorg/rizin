@@ -3,7 +3,7 @@
 
 #include <rz_core.h>
 
-RZ_API RzCmdStatus rz_core_hash_plugin_print(RzCmdStateOutput *state, const RzMsgDigestPlugin *plugin) {
+RZ_API RzCmdStatus rz_core_hash_plugin_print(RzCmdStateOutput *state, const RzHashPlugin *plugin) {
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET: {
@@ -31,14 +31,17 @@ RZ_API RzCmdStatus rz_core_hash_plugin_print(RzCmdStateOutput *state, const RzMs
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_hash_plugins_print(RzCmdStateOutput *state) {
-	const RzMsgDigestPlugin *plugin = NULL;
+RZ_API RzCmdStatus rz_core_hash_plugins_print(RzHash *hash, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(hash, RZ_CMD_STATUS_ERROR);
+
+	const RzHashPlugin *plugin = NULL;
 	RzCmdStatus status;
+	RzListIter *it;
 	rz_cmd_state_output_array_start(state);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_println("algorithm      license    author");
 	}
-	for (size_t j = 0; (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
+	rz_list_foreach (hash->plugins, it, plugin) {
 		status = rz_core_hash_plugin_print(state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;

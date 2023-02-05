@@ -1728,7 +1728,7 @@ end:
 	return ret;
 }
 
-RzList *gdbr_pids_list(libgdbr_t *g, int pid) {
+RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RzList *list = NULL;
 	int tpid = -1, ttid = -1;
@@ -1830,7 +1830,7 @@ end:
 	return list;
 }
 
-RzList *gdbr_threads_list(libgdbr_t *g, int pid) {
+RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RzList *list = NULL;
 	int tpid = -1, ttid = -1;

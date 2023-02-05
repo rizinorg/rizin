@@ -3,7 +3,7 @@
 #include <errno.h>
 
 #include <rz_crypto.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_socket.h>
 #include <rz_util.h>
 
@@ -35,6 +35,8 @@ typedef struct iobnet_t {
 	RzThreadLock *key_lock;
 	// KDNet Protocol version of the debuggee
 	ut8 version;
+	RzHash *hash;
+	RzCrypto *crypto;
 } iobnet_t;
 
 // Constants to convert ASCII to its base36 value
@@ -85,24 +87,24 @@ static ut64 base36_decode(const char *str) {
  * @param resbuf, the buffer that contains the KDNet Data of a Response packet.
  */
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
-	RzMsgDigestSize digest_size = 0;
+	RzHashSize digest_size = 0;
 	const ut8 *digest = NULL;
-	RzMsgDigest *md = rz_msg_digest_new_with_algo2("sha256");
+	RzHashCfg *md = rz_hash_cfg_new_with_algo2(obj->hash, "sha256");
 	if (!md) {
 		return false;
 	}
 
-	if (!rz_msg_digest_update(md, obj->key, 32) ||
-		!rz_msg_digest_update(md, resbuf, size) ||
-		!rz_msg_digest_final(md) ||
-		!(digest = rz_msg_digest_get_result(md, "sha256", &digest_size))) {
+	if (!rz_hash_cfg_update(md, obj->key, 32) ||
+		!rz_hash_cfg_update(md, resbuf, size) ||
+		!rz_hash_cfg_final(md) ||
+		!(digest = rz_hash_cfg_get_result(md, "sha256", &digest_size))) {
 
-		rz_msg_digest_free(md);
+		rz_hash_cfg_free(md);
 		return false;
 	}
 
 	memcpy(obj->datakey, digest, digest_size);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 
 	return true;
 }
@@ -114,6 +116,8 @@ static void *iob_net_open(const char *path) {
 	if (!obj) {
 		return NULL;
 	}
+	obj->hash = rz_hash_new();
+	obj->crypto = rz_crypto_new();
 	obj->key_lock = rz_th_lock_new(false);
 	if (!obj->key_lock) {
 		free(obj);
@@ -172,29 +176,28 @@ static bool iob_net_close(void *p) {
 	}
 
 	rz_socket_free(obj->sock);
+	rz_hash_free(obj->hash);
+	rz_crypto_free(obj->crypto);
 	free(obj);
 	return ret;
 }
 
 static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RzCrypto *cry = rz_crypto_new();
-	if (!cry) {
-		return false;
-	}
-	if (!rz_crypto_use(cry, "aes-cbc")) {
+	rz_crypto_reset(obj->crypto);
+	if (!rz_crypto_use(obj->crypto, "aes-cbc")) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!rz_crypto_set_key(cry, obj->datakey, sizeof(obj->datakey), 0, 0)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->datakey, sizeof(obj->datakey), 0, 0)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL: // Control Channel
-		if (!rz_crypto_set_key(cry, obj->key, sizeof(obj->key), 0, 0)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->key, sizeof(obj->key), 0, 0)) {
 			goto end;
 		}
 		break;
@@ -203,17 +206,17 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!rz_crypto_set_iv(cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!rz_crypto_set_iv(obj->crypto, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Encrypt the buffer except HMAC
-	if (rz_crypto_final(cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (rz_crypto_final(obj->crypto, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite the buffer with encrypted data
 	int sz;
-	const ut8 *encbuf = rz_crypto_get_output(cry, &sz);
+	const ut8 *encbuf = rz_crypto_get_output(obj->crypto, &sz);
 	if (!encbuf) {
 		goto end;
 	}
@@ -221,7 +224,6 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 
 	ret = true;
 end:
-	rz_crypto_free(cry);
 	return ret;
 }
 
@@ -263,22 +265,22 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 	int off = sizeof(kdnet_packet_t) + KDNET_DATA_SIZE + size + padsize;
 
 	const ut8 *digest = NULL;
-	RzMsgDigest *md = rz_msg_digest_new_with_algo("sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo(obj->hash, "sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
 	if (!md) {
 		free(encbuf);
 		return NULL;
 	}
 
-	if (!rz_msg_digest_update(md, encbuf, off) ||
-		!rz_msg_digest_final(md) ||
-		!(digest = rz_msg_digest_get_result(md, "sha256", NULL))) {
+	if (!rz_hash_cfg_update(md, encbuf, off) ||
+		!rz_hash_cfg_final(md) ||
+		!(digest = rz_hash_cfg_get_result(md, "sha256", NULL))) {
 		free(encbuf);
-		rz_msg_digest_free(md);
+		rz_hash_cfg_free(md);
 		return NULL;
 	}
 
 	memcpy(encbuf + off, digest, KDNET_HMAC_SIZE);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 
 	// Encrypt the KDNet Data, KD Packet and padding
 	if (!_encrypt(obj, encbuf + sizeof(kdnet_packet_t), encsize - sizeof(kdnet_packet_t), type)) {
@@ -294,23 +296,20 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RzCrypto *cry = rz_crypto_new();
-	if (!cry) {
-		return false;
-	}
-	if (!rz_crypto_use(cry, "aes-cbc")) {
+	rz_crypto_reset(obj->crypto);
+	if (!rz_crypto_use(obj->crypto, "aes-cbc")) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!rz_crypto_set_key(cry, obj->datakey, sizeof(obj->datakey), 0, 1)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->datakey, sizeof(obj->datakey), 0, 1)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL:
-		if (!rz_crypto_set_key(cry, obj->key, sizeof(obj->key), 0, 1)) {
+		if (!rz_crypto_set_key(obj->crypto, obj->key, sizeof(obj->key), 0, 1)) {
 			goto end;
 		}
 		break;
@@ -319,17 +318,17 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!rz_crypto_set_iv(cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!rz_crypto_set_iv(obj->crypto, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Decrypt the buffer except HMAC
-	if (rz_crypto_final(cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (rz_crypto_final(obj->crypto, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite it with decrypted data
 	int sz;
-	const ut8 *decbuf = rz_crypto_get_output(cry, &sz);
+	const ut8 *decbuf = rz_crypto_get_output(obj->crypto, &sz);
 	if (!decbuf) {
 		goto end;
 	}
@@ -337,7 +336,6 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	ret = true;
 
 end:
-	rz_crypto_free(cry);
 	return ret;
 }
 
@@ -416,20 +414,20 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 
 bool _verifyhmac(iobnet_t *obj) {
 	const ut8 *digest = NULL;
-	RzMsgDigest *md = rz_msg_digest_new_with_algo("sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
+	RzHashCfg *md = rz_hash_cfg_new_with_algo(obj->hash, "sha256", obj->hmackey, KDNET_HMACKEY_SIZE);
 	if (!md) {
 		return false;
 	}
 
-	if (!rz_msg_digest_update(md, obj->read_buf, obj->read_size - KDNET_HMAC_SIZE) ||
-		!rz_msg_digest_final(md) ||
-		!(digest = rz_msg_digest_get_result(md, "sha256", NULL))) {
-		rz_msg_digest_free(md);
+	if (!rz_hash_cfg_update(md, obj->read_buf, obj->read_size - KDNET_HMAC_SIZE) ||
+		!rz_hash_cfg_final(md) ||
+		!(digest = rz_hash_cfg_get_result(md, "sha256", NULL))) {
+		rz_hash_cfg_free(md);
 		return false;
 	}
 
 	bool result = !memcmp(digest, obj->read_buf + obj->read_size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE);
-	rz_msg_digest_free(md);
+	rz_hash_cfg_free(md);
 
 	return result;
 }

@@ -21,10 +21,10 @@ typedef struct rz_bin_le_obj_s {
 
 rz_bin_le_obj_t *rz_bin_le_new_buf(RzBuffer *buf);
 void rz_bin_le_free(rz_bin_le_obj_t *bin);
-RzList *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin);
-RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin);
-RzList *rz_bin_le_get_symbols(rz_bin_le_obj_t *bin);
-RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin);
-RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin);
-RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin);
+RzList /*<RzBinAddr *>*/ *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin);
+RzList /*<RzBinSection *>*/ *rz_bin_le_get_sections(rz_bin_le_obj_t *bin);
+RzList /*<RzBinSymbol *>*/ *rz_bin_le_get_symbols(rz_bin_le_obj_t *bin);
+RzList /*<RzBinImport *>*/ *rz_bin_le_get_imports(rz_bin_le_obj_t *bin);
+RzList /*<char *>*/ *rz_bin_le_get_libs(rz_bin_le_obj_t *bin);
+RzList /*<RzBinReloc *>*/ *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin);
 #endif

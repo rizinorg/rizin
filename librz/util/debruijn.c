@@ -94,7 +94,10 @@ RZ_API RZ_OWN char *rz_debruijn_pattern(int size, int start, const char *charset
 		return NULL;
 	}
 	size_t len = strlen(pat + start);
-	rz_return_val_if_fail(len <= size, NULL);
+	if (len > size) {
+		free(pat);
+		return NULL;
+	}
 	strcpy(pat2, pat + start);
 	free(pat);
 	return pat2;

@@ -17,7 +17,7 @@ static bool get_functions_block_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_get_functions_in(RzAnalysis *analysis, ut64 addr) {
+RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_functions_in(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -77,7 +77,6 @@ RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
 	fcn->cc = rz_str_constpool_get(&analysis->constpool, rz_analysis_cc_default(analysis));
 	fcn->bits = analysis->bits;
 	fcn->bbs = rz_list_new();
-	fcn->diff = rz_analysis_diff_new();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
@@ -111,17 +110,13 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 		ht_pp_delete(analysis->ht_name_fun, fcn->name);
 	}
 
-	ht_up_free(fcn->inst_vars);
-	fcn->inst_vars = NULL;
 	rz_analysis_function_delete_all_vars(fcn);
 
+	ht_up_free(fcn->inst_vars);
 	ht_up_free(fcn->labels);
 	ht_pp_free(fcn->label_addrs);
-
+	rz_type_free(fcn->ret_type);
 	free(fcn->name);
-	fcn->bbs = NULL;
-	free(fcn->fingerprint);
-	rz_analysis_diff_free(fcn->diff);
 	rz_list_free(fcn->imports);
 	free(fcn);
 }
@@ -143,7 +138,7 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	return true;
 }
 
-RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, int type, RzAnalysisDiff *diff) {
+RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type) {
 	RzAnalysisFunction *fcn = rz_analysis_function_new(analysis);
 	if (!fcn) {
 		return NULL;
@@ -157,18 +152,10 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 		fcn->name = strdup(name);
 	} else {
 		const char *fcnprefix = analysis->coreb.cfgGet ? analysis->coreb.cfgGet(analysis->coreb.core, "analysis.fcnprefix") : NULL;
-		if (!fcnprefix) {
+		if (RZ_STR_ISEMPTY(fcnprefix)) {
 			fcnprefix = "fcn";
 		}
 		fcn->name = rz_str_newf("%s.%08" PFMT64x, fcnprefix, fcn->addr);
-	}
-	if (diff) {
-		fcn->diff->type = diff->type;
-		fcn->diff->addr = diff->addr;
-		RZ_FREE(fcn->diff->name);
-		if (diff->name) {
-			fcn->diff->name = strdup(diff->name);
-		}
 	}
 	if (!rz_analysis_add_function(analysis, fcn)) {
 		rz_analysis_function_free(fcn);
@@ -375,7 +362,7 @@ RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn) {
 	return false;
 }
 
-RZ_API RZ_BORROW RzList *rz_analysis_function_list(RzAnalysis *analysis) {
+RZ_API RZ_BORROW RzList /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return analysis->fcns;
 }

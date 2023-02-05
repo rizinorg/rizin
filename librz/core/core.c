@@ -362,7 +362,7 @@ static ut64 numget(RzCore *core, const char *k) {
 	return rz_num_math(core->num, k);
 }
 
-static const RzList *__flagsGet(RzCore *core, ut64 offset) {
+static const RzList /*<RzFlagItem *>*/ *__flagsGet(RzCore *core, ut64 offset) {
 	return rz_flag_get_list(core->flags, offset);
 }
 
@@ -588,7 +588,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		case 1:
 			return rz_read_ble8(buf);
 		default:
-			eprintf("Invalid reference size: %d (%s)\n", refsz, str);
+			RZ_LOG_ERROR("core: invalid reference size: %d (%s)\n", refsz, str);
 			return 0LL;
 		}
 	} break;
@@ -605,7 +605,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return rz_debug_reg_get(core->dbg, str + 2);
 		case 'k': // $k{kv}
 			if (str[2] != '{') {
-				eprintf("Expected '{' after 'k'.\n");
+				RZ_LOG_ERROR("core: expected '{' after 'k'.\n");
 				break;
 			}
 			bptr = strdup(str + 3);
@@ -620,7 +620,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			out = sdb_querys(core->sdb, NULL, 0, bptr);
 			if (out && *out) {
 				if (strstr(out, "$k{")) {
-					eprintf("Recursivity is not permitted here\n");
+					RZ_LOG_ERROR("core: recursivity is not permitted here\n");
 				} else {
 					ret = rz_num_math(core->num, out);
 				}
@@ -897,7 +897,7 @@ static const char *rizin_argv[] = {
 	"aar?", "aar", "aar*", "aarj", "aas", "aat", "aaT", "aau", "aav",
 	"a8", "ab",
 	"acl", "acll", "aclj", "acl*", "ac?", "ac", "ac-", "acn", "acv", "acvf", "acv-", "acb", "acb-", "acm", "acm-", "acmn",
-	"aC?", "aC", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk",
+	"aC?", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk",
 	"ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecb", "aecs", "aecc", "aecu", "aecue",
 	"aef", "aefa",
 	"aei", "aeim", "aeip", "aek", "aek-", "aeli", "aelir", "aep?", "aep", "aep-", "aepc",
@@ -992,8 +992,8 @@ static const char *rizin_argv[] = {
 	"pF?", "pF", "pFa", "pFaq", "pFo", "pFp", "pFx",
 	"pg?", "pg", "pg*", "pg-*",
 	"ph?", "ph", "ph=",
-	"pi?", "pi", "pia", "pib", "pid", "pie", "pif?", "pif", "pifc", "pifcj", "pifj", "pij", "pir",
-	"pI?", "pI", "pIa", "pIb", "pId", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIj", "pIr",
+	"pi?", "pi", "pia", "pib", "pie", "pif?", "pif", "pifc", "pifcj", "pifj", "pir",
+	"pI?", "pI", "pIa", "pIb", "pIe", "pIf?", "pIf", "pIfc", "pIfcj", "pIfj", "pIr",
 	"pj?", "pj", "pj.", "pj..",
 	"pk?", "pk", "pK?", "pK",
 	"pm?", "pm",
@@ -1329,24 +1329,6 @@ static void autocomplete_sdb(RzCore *core, RzLineCompletion *completion, const c
 	}
 }
 
-static void autocomplete_zignatures(RzCore *core, RzLineCompletion *completion, const char *msg) {
-	rz_return_if_fail(msg);
-	int length = strlen(msg);
-	RzSpaces *zs = &core->analysis->zign_spaces;
-	RzSpace *s;
-	RzSpaceIter it;
-
-	rz_spaces_foreach(zs, it, s) {
-		if (!strncmp(msg, s->name, length)) {
-			rz_line_completion_push(completion, s->name);
-		}
-	}
-
-	if (strlen(msg) == 0) {
-		rz_line_completion_push(completion, "*");
-	}
-}
-
 static void autocomplete_flagspaces(RzCore *core, RzLineCompletion *completion, const char *msg) {
 	rz_return_if_fail(msg);
 	int length = strlen(msg);
@@ -1375,23 +1357,6 @@ static void autocomplete_functions(RzCore *core, RzLineCompletion *completion, c
 			rz_line_completion_push(completion, name);
 		}
 		free(name);
-	}
-}
-
-static void autocomplete_macro(RzCore *core, RzLineCompletion *completion, const char *str) {
-	rz_return_if_fail(core && core->rcmd && completion && str);
-	RzCmdMacroItem *item;
-	RzListIter *iter;
-	size_t n = strlen(str);
-	rz_list_foreach (core->rcmd->macro.macros, iter, item) {
-		char *p = item->name;
-		if (!*str || !strncmp(str, p, n)) {
-			char *buf = rz_str_newf("%s%s)", str, p);
-			if (buf) {
-				rz_line_completion_push(completion, buf);
-				free(buf);
-			}
-		}
 	}
 }
 
@@ -1516,9 +1481,6 @@ static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLine
 	case RZ_CORE_AUTOCMPLT_FCN:
 		autocomplete_functions(core, completion, p);
 		break;
-	case RZ_CORE_AUTOCMPLT_ZIGN:
-		autocomplete_zignatures(core, completion, p);
-		break;
 	case RZ_CORE_AUTOCMPLT_EVAL:
 		autocomplete_evals(core, completion, p);
 		break;
@@ -1527,9 +1489,6 @@ static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLine
 		break;
 	case RZ_CORE_AUTOCMPLT_BRKP:
 		autocomplete_breakpoints(core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_MACR:
-		autocomplete_macro(core, completion, p);
 		break;
 	case RZ_CORE_AUTOCMPLT_FILE:
 		autocomplete_file(completion, p);
@@ -1667,9 +1626,9 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 		RzList *vars;
 		if (!strncmp(buf->data, "afvn ", 5)) {
-			vars = rz_analysis_var_list(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+			vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_STORAGE_STACK);
 		} else {
-			vars = rz_list_new(); // TODO rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_ARG);
+			vars = rz_list_new(); // TODO rz_analysis_var_list (fcn, RZ_ANALYSIS_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RzAnalysisVar *var;
@@ -1696,15 +1655,6 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			if (!len || !strncmp(buf->data, key, len)) {
 				rz_line_completion_push(completion, key);
 			}
-		}
-	} else if (!strncmp(buf->data, "zo ", 3) || !strncmp(buf->data, "zoz ", 4)) {
-		if (core->analysis->zign_path && core->analysis->zign_path[0]) {
-			char *zignpath = rz_file_abspath(core->analysis->zign_path);
-			char *paths[2] = { zignpath, NULL };
-			autocompleteFilename(completion, buf, paths, 1);
-			free(zignpath);
-		} else {
-			autocompleteFilename(completion, buf, NULL, 1);
 		}
 	} else if (find_e_opts(core, completion, buf)) {
 		return;
@@ -2046,11 +1996,9 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 					}
 				}
 			} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
-				ut8 buf[32];
-				ut32 *n32 = (ut32 *)buf;
-				ut64 *n64 = (ut64 *)buf;
+				ut8 buf[8];
 				if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-					ut64 n = (bits == 64) ? *n64 : *n32;
+					ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
 					rz_strbuf_appendf(s, "0x%" PFMT64x " ", n);
 				}
 			}
@@ -2077,7 +2025,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 			case 2:
 				r = rz_utf8_encode_str((const RzRune *)buf, widebuf, sizeof(widebuf) - 1);
 				if (r == -1) {
-					eprintf("Something was wrong with refs\n");
+					RZ_LOG_ERROR("core: something was wrong with refs\n");
 				} else {
 					if (pj) {
 						pj_ks(pj, "string", (const char *)widebuf);
@@ -2091,11 +2039,9 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	}
 	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
-		ut8 buf[32];
-		ut32 *n32 = (ut32 *)buf;
-		ut64 *n64 = (ut64 *)buf;
+		ut8 buf[8];
 		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			ut64 n = (bits == 64) ? *n64 : *n32;
+			ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
 			if (n != value) {
 				if (pj) {
 					pj_k(pj, "ref");
@@ -2226,7 +2172,7 @@ static void __init_autocomplete_default(RzCore *core) {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc",
-		"rizin", "rz-agent", "rz-asm", "rz-ax", "rz-bin", "rz-diff", "rz-find", "rz-gg", "rz-hash", "rz-pm", "rz-run", "rz-sign",
+		"rizin", "rz-asm", "rz-ax", "rz-bin", "rz-diff", "rz-find", "rz-gg", "rz-hash", "rz-pm", "rz-run", "rz-sign",
 		"cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
 		"less", "head", "Ps", "Pl", NULL
@@ -2239,7 +2185,6 @@ static void __init_autocomplete_default(RzCore *core) {
 	__foreach(core, files, RZ_CORE_AUTOCMPLT_FILE);
 
 	rz_core_autocomplete_add(core->autocomplete, "-", RZ_CORE_AUTOCMPLT_MINS, true);
-	rz_core_autocomplete_add(core->autocomplete, "zs", RZ_CORE_AUTOCMPLT_ZIGN, true);
 	rz_core_autocomplete_add(core->autocomplete, "fs", RZ_CORE_AUTOCMPLT_FLSP, true);
 	rz_core_autocomplete_add(
 		rz_core_autocomplete_add(core->autocomplete, "ls", RZ_CORE_AUTOCMPLT_DFLT, true),
@@ -2413,7 +2358,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->blocksize = RZ_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc(RZ_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
-		eprintf("Cannot allocate %d byte(s)\n", RZ_CORE_BLOCKSIZE);
+		RZ_LOG_ERROR("core: cannot allocate %d byte(s)\n", RZ_CORE_BLOCKSIZE);
 		/* XXX memory leak */
 		return false;
 	}
@@ -2460,7 +2405,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->scriptstack->free = (RzListFree)free;
 	core->times = RZ_NEW0(RzCoreTimes);
 	core->vmode = false;
-	core->printidx = 0;
 	core->lastcmd = NULL;
 	core->cmdlog = NULL;
 	core->stkcmd = NULL;
@@ -2470,6 +2414,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->num = rz_num_new(&num_callback, &str_callback, core);
 	core->egg = rz_egg_new();
 	rz_egg_setup(core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
+	core->crypto = rz_crypto_new();
 
 	core->fixedarch = false;
 	core->fixedbits = false;
@@ -2509,7 +2454,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->rasm->num = core->num;
 	core->rasm->core = core;
 	core->analysis = rz_analysis_new();
-	rz_sign_analysis_set_hooks(core->analysis);
 	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
 	core->analysis->ev = core->ev;
 	core->analysis->read_at = rz_core_analysis_read_at;
@@ -2521,7 +2465,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->core = core;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
-	core->parser->varlist = rz_analysis_function_get_var_fields;
+	core->parser->var_expr_for_reg_access = rz_analysis_function_var_expr_for_reg_access_at;
 	/// XXX shouhld be using coreb
 	rz_parse_set_user_ptr(core->parser, core);
 	core->bin = rz_bin_new();
@@ -2547,6 +2491,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	} else {
 		core->asmqjmps = RZ_NEWS(ut64, core->asmqjmps_size);
 	}
+	core->hash = rz_hash_new();
 
 	rz_bin_bind(core->bin, &(core->rasm->binb));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
@@ -2595,6 +2540,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->dbg->cb_printf = rz_cons_printf;
 	core->dbg->bp->cb_printf = rz_cons_printf;
 	core->dbg->ev = core->ev;
+	// Initialize visual modes after everything else but before config init
+	core->visual = rz_core_visual_new();
 	// initialize config before any corebind
 	rz_core_config_init(core);
 
@@ -2653,11 +2600,13 @@ RZ_API void rz_core_fini(RzCore *c) {
 	if (!c) {
 		return;
 	}
+	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
 	rz_core_plugin_fini(c);
 	rz_core_task_break_all(&c->tasks);
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);
 	//  avoid double free
+	RZ_FREE_CUSTOM(c->hash, rz_hash_free);
 	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
 	RZ_FREE_CUSTOM(c->ev, rz_event_free);
 	RZ_FREE(c->cmdlog);
@@ -2666,7 +2615,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->cmdqueue);
 	RZ_FREE(c->lastcmd);
 	RZ_FREE(c->stkcmd);
-	RZ_FREE_CUSTOM(c->visual.tabs, rz_list_free);
 	RZ_FREE(c->block);
 	RZ_FREE_CUSTOM(c->autocomplete, rz_core_autocomplete_free);
 
@@ -2695,7 +2643,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->search, rz_search_free);
 	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
 	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
-	RZ_FREE_CUSTOM(c->lib, rz_lib_free);
+	RZ_FREE_CUSTOM(c->crypto, rz_crypto_free);
 	RZ_FREE_CUSTOM(c->yank_buf, rz_buf_free);
 	RZ_FREE_CUSTOM(c->graph, rz_agraph_free);
 	RZ_FREE(c->asmqjmps);
@@ -2705,6 +2653,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_seek_free(c);
 	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
+	rz_core_visual_free(c->visual);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
@@ -2854,8 +2803,6 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 	return true;
 }
 
-extern void rz_core_echo(RzCore *core, const char *input);
-
 RZ_API int rz_core_prompt_exec(RzCore *r) {
 	int ret = rz_core_cmd(r, r->cmdqueue, true);
 	r->rc = r->num->value;
@@ -2938,11 +2885,11 @@ RZ_API bool rz_core_serve(RzCore *core, RzIODesc *file) {
 
 	RzIORap *rior = (RzIORap *)file->data;
 	if (!rior || !rior->fd) {
-		eprintf("rap: cannot listen.\n");
+		RZ_LOG_ERROR("core: rap: cannot listen.\n");
 		return false;
 	}
 	RzSocket *fd = rior->fd;
-	eprintf("RAP Server started (rap.loop=%s)\n",
+	RZ_LOG_WARN("RAP Server started (rap.loop=%s)\n",
 		rz_config_get(core->config, "rap.loop"));
 	rz_cons_break_push(rap_break, rior);
 reaccept:
@@ -2955,16 +2902,16 @@ reaccept:
 			goto out_of_function;
 		}
 		if (!c) {
-			eprintf("rap: cannot accept\n");
+			RZ_LOG_ERROR("core: rap: cannot accept\n");
 			rz_socket_free(c);
 			goto out_of_function;
 		}
-		eprintf("rap: client connected\n");
+		RZ_LOG_INFO("core: rap: client connected\n");
 		for (; !rz_cons_is_breaked();) {
 			if (!rz_socket_read_block(c, &cmd, 1)) {
-				eprintf("rap: connection closed\n");
+				RZ_LOG_ERROR("core: rap: connection closed\n");
 				if (rz_config_get_i(core->config, "rap.loop")) {
-					eprintf("rap: waiting for new connection\n");
+					RZ_LOG_INFO("core: rap: waiting for new connection\n");
 					rz_socket_free(c);
 					goto reaccept;
 				}
@@ -2973,7 +2920,7 @@ reaccept:
 			switch (cmd) {
 			case RAP_PACKET_OPEN:
 				rz_socket_read_block(c, &flg, 1); // flags
-				eprintf("open (%d): ", cmd);
+				RZ_LOG_DEBUG("open (%d): ", cmd);
 				rz_socket_read_block(c, &cmd, 1); // len
 				pipefd = -1;
 				if (UT8_ADD_OVFCHK(cmd, 1)) {
@@ -2981,7 +2928,7 @@ reaccept:
 				}
 				ptr = malloc((size_t)cmd + 1);
 				if (!ptr) {
-					eprintf("Cannot malloc in rmt-open len = %d\n", cmd);
+					RZ_LOG_ERROR("core: rap: cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
 					ut64 baddr = rz_config_get_i(core->config, "bin.laddr");
 					rz_socket_read_block(c, ptr, cmd);
@@ -2999,13 +2946,13 @@ reaccept:
 						} else {
 							pipefd = -1;
 						}
-						eprintf("(flags: %d) len: %d filename: '%s'\n",
+						RZ_LOG_DEBUG("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); // config.file);
 					} else {
-						eprintf("Cannot open file (%s)\n", ptr);
+						RZ_LOG_ERROR("core: rap: cannot open file (%s)\n", ptr);
 						rz_socket_close(c);
 						if (rz_config_get_i(core->config, "rap.loop")) {
-							eprintf("rap: waiting for new connection\n");
+							RZ_LOG_INFO("core: rap: waiting for new connection\n");
 							rz_socket_free(c);
 							goto reaccept;
 						}
@@ -3040,7 +2987,7 @@ reaccept:
 					rz_socket_flush(c);
 					RZ_FREE(ptr);
 				} else {
-					eprintf("Cannot read %d byte(s)\n", i);
+					RZ_LOG_ERROR("core: rap: cannot read %d byte(s)\n", i);
 					rz_socket_free(c);
 					// TODO: reply error here
 					goto out_of_function;
@@ -3065,10 +3012,10 @@ reaccept:
 						rz_config_set_i(core->config, "scr.interactive", scr_interactive);
 						free(cmd);
 					} else {
-						eprintf("rap: cannot malloc\n");
+						RZ_LOG_ERROR("core: rap: cannot allocate %u bytes\n", (i + 1));
 					}
 				} else {
-					eprintf("rap: invalid length '%d'\n", i);
+					RZ_LOG_ERROR("core: rap: invalid length '%u'\n", i);
 				}
 				/* write */
 				if (cmd_output) {
@@ -3094,11 +3041,11 @@ reaccept:
 					rz_socket_read_block(c, b, 5);
 					if (b[0] == (RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
 						ut32 n = rz_read_be32(b + 1);
-						eprintf("REPLY %d\n", n);
+						RZ_LOG_DEBUG("core: rap: reply %d\n", n);
 						if (n > 0) {
 							ut8 *res = calloc(1, n);
 							rz_socket_read_block(c, res, n);
-							eprintf("RESPONSE(%s)\n", (const char *)res);
+							RZ_LOG_DEBUG("core: rap: response(%s)\n", (const char *)res);
 							free(res);
 						}
 					}
@@ -3190,19 +3137,19 @@ reaccept:
 						rz_socket_close(c);
 					}
 				} else {
-					eprintf("[rap] unknown command 0x%02x\n", cmd);
+					RZ_LOG_ERROR("core: rap: unknown command 0x%02x\n", cmd);
 					rz_socket_close(c);
 					RZ_FREE(ptr);
 				}
 				if (rz_config_get_i(core->config, "rap.loop")) {
-					eprintf("rap: waiting for new connection\n");
+					RZ_LOG_INFO("core: rap: waiting for new connection\n");
 					rz_socket_free(c);
 					goto reaccept;
 				}
 				goto out_of_function;
 			}
 		}
-		eprintf("client: disconnected\n");
+		RZ_LOG_INFO("core: rap: client disconnected\n");
 		rz_socket_free(c);
 	}
 out_of_function:
@@ -3214,7 +3161,7 @@ RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallb
 	int ret, len = core->blocksize;
 	ut8 *buf = malloc(len);
 	if (!buf) {
-		eprintf("Cannot allocate blocksize\n");
+		RZ_LOG_ERROR("core: cannot allocate blocksize\n");
 		return false;
 	}
 	while (from < to) {
@@ -3223,7 +3170,7 @@ RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallb
 			len = (int)delta;
 		}
 		if (!rz_io_read_at(core->io, from, buf, len)) {
-			eprintf("Cannot read at 0x%" PFMT64x "\n", from);
+			RZ_LOG_ERROR("core: cannot read at 0x%" PFMT64x "\n", from);
 			break;
 		}
 		for (ret = 0; ret < len;) {
@@ -3248,7 +3195,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	const char *editor = rz_config_get(core->config, "cfg.editor");
 	if (RZ_STR_ISEMPTY(editor)) {
-		RZ_LOG_ERROR("Please set \"cfg.editor\" to run the editor");
+		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor");
 		return NULL;
 	}
 	char *name = NULL, *ret = NULL;
@@ -3273,7 +3220,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 		return NULL;
 	}
 	if (readonly) {
-		eprintf("Opening in read-only\n");
+		RZ_LOG_WARN("core: opening in read-only\n");
 	} else {
 		if (str) {
 			const size_t str_len = strlen(str);
@@ -3332,13 +3279,12 @@ RZ_API RzBuffer *rz_core_syscallf(RzCore *core, const char *name, const char *fm
 }
 
 RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *args) {
-	RzBuffer *b = NULL;
 	char code[1024];
 	int num;
 
 	// arch check
 	if (strcmp(core->analysis->cur->arch, "x86")) {
-		eprintf("architecture not yet supported!\n");
+		RZ_LOG_ERROR("architecture '%s' is not yet supported!\n", core->analysis->cur->arch);
 		return 0;
 	}
 
@@ -3348,18 +3294,18 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 	switch (core->rasm->bits) {
 	case 32:
 		if (strcmp(name, "setup") && !num) {
-			eprintf("syscall not found!\n");
+			RZ_LOG_ERROR("core: syscall not found!\n");
 			return 0;
 		}
 		break;
 	case 64:
 		if (strcmp(name, "read") && !num) {
-			eprintf("syscall not found!\n");
+			RZ_LOG_ERROR("core: syscall not found!\n");
 			return 0;
 		}
 		break;
 	default:
-		eprintf("syscall not found!\n");
+		RZ_LOG_ERROR("core: syscall not found!\n");
 		return 0;
 	}
 
@@ -3374,22 +3320,12 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 	rz_egg_load(core->egg, code, 0);
 
 	if (!rz_egg_compile(core->egg)) {
-		eprintf("Cannot compile.\n");
+		RZ_LOG_ERROR("core: cannot compile.\n");
 	}
 	if (!rz_egg_assemble(core->egg)) {
-		eprintf("rz_egg_assemble: invalid assembly\n");
+		RZ_LOG_ERROR("core: rz_egg_assemble: invalid assembly\n");
 	}
-	if ((b = rz_egg_get_bin(core->egg))) {
-#if 0
-		if (b->length > 0) {
-			for (i = 0; i < b->length; i++) {
-				rz_cons_printf ("%02x", b->buf[i]);
-			}
-			rz_cons_printf ("\n");
-		}
-#endif
-	}
-	return b;
+	return rz_egg_get_bin(core->egg);
 }
 
 RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char *cmd, int type, bool lock) {
@@ -3464,7 +3400,7 @@ RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *
 			rz_core_autocomplete_free(ac);
 			RzCoreAutocomplete **updated = realloc(parent->subcmds, (parent->n_subcmds - 1) * sizeof(RzCoreAutocomplete *));
 			if (!updated && (parent->n_subcmds - 1) > 0) {
-				eprintf("Something really bad has happen.. this should never ever happen..\n");
+				RZ_LOG_ERROR("core: autocomplete: something really bad has happen.. this should never ever happen..\n");
 				return false;
 			}
 			parent->subcmds = updated;

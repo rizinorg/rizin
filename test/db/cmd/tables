@@ -108,21 +108,21 @@ classes  class.B
 classes  class.A
 classes  class.C
 segments segment.LOAD0
-.---------------------------------------------------------.
-| space             | size  | name                        |
-)---------------------------------------------------------(
-| sections          | 28    | section..interp             |
-| sections          | 32    | section..note.ABI_tag       |
-| sections          | 36    | section..note.gnu.build_id  |
-| segments          | 28    | segment.INTERP              |
-| segments          | 4132  | segment.LOAD0               |
-| segments          | 68    | segment.NOTE                |
-| segments          | 448   | segment.PHDR                |
-| segments          | 64    | segment.ehdr                |
-| symbols.sections  | 0     | sym..interp                 |
-| symbols.sections  | 0     | sym..note.ABI_tag           |
-| symbols.sections  | 0     | sym..note.gnu.build_id      |
-`---------------------------------------------------------'
+.------------------------------------------------------.
+| space            | size | name                       |
+)------------------------------------------------------(
+| sections         | 28   | section..interp            |
+| sections         | 32   | section..note.ABI_tag      |
+| sections         | 36   | section..note.gnu.build_id |
+| segments         | 28   | segment.INTERP             |
+| segments         | 4132 | segment.LOAD0              |
+| segments         | 68   | segment.NOTE               |
+| segments         | 448  | segment.PHDR               |
+| segments         | 64   | segment.ehdr               |
+| symbols.sections | 0    | sym..interp                |
+| symbols.sections | 0    | sym..note.ABI_tag          |
+| symbols.sections | 0    | sym..note.gnu.build_id     |
+`------------------------------------------------------'
 EOF
 RUN
 
@@ -161,13 +161,13 @@ addr  size jump  fail
 0x7aa 92   0x844 0x806
 0x806 62   0x844 -1
 0x844 3    -1    -1
-.----------------------------------.
-| addr   | size  | jump   | fail   |
-)----------------------------------(
-| 0x7aa  | 92    | 0x844  | 0x806  |
-| 0x806  | 62    | 0x844  | -1     |
-| 0x844  | 3     | -1     | -1     |
-`----------------------------------'
+.------------------------------.
+| addr  | size | jump  | fail  |
+)------------------------------(
+| 0x7aa | 92   | 0x844 | 0x806 |
+| 0x806 | 62   | 0x844 | -1    |
+| 0x844 | 3    | -1    | -1    |
+`------------------------------'
 addr  size jump  fail  
 -----------------------
 0x844 3    -1    -1
@@ -188,20 +188,20 @@ omlt:size/le/0x3480:size:quiet
 omlt:size/lt/0x3480:size/cols:quiet
 EOF
 EXPECT=<<EOF
-.----------.
-| size     |
-)----------(
-| 0x3480   |
-| 0x12791  |
-| 0x87c0   |
-`----------'
+.---------.
+| size    |
+)---------(
+| 0x3480  |
+| 0x12791 |
+| 0x87c0  |
+`---------'
 
-.----------.
-| size     |
-)----------(
-| 0x12791  |
-| 0x87c0   |
-`----------'
+.---------.
+| size    |
+)---------(
+| 0x12791 |
+| 0x87c0  |
+`---------'
 
 0x9b8
 0x3480

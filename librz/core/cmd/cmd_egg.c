@@ -48,7 +48,7 @@ static void showBuffer(RzBuffer *b) {
 static bool egg_compile(RzEgg *egg) {
 	rz_egg_compile(egg);
 	if (!rz_egg_assemble(egg)) {
-		eprintf("rz_egg_assemble: invalid assembly\n");
+		RZ_LOG_ERROR("core: rz_egg_assemble: invalid assembly\n");
 		return false;
 	}
 	char *p = rz_egg_option_get(egg, "egg.padding");
@@ -74,13 +74,13 @@ static bool rz_core_egg_compile(RzEgg *egg) {
 	char *p = rz_egg_option_get(egg, "egg.shellcode");
 	if (p && *p) {
 		if (!rz_egg_shellcode(egg, p)) {
-			eprintf("Unknown shellcode '%s'\n", p);
+			RZ_LOG_ERROR("core: Unknown shellcode '%s'\n", p);
 			free(p);
 			return false;
 		}
 		free(p);
 	} else {
-		eprintf("Setup a shellcode before (gi command)\n");
+		RZ_LOG_ERROR("core: Setup a shellcode before (gi command)\n");
 		free(p);
 		return false;
 	}

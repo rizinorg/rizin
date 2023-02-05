@@ -27,7 +27,7 @@ static int task_output(RzCore *core, int tid) {
 		}
 		rz_core_task_decref(task);
 	} else {
-		eprintf("Cannot find task\n");
+		RZ_LOG_ERROR("core: Cannot find task\n");
 		return -1;
 	}
 	return 0;

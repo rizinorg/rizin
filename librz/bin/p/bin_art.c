@@ -94,7 +94,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return ao ? ao->art.image_base : 0;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -132,7 +132,7 @@ static bool check_buffer(RzBuffer *buf) {
 	return r == 4 && !strncmp(tmp, "art\n", 4);
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf(free);
 	if (ret) {
 		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
@@ -144,7 +144,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ArtObj *ao = bf->o->bin_obj;
 	if (!ao) {
 		return NULL;

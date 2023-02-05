@@ -183,7 +183,7 @@ RZ_API void rz_debug_session_restore_reg_mem(RzDebug *dbg, ut32 cnum) {
 }
 
 RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
-	RzMsgDigestSize dsize;
+	RzHashSize dsize;
 	RzListIter *iter;
 	RzDebugMap *map;
 	rz_debug_map_sync(dbg);
@@ -194,7 +194,7 @@ RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
 				return;
 			}
 
-			ut8 *hash = rz_debug_snap_get_hash(snap, &dsize);
+			ut8 *hash = rz_debug_snap_get_hash(dbg, snap, &dsize);
 			if (!hash) {
 				rz_debug_snap_free(snap);
 				return;
@@ -301,7 +301,7 @@ static void serialize_memory(Sdb *db, HtUP *memory) {
 	ht_up_foreach(memory, serialize_memory_cb, db);
 }
 
-static void serialize_checkpoints(Sdb *db, RzVector *checkpoints) {
+static void serialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *checkpoints) {
 	size_t i;
 	RzDebugCheckpoint *chkpt;
 	RzDebugSnap *snap;
@@ -397,7 +397,7 @@ static void serialize_checkpoints(Sdb *db, RzVector *checkpoints) {
  *  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
  *
  * Notes:
- * - This mostly follows rz-db-style serialization and uses sdb_json as the parser.
+ * - This mostly follows rz-db-style serialization
  */
 RZ_API void rz_debug_session_serialize(RzDebugSession *session, Sdb *db) {
 	sdb_num_set(db, "maxcnum", session->maxcnum, 0);
@@ -660,7 +660,7 @@ end:
 	return true;
 }
 
-static void deserialize_checkpoints(Sdb *db, RzVector *checkpoints) {
+static void deserialize_checkpoints(Sdb *db, RzVector /*<RzDebugCheckpoint>*/ *checkpoints) {
 	sdb_foreach(db, deserialize_checkpoints_cb, checkpoints);
 }
 

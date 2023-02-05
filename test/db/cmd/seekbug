@@ -12,12 +12,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=seekbug pid -x
+NAME=seekbug pdq -x
 FILE=malloc://1024
 CMDS=<<EOF
 e scr.null=true
 s 0x200
-pid -3
+pdq -3
 e scr.null=false
 s
 EOF

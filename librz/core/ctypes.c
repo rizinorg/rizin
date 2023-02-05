@@ -415,14 +415,56 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 	return rz_type_db_base_type_as_pretty_string(core->analysis->typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
-RZ_IPI RZ_OWN char *rz_core_types_as_c(RzCore *core, RZ_NONNULL const char *name, bool multiline) {
-	rz_return_val_if_fail(name, NULL);
+/**
+ * \brief Get a type string by \p name (\see rz_type_db_base_type_as_pretty_string)
+ * \param core RzCore reference
+ * \param name Type name
+ * \param multiline Pretty printing with RZ_TYPE_PRINT_MULTILINE
+ */
+RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
 
 	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, name);
 	if (!btype) {
-		return false;
+		return NULL;
 	}
 	return rz_core_base_type_as_c(core, btype, multiline);
+}
+
+/**
+ * \brief Get all types with pretty printing
+ * \param core RzCore reference
+ * \param multiline Pretty printing with RZ_TYPE_PRINT_MULTILINE
+ */
+RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multiline) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+
+	RzStrBuf *buf = rz_strbuf_new("");
+	// List all unions in the C format with newlines
+	char *str = rz_core_types_union_as_c_all(core->analysis->typedb, multiline);
+	if (str) {
+		rz_strbuf_append(buf, str);
+		free(str);
+	}
+	// List all structures in the C format with newlines
+	str = rz_core_types_struct_as_c_all(core->analysis->typedb, multiline);
+	if (str) {
+		rz_strbuf_append(buf, str);
+		free(str);
+	}
+	// List all typedefs in the C format with newlines
+	str = rz_core_types_typedef_as_c_all(core->analysis->typedb);
+	if (str) {
+		rz_strbuf_append(buf, str);
+		free(str);
+	}
+	// List all enums in the C format with newlines
+	str = rz_core_types_enum_as_c_all(core->analysis->typedb, multiline);
+	if (str) {
+		rz_strbuf_append(buf, str);
+		free(str);
+	}
+	return rz_strbuf_drain(buf);
 }
 
 // Function types
@@ -485,7 +527,7 @@ RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 
 // Noreturn function attributes
 
-static bool nonreturn_print(RzCore *core, RzList *noretl) {
+static bool nonreturn_print(RzCore *core, RzList /*<char *>*/ *noretl) {
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (noretl, it, s) {
@@ -494,7 +536,7 @@ static bool nonreturn_print(RzCore *core, RzList *noretl) {
 	return true;
 }
 
-static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
+static bool nonreturn_print_json(RzCore *core, RzList /*<char *>*/ *noretl) {
 	RzListIter *it;
 	char *s;
 	PJ *pj = pj_new();
@@ -553,7 +595,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		}
 		free(fmt);
 	} else {
-		eprintf("Cannot find '%s' type\n", name);
+		RZ_LOG_ERROR("core: cannot find '%s' type\n", name);
 	}
 }
 
@@ -605,21 +647,22 @@ beach:
 	return;
 }
 
-static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath *tpath, ut64 laddr, ut64 at, int offimm) {
+static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePathTuple *tpath, ut64 laddr, ut64 at, int offimm) {
 	rz_return_if_fail(core && op && tpath);
-	if (tpath->typ->kind != RZ_TYPE_KIND_IDENTIFIER) {
+	if (tpath->root->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	char *cmt = (offimm == 0) ? strdup(tpath->path) : rz_type_as_string(core->analysis->typedb, tpath->typ);
+	char *cmt = (offimm == 0) ? strdup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
 		// possible member offset and the type linked to the laddr
 		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
 		if (paths && rz_list_length(paths)) {
-			RzTypePath *link = rz_list_get_top(paths);
-			rz_analysis_hint_set_offset(core->analysis, at, link->path);
+			RzTypePathTuple *link = rz_list_get_top(paths);
+			rz_analysis_hint_set_offset(core->analysis, at, link->path->path);
 		}
+		rz_list_free(paths);
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
 	}
@@ -642,34 +685,38 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 	RzList *dlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
 	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
 	// TODO: Handle register based arg for struct offset propgation
-	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->kind != 'r') {
-		RzTypePath *vlink = rz_list_get_top(vlinks);
+	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+		RzTypePathTuple *vlink = rz_list_get_top(vlinks);
 		// FIXME: For now we only propagate simple type identifiers,
 		// no pointers or arrays
-		if (vlink->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
-			if (!vlink->typ->identifier.name) {
+		if (vlink->root->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			if (!vlink->root->identifier.name) {
 				rz_warn_if_reached();
 				return;
 			}
-			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->typ->identifier.name);
+			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->root->identifier.name);
 			if (varbtype) {
 				// if a var addr matches with struct , change it's type and name
 				// var int local_e0h --> var struct foo
 				// if (strcmp(var->name, vlink) && !*resolved) {
 				if (!*resolved) {
 					*resolved = true;
-					rz_analysis_var_set_type(ctx->var, vlink->typ, true);
-					rz_analysis_var_rename(ctx->var, vlink->typ->identifier.name, false);
+					rz_analysis_var_set_type(ctx->var, vlink->root, true);
+					rz_analysis_var_rename(ctx->var, vlink->root->identifier.name, false);
+					vlink->root = NULL;
 				}
 			}
 		}
 	} else if (slinks && rz_list_length(slinks)) {
-		RzTypePath *slink = rz_list_get_top(slinks);
+		RzTypePathTuple *slink = rz_list_get_top(slinks);
 		set_offset_hint(core, ctx->aop, slink, ctx->src_addr, at - ret, ctx->src_imm);
 	} else if (dlinks && rz_list_length(dlinks)) {
-		RzTypePath *dlink = rz_list_get_top(dlinks);
+		RzTypePathTuple *dlink = rz_list_get_top(dlinks);
 		set_offset_hint(core, ctx->aop, dlink, ctx->dst_addr, at - ret, ctx->dst_imm);
 	}
+	rz_list_free(slinks);
+	rz_list_free(dlinks);
+	rz_list_free(vlinks);
 }
 
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
@@ -859,7 +906,7 @@ RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOu
 	case RZ_OUTPUT_MODE_LONG: {
 		char *fmt = rz_type_as_format(core->analysis->typedb, type);
 		if (!fmt) {
-			eprintf("Can't fint type %s", typestr);
+			RZ_LOG_ERROR("core: can't fint type %s", typestr);
 		}
 		rz_cons_printf("(%s)\n", typestr);
 		rz_core_cmdf(core, "pf %s @ 0x%" PFMT64x "\n", fmt, addr);
@@ -914,7 +961,8 @@ RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
 	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {
 		if (error_msg) {
-			eprintf("%s", error_msg);
+			rz_str_trim_tail(error_msg);
+			RZ_LOG_ERROR("core: %s\n", error_msg);
 		}
 		free(error_msg);
 		return;
@@ -922,7 +970,7 @@ RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
 	rz_analysis_type_set_link(core->analysis, type, addr);
 	RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_length(fcns) > 1) {
-		eprintf("Multiple functions found in here.\n");
+		RZ_LOG_ERROR("core: multiple functions found at 0x%08" PFMT64x ".\n", addr);
 	} else if (rz_list_length(fcns) == 1) {
 		RzAnalysisFunction *fcn = rz_list_first(fcns);
 		rz_core_link_stroff(core, fcn);
@@ -996,7 +1044,8 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 	RzTypeDB *typedb = core->analysis->typedb;
 	int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 	if (result && error_msg) {
-		eprintf("%s", error_msg);
+		rz_str_trim_tail(error_msg);
+		RZ_LOG_ERROR("core: %s\n", error_msg);
 		free(error_msg);
 	}
 }
@@ -1010,7 +1059,8 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 			char *error_msg = NULL;
 			int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 			if (result && error_msg) {
-				RZ_LOG_ERROR("%s", error_msg);
+				rz_str_trim_tail(error_msg);
+				RZ_LOG_ERROR("%s\n", error_msg);
 				free(error_msg);
 			}
 			free(tmp);

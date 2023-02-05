@@ -3,8 +3,8 @@
 
 #include <rz_debug.h>
 
-#if 0
-	/* debugesil performs step into + esil conditionals */
+/*
+	debugesil performs step into + esil conditionals
 	ESIL conditionals can be used to detect when a specific address is
 	accessed, or a register. Those esil conditionals must be evaluated
 	every iteration to ensure the register values are updated. Think
@@ -15,16 +15,9 @@
 	de rw reg eax
 	de-*
 
-#expression can be a number or a range(if..is found)
-#The <=, >=, ==, <, > comparisons are also supported
-
-#endif
-
-typedef struct {
-	int rwx;
-	int dev;
-	char *expr;
-} EsilBreak;
+	expression can be a number or a range(if..is found)
+	The <=, >=, ==, <, > comparisons are also supported
+*/
 
 // TODO: Kill those globals
 RzDebug *dbg = NULL;
@@ -69,7 +62,7 @@ static int exprmatch(RzDebug *dbg, ut64 addr, const char *expr) {
 }
 
 static int esilbreak_check_pc(RzDebug *dbg, ut64 pc) {
-	EsilBreak *ew;
+	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	if (!pc) {
 		pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
@@ -85,7 +78,7 @@ static int esilbreak_check_pc(RzDebug *dbg, ut64 pc) {
 }
 
 static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
-	EsilBreak *ew;
+	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	eprintf(Color_GREEN "MEM READ 0x%" PFMT64x "\n" Color_RESET, addr);
 	rz_list_foreach (EWPS, iter, ew) {
@@ -100,7 +93,7 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 }
 
 static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	EsilBreak *ew;
+	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	eprintf(Color_RED "MEM WRTE 0x%" PFMT64x "\n" Color_RESET, addr);
 	rz_list_foreach (EWPS, iter, ew) {
@@ -115,7 +108,7 @@ static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, 
 }
 
 static int esilbreak_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *num, int *size) {
-	EsilBreak *ew;
+	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
 		// eprintf (Color_CYAN"IMM READ %s\n"Color_RESET, regname);
@@ -191,7 +184,7 @@ static int exprmatchreg(RzDebug *dbg, const char *regname, const char *expr) {
 }
 
 static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 *num) {
-	EsilBreak *ew;
+	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
 		// this should never happen
@@ -251,7 +244,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 
-	if (rz_analysis_op(dbg->analysis, &op, opc, obuf, sizeof(obuf), RZ_ANALYSIS_OP_MASK_ESIL)) {
+	if (rz_analysis_op(dbg->analysis, &op, opc, obuf, sizeof(obuf), RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 		if (esilbreak_check_pc(dbg, opc)) {
 			eprintf("STOP AT 0x%08" PFMT64x "\n", opc);
 			ret = 0;
@@ -286,7 +279,7 @@ RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count) {
 			break;
 		}
 		if (has_match) {
-			eprintf("EsilBreak match at 0x%08" PFMT64x "\n", opc);
+			eprintf("RzDebugEsilWatchpoint match at 0x%08" PFMT64x "\n", opc);
 			break;
 		}
 		if (count > 0) {
@@ -305,7 +298,7 @@ RZ_API ut64 rz_debug_esil_continue(RzDebug *dbg) {
 	return rz_debug_esil_step(dbg, UT32_MAX);
 }
 
-static void ewps_free(EsilBreak *ew) {
+static void ewps_free(RzDebugEsilWatchpoint *ew) {
 	RZ_FREE(ew->expr);
 	free(ew);
 }
@@ -322,7 +315,7 @@ RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr
 		}
 		EWPS->free = (RzListFree)ewps_free;
 	}
-	EsilBreak *ew = RZ_NEW0(EsilBreak);
+	RzDebugEsilWatchpoint *ew = RZ_NEW0(RzDebugEsilWatchpoint);
 	if (!ew) {
 		RZ_FREE(EWPS);
 		return;
@@ -338,10 +331,6 @@ RZ_API void rz_debug_esil_watch_reset(RzDebug *dbg) {
 	EWPS = NULL;
 }
 
-RZ_API void rz_debug_esil_watch_list(RzDebug *dbg) {
-	EsilBreak *ew;
-	RzListIter *iter;
-	rz_list_foreach (EWPS, iter, ew) {
-		dbg->cb_printf("de %s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
-	}
+RZ_API RZ_BORROW RzList /*<RzDebugEsilWatchpoint *>*/ *rz_debug_esil_watch_list(RzDebug *dbg) {
+	return EWPS;
 }

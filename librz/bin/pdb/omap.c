@@ -45,7 +45,9 @@ RZ_IPI void free_omap_stream(RzPdbOmapStream *stream) {
 	}
 	OmapEntry *entry;
 	RzListIter *it;
-	rz_list_foreach (stream->entries, it, entry) { RZ_FREE(entry); }
+	rz_list_foreach (stream->entries, it, entry) {
+		RZ_FREE(entry);
+	}
 	rz_list_free(stream->entries);
 	free(stream);
 }
@@ -86,7 +88,7 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
  * \param address Where to remap
  * \return int
  */
-RZ_API int rz_bin_pdb_omap_remap(RzPdbOmapStream *omap_stream, int address) {
+RZ_API int rz_bin_pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, int address) {
 	OmapEntry *omap_entry = 0;
 	RzListIter *it = 0;
 	int i = 0;

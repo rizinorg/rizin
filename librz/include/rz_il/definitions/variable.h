@@ -29,8 +29,8 @@ RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var);
  * This is meant only as a low-level container to be used in RzILVM.
  */
 typedef struct rz_il_var_set_t {
-	HtPP /* <char *, RzILVar *> */ *vars;
-	HtPP /* <char *, RzILVal *> */ *contents;
+	HtPP /*<char *, RzILVar *>*/ *vars;
+	HtPP /*<char *, RzILVal *>*/ *contents;
 } RzILVarSet;
 
 RZ_API bool rz_il_var_set_init(RzILVarSet *vs);
@@ -40,7 +40,7 @@ RZ_API RZ_BORROW RzILVar *rz_il_var_set_create_var(RzILVarSet *vs, const char *n
 RZ_API RZ_OWN RZ_NULLABLE RzILVal *rz_il_var_set_remove_var(RzILVarSet *vs, const char *name);
 RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal *val);
 RZ_API RZ_BORROW RzILVar *rz_il_var_set_get(RzILVarSet *vs, const char *name);
-RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_var_set_get_all(RzILVarSet *vs);
+RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_var_set_get_all(RzILVarSet *vs);
 RZ_API RZ_BORROW RzILVal *rz_il_var_set_get_value(RzILVarSet *vs, const char *name);
 
 typedef enum {

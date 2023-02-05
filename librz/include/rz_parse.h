@@ -15,8 +15,6 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_parse);
 
-typedef RzList *(*RzAnalysisVarList)(RzAnalysisFunction *fcn, int kind);
-
 typedef struct rz_parse_t {
 	void *user;
 	RzSpace *flagspace;
@@ -32,10 +30,8 @@ typedef struct rz_parse_t {
 	char *retleave_asm;
 	struct rz_parse_plugin_t *cur;
 	// RzAnalysis *analysis; // weak analysis ref XXX do not use. use analb.anal
-	RzList *parsers;
-	RzAnalysisVarList varlist;
-	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
-	const char *(*get_reg_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
+	RzList /*<RzParsePlugin *>*/ *parsers;
+	RZ_OWN char *(*var_expr_for_reg_access)(RzAnalysisFunction *fcn, ut64 addr, const char *reg, st64 reg_addend);
 	RzAnalysisBind analb;
 	RzFlagGetAtAddr flag_get; // XXX
 	RzAnalysisLabelAt label_get;
@@ -56,12 +52,13 @@ typedef struct rz_parse_plugin_t {
 #ifdef RZ_API
 
 /* lifecycle */
-RZ_API struct rz_parse_t *rz_parse_new(void);
+RZ_API RzParse *rz_parse_new(void);
 RZ_API void rz_parse_free(RzParse *p);
 
 /* plugins */
 RZ_API void rz_parse_set_user_ptr(RzParse *p, void *user);
-RZ_API bool rz_parse_add(RzParse *p, RzParsePlugin *foo);
+RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin);
+RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin);
 RZ_API bool rz_parse_use(RzParse *p, const char *name);
 
 /* action */

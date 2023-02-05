@@ -374,20 +374,25 @@ RZ_API void rz_core_help_vars_print(RzCore *core) {
 	while (vars[i]) {
 		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
 		if (wideOffsets) {
-			eprintf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
 		} else {
-			eprintf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
 		}
 		i++;
 	}
 }
 
-RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
+/**
+ * \brief Get clippy echo string.
+ * \param msg The message to echo.
+ */
+RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const char *msg) {
+	rz_return_val_if_fail(core && msg, NULL);
 	int type = RZ_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
 		char *space = strchr(msg, ' ');
 		if (!space) {
-			return;
+			return NULL;
 		}
 		type = (*msg == '+') ? RZ_AVATAR_ORANGG : RZ_AVATAR_CYBCAT;
 		msg = space + 1;
@@ -411,9 +416,18 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
 		f = avatar_clippy[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy))];
 	}
 
-	rz_cons_printf(f, l, s, msg, s, l);
+	char *string = rz_str_newf(f, l, s, msg, s, l);
 	free(l);
 	free(s);
+	return string;
+}
+
+RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
+	char *string = rz_core_clippy(core, msg);
+	if (string) {
+		rz_cons_print(string);
+		free(string);
+	}
 }
 
 RZ_IPI int rz_cmd_help(void *data, const char *input) {
@@ -480,7 +494,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free(buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (rz_num_between(core->num, input + 3) == -1) {
-				eprintf("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
+				RZ_LOG_ERROR("core: Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
 			n = rz_num_math(core->num, input + 1);
@@ -504,7 +518,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			ut32 hash = (ut32)rz_str_djb2_hash(input + 2);
 			rz_cons_printf("0x%08x\n", hash);
 		} else {
-			eprintf("Usage: ?h [string-to-hash]\n");
+			RZ_LOG_ERROR("core: Usage: ?h [string-to-hash]\n");
 		}
 		break;
 	case 'F': // "?F"
@@ -514,7 +528,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *q, *p = strdup(input + 2);
 			if (!p) {
-				eprintf("Cannot strdup\n");
+				RZ_LOG_ERROR("core: Cannot strdup\n");
 				return 0;
 			}
 			q = strchr(p, ' ');
@@ -524,11 +538,11 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 				rz_str_bits(out, (const ut8 *)&n, sizeof(n) * 8, q + 1);
 				rz_cons_println(out);
 			} else {
-				eprintf("Usage: \"?b value bitstring\"\n");
+				RZ_LOG_ERROR("core: Usage: \"?b value bitstring\"\n");
 			}
 			free(p);
 		} else {
-			eprintf("Whitespace expected after '?f'\n");
+			RZ_LOG_ERROR("core: Whitespace expected after '?f'\n");
 		}
 		break;
 	case 'o': // "?o"
@@ -573,7 +587,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 			n = rz_num_math(core->num, str);
 			if (core->num->dbz) {
-				eprintf("RzNum ERROR: Division by Zero\n");
+				RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 			}
 			asnum = rz_num_as_string(NULL, n, false);
 			/* decimal, hexa, octal */
@@ -648,7 +662,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	} break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
-			eprintf("RzNum ERROR: Division by Zero\n");
+			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		}
 		if (input[1] == '?') {
 			rz_cons_printf("|Usage: ?q [num]  # Update $? without printing anything\n"
@@ -673,7 +687,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 	}
 		if (core->num->dbz) {
-			eprintf("RzNum ERROR: Division by Zero\n");
+			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		}
 		switch (input[1]) {
 		case '?':
@@ -728,11 +742,11 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 					*e++ = 0;
 					core->num->value = strcmp(s, e);
 				} else {
-					eprintf("Missing secondary word in expression to compare\n");
+					RZ_LOG_ERROR("core: Missing secondary word in expression to compare\n");
 				}
 				free(s);
 			} else {
-				eprintf("Usage: ?== str1 str2\n");
+				RZ_LOG_ERROR("core: Usage: ?== str1 str2\n");
 			}
 		} else {
 			if (input[1]) { // ?=
@@ -807,7 +821,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_question_V);
 			break;
 		case 0: { // "?V"
-			char *v = rz_str_version(NULL);
+			char *v = rz_version_str(NULL);
 			rz_cons_printf("%s\n", v);
 			free(v);
 			break;
@@ -878,7 +892,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 					out[len] = 0;
 					rz_cons_println((const char *)out);
 				} else {
-					eprintf("Error parsing the hexpair string\n");
+					RZ_LOG_ERROR("core: Error parsing the hexpair string\n");
 				}
 				free(out);
 			}
@@ -900,7 +914,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // "?E" clippy echo
-		rz_core_clippy(core, rz_str_trim_head_ro(input + 1));
+		rz_core_clippy_print(core, rz_str_trim_head_ro(input + 1));
 		break;
 	case 'e': // "?e" echo
 		switch (input[1]) {
@@ -909,7 +923,24 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			break;
 		case '=': { // "?e="
 			ut64 pc = rz_num_math(core->num, input + 2);
-			rz_print_progressbar(core->print, pc, 80);
+			RzBarOptions opts = {
+				.unicode = rz_config_get_b(core->config, "scr.utf8"),
+				.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+				.legend = true,
+				.offset = rz_config_get_b(core->config, "hex.offset"),
+				.offpos = 0,
+				.cursor = false,
+				.curpos = 0,
+				.color = rz_config_get_i(core->config, "scr.color")
+			};
+			RzStrBuf *strbuf = rz_progressbar(&opts, pc, 80);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate progressbar\n");
+			} else {
+				char *bar = rz_strbuf_drain(strbuf);
+				rz_cons_print(bar);
+				free(bar);
+			}
 			rz_cons_newline();
 			break;
 		}
@@ -996,12 +1027,12 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	case 'i': // "?i" input num
 		rz_cons_set_raw(0);
 		if (!rz_cons_is_interactive()) {
-			eprintf("Not running in interactive mode\n");
+			RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		} else {
 			switch (input[1]) {
 			case 'f': // "?if"
 				core->num->value = !rz_num_conditional(core->num, input + 2);
-				eprintf("%s\n", rz_str_bool(!core->num->value));
+				rz_cons_printf("%s\n", rz_str_bool(!core->num->value));
 				break;
 			case 'm': // "?im"
 				rz_cons_message(input + 2);
@@ -1043,7 +1074,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		ut64 addr = rz_num_math(core->num, input + 1);
 		char *rstr = core->print->hasrefs(core->print->user, addr, true);
 		if (!rstr) {
-			eprintf("Cannot get refs\n");
+			RZ_LOG_ERROR("core: Cannot get refs\n");
 			break;
 		}
 		rz_cons_println(rstr);
@@ -1056,13 +1087,13 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		ut64 end = rz_time_now_mono();
 		double seconds = (double)(end - start) / RZ_USEC_PER_SEC;
 		core->num->value = (ut64)seconds;
-		eprintf("%lf\n", seconds);
+		rz_cons_printf("%lf\n", seconds);
 		break;
 	}
 	case '?': // "??"
 		if (input[1] == '?') {
 			if (input[2] == '?') { // "???"
-				rz_core_clippy(core, "What are you doing?");
+				rz_core_clippy_print(core, "What are you doing?");
 				return 0;
 			}
 			if (input[2]) {
@@ -1079,7 +1110,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (core->num->dbz) {
-				eprintf("RzNum ERROR: Division by Zero\n");
+				RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 			}
 			rz_cons_printf("%" PFMT64d "\n", core->num->value);
 		}
@@ -1089,4 +1120,27 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	}
 	return 0;
+}
+
+RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
+	const char *cmd_color = rz_cons_singleton()->context->pal.help;
+	const char *reset = rz_cons_singleton()->context->pal.reset;
+	rz_cons_printf("Welcome to Rizin!\n\n");
+	rz_cons_printf("Type %s?%s for a list of commands available.\n", cmd_color, reset);
+	rz_cons_printf("Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
+	rz_cons_printf("Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);
+	rz_cons_printf("\n");
+	rz_cons_printf("Commands output can be redirected as in a regular shell, see %s>?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf("You can grep commands output with the 'internal grep', see %s~?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf("You can pipe an internal Rizin command to a system program, see %s|?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf("\n");
+	rz_cons_printf("Chain multiple commands with %s;%s.\n", cmd_color, reset);
+	rz_cons_printf("Temporary modifiers are your friends, see %s@?%s for more info, but here some useful ones:\n", cmd_color, reset);
+	rz_cons_printf(" - %s@ %s temporarily switch to a different address\n", cmd_color, reset);
+	rz_cons_printf(" - %s@a:<arch>%s temporarily switch to a different architecture\n", cmd_color, reset);
+	rz_cons_printf(" - %s@e:<varname>=<varvalue>%s temporarily change an eval variable\n", cmd_color, reset);
+	rz_cons_printf("\n");
+	rz_cons_printf("There are a lot of settings that customize Rizin's behaviour, see them with %sel%s. Have a look at %se?%s to know how to interact with them.\n", cmd_color, reset, cmd_color, reset);
+	rz_cons_printf("You can save your preferred settings in %s~/.rizinrc%s.\n", cmd_color, reset);
+	return RZ_CMD_STATUS_OK;
 }

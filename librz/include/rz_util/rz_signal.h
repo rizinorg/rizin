@@ -1,6 +1,8 @@
 #ifndef RZ_SIGNAL_H
 #define RZ_SIGNAL_H
 
+#include <rz_types.h>
+
 #if __UNIX__
 #include <signal.h>
 #endif

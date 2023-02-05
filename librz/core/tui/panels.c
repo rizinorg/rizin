@@ -196,7 +196,6 @@ static const char *help_msg_panels[] = {
 	".", "seek to PC or entrypoint",
 	"\"", "create a panel from the list and replace the current one",
 	"/", "highlight the keyword",
-	"(", "toggle snow",
 	"&", "toggle cache",
 	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
 	"' '", "(space) toggle graph / panels",
@@ -339,7 +338,6 @@ static bool __check_panel_num(RzCore *core);
 static bool __check_func(RzCore *core);
 static bool __check_func_diff(RzCore *core, RzPanel *p);
 static bool __check_root_state(RzCore *core, RzPanelsRootState state);
-static bool __check_if_addr(const char *c, int len);
 static bool __check_if_cur_panel(RzCore *core, RzPanel *panel);
 static bool __check_if_mouse_x_illegal(RzCore *core, int x);
 static bool __check_if_mouse_y_illegal(RzCore *core, int y);
@@ -363,8 +361,8 @@ static void __panel_prompt(const char *prompt, char *buf, int len);
 static void __panels_layout_refresh(RzCore *core);
 static void __panels_layout(RzPanels *panels);
 static void __layout_default(RzPanels *panels);
-RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
 static void __split_panel_vertical(RzCore *core, RzPanel *p, const char *name, const char *cmd);
 static void __split_panel_horizontal(RzCore *core, RzPanel *p, const char *name, const char *cmd);
 static void __panel_print(RzCore *core, RzConsCanvas *can, RzPanel *panel, int color);
@@ -530,6 +528,7 @@ static void __rotate_function_cb(void *user, bool rev);
 
 /* print callback */
 static void __print_default_cb(void *user, void *p);
+static void __print_default_noreset_cb(void *user, void *p);
 static void __print_disassembly_cb(void *user, void *p);
 static void __print_disasmsummary_cb(void *user, void *p);
 static void __print_graph_cb(void *user, void *p);
@@ -543,7 +542,7 @@ static void __create_panel_input(void *user, RzPanel *panel, const RzPanelLayout
 static void __replace_current_panel_input(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 static void __search_strings_data_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 static void __search_strings_bin_create(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
-static char *__search_strings(RzCore *core, bool whole);
+RZ_OWN static char *__search_strings(RzCore *core, bool whole);
 static void __put_breakpoints_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
 static void __continue_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
 static void __step_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
@@ -556,7 +555,7 @@ static void __clear_panels_menuRec(RzPanelsMenuItem *pmi);
 static RzStrBuf *__draw_menu(RzCore *core, RzPanelsMenuItem *item);
 static void __handle_menu(RzCore *core, const int key);
 static int cmpstr(const void *_a, const void *_b);
-static RzList *__sorted_list(RzCore *core, char *menu[], int count);
+static RzList /*<char *>*/ *__sorted_list(RzCore *core, char *menu[], int count);
 
 /* config */
 static char *__get_panels_config_dir_path(void);
@@ -708,20 +707,6 @@ bool __check_if_mouse_y_on_edge(RzCore *core, int x, int y) {
 
 bool __check_if_cur_panel(RzCore *core, RzPanel *panel) {
 	return __get_cur_panel(core->panels) == panel;
-}
-
-bool __check_if_addr(const char *c, int len) {
-	if (len < 2) {
-		return false;
-	}
-	int i = 0;
-	for (; i < len; i++) {
-		if (RZ_STR_ISNOTEMPTY(c + i) && RZ_STR_ISNOTEMPTY(c + i + 1) &&
-			c[i] == '0' && c[i + 1] == 'x') {
-			return true;
-		}
-	}
-	return false;
 }
 
 void __check_edge(RzCore *core) {
@@ -1969,6 +1954,9 @@ static bool __handle_mouse_on_X(RzCore *core, int x, int y) {
 }
 
 static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, int *key) {
+	if (core->cons->mouse_event != LEFT_PRESS) {
+		return false;
+	}
 	RzPanels *panels = core->panels;
 	int h;
 	(void)rz_cons_get_size(&h);
@@ -1983,8 +1971,8 @@ static bool __handle_mouse_on_panel(RzCore *core, RzPanel *panel, int x, int y, 
 	if (word) {
 		const ut64 addr = rz_num_math(core->num, word);
 		if (__check_panel_type(panel, PANEL_CMD_FUNCTION) &&
-			__check_if_addr(word, strlen(word))) {
-			rz_core_seek(core, addr, true);
+			addr > 0) {
+			rz_core_seek_and_save(core, addr, true);
 			__set_addr_by_type(core, PANEL_CMD_DISASSEMBLY, addr);
 		}
 		rz_flag_set(core->flags, "panel.addr", addr, 1);
@@ -2948,7 +2936,7 @@ void __set_addr_by_type(RzCore *core, const char *cmd, ut64 addr) {
 RzConsCanvas *__create_new_canvas(RzCore *core, int w, int h) {
 	RzConsCanvas *can = rz_cons_canvas_new(w, h);
 	if (!can) {
-		eprintf("Cannot create RzCons.canvas context\n");
+		RZ_LOG_ERROR("core: Cannot create RzCons.canvas context\n");
 		return false;
 	}
 	rz_cons_canvas_fill(can, 0, 0, w, h, ' ');
@@ -3081,6 +3069,14 @@ void __set_pcb(RzPanel *p) {
 	}
 	if (__check_panel_type(p, PANEL_CMD_DISASMSUMMARY)) {
 		p->model->print_cb = __print_disasmsummary_cb;
+		return;
+	}
+	if (__check_panel_type(p, PANEL_CMD_FUNCTION)) {
+		p->model->print_cb = __print_default_noreset_cb;
+		return;
+	}
+	if (__check_panel_type(p, PANEL_CMD_SYMBOLS)) {
+		p->model->print_cb = __print_default_noreset_cb;
 		return;
 	}
 	p->model->print_cb = __print_default_cb;
@@ -3601,7 +3597,7 @@ int __license_cb(void *user) {
 }
 
 int __version_cb(void *user) {
-	char *v = rz_str_version(NULL);
+	char *v = rz_version_str(NULL);
 	rz_cons_message(v);
 	free(v);
 	return 0;
@@ -3942,6 +3938,17 @@ void __print_default_cb(void *user, void *p) {
 		if (panel->model->cache && panel->model->cmdStrCache) {
 			__reset_scroll_pos(panel);
 		}
+	}
+	__update_panel_contents(core, panel, cmdstr);
+}
+
+void __print_default_noreset_cb(void *user, void *p) {
+	RzCore *core = (RzCore *)user;
+	RzPanel *panel = (RzPanel *)p;
+	bool update = core->panels->autoUpdate && __check_func_diff(core, panel);
+	char *cmdstr = __find_cmd_str_cache(core, panel);
+	if (update || !cmdstr) {
+		cmdstr = __handle_cmd_str_cache(core, panel, false);
 	}
 	__update_panel_contents(core, panel, cmdstr);
 }
@@ -4552,7 +4559,7 @@ int cmpstr(const void *_a, const void *_b) {
 	return strcmp(a, b);
 }
 
-RzList *__sorted_list(RzCore *core, char *menu[], int count) {
+RzList /*<char *>*/ *__sorted_list(RzCore *core, char *menu[], int count) {
 	RzList *list = rz_list_new();
 	int i;
 	for (i = 0; i < count; i++) {
@@ -4880,7 +4887,7 @@ void __init_sdb(RzCore *core) {
 	sdb_set(db, "Methods", "ic", 0);
 	sdb_set(db, "Relocs", "ir", 0);
 	sdb_set(db, "Headers", "iH", 0);
-	sdb_set(db, "File Hashes", "it", 0);
+	sdb_set(db, "File Hashes", "iT", 0);
 }
 
 void __init_almighty_db(RzCore *core) {
@@ -5282,7 +5289,7 @@ char *__get_panels_config_file_from_dir(const char *file) {
 	return ret;
 }
 
-RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *oname) {
 	int i;
 	if (!core->panels) {
 		return;
@@ -5333,7 +5340,7 @@ void __load_config_menu(RzCore *core) {
 	}
 }
 
-RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name) {
 	if (!core->panels) {
 		return false;
 	}
@@ -5401,7 +5408,7 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 			}
 		}
 		if (!title || !cmd) {
-			eprintf("Malformed Visual Panels config: %s\n", _name);
+			RZ_LOG_ERROR("core: Malformed Visual Panels config: %s\n", _name);
 			rz_json_free(json);
 			free(panels_config);
 			return false;
@@ -5959,7 +5966,7 @@ void __rotate_asmemu(RzCore *core, RzPanel *p) {
 
 static bool fromVisual = false;
 
-RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) {
+RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) {
 	fromVisual = core->vmode;
 	if (!panels_root) {
 		panels_root = RZ_NEW0(RzPanelsRoot);
@@ -6458,7 +6465,7 @@ repeat:
 		if (rz_config_get_b(core->config, "scr.randpal")) {
 			rz_cons_pal_random();
 		} else {
-			rz_core_theme_nextpal(core, 'n');
+			rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 		}
 		__do_panels_refresh(core);
 		break;

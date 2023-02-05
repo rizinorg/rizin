@@ -11,13 +11,13 @@ commands:
         type: RZ_CMD_ARG_TYPE_FILE
   - name: L-
     cname: plugins_unload
-    summary: Unload core plugin by name
+    summary: Unload a plugin from file
     args:
-      - name: plugin_name
-        type: RZ_CMD_ARG_TYPE_STRING
+      - name: plugin_file
+        type: RZ_CMD_ARG_TYPE_FILE
   - name: Ll
     cname: plugins_lang_print
-    summary: Print the lang plugins
+    summary: List the lang plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
@@ -25,7 +25,7 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: La
     cname: plugins_asm_print
-    summary: Print the asm/analysis plugins
+    summary: List the asm/analysis plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
@@ -34,14 +34,14 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: Lc
     cname: plugins_core_print
-    summary: Print the core plugins
+    summary: List the core plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
   - name: Ld
-    summary: Print the debug plugins
+    summary: List debug plugins / Set debug backend (e dbg.backend)
     cname: plugins_debug_print
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args:
@@ -54,7 +54,7 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: Lh
     cname: plugins_hash_print
-    summary: Print the hash plugins
+    summary: List the hash plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
@@ -63,7 +63,7 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: Li
     cname: plugins_bin_print
-    summary: Print the bin plugins
+    summary: List the bin plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:
@@ -72,7 +72,7 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: Lo
     cname: plugins_io_print
-    summary: Print IO plugins / Register IO plugin from <path>
+    summary: List IO plugins / Register IO plugin from <path>
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args:
       - name: path
@@ -85,7 +85,7 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: Lp
     cname: plugins_parser_print
-    summary: Print the parser plugins
+    summary: List the parser plugins
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     args: []
     modes:

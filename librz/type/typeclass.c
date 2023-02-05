@@ -292,7 +292,7 @@ RZ_API bool rz_type_is_integral_unsigned(const RzTypeDB *typedb, RZ_NONNULL cons
 
 struct list_typeclass {
 	const RzTypeDB *typedb;
-	RzList *types;
+	RzList /*<RzBaseType *>*/ *types;
 	RzTypeTypeclass typeclass;
 };
 
@@ -311,7 +311,7 @@ static bool base_type_typeclass_collect_cb(void *user, const void *k, const void
 
 struct list_typeclass_size {
 	const RzTypeDB *typedb;
-	RzList *types;
+	RzList /*<RzBaseType *>*/ *types;
 	RzTypeTypeclass typeclass;
 	size_t size;
 };
@@ -335,7 +335,7 @@ static bool base_type_typeclass_sized_collect_cb(void *user, const void *k, cons
  * \param typedb Type Database instance
  * \param typeclass typeclass (cannot be None)
  */
-RZ_API RZ_OWN RzList *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTypeclass typeclass) {
+RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTypeclass typeclass) {
 	rz_return_val_if_fail(typedb && typeclass != RZ_TYPE_TYPECLASS_NONE, NULL);
 	rz_return_val_if_fail(typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
@@ -351,7 +351,7 @@ RZ_API RZ_OWN RzList *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTy
  * \param typeclass typeclass (cannot be None)
  * \param size The bitsize of a type to select from
  */
-RZ_API RZ_OWN RzList *rz_type_typeclass_get_all_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size) {
+RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size) {
 	rz_return_val_if_fail(typedb && typeclass != RZ_TYPE_TYPECLASS_NONE, NULL);
 	rz_return_val_if_fail(size && typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();

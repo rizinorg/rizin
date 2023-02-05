@@ -1,17 +1,16 @@
 // SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_crypto.h>
 #include "config.h"
+#include <rz_crypto.h>
+#include <rz_lib.h>
 #include <rz_util.h>
 
 #define RZ_CRYPTO_OUTPUT_SIZE 4096
 
 RZ_LIB_VERSION(rz_crypto);
 
-static RzCryptoPlugin *crypto_static_plugins[] = {
-	RZ_CRYPTO_STATIC_PLUGINS
-};
+static RzCryptoPlugin *crypto_static_plugins[] = { RZ_CRYPTO_STATIC_PLUGINS };
 
 static const struct {
 	const char *name;
@@ -71,14 +70,19 @@ RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index) {
 	return crypto_static_plugins[index];
 }
 
-RZ_API int rz_crypto_add(RzCrypto *cry, RzCryptoPlugin *h) {
-	// add a check ?
-	rz_list_append(cry->plugins, h);
+RZ_API bool rz_crypto_plugin_add(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *plugin) {
+	rz_return_val_if_fail(cry && plugin, false);
+	RZ_PLUGIN_CHECK_AND_ADD(cry->plugins, plugin, RzCryptoPlugin);
 	return true;
 }
 
-RZ_API int rz_crypto_del(RzCrypto *cry, RzCryptoPlugin *h) {
-	rz_list_delete_data(cry->plugins, h);
+RZ_API bool rz_crypto_plugin_del(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *plugin) {
+	rz_return_val_if_fail(cry && plugin, false);
+	if (cry->h == plugin && cry->h->fini) {
+		cry->h->fini(cry);
+		cry->h = NULL;
+	}
+	rz_list_delete_data(cry->plugins, plugin);
 	return true;
 }
 
@@ -94,18 +98,18 @@ RZ_API RzCrypto *rz_crypto_new(void) {
 		goto rz_crypto_new_bad;
 	}
 
-	cry->plugins = rz_list_newf((RzListFree)free);
+	cry->plugins = rz_list_new();
 	if (!cry->plugins) {
 		goto rz_crypto_new_bad;
 	}
 
-	for (ut32 i = 0; crypto_static_plugins[i]; i++) {
+	for (ut32 i = 0; i < RZ_ARRAY_SIZE(crypto_static_plugins); i++) {
 		RzCryptoPlugin *p = RZ_NEW0(RzCryptoPlugin);
 		if (!p) {
 			goto rz_crypto_new_bad;
 		}
 		memcpy(p, crypto_static_plugins[i], sizeof(RzCryptoPlugin));
-		rz_crypto_add(cry, p);
+		rz_crypto_plugin_add(cry, p);
 	}
 	return cry;
 
@@ -127,6 +131,26 @@ RZ_API void rz_crypto_free(RzCrypto *cry) {
 	free(cry->key);
 	free(cry->iv);
 	free(cry);
+}
+
+/**
+ * \brief Reset the internal state of RzCrypto.
+ *
+ * Prepare the RzCrypto instance to be run on a new input. This includes
+ * resetting the current plugin, the output, key, iv.
+ *
+ * \param cry RzCrypto reference
+ */
+RZ_API void rz_crypto_reset(RzCrypto *cry) {
+	rz_return_if_fail(cry);
+
+	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
+		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);
+	}
+	cry->h = NULL;
+	RZ_FREE(cry->key);
+	RZ_FREE(cry->iv);
+	cry->output_len = 0;
 }
 
 RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo) {

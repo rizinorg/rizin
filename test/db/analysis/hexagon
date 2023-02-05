@@ -451,7 +451,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
 / int main (int argc, char **argv, char **envp);
-|           ; arg int argc @ R0
+|           ; arg int argc @ r0
 |           0x00005110      ?       allocframe(SP,#0x8):raw
 EOF
 RUN
@@ -464,67 +464,66 @@ s main
 agf
 EOF
 EXPECT=<<EOF
-[0x00005110]>  # int main (int argc, char **argv, char **envp);
-         .---------------------------------------------------.
-         |  0x5110                                           |
-         |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
-         | int main (int argc, char **argv, char **envp);    |
-         | ; arg int argc @ R0                               |
-         | ?   allocframe(SP,#0x8):raw                       |
-         | [   R2 = add(FP,##-0x4)                           |
-         | [   memw(R2+#0x0) = ##0x0                         |
-         | [   R2 = add(FP,##-0x8)                           |
-         | [   memw(R2+#0x0) = ##0x0                         |
-         | [   jump 0x5128                                   |
-         `---------------------------------------------------'
-             v
-             |
-             '------.
-.---------------------.
-|                   | |
-|             .-----------------------------------------.
-|             |  0x5128                                 |
-|             | ; CODE XREFS from main @ 0x5124, 0x5150 |
-|             | [   R2 = memw(FP+##-0x8)                |
-|             | [   P0 = cmp.gt(R2,##0x2)               |
-|             | [   if (P0) jump:nt 0x5154              |
-|             `-----------------------------------------'
-|                     f t
-|                     | |
-|                     | '------------.
-|          .----------'              |
-|          |                         |
-|      .--------------------.    .---------------------------------------.
-|      |  0x5134            |    |  0x5154                               |
-|      | [   jump 0x5138    |    | ; DATA XREF from main @ 0x5130        |
-|      `--------------------'    | [   R0 = ##0x0                        |
-|          v                     | [   LR:FP = dealloc_return(FP):raw    |
-|          |                     `---------------------------------------'
-|          |
-|          |
-|    .-----'
-|    |
-|.--------------------------------.
-||  0x5138                        |
-|| ; CODE XREF from main @ 0x5134 |
-|| [   call sym.pHello;[oa]       |
-|| [   call sym.pWorld;[ob]       |
-|| [   jump 0x5144                |
-|`--------------------------------'
-|    v
-|    |
-|    |
-|.--------------------------------.
-||  0x5144                        |
-|| ; CODE XREF from main @ 0x5140 |
-|| [   R2 = memw(FP+##-0x8)       |
-|| [   R2 = add(R2,##0x1)         |
-|| [   memw(FP+##-0x8) = R2       |
-|| [   jump 0x5128                |
-|`--------------------------------'
-|    v
-|    |
-`----'
+          .---------------------------------------------------.
+          |  0x5110                                           |
+          |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
+          | int main (int argc, char **argv, char **envp);    |
+          | ; arg int argc @ r0                               |
+          | ?   allocframe(SP,#0x8):raw                       |
+          | [   R2 = add(FP,##-0x4)                           |
+          | [   memw(R2+#0x0) = ##0x0                         |
+          | [   R2 = add(FP,##-0x8)                           |
+          | [   memw(R2+#0x0) = ##0x0                         |
+          | [   jump 0x5128                                   |
+          `---------------------------------------------------'
+              v
+              |
+              '------.
+.----------------------.
+|                    | |
+|              .-----------------------------------------.
+|              |  0x5128                                 |
+|              | ; CODE XREFS from main @ 0x5124, 0x5150 |
+|              | [   R2 = memw(FP+##-0x8)                |
+|              | [   P0 = cmp.gt(R2,##0x2)               |
+|              | [   if (P0) jump:nt 0x5154              |
+|              `-----------------------------------------'
+|                    t f
+|                    | |
+|    .---------------' |
+|    |                 '-----------------------.
+|    |                                         |
+|.------------------------------------.    .-----------------.
+||  0x5154                            |    |  0x5134         |
+|| ; DATA XREF from main @ 0x5130     |    | ?   jump 0x5138 |
+|| ?   R0 = ##0x0                     |    `-----------------'
+|| [   LR:FP = dealloc_return(FP):raw |        v
+|`------------------------------------'        |
+|                                              |
+|                                              |
+|                              .---------------'
+|                              |
+|                          .--------------------------------.
+|                          |  0x5138                        |
+|                          | ; CODE XREF from main @ 0x5134 |
+|                          | [   call sym.pHello            |
+|                          | [   call sym.pWorld            |
+|                          | [   jump 0x5144                |
+|                          `--------------------------------'
+|                              v
+|                              |
+|                              |
+|                          .--------------------------------.
+|                          |  0x5144                        |
+|                          | ; CODE XREF from main @ 0x5140 |
+|                          | [   R2 = memw(FP+##-0x8)       |
+|                          | [   R2 = add(R2,##0x1)         |
+|                          | [   memw(FP+##-0x8) = R2       |
+|                          | [   jump 0x5128                |
+|                          `--------------------------------'
+|                              v
+|                              |
+`------------------------------'
 EOF
 RUN
 
@@ -668,8 +667,8 @@ EOF
 EXPECT=<<EOF
             0x00000000      ?       R1 = ##0xc                         ; "Where is Wally?"
             0x00000004      [   memw(R17+#0x0) = ##0x1c                ; "There is Wally!"
-0x0000000c 1 str.Where_is_Wally
-0x0000001c 1 str.There_is_Wally
+0x0000000c 16 str.Where_is_Wally
+0x0000001c 16 str.There_is_Wally
 EOF
 RUN
 
@@ -686,28 +685,28 @@ EXPECT=<<EOF
 ?   nop
 {   loop0(0x8,#0x3) }
 {   P0 = R13
-   immext(##0x0)
-   R23:22 = memb_fifo(R27=##0x3) }
+    immext(##0x0)
+    R23:22 = memb_fifo(R27=##0x3) }
 {   loop1(0x18,#0x2) }
 {   nop
-   R7 = R28
-   immext(##0x0)
-   memb(R10=##0x7) = R4 }
+    R7 = R28
+    immext(##0x0)
+    memb(R10=##0x7) = R4 }
 {   R4 = R3
-   nop
-   nop }:endloop01
+    nop
+    nop }:endloop01
 {   nop }
 {   loop1(0x3c,#0x3) }
 {   P0 = R13
-   immext(##0x0)
-   R23:22 = memb_fifo(R27=##0x3) }
+    immext(##0x0)
+    R23:22 = memb_fifo(R27=##0x3) }
 {   jump 0x48 }
 {   loop0(0x50,#0x2) }
 {   R7 = R28
-   nop }:endloop0
+    nop }:endloop0
 {   R4 = R3
-   nop
-   nop }:endloop1
+    nop
+    nop }:endloop1
 EOF
 RUN
 
@@ -1404,4 +1403,3 @@ offset - 0 1 2 3 4 5
 3400 0008 3400 0000 3400 0000 7cff ffff
 EOF
 RUN
-

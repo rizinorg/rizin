@@ -10,6 +10,9 @@
 #include <stddef.h>
 #include <assert.h>
 #include <errno.h>
+#if HAVE_HEADER_INTTYPES_H
+#include <inttypes.h>
+#endif
 
 // TODO: fix this to make it crosscompile-friendly: RZ_SYS_OSTYPE ?
 /* operating system */
@@ -44,14 +47,25 @@ typedef enum {
 	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
 } RzOutputMode;
 
-#define RZ_IN        /* do not use, implicit */
-#define RZ_OUT       /* parameter is written, not read */
-#define RZ_INOUT     /* parameter is read and written */
+#define RZ_IN    /* do not use, implicit */
+#define RZ_OUT   /* parameter is written, not read */
+#define RZ_INOUT /* parameter is read and written */
+
+#ifdef RZ_BINDINGS
+#define RZ_OWN    __attribute__((annotate("RZ_OWN")))
+#define RZ_BORROW __attribute__((annotate("RZ_BORROW")))
+
+#define RZ_NONNULL   __attribute__((annotate("RZ_NONNULL")))
+#define RZ_NULLABLE  __attribute__((annotate("RZ_NULLABLE")))
+#define RZ_DEPRECATE __attribute__((annotate("RZ_DEPRECATE")))
+#else
 #define RZ_OWN       /* pointer ownership is transferred */
 #define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
 #define RZ_NONNULL   /* pointer can not be null */
 #define RZ_NULLABLE  /* pointer can be null */
 #define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+#endif
+
 #define RZ_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define RZ_UNUSED __attribute__((__unused__))
@@ -181,8 +195,6 @@ typedef enum {
 #include <rz_types_base.h>
 #include <rz_constructor.h>
 
-#undef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 64
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 
@@ -244,8 +256,8 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #ifdef RZ_API
 #undef RZ_API
 #endif
-#if RZ_SWIG
-#define RZ_API export
+#ifdef RZ_BINDINGS
+#define RZ_API __attribute__((annotate("RZ_API")))
 #elif RZ_INLINE
 #define RZ_API inline
 #else
@@ -300,7 +312,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #define RZ_BIT_UNSET(x, y)  (((ut8 *)x)[y >> 4] &= ~(1 << (y & 0xf)))
 #define RZ_BIT_TOGGLE(x, y) (RZ_BIT_CHK(x, y) ? RZ_BIT_UNSET(x, y) : RZ_BIT_SET(x, y))
 
-//#define RZ_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
+// #define RZ_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
 #define RZ_BIT_CHK(x, y) (*(x) & (1 << (y)))
 
 /* try for C99, but provide backwards compatibility */
@@ -347,7 +359,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #if !(defined(__GNUC__) && __GNUC__ < 5) || defined(__clang__)
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
-#if __SDB_WINDOWS__
+#if __WINDOWS__
 #define rz_offsetof(type, member) ((unsigned long)(ut64) & ((type *)0)->member)
 #else
 #define rz_offsetof(type, member) ((unsigned long)&((type *)0)->member)
@@ -367,27 +379,29 @@ static inline void *rz_new_copy(int size, void *data) {
 	}
 
 #if __WINDOWS__
-#define PFMT64x "I64x"
-#define PFMT64d "I64d"
-#define PFMT64u "I64u"
-#define PFMT64o "I64o"
-#define PFMTSZx "Ix"
-#define PFMTSZd "Id"
-#define PFMTSZu "Iu"
-#define PFMTSZo "Io"
-#define LDBLFMT "f"
-#define HHXFMT  "x"
+#define PFMT64x  "I64x"
+#define PFMT64d  "I64d"
+#define PFMT64u  "I64u"
+#define PFMT64o  "I64o"
+#define PFMTSZx  "Ix"
+#define PFMTSZd  "Id"
+#define PFMTSZu  "Iu"
+#define PFMTSZo  "Io"
+#define LDBLFMTg "g"
+#define LDBLFMTf "f"
+#define HHXFMT   "x"
 #else
-#define PFMT64x "llx"
-#define PFMT64d "lld"
-#define PFMT64u "llu"
-#define PFMT64o "llo"
-#define PFMTSZx "zx"
-#define PFMTSZd "zd"
-#define PFMTSZu "zu"
-#define PFMTSZo "zo"
-#define LDBLFMT "Lf"
-#define HHXFMT  "hhx"
+#define PFMT64x  "llx"
+#define PFMT64d  "lld"
+#define PFMT64u  "llu"
+#define PFMT64o  "llo"
+#define PFMTSZx  "zx"
+#define PFMTSZd  "zd"
+#define PFMTSZu  "zu"
+#define PFMTSZo  "zo"
+#define LDBLFMTg "Lg"
+#define LDBLFMTf "Lf"
+#define HHXFMT   "hhx"
 #endif
 
 #define PFMTDPTR "td"
@@ -555,8 +569,8 @@ typedef enum {
 /* os */
 #if defined(__QNX__)
 #define RZ_SYS_OS "qnx"
-//#elif TARGET_OS_IPHONE
-//#define RZ_SYS_OS "ios"
+// #elif TARGET_OS_IPHONE
+// #define RZ_SYS_OS "ios"
 #elif defined(__APPLE__)
 #define RZ_SYS_OS "darwin"
 #elif defined(__linux__)
@@ -661,5 +675,7 @@ typedef int RzRef;
 	static inline void n##_unref(s *x) { \
 		rz_unref(x, n##_free); \
 	}
+
+typedef struct rz_core_t RzCore;
 
 #endif // RZ_TYPES_H

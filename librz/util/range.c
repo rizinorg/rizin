@@ -56,7 +56,7 @@ RZ_API int rz_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
 	return 1;
 }
 
-RRangeItem *rz_range_item_get(RRange *rgs, ut64 addr) {
+RZ_API RRangeItem *rz_range_item_get(RRange *rgs, ut64 addr) {
 	RRangeItem *r;
 	RzListIter *iter;
 	rz_list_foreach (rgs->ranges, iter, r) {
@@ -140,7 +140,7 @@ RZ_API int rz_range_add_from_string(RRange *rgs, const char *string) {
 =  |_________|   = |___||__|   = |_______|  = |_________|   |_______|  result
 #endif
 
-RRangeItem *rz_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
+RZ_API RRangeItem *rz_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 	RzListIter *iter;
 	RRangeItem *r, *ret = NULL;
 	int add = 1;
@@ -311,7 +311,7 @@ RZ_API void rz_range_percent(RRange *rgs) {
 }
 
 // TODO: total can be cached in rgs!!
-int rz_range_list(RRange *rgs, int rad) {
+RZ_API int rz_range_list(RRange *rgs, int rad) {
 	ut64 total = 0;
 	RRangeItem *r;
 	RzListIter *iter;
@@ -328,7 +328,7 @@ int rz_range_list(RRange *rgs, int rad) {
 	return 0;
 }
 
-int rz_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
+RZ_API int rz_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
 	int count = 0;
 	RRangeItem *r;
 	RzListIter *iter;
@@ -350,7 +350,7 @@ int rz_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
     ---------------------------------
             |__|    |__|       |_|
 #endif
-RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
+RZ_API RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	RzListIter *iter;
 	RRangeItem *r = NULL;
 	RRange *newrgs = rz_range_new();

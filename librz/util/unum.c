@@ -8,6 +8,20 @@
 
 static ut64 rz_num_tailff(RzNum *num, const char *hex);
 
+/**
+ * \brief Checks if the first two chars of \p p equal "0x".
+ *
+ * \param p The string which potentially represents a hex number.
+ * \return bool True if p[0] == '0' && p[1] == 'x'. False otherwise.
+ */
+RZ_API bool rz_num_is_hex_prefix(const char *p) {
+	rz_return_val_if_fail(p, false);
+	if (!isascii(*p)) {
+		return false; // UTF-8
+	}
+	return (p[0] == '0' && p[1] == 'x');
+}
+
 // TODO: rename to rz_num_srand()
 static void rz_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
@@ -124,8 +138,8 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 		unit = '\0';
 	}
 	fmt_str = ((double)ceill(fnum) == (double)fnum)
-		? "%.0" LDBLFMT "%c"
-		: "%.1" LDBLFMT "%c";
+		? "%.0" LDBLFMTf "%c"
+		: "%.1" LDBLFMTf "%c";
 	snprintf(buf, len, fmt_str, fnum, unit);
 	return buf;
 }
@@ -155,7 +169,7 @@ static void error(RzNum *num, const char *err_str) {
 
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
-RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
+RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str) {
 	int i, j, ok;
 	char lch, len;
 	ut64 ret = 0LL;
@@ -218,7 +232,7 @@ RZ_API ut64 rz_num_get(RzNum *num, const char *str) {
 		ret = 0;
 		for (j = 0, i = strlen(str) - 1; i > 0; i--, j++) {
 			if (str[i] == '1') {
-				ret |= 1 << j;
+				ret |= 1ULL << j;
 			} else if (str[i] != '0') {
 				break;
 			}
@@ -888,7 +902,7 @@ RZ_API int rz_num_str_split(char *str) {
 	return count;
 }
 
-RZ_API RzList *rz_num_str_split_list(char *str) {
+RZ_API RzList /*<char *>*/ *rz_num_str_split_list(char *str) {
 	int i, count = rz_num_str_split(str);
 	RzList *list = rz_list_new();
 	for (i = 0; i < count; i++) {

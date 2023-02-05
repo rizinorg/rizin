@@ -8,6 +8,7 @@
 #include "../core_private.h"
 
 struct open_list_ascii_data_t {
+	RzCore *core;
 	RzPrint *p;
 	int fdsz;
 };
@@ -29,54 +30,6 @@ static bool core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 	return true;
 }
 
-static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
-	RzIO *io = (RzIO *)user;
-	RzIODesc *desc = (RzIODesc *)data;
-
-	if (rz_io_desc_is_blockdevice(desc) || rz_io_desc_is_dbg(desc)) {
-		return true;
-	}
-
-	if (strstr(desc->uri, "://")) {
-		return true;
-	}
-
-	ut64 size = rz_io_desc_size(desc);
-
-	char *uri = rz_str_newf("malloc://%" PFMT64u, size);
-	if (!uri) {
-		return false;
-	}
-
-	ut8 *buf = malloc(size);
-	// if malloc fails, we can just abort the loop by returning false
-	if (!buf) {
-		free(uri);
-		return false;
-	}
-
-	RzIODesc *ndesc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
-	free(uri);
-	if (!ndesc) {
-		free(buf);
-		return false;
-	}
-
-	rz_io_desc_read_at(desc, 0LL, buf, (int)size); // that cast o_O
-	rz_io_desc_write_at(ndesc, 0LL, buf, (int)size);
-	free(buf);
-	rz_io_desc_exchange(io, desc->fd, ndesc->fd);
-
-	rz_io_desc_close(desc);
-	return true;
-}
-
-RZ_API void rz_core_file_reopen_in_malloc(RzCore *core) {
-	if (core && core->io && core->io->files) {
-		rz_id_storage_foreach(core->io->files, reopen_in_malloc_cb, core->io);
-	}
-}
-
 static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
 	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
 	RzIODesc *desc = (RzIODesc *)data;
@@ -89,15 +42,29 @@ static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
 
 static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	struct open_list_ascii_data_t *u = (struct open_list_ascii_data_t *)user;
-	RzPrint *p = u->p;
+	RzCore *core = u->core;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
 	rz_cons_printf("%2d %c %s 0x%08" PFMT64x " ", desc->fd,
 		(desc->io && (desc->io->desc == desc)) ? '*' : '-', rz_str_rwx_i(desc->perm), sz);
-	int flags = p->flags;
-	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
-	rz_print_progressbar(p, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
-	p->flags = flags;
+	RzBarOptions opts = {
+		.unicode = rz_config_get_b(core->config, "scr.utf8"),
+		.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+		.legend = false,
+		.offset = rz_config_get_b(core->config, "hex.offset"),
+		.offpos = 0,
+		.cursor = false,
+		.curpos = 0,
+		.color = rz_config_get_i(core->config, "scr.color")
+	};
+	RzStrBuf *strbuf = rz_progressbar(&opts, sz * 100 / u->fdsz, rz_cons_get_size(NULL) - 40);
+	if (!strbuf) {
+		RZ_LOG_ERROR("Cannot generate progressbar\n");
+	} else {
+		char *bar = rz_strbuf_drain(strbuf);
+		rz_cons_print(bar);
+		free(bar);
+	}
 	rz_cons_printf(" %s\n", desc->uri);
 	return true;
 }
@@ -169,6 +136,7 @@ RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char 
 }
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv) {
 	struct open_list_ascii_data_t data = { 0 };
+	data.core = core;
 	data.p = core->print;
 	data.fdsz = 0;
 	rz_id_storage_foreach(core->io->files, init_desc_list_visual_cb, &data);
@@ -665,7 +633,7 @@ RZ_IPI RzCmdStatus rz_open_binary_select_fd_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_core_bin_raise(core, bf->id)) {
-		eprintf("Could not select the binary file for fd %d.\n", fd);
+		RZ_LOG_ERROR("core: Could not select the binary file for fd %d.\n", fd);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
@@ -803,50 +771,16 @@ RZ_IPI RzCmdStatus rz_open_binary_reload_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus open_file(RzCore *core, const char *filepath, ut64 addr, int perms, bool write_mode) {
-	RzCoreFile *cfile = rz_core_file_open(core, filepath, perms, addr);
-	if (!cfile) {
-		RZ_LOG_ERROR("Cannot open file '%s'\n", filepath);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	core->num->value = cfile->fd;
-	if (addr == 0) { // if no baddr defined, use the one provided by the file
-		addr = UT64_MAX;
-	}
-	if (!rz_core_bin_load(core, filepath, addr)) {
-		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", filepath);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (write_mode) {
-		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
-		if (!desc || !(desc->perm & RZ_PERM_W)) {
-			RZ_LOG_WARN("Cannot make maps for %s writable.\n", filepath);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		void **it;
-		rz_pvector_foreach (&cfile->maps, it) {
-			RzIOMap *map = *it;
-			map->perm |= RZ_PERM_WX;
-		}
-	}
-
-	rz_core_block_read(core);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_open_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[3]) : RZ_PERM_R;
-
-	return open_file(core, argv[1], addr, perms, false);
+	return bool2status(rz_core_file_open_load(core, argv[1], addr, perms, false));
 }
 
 RZ_IPI RzCmdStatus rz_open_write_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : 0;
 	int perms = argc > 3 ? rz_str_rwx(argv[3]) : RZ_PERM_RW;
-
-	return open_file(core, argv[1], addr, perms, true);
+	return bool2status(rz_core_file_open_load(core, argv[1], addr, perms, true));
 }
 
 RZ_IPI RzCmdStatus rz_open_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

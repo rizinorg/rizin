@@ -403,7 +403,7 @@ RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t) {
  * \param t RzPdbTpiType
  * \return RzList *
  */
-RZ_API RZ_BORROW RzList *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t) {
+RZ_API RZ_BORROW RzList /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, NULL);
 	RzPdbTpiType *tmp;
 	switch (t->leaf_type) {

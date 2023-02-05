@@ -13,7 +13,6 @@ EXPECT=<<EOF
 1
 1
 1
-p=3
 EOF
 RUN
 

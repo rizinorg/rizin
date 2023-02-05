@@ -9,7 +9,7 @@
 // https://www.ti.com/lit/ug/spru732j/spru732j.pdf
 #include "parse_common.c"
 
-static RzList *tms320_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *tms320_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar tms320_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("add", "3 = 1 + 2"),
@@ -94,7 +94,7 @@ static const RzPseudoGrammar tms320_lexicon[] = {
 
 static const RzPseudoConfig tms320_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(tms320_lexicon, 5, tms320_tokenize);
 
-RzList *tms320_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *tms320_tokenize(const char *assembly, size_t length) {
 	char *buf = NULL, *sp = NULL;
 	RzList *tokens = NULL;
 	buf = rz_str_ndup(assembly, length);

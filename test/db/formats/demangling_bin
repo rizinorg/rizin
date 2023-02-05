@@ -70,7 +70,7 @@ RUN
 
 NAME=MSVC import symbol demangling
 FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
-CMDS=fl~0x1004e0f4[2]
+CMDS=fl~+0x1004e0f4[2]
 EXPECT=<<EOF
 sym.imp.MSVCP100.dll_public:_void___thiscall_std::basic_ostream_char__struct_std::char_traits_char__::_Osfx_void
 EOF
@@ -183,7 +183,6 @@ EXPECT=<<EOF
 / sym.__x86.get_pc_thunk.bx ();
 |           0x08049140      mov   ebx, dword [esp]
 
-[0x08049140]>  # sym.__x86.get_pc_thunk.bx ();
 .--------------------------------------------------------------.
 |  0x8049140                                                   |
 |   ; CALL XREF from sym._init @ 0x8049008                     |
@@ -208,10 +207,10 @@ EXPECT=<<EOF
 |           0x08049140      mov   ebx, dword [esp]
 
 |           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
-|           0x08049390      mov   ebx, dword [var_4h]
+|           0x08049390      mov   ebx, dword [var_8h]
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
-|           0x08049390      mov   ebx, dword [var_4h]
+|           0x08049390      mov   ebx, dword [var_8h]
 EOF
 RUN
 
@@ -272,4 +271,3 @@ EXPECT=<<EOF
 0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
 EOF
 RUN
-

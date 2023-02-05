@@ -1,0 +1,48 @@
+
+# This is in here because debug plugins differ depending on the platform
+NAME=Print the debug plugins
+FILE==
+CMDS=Ld
+EXPECT=<<EOF
+0  ---  bf       LGPL3
+1  ---  bochs    LGPL3
+2  ---  dmp      LGPL3
+3  ---  gdb      LGPL3
+4  ---  io       MIT
+5  ---  null     MIT
+6  ---  rap      LGPL3
+7  ---  winkd    LGPL3
+8  ---  qnx      LGPL3
+9  dbg  native   LGPL3
+EOF
+RUN
+
+NAME=Print the debug plugins in JSON
+FILE==
+CMDS=<<EOF
+Ldj~{[0]}
+Ldj~{[1]}
+Ldj~{[2]}
+Ldj~{[3]}
+Ldj~{[4]}
+Ldj~{[5]}
+Ldj~{[6]}
+Ldj~{[7]}
+Ldj~{[8]}
+Ldj~{[9].name}
+Ldj~{[9].license}
+EOF
+EXPECT=<<EOF
+{"arch":"bf","name":"bf","license":"LGPL3"}
+{"arch":"x86","name":"bochs","license":"LGPL3"}
+{"arch":"x86,arm","name":"dmp","license":"LGPL3"}
+{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2","name":"gdb","license":"LGPL3"}
+{"arch":"any","name":"io","license":"MIT"}
+{"arch":"any","name":"null","license":"MIT"}
+{"arch":"any","name":"rap","license":"LGPL3"}
+{"arch":"x86","name":"winkd","license":"LGPL3"}
+{"arch":"x86,arm","name":"qnx","license":"LGPL3"}
+native
+LGPL3
+EOF
+RUN

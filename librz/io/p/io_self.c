@@ -14,7 +14,7 @@
 #include <mach/mach_interface.h>
 #include <mach/mach_traps.h>
 #include <mach/mach_types.h>
-//#include <mach/mach_vm.h>
+// #include <mach/mach_vm.h>
 #include <mach/mach_error.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
@@ -226,7 +226,7 @@ static int update_self_regions(RzIO *io, int pid) {
 	PVOID to = NULL;
 	MEMORY_BASIC_INFORMATION mbi;
 	HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
-	LPTSTR name = calloc(name_size, sizeof(TCHAR));
+	LPWSTR name = calloc(name_size, sizeof(WCHAR));
 	if (!name) {
 		RZ_LOG_ERROR("io_self/update_self_regions: Failed to allocate memory.\n");
 		CloseHandle(h);
@@ -241,15 +241,15 @@ static int update_self_regions(RzIO *io, int pid) {
 		perm |= mbi.Protect & PAGE_EXECUTE_READ ? RZ_PERM_RX : 0;
 		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? RZ_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
-		if (perm && !GetMappedFileName(h, (LPVOID)mbi.BaseAddress, name, name_size)) {
-			name[0] = '\0';
+		if (perm && !GetMappedFileNameW(h, (LPVOID)mbi.BaseAddress, name, name_size)) {
+			name[0] = L'\0';
 		}
 		self_sections[self_sections_count].from = (ut64)mbi.BaseAddress;
 		self_sections[self_sections_count].to = (ut64)to;
-		self_sections[self_sections_count].name = rz_sys_conv_win_to_utf8(name);
+		self_sections[self_sections_count].name = rz_utf16_to_utf8(name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
-		name[0] = '\0';
+		name[0] = L'\0';
 	}
 	free(name);
 	CloseHandle(h);
@@ -347,14 +347,14 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		const char *sym = rz_str_word_get0(argv, 0);
 		if (sym) {
 			const char *symbol = cmd + 6;
-			void *lib = rz_lib_dl_open(NULL);
-			void *ptr = rz_lib_dl_sym(lib, symbol);
+			void *lib = rz_sys_dlopen(NULL);
+			void *ptr = rz_sys_dlsym(lib, symbol);
 			if (ptr) {
 				cbptr = (ut64)(size_t)ptr;
 			} else {
 				cbptr = rz_num_math(NULL, symbol);
 			}
-			rz_lib_dl_close(lib);
+			rz_sys_dlclose(lib);
 		}
 		if (argc == 1) {
 			size_t (*cb)() = (size_t(*)())cbptr;
@@ -440,13 +440,13 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 #endif
 	} else if (!strncmp(cmd, "dlsym ", 6)) {
 		const char *symbol = cmd + 6;
-		void *lib = rz_lib_dl_open(NULL);
-		void *ptr = rz_lib_dl_sym(lib, symbol);
+		void *lib = rz_sys_dlopen(NULL);
+		void *ptr = rz_sys_dlsym(lib, symbol);
 		eprintf("(%s) 0x%08" PFMT64x "\n", symbol, (ut64)(size_t)ptr);
-		rz_lib_dl_close(lib);
+		rz_sys_dlclose(lib);
 	} else if (!strcmp(cmd, "mameio")) {
-		void *lib = rz_lib_dl_open(NULL);
-		void *ptr = rz_lib_dl_sym(lib, "_ZN12device_debug2goEj");
+		void *lib = rz_sys_dlopen(NULL);
+		void *ptr = rz_sys_dlsym(lib, "_ZN12device_debug2goEj");
 		//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		// readmem(0, )
 		if (ptr) {
@@ -456,7 +456,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		} else {
 			eprintf("This process is not a MAME!");
 		}
-		rz_lib_dl_close(lib);
+		rz_sys_dlclose(lib);
 	} else if (!strcmp(cmd, "maps")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {

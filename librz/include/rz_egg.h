@@ -94,14 +94,13 @@ typedef struct rz_egg_t {
 	RzBuffer *src;
 	RzBuffer *buf;
 	RzBuffer *bin;
-	RzList *list;
 	// RzList *shellcodes; // XXX is plugins nao?
 	RzAsm *rasm;
 	RzSyscall *syscall;
 	RzEggLang lang;
 	Sdb *db;
-	RzList *plugins;
-	RzList *patches; // <RzBuffer>
+	RzList /*<RzEggPlugin *>*/ *plugins;
+	RzList /*<struct egg_patch_t *>*/ *patches; // <RzBuffer>
 	struct rz_egg_emit_t *remit;
 	int arch;
 	int endian;
@@ -187,7 +186,8 @@ RZ_API void rz_egg_lang_free(RzEgg *egg);
 RZ_API const char *rz_egg_os_as_string(int os);
 RZ_API char *rz_egg_to_string(RzEgg *egg);
 RZ_API void rz_egg_free(RzEgg *egg);
-RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo);
+RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin);
+RZ_API bool rz_egg_plugin_del(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin);
 RZ_API void rz_egg_reset(RzEgg *egg);
 RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
 RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format);
@@ -209,7 +209,6 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad);
 RZ_API bool rz_egg_assemble(RzEgg *egg);
 RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list);
 RZ_API void rz_egg_pattern(RzEgg *egg, int size);
-RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
 // RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 RZ_API char *rz_egg_get_source(RzEgg *egg);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);

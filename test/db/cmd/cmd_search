@@ -1023,3 +1023,69 @@ EXPECT=<<EOF
 0x00000005 hit0_0 a5a5bf
 EOF
 RUN
+
+NAME=config search smartcase
+CMDS=<<EOF
+el~rzil
+echo "---"
+el~+rzil
+echo "---"
+el~RzIL
+EOF
+EXPECT=<<EOF
+          asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+---
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+---
+          asm.cmt.il: Show RzIL expressions as comments
+EOF
+RUN
+
+
+NAME=config search sensitive
+CMDS=<<EOF
+e search.case_sensitive=sensitive
+el~rzil
+echo "---"
+el~+rzil
+echo "---"
+el~RzIL
+EOF
+EXPECT=<<EOF
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+---
+          asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+---
+          asm.cmt.il: Show RzIL expressions as comments
+EOF
+RUN
+
+
+NAME=config search insensitive
+CMDS=<<EOF
+e search.case_sensitive=insensitive
+el~rzil
+echo "---"
+el~+rzil
+echo "---"
+el~RzIL
+EOF
+EXPECT=<<EOF
+          asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+---
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+---
+          asm.cmt.il: Show RzIL expressions as comments
+rzil.step.events.read: enables/disables printing aezse read event
+rzil.step.events.write: enables/disables printing aezse write event
+EOF
+RUN

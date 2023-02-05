@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_regex.h>
+#include "rz_list.h"
 #include "rz_types.h"
 #include "rz_util.h"
 #include "rz_cons.h"
 #include "rz_bin.h"
+#include "rz_util/rz_assert.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,9 +44,11 @@ static const char *rwxstr[] = {
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 	switch (enc) {
 	case RZ_STRING_ENC_8BIT:
-		return "8bit";
+		return "ascii";
 	case RZ_STRING_ENC_UTF8:
 		return "utf8";
+	case RZ_STRING_ENC_MUTF8:
+		return "mutf8";
 	case RZ_STRING_ENC_UTF16LE:
 		return "utf16le";
 	case RZ_STRING_ENC_UTF32LE:
@@ -52,22 +57,65 @@ RZ_API const char *rz_str_enc_as_string(RzStrEnc enc) {
 		return "utf16be";
 	case RZ_STRING_ENC_UTF32BE:
 		return "utf32be";
+	case RZ_STRING_ENC_BASE64:
+		return "base64";
 	case RZ_STRING_ENC_IBM037:
 		return "ibm037";
 	case RZ_STRING_ENC_IBM290:
 		return "ibm290";
-	case RZ_STRING_ENC_EBCDIC_UK:
-		return "ebcdic_uk";
-	case RZ_STRING_ENC_EBCDIC_US:
-		return "ebcdic_us";
 	case RZ_STRING_ENC_EBCDIC_ES:
-		return "ebcdic_es";
+		return "ebcdices";
+	case RZ_STRING_ENC_EBCDIC_UK:
+		return "ebcdicuk";
+	case RZ_STRING_ENC_EBCDIC_US:
+		return "ebcdicus";
 	case RZ_STRING_ENC_GUESS:
 		return "guessed";
 	default:
 		rz_warn_if_reached();
 		return "unknown";
 	}
+}
+
+/**
+ * \brief      converts an encoding name to RzStrEnc
+ *
+ * \param[in]  encoding Encoding name
+ * \return     Returns a RzStrEnc type.
+ */
+RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
+	if (!encoding || !strncmp(encoding, "guess", 5)) {
+		return RZ_STRING_ENC_GUESS;
+	} else if (!strcmp(encoding, "ascii") || !strcmp(encoding, "8bit")) {
+		return RZ_STRING_ENC_8BIT;
+	} else if (!strcmp(encoding, "mutf8")) {
+		return RZ_STRING_ENC_MUTF8;
+	} else if (!strcmp(encoding, "utf8")) {
+		return RZ_STRING_ENC_UTF8;
+	} else if (!strcmp(encoding, "utf16le")) {
+		return RZ_STRING_ENC_UTF16LE;
+	} else if (!strcmp(encoding, "utf32le")) {
+		return RZ_STRING_ENC_UTF32LE;
+	} else if (!strcmp(encoding, "utf16be")) {
+		return RZ_STRING_ENC_UTF16BE;
+	} else if (!strcmp(encoding, "utf32be")) {
+		return RZ_STRING_ENC_UTF32BE;
+	} else if (!strcmp(encoding, "ibm037")) {
+		return RZ_STRING_ENC_IBM037;
+	} else if (!strcmp(encoding, "ibm290")) {
+		return RZ_STRING_ENC_IBM290;
+	} else if (!strcmp(encoding, "ebcdices")) {
+		return RZ_STRING_ENC_EBCDIC_ES;
+	} else if (!strcmp(encoding, "ebcdicuk")) {
+		return RZ_STRING_ENC_EBCDIC_UK;
+	} else if (!strcmp(encoding, "ebcdicus")) {
+		return RZ_STRING_ENC_EBCDIC_US;
+	} else if (!strcmp(encoding, "base64")) {
+		return RZ_STRING_ENC_BASE64;
+	}
+
+	RZ_LOG_ERROR("rz_str: encoding %s not supported\n", encoding);
+	return RZ_STRING_ENC_GUESS;
 }
 
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
@@ -646,6 +694,97 @@ RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr
 	return str[start] == chr ? str + start : NULL;
 }
 
+/**
+ * \brief Checks if the given character string is a two byte UTF-8 character.
+ *
+ * \param c The character string to test.
+ * \return bool True if the character string is a two byte UTF-8 character. False otherwise.
+ */
+RZ_API bool rz_str_is2utf8(RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(c, false);
+	if (!c[0] || !c[1]) {
+		return false;
+	}
+	return ((c[0] & 0xe0) == 0xc0) && ((c[1] & 0xc0) == 0x80);
+}
+
+/**
+ * \brief Checks if the given character string is a three byte UTF-8 character.
+ *
+ * \param c The character string to test.
+ * \return bool True if the character string is a three byte UTF-8 character. False otherwise.
+ */
+RZ_API bool rz_str_is3utf8(RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(c, false);
+	if (!c[0] || !c[1] || !c[2]) {
+		return false;
+	}
+	return ((c[0] & 0xf0) == 0xe0) && ((c[1] & 0xc0) == 0x80) && ((c[2] & 0xc0) == 0x80);
+}
+
+/**
+ * \brief Checks if the given character string is a four byte UTF-8 character.
+ *
+ * \param c The character string to test.
+ * \return bool True if the character string is a four byte UTF-8 character. False otherwise.
+ */
+RZ_API bool rz_str_is4utf8(RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(c, false);
+	if (!c[0] || !c[1] || !c[2] || !c[3]) {
+		return false;
+	}
+	return ((c[0] & 0xf8) == 0xf0) && ((c[1] & 0xc0) == 0x80) && ((c[2] & 0xc0) == 0x80) && ((c[3] & 0xc0) == 0x80);
+}
+
+/**
+ * \brief Checks if the byte string matches the criteria of a UTF-8 character of length \p x.
+ *
+ * \param c The byte string to test.
+ * \return bool True if the bytes match an UTF-8 character of length \p x. False otherwise.
+ */
+RZ_API bool rz_str_isXutf8(RZ_NONNULL const char *c, ut8 x) {
+	rz_return_val_if_fail(c, false);
+	switch (x) {
+	default:
+		return false;
+	case 1:
+		return isascii(c[0]);
+	case 2:
+		return rz_str_is2utf8(c);
+	case 3:
+		return rz_str_is3utf8(c);
+	case 4:
+		return rz_str_is4utf8(c);
+	}
+}
+
+/**
+ * \brief Returns a pointer to the first occurrence of UTF-8 character \p c in the string \p s.
+ *
+ * \param str The string to search.
+ * \param c The UTF-8 character to search for.
+ * \return char* A pointer to the first occurrence of \p c in the string (first from the left) or NULL if \p c was not found.
+ */
+RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NONNULL const char *c) {
+	rz_return_val_if_fail(str && c, NULL);
+	ut32 i = 0;
+	ut64 str_len = strlen(str);
+	ut8 c_len = isascii(*c) ? 1 : (rz_str_is2utf8(c) ? 2 : (rz_str_is3utf8(c) ? 3 : (rz_str_is4utf8(c) ? 4 : 1)));
+	while (i <= str_len && i + c_len <= str_len) {
+		if (c_len == 1) {
+			if (str[i] == c[0]) {
+				return str + i;
+			}
+		} else {
+			if (rz_mem_eq((ut8 *)str + i, (ut8 *)c, c_len)) {
+				return str + i;
+			}
+		}
+		++i;
+	}
+	return NULL;
+}
+
 RZ_API const char *rz_str_sep(const char *base, const char *sep) {
 	int i;
 	while (*base) {
@@ -719,6 +858,27 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
 		s--;
 	}
 	return (char *)s;
+}
+
+/**
+ * \brief Finds the first occurrence of \p find in \p s, ignore case.
+ * \param s pointer to the string to examine
+ * \param find pointer to the string to search for
+ * \param slen the maximum number of characters to search
+ */
+RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *s, RZ_NONNULL const char *find, int slen) {
+	rz_return_val_if_fail(s && find, NULL);
+	char *new_s = strdup(s), *new_find = strdup(find);
+	const char *res = NULL;
+	rz_str_case(new_s, false);
+	rz_str_case(new_find, false);
+	const char *pos = rz_str_nstr(new_s, new_find, slen);
+	if (pos) {
+		res = s + (pos - new_s);
+	}
+	free(new_s);
+	free(new_find);
+	return res;
 }
 
 // Returns a new heap-allocated copy of str.
@@ -1857,6 +2017,22 @@ RZ_API bool rz_str_is_ascii(const char *str) {
 }
 
 /**
+ * \brief Checks if the whole string is composed of whitespace
+ *
+ * \param str input string
+ * \return bool true if whitespace (or empty), false otherwise
+ */
+RZ_API bool rz_str_is_whitespace(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, false);
+	for (const char *ptr = str; *ptr != '\0'; ptr++) {
+		if (!isspace(*ptr)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
  * \brief Returns true if the input string is correctly UTF-8-encoded.
  *
  * Goes through a null-terminated string and returns false if there is a byte
@@ -2584,18 +2760,33 @@ RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
 }
 
 // XXX must find across the ansi tags, as well as support utf8
-RZ_API const char *rz_strstr_ansi(const char *a, const char *b) {
+/**
+ * \brief Finds the first occurrence of \p b in \p a, skip ansi sequence.
+ * \param a pointer to the string to examine
+ * \param b pointer to the string to search for
+ * \param icase whether ignore case
+ */
+RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase) {
+	rz_return_val_if_fail(a && b, NULL);
 	const char *ch, *p = a;
 	do {
 		ch = strchr(p, '\x1b');
 		if (ch) {
-			const char *v = rz_str_nstr(p, b, ch - p);
+			const char *v;
+			if (icase) {
+				v = rz_str_case_nstr(p, b, ch - p);
+			} else {
+				v = rz_str_nstr(p, b, ch - p);
+			}
 			if (v) {
 				return v;
 			}
 			p = ch + __str_ansi_length(ch);
 		}
 	} while (ch);
+	if (icase) {
+		return rz_str_casestr(p, b);
+	}
 	return strstr(p, b);
 }
 
@@ -2604,8 +2795,8 @@ RZ_API const char *rz_str_casestr(const char *a, const char *b) {
 	// return strcasestr (a, b);
 	size_t hay_len = strlen(a);
 	size_t needle_len = strlen(b);
-	if (!hay_len || !needle_len) {
-		return NULL;
+	if (!needle_len) {
+		return a;
 	}
 	while (hay_len >= needle_len) {
 		if (!rz_str_ncasecmp(a, b, needle_len)) {
@@ -2732,7 +2923,6 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	ut16 *in = (ut16 *)src;
 	ut16 *inend;
 	ut32 c, d, inlen;
-	ut8 *tmp;
 	int bits;
 
 	if ((len_src % 2) == 1) {
@@ -2741,29 +2931,14 @@ RZ_API int rz_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_s
 	inlen = len_src / 2;
 	inend = in + inlen;
 	while ((in < inend) && (dst - outstart + 5 < len_dst)) {
-		if (little_endian) {
-			c = *in++;
-		} else {
-			tmp = (ut8 *)in;
-			c = *tmp++;
-			if (!c && !*tmp) {
-				break;
-			}
-			c = c | (((ut32)*tmp) << 8);
-			in++;
-		}
+		c = rz_read_ble16((const ut8 *)in, !little_endian);
+		in++;
 		if ((c & 0xFC00) == 0xD800) { /* surrogates */
 			if (in >= inend) { /* (in > inend) shouldn't happens */
 				break;
 			}
-			if (little_endian) {
-				d = *in++;
-			} else {
-				tmp = (ut8 *)in;
-				d = *tmp++;
-				d = d | (((ut32)*tmp) << 8);
-				in++;
-			}
+			d = rz_read_ble16((const ut8 *)in, !little_endian);
+			in++;
 			if ((d & 0xFC00) == 0xDC00) {
 				c &= 0x03FF;
 				c <<= 10;
@@ -3186,7 +3361,7 @@ RZ_API bool rz_str_endswith_icase(RZ_NONNULL const char *str, RZ_NONNULL const c
 	return str_endswith(str, needle, false);
 }
 
-static RzList *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {
+static RzList /*<char *>*/ *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {
 	rz_return_val_if_fail(str && c, NULL);
 	RzList *lst = rz_list_newf(dup ? free : NULL);
 	char *aux = str;
@@ -3212,6 +3387,54 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
 	return lst;
 }
 
+static RzList /*<char *>*/ *str_split_list_common_regex(RZ_BORROW char *str, RZ_BORROW RzRegex *r, int n, bool trim, bool dup) {
+	rz_return_val_if_fail(str && r, NULL);
+	RzList *lst = rz_list_newf(dup ? free : NULL);
+	RzRegexMatch m[1];
+	char *aux;
+	int i = 0;
+	int s = 0, e = 0;
+	int j = 0;
+	while (rz_regex_exec(r, str + j, 1, m, 0) == 0) {
+		if (n == i && n > 0) {
+			break;
+		}
+		s = m[0].rm_so; // Match start (inclusive) in string str + j
+		e = m[0].rm_eo; // Match end (exclusive) in string str + j
+		if (dup) {
+			aux = rz_str_ndup(str + j, s);
+		} else {
+			// Overwrite split chararcters.
+			memset(str + j + s, 0, e - s);
+			aux = str + j;
+		}
+		if (trim) {
+			rz_str_trim(aux);
+		}
+		rz_list_append(lst, aux);
+		j += e;
+		++i;
+	}
+	if (*(str + j) == 0 || (n == i && n > 0) || rz_list_length(lst) == 0) {
+		// No token left.
+		return lst;
+	}
+
+	if (dup) {
+		aux = rz_str_ndup(str + j, strlen(str + j));
+	} else {
+		// Overwrite split chararcters.
+		memset(str + j + s, 0, e - s);
+		aux = str + j;
+	}
+	if (trim) {
+		rz_str_trim(aux);
+	}
+	rz_list_append(lst, aux);
+
+	return lst;
+}
+
 /**
  * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
  *
@@ -3223,9 +3446,28 @@ static RzList *str_split_list_common(char *str, const char *c, int n, bool trim,
  * \param c Delimiter string used to split \p str
  * \param n If > 0 at most this number of delimiters are considered.
  */
-RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
+RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n) {
 	rz_return_val_if_fail(str && c, NULL);
 	return str_split_list_common(str, c, n, true, false);
+}
+
+/**
+ * \brief Split the string \p str according to the regex \p r and returns a \p RzList with the result.
+ *
+ * Split a string \p str according to the regex specified in \p r and it
+ * considers at most \p n delimiters. The result is a \p RzList with pointers
+ * to the input string \p str.
+ *
+ * \param str Input string to split. It will be modified by this function.
+ * \param r Delimiter regex used to split \p str
+ * \param n If > 0 at most this number of delimiters are considered.
+ */
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n) {
+	rz_return_val_if_fail(str && r, NULL);
+	RzRegex *regex = rz_regex_new(r, "e");
+	RzList *res = str_split_list_common_regex(str, regex, n, false, false);
+	rz_regex_free(regex);
+	return res;
 }
 
 /**
@@ -3239,7 +3481,7 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n) {
  * \param c Delimiter string used to split \p str
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, 0, trim, true);
@@ -3260,11 +3502,34 @@ RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) 
  * \param n If > 0 at most this number of delimiters are considered.
  * \param trim If true each token is considered without trailing/leading whitespaces.
  */
-RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
 	rz_return_val_if_fail(_str && c, NULL);
 	char *str = strdup(_str);
 	RzList *res = str_split_list_common(str, c, n, trim, true);
 	free(str);
+	return res;
+}
+
+/**
+ * \brief Split the string \p str according to the regex \p r and returns a \p RzList with the result.
+ *
+ * Split a string \p str according to the regex specified in \p r. It can
+ * optionally trim (aka remove spaces) the tokens and/or consider at most \p n
+ * delimiters. The result is a \p RzList with newly allocated strings for each
+ * token.
+ *
+ * \param str Input string to split
+ * \param r Delimiter regex string used to split \p str
+ * \param n If > 0 at most this number of delimiters are considered.
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim) {
+	rz_return_val_if_fail(_str && r, NULL);
+	char *str = strdup(_str);
+	RzRegex *regex = rz_regex_new(r, "e");
+	RzList *res = str_split_list_common_regex(str, regex, n, trim, true);
+	free(str);
+	rz_regex_free(regex);
 	return res;
 }
 
@@ -3474,75 +3739,6 @@ RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, co
 	return strdup(o);
 }
 
-RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len) {
-	wchar_t *res_buf = NULL;
-	size_t sz;
-	bool fail = true;
-
-	if (!buf || len <= 0) {
-		return NULL;
-	}
-	sz = mbstowcs(NULL, buf, len);
-	if (sz == (size_t)-1) {
-		goto err_r_str_mb_to_wc;
-	}
-	res_buf = (wchar_t *)calloc(1, (sz + 1) * sizeof(wchar_t));
-	if (!res_buf) {
-		goto err_r_str_mb_to_wc;
-	}
-	sz = mbstowcs(res_buf, buf, sz + 1);
-	if (sz == (size_t)-1) {
-		goto err_r_str_mb_to_wc;
-	}
-	fail = false;
-err_r_str_mb_to_wc:
-	if (fail) {
-		RZ_FREE(res_buf);
-	}
-	return res_buf;
-}
-
-RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
-	char *res_buf = NULL;
-	mbstate_t mbstate = { 0 };
-	size_t sz;
-
-	if (!buf || len <= 0) {
-		return NULL;
-	}
-	sz = wcsrtombs(NULL, &buf, 0, &mbstate);
-	if (sz == (size_t)-1) {
-		goto err_r_str_wc_to_mb;
-	}
-	res_buf = RZ_NEWS0(char, sz + 1);
-	if (!res_buf) {
-		goto err_r_str_wc_to_mb;
-	}
-	sz = wcsrtombs(res_buf, &buf, sz + 1, &mbstate);
-	if (sz == (size_t)-1) {
-		goto err_r_str_wc_to_mb;
-	}
-	return res_buf;
-
-err_r_str_wc_to_mb:
-	free(res_buf);
-	return NULL;
-}
-
-RZ_API char *rz_str_wc_to_mb(const wchar_t *buf) {
-	if (!buf) {
-		return NULL;
-	}
-	return rz_str_wc_to_mb_l(buf, wcslen(buf));
-}
-
-RZ_API wchar_t *rz_str_mb_to_wc(const char *buf) {
-	if (!buf) {
-		return NULL;
-	}
-	return rz_str_mb_to_wc_l(buf, strlen(buf));
-}
-
 RZ_API char *rz_str_from_ut64(ut64 val) {
 	int i = 0;
 	char *v = (char *)&val;
@@ -3601,7 +3797,7 @@ RZ_API void rz_str_stripLine(char *str, const char *key) {
 	}
 }
 
-RZ_API char *rz_str_list_join(RzList *str, const char *sep) {
+RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	const char *p;
 	while ((p = rz_list_pop_head(str))) {
@@ -3744,11 +3940,11 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
  * space. Spaces at the beginning of \p string will be maintained, trailing
  * whitespaces at the end of each split line is removed.
  *
- * @param string a writable string, it will be modified by the function
- * @param width the maximum size of each line. It will be respected only if
+ * \param string a writable string, it will be modified by the function
+ * \param width the maximum size of each line. It will be respected only if
  *              possible, as the function won't split words.
  */
-RZ_API RzList *rz_str_wrap(char *str, size_t width) {
+RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width) {
 	rz_return_val_if_fail(str, NULL);
 
 	RzList *res = rz_list_new();
@@ -3788,47 +3984,6 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 
 	return res;
 }
-
-// version.c
-#include <rz_userconf.h>
-#include <rz_util.h>
-
-#ifndef RZ_GITTIP
-#define RZ_GITTIP ""
-#endif
-
-#ifndef RZ_BIRTH
-#define RZ_BIRTH "unknown"
-#endif
-
-#ifdef RZ_PACKAGER_VERSION
-#ifdef RZ_PACKAGER
-#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
-#else
-#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION
-#endif
-#else
-#define RZ_STR_PKG_VERSION_STRING ""
-#endif
-
-RZ_API char *rz_str_version(const char *program) {
-	RzStrBuf *sb = rz_strbuf_new(NULL);
-	if (program) {
-		rz_strbuf_appendf(sb, "%s ", program);
-	}
-	rz_strbuf_appendf(sb, RZ_VERSION " @ " RZ_SYS_OS "-" RZ_SYS_ARCH "-%d",
-		(RZ_SYS_BITS & 8) ? 64 : 32);
-	if (RZ_STR_ISNOTEMPTY(RZ_STR_PKG_VERSION_STRING)) {
-		rz_strbuf_append(sb, RZ_STR_PKG_VERSION_STRING);
-	}
-	if (RZ_STR_ISNOTEMPTY(RZ_GITTIP)) {
-		rz_strbuf_append(sb, "\n");
-		rz_strbuf_append(sb, "commit: " RZ_GITTIP ", build: " RZ_BIRTH);
-	}
-	return rz_strbuf_drain(sb);
-}
-
-#undef RZ_STR_PKG_VERSION_STRING
 
 /**
  * \brief Tries to guess the string encoding method from the buffer.

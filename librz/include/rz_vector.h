@@ -68,7 +68,6 @@ RZ_API void rz_vector_fini(RzVector *vec);
 // frees the vector and calls vec->free on every element if set.
 RZ_API void rz_vector_free(RzVector *vec);
 
-// the returned vector will have the same capacity as vec.
 RZ_API RzVector *rz_vector_clone(RzVector *vec);
 
 static inline bool rz_vector_empty(const RzVector *vec) {
@@ -228,6 +227,11 @@ RZ_API void rz_pvector_clear(RzPVector *vec);
 // free the vector and call vec->v.free on every element.
 RZ_API void rz_pvector_free(RzPVector *vec);
 
+/// See rz_vector_clone() for detailed semantics
+static inline RzPVector *rz_pvector_clone(RzPVector *vec) {
+	return (RzPVector *)rz_vector_clone(&vec->v);
+}
+
 static inline size_t rz_pvector_len(const RzPVector *vec) {
 	rz_return_val_if_fail(vec, 0);
 	return vec->v.len;
@@ -272,7 +276,7 @@ static inline void *rz_pvector_tail(RzPVector *vec) {
 }
 
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
-RZ_API void **rz_pvector_contains(RzPVector *vec, void *x);
+RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x);
 
 // removes and returns the pointer at the given index. Does not call free.
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index);
@@ -382,6 +386,22 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 				i = m + 1; \
 			} \
 		} \
+	} while (0)
+
+/**
+ * \brief Find an element elem in the \p array,
+ * lying within \p start and \p stop index such that \p cmp(x, elem) == 0
+ * The index of the element elem is stored in \p itr
+ * If \p itr == \p stop, then no such element was found
+ */
+#define rz_array_find(array, x, itr, start, stop, cmp) \
+	do { \
+		for (itr = start; itr < stop; itr++) { \
+			if (cmp((array[itr]), x) == 0) { \
+				break; \
+			} \
+		} \
+		return itr; \
 	} while (0)
 
 /*

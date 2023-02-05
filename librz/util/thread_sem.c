@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2018 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "thread.h"
@@ -15,7 +16,14 @@
 #include <limits.h>
 #endif
 
-RZ_API RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
+/**
+ * \brief  Allocates and initialize a RzThreadSemaphore structure
+ *
+ * \param  initial  The initial status of the semaphore
+ *
+ * \return On success returns a valid RzThreadSemaphore pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 	RzThreadSemaphore *sem = RZ_NEW(RzThreadSemaphore);
 	if (!sem) {
 		return NULL;
@@ -57,7 +65,12 @@ RZ_API RzThreadSemaphore *rz_th_sem_new(unsigned int initial) {
 	return sem;
 }
 
-RZ_API void rz_th_sem_free(RzThreadSemaphore *sem) {
+/**
+ * \brief  Frees a RzThreadSemaphore struct
+ *
+ * \param  sem  The RzThreadSemaphore to free
+ */
+RZ_API void rz_th_sem_free(RZ_NULLABLE RzThreadSemaphore *sem) {
 	if (!sem) {
 		return;
 	}
@@ -76,7 +89,13 @@ RZ_API void rz_th_sem_free(RzThreadSemaphore *sem) {
 	free(sem);
 }
 
-RZ_API void rz_th_sem_post(RzThreadSemaphore *sem) {
+/**
+ * \brief  increments (releases) a semaphore
+ *
+ * \param  sem   The RzThreadSemaphore to increment (release)
+ */
+RZ_API void rz_th_sem_post(RZ_NONNULL RzThreadSemaphore *sem) {
+	rz_return_if_fail(sem);
 #if HAVE_PTHREAD
 	sem_post(sem->sem);
 #elif __WINDOWS__
@@ -84,7 +103,13 @@ RZ_API void rz_th_sem_post(RzThreadSemaphore *sem) {
 #endif
 }
 
-RZ_API void rz_th_sem_wait(RzThreadSemaphore *sem) {
+/**
+ * \brief  Decrements (acquires) the semaphore (waits indefinetely)
+ *
+ * \param  sem   The RzThreadSemaphore to decrement (acquire)
+ */
+RZ_API void rz_th_sem_wait(RZ_NONNULL RzThreadSemaphore *sem) {
+	rz_return_if_fail(sem);
 #if HAVE_PTHREAD
 	sem_wait(sem->sem);
 #elif __WINDOWS__

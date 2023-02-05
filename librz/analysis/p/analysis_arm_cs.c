@@ -673,9 +673,6 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 				op->stackptr = IMM64(2);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = RZ_ANALYSIS_STACK_RESET;
-			op->stackptr = 0;
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -702,18 +699,14 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM64(1)) {
 				// add sp, 0x54
-				op->stackptr = -IMM(1);
+				op->stackptr = -(st64)IMM(1);
 			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
 				// add sp, sp, 0x10
-				op->stackptr = -IMM64(2);
+				op->stackptr = -(st64)IMM64(2);
 			}
 			op->val = op->stackptr;
-		} else {
-			op->stackop = RZ_ANALYSIS_STACK_RESET;
-			op->stackptr = 0;
-			if (ISIMM64(2)) {
-				op->val = IMM64(2);
-			}
+		} else if (ISIMM64(2)) {
+			op->val = IMM64(2);
 		}
 		op->cycles = 1;
 		/* fallthru */
@@ -1153,10 +1146,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM(1)) {
 				// add sp, 0x54
-				op->stackptr = -IMM(1);
+				op->stackptr = -(st64)IMM(1);
 			} else if (ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
 				// add sp, sp, 0x10
-				op->stackptr = -IMM(2);
+				op->stackptr = -(st64)IMM(2);
 			}
 			op->val = op->stackptr;
 		}
@@ -2207,26 +2200,23 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	if (q == RZ_ANALYSIS_ARCHINFO_DATA_ALIGN) {
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	bool is_16_bits = analysis && analysis->bits == 16;
+
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return is_16_bits ? 2 : 4;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
-	}
-	if (q == RZ_ANALYSIS_ARCHINFO_ALIGN) {
-		if (analysis && analysis->bits == 16) {
-			return 2;
-		}
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return is_16_bits ? 2 : 4;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
 		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	if (q == RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) {
-		return 4;
-	}
-	if (q == RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE) {
-		if (analysis && analysis->bits == 16) {
-			return 2;
-		}
-		return 4;
-	}
-	return 4; // XXX
 }
 
 static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {
@@ -2352,7 +2342,7 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 	return ret;
 }
 
-static RzList *analysis_preludes(RzAnalysis *analysis) {
+static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 #define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
 	switch (analysis->bits) {

@@ -312,6 +312,135 @@ commands:
         summary: Debug continue until
         cname: cmd_debug_continue_until
         type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: dd
+    summary: Debug file descriptors commands
+    subcommands:
+      - name: dd
+        summary: Open and map <file> given the path
+        cname: cmd_debug_descriptor_open
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dd-
+        summary: Close the <fd> file descriptor
+        cname: cmd_debug_descriptor_close
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddl
+        summary: List all file descriptors
+        cname: cmd_debug_descriptor_list
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+      - name: dds
+        summary: Seek given <fd> to the <offset>
+        cname: cmd_debug_descriptor_seek
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddd
+        summary: Duplicate <fd_src> to <fd_dst>
+        cname: cmd_debug_descriptor_dup
+        args:
+          - name: fd_src
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: fd_dst
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddr
+        summary: Read <len> bytes from <fd> file at <offset>
+        cname: cmd_debug_descriptor_read
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: ddw
+        summary: Write <len> bytes to <fd> file at <offset>
+        cname: cmd_debug_descriptor_write
+        args:
+          - name: fd
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: len
+            type: RZ_CMD_ARG_TYPE_NUM
+  - name: de
+    summary: Manage ESIL watchpoints
+    subcommands:
+      - name: de
+        summary: Add ESIL watchpoint
+        cname: cmd_debug_esil_add
+        args:
+          - name: perm
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: kind
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices:
+              - reg
+              - mem
+          - name: expression
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: de
+                arg_str: "r reg rip"
+                comment: Stop when reads RIP register
+              - text: de
+                arg_str: "rw mem ADDR"
+                comment: Stop when read or write in ADDR
+              - text: de
+                arg_str: "w r rdx"
+                comment: Stop when rdx register is modified
+              - text: de
+                arg_str: "x m FROM..TO"
+                comment: Stop when rip in range
+      - name: de-*
+        summary: Remove all ESIL watchpoints
+        cname: cmd_debug_esil_remove
+        args: []
+      - name: del
+        summary: List all ESIL watchpoints
+        cname: cmd_debug_esil_list
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: dec
+        summary: Continue execution until matching expression
+        cname: cmd_debug_esil_continue
+        args: []
+      - name: des
+        summary: Step-in <N> instructions with ESIL
+        cname: cmd_debug_esil_step
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: desu
+        summary: Step until specified <address>
+        cname: cmd_debug_esil_step_until
+        args:
+          - name: <address>
+            type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: dg
+    summary: Generate core dump file
+    cname: cmd_debug_core_dump_generate
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
   - name: do
     summary: Debug (re)open commands
     subcommands:
@@ -546,6 +675,68 @@ commands:
         args:
           - name: tag
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: di
+    summary: Debug information
+    cname: debug_info
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+    default_mode: RZ_OUTPUT_MODE_STANDARD
+    args: []
+  - name: dk
+    summary: Debug signals management
+    subcommands:
+      - name: dk
+        summary: Send signal to the child
+        cname: cmd_debug_signal
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dkl
+        summary: List all signal handlers of the child process
+        cname: cmd_debug_signal_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_TABLE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: dkn
+        summary: Resolve the name of signal given the number
+        cname: cmd_debug_signal_name
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: dkN
+        summary: Resolve the signal number given the name
+        cname: cmd_debug_signal_number
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dko
+        summary: Set skip or continue options for a given signal
+        cname: cmd_debug_signal_option
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: option
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices: ["skip", "continue", "reset"]
+            default_value: "reset"
+        details:
+          - name: Signal options
+            entries:
+              - text: skip
+                comment: Do not enter into the signal handler
+              - text: continue
+                comment: Enter into the signal handler
+              - text: reset
+                comment: Remove all previously set signal options
   - name: dl
     summary: Debug handler
     subcommands:
@@ -708,6 +899,100 @@ commands:
         cname: cmd_debug_heap_jemalloc
         type: RZ_CMD_DESC_TYPE_OLDINPUT
         args: []
+  - name: dp
+    summary: List or attach to process or thread
+    subcommands:
+      - name: dp
+        summary: List current pid and children
+        cname: cmd_debug_pid_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpl
+        summary: List all attachable pids
+        cname: cmd_debug_pid_attachable_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args: []
+      - name: dpa
+        summary: Attach to selected <pid>
+        cname: cmd_debug_pid_attach
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dp-
+        summary: Detach from selected <pid>
+        cname: cmd_debug_pid_detach
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dp=
+        summary: Select <pid>
+        cname: cmd_debug_pid_select
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: dpc
+        summary: Select forked pid (see dbg.forks)
+        cname: cmd_debug_pid_select_forked
+        args: []
+      - name: dpc*
+        summary: Display forked pid (see dbg.forks)
+        cname: cmd_debug_pid_display_forked
+        args: []
+      - name: dpe
+        summary: Show path to executable
+        cname: cmd_debug_executable_path
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpf
+        summary: Attach to pid like file fd
+        cname: cmd_debug_pid_attach_fd
+        args: []
+      - name: dpk
+        summary: Send <signal> to process <pid>
+        cname: cmd_debug_pid_signal
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpT
+        summary: List threads of specified or current <pid>
+        cname: cmd_debug_thread_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_STANDARD
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dpt=
+        summary: Select <thread-id>
+        cname: cmd_debug_pid_thread_select
+        args:
+          - name: thread-id
+            type: RZ_CMD_ARG_TYPE_RZNUM
+
   #####################################################
   # Keep this in sync with ar in cmd_analysis.yaml from here...
   - name: dr
@@ -998,3 +1283,72 @@ commands:
             args:
               - name: number
                 type: RZ_CMD_ARG_TYPE_NUM
+  - name: dw
+    summary: Block prompt until <pid> dies
+    cname: cmd_debug_wait
+    args:
+      - name: pid
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: dW
+    summary: Windows process commands
+    subcommands:
+      - name: dW
+        summary: List process windows
+        cname: cmd_debug_windows_list
+        args: []
+      - name: dWi
+        summary: Identify window under cursor
+        cname: cmd_debug_window_identify
+        args: []
+  - name: dx
+    summary: Code injection commands
+    subcommands:
+      - name: dx
+        summary: Inject opcodes
+        cname: cmd_debug_inject_opcode
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: dx
+                arg_str: " 9090"
+                comment: Insert two 0x90 bytes (nop instruction on x86 platforms)
+      - name: dxa
+        summary: Assemble code and inject
+        cname: cmd_debug_inject_assembly
+        args:
+          - name: asm
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: dxa
+                arg_str: " mov eax,6; mov ebx,0; int 0x80"
+                comment: Assemble and insert 3 instructions
+      - name: dxe
+        summary: Compile RzEgg expression and inject
+        cname: cmd_debug_inject_egg
+        args:
+          - name: expression
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dxr
+        summary: Inject opcodes and restore state
+        cname: cmd_debug_inject_opcode_restore
+        args:
+          - name: opcode
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: dxs
+        summary: Syscall injection
+        cname: cmd_debug_inject_syscall
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+        details:
+          - name: Examples
+            entries:
+              - text: dxs
+                arg_str: " write 1, 0x8048, 12"
+                comment: Inject the write() syscall with given arguments

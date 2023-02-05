@@ -34,6 +34,7 @@ bool test_rz_analysis_block_create() {
 	mu_assert_eq(block->addr, 0x1337, "created addr");
 	mu_assert_eq(block->size, 42, "created size");
 	mu_assert_eq(block->ref, 1, "created initial ref");
+	mu_assert_eq(block->sp_entry, RZ_STACK_ADDR_INVALID, "created sp_entry");
 	mu_assert_eq(blocks_count(analysis), 1, "count after create");
 
 	RzAnalysisBlock *block2 = rz_analysis_create_block(analysis, 0x133f, 100);
@@ -42,6 +43,7 @@ bool test_rz_analysis_block_create() {
 	mu_assert_eq(block2->addr, 0x133f, "created addr");
 	mu_assert_eq(block2->size, 100, "created size");
 	mu_assert_eq(block2->ref, 1, "created initial ref");
+	mu_assert_eq(block2->sp_entry, RZ_STACK_ADDR_INVALID, "created sp_entry");
 	mu_assert_eq(blocks_count(analysis), 2, "count after create");
 
 	RzAnalysisBlock *block3 = rz_analysis_create_block(analysis, 0x1337, 5);
@@ -69,6 +71,154 @@ bool test_rz_analysis_block_contains() {
 	mu_end;
 }
 
+bool test_rz_analysis_block_sp() {
+	RzAnalysis *analysis = rz_analysis_new();
+	assert_block_invariants(analysis);
+
+	ut64 base = 0xfa1afe1;
+	RzAnalysisBlock *block = rz_analysis_create_block(analysis, base, 42);
+	assert_block_invariants(analysis);
+	mu_assert_eq(blocks_count(analysis), 1, "count after create");
+
+	// while ninstr == 0, nothing is known except delta at 0 (always 0)
+	st16 delta = rz_analysis_block_get_op_sp_delta(block, 0);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_op_sp_delta(block, 4);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 5);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_sp_delta_at(block, base);
+	mu_assert_eq(delta, 0, "sp delta at 0");
+	delta = rz_analysis_block_get_sp_delta_at_end(block);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+
+	block->ninstr = 5;
+
+	// with ninstr > 0, but nothing set yet, still nothing new is known
+	delta = rz_analysis_block_get_op_sp_delta(block, 0);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_op_sp_delta(block, 4);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 5);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_sp_delta_at(block, base);
+	mu_assert_eq(delta, 0, "sp delta at 0");
+	delta = rz_analysis_block_get_sp_delta_at_end(block);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+
+	// after setting one sp delta, this one is known, but nothing else around
+	bool succ = rz_analysis_block_set_op_sp_delta(block, 2, -8);
+	mu_assert_true(succ, "sp delta set");
+	delta = rz_analysis_block_get_op_sp_delta(block, 1);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_op_sp_delta(block, 2);
+	mu_assert_eq(delta, -8, "sp delta known after set");
+	delta = rz_analysis_block_get_op_sp_delta(block, 3);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+	delta = rz_analysis_block_get_sp_delta_at_end(block);
+	mu_assert_eq(delta, ST16_MAX, "sp delta unknown");
+
+	// fill up the sp deltas for the remaining ops
+	succ = rz_analysis_block_set_op_sp_delta(block, 4, -24);
+	mu_assert_true(succ, "sp delta set");
+	succ = rz_analysis_block_set_op_sp_delta(block, 0, -4);
+	mu_assert_true(succ, "sp delta set");
+	succ = rz_analysis_block_set_op_sp_delta(block, 1, -5);
+	mu_assert_true(succ, "sp delta set");
+	succ = rz_analysis_block_set_op_sp_delta(block, 3, -16);
+	mu_assert_true(succ, "sp delta set");
+	succ = rz_analysis_block_set_op_sp_delta(block, 5, -42);
+	mu_assert_false(succ, "set at i >= ninstr");
+
+	delta = rz_analysis_block_get_op_sp_delta(block, 0);
+	mu_assert_eq(delta, -4, "sp delta known after set");
+	delta = rz_analysis_block_get_op_sp_delta(block, 5);
+	mu_assert_eq(delta, ST16_MAX, "sp delta oob");
+
+	// without knowing the op offsets yet, delta by address is at least known
+	// at the beginning and after the end of the block
+	delta = rz_analysis_block_get_sp_delta_at(block, base);
+	mu_assert_eq(delta, 0, "sp delta at 0");
+	delta = rz_analysis_block_get_sp_delta_at_end(block);
+	mu_assert_eq(delta, -24, "sp delta at end");
+
+	// absolute sps are not known until sp_delta is set
+	RzStackAddr sp = rz_analysis_block_get_sp_at(block, base);
+	mu_assert_eq(sp, RZ_STACK_ADDR_INVALID, "sp unknown");
+	sp = rz_analysis_block_get_sp_at_end(block);
+	mu_assert_eq(sp, RZ_STACK_ADDR_INVALID, "sp unknown");
+
+	rz_analysis_block_set_op_offset(block, 1, 1);
+	rz_analysis_block_set_op_offset(block, 2, 2);
+	rz_analysis_block_set_op_offset(block, 3, 4);
+	rz_analysis_block_set_op_offset(block, 4, 30);
+
+	// with the op offsets, all deltas by address are known
+	delta = rz_analysis_block_get_sp_delta_at(block, base);
+	mu_assert_eq(delta, 0, "sp delta at 0");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 1);
+	mu_assert_eq(delta, -4, "sp delta known through op offset");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 2);
+	mu_assert_eq(delta, -5, "sp delta known through op offset");
+	// When inside an instruction, we want to get the sp delta at the instruction's beginning
+	// as the best known value here.
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 3);
+	mu_assert_eq(delta, -5, "sp delta known through op offset");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 4);
+	mu_assert_eq(delta, -8, "sp delta known through op offset");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 10);
+	mu_assert_eq(delta, -8, "sp delta known through op offset");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 30);
+	mu_assert_eq(delta, -16, "sp delta known through op offset");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 41);
+	mu_assert_eq(delta, -16, "sp delta known through op offset");
+	delta = rz_analysis_block_get_sp_delta_at(block, base + 42);
+	mu_assert_eq(delta, ST16_MAX, "sp delta oob");
+	delta = rz_analysis_block_get_sp_delta_at(block, base - 1);
+	mu_assert_eq(delta, ST16_MAX, "sp delta oob");
+	delta = rz_analysis_block_get_sp_delta_at_end(block);
+	mu_assert_eq(delta, -24, "sp delta at end");
+
+	// absolute sps still not known until sp_delta is set
+	sp = rz_analysis_block_get_sp_at(block, base);
+	mu_assert_eq(sp, RZ_STACK_ADDR_INVALID, "sp unknown");
+	sp = rz_analysis_block_get_sp_at_end(block);
+	mu_assert_eq(sp, RZ_STACK_ADDR_INVALID, "sp unknown");
+
+	// complete all info by setting sp_entry
+	block->sp_entry = -1000;
+
+	// now all actual sps are known for the block
+	sp = rz_analysis_block_get_sp_at(block, base);
+	mu_assert_eq(sp, -1000, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 1);
+	mu_assert_eq(sp, -1004, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 2);
+	mu_assert_eq(sp, -1005, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 3);
+	mu_assert_eq(sp, -1005, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 4);
+	mu_assert_eq(sp, -1008, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 10);
+	mu_assert_eq(sp, -1008, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 30);
+	mu_assert_eq(sp, -1016, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 41);
+	mu_assert_eq(sp, -1016, "sp known");
+	sp = rz_analysis_block_get_sp_at(block, base + 42);
+	mu_assert_eq(sp, RZ_STACK_ADDR_INVALID, "sp oob");
+	sp = rz_analysis_block_get_sp_at(block, base - 1);
+	mu_assert_eq(sp, RZ_STACK_ADDR_INVALID, "sp oob");
+	sp = rz_analysis_block_get_sp_at_end(block);
+	mu_assert_eq(sp, -1024, "sp at end");
+
+	rz_analysis_block_unref(block);
+
+	assert_block_leaks(analysis);
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 bool test_rz_analysis_block_split() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
@@ -84,6 +234,12 @@ bool test_rz_analysis_block_split() {
 	rz_analysis_block_set_op_offset(block, 2, 2);
 	rz_analysis_block_set_op_offset(block, 3, 4);
 	rz_analysis_block_set_op_offset(block, 4, 30);
+	block->sp_entry = -1000;
+	rz_analysis_block_set_op_sp_delta(block, 0, -4);
+	rz_analysis_block_set_op_sp_delta(block, 1, -8);
+	rz_analysis_block_set_op_sp_delta(block, 2, -13);
+	rz_analysis_block_set_op_sp_delta(block, 3, -18);
+	rz_analysis_block_set_op_sp_delta(block, 4, -23);
 
 	RzAnalysisBlock *second = rz_analysis_block_split(block, 0x1337);
 	assert_block_invariants(analysis);
@@ -110,11 +266,24 @@ bool test_rz_analysis_block_split() {
 	mu_assert_eq(block->ninstr, 2, "first ninstr after split");
 	mu_assert_eq(rz_analysis_block_get_op_offset(block, 0), 0, "first op_pos[0]");
 	mu_assert_eq(rz_analysis_block_get_op_offset(block, 1), 1, "first op_pos[1]");
+	mu_assert_eq(block->sp_entry, -1000, "first sp_entry after split");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 0), -4, "first sp_delta[0]");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 1), -8, "first sp_delta[1]");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 2), ST16_MAX, "first sp_delta[3]");
+	mu_assert_eq(rz_analysis_block_get_sp_delta_at_end(block), -8, "first sp_delta at end");
+	mu_assert_eq(rz_analysis_block_get_sp_at_end(block), -1008, "first sp at end");
 
 	mu_assert_eq(second->ninstr, 3, "second ninstr after split");
 	mu_assert_eq(rz_analysis_block_get_op_offset(second, 0), 0, "second op_pos[0]");
 	mu_assert_eq(rz_analysis_block_get_op_offset(second, 1), 2, "second op_pos[1]");
 	mu_assert_eq(rz_analysis_block_get_op_offset(second, 2), 28, "second op_pos[2]");
+	mu_assert_eq(second->sp_entry, -1008, "second sp_entry after split");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(second, 0), -5, "second sp_delta[0]");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(second, 1), -10, "second sp_delta[1]");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(second, 2), -15, "second sp_delta[2]");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(second, 3), ST16_MAX, "second sp_delta[3]");
+	mu_assert_eq(rz_analysis_block_get_sp_delta_at_end(second), -15, "second sp_delta at end");
+	mu_assert_eq(rz_analysis_block_get_sp_at_end(second), -1023, "second sp at end");
 
 	rz_analysis_block_unref(block);
 	rz_analysis_block_unref(second);
@@ -128,7 +297,7 @@ bool test_rz_analysis_block_split_in_function() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
@@ -210,7 +379,7 @@ bool test_rz_analysis_block_merge_in_function() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *first = rz_analysis_create_block(analysis, 0x1337, 42);
 	RzAnalysisBlock *second = rz_analysis_create_block(analysis, 0x1337 + 42, 624);
@@ -243,7 +412,7 @@ bool test_rz_analysis_block_delete() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
@@ -271,7 +440,7 @@ bool test_rz_analysis_block_set_size() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
@@ -310,7 +479,7 @@ bool test_rz_analysis_block_relocate() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_block_invariants(analysis);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
 	assert_block_invariants(analysis);
@@ -593,14 +762,14 @@ bool test_rz_analysis_block_automerge() {
 		RzAnalysisBlock *f = rz_analysis_create_block(analysis, 0x150, 0x10);
 		e->jump = f->addr;
 
-		RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 		rz_analysis_function_add_block(fa, a);
 		rz_analysis_function_add_block(fa, c);
 		rz_analysis_function_add_block(fa, d);
 		rz_analysis_function_add_block(fa, e);
 		rz_analysis_function_add_block(fa, f);
 
-		RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x110, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x110, RZ_ANALYSIS_FCN_TYPE_FCN);
 		rz_analysis_function_add_block(fb, b);
 		rz_analysis_function_add_block(fb, c);
 		rz_analysis_function_add_block(fb, d);
@@ -657,12 +826,12 @@ bool test_rz_analysis_block_chop_noreturn(void) {
 	a->jump = c->addr;
 	b->jump = c->addr;
 
-	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	rz_analysis_function_add_block(fa, a);
 	rz_analysis_function_add_block(fa, b);
 	rz_analysis_function_add_block(fa, c);
 
-	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x130, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "fcn2", 0x130, RZ_ANALYSIS_FCN_TYPE_FCN);
 	fb->is_noreturn = true;
 
 	rz_analysis_block_chop_noreturn(b, 0x111);
@@ -705,11 +874,20 @@ bool test_rz_analysis_block_analyze_ops(void) {
 	mu_assert_eq(rz_analysis_block_get_op_size(block, 1), 0x3, "op size");
 	mu_assert_eq(rz_analysis_block_get_op_size(block, 2), 0x7, "op size");
 	mu_assert_eq(rz_analysis_block_get_op_size(block, 3), 0x7, "op size");
+	mu_assert_eq(rz_analysis_block_get_op_index_in(block, 0x1000), 0, "op index in");
+	mu_assert_eq(rz_analysis_block_get_op_index_in(block, 0x1001), 0, "op index in");
+	mu_assert_eq(rz_analysis_block_get_op_index_in(block, 0x1006), 0, "op index in");
+	mu_assert_eq(rz_analysis_block_get_op_index_in(block, 0x1007), 1, "op index in");
+	mu_assert_eq(rz_analysis_block_get_op_index_in(block, 0x1008), 1, "op index in");
 	mu_assert_eq(rz_analysis_block_get_op_addr_in(block, 0x1000), 0x1000, "op addr in");
 	mu_assert_eq(rz_analysis_block_get_op_addr_in(block, 0x1001), 0x1000, "op addr in");
 	mu_assert_eq(rz_analysis_block_get_op_addr_in(block, 0x1006), 0x1000, "op addr in");
 	mu_assert_eq(rz_analysis_block_get_op_addr_in(block, 0x1007), 0x1007, "op addr in");
 	mu_assert_eq(rz_analysis_block_get_op_addr_in(block, 0x1008), 0x1007, "op addr in");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 0), 0, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 1), 0, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 2), 0, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 3), 0, "sp delta");
 
 	// dirty block with valid code
 	rz_analysis_block_relocate(block, 0x1000, 0x11);
@@ -740,10 +918,68 @@ bool test_rz_analysis_block_analyze_ops(void) {
 	mu_end;
 }
 
+static const uint8_t example_code_sp[0xa] = {
+	0x55, // push rbp
+	0x48, 0x89, 0xe5, // mov rbp, rsp
+	0x48, 0x83, 0xec, 0x20, // sub rsp, 0x20
+	0xc9, // leave
+	0x55, // push rbp
+};
+
+bool test_rz_analysis_block_analyze_ops_sp(void) {
+	RzAnalysis *a = rz_analysis_new();
+	rz_analysis_use(a, "x86");
+	rz_analysis_set_bits(a, 64);
+	IOMock io;
+	io_mock_init(&io, 0x1000, example_code_sp, sizeof(example_code_sp));
+	io_mock_bind(&io, &a->iob);
+
+	RzAnalysisBlock *block = rz_analysis_create_block(a, 0x1000, 0xa);
+	mu_assert_eq(block->ninstr, 0, "clean block");
+	rz_analysis_block_analyze_ops(block);
+	mu_assert_eq(block->ninstr, 5, "ninstr");
+	mu_assert_eq(block->sp_entry, RZ_STACK_ADDR_INVALID, "sp_entry untouched");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 0), 0, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 1), 0x1, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 2), 0x4, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 3), 0x8, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 4), 0x9, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 0), -8, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 1), -8, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 2), -0x28, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 3), 0, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 4), -8, "sp delta");
+
+	block->sp_entry = -0x10;
+	rz_analysis_block_analyze_ops(block);
+	mu_assert_eq(block->ninstr, 5, "ninstr");
+	mu_assert_eq(block->sp_entry, -0x10, "sp_entry untouched");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 0), 0, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 1), 0x1, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 2), 0x4, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 3), 0x8, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_offset(block, 4), 0x9, "op offset");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 0), -8, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 1), -8, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 2), -0x28, "sp delta");
+	// stack reset depends on the sp_entry, which makes the following difference to above:
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 3), 0x10, "sp delta");
+	mu_assert_eq(rz_analysis_block_get_op_sp_delta(block, 4), 8, "sp delta");
+
+	rz_analysis_block_unref(block);
+
+	assert_block_invariants(a);
+	assert_block_leaks(a);
+	rz_analysis_free(a);
+	io_mock_fini(&io);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_block_chop_noreturn);
 	mu_run_test(test_rz_analysis_block_create);
 	mu_run_test(test_rz_analysis_block_contains);
+	mu_run_test(test_rz_analysis_block_sp);
 	mu_run_test(test_rz_analysis_block_split);
 	mu_run_test(test_rz_analysis_block_split_in_function);
 	mu_run_test(test_rz_analysis_block_merge);
@@ -755,12 +991,13 @@ int all_tests() {
 	mu_run_test(test_rz_analysis_block_successors);
 	mu_run_test(test_rz_analysis_block_automerge);
 	mu_run_test(test_rz_analysis_block_analyze_ops);
+	mu_run_test(test_rz_analysis_block_analyze_ops_sp);
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
 	struct timeval tv;
-	gettimeofday(&tv, NULL);
+	rz_time_gettimeofday(&tv, NULL);
 	unsigned int seed = argc > 1 ? strtoul(argv[1], NULL, 0) : tv.tv_sec + tv.tv_usec;
 	printf("seed for test_analysis_block: %u\n", seed);
 	return all_tests();

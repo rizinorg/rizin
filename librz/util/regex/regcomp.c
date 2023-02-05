@@ -152,12 +152,31 @@ RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *te
 	return ret ? 0 : 1;
 }
 
-RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text) {
+/**
+ * Extract the string matched by given regex match
+ *
+ * \param str must be the exact string \p match was originally matched from
+ * \param match a match pointing into \p str, may be -1/-1 (not found) in which case NULL will be returned
+ * \return a heap-allocated string representing the contents of \p match or NULL if unmatched
+ */
+RZ_API char *rz_regex_match_extract(RZ_NONNULL const char *str, RZ_NONNULL RzRegexMatch *match) {
+	rz_return_val_if_fail(str && match, NULL);
+	if (match->rm_eo < 0 || match->rm_so < 0) {
+		return NULL;
+	}
+	size_t entry_len = match->rm_eo - match->rm_so + 1;
+	char *r = RZ_NEWS0(char, entry_len);
+	if (!r) {
+		return NULL;
+	}
+	rz_str_ncpy(r, str + match->rm_so, entry_len);
+	return r;
+}
+
+RZ_API RzList /*<char *>*/ *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text) {
 	RzList *list = rz_list_newf(free);
 	RzRegex rx;
 	RzRegexMatch match;
-	char *entry;
-	size_t entry_len = 0;
 	int re_flags = rz_regex_flags(flags);
 	if (rz_regex_comp(&rx, pattern, re_flags)) {
 		eprintf("Failed to compile regexp: %s\n", pattern);
@@ -168,10 +187,10 @@ RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, c
 	match.rm_so = 0;
 	match.rm_eo = strlen(text);
 	while (!rz_regex_exec(&rx, text, 1, &match, re_flags | RZ_REGEX_STARTEND)) {
-		entry_len = match.rm_eo - match.rm_so + 1;
-		entry = RZ_NEWS0(char, entry_len);
-		rz_str_ncpy(entry, text + match.rm_so, entry_len);
-		rz_list_append(list, entry);
+		char *entry = rz_regex_match_extract(text, &match);
+		if (entry) {
+			rz_list_append(list, entry);
+		}
 		/* Update the boundaries for RZ_REGEX_STARTEND */
 		match.rm_so = match.rm_eo;
 		match.rm_eo = strlen(text);

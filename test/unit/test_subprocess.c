@@ -263,6 +263,131 @@ bool test_interactive(void) {
 	mu_end;
 }
 
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
+bool test_interactive_pty(void) {
+	rz_subprocess_init();
+	const char *exe_path = get_auxiliary_path("subprocess-interactive");
+
+	RzSubprocessOpt opt = { 0 };
+	opt.file = exe_path;
+	/* Try all PTY */
+	opt.stdin_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	opt.stderr_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	opt.make_raw = true;
+
+	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
+	mu_assert_notnull(sp, "the subprocess should be created");
+	rz_subprocess_stdin_write(sp, (const ut8 *)"3\n", strlen("3\n"));
+	rz_subprocess_stdin_write(sp, (const ut8 *)"5\n", strlen("5\n"));
+
+	RzStrBuf *sb = rz_subprocess_stdout_readline(sp, UT_TIMEOUT);
+	int c = atoi(rz_strbuf_get(sb));
+	char buf[100];
+	snprintf(buf, sizeof(buf), "%d\n", 3 + 5 + c);
+	rz_subprocess_stdin_write(sp, (const ut8 *)buf, strlen(buf));
+
+	rz_subprocess_wait(sp, UT_TIMEOUT);
+	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
+	mu_assert_streq(remove_cr(spo->out), "Right\n", "A Good message should be returned");
+	mu_assert_eq(spo->ret, 0, "subprocess exited in the right way");
+
+	rz_subprocess_output_free(spo);
+	rz_subprocess_free(sp);
+	rz_subprocess_fini();
+	mu_end;
+}
+
+bool test_interactive_custom_pty(void) {
+	rz_subprocess_init();
+	const char *exe_path = get_auxiliary_path("subprocess-interactive");
+
+	RzSubprocessOpt opt = { 0 };
+	opt.file = exe_path;
+	opt.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE;
+	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	opt.stderr_pipe = RZ_SUBPROCESS_PIPE_STDOUT;
+	opt.make_raw = true;
+	opt.pty = rz_subprocess_openpty(NULL, NULL, NULL);
+
+	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
+	mu_assert_notnull(sp, "the subprocess should be created");
+	rz_subprocess_stdin_write(sp, (const ut8 *)"3\n", strlen("3\n"));
+	rz_subprocess_stdin_write(sp, (const ut8 *)"5\n", strlen("5\n"));
+
+	RzStrBuf *sb = rz_subprocess_stdout_readline(sp, UT_TIMEOUT);
+	int c = atoi(rz_strbuf_get(sb));
+	char buf[100];
+	snprintf(buf, sizeof(buf), "%d\n", 3 + 5 + c);
+	rz_subprocess_stdin_write(sp, (const ut8 *)buf, strlen(buf));
+
+	rz_subprocess_wait(sp, UT_TIMEOUT);
+	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
+	mu_assert_streq(remove_cr(spo->out), "Right\n", "A Good message should be returned");
+	mu_assert_eq(spo->ret, 0, "subprocess exited in the right way");
+
+	rz_subprocess_output_free(spo);
+	rz_subprocess_free(sp);
+	rz_subprocess_fini();
+	rz_subprocess_pty_free(opt.pty);
+	mu_end;
+}
+
+bool test_interactive_not_raw_pty(void) {
+	rz_subprocess_init();
+	const char *exe_path = get_auxiliary_path("subprocess-interactive");
+
+	RzSubprocessOpt opt = { 0 };
+	opt.file = exe_path;
+	opt.stdin_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	opt.stdout_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	opt.stderr_pipe = RZ_SUBPROCESS_PIPE_PTY;
+	/* Not raw, so all input will be echoe-ed */
+	opt.make_raw = false;
+
+	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
+	mu_assert_notnull(sp, "the subprocess should be created");
+	rz_subprocess_stdin_write(sp, (const ut8 *)"3\n", strlen("3\n"));
+	rz_subprocess_stdin_write(sp, (const ut8 *)"5\n", strlen("5\n"));
+
+	/* CRLF is returned, can be changed by using custom PTY with custom term params
+	Not necessary for testing here though */
+	RzStrBuf *sb = rz_subprocess_stdout_readline(sp, UT_TIMEOUT);
+	mu_assert_streq(remove_cr(rz_strbuf_get(sb)), "3\r\n", "No 3");
+	sb = rz_subprocess_stdout_readline(sp, UT_TIMEOUT);
+	mu_assert_streq(remove_cr(rz_strbuf_get(sb)), "5\r\n", "No 5");
+
+	sb = rz_subprocess_stdout_readline(sp, UT_TIMEOUT);
+	int c = atoi(rz_strbuf_get(sb));
+	char buf[100];
+	snprintf(buf, sizeof(buf), "%d\n", 3 + 5 + c);
+	rz_subprocess_stdin_write(sp, (const ut8 *)buf, strlen(buf));
+
+	sb = rz_subprocess_stdout_readline(sp, UT_TIMEOUT);
+	mu_assert_eq(atoi(rz_strbuf_get(sb)), 3 + 5 + c, "No 3 + 5 + c");
+
+	rz_subprocess_wait(sp, UT_TIMEOUT);
+	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
+	mu_assert_streq(remove_cr(spo->out), "Right\r\n", "A Good message should be returned");
+	mu_assert_eq(spo->ret, 0, "subprocess exited in the right way");
+
+	rz_subprocess_output_free(spo);
+	rz_subprocess_free(sp);
+	rz_subprocess_fini();
+	mu_end;
+}
+#else
+bool test_interactive_pty(void) {
+	mu_end;
+}
+bool test_interactive_custom_pty(void) {
+	mu_end;
+}
+bool test_interactive_not_raw_pty(void) {
+	mu_end;
+}
+#endif // PTY functions
+
 bool all_tests() {
 	mu_run_test(test_noargs_noinput_outerr);
 	mu_run_test(test_args);
@@ -275,6 +400,9 @@ bool all_tests() {
 	mu_run_test(test_stderronly);
 	mu_run_test(test_stdoutstderr);
 	mu_run_test(test_interactive);
+	mu_run_test(test_interactive_pty);
+	mu_run_test(test_interactive_custom_pty);
+	mu_run_test(test_interactive_not_raw_pty);
 	return tests_passed != tests_run;
 }
 

@@ -21,7 +21,7 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[AARCH64] = { 272, 0x70, 64, 0xf8 }
 };
 
-static bool parse_note_prstatus(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
+static bool parse_note_prstatus(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
 	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
 	if (!layout) {
 		RZ_LOG_WARN("Fetching registers from core file not supported for this architecture.\n");
@@ -73,7 +73,7 @@ static bool set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, cha
 	return true;
 }
 
-static bool parse_note_file(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
+static bool parse_note_file(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
 	Elf_(Addr) n_maps;
 	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &n_maps)) {
 		return false;
@@ -115,7 +115,7 @@ static bool parse_note_file(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_segm
 	return true;
 }
 
-static bool set_note(ELFOBJ *bin, RzVector *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
+static bool set_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset) {
 	switch (note_segment_header->n_type) {
 	case NT_FILE:
 		if (!parse_note_file(bin, notes, note_segment_header, offset)) {
@@ -150,7 +150,7 @@ static bool read_note_segment_header(ELFOBJ *bin, ut64 *offset, Elf_(Nhdr) * not
 	return true;
 }
 
-static bool set_note_segment(ELFOBJ *bin, RzVector *notes, RzBinElfSegment *segment) {
+static bool set_note_segment(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, RzBinElfSegment *segment) {
 	ut64 offset = segment->data.p_offset;
 
 	while (offset < segment->data.p_filesz) {
@@ -215,7 +215,7 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 	return NULL;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzVector /*<RzVector<RzBinElfNote>>*/ *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
 	RzVector *result = rz_vector_new(sizeof(RzVector), note_segment_free, NULL);

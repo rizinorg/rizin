@@ -40,6 +40,7 @@ NAME=mips hello ref analysis subtract
 FILE=bins/elf/analysis/busybox-mips
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
+e analysis.resolve.pointers=false
 e asm.bytes=true
 aae @ entry0
 pd 1 @ 0x00406228
@@ -751,38 +752,108 @@ e asm.arch=mips.gnu
 ar
 EOF
 EXPECT=<<EOF
-zero = 0x00000000
-at = 0x00000000
-v0 = 0x00000000
-v1 = 0x00000000
-a0 = 0x00000000
-a1 = 0x00000000
-a2 = 0x00000000
-a3 = 0x00000000
-t0 = 0x00000000
-t1 = 0x00000000
-t2 = 0x00000000
-t3 = 0x00000000
-t4 = 0x00000000
-t5 = 0x00000000
-t6 = 0x00000000
-t7 = 0x00000000
-s0 = 0x00000000
-s1 = 0x00000000
-s2 = 0x00000000
-s3 = 0x00000000
-s4 = 0x00000000
-s5 = 0x00000000
-s6 = 0x00000000
-s7 = 0x00000000
-t8 = 0x00000000
-t9 = 0x00000000
-k0 = 0x00000000
-k1 = 0x00000000
-gp = 0x00000000
-sp = 0x00000000
-fp = 0x00000000
-ra = 0x00000000
-pc = 0x00000000
+zero = 0x0000000000000000
+at = 0x0000000000000000
+v0 = 0x0000000000000000
+v1 = 0x0000000000000000
+a0 = 0x0000000000000000
+a1 = 0x0000000000000000
+a2 = 0x0000000000000000
+a3 = 0x0000000000000000
+t0 = 0x0000000000000000
+t1 = 0x0000000000000000
+t2 = 0x0000000000000000
+t3 = 0x0000000000000000
+t4 = 0x0000000000000000
+t5 = 0x0000000000000000
+t6 = 0x0000000000000000
+t7 = 0x0000000000000000
+s0 = 0x0000000000000000
+s1 = 0x0000000000000000
+s2 = 0x0000000000000000
+s3 = 0x0000000000000000
+s4 = 0x0000000000000000
+s5 = 0x0000000000000000
+s6 = 0x0000000000000000
+s7 = 0x0000000000000000
+t8 = 0x0000000000000000
+t9 = 0x0000000000000000
+k0 = 0x0000000000000000
+k1 = 0x0000000000000000
+gp = 0x0000000000000000
+sp = 0x0000000000000000
+fp = 0x0000000000000000
+ra = 0x0000000000000000
+pc = 0x0000000000000000
+EOF
+RUN
+
+NAME=mips sp/bp tracking
+FILE=bins/elf/vars-mips-bp
+ARGS=-e bin.dbginfo=0
+CMDS=<<EOF
+s sym.varfunc
+af
+e asm.sub.var=0
+e asm.comments=0
+e asm.stackptr=0
+pdf
+afvx
+EOF
+EXPECT=<<EOF
+/ sym.varfunc ();
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00000794      lui   gp, 2
+|           0x00000798      addiu gp, gp, -0x7db4
+|           0x0000079c      addu  gp, gp, t9
+|           0x000007a0      addiu sp, sp, -0x30
+|           0x000007a4      sw    ra, 0x2c(sp)
+|           0x000007a8      sw    fp, 0x28(sp)
+|           0x000007ac      move  fp, sp
+|           0x000007b0      sw    gp, 0x10(sp)
+|           0x000007b4      addiu v0, zero, 1
+|           0x000007b8      sw    v0, 0x18(fp)
+|           0x000007bc      addiu v0, zero, 2
+|           0x000007c0      sw    v0, 0x1c(fp)
+|           0x000007c4      addiu v0, zero, 3
+|           0x000007c8      sw    v0, 0x20(fp)
+|           0x000007cc      addiu v0, zero, 4
+|           0x000007d0      sw    v0, 0x24(fp)
+|           0x000007d4      lw    v0, -sym.leaffunc(gp)
+|           0x000007d8      move  t9, v0
+|           0x000007dc      bal   sym.leaffunc
+|           0x000007e0      nop
+|           0x000007e4      lw    gp, 0x10(fp)
+|           0x000007e8      lw    v0, 0x24(fp)
+|           0x000007ec      sw    v0, 0x1c(fp)
+|           0x000007f0      lw    v0, 0x18(fp)
+|           0x000007f4      move  sp, fp
+|           0x000007f8      lw    ra, 0x2c(sp)
+|           0x000007fc      lw    fp, 0x28(sp)
+|           0x00000800      addiu sp, sp, 0x30
+|           0x00000804      jr    ra
+\           0x00000808      nop
+afvR
+    var_4h  0x7f8
+    var_8h  0x7fc
+   var_20h  0x7e4
+   var_18h  0x7f0
+   var_14h
+   var_10h
+    var_ch  0x7e8
+afvW
+    var_4h  0x7a4
+    var_8h  0x7a8
+   var_20h  0x7b0
+   var_18h  0x7b8
+   var_14h  0x7c0,0x7ec
+   var_10h  0x7c8
+    var_ch  0x7d0
 EOF
 RUN

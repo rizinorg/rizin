@@ -295,7 +295,7 @@ typedef struct {
 	RzAnalysisMetaType type;
 	const RzSpace *space;
 
-	RzPVector /*RzIntervalNode*/ *result;
+	RzPVector /*<RzIntervalNode *>*/ *result;
 } CollectCtx;
 
 static bool item_matches_filter(RzAnalysisMetaItem *item, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space) {
@@ -310,7 +310,7 @@ static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -433,12 +433,13 @@ static bool meta_string_guess_add(RzCore *core, ut64 addr, size_t limit, char **
 		free(name);
 		return false;
 	}
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzUtilStrScanOptions scan_opt = {
 		.buf_size = 2048,
 		.max_uni_blocks = 4,
 		.min_str_length = 4,
-		.prefer_big_endian = big_endian
+		.prefer_big_endian = big_endian,
+		.check_ascii_freq = bf->rbin->strseach_check_ascii_freq
 	};
 	RzList *str_list = rz_list_new();
 	if (!str_list) {

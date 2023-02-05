@@ -253,7 +253,7 @@ RZ_API RZ_BORROW RzILVar *rz_il_vm_get_var(RZ_NONNULL RzILVM *vm, RzILVarKind ki
 	return rz_il_var_set_get(var_set_of_kind(vm, kind), name);
 }
 
-RZ_API RZ_OWN RzPVector /* <RzILVar> */ *rz_il_vm_get_all_vars(RZ_NONNULL RzILVM *vm, RzILVarKind kind) {
+RZ_API RZ_OWN RzPVector /*<RzILVar *>*/ *rz_il_vm_get_all_vars(RZ_NONNULL RzILVM *vm, RzILVarKind kind) {
 	rz_return_val_if_fail(vm, NULL);
 	return rz_il_var_set_get_all(var_set_of_kind(vm, kind));
 }

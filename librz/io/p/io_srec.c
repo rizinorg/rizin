@@ -134,6 +134,52 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, SREC_PATH_PREFIX, strlen(SREC_PATH_PREFIX)));
 }
 
+/**
+ * Parse a value formatted like "%02x" of exactly 2 chars
+ */
+static bool parse_hex_byte(const char *str, RZ_OUT ut8 *out) {
+	if (!str[0] || !str[1]) {
+		return false;
+	}
+	*out = 0;
+	return !rz_hex_to_byte(out, str[0]) && !rz_hex_to_byte(out, str[1]);
+}
+
+/**
+ * Parse an n-byte big endian hex value of exactly 2*n chars
+ */
+static bool parse_hex_bytes(const char *str, size_t count, RZ_OUT ut32 *out) {
+	*out = 0;
+	while (count--) {
+		ut8 byte;
+		if (!parse_hex_byte(str, &byte)) {
+			return false;
+		}
+		*out = *out << 8 | (ut32)byte;
+		str += 2;
+	}
+	return true;
+}
+
+/**
+ * Parse a prefix formatted like "S%c%02x" of exactly 4 chars
+ */
+static bool parse_srecord_prefix(const char *str, RZ_OUT char *record_type, RZ_OUT st32 *byte_count) {
+	if (*str != 'S') {
+		return false;
+	}
+	*record_type = str[1];
+	if (!*record_type) {
+		return false;
+	}
+	ut8 bc;
+	if (!parse_hex_byte(str + 2, &bc)) {
+		return false;
+	}
+	*byte_count = bc;
+	return true;
+}
+
 static bool srecord_parse(RzBuffer *buf, char *str) {
 	if (!str || *str != 'S') {
 		return false;
@@ -147,7 +193,7 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 	char *eol = NULL;
 	ut8 cksum = 0;
 	st32 byte_count = 0;
-	st32 byte = 0, i = 0, counter = 0;
+	st32 i = 0, counter = 0;
 	int line = 0;
 
 	record_data = malloc(UT16_MAX);
@@ -157,8 +203,8 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 
 	do {
 		line++;
-		if (sscanf(str, "S%c%02x", &record_type, &byte_count) != 2) {
-			RZ_LOG_ERROR("srec:parse(): invalid data in motorola srecord file at line %d\n", line);
+		if (!parse_srecord_prefix(str, &record_type, &byte_count)) {
+			RZ_LOG_ERROR("srec:parse(): invalid prefix in Motorola S-record file at line %d\n", line);
 			goto fail;
 		}
 
@@ -167,7 +213,7 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 		switch (record_type) {
 		case '0': // Header with 16-bit address
 			counter = byte_count - 3;
-			if (sscanf(str + 4, "%04x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 2, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid header hexadecimal address 16-bit at line %d\n", line);
 				goto fail;
 			}
@@ -178,28 +224,18 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			cksum += record_addr >> 8;
 
 			for (i = 0; i < counter; i++) {
-				if (sscanf(str + 8 + (i * 2), "%02x", &byte) != 1) {
+				ut8 byte;
+				if (!parse_hex_byte(str + 8 + (i * 2), &byte)) {
 					RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value! at line %d\n", line);
 					goto fail;
 				}
 				cksum += byte;
 			}
-			cksum = ~cksum;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value! at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '1': // Data with 16-bit address
 			counter = byte_count - 3;
-			if (sscanf(str + 4, "%04x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 2, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid data hexadecimal address 16-bit at line %d\n", line);
 				goto fail;
 			}
@@ -222,7 +258,8 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			}
 
 			for (i = 0; i < byte_count - 3; i++) {
-				if (sscanf(str + 8 + (i * 2), "%02x", &byte) != 1) {
+				ut8 byte;
+				if (!parse_hex_byte(str + 8 + (i * 2), &byte)) {
 					RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
 					goto fail;
 				}
@@ -231,69 +268,34 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 				}
 				cksum += byte;
 			}
-			cksum = ~cksum;
 			record_size += counter;
 			record_next += counter;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '5': // Count with 16-bit address
-			if (sscanf(str + 4, "%04x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 2, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid count hexadecimal address 16-bit at line %d\n", line);
 				goto fail;
 			}
 			record_addr &= 0xffff;
-
 			cksum = byte_count;
 			cksum += record_addr & 0xff;
 			cksum += record_addr >> 8;
-			cksum = ~cksum;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '9': // Terminator with 16-bit address
-			if (sscanf(str + 4, "%04x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 2, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid terminator hexadecimal address 16-bit at line %d\n", line);
 				goto fail;
 			}
 			record_addr &= 0xffff;
-
 			cksum = byte_count;
 			cksum += record_addr & 0xff;
 			cksum += record_addr >> 8;
-			cksum = ~cksum;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 		case '2': // Data with 24-bit address
 			counter = byte_count - 4;
-			if (sscanf(str + 4, "%06x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 3, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid data hexadecimal address 24-bit at line %d\n", line);
 				goto fail;
 			}
@@ -317,7 +319,8 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			}
 
 			for (i = 0; i < byte_count - 4; i++) {
-				if (sscanf(str + 10 + (i * 2), "%02x", &byte) != 1) {
+				ut8 byte;
+				if (!parse_hex_byte(str + 10 + (i * 2), &byte)) {
 					RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
 					goto fail;
 				}
@@ -326,47 +329,24 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 				}
 				cksum += byte;
 			}
-			cksum = ~cksum;
 			record_size += counter;
 			record_next += counter;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '6': // Count with 24-bit address
-			if (sscanf(str + 4, "%06x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 3, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal address 24-bit at line %d\n", line);
 				goto fail;
 			}
 			record_addr &= 0xffffff;
-
 			cksum = byte_count;
 			cksum += record_addr & 0xff;
 			cksum += (record_addr >> 8) & 0xff;
 			cksum += record_addr >> 16;
-			cksum = ~cksum;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '8': // Terminator with 24-bit address
-			if (sscanf(str + 4, "%06x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 3, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal address 24-bit at line %d\n", line);
 				goto fail;
 			}
@@ -381,22 +361,11 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			cksum += record_addr & 0xff;
 			cksum += (record_addr >> 8) & 0xff;
 			cksum += record_addr >> 16;
-			cksum = ~cksum;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '3': // Data with 32-bit address
 			counter = byte_count - 5;
-			if (sscanf(str + 4, "%08x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 4, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal address 32-bit at line %d\n", line);
 				goto fail;
 			}
@@ -426,7 +395,8 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			}
 
 			for (i = 0; i < byte_count - 5; i++) {
-				if (sscanf(str + 12 + (i * 2), "%02x", &byte) != 1) {
+				ut8 byte;
+				if (!parse_hex_byte(str + 12 + (i * 2), &byte)) {
 					RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
 					goto fail;
 				}
@@ -435,23 +405,12 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 				}
 				cksum += byte;
 			}
-			cksum = ~cksum;
 			record_size += counter;
 			record_next += counter;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
 		case '7': // Terminator with 32-bit address
-			if (sscanf(str + 4, "%08x", &record_addr) != 1) {
+			if (!parse_hex_bytes(str + 4, 4, &record_addr)) {
 				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal address 32-bit at line %d\n", line);
 				goto fail;
 			}
@@ -467,25 +426,28 @@ static bool srecord_parse(RzBuffer *buf, char *str) {
 			cksum += (record_addr >> 8) & 0xff;
 			cksum += (record_addr >> 16) & 0xff;
 			cksum += record_addr >> 24;
-			cksum = ~cksum;
-
-			if (sscanf(str + 2 + (byte_count * 2), "%02x", &byte) != 1) {
-				RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value at line %d\n", line);
-				goto fail;
-			} else if (cksum != byte) {
-				RZ_LOG_ERROR("srec:parse(): checksum check failed (got %02x expected %02x) at line %d\n", byte, cksum, line);
-				goto fail;
-			}
-
-			str = strchr(str + 1, 'S');
 			break;
 
-		case '4':
-			break;
+		case '4': // reserved
+			continue;
 		default:
-			RZ_LOG_ERROR("srec:parse(): invalid motorola srecord type '%c' at line %d\n", record_type, line);
+			RZ_LOG_ERROR("srec:parse(): invalid Motorola S-record type '%c' at line %d\n", record_type, line);
 			goto fail;
 		}
+
+		// Validate checksum
+		cksum = ~cksum;
+		ut8 cksum_expect;
+		if (!parse_hex_byte(str + 2 + (byte_count * 2), &cksum_expect)) {
+			RZ_LOG_ERROR("srec:parse(): invalid hexadecimal value! at line %d\n", line);
+			goto fail;
+		}
+		if (cksum != cksum_expect) {
+			RZ_LOG_ERROR("srec:parse(): checksum test failed (calculated %02x, but expected %02x) at line %d\n", cksum, cksum_expect, line);
+			goto fail;
+		}
+
+		str = strchr(str + 1, 'S');
 	} while (str);
 
 	if (record_size && record_size < UT16_MAX) {

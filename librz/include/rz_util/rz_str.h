@@ -4,6 +4,7 @@
 #include <wchar.h>
 #include "rz_str_util.h"
 #include "rz_list.h"
+#include "rz_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,10 +19,12 @@ typedef enum {
 typedef enum {
 	RZ_STRING_ENC_8BIT = 'b', // unknown 8bit encoding but with ASCII from 0 to 0x7f
 	RZ_STRING_ENC_UTF8 = '8',
+	RZ_STRING_ENC_MUTF8 = 'm', // modified utf8
 	RZ_STRING_ENC_UTF16LE = 'u',
 	RZ_STRING_ENC_UTF32LE = 'U',
 	RZ_STRING_ENC_UTF16BE = 'n',
 	RZ_STRING_ENC_UTF32BE = 'N',
+	RZ_STRING_ENC_BASE64 = '6',
 	RZ_STRING_ENC_IBM037 = 'c',
 	RZ_STRING_ENC_IBM290 = 'd',
 	RZ_STRING_ENC_EBCDIC_UK = 'k',
@@ -66,10 +69,11 @@ typedef int (*RzStrRangeCallback)(void *, int);
 #define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
 #define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
 RZ_API const char *rz_str_enc_as_string(RzStrEnc enc);
+RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *enc);
 RZ_API char *rz_str_repeat(const char *ch, int sz);
 RZ_API const char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
-RZ_API const char *rz_strstr_ansi(const char *a, const char *b);
+RZ_API const char *rz_strstr_ansi(RZ_NONNULL const char *a, RZ_NONNULL const char *b, bool icase);
 RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch);
 RZ_API const char *rz_str_closer_chr(const char *b, const char *s);
 RZ_API int rz_str_bounds(const char *str, int *h);
@@ -93,9 +97,11 @@ RZ_API const char *rz_str_casestr(const char *a, const char *b);
 RZ_API const char *rz_str_firstbut(const char *s, char ch, const char *but);
 RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but);
 RZ_API size_t rz_str_split(char *str, char ch);
-RZ_API RzList *rz_str_split_list(char *str, const char *c, int n);
-RZ_API RzList *rz_str_split_duplist(const char *str, const char *c, bool trim);
-RZ_API RzList *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
+RZ_API RzList /*<char *>*/ *rz_str_split_list(char *str, const char *c, int n);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_list_regex(RZ_NONNULL char *str, RZ_NONNULL const char *r, int n);
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist(const char *str, const char *c, bool trim);
+RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
 RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
@@ -118,6 +124,7 @@ RZ_API char **rz_str_argv(const char *str, int *_argc);
 RZ_API void rz_str_argv_free(char **argv);
 RZ_API char *rz_str_new(const char *str);
 RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
+RZ_API bool rz_str_is_whitespace(RZ_NONNULL const char *str);
 RZ_API bool rz_str_is_ascii(const char *str);
 RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
@@ -161,7 +168,13 @@ RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str);
 RZ_API void rz_str_trim_tail_char(RZ_NONNULL RZ_INOUT char *str, const char c);
 RZ_API ut64 rz_str_djb2_hash(const char *str);
 RZ_API char *rz_str_trim_nc(char *str);
+RZ_API bool rz_str_is2utf8(RZ_NONNULL const char *c);
+RZ_API bool rz_str_is3utf8(RZ_NONNULL const char *c);
+RZ_API bool rz_str_is4utf8(RZ_NONNULL const char *c);
+RZ_API bool rz_str_isXutf8(RZ_NONNULL const char *c, ut8 x);
+RZ_API const char *rz_str_strchr(RZ_NONNULL const char *str, RZ_NONNULL const char *c);
 RZ_API const char *rz_str_nstr(const char *from, const char *to, int size);
+RZ_API const char *rz_str_case_nstr(RZ_NONNULL const char *from, RZ_NONNULL const char *to, int size);
 RZ_API const char *rz_str_lchr(const char *str, char chr);
 RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr);
 RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr);
@@ -180,14 +193,9 @@ static inline const char *rz_str_get_null(const char *str) {
 }
 RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
-RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);
 RZ_API int rz_str_delta(char *p, char a, char b);
 RZ_API void rz_str_filter(char *str);
 RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);
-RZ_API wchar_t *rz_str_mb_to_wc(const char *buf);
-RZ_API char *rz_str_wc_to_mb(const wchar_t *buf);
-RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len);
-RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len);
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y);
 
 typedef void (*str_operation)(char *c);
@@ -195,8 +203,6 @@ typedef void (*str_operation)(char *c);
 RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok);
 
 RZ_API void rz_str_reverse(char *str);
-RZ_API int rz_str_re_match(const char *str, const char *reg);
-RZ_API int rz_str_re_replace(const char *str, const char *reg, const char *sub);
 RZ_API int rz_str_path_unescape(char *path);
 RZ_API char *rz_str_path_escape(const char *path);
 RZ_API int rz_str_unescape(char *buf);
@@ -247,13 +253,12 @@ RZ_API const char *rz_str_last(const char *in, const char *ch);
 RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
 RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);
-RZ_API char *rz_str_list_join(RzList *str, const char *sep);
+RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep);
 RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep);
-RZ_API RzList *rz_str_wrap(char *str, size_t width);
+RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width);
 
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
-RZ_API char *rz_str_version(const char *program);
 
 typedef struct rz_str_stringify_opt_t {
 	const ut8 *buffer; ///< String buffer (cannot be NULL).
@@ -273,4 +278,4 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 }
 #endif
 
-#endif //  RZ_STR_H
+#endif // RZ_STR_H

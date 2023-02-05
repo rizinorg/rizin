@@ -375,7 +375,7 @@ Ch 2 @ 0x00000200
 Cf 4 x @ 0x00000300
 Cm 8 wwww @ 0x00000380
 ----
-[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"8bit","ascii":true}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"ascii","ascii":true}]
 ----
 [{"offset":256,"type":"Cd","name":"3","size":3}]
 ----
@@ -387,7 +387,7 @@ Cm 8 wwww @ 0x00000380
 ----
 [{"offset":896,"type":"Cm","name":"wwww"}]
 ----
-[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"8bit","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":512,"type":"Ch","name":"2"},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"ascii","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":512,"type":"Ch","name":"2"},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
 EOF
 RUN
 
@@ -414,13 +414,12 @@ Csb @ 0x1400160b8
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"8bit","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"8bit","ascii":true}]
+[{"offset":5368799392,"type":"Cs","name":"bGF0aW4xIGdhdGU6IM67q84=","enc":"ascii","ascii":false},{"offset":5368799416,"type":"Cs","name":"ICAtLSBpbiBDb25FbXUsIHJ1biBgY2hjcCAyODU5MWAgdG8gc2VlIHRoZSBnYXRlLg==","enc":"ascii","ascii":true}]
 EOF
 RUN
 
 NAME=Csb, Cs. and Cs.l
 FILE=bins/pe/testapp-msvc64.exe
-BROKEN=1
 CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
@@ -452,11 +451,12 @@ ascii[2] "\t"
 0x140016018 ascii[2] "\t"
             ;-- str.wide_esc:___0m:
             0x140016018     .string "\t" ; len=2
-Csw 19 @ 0x140016018 # \twide\\esc: \e[0m\xa1\r\n
-"\twide\\esc: \e[0m\xa1\r\n"
-ut16le[15] "\twide\\esc: \e[0m\xa1\r\n"
+Csw 38 @ 0x140016018 # \twide\\esc: \e[0m\u00a1\r\n
+"\twide\\esc: \e[0m\u00a1\r\n"
+utf16le[38] "\twide\\esc: \e[0m\u00a1\r\n"
+0x140016018 utf16le[38] "\twide\\esc: \e[0m\u00a1\r\n"
             ;-- str.wide_esc:___0m:
-            0x140016018     .string "\twide\\esc: \e[0m\xa1\r\n" ; len=19
+            0x140016018     .string "\twide\\esc: \e[0m\xc2\xa1\r\n" ; len=38
 0x140016018 ascii[4] "\t"
 0x140016018 ascii[4] "\t"
 EOF
@@ -479,15 +479,16 @@ Cs
 Cslj
 EOF
 EXPECT=<<EOF
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"8bit","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
-[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBt","enc":"utf16le","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
+[{"offset":5368799256,"type":"Cs","name":"CQ==","enc":"ascii","ascii":true}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
+[{"offset":5368799256,"type":"Cs","name":"CXdpZGVcZXNjOiAbWzBtwqENCg==","enc":"utf16le","ascii":false}]
 EOF
 RUN
 
 NAME=Cs8
 FILE=bins/elf/strenc
+ARGS=-e str.search.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
@@ -521,7 +522,7 @@ RUN
 
 NAME=Cs8 and Cslj
 FILE=bins/elf/strenc
-ARGS=-e bin.str.purge=all,!0x004021ff
+ARGS=-e bin.str.purge=all,!0x004021ff -e str.search.check_ascii_freq=false
 CMDS=<<EOF
 s 0x004021ff
 Csl
@@ -726,3 +727,20 @@ EXPECT=<<EOF
 0x00000049 utf8[26] " and a codepoint position "
 EOF
 RUN
+
+NAME=Csl
+FILE=bins/arm/crackme.arm32.bin
+ARGS=-A -a arm -b 32 -m 0x8000000
+CMDS=<<EOF
+Csl
+EOF
+EXPECT=<<EOF
+0x08002364 ascii[23] "Bare_Metal_Crackme_01"
+0x0800237c ascii[59] "Enter_the_correct_combination_of_signals_and_press_button."
+0x080023b8 ascii[19] "__________________"
+0x080023cc ascii[19] "Success"
+0x080023e0 ascii[33] "The_flag_is:_XXXXXXXXXXXXXXXXXX"
+0x08002404 ascii[36] "Unlock_criteria_not_met._Try_again"
+EOF
+RUN
+

@@ -67,7 +67,7 @@ static bool get_elf_segment(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzBinE
 	return true;
 }
 
-static RzVector *get_segments_from_phdr(ELFOBJ *bin, size_t count, RzBinObjectLoadOptions *options) {
+static RzVector /*<RzBinElfSegment>*/ *get_segments_from_phdr(ELFOBJ *bin, size_t count, RzBinObjectLoadOptions *options) {
 	RzVector *result = rz_vector_new(sizeof(RzBinElfSegment), NULL, NULL);
 	if (!result) {
 		return NULL;
@@ -98,7 +98,7 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin, size_t count, RzBinObjectLo
 	return result;
 }
 
-static size_t get_number_of_segments(ELFOBJ *bin, RzVector *sections) {
+static size_t get_number_of_segments(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	if (bin->ehdr.e_phnum != PN_XNUM) {
 		return bin->ehdr.e_phnum;
 	}
@@ -130,7 +130,7 @@ RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELF
 	return NULL;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RzVector *sections, RZ_NONNULL RzBinObjectLoadOptions *options) {
+RZ_OWN RzVector /*<RzBinElfSegment>*/ *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections, RZ_NONNULL RzBinObjectLoadOptions *options) {
 	rz_return_val_if_fail(bin && options, NULL);
 
 	size_t count = get_number_of_segments(bin, sections);

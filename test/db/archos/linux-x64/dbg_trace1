@@ -8,11 +8,10 @@ db @ sym.called_in_loop
 dbc dr PC @ sym.called_in_loop
 dbte @ sym.called_in_loop
 dc
-dk 9
 EOF
 EXPECT=<<EOF
-rip = 0x004004ed
-rip = 0x004004ed
-rip = 0x004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
+rip = 0x00000000004004ed
 EOF
 RUN

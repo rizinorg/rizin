@@ -40,9 +40,12 @@ RZ_API RzTableColumnType *rz_table_type(const char *name) {
 static void __table_adjust(RzTable *t) {
 	RzTableColumn *col;
 	RzTableRow *row;
-	rz_vector_foreach(t->cols, col) {
-		int itemLength = rz_str_len_utf8_ansi(col->name) + 1;
-		col->width = itemLength;
+	int length = 0;
+	if (t->showHeader) {
+		rz_vector_foreach(t->cols, col) {
+			int length = rz_str_len_utf8_ansi(col->name) + 1;
+			col->width = length;
+		}
 	}
 	rz_vector_foreach(t->rows, row) {
 		void **pitem;
@@ -50,10 +53,10 @@ static void __table_adjust(RzTable *t) {
 		int ncol = 0;
 		rz_pvector_foreach (row->items, pitem) {
 			item = *pitem;
-			int itemLength = rz_str_len_utf8_ansi(item) + 1;
-			RzTableColumn *c = rz_vector_index_ptr(t->cols, ncol);
-			if (c) {
-				c->width = RZ_MAX(c->width, itemLength);
+			length = rz_str_len_utf8_ansi(item) + 1;
+			col = rz_vector_index_ptr(t->cols, ncol);
+			if (col) {
+				col->width = RZ_MAX(col->width, length);
 			}
 			ncol++;
 		}
@@ -149,14 +152,14 @@ RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char 
 	RZ_FREE(c);
 }
 
-RZ_API RzTableRow *rz_table_row_new(RzPVector *items) {
+RZ_API RzTableRow *rz_table_row_new(RzPVector /*<char *>*/ *items) {
 	RzTableRow *row = RZ_NEW(RzTableRow);
 	row->items = items;
 	return row;
 }
 
-static bool __addRow(RzTable *t, RzPVector *items, const char *arg, int col) {
-	int itemLength = rz_str_len_utf8_ansi(arg) + 1;
+static bool __addRow(RzTable *t, RzPVector /*<char *>*/ *items, const char *arg, int col) {
+	int itemLength = rz_str_len_utf8_ansi(arg);
 	RzTableColumn *c = rz_vector_index_ptr(t->cols, col);
 	if (c) {
 		char *str = strdup(arg);
@@ -173,7 +176,7 @@ static bool __addRow(RzTable *t, RzPVector *items, const char *arg, int col) {
  * \param t pointer to RzTable
  * \param items pointer to RzPVector which contains row elements
  */
-RZ_API void rz_table_add_row_vec(RZ_NONNULL RzTable *t, RZ_NONNULL RzPVector *items) {
+RZ_API void rz_table_add_row_vec(RZ_NONNULL RzTable *t, RZ_NONNULL RzPVector /*<char *>*/ *items) {
 	rz_return_if_fail(t && items);
 	RzTableRow *row = rz_table_row_new(items);
 	rz_vector_push(t->rows, row);
@@ -356,19 +359,25 @@ static int __strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableCo
 	RzCons *cons = (RzCons *)t->cons;
 	const char *v_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
 	int ll = rz_strbuf_length(sb);
+	int pad = 0;
+	int len = rz_str_len_utf8_ansi(str);
+	if (len < rz_str_len_utf8(str) && len < col->width) {
+		pad = col->width - len;
+	}
+
 	switch (col->align) {
 	case RZ_TABLE_ALIGN_LEFT:
-		rz_strbuf_appendf(sb, "%s %-*s ", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%s %-*s", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%*s", pad, "");
 		break;
 	case RZ_TABLE_ALIGN_RIGHT:
-		rz_strbuf_appendf(sb, "%s %*s ", v_line, col->width, str);
+		rz_strbuf_appendf(sb, "%s%*s%*s", v_line, pad, " ", col->width, str);
 		break;
 	case RZ_TABLE_ALIGN_CENTER: {
-		int len = rz_str_len_utf8(str);
-		int pad = (col->width - len) / 2;
+		pad = (col->width - len) / 2;
 		int left = col->width - (pad * 2 + len);
-		rz_strbuf_appendf(sb, "%s %-*s ", v_line, pad, " ");
-		rz_strbuf_appendf(sb, "%-*s ", pad + left, str);
+		rz_strbuf_appendf(sb, "%s %-*s", v_line, pad, " ");
+		rz_strbuf_appendf(sb, "%-*s", pad + left, str);
 		break;
 	}
 	}
@@ -443,8 +452,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 			item = *pitem;
 			RzTableColumn *col = rz_vector_index_ptr(t->cols, c);
 			if (col) {
-				int l = __strbuf_append_col_aligned_fancy(t, sb, col, item);
-				len = RZ_MAX(len, l);
+				(void)__strbuf_append_col_aligned_fancy(t, sb, col, item);
 			}
 			c++;
 		}
@@ -457,8 +465,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 		rz_strbuf_appendf(sb, "%s%s%s\n", l_intersect, h_line_str, rz_intersect);
 		rz_vector_foreach(t->cols, col) {
 			char *num = col->total == -1 ? "" : sdb_itoa(col->total, tmp, 10);
-			int l = __strbuf_append_col_aligned_fancy(t, sb, col, num);
-			len = RZ_MAX(len, l);
+			(void)__strbuf_append_col_aligned_fancy(t, sb, col, num);
 		}
 		rz_strbuf_appendf(sb, "%s\n", v_line);
 	}
@@ -747,16 +754,24 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 			}
 			break;
 		case '~':
-			match = strstr(nn, un) != NULL;
+			if (nn != NULL && un != NULL) {
+				match = strstr(nn, un) != NULL;
+			}
 			break;
 		case 's':
-			match = strlen(nn) == atoi(un);
+			if (nn != NULL && un != NULL) {
+				match = strlen(nn) == atoi(un);
+			}
 			break;
 		case 'l':
-			match = strlen(nn) > atoi(un);
+			if (nn != NULL && un != NULL) {
+				match = strlen(nn) > atoi(un);
+			}
 			break;
 		case 'L':
-			match = strlen(nn) < atoi(un);
+			if (nn != NULL && un != NULL) {
+				match = strlen(nn) < atoi(un);
+			}
 			break;
 		case '\0':
 			break;
@@ -812,7 +827,7 @@ RZ_API void rz_table_sortlen(RzTable *t, int nth, bool dec) {
 	}
 }
 
-static int rz_rows_cmp(RzPVector *lhs, RzPVector *rhs, RzVector *cols, int nth) {
+static int rz_rows_cmp(RzPVector /*<char *>*/ *lhs, RzPVector /*<char *>*/ *rhs, RzVector /*<RzTableColumn>*/ *cols, int nth) {
 	void *item_lhs, *item_rhs;
 	RzTableColumn *item_col;
 	st32 tmp, i;
@@ -911,7 +926,7 @@ static int __resolveOperation(const char *op) {
  * \param t pointer to RzTable
  * \param col_names pointer to RzList containing column names
  */
-RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
+RZ_API void rz_table_columns(RzTable *t, RzList /*<char *>*/ *col_names) {
 	// 1 bool per OLD column to indicate whether it should be freed (masked out)
 	bool *free_cols = malloc(sizeof(bool) * rz_vector_len(t->cols));
 	if (!free_cols) {
@@ -1012,7 +1027,7 @@ RZ_API void rz_table_columns(RzTable *t, RzList *col_names) {
 	free(free_cols);
 }
 
-RZ_API void rz_table_filter_columns(RzTable *t, RzList *list) {
+RZ_API void rz_table_filter_columns(RzTable *t, RzList /*<char *>*/ *list) {
 	const char *col;
 	RzListIter *iter;
 	RzVector *cols = t->cols;
@@ -1202,7 +1217,28 @@ RZ_API void rz_table_hide_header(RzTable *t) {
 	t->showHeader = false;
 }
 
-RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 len, int width, bool va) {
+RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra) {
+	RzListInfo *info = RZ_NEW(RzListInfo);
+	if (info) {
+		info->name = name ? strdup(name) : NULL;
+		info->pitv = pitv;
+		info->vitv = vitv;
+		info->perm = perm;
+		info->extra = extra ? strdup(extra) : NULL;
+	}
+	return info;
+}
+
+RZ_API void rz_listinfo_free(RzListInfo *info) {
+	if (!info) {
+		return;
+	}
+	free(info->name);
+	free(info->extra);
+	free(info);
+}
+
+RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va) {
 	ut64 mul, min = -1, max = -1;
 	RzListIter *iter;
 	RzListInfo *info;
@@ -1289,7 +1325,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
  *
  * This function returns the transpose of the RzTable passed to the table.
  */
-RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
+RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 	RzListIter *iter;
 	RzList *row_name = rz_list_new();

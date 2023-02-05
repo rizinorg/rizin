@@ -1,9 +1,9 @@
+// SPDX-FileCopyrightText: 2019-2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2019-2020 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2019-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <ht_uu.h>
 #include <assert.h>
 
@@ -57,8 +57,8 @@ static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
 	block->fail = UT64_MAX;
 	block->op_pos = RZ_NEWS0(ut16, DFLT_NINSTR);
 	block->op_pos_size = DFLT_NINSTR;
-	block->stackptr = 0;
-	block->parent_stackptr = INT_MAX;
+	block->sp_entry = ST32_MAX;
+	rz_vector_init(&block->sp_delta, sizeof(st16), NULL, NULL);
 	block->cmpval = UT64_MAX;
 	block->fcns = rz_list_new();
 	if (size) {
@@ -72,12 +72,11 @@ static void block_free(RzAnalysisBlock *block) {
 		return;
 	}
 	rz_analysis_cond_free(block->cond);
-	free(block->fingerprint);
-	rz_analysis_diff_free(block->diff);
 	free(block->op_bytes);
 	rz_analysis_switch_op_free(block->switch_op);
 	rz_list_free(block->fcns);
 	free(block->op_pos);
+	rz_vector_fini(&block->sp_delta);
 	free(block->parent_reg_arena);
 	free(block);
 }
@@ -130,7 +129,7 @@ static bool block_list_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_get_blocks_in(RzAnalysis *analysis, ut64 addr) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_analysis_get_blocks_in(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (list) {
 		rz_analysis_blocks_foreach_in(analysis, addr, block_list_cb, list);
@@ -162,7 +161,7 @@ RZ_API void rz_analysis_blocks_foreach_intersect(RzAnalysis *analysis, ut64 addr
 	all_intersect(unwrap(analysis->bb_tree), addr, size, cb, user);
 }
 
-RZ_API RzList *rz_analysis_get_blocks_intersect(RzAnalysis *analysis, ut64 addr, ut64 size) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_analysis_get_blocks_intersect(RzAnalysis *analysis, ut64 addr, ut64 size) {
 	RzList *list = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (!list) {
 		return NULL;
@@ -272,7 +271,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	}
 	bb->jump = bbi->jump;
 	bb->fail = bbi->fail;
-	bb->parent_stackptr = bbi->stackptr;
+	bb->sp_entry = rz_analysis_block_get_sp_at(bbi, addr);
 	bb->switch_op = bbi->switch_op;
 
 	// resize the first block
@@ -292,22 +291,28 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 		rz_analysis_function_add_block(fcn, bb);
 	}
 
-	// recalculate offset of instructions in both bb and bbi
+	// recalculate offsets and sp deltas of instructions in both bb and bbi
 	int i;
 	i = 0;
 	while (i < bbi->ninstr && rz_analysis_block_get_op_offset(bbi, i) < bbi->size) {
 		i++;
 	}
 	int new_bbi_instr = i;
+	st16 sp_delta_base = i > 0 ? rz_analysis_block_get_op_sp_delta(bbi, i - 1) : 0;
 	if (bb->addr - bbi->addr == rz_analysis_block_get_op_offset(bbi, i)) {
+		// setting instructions of the second block only makes sense if the split happened on an instruction boundary
 		bb->ninstr = 0;
 		while (i < bbi->ninstr) {
 			ut16 off_op = rz_analysis_block_get_op_offset(bbi, i);
 			if (off_op >= bbi->size + bb->size) {
 				break;
 			}
-			rz_analysis_block_set_op_offset(bb, bb->ninstr, off_op - bbi->size);
 			bb->ninstr++;
+			rz_analysis_block_set_op_offset(bb, bb->ninstr - 1, off_op - bbi->size);
+			st16 sp_delta = rz_analysis_block_get_op_sp_delta(bbi, i);
+			if (sp_delta_base != ST16_MAX && sp_delta != ST16_MAX) {
+				rz_analysis_block_set_op_sp_delta(bb, bb->ninstr - 1, sp_delta - sp_delta_base);
+			}
 			i++;
 		}
 	}
@@ -408,7 +413,7 @@ RZ_API bool rz_analysis_block_successor_addrs_foreach(RzAnalysisBlock *block, Rz
 
 typedef struct rz_analysis_block_recurse_context_t {
 	RzAnalysis *analysis;
-	RzPVector /*<RzAnalysisBlock>*/ to_visit;
+	RzPVector /*<RzAnalysisBlock *>*/ to_visit;
 	HtUP *visited;
 } RzAnalysisBlockRecurseContext;
 
@@ -486,7 +491,7 @@ beach:
 
 typedef struct {
 	RzAnalysisBlock *bb;
-	RzListIter *switch_it;
+	RzListIter /*<RzAnalysisCaseOp *>*/ *switch_it;
 } RecurseDepthFirstCtx;
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
@@ -564,7 +569,7 @@ static bool recurse_list_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_analysis_block_recurse_list(RzAnalysisBlock *block) {
+RZ_API RzList /*<RzAnalysisBlock *>*/ *rz_analysis_block_recurse_list(RzAnalysisBlock *block) {
 	RzList *ret = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (ret) {
 		rz_analysis_block_recurse(block, recurse_list_cb, ret);
@@ -601,8 +606,8 @@ typedef struct {
 	RzAnalysis *analysis;
 	RzAnalysisBlock *cur_parent;
 	ut64 dst;
-	RzPVector /*<RzAnalysisBlock>*/ *next_visit; // accumulate block of the next level in the tree
-	HtUP /*<RzAnalysisBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
+	RzPVector /*<RzAnalysisBlock *>*/ *next_visit; // accumulate block of the next level in the tree
+	HtUP /*<RzAnalysisBlock *>*/ *visited; // maps addrs to their previous block (or NULL for entry)
 } PathContext;
 
 static bool shortest_path_successor_cb(ut64 addr, void *user) {
@@ -889,7 +894,7 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 
 // Try to find the contiguous predecessors of all given blocks and merge them if possible,
 // i.e. if there are no other blocks that have this block as one of their successors
-RZ_API void rz_analysis_block_automerge(RzList *blocks) {
+RZ_API void rz_analysis_block_automerge(RzList /*<RzAnalysisBlock *>*/ *blocks) {
 	rz_return_if_fail(blocks);
 	AutomergeCtx ctx = {
 		.predecessors = ht_up_new0(),
@@ -1043,29 +1048,35 @@ RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut
 }
 
 /**
- * @return the address of the instruction that occupies a given offset or UT64_MAX if off is not in the block.
+ * \return the index of the instruction that occupies the given \p addr or -1 if it is not in the block.
  */
-RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off) {
-	ut16 delta, delta_off, last_delta;
-	int i;
-
-	if (!rz_analysis_block_contains(bb, off)) {
-		return UT64_MAX;
+RZ_API int rz_analysis_block_get_op_index_in(RzAnalysisBlock *bb, ut64 addr) {
+	if (!rz_analysis_block_contains(bb, addr)) {
+		return -1;
 	}
-	last_delta = 0;
-	delta_off = off - bb->addr;
-	for (i = 0; i < bb->ninstr; i++) {
-		delta = rz_analysis_block_get_op_offset(bb, i);
+	ut16 delta_off = addr - bb->addr;
+	for (int i = 0; i < bb->ninstr; i++) {
+		ut16 delta = rz_analysis_block_get_op_offset(bb, i);
 		if (delta > delta_off) {
-			return bb->addr + last_delta;
+			return i - 1;
 		}
-		last_delta = delta;
 	}
-	return bb->addr + last_delta;
+	return bb->ninstr - 1;
 }
 
 /**
- * @return the size of the i-th instruction in a basic block
+ * \return the address of the instruction that occupies the given \p addr or UT64_MAX if it is not in the block.
+ */
+RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 addr) {
+	int idx = rz_analysis_block_get_op_index_in(bb, addr);
+	if (idx < 0) {
+		return UT64_MAX;
+	}
+	return rz_analysis_block_get_op_addr(bb, idx);
+}
+
+/**
+ * \return the size of the i-th instruction in a basic block
  */
 RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
 	if (i >= bb->ninstr) {
@@ -1074,6 +1085,103 @@ RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
 	ut16 idx_cur = rz_analysis_block_get_op_offset(bb, i);
 	ut16 idx_next = rz_analysis_block_get_op_offset(bb, i + 1);
 	return idx_next != UT16_MAX ? idx_next - idx_cur : bb->size - idx_cur;
+}
+
+/**
+ * \return The delta between the stack pointer after executing the i-th op and bb->sp_entry or
+ *         ST16_MAX if \p i is out of bounds or the value is currently unknown
+ */
+RZ_API st16 rz_analysis_block_get_op_sp_delta(RzAnalysisBlock *bb, size_t i) {
+	rz_return_val_if_fail(bb, ST16_MAX);
+	if (i >= bb->ninstr || i >= rz_vector_len(&bb->sp_delta)) {
+		return ST16_MAX;
+	}
+	return *(st16 *)rz_vector_index_ptr(&bb->sp_delta, i);
+}
+
+/**
+ * Set the delta between the stack pointer after executing the i-th op and bb->sp_entry to \p delta
+ * \return whether the value was actually applied
+ */
+RZ_API bool rz_analysis_block_set_op_sp_delta(RzAnalysisBlock *bb, size_t i, st16 delta) {
+	rz_return_val_if_fail(bb, false);
+	if (i >= bb->ninstr) {
+		return false;
+	}
+	size_t len = rz_vector_len(&bb->sp_delta);
+	if (len <= i) {
+		// if necessary, allocate the array until bb->ninstr and pre-fill with ST16_MAX (unknown)
+		st16 *arr = rz_vector_insert_range(&bb->sp_delta, len, NULL, bb->ninstr - len);
+		if (!arr) {
+			return false;
+		}
+		for (size_t i = 0; i < bb->ninstr - len; i++) {
+			arr[i] = ST16_MAX;
+		}
+	}
+	return !!rz_vector_assign_at(&bb->sp_delta, i, &delta);
+}
+
+/**
+ * \return The delta between the stack pointer at \p addr and bb->sp_entry or
+ *         ST16_MAX if \p addr is out of bounds or the value is currently unknown
+ */
+RZ_API st16 rz_analysis_block_get_sp_delta_at(RzAnalysisBlock *bb, ut64 addr) {
+	rz_return_val_if_fail(bb, ST16_MAX);
+	int idx = rz_analysis_block_get_op_index_in(bb, addr);
+	if (idx == 0 || addr == bb->addr) {
+		// before the first instruction, nothing happened yet compared to sp_entry
+		return 0;
+	}
+	if (idx < 0) {
+		return ST16_MAX;
+	}
+	return rz_analysis_block_get_op_sp_delta(bb, idx - 1);
+}
+
+/**
+ * Get the delta applied to the stack pointer when running through the entire block
+ *
+ * \return The delta between the stack pointer after executing the last instruction of
+ *         the block and bb->sp_entry or ST16_MAX if the value is currently unknown
+ */
+RZ_API st16 rz_analysis_block_get_sp_delta_at_end(RzAnalysisBlock *bb) {
+	rz_return_val_if_fail(bb, ST16_MAX);
+	if (!bb->ninstr) {
+		return ST16_MAX;
+	}
+	return rz_analysis_block_get_op_sp_delta(bb, bb->ninstr - 1);
+}
+
+/**
+ * \return the the stack pointer value after running through the entire block
+ */
+RZ_API RzStackAddr rz_analysis_block_get_sp_at_end(RzAnalysisBlock *bb) {
+	rz_return_val_if_fail(bb, RZ_STACK_ADDR_INVALID);
+	if (bb->sp_entry == RZ_STACK_ADDR_INVALID) {
+		return RZ_STACK_ADDR_INVALID;
+	}
+	st16 delta = rz_analysis_block_get_sp_delta_at_end(bb);
+	if (delta == ST16_MAX) {
+		return RZ_STACK_ADDR_INVALID;
+	}
+	return bb->sp_entry + delta;
+}
+
+/**
+ * \return The stack pointer at \p addr or RZ_STACK_ADDR_INVALID if \p addr is
+ *         out of bounds or the value is currently unknown
+ */
+RZ_API RzStackAddr rz_analysis_block_get_sp_at(RzAnalysisBlock *bb, ut64 addr) {
+	rz_return_val_if_fail(bb, RZ_STACK_ADDR_INVALID);
+	if (bb->sp_entry == RZ_STACK_ADDR_INVALID) {
+		return RZ_STACK_ADDR_INVALID;
+	}
+	st16 delta = rz_analysis_block_get_sp_delta_at(bb, addr);
+	if (delta == ST16_MAX) {
+		return RZ_STACK_ADDR_INVALID;
+	}
+	return bb->sp_entry + delta;
 }
 
 /**
@@ -1098,6 +1206,9 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 		free(buf);
 		return;
 	}
+	// Try to start at the known sp_entry, or fallback to 0 to at least get relative deltas right
+	RzStackAddr init_sp = block->sp_entry != RZ_STACK_ADDR_INVALID ? block->sp_entry : 0;
+	RzStackAddr sp = init_sp;
 	ut64 addr = block->addr;
 	size_t i = 0;
 	while (addr < block->addr + block->size) {
@@ -1107,6 +1218,9 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 			rz_analysis_op_fini(&op);
 			break;
 		}
+		block->ninstr = i + 1;
+		sp = rz_analysis_op_apply_sp_effect(&op, sp);
+		rz_analysis_block_set_op_sp_delta(block, i, sp - init_sp);
 		if (i > 0) {
 			ut64 off = addr - block->addr;
 			if (off >= UT16_MAX) {
@@ -1119,6 +1233,5 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 		addr += op.size > 0 ? op.size : 1;
 		rz_analysis_op_fini(&op);
 	}
-	block->ninstr = i;
 	free(buf);
 }

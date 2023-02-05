@@ -1,6 +1,8 @@
 #ifndef RZ_STRPOOL_H
 #define RZ_STRPOOL_H
 
+#include <rz_types.h>
+
 #define RZ_STRPOOL_INC 1024
 
 #ifdef __cplusplus

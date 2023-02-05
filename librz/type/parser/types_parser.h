@@ -24,7 +24,7 @@ typedef struct {
 	RzType *type;
 } ParserTypePair;
 
-CParserState *c_parser_state_new();
+CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types);
 void c_parser_state_free(CParserState *state);
 
 int parse_type_nodes_save(CParserState *state, TSNode node, const char *text);
@@ -49,7 +49,7 @@ bool c_parser_forward_definition_remove(CParserState *state, RZ_NONNULL const ch
 
 RzCallable *c_parser_callable_type_find(CParserState *state, RZ_NONNULL const char *name);
 bool c_parser_callable_type_exists(CParserState *state, RZ_NONNULL const char *name);
-bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *name, RzType *type);
+bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *name, RZ_NONNULL RzType *type);
 
 RZ_OWN ParserTypePair *c_parser_new_unspecified_naked_type(CParserState *state, RZ_NONNULL const char *name, bool is_const);
 

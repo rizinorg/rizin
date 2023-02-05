@@ -11,7 +11,7 @@ FILE=bins/elf/analysis/simple.elf
 CMDS=<<EOF
 e asm.bytes=true
 e asm.sub.names=false
-pid 4 @ entry0
+pdq 4 @ entry0
 EOF
 EXPECT=<<EOF
 0x08000060   section..text:

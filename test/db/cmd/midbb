@@ -1,7 +1,6 @@
 NAME=asm.bb.middle disasm
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
-e analysis.vars.stackname=true
 e asm.bytes=false
 e asm.comments=false
 e asm.var=false
@@ -14,7 +13,7 @@ e asm.bb.middle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
-/ fcn.00560e67 (int32_t arg_4h);
+/ fcn.00560e67 (int32_t arg_4h, int32_t arg_7fbf5070h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -50,7 +49,7 @@ EXPECT=<<EOF
 |      ||   0x00560eb1      pop   edx
 |      ||   0x00560eb2      pop   eax
 
-/ fcn.00560e67 (int32_t arg_4h);
+/ fcn.00560e67 (int32_t arg_4h, int32_t arg_7fbf5070h);
 |           0x00560e67      push  esi
 |       ,=< 0x00560e68      jmp   0x560e7d
         |   0x00560e6d      push  ecx
@@ -519,7 +518,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle and pdi
+NAME=asm.bb.middle and pdq
 FILE==
 CMDS=<<EOF
 e asm.bytes=true
@@ -530,10 +529,10 @@ e analysis.jmp.mid=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
-pdi 6
+pdq 6
 ?e
 e asm.bb.middle=false
-pdi 6
+pdq 6
 EOF
 EXPECT=<<EOF
 0x00000000   fcn.00000000:
@@ -639,8 +638,8 @@ EXPECT=<<EOF
 
             [36m;-- sym.real:[0m
 [36m|[0m           [36m;-- [32m(0x00560e97)[36m sym.dummy:[0m
-            [32m0x00560e95[0m  ~   [37mba[37m0f[33m31[37me9[37m14[0m     [37mmov  [36m edx[0m,[36m[36m [33m0x14e9310f[0m[0m[0m
-[36m|[0m           [32m0x00560e9a[0m      [32m00[32m00[0m           [33madd   byte[36m [0m[[36meax[0m][36m[0m,[36m[36m al[0m[0m[0m
-[36m|[0m           [32m0x00560e9c[0m      [32m00[37ma8[33m36[37mdc[33m52[33m64[0m   [33madd   byte [0m[[36meax [0m+[36m[36m [33m0x6452dc36[0m][36m[0m,[36m[36m ch[0m[0m[0m
+            [32m0x00560e95[0m  ~   [37mba[37m0f[33m31[37me9[37m14[0m     [37mmov[0m[37m   [0m[36medx[0m[37m, [0m[33m0x14e9310f[0m[0m[0m
+[36m|[0m           [32m0x00560e9a[0m      [32m00[32m00[0m           [33madd[0m[37m   [0m[37mbyte[0m[37m [[0m[36meax[0m[37m], [0m[36mal[0m[0m[0m
+[36m|[0m           [32m0x00560e9c[0m      [32m00[37ma8[33m36[37mdc[33m52[33m64[0m   [33madd[0m[37m   [0m[37mbyte[0m[37m [[0m[36meax[0m[37m [0m[37m+[0m[37m [0m[33m0x6452dc36[0m[37m], [0m[36mch[0m[0m[0m
 EOF
 RUN

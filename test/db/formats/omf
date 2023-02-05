@@ -57,7 +57,7 @@ RUN
 
 NAME=virtual address 16 bits omf
 FILE=bins/omf/hello_world
-CMDS=e asm.bytes=true;pid 1~mov[1];
+CMDS=e asm.bytes=true;pdq 1~mov[1];
 EXPECT=<<EOF
 ba0e00
 EOF
@@ -111,7 +111,7 @@ RUN
 
 NAME=virtual address 32 bits omf
 FILE=bins/omf/hello_world32
-CMDS=e asm.bytes=true; pid 1~mov[1]
+CMDS=e asm.bytes=true; pdq 1~mov[1]
 EXPECT=<<EOF
 ba0e000000
 EOF

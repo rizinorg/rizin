@@ -55,7 +55,7 @@ RZ_LIB_VERSION_HEADER(rz_cons);
 #define RZ_CONS_CMD_DEPTH 100
 
 typedef int (*RzConsGetSize)(int *rows);
-typedef int (*RzConsGetCursor)(int *rows);
+typedef int (*RzConsGetCursor)(RZ_NONNULL int *rows);
 typedef bool (*RzConsIsBreaked)(void);
 typedef void (*RzConsFlush)(void);
 typedef void (*RzConsGrepCallback)(const char *grep);
@@ -246,6 +246,7 @@ typedef struct rz_cons_palette_t {
 	RzColor func_var_addr;
 	RzColor widget_bg;
 	RzColor widget_sel;
+	RzColor meta;
 
 	/* Graph colors */
 	RzColor graph_box;
@@ -322,6 +323,7 @@ typedef struct rz_cons_printable_palette_t {
 	char *func_var_addr;
 	char *widget_bg;
 	char *widget_sel;
+	char *meta;
 
 	/* graph colors */
 	char *graph_box;
@@ -487,9 +489,27 @@ typedef struct rz_cons_context_t {
 	int color_mode;
 	RzConsPalette cpal;
 	RzConsPrintablePalette pal;
+
+	// Memoized last calculated row/column inside buffer
+	int row;
+	int col;
+	int rowcol_calc_start;
 } RzConsContext;
 
 #define HUD_BUF_SIZE 512
+
+typedef enum {
+	MOUSE_NONE = 0,
+	MOUSE_DEFAULT, // indicate an event with no consideration of specific type
+	LEFT_PRESS,
+	LEFT_RELEASE,
+	WHEEL_PRESS,
+	WHEEL_RELEASE,
+	RIGHT_PRESS,
+	RIGHT_RELEASE,
+	WHEEL_UP,
+	WHEEL_DOWN,
+} MouseEvent;
 
 typedef struct rz_cons_t {
 	RzConsContext *context;
@@ -514,7 +534,7 @@ typedef struct rz_cons_t {
 	void *user_fgets_user;
 	RzConsEvent event_resize;
 	void *event_data;
-	int mouse_event;
+	MouseEvent mouse_event;
 
 	RzConsEditorCallback cb_editor;
 	RzConsBreakCallback cb_break;
@@ -528,7 +548,8 @@ typedef struct rz_cons_t {
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
-	unsigned long term_raw, term_buf, term_xterm;
+	unsigned long term_raw, term_buf, term_pty;
+	unsigned long old_input_mode, old_output_mode;
 	ut32 old_cp;
 	ut32 old_ocp;
 #endif
@@ -558,6 +579,7 @@ typedef struct rz_cons_t {
 	ut64 timeout; // must come from rz_time_now_mono()
 	bool grep_color;
 	bool grep_highlight;
+	int grep_icase;
 	bool filter;
 	char *(*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
@@ -566,6 +588,10 @@ typedef struct rz_cons_t {
 	bool show_vals; // show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
+
+#define RZ_CONS_SEARCH_CASE_SENSITIVE   0
+#define RZ_CONS_SEARCH_CASE_INSENSITIVE 1
+#define RZ_CONS_SEARCH_CASE_SMART       2
 
 #define RZ_CONS_KEY_F1  0xf1
 #define RZ_CONS_KEY_F2  0xf2
@@ -651,7 +677,9 @@ typedef struct rz_cons_t {
 	{ 0, a, r, g, b, bgr, bgg, bgb, id16 }
 #else
 #define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) \
-	(RzColor) { 0, a, r, g, b, bgr, bgg, bgb, id16 }
+	(RzColor) { \
+		0, a, r, g, b, bgr, bgg, bgb, id16 \
+	}
 #endif
 #define RzColor_NULL RZCOLOR(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
 #if __WINDOWS__
@@ -795,6 +823,29 @@ typedef struct rz_cons_canvas_line_style_t {
 #define ARROW_LEFT  9
 #define SELF_LOOP   10
 
+typedef struct rz_histogram_options_t {
+	bool unicode; //<< Use Unicode characters instead of ASCII
+	bool thinline; //<< Use thin lines instead of block lines
+	bool legend; //<< Show axes and legend
+	bool offset; //<< Show offsets
+	ut64 offpos; //<< Starting offset value
+	bool cursor; //<< Show cursor position
+	ut64 curpos; //<< Cursor position
+	bool color; //<< Use colors
+	RzConsPrintablePalette *pal; //<< Colors palette if color is enabled
+} RzHistogramOptions;
+
+typedef struct rz_bar_options_t {
+	bool unicode; //<< Use Unicode characters instead of ASCII
+	bool thinline; //<< Use thin lines instead of block lines
+	bool legend; //<< Show axes and legend
+	bool offset; //<< Show offsets
+	ut64 offpos; //<< Starting offset value
+	bool cursor; //<< Show cursor position
+	ut64 curpos; //<< Cursor position
+	bool color; //<< Use colors
+} RzBarOptions;
+
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
@@ -802,10 +853,8 @@ RZ_API void rz_cons_canvas_clear(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c);
 RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c);
-RZ_API void rz_cons_canvas_attr(RzConsCanvas *c, const char *attr);
 RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *_s);
 RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y);
-RZ_API void rz_cons_canvas_goto_write(RzConsCanvas *c, int x, int y, const char *s);
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
 RZ_API void rz_cons_canvas_line(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API void rz_cons_canvas_line_diagonal(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
@@ -819,7 +868,7 @@ RZ_API RzCons *rz_cons_singleton(void);
 RZ_API RzCons *rz_cons_free(void);
 RZ_API char *rz_cons_lastline(int *size);
 RZ_API char *rz_cons_lastline_utf8_ansi_len(int *len);
-RZ_API void rz_cons_set_click(int x, int y);
+RZ_API void rz_cons_set_click(int x, int y, MouseEvent event);
 RZ_API bool rz_cons_get_click(int *x, int *y);
 
 typedef void (*RzConsBreak)(void *);
@@ -833,7 +882,7 @@ RZ_API void rz_cons_sleep_end(void *user);
 RZ_API void rz_cons_break_push(RzConsBreak cb, void *user);
 RZ_API void rz_cons_break_pop(void);
 RZ_API void rz_cons_break_clear(void);
-RZ_API void rz_cons_breakword(const char *s);
+RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s);
 RZ_API void rz_cons_break_end(void);
 RZ_API void rz_cons_break_timeout(int timeout);
 
@@ -852,7 +901,6 @@ RZ_API int rz_cons_win_vhprintf(unsigned long hdl, bool vmode, const char *fmt, 
 #endif
 
 RZ_API void rz_cons_push(void);
-RZ_API void rz_cons_push_capture(void);
 RZ_API void rz_cons_pop(void);
 RZ_API RzConsContext *rz_cons_context_new(RZ_NULLABLE RzConsContext *parent);
 RZ_API void rz_cons_context_free(RzConsContext *context);
@@ -875,8 +923,6 @@ RZ_API void rz_cons_clear_buffer(void);
 RZ_API void rz_cons_clear00(void);
 RZ_API void rz_cons_clear_line(int err);
 RZ_API void rz_cons_fill_line(void);
-RZ_API void rz_cons_stdout_open(const char *file, int append);
-RZ_API int rz_cons_stdout_set_fd(int fd);
 RZ_API void rz_cons_gotoxy(int x, int y);
 RZ_API int rz_cons_get_cur_line(void);
 RZ_API void rz_cons_show_cursor(int cursor);
@@ -911,8 +957,6 @@ RZ_API void rz_cons_visual_flush(void);
 RZ_API void rz_cons_visual_write(char *buffer);
 RZ_API bool rz_cons_is_utf8(void);
 RZ_API void rz_cons_cmd_help(const char *help[], bool use_color);
-RZ_API void rz_cons_log_stub(const char *output, const char *funcname, const char *filename,
-	unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
 /* input */
 RZ_API int rz_cons_controlz(int ch);
@@ -925,7 +969,6 @@ RZ_API int rz_cons_readchar_timeout(ut32 usec);
 RZ_API int rz_cons_any_key(const char *msg);
 RZ_API int rz_cons_eof(void);
 
-RZ_API int rz_cons_palette_init(const unsigned char *pal);
 RZ_API int rz_cons_pal_set(const char *key, const char *val);
 RZ_API void rz_cons_pal_update_event(void);
 RZ_API void rz_cons_pal_free(RzConsContext *ctx);
@@ -943,7 +986,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg);
 RZ_API void rz_cons_pal_show(void);
 RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);
-RZ_API int rz_cons_get_cursor(int *rows);
+RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows);
 RZ_API int rz_cons_arrow_to_hjkl(int ch);
 RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen);
 RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg);
@@ -951,7 +994,7 @@ RZ_API void rz_cons_rainbow_free(RzConsContext *ctx);
 RZ_API void rz_cons_rainbow_new(RzConsContext *ctx, int sz);
 
 RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv);
-RZ_API char *rz_cons_hud(RzList *list, const char *prompt);
+RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt);
 RZ_API char *rz_cons_hud_path(const char *path, int dir);
 RZ_API char *rz_cons_hud_string(const char *s);
 RZ_API char *rz_cons_hud_file(const char *f);
@@ -966,7 +1009,6 @@ RZ_API void rz_cons_grep_process(char *grep);
 RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
-RZ_API void rz_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
 RZ_API void rz_cons_rgb_init(void);
 RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, const RzColor *rcolor);
 RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, const RzColor *rcolor);
@@ -986,7 +1028,16 @@ RZ_API bool rz_cons_enable_mouse(const bool enable);
 RZ_API void rz_cons_enable_highlight(const bool enable);
 RZ_API void rz_cons_bind(RzConsBind *bind);
 RZ_API const char *rz_cons_get_rune(const ut8 ch);
+
+/* Histograms */
+RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
 #endif
+
+/* Bars */
+RZ_API RZ_OWN RzStrBuf *rz_progressbar(RZ_NONNULL RzBarOptions *opts, int pc, int width);
+RZ_API RZ_OWN RzStrBuf *rz_rangebar(RZ_NONNULL RzBarOptions *opts, ut64 startA, ut64 endA, ut64 min,
+	ut64 max, int width);
 
 /* rz_line */
 #define RZ_LINE_BUFSIZE  4096
@@ -1045,7 +1096,7 @@ struct rz_line_comp_t {
 	bool opt;
 	size_t args_limit;
 	bool quit;
-	RzPVector args; /* <char *> */
+	RzPVector /*<char *>*/ args;
 	RzLineCompletionCb run;
 	void *run_user;
 };
@@ -1058,7 +1109,7 @@ typedef struct rz_line_ns_completion_t RzLineNSCompletion;
  * user.
  */
 typedef struct rz_line_ns_completion_result_t {
-	RzPVector options; ///< Vector of options that can be used for autocompletion
+	RzPVector /*<char *>*/ options; ///< Vector of options that can be used for autocompletion
 	HtPP *options_ht; ///< Hash table to keep track of duplicated autocompletion suggestions
 	size_t start; ///< First byte that was considered for autocompletion. Everything before this will be left intact.
 	size_t end; ///< Last byte that was considered for autocompletion. Everything after this will be left intact.
@@ -1102,7 +1153,7 @@ struct rz_line_t {
 	int echo;
 	int has_echo;
 	char *prompt;
-	RzList /*<str>*/ *kill_ring;
+	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
 	char *clipboard;
 	int disable;
@@ -1118,8 +1169,8 @@ struct rz_line_t {
 	int offset_hist_index;
 	int file_hist_index;
 	RzLineHud *hud;
-	RzList *sdbshell_hist;
-	RzListIter *sdbshell_hist_iter;
+	RzList /*<char *>*/ *sdbshell_hist;
+	RzListIter /*<char *>*/ *sdbshell_hist_iter;
 	RzVirtTermMode vtmode;
 }; /* RzLine */
 
@@ -1142,8 +1193,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
 RZ_API int rz_line_hist_load(RZ_NONNULL const char *file);
 RZ_API int rz_line_hist_add(const char *line);
 RZ_API int rz_line_hist_save(RZ_NONNULL const char *file);
-RZ_API int rz_line_hist_label(const char *label, void (*cb)(const char *));
-RZ_API void rz_line_label_show(void);
 RZ_API int rz_line_hist_list(void);
 RZ_API const char *rz_line_hist_get(int n);
 
@@ -1161,6 +1210,8 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
 RZ_API void rz_line_ns_completion_result_propose(RzLineNSCompletionResult *res, const char *option, const char *cur, size_t cur_len);
+
+RZ_API RZ_OWN char *rz_cons_prompt(RZ_NONNULL const char *str, RZ_NULLABLE const char *txt);
 
 #define RZ_CONS_INVERT(x, y) (y ? (x ? Color_INVERT : Color_INVERT_RESET) : (x ? "[" : "]"))
 

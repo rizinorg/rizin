@@ -59,9 +59,8 @@ typedef struct {
 
 typedef struct {
 	ut32 *strings;
-	RzList *methods_list;
-	RzList *imports_list;
-	RzList *classes_list;
+	RzList /*<RzBinSymbol *>*/ *methods_list;
+	RzList /*<RzBinImport *>*/ *imports_list;
 	RZ_NULLABLE RzBuffer *decompressed; /// nso-only
 	void *header;
 } RzBinNXOObj;

@@ -11,7 +11,7 @@ typedef struct sparse_init_config_t {
 
 typedef struct buf_sparse_priv {
 	RzBuffer *base; ///< If not NULL, unpopulated bytes are taken from this, else Oxff
-	RzVector chunks; ///< of RzBufferSparseChunk, non-overlapping, ordered by from addr
+	RzVector /*<RzBufferSparseChunk>*/ chunks; ///< of RzBufferSparseChunk, non-overlapping, ordered by from addr
 	ut64 offset;
 	RzBufferSparseWriteMode write_mode;
 } SparsePriv;

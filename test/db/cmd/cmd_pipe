@@ -123,18 +123,18 @@ Shared buffer size 0x10e8
             ;-- _main:
             ;-- func.100000f70:
 / entry0 (int64_t arg1, int64_t arg2);
-|           ; var int64_t var_10h @ rbp-0x10
-|           ; var int64_t var_8h @ rbp-0x8
-|           ; var int64_t var_4h @ rbp-0x4
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_ch @ stack - 0xc
 |           0x100000f70      push  rbp
 |           0x100000f71      mov   rbp, rsp
 |           0x100000f74      sub   rsp, 0x10
-|           0x100000f78      mov   dword [var_4h], 0
-|           0x100000f7f      mov   dword [var_8h], edi                 ; arg1
-|           0x100000f82      mov   qword [var_10h], rsi                ; arg2
-|           0x100000f86      mov   edi, dword [var_8h]                 ; int64_t arg1
+|           0x100000f78      mov   dword [var_ch], 0
+|           0x100000f7f      mov   dword [var_10h], edi                ; arg1
+|           0x100000f82      mov   qword [var_18h], rsi                ; arg2
+|           0x100000f86      mov   edi, dword [var_10h]                ; int64_t arg1
 |           0x100000f89      call  sym._foo
 |           0x100000f8e      add   rsp, 0x10
 |           0x100000f92      pop   rbp

@@ -1,13 +1,12 @@
 // SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// XXX: this plugin have 0 tests and no binaries
-//
-
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
+
+#define mbn_file_get_hdr(bf) ((SblHeader *)bf->o->bin_obj)
 
 typedef struct sbl_header {
 	ut32 load_index;
@@ -22,105 +21,102 @@ typedef struct sbl_header {
 	ut32 cert_sz;
 } SblHeader;
 
-// TODO avoid globals
-static SblHeader sb = { 0 };
+static bool read_sbl_header(RzBuffer *b, SblHeader *sb, ut64 *offset) {
+	return rz_buf_read_le32_offset(b, offset, &sb->load_index) &&
+		rz_buf_read_le32_offset(b, offset, &sb->version) &&
+		rz_buf_read_le32_offset(b, offset, &sb->paddr) &&
+		rz_buf_read_le32_offset(b, offset, &sb->vaddr) &&
+		rz_buf_read_le32_offset(b, offset, &sb->psize) &&
+		rz_buf_read_le32_offset(b, offset, &sb->code_pa) &&
+		rz_buf_read_le32_offset(b, offset, &sb->sign_va) &&
+		rz_buf_read_le32_offset(b, offset, &sb->sign_sz) &&
+		rz_buf_read_le32_offset(b, offset, &sb->cert_va) &&
+		rz_buf_read_le32_offset(b, offset, &sb->cert_sz);
+}
 
 static bool check_buffer(RzBuffer *b) {
+	ut64 offset = 0;
+	SblHeader sb = { 0 };
 	rz_return_val_if_fail(b, false);
-	ut64 bufsz = rz_buf_size(b);
-	if (sizeof(SblHeader) < bufsz) {
-		int ret = rz_buf_fread_at(b, 0, (ut8 *)&sb, "10i", 1);
-		if (!ret) {
-			return false;
-		}
-#if 0
-		eprintf ("V=%d\n", sb.version);
-		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
-		eprintf ("VA=0x%08x sz=0x%x\n", sb.vaddr, sb.psize);
-		eprintf ("CODE=0x%08x\n", sb.code_pa + sb.vaddr + 40);
-		eprintf ("SIGN=0x%08x sz=0x%x\n", sb.sign_va, sb.sign_sz);
-		if (sb.cert_sz > 0) {
-			eprintf ("CERT=0x%08x sz=0x%x\n", sb.cert_va, sb.cert_sz);
-		} else {
-			eprintf ("No certificate found.\n");
-		}
-#endif
-		if (sb.version != 3) { // NAND
-			return false;
-		}
-		if (sb.paddr + sizeof(SblHeader) > bufsz) { // NAND
-			return false;
-		}
-		if (sb.vaddr < 0x100 || sb.psize > bufsz) { // NAND
-			return false;
-		}
-		if (sb.cert_va < sb.vaddr) {
-			return false;
-		}
-		if (sb.cert_sz >= 0xf0000) {
-			return false;
-		}
-		if (sb.sign_va < sb.vaddr) {
-			return false;
-		}
-		if (sb.sign_sz >= 0xf0000) {
-			return false;
-		}
-		if (sb.load_index < 1 || sb.load_index > 0x40) {
-			return false; // should be 0x19 ?
-		}
-		// TODO: Add more checks here
-		return true;
+	if (!read_sbl_header(b, &sb, &offset)) {
+		return false;
 	}
-	return false;
+	if (sb.version != 3) { // NAND
+		return false;
+	}
+	if (sb.paddr + sizeof(SblHeader) > offset) { // NAND
+		return false;
+	}
+	if (sb.vaddr < 0x100 || sb.psize > offset) { // NAND
+		return false;
+	}
+	if (sb.cert_va < sb.vaddr) {
+		return false;
+	}
+	if (sb.cert_sz >= 0xf0000) {
+		return false;
+	}
+	if (sb.sign_va < sb.vaddr) {
+		return false;
+	}
+	if (sb.sign_sz >= 0xf0000) {
+		return false;
+	}
+	if (sb.load_index < 1 || sb.load_index > 0x40) {
+		return false; // should be 0x19 ?
+	}
+	return true;
 }
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
-	return check_buffer(b);
+	ut64 offset = 0;
+	SblHeader *sb = RZ_NEW0(SblHeader);
+	if (!sb || !read_sbl_header(b, sb, &offset)) {
+		free(sb);
+		return false;
+	}
+
+	obj->bin_obj = sb;
+	return true;
 }
 
 static ut64 baddr(RzBinFile *bf) {
-	return sb.vaddr; // XXX
+	SblHeader *sb = mbn_file_get_hdr(bf);
+	return sb->vaddr;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	SblHeader *sb = mbn_file_get_hdr(bf);
 	RzList *ret = rz_list_newf(free);
-	;
 	if (ret) {
 		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 		if (ptr) {
-			ptr->paddr = 40 + sb.code_pa;
-			ptr->vaddr = 40 + sb.code_pa + sb.vaddr;
+			ptr->paddr = 40 + sb->code_pa;
+			ptr->vaddr = 40 + sb->code_pa + sb->vaddr;
 			rz_list_append(ret, ptr);
 		}
 	}
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	SblHeader *sb = mbn_file_get_hdr(bf);
 	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
-	int rc;
-
 	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
-	rc = rz_buf_fread_at(bf->buf, 0, (ut8 *)&sb, "10i", 1);
-	if (!rc) {
-		rz_list_free(ret);
-		return false;
-	}
 
 	// add text segment
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup("text");
-	ptr->size = sb.psize;
-	ptr->vsize = sb.psize;
-	ptr->paddr = sb.paddr + 40;
-	ptr->vaddr = sb.vaddr;
+	ptr->size = sb->psize;
+	ptr->vsize = sb->psize;
+	ptr->paddr = sb->paddr + 40;
+	ptr->vaddr = sb->vaddr;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->has_strings = true;
 	rz_list_append(ret, ptr);
@@ -129,23 +125,23 @@ static RzList *sections(RzBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup("sign");
-	ptr->size = sb.sign_sz;
-	ptr->vsize = sb.sign_sz;
-	ptr->paddr = sb.sign_va - sb.vaddr;
-	ptr->vaddr = sb.sign_va;
+	ptr->size = sb->sign_sz;
+	ptr->vsize = sb->sign_sz;
+	ptr->paddr = sb->sign_va - sb->vaddr;
+	ptr->vaddr = sb->sign_va;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->has_strings = true;
 	rz_list_append(ret, ptr);
 
-	if (sb.cert_sz && sb.cert_va > sb.vaddr) {
+	if (sb->cert_sz && sb->cert_va > sb->vaddr) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup("cert");
-		ptr->size = sb.cert_sz;
-		ptr->vsize = sb.cert_sz;
-		ptr->paddr = sb.cert_va - sb.vaddr;
-		ptr->vaddr = sb.cert_va;
+		ptr->size = sb->cert_sz;
+		ptr->vsize = sb->cert_sz;
+		ptr->paddr = sb->cert_va - sb->vaddr;
+		ptr->vaddr = sb->cert_va;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->has_strings = true;
 		rz_list_append(ret, ptr);
@@ -178,7 +174,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static ut64 size(RzBinFile *bf) {
-	return sizeof(SblHeader) + sb.psize;
+	SblHeader *sb = mbn_file_get_hdr(bf);
+	return sizeof(SblHeader) + sb->psize;
+}
+
+static void destroy(RzBinFile *bf) {
+	SblHeader *sb = mbn_file_get_hdr(bf);
+	free(sb);
 }
 
 RzBinPlugin rz_bin_plugin_mbn = {
@@ -187,6 +189,7 @@ RzBinPlugin rz_bin_plugin_mbn = {
 	.license = "LGPL3",
 	.minstrlen = 10,
 	.load_buffer = &load_buffer,
+	.destroy = &destroy,
 	.size = &size,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,

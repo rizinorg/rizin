@@ -1,6 +1,8 @@
 #ifndef RZ_STACK_H
 #define RZ_STACK_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

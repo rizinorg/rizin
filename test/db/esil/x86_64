@@ -3,7 +3,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-(pi bytes;wx $0;pi 1;pie 1)
+(pi bytes;wx ${bytes};pi 1;pie 1)
 .(pi 49f7e9)
 EOF
 EXPECT=<<EOF
@@ -17,7 +17,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-(pi bytes;wx $0;pi 1;pie 1)
+(pi bytes;wx ${bytes};pi 1;pie 1)
 .(pi 0fafc1)
 EOF
 EXPECT=<<EOF
@@ -31,7 +31,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-(pi bytes;wx $0;pi 1;pie 1)
+(pi bytes;wx ${bytes};pi 1;pie 1)
 .(pi 4969c367666633)
 EOF
 EXPECT=<<EOF
@@ -56,7 +56,7 @@ e scr.null=false
 ar rax
 EOF
 EXPECT=<<EOF
-rax = 0x00000021
+rax = 0x0000000000000021
 EOF
 RUN
 
@@ -76,7 +76,7 @@ e scr.null=false
 ar rax
 EOF
 EXPECT=<<EOF
-rax = 0x00000021
+rax = 0x0000000000000021
 EOF
 RUN
 
@@ -96,7 +96,7 @@ e scr.null=false
 ar rax
 EOF
 EXPECT=<<EOF
-rax = 0x00000021
+rax = 0x0000000000000021
 EOF
 RUN
 
@@ -129,7 +129,7 @@ wx 69c303000000 @ 14
 ar rax
 EOF
 EXPECT=<<EOF
-rax = 0x0000000f
+rax = 0x000000000000000f
 EOF
 RUN
 
@@ -148,8 +148,8 @@ EOF
 EXPECT=<<EOF
 mov rax, 4
 mov rbx, 5
-rax = 0x00000004
-rbx = 0x00000005
+rax = 0x0000000000000004
+rbx = 0x0000000000000005
 EOF
 RUN
 
@@ -168,8 +168,8 @@ EOF
 EXPECT=<<EOF
 mov rax, 4
 mov rbx, 5
-rax = 0x00000004
-rbx = 0x00000005
+rax = 0x0000000000000004
+rbx = 0x0000000000000005
 EOF
 RUN
 
@@ -188,8 +188,8 @@ EOF
 EXPECT=<<EOF
 mov rax, 4
 mov rbx, 5
-rax = 0x00000004
-rbx = 0x00000005
+rax = 0x0000000000000004
+rbx = 0x0000000000000005
 EOF
 RUN
 
@@ -427,7 +427,7 @@ e asm.arch=x86;e asm.bits=64;s 0;aei;ar rip=0;wa test eax, eax;ar eax=-1;aes
 ar 1~sf
 EOF
 EXPECT=<<EOF
-sf = 0x00000001
+sf = 0x1
 EOF
 RUN
 
@@ -446,15 +446,15 @@ aes 1; ar rbx; ar cf
 aes 1; ar rbx; ar cf
 EOF
 EXPECT=<<EOF
-rbx = 0x300020100
-cf = 0x00000000
-rbx = 0x30002ff00
-cf = 0x00000001
-rbx = 0x300020100
-cf = 0x00000001
-rbx = 0x3fffdff00
-cf = 0x00000001
+rbx = 0x0000000300020100
+cf = 0x0
+rbx = 0x000000030002ff00
+cf = 0x1
+rbx = 0x0000000300020100
+cf = 0x1
+rbx = 0x00000003fffdff00
+cf = 0x1
 rbx = 0xfffffffc00020100
-cf = 0x00000001
+cf = 0x1
 EOF
 RUN

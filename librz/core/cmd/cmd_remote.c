@@ -103,7 +103,7 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 		rz_core_rtr_list(core);
 		break;
 	case 'j': // "Rj"
-		eprintf("TODO: list connections in json\n");
+		RZ_LOG_ERROR("core: list connections in json is not implemented\n");
 		break;
 	case '!': // "R!"
 		if (input[1] == 'q') {

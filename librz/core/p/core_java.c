@@ -314,6 +314,13 @@ static bool rz_cmd_java_init_handler(RzCore *core) {
 	return true;
 }
 
+static bool rz_cmd_java_fini_handler(RzCore *core) {
+	RzCmd *rcmd = core->rcmd;
+	RzCmdDesc *cd = rz_cmd_get_desc(rcmd, "java");
+	rz_return_val_if_fail(cd, false);
+	return rz_cmd_desc_remove(rcmd, cd);
+}
+
 RzCorePlugin rz_core_plugin_java = {
 	.name = "java",
 	.desc = "Suite of java commands, type `java` for more info",
@@ -321,6 +328,7 @@ RzCorePlugin rz_core_plugin_java = {
 	.author = "deroad",
 	.version = "1.0",
 	.init = rz_cmd_java_init_handler,
+	.fini = rz_cmd_java_fini_handler,
 };
 
 #ifndef RZ_PLUGIN_INCORE

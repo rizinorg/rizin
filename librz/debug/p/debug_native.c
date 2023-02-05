@@ -560,13 +560,13 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RzList *rz_debug_native_tids(RzDebug *dbg, int pid) {
+static RzList /*<void *>*/ *rz_debug_native_tids(RzDebug *dbg, int pid) {
 	printf("TODO: Threads: \n");
 	// T
 	return NULL;
 }
 
-static RzList *rz_debug_native_pids(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -596,7 +596,7 @@ static RzList *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	return list;
 }
 
-static RzList *rz_debug_native_threads(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		eprintf("No list?\n");
@@ -986,7 +986,7 @@ static void _map_free(RzDebugMap *map) {
 }
 #endif
 
-static RzList *rz_debug_native_map_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	RzList *list = NULL;
 #if __KFBSD__
 	int ign;
@@ -1136,7 +1136,7 @@ static RzList *rz_debug_native_map_get(RzDebug *dbg) {
 	return list;
 }
 
-static RzList *rz_debug_native_modules_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 	char *lastname = NULL;
 	RzDebugMap *map;
 	RzListIter *iter, *iter2;
@@ -1224,8 +1224,16 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 	dbg->cur->desc = rz_debug_desc_plugin_native;
 #if __WINDOWS__
 	return w32_init(dbg);
+#elif __APPLE__
+	return rz_xnu_debug_init(dbg, user);
 #else
 	return true;
+#endif
+}
+
+static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+#if __APPLE__
+	rz_xnu_debug_fini(dbg, user);
 #endif
 }
 
@@ -1428,27 +1436,23 @@ static bool arm64_hwbp_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) 
  * we let the caller handle the work.
  */
 static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
-	RzDebug *dbg = bp->user;
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
 		return set
-			? drx_add(dbg, bp, b)
-			: drx_del(dbg, bp, b);
+			? drx_add((RzDebug *)bp->user, bp, b)
+			: drx_del((RzDebug *)bp->user, bp, b);
 #elif (__arm64__ || __aarch64__) && __linux__
 		return set
-			? arm64_hwbp_add(dbg, bp, b)
-			: arm64_hwbp_del(dbg, bp, b);
+			? arm64_hwbp_add((RzDebug *)bp->user, bp, b)
+			: arm64_hwbp_del((RzDebug *)bp->user, bp, b);
 #elif __WINDOWS__
 		return set
-			? w32_hwbp_arm_add(dbg, bp, b)
-			: w32_hwbp_arm_del(dbg, bp, b);
+			? w32_hwbp_arm_add((RzDebug *)bp->user, bp, b)
+			: w32_hwbp_arm_del((RzDebug *)bp->user, bp, b);
 #elif __arm__ && __linux__
 		return set
-			? arm32_hwbp_add(dbg, bp, b)
-			: arm32_hwbp_del(dbg, bp, b);
-#elif __riscv
-		dbg = NULL;
-		return false;
+			? arm32_hwbp_add((RzDebug *)bp->user, bp, b)
+			: arm32_hwbp_del((RzDebug *)bp->user, bp, b);
 #endif
 	}
 	return false;
@@ -1497,7 +1501,7 @@ static RzList *xnu_desc_list(int pid) {
 }
 #endif
 
-static RzList *rz_debug_desc_native_list(int pid) {
+static RzList /*<RzDebugDesc *>*/ *rz_debug_desc_native_list(int pid) {
 #if __APPLE__
 	return xnu_desc_list(pid);
 #elif __WINDOWS__
@@ -1638,6 +1642,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.bits = 0,
 	.arch = 0,
 	.canstep = 0,
+	.arch = "unsupported",
 #ifdef _MSC_VER
 #pragma message("Unsupported architecture")
 #else
@@ -1645,6 +1650,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 #endif
 #endif
 	.init = &rz_debug_native_init,
+	.fini = &rz_debug_native_fini,
 	.step = &rz_debug_native_step,
 	.cont = &rz_debug_native_continue,
 	.stop = &rz_debug_native_stop,
@@ -1683,7 +1689,7 @@ RZ_API RzLibStruct rizin_plugin = {
 };
 #endif // RZ_PLUGIN_INCORE
 
-//#endif
+// #endif
 #else // DEBUGGER
 RzDebugPlugin rz_debug_plugin_native = {
 	NULL // .name = "native",

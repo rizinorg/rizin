@@ -246,7 +246,7 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc) {
+RZ_API RzList /*<RzIOCache *>*/ *rz_io_desc_cache_list(RzIODesc *desc) {
 	if (!desc || !desc->io || !desc->io->desc || !desc->io->p_cache || !desc->cache) {
 		return NULL;
 	}

@@ -400,15 +400,6 @@ commands:
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
         args: []
-      - name: Cvb
-        summary: List all comments for all bp-based arguments and variables
-        cname: meta_var_bp_comment_list
-        type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
-          - RZ_OUTPUT_MODE_JSON
-        args: []
       - name: Cvr
         summary: List all comments for all register-based arguments and variables
         cname: meta_var_reg_comment_list

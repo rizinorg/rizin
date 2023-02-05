@@ -158,7 +158,7 @@ RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, 
  * \param len number of bytes to read instructions from
  * \return RzList<RzCompareData>* List of comparison data
  */
-RZ_API RZ_OWN RzList /*<RzCompareData>*/ *rz_core_cmp_disasm(RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
+RZ_API RZ_OWN RzList /*<RzCompareData *>*/ *rz_core_cmp_disasm(RzCore *core, ut64 addr1, ut64 addr2, ut32 len) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *cmp_list = rz_list_new();
@@ -240,7 +240,7 @@ RZ_API void rz_core_cmp_free(RzCompareData *cmp) {
  * \param unified print in unified form
  * \return bool true if successfull
  */
-RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData>*/ *compare, bool unified) {
+RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData *>*/ *compare, bool unified) {
 	rz_return_val_if_fail(core && compare, false);
 	char colpad[80];
 	int hascolor = rz_config_get_i(core->config, "scr.color");

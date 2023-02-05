@@ -47,32 +47,29 @@ RZ_API ut64 rz_coff_perms_from_section_flags(ut32 flags) {
 	return r;
 }
 
-RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
-	char n[256] = { 0 };
-	int len = 0, offset = 0;
-	union {
-		char name[8];
-		struct {
-			ut32 zero;
-			ut32 offset;
-		};
-	} *p = ptr;
+/*
+ * Resolve a coff name to a C string.
+ * \param ptr buffer of at least 8 bytes
+ */
+RZ_API char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, const ut8 *ptr) {
+	rz_return_val_if_fail(obj && ptr, NULL);
+	ut32 zero = rz_read_at_ble32(ptr, 0, obj->endian == COFF_IS_BIG_ENDIAN);
+	ut32 offset = rz_read_at_ble32(ptr, 4, obj->endian == COFF_IS_BIG_ENDIAN);
 	if (!ptr) {
 		return strdup("");
 	}
-	if (p->zero) {
-		return rz_str_ndup(p->name, 8);
+	if (zero) {
+		return rz_str_ndup((const char *)ptr, 8);
 	}
-	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + p->offset;
-	if (offset > obj->size) {
+	ut32 addr = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof(struct coff_symbol) + offset;
+	if (addr > obj->size) {
 		return strdup("");
 	}
-	len = rz_buf_read_at(obj->b, offset, (ut8 *)n, sizeof(n));
+	char n[256] = { 0 };
+	st64 len = rz_buf_read_at(obj->b, addr, (ut8 *)n, sizeof(n) - 1);
 	if (len < 1) {
 		return strdup("");
 	}
-	/* ensure null terminated string */
-	n[sizeof(n) - 1] = 0;
 	return strdup(n);
 }
 

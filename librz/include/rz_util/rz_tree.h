@@ -1,14 +1,13 @@
 #ifndef RZ_TREE_H
 #define RZ_TREE_H
 #include <rz_list.h>
-#include <rz_util/rz_queue.h>
 
 struct rz_tree_t;
 
 typedef struct rz_tree_node_t {
 	struct rz_tree_node_t *parent;
 	struct rz_tree_t *tree;
-	RzList *children; // <RTreeNode>
+	RzList /*<RTreeNode *>*/ *children;
 	unsigned int n_children;
 	int depth;
 	RzListFree free;

@@ -6,6 +6,8 @@
 #include <rz_util.h>
 #include <rz_io.h>
 
+#include "core_private.h"
+
 /* \brief Maps in a file and yank from \p offset the number of \p len bytes from \p filename.
  *
  * If the len is -1, the all the bytes are mapped into the yank buffer.
@@ -26,7 +28,7 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 			ut64 addr = rz_io_map_next_available(core->io, 0, yank_file_sz, load_align);
 			RzIOMap *map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
 			if (!map || map->itv.addr == -1) {
-				eprintf("Unable to map the opened file: %s", filename);
+				RZ_LOG_ERROR("core: Unable to map the opened file: %s", filename);
 				rz_io_desc_close(yankdesc);
 				yankdesc = NULL;
 			}
@@ -277,8 +279,7 @@ RZ_API bool rz_core_yank_print_hexdump(RzCore *core, ut64 pos) {
 		return false;
 	}
 	rz_buf_read_at(core->yank_buf, pos, buf, ybl - pos);
-	rz_print_hexdump(core->print, pos,
-		buf, ybl - pos, 16, 1, 1);
+	rz_core_print_hexdump(core, pos, buf, ybl - pos, 16, 1, 1);
 	return true;
 }
 

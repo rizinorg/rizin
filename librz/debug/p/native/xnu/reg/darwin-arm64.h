@@ -87,10 +87,10 @@ return strdup(
 	// TODO complete w list ...
 	// special registers
 	"gpr	fp	.64	232	0\n" // FP
-	"gpr	lr	.64	236	0\n" // LR
-	"gpr	sp	.64	240	0\n" // SP
-	"gpr	pc	.64	248	0\n" // PC
-	"gpr	pstate	.64	256	0\n" // FLAGS
+	"gpr	lr	.64	240	0\n" // LR
+	"gpr	sp	.64	248	0\n" // SP
+	"gpr	pc	.64	256	0\n" // PC
+	"gpr	pstate	.64	264	0\n" // FLAGS
 	// TODO flags
 	"gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
 );

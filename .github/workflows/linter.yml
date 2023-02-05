@@ -11,14 +11,15 @@ on:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       yaml: ${{ steps.filter.outputs.yaml }}
       clang-format: ${{ steps.filter.outputs.clang-format }}
+      bindgen-linter: ${{ steps.filter.outputs.bindgen-linter }}
       prettier: ${{ steps.filter.outputs.prettier }}
       python: ${{ steps.filter.outputs.python }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: dorny/paths-filter@v2
       id: filter
       with:
@@ -26,6 +27,11 @@ jobs:
           yaml:
             - '**.yml'
             - '**.yaml'
+            - '.github/workflows/linter.yml'
+          bindgen-linter:
+            - '**.c'
+            - '**.h'
+            - '**.inc'
             - '.github/workflows/linter.yml'
           clang-format:
             - '**.c'
@@ -45,10 +51,10 @@ jobs:
 
   cmd_descs_yaml_check:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install tools
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
@@ -59,39 +65,70 @@ jobs:
           ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
 
+  bindgen-linter:
+    needs: changes
+    runs-on: ubuntu-22.04
+    if: ${{ needs.changes.outputs.bindgen-linter == 'true' }}
+    steps:
+      - name: Checkout rizin
+        uses: actions/checkout@v3
+        with:
+          path: rizin
+      - name: Checkout rz-bindgen
+        uses: actions/checkout@v3
+        with:
+          repository: rizinorg/rz-bindgen
+          path: rz-bindgen
+      - name: Install dependencies
+        run: |
+          sudo pip install meson ninja
+          sudo apt update
+          sudo apt install libclang-14-dev
+      - name: Build rizin
+        working-directory: rizin
+        run: |
+          meson setup build
+          ninja -C build
+      - name: Run rz-bindgen linter
+        run: |
+          python3 rz-bindgen/src/lint.py \
+                  --clang-path "/usr/lib/llvm-14/lib" \
+                  --clang-args "-resource-dir=$(clang -print-resource-dir) " \
+                  --rizin-path rizin
+
   clang-format:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.clang-format == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
       run: sudo apt --assume-yes install wget software-properties-common lsb-release
 
-    - name: Install automatic LLVM 13
-      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 13
+    - name: Install automatic LLVM 15
+      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 15
 
-    - name: Install clang-format-13
-      run: sudo apt --assume-yes install clang-format-13
+    - name: Install clang-format-15
+      run: sudo apt --assume-yes install clang-format-15
 
     - name: Install gitpython
       run: sudo pip install gitpython
 
     - name: Run clang-format
       run: |
-        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-13 130
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-15 150
         clang-format --version
         python sys/clang-format.py --check --verbose
 
   prettier:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.prettier == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install prettier
       run: |
@@ -103,11 +140,11 @@ jobs:
 
   python:
     needs: changes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ needs.changes.outputs.python == 'true' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install pylint, black, isort
       run: pip install pylint black isort
@@ -123,9 +160,9 @@ jobs:
         find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs pylint
 
   licenses:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: REUSE Compliance Check
-      uses: fsfe/reuse-action@v1.1
+      uses: fsfe/reuse-action@v1

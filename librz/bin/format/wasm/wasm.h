@@ -197,7 +197,7 @@ typedef struct rz_bin_wasm_custom_name_local_name_t {
 
 typedef struct rz_bin_wasm_custom_name_local_names_t {
 	ut32 count;
-	RzList *locals; // RzBinWasmCustomNameLocalName
+	RzList /*<RzBinWasmCustomNameLocalName *>*/ *locals;
 } RzBinWasmCustomNameLocalNames;
 
 // "name" section entry
@@ -221,36 +221,36 @@ typedef struct rz_bin_wasm_obj_t {
 	ut32 entrypoint;
 
 	// cache purposes
-	RzList *g_sections;
-	RzList *g_types;
-	RzList *g_imports;
-	RzList *g_exports;
-	RzList *g_tables;
-	RzList *g_memories;
-	RzList *g_globals;
-	RzList *g_elements;
-	RzList *g_codes;
-	RzList *g_datas;
+	RzList /*<RzBinWasmSection *>*/ *g_sections;
+	RzList /*<RzBinWasmTypeEntry *>*/ *g_types;
+	RzList /*<RzBinWasmImportEntry *>*/ *g_imports;
+	RzList /*<RzBinWasmExportEntry *>*/ *g_exports;
+	RzList /*<RzBinWasmTableEntry *>*/ *g_tables;
+	RzList /*<RzBinWasmMemoryEntry *>*/ *g_memories;
+	RzList /*<RzBinWasmGlobalEntry *>*/ *g_globals;
+	RzList /*<RzBinWasmElementEntry *>*/ *g_elements;
+	RzList /*<RzBinWasmCodeEntry *>*/ *g_codes;
+	RzList /*<RzBinWasmDataEntry *>*/ *g_datas;
 	RzBinWasmStartEntry *g_start;
 
-	RzList *g_names;
+	RzList /*<RzBinWasmCustomNameEntry *>*/ *g_names;
 	// etc...
 
 } RzBinWasmObj;
 
 RzBinWasmObj *rz_bin_wasm_init(RzBinFile *bf, RzBuffer *buf);
 void rz_bin_wasm_destroy(RzBinFile *bf);
-RzList *rz_bin_wasm_get_sections(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_types(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_imports(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_exports(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_tables(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_memories(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_globals(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_elements(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_codes(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_datas(RzBinWasmObj *bin);
-RzList *rz_bin_wasm_get_custom_names(RzBinWasmObj *bin);
+RzList /*<RzBinWasmSection *>*/ *rz_bin_wasm_get_sections(RzBinWasmObj *bin);
+RzList /*<RzBinWasmTypeEntry *>*/ *rz_bin_wasm_get_types(RzBinWasmObj *bin);
+RzList /*<RzBinWasmImportEntry *>*/ *rz_bin_wasm_get_imports(RzBinWasmObj *bin);
+RzList /*<RzBinWasmExportEntry *>*/ *rz_bin_wasm_get_exports(RzBinWasmObj *bin);
+RzList /*<RzBinWasmTableEntry *>*/ *rz_bin_wasm_get_tables(RzBinWasmObj *bin);
+RzList /*<RzBinWasmMemoryEntry *>*/ *rz_bin_wasm_get_memories(RzBinWasmObj *bin);
+RzList /*<RzBinWasmGlobalEntry *>*/ *rz_bin_wasm_get_globals(RzBinWasmObj *bin);
+RzList /*<RzBinWasmElementEntry *>*/ *rz_bin_wasm_get_elements(RzBinWasmObj *bin);
+RzList /*<RzBinWasmCodeEntry *>*/ *rz_bin_wasm_get_codes(RzBinWasmObj *bin);
+RzList /*<RzBinWasmDataEntry *>*/ *rz_bin_wasm_get_datas(RzBinWasmObj *bin);
+RzList /*<RzBinWasmCustomNameEntry *>*/ *rz_bin_wasm_get_custom_names(RzBinWasmObj *bin);
 ut32 rz_bin_wasm_get_entrypoint(RzBinWasmObj *bin);
 const char *rz_bin_wasm_get_function_name(RzBinWasmObj *bin, ut32 idx);
 const char *rz_bin_wasm_valuetype_to_string(rz_bin_wasm_value_type_t type);

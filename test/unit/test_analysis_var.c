@@ -48,12 +48,14 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 		} \
 	} while (0);
 
-static RzAnalysisVar *set_var_str(RzAnalysisFunction *fcn, int delta, char kind, const char *type, int size, bool isarg, const char *name) {
+static RzAnalysisVar *set_var_str(RzAnalysisFunction *fcn, RzAnalysisVarStorage *stor, const char *type, int size, const char *name) {
 	RzType *ttype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, NULL);
 	if (!ttype) {
 		return NULL;
 	}
-	return rz_analysis_function_set_var(fcn, delta, kind, ttype, size, isarg, name);
+	RzAnalysisVar *ret = rz_analysis_function_set_var(fcn, stor, ttype, size, name);
+	rz_type_free(ttype);
+	return ret;
 }
 
 bool test_rz_analysis_var() {
@@ -61,23 +63,28 @@ bool test_rz_analysis_var() {
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	assert_sane(analysis);
 
 	// creating variables and renaming
 
-	RzAnalysisVar *a = set_var_str(fcn, -8, RZ_ANALYSIS_VAR_KIND_BPV, "char *", 8, false, "random_name");
+	RzAnalysisVarStorage stor;
+	rz_analysis_var_storage_init_stack(&stor, -0x10);
+	RzAnalysisVar *a = set_var_str(fcn, &stor, "char *", 8, "random_name");
 	mu_assert_notnull(a, "create a var");
 	mu_assert_streq(a->name, "random_name", "var name");
+	mu_assert_false(rz_analysis_var_is_arg(a), "negative stack offset is local var");
 	bool succ = rz_analysis_var_rename(a, "var_a", false);
 	mu_assert("rename success", succ);
 	mu_assert_streq(a->name, "var_a", "var name after rename");
 
-	RzAnalysisVar *b = set_var_str(fcn, -0x10, RZ_ANALYSIS_VAR_KIND_SPV, "char *", 8, false, "var_a");
+	rz_analysis_var_storage_init_stack(&stor, 8);
+	RzAnalysisVar *b = set_var_str(fcn, &stor, "char *", 8, "var_a");
 	mu_assert_null(b, "create a var with the same name");
-	b = set_var_str(fcn, -0x10, RZ_ANALYSIS_VAR_KIND_SPV, "char *", 8, false, "new_var");
+	b = set_var_str(fcn, &stor, "char *", 8, "new_var");
 	mu_assert_notnull(b, "create a var with another name");
 	mu_assert_streq(b->name, "new_var", "var name");
+	mu_assert_true(rz_analysis_var_is_arg(b), "positive stack offset is arg");
 	succ = rz_analysis_var_rename(b, "random_name", false);
 	mu_assert("rename success", succ);
 	mu_assert_streq(b->name, "random_name", "var name after rename");
@@ -88,19 +95,21 @@ bool test_rz_analysis_var() {
 	mu_assert("rename success", succ);
 	mu_assert_streq(b->name, "var_b", "var name after rename");
 
-	RzAnalysisVar *c = set_var_str(fcn, 0x30, RZ_ANALYSIS_VAR_KIND_REG, "int64_t", 8, true, "arg42");
+	rz_analysis_var_storage_init_reg(&stor, "rax");
+	RzAnalysisVar *c = set_var_str(fcn, &stor, "int64_t", 8, "arg42");
 	mu_assert_notnull(c, "create a var");
+	mu_assert_true(rz_analysis_var_is_arg(c), "reg vars are always args");
 
 	// querying variables
 
-	RzAnalysisVar *v = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_REG, 0x41);
-	mu_assert_null(v, "get no var");
-	v = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_REG, 0x30);
+	RzAnalysisVar *v = rz_analysis_function_get_reg_var_at(fcn, "rbx");
+	mu_assert_null(v, "get no var (reg)");
+	v = rz_analysis_function_get_reg_var_at(fcn, "rax");
 	mu_assert_ptreq(v, c, "get var (reg)");
-	v = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_SPV, -0x10);
-	mu_assert_ptreq(v, b, "get var (sp)");
-	v = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_BPV, -8);
-	mu_assert_ptreq(v, a, "get var (bp)");
+	v = rz_analysis_function_get_stack_var_at(fcn, -0xf);
+	mu_assert_null(v, "get no var (stack)");
+	v = rz_analysis_function_get_stack_var_at(fcn, -0x10);
+	mu_assert_ptreq(v, a, "get var (stack)");
 
 	v = rz_analysis_function_get_var_byname(fcn, "random_name");
 	mu_assert_null(v, "nonsense name");
@@ -114,31 +123,18 @@ bool test_rz_analysis_var() {
 	rz_analysis_var_set_access(b, "rsp", 0x120, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 123);
 	rz_analysis_var_set_access(b, "rbp", 0x10, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, -100);
 
-	st64 stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -0x10, 0x12345);
-	mu_assert_eq(stackptr, ST64_MAX, "unset stackptr");
-
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x123);
 	mu_assert("no used vars", !used_vars || rz_pvector_len(used_vars));
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x130);
 	mu_assert_eq(rz_pvector_len(used_vars), 1, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, a));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -8, 0x130);
-	mu_assert_eq(stackptr, 13, "stackptr");
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, 123123, 0x130);
-	mu_assert_eq(stackptr, ST64_MAX, "stackptr");
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x120);
 	mu_assert_eq(rz_pvector_len(used_vars), 2, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, a));
 	mu_assert("used vars", rz_pvector_contains(used_vars, b));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -0x10, 0x120);
-	mu_assert_eq(stackptr, 123, "stackptr");
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -8, 0x120);
-	mu_assert_eq(stackptr, 42, "stackptr");
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x10);
 	mu_assert_eq(rz_pvector_len(used_vars), 1, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, b));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -0x10, 0x10);
-	mu_assert_eq(stackptr, -100, "stackptr");
 
 	assert_sane(analysis);
 
@@ -168,10 +164,6 @@ bool test_rz_analysis_var() {
 	mu_assert_eq(rz_pvector_len(used_vars), 2, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, a));
 	mu_assert("used vars", rz_pvector_contains(used_vars, b));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -0x10, 0x120);
-	mu_assert_eq(stackptr, 123, "stackptr");
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -8, 0x120);
-	mu_assert_eq(stackptr, 42, "stackptr");
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x10);
 	mu_assert_eq(rz_pvector_len(used_vars), 1, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, b));
@@ -185,8 +177,6 @@ bool test_rz_analysis_var() {
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x8000000000000100);
 	mu_assert_eq(rz_pvector_len(used_vars), 1, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, a));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -8, 0x8000000000000100);
-	mu_assert_eq(stackptr, 987321, "stackptr");
 
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x7ffffffffffffe00);
 	mu_assert("no used vars", !used_vars || rz_pvector_len(used_vars));
@@ -194,8 +184,6 @@ bool test_rz_analysis_var() {
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0x7ffffffffffffe00);
 	mu_assert_eq(rz_pvector_len(used_vars), 1, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, a));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -8, 0x7ffffffffffffe00);
-	mu_assert_eq(stackptr, 777, "stackptr");
 
 	used_vars = rz_analysis_function_get_vars_used_at(fcn, 0xffffffffffff0130UL);
 	mu_assert_eq(rz_pvector_len(used_vars), 1, "used vars count");
@@ -210,10 +198,6 @@ bool test_rz_analysis_var() {
 	mu_assert_eq(rz_pvector_len(used_vars), 2, "used vars count");
 	mu_assert("used vars", rz_pvector_contains(used_vars, a));
 	mu_assert("used vars", rz_pvector_contains(used_vars, b));
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -0x10, 0x120);
-	mu_assert_eq(stackptr, 123, "stackptr");
-	stackptr = rz_analysis_function_get_var_stackptr_at(fcn, -8, 0x120);
-	mu_assert_eq(stackptr, 42, "stackptr");
 
 	assert_sane(analysis);
 
@@ -237,8 +221,158 @@ bool test_rz_analysis_var() {
 	mu_end;
 }
 
+bool test_rz_analysis_function_get_stack_var_in() {
+	RzAnalysis *analysis = rz_analysis_new();
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	assert_sane(analysis);
+
+	RzAnalysisVarStorage stor;
+	rz_analysis_var_storage_init_stack(&stor, -0x10);
+	RzAnalysisVar *a = set_var_str(fcn, &stor, "char *", 8, "var_10h");
+	mu_assert_notnull(a, "create var");
+	rz_analysis_var_storage_init_stack(&stor, -0x18);
+	RzAnalysisVar *b = set_var_str(fcn, &stor, "uint64_t", 8, "var_18h");
+	mu_assert_notnull(b, "create var");
+	rz_analysis_var_storage_init_stack(&stor, 8);
+	RzAnalysisVar *c = set_var_str(fcn, &stor, "char *", 8, "arg_8h");
+	mu_assert_notnull(c, "create var");
+	assert_sane(analysis);
+
+	RzAnalysisVar *var = rz_analysis_function_get_stack_var_in(fcn, -0x10);
+	mu_assert_ptreq(var, a, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, -0x10);
+	mu_assert_ptreq(var, a, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, -0xf);
+	mu_assert_ptreq(var, a, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, -0xf);
+	mu_assert_null(var, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, 7);
+	mu_assert_ptreq(var, a, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, 7);
+	mu_assert_null(var, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, 8);
+	mu_assert_ptreq(var, c, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, 8);
+	mu_assert_ptreq(var, c, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, 99999);
+	mu_assert_ptreq(var, c, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, 99999);
+	mu_assert_null(var, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, -0x17);
+	mu_assert_ptreq(var, b, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, -0x17);
+	mu_assert_null(var, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, -0x18);
+	mu_assert_ptreq(var, b, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, -0x18);
+	mu_assert_ptreq(var, b, "var_at");
+
+	var = rz_analysis_function_get_stack_var_in(fcn, -0x19);
+	mu_assert_null(var, "var_in");
+	var = rz_analysis_function_get_stack_var_at(fcn, -0x19);
+	mu_assert_null(var, "var_at");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+bool test_rz_analysis_function_var_expr_for_reg_access_at() {
+	RzAnalysis *analysis = rz_analysis_new();
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	fcn->bp_off = 8;
+	assert_sane(analysis);
+
+	RzType *struct_type = rz_type_parse_string_single(analysis->typedb->parser, "struct MyStruct { uint32_t a; uint32_t b; };", NULL);
+	mu_assert_notnull(struct_type, "parse struct");
+
+	RzAnalysisVarStorage stor;
+	rz_analysis_var_storage_init_stack(&stor, -0x10);
+	RzAnalysisVar *a = set_var_str(fcn, &stor, "char *", 0, "var_10h");
+	mu_assert_notnull(a, "create var");
+	rz_analysis_var_storage_init_stack(&stor, -0x18);
+	RzAnalysisVar *b = rz_analysis_function_set_var(fcn, &stor, struct_type, 0, "var_18h");
+	mu_assert_notnull(b, "create var");
+	rz_analysis_var_storage_init_stack(&stor, 8);
+	RzAnalysisVar *c = set_var_str(fcn, &stor, "char *", 0, "arg_8h");
+	mu_assert_notnull(c, "create var");
+	rz_type_free(struct_type);
+	assert_sane(analysis);
+
+	// bp-based access, uses fcn->bp_off
+
+	char *s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -8);
+	mu_assert_streq_free(s, "var_10h", "expr from stack for bp");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -3);
+	mu_assert_streq_free(s, "var_10h + 0x5", "expr from stack for bp with offset");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -42);
+	mu_assert_null(s, "expr from stack for bp oob");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -0x10);
+	mu_assert_streq_free(s, "var_18h.a", "expr from stack for bp in struct");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -0xc);
+	mu_assert_streq_free(s, "var_18h.b", "expr from stack for bp in struct");
+
+	// sp-based access, needing sp tracking info
+
+	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x100, 0x10);
+	rz_analysis_function_add_block(fcn, block);
+	rz_analysis_block_unref(block);
+	block->sp_entry = 0;
+	block->ninstr = 4;
+	rz_analysis_block_set_op_sp_delta(block, 0, 0);
+	rz_analysis_block_set_op_offset(block, 1, 3);
+	rz_analysis_block_set_op_sp_delta(block, 1, -0x20);
+	rz_analysis_block_set_op_offset(block, 2, 5);
+	rz_analysis_block_set_op_sp_delta(block, 2, -0x28);
+	rz_analysis_block_set_op_offset(block, 3, 0xa);
+	rz_analysis_block_set_op_sp_delta(block, 3, 0);
+
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rsp", 0x10);
+	mu_assert_streq_free(s, "var_10h", "expr from stack for sp");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rsp", 0x13);
+	mu_assert_streq_free(s, "var_10h + 0x3", "expr from stack for sp with offset");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rsp", 0);
+	mu_assert_null(s, "expr from stack for sp oob");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x10a, "rsp", 0x10);
+	mu_assert_streq_free(s, "var_18h.a", "expr from stack for sp in struct");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x10a, "rsp", 0x13);
+	mu_assert_streq_free(s, "var_18h + 0x3", "expr from stack for sp with offset");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x10a, "rsp", 0x14);
+	mu_assert_streq_free(s, "var_18h.b", "expr from stack for sp in struct");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x10a, "rsp", 0);
+	mu_assert_null(s, "expr from stack for sp oob");
+
+	// arbitrary reg accesses from explicit RzAnalysisVarAccesses
+
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rax", 6);
+	mu_assert_null(s, "expr from access");
+	rz_analysis_var_set_access(a, "rax", 0x105, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 6);
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rax", 6);
+	mu_assert_streq_free(s, "var_10h", "expr from access");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rax", 5);
+	mu_assert_null(s, "expr from access");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbx", 6);
+	mu_assert_null(s, "expr from access");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_var);
+	mu_run_test(test_rz_analysis_function_get_stack_var_in);
+	mu_run_test(test_rz_analysis_function_var_expr_for_reg_access_at);
 	return tests_passed != tests_run;
 }
 

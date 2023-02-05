@@ -78,7 +78,7 @@ static void free_rz_bin_class(void /*RzBinClass*/ *k) {
 	}
 }
 
-static RzList *classes(RzBinFile *bf) {
+static RzList /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzBinClass *bclass = NULL;
 	RzList *classes = NULL;
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
@@ -113,7 +113,7 @@ static RzList *classes(RzBinFile *bf) {
 	return classes;
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -122,7 +122,7 @@ static RzList *imports(RzBinFile *bf) {
 	return rz_bin_java_class_const_pool_as_imports(jclass);
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -131,7 +131,7 @@ static RzList *sections(RzBinFile *bf) {
 	return rz_bin_java_class_as_sections(jclass);
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *tmp;
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
@@ -153,7 +153,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return list;
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -162,7 +162,7 @@ static RzList *fields(RzBinFile *bf) {
 	return rz_bin_java_class_fields_as_binfields(jclass);
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -180,7 +180,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return rz_bin_java_class_resolve_symbol(jclass, sym);
 }
 
-static RzList *entrypoints(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entrypoints(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;
@@ -189,7 +189,7 @@ static RzList *entrypoints(RzBinFile *bf) {
 	return rz_bin_java_class_entrypoints(jclass);
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;

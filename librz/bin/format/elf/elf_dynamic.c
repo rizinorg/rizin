@@ -78,14 +78,14 @@ static bool init_dt_dynamic(ELFOBJ *bin, RzBinElfDtDynamic *ptr) {
 
 	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, segment->data.p_vaddr);
 	if (offset == UT64_MAX) {
-		RZ_LOG_WARN("Failed to convert PT_DYNAMIC segment p_vaddr to a physical offset.\n")
+		RZ_LOG_INFO("Failed to convert PT_DYNAMIC segment p_vaddr to a physical offset.\n")
 		return false;
 	}
 
 	return fill_dt_dynamic(bin, ptr, offset, segment->data.p_filesz);
 }
 
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin) {
+RZ_BORROW RzVector /*<ut64>*/ *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {

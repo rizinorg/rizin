@@ -6,6 +6,7 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
+#include "../arch/sh/sh_il.h"
 
 #define API static
 
@@ -52,12 +53,12 @@
 #define IS_STSMACH(x)           (((x)&0xF0FF) == 0x000A)
 #define IS_STSMACL(x)           (((x)&0xF0FF) == 0x001A)
 #define IS_STSPR(x)             (((x)&0xF0FF) == 0x002A)
-//#define IS_STSFPUL(x)	(((x) & 0xF0FF) == 0x005A)	//FP*: todo maybe someday
-//#define IS_STSFPSCR(x)	(((x) & 0xF0FF) == 0x006A)
+// #define IS_STSFPUL(x)	(((x) & 0xF0FF) == 0x005A)	//FP*: todo maybe someday
+// #define IS_STSFPSCR(x)	(((x) & 0xF0FF) == 0x006A)
 #define IS_MOVB_REG_TO_REGREF(x) (((x)&0xF00F) == 0x2000)
 #define IS_MOVW_REG_TO_REGREF(x) (((x)&0xF00F) == 0x2001)
 #define IS_MOVL_REG_TO_REGREF(x) (((x)&0xF00F) == 0x2002)
-//#define invalid?(x)	(((x) & 0xF00F) == 0x2003)	//illegal on sh2e
+// #define invalid?(x)	(((x) & 0xF00F) == 0x2003)	//illegal on sh2e
 #define IS_PUSHB(x)    (((x)&0xF00F) == 0x2004)
 #define IS_PUSHW(x)    (((x)&0xF00F) == 0x2005)
 #define IS_PUSHL(x)    (((x)&0xF00F) == 0x2006)
@@ -71,7 +72,7 @@
 #define IS_MULUW(x)    (((x)&0xF00F) == 0x200E)
 #define IS_MULSW(x)    (((x)&0xF00F) == 0x200F)
 #define IS_CMPEQ(x)    (((x)&0xF00F) == 0x3000)
-//#define invalid?(x)	(((x) & 0xF00F) == 0x3001)
+// #define invalid?(x)	(((x) & 0xF00F) == 0x3001)
 #define IS_CMPHS(x) (((x)&0xF00F) == 0x3002)
 #define IS_CMPGE(x) (((x)&0xF00F) == 0x3003)
 #define IS_CMPHI(x) (((x)&0xF00F) == 0x3006)
@@ -80,7 +81,7 @@
 #define IS_DMULU(x) (((x)&0xF00F) == 0x3005)
 #define IS_DMULS(x) (((x)&0xF00F) == 0x300D)
 #define IS_SUB(x)   (((x)&0xF00F) == 0x3008)
-//#define invalid?(x)	(((x) & 0xF00F) == 0x3009)
+// #define invalid?(x)	(((x) & 0xF00F) == 0x3009)
 #define IS_SUBC(x)      (((x)&0xF00F) == 0x300A)
 #define IS_SUBV(x)      (((x)&0xF00F) == 0x300B)
 #define IS_ADD(x)       (((x)&0xF00F) == 0x300C)
@@ -103,18 +104,18 @@
 #define IS_LDSLMACL(x)  (((x)&0xF0FF) == 0x4016)
 #define IS_LDSPR(x)     (((x)&0xF0FF) == 0x402A)
 #define IS_LDSLPR(x)    (((x)&0xF0FF) == 0x4026)
-//#define IS_LDSFPUL(x)	(((x) & 0xF0FF) == 0x405A)	//FP*: todo maybe someday
-//#define IS_LDSFPSCR(x)	(((x) & 0xF0FF) == 0x406A)
-//#define IS_LDSLFPUL(x)	(((x) & 0xF0FF) == 0x4066)
-//#define IS_LDSLFPSCR(x)	(((x) & 0xF0FF) == 0x4056)
+// #define IS_LDSFPUL(x)	(((x) & 0xF0FF) == 0x405A)	//FP*: todo maybe someday
+// #define IS_LDSFPSCR(x)	(((x) & 0xF0FF) == 0x406A)
+// #define IS_LDSLFPUL(x)	(((x) & 0xF0FF) == 0x4066)
+// #define IS_LDSLFPSCR(x)	(((x) & 0xF0FF) == 0x4056)
 #define IS_ROTCR(x) (((x)&0xF0FF) == 0x4025)
 #define IS_ROTCL(x) (((x)&0xF0FF) == 0x4024)
 #define IS_ROTL(x)  (((x)&0xF0FF) == 0x4004)
 #define IS_ROTR(x)  (((x)&0xF0FF) == 0x4005)
 // not on sh2e : shad, shld
 
-//#define IS_SHIFT1(x)	(((x) & 0xF0DE) == 0x4000)	//unused (treated as switch-case)
-// other shl{l,r}{,2,8,16} in switch case also.
+// #define IS_SHIFT1(x)	(((x) & 0xF0DE) == 0x4000)	//unused (treated as switch-case)
+//  other shl{l,r}{,2,8,16} in switch case also.
 
 #define IS_STSLMACL(x) (((x)&0xF0FF) == 0x4012)
 #define IS_STSLMACH(x) (((x)&0xF0FF) == 0x4002)
@@ -123,8 +124,8 @@
 #define IS_STCLVBR(x)  (((x)&0xF0FF) == 0x4023)
 // todo: other stc.l not on sh2e
 #define IS_STSLPR(x) (((x)&0xF0FF) == 0x4022)
-//#define IS_STSLFPUL(x)	(((x) & 0xF0FF) == 0x4052)
-//#define IS_STSLFPSCR(x)	(((x) & 0xF0FF) == 0x4062)
+// #define IS_STSLFPUL(x)	(((x) & 0xF0FF) == 0x4052)
+// #define IS_STSLFPSCR(x)	(((x) & 0xF0FF) == 0x4062)
 #define IS_TASB(x) (((x)&0xF0FF) == 0x401B)
 #define IS_DT(x)   (((x)&0xF0FF) == 0x4010)
 
@@ -144,11 +145,11 @@
 
 #define IS_MOVB_R0_REGDISP(x) (((x)&0xFF00) == 0x8000)
 #define IS_MOVW_R0_REGDISP(x) (((x)&0xFF00) == 0x8100)
-//#define illegal?(x)	(((x) & 0xF900) == 0x8000)	//match 8{2,3,6,7}00
+// #define illegal?(x)	(((x) & 0xF900) == 0x8000)	//match 8{2,3,6,7}00
 #define IS_MOVB_REGDISP_R0(x) (((x)&0xFF00) == 0x8400)
 #define IS_MOVW_REGDISP_R0(x) (((x)&0xFF00) == 0x8500)
 #define IS_CMPIMM(x)          (((x)&0xFF00) == 0x8800)
-//#define illegal?(x)	(((x) & 0xFB00) == 0x8A00)	//match 8{A,E}00
+// #define illegal?(x)	(((x) & 0xFB00) == 0x8A00)	//match 8{A,E}00
 #define IS_BT(x)       (((x)&0xff00) == 0x8900)
 #define IS_BF(x)       (((x)&0xff00) == 0x8B00)
 #define IS_BTS(x)      (((x)&0xff00) == 0x8D00)
@@ -1096,14 +1097,24 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 
 	op_MSB = analysis->big_endian ? data[0] : data[1];
 	op_LSB = analysis->big_endian ? data[1] : data[0];
-	ret = first_nibble_decode[(op_MSB >> 4) & 0x0F](analysis, op, (ut16)(op_MSB << 8 | op_LSB));
+	ut16 opcode = (ut16)op_MSB << 8 | op_LSB;
+	ret = first_nibble_decode[(op_MSB >> 4) & 0x0F](analysis, op, opcode);
+
+	// RzIL uplifting
+	SHOp *ilop = sh_disassembler(opcode);
+	SHILContext *ctx = RZ_NEW0(SHILContext);
+	ctx->use_banked = true;
+
+	rz_sh_il_opcode(analysis, op, addr, ilop, ctx);
+	RZ_FREE(ctx);
+	RZ_FREE(ilop);
 
 	return ret;
 }
 
 /* Set the profile register */
-static char *sh_get_reg_profile(RzAnalysis *analysis) {
-	// TODO Add system ( ssr, spc ) + fpu regs
+static RZ_OWN char *sh_get_reg_profile(RzAnalysis *analysis) {
+	// TODO Add fpu regs
 	const char *p =
 		"=PC	pc\n"
 		"=SN	r0\n"
@@ -1114,39 +1125,69 @@ static char *sh_get_reg_profile(RzAnalysis *analysis) {
 		"=A2	r6\n"
 		"=A3	r7\n"
 		"=R0	r0\n"
-		"gpr	r0	.32	0	0\n"
-		"gpr	r1	.32	4	0\n"
-		"gpr	r2	.32	8	0\n"
-		"gpr	r3	.32	12	0\n"
-		"gpr	r4	.32	16	0\n"
-		"gpr	r5	.32	20	0\n"
-		"gpr	r6	.32	24	0\n"
-		"gpr	r7	.32	28	0\n"
-		"gpr	r8	.32	32	0\n"
-		"gpr	r9	.32	36	0\n"
-		"gpr	r10	.32	40	0\n"
-		"gpr	r11	.32	44	0\n"
-		"gpr	r12	.32	48	0\n"
-		"gpr	r13	.32	52	0\n"
-		"gpr	r14	.32	56	0\n"
-		"gpr	r15	.32	60	0\n"
-		"gpr	pc	.32	64	0\n"
-		"gpr	pr	.32	68	0\n"
-		"gpr	sr	.32	72	0\n"
-		"gpr	gbr	.32	76	0\n"
-		"gpr	vbr	.32	80	0\n"
-		"gpr	mach	.32	84	0\n"
-		"gpr	macl	.32	88	0\n";
+		"gpr	r0		.32	0		0\n"
+		"gpr	r1		.32	4		0\n"
+		"gpr	r2		.32	8		0\n"
+		"gpr	r3		.32	12		0\n"
+		"gpr	r4		.32	16		0\n"
+		"gpr	r5		.32	20		0\n"
+		"gpr	r6		.32	24		0\n"
+		"gpr	r7		.32	28		0\n"
+		"gpr	r0b		.32	32		0\n"
+		"gpr	r1b		.32	36		0\n"
+		"gpr	r2b		.32	40		0\n"
+		"gpr	r3b		.32	44		0\n"
+		"gpr	r4b		.32	48		0\n"
+		"gpr	r5b		.32	52		0\n"
+		"gpr	r6b		.32	56		0\n"
+		"gpr	r7b		.32	60		0\n"
+		"gpr	r8		.32	64		0\n"
+		"gpr	r9		.32	68		0\n"
+		"gpr	r10		.32	72		0\n"
+		"gpr	r11		.32	76		0\n"
+		"gpr	r12		.32	80		0\n"
+		"gpr	r13		.32	84		0\n"
+		"gpr	r14		.32	88		0\n"
+		"gpr	r15		.32	92		0\n"
+		"gpr	pc		.32	96		0\n"
+		"gpr	sr		.32	100		0\n"
+		"gpr	sr_t	.1	100.0	0\n"
+		"gpr	sr_s	.1	100.1	0\n"
+		"gpr	sr_i	.4	100.4	0\n"
+		"gpr	sr_q	.1	101.0	0\n"
+		"gpr	sr_m	.1	101.1	0\n"
+		"gpr	sr_f	.1	101.7	0\n"
+		"gpr	sr_b	.1	103.4	0\n"
+		"gpr	sr_r	.1	103.5	0\n"
+		"gpr	sr_d	.1	103.6	0\n"
+		"gpr	gbr		.32	104		0\n"
+		"gpr	ssr		.32	108		0\n"
+		"gpr	spc		.32	112		0\n"
+		"gpr	sgr		.32	116		0\n"
+		"gpr	dbr		.32	120		0\n"
+		"gpr	vbr		.32	124		0\n"
+		"gpr	mach	.32	128		0\n"
+		"gpr	macl	.32	132		0\n"
+		"gpr	pr		.32	136		0\n";
+
 	return strdup(p);
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-#if 0
-	if (q == RZ_ANALYSIS_ARCHINFO_ALIGN) {
-		return 4;
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-#endif
-	return 2; /* :) */
 }
 
 RzAnalysisPlugin rz_analysis_plugin_sh = {
@@ -1158,7 +1199,9 @@ RzAnalysisPlugin rz_analysis_plugin_sh = {
 	.bits = 32,
 	.op = &sh_op,
 	.get_reg_profile = &sh_get_reg_profile,
-	.esil = true
+	.esil = true,
+	.il_config = rz_sh_il_config
+
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -1,0 +1,27 @@
+name: Rizin CI tree-sitter test
+
+on:
+  pull_request:
+    paths:
+      - 'subprojects/tree-sitter.wrap'
+      - 'subprojects/rizin-shell-parser/*'
+      - 'subprojects/rizin-shell-parser/**/*'
+    branches:
+      - dev
+
+jobs:
+  build:
+    name: rizin-shell-parser-tests
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+    - run: cd subprojects/rizin-shell-parser/ && npm install
+    - name: Run tests
+      run: |
+        cd subprojects/rizin-shell-parser
+        export PATH=${PATH}:./node_modules/.bin
+        tree-sitter generate
+        tree-sitter test

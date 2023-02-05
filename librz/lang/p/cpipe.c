@@ -5,9 +5,10 @@
  * A plugin allowing to run rz-pipe "scripts" written in C language
  */
 
-#include "rz_lib.h"
-#include "rz_core.h"
-#include "rz_lang.h"
+#include <rz_lib.h>
+#include <rz_core.h>
+#include <rz_lang.h>
+#include "pipe_helper.h"
 
 #if __UNIX__
 static int lang_cpipe_file(RzLang *lang, const char *file) {
@@ -97,7 +98,7 @@ static int lang_cpipe_run(RzLang *lang, const char *code, int len) {
 	return true;
 }
 
-static RzLangPlugin rz_lang_plugin_cpipe = {
+RzLangPlugin rz_lang_plugin_cpipe = {
 	.name = "cpipe",
 	.ext = "c2",
 	.desc = "rzpipe scripting in C",
@@ -107,6 +108,15 @@ static RzLangPlugin rz_lang_plugin_cpipe = {
 	.fini = NULL,
 	.run_file = (void *)lang_cpipe_file,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_cpipe,
+	.version = RZ_VERSION
+};
+#endif
+
 #else
 #ifdef _MSC_VER
 #pragma message("Warning: cpipe RzLangPlugin is not implemented on this platform")

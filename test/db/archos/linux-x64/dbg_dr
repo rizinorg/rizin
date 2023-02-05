@@ -321,6 +321,7 @@ e cfg.debug
 # mask out anything aslr-dependent
 # we don't use ~ below to test the conditional command as-is
 dcu 0x080484a2
+dr ebx=0x42
 dr ecx=0x42
 dr edx=0x42
 dr esp=0x42
@@ -329,7 +330,6 @@ dr esi=0x42
 dr edi=0x42
 dr rflags=0
 ?== true `e cfg.debug`; ?! dr; ?? ar
-dk 9
 EOF
 EXPECT=<<EOF
 false
@@ -347,7 +347,7 @@ eflags = 0x00000000
 --
 true
 eax = 0x080485d0
-ebx = 0x00000000
+ebx = 0x00000042
 ecx = 0x00000042
 edx = 0x00000042
 esi = 0x00000042
@@ -359,7 +359,7 @@ xfs = 0x00000000
 xgs = 0x00000063
 xcs = 0x00000023
 xss = 0x0000002b
-rflags = 0x00000202
+rflags = 0x0000000000000202
 oeax = 0xffffffff
 EOF
 RUN

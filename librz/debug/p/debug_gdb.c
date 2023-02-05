@@ -58,7 +58,7 @@ static int rz_debug_gdb_step(RzDebug *dbg) {
 	return true;
 }
 
-static RzList *rz_debug_gdb_threads(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_gdb_threads(RzDebug *dbg, int pid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	RzList *list;
 	if ((list = gdbr_threads_list(ctx->desc, pid))) {
@@ -67,7 +67,7 @@ static RzList *rz_debug_gdb_threads(RzDebug *dbg, int pid) {
 	return list;
 }
 
-static RzList *rz_debug_gdb_pids(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *rz_debug_gdb_pids(RzDebug *dbg, int pid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	RzList *list;
 	if ((list = gdbr_pids_list(ctx->desc, pid))) {
@@ -130,7 +130,7 @@ static int rz_debug_gdb_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	return ctx->desc->data_len;
 }
 
-static RzList *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
+static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	check_connection(dbg);
 	if (!ctx->desc || ctx->desc->pid <= 0) {
@@ -265,7 +265,7 @@ static RzList *rz_debug_gdb_map_get(RzDebug *dbg) { // TODO
 	return retlist;
 }
 
-static RzList *rz_debug_gdb_modules_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *rz_debug_gdb_modules_get(RzDebug *dbg) {
 	char *lastname = NULL;
 	RzDebugMap *map;
 	RzListIter *iter, *iter2;
@@ -567,7 +567,7 @@ static RzDebugInfo *rz_debug_gdb_info(RzDebug *dbg, const char *arg) {
 
 #include "native/bt.c"
 
-static RzList *rz_debug_gdb_frames(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *rz_debug_gdb_frames(RzDebug *dbg, ut64 at) {
 	return rz_debug_native_frames(dbg, at);
 }
 

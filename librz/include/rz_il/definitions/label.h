@@ -30,7 +30,7 @@ typedef struct rz_il_effect_label_t {
 	RzILEffectLabelType type; ///< type of label
 } RzILEffectLabel;
 
-RZ_API RzILEffectLabel *rz_il_effect_label_new(const char *name, RzILEffectLabelType type);
+RZ_API RzILEffectLabel *rz_il_effect_label_new(RZ_NONNULL const char *name, RzILEffectLabelType type);
 RZ_API void rz_il_effect_label_free(RzILEffectLabel *lbl);
 RZ_API RzILEffectLabel *rz_il_effect_label_dup(RZ_NONNULL RzILEffectLabel *lbl);
 

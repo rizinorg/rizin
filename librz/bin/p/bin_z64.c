@@ -89,8 +89,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 	return false;
 }
 
-static RzList *entries(RzBinFile *bf) {
-	RzList /*<RzBinAddr>*/ *ret = rz_list_newf(free);
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+	RzList /*<RzBinAddr *>*/ *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -103,8 +103,8 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
-	RzList /*<RzBinSection>*/ *ret = rz_list_new();
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+	RzList /*<RzBinSection *>*/ *ret = rz_list_new();
 	if (!ret) {
 		return NULL;
 	}
@@ -149,7 +149,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_z64 = {
 	.name = "z64",
-	.desc = "Nintendo 64 binaries big endian rz_bin plugin",
+	.desc = "Nintendo 64 Bin-BE plugin",
 	.license = "LGPL3",
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,

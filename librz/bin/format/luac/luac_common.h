@@ -60,27 +60,27 @@ typedef struct lua_proto_ex {
 	ut64 code_skipped; ///< opcode data offset to code_offset.
 
 	/* store constant entries */
-	RzList *const_entries; ///< A list to store constant entries
+	RzList /*<LuaConstEntry *>*/ *const_entries; ///< A list to store constant entries
 	ut64 const_offset; ///< const section offset
 	ut64 const_size; ///< const section size
 
 	/* store upvalue entries */
-	RzList *upvalue_entries; ///< A list to store upvalue entries
+	RzList /*<LuaUpvalueEntry *>*/ *upvalue_entries; ///< A list to store upvalue entries
 	ut64 upvalue_offset; ///< upvalue section offset
 	ut64 upvalue_size; ///< upvalue section size
 
 	/* store protos defined in this proto */
-	RzList *proto_entries; ///< A list to store sub proto entries
+	RzList /*<LuaProto *>*/ *proto_entries; ///< A list to store sub proto entries
 	ut64 inner_proto_offset; ///< sub proto section offset
 	ut64 inner_proto_size; ///< sub proto section size
 
 	/* store Debug info */
 	ut64 debug_offset; ///< debug section offset
 	ut64 debug_size; ///< debug section size
-	RzList *line_info_entries; ///< A list to store line info entries
-	RzList *abs_line_info_entries; ///< A list to store absolutely line info entries
-	RzList *local_var_info_entries; ///< A list to store local var entries
-	RzList *dbg_upvalue_entries; ///< A list to store upvalue names
+	RzList /*<LuaLineinfoEntry *>*/ *line_info_entries; ///< A list to store line info entries
+	RzList /*<LuaAbsLineinfoEntry *>*/ *abs_line_info_entries; ///< A list to store absolutely line info entries
+	RzList /*<LuaLocalVarEntry *>*/ *local_var_info_entries; ///< A list to store local var entries
+	RzList /*<LuaLocalVarEntry *>*/ *dbg_upvalue_entries; ///< A list to store upvalue names
 
 } LuaProtoHeavy;
 
@@ -159,10 +159,10 @@ typedef struct lua_dbg_upvalue_entry {
 typedef struct luac_bin_info {
 	st32 major; ///< major version
 	st32 minor; ///< minor version
-	RzList *section_list; ///< list of sections
-	RzList *symbol_list; ///< list of symbols
-	RzList *entry_list; ///< list of entries
-	RzList *string_list; ///< list of strings
+	RzList /*<RzBinSection *>*/ *section_list; ///< list of sections
+	RzList /*<RzBinSymbol *>*/ *symbol_list; ///< list of symbols
+	RzList /*<RzBinAddr *>*/ *entry_list; ///< list of entries
+	RzList /*<RzBinString *>*/ *string_list; ///< list of strings
 	RzBinInfo *general_info; ///< general binary info from luac header
 } LuacBinInfo;
 
@@ -187,10 +187,10 @@ void lua_free_proto_entry(LuaProto *);
  * Common Operation to RzBinInfo
  * Implemented in 'bin/format/luac/luac_bin.c'
  * ======================================================== */
-void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func);
-void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
-void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type);
-void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size);
+void luac_add_section(RzList /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func);
+void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
+void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry_type);
+void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 size);
 
 LuacBinInfo *luac_build_info(LuaProto *proto);
 void luac_build_info_free(LuacBinInfo *bin_info);

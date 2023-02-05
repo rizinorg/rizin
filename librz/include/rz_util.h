@@ -21,10 +21,6 @@
 #if HAVE_LIB_SSL
 #include <openssl/bn.h>
 #endif
-#ifdef _MSC_VER
-struct timeval;
-int gettimeofday(struct timeval *p, void *tz);
-#endif
 #include "rz_util/rz_axml.h"
 #include "rz_util/rz_event.h"
 #include "rz_util/rz_assert.h"
@@ -42,6 +38,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_time.h"
 #include "rz_util/rz_debruijn.h"
 #include "rz_util/rz_file.h"
+#include "rz_util/rz_float.h"
 #include "rz_util/rz_hex.h"
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_mem.h"
@@ -51,9 +48,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_path.h"
 #include "rz_util/rz_panels.h"
-#include "rz_util/rz_pool.h"
 #include "rz_util/rz_punycode.h"
-#include "rz_util/rz_queue.h"
 #include "rz_util/rz_range.h"
 #include "rz_util/rz_signal.h"
 #include "rz_util/rz_spaces.h"
@@ -79,6 +74,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "rz_util/rz_big.h"
 #include "rz_util/rz_subprocess.h"
 #include "rz_util/rz_luhn.h"
+#include "rz_util/rz_version.h"
 #include "rz_util/rz_lang_byte_array.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 

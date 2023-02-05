@@ -2,15 +2,6 @@
 // SPDX-FileCopyrightText: 2015-2019 alvaro_fe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_userconf.h>
-
-#if XNU_USE_PTRACE
-#define XNU_USE_EXCTHR 0
-#else
-#define XNU_USE_EXCTHR 1
-#endif
-// ------------------------------------
-
 #include <rz_debug.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
@@ -24,14 +15,12 @@
 
 #include <TargetConditionals.h>
 
-static task_t task_dbg = 0;
 #include "xnu_debug.h"
-#include "xnu_threads.c"
-#if XNU_USE_EXCTHR
-#include "xnu_excthreads.c"
-#endif
+#include "xnu_threads.h"
 
 extern int proc_regionfilename(int pid, uint64_t address, void *buffer, uint32_t buffersize);
+
+static cpu_type_t xnu_get_cpu_type(pid_t pid);
 
 #define MAX_MACH_HEADER_SIZE    (64 * 1024)
 #define DYLD_INFO_COUNT         5
@@ -41,6 +30,20 @@ extern int proc_regionfilename(int pid, uint64_t address, void *buffer, uint32_t
 #define DYLD_IMAGE_INFO_32_SIZE 12
 #define DYLD_IMAGE_INFO_64_SIZE 24
 #define DEBUG_MAP_TAG_ID        239 /* anonymous page id monitorable (e.g. vmmap) */
+
+RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user) {
+	RzXnuDebug *ctx = RZ_NEW0(RzXnuDebug);
+	if (!ctx) {
+		return false;
+	}
+	ctx->old_pid = -1;
+	*user = ctx;
+	return true;
+}
+
+RZ_IPI void rz_xnu_debug_fini(RzDebug *dbg, void *user) {
+	free(user);
+}
 
 typedef struct {
 	ut32 version;
@@ -65,50 +68,6 @@ typedef struct {
 	ut64 image_file_path;
 	ut64 image_file_mod_date;
 } DyldImageInfo64;
-
-/* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
-static thread_t getcurthread(RzDebug *dbg) {
-	thread_t th;
-	thread_array_t threads = NULL;
-	unsigned int n_threads = 0;
-	task_t t = pid_to_task(dbg->pid);
-	if (!t) {
-		return -1;
-	}
-	if (task_threads(t, &threads, &n_threads) != KERN_SUCCESS) {
-		return -1;
-	}
-	if (n_threads > 0) {
-		memcpy(&th, threads, sizeof(th));
-	} else {
-		th = -1;
-	}
-	vm_deallocate(t, (vm_address_t)threads, n_threads * sizeof(thread_act_t));
-	return th;
-}
-
-static xnu_thread_t *get_xnu_thread(RzDebug *dbg, int tid) {
-	if (!dbg || tid < 0) {
-		return NULL;
-	}
-	if (!xnu_update_thread_list(dbg)) {
-		eprintf("Failed to update thread_list xnu_udpate_thread_list\n");
-		return NULL;
-	}
-	// TODO get the current thread
-	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find);
-	if (!it) {
-		tid = getcurthread(dbg);
-		it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
-			(RzListComparator)&thread_find);
-		if (!it) {
-			eprintf("Thread not found get_xnu_thread\n");
-			return NULL;
-		}
-	}
-	return (xnu_thread_t *)it->data;
-}
 
 static task_t task_for_pid_workaround(int Pid) {
 	host_t myhost = mach_host_self();
@@ -162,33 +121,23 @@ static task_t task_for_pid_ios9pangu(int pid) {
 }
 
 int xnu_wait(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-	return RZ_DEBUG_REASON_UNKNOWN;
-#else
-	return __xnu_wait(dbg, pid);
-#endif
+	return xnu_wait_for_exception(dbg, pid, 0, false);
 }
 
 bool xnu_step(RzDebug *dbg) {
-#if XNU_USE_PTRACE
-	int ret = rz_debug_ptrace(dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; // SIGINT
-	if (!ret) {
-		perror("ptrace-step");
-		RZ_LOG_ERROR("mach-error: %d, %s\n", ret, rz_str_get_null(mach_error_string(ret)));
-	}
-	return ret;
-#else
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	// we must find a way to get the current thread not just the first one
-	task_t task = pid_to_task(dbg->pid);
+	task_t task = pid_to_task(ctx, dbg->pid);
 	if (!task) {
 		eprintf("step failed on task %d for pid %d\n", task, dbg->tid);
 		return false;
 	}
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return false;
 	}
-	int ret = set_trace_bit(dbg, th);
+	int ret = xnu_set_trace_bit(dbg, th);
 	if (!ret) {
 		eprintf("xnu_step modificy_trace_bit error\n");
 		return false;
@@ -196,50 +145,66 @@ bool xnu_step(RzDebug *dbg) {
 	th->stepping = true;
 	task_resume(task);
 	return ret;
-#endif
 }
 
 int xnu_attach(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-#if PT_ATTACHEXC
-	if (rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
-#else
-	if (rz_debug_ptrace(dbg, PT_ATTACH, pid, 0, 0) == -1) {
-#endif
-		perror("ptrace (PT_ATTACH)");
-		return -1;
-	}
-	return pid;
-#else
+	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
+	RzXnuDebug *ctx = dbg->plugin_data;
+
 	dbg->pid = pid;
+
+	ctx->cpu = xnu_get_cpu_type(pid);
+	if (!ctx->cpu) {
+		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d", pid);
+	}
+
+	// First start listening to exceptions, which will also deliver signals to us
 	if (!xnu_create_exception_thread(dbg)) {
-		eprintf("error setting up exception thread\n");
+		RZ_LOG_ERROR("Failed to start listening to mach exceptions");
 		return -1;
 	}
-	xnu_stop(dbg, pid);
+
+	// Then do the actual attach.
+	int r = rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0);
+	if (r < 0) {
+		perror("ptrace(PT_ATTACHEXC)");
+		RZ_LOG_ERROR("Failed to attach to process");
+		return -1;
+	}
+
+	// PT_ATTACHEXC will cause a SIGSTOP in the debuggee, so wait for it
+	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
+	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
+	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
+		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed");
+		xnu_stop(dbg, pid);
+	}
+
 	return pid;
-#endif
 }
 
 int xnu_detach(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-	return rz_debug_ptrace(dbg, PT_DETACH, pid, NULL, 0);
-#else
-	kern_return_t kr;
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
+	// Not calling PT_DETACH results in a zombie
+	int r = rz_debug_ptrace(dbg, PT_DETACH, pid, 0, 0);
+	if (r < 0) {
+		perror("ptrace(PT_DETACH)");
+	}
+
 	// do the cleanup necessary
 	// XXX check for errors and ref counts
-	(void)xnu_restore_exception_ports(pid);
-	kr = mach_port_deallocate(mach_task_self(), task_dbg);
+	(void)xnu_restore_exception_ports(ctx, pid);
+	kern_return_t kr = mach_port_deallocate(mach_task_self(), ctx->task_dbg);
 	if (kr != KERN_SUCCESS) {
 		eprintf("xnu_detach: failed to deallocate port\n");
 		return false;
 	}
 	// we mark the task as not longer available since we deallocated the ref
-	task_dbg = 0;
+	ctx->task_dbg = 0;
 	rz_list_free(dbg->threads);
 	dbg->threads = NULL;
 	return true;
-#endif
 }
 
 static int task_suspend_count(task_t task) {
@@ -255,11 +220,9 @@ static int task_suspend_count(task_t task) {
 }
 
 int xnu_stop(RzDebug *dbg, int pid) {
-#if XNU_USE_PTRACE
-	eprintf("xnu_stop: not implemented\n");
-	return false;
-#else
-	task_t task = pid_to_task(pid);
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
+	task_t task = pid_to_task(ctx, pid);
 	if (!task) {
 		return false;
 	}
@@ -289,29 +252,24 @@ int xnu_stop(RzDebug *dbg, int pid) {
 		return false;
 	}
 	return true;
-#endif
 }
 
 int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
-#if XNU_USE_PTRACE
-	void *data = (void *)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-	task_resume(pid_to_task(pid));
-	return rz_debug_ptrace(dbg, PT_CONTINUE, pid, (void *)(size_t)1,
-		       (int)(size_t)data) == 0;
-#else
-	task_t task = pid_to_task(pid);
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
+	task_t task = pid_to_task(ctx, pid);
 	if (!task) {
 		return false;
 	}
 	// TODO free refs count threads
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		eprintf("failed to get thread in xnu_continue\n");
 		return false;
 	}
 	// disable trace bit if enable
 	if (th->stepping) {
-		if (!clear_trace_bit(dbg, th)) {
+		if (!xnu_clear_trace_bit(dbg, th)) {
 			eprintf("error clearing trace bit in xnu_continue\n");
 			return false;
 		}
@@ -321,29 +279,32 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		eprintf("xnu_continue: Warning: Failed to resume task\n");
 	}
 	return true;
-#endif
 }
 
 char *xnu_reg_profile(RzDebug *dbg) {
-#if __i386__ || __x86_64__
-	if (dbg->bits & RZ_SYS_BITS_32) {
-#include "reg/darwin-x86.h"
-	} else if (dbg->bits == RZ_SYS_BITS_64) {
-#include "reg/darwin-x64.h"
-	} else {
-		eprintf("invalid bit size\n");
+#if __POWERPC__
+#include "reg/darwin-ppc.h"
+#else
+	RzXnuDebug *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->cpu) {
+		// not yet attached, arch still unknown
 		return NULL;
 	}
-#elif __POWERPC__
-#include "reg/darwin-ppc.h"
+#if __i386__ || __x86_64__
+	if (ctx->cpu == CPU_TYPE_X86_64) {
+#include "reg/darwin-x64.h"
+	} else {
+#include "reg/darwin-x86.h"
+	}
 #elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
-	if (dbg->bits == RZ_SYS_BITS_64) {
+	if (ctx->cpu == CPU_TYPE_ARM64) {
 #include "reg/darwin-arm64.h"
 	} else {
 #include "reg/darwin-arm.h"
 	}
 #else
 #error "Unsupported Apple architecture"
+#endif
 #endif
 }
 
@@ -352,8 +313,10 @@ char *xnu_reg_profile(RzDebug *dbg) {
 // the thread you want to write or read from. but how that feature
 // is not implemented yet i don't care so much
 int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, 0);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	bool ret;
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return 0;
 	}
@@ -372,23 +335,29 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #elif __arm || __armv7 || __arm__ || __armv7__
 		memcpy(&th->debug.drx, buf, RZ_MIN(size, sizeof(th->debug.drx)));
 #endif
-		ret = xnu_thread_set_drx(dbg, th);
+		ret = rz_xnu_thread_set_drx(ctx, th);
 		break;
 	default:
 		// th->gpr has a header and the state we should copy on the state only
 #if __POWERPC__
 #warning TODO powerpc support here
 #else
-		memcpy(&th->gpr.uts, buf, RZ_MIN(size, sizeof(th->gpr.uts)));
+#if __x86_64__ || __i386__
+		memcpy(&th->gpr.uts, buf, RZ_MIN(size, sizeof(th->gpr)));
+#else
+		memcpy(&th->gpr, buf, RZ_MIN(size, sizeof(th->gpr)));
 #endif
-		ret = xnu_thread_set_gpr(dbg, th);
+#endif
+		ret = rz_xnu_thread_set_gpr(ctx, th);
 		break;
 	}
 	return ret;
 }
 
 int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
-	xnu_thread_t *th = get_xnu_thread(dbg, getcurthread(dbg));
+	rz_return_val_if_fail(dbg && dbg->plugin_data, 0);
+	RzXnuDebug *ctx = dbg->plugin_data;
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return 0;
 	}
@@ -396,12 +365,12 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	case RZ_REG_TYPE_SEG:
 	case RZ_REG_TYPE_FLG:
 	case RZ_REG_TYPE_GPR:
-		if (!xnu_thread_get_gpr(dbg, th)) {
+		if (!rz_xnu_thread_get_gpr(ctx, th)) {
 			return 0;
 		}
 		break;
 	case RZ_REG_TYPE_DRX:
-		if (!xnu_thread_get_drx(dbg, th)) {
+		if (!rz_xnu_thread_get_drx(ctx, th)) {
 			return 0;
 		}
 		break;
@@ -421,7 +390,7 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size) {
 	kern_return_t ret;
 	ut8 *base = (ut8 *)addr;
-	xnu_thread_t *th = get_xnu_thread(dbg, dbg->tid);
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, dbg->tid);
 	bool anywhere = !VM_FLAGS_ANYWHERE;
 	if (!th) {
 		return NULL;
@@ -441,7 +410,7 @@ RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size) {
 }
 
 int xnu_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
-	xnu_thread_t *th = get_xnu_thread(dbg, dbg->tid);
+	xnu_thread_t *th = rz_xnu_get_thread(dbg, dbg->tid);
 	if (!th) {
 		return false;
 	}
@@ -526,8 +495,10 @@ static void xnu_free_threads_ports (RzDebugPid *p) {
 */
 
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
+	RzXnuDebug *ctx = dbg->plugin_data;
 #if __arm__ || __arm64__ || __aarch_64__
-#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.ts_64.__pc : state.ts_32.__pc
+#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
 #elif __POWERPC__
 #define CPU_PC state.srr0
 #elif __x86_64__ || __i386__
@@ -536,10 +507,10 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	RzListIter *iter;
 	xnu_thread_t *thread;
 	RZ_REG_T state;
-	xnu_update_thread_list(dbg);
+	rz_xnu_update_thread_list(dbg);
 	list->free = (RzListFree)&rz_debug_pid_free;
 	rz_list_foreach (dbg->threads, iter, thread) {
-		if (!xnu_thread_get_gpr(dbg, thread)) {
+		if (!rz_xnu_thread_get_gpr(ctx, thread)) {
 			eprintf("Failed to get gpr registers xnu_thread_list\n");
 			continue;
 		}
@@ -559,7 +530,8 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
 #endif
 
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
-	task_t task = pid_to_task(dbg->tid);
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	task_t task = pid_to_task(dbg->plugin_data, dbg->tid);
 #define xwrz_testwx(x) ((x & 1) << 2) | (x & 2) | ((x & 4) >> 2)
 	int xnu_perms = xwrz_testwx(perms);
 	mach_error_t ret = mach_vm_protect(task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); // VM_PROT_COPY | perms);
@@ -570,19 +542,18 @@ int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	return true;
 }
 
-task_t pid_to_task(int pid) {
-	static int old_pid = -1;
+task_t pid_to_task(RzXnuDebug *ctx, int pid) {
 	kern_return_t kr;
 	task_t task = -1;
 	int err;
 	/* it means that we are done with the task*/
-	if (task_dbg != 0 && old_pid == pid) {
-		return task_dbg;
+	if (ctx->task_dbg != 0 && ctx->old_pid == pid) {
+		return ctx->task_dbg;
 	}
-	if (task_dbg != 0 && old_pid != pid) {
+	if (ctx->task_dbg != 0 && ctx->old_pid != pid) {
 		// we changed the process pid so deallocate a ref from the old_task
 		// since we are going to get a new task
-		kr = mach_port_deallocate(mach_task_self(), task_dbg);
+		kr = mach_port_deallocate(mach_task_self(), ctx->task_dbg);
 		if (kr != KERN_SUCCESS) {
 			eprintf("pid_to_task: fail to deallocate port\n");
 			/* ignore on purpose to not break process reload: ood */
@@ -605,13 +576,13 @@ task_t pid_to_task(int pid) {
 			}
 		}
 	}
-	old_pid = pid;
-	task_dbg = task;
+	ctx->old_pid = pid;
+	ctx->task_dbg = task;
 	return task;
 }
 
-int xnu_get_vmmap_entries_for_pid(pid_t pid) {
-	task_t task = pid_to_task(pid);
+int xnu_get_vmmap_entries_for_pid(RzXnuDebug *ctx, pid_t pid) {
+	task_t task = pid_to_task(ctx, pid);
 	kern_return_t kr = KERN_SUCCESS;
 	vm_address_t address = 0;
 	vm_size_t size = 0;
@@ -661,7 +632,12 @@ static void get_mach_header_sizes(size_t *mach_header_sz,
 	// XXX: What about arm?
 }
 
-// XXX: This function could use less function calls, but works.
+/**
+ * Determine the cpu/arch/bits a process is running under.
+ * See constants like CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_ARM64_32, etc.
+ *
+ * \return the cpu type of the process with given pid or 0 on error
+ */
 static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	int mib[CTL_MAXNAME];
 	size_t len = CTL_MAXNAME;
@@ -670,16 +646,16 @@ static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 
 	if (sysctlnametomib("sysctl.proc_cputype", mib, &len) == -1) {
 		perror("sysctlnametomib");
-		return -1;
+		return 0;
 	}
 	mib[len++] = pid;
 	if (sysctl(mib, len, &cpu_type, &cpu_type_len, NULL, 0) == -1) {
 		perror("sysctl");
-		return -1;
+		return 0;
 	}
 	if (cpu_type_len > 0)
 		return cpu_type;
-	return -1;
+	return 0;
 }
 
 static cpu_subtype_t xnu_get_cpu_subtype(void) {
@@ -716,13 +692,13 @@ static void xnu_build_corefile_header(vm_offset_t header,
 #endif
 }
 
-static int xnu_dealloc_threads(RzList *threads) {
+static int xnu_dealloc_threads(RzXnuDebug *ctx, RzList *threads) {
 	RzListIter *iter, *iter2;
 	xnu_thread_t *thread;
 	mach_msg_type_number_t thread_count;
 	thread_array_t thread_list;
 
-	mach_error_t kr = task_threads(task_dbg, &thread_list, &thread_count);
+	mach_error_t kr = task_threads(ctx->task_dbg, &thread_list, &thread_count);
 	if (kr != KERN_SUCCESS) {
 		LOG_MACH_ERROR("task_threads", kr);
 	} else {
@@ -740,11 +716,10 @@ static int xnu_dealloc_threads(RzList *threads) {
 /* XXX which follow the header. */
 /* XXX Maybe this function needs refactoring, but I haven't come up with */
 /* XXX a better way to do it yet. */
-static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int start_offset,
+static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzList *mem_maps, int start_offset,
 	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
 	RzListIter *iter, *iter2;
 	RzDebugMap *curr_map;
-	int foffset = 0; // start_offset;
 	int hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
@@ -755,6 +730,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 	struct segment_command_64 *sc64;
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct segment_command *sc;
+	int foffset = 0; // start_offset;
 #endif
 	rz_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
 		eprintf("Writing section from 0x%" PFMT64x " to 0x%" PFMT64x " (%" PFMT64d ")\n",
@@ -771,7 +747,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 		sc64->maxprot = xwrz_testwx(curr_map->user);
 		sc64->initprot = xwrz_testwx(curr_map->perm);
 		sc64->nsects = 0;
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 		sc = (struct segment_command *)(header + hoffset);
 		sc->cmd = LC_SEGMENT;
 		sc->cmdsize = sizeof(struct segment_command);
@@ -785,7 +761,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 		sc->nsects = 0;
 #endif
 		if ((curr_map->perm & VM_PROT_READ) == 0) {
-			mach_vm_protect(task_dbg, curr_map->addr, curr_map->size, FALSE,
+			mach_vm_protect(ctx->task_dbg, curr_map->addr, curr_map->size, FALSE,
 				curr_map->perm | VM_PROT_READ);
 		}
 
@@ -796,7 +772,6 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 #endif
 		if ((curr_map->perm & VM_PROT_READ) == VM_PROT_READ) {
 			vm_map_size_t tmp_size = curr_map->size;
-			off_t xfer_foffset = foffset;
 
 			while (tmp_size > 0) {
 				vm_map_size_t xfer_size = tmp_size;
@@ -805,7 +780,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 
 				if (xfer_size > INT_MAX)
 					xfer_size = INT_MAX;
-				kr = mach_vm_read(task_dbg, vmoffset, xfer_size,
+				kr = mach_vm_read(ctx->task_dbg, vmoffset, xfer_size,
 					&local_address, &local_size);
 
 				if ((kr != KERN_SUCCESS) || (xfer_size != local_size)) {
@@ -832,12 +807,13 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 				}
 
 				tmp_size -= xfer_size;
-				xfer_foffset += xfer_size;
 			}
 		}
 
 		hoffset += segment_command_sz;
+#if __i386__ || __ppc__ || __POWERPC__
 		foffset += curr_map->size;
+#endif
 		vmoffset += curr_map->size;
 	}
 
@@ -902,6 +878,8 @@ static uid_t uidFromPid(pid_t pid) {
 }
 
 bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	int error = 0, i;
 	int tstate_size;
 	int segment_count;
@@ -918,7 +896,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	RzListIter *iter, *iter2;
 	RzList *threads_list;
 	xnu_thread_t *thread;
-	task_t task = pid_to_task(dbg->pid);
+	task_t task = pid_to_task(ctx, dbg->pid);
 	coredump_thread_state_flavor_t flavors[MAX_TSTATE_FLAVORS];
 	tir_t tir;
 
@@ -927,9 +905,9 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	get_mach_header_sizes(&mach_header_sz, &segment_command_sz);
 	(void)task_suspend(task);
 	threads_list = xnu_thread_list(dbg, dbg->pid, rz_list_new());
-	xnu_dealloc_threads(threads_list);
+	xnu_dealloc_threads(ctx, threads_list);
 
-	segment_count = xnu_get_vmmap_entries_for_pid(dbg->pid);
+	segment_count = xnu_get_vmmap_entries_for_pid(ctx, dbg->pid);
 
 	memcpy(thread_flavor_array, &flavors, sizeof(thread_flavor_array));
 	tstate_size = 0;
@@ -949,7 +927,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	if (!dbg->maps) {
 		perror("There are not loaded maps");
 	}
-	if (xnu_write_mem_maps_to_buffer(mem_maps_buffer, dbg->maps, round_page(header_size),
+	if (xnu_write_mem_maps_to_buffer(ctx, mem_maps_buffer, dbg->maps, round_page(header_size),
 		    header, mach_header_sz, segment_command_sz, &hoffset) < 0) {
 		eprintf("There was an error while writing the memory maps");
 		error = false;
@@ -964,7 +942,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	rz_list_foreach_safe (threads_list, iter, iter2, thread) {
 		xnu_collect_thread_state(thread->port, &tir);
 	}
-	xnu_dealloc_threads(threads_list);
+	xnu_dealloc_threads(ctx, threads_list);
 
 	rz_buf_append_bytes(dest, (const ut8 *)header, header_size);
 	padding_sz = round_page(header_size) - header_size;
@@ -1176,6 +1154,8 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 #warning TODO: xnu_dbg_modules not supported
 	return NULL;
 #else
+	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	struct task_dyld_info info;
 	mach_msg_type_number_t count;
 	kern_return_t kr;
@@ -1185,7 +1165,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 	// void *header_data = NULL;
 	char file_path[MAXPATHLEN] = { 0 };
 	count = TASK_DYLD_INFO_COUNT;
-	task_t task = pid_to_task(dbg->tid);
+	task_t task = pid_to_task(ctx, dbg->tid);
 	ut64 addr, file_path_address;
 	RzDebugMap *mr = NULL;
 	RzList *list = NULL;
@@ -1300,6 +1280,8 @@ static RzDebugMap *rz_debug_map_clone(RzDebugMap *m) {
 }
 
 RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	// bool contiguous = false;
 	// ut32 oldprot = UT32_MAX;
 	// ut32 oldmaxprot = UT32_MAX;
@@ -1310,7 +1292,7 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 	mach_vm_size_t osize = (mach_vm_size_t)0;
 	natural_t depth = 0;
 	int tid = dbg->pid;
-	task_t task = pid_to_task(tid);
+	task_t task = pid_to_task(ctx, tid);
 	RzDebugMap *mr = NULL;
 	int i = 0;
 

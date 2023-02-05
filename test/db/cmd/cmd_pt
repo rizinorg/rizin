@@ -403,8 +403,8 @@ RUN
 NAME=pt boundaries
 FILE=--
 CMDS=<<EOF
-$rz=!rizin -c '(pv4s val; wv4 $0; sd 4); ..(pv4s 0 0x7fffffff 0x80000000 0xffffffff); s 0; b 16; pt' -q =
-(TZ-rz tz; ?e; env TZ=$0; $rz)
+$rz=!rizin -c '(pv4s val; wv4 ${val}; sd 4); ..(pv4s 0 0x7fffffff 0x80000000 0xffffffff); s 0; b 16; pt' -q =
+(TZ-rz tz; ?e; env TZ=${tz}; $rz)
 # When setting TZ, the sign must be reversed
 ..(TZ-rz GMT GMT-2:30:17 GMT+24)
 .(TZ-rz GMT+24:0:1) # UB

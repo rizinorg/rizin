@@ -57,7 +57,7 @@ RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64
 
 /// Construct the list of registers that should be applied as flags by default
 /// (e.g. because their size matches the pointer size)
-RZ_IPI RzList /*<RzRegItem>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg) {
+RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg) {
 	const RzList *l = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	if (!l) {
 		return NULL;
@@ -113,7 +113,7 @@ RZ_API void rz_core_reg_update_flags(RzCore *core) {
 /**
  * \brief Print registers that have changed since the last step (drd/ard)
  */
-RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList *items) {
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items) {
 	RzListIter *iter;
 	RzRegItem *item;
 	rz_list_foreach (items, iter, item) {

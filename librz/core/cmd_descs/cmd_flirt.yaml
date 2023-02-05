@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_flirt
+commands:
+  - name: Fc
+    cname: flirt_create
+    summary: Create a FLIRT file (.pat or .sig)
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: Fd
+    cname: flirt_dump
+    summary: Open a FLIRT file (.pat or .sig) and dumps its contents
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: Fs
+    cname: flirt_scan
+    summary: Open a FLIRT file (.pat or .sig) and tries to apply the signatures to the loaded binary
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: Ff
+    cname: flirt_function
+    summary: Outputs the flirt function signature info
+    args: []
+  - name: Fa
+    summary: Apply signatures from sigdb
+    cname: apply_signatures_from_sigdb
+    args:
+      - name: filter
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: Fl
+    summary: Lists all available signatures in sigdb
+    cname: list_signatures_in_sigdb
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    default_mode: RZ_OUTPUT_MODE_TABLE
+    modes:
+      - RZ_OUTPUT_MODE_TABLE
+    args: []

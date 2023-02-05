@@ -12,7 +12,7 @@ static struct {
 	const ut8 *a;
 	const ut8 *b;
 	ut32 myers;
-	ut32 levenstein;
+	ut32 levenshtein;
 } tests[] = {
 	R("", "zzz", 3, 3),
 	R("meow", "", 4, 4),
@@ -35,9 +35,9 @@ bool test_rz_diff_distances(void) {
 		size_t la = strlen((const char *)tests[i].a);
 		size_t lb = strlen((const char *)tests[i].b);
 
-		boolean = rz_diff_levenstein_distance(tests[i].a, la, tests[i].b, lb, &distance, NULL);
-		mu_assert_true(boolean, "rz_diff_levenstein_distance");
-		mu_assert_eq(distance, tests[i].levenstein, "levenstein distance");
+		boolean = rz_diff_levenshtein_distance(tests[i].a, la, tests[i].b, lb, &distance, NULL);
+		mu_assert_true(boolean, "rz_diff_levenshtein_distance");
+		mu_assert_eq(distance, tests[i].levenshtein, "levenshtein distance");
 
 		boolean = rz_diff_myers_distance(tests[i].a, la, tests[i].b, lb, &distance, NULL);
 		mu_assert_true(boolean, "rz_diff_myers_distance");

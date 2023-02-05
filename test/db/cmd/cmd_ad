@@ -1,0 +1,27 @@
+NAME=ad 4
+FILE=bins/arm/elf/hello_world
+CMDS=<<EOF
+aaa
+s 0x434
+ad 4
+pd 4
+EOF
+EXPECT=<<EOF
+0x00000434  cc0b  number 3020 0xbcc
+0x00000436  0100  pointer  0x00000001
+`- 0x00000001  454c  number 19525 0x4c45
+0x00000438  2000  pointer  0x00000020
+`- 0x00000020  481b  number 6984 0x1b48
+0x0000043a  0000  (null)
+            ; STRING XREFS from entry0 @ 0x40c, 0x410
+            ;-- data.00000434:
+            0x00000434      lsrs  r4, r1, 0xf
+            0x00000436      movs  r1, r0
+            ; DATA XREF from entry0 @ 0x414
+            ;-- data.00000438:
+            0x00000438      .dword 0x00000020
+            ; DATA XREF from entry0 @ 0x420
+            ;-- data.0000043c:
+            0x0000043c      .dword 0x00000030
+EOF
+RUN

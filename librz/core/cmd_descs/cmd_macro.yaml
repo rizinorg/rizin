@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_macro
+commands:
+  - name: "("
+    cname: macros_list
+    summary: List all defined macros
+    description: >
+      Without any arguments, ( lists defined macros. Macros can be used to
+      execute multiple commands under one name, by replacing some arguments. The
+      argument replacement is done before executing the command, by simply
+      replacing ${<arg-name>} in the body of the macro with the value passed
+      when calling the macro.
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+    args: []
+  - name: "(-"
+    cname: macros_remove
+    summary: Remove a defined macro named <macro-name>
+    args:
+      - name: macro-name
+        type: RZ_CMD_ARG_TYPE_STRING
+        no_space: true
+  - name: "("
+    cname: macros_add
+    summary: Add a new macro <macro-name>
+    type: RZ_CMD_DESC_TYPE_INNER
+    args_str: "<macro-name> [<macro-arg0> <macro-arg1> ...][; <cmds>])[([<macro-call-arg0> <macro-call-arg1> ...])]"
+  - name: "("
+    cname: macros_add_call
+    summary: Define a macro <macro-name> and call it with the arguments <macro-call-args>
+    type: RZ_CMD_DESC_TYPE_INNER
+    args_str: "<macro-name> [<macro-arg0> <macro-arg1> ...][; <cmds>])[([<macro-call-arg0> <macro-call-arg1> ...])]"
+  - name: ".("
+    cname: macros_call
+    summary: Call macro <macro-name> with the arguments <macro-call-args>
+    type: RZ_CMD_DESC_TYPE_INNER
+    args_str: "<macro-name> [<macro-call-arg0> <macro-call-arg1> ...])"
+  - name: "..("
+    cname: macros_call_multiple
+    summary: Call macro <macro-name> multiple times with the arguments <macro-call-args>
+    type: RZ_CMD_DESC_TYPE_INNER
+    args_str: "<macro-name> [<macro-call-arg0> <macro-call-arg1> ...])"
+    description: >
+      Call the same macro multiple time, based on the number of arguments
+      provided. If a macro accepts N arguments, the first N arguments are passed
+      to the first invocation of the macro, the second N arguments to the second
+      invocation, and so on. An error is returned when the wrong number of
+      arguments is passed.

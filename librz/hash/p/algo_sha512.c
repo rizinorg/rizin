@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
 #if HAVE_LIB_SSL
@@ -10,7 +10,7 @@
  */
 
 #include "../algorithms/openssl_common.h"
-rz_openssl_plugin_define_msg_digest(sha512, EVP_sha512, true);
+rz_openssl_plugin_define_hash_cfg(sha512, EVP_sha512, true);
 
 #else /* HAVE_LIB_SSL */
 /**
@@ -27,11 +27,11 @@ static void plugin_sha512_context_free(void *context) {
 	free(context);
 }
 
-static RzMsgDigestSize plugin_sha512_digest_size(void *context) {
+static RzHashSize plugin_sha512_digest_size(void *context) {
 	return SHA512_DIGEST_LENGTH;
 }
 
-static RzMsgDigestSize plugin_sha512_block_size(void *context) {
+static RzHashSize plugin_sha512_block_size(void *context) {
 	return SHA512_BLOCK_LENGTH;
 }
 
@@ -56,7 +56,7 @@ static bool plugin_sha512_final(void *context, ut8 *digest) {
 	return true;
 }
 
-static bool plugin_sha512_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) {
+static bool plugin_sha512_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) {
 	rz_return_val_if_fail(data && digest, false);
 	ut8 *dgst = malloc(SHA512_DIGEST_LENGTH);
 	if (!dgst) {
@@ -75,7 +75,7 @@ static bool plugin_sha512_small_block(const ut8 *data, ut64 size, ut8 **digest, 
 	return true;
 }
 
-RzMsgDigestPlugin rz_msg_digest_plugin_sha512 = {
+RzHashPlugin rz_hash_plugin_sha512 = {
 	.name = "sha512",
 	.author = "Aaron D. Gifford",
 	.license = "BSD-3",
@@ -94,8 +94,8 @@ RzMsgDigestPlugin rz_msg_digest_plugin_sha512 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_MD,
-	.data = &rz_msg_digest_plugin_sha512,
+	.type = RZ_LIB_TYPE_HASH,
+	.data = &rz_hash_plugin_sha512,
 	.version = RZ_VERSION
 };
 #endif

@@ -983,7 +983,7 @@ static RzILOpEffect *stm(cs_insn *insn, bool is_thumb) {
 	}
 	size_t op_count = OPCOUNT() - op_first;
 	if (!op_count) {
-		return NOP;
+		return NOP();
 	}
 	RzILOpBitVector *ptr = REG_VAL(ptr_reg);
 	if (!ptr) {
@@ -1044,7 +1044,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 	}
 	size_t op_count = OPCOUNT() - op_first;
 	if (!op_count) {
-		return NOP;
+		return NOP();
 	}
 	RzILOpBitVector *ptr_initial = REG_VAL(ptr_reg);
 	if (!ptr_initial) {
@@ -2365,7 +2365,7 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_DMB:
 	case ARM_INS_DSB:
 	case ARM_INS_ISB:
-		return NOP;
+		return NOP();
 	case ARM_INS_B:
 	case ARM_INS_BX:
 	case ARM_INS_BXJ: {
@@ -2649,7 +2649,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb) {
 		// Note: IT is **not** a conditional branch!
 		// It's currently handled in analysis_arm_cs.c using ArmCSContext as a hack to turn the following instructions
 		// into conditional ones. So in the IL, we don't do anything for IT.
-		return NOP;
+		return NOP();
 	}
 	RzILOpEffect *eff = il_unconditional(handle, insn, thumb);
 	if (!eff) {
@@ -2657,7 +2657,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb) {
 	}
 	RzILOpBool *c = cond(insn->detail->arm.cc);
 	if (c) {
-		return BRANCH(c, eff, NOP);
+		return BRANCH(c, eff, NOP());
 	}
 	return eff;
 }

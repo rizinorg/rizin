@@ -53,7 +53,7 @@ static void loadGP(RzCore *core) {
 	}
 }
 
-static RZ_OWN RzList *__save_old_sections(RzCore *core) {
+static RZ_OWN RzList /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
 	RzList *sections = rz_bin_get_sections(core->bin);
 	RzListIter *it;
 	RzBinSection *sec;
@@ -81,7 +81,7 @@ static RZ_OWN RzList *__save_old_sections(RzCore *core) {
 
 struct __rebase_struct {
 	RzCore *core;
-	RzList *old_sections;
+	RzList /*<RzBinSection *>*/ *old_sections;
 	ut64 old_base;
 	ut64 diff;
 	int type;
@@ -120,7 +120,7 @@ static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base) {
+static void __rebase_everything(RzCore *core, RzList /*<RzBinSection *>*/ *old_sections, ut64 old_base) {
 	RzListIter *it, *itit, *ititit;
 	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
@@ -135,7 +135,6 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 			if (!__is_inside_section(fcn->addr, old_section)) {
 				continue;
 			}
-			rz_analysis_function_rebase_vars(core->analysis, fcn);
 			rz_analysis_function_relocate(fcn, fcn->addr + diff);
 			RzAnalysisBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
@@ -180,6 +179,43 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 
 	// BREAKPOINTS
 	rz_debug_bp_rebase(core->dbg, old_base, new_base);
+}
+
+/**
+ * \brief Tries to open the file, load binary info and make RzIOMap
+ * \return Success?
+ */
+RZ_API bool rz_core_file_open_load(RZ_NONNULL RzCore *core, RZ_NONNULL const char *filepath, ut64 addr, int perms, bool write_mode) {
+	rz_return_val_if_fail(core && filepath, false);
+	RzCoreFile *cfile = rz_core_file_open(core, filepath, perms, addr);
+	if (!cfile) {
+		RZ_LOG_ERROR("Cannot open file '%s'\n", filepath);
+		return false;
+	}
+
+	core->num->value = cfile->fd;
+	if (addr == 0) { // if no baddr defined, use the one provided by the file
+		addr = UT64_MAX;
+	}
+	if (!rz_core_bin_load(core, filepath, addr)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", filepath);
+		return false;
+	}
+	if (write_mode) {
+		RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+		if (!desc || !(desc->perm & RZ_PERM_W)) {
+			RZ_LOG_WARN("Cannot make maps for %s writable.\n", filepath);
+			return false;
+		}
+		void **it;
+		rz_pvector_foreach (&cfile->maps, it) {
+			RzIOMap *map = *it;
+			map->perm |= RZ_PERM_WX;
+		}
+	}
+
+	rz_core_block_read(core);
+	return true;
 }
 
 RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64 addr) {
@@ -428,7 +464,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	}
 	rz_core_seek(core, origoff, true);
 	if (isdebug) {
-		rz_core_cmd0(core, ".dm*");
+		rz_core_debug_map_update_flags(core);
 		rz_core_reg_update_flags(core);
 		rz_core_seek_to_register(core, "PC", false);
 	} else {
@@ -1624,6 +1660,54 @@ RZ_API void rz_core_io_file_reopen(RZ_NONNULL RzCore *core, int fd, int perms) {
 				map->perm |= RZ_PERM_WX;
 			}
 		}
+	}
+}
+
+static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
+	RzIO *io = (RzIO *)user;
+	RzIODesc *desc = (RzIODesc *)data;
+
+	if (rz_io_desc_is_blockdevice(desc) || rz_io_desc_is_dbg(desc)) {
+		return true;
+	}
+
+	if (strstr(desc->uri, "://")) {
+		return true;
+	}
+
+	ut64 size = rz_io_desc_size(desc);
+
+	char *uri = rz_str_newf("malloc://%" PFMT64u, size);
+	if (!uri) {
+		return false;
+	}
+
+	ut8 *buf = malloc(size);
+	// if malloc fails, we can just abort the loop by returning false
+	if (!buf) {
+		free(uri);
+		return false;
+	}
+
+	RzIODesc *ndesc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
+	free(uri);
+	if (!ndesc) {
+		free(buf);
+		return false;
+	}
+
+	rz_io_desc_read_at(desc, 0LL, buf, (int)size); // that cast o_O
+	rz_io_desc_write_at(ndesc, 0LL, buf, (int)size);
+	free(buf);
+	rz_io_desc_exchange(io, desc->fd, ndesc->fd);
+
+	rz_io_desc_close(desc);
+	return true;
+}
+
+RZ_API void rz_core_file_reopen_in_malloc(RzCore *core) {
+	if (core && core->io && core->io->files) {
+		rz_id_storage_foreach(core->io->files, reopen_in_malloc_cb, core->io);
 	}
 }
 

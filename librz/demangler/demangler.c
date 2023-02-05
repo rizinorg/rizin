@@ -5,6 +5,7 @@
 #include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_libdemangle.h>
+#include <rz_lib.h>
 #include <config.h>
 
 #define DEFINE_DEMANGLER_PLUGIN(name, lang, lic, auth, handler) \
@@ -27,6 +28,7 @@ DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_sw
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
+DEFINE_DEMANGLER_PLUGIN(pascal, "pascal", "LGPL3", "deroad", libdemangle_handler_pascal);
 
 static RzDemanglerPlugin *demangler_static_plugins[] = { RZ_DEMANGLER_STATIC_PLUGINS };
 
@@ -55,6 +57,13 @@ RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
  */
 RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol) {
 	return libdemangle_handler_objc(symbol);
+}
+
+/**
+ * \brief Demangles pascal symbols
+ */
+RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol) {
+	return libdemangle_handler_pascal(symbol);
 }
 
 /**
@@ -157,7 +166,13 @@ RZ_API bool rz_demangler_plugin_add(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDe
 		}
 	}
 
-	return rz_list_append(dem->plugins, plugin);
+	rz_list_append(dem->plugins, plugin);
+	return true;
+}
+
+RZ_API bool rz_demangler_plugin_del(RZ_NONNULL RzDemangler *dem, RZ_NONNULL RzDemanglerPlugin *plugin) {
+	rz_return_val_if_fail(dem && dem->plugins && plugin && plugin->language, false);
+	return rz_list_delete_data(dem->plugins, plugin);
 }
 
 /**

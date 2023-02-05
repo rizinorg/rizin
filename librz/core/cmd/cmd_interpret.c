@@ -46,7 +46,7 @@ RZ_IPI RzCmdStatus rz_interpret_script_handler(RzCore *core, int argc, const cha
 		rz_core_cmd0(core, script_file);
 	} else {
 		if (!rz_core_run_script(core, script_file)) {
-			eprintf("Cannot find script '%s'\n", script_file);
+			RZ_LOG_ERROR("core: Cannot find script '%s'\n", script_file);
 			core->num->value = 1;
 		} else {
 			core->num->value = 0;
@@ -66,11 +66,19 @@ RZ_IPI RzCmdStatus rz_interpret_pipe_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_macro_call(&core->rcmd->macro, argv[1]);
-	return RZ_CMD_STATUS_OK;
+	RzCmdStatus res = rz_cmd_macro_call(core->rcmd, argv[1], &argv[2]);
+	if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
+		RZ_LOG_ERROR("Macro '%s' does not exist.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return res;
 }
 
 RZ_IPI RzCmdStatus rz_interpret_macro_multiple_handler(RzCore *core, int argc, const char **argv) {
-	rz_cmd_macro_call_multiple(&core->rcmd->macro, argv[1]);
-	return RZ_CMD_STATUS_OK;
+	RzCmdStatus res = rz_cmd_macro_call_multiple(core->rcmd, argv[1], &argv[2]);
+	if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
+		RZ_LOG_ERROR("Macro '%s' does not exist.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return res;
 }

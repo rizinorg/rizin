@@ -3,23 +3,20 @@ FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
 db @ main
-db @ 0x004028fe
+db @ 0x004028b6
 dc
 dts+
 dc
-dsb
-dsb
-dr rbx
-dr rcx
-dr r12
 dr rip
-dk 9
+$rsp_after=$`dr rsp`
+2dsb
+dr rip
+?v `dr rsp~[1]`-`$rsp_after~[0]`
 EOF
 EXPECT=<<EOF
-rbx = 0x00000001
-rcx = 0x736c6974756572
-r12 = 0x00404870
-rip = 0x004028f9
+rip = 0x00000000004028b6
+rip = 0x00000000004028af
+0x398
 EOF
 RUN
 
@@ -28,39 +25,25 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
 db @ main
-db @ 0x0040052f
+db @ 0x00400510
 dc
 dts+
 dc
 dr rax
-dr rbx
-dr rcx
-dr r10
-dr rbp
 dr rip
+$rsp_after=$`dr rsp`
 dsb
 dsb
 dr rax
-dr rbx
-dr rcx
-dr r10
-dr rbp
 dr rip
-dk 9
+?v `dr rsp~[1]`-`$rsp_after~[0]`
 EOF
 EXPECT=<<EOF
-rax = 0x00400574
-rbx = 0x00400590
-rcx = 0x00400590
-r10 = 0xfffffffffffff30e
-rbp = 0x00000000
-rip = 0x0040052f
-rax = 0x00400574
-rbx = 0x00400590
-rcx = 0x00400590
-r10 = 0xfffffffffffff30e
-rbp = 0x00000000
-rip = 0x00400575
+rax = 0x0000000000600980
+rip = 0x0000000000400510
+rax = 0x0000000000600980
+rip = 0x000000000040056e
+0x8
 EOF
 RUN
 
@@ -68,6 +51,7 @@ NAME=debug stepback from caller
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
+wao nop @ 0x00400529
 db @ main
 db @ 0x0040057c
 dc
@@ -78,6 +62,6 @@ dsb
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x0040053b
+rip = 0x000000000040053b
 EOF
 RUN

@@ -75,7 +75,7 @@ static char *__func_name_from_ord(char *module, ut16 ordinal) {
 	return name;
 }
 
-RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinSection *>*/ *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	int i;
 	if (!bin) {
 		return NULL;
@@ -118,7 +118,7 @@ static void ne_sanitize_name(char *name, ut16 count) {
 	}
 }
 
-RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	RzBinSymbol *sym;
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
 	RzList *symbols = rz_list_newf(free);
@@ -311,7 +311,10 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 		if (!res->entry) {
 			break;
 		}
-		rz_buf_read_at(bin->buf, off, (ut8 *)&ti, sizeof(ti));
+		ut64 offset = off;
+		rz_buf_read_le16_offset(bin->buf, &offset, &ti.rtTypeID);
+		rz_buf_read_le16_offset(bin->buf, &offset, &ti.rtResourceCount);
+		rz_buf_read_le32_offset(bin->buf, &offset, &ti.rtReserved);
 		if (!ti.rtTypeID) {
 			break;
 		} else if (ti.rtTypeID & 0x8000) {
@@ -323,12 +326,18 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 		off += sizeof(NE_image_typeinfo_entry);
 		int i;
 		for (i = 0; i < ti.rtResourceCount; i++) {
-			NE_image_nameinfo_entry ni;
 			rz_ne_resource_entry *ren = RZ_NEW0(rz_ne_resource_entry);
 			if (!ren) {
 				break;
 			}
-			rz_buf_read_at(bin->buf, off, (ut8 *)&ni, sizeof(NE_image_nameinfo_entry));
+			offset = off;
+			NE_image_nameinfo_entry ni = { 0 };
+			rz_buf_read_le16_offset(bin->buf, &offset, &ni.rnOffset);
+			rz_buf_read_le16_offset(bin->buf, &offset, &ni.rnLength);
+			rz_buf_read_le16_offset(bin->buf, &offset, &ni.rnFlags);
+			rz_buf_read_le16_offset(bin->buf, &offset, &ni.rnID);
+			rz_buf_read_le16_offset(bin->buf, &offset, &ni.rnHandle);
+			rz_buf_read_le16_offset(bin->buf, &offset, &ni.rnUsage);
 			ren->offset = ni.rnOffset << alignment;
 			ren->size = ni.rnLength;
 			if (ni.rnID & 0x8000) {
@@ -345,7 +354,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	return true;
 }
 
-RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinImport *>*/ *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
@@ -381,7 +390,7 @@ RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 	return imports;
 }
 
-RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinAddr *>*/ *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 	RzList *entries = rz_list_newf(free);
 	if (!entries) {
 		return NULL;
@@ -396,6 +405,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		entry = RZ_NEW0(RzBinAddr);
 		if (!entry) {
 			rz_list_free(entries);
+			rz_list_free(segments);
 			return NULL;
 		}
 		entry->bits = 16;
@@ -420,6 +430,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 			entry = RZ_NEW0(RzBinAddr);
 			if (!entry) {
 				rz_list_free(entries);
+				rz_list_free(segments);
 				return NULL;
 			}
 			off++;
@@ -463,7 +474,7 @@ end:
 	return entries;
 }
 
-RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
+RzList /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	RzList *segments = bin->segments;
 	if (!segments) {
 		return NULL;
@@ -517,7 +528,12 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				return NULL;
 			}
 			NE_image_reloc_item rel;
-			rz_buf_read_at(bin->buf, off, (ut8 *)&rel, sizeof(rel));
+			ut64 offset = off;
+			rz_buf_read8_offset(bin->buf, &offset, &rel.type);
+			rz_buf_read8_offset(bin->buf, &offset, &rel.flags);
+			rz_buf_read_le16_offset(bin->buf, &offset, &rel.offset);
+			rz_buf_read_le16_offset(bin->buf, &offset, &rel.align1);
+			rz_buf_read_le16_offset(bin->buf, &offset, &rel.func_ord);
 			reloc->paddr = seg->paddr + rel.offset;
 			switch (rel.type) {
 			case LOBYTE:
@@ -536,7 +552,6 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				break;
 			}
 
-			ut32 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RzBinImport *imp = RZ_NEW0(RzBinImport);
 				if (!imp) {
@@ -547,7 +562,8 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				if (rel.index > bin->ne_header->ModRefs || !rel.index) {
 					name = rz_str_newf("UnknownModule%d_%x", rel.index, off); // ????
 				} else {
-					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
+					ut16 modref_val = rz_read_le16(&modref[rel.index - 1]);
+					offset = modref_val + bin->header_offset + bin->ne_header->ImportNameTable;
 					name = __read_nonnull_str_at(bin->buf, offset);
 				}
 				if (rel.flags & IMPORTED_ORD) {
@@ -622,6 +638,44 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	return relocs;
 }
 
+static bool read_ne_header(NE_image_header *ne, RzBuffer *buf, ut64 off) {
+	ut64 offset = off;
+	return (rz_buf_read8_offset(buf, &offset, (ut8 *)&ne->sig[0]) &&
+		rz_buf_read8_offset(buf, &offset, (ut8 *)&ne->sig[1]) &&
+		rz_buf_read8_offset(buf, &offset, &ne->MajLinkerVersion) &&
+		rz_buf_read8_offset(buf, &offset, &ne->MinLinkerVersion) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->EntryTableOffset) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->EntryTableLength) &&
+		rz_buf_read_le32_offset(buf, &offset, &ne->FileLoadCRC) &&
+		rz_buf_read8_offset(buf, &offset, &ne->ProgFlags) &&
+		rz_buf_read8_offset(buf, &offset, &ne->ApplFlags) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->AutoDataSegIndex) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->InitHeapSize) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->InitStackSize) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->ipEntryPoint) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->csEntryPoint) &&
+		rz_buf_read_le32_offset(buf, &offset, &ne->InitStack) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->SegCount) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->ModRefs) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->NoResNamesTabSiz) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->SegTableOffset) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->ResTableOffset) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->ResidNamTable) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->ModRefTable) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->ImportNameTable) &&
+		rz_buf_read_le32_offset(buf, &offset, &ne->OffStartNonResTab) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->MovEntryCount) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->FileAlnSzShftCnt) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->nResTabEntries) &&
+		rz_buf_read8_offset(buf, &offset, &ne->targOS) &&
+		rz_buf_read8_offset(buf, &offset, &ne->OS2EXEFlags) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->retThunkOffset) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->segrefthunksoff) &&
+		rz_buf_read_le16_offset(buf, &offset, &ne->mincodeswap) &&
+		rz_buf_read8_offset(buf, &offset, (ut8 *)&ne->expctwinver[0]) &&
+		rz_buf_read8_offset(buf, &offset, (ut8 *)&ne->expctwinver[1]));
+}
+
 bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 	if (!rz_buf_read_le16_at(buf, 0x3c, &bin->header_offset)) {
 		return false;
@@ -632,7 +686,10 @@ bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 		return false;
 	}
 	bin->buf = buf;
-	rz_buf_read_at(buf, bin->header_offset, (ut8 *)bin->ne_header, sizeof(NE_image_header));
+	if (!read_ne_header(bin->ne_header, bin->buf, bin->header_offset)) {
+		RZ_FREE(bin->ne_header);
+		return false;
+	}
 	if (bin->ne_header->FileAlnSzShftCnt > 31) {
 		return false;
 	}
@@ -642,16 +699,22 @@ bool rz_bin_ne_buf_init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 	}
 	bin->os = __get_target_os(bin);
 
-	ut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;
-	ut16 size = bin->ne_header->SegCount * sizeof(NE_image_segment_entry);
-	if (!size) {
+	if (!bin->ne_header->SegCount) {
 		return false;
 	}
 	bin->segment_entries = calloc(bin->ne_header->SegCount, sizeof(NE_image_segment_entry));
 	if (!bin->segment_entries) {
 		return false;
 	}
-	rz_buf_read_at(buf, offset, (ut8 *)bin->segment_entries, size);
+
+	ut64 offset = bin->ne_header->SegTableOffset + bin->header_offset;
+	for (ut32 i = 0; i < bin->ne_header->SegCount; i++) {
+		NE_image_segment_entry *ne_segment_entry = bin->segment_entries + i;
+		rz_buf_read_le16_offset(buf, &offset, &ne_segment_entry->offset);
+		rz_buf_read_le16_offset(buf, &offset, &ne_segment_entry->length);
+		rz_buf_read_le16_offset(buf, &offset, &ne_segment_entry->flags);
+		rz_buf_read_le16_offset(buf, &offset, &ne_segment_entry->minAllocSz);
+	}
 	if (!bin->ne_header->EntryTableLength) {
 		return false;
 	}

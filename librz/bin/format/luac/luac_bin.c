@@ -3,7 +3,7 @@
 
 #include "luac_common.h"
 
-void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
+void luac_add_section(RzList /*<RzBinSection *>*/ *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
 	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
 	if (!bin_sec || !name) {
 		free(bin_sec);
@@ -30,7 +30,7 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 	}
 }
 
-void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type) {
+void luac_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64 offset, ut64 size, const char *type) {
 	RzBinSymbol *bin_sym = RZ_NEW0(RzBinSymbol);
 	if (!bin_sym) {
 		return;
@@ -44,7 +44,7 @@ void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, co
 	rz_list_append(symbol_list, bin_sym);
 }
 
-void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
+void luac_add_entry(RzList /*<RzBinAddr *>*/ *entry_list, ut64 offset, int entry_type) {
 	RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 	if (!entry) {
 		return;
@@ -57,7 +57,7 @@ void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
 	rz_list_append(entry_list, entry);
 }
 
-void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) {
+void luac_add_string(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 size) {
 	RzBinString *bin_string = RZ_NEW0(RzBinString);
 	if (!bin_string) {
 		return;
@@ -68,6 +68,7 @@ void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) 
 	bin_string->size = size;
 	bin_string->length = size;
 	bin_string->string = rz_str_new(string);
+	bin_string->type = RZ_STRING_ENC_UTF8;
 
 	rz_list_append(string_list, bin_string);
 }
@@ -197,15 +198,15 @@ static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry) {
 		if (entry->data_len < sizeof(double)) {
 			return NULL;
 		}
-		float_value = *(double *)entry->data;
+		float_value = rz_read_le_double(entry->data);
 		ret = rz_str_newf("%s_const_%f", proto_name, float_value);
 		break;
 	case LUA_VNUMINT:
 		rz_return_val_if_fail(entry->data, NULL);
-		if (entry->data_len < sizeof(int)) {
+		if (entry->data_len < sizeof(st32)) {
 			return NULL;
 		}
-		integer_value = *(int *)entry->data;
+		integer_value = (st32)rz_read_le32(entry->data);
 		ret = rz_str_newf("%s_const_%d", proto_name, integer_value);
 		break;
 	default:

@@ -38,6 +38,12 @@ typedef struct {
 
 static void cons_grep_reset(RzConsGrep *grep);
 
+static void ctx_rowcol_calc_reset(void) {
+	CTX(row) = 0;
+	CTX(col) = 0;
+	CTX(rowcol_calc_start) = 0;
+}
+
 static void break_stack_free(void *ptr) {
 	RzConsBreakStack *b = (RzConsBreakStack *)ptr;
 	free(b);
@@ -72,6 +78,7 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
 			CTX(buffer) = malloc(CTX(buffer_sz));
+			ctx_rowcol_calc_reset();
 			if (!CTX(buffer)) {
 				CTX(buffer) = data->buf;
 				free(data);
@@ -98,6 +105,7 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
 	}
 	CTX(noflush) = data->noflush;
+	ctx_rowcol_calc_reset();
 }
 
 static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext *parent) {
@@ -446,7 +454,6 @@ RZ_API void rz_cons_sleep_end(void *user) {
 }
 
 #if __WINDOWS__
-static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		__break_signal(2); // SIGINT
@@ -467,11 +474,17 @@ void resizeWin(void) {
 	}
 }
 
-RZ_API void rz_cons_set_click(int x, int y) {
+/**
+ * \brief Set the property of the click event
+ * \param x The x coordinate of the position
+ * \param y The y coordinate of the position
+ * \param event The type of the click
+ */
+RZ_API void rz_cons_set_click(int x, int y, MouseEvent event) {
 	I.click_x = x;
 	I.click_y = y;
 	I.click_set = true;
-	I.mouse_event = 1;
+	I.mouse_event = event;
 }
 
 RZ_API bool rz_cons_get_click(int *x, int *y) {
@@ -542,12 +555,37 @@ static void set_console_codepage_to_utf8(void) {
 	}
 }
 
-static void restore_console_codepage(void) {
-	if (!SetConsoleCP(I.old_cp)) {
-		rz_sys_perror("SetConsoleCP");
+static void save_console_state(void) {
+	if (rz_cons_isatty()) {
+		if (!(I.old_ocp = GetConsoleOutputCP())) {
+			rz_sys_perror("GetConsoleOutputCP");
+		}
+		if (!(I.old_cp = GetConsoleCP())) {
+			rz_sys_perror("GetConsoleCP");
+		}
+		if (!GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &I.old_output_mode)) {
+			rz_sys_perror("GetConsoleMode");
+		}
+		if (!GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &I.old_input_mode)) {
+			rz_sys_perror("GetConsoleCP");
+		}
 	}
-	if (!SetConsoleOutputCP(I.old_ocp)) {
-		rz_sys_perror("SetConsoleOutputCP");
+}
+
+static void restore_console_state(void) {
+	if (rz_cons_isatty()) {
+		if (!SetConsoleCP(I.old_cp)) {
+			rz_sys_perror("SetConsoleCP");
+		}
+		if (!SetConsoleOutputCP(I.old_ocp)) {
+			rz_sys_perror("SetConsoleOutputCP");
+		}
+		if (!SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), I.old_output_mode)) {
+			rz_sys_perror("SetConsoleMode");
+		}
+		if (!SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), I.old_input_mode)) {
+			rz_sys_perror("SetConsoleMode");
+		}
 	}
 }
 #endif
@@ -568,7 +606,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.teefile = NULL;
 	I.fix_columns = 0;
 	I.fix_rows = 0;
-	I.mouse_event = 0;
+	I.mouse_event = MOUSE_NONE;
 	I.force_rows = 0;
 	I.force_columns = 0;
 	I.event_resize = NULL;
@@ -588,8 +626,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__
-	I.old_cp = GetConsoleCP();
-	I.old_ocp = GetConsoleOutputCP();
+	save_console_state();
 	I.vtmode = rz_cons_detect_vt_mode();
 	set_console_codepage_to_utf8();
 #else
@@ -607,9 +644,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
-	h = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(h, &I.term_buf);
-	I.term_buf |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+	I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
 	I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
@@ -635,8 +670,7 @@ RZ_API RzCons *rz_cons_free(void) {
 		return &I;
 	}
 #if __WINDOWS__
-	rz_cons_enable_mouse(false);
-	restore_console_codepage();
+	restore_console_state();
 #endif
 	if (I.line) {
 		rz_line_free();
@@ -782,6 +816,7 @@ RZ_API void rz_cons_reset(void) {
 	I.lastline = CTX(buffer);
 	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
+	ctx_rowcol_calc_reset();
 }
 
 /**
@@ -795,7 +830,7 @@ RZ_API const char *rz_cons_get_buffer(void) {
 /**
  * \brief Return a newly allocated buffer containing what's currently in RzCons buffer
  */
-RZ_API char *rz_cons_get_buffer_dup(void) {
+RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void) {
 	const char *s = rz_cons_get_buffer();
 	return s ? strdup(s) : NULL;
 }
@@ -819,6 +854,7 @@ RZ_API void rz_cons_filter(void) {
 		CTX(buffer) = res;
 		CTX(buffer_len) = newlen;
 		CTX(buffer_sz) = newlen;
+		ctx_rowcol_calc_reset();
 		free(input);
 	}
 	if (I.was_html) {
@@ -1262,38 +1298,51 @@ now the console color is reset with each \n (same stuff do it here but in correc
 #endif
 }
 
-/* return the aproximated x,y of cursor before flushing */
-// XXX this function is a huge bottleneck
-RZ_API int rz_cons_get_cursor(int *rows) {
-	int i, col = 0;
-	int row = 0;
-	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
-	for (i = 0; i < CTX(buffer_len); i++) {
+/**
+ * \brief Calculates the aproximated x,y coordinates of the cursor before flushing
+ * \param[out] rows Row number of the cursor
+ * \return Column number of the cursor
+ */
+RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows) {
+	rz_return_val_if_fail(rows, 0);
+	int col = CTX(col);
+	int row = CTX(row);
+	if (CTX(rowcol_calc_start) > CTX(buffer_len)) {
+		rz_warn_if_reached();
+		CTX(rowcol_calc_start) = 0;
+	}
+	if (!CTX(buffer)) {
+		*rows = 0;
+		return 0;
+	}
+	const char *last_line = CTX(buffer) + CTX(rowcol_calc_start);
+	const char *ptr;
+	while ((ptr = strchr(last_line, '\n'))) {
+		last_line = ++ptr;
+		row++;
+	};
+	const char *last_escape = last_line;
+	while ((ptr = strchr(last_escape, '\x1b'))) {
 		// ignore ansi chars, copypasta from rz_str_ansi_len
-		if (CTX(buffer)[i] == 0x1b) {
-			char ch2 = CTX(buffer)[i + 1];
-			char *str = CTX(buffer);
-			if (ch2 == '\\') {
-				i++;
-			} else if (ch2 == ']') {
-				if (!strncmp(str + 2 + 5, "rgb:", 4)) {
-					i += 18;
-				}
-			} else if (ch2 == '[') {
-				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
-					;
-				}
+		col += ptr - last_escape;
+		char ch2 = *++ptr;
+		if (ch2 == '\\') {
+			ptr++;
+		} else if (ch2 == ']') {
+			if (!strncmp(ptr + 2 + 5, "rgb:", 4)) {
+				ptr += 18;
 			}
-		} else if (CTX(buffer)[i] == '\n') {
-			row++;
-			col = 0;
-		} else {
-			col++;
+		} else if (ch2 == '[') {
+			for (++ptr; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ptr++) {
+				;
+			}
 		}
+		last_escape = ptr;
 	}
-	if (rows) {
-		*rows = row;
-	}
+	*rows = row;
+	CTX(row) = row;
+	CTX(col) = col;
+	CTX(rowcol_calc_start) = CTX(buffer_len);
 	return col;
 }
 
@@ -1320,13 +1369,19 @@ RZ_API bool rz_cons_isatty(void) {
 		return false;
 	}
 	return true;
+#elif __WINDOWS__
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (GetFileType(hOut) == FILE_TYPE_CHAR) {
+		DWORD unused;
+		return GetConsoleMode(hOut, &unused);
+	}
 #endif
 	/* non-UNIX do not have ttys */
 	return false;
 }
 
 #if __WINDOWS__
-static int __xterm_get_cur_pos(int *xpos) {
+static int __pty_get_cur_pos(int *xpos) {
 	int ypos = 0;
 	const char *get_pos = RZ_CONS_GET_CURSOR_POSITION;
 	if (write(I.fdout, get_pos, sizeof(get_pos)) < 1) {
@@ -1379,13 +1434,13 @@ static int __xterm_get_cur_pos(int *xpos) {
 	return ypos;
 }
 
-static bool __xterm_get_size(void) {
+static bool __pty_get_size(void) {
 	if (write(I.fdout, RZ_CONS_CURSOR_SAVE, sizeof(RZ_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
 	int rows, columns;
 	rz_xwrite(I.fdout, "\x1b[999;999H", sizeof("\x1b[999;999H"));
-	rows = __xterm_get_cur_pos(&columns);
+	rows = __pty_get_cur_pos(&columns);
 	if (rows) {
 		I.rows = rows;
 		I.columns = columns;
@@ -1405,8 +1460,8 @@ RZ_API int rz_cons_get_size(int *rows) {
 		I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 		I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	} else {
-		if (I.term_xterm) {
-			ret = __xterm_get_size();
+		if (I.term_pty) {
+			ret = __pty_get_size();
 		}
 		if (!ret || (I.columns == -1 && I.rows == 0)) {
 			// Stdout is probably redirected so we set default values
@@ -1484,6 +1539,19 @@ RZ_API int rz_cons_get_size(int *rows) {
 }
 
 #if __WINDOWS__
+
+typedef DWORD(WINAPI *GetFileInformationByHandleEx_t)(
+	_In_ HANDLE hFile,
+	_In_ FILE_INFO_BY_HANDLE_CLASS FileInformationClass,
+	_Out_writes_bytes_(dwBufferSize) LPVOID lpFileInformation,
+	_In_ DWORD dwBufferSize);
+
+static GetFileInformationByHandleEx_t w32_GetFileInformationByHandleEx;
+
+static inline bool is_win_10_creators_or_above(DWORD major, DWORD minor, DWORD release) {
+	return major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703);
+}
+
 RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 	DWORD major;
 	DWORD minor;
@@ -1498,15 +1566,31 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 		free(alacritty);
 		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
-	char *term = rz_sys_getenv("TERM");
-	if (term) {
-		if (strstr(term, "xterm")) {
-			I.term_xterm = 1;
-			free(term);
-			return 2;
+	const bool is_console = rz_cons_isatty();
+	HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+	if (!is_console) {
+#if NTDDI_VERSION >= NTDDI_VISTA
+		if (!w32_GetFileInformationByHandleEx) {
+			HMODULE k32 = GetModuleHandleA("kernel32");
+			if (k32) {
+				w32_GetFileInformationByHandleEx = (GetFileInformationByHandleEx_t)GetProcAddress(k32, "GetFileInformationByHandleEx");
+			}
 		}
-		I.term_xterm = 0;
-		free(term);
+		if (w32_GetFileInformationByHandleEx) {
+			struct {
+				FILE_NAME_INFO fi;
+				wchar_t buf[MAX_PATH];
+			} buf;
+			if (w32_GetFileInformationByHandleEx(in, FileNameInfo, &buf, sizeof(buf))) {
+				buf.fi.FileName[buf.fi.FileNameLength / sizeof(WCHAR)] = 0;
+				if ((wcsstr(buf.fi.FileName, L"msys-") || wcsstr(buf.fi.FileName, L"cygwin-")) &&
+					wcsstr(buf.fi.FileName, L"-pty")) {
+					I.term_pty = 1;
+				}
+			}
+		}
+#endif
+		return RZ_VIRT_TERM_MODE_COMPLETE;
 	}
 	char *ansicon = rz_sys_getenv("ANSICON");
 	if (ansicon) {
@@ -1523,8 +1607,18 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 		if (info->release) {
 			release = atoi(info->release);
 		}
-		if (major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703)) {
+		// VT output processing was first introduced in Windows 10 Creators Update
+		if (ENABLE_VIRTUAL_TERMINAL_PROCESSING && is_win_10_creators_or_above(major, minor, release)) {
 			win_support = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
+			if (ENABLE_VIRTUAL_TERMINAL_INPUT && is_console) {
+				DWORD mode;
+				if (GetConsoleMode(in, &mode)) {
+					if (SetConsoleMode(in, mode | ENABLE_VIRTUAL_TERMINAL_INPUT)) {
+						win_support = RZ_VIRT_TERM_MODE_COMPLETE;
+					}
+					SetConsoleMode(in, mode);
+				}
+			}
 		}
 	}
 	rz_sys_info_free(info);
@@ -1587,15 +1681,16 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 	}
 #elif __WINDOWS__
 	DWORD mode;
+	HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(h, &mode);
 	if (is_raw) {
-		if (I.term_xterm) {
+		if (I.term_pty) {
 			rz_sys_xsystem("stty raw -echo");
 		} else {
 			SetConsoleMode(h, mode & I.term_raw);
 		}
 	} else {
-		if (I.term_xterm) {
+		if (I.term_pty) {
 			rz_sys_xsystem("stty -raw echo");
 		} else {
 			SetConsoleMode(h, mode | I.term_buf);
@@ -1755,6 +1850,7 @@ RZ_API void rz_cons_highlight(const char *word) {
 		free(rword);
 		free(clean);
 		free(cpos);
+		ctx_rowcol_calc_reset();
 		/* don't free orig - it's assigned
 		 * to CTX(buffer) and possibly realloc'd */
 	} else {

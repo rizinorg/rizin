@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_vector.h>
 
 static void tree_dfs_node(RTreeNode *r, RTreeVisitor *vis) {
 	RzStack *s;
@@ -129,22 +130,20 @@ RZ_API void rz_tree_dfs(RTree *t, RTreeVisitor *vis) {
 }
 
 RZ_API void rz_tree_bfs(RTree *t, RTreeVisitor *vis) {
-	RQueue *q;
-
 	if (!t || !t->root) {
 		return;
 	}
 
-	q = rz_queue_new(16);
-	if (!q) {
+	RzPVector *pv = rz_pvector_new(NULL);
+	if (!pv) {
 		return;
 	}
-	rz_queue_enqueue(q, t->root);
-	while (!rz_queue_is_empty(q)) {
-		RTreeNode *el = (RTreeNode *)rz_queue_dequeue(q);
+	rz_pvector_reserve(pv, 16);
+	rz_pvector_push(pv, t->root);
+	while (!rz_pvector_empty(pv)) {
+		RTreeNode *el = (RTreeNode *)rz_pvector_pop_front(pv);
 		if (!el) {
-			rz_queue_free(q);
-			return;
+			break;
 		}
 		RTreeNode *n;
 		RzListIter *it;
@@ -157,7 +156,7 @@ RZ_API void rz_tree_bfs(RTree *t, RTreeVisitor *vis) {
 			if (vis->discover_child) {
 				vis->discover_child(n, vis);
 			}
-			rz_queue_enqueue(q, n);
+			rz_pvector_push(pv, n);
 		}
 
 		if (vis->post_visit) {
@@ -165,5 +164,5 @@ RZ_API void rz_tree_bfs(RTree *t, RTreeVisitor *vis) {
 		}
 	}
 
-	rz_queue_free(q);
+	rz_pvector_free(pv);
 }

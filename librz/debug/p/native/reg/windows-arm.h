@@ -73,6 +73,4 @@ return strdup(
 	"drx     bvr6    .32     392    0\n"
 	"drx     bvr7    .32     396    0\n"
 	"drx     wcr0    .32     400    0\n"
-	"drx     wcr1    .32     404    0\n"
-	"drx     wvr0    .32     408    0\n"
-	"drx     wvr1    .32     412    0\n");
+	"drx     wvr0    .32     404    0\n");

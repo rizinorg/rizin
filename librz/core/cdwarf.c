@@ -193,7 +193,7 @@ static bool sort_loclists(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*/ *loc_table, int addr_size) {
+RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size) {
 	rz_return_if_fail(loc_table);
 	rz_cons_print("\nContents of the .debug_loc section:\n");
 	RzList /*<RzBinDwarfLocList *>*/ *sort_list = rz_list_new();
@@ -219,7 +219,7 @@ RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*/ *loc
 	rz_list_free(sort_list);
 }
 
-RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges) {
+RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet *>*/ *aranges) {
 	rz_return_if_fail(aranges);
 	rz_cons_print("\nContents of the .debug_aranges section:\n");
 	RzListIter *it;
@@ -340,7 +340,7 @@ static void print_line_op(RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr, RZ_NU
 	rz_cons_print("\n");
 }
 
-RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit>*/ *lines) {
+RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit *>*/ *lines) {
 	rz_return_if_fail(lines);
 	rz_cons_print("Raw dump of debug contents of section .debug_line:\n\n");
 	RzListIter *it;

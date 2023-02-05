@@ -44,7 +44,9 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 		if (!b64) {
 			return;
 		}
-		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n", var->kind, var->name, b64, var->fcn->addr);
+		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n",
+			var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG ? 'r' : 's',
+			var->name, b64, var->fcn->addr);
 		free(b64);
 		break;
 	}
@@ -54,7 +56,7 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 	}
 }
 
-static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarKind kind, RzCmdStateOutput *state) {
+static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	if (!fcn) {
 		RZ_LOG_ERROR("Cannot find the function at the 0x%08" PFMT64x " offset", core->offset);
@@ -63,7 +65,7 @@ static RzCmdStatus meta_variable_comment_list(RzCore *core, RzAnalysisVarKind ki
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
-		if (var->kind != kind || !var->comment) {
+		if (var->storage.type != kind || !var->comment) {
 			continue;
 		}
 		meta_variable_comment_print(core, var, state);
@@ -101,6 +103,7 @@ static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, 
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
 	if (!var) {
 		RZ_LOG_ERROR("Can't find variable named `%s`\n", name);
+		free(heap_comment);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (var->comment) {
@@ -360,15 +363,11 @@ RZ_IPI RzCmdStatus rz_meta_var_comment_list_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_meta_var_reg_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_KIND_REG, state);
-}
-
-RZ_IPI RzCmdStatus rz_meta_var_bp_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_KIND_BPV, state);
+	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 }
 
 RZ_IPI RzCmdStatus rz_meta_var_stack_comment_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_KIND_SPV, state);
+	return meta_variable_comment_list(core, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 }
 
 RZ_IPI RzCmdStatus rz_meta_type_current_handler(RzCore *core, int argc, const char **argv) {
@@ -478,8 +477,7 @@ RZ_IPI RzCmdStatus rz_meta_string_8bit_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF16BE : RZ_STRING_ENC_UTF16LE;
 	if (!rz_core_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -489,8 +487,7 @@ RZ_IPI RzCmdStatus rz_meta_string_wide16_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_meta_string_wide32_handler(RzCore *core, int argc, const char **argv) {
 	ut64 size = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	bool big_endian = obj ? rz_bin_object_is_big_endian(obj) : RZ_SYS_ENDIAN;
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	RzStrEnc enc = big_endian ? RZ_STRING_ENC_UTF32BE : RZ_STRING_ENC_UTF32LE;
 	if (!rz_core_meta_string_add(core, core->offset, size, enc, NULL)) {
 		return RZ_CMD_STATUS_ERROR;

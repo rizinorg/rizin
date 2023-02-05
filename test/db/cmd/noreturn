@@ -95,11 +95,11 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40048d
 / int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_4h @ rbp-0x4
+|           ; var int64_t var_ch @ stack - 0xc
 |           0x00400566      55             push  rbp
 |           0x00400567      4889e5         mov   rbp, rsp
 |           0x0040056a      4883ec10       sub   rsp, 0x10
-|           0x0040056e      837dfc00       cmp   dword [var_4h], 0
+|           0x0040056e      837dfc00       cmp   dword [var_ch], 0
 |       ,=< 0x00400572      740a           je    0x40057e
 |       |   0x00400574      bf00000000     mov   edi, 0
 |       |   0x00400579      e8d2feffff     call  sym.imp.exit          ; void exit(int status)

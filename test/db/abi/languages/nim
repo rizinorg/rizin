@@ -1,0 +1,7 @@
+NAME=LANGUAGES : nim detection
+FILE=bins/nim/chatserver-dbg
+CMDS=iI~lang
+EXPECT=<<EOF
+lang     nim
+EOF
+RUN

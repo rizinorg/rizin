@@ -44,7 +44,7 @@ typedef struct rz_config_node_t {
 	RzConfigCallback getter;
 	RzConfigCallback setter;
 	char *desc;
-	RzList *options;
+	RzList /*<char *>*/ *options;
 } RzConfigNode;
 
 RZ_API const char *rz_config_node_type(RzConfigNode *node);
@@ -53,7 +53,7 @@ typedef struct rz_config_t {
 	int lock;
 	void *user;
 	RzNum *num;
-	RzList *nodes;
+	RzList /*<RzConfigNode *>*/ *nodes;
 	HtPP *ht;
 } RzConfig;
 
@@ -69,8 +69,8 @@ typedef struct rz_config_hold_char_t {
 
 typedef struct rz_config_hold_t {
 	RzConfig *cfg;
-	RzList *list_num; // list of RzConfigHoldNum to hold numeric values
-	RzList *list_char; // list of RzConfigHoldChar to hold char values
+	RzList /*<RzConfigHoldNum *>*/ *list_num; // holds numeric values
+	RzList /*<RzConfigHoldChar *>*/ *list_char; // holds char values
 } RzConfigHold;
 
 #ifdef RZ_API
@@ -106,9 +106,8 @@ RZ_API void rz_config_node_free(RZ_NULLABLE void *n);
 RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RzConfigNode *node);
 RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name);
 RZ_API bool rz_config_readonly(RzConfig *cfg, const char *key);
-RZ_API bool rz_config_eval(RzConfig *cfg, const char *str);
+RZ_API bool rz_config_eval(RZ_NONNULL RzConfig *cfg, RZ_NONNULL const char *str);
 
-RZ_API void rz_config_set_sort_column(char *column);
 RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallback cb);
 RZ_API bool rz_config_set_getter(RzConfig *cfg, const char *key, RzConfigCallback cb);
 

@@ -10,7 +10,7 @@
 
 #include "parse_common.c"
 
-static RzList *v850_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *v850_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar v850_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("add", "2 += 1"),
@@ -79,7 +79,7 @@ static const char *v850_short_op[] = {
 	"or",
 };
 
-RzList *v850_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *v850_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	bool insert_zero = false;

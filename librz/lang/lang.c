@@ -1,24 +1,21 @@
 // SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "config.h"
 #include <rz_lang.h>
 #include <rz_util.h>
+#include <rz_cons.h>
+#include <rz_lib.h>
 
 RZ_LIB_VERSION(rz_lang);
 
-#include "p/pipe.c" // hardcoded
-#include "p/c.c" // hardcoded
-#include "p/lib.c"
-#if __UNIX__
-#include "p/cpipe.c" // hardcoded
-#endif
+static RzLangPlugin *lang_static_plugins[] = { RZ_LANG_STATIC_PLUGINS };
 
-static RzLang *__lang = NULL;
-
-RZ_API void rz_lang_plugin_free(RzLangPlugin *p) {
-	if (p && p->fini) {
-		p->fini(__lang);
+static bool plugin_fini(RzLang *lang, RzLangPlugin *plugin) {
+	if (plugin->fini) {
+		return plugin->fini(lang);
 	}
+	return true;
 }
 
 RZ_API RzLang *rz_lang_new(void) {
@@ -32,7 +29,6 @@ RZ_API RzLang *rz_lang_new(void) {
 		rz_lang_free(lang);
 		return NULL;
 	}
-	lang->langs->free = (RzListFree)rz_lang_plugin_free;
 	lang->defs = rz_list_new();
 	if (!lang->defs) {
 		rz_lang_free(lang);
@@ -40,25 +36,28 @@ RZ_API RzLang *rz_lang_new(void) {
 	}
 	lang->defs->free = (RzListFree)rz_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
-#if __UNIX__
-	rz_lang_add(lang, &rz_lang_plugin_c);
-	rz_lang_add(lang, &rz_lang_plugin_cpipe);
-#endif
-	rz_lang_add(lang, &rz_lang_plugin_pipe);
-	rz_lang_add(lang, &rz_lang_plugin_lib);
+	for (int i = 0; i < RZ_ARRAY_SIZE(lang_static_plugins); i++) {
+		rz_lang_plugin_add(lang, lang_static_plugins[i]);
+	}
 
 	return lang;
 }
 
 RZ_API void rz_lang_free(RzLang *lang) {
-	if (lang) {
-		__lang = NULL;
-		rz_lang_undef(lang, NULL);
-		rz_list_free(lang->langs);
-		rz_list_free(lang->defs);
-		// TODO: remove langs plugins
-		free(lang);
+	if (!lang) {
+		return;
 	}
+	RzListIter *it;
+	RzLangPlugin *p;
+
+	rz_list_foreach (lang->langs, it, p) {
+		plugin_fini(lang, p);
+	}
+
+	rz_lang_undef(lang, NULL);
+	rz_list_free(lang->langs);
+	rz_list_free(lang->defs);
+	free(lang);
 }
 
 // XXX: This is only used actually to pass 'core' structure
@@ -119,15 +118,24 @@ RZ_API bool rz_lang_setup(RzLang *lang) {
 	return false;
 }
 
-RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo) {
-	if (foo && (!rz_lang_get_by_name(lang, foo->name))) {
-		if (foo->init) {
-			foo->init(lang);
-		}
-		rz_list_append(lang->langs, foo);
-		return true;
+RZ_API bool rz_lang_plugin_add(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
+	rz_return_val_if_fail(lang && plugin && plugin->name, false);
+	if (rz_lang_get_by_name(lang, plugin->name)) {
+		return false;
 	}
-	return false;
+	rz_list_append(lang->langs, plugin);
+	if (plugin->init) {
+		plugin->init(lang);
+	}
+	return true;
+}
+
+RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
+	rz_return_val_if_fail(lang && plugin, false);
+	if (!plugin_fini(lang, plugin)) {
+		return false;
+	}
+	return rz_list_delete_data(lang->langs, plugin);
 }
 
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {

@@ -348,7 +348,7 @@ RUN
 
 NAME=mach0 fat kext reloc patching x86
 FILE=bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
-ARGS=-a x86
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 i~arch
 i~type
@@ -1041,7 +1041,7 @@ RUN
 
 NAME=mach0 fat kext reloc patching arm64
 FILE=bins/mach0/IOKitTest-fat-arm64-x86_64.kext/Contents/MacOS/IOKitTest
-ARGS=-a arm
+ARGS=-a arm -b 64
 CMDS=<<EOF
 i~arch
 i~type
@@ -1402,7 +1402,7 @@ vaddr paddr type name
 ----------------------
 --
  3 * r-x 0x0001e290 bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
- 4 - r-x 0x0001e290 vfile://0/rebased_stripped
+ 4 - r-x 0x0001e290 vfile://0/patched
  1 fd: 3 +0x00000000 0x00000000 - 0x00003fff r-- fmap.__TEXT
  2 fd: 3 +0x00004000 0x00004000 * 0x00007fff r-x fmap.__TEXT_EXEC
  3 fd: 4 +0x00008000 0x00008000 - 0x0000bfff r-- vmap.__DATA
@@ -1482,5 +1482,38 @@ CMDS=<<EOF
 q
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=big endian external relocs
+FILE=bins/mach0/librz_main.ppc32.dylib
+CMDS=<<EOF
+ir~_version
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000000 0x00000000 SET_32  rz_analysis_version
+0x0003c740 0x0003c740 0x00000000 SET_32  rz_version_str
+0x0003c7e0 0x0003c7e0 0x00049008 UNKNOWN rz_analysis_version
+0x0003c7e8 0x0003c7e8 0x00049010 UNKNOWN rz_lib_version
+0x0003c7f0 0x0003c7f0 0x00049018 UNKNOWN rz_egg_version
+0x0003c7f8 0x0003c7f8 0x00049020 UNKNOWN rz_asm_version
+0x0003c800 0x0003c800 0x00049028 UNKNOWN rz_bin_version
+0x0003c808 0x0003c808 0x00049030 UNKNOWN rz_cons_version
+0x0003c810 0x0003c810 0x00049038 UNKNOWN rz_flag_version
+0x0003c818 0x0003c818 0x00049040 UNKNOWN rz_core_version
+0x0003c820 0x0003c820 0x00049048 UNKNOWN rz_crypto_version
+0x0003c828 0x0003c828 0x00049050 UNKNOWN rz_bp_version
+0x0003c830 0x0003c830 0x00049058 UNKNOWN rz_debug_version
+0x0003c840 0x0003c840 0x00049060 UNKNOWN rz_hash_version
+0x0003c848 0x0003c848 0x00049068 UNKNOWN rz_io_version
+0x0003c850 0x0003c850 0x00049070 UNKNOWN rz_magic_version
+0x0003c858 0x0003c858 0x00049078 UNKNOWN rz_parse_version
+0x0003c860 0x0003c860 0x00049080 UNKNOWN rz_reg_version
+0x0003c868 0x0003c868 0x00049088 UNKNOWN rz_sign_version
+0x0003c870 0x0003c870 0x00049090 UNKNOWN rz_search_version
+0x0003c878 0x0003c878 0x00049098 UNKNOWN rz_syscall_version
+0x0003c880 0x0003c880 0x000490a0 UNKNOWN rz_util_version
+0x0003c888 0x0003c888 0x000490a8 UNKNOWN rz_diff_version
+0x0003c890 0x0003c890 0x000490b0 UNKNOWN rz_demangler_version
 EOF
 RUN

@@ -28,22 +28,22 @@ static int lang_lib_file_run(RzLang *user, const char *file) {
 		return -1;
 	}
 
-	lib = rz_lib_dl_open(libpath);
+	lib = rz_sys_dlopen(libpath);
 	if (lib) {
 		void (*fcn)(RzCore *);
-		fcn = rz_lib_dl_sym(lib, "entry");
+		fcn = rz_sys_dlsym(lib, "entry");
 		if (fcn) {
 			fcn(user->user);
 		} else {
 			eprintf("Cannot find 'entry' symbol in library\n");
 		}
-		rz_lib_dl_close(lib);
+		rz_sys_dlclose(lib);
 	}
 	free(libpath);
 	return 0;
 }
 
-static RzLangPlugin rz_lang_plugin_lib = {
+RzLangPlugin rz_lang_plugin_lib = {
 	.name = "lib",
 	.ext = RZ_LIB_EXT,
 	.desc = "Load libs directly into rizin",
@@ -51,3 +51,11 @@ static RzLangPlugin rz_lang_plugin_lib = {
 	.init = lang_lib_init,
 	.run_file = lang_lib_file_run,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_lib,
+	.version = RZ_VERSION
+};
+#endif

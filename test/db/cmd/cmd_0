@@ -5,13 +5,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p=b 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=p=b 0
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=p=d 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=p=d 0
@@ -51,6 +44,7 @@ NAME=pb 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pb 0
 EXPECT=<<EOF
+
 EOF
 RUN
 
@@ -58,6 +52,7 @@ NAME=pB 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pB 0
 EXPECT=<<EOF
+
 EOF
 RUN
 
@@ -96,23 +91,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd1 0
+NAME=pxd 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pxd1 0
+CMDS=pxd 0
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd2 0
+NAME=pxdh 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pxd2 0
+CMDS=pxdh 0
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pxd4 0
+NAME=pxdw 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pxd4 0
+CMDS=pxdw 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -243,9 +238,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdi 0
+NAME=pdq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pdi 0
+CMDS=pdq 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -280,9 +275,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pid 0
+NAME=pdq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pid 0
+CMDS=pdq 0
 EXPECT=<<EOF
 EOF
 RUN
@@ -301,9 +296,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pId 0
+NAME=pDq 0
 FILE=bins/elf/analysis/hello-arm32
-CMDS=pId 0
+CMDS=pDq 0
 EXPECT=<<EOF
 EOF
 RUN

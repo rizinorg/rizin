@@ -620,14 +620,14 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ 0x10468
 / sym.call (int32_t arg1);
-|           ; var int32_t var_8h @ fp-0x8
 |           ; arg int32_t arg1 @ r0
+|           ; var int32_t var_ch @ stack - 0xc
 |           0x00010420      00482de9       push  {fp, lr}
 |           0x00010424      04b08de2       add   fp, sp, 4
 |           0x00010428      08d04de2       sub   sp, sp, 8
-|           0x0001042c      08000be5       str   r0, [var_8h]          ; 8 ; arg1
+|           0x0001042c      08000be5       str   r0, [var_ch]          ; 0x8 ; 8 ; arg1
 |           0x00010430      14009fe5       ldr   r0, [0x0001044c]      ; [0x1044c:4]=0x104f0
-|           0x00010434      08101be5       ldr   r1, [var_8h]          ; 8
+|           0x00010434      08101be5       ldr   r1, [var_ch]          ; 0x8 ; 8
 |           0x00010438      a2ffffeb       bl    sym.imp.printf
 |           0x0001043c      0030a0e3       mov   r3, 0
 |           0x00010440      0300a0e1       mov   r0, r3
@@ -647,16 +647,16 @@ pdf@ main
 EOF
 EXPECT=<<EOF
 / int main (int argc, char **argv, char **envp);
-|           ; var int32_t var_ch @ fp-0xc
-|           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0
 |           ; arg char **argv @ r1
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
 |           0x00010450      00482de9       push  {fp, lr}
 |           0x00010454      04b08de2       add   fp, sp, 4
 |           0x00010458      08d04de2       sub   sp, sp, 8
-|           0x0001045c      08000be5       str   r0, [var_8h]          ; 8 ; argc
-|           0x00010460      0c100be5       str   r1, [var_ch]          ; 0xc ; 12 ; argv
-|           0x00010464      08001be5       ldr   r0, [var_8h]          ; 8
+|           0x0001045c      08000be5       str   r0, [var_ch]          ; 0x8 ; 8 ; argc
+|           0x00010460      0c100be5       str   r1, [var_10h]         ; 0xc ; 12 ; argv
+|           0x00010464      08001be5       ldr   r0, [var_ch]          ; 0x8 ; 8
 |           0x00010468      ecffffeb       bl    sym.call
 |           0x0001046c      0030a0e1       mov   r3, r0
 |           0x00010470      0300a0e1       mov   r0, r3
@@ -743,34 +743,33 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-e analysis.vars.stackname=true
 wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
 aa
 afv~var
 EOF
 EXPECT=<<EOF
-var int16_t var_74h @ sp+0x0
-var int16_t var_70h @ sp+0x4
-var int16_t var_6ch @ sp+0x8
-var int16_t var_68h @ sp+0xc
-var int16_t var_64h @ sp+0x10
-var int16_t var_60h @ sp+0x14
-var int16_t var_5ch @ sp+0x18
-var int16_t var_58h @ sp+0x1c
-var int16_t var_54h @ sp+0x20
-var int16_t var_50h @ sp+0x24
-var int16_t var_4ch @ sp+0x28
-var int16_t var_48h @ sp+0x2c
-var int16_t var_44h @ sp+0x30
-var int16_t var_40h @ sp+0x34
-var int16_t var_3ch @ sp+0x38
-var int16_t var_38h @ sp+0x3c
-var int16_t var_34h @ sp+0x40
-var int16_t var_30h @ sp+0x44
-var int16_t var_2ch @ sp+0x48
-var int16_t var_28h @ sp+0x4c
-var int16_t var_24h @ sp+0x50
-var int16_t var_8h @ sp+0x6c
+var int16_t var_74h @ stack - 0x74
+var int16_t var_70h @ stack - 0x70
+var int16_t var_6ch @ stack - 0x6c
+var int16_t var_68h @ stack - 0x68
+var int16_t var_64h @ stack - 0x64
+var int16_t var_60h @ stack - 0x60
+var int16_t var_5ch @ stack - 0x5c
+var int16_t var_58h @ stack - 0x58
+var int16_t var_54h @ stack - 0x54
+var int16_t var_50h @ stack - 0x50
+var int16_t var_4ch @ stack - 0x4c
+var int16_t var_48h @ stack - 0x48
+var int16_t var_44h @ stack - 0x44
+var int16_t var_40h @ stack - 0x40
+var int16_t var_3ch @ stack - 0x3c
+var int16_t var_38h @ stack - 0x38
+var int16_t var_34h @ stack - 0x34
+var int16_t var_30h @ stack - 0x30
+var int16_t var_2ch @ stack - 0x2c
+var int16_t var_28h @ stack - 0x28
+var int16_t var_24h @ stack - 0x24
+var int16_t var_8h @ stack - 0x8
 EOF
 RUN
 
@@ -1150,5 +1149,25 @@ mov r0, r3
 mnemonic: ldr
 mnemonic: adds
 mnemonic: mov
+EOF
+RUN
+
+NAME=arm32 function is NOT cut off when setting lr with add before bx
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 10402de90040a0e100e08fe214ff2fe11080bde8
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 (int32_t arg1);
+|           ; arg int32_t arg1 @ r0
+|           0x00000000      push  {r4, lr}
+|           0x00000004      mov   r4, r0                               ; arg1
+|           0x00000008      add   lr, pc, 0
+|           0x0000000c      bx    r4
+\           0x00000010      pop   {r4, pc}
 EOF
 RUN

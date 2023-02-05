@@ -8,16 +8,20 @@
 
 #include "../../asm/arch/pyc/pyc_dis.h"
 
-static int archinfo(RzAnalysis *analysis, int query) {
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
 	if (!strcmp(analysis->cpu, "x86")) {
 		return -1;
 	}
 
+	bool is_16_bits = analysis && analysis->bits == 16;
+
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
-		return (analysis->bits == 16) ? 1 : 2;
+		return is_16_bits ? 1 : 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
-		return (analysis->bits == 16) ? 3 : 2;
+		return is_16_bits ? 3 : 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return false;
 	default:
 		return -1;
 	}
@@ -35,11 +39,14 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	);
 }
 
-static RzList *get_pyc_code_obj(RzAnalysis *analysis) {
+static RzList /*<RzList<void *> *>*/ *get_pyc_code_obj(RzAnalysis *analysis) {
 	RzBin *b = analysis->binb.bin;
 	RzBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	bool is_pyc = (plugin && strcmp(plugin->name, "pyc") == 0);
-	return is_pyc ? b->cur->o->bin_obj : NULL;
+	if (!is_pyc) {
+		return NULL;
+	}
+	return ((RzBinPycObj *)b->cur->o->bin_obj)->shared;
 }
 
 static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {

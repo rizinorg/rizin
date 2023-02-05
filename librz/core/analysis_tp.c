@@ -28,8 +28,8 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	if ((bp && !rz_reg_getv(core->analysis->reg, bp)) && (sp && !rz_reg_getv(core->analysis->reg, sp))) {
-		eprintf("Stack isn't initialized.\n");
-		eprintf("Try running aei and aeim commands before aft for default stack initialization\n");
+		RZ_LOG_ERROR("core: stack isn't initialized.\n");
+		RZ_LOG_ERROR("core: try running aei and aeim commands before aft for default stack initialization\n");
 		return false;
 	}
 	return (core->dbg->trace && core->analysis->esil->trace);
@@ -126,7 +126,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 	// Since the type could be used by something else we should clone it
 	RzType *cloned = rz_type_clone(type);
 	if (!cloned) {
-		eprintf("Cannot clone the type for the variable \"%s.%s\"\n", var->fcn->name, var->name);
+		RZ_LOG_ERROR("core: cannot clone the type for the variable \"%s.%s\"\n", var->fcn->name, var->name);
 		return;
 	}
 	// Make a pointer of the existing type
@@ -134,7 +134,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 		// By default we create non-const pointers
 		RzType *ptrtype = rz_type_pointer_of_type(typedb, cloned, false);
 		if (!ptrtype) {
-			eprintf("Cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
+			RZ_LOG_ERROR("core: cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
 			return;
 		}
 		rz_analysis_var_set_type(var, ptrtype, resolve_overlaps);
@@ -148,7 +148,7 @@ static void var_type_set_resolve_overlaps(RzAnalysis *analysis, RzAnalysisVar *v
 	var_type_set(analysis, var, type, ref, true);
 }
 
-static void vars_resolve_overlaps(RzPVector *vars) {
+static void vars_resolve_overlaps(RzPVector /*<RzAnalysisVar *>*/ *vars) {
 	for (size_t i = 0; i < rz_pvector_len(vars); i++) {
 		RzAnalysisVar *var = rz_pvector_at(vars, i);
 		rz_analysis_var_resolve_overlaps(var);
@@ -160,7 +160,7 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 	char *error_msg = NULL;
 	RzType *realtype = rz_type_parse_string_single(analysis->typedb->parser, type, &error_msg);
 	if (!realtype && error_msg) {
-		eprintf("Fail to parse type \"%s\":\n%s\n", type, error_msg);
+		RZ_LOG_ERROR("core: fail to parse type \"%s\":\n%s\n", type, error_msg);
 		free(error_msg);
 		return;
 	}
@@ -213,7 +213,7 @@ static ut64 get_addr(RzAnalysis *analysis, const char *regname, int idx) {
 	return reg_op->value;
 }
 
-static RzList *parse_format(RzCore *core, char *fmt) {
+static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 	if (!fmt || !*fmt) {
 		return NULL;
 	}
@@ -254,17 +254,13 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		return;
 	}
 	if (in_stack) {
-		RzAnalysisVar *var = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_BPV, size - fcn->bp_off + 8);
+		RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, size - fcn->bp_off + 8);
 		if (!var) {
 			return;
 		}
 		var_type_set_resolve_overlaps(analysis, var, type, false);
 	} else {
-		RzRegItem *item = rz_reg_get(analysis->reg, place, -1);
-		if (!item) {
-			return;
-		}
-		RzAnalysisVar *rvar = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_REG, item->index);
+		RzAnalysisVar *rvar = rz_analysis_function_get_reg_var_at(fcn, place);
 		if (!rvar) {
 			return;
 		}
@@ -369,7 +365,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 		in_stack = true;
 	}
 	if (verbose && !strncmp(fcn_name, "sym.imp.", 8)) {
-		eprintf("%s missing function definition\n", fcn_name + 8);
+		RZ_LOG_ERROR("core: %s missing function definition\n", fcn_name + 8);
 	}
 	if (!max || max == -1) {
 		if (!in_stack) {
@@ -437,7 +433,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 
 			// FIXME : It seems also assume only read memory once ?
 			if (op->type == RZ_ANALYSIS_OP_TYPE_MOV && (instr_trace->stats & RZ_IL_TRACE_INS_HAS_MEM_R)) {
-				memref = !(!memref && var && (var->kind != RZ_ANALYSIS_VAR_KIND_REG));
+				memref = !(!memref && var && var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK);
 			}
 			// Match type from function param to instr
 			if (type_pos_hit(analysis, instr_trace, in_stack, size, place)) {
@@ -570,7 +566,7 @@ static inline bool return_type_analysis_context_unresolved(struct ReturnTypeAnal
 }
 
 // Progate return type passed using pointer
-static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVector *used_vars, ut64 addr, struct ReturnTypeAnalysisCtx *ctx) {
+static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVector /*<RzAnalysisVar *>*/ *used_vars, ut64 addr, struct ReturnTypeAnalysisCtx *ctx) {
 	// int *ret; *ret = strlen(s);
 	// TODO: memref check , dest and next src match
 	char nsrc[REGNAME_SIZE] = { 0 };
@@ -588,7 +584,7 @@ static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVe
 }
 
 // Forward propagation of function return type
-static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, RzILTraceInstruction *trace, struct ReturnTypeAnalysisCtx *ctx, RzPVector *used_vars) {
+static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, RzILTraceInstruction *trace, struct ReturnTypeAnalysisCtx *ctx, RzPVector /*<RzAnalysisVar *>*/ *used_vars) {
 	char src[REGNAME_SIZE] = { 0 };
 	void **uvit;
 
@@ -813,13 +809,15 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	}
 }
 
+#define OP_CACHE_LIMIT 8192
+
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
 	RzListIter *it;
 
 	rz_return_if_fail(core && core->analysis && fcn);
 
 	if (!core->analysis->esil) {
-		eprintf("Please run aeim\n");
+		RZ_LOG_ERROR("core: please run aeim first.\n");
 		return;
 	}
 
@@ -929,6 +927,15 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			}
 			addr += aop->size;
 			rz_list_free(fcns);
+			// Recreate op_cache if it grows too large to avoid
+			// excessive memory usage.
+			if (op_cache->count > OP_CACHE_LIMIT) {
+				ht_up_free(op_cache);
+				op_cache = ht_up_new(NULL, free_op_cache_kv, NULL);
+				if (!op_cache) {
+					break;
+				}
+			}
 		}
 	}
 
@@ -936,12 +943,8 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	void **vit;
 	rz_pvector_foreach (&fcn->vars, vit) {
 		RzAnalysisVar *rvar = *vit;
-		if (rvar->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+		if (rvar->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
 			RzAnalysisVar *lvar = rz_analysis_var_get_dst_var(rvar);
-			RzRegItem *i = rz_reg_index_get(reg, rvar->delta);
-			if (!i) {
-				continue;
-			}
 			// Note that every `var_type_set_resolve_overlaps()` call could remove some variables
 			// due to the overlaps resolution
 			if (lvar) {

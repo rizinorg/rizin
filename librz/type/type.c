@@ -14,6 +14,10 @@ static void types_ht_free(HtPPKv *kv) {
 	rz_type_base_type_free(kv->value);
 }
 
+static void types_ht_free_keep_val(HtPPKv *kv) {
+	free(kv->key);
+}
+
 static void formats_ht_free(HtPPKv *kv) {
 	free(kv->key);
 	free(kv->value);
@@ -366,7 +370,7 @@ RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *types_dir) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_enum_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzList *result = rz_list_new();
@@ -384,7 +388,7 @@ RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_union_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *unions = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzList *result = rz_list_new();
@@ -402,7 +406,7 @@ RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_struct_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *structs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzList *result = rz_list_new();
@@ -420,7 +424,7 @@ RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_typedef_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *typedefs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
 	RzList *result = rz_list_new();
@@ -438,7 +442,7 @@ RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_db_all(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_type_db_get_base_types(typedb);
 	RzList *result = rz_list_new();
@@ -556,7 +560,7 @@ RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, RZ_NONNULL con
  * \param typedb Types Database instance
  * \param val The value to search for
  */
-RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzList *result = rz_list_newf(free);
@@ -581,7 +585,7 @@ RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 
  * \param name The name of the bitfield enum
  * \param val The value to search for
  */
-RZ_OWN RZ_API char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
+RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	char *res = NULL;
 	int i;
@@ -675,75 +679,82 @@ RZ_API RzBaseType *rz_type_db_get_typedef(const RzTypeDB *typedb, RZ_NONNULL con
 	return btype;
 }
 
-/**
- * \brief Returns the atomic type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+static ut64 type_get_bitsize_recurse(const RzTypeDB *typedb, RZ_NONNULL RzType *type, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes);
+
+static ut64 atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ATOMIC, 0);
 	return btype->size;
 }
 
-/**
- * \brief Returns the enum type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+static ut64 enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ENUM, 0);
 	// FIXME: Need a proper way to determine size of enum
 	return 32;
 }
 
-/**
- * \brief Returns the struct type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_struct_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
-	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_STRUCT, 0);
-	RzTypeStructMember *memb;
+static ut64 struct_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
+	rz_return_val_if_fail(typedb && btype && (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION), 0);
+	RzPVector visited_btypes_owned; // for detecting self-referential typedefs (maybe in multiple steps)
+	if (!visited_btypes) {
+		// Lazy allocation of the visited_btypes stack, only at this point we will actually need it
+		rz_pvector_init(&visited_btypes_owned, NULL);
+		visited_btypes = &visited_btypes_owned;
+	} else {
+		if (rz_pvector_contains(visited_btypes, btype)) {
+			// loop detected
+			return 0;
+		}
+	}
+	rz_pvector_push(visited_btypes, btype);
 	ut64 size = 0;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
-		size += rz_type_db_get_bitsize(typedb, memb->type);
+	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&btype->struct_data.members, memb) {
+			size += type_get_bitsize_recurse(typedb, memb->type, visited_btypes);
+		}
+	} else {
+		RzTypeUnionMember *memb;
+		// Union has the size of the maximum size of its elements
+		rz_vector_foreach(&btype->union_data.members, memb) {
+			size = RZ_MAX(type_get_bitsize_recurse(typedb, memb->type, visited_btypes), size);
+		}
+	}
+	if (visited_btypes == &visited_btypes_owned) {
+		rz_pvector_fini(&visited_btypes_owned);
+	} else {
+		rz_pvector_pop(visited_btypes);
 	}
 	return size;
 }
 
-/**
- * \brief Returns the union type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
-	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_UNION, 0);
-	RzTypeUnionMember *memb;
-	ut64 size = 0;
-	// Union has the size of the maximum size of its elements
-	rz_vector_foreach(&btype->union_data.members, memb) {
-		size = RZ_MAX(rz_type_db_get_bitsize(typedb, memb->type), size);
-	}
-	return size;
-}
-
-/**
- * \brief Returns the typedef type size in bits (target dependent)
- *
- * \param typedb Types Database instance
- * \param btype The base type
- */
-RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+static ut64 typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, 0);
 	rz_return_val_if_fail(btype->type, 0);
-	if (btype->type->kind == RZ_TYPE_KIND_IDENTIFIER && !strcmp(btype->type->identifier.name, btype->name)) {
-		return btype->size;
+	RzType *unwrapped = rz_type_db_base_type_unwrap_typedef(typedb, btype);
+	if (!unwrapped) {
+		return 0;
 	}
-	return rz_type_db_get_bitsize(typedb, btype->type);
+	return type_get_bitsize_recurse(typedb, unwrapped, visited_btypes);
+}
+
+/**
+ * \param visited_btypes Stack of struct/union types visited higher up in the recursion, for loop detection
+ * \return the base type size in bits (target dependent)
+ */
+static ut64 base_type_get_bitsize_recurse(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
+	rz_return_val_if_fail(typedb && btype, 0);
+	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM) {
+		return enum_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
+		return struct_union_bitsize(typedb, btype, visited_btypes);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+		return atomic_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
+		return typedef_bitsize(typedb, btype, visited_btypes);
+	}
+	// Should not happen
+	rz_warn_if_reached();
+	return 0;
 }
 
 /**
@@ -753,21 +764,30 @@ RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBase
  * \param btype The base type
  */
 RZ_API ut64 rz_type_db_base_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
-	rz_return_val_if_fail(typedb && btype, 0);
-	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM) {
-		return rz_type_db_enum_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
-		return rz_type_db_struct_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
-		return rz_type_db_union_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
-		return rz_type_db_atomic_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
-		return rz_type_db_typedef_bitsize(typedb, btype);
+	return base_type_get_bitsize_recurse(typedb, btype, NULL);
+}
+
+/**
+ * \param visited_btypes Stack of struct/union types visited higher up in the recursion, for loop detection
+ * \return the type size in bits (target dependent)
+ */
+static ut64 type_get_bitsize_recurse(const RzTypeDB *typedb, RZ_NONNULL RzType *type, RZ_NULLABLE RzPVector /*<RzBaseType *>*/ *visited_btypes) {
+	rz_return_val_if_fail(typedb && type, 0);
+	// Detect if the pointer and return the corresponding size
+	if (type->kind == RZ_TYPE_KIND_POINTER || type->kind == RZ_TYPE_KIND_CALLABLE) {
+		// Note, that function types (RzCallable) are in fact pointers too
+		return rz_type_db_pointer_size(typedb);
+		// Detect if the pointer is array, then return the bitsize of the base type
+		// multiplied to the array size
+	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
+		return type->array.count * type_get_bitsize_recurse(typedb, type->array.type, visited_btypes);
 	}
-	// Should not happen
-	rz_warn_if_reached();
-	return 0;
+	// The rest of the logic is for the normal, identifier types
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+	if (!btype) {
+		return 0;
+	}
+	return base_type_get_bitsize_recurse(typedb, btype, visited_btypes);
 }
 
 /**
@@ -777,35 +797,7 @@ RZ_API ut64 rz_type_db_base_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBas
  * \param type The type
  */
 RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *type) {
-	rz_return_val_if_fail(typedb && type, 0);
-	// Detect if the pointer and return the corresponding size
-	if (type->kind == RZ_TYPE_KIND_POINTER || type->kind == RZ_TYPE_KIND_CALLABLE) {
-		// Note, that function types (RzCallable) are in fact pointers too
-		return rz_type_db_pointer_size(typedb);
-		// Detect if the pointer is array, then return the bitsize of the base type
-		// multiplied to the array size
-	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
-		return type->array.count * rz_type_db_get_bitsize(typedb, type->array.type);
-	}
-	// The rest of the logic is for the normal, identifier types
-	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-	if (!btype) {
-		return 0;
-	}
-	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
-		return rz_type_db_enum_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
-		return rz_type_db_struct_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
-		return rz_type_db_union_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
-		return rz_type_db_atomic_bitsize(typedb, btype);
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
-		return rz_type_db_typedef_bitsize(typedb, btype);
-	}
-	// Should not happen
-	rz_warn_if_reached();
-	return 0;
+	return type_get_bitsize_recurse(typedb, type, NULL);
 }
 
 /**
@@ -850,7 +842,7 @@ struct PrettyHelperBufs {
 	RzStrBuf *arraybuf;
 };
 
-static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs) {
+static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *type, HtPP *used_types, struct PrettyHelperBufs phbuf, bool *self_ref, char **self_ref_typename, bool zero_vla, bool print_anon, bool show_typedefs, bool allow_non_exist) {
 	rz_return_val_if_fail(typedb && type && used_types && self_ref, false);
 
 	bool is_anon = false;
@@ -866,8 +858,10 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		*self_ref_typename = *self_ref ? strdup(type->identifier.name) : NULL;
 
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-		if (!btype) {
+		if (!btype && !allow_non_exist) {
 			rz_strbuf_append(phbuf.typename, "unknown_t");
+		} else if (!btype || btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+			rz_strbuf_appendf(phbuf.typename, "%s%s", type->identifier.is_const ? "const " : "", type->identifier.name);
 		} else {
 			switch (btype->kind) {
 			case RZ_BASE_TYPE_KIND_STRUCT:
@@ -902,9 +896,6 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 				}
 				break;
 			}
-			case RZ_BASE_TYPE_KIND_ATOMIC:
-				rz_strbuf_appendf(phbuf.typename, "%s%s", type->identifier.is_const ? "const " : "", btype->name);
-				break;
 			default:
 				rz_warn_if_reached();
 				break;
@@ -918,7 +909,8 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 			rz_strbuf_append(phbuf.typename, typestr);
 			free(typestr);
 		} else {
-			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
+			type_decl_as_pretty_string(typedb, type->pointer.type, used_types, phbuf, self_ref, self_ref_typename,
+				zero_vla, print_anon, show_typedefs, allow_non_exist);
 			rz_strbuf_append(phbuf.pointerbuf, "*");
 			rz_strbuf_appendf(phbuf.pointerbuf, "%s", type->pointer.is_const ? " const " : "");
 		}
@@ -929,7 +921,8 @@ static bool type_decl_as_pretty_string(const RzTypeDB *typedb, const RzType *typ
 		} else { // variable length arrays
 			rz_strbuf_appendf(phbuf.arraybuf, "[%s]", zero_vla ? "0" : "");
 		}
-		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename, zero_vla, print_anon, show_typedefs);
+		type_decl_as_pretty_string(typedb, type->array.type, used_types, phbuf, self_ref, self_ref_typename,
+			zero_vla, print_anon, show_typedefs, allow_non_exist);
 		break;
 	case RZ_TYPE_KIND_CALLABLE: {
 		char *callstr = rz_type_callable_as_string(typedb, type->callable);
@@ -961,6 +954,7 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	bool end_newline = opts & RZ_TYPE_PRINT_END_NEWLINE;
 	end_newline = end_newline && (indent_level == 0); // only append newline for the outer type
 	bool show_typedefs = opts & RZ_TYPE_PRINT_SHOW_TYPEDEF;
+	bool allow_non_exist = opts & RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE;
 	if (indent_level == 0) { // for the root type, disregard anon_only
 		anon_only = false;
 	}
@@ -984,7 +978,8 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 	struct PrettyHelperBufs phbuf = { typename, pointer_buf, array_buf };
 	bool self_ref = false;
 	char *self_ref_typename = NULL;
-	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename, zero_vla, print_anon, show_typedefs);
+	bool decl = type_decl_as_pretty_string(typedb, type, used_types, phbuf, &self_ref, &self_ref_typename,
+		zero_vla, print_anon, show_typedefs, allow_non_exist);
 	if (!decl) {
 		rz_strbuf_free(buf);
 		rz_strbuf_free(typename);
@@ -1311,7 +1306,7 @@ RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *n
 	// Remove the original type first
 	// but do not free them
 	void *freefn = (void *)typedb->types->opt.freefn;
-	typedb->types->opt.freefn = NULL;
+	typedb->types->opt.freefn = types_ht_free_keep_val;
 	ht_pp_delete(typedb->types, t->name);
 	typedb->types->opt.freefn = freefn;
 	char *error_msg = NULL;

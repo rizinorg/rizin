@@ -101,7 +101,7 @@ typedef struct rz_dyldcache_t {
 	cache_map_t *maps;
 	ut32 n_maps;
 
-	RzList *bins;
+	RzList /*<RzDyldBinImage *>*/ *bins;
 	RzBuffer *buf;
 	RzDyldRebaseInfos *rebase_infos;
 	cache_accel_t *accel;
@@ -116,7 +116,7 @@ RZ_API void rz_dyldcache_free(RzDyldCache *cache);
 RZ_API ut64 rz_dyldcache_va2pa(RzDyldCache *cache, uint64_t vaddr, ut32 *offset, ut32 *left);
 RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache);
 RZ_API objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *cache);
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList *symbols, SetU *hash);
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList /*<RzBinSymbol *>*/ *symbols, SetU *hash);
 
 RZ_API RzBuffer *rz_dyldcache_new_rebasing_buf(RzDyldCache *cache);
 RZ_API bool rz_dyldcache_needs_rebasing(RzDyldCache *cache);

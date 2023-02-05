@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-RZ_API void rz_path_set_prefix(RZ_NULLABLE const char *path);
+RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path);
 RZ_API RZ_OWN char *rz_path_prefix(RZ_NULLABLE const char *path);
 RZ_API RZ_OWN char *rz_path_incdir(void);
 RZ_API RZ_OWN char *rz_path_bindir(void);

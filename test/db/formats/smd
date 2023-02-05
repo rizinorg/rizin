@@ -27,6 +27,7 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Sega Megadrive
+minopsz  1
 os       smd
 cc       N/A
 rpath    N/A

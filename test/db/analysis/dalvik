@@ -195,3 +195,30 @@ EXPECT=<<EOF
   - 0x10001a24e fcn 0x100019f98 method.public.static.Lcom_network_android_a_c_.a_Landroid_content_Context_ILjava_lang_String_I_V
 EOF
 RUN
+
+NAME=Dalvik disassemble single opcode pdfj
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 0e00
+af
+pdfj
+EOF
+EXPECT=<<EOF
+{"name":"fcn.00000000","size":2,"addr":0,"ops":[{"offset":0,"esil":"sp,[8],ip,=,8,sp,+=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"return-void","disasm":"return-void","bytes":"0e00","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0,"flags":["fcn.00000000"]}]}
+EOF
+RUN
+
+NAME=Dalvik disassemble single opcode pdf
+FILE=
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 0e00
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 ();
+\           0x00000000      return-void
+EOF
+RUN

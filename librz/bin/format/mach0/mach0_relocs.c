@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021-2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2020 Francesco Tamagni <mrmacete@protonmail.ch>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
@@ -10,6 +10,37 @@
 
 #include "mach0_utils.inc"
 
+#define RELOCATION_INFO_SIZE 8 // sizeof(struct relocation_info)
+
+/**
+ * \param buf buffer of at least RELOCATION_INFO_SIZE bytes
+ */
+static void read_relocation_info(struct relocation_info *dst, ut8 *src, bool big_endian) {
+	dst->r_address = (st32)rz_read_at_ble32(src, 0, big_endian);
+	uint32_t field = rz_read_at_ble32(src, 4, big_endian);
+	if (big_endian) {
+		dst->r_type = field & rz_num_bitmask(4);
+		field >>= 4;
+		dst->r_extern = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_length = field & rz_num_bitmask(2);
+		field >>= 2;
+		dst->r_pcrel = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_symbolnum = field & rz_num_bitmask(24);
+	} else {
+		dst->r_symbolnum = field & rz_num_bitmask(24);
+		field >>= 24;
+		dst->r_pcrel = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_length = field & rz_num_bitmask(2);
+		field >>= 2;
+		dst->r_extern = field & rz_num_bitmask(1);
+		field >>= 1;
+		dst->r_type = field & rz_num_bitmask(4);
+	}
+}
+
 static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	return a->addr - b->addr;
 }
@@ -19,20 +50,20 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		return;
 	}
 
-	ut64 total_size = num * sizeof(struct relocation_info);
-	struct relocation_info *info = calloc(num, sizeof(struct relocation_info));
-	if (!info) {
+	ut64 total_size = (ut64)num * RELOCATION_INFO_SIZE;
+	ut8 *infos = malloc(total_size);
+	if (!infos) {
 		return;
 	}
-
-	if (rz_buf_read_at(bin->b, offset, (ut8 *)info, total_size) < total_size) {
-		free(info);
+	if (rz_buf_read_at(bin->b, offset, infos, total_size) < total_size) {
+		free(infos);
 		return;
 	}
 
 	size_t i;
 	for (i = 0; i < num; i++) {
-		struct relocation_info a_info = info[i];
+		struct relocation_info a_info;
+		read_relocation_info(&a_info, infos + i * RELOCATION_INFO_SIZE, bin->big_endian);
 		ut32 sym_num = a_info.r_symbolnum;
 		if (sym_num >= bin->nsymtab) {
 			continue;
@@ -46,7 +77,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 
 		struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
 		if (!reloc) {
-			free(info);
+			free(infos);
 			free(sym_name);
 			return;
 		}
@@ -62,7 +93,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		rz_skiplist_insert(relocs, reloc);
 		free(sym_name);
 	}
-	free(info);
+	free(infos);
 }
 
 static bool is_valid_ordinal_table_size(ut64 size) {
@@ -254,24 +285,24 @@ RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 								int addend = -1;
 								ut64 delta;
 								if (is_auth && is_bind) {
-									struct dyld_chained_ptr_arm64e_auth_bind *p =
-										(struct dyld_chained_ptr_arm64e_auth_bind *)&raw_ptr;
-									delta = p->next;
-									ordinal = p->ordinal;
+									struct dyld_chained_ptr_arm64e_auth_bind p;
+									dyld_chained_ptr_arm64e_auth_bind_read(&p, raw_ptr);
+									delta = p.next;
+									ordinal = p.ordinal;
 								} else if (!is_auth && is_bind) {
-									struct dyld_chained_ptr_arm64e_bind *p =
-										(struct dyld_chained_ptr_arm64e_bind *)&raw_ptr;
-									delta = p->next;
-									ordinal = p->ordinal;
-									addend = p->addend;
+									struct dyld_chained_ptr_arm64e_bind p;
+									dyld_chained_ptr_arm64e_bind_read(&p, raw_ptr);
+									delta = p.next;
+									ordinal = p.ordinal;
+									addend = p.addend;
 								} else if (is_auth && !is_bind) {
-									struct dyld_chained_ptr_arm64e_auth_rebase *p =
-										(struct dyld_chained_ptr_arm64e_auth_rebase *)&raw_ptr;
-									delta = p->next;
+									struct dyld_chained_ptr_arm64e_auth_rebase p;
+									dyld_chained_ptr_arm64e_auth_rebase_read(&p, raw_ptr);
+									delta = p.next;
 								} else {
-									struct dyld_chained_ptr_arm64e_rebase *p =
-										(struct dyld_chained_ptr_arm64e_rebase *)&raw_ptr;
-									delta = p->next;
+									struct dyld_chained_ptr_arm64e_rebase p;
+									dyld_chained_ptr_arm64e_rebase_read(&p, raw_ptr);
+									delta = p.next;
 								}
 								if (ordinal != -1) {
 									if (ordinal >= n_threaded_binds) {
@@ -497,7 +528,7 @@ beach:
 	return relocs;
 }
 
-static RzPVector *get_patchable_relocs(struct MACH0_(obj_t) * obj) {
+static RzPVector /*<struct reloc_t *>*/ *get_patchable_relocs(struct MACH0_(obj_t) * obj) {
 	if (!obj->options.patch_relocs) {
 		return NULL;
 	}
@@ -605,37 +636,50 @@ static bool _patch_reloc(struct MACH0_(obj_t) * bin, struct reloc_t *reloc, ut64
 /**
  * \brief Patching of external relocs in a sparse overlay buffer
  *
- * see also mach0_rebase.c for additional modification of the data that might happen.
+ * This patches both classic Mach-O relocs and modern dyld chained pointers
  */
 RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
 	rz_return_if_fail(obj);
-	if (obj->relocs_patched || !MACH0_(needs_reloc_patching)(obj)) {
+	if (obj->relocs_patched) {
+		return;
+	}
+	bool needs_reloc_patch = MACH0_(needs_reloc_patching)(obj);
+	bool needs_rebasing = MACH0_(needs_rebasing_and_stripping)(obj);
+	if (obj->relocs_patched || (!needs_reloc_patch && !needs_rebasing)) {
 		return;
 	}
 	obj->relocs_patched = true; // run this function just once (lazy relocs patching)
-	ut64 cdsz = reloc_target_size(obj);
-	ut64 size = MACH0_(reloc_targets_vfile_size)(obj);
-	if (!size) {
-		return;
-	}
-	RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, MACH0_(reloc_targets_map_base)(bf, obj));
-	if (!targets) {
-		return;
-	}
 	obj->buf_patched = rz_buf_new_sparse_overlay(obj->b, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
 	if (!obj->buf_patched) {
-		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
-	RzPVector *patchable_relocs = get_patchable_relocs(obj);
-	void **it;
-	rz_pvector_foreach (patchable_relocs, it) {
-		struct reloc_t *reloc = *it;
-		ut64 sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->ord);
-		reloc->target = sym_addr;
-		_patch_reloc(obj, reloc, sym_addr);
+
+	if (needs_reloc_patch) {
+		ut64 cdsz = reloc_target_size(obj);
+		ut64 size = MACH0_(reloc_targets_vfile_size)(obj);
+		if (!size) {
+			return;
+		}
+		RzBinRelocTargetBuilder *targets = rz_bin_reloc_target_builder_new(cdsz, MACH0_(reloc_targets_map_base)(bf, obj));
+		if (!targets) {
+			return;
+		}
+		RzPVector *patchable_relocs = get_patchable_relocs(obj);
+		void **it;
+		rz_pvector_foreach (patchable_relocs, it) {
+			struct reloc_t *reloc = *it;
+			ut64 sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->ord);
+			reloc->target = sym_addr;
+			_patch_reloc(obj, reloc, sym_addr);
+		}
+		rz_bin_reloc_target_builder_free(targets);
 	}
-	rz_bin_reloc_target_builder_free(targets);
+
+	if (needs_rebasing) {
+		MACH0_(rebase_buffer)
+		(obj, obj->buf_patched);
+	}
+
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(obj->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }

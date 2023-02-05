@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <ht_uu.h>
+#include <rz_asm.h>
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_list.h>
@@ -157,7 +158,7 @@ static const char *searchprefix = NULL;
 
 struct search_parameters {
 	RzCore *core;
-	RzList *boundaries;
+	RzList /*<RzIOMap *>*/ *boundaries;
 	const char *mode;
 	const char *cmd_hit;
 	PJ *pj;
@@ -197,12 +198,12 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 			st64 bufsz;
 			bufsz = to - from;
 			if (len > bufsz) {
-				eprintf("Hash length is bigger than range 0x%" PFMT64x "\n", from);
+				RZ_LOG_ERROR("core: Hash length is bigger than range 0x%" PFMT64x "\n", from);
 				continue;
 			}
 			buf = malloc(bufsz);
 			if (!buf) {
-				eprintf("Cannot allocate %" PFMT64d " bytes\n", bufsz);
+				RZ_LOG_ERROR("core: Cannot allocate %" PFMT64d " bytes\n", bufsz);
 				goto fail;
 			}
 			eprintf("Search in range 0x%08" PFMT64x " and 0x%08" PFMT64x "\n", from, to);
@@ -213,9 +214,9 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 				if (rz_cons_is_breaked()) {
 					break;
 				}
-				char *s = rz_msg_digest_calculate_small_block_string(hashname, buf + i, len, NULL, false);
+				char *s = rz_hash_cfg_calculate_small_block_string(core->hash, hashname, buf + i, len, NULL, false);
 				if (!s) {
-					eprintf("Hash fail\n");
+					RZ_LOG_ERROR("core: Hash fail\n");
 					break;
 				}
 				if (!(i % 5)) {
@@ -296,7 +297,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	}
 	// TODO: handle sections ?
 	if (from >= to) {
-		eprintf("aap: Invalid search range 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", from, to);
+		RZ_LOG_ERROR("core: Invalid search range 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", from, to);
 		free(b);
 		return 0;
 	}
@@ -314,7 +315,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 		}
 		(void)rz_io_read_at(core->io, at, b, core->blocksize);
 		if (rz_search_update(core->search, at, b, core->blocksize) == -1) {
-			eprintf("search: update read error at 0x%08" PFMT64x "\n", at);
+			RZ_LOG_ERROR("core: update read error at 0x%08" PFMT64x "\n", at);
 			break;
 		}
 	}
@@ -468,7 +469,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				}
 				*p = 0;
 			} else {
-				eprintf("Cannot allocate %d\n", mallocsize);
+				RZ_LOG_ERROR("core: Cannot allocate %d\n", mallocsize);
 			}
 			s = str;
 			str = NULL;
@@ -531,7 +532,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 	}
 }
 
-static void append_bound(RzList *list, RzIO *io, RzInterval search_itv, ut64 from, ut64 size, int perms) {
+static void append_bound(RzList /*<RzIOMap *>*/ *list, RzIO *io, RzInterval search_itv, ut64 from, ut64 size, int perms) {
 	RzIOMap *map = RZ_NEW0(RzIOMap);
 	if (!map) {
 		return;
@@ -543,7 +544,7 @@ static void append_bound(RzList *list, RzIO *io, RzInterval search_itv, ut64 fro
 	map->perm = perms;
 	RzInterval itv = { from, size };
 	if (size == -1) {
-		eprintf("Warning: Invalid range. Use different search.in=? or analysis.in=dbg.maps.x\n");
+		RZ_LOG_ERROR("core: Invalid range. Use different search.in=? or analysis.in=dbg.maps.x\n");
 		free(map);
 		return;
 	}
@@ -573,7 +574,7 @@ static bool maskMatches(int perm, int mask, bool only) {
 	return false;
 }
 
-RZ_API RZ_OWN RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
 	rz_return_val_if_fail(core, NULL);
 
 	RzList *list = rz_list_newf(free); // XXX rz_io_map_free);
@@ -830,8 +831,8 @@ RZ_API RZ_OWN RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const 
 			}
 			append_bound(list, core->io, search_itv, from, size, 5);
 		} else {
-			eprintf("WARNING: search.in = ( analysis.bb | analysis.fcn )"
-				"requires to seek into a valid function\n");
+			RZ_LOG_WARN("core: search.in = ( analysis.bb | analysis.fcn )"
+				    "requires to seek into a valid function\n");
 			append_bound(list, core->io, search_itv, core->offset, 1, 5);
 		}
 	} else if (!strncmp(mode, "dbg.", 4)) {
@@ -986,7 +987,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 }
 
 // TODO: follow unconditional jumps
-static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RzList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
+static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RzList /*<char *>*/ *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RzAnalysisOp aop = { 0 };
@@ -1120,12 +1121,10 @@ ret:
 	return hitlist;
 }
 
-static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
-	const char *otype;
+static void print_rop(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, PJ *pj, int mode) {
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
 	RzList *ropList = NULL;
-	char *buf_asm = NULL;
 	unsigned int size = 0;
 	RzAnalysisOp analop = RZ_EMPTY;
 	RzAsmOp asmop;
@@ -1139,7 +1138,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 		db = sdb_ns(core->sdb, "rop", true);
 		ropList = rz_list_newf(free);
 		if (!db) {
-			eprintf("Error: Could not create SDB 'rop' namespace\n");
+			RZ_LOG_ERROR("core: Could not create SDB 'rop' namespace\n");
 			rz_list_free(ropList);
 			return;
 		}
@@ -1204,10 +1203,10 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			if (esil) {
 				rz_cons_printf("%s\n", opstr);
 			} else if (colorize) {
-				buf_asm = rz_print_colorize_opcode(core->print, rz_asm_op_get_asm(&asmop),
-					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
-				rz_cons_printf(" %s%s;", buf_asm, Color_RESET);
-				free(buf_asm);
+				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
+				rz_cons_printf(" %s%s;", colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
+				rz_strbuf_free(colored_asm);
 			} else {
 				rz_cons_printf(" %s;", rz_asm_op_get_asm(&asmop));
 			}
@@ -1226,7 +1225,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 		rz_list_foreach (hitlist, iter, hit) {
 			const char *comment = rop_comments ? rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr) : NULL;
 			if (hit->len < 0) {
-				eprintf("Invalid hit length here\n");
+				RZ_LOG_ERROR("core: Invalid hit length here\n");
 				continue;
 			}
 			ut8 *buf = malloc(1 + hit->len);
@@ -1245,17 +1244,16 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			}
 			char *asm_op_hex = rz_asm_op_get_hex(&asmop);
 			if (colorize) {
-				char *buf_asm = rz_print_colorize_opcode(core->print, rz_asm_op_get_asm(&asmop),
-					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
-				otype = rz_print_color_op_type(core->print, analop.type);
+				RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(rz_asm_op_get_asm(&asmop));
+				colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, rz_asm_get_parse_param(core->analysis->reg, analop.type), asmop.asm_toks);
 				if (comment) {
-					rz_cons_printf("  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
-						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET, comment);
+					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s ; %s\n",
+						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET, comment);
 				} else {
-					rz_cons_printf("  0x%08" PFMT64x " %18s%s  %s%s\n",
-						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET);
+					rz_cons_printf("  0x%08" PFMT64x " %18s  %s%s\n",
+						hit->addr, asm_op_hex, colored_asm ? rz_strbuf_get(colored_asm) : "", Color_RESET);
 				}
-				free(buf_asm);
+				rz_strbuf_free(colored_asm);
 			} else {
 				if (comment) {
 					rz_cons_printf("  0x%08" PFMT64x " %18s  %s ; %s\n",
@@ -1290,7 +1288,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 	int max_count = rz_config_get_i(core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
 	RzList /*<endlist_pair>*/ *end_list = rz_list_newf(free);
-	RzList /*<RzRegex>*/ *rx_list = NULL;
+	RzList /*<char *>*/ *rx_list = NULL;
 	int align = core->search->align;
 	RzListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
@@ -1312,10 +1310,10 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 	}
 	if (max_instr <= 1) {
 		rz_list_free(end_list);
-		eprintf("ROP length (rop.len) must be greater than 1.\n");
+		RZ_LOG_ERROR("core: ROP length (rop.len) must be greater than 1.\n");
 		if (max_instr == 1) {
-			eprintf("For rop.len = 1, use /c to search for single "
-				"instructions. See /c? for help.\n");
+			RZ_LOG_ERROR("core: For rop.len = 1, use /c to search for single "
+				     "instructions. See /c? for help.\n");
 		}
 		return false;
 	}
@@ -1593,7 +1591,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 		// initialize esil vm
 		rz_core_analysis_esil_reinit(core);
 		if (!core->analysis->esil) {
-			eprintf("Cannot initialize the ESIL vm\n");
+			RZ_LOG_ERROR("core: Cannot initialize the ESIL vm\n");
 			return;
 		}
 	}
@@ -1640,13 +1638,13 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 			rz_analysis_esil_set_op (core->analysis->esil, "AddressInfo", esil_search_address_info);
 #endif
 			if (rz_cons_is_breaked()) {
-				eprintf("Breaked at 0x%08" PFMT64x "\n", addr);
+				RZ_LOG_WARN("core: Breaked at 0x%08" PFMT64x "\n", addr);
 				break;
 			}
 			rz_analysis_esil_set_pc(core->analysis->esil, addr);
 			if (!rz_analysis_esil_parse(core->analysis->esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
-				eprintf("Cannot parse esil (%s)\n", input + 2);
+				RZ_LOG_ERROR("core: Cannot parse esil (%s)\n", input + 2);
 				break;
 			}
 			hit_happens = false;
@@ -1671,7 +1669,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 					}
 				}
 			} else {
-				eprintf("Cannot parse esil (%s)\n", input + 2);
+				RZ_LOG_ERROR("core: Cannot parse esil (%s)\n", input + 2);
 				rz_analysis_esil_stack_free(core->analysis->esil);
 				free(res);
 				break;
@@ -1688,7 +1686,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 				}
 				hit_combo++;
 				if (hit_combo > hit_combo_limit) {
-					eprintf("Hit search.esilcombo reached (%d). Stopping search. Use f-\n", hit_combo_limit);
+					RZ_LOG_WARN("core: Hit search.esilcombo reached (%d). Stopping search. Use f-\n", hit_combo_limit);
 					break;
 				}
 			} else {
@@ -1725,7 +1723,7 @@ static int emulateSyscallPrelude(RzCore *core, ut64 at, ut64 curpc) {
 
 	arr = malloc(bsize);
 	if (!arr) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", bsize);
 		free(arr);
 		return -1;
 	}
@@ -1738,7 +1736,7 @@ static int emulateSyscallPrelude(RzCore *core, ut64 at, ut64 curpc) {
 			rz_io_read_at(core->io, curpc, arr, bsize);
 		}
 		inslen = rz_analysis_op(core->analysis, &aop, curpc, arr + i, bsize - i, RZ_ANALYSIS_OP_MASK_BASIC);
-		if (inslen) {
+		if (inslen > 0) {
 			int incr = (core->search->align > 0) ? core->search->align - 1 : inslen - 1;
 			if (incr < 0) {
 				incr = minopcode;
@@ -1790,7 +1788,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	}
 	buf = malloc(bsize);
 	if (!buf) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", bsize);
 		rz_analysis_esil_free(esil);
 		free(previnstr);
 		return;
@@ -1811,11 +1809,11 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 		ut64 from = map->itv.addr;
 		ut64 to = rz_itv_end(map->itv);
 		if (from >= to) {
-			eprintf("Error: from must be lower than to\n");
+			RZ_LOG_ERROR("core: `from` value must be lower than `to` value\n");
 			goto beach;
 		}
 		if (to == UT64_MAX) {
-			eprintf("Error: Invalid destination boundary\n");
+			RZ_LOG_ERROR("core: Invalid destination boundary\n");
 			goto beach;
 		}
 		for (i = 0, at = from; at < to; at++, i++) {
@@ -2036,7 +2034,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 			ut8 bufop[32];
 			rz_io_read_at(core->io, at, bufop, sizeof(bufop));
 			ret = rz_analysis_op(core->analysis, &aop, at, bufop, sizeof(bufop), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
-			if (ret) {
+			if (ret > 0) {
 				bool match = false;
 				if (type == 'm') {
 					const char *fam = aop.mnemonic;
@@ -2053,7 +2051,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					if (type) {
 						bool isCandidate = !*input;
 						if (!strcmp(input, "cswi")) {
-							if (!strcmp(input + 1, type)) {
+							if (*input && !strcmp(input + 1, type)) {
 								isCandidate = true;
 							}
 						} else {
@@ -2411,7 +2409,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 		rz_cons_break_pop();
 		free(buf);
 	} else {
-		eprintf("No keywords defined\n");
+		RZ_LOG_ERROR("core: No keywords defined\n");
 	}
 
 	if (param->outmode == RZ_MODE_JSON) {
@@ -2429,7 +2427,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 	char *out;
 
 	if (!db_rop) {
-		eprintf("Error: could not find SDB 'rop' namespace\n");
+		RZ_LOG_ERROR("core: could not find SDB 'rop' namespace\n");
 		return;
 	}
 
@@ -2503,7 +2501,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 				free(out);
 			}
 		} else {
-			eprintf("Invalid ROP class\n");
+			RZ_LOG_ERROR("core: Invalid ROP class\n");
 		}
 		break;
 	default:
@@ -2547,7 +2545,23 @@ static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 t
 			ut8 ptr[2] = {
 				(ut8)(pc * 2.5), 0
 			};
-			rz_print_fill(core->print, ptr, 1, UT64_MAX, core->blocksize);
+			RzHistogramOptions opts = {
+				.unicode = rz_config_get_b(core->config, "scr.utf8"),
+				.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
+				.legend = false,
+				.offset = rz_config_get_b(core->config, "hex.offset"),
+				.offpos = UT64_MAX,
+				.cursor = false,
+				.curpos = 0,
+				.color = rz_config_get_i(core->config, "scr.color"),
+				.pal = &core->cons->context->pal
+			};
+			RzStrBuf *strbuf = rz_histogram_vertical(&opts, ptr, 1, core->blocksize);
+			if (!strbuf) {
+				RZ_LOG_ERROR("Cannot generate vertical histogram\n");
+			} else {
+				rz_cons_print(rz_strbuf_drain(strbuf));
+			}
 		}
 		addr += core->blocksize;
 	}
@@ -2607,7 +2621,7 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) 
 	}
 }
 
-static ut8 *v_writebuf(RzCore *core, RzList *nums, int len, char ch, int bsize) {
+static ut8 *v_writebuf(RzCore *core, RzList /*<char *>*/ *nums, int len, char ch, int bsize) {
 	ut8 *ptr;
 	ut64 n64;
 	ut32 n32;
@@ -2616,7 +2630,7 @@ static ut8 *v_writebuf(RzCore *core, RzList *nums, int len, char ch, int bsize) 
 	int i = 0;
 	ut8 *buf = calloc(1, bsize);
 	if (!buf) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", bsize);
 		free(buf);
 		return NULL;
 	}
@@ -2741,7 +2755,7 @@ static void incDigitBuffer(ut8 *buf, int bufsz) {
 
 static void search_collisions(RzCore *core, const char *hashName, const ut8 *hashValue, int hashLength, int mode) {
 	ut8 RZ_ALIGNED(8) cmphash[128];
-	const RzMsgDigestPlugin *crc32 = rz_msg_digest_plugin_by_name("crc32");
+	const RzHashPlugin *crc32 = rz_hash_plugin_by_name(core->hash, "crc32");
 	ut8 *digest = NULL;
 
 	int i = 0;
@@ -2752,14 +2766,14 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 	}
 	memcpy(buf, core->block, bufsz);
 	if (hashLength > sizeof(cmphash)) {
-		eprintf("Hashlength mismatch %d %d\n", hashLength, (int)sizeof(cmphash));
+		RZ_LOG_WARN("core: Hashlength mismatch %d %d\n", hashLength, (int)sizeof(cmphash));
 		free(buf);
 		return;
 	}
 	memcpy(cmphash, hashValue, hashLength);
 
 	if (hashLength != 4) {
-		eprintf("Invalid hash size %d (expected 4)\n", hashLength);
+		RZ_LOG_ERROR("core: Invalid hash size %d (expected 4)\n", hashLength);
 		free(buf);
 		return;
 	}
@@ -2800,26 +2814,26 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 			break;
 		}
 
-		eprintf("0x%08" PFMT64x " input:", inc);
+		rz_cons_printf("0x%08" PFMT64x " input:", inc);
 		for (i = 0; i < bufsz; i++) {
-			eprintf("%02x", buf[i]);
+			rz_cons_printf("%02x", buf[i]);
 		}
 		if (mode) {
-			eprintf(" \"%s\"", buf);
+			rz_cons_printf(" \"%s\"", buf);
 		}
 
 		crc32->small_block(buf, bufsz, &digest, NULL);
 
-		eprintf(" digest:");
+		rz_cons_printf(" digest:");
 		for (i = 0; i < hashLength; i++) {
-			eprintf("%02x", digest[i]);
+			rz_cons_printf("%02x", digest[i]);
 		}
-		eprintf(" (%d h/s)  \r", mount);
+		rz_cons_printf(" (%d h/s)  \r", mount);
 		if (!memcmp(hashValue, digest, hashLength)) {
-			eprintf("\nCOLLISION FOUND!\n");
-			rz_print_hexdump(core->print, core->offset, buf, bufsz, 0, 16, 0);
-			rz_cons_flush();
+			rz_cons_printf("\nCOLLISION FOUND!\n");
+			rz_core_print_hexdump(core, core->offset, buf, bufsz, 0, 16, 0);
 		}
+		rz_cons_flush();
 		RZ_FREE(digest);
 		inc++;
 	}
@@ -2894,18 +2908,18 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	int param_offset = 2;
 	char *inp;
 	if (!core || !core->io) {
-		eprintf("Can't search if we don't have an open file.\n");
+		RZ_LOG_ERROR("core: Can't search if we don't have an open file.\n");
 		return false;
 	}
 	if (core->in_search) {
-		eprintf("Can't search from within a search.\n");
+		RZ_LOG_ERROR("core: Can't search from within a search.\n");
 		return false;
 	}
 	if (input[0] == '/') {
 		if (core->lastsearch) {
 			input = core->lastsearch;
 		} else {
-			eprintf("No previous search done\n");
+			RZ_LOG_ERROR("core: No previous search done\n");
 			return false;
 		}
 	} else {
@@ -2918,7 +2932,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	const ut64 search_from = rz_config_get_i(core->config, "search.from"),
 		   search_to = rz_config_get_i(core->config, "search.to");
 	if (search_from > search_to && search_to) {
-		eprintf("search.from > search.to is not supported\n");
+		RZ_LOG_ERROR("core: search.from > search.to is not supported\n");
 		ret = false;
 		goto beach;
 	}
@@ -2926,7 +2940,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	RzInterval search_itv = { search_from, search_to - search_from };
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
-		eprintf("WARNING from == to?\n");
+		RZ_LOG_ERROR("core: `from` address is equal `to`\n");
 		ret = false;
 		goto beach;
 	}
@@ -2976,7 +2990,7 @@ reread:
 		goto reread;
 	case 'b': // "/b" backward search
 		if (*(++input) == '?') {
-			eprintf("Usage: /b<command> [value] backward search, see '/?'\n");
+			RZ_LOG_ERROR("core: Usage: /b<command> [value] backward search, see '/?'\n");
 			goto beach;
 		}
 		search->bckwrds = true;
@@ -3081,7 +3095,7 @@ reread:
 			? rz_num_math(core->num, input + 2)
 			: UT64_MAX;
 		if (n == 0LL) {
-			eprintf("Cannot find null references.\n");
+			RZ_LOG_ERROR("core: Cannot find null references.\n");
 			break;
 		}
 		switch (input[1]) {
@@ -3205,13 +3219,13 @@ reread:
 			char *space = strchr(input, ' ');
 			const char *arg = space ? rz_str_trim_head_ro(space + 1) : NULL;
 			if (!arg || input[2] == '?') {
-				eprintf("Usage: /cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
-				eprintf(" /cca - lowercase alphabet chars only\n");
-				eprintf(" /ccA - uppercase alphabet chars only\n");
-				eprintf(" /ccl - letters (lower + upper alphabet chars)\n");
-				eprintf(" /ccd - digits (only numbers)\n");
-				eprintf(" /ccp - printable (alpha + digit)\n");
-				eprintf(" /ccb - binary (any number is valid)\n");
+				RZ_LOG_ERROR("core: Usage: /cc[aAdlpb] [hashname] [hexpairhashvalue]\n");
+				RZ_LOG_ERROR("core:  /cca - lowercase alphabet chars only\n");
+				RZ_LOG_ERROR("core:  /ccA - uppercase alphabet chars only\n");
+				RZ_LOG_ERROR("core:  /ccl - letters (lower + upper alphabet chars)\n");
+				RZ_LOG_ERROR("core:  /ccd - digits (only numbers)\n");
+				RZ_LOG_ERROR("core:  /ccp - printable (alpha + digit)\n");
+				RZ_LOG_ERROR("core:  /ccb - binary (any number is valid)\n");
 				goto beach;
 			}
 			char *s = strdup(arg);
@@ -3234,17 +3248,17 @@ reread:
 						if (hashLength > 0) {
 							search_collisions(core, hashName, hashValue, hashLength, mode);
 						} else {
-							eprintf("Invalid expected hash hexpairs.\n");
+							RZ_LOG_ERROR("core: Invalid expected hash hexpairs.\n");
 						}
 					}
 					free(hashValue);
 				} else {
-					eprintf("Cannot allocate memory.\n");
+					RZ_LOG_ERROR("core: Cannot allocate memory.\n");
 				}
 				ret = true;
 			} else {
-				eprintf("Usage: /cc [hashname] [hexpairhashvalue]\n");
-				eprintf("Usage: /CC to search ascii collisions\n");
+				RZ_LOG_ERROR("core: Usage: /cc [hashname] [hexpairhashvalue]\n");
+				RZ_LOG_ERROR("core: Usage: /CC to search ascii collisions\n");
 			}
 			free(s);
 			goto beach;
@@ -3259,7 +3273,7 @@ reread:
 				// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
 				rz_search_begin(core->search);
 			} else {
-				eprintf("bad pointer\n");
+				RZ_LOG_ERROR("core: null pointer on search keyword\n");
 				dosearch = false;
 			}
 		} break;
@@ -3341,7 +3355,7 @@ reread:
 				pj_end(param.pj);
 			}
 		} else {
-			eprintf("Usage: /m [file]\n");
+			RZ_LOG_ERROR("core: Usage: /m [file]\n");
 		}
 		rz_cons_clear_line(1);
 		break;
@@ -3362,7 +3376,7 @@ reread:
 				break;
 			}
 		}
-		eprintf("Invalid pattern size (must be > 0)\n");
+		RZ_LOG_ERROR("core: Invalid pattern size (must be > 0)\n");
 	} break;
 	case 'P': // "/P"
 		search_similar_pattern(core, atoi(input + 1), &param);
@@ -3405,7 +3419,7 @@ reread:
 			}
 		}
 		if (err) {
-			eprintf("Usage: /V[1|2|4|8] [minval] [maxval]\n");
+			RZ_LOG_ERROR("core: Usage: /V[1|2|4|8] [minval] [maxval]\n");
 		}
 	}
 		dosearch = false;
@@ -3434,7 +3448,7 @@ reread:
 				bsize = sizeof(ut64) * len;
 				v_buf = v_writebuf(core, nums, len, '8', bsize);
 			} else {
-				eprintf("Usage: /v8 value\n");
+				RZ_LOG_ERROR("core: Usage: /v8 value\n");
 			}
 			break;
 		case '1':
@@ -3442,7 +3456,7 @@ reread:
 				bsize = sizeof(ut8) * len;
 				v_buf = v_writebuf(core, nums, len, '1', bsize);
 			} else {
-				eprintf("Usage: /v1 value\n");
+				RZ_LOG_ERROR("core: Usage: /v1 value\n");
 			}
 			break;
 		case '2':
@@ -3450,7 +3464,7 @@ reread:
 				bsize = sizeof(ut16) * len;
 				v_buf = v_writebuf(core, nums, len, '2', bsize);
 			} else {
-				eprintf("Usage: /v2 value\n");
+				RZ_LOG_ERROR("core: Usage: /v2 value\n");
 			}
 			break;
 		default: // default size
@@ -3461,7 +3475,7 @@ reread:
 					v_buf = v_writebuf(core, nums, len, '4', bsize);
 				}
 			} else {
-				eprintf("Usage: /v4 value\n");
+				RZ_LOG_ERROR("core: Usage: /v4 value\n");
 			}
 			break;
 		}
@@ -3514,13 +3528,13 @@ reread:
 			rz_search_begin(core->search);
 			dosearch = true;
 		} else {
-			eprintf("Invalid keyword\n");
+			RZ_LOG_ERROR("core: Invalid keyword\n");
 			break;
 		}
 		// fallthrough
 	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
-			eprintf("Missing ' ' after /i\n");
+			RZ_LOG_ERROR("core: Missing ' ' after /i\n");
 			ret = false;
 			goto beach;
 		}
@@ -3555,7 +3569,7 @@ reread:
 				skw->type = RZ_SEARCH_KEYWORD_TYPE_STRING;
 				rz_search_kw_add(core->search, skw);
 			} else {
-				eprintf("Invalid keyword\n");
+				RZ_LOG_ERROR("core: Invalid keyword\n");
 				break;
 			}
 		}
@@ -3564,12 +3578,12 @@ reread:
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
-			eprintf("Usage: /e /foo/i or /e/foo/i\n");
+			RZ_LOG_ERROR("core: Usage: /e /foo/i or /e/foo/i\n");
 		} else if (input[1]) {
 			RzSearchKeyword *kw;
 			kw = rz_search_keyword_new_regexp(input + 1, NULL);
 			if (!kw) {
-				eprintf("Invalid regexp specified\n");
+				RZ_LOG_ERROR("core: Invalid regexp specified\n");
 				break;
 			}
 			rz_search_reset(core->search, RZ_SEARCH_REGEXP);
@@ -3579,7 +3593,7 @@ reread:
 			rz_search_begin(core->search);
 			dosearch = true;
 		} else {
-			eprintf("Missing regex\n");
+			RZ_LOG_ERROR("core: Missing regex\n");
 		}
 		break;
 	case 'E': // "/E"
@@ -3596,7 +3610,7 @@ reread:
 			rz_search_begin(core->search);
 			dosearch = true;
 		} else {
-			eprintf("Missing delta\n");
+			RZ_LOG_ERROR("core: Missing delta\n");
 		}
 		break;
 	case 'h': // "/h"
@@ -3606,7 +3620,7 @@ reread:
 		if (p) {
 			*p++ = 0;
 			if (*arg == '?') {
-				eprintf("Usage: /h md5 [hash] [datalen]\n");
+				RZ_LOG_ERROR("core: Usage: /h md5 [hash] [datalen]\n");
 			} else {
 				ut32 min = UT32_MAX;
 				ut32 max = UT32_MAX;
@@ -3623,7 +3637,7 @@ reread:
 				search_hash(core, arg, p, min, max, &param);
 			}
 		} else {
-			eprintf("Missing hash. See ph?\n");
+			RZ_LOG_ERROR("core: Missing hash. See ph?\n");
 		}
 		free(arg);
 	} break;
@@ -3670,14 +3684,14 @@ reread:
 			size_t size;
 			buf = (ut8 *)rz_file_slurp(args[0], &size);
 			if (!buf) {
-				eprintf("Cannot open '%s'\n", args[0]);
+				RZ_LOG_ERROR("core: Cannot open '%s'\n", args[0]);
 				rz_str_argv_free(args);
 				break;
 			}
 			if (n_args > 1) {
 				offset = rz_num_math(core->num, args[1]);
 				if (size <= offset) {
-					eprintf("size <= offset\n");
+					RZ_LOG_ERROR("core: size <= offset\n");
 					rz_str_argv_free(args);
 					free(buf);
 					break;
@@ -3686,7 +3700,7 @@ reread:
 			if (n_args > 2) {
 				len = rz_num_math(core->num, args[2]);
 				if (len > size - offset) {
-					eprintf("len too large\n");
+					RZ_LOG_ERROR("core: len too large\n");
 					rz_str_argv_free(args);
 					free(buf);
 					break;
@@ -3704,13 +3718,13 @@ reread:
 				rz_search_begin(core->search);
 				dosearch = true;
 			} else {
-				eprintf("no keyword\n");
+				RZ_LOG_ERROR("core: no keyword\n");
 			}
 
 			rz_str_argv_free(args);
 			free(buf);
 		} else {
-			eprintf("Usage: /F[j] [file] ([offset] ([sz]))\n");
+			RZ_LOG_ERROR("core: Usage: /F[j] [file] ([offset] ([sz]))\n");
 		}
 		break;
 	case 'x': // "/x" search hex
@@ -3734,7 +3748,7 @@ reread:
 				rz_search_begin(core->search);
 				dosearch = true;
 			} else {
-				eprintf("no keyword\n");
+				RZ_LOG_ERROR("core: no keyword\n");
 			}
 			free(p);
 		}
@@ -3754,30 +3768,30 @@ reread:
 			}
 			len = rz_str_unescape(str);
 			ochunksize = chunksize = RZ_MIN(len, chunksize);
-			eprintf("Using chunksize: %d\n", chunksize);
+			RZ_LOG_ERROR("core: Using chunksize: %d\n", chunksize);
 			core->in_search = false;
 			for (i = 0; i < len; i += chunksize) {
 				chunksize = ochunksize;
 			again:
 				rz_hex_bin2str((ut8 *)str + i, RZ_MIN(chunksize, len - i), buf);
-				eprintf("/x %s\n", buf);
+				RZ_LOG_ERROR("core: /x %s\n", buf);
 				rz_core_cmdf(core, "/x %s", buf);
 				if (core->num->value == 0) {
 					chunksize--;
 					if (chunksize < 1) {
-						eprintf("Oops\n");
+						RZ_LOG_ERROR("core: Oops\n");
 						free(buf);
 						free(str);
 						goto beach;
 					}
-					eprintf("Repeat with chunk size %d\n", chunksize);
+					RZ_LOG_ERROR("core: Repeat with chunk size %d\n", chunksize);
 					goto again;
 				}
 			}
 			free(str);
 			free(buf);
 		} else {
-			eprintf("Usage: /+ [string]\n");
+			RZ_LOG_ERROR("core: Usage: /+ [string]\n");
 		}
 		break;
 	case 'z': // "/z" search strings of min-max range
@@ -3785,19 +3799,19 @@ reread:
 		char *p;
 		ut32 min, max;
 		if (!input[1]) {
-			eprintf("Usage: /z min max\n");
+			RZ_LOG_ERROR("core: Usage: /z min max\n");
 			break;
 		}
 		if ((p = strchr(input + 2, ' '))) {
 			*p = 0;
 			max = rz_num_math(core->num, p + 1);
 		} else {
-			eprintf("Usage: /z min max\n");
+			RZ_LOG_ERROR("core: Usage: /z min max\n");
 			break;
 		}
 		min = rz_num_math(core->num, input + 2);
 		if (!rz_search_set_string_limits(core->search, min, max)) {
-			eprintf("Error: min must be lower than max\n");
+			RZ_LOG_ERROR("core: min must be lower than max\n");
 			break;
 		}
 		rz_search_reset(core->search, RZ_SEARCH_STRING);
@@ -3814,7 +3828,7 @@ reread:
 		rz_core_cmd_help(core, help_msg_slash);
 		break;
 	default:
-		eprintf("See /? for help.\n");
+		RZ_LOG_ERROR("core: See /? for help.\n");
 		break;
 	}
 	rz_config_set_i(core->config, "search.kwidx", search->n_kws);

@@ -6,11 +6,11 @@ db @ sym.main
 dc
 dmh > /dev/null
 aa > /dev/null
-pdf @ sym.main~:3
+dr r13=rip
+pdf @ sym.main~:4
 EOF
 EXPECT=<<EOF
 / int main (int argc, char **argv, char **envp);
-p=3
 EOF
 RUN
 
@@ -19,14 +19,19 @@ FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-dmh~?allocated
+dmh | tail -n 2
+?e ----
 7dso
-dmh~?allocated
+dmh | tail -n 3
 EOF
+REGEXP_FILTER_OUT=(status=[a-z,[0]+)|(size=0x[a-f0-9]+)|-+|\n|[()]|Chunk
 EXPECT=<<EOF
-1
-2
-p=3
+Chunk(status=allocated,size=0x11c10)
+Chunk(status=free[0m,size=0xf160)
+----
+Chunk(status=allocated,size=0x11c10)
+Chunk(status=allocated,size=0x20)
+Chunk(status=free[0m,size=0xf140)
 EOF
 RUN
 

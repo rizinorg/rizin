@@ -26,82 +26,82 @@ EXPECT=<<EOF
 afvR
       argv  0x10000106c
       argc  0x10000106f
-  var_640h  0x100001072
-  var_648h  0x100001617,0x100001691
-  var_654h  0x100001784
-  var_650h  0x10000173c,0x100001807,0x10000181c
-  var_64ch  0x100001736,0x1000017dd,0x1000017f2
-  var_658h  0x1000017d4
-  var_660h  0x1000018f1
-  var_664h  0x10000190b
-  var_670h  0x100001911
-   var_34h  0x10000179e
-  var_440h  0x1000015f8
-   var_30h  0x1000010d6
-   var_2eh  0x1000010f0
+  var_648h  0x100001072
+  var_650h  0x100001617,0x100001691
+  var_65ch  0x100001784
+  var_658h  0x10000173c,0x100001807,0x10000181c
+  var_654h  0x100001736,0x1000017dd,0x1000017f2
+  var_660h  0x1000017d4
+  var_668h  0x1000018f1
+  var_66ch  0x10000190b
+  var_678h  0x100001911
+   var_3ch  0x10000179e
+  var_448h  0x1000015f8
+   var_38h  0x1000010d6
+   var_36h  0x1000010f0
 afvW
       argv
       argc
-  var_640h
-  var_648h  0x100001079
-  var_654h  0x100001137,0x100001315
-  var_650h  0x10000114c,0x1000014f2
-  var_64ch  0x100001156,0x1000012d8
-  var_658h  0x100001160,0x1000014ce
-  var_660h  0x100001597
-  var_664h  0x1000015a3
-  var_670h  0x1000015ad
-   var_34h
-  var_440h
-   var_30h
-   var_2eh
+  var_648h
+  var_650h  0x100001079
+  var_65ch  0x100001137,0x100001315
+  var_658h  0x10000114c,0x1000014f2
+  var_654h  0x100001156,0x1000012d8
+  var_660h  0x100001160,0x1000014ce
+  var_668h  0x100001597
+  var_66ch  0x1000015a3
+  var_678h  0x1000015ad
+   var_3ch
+  var_448h
+   var_38h
+   var_36h
+* var_648h
+R 0x100001072  lea rax, [var_648h]
+* var_650h
+R 0x100001617  lea rbx, [var_650h]
+R 0x100001691  lea rsi, [var_650h]
+W 0x100001079  mov qword [var_650h], rax
+* var_65ch
+R 0x100001784  cmp dword [var_65ch], 0
+W 0x100001137  mov dword [var_65ch], 0
+W 0x100001315  mov dword [var_65ch], 1
+* var_658h
+R 0x10000173c  or ebx, dword [var_658h]
+R 0x100001807  cmp dword [var_658h], 0
+R 0x10000181c  cmp dword [var_658h], 0
+W 0x10000114c  mov dword [var_658h], 0
+W 0x1000014f2  mov dword [var_658h], 1
+* var_654h
+R 0x100001736  mov ebx, dword [var_654h]
+R 0x1000017dd  cmp dword [var_654h], 0
+R 0x1000017f2  cmp dword [var_654h], 0
+W 0x100001156  mov dword [var_654h], 0
+W 0x1000012d8  mov dword [var_654h], 1
+* var_660h
+R 0x1000017d4  cmp dword [var_660h], 0
+W 0x100001160  mov dword [var_660h], 0
+W 0x1000014ce  mov dword [var_660h], 1
+* var_668h
+R 0x1000018f1  mov rax, qword [var_668h]
+W 0x100001597  mov qword [var_668h], rcx
+* var_66ch
+R 0x10000190b  mov edi, dword [var_66ch]
+W 0x1000015a3  mov dword [var_66ch], eax
+* var_678h
+R 0x100001911  mov rsi, qword [var_678h]
+W 0x1000015ad  mov qword [var_678h], rax
+* var_3ch
+R 0x10000179e  lea rdi, [var_3ch]
+* var_448h
+R 0x1000015f8  lea rdi, [var_448h]
+* var_38h
+R 0x1000010d6  lea rdx, [var_38h]
+* var_36h
+R 0x1000010f0  movzx eax, word [var_36h]
 * argv
 R 0x10000106c  mov rbx, rsi
 * argc
 R 0x10000106f  mov r14d, edi
-* var_640h
-R 0x100001072  lea rax, [var_640h]
-* var_648h
-R 0x100001617  lea rbx, [var_648h]
-R 0x100001691  lea rsi, [var_648h]
-W 0x100001079  mov qword [var_648h], rax
-* var_654h
-R 0x100001784  cmp dword [var_654h], 0
-W 0x100001137  mov dword [var_654h], 0
-W 0x100001315  mov dword [var_654h], 1
-* var_650h
-R 0x10000173c  or ebx, dword [var_650h]
-R 0x100001807  cmp dword [var_650h], 0
-R 0x10000181c  cmp dword [var_650h], 0
-W 0x10000114c  mov dword [var_650h], 0
-W 0x1000014f2  mov dword [var_650h], 1
-* var_64ch
-R 0x100001736  mov ebx, dword [var_64ch]
-R 0x1000017dd  cmp dword [var_64ch], 0
-R 0x1000017f2  cmp dword [var_64ch], 0
-W 0x100001156  mov dword [var_64ch], 0
-W 0x1000012d8  mov dword [var_64ch], 1
-* var_658h
-R 0x1000017d4  cmp dword [var_658h], 0
-W 0x100001160  mov dword [var_658h], 0
-W 0x1000014ce  mov dword [var_658h], 1
-* var_660h
-R 0x1000018f1  mov rax, qword [var_660h]
-W 0x100001597  mov qword [var_660h], rcx
-* var_664h
-R 0x10000190b  mov edi, dword [var_664h]
-W 0x1000015a3  mov dword [var_664h], eax
-* var_670h
-R 0x100001911  mov rsi, qword [var_670h]
-W 0x1000015ad  mov qword [var_670h], rax
-* var_34h
-R 0x10000179e  lea rdi, [var_34h]
-* var_440h
-R 0x1000015f8  lea rdi, [var_440h]
-* var_30h
-R 0x1000010d6  lea rdx, [var_30h]
-* var_2eh
-R 0x1000010f0  movzx eax, word [var_2eh]
 EOF
 RUN
 
@@ -128,53 +128,53 @@ afv=
 afvxa
 EOF
 EXPECT=<<EOF
+* var_648h
+R 0x100001072  lea rax, [var_648h]
+* var_650h
+R 0x100001617  lea rbx, [var_650h]
+R 0x100001691  lea rsi, [var_650h]
+W 0x100001079  mov qword [var_650h], rax
+* var_65ch
+R 0x100001784  cmp dword [var_65ch], 0
+W 0x100001137  mov dword [var_65ch], 0
+W 0x100001315  mov dword [var_65ch], 1
+* var_658h
+R 0x10000173c  or ebx, dword [var_658h]
+R 0x100001807  cmp dword [var_658h], 0
+R 0x10000181c  cmp dword [var_658h], 0
+W 0x10000114c  mov dword [var_658h], 0
+W 0x1000014f2  mov dword [var_658h], 1
+* var_654h
+R 0x100001736  mov ebx, dword [var_654h]
+R 0x1000017dd  cmp dword [var_654h], 0
+R 0x1000017f2  cmp dword [var_654h], 0
+W 0x100001156  mov dword [var_654h], 0
+W 0x1000012d8  mov dword [var_654h], 1
+* var_660h
+R 0x1000017d4  cmp dword [var_660h], 0
+W 0x100001160  mov dword [var_660h], 0
+W 0x1000014ce  mov dword [var_660h], 1
+* var_668h
+R 0x1000018f1  mov rax, qword [var_668h]
+W 0x100001597  mov qword [var_668h], rcx
+* var_66ch
+R 0x10000190b  mov edi, dword [var_66ch]
+W 0x1000015a3  mov dword [var_66ch], eax
+* var_678h
+R 0x100001911  mov rsi, qword [var_678h]
+W 0x1000015ad  mov qword [var_678h], rax
+* var_3ch
+R 0x10000179e  lea rdi, [var_3ch]
+* var_448h
+R 0x1000015f8  lea rdi, [var_448h]
+* var_38h
+R 0x1000010d6  lea rdx, [var_38h]
+* var_36h
+R 0x1000010f0  movzx eax, word [var_36h]
 * argv
 R 0x10000106c  mov rbx, rsi
 * argc
 R 0x10000106f  mov r14d, edi
-* var_640h
-R 0x100001072  lea rax, [var_640h]
-* var_648h
-R 0x100001617  lea rbx, [var_648h]
-R 0x100001691  lea rsi, [var_648h]
-W 0x100001079  mov qword [var_648h], rax
-* var_654h
-R 0x100001784  cmp dword [var_654h], 0
-W 0x100001137  mov dword [var_654h], 0
-W 0x100001315  mov dword [var_654h], 1
-* var_650h
-R 0x10000173c  or ebx, dword [var_650h]
-R 0x100001807  cmp dword [var_650h], 0
-R 0x10000181c  cmp dword [var_650h], 0
-W 0x10000114c  mov dword [var_650h], 0
-W 0x1000014f2  mov dword [var_650h], 1
-* var_64ch
-R 0x100001736  mov ebx, dword [var_64ch]
-R 0x1000017dd  cmp dword [var_64ch], 0
-R 0x1000017f2  cmp dword [var_64ch], 0
-W 0x100001156  mov dword [var_64ch], 0
-W 0x1000012d8  mov dword [var_64ch], 1
-* var_658h
-R 0x1000017d4  cmp dword [var_658h], 0
-W 0x100001160  mov dword [var_658h], 0
-W 0x1000014ce  mov dword [var_658h], 1
-* var_660h
-R 0x1000018f1  mov rax, qword [var_660h]
-W 0x100001597  mov qword [var_660h], rcx
-* var_664h
-R 0x10000190b  mov edi, dword [var_664h]
-W 0x1000015a3  mov dword [var_664h], eax
-* var_670h
-R 0x100001911  mov rsi, qword [var_670h]
-W 0x1000015ad  mov qword [var_670h], rax
-* var_34h
-R 0x10000179e  lea rdi, [var_34h]
-* var_440h
-R 0x1000015f8  lea rdi, [var_440h]
-* var_30h
-R 0x1000010d6  lea rdx, [var_30h]
-* var_2eh
-R 0x1000010f0  movzx eax, word [var_2eh]
 afvR
       argv  0x10000106c
       argc  0x10000106f
@@ -207,81 +207,81 @@ afv=
 afvxv
 EOF
 EXPECT=<<EOF
+* var_648h
+R 0x100001072  lea rax, [var_648h]
+* var_650h
+R 0x100001617  lea rbx, [var_650h]
+R 0x100001691  lea rsi, [var_650h]
+W 0x100001079  mov qword [var_650h], rax
+* var_65ch
+R 0x100001784  cmp dword [var_65ch], 0
+W 0x100001137  mov dword [var_65ch], 0
+W 0x100001315  mov dword [var_65ch], 1
+* var_658h
+R 0x10000173c  or ebx, dword [var_658h]
+R 0x100001807  cmp dword [var_658h], 0
+R 0x10000181c  cmp dword [var_658h], 0
+W 0x10000114c  mov dword [var_658h], 0
+W 0x1000014f2  mov dword [var_658h], 1
+* var_654h
+R 0x100001736  mov ebx, dword [var_654h]
+R 0x1000017dd  cmp dword [var_654h], 0
+R 0x1000017f2  cmp dword [var_654h], 0
+W 0x100001156  mov dword [var_654h], 0
+W 0x1000012d8  mov dword [var_654h], 1
+* var_660h
+R 0x1000017d4  cmp dword [var_660h], 0
+W 0x100001160  mov dword [var_660h], 0
+W 0x1000014ce  mov dword [var_660h], 1
+* var_668h
+R 0x1000018f1  mov rax, qword [var_668h]
+W 0x100001597  mov qword [var_668h], rcx
+* var_66ch
+R 0x10000190b  mov edi, dword [var_66ch]
+W 0x1000015a3  mov dword [var_66ch], eax
+* var_678h
+R 0x100001911  mov rsi, qword [var_678h]
+W 0x1000015ad  mov qword [var_678h], rax
+* var_3ch
+R 0x10000179e  lea rdi, [var_3ch]
+* var_448h
+R 0x1000015f8  lea rdi, [var_448h]
+* var_38h
+R 0x1000010d6  lea rdx, [var_38h]
+* var_36h
+R 0x1000010f0  movzx eax, word [var_36h]
 * argv
 R 0x10000106c  mov rbx, rsi
 * argc
 R 0x10000106f  mov r14d, edi
-* var_640h
-R 0x100001072  lea rax, [var_640h]
-* var_648h
-R 0x100001617  lea rbx, [var_648h]
-R 0x100001691  lea rsi, [var_648h]
-W 0x100001079  mov qword [var_648h], rax
-* var_654h
-R 0x100001784  cmp dword [var_654h], 0
-W 0x100001137  mov dword [var_654h], 0
-W 0x100001315  mov dword [var_654h], 1
-* var_650h
-R 0x10000173c  or ebx, dword [var_650h]
-R 0x100001807  cmp dword [var_650h], 0
-R 0x10000181c  cmp dword [var_650h], 0
-W 0x10000114c  mov dword [var_650h], 0
-W 0x1000014f2  mov dword [var_650h], 1
-* var_64ch
-R 0x100001736  mov ebx, dword [var_64ch]
-R 0x1000017dd  cmp dword [var_64ch], 0
-R 0x1000017f2  cmp dword [var_64ch], 0
-W 0x100001156  mov dword [var_64ch], 0
-W 0x1000012d8  mov dword [var_64ch], 1
-* var_658h
-R 0x1000017d4  cmp dword [var_658h], 0
-W 0x100001160  mov dword [var_658h], 0
-W 0x1000014ce  mov dword [var_658h], 1
-* var_660h
-R 0x1000018f1  mov rax, qword [var_660h]
-W 0x100001597  mov qword [var_660h], rcx
-* var_664h
-R 0x10000190b  mov edi, dword [var_664h]
-W 0x1000015a3  mov dword [var_664h], eax
-* var_670h
-R 0x100001911  mov rsi, qword [var_670h]
-W 0x1000015ad  mov qword [var_670h], rax
-* var_34h
-R 0x10000179e  lea rdi, [var_34h]
-* var_440h
-R 0x1000015f8  lea rdi, [var_440h]
-* var_30h
-R 0x1000010d6  lea rdx, [var_30h]
-* var_2eh
-R 0x1000010f0  movzx eax, word [var_2eh]
 afvR
-  var_640h  0x100001072
-  var_648h  0x100001617,0x100001691
-  var_654h  0x100001784
-  var_650h  0x10000173c,0x100001807,0x10000181c
-  var_64ch  0x100001736,0x1000017dd,0x1000017f2
-  var_658h  0x1000017d4
-  var_660h  0x1000018f1
-  var_664h  0x10000190b
-  var_670h  0x100001911
-   var_34h  0x10000179e
-  var_440h  0x1000015f8
-   var_30h  0x1000010d6
-   var_2eh  0x1000010f0
+  var_648h  0x100001072
+  var_650h  0x100001617,0x100001691
+  var_65ch  0x100001784
+  var_658h  0x10000173c,0x100001807,0x10000181c
+  var_654h  0x100001736,0x1000017dd,0x1000017f2
+  var_660h  0x1000017d4
+  var_668h  0x1000018f1
+  var_66ch  0x10000190b
+  var_678h  0x100001911
+   var_3ch  0x10000179e
+  var_448h  0x1000015f8
+   var_38h  0x1000010d6
+   var_36h  0x1000010f0
 afvW
-  var_640h
-  var_648h  0x100001079
-  var_654h  0x100001137,0x100001315
-  var_650h  0x10000114c,0x1000014f2
-  var_64ch  0x100001156,0x1000012d8
-  var_658h  0x100001160,0x1000014ce
-  var_660h  0x100001597
-  var_664h  0x1000015a3
-  var_670h  0x1000015ad
-   var_34h
-  var_440h
-   var_30h
-   var_2eh
+  var_648h
+  var_650h  0x100001079
+  var_65ch  0x100001137,0x100001315
+  var_658h  0x10000114c,0x1000014f2
+  var_654h  0x100001156,0x1000012d8
+  var_660h  0x100001160,0x1000014ce
+  var_668h  0x100001597
+  var_66ch  0x1000015a3
+  var_678h  0x1000015ad
+   var_3ch
+  var_448h
+   var_38h
+   var_36h
 EOF
 RUN
 
@@ -345,10 +345,10 @@ af
 afv
 EOF
 EXPECT=<<EOF
-var int64_t var_20h @ rsp+0x48
-var int64_t var_10h @ rbp+0x10
-var int64_t var_18h @ rbp+0x18
-var int64_t var_bp_20h @ rbp+0x20
+var int64_t var_8h @ stack + 0x8
+var int64_t var_10h @ stack + 0x10
+var int64_t var_18h @ stack + 0x18
+var int64_t var_20h @ stack + 0x20
 EOF
 RUN
 
@@ -358,7 +358,6 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.flags=false
 e asm.bytes=true
-e analysis.vars.stackname=true
 e analysis.cc=ms
 wx 488bc448895808488970104889781841574881ecb00000008364242000488d48884c8d9c24b0000000498b5b10498b7318498b7b20498be3415fc3
 af
@@ -368,42 +367,42 @@ pdf
 EOF
 EXPECT=<<EOF
 afvR
-   var_c0h  0x18
-   var_30h  0x21
-   var_28h
-   var_20h  0x29
-   var_18h  0x2d
-   var_10h  0x31
-   var_a0h
+   var_98h  0x18
+    var_8h  0x21
+    var_0h
+   var_s8h  0x29
+  var_s10h  0x2d
+  var_s18h  0x31
+   var_78h
 afvW
-   var_c0h  0x18
-   var_30h
-   var_28h
-   var_20h  0x3
-   var_18h  0x7
-   var_10h  0xb
-   var_a0h
+   var_98h  0x18
+    var_8h
+    var_0h
+   var_s8h  0x3
+  var_s10h  0x7
+  var_s18h  0xb
+   var_78h
 / fcn.00000000 ();
-|           ; var int64_t var_c0h @ rsp+0x20
-|           ; var int64_t var_a0h @ rsp+0x40
-|           ; var int64_t var_30h @ rsp+0xb0
-|           ; var int64_t var_28h @ rsp+0xb8
-|           ; var int64_t var_20h @ rsp+0xc0
-|           ; var int64_t var_18h @ rsp+0xc8
-|           ; var int64_t var_10h @ rsp+0xd0
-|           0x00000000      488bc4         mov   rax, var_28h
-|           0x00000003      48895808       mov   qword [var_20h], rbx
-|           0x00000007      48897010       mov   qword [var_18h], rsi
-|           0x0000000b      48897818       mov   qword [var_10h], rdi
+|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int64_t var_78h @ stack - 0x78
+|           ; var int64_t var_8h @ stack - 0x8
+|           ; var int64_t var_0h @ stack + 0x0
+|           ; var int64_t var_s8h @ stack + 0x8
+|           ; var int64_t var_s10h @ stack + 0x10
+|           ; var int64_t var_s18h @ stack + 0x18
+|           0x00000000      488bc4         mov   rax, rsp
+|           0x00000003      48895808       mov   qword [var_s8h], rbx
+|           0x00000007      48897010       mov   qword [var_s10h], rsi
+|           0x0000000b      48897818       mov   qword [var_s18h], rdi
 |           0x0000000f      4157           push  r15
 |           0x00000011      4881ecb00000.  sub   rsp, 0xb0
-|           0x00000018      8364242000     and   dword [var_c0h], 0
-|           0x0000001d      488d4888       lea   rcx, [var_a0h]
-|           0x00000021      4c8d9c24b000.  lea   r11, [var_30h]
-|           0x00000029      498b5b10       mov   rbx, qword [var_20h]
-|           0x0000002d      498b7318       mov   rsi, qword [var_18h]
-|           0x00000031      498b7b20       mov   rdi, qword [var_10h]
-|           0x00000035      498be3         mov   rsp, var_30h
+|           0x00000018      8364242000     and   dword [var_98h], 0
+|           0x0000001d      488d4888       lea   rcx, [var_78h]
+|           0x00000021      4c8d9c24b000.  lea   r11, [var_8h]
+|           0x00000029      498b5b10       mov   rbx, qword [var_s8h]
+|           0x0000002d      498b7318       mov   rsi, qword [var_s10h]
+|           0x00000031      498b7b20       mov   rdi, qword [var_s18h]
+|           0x00000035      498be3         mov   rsp, r11
 |           0x00000038      415f           pop   r15
 \           0x0000003a      c3             ret
 EOF
@@ -417,7 +416,6 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.flags=false
 e asm.comments=false
-e analysis.vars.stackname=true
 wx 80b483b000af78600b467b8013467b707b78002b03d07a887b689a6103e07b881a047b689a6100bf0c37bd465df8047b7047
 af
 aaef
@@ -444,14 +442,14 @@ afvW
     var_fh  0xe
     var_4h
 / fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
-|           ; var int16_t var_10h @ sp+0x0
-|           ; var int8_t var_fh @ sp+0x1
-|           ; var int16_t var_eh @ sp+0x2
-|           ; var int32_t var_ch @ sp+0x4
-|           ; var int16_t var_4h @ sp+0xc
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
 |           ; arg int16_t arg3 @ r2
+|           ; var int16_t var_10h @ stack - 0x10
+|           ; var int8_t var_fh @ stack - 0xf
+|           ; var int16_t var_eh @ stack - 0xe
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int16_t var_4h @ stack - 0x4
 |           0x00000000      80b4           push  {r7}
 |           0x00000002      83b0           sub   sp, 0xc
 |           0x00000004      00af           add   r7, var_10h
@@ -493,20 +491,20 @@ EOF
 EXPECT=<<EOF
 afvR
 afvW
-var int32_t var_4h_2 @ ebp-0x4
-var int32_t var_4h @ ebp+0x0
-arg int32_t arg_8h @ ebp+0x8
-arg int32_t arg_ch @ ebp+0xc
+var int32_t var_8h @ stack - 0x4
+arg int32_t var_4h @ stack + 0x0
+arg int32_t arg_4h @ stack + 0x8
+arg int32_t arg_8h @ stack + 0xc
 afvR
-    arg_8h  0x16
-    arg_ch  0x19
-  var_4h_2
+    arg_4h  0x16
+    arg_8h  0x19
     var_4h  0x24,0x2d
+    var_8h
 afvW
+    arg_4h
     arg_8h
-    arg_ch
-  var_4h_2  0x1c
     var_4h  0x27
+    var_8h  0x1c
 EOF
 RUN
 
@@ -517,4 +515,96 @@ af+ a @ 0
 aa
 EOF
 EXPECT=
+RUN
+
+NAME=Analyze vars accessed from bp (x86)
+FILE=bins/elf/vars-x86_64-bp
+CMDS=<<EOF
+s sym.varfunc
+af
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_18h @ stack - 0x18
+var int64_t var_14h @ stack - 0x14
+var int64_t var_10h @ stack - 0x10
+var int64_t var_ch @ stack - 0xc
+EOF
+RUN
+
+NAME=Vars from dwarf accessed from bp (x86)
+FILE=bins/elf/vars-x86_64-bp
+CMDS=<<EOF
+aaa
+s sym.varfunc
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- varfunc:
+/ dbg.varfunc ();
+|           ; var int lightbulb @ stack - 0x18
+|           ; var int sun @ stack - 0x14
+|           ; var int last @ stack - 0x10
+|           ; var int chance @ stack - 0xc
+|           0x0000113c      push  rbp
+|           0x0000113d      mov   rbp, rsp
+|           0x00001140      sub   rsp, 0x10
+|           0x00001144      mov   dword [lightbulb], 1
+|           0x0000114b      mov   dword [sun], 2
+|           0x00001152      mov   dword [last], 3
+|           0x00001159      mov   dword [chance], 4
+|           0x00001160      mov   eax, 0
+|           0x00001165      call  dbg.leaffunc
+|           0x0000116a      mov   eax, dword [chance]
+|           0x0000116d      mov   dword [sun], eax
+|           0x00001170      mov   eax, dword [lightbulb]
+|           0x00001173      leave
+\           0x00001174      ret
+EOF
+RUN
+
+NAME=Analyze vars accessed from sp (x86)
+FILE=bins/elf/vars-x86_64-sp
+CMDS=<<EOF
+s sym.varfunc
+af
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_10h @ stack - 0x10
+var int64_t var_ch @ stack - 0xc
+var int64_t var_8h @ stack - 0x8
+var int64_t var_4h @ stack - 0x4
+EOF
+RUN
+
+NAME=Vars from dwarf accessed from sp (x86)
+FILE=bins/elf/vars-x86_64-sp
+CMDS=<<EOF
+aaa
+s sym.varfunc
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- varfunc:
+/ dbg.varfunc ();
+|           ; var int lightbulb @ stack - 0x10
+|           ; var int sun @ stack - 0xc
+|           ; var int last @ stack - 0x8
+|           ; var int chance @ stack - 0x4
+|           0x00001137      sub   rsp, 0x10
+|           0x0000113b      mov   dword [rsp], 1
+|           0x00001142      mov   dword [sun], 2
+|           0x0000114a      mov   dword [last], 3
+|           0x00001152      mov   dword [chance], 4
+|           0x0000115a      mov   eax, 0
+|           0x0000115f      call  dbg.leaffunc
+|           0x00001164      mov   eax, dword [chance]
+|           0x00001168      mov   dword [sun], eax
+|           0x0000116c      mov   eax, dword [rsp]
+|           0x0000116f      add   rsp, 0x10
+\           0x00001173      ret
+EOF
 RUN

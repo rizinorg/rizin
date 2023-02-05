@@ -1,6 +1,8 @@
 #ifndef RZ_NAME_H
 #define RZ_NAME_H
 
+#include <rz_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

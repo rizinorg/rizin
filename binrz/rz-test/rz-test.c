@@ -42,22 +42,22 @@ typedef struct rz_test_state_t {
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
 	HtPP *path_left; // char * (path to test file) => RzTestFileCounts *
-	RzPVector completed_paths;
+	RzPVector /*<char *>*/ completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
 	ut64 br_count;
 	ut64 fx_count;
-	RzPVector queue;
-	RzPVector results;
+	RzPVector /*<RzTest *>*/ queue;
+	RzPVector /*<RzTestResultInfo *>*/ results;
 } RzTestState;
 
-static RzThreadFunctionRet worker_th(RzThread *th);
+static void *worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
-static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results);
-static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results);
-static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results);
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 
 static int help(bool verbose) {
 	printf("Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -72,13 +72,15 @@ static int help(bool verbose) {
 			" -L           log mode (better printing for CI, logfiles, etc.)\n"
 			" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 			" -j [threads] how many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")\n"
-			" -r [rizin] path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
-			" -m [rz-asm]   path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
+			" -r [rizin]   path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
+			" -m [rz-asm]  path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
 			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
 			" -C [dir]     chdir before running rz-test (default follows executable symlink + test/new\n"
 			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
 			" -o [file]    output test run information in JSON format to file\n"
-			" -e [dir]     exclude a particular directory while testing (this option can appear many times)"
+			" -e [dir]     exclude a particular directory while testing (this option can appear many times)\n"
+			" -s [num]     number of expected successful tests\n"
+			" -x [num]     number of expected failed tests"
 			"\n"
 			"Supported test types: @json @unit @fuzz @cmds\n"
 			"OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
@@ -196,6 +198,8 @@ int rz_test_main(int argc, const char **argv) {
 	RzPVector *except_dir = rz_pvector_new(free);
 	const char *rz_test_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
+	st64 expect_succ = -1;
+	st64 expect_fail = -1;
 	int ret = 0;
 
 	if (!except_dir) {
@@ -219,7 +223,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -234,7 +238,7 @@ int rz_test_main(int argc, const char **argv) {
 			if (quiet) {
 				printf(RZ_VERSION "\n");
 			} else {
-				char *s = rz_str_version("rz-test");
+				char *s = rz_version_str("rz-test");
 				printf("%s\n", s);
 				free(s);
 			}
@@ -292,6 +296,21 @@ int rz_test_main(int argc, const char **argv) {
 		case 'e':
 			rz_pvector_push(except_dir, strdup(opt.arg));
 			break;
+		case 's':
+			// rz_num_math returns 0 for both '0' and invalid str
+			expect_succ = rz_num_math(NULL, opt.arg);
+			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_succ < 0) {
+				RZ_LOG_ERROR("Number of expected successful tests is invalid\n");
+				goto beach;
+			}
+			break;
+		case 'x':
+			expect_fail = rz_num_math(NULL, opt.arg);
+			if (!rz_num_is_valid_input(NULL, opt.arg) || expect_fail < 0) {
+				RZ_LOG_ERROR("Number of expected failed tests is invalid\n");
+				goto beach;
+			}
+			break;
 		default:
 			ret = help(false);
 			goto beach;
@@ -332,8 +351,15 @@ int rz_test_main(int argc, const char **argv) {
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
 	RzTestState state = { 0 };
-	state.run_config.rz_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
-	state.run_config.rz_asm_cmd = rz_asm_cmd ? rz_asm_cmd : RZ_ASM_CMD_DEFAULT;
+	// Avoid PATH search for each process launched
+	if (!rizin_cmd) {
+		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
+	}
+	if (!rz_asm_cmd) {
+		rz_asm_cmd = rz_file_path(RZ_ASM_CMD_DEFAULT);
+	}
+	state.run_config.rz_cmd = rizin_cmd;
+	state.run_config.rz_asm_cmd = rz_asm_cmd;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
@@ -464,7 +490,11 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 
-	rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+	if (rz_pvector_len(&state.db->tests) != 0) {
+		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+	} else {
+		eprintf("No tests discovered\n");
+	}
 
 	if (log_mode) {
 		// Log mode prints the state after every completed file.
@@ -490,7 +520,7 @@ int rz_test_main(int argc, const char **argv) {
 	rz_pvector_init(&workers, NULL);
 	int i;
 	for (i = 0; i < workers_count; i++) {
-		RzThread *th = rz_th_new(worker_th, &state, 0);
+		RzThread *th = rz_th_new((RzThreadFunction)worker_th, &state);
 		if (!th) {
 			eprintf("Failed to start thread.\n");
 			rz_th_lock_leave(state.lock);
@@ -548,7 +578,15 @@ int rz_test_main(int argc, const char **argv) {
 		interact(&state);
 	}
 
-	if (state.xx_count) {
+	if (expect_succ > 0 && expect_succ != state.ok_count) {
+		ret = 1;
+	}
+
+	if (expect_fail > 0 && expect_fail != state.xx_count) {
+		ret = 1;
+	}
+
+	if (expect_fail < 0 && expect_succ < 0 && state.xx_count) {
 		ret = 1;
 	}
 
@@ -585,7 +623,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD:
 		pj_s(pj, "cmd");
-		pj_ks(pj, "name", test->cmd_test->name.value);
+		pj_ks(pj, "name", test->cmd_test->name.value ? test->cmd_test->name.value : "missing name");
 		break;
 	case RZ_TEST_TYPE_ASM:
 		pj_s(pj, "asm");
@@ -623,8 +661,7 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	pj_end(pj);
 }
 
-static RzThreadFunctionRet worker_th(RzThread *th) {
-	RzTestState *state = rz_th_get_user(th);
+static void *worker_th(RzTestState *state) {
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {
@@ -679,7 +716,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		rz_th_cond_signal(state->cond);
 	}
 	rz_th_lock_leave(state->lock);
-	return RZ_TH_STOP;
+	return NULL;
 }
 
 static void print_diff(const char *actual, const char *expected, const char *regexp) {
@@ -942,6 +979,11 @@ static void interact(RzTestState *state) {
 		}
 
 		printf("#####################\n\n");
+		char *name = rz_test_test_name(result->test);
+		if (name) {
+			printf(Color_RED "[XX]" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", result->test->path, name);
+			free(name);
+		}
 		print_result_diff(&state->run_config, result);
 		bool have_commands = result->test->type == RZ_TEST_TYPE_CMD;
 	menu:
@@ -1038,7 +1080,7 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 }
 
 // After editing a test, fix the line numbers previously saved for all the other tests
-static void fixup_tests(RzPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
+static void fixup_tests(RzPVector /*<RzTestResultInfo *>*/ *results, const char *edited_file, ut64 start_line, st64 delta) {
 	void **it;
 	rz_pvector_foreach (results, it) {
 		RzTestResultInfo *result = *it;
@@ -1096,7 +1138,7 @@ static void save_test_file_for_fix(const char *path, const char *newc) {
 	}
 }
 
-static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RzPVector *fixup_results) {
+static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	char *kv = format_cmd_kv(key, value);
 	if (!kv) {
 		return NULL;
@@ -1116,7 +1158,7 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 	return newc;
 }
 
-static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RzPVector *fixup_results) {
+static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	char *content = read_test_file_for_fix(path);
 	if (!content) {
 		return;
@@ -1130,7 +1172,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free(newc);
 }
 
-static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector *fixup_results) {
+static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	if (result->run_failed || result->proc_out->ret != 0) {
 		return false;
@@ -1190,7 +1232,7 @@ static void replace_asm_test(RZ_NONNULL const char *path, ut64 line_idx,
  */
 static bool asm_test_failed_both_ways(RzAsmTest *test, RzAsmTestOutput *out) {
 	// check that both ways are requested
-	if (!(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) || !(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE)) {
+	if (!(test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) || !(test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE)) {
 		return false;
 	}
 	// check that disasm is wrong
@@ -1242,7 +1284,7 @@ static bool interact_fix_asm(RzTestResultInfo *result) {
 	return true;
 }
 
-static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	switch (result->test->type) {
 	case RZ_TEST_TYPE_CMD:
 		return interact_fix_cmd(result, fixup_results);
@@ -1253,7 +1295,7 @@ static bool interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
 	}
 }
 
-static void interact_break_cmd(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void interact_break_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	ut64 line_begin;
@@ -1274,7 +1316,7 @@ static void interact_break_asm(RzTestResultInfo *result) {
 		test->mode | RZ_ASM_TEST_MODE_BROKEN, test->disasm, test->bytes, test->bytes_size, test->offset, test->il);
 }
 
-static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	switch (result->test->type) {
 	case RZ_TEST_TYPE_CMD:
 		interact_break_cmd(result, fixup_results);
@@ -1287,7 +1329,7 @@ static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
 	}
 }
 
-static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results) {
+static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {

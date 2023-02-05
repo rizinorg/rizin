@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
+#include <rz_lib.h>
 #include <config.h>
 
-static RzDebugPlugin *debug_static_plugins[] = {
-	RZ_DEBUG_STATIC_PLUGINS
-};
+static RzDebugPlugin *debug_static_plugins[] = { RZ_DEBUG_STATIC_PLUGINS };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 	int i;
-	dbg->plugins = rz_list_newf(free);
-	for (i = 0; debug_static_plugins[i]; i++) {
+	dbg->plugins = rz_list_new();
+	for (i = 0; i < RZ_ARRAY_SIZE(debug_static_plugins); i++) {
 		rz_debug_plugin_add(dbg, debug_static_plugins[i]);
 	}
 }
@@ -51,18 +50,26 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 	if (dbg->cur->init) {
 		dbg->cur->init(dbg, &dbg->plugin_data);
 	}
+	// Syncing the reg profile here may fail if the plugin is not ready, but it should
+	// at least clean up the old RzReg contents.
 	rz_debug_reg_profile_sync(dbg);
 	return true;
 }
 
-RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo) {
-	if (!dbg || !foo || !foo->name) {
-		return false;
-	}
-	RzDebugPlugin *dp = RZ_NEW(RzDebugPlugin);
-	memcpy(dp, foo, sizeof(RzDebugPlugin));
-	rz_list_append(dbg->plugins, dp);
+RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
+	rz_return_val_if_fail(dbg && plugin && plugin->name, false);
+	RZ_PLUGIN_CHECK_AND_ADD(dbg->plugins, plugin, RzDebugPlugin);
 	return true;
+}
+
+RZ_API bool rz_debug_plugin_del(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
+	rz_return_val_if_fail(dbg && plugin, false);
+	if (dbg->cur == plugin) {
+		dbg->cur->fini(dbg, dbg->plugin_data);
+		dbg->cur = NULL;
+		dbg->plugin_data = NULL;
+	}
+	return rz_list_delete_data(dbg->plugins, plugin);
 }
 
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *profile) {

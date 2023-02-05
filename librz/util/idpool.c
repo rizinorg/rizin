@@ -36,11 +36,9 @@ RZ_API bool rz_id_pool_grab_id(RzIDPool *pool, ut32 *grabber) {
 
 	*grabber = UT32_MAX;
 	if (pool->freed_ids) {
-		ut32 grab = (ut32)(size_t)rz_queue_dequeue(pool->freed_ids);
-		*grabber = (ut32)grab;
-		if (rz_queue_is_empty(pool->freed_ids)) {
-			rz_queue_free(pool->freed_ids);
-			pool->freed_ids = NULL;
+		rz_vector_pop_front(pool->freed_ids, grabber);
+		if (rz_vector_empty(pool->freed_ids)) {
+			RZ_FREE_CUSTOM(pool->freed_ids, rz_vector_free);
 		}
 		return true;
 	}
@@ -61,16 +59,21 @@ RZ_API bool rz_id_pool_kick_id(RzIDPool *pool, ut32 kick) {
 		return true;
 	}
 	if (!pool->freed_ids) {
-		pool->freed_ids = rz_queue_new(2);
+		pool->freed_ids = rz_vector_new(sizeof(ut32), NULL, NULL);
+		if (!pool->freed_ids) {
+			return false;
+		}
+		rz_vector_reserve(pool->freed_ids, 2);
 	}
-	rz_queue_enqueue(pool->freed_ids, (void *)(size_t)kick);
+	rz_vector_push(pool->freed_ids, &kick);
 	return true;
 }
 
 RZ_API void rz_id_pool_free(RzIDPool *pool) {
-	if (pool && pool->freed_ids) {
-		rz_queue_free(pool->freed_ids);
+	if (!pool) {
+		return;
 	}
+	rz_vector_free(pool->freed_ids);
 	free(pool);
 }
 

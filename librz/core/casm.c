@@ -6,14 +6,12 @@
 #include <rz_core.h>
 #include <rz_asm.h>
 
-#define IFDBG if (0)
-
-static RzCoreAsmHit *find_addr(RzList *hits, ut64 addr);
-static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit);
+static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr);
+static int prune_hits_in_hit_range(RzList /*<RzCoreAsmHit *>*/ *hits, RzCoreAsmHit *hit);
 static int is_hit_inrange(RzCoreAsmHit *hit, ut64 start_range, ut64 end_range);
 static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range);
-static void add_hit_to_sorted_hits(RzList *hits, ut64 addr, int len, ut8 is_valid);
-static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_valid);
+static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid);
+static int prune_hits_in_addr_range(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, ut64 len, ut8 is_valid);
 
 static int rcoreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b) {
 	if (a->addr == b->addr) {
@@ -35,7 +33,7 @@ RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void) {
 	return hit;
 }
 
-RZ_API RzList *rz_core_asm_hit_list_new(void) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_hit_list_new(void) {
 	RzList *list = rz_list_new();
 	if (list) {
 		list->free = &rz_core_asm_hit_free;
@@ -182,7 +180,7 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzC
 }
 
 // TODO: add support for byte-per-byte opcode search
-RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode) {
 	RzCoreAsmHit *hit;
 	RzAsmOp op;
 	RzList *hits;
@@ -208,12 +206,12 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 	ut64 usrimm = rz_num_math(core->num, inp);
 	ut64 usrimm2 = inp_arg ? rz_num_math(core->num, inp_arg) : usrimm;
 	if (usrimm > usrimm2) {
-		eprintf("Error: /ci : Invalid range\n");
+		RZ_LOG_ERROR("core: Invalid range [0x%08" PFMT64x ":0x%08" PFMT64x "]\n", usrimm, usrimm2);
 		return NULL;
 	}
 
 	if (core->blocksize < 8) {
-		eprintf("error: block size too small\n");
+		RZ_LOG_ERROR("core: block size is too small\n");
 		return NULL;
 	}
 	if (!(buf = (ut8 *)calloc(core->blocksize, 1))) {
@@ -410,10 +408,10 @@ beach:
 	return hits;
 }
 
-static void add_hit_to_sorted_hits(RzList *hits, ut64 addr, int len, ut8 is_valid) {
+static void add_hit_to_sorted_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid) {
 	RzCoreAsmHit *hit = rz_core_asm_hit_new();
 	if (hit) {
-		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
+		RZ_LOG_DEBUG("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
 		hit->addr = addr;
 		hit->len = len;
 		hit->valid = is_valid;
@@ -422,10 +420,10 @@ static void add_hit_to_sorted_hits(RzList *hits, ut64 addr, int len, ut8 is_vali
 	}
 }
 
-static void add_hit_to_hits(RzList *hits, ut64 addr, int len, ut8 is_valid) {
+static void add_hit_to_hits(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, int len, ut8 is_valid) {
 	RzCoreAsmHit *hit = rz_core_asm_hit_new();
 	if (hit) {
-		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
+		RZ_LOG_DEBUG("*** Inserting instruction (valid?: %d): instr_addr: 0x%" PFMT64x " instr_len: %d\n", is_valid, addr, len);
 		hit->addr = addr;
 		hit->len = len;
 		hit->valid = is_valid;
@@ -436,7 +434,7 @@ static void add_hit_to_hits(RzList *hits, ut64 addr, int len, ut8 is_valid) {
 	}
 }
 
-static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_valid) {
+static int prune_hits_in_addr_range(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr, ut64 len, ut8 is_valid) {
 	RzCoreAsmHit hit = RZ_EMPTY;
 	hit.addr = addr;
 	hit.len = len;
@@ -444,7 +442,7 @@ static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_va
 	return prune_hits_in_hit_range(hits, &hit);
 }
 
-static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit) {
+static int prune_hits_in_hit_range(RzList /*<RzCoreAsmHit *>*/ *hits, RzCoreAsmHit *hit) {
 	RzListIter *iter, *iter_tmp;
 	RzCoreAsmHit *to_check_hit;
 	int result = 0;
@@ -456,9 +454,9 @@ static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit) {
 	end_range = hit->addr + hit->len;
 	rz_list_foreach_safe (hits, iter, iter_tmp, to_check_hit) {
 		if (to_check_hit && is_hit_inrange(to_check_hit, start_range, end_range)) {
-			IFDBG eprintf("Found hit that clashed (start: 0x%" PFMT64x
-				      " - end: 0x%" PFMT64x " ), 0x%" PFMT64x " len: %d (valid: %d 0x%" PFMT64x
-				      " - 0x%" PFMT64x ")\n",
+			RZ_LOG_DEBUG("Found hit that clashed (start: 0x%" PFMT64x
+				     " - end: 0x%" PFMT64x " ), 0x%" PFMT64x " len: %d (valid: %d 0x%" PFMT64x
+				     " - 0x%" PFMT64x ")\n",
 				start_range, end_range, to_check_hit->addr,
 				to_check_hit->len, to_check_hit->valid, to_check_hit->addr,
 				to_check_hit->addr + to_check_hit->len);
@@ -472,7 +470,7 @@ static int prune_hits_in_hit_range(RzList *hits, RzCoreAsmHit *hit) {
 	return result;
 }
 
-static RzCoreAsmHit *find_addr(RzList *hits, ut64 addr) {
+static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr) {
 	// Find an address in the list of hits
 	RzListIter *addr_iter = NULL;
 	RzCoreAsmHit dummy_value;
@@ -481,7 +479,7 @@ static RzCoreAsmHit *find_addr(RzList *hits, ut64 addr) {
 	return rz_list_iter_get_data(addr_iter);
 }
 
-static int handle_forward_disassemble(RzCore *core, RzList *hits, ut8 *buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {
+static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hits, ut8 *buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {
 	RzCoreAsmHit *hit = NULL, *found_addr = NULL;
 	// forward disassemble from the current instruction up to the end address
 	ut64 temp_instr_addr = current_instr_addr;
@@ -500,7 +498,7 @@ static int handle_forward_disassemble(RzCore *core, RzList *hits, ut8 *buf, ut64
 	rz_asm_set_pc(core->rasm, current_instr_addr);
 	while (tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		temp_instr_len = len - tmp_current_buf_pos;
-		IFDBG eprintf("Current position: %" PFMT64d " instr_addr: 0x%" PFMT64x "\n", tmp_current_buf_pos, temp_instr_addr);
+		RZ_LOG_DEBUG("Current position: %" PFMT64d " instr_addr: 0x%" PFMT64x "\n", tmp_current_buf_pos, temp_instr_addr);
 		temp_instr_len = rz_asm_disassemble(core->rasm, &op, buf + tmp_current_buf_pos, temp_instr_len);
 
 		if (temp_instr_len == 0) {
@@ -523,7 +521,7 @@ static int handle_forward_disassemble(RzCore *core, RzList *hits, ut8 *buf, ut64
 			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
 			if (prune_results) {
 				rz_list_add_sorted(hits, hit, ((RzListComparator)rcoreasm_address_comparator));
-				IFDBG eprintf("Pruned %u hits from list in fwd sweep.\n", prune_results);
+				RZ_LOG_DEBUG("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
 				RZ_FREE(hit);
 			}
@@ -534,19 +532,6 @@ static int handle_forward_disassemble(RzCore *core, RzList *hits, ut8 *buf, ut64
 	}
 	return temp_instr_addr;
 }
-
-#if 0
-static int handle_disassembly_overlap(RzCore* core, RzList *hits, ut8* buf, int len, ut64 current_buf_pos, ut64 current_instr_addr ) {
-	// disassemble over lap means the current instruction decoded using the bytes in a previously decoded instruction
-	ut64 next_buf_pos = current_buf_pos,
-		end_addr = current_instr_addr + ( len - current_buf_pos - 1);
-
-	/* Sub optimal method (e.g. easy) */
-	handle_forward_disassemble (core, hits, buf, len, current_buf_pos, current_instr_addr, end_addr );
-	next_buf_pos = current_buf_pos;
-	return next_buf_pos;
-}
-#endif
 
 static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range) {
 	int result = false;
@@ -609,7 +594,7 @@ static int is_hit_inrange(RzCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 	return result;
 }
 
-RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len) {
 	RzAsmOp op;
 	// if (n > core->blocksize) n = core->blocksize;
 	ut64 at;
@@ -675,7 +660,7 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 	return hits;
 }
 
-static RzList *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding) {
+static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding) {
 	RzList *hits = rz_core_asm_hit_list_new();
 	RzCoreAsmHit dummy_value;
 	RzCoreAsmHit *hit = NULL;
@@ -715,7 +700,7 @@ static RzList *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 le
 		// reset assembler
 		rz_asm_set_pc(core->rasm, current_instr_addr);
 		current_instr_len = len - current_buf_pos + extra_padding;
-		IFDBG eprintf("current_buf_pos: 0x%" PFMT64x ", current_instr_len: %d\n", current_buf_pos, current_instr_len);
+		RZ_LOG_DEBUG("current_buf_pos: 0x%" PFMT64x ", current_instr_len: %d\n", current_buf_pos, current_instr_len);
 		current_instr_len = rz_asm_disassemble(core->rasm, &op, buf + current_buf_pos, current_instr_len);
 		hit = rz_core_asm_hit_new();
 		hit->addr = current_instr_addr;
@@ -732,7 +717,7 @@ static RzList *rz_core_asm_back_disassemble_all(RzCore *core, ut64 addr, ut64 le
 	return hits;
 }
 
-static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
+static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
 	RzList *hits;
 	;
 	RzAsmOp op;
@@ -797,20 +782,6 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 		rz_asm_set_pc(core->rasm, current_instr_addr);
 		current_instr_len = next_buf_pos - current_buf_pos;
 		current_instr_len = rz_asm_disassemble(core->rasm, &op, buf + current_buf_pos, current_instr_len);
-		IFDBG {
-			ut32 byte_cnt = current_instr_len ? current_instr_len : 1;
-			eprintf("current_instr_addr: 0x%" PFMT64x ", current_buf_pos: 0x%" PFMT64x ", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
-
-			ut8 *hex_str = (ut8 *)rz_hex_bin2strdup(buf + current_buf_pos, byte_cnt);
-			eprintf("==== current_instr_bytes: %s ", hex_str);
-
-			if (current_instr_len > 0) {
-				eprintf("op.buf_asm: %s\n", rz_strbuf_get(&op.buf_asm));
-			} else {
-				eprintf("op.buf_asm: <invalid>\n");
-			}
-			free(hex_str);
-		}
 		// disassembly invalid
 		if (current_instr_len == 0 || strstr(rz_strbuf_get(&op.buf_asm), "invalid")) {
 			if (current_instr_len == 0) {
@@ -827,7 +798,7 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 			// and they are lazy, since they purge the hit list
 			ut32 purge_results = 0;
 			ut8 is_valid = true;
-			IFDBG eprintf(" handling underlap case: current_instr_addr: 0x%" PFMT64x ".\n", current_instr_addr);
+			RZ_LOG_DEBUG(" handling underlap case: current_instr_addr: 0x%" PFMT64x ".\n", current_instr_addr);
 			purge_results = prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ true);
 			if (purge_results) {
 				handle_forward_disassemble(core, hits, buf, len, current_buf_pos + current_instr_len, current_instr_addr + current_instr_len, addr);
@@ -856,9 +827,9 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 		}
 
 		// walk backwards by one instruction
-		IFDBG eprintf(" current_instr_addr: 0x%" PFMT64x " current_instr_len: %d next_instr_addr: 0x%04" PFMT64x "\n",
+		RZ_LOG_DEBUG(" current_instr_addr: 0x%" PFMT64x " current_instr_len: %d next_instr_addr: 0x%04" PFMT64x "\n",
 			current_instr_addr, current_instr_len, next_buf_pos);
-		IFDBG eprintf(" hit count: %d \n", hit_count);
+		RZ_LOG_DEBUG(" hit count: %d \n", hit_count);
 		current_instr_addr -= 1;
 		current_buf_pos -= 1;
 
@@ -873,13 +844,13 @@ static RzList *rz_core_asm_back_disassemble(RzCore *core, ut64 addr, int len, ut
 	return hits;
 }
 
-RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
 	ut8 disassmble_each_addr = false;
 	return rz_core_asm_back_disassemble(core, addr, len, hit_count, disassmble_each_addr, extra_padding);
 }
 
-RZ_API RzList *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
+RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_byte(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
 	ut8 disassmble_each_addr = true;
 	return rz_core_asm_back_disassemble(core, addr, len, hit_count, disassmble_each_addr, extra_padding);

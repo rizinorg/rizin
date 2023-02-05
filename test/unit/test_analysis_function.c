@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include "minunit.h"
+#include "test_config.h"
 
 #include "test_analysis_block_invars.inl"
 
@@ -92,11 +93,11 @@ bool test_rz_analysis_function_relocate() {
 	RzAnalysis *analysis = rz_analysis_new();
 	assert_invariants(analysis);
 
-	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "do_something", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_invariants(analysis);
-	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "do_something_else", 0xdeadbeef, 0, NULL);
+	RzAnalysisFunction *fb = rz_analysis_create_function(analysis, "do_something_else", 0xdeadbeef, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_invariants(analysis);
-	rz_analysis_create_function(analysis, "do_something_different", 0xc0ffee, 0, NULL);
+	rz_analysis_create_function(analysis, "do_something_different", 0xc0ffee, RZ_ANALYSIS_FCN_TYPE_NULL);
 	assert_invariants(analysis);
 
 	bool success = rz_analysis_function_relocate(fa, fb->addr);
@@ -117,7 +118,7 @@ bool test_rz_analysis_function_relocate() {
 bool test_rz_analysis_function_labels() {
 	RzAnalysis *analysis = rz_analysis_new();
 
-	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "do_something", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	bool s = rz_analysis_function_set_label(f, "smartfriend", 0x1339);
 	mu_assert_true(s, "set label");
@@ -322,6 +323,116 @@ bool test_initial_underscore(void) {
 	mu_end;
 }
 
+bool test_rz_analysis_function_set_type() {
+	RzAnalysis *analysis = rz_analysis_new();
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+	rz_analysis_cc_set(analysis, "eax sectarian(ecx, edx, stack)");
+	rz_type_db_purge(analysis->typedb);
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(analysis->typedb, types_dir, "x86", 32, "linux");
+
+	// Only setup here
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "postcard", 0x100, RZ_ANALYSIS_FCN_TYPE_NULL);
+	RzAnalysisVarStorage stor = { 0 };
+	stor.type = RZ_ANALYSIS_VAR_STORAGE_REG;
+	stor.reg = "edi";
+	rz_analysis_function_set_var(f, &stor, NULL, 4, "oldarg0");
+	stor.type = RZ_ANALYSIS_VAR_STORAGE_REG;
+	stor.reg = "ecx";
+	rz_analysis_function_set_var(f, &stor, NULL, 4, "oldarg1");
+	stor.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+	stor.stack_off = 1000;
+	rz_analysis_function_set_var(f, &stor, NULL, 4, "oldarg2");
+	stor.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+	stor.stack_off = -8;
+	rz_analysis_function_set_var(f, &stor, NULL, 4, "oldvar");
+	mu_assert_eq(rz_pvector_len(&f->vars), 4, "initial vars");
+	// The order in the vars vector is allowed to be different. It is only assumed here because
+	// it is currently deterministic and this simplifies the test code.
+	RzAnalysisVar *var = rz_pvector_at(&f->vars, 0);
+	mu_assert_streq(var->name, "oldarg0", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "var storage type");
+	mu_assert_streq(var->storage.reg, "edi", "var storage reg");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "int32_t", "var type");
+	var = rz_pvector_at(&f->vars, 1);
+	mu_assert_streq(var->name, "oldarg1", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "var storage type");
+	mu_assert_streq(var->storage.reg, "ecx", "var storage reg");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "int32_t", "var type");
+	var = rz_pvector_at(&f->vars, 2);
+	mu_assert_streq(var->name, "oldarg2", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage type");
+	mu_assert_eq(var->storage.stack_off, 1000, "var storage stack");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "int32_t", "var type");
+	var = rz_pvector_at(&f->vars, 3);
+	mu_assert_streq(var->name, "oldvar", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage type");
+	mu_assert_eq(var->storage.stack_off, -8, "var storage stack");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "int32_t", "var type");
+	f->is_noreturn = true;
+
+	RzCallable *c = rz_type_callable_new("nopartofme");
+	rz_type_callable_arg_add(c, rz_type_callable_arg_new(analysis->typedb, "arg0", rz_type_identifier_of_base_type_str(analysis->typedb, "uint8_t")));
+	rz_type_callable_arg_add(c, rz_type_callable_arg_new(analysis->typedb, "arg1", rz_type_identifier_of_base_type_str(analysis->typedb, "uint32_t")));
+	rz_type_callable_arg_add(c, rz_type_callable_arg_new(analysis->typedb, "arg2", rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t")));
+	rz_type_callable_arg_add(c, rz_type_callable_arg_new(analysis->typedb, "arg3", rz_type_identifier_of_base_type_str(analysis->typedb, "uint32_t")));
+	c->noret = false;
+	c->ret = rz_type_identifier_of_base_type_str(analysis->typedb, "uint16_t");
+	c->cc = rz_str_constpool_get(&analysis->constpool, "sectarian");
+
+	// Actual testing
+
+	rz_analysis_function_set_type(analysis, f, c);
+	rz_type_callable_free(c);
+	mu_assert_streq(f->cc, "sectarian", "cc");
+	mu_assert_eq(rz_pvector_len(&f->vars), 5, "initial vars");
+	// Expected: only the var that was not an arg from before still exists, all
+	// args have been replaced by the ones from the callable.
+	// See note about the ordering above
+	var = rz_pvector_at(&f->vars, 0);
+	mu_assert_streq(var->name, "oldvar", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage type");
+	mu_assert_eq(var->storage.stack_off, -8, "var storage stack");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "int32_t", "var type");
+	var = rz_pvector_at(&f->vars, 1);
+	mu_assert_streq(var->name, "arg0", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "var storage type");
+	mu_assert_streq(var->storage.reg, "ecx", "var storage reg");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "uint8_t", "var type");
+	var = rz_pvector_at(&f->vars, 2);
+	mu_assert_streq(var->name, "arg1", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "var storage type");
+	mu_assert_streq(var->storage.reg, "edx", "var storage reg");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "uint32_t", "var type");
+	var = rz_pvector_at(&f->vars, 3);
+	mu_assert_streq(var->name, "arg2", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage type");
+	mu_assert_eq(var->storage.stack_off, 4, "var storage stack");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "int64_t", "var type");
+	var = rz_pvector_at(&f->vars, 4);
+	mu_assert_streq(var->name, "arg3", "var name");
+	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "var storage type");
+	mu_assert_eq(var->storage.stack_off, 12, "var storage stack");
+	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
+	mu_assert_streq(var->type->identifier.name, "uint32_t", "var type");
+
+	mu_assert_notnull(f->ret_type, "ret type");
+	mu_assert_eq(f->ret_type->kind, RZ_TYPE_KIND_IDENTIFIER, "ret type kind");
+	mu_assert_streq(f->ret_type->identifier.name, "uint16_t", "ret type");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -330,6 +441,7 @@ int all_tests() {
 	mu_run_test(test_dll_names);
 	mu_run_test(test_autonames);
 	mu_run_test(test_initial_underscore);
+	mu_run_test(test_rz_analysis_function_set_type);
 	return tests_passed != tests_run;
 }
 

@@ -83,7 +83,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return bin_info_obj->general_info;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -95,7 +95,7 @@ static RzList *sections(RzBinFile *bf) {
 	return rz_list_clone(bin_info_obj->section_list);
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -107,7 +107,7 @@ static RzList *symbols(RzBinFile *bf) {
 	return rz_list_clone(bin_info_obj->symbol_list);
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -119,7 +119,7 @@ static RzList *entries(RzBinFile *bf) {
 	return rz_list_clone(bin_info_obj->entry_list);
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}

@@ -3,6 +3,64 @@
 ---
 name: cmd_print
 commands:
+  - name: pb
+    summary: Print bitstream of <n> bits, skipping the first <skip> bits.
+    cname: print_bitstream
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: skip
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        default_value: 0
+  - name: pB
+    summary: Print bitstream of <n> bytes
+    cname: print_byte_bitstream
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: pa
+    summary: Print (dis)assembly of given hexpairs/assembly
+    subcommands:
+      - name: pa
+        summary: Print hexpairs of the given assembly expression
+        cname: hex_of_assembly
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: assembly
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+      - name: pae
+        summary: Print ESIL expression of the given assembly expression
+        cname: esil_of_assembly
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: assembly
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+      - name: pad
+        summary: Print assembly expression from hexpairs (alias for pix)
+        cname: assembly_of_hex
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+      - name: pade
+        summary: Print ESIL expression from hexpairs
+        cname: esil_of_hex
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
   - name: pc
     summary: Print bytes as code byte arrays.
     cname: cmd_print_byte_array
@@ -41,6 +99,10 @@ commands:
       - name: pca
         summary: Generate a byte array in GAS assembly.
         cname: cmd_print_byte_array_asm
+        args: []
+      - name: pcA
+        summary: Generate a byte array in GAS assembly with instructions in comments
+        cname: cmd_print_byte_array_with_inst
         args: []
       - name: pcb
         summary: Generate a bash script with the byte array.
@@ -90,6 +152,64 @@ commands:
         summary: Generate a rizin commands for writing the byte array.
         cname: cmd_print_byte_array_rizin
         args: []
+  - name: pD
+    summary: Disassemble N bytes (can be negative)
+    cname: cmd_disassembly_n_bytes
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: n_bytes
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: pC
+    summary: Print disassembly in columns
+    subcommands:
+      - name: pCd
+        summary: Print <N> lines of instructions disassembly in columns
+        cname: print_columns_disassembly
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCD
+        summary: Print <N> lines of the debug registers and stack in columns
+        cname: print_columns_debug
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCa
+        summary: Print <N> lines of annotated hexdump in columns
+        cname: print_columns_hex_annotated
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCA
+        summary: Print <N> lines of op analysis color map in columns
+        cname: print_columns_hex_op_colored
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCx
+        summary: Print <N> lines of hexdump in columns
+        cname: print_columns_hex
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pCw
+        summary: Print <N> lines of 4-byte integer hexdump in columns
+        cname: print_columns_hex_words
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: pd
     summary: Print Disassembly
     cname: cmd_print_disassembly
@@ -269,9 +389,49 @@ commands:
           - name: pdsb
             summary: Summarize current block
             cname: cmd_disassemble_summarize_block
-            args:
-              - name: n_bytes
-                type: RZ_CMD_ARG_TYPE_RZNUM
+            args: []
+  - name: pF
+    summary: Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
+    subcommands:
+      - name: pFa
+        summary: Decode ASN.1 from current block
+        cname: cmd_print_asn1
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: pFb
+        summary: Decode raw protobuf from current block
+        cname: cmd_print_protobuf
+        subcommands:
+          - name: pFb
+            summary: Decode raw protobuf from current block
+            cname: cmd_print_protobuf_standard
+            args: []
+          - name: pFbv
+            summary: Decode raw protobuf from current block (verbose)
+            cname: cmd_print_protobuf_verbose
+            args: []
+      - name: pFp
+        summary: Decode PKCS7 from current block
+        cname: cmd_print_pkcs7
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pFx
+        summary: Decode X.509 from current block
+        cname: cmd_print_x509
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pFA
+        summary: Decode Android Binary XML from current block
+        cname: cmd_print_axml
+        args: []
   - name: pg
     summary: Print gadgets
     cname: cmd_print_gadget
@@ -323,13 +483,13 @@ commands:
     subcommands:
       - name: ph
         summary: Prints a hash/message digest or entropy (use @! to change the block size)
-        cname: cmd_print_msg_digest
+        cname: cmd_print_hash_cfg
         args:
           - name: algo
             type: RZ_CMD_ARG_TYPE_STRING
       - name: phl
         summary: Lists all the supported algorithms
-        cname: cmd_print_msg_digest_algo_list
+        cname: cmd_print_hash_cfg_algo_list
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -337,6 +497,166 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
+  - name: pi
+    summary: Print instructions
+    subcommands:
+      - name: pi
+        summary: Print <N> instructions/bytes
+        cname: print_instr
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pia
+        summary: Print all possible opcodes (byte by byte)
+        cname: print_instr_opcodes
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pib
+        summary: Print all instructions in a basic block
+        cname: print_instr_block
+        args: []
+      - name: pie
+        summary: Print offset and ESIL expression
+        cname: print_instr_esil
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pif
+        summary: Print all instructions at the current function
+        cname: print_instr_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pifc
+        summary: Print only call instructions at the current function
+        cname: print_calls_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pir
+        summary: Print instructions using recursive disassembly algorithm
+        cname: print_instr_recursive
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pir.
+        summary: Print instructions using recursive disassembly algorithm from the current position
+        cname: print_instr_recursive_at
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: piu
+        summary: Print all instructions until first ret/jmp
+        cname: print_instr_until
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+        args:
+          - name: limit
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pix
+        summary: Print assembly expression from hexpairs (alias for pad)
+        cname: assembly_of_hex_alias
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: hexpair
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+  - name: pI
+    summary: Print instructions
+    subcommands:
+      - name: pI
+        summary: Print <N> instructions/bytes
+        cname: print_instructions
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pIf
+        summary: Print all instructions at the current function
+        cname: print_instructions_function
+        args: []
+  - name: pp
+    summary: Print patterns
+    subcommands:
+      - name: pp0
+        summary: Print buffer filled with zeroes
+        cname: print_pattern0
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp1
+        summary: Print incremental byte pattern (honor lower bits of current address and block size)
+        cname: print_pattern1
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp2
+        summary: Print incremental word pattern
+        cname: print_pattern2
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp4
+        summary: Print incremental dword pattern
+        cname: print_pattern4
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pp8
+        summary: Print incremental qword pattern
+        cname: print_pattern8
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppa
+        summary: Print Latin alphabet pattern
+        cname: print_pattern_latin_alphabet
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppd
+        summary: Print De Brujin pattern
+        cname: print_pattern_debrujin
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppf
+        summary: Print buffer filled with 0xFF
+        cname: print_pattern_oxff
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: ppn
+        summary: Print numeric pin pattern
+        cname: print_pattern_num
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: pt
     summary: Print timestamps
     cname: cmd_print_timestamp
@@ -361,6 +681,20 @@ commands:
         summary: Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)
         cname: cmd_print_timestamp_ntfs
         args: []
+  - name: pk
+    summary: Print cryptographic key in randomart
+    cname: print_key_randomart
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: pK
+    summary: Print cryptographic key in randomart mosaic
+    cname: print_key_mosaic
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: pm
     summary: Print libmagic data
     cname: cmd_print_magic
@@ -370,6 +704,120 @@ commands:
         optional: true
     modes:
       - RZ_OUTPUT_MODE_JSON
+  - name: po
+    summary: Print operation applied on the data
+    subcommands:
+      - name: po2
+        summary: 2-byte endian swap
+        cname: print_operation_2swap
+        args: []
+      - name: po4
+        summary: 4-byte endian swap
+        cname: print_operation_4swap
+        args: []
+      - name: po8
+        summary: 8-byte endian swap
+        cname: print_operation_8swap
+        args: []
+      - name: poa
+        summary: Apply addition
+        cname: print_operation_add
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: poA
+        summary: Apply AND operation
+        cname: print_operation_and
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pod
+        summary: Apply division operation
+        cname: print_operation_div
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pol
+        summary: Apply shift left operation
+        cname: print_operation_shl
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pom
+        summary: Apply multiplication operation
+        cname: print_operation_mul
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: poo
+        summary: Apply OR operation
+        cname: print_operation_or
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: por
+        summary: Apply shift right operation
+        cname: print_operation_shr
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pos
+        summary: Apply subtraction operation
+        cname: print_operation_sub
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: pox
+        summary: Apply XOR operation
+        cname: print_operation_xor
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: pr
+    summary: Print raw bytes in different representations
+    subcommands:
+      - name: pr
+        summary: Print raw bytes
+        cname: cmd_print_raw
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: prc
+        summary: Print bytes as colors in palette
+        cname: cmd_print_raw_colors
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: prg
+        summary: Print uncompressed data
+        subcommands:
+          - name: prg
+            summary: gunzip block and print
+            cname: cmd_print_raw_gunzip
+            args: []
+          - name: prgv
+            summary: Show consumed bytes and output size
+            cname: cmd_print_raw_gunzip_verbose
+            args: []
+      - name: prx
+        summary: Printable chars with real offset
+        cname: cmd_print_raw_printable
+        args: []
+      - name: prz
+        summary: Print raw zero-terminated string
+        cname: cmd_print_raw_string
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: psc
+    summary: Generate a C/C++ string
+    cname: print_string_c_cpp
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+    args: []
   - name: psw
     summary: Print buffer as a utf16le string
     cname: print_utf16le
@@ -410,3 +858,790 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
+  - name: pv
+    summary: Print bytes based on current bitness and endianness
+    subcommands:
+      - name: pv
+        summary: print bytes
+        cname: print_value
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv1
+        summary: print 1 byte
+        cname: print_value1
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv2
+        summary: print 2 bytes
+        cname: print_value2
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv4
+        summary: print 4 bytes
+        cname: print_value4
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+      - name: pv8
+        summary: print 8 bytes
+        cname: print_value8
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: repeat
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+  - name: px
+    summary: Show hexdump
+    subcommands:
+      - name: px
+        summary: show hexdump
+        cname: print_hexdump
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxa
+        summary: show annotated hexdump
+        cname: print_hexdump_annotated
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxA
+        summary: show op analysis color map
+        cname: print_op_analysis_color_map
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxb
+        summary: dump bits in hexdump form
+        cname: print_hexdump_bits
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxc
+        summary: show hexdump with comments
+        cname: print_hexdump_comments
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxd
+        summary: show signed integer dump
+        subcommands:
+          - name: pxd
+            summary: show 1-byte integer dump
+            cname: print_hexdump_signed_integer
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxdh
+            summary: show 2-bytes integer dump
+            cname: print_hexdump_signed_integer2
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxdw
+            summary: show 4-bytes integer dump
+            cname: print_hexdump_signed_integer4
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxdq
+            summary: show 8-bytes integer dump
+            cname: print_hexdump_signed_integer8
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+      - name: pxe
+        summary: emoji hexdump! :)
+        cname: print_hexdump_emoji
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxf
+        summary: show hexdump of current function
+        cname: print_hexdump_function
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxi
+        summary: HexII compact binary representation
+        cname: print_hexdump_hexii
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxr
+        summary: show hexword references
+        subcommands:
+          - name: pxr
+            summary: show hexword references
+            cname: print_hexword_references
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxr1
+            summary: show hexword references
+            cname: print_hexword_references_1
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxr2
+            summary: show hexword references with hexdump
+            cname: print_hexword_references_2
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxr4
+            summary: show hexword references with hexdump
+            cname: print_hexword_references_4
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: pxr8
+            summary: show hexword references with hexdump
+            cname: print_hexword_references_8
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
+              - RZ_OUTPUT_MODE_RIZIN
+            args:
+              - name: len
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+      - name: pxs
+        summary: show hexadecimal in sparse mode
+        cname: print_hexdump_sparse
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxt
+        summary: show delta pointer table in rizin commands
+        cname: print_delta_pointer_table
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: pxx
+        summary: show <N> bytes of hex-less hexdump
+        cname: print_hexdump_hexless_bytes
+        args: []
+      - name: pxX
+        summary: show <N> words of hex-less hexdump
+        cname: print_hexdump_hexless_words
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: px0
+        summary: 8bit hexpair list of bytes until zero byte
+        cname: print_hexdump_hexpair_bytes
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxh
+        summary: show 2-bytes hexadecimal integers dump
+        cname: print_hexdump_hex2
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxH
+        summary: show 2-bytes hexadecimal integers dump, one per line
+        cname: print_hexdump_hex2l
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxw
+        summary: show 4-bytes hexadecimal integers dump
+        cname: print_hexdump_hex4
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxW
+        summary: show 4-bytes hexadecimal integers dump, one per line
+        cname: print_hexdump_hex4l
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxq
+        summary: show 8-bytes hexadecimal integers dump
+        cname: print_hexdump_hex8
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxQ
+        summary: show 8-bytes hexadecimal integers dump, one per line
+        cname: print_hexdump_hex8l
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxo
+        summary: show 1-byte octal integers dump
+        cname: print_hexdump_oct
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pxl
+        summary: display <N> lines of hexdump
+        cname: print_hexdump_n_lines
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: p6
+    summary: Base64 decoding/encoding
+    subcommands:
+      - name: p6e
+        summary: Base64 encoding
+        cname: cmd_base64_encode
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: p6d
+        summary: Base64 decoding
+        cname: cmd_base64_decode
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+  - name: pu
+    summary: URL-encoded strings
+    subcommands:
+      - name: pu
+        summary: Print <N> bytes as URL-encoded UTF-8 string
+        cname: print_url_encode
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: puw
+        summary: Print <N> bytes as URL-encoded UTF-16 string
+        cname: print_url_encode_wide
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: pu0
+        summary: Print <N> bytes as URL-encoded string and stop at zero
+        cname: print_url_encode_zero
+        args:
+          - name: N
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: p-
+    summary: Blocks information representation as a horisontal bar and summary
+    subcommands:
+      - name: p-
+        summary: Show horisontal bar of metadata in file boundaries
+        cname: print_minus
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: width
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p-e
+        summary: Show horisontal bar of entropy per block in file boundaries
+        cname: print_minus_entropy
+        args:
+          - name: width
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p-h
+        summary: Show statistics table about blocks in the file
+        cname: print_minus_table
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        default_mode: RZ_OUTPUT_MODE_TABLE
+        modes:
+          - RZ_OUTPUT_MODE_TABLE
+        args:
+          - name: depth
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+  - name: p=
+    summary: Blocks information representation as a histogram
+    subcommands:
+      - name: p=
+        summary: Show a vertical histogram of bytes in current block
+        cname: print_equal
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=d
+        summary: Show a summary of min/max/number of unique bytes in the current block
+        cname: print_equal_d
+        args: []
+      - name: p=2
+        summary: Show progress bars of int16 values
+        cname: print_equal_two
+        args:
+          - name: step
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=0
+        summary: Show a vertical histogram of 0x00 bytes per each block
+        cname: print_equal_0x00
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=F
+        summary: Show a vertical histogram of 0xFF bytes per each block
+        cname: print_equal_0xff
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=a
+        summary: Show a vertical histogram of basic blocks per each block
+        cname: print_equal_bbs
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=A
+        summary: Show a vertical histogram of statistical maps per each block
+        cname: print_equal_stats
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=c
+        summary: Show a vertical histogram of calls per each block
+        cname: print_equal_call
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=e
+        summary: Show a vertical histogram of entropy per each block
+        cname: print_equal_entropy
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=i
+        summary: Show a vertical histogram of invalid instructions per each block
+        cname: print_equal_invalid
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=j
+        summary: Show a vertical histogram of jumps and conditional jumps per each block
+        cname: print_equal_jump
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=m
+        summary: Show a vertical histogram of number of flags and marks per each block
+        cname: print_equal_m
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=p
+        summary: Show a vertical histogram of printable bytes per each block
+        cname: print_equal_printable
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=s
+        summary: Show a vertical histogram of syscalls and privileged instructions per each block
+        cname: print_equal_priv
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p=z
+        summary: Show a vertical histogram of number of chars in strings per each block
+        cname: print_equal_z
+        args:
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: p==
+        summary: Blocks information representation as a horizontal histogram
+        subcommands:
+          - name: p==
+            summary: Show a horizontal histogram of bytes in current block
+            cname: print_equal_equal
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==0
+            summary: Show a horizontal histogram of 0x00 bytes per each block
+            cname: print_equal_equal_0x00
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==F
+            summary: Show a horizontal histogram of 0xFF bytes per each block
+            cname: print_equal_equal_0xff
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==a
+            summary: Show a horizontal histogram of basic blocks per each block
+            cname: print_equal_equal_bbs
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==A
+            summary: Show a horizontal histogram of statistical maps per each block
+            cname: print_equal_equal_stats
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==c
+            summary: Show a horizontal histogram of calls per each block
+            cname: print_equal_equal_call
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==e
+            summary: Show a horizontal histogram of entropy per each block
+            cname: print_equal_equal_entropy
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==i
+            summary: Show a vertical histogram of invalid instructions per each block
+            cname: print_equal_equal_invalid
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==j
+            summary: Show a horizontal histogram of jumps and conditional jumps per each block
+            cname: print_equal_equal_jump
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==m
+            summary: Show a horizontal histogram of number of flags and marks per each block
+            cname: print_equal_equal_m
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==p
+            summary: Show a horizontal histogram of printable bytes per each block
+            cname: print_equal_equal_printable
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==s
+            summary: Show a vertical histogram of syscalls and privileged instructions per each block
+            cname: print_equal_equal_priv
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: p==z
+            summary: Show a vertical histogram of number of chars in strings per each block
+            cname: print_equal_equal_z
+            args:
+              - name: blocks
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: totalsize
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: skip
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true

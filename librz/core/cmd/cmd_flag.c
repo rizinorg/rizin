@@ -22,7 +22,7 @@ static size_t countMatching(const char *a, const char *b) {
 	return matches;
 }
 
-static const char *__isOnlySon(RzCore *core, RzList *flags, const char *kw) {
+static const char *__isOnlySon(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *kw) {
 	RzListIter *iter;
 	RzFlagItem *f;
 
@@ -40,7 +40,7 @@ static const char *__isOnlySon(RzCore *core, RzList *flags, const char *kw) {
 	return fname;
 }
 
-static RzList *__childrenFlagsOf(RzCore *core, RzList *flags, const char *prefix) {
+static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *prefix) {
 	RzList *list = rz_list_newf(free);
 	RzListIter *iter, *iter2;
 	RzFlagItem *f, *f2;
@@ -129,9 +129,7 @@ static RzList *__childrenFlagsOf(RzCore *core, RzList *flags, const char *prefix
 	return list;
 }
 
-static void __printRecursive(RzCore *core, RzList *list, const char *name, RzOutputMode mode, int depth);
-
-static void __printRecursive(RzCore *core, RzList *flags, const char *name, RzOutputMode mode, int depth) {
+static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *name, RzOutputMode mode, int depth) {
 	char *fn;
 	RzListIter *iter;
 	if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISEMPTY(name)) {
@@ -209,8 +207,8 @@ RZ_IPI RzCmdStatus rz_flag_add_handler(RzCore *core, int argc, const char **argv
 	bool addFlag = true;
 	ut64 size = argc > 2 ? rz_num_math(core->num, argv[2]) : 1;
 	if ((item = rz_flag_get_at(core->flags, core->offset, false))) {
-		RZ_LOG_INFO("Cannot create flag \"%s\" at 0x%" PFMT64x
-			    " because there is already \"%s\" flag\n",
+		RZ_LOG_ERROR("Cannot create flag \"%s\" at 0x%" PFMT64x
+			     " because there is already \"%s\" flag\n",
 			argv[1],
 			core->offset, item->name);
 		addFlag = false;
@@ -506,7 +504,22 @@ static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 		max = m->itv.addr + m->itv.size;
 	}
 	rz_cons_printf("0x%08" PFMT64x " ", fi->offset);
-	rz_print_rangebar(u->core->print, fi->offset, fi->offset + fi->size, min, max, u->cols);
+	RzBarOptions opts = {
+		.unicode = false,
+		.thinline = false,
+		.legend = true,
+		.offset = false,
+		.offpos = 0,
+		.cursor = false,
+		.curpos = 0,
+		.color = false
+	};
+	RzStrBuf *strbuf = rz_rangebar(&opts, fi->offset, fi->offset + fi->size, min, max, u->cols);
+	if (!strbuf) {
+		RZ_LOG_ERROR("Cannot generate rangebar\n");
+	} else {
+		rz_cons_print(rz_strbuf_drain(strbuf));
+	}
 	rz_cons_printf("  %s\n", fi->name);
 	return true;
 }
@@ -776,8 +789,10 @@ RZ_IPI RzCmdStatus rz_flag_base_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_flag_exists_handler(RzCore *core, int argc, const char **argv) {
 	RzFlagItem *item = rz_flag_get(core->flags, argv[1]);
 	if (!item) {
+		RZ_LOG_ERROR("Cannot find flag '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	RZ_LOG_DEBUG("Find flag '%s' at 0x%" PFMT64x "\n", argv[1], item->offset);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -1,8 +1,12 @@
-egg_plugins = [
-  'exec',
-  #'shya',
-  'xor'
-]
+egg_plugins = {
+  'conf_name': 'plugins_egg',
+  'base_cname': 'rz_egg_plugin_',
+  'list': [
+    'exec',
+    #'shya',
+    'xor'
+  ],
+}
 
 rz_egg_sources = [
   'egg.c',
@@ -22,7 +26,6 @@ rz_egg_sources = [
 
 rz_egg = library('rz_egg', rz_egg_sources,
   include_directories: [platform_inc],
-  c_args: library_cflags,
   dependencies: [
     rz_util_dep,
     rz_syscall_dep,
@@ -32,7 +35,6 @@ rz_egg = library('rz_egg', rz_egg_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
@@ -43,37 +45,8 @@ rz_egg_dep = declare_dependency(link_with: rz_egg,
                                include_directories: [platform_inc])
 meson.override_dependency('rz_egg', rz_egg_dep)
 
-pkgconfig_mod.generate(rz_egg,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_egg',
-  filebase: 'rz_egg',
-  requires: [
-    'rz_util',
-    'rz_asm',
-    'rz_syscall'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_egg.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_asm', 'rz_syscall']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_egg.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_egg': {
+    'target': rz_egg,
+    'dependencies': ['rz_util', 'rz_asm', 'rz_syscall'],
+    'plugins': [egg_plugins]
+}}

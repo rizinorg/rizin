@@ -176,7 +176,7 @@ static int v850_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	ut16 word1 = 0, word2 = 0;
 	struct v850_cmd cmd;
 
-	if (len < 1 || (len > 0 && !memcmp(buf, "\xff\xff\xff\xff\xff\xff", R_MIN(len, 6)))) {
+	if (len < 1 || (len > 0 && !memcmp(buf, "\xff\xff\xff\xff\xff\xff", RZ_MIN(len, 6)))) {
 		return -1;
 	}
 
@@ -555,7 +555,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static RzList *analysis_preludes(RzAnalysis *analysis) {
+static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 #define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
 	KW("\x80\x07", 2, "\xf0\xff", 2);
@@ -563,16 +563,21 @@ static RzList *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	switch (q) {
-	case RZ_ANALYSIS_ARCHINFO_ALIGN:
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 8;
-	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 0;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	return 0;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_v850 = {

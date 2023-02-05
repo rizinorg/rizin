@@ -115,7 +115,7 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
    AND, DOTS, NOARGS.  Don't use them.  */
 
 #ifndef _ANSIDECL_H
-#define _ANSIDECL_H 1
+#define _ANSIDECL_H
 
 /* Every source file includes this file,
    so they will all get the switch for lint.  */

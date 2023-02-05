@@ -1,3 +1,6 @@
+
+modules = {} # every rizin module subdir registers in here
+
 subdir('include')
 
 subdir('util')
@@ -23,7 +26,7 @@ subdir('lang')
 subdir('asm')
 subdir('il')
 subdir('analysis')
-subdir('signature')
+subdir('sign')
 subdir('egg')
 subdir('debug')
 subdir('core')
@@ -31,20 +34,63 @@ subdir('core')
 subdir('main')
 
 conf_data = configuration_data()
-conf_data.set('plugins_core', '&rz_core_plugin_' + ', &rz_core_plugin_'.join(core_plugins) + ', 0')
-conf_data.set('plugins_analysis', '&rz_analysis_plugin_' + ', &rz_analysis_plugin_'.join(analysis_plugins) + ', 0')
-conf_data.set('plugins_asm', '&rz_asm_plugin_' + ', &rz_asm_plugin_'.join(asm_plugins) + ', 0')
-conf_data.set('plugins_bp', '&rz_bp_plugin_' + ', &rz_bp_plugin_'.join(bp_plugins) + ', 0')
-conf_data.set('plugins_bin', '&rz_bin_plugin_' + ', &rz_bin_plugin_'.join(bin_plugins) + ', 0')
-conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
-conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
-conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
-conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
-conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(debug_plugins) + ', 0')
-conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
-conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
-conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
-conf_data.set('plugins_demangler', '&rz_demangler_plugin_' + ', &rz_demangler_plugin_'.join(demangler_plugins))
+foreach module_name, module : modules
+  include_subdirs = ['librz']
+  if 'include_subdirs_extra' in module
+    include_subdirs += module['include_subdirs_extra']
+  endif
+
+  # pkg-config
+  pkgconfig_vars = []
+  if 'plugins' in module
+    pkgconfig_vars += ['plugindir=@0@'.format(rizin_plugins)]
+  endif
+  pkgconfig_vars += ['datdir=@0@'.format(rizin_datdir_rz)]
+
+  pkgconfig_mod.generate(module['target'],
+    subdirs: include_subdirs,
+    version: rizin_version,
+    name: module_name,
+    filebase: module_name,
+    requires: module['dependencies'],
+    description: 'rizin foundation libraries',
+    variables: pkgconfig_vars,
+  )
+
+  # cmake
+  if not is_static_libs_only
+    conf = configuration_data()
+    conf.set('RZ_VERSION', rizin_version)
+    conf.set('RIZIN_MODULE', module['target'].name())
+    conf.set('RIZIN_MODULE_DEPS', ' '.join(module['dependencies']))
+    conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
+    conf.set('INSTALL_INCDIR', rizin_incdir)
+    conf.set('INSTALL_LIBDIR', rizin_libdir)
+    conf.set('INSTALL_PLUGDIR', rizin_plugins)
+    conf.set('rizin_libname', module['target'].name())
+    # meson's cmake module is not used on purpose due to:
+    #   https://todo.sr.ht/~lattis/muon/24
+    #   https://github.com/mesonbuild/meson/issues/9702
+    configure_file(
+      output: conf.get('rizin_libname') + 'Config.cmake',
+      input: 'RzModulesConfig.cmake.in',
+      install_dir: rizin_cmakedir / conf.get('rizin_libname'),
+      configuration: conf,
+    )
+  endif
+
+  # plugins
+  if 'plugins' in module
+    foreach plugin : module['plugins']
+      l = []
+      foreach p : plugin.get('list')
+        l += ['&' + plugin.get('base_cname') + p]
+      endforeach
+      conf_data.set(plugin.get('conf_name'), ', '.join(l))
+    endforeach
+  endif
+endforeach
+
 config_h = configure_file(
   input: 'config.h.in',
   output: 'config.h',
@@ -55,8 +101,11 @@ if not is_static_libs_only
   conf = configuration_data()
   conf.set('RZ_VERSION', rizin_version)
   conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  cmake_mod.configure_package_config_file(
-    name: 'Rizin',
+  # meson's cmake module is not used on purpose due to:
+  #   https://todo.sr.ht/~lattis/muon/24
+  #   https://github.com/mesonbuild/meson/issues/9702
+  configure_file(
+    output: 'RizinConfig.cmake',
     input: 'RizinConfig.cmake.in',
     install_dir: rizin_cmakedir / 'Rizin',
     configuration: conf,

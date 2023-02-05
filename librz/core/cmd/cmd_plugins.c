@@ -32,7 +32,7 @@ RZ_IPI RzCmdStatus rz_plugins_debug_print_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_plugins_hash_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_hash_plugins_print(state);
+	return rz_core_hash_plugins_print(core->hash, state);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -41,7 +41,7 @@ RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
-		if (rz_lib_open(core->lib, argv[1]) == -1) {
+		if (!rz_lib_open(core->lib, argv[1])) {
 			RZ_LOG_ERROR("Could not load an IO plugin from '%s'\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}

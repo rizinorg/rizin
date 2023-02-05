@@ -9,7 +9,10 @@
 #undef U8
 #undef U16
 #undef U32
+#undef U48
 #undef U64
+#undef CAST
+#undef BOOL_TO_BV
 
 #undef SN
 #undef S8
@@ -23,11 +26,18 @@
 #undef XOR
 #undef AND
 
+#undef UNSIGNED
+#undef SIGNED
+#undef APPEND
+#undef DUP
+
 #undef ADD
 #undef SUB
 #undef MUL
 #undef DIV
 #undef SDIV
+#undef MOD
+#undef SMOD
 #undef SHIFTL
 #undef SHIFTR
 #undef SHIFTL0
@@ -74,7 +84,9 @@
 #undef SEQ7
 #undef SEQ8
 #undef SEQ9
+#undef SEQN
 
+#undef EMPTY
 #undef NOP
 #undef BRANCH
 #undef REPEAT

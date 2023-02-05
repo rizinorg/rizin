@@ -1046,33 +1046,34 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, gnu_insn *ins
 	return 0;
 }
 
-static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b, int len, RzAnalysisOpMask mask) {
-	ut32 opcode;
-	// WIP char buf[10]; int reg; int family;
-	int optype, oplen = (analysis->bits == 16) ? 2 : 4;
-	const ut8 *buf;
-	gnu_insn insn;
+static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	ut8 opcode[4] = { 0 };
+	int optype = 0, oplen = (analysis->bits == 16) ? 2 : 4;
+	gnu_insn insn = { 0 };
 
-	if (!op) {
+	if (!op || len < 4) {
 		return oplen;
 	}
 
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->size = oplen;
 	op->addr = addr;
-	// Be endian aware
-	opcode = rz_read_ble32(b, analysis->big_endian);
 
-	// RZ_LOG_DEBUG("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], analysis->big_endian);
-	if (opcode == 0) {
+	if (!buf[0] && !buf[1] && !buf[2] && !buf[3]) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return oplen;
 	}
 
-	opcode = rz_swap_ut32(opcode);
-	buf = (ut8 *)&opcode;
+	if (analysis->big_endian) {
+		memcpy(opcode, buf, oplen);
+	} else {
+		opcode[0] = buf[3];
+		opcode[1] = buf[2];
+		opcode[2] = buf[1];
+		opcode[3] = buf[0];
+	}
 
-	optype = (buf[0] >> 2);
+	optype = opcode[0] >> 2;
 	insn.optype = optype;
 	insn.id = 0;
 
@@ -1094,11 +1095,11 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			  |          (buf[2]>>3)  |
 		  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
 */
-		int rs = ((buf[0] & 3) << 3) + (buf[1] >> 5);
-		int rt = buf[1] & 31;
-		int rd = buf[2] >> 3;
-		int sa = ((buf[2] & 7) << 2) + (buf[3] >> 6);
-		int fun = buf[3] & 63;
+		int rs = ((opcode[0] & 3) << 3) + (opcode[1] >> 5);
+		int rt = opcode[1] & 31;
+		int rd = opcode[2] >> 3;
+		int sa = ((opcode[2] & 7) << 2) + (opcode[3] >> 6);
+		int fun = opcode[3] & 63;
 
 		insn.r_reg.rs = mips_reg_decode(rs);
 		insn.r_reg.rd = mips_reg_decode(rd);
@@ -1287,7 +1288,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		// Maybe better solution: use a cfg. variable to do
 		// the offset... but I dont yet know how to get to that
 		// from this static function
-		int address = (((buf[0] & 3) << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3]) << 2;
+		int address = (((opcode[0] & 3) << 24) + (opcode[1] << 16) + (opcode[2] << 8) + opcode[3]) << 2;
 		ut64 page_hack = addr & 0xf0000000;
 
 		switch (optype) {
@@ -1323,12 +1324,12 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
 */
 #if WIP
-		int fmt = ((buf[0] & 3) << 3) + (buf[1] >> 5);
-		int ft = (buf[1] & 31);
-		int fs = (buf[2] >> 3);
-		int fd = (buf[2] & 7) + (buf[3] >> 6);
+		int fmt = ((opcode[0] & 3) << 3) + (opcode[1] >> 5);
+		int ft = (opcode[1] & 31);
+		int fs = (opcode[2] >> 3);
+		int fd = (opcode[2] & 7) + (opcode[3] >> 6);
 #endif
-		int fun = (buf[3] & 63);
+		int fun = (opcode[3] & 63);
 		// family = 'C';
 		switch (fun) {
 		case 0: // mtc1
@@ -1357,9 +1358,9 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		 ((buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]<<8)+buf[3]
 */
 		op->refptr = 0;
-		int rs = ((buf[0] & 3) << 3) + (buf[1] >> 5);
-		int rt = buf[1] & 31;
-		int imm = (buf[2] << 8) + buf[3];
+		int rs = ((opcode[0] & 3) << 3) + (opcode[1] >> 5);
+		int rt = opcode[1] & 31;
+		int imm = (opcode[2] << 8) + opcode[3];
 		if (((optype >> 2) ^ 0x3) && (imm & 0x8000)) {
 			imm = 0 - (0x10000 - imm);
 		}
@@ -1562,7 +1563,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		case 29: // jalx
 			insn.id = MIPS_INS_JALX;
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-			op->jump = addr + 4 * ((buf[3] | buf[2] << 8 | buf[1] << 16));
+			op->jump = addr + 4 * ((opcode[3] | opcode[2] << 8 | opcode[1] << 16));
 			op->fail = addr + 8;
 			op->delay = 1;
 			snprintf((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
@@ -1769,8 +1770,21 @@ static char *mips_get_reg_profile(RzAnalysis *analysis) {
 		return strdup(p);
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	return 4;
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
 }
 
 RzAnalysisPlugin rz_analysis_plugin_mips_gnu = {

@@ -9,9 +9,6 @@
 #ifndef _INCLUDE_RZ_BIN_MACH0_H_
 #define _INCLUDE_RZ_BIN_MACH0_H_
 
-// 20% faster loading times for macho if enabled
-#define FEATURE_SYMLIST 0
-
 #define RZ_BIN_MACH0_STRING_LENGTH 256
 
 #define CSMAGIC_CODEDIRECTORY      0xfade0c02
@@ -181,32 +178,31 @@ struct MACH0_(obj_t) {
 	struct symbol_t *symbols;
 	ut64 main_addr;
 
+	RzList /*<RzBinSection *>*/ *sections_cache;
 	RzSkipList *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
 	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 	bool reloc_targets_map_base_calculated;
 	bool relocs_patched;
 	RzBuffer *buf_patched;
 	ut64 reloc_targets_map_base;
-	RzPVector /* <struct reloc_t> */ *patchable_relocs; ///< weak pointers to relocs in `relocs` which should be patched
+	RzPVector /*<struct reloc_t *>*/ *patchable_relocs; ///< weak pointers to relocs in `relocs` which should be patched
+	RzHash *hash;
 };
 
-#define MACH0_VFILE_NAME_REBASED_STRIPPED "rebased_stripped"
-#define MACH0_VFILE_NAME_RELOC_TARGETS    "reloc-targets"
-#define MACH0_VFILE_NAME_PATCHED          "patched"
+#define MACH0_VFILE_NAME_RELOC_TARGETS "reloc-targets"
+#define MACH0_VFILE_NAME_PATCHED       "patched"
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RzBinFile *bf);
-struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) * options);
 struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char *MACH0_(section_type_to_string)(ut64 type);
-RzList *MACH0_(section_flag_to_rzlist)(ut64 flag);
-RzList *MACH0_(get_virtual_files)(RzBinFile *bf);
-RzList *MACH0_(get_maps_unpatched)(RzBinFile *bf);
-RzList *MACH0_(get_maps)(RzBinFile *bf);
-RzList *MACH0_(get_segments)(RzBinFile *bf);
+RzList /*<char *>*/ *MACH0_(section_flag_to_rzlist)(ut64 flag);
+RzList /*<RzBinVirtualFile *>*/ *MACH0_(get_virtual_files)(RzBinFile *bf);
+RzList /*<RzBinMap *>*/ *MACH0_(get_maps_unpatched)(RzBinFile *bf);
+RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf);
+RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
-const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin);
 RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
@@ -230,13 +226,12 @@ const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) * hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
-RzList *MACH0_(mach_fields)(RzBinFile *bf);
+RzList /*<RzBinField *>*/ *MACH0_(mach_fields)(RzBinFile *bf);
 RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter);
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);
 
-RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, ut64 off, ut8 *buf, ut64 count);
-RZ_API RzBuffer *MACH0_(new_rebasing_and_stripping_buf)(struct MACH0_(obj_t) * obj);
+RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst);
 RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj);
 RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index);
 

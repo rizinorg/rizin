@@ -863,6 +863,9 @@ static mpc_err_t *mpc_err_count(mpc_input_t *i, mpc_err_t *x, int n) {
   int digits = n/10 + 1;
   char *prefix;
   prefix = mpc_malloc(i, digits + strlen(" of ") + 1);
+  if (!prefix) {
+    return NULL;
+  }
   sprintf(prefix, "%i of ", n);
   y = mpc_err_repeat(i, x, prefix);
   mpc_free(i, prefix);
@@ -1651,6 +1654,9 @@ mpc_parser_t *mpc_failf(const char *fmt, ...) {
 
   va_start(va, fmt);
   buffer = malloc(2048);
+  if (!buffer) {
+    return NULL;
+  }
   vsprintf(buffer, fmt, va);
   va_end(va);
 
@@ -1725,6 +1731,9 @@ mpc_parser_t *mpc_expectf(mpc_parser_t *a, const char *fmt, ...) {
 
   va_start(va, fmt);
   buffer = malloc(2048);
+  if (!buffer) {
+    return NULL;
+  }
   vsprintf(buffer, fmt, va);
   va_end(va);
 

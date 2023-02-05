@@ -168,8 +168,9 @@ RZ_API bool rz_project_migrate_v3_v4(RzProject *prj, RzSerializeResultInfo *res)
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
 	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
-	// Kill me in the future
 	sdb_ns(analysis_db, "vars", true);
+	// Typelinks currently still exist. When they will be removed, the following
+	// code can be enabled and moved to the respective migration.
 #if 0
 	V3V4TypesCtx ctx = {
 		.moved_keys = rz_list_newf(free),
@@ -258,7 +259,7 @@ RZ_API bool rz_project_migrate_v5_v6(RzProject *prj, RzSerializeResultInfo *res)
 // --
 // Migration 6 -> 7
 //
-// Changes from <commit-hash>
+// Changes from 96a85e573e766e3870a01482f36c92df403cc4cd
 //	Removed esil pin feature. Namespace deleted: /core/analysis/pins
 
 RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res) {
@@ -271,6 +272,200 @@ RZ_API bool rz_project_migrate_v6_v7(RzProject *prj, RzSerializeResultInfo *res)
 }
 
 // --
+// Migration 7 -> 8
+//
+// Changes from ea02b0d25f48bb17bc6578259485549cf5c74a20
+//	Removed zignature feature. Namespace deleted: /core/analysis/zigns
+//	Also removed configs zign.* options.
+
+RZ_API bool rz_project_migrate_v7_v8(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	sdb_ns_unset(analysis_db, "zigns", NULL);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_unset(config_db, "zign.autoload", 0);
+	sdb_unset(config_db, "zign.diff.bthresh", 0);
+	sdb_unset(config_db, "zign.diff.gthresh", 0);
+	sdb_unset(config_db, "zign.match.bytes", 0);
+	sdb_unset(config_db, "zign.match.graph", 0);
+	sdb_unset(config_db, "zign.match.hash", 0);
+	sdb_unset(config_db, "zign.match.offset", 0);
+	sdb_unset(config_db, "zign.match.refs", 0);
+	sdb_unset(config_db, "zign.match.types", 0);
+	sdb_unset(config_db, "zign.maxsz", 0);
+	sdb_unset(config_db, "zign.mincc", 0);
+	sdb_unset(config_db, "zign.minsz", 0);
+	sdb_unset(config_db, "zign.prefix", 0);
+	sdb_unset(config_db, "zign.threshold", 0);
+	return true;
+}
+
+// --
+// Migration 8 -> 9
+//
+// Changes from fbad0b4859802a62dcc96002c2710e696809a0c3
+//	Removed fingerprint from the serialized RzAnalysisFunction & RzAnalysisBlock
+
+RZ_API bool rz_project_migrate_v8_v9(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the deserializer will ignore the original serialized data
+	return true;
+}
+
+// --
+// Migration 9 -> 10
+//
+// Changes from 13cd3942d12b61911e27ab82baef045adf57d77c
+//	Removed stackptr and parent_stackptr from the serialized RzAnalysisBlock
+//	Added sp_entry and sp_delta to serialized RzAnalysisBlock
+
+RZ_API bool rz_project_migrate_v9_v10(RzProject *prj, RzSerializeResultInfo *res) {
+	// There is nothing to be done since the deserializer will ignore the original serialized data
+	// and missing sp_entry and sp_delta are valid for unknown values.
+	// The previous stackptr/parent_stackptr are too nonsensical to be converted to sp_entry/sp_delta
+	// unfortunately.
+	return true;
+}
+
+// --
+// Migration 10 -> 11
+//
+// Changes from <commit hash not yet known>
+//   - Removed analysis.vars.stackname config var
+//   - In RzAnalysisVar JSON, "kind", "arg" and "delta" are removed. Instead, there is either a "stack"
+//     or a "reg" key, but never both.
+//     - {name:<str>, type:<str>, kind:"s|b|r", arg?:<bool>, delta?:<st64>, reg?:<str>, cmt?:<str>,...
+//     + {name:<str>, type:<str>, stack?:<st64>, reg?:<str>, cmt?:<str>,...
+//   - In RzAnalysisVar.accs JSON, "sp" value is now actually signed in json instead of being casted
+//     to and from its unsigned representation (pj_kn before, pj_kN now). The loader should be able
+//     to handle both just fine, but we still convert it so we do not have to make this assumption.
+//
+
+typedef struct {
+	Sdb *db_new;
+	RzSerializeResultInfo *res;
+} V10V11FunctionsCtx;
+
+bool v10_v11_migrate_variable(const RzJson *var, st64 maxstack, PJ *pj, RzSerializeResultInfo *res) {
+	if (var->type != RZ_JSON_OBJECT) {
+		goto invalid;
+	}
+	// read necessary info
+	const RzJson *kind = rz_json_get(var, "kind");
+	if (!kind || kind->type != RZ_JSON_STRING) {
+		goto invalid;
+	}
+	bool is_reg;
+	st64 stack_addr;
+	if (!strcmp(kind->str_value, "r")) {
+		is_reg = true;
+		// reg vars did not change, they just don't have the "delta" anymore because it was redundant.
+	} else if (!strcmp(kind->str_value, "b") || !strcmp(kind->str_value, "s")) {
+		is_reg = false;
+		const RzJson *delta = rz_json_get(var, "delta");
+		if (delta && delta->type != RZ_JSON_INTEGER) {
+			goto invalid;
+		}
+		// Despite variables being represented as sp/bp+offset, the delta value
+		// already matches our notion of stack addresses.
+		stack_addr = delta ? delta->num.s_value : 0;
+	} else {
+		goto invalid;
+	}
+	// write new json
+	pj_o(pj);
+	for (const RzJson *var_member = var->children.first; var_member; var_member = var_member->next) {
+		if (!strcmp(var_member->key, "arg") || !strcmp(var_member->key, "delta") || !strcmp(var_member->key, "kind")) {
+			// removed keys
+			continue;
+		}
+		// The accesses' "sp" key will be converted to sgned in the call below
+		// as a somewhat unexpected side effect. But this is exactly what we want.
+		rz_json_to_pj(var_member, pj, true);
+	}
+	if (!is_reg) {
+		pj_kN(pj, "stack", stack_addr);
+	}
+	pj_end(pj);
+	return true;
+invalid:
+	RZ_SERIALIZE_ERR(res, "invalid json contents for variable");
+	return false;
+}
+
+bool v10_v11_functions_foreach_cb(void *user, const char *k, const char *v) {
+	V10V11FunctionsCtx *ctx = user;
+	char *json_str = strdup(v);
+	RzJson *j = rz_json_parse(json_str);
+	bool ret = false;
+	if (!j || j->type != RZ_JSON_OBJECT) {
+		RZ_SERIALIZE_ERR(ctx->res, "invalid json in function key %s", k);
+		goto end;
+	}
+	const RzJson *tmp = rz_json_get(j, "maxstack"); // maxstack is mandatory in v10
+	if (!tmp || tmp->type != RZ_JSON_INTEGER) {
+		RZ_SERIALIZE_ERR(ctx->res, "missing or invalid maxstack in function key %s", k);
+		goto end;
+	}
+	st64 maxstack = tmp->num.s_value;
+	PJ *pj = pj_new();
+	if (!pj) {
+		goto end;
+	}
+	pj_o(pj);
+	for (RzJson *func_member = j->children.first; func_member; func_member = func_member->next) {
+		if (!strcmp(func_member->key, "vars")) {
+			if (func_member->type != RZ_JSON_ARRAY) {
+				RZ_SERIALIZE_ERR(ctx->res, "invalid json contents for function -> vars");
+				pj_free(pj);
+				goto end;
+			}
+			pj_ka(pj, "vars");
+			for (RzJson *var = func_member->children.first; var; var = var->next) {
+				v10_v11_migrate_variable(var, maxstack, pj, ctx->res);
+			}
+			pj_end(pj);
+			continue;
+		}
+		rz_json_to_pj(func_member, pj, true);
+	}
+	pj_end(pj);
+	char *res = pj_drain(pj);
+	if (!res) {
+		goto end;
+	}
+	sdb_set_owned(ctx->db_new, k, res, 0);
+	ret = true;
+end:
+	rz_json_free(j);
+	free(json_str);
+	return ret;
+}
+
+RZ_API bool rz_project_migrate_v10_v11(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_unset(config_db, "analysis.vars.stackname", 0);
+
+	Sdb *analysis_db;
+	RZ_SERIALIZE_SUB(core_db, analysis_db, res, "analysis", return false;);
+	Sdb *functions_db_old;
+	RZ_SERIALIZE_SUB(analysis_db, functions_db_old, res, "functions", return false;);
+	functions_db_old->refs++;
+	sdb_ns_unset(analysis_db, "functions", NULL);
+	V10V11FunctionsCtx ctx = {
+		.db_new = sdb_ns(analysis_db, "functions", true),
+		.res = res
+	};
+	bool ret = sdb_foreach(functions_db_old, v10_v11_functions_foreach_cb, &ctx);
+	sdb_free(functions_db_old);
+
+	return ret;
+}
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
@@ -278,7 +473,11 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v3_v4,
 	rz_project_migrate_v4_v5,
 	rz_project_migrate_v5_v6,
-	rz_project_migrate_v6_v7
+	rz_project_migrate_v6_v7,
+	rz_project_migrate_v7_v8,
+	rz_project_migrate_v8_v9,
+	rz_project_migrate_v9_v10,
+	rz_project_migrate_v10_v11
 };
 
 /// Migrate the given project to the current version in-place

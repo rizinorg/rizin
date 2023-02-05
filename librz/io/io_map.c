@@ -385,7 +385,7 @@ RZ_API ut64 rz_io_map_next_address(RzIO *io, ut64 addr) {
 	return lowest;
 }
 
-RZ_API RzList *rz_io_map_get_for_fd(RzIO *io, int fd) {
+RZ_API RzList /*<RzIOMap *>*/ *rz_io_map_get_for_fd(RzIO *io, int fd) {
 	RzList *map_list = rz_list_newf(NULL);
 	if (!map_list) {
 		return NULL;
@@ -432,7 +432,7 @@ RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
  *
  * \param io RzIO instance
  */
-RZ_API RZ_BORROW RzPVector *rz_io_maps(RzIO *io) {
+RZ_API RZ_BORROW RzPVector /*<RzIOMap *>*/ *rz_io_maps(RzIO *io) {
 	rz_return_val_if_fail(io, NULL);
 	return &io->maps;
 }

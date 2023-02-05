@@ -1,7 +1,6 @@
 include_files = [
   'rz_agraph.h',
   'rz_analysis.h',
-  'rz_arch.h',
   'rz_asm.h',
   'rz_basefind.h',
   'rz_bin.h',
@@ -32,9 +31,10 @@ include_files = [
   'rz_list.h',
   'rz_magic.h',
   'rz_main.h',
-  'rz_msg_digest.h',
+  'rz_hash.h',
   'rz_parse.h',
   'rz_pdb.h',
+  'rz_platform.h',
   'rz_project.h',
   'rz_reg.h',
   'rz_regex.h',
@@ -51,6 +51,7 @@ include_files = [
   'rz_types_overflow.h',
   'rz_util.h',
   'rz_vector.h',
+  'rz_windows.h',
   'rz_windows_heap.h',
 ]
 install_headers(include_files, install_dir: rizin_incdir)
@@ -71,6 +72,7 @@ rz_util_files = [
   'rz_util/rz_debruijn.h',
   'rz_util/rz_event.h',
   'rz_util/rz_file.h',
+  'rz_util/rz_float.h',
   'rz_util/rz_graph.h',
   'rz_util/rz_graph_drawable.h',
   'rz_util/rz_hex.h',
@@ -88,11 +90,9 @@ rz_util_files = [
   'rz_util/rz_path.h',
   'rz_util/rz_pj.h',
   'rz_util/rz_pkcs7.h',
-  'rz_util/rz_pool.h',
   'rz_util/rz_print.h',
   'rz_util/rz_protobuf.h',
   'rz_util/rz_punycode.h',
-  'rz_util/rz_queue.h',
   'rz_util/rz_range.h',
   'rz_util/rz_rbtree.h',
   'rz_util/rz_serialize.h',
@@ -114,6 +114,7 @@ rz_util_files = [
   'rz_util/rz_utf16.h',
   'rz_util/rz_utf32.h',
   'rz_util/rz_utf8.h',
+  'rz_util/rz_version.h',
   'rz_util/rz_x509.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))

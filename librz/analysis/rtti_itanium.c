@@ -857,7 +857,7 @@ static void detect_constructor_destructor(RzAnalysis *analysis, class_type_info 
 	rz_vector_free(vec);
 }
 
-RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList *vtables) {
+RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList /*<RVTableInfo *>*/ *vtables) {
 	RzList /*<class_type_info>*/ *rtti_list = rz_list_new();
 	rtti_list->free = rtti_itanium_type_info_free;
 	// to escape multiple same infos from multiple inheritance

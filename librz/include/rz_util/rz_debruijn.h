@@ -13,7 +13,7 @@ extern "C" {
 // For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
 // Efficient Algorithm for Generating Necklaces with Fixed Density"
 
-RZ_API char *rz_debruijn_pattern(int size, int start, const char *charset);
+RZ_API RZ_OWN char *rz_debruijn_pattern(int size, int start, const char *charset);
 RZ_API int rz_debruijn_offset(int start, const char *charset, ut64 value, bool is_big_endian);
 
 #ifdef __cplusplus

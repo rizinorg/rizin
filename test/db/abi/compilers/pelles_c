@@ -11,7 +11,7 @@ RUN
 
 NAME=ELF_ABI : Pelles C 32 flagspaces
 FILE=bins/abi_bins/pe/compilers/echo_32_pelleC.exe
-ARGS=-A -eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl
 EOF
@@ -20,6 +20,7 @@ EXPECT=<<EOF
   108 * functions
    38 * imports
     0 * platform.ports
+   76 * pointers
     0 * registers
     0 * registers.extended
     0 * registers.mmio
@@ -54,7 +55,7 @@ RUN
 
 NAME=ELF_ABI : Pelles C 64 flagspaces
 FILE=bins/abi_bins/pe/compilers/echo_64_pelleC.exe
-ARGS=-A -eflirt.sigdb.load.system=false -eflirt.sigdb.load.home=false
+ARGS=-A
 CMDS=<<EOF
 fsl
 EOF
@@ -63,6 +64,7 @@ EXPECT=<<EOF
    86 * functions
    38 * imports
     0 * platform.ports
+   80 * pointers
     0 * registers
     0 * registers.extended
     0 * registers.mmio

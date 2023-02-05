@@ -132,12 +132,12 @@ int gdbr_close_file(libgdbr_t *g);
 /*!
  * \brief get list of threads for given pid
  */
-RzList *gdbr_threads_list(libgdbr_t *g, int pid);
+RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid);
 
 /*!
  * \brief get a list of the child processes of the given pid
  */
-RzList *gdbr_pids_list(libgdbr_t *g, int pid);
+RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid);
 
 /*!
  * Get absolute name of file executed to create a process

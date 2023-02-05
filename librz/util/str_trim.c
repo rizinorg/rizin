@@ -107,7 +107,7 @@ RZ_API const char *rz_str_trim_head_wp(const char *str) {
  *
  * \param str The string to trim.
  */
-RZ_API void rz_str_trim_head(char *str) {
+RZ_API void rz_str_trim_head(RZ_NONNULL char *str) {
 	char *p = (char *)rz_str_trim_head_ro(str);
 	if (p) {
 		memmove(str, p, strlen(p) + 1);

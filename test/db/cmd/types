@@ -122,7 +122,6 @@ NAME=jni and SoP
 BROKEN=1
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
-e analysis.vars.stackname=true
 e asm.bytes=true
 e asm.lines.bb=false
 aa
@@ -165,7 +164,6 @@ RUN
 NAME=jni and SoP (preprocessed)
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
-e analysis.vars.stackname=true
 e asm.bytes=true
 e asm.lines.bb=false
 aa
@@ -187,55 +185,19 @@ pdf~JNINativeInterface
 pdr~JNI?
 EOF
 EXPECT=<<EOF
-| ; var struct JNINativeInterface JNINativeInterface @ sp+0x12c
-| 0x00000f62      cdb0           sub   JNINativeInterface.DefineClassx134
+| ; var struct JNINativeInterface JNINativeInterface @ stack - 0x14
 | 0x00000f74      4b93           str   r3, [JNINativeInterface.reserved0]
 | 0x00000f76      039b           ldr   r3, [var_134h]                  ; JNINativeInterface.reserved0
 | 0x00000f7e      d358           ldr   r3, [r2, r3]                    ; JNINativeInterface.GetStringUTFChars
 | 0x00000f82      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
-| 0x00000f8e      4693           str   r3, [JNINativeInterface.DefineClassx118]
-| 0x00000f98      4593           str   r3, [JNINativeInterface.DefineClassx114]
-| 0x00000f9a      35ab           add   r3, JNINativeInterface.DefineClassxd4
-| 0x00000fb0      29ab           add   r3, JNINativeInterface.DefineClassxa4
-| 0x00000fc6      1dab           add   r3, JNINativeInterface.DefineClassx74
-| 0x00000fdc      11ab           add   r3, JNINativeInterface.DefineClassx44
-| 0x00000ff8      469a           ldr   r2, [JNINativeInterface.DefineClassx118]
-| 0x00001000      4393           str   r3, [JNINativeInterface.DefineClassx10c]
-| 0x00001004      4293           str   r3, [JNINativeInterface.DefineClassx108]
 | 0x0000100e      d358           ldr   r3, [r2, r3]                    ; JNINativeInterface.GetStringLength
 | 0x00001012      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
-| 0x0000101c      4193           str   r3, [JNINativeInterface.DefineClassx104]
-| 0x00001020      4ca8           add   r0, JNINativeInterface.reserved1
-| 0x0000103a      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
-| 0x00001040      439a           ldr   r2, [JNINativeInterface.DefineClassx10c]
-| 0x00001042      29ab           add   r3, JNINativeInterface.DefineClassxa4
-| 0x00001048      4399           ldr   r1, [JNINativeInterface.DefineClassx10c]
-| 0x0000104a      1dab           add   r3, JNINativeInterface.DefineClassx74
-| 0x00001052      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
-| 0x00001054      4699           ldr   r1, [JNINativeInterface.DefineClassx118]
 | 0x00001066      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
-| 0x00001078      439a           ldr   r2, [JNINativeInterface.DefineClassx10c]
-| 0x0000107a      4399           ldr   r1, [JNINativeInterface.DefineClassx10c]
-| 0x0000107e      4cad           add   r5, JNINativeInterface.reserved1
-| 0x00001086      4398           ldr   r0, [JNINativeInterface.DefineClassx10c]
-| 0x00001088      11ab           add   r3, JNINativeInterface.DefineClassx44
-| 0x00001092      4ca8           add   r0, JNINativeInterface.reserved1
-| 0x0000109a      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
-| 0x0000109e      4393           str   r3, [JNINativeInterface.DefineClassx10c]
-| 0x000010a0      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
-| 0x000010a4      4293           str   r3, [JNINativeInterface.DefineClassx108]
-| 0x000010a6      439b           ldr   r3, [JNINativeInterface.DefineClassx10c]
-| 0x000010a8      469a           ldr   r2, [JNINativeInterface.DefineClassx118]
-| 0x000010ca      4493           str   r3, [JNINativeInterface.DefineClassx110]
-| 0x000010d2      419b           ldr   r3, [JNINativeInterface.DefineClassx104]
-| 0x000010d8      459a           ldr   r2, [JNINativeInterface.DefineClassx114]
-| 0x000010da      449b           ldr   r3, [JNINativeInterface.DefineClassx110]
 | 0x00001114      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
 | 0x0000112e      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
 | 0x00001144      4b9a           ldr   r2, [JNINativeInterface.reserved0]
 | 0x00001148      9a42           cmp   r2, r3                          ; JNINativeInterface.reserved0
-| 0x00001150      4db0           add   JNINativeInterface.DefineClassx134
-48
+12
 EOF
 RUN
 
@@ -299,7 +261,7 @@ EXPECT=<<EOF
 pf d int
 EOF
 EXPECT_ERR=<<EOF
-Cannot find 'int' type
+ERROR: core: cannot find 'int' type
 EOF
 RUN
 
@@ -349,7 +311,7 @@ union xoo {
 };
 EOF
 EXPECT_ERR=<<EOF
-Cannot find 'xoo' type
+ERROR: core: cannot find 'xoo' type
 ERROR: Cannot find "xoo" union type
 EOF
 RUN
@@ -1007,7 +969,7 @@ s main
 aei
 aeim
 aecu 0x000006d5
-tp Books var_e0h
+tp Books var_e8h
 EOF
 EXPECT=<<EOF
    title : 0x00177f18 = [ 'R', 'a', 'd', 'a', 'r', 'e', '2', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
@@ -1196,7 +1158,7 @@ pdf~Books
 EOF
 EXPECT=<<EOF
 
-|           ; var struct Books Books @ rbp-0xe0
+|           ; var struct Books Books @ stack - 0xe8
 |           0x00000684      488d8520ffff.  lea   rax, [Books.title]
 |           0x00000695      488910         mov   qword [rax], rdx      ; Books.title
 |           0x00000698      488d8520ffff.  lea   rax, [Books.title]
@@ -1236,16 +1198,16 @@ aa
 td "union Books {char  title[50];char  author[50]; char  subject[100];};"
 tu Books
 s main
-afvt var_70h "union Books"
-afvn books var_70h
+afvt var_78h "union Books"
+afvn books var_78h
 afv~Books
 s 0x000006d2
 pd 1
 EOF
 EXPECT=<<EOF
 pf [50]c[50]c[100]c title author subject
-var union Books books @ rbp-0x70
-|           0x000006d2      488d4590       lea   rax, [books]
+var union Books books @ stack - 0x78
+|           0x000006d2      488d4590       lea   rax, [books.title]
 EOF
 RUN
 
@@ -1507,37 +1469,40 @@ CMDS=<<EOF
 aaa
 s 0x4070
 afv
-afvt var_18h "char [20]"
+afvt var_70h "char [20]"
 afv
-afvd var_18h
+ar bp=0x98
+afvd var_70h
 EOF
 EXPECT=<<EOF
-var uint64_t var_8h @ rsp+0x18
-var uint64_t var_17h @ rsp+0x27
-var int64_t var_18h @ rsp+0x28
-var char * var_28h @ rsp+0x38
-var int64_t var_30h @ rsp+0x40
-var int64_t var_32h @ rsp+0x42
-var int64_t var_38h @ rsp+0x48
-var int64_t var_45h @ rsp+0x55
-var int64_t var_46h @ rsp+0x56
-var int64_t var_47h @ rsp+0x57
-var int64_t var_48h @ rsp+0x58
-arg char ** argv @ rsi
+var uint64_t var_80h @ stack - 0x80
+var uint64_t var_71h @ stack - 0x71
+var int64_t var_70h @ stack - 0x70
+var char * var_60h @ stack - 0x60
+var int64_t var_58h @ stack - 0x58
+var int64_t var_56h @ stack - 0x56
+var int64_t var_50h @ stack - 0x50
+var int64_t var_43h @ stack - 0x43
+var int64_t var_42h @ stack - 0x42
+var int64_t var_41h @ stack - 0x41
+var int64_t var_40h @ stack - 0x40
+arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
-var uint64_t var_8h @ rsp+0x18
-var uint64_t var_17h @ rsp+0x27
-var char [20] var_18h @ rsp+0x28
-var int64_t var_30h @ rsp+0x40
-var int64_t var_32h @ rsp+0x42
-var int64_t var_38h @ rsp+0x48
-var int64_t var_45h @ rsp+0x55
-var int64_t var_46h @ rsp+0x56
-var int64_t var_47h @ rsp+0x57
-var int64_t var_48h @ rsp+0x58
 arg char ** argv @ rsi
+var uint64_t var_80h @ stack - 0x80
+var uint64_t var_71h @ stack - 0x71
+var char [20] var_70h @ stack - 0x70
+var int64_t var_58h @ stack - 0x58
+var int64_t var_56h @ stack - 0x56
+var int64_t var_50h @ stack - 0x50
+var int64_t var_43h @ stack - 0x43
+var int64_t var_42h @ stack - 0x42
+var int64_t var_41h @ stack - 0x41
+var int64_t var_40h @ stack - 0x40
+arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
-var var_18h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
+arg char ** argv @ rsi
+var var_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
 
@@ -1550,9 +1515,9 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t size @ rbp-0x14
-var char * dest @ rbp-0x10
-var const char * src @ rbp-0x8
+var size_t size @ stack - 0x1c
+var char * dest @ stack - 0x18
+var const char * src @ stack - 0x10
 EOF
 RUN
 
@@ -1565,9 +1530,9 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t size @ rbp-0x14
-var char * ptr @ rbp-0x10
-var const char * src @ rbp-0x8
+var size_t size @ stack - 0x1c
+var char * ptr @ stack - 0x18
+var const char * src @ stack - 0x10
 EOF
 RUN
 
@@ -1580,10 +1545,10 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t var_1ch @ rbp-0x1c
-var const char * var_18h @ rbp-0x18
-var const char * s @ rbp-0x10
-var const char * var_8h @ rbp-0x8
+var size_t var_24h @ stack - 0x24
+var const char * var_20h @ stack - 0x20
+var const char * s @ stack - 0x18
+var const char * var_10h @ stack - 0x10
 EOF
 RUN
 
@@ -1596,11 +1561,11 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t var_20h @ rbp-0x20
-var size_t size @ rbp-0x1c
-var const char * src @ rbp-0x18
-var const char * s2 @ rbp-0x10
-var char * dest @ rbp-0x8
+var size_t var_28h @ stack - 0x28
+var size_t size @ stack - 0x24
+var const char * src @ stack - 0x20
+var const char * s2 @ stack - 0x18
+var char * dest @ stack - 0x10
 EOF
 RUN
 
@@ -1613,13 +1578,13 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-arg char ** argv @ esp+0x44
-var const char * src @ ebp-0x1c
-var const char * s2 @ ebp-0x18
-var size_t var_14h @ ebp-0x14
-var size_t size @ ebp-0x10
-var char * dest @ ebp-0xc
-var int32_t var_8h @ ebp-0x8
+var const char * src @ stack - 0x24
+var const char * s2 @ stack - 0x20
+var size_t var_1ch @ stack - 0x1c
+var size_t size @ stack - 0x18
+var char * dest @ stack - 0x14
+var int32_t var_10h @ stack - 0x10
+arg char ** argv @ stack + 0x4
 EOF
 RUN
 
@@ -1632,9 +1597,9 @@ afvr
 EOF
 EXPECT=<<EOF
 arg int64_t arg4 @ rcx
+arg int64_t arg1 @ rdi
 arg int64_t arg3 @ rdx
 arg int64_t arg2 @ rsi
-arg int64_t arg1 @ rdi
 EOF
 RUN
 
@@ -1648,9 +1613,9 @@ afvr
 EOF
 EXPECT=<<EOF
 arg size_t arg4 @ rcx
+arg const char * arg1 @ rdi
 arg int64_t arg3 @ rdx
 arg const char * arg2 @ rsi
-arg const char * arg1 @ rdi
 EOF
 RUN
 
@@ -1667,10 +1632,10 @@ pd 1
 EOF
 EXPECT=<<EOF
 sym.funcarg (const char *arg1, uint64_t arg2);
-; var uint64_t var_ch @ rbp-0xc
-; var const char *var_8h @ rbp-0x8
 ; arg const char *arg1 @ rdi
 ; arg uint64_t arg2 @ rsi
+; var uint64_t var_14h @ stack - 0x14
+; var const char *var_10h @ stack - 0x10
 0x0000068a      55             push  rbp
 EOF
 RUN
@@ -1687,10 +1652,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg_8h, unsigned long arg_ch);
-; var int32_t var_4h @ ebp-0x4
-; arg const char *arg_8h @ ebp+0x8
-; arg unsigned long arg_ch @ ebp+0xc
+sym.funcarg (const char *arg_4h, unsigned long arg_8h);
+; var int32_t var_8h @ stack - 0x8
+; arg const char *arg_4h @ stack + 0x4
+; arg unsigned long arg_8h @ stack + 0x8
 0x0000054d      55             push  ebp
 EOF
 RUN
@@ -1740,7 +1705,7 @@ s main
 afv~ptr
 EOF
 EXPECT=<<EOF
-var char ** ptr @ rbp-0x18
+var char ** ptr @ stack - 0x20
 EOF
 RUN
 
@@ -1750,14 +1715,14 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv~var_34h
+afv~var_3ch
+afv~var_38h
 afv~var_30h
-afv~var_28h
 EOF
 EXPECT=<<EOF
-var int var_34h @ rbp-0x34
-var int64_t var_30h @ rbp-0x30
-var uint64_t var_28h @ rbp-0x28
+var int var_3ch @ stack - 0x3c
+var int64_t var_38h @ stack - 0x38
+var uint64_t var_30h @ stack - 0x30
 EOF
 RUN
 
@@ -1770,13 +1735,13 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var void * va_args @ rbp-0x34
-var uint64_t var_2ch @ rbp-0x2c
-var FILE * stream @ rbp-0x28
-var const char * s @ rbp-0x20
-var const char * var_18h @ rbp-0x18
-var const char * var_10h @ rbp-0x10
-var int64_t canary @ rbp-0x8
+var void * va_args @ stack - 0x3c
+var uint64_t var_34h @ stack - 0x34
+var FILE * stream @ stack - 0x30
+var const char * s @ stack - 0x28
+var const char * var_20h @ stack - 0x20
+var const char * var_18h @ stack - 0x18
+var int64_t canary @ stack - 0x10
 EOF
 RUN
 
@@ -1804,93 +1769,92 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_14e0h @ rbp-0x14e0
-var int var_14d4h @ rbp-0x14d4
-var int * wstatus @ rbp-0x14cc
-var int64_t var_14c4h @ rbp-0x14c4
-var int64_t var_14c0h @ rbp-0x14c0
-var int64_t var_14bch @ rbp-0x14bc
-var uint64_t pid @ rbp-0x14b8
-var uint64_t var_14b4h @ rbp-0x14b4
-var uint64_t var_14b0h @ rbp-0x14b0
-var int64_t var_14ach @ rbp-0x14ac
-var const char * var_14a8h @ rbp-0x14a8
-var const char * s @ rbp-0x14a0
-var int64_t var_1498h @ rbp-0x1498
-var char * src @ rbp-0x1490
-var const char * v2 @ rbp-0x1488
-var const char * var_1480h @ rbp-0x1480
-var void * var_1478h @ rbp-0x1478
-var char * dest @ rbp-0x1470
-var void * var_1420h @ rbp-0x1420
-var const char * s1 @ rbp-0x1020
-var int64_t var_18h @ rbp-0x18
-arg char ** argv @ rsi
+var char ** var_14e8h @ stack - 0x14e8
+var int var_14dch @ stack - 0x14dc
+var int * wstatus @ stack - 0x14d4
+var int64_t var_14cch @ stack - 0x14cc
+var int64_t var_14c8h @ stack - 0x14c8
+var int64_t var_14c4h @ stack - 0x14c4
+var uint64_t pid @ stack - 0x14c0
+var uint64_t var_14bch @ stack - 0x14bc
+var uint64_t var_14b8h @ stack - 0x14b8
+var int64_t var_14b4h @ stack - 0x14b4
+var const char * var_14b0h @ stack - 0x14b0
+var const char * s @ stack - 0x14a8
+var int64_t var_14a0h @ stack - 0x14a0
+var char * src @ stack - 0x1498
+var const char * v2 @ stack - 0x1490
+var const char * var_1488h @ stack - 0x1488
+var void * var_1480h @ stack - 0x1480
+var char * dest @ stack - 0x1478
+var void * var_1428h @ stack - 0x1428
+var const char * s1 @ stack - 0x1028
+var int64_t var_20h @ stack - 0x20
 arg int argc @ rdi
-var char * str @ rbp-0xb0
-var int64_t var_a4h @ rbp-0xa4
-var int64_t var_a0h @ rbp-0xa0
-var uint64_t var_9ch @ rbp-0x9c
-var int var_98h @ rbp-0x98
-var int var_94h @ rbp-0x94
-var int var_90h @ rbp-0x90
-var int var_8ch @ rbp-0x8c
-var int var_88h @ rbp-0x88
-var int var_84h @ rbp-0x84
-var int var_80h @ rbp-0x80
-var int var_7ch @ rbp-0x7c
-var int64_t var_78h @ rbp-0x78
-var int var_74h @ rbp-0x74
-var int var_70h @ rbp-0x70
-var int var_6ch @ rbp-0x6c
-var int64_t var_68h @ rbp-0x68
-var int64_t var_64h @ rbp-0x64
-var char * var_60h @ rbp-0x60
-var char * var_58h @ rbp-0x58
-var char * var_50h @ rbp-0x50
-var char * var_48h @ rbp-0x48
-var uint64_t var_40h @ rbp-0x40
-var const char * s1 @ rbp-0x38
-var const char * s @ rbp-0x30
-var const char * var_28h @ rbp-0x28
-var const char * var_20h @ rbp-0x20
-var int64_t var_18h @ rbp-0x18
-var int64_t var_8h @ rbp-0x8
-arg char * arg2 @ rsi
+arg char ** argv @ rsi
+var char * str @ stack - 0xb8
+var int64_t var_ach @ stack - 0xac
+var int64_t var_a8h @ stack - 0xa8
+var uint64_t var_a4h @ stack - 0xa4
+var int var_a0h @ stack - 0xa0
+var int var_9ch @ stack - 0x9c
+var int var_98h @ stack - 0x98
+var int var_94h @ stack - 0x94
+var int var_90h @ stack - 0x90
+var int var_8ch @ stack - 0x8c
+var int var_88h @ stack - 0x88
+var int var_84h @ stack - 0x84
+var int64_t var_80h @ stack - 0x80
+var int var_7ch @ stack - 0x7c
+var int var_78h @ stack - 0x78
+var int var_74h @ stack - 0x74
+var int64_t var_70h @ stack - 0x70
+var int64_t var_6ch @ stack - 0x6c
+var char * var_68h @ stack - 0x68
+var char * var_60h @ stack - 0x60
+var char * var_58h @ stack - 0x58
+var char * var_50h @ stack - 0x50
+var uint64_t var_48h @ stack - 0x48
+var const char * s1 @ stack - 0x40
+var const char * s @ stack - 0x38
+var const char * var_30h @ stack - 0x30
+var const char * var_28h @ stack - 0x28
+var int64_t var_20h @ stack - 0x20
+var int64_t var_10h @ stack - 0x10
 arg int64_t arg1 @ rdi
+arg char * arg2 @ rsi
 EOF
 RUN
 
 NAME=bashbot test (arm 32-bits)
 FILE=bins/elf/bashbot.arm.gcc.O0.elf
 CMDS=<<EOF
-e analysis.vars.stackname=true
 s main
 af
 aaft
 afv
 EOF
 EXPECT=<<EOF
-var int32_t var_1454h @ sp+0x0
-var void * var_1438h @ fp-0x1440
-var const char * s1 @ fp-0x1040
-var int * wstatus @ fp-0x4c
-var int32_t var_40h @ fp-0x48
-var const char * var_3ch @ fp-0x44
-var int32_t var_38h @ fp-0x40
-var int32_t var_34h @ fp-0x3c
-var int32_t var_30h @ fp-0x38
-var pid_t pid @ fp-0x34
-var const char * v2 @ fp-0x30
-var int32_t var_24h @ fp-0x2c
-var const char * src @ fp-0x28
-var int32_t var_1ch @ fp-0x24
-var int32_t var_18h @ fp-0x20
-var const char * s @ fp-0x1c
-var const char * var_10h @ fp-0x18
-var int32_t var_ch @ fp-0x14
-var int32_t var_8h @ fp-0x10
-var const char * option @ fp-0xc
+var int32_t var_1454h @ stack - 0x1454
+var void * var_1438h @ stack - 0x1438
+var const char * s1 @ stack - 0x1038
+var int * wstatus @ stack - 0x44
+var int32_t var_40h @ stack - 0x40
+var const char * var_3ch @ stack - 0x3c
+var int32_t var_38h @ stack - 0x38
+var int32_t var_34h @ stack - 0x34
+var int32_t var_30h @ stack - 0x30
+var pid_t pid @ stack - 0x2c
+var const char * v2 @ stack - 0x28
+var int32_t var_24h @ stack - 0x24
+var const char * src @ stack - 0x20
+var int32_t var_1ch @ stack - 0x1c
+var int32_t var_18h @ stack - 0x18
+var const char * s @ stack - 0x14
+var const char * var_10h @ stack - 0x10
+var int32_t var_ch @ stack - 0xc
+var int32_t var_8h @ stack - 0x8
+var const char * option @ stack - 0x4
 arg int argc @ r0
 arg char ** argv @ r1
 EOF
@@ -1905,13 +1869,13 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var int64_t var_25h @ rbp-0x25
-var int64_t var_24h @ rbp-0x24
-var unsigned int var_20h @ rbp-0x20
-var int64_t var_1ch @ rbp-0x1c
-var const char * var_18h @ rbp-0x18
-var long int var_10h @ rbp-0x10
-var const char * var_8h @ rbp-0x8
+var int64_t var_2dh @ stack - 0x2d
+var int64_t var_2ch @ stack - 0x2c
+var unsigned int var_28h @ stack - 0x28
+var int64_t var_24h @ stack - 0x24
+var const char * var_20h @ stack - 0x20
+var long int var_18h @ stack - 0x18
+var const char * var_10h @ stack - 0x10
 EOF
 RUN
 
@@ -1924,14 +1888,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_28h @ rbp-0x28
-var char ** var_20h @ rbp-0x20
-var int var_14h @ rbp-0x14
-var void * var_10h @ rbp-0x10
-var int var_4h @ rbp-0x4
+var char ** var_30h @ stack - 0x30
+var char ** var_28h @ stack - 0x28
+var int var_1ch @ stack - 0x1c
+var void * var_18h @ stack - 0x18
+var int var_ch @ stack - 0xc
+arg int argc @ rdi
 arg char ** envp @ rdx
 arg char ** argv @ rsi
-arg int argc @ rdi
 EOF
 RUN
 
@@ -1941,32 +1905,31 @@ CMDS=<<EOF
 e analysis.types.constraint=true
 aaa
 s sym.single_cond
-pd 1~4h
+pd 1~ch
 s sym.range_small
-pd 1~14h
+pd 1~1ch
 s sym.range_high
-pd 1~4h
+pd 1~ch
 s sym.range_or
-pd 1~4h
+pd 1~ch
 EOF
 EXPECT=<<EOF
-|           ; var int64_t var_4h  { > 0xa} @ rbp-0x4
-|           ; var int64_t var_14h  { > 0x0 && <= 0x9} @ rbp-0x14
-|           ; var int64_t var_4h  { > 0x64 && <= 0xc7} @ rbp-0x4
-|           ; var int64_t var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ rbp-0x4
+|           ; var int64_t var_ch  { > 0xa} @ stack - 0xc
+|           ; var int64_t var_1ch  { > 0x0 && <= 0x9} @ stack - 0x1c
+|           ; var int64_t var_ch  { > 0x64 && <= 0xc7} @ stack - 0xc
+|           ; var int64_t var_ch  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ stack - 0xc
 EOF
 RUN
 
 NAME=mov str
 FILE=bins/elf/movstr
 CMDS=<<EOF
-e analysis.vars.stackname=true
 aaa
 s main
 afv~var_28h
 EOF
 EXPECT=<<EOF
-var const char * var_28h @ esp+0x4
+var const char * var_28h @ stack - 0x28
 EOF
 RUN
 
@@ -1975,10 +1938,10 @@ FILE=bins/elf/tie-test
 CMDS=<<EOF
 aaa
 s sym.foo
-afv~var_20h
+afv~var_28h
 EOF
 EXPECT=<<EOF
-var size_t * var_20h @ rbp-0x20
+var size_t * var_28h @ stack - 0x28
 EOF
 RUN
 
@@ -2021,7 +1984,6 @@ RUN
 NAME=afs without type
 FILE=bins/elf/analysis/pid_stripped
 CMDS=<<EOF
-e analysis.vars.stackname=true
 s 0x4e2420
 af
 afs
@@ -2066,6 +2028,32 @@ size_t strlen(const char *s);
 EOF
 RUN
 
+NAME=afs fastcall
+FILE=bins/elf/analysis/fast
+CMDS=<<EOF
+s sym.fastcaslled
+af
+afc fastcall
+afs "int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3)"
+afs
+afv
+afi~name,convention
+EOF
+EXPECT=<<EOF
+int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3);
+var int32_t var_24h @ stack - 0x24
+var int32_t var_20h @ stack - 0x20
+var int32_t var_14h @ stack - 0x14
+var int32_t var_10h @ stack - 0x10
+arg int sarg2 @ stack + 0x4
+arg int sarg3 @ stack + 0x8
+arg int sarg0 @ ecx
+arg int sarg1 @ edx
+name: fastcalled
+call-convention: fastcall
+EOF
+RUN
+
 NAME=td crash
 FILE==
 CMDS=<<EOF
@@ -2074,9 +2062,9 @@ td "stract;"
 td "struct crash __attribute__((packed)) { };"
 EOF
 EXPECT_ERR=<<EOF
-Unsupported type definition: struct
-Unsupported type definition: stract;
-Unsupported type definition: struct crash __attribute__((packed)) { }
+ERROR: core: Unsupported type definition: struct
+ERROR: core: Unsupported type definition: stract;
+ERROR: core: Unsupported type definition: struct crash __attribute__((packed)) { }
 EOF
 RUN
 
@@ -2169,15 +2157,15 @@ tx size_t
 tx "size_t *"
 EOF
 EXPECT=<<EOF
+int64_t
+const char *
+uint64_t
 int
 char **
-int64_t
-const char *
-uint64_t
 =
-uint64_t
 int64_t
 const char *
+uint64_t
 const void *
 size_t
 mbstate_t *
@@ -4925,7 +4913,7 @@ BOOL GetDefaultPrinterW(LPWSTR pszBuffer, int *pcchBuffer);
 INT ldap_parse_vlv_controlW(PLDAP ExternalHandle, PLDAPControlW *Control, PULONG TargetPos, PULONG ListCount, PBERVAL *Context, PINT ErrCode);
 EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 void SHGetSettings(unknown_t lpsfs, unknown_t dwMask);
-NTSTATUS NtNotifyChangeMultipleKeys(HANDLE MasterKeyHandle, ULONG Count, unknown_t *SubordinateObjects, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, ULONG CompletionFilter, BOOLEAN WatchTree, PVOID Buffer, ULONG BufferSize, BOOLEAN Asynchronous);
+NTSTATUS NtNotifyChangeMultipleKeys(HANDLE MasterKeyHandle, ULONG Count, OBJECT_ATTRIBUTES *SubordinateObjects, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, ULONG CompletionFilter, BOOLEAN WatchTree, PVOID Buffer, ULONG BufferSize, BOOLEAN Asynchronous);
 ULONG ldap_simple_bind(LDAP *ld, const PSTR dn, const PSTR passwd);
 HRESULT StrRetToBufW(unknown_t *pstr, unknown_t pidl, LPWSTR pszBuf, UINT cchBuf);
 BOOL SymFromName(HANDLE hProcess, PCSTR Name, PSYMBOL_INFO Symbol);

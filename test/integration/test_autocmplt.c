@@ -9,7 +9,7 @@ static RzCmdDescArg xd_args[] = {
 	{ .name = "f1", .type = RZ_CMD_ARG_TYPE_FILE },
 	{ .name = "F2", .type = RZ_CMD_ARG_TYPE_FCN },
 	{ .name = "e3", .type = RZ_CMD_ARG_TYPE_ENV },
-	{ .name = "Z4", .type = RZ_CMD_ARG_TYPE_ZIGN_SPACE },
+	{ .name = "Z4", .type = RZ_CMD_ARG_TYPE_REG_TYPE },
 	{ .name = "E5", .type = RZ_CMD_ARG_TYPE_EVAL_FULL },
 	{ 0 },
 };
@@ -56,7 +56,7 @@ static char **z_args_choices_cb(RzCore *core) {
 }
 
 static RzCmdDescArg z_args[] = {
-	{ .name = "v1", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices_cb = z_args_choices_cb },
+	{ .name = "v1", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices.choices_cb = z_args_choices_cb },
 	{ 0 },
 };
 
@@ -76,7 +76,7 @@ static RzCore *fake_core_new(void) {
 	mu_assert_notnull(cf, "file should be opened");
 	rz_core_bin_load(core, "bins/elf/hello_world", 0);
 	rz_cmd_free(core->rcmd);
-	RzCmd *cmd = rz_core_cmd_new(true);
+	RzCmd *cmd = rz_core_cmd_new(core, true);
 	mu_assert_notnull(cmd, "cmd should be created");
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	mu_assert_notnull(root, "root should be present");
@@ -439,6 +439,8 @@ static bool test_autocmplt_global(void) {
 	mu_assert_notnull(parser, "create type parser");
 	char *errmsg = NULL;
 	RzType *typ = rz_type_parse_string_single(parser, "int", &errmsg);
+	free(errmsg);
+
 	mu_assert_notnull(typ, "parsed type");
 	rz_analysis_var_global_set_type(glob2, typ);
 
@@ -457,6 +459,7 @@ static bool test_autocmplt_global(void) {
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "GCHR", "GCHR found");
 	rz_line_ns_completion_result_free(r);
 
+	rz_type_parser_free(parser);
 	rz_core_free(core);
 	mu_end;
 }

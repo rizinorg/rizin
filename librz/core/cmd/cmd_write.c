@@ -10,7 +10,7 @@
 #include "../core_private.h"
 
 static void cmd_write_fail(RzCore *core) {
-	eprintf("Failed to write\n");
+	RZ_LOG_ERROR("core: Failed to write\n");
 	core->num->value = 1;
 }
 
@@ -27,64 +27,68 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 		keylen = rz_hex_str2bin(key, binkey);
 	}
 	if (!no_key_mode && keylen < 1) {
-		eprintf("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+		RZ_LOG_ERROR("core: %s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 		free(binkey);
 		return false;
 	}
-	RzCrypto *cry = rz_crypto_new();
-	if (rz_crypto_use(cry, algo)) {
-		if (!binkey) {
-			eprintf("Cannot allocate %d byte(s)\n", keylen);
-			rz_crypto_free(cry);
-			return false;
-		}
-		if (rz_crypto_set_key(cry, binkey, keylen, 0, direction)) {
-			if (iv) {
-				ut8 *biniv = malloc(strlen(iv) + 1);
-				int ivlen = rz_hex_str2bin(iv, biniv);
-				if (ivlen < 1) {
-					ivlen = strlen(iv);
-					strcpy((char *)biniv, iv);
-				}
-				if (!rz_crypto_set_iv(cry, biniv, ivlen)) {
-					eprintf("Invalid IV.\n");
-					return 0;
-				}
-			}
-			rz_crypto_update(cry, (const ut8 *)core->block, core->blocksize);
-			rz_crypto_final(cry, NULL, 0);
-
-			int result_size = 0;
-			const ut8 *result = rz_crypto_get_output(cry, &result_size);
-			if (result) {
-				if (!rz_core_write_at(core, core->offset, result, result_size)) {
-					eprintf("rz_core_write_at failed at 0x%08" PFMT64x "\n", core->offset);
-				}
-				eprintf("Written %d byte(s)\n", result_size);
-			}
-		} else {
-			eprintf("Invalid key\n");
-		}
+	rz_crypto_reset(core->crypto);
+	if (!rz_crypto_use(core->crypto, algo)) {
+		RZ_LOG_ERROR("core: Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption"), algo);
 		free(binkey);
-		rz_crypto_free(cry);
-		return 0;
-	} else {
-		eprintf("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption"), algo);
+		return false;
 	}
-	rz_crypto_free(cry);
-	return 1;
+	if (!binkey) {
+		RZ_LOG_ERROR("core: Cannot allocate %d byte(s)\n", keylen);
+		return false;
+	}
+	if (rz_crypto_set_key(core->crypto, binkey, keylen, 0, direction)) {
+		if (iv) {
+			ut8 *biniv = malloc(strlen(iv) + 1);
+			int ivlen = rz_hex_str2bin(iv, biniv);
+			if (ivlen < 1) {
+				ivlen = strlen(iv);
+				strcpy((char *)biniv, iv);
+			}
+			if (!rz_crypto_set_iv(core->crypto, biniv, ivlen)) {
+				RZ_LOG_ERROR("core: Invalid IV.\n");
+				return 0;
+			}
+		}
+		rz_crypto_update(core->crypto, (const ut8 *)core->block, core->blocksize);
+		rz_crypto_final(core->crypto, NULL, 0);
+
+		int result_size = 0;
+		const ut8 *result = rz_crypto_get_output(core->crypto, &result_size);
+		if (result) {
+			if (!rz_core_write_at(core, core->offset, result, result_size)) {
+				RZ_LOG_ERROR("core: rz_core_write_at failed at 0x%08" PFMT64x "\n", core->offset);
+			}
+			RZ_LOG_WARN("core: Written %d byte(s)\n", result_size);
+		}
+	} else {
+		RZ_LOG_ERROR("core: Invalid key\n");
+	}
+	free(binkey);
+	return 0;
 }
 
 static void cmd_write_bits(RzCore *core, int set, ut64 val) {
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	ut8 buf[sizeof(ut64)];
 	ut64 ret, orig;
 	// used to set/unset bit in current address
-	rz_io_read_at(core->io, core->offset, (ut8 *)&orig, sizeof(orig));
+	if (!rz_io_read_at(core->io, core->offset, buf, sizeof(buf))) {
+		cmd_write_fail(core);
+		return;
+	}
+	orig = rz_read_ble64(buf, big_endian);
 	if (set) {
 		ret = orig | val;
 	} else {
 		ret = orig & (~(val));
 	}
-	if (!rz_core_write_at(core, core->offset, (const ut8 *)&ret, sizeof(ret))) {
+	rz_write_ble64(buf, ret, big_endian);
+	if (!rz_core_write_at(core, core->offset, buf, sizeof(buf))) {
 		cmd_write_fail(core);
 	}
 }
@@ -141,10 +145,10 @@ static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 					rz_core_block_read(core);
 					ret = true;
 				} else {
-					eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", dst);
+					RZ_LOG_ERROR("core: rz_io_write_at failed at 0x%08" PFMT64x "\n", dst);
 				}
 			} else {
-				eprintf("rz_io_read_at failed at 0x%08" PFMT64x "\n", src);
+				RZ_LOG_ERROR("core: rz_io_read_at failed at 0x%08" PFMT64x "\n", src);
 			}
 			free(buf);
 		}
@@ -174,13 +178,13 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
 	if (!rz_io_read_at(core->io, dst, buf, len)) {
-		eprintf("cmd_wfx: failed to read at 0x%08" PFMT64x "\n", dst);
+		RZ_LOG_ERROR("core: cmd_wfx: failed to read at 0x%08" PFMT64x "\n", dst);
 		goto err;
 	}
 
 	ioMemcpy(core, core->offset, src, len);
 	if (!rz_io_write_at(core->io, src, buf, len)) {
-		eprintf("Failed to write at 0x%08" PFMT64x "\n", src);
+		RZ_LOG_ERROR("core: Failed to write at 0x%08" PFMT64x "\n", src);
 		goto err;
 	}
 
@@ -203,31 +207,31 @@ RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char
 	if (!strcmp(filename, "-")) {
 		data = rz_core_editor(core, NULL, NULL);
 		if (!data) {
-			eprintf("No data from editor\n");
+			RZ_LOG_ERROR("core: No data from editor\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		size = strlen(data);
 	} else {
 		data = rz_file_slurp(filename, &size);
 		if (!data) {
-			eprintf("Cannot open file '%s'\n", filename);
+			RZ_LOG_ERROR("core: Cannot open file '%s'\n", filename);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	}
 
 	w_size = RZ_MIN(size, user_size);
 	if (offset > size) {
-		eprintf("Invalid offset provided\n");
+		RZ_LOG_ERROR("core: Invalid offset provided\n");
 		goto err;
 	}
 	if (UT64_ADD_OVFCHK(offset, w_size) || offset + w_size > size) {
-		eprintf("Invalid offset/size provided\n");
+		RZ_LOG_ERROR("core: Invalid offset/size provided\n");
 		goto err;
 	}
 
 	rz_io_use_fd(core->io, core->file->fd);
 	if (!rz_io_write_at(core->io, core->offset, (ut8 *)data + offset, w_size)) {
-		eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
+		RZ_LOG_ERROR("core: rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
 		goto err;
 	}
 	WSEEK(core, w_size);
@@ -246,7 +250,7 @@ RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const ch
 
 	size_t n_split = rz_str_split(address, ':');
 	if (n_split != 2) {
-		eprintf("Wrong format for <host:port>\n");
+		RZ_LOG_ERROR("core: Wrong format for <host:port>\n");
 		goto err;
 	}
 	char *host = address;
@@ -259,21 +263,21 @@ RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const ch
 
 	RzSocket *s = rz_socket_new(false);
 	if (!rz_socket_listen(s, port, NULL)) {
-		eprintf("Cannot listen on port %s\n", port);
+		RZ_LOG_ERROR("core: Cannot listen on port %s\n", port);
 		goto socket_err;
 	}
 	int done = 0;
 	RzSocket *c = rz_socket_accept(s);
 	if (!c) {
-		eprintf("Failing to accept socket\n");
+		RZ_LOG_ERROR("core: Failing to accept socket\n");
 		goto socket_err;
 	}
 
-	eprintf("Receiving data from client...\n");
+	RZ_LOG_INFO("core: Receiving data from client...\n");
 	while (done < sz) {
 		int rc = rz_socket_read(c, buf + done, sz - done);
 		if (rc < 0) {
-			eprintf("Failing to read data from socket: %d\n", rc);
+			RZ_LOG_ERROR("core: Failing to read data from socket: %d\n", rc);
 			goto socket_err;
 		} else if (rc == 0) {
 			break;
@@ -281,10 +285,10 @@ RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const ch
 		done += rc;
 	}
 	if (!rz_io_write_at(core->io, core->offset, buf, done)) {
-		eprintf("Cannot write\n");
+		RZ_LOG_ERROR("core: Cannot write\n");
 		goto socket_err;
 	}
-	eprintf("Written %d bytes\n", done);
+	RZ_LOG_WARN("core: Written %d bytes\n", done);
 	res = RZ_CMD_STATUS_OK;
 
 socket_err:
@@ -403,8 +407,6 @@ RZ_IPI RzCmdStatus rz_write_unified_patch_handler(RzCore *core, int argc, const 
 						int len = rz_hex_str2bin(data + hexa, buf);
 						rz_core_write_at(core, dst, buf, len);
 					}
-				} else {
-					eprintf("food\n");
 				}
 				offs = 0;
 				line = 0;

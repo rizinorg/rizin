@@ -46,9 +46,9 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 
-static RzList *sections(RzBinFile *bf);
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf);
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
 	RzList *ret = NULL;
@@ -83,7 +83,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	RzList *ret = NULL;
 	RzList *secs = NULL;
@@ -119,7 +119,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *ret = NULL, *codes = NULL, *imports = NULL, *exports = NULL;
 	RzBinSymbol *ptr = NULL;
@@ -229,7 +229,7 @@ bad_alloc:
 	return NULL;
 }
 
-static RzList *imports(RzBinFile *bf) {
+static RzList /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
@@ -280,7 +280,7 @@ bad_alloc:
 	return NULL;
 }
 
-static RzList *libs(RzBinFile *bf) {
+static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	return NULL;
 }
 

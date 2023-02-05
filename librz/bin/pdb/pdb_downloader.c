@@ -8,14 +8,6 @@
 #include <rz_socket.h>
 #include "pdb_downloader.h"
 
-static bool checkExtract(void) {
-#if __WINDOWS__
-	return rz_sys_system("expand -? >nul") == 0;
-#else
-	return rz_sys_system("cabextract -v > /dev/null") == 0;
-#endif
-}
-
 static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	char *dir = rz_str_newf("%s%s%s%s%s",
 		opt->symbol_store_path, RZ_SYS_DIR,
@@ -66,8 +58,7 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 
 static char *download(struct SPDBDownloader *pd) {
 	SPDBDownloaderOpt *opt = pd->opt;
-	int res = 0;
-	int cmd_ret;
+	bool downloaded = false;
 
 	if (!opt->dbg_file || !*opt->dbg_file) {
 		// no pdb debug file
@@ -85,7 +76,7 @@ static char *download(struct SPDBDownloader *pd) {
 		return abspath_to_file;
 	}
 
-	if (checkExtract() || opt->extract == 0) {
+	if (opt->extract == 0) {
 		char *extractor_cmd = NULL;
 		char *archive_name = strdup(opt->dbg_file);
 		archive_name[strlen(archive_name) - 1] = '_';
@@ -94,50 +85,32 @@ static char *download(struct SPDBDownloader *pd) {
 			opt->dbg_file, RZ_SYS_DIR,
 			opt->guid, RZ_SYS_DIR,
 			archive_name);
+		char *abspath_to_dir = rz_file_dirname(abspath_to_archive);
 
 		eprintf("Attempting to download compressed pdb in %s\n", abspath_to_archive);
-		char *abs_arch_esc = rz_str_escape_sh(abspath_to_archive);
-#if __WINDOWS__
-		char *abs_file_esc = rz_str_escape_sh(abspath_to_file);
-		// expand %1 %2
-		// %1 - absolute path to archive
-		// %2 - absolute path to file that will be dearchive
-		extractor_cmd = rz_str_newf("expand \"%s\" \"%s\"", abs_arch_esc, abs_file_esc);
-		free(abs_file_esc);
-#else
-		char *abspath_to_dir = rz_file_dirname(abspath_to_archive);
-		char *abs_dir_esc = rz_str_escape_sh(abspath_to_dir);
-		// cabextract -d %1 %2
-		// %1 - path to directory where to extract all files from cab archive
-		// %2 - absolute path to cab archive
-		extractor_cmd = rz_str_newf("cabextract -d \"%s\" \"%s\"", abs_arch_esc, abs_dir_esc);
-		free(abs_dir_esc);
-		free(abspath_to_dir);
-#endif
-		free(abs_arch_esc);
-		res = download_and_write(opt, archive_name);
+		downloaded = download_and_write(opt, archive_name);
 
-		if (opt->extract > 0 && res) {
+		if (opt->extract > 0 && downloaded) {
 			eprintf("Attempting to decompress pdb\n");
-			if (res && ((cmd_ret = rz_sys_system(extractor_cmd)) != 0)) {
-				eprintf("cab extractor exited with error %d\n", cmd_ret);
-				res = 0;
+			if (!rz_bin_pdb_extract_in_folder(abspath_to_archive, abspath_to_dir)) {
+				downloaded = false;
 			}
 			rz_file_rm(abspath_to_archive);
 		}
 		free(archive_name);
+		free(abspath_to_dir);
 		free(abspath_to_archive);
 		free(extractor_cmd);
 	}
-	if (res == 0) {
+	if (!downloaded) {
 		eprintf("Falling back to uncompressed pdb\n");
 		eprintf("Attempting to download uncompressed pdb in %s\n", abspath_to_file);
-		res = download_and_write(opt, opt->dbg_file);
-		if (!res) {
-			free(abspath_to_file);
+		downloaded = download_and_write(opt, opt->dbg_file);
+		if (!downloaded) {
+			RZ_FREE(abspath_to_file);
 		}
 	}
-	return res ? abspath_to_file : NULL;
+	return downloaded ? abspath_to_file : NULL;
 }
 
 /**

@@ -1,6 +1,9 @@
 #ifndef RZ_BUF_H
 #define RZ_BUF_H
 #include <rz_util/rz_mem.h>
+#include <rz_types.h>
+#include <rz_list.h>
+#include <rz_util/rz_assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,18 +102,18 @@ RZ_API RZ_OWN char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
 RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
 RZ_API bool rz_buf_append_buf(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a);
 RZ_API bool rz_buf_append_buf_slice(RZ_NONNULL RzBuffer *b, RZ_NONNULL RzBuffer *a, ut64 offset, ut64 size);
-RZ_API bool rz_buf_append_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
-RZ_API bool rz_buf_append_nbytes(RZ_NONNULL RzBuffer *b, ut64 length);
+RZ_API bool rz_buf_append_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 len);
+RZ_API bool rz_buf_append_nbytes(RZ_NONNULL RzBuffer *b, ut64 len);
 RZ_API bool rz_buf_append_ut16(RZ_NONNULL RzBuffer *b, ut16 n);
 RZ_API bool rz_buf_append_ut32(RZ_NONNULL RzBuffer *b, ut32 n);
 RZ_API bool rz_buf_append_ut64(RZ_NONNULL RzBuffer *b, ut64 n);
 RZ_API bool rz_buf_dump(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const char *file);
 RZ_API bool rz_buf_fini(RzBuffer *b);
-RZ_API bool rz_buf_prepend_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_prepend_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 len);
 RZ_API bool rz_buf_read8(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut8 *result);
 RZ_API bool rz_buf_read8_at(RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *result);
 RZ_API bool rz_buf_resize(RZ_NONNULL RzBuffer *b, ut64 newsize);
-RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API bool rz_buf_set_bytes(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, ut64 len);
 RZ_API bool rz_buf_write8(RZ_NONNULL RzBuffer *b, ut8 value);
 RZ_API bool rz_buf_write8_at(RZ_NONNULL RzBuffer *b, ut64 addr, ut8 value);
 RZ_API st64 rz_buf_append_string(RZ_NONNULL RzBuffer *b, RZ_NONNULL const char *str);
@@ -118,7 +121,7 @@ RZ_API st64 rz_buf_fread(RZ_NONNULL RzBuffer *b, RZ_NONNULL ut8 *buf, RZ_NONNULL
 RZ_API st64 rz_buf_fread_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL ut8 *buf, RZ_NONNULL const char *fmt, int n);
 RZ_API st64 rz_buf_fwrite(RZ_NONNULL RzBuffer *b, RZ_NONNULL const ut8 *buf, RZ_NONNULL const char *fmt, int n);
 RZ_API st64 rz_buf_fwrite_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, RZ_NONNULL const char *fmt, int n);
-RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 length);
+RZ_API st64 rz_buf_insert_bytes(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len);
 RZ_API st64 rz_buf_read(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_OUT ut8 *buf, ut64 len);
 RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT ut8 *buf, ut64 len);
 RZ_API st64 rz_buf_seek(RZ_NONNULL RzBuffer *b, st64 addr, int whence);
@@ -221,6 +224,15 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 		return true; \
 	}
 
+static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result, size_t size) {
+	rz_return_val_if_fail(b && offset && result, false);
+	if (rz_buf_read_at(b, *offset, result, size) != size) {
+		return false;
+	}
+	*offset += size;
+	return true;
+}
+
 #define DEFINE_RZ_BUF_WRITE_OFFSET_BLE(size) \
 	static inline bool rz_buf_write_ble##size##_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, ut##size value, bool big_endian) { \
 		rz_return_val_if_fail(b &&offset, false); \
@@ -230,6 +242,15 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 		*offset += sizeof(value); \
 		return true; \
 	}
+
+static inline bool rz_buf_write_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL ut8 *result, size_t size) {
+	rz_return_val_if_fail(b && offset && result, false);
+	if (rz_buf_write_at(b, *offset, result, size) != size) {
+		return false;
+	}
+	*offset += size;
+	return true;
+}
 
 #define rz_buf_read_ble8_at(b, addr, result, endian) ((void)endian, rz_buf_read8_at(b, addr, result))
 #define rz_buf_write_ble8_at(b, addr, value, endian) ((void)endian, rz_buf_write8_at(b, addr, value))
@@ -327,6 +348,8 @@ RZ_API bool rz_deflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 RZ_API bool rz_deflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
 RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed, int wbits);
 RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
+RZ_API bool rz_lzma_dec_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
+RZ_API bool rz_lzma_enc_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
 
 #ifdef __cplusplus
 }

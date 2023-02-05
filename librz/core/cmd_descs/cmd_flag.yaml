@@ -189,7 +189,7 @@ commands:
         optional: true
   - name: fc
     cname: flag_color
-    summary: Set a comment for the given flag / Show a comment for the given flag
+    summary: Set a color for the given flag / Show the color for the given flag
     args:
       - name: flag
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -198,7 +198,7 @@ commands:
         optional: true
   - name: fC
     cname: flag_comment
-    summary: Set a comment for the given flag / Show a comment for the given flag
+    summary: Set a comment for the given flag / Show the comment for the given flag
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_FLAG

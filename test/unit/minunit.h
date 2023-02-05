@@ -10,6 +10,8 @@
 #ifndef _MINUNIT_H_
 #define _MINUNIT_H_
 
+#include <rz_types.h>
+
 #if __WINDOWS__
 #define TRED
 #define TGREEN
@@ -36,7 +38,7 @@
 #define MU_TEST_UNBROKEN 0
 #define MU_TEST_BROKEN   1
 
-#define MU_BUF_SIZE 5120
+#define MU_BUF_SIZE 8192
 
 void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 	size_t i;

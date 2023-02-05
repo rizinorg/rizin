@@ -31,7 +31,7 @@ typedef struct rz_sysreg_item_t {
 } RzSysregItem;
 
 typedef struct rz_sysreg_db_t {
-	HtUP /* <ut64 , RzSysregItem> */ *port;
+	HtUP /*<ut64 , RzSysregItem>*/ *port;
 } RzSysregsDB;
 
 typedef struct rz_syscall_t {
@@ -67,26 +67,6 @@ typedef struct rz_sysregs_t {
 } RSysregs;
 #endif
 
-/* plugin struct */
-typedef struct rz_syscall_plugin_t {
-	char *name;
-	char *arch;
-	char *os;
-	char *desc;
-	int bits;
-	int nargs;
-	struct rz_syscall_args_t *args;
-} RzSyscallPlugin;
-
-typedef struct rz_syscall_arch_plugin_t {
-	char *name;
-	char *arch;
-	char *desc;
-	int *bits;
-	int nargs;
-	struct rz_syscall_args_t **args;
-} RzSyscallArchPlugin;
-
 #ifdef RZ_API
 RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const char *s);
 RZ_API void rz_syscall_item_free(RzSyscallItem *si);
@@ -99,7 +79,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *ctx, int num, int swi);
 RZ_API int rz_syscall_get_num(RzSyscall *ctx, const char *str);
 RZ_API const char *rz_syscall_get_i(RzSyscall *ctx, int num, int swi);
-RZ_API RzList *rz_syscall_list(RzSyscall *ctx);
+RZ_API RzList /*<RzSyscallItem *>*/ *rz_syscall_list(RzSyscall *ctx);
 RZ_API int rz_syscall_get_swi(RzSyscall *s);
 
 RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 num);

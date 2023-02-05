@@ -36,7 +36,7 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalysisRefline *re
 	return re;
 }
 
-static bool add_refline(RzList *list, RzList *sten, ut64 addr, ut64 to, int *idx) {
+static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<ReflineEnd *>*/ *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RzAnalysisRefline *item = RZ_NEW0(RzAnalysisRefline);
 	if (!item) {
@@ -79,7 +79,7 @@ RZ_API void rz_analysis_reflines_free(RzAnalysisRefline *rl) {
  * nlines - max number of lines of code to consider
  * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
  * linescall - true if you want to display call lines */
-RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RzList *list, *sten;
 	RzListIter *iter;
 	RzAnalysisOp op;
@@ -263,7 +263,7 @@ list_err:
 	return NULL;
 }
 
-RZ_API int rz_analysis_reflines_middle(RzAnalysis *a, RzList * /*<RzAnalysisRefline>*/ list, ut64 addr, int len) {
+RZ_API int rz_analysis_reflines_middle(RzAnalysis *a, RzList /*<RzAnalysisRefline *>*/ *list, ut64 addr, int len) {
 	if (a && list) {
 		RzAnalysisRefline *ref;
 		RzListIter *iter;

@@ -45,6 +45,7 @@ void *rz_il_handler_bool_inv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_cast(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_append(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 
+bool rz_il_handler_empty(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_nop(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_set(RzILVM *vm, RzILOpEffect *op);
 bool rz_il_handler_jmp(RzILVM *vm, RzILOpEffect *op);
@@ -101,6 +102,7 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 };
 
 RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX] = {
+	[RZ_IL_OP_EMPTY] = rz_il_handler_empty,
 	[RZ_IL_OP_STORE] = rz_il_handler_store,
 	[RZ_IL_OP_STOREW] = rz_il_handler_storew,
 	[RZ_IL_OP_NOP] = rz_il_handler_nop,

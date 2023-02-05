@@ -109,10 +109,24 @@ commands:
   - name: "&"
     summary: Manage tasks
     subcommands: cmd_tasks
-  - name: (
-    cname: cmd_macro
+  - name: "("
     summary: Manage scripting macros
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_macro
+    details:
+      - name: Examples
+        entries:
+          - text: (
+            arg_str: ""
+            comment: List defined macros
+          - text: (
+            arg_str: foo; ?e Disassemble 10 bytes at 0x10000; pd 10 @ 0x10000)
+            comment: Define a new macro 'foo', which executes `?` followed by `pd` when called.
+          - text: (
+            arg_str: foo a b; ?e Disassemble ${a} bytes at ${b}; pd ${a} @ ${b})
+            comment: Define a new macro 'foo' with two arguments. ${a}/${b} are replaced before execution.
+          - text: (-
+            arg_str: foo
+            comment: Remove previously defined macro named 'foo'
   - name: "*"
     cname: pointer
     summary: Pointer read/write data/values
@@ -202,9 +216,7 @@ commands:
     summary: Code metadata (comments, format, hints, ..)
     subcommands: cmd_meta
   - name: d
-    cname: cmd_debug
     summary: Debugger commands
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands: cmd_debug
   - name: e
     summary: List/get/set config evaluable vars
@@ -212,9 +224,16 @@ commands:
   - name: f
     summary: Manage flags
     subcommands: cmd_flag
+  - name: F
+    summary: FLIRT signature management
+    subcommands: cmd_flirt
   - name: g
     summary: Generate shellcodes with rz_egg
     subcommands: cmd_egg
+  - name: help
+    summary: Generic help
+    cname: help
+    args: []
   - name: H
     summary: Rizin history commands.
     subcommands: cmd_history
@@ -269,9 +288,6 @@ commands:
   - name: y
     summary: Yank/paste bytes from/to memory
     subcommands: cmd_yank
-  - name: z
-    summary: Zignatures management
-    subcommands: cmd_zign
   - name: "@"
     cname: tmp_modifiers
     options: "[?]"
@@ -485,7 +501,7 @@ commands:
           - text: ","
             comment: "Token to define another keyword"
           - text: "+"
-            comment: "Case insensitive grep (grep -i)"
+            comment: "Set the grep as the opposite of search.case_sensitive"
           - text: "^"
             comment: "Words must be placed at the beginning of line"
           - text: "<"
@@ -536,8 +552,8 @@ commands:
             arg_str: "~:0"
             comment: Show first line of 'i' output
           - text: i
-            arg_str: "~:-2"
-            comment: Show from the second to the last line of 'i' output
+            arg_str: "~:-2.."
+            comment: Show from the second-last line to the last line of 'i' output
           - text: i
             arg_str: "~:0..3"
             comment: Show first three lines of 'i' output

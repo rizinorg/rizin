@@ -197,20 +197,10 @@ static ut8 esil_internal_sizeof_reg(RzAnalysisEsil *esil, const char *r) {
 	return ri ? ri->size : 0;
 }
 
-static bool alignCheck(RzAnalysisEsil *esil, ut64 addr) {
-	int dataAlign = rz_analysis_archinfo(esil->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
-	return !(dataAlign > 0 && addr % dataAlign);
-}
-
 static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->iob.io, 0);
 
 	addr &= esil->addrmask;
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	if (esil->cmd_mdev && esil->mdev_range) {
 		if (rz_str_range_in(esil->mdev_range, addr)) {
 			if (esil->cmd(esil, esil->cmd_mdev, addr, 0)) {
@@ -238,11 +228,6 @@ static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *
 	rz_return_val_if_fail(esil && esil->analysis && esil->analysis->iob.io, 0);
 
 	addr &= esil->addrmask;
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)esil->analysis->iob.read_at(esil->analysis->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
@@ -263,11 +248,6 @@ RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, 
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read(esil, addr, buf, len);
 	}
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 		if (ret != len) {
@@ -286,11 +266,6 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 		return 0;
 	}
 	addr &= esil->addrmask;
-	if (!alignCheck(esil, addr)) {
-		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
 	if (esil->cmd_mdev && esil->mdev_range) {
 		if (rz_str_range_in(esil->mdev_range, addr)) {
 			if (esil->cmd(esil, esil->cmd_mdev, addr, 1)) {
@@ -1957,23 +1932,20 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 		if (bits == 128) {
 			ut8 a[sizeof(ut64) * 2] = { 0 };
 			ret = rz_analysis_esil_mem_read(esil, addr, a, bytes);
-			ut64 b = rz_read_ble64(&a, 0); // esil->analysis->big_endian);
-			ut64 c = rz_read_ble64(&a[8], 0); // esil->analysis->big_endian);
-			snprintf(res, sizeof(res), "0x%" PFMT64x, b);
+			ut64 b = rz_read_ble(a, esil->analysis->big_endian, bits);
+			ut64 c = rz_read_ble(a + 8, esil->analysis->big_endian, bits);
+			rz_strf(res, "0x%" PFMT64x, b);
 			rz_analysis_esil_push(esil, res);
-			snprintf(res, sizeof(res), "0x%" PFMT64x, c);
+			rz_strf(res, "0x%" PFMT64x, c);
 			rz_analysis_esil_push(esil, res);
 			free(dst);
 			return ret;
 		}
 		ut64 bitmask = genmask(bits - 1);
 		ut8 a[sizeof(ut64)] = { 0 };
-		ret = !!rz_analysis_esil_mem_read(esil, addr, a, bytes);
-		ut64 b = rz_read_ble64(a, 0); // esil->analysis->big_endian);
-		if (esil->analysis->big_endian) {
-			rz_mem_swapendian((ut8 *)&b, (const ut8 *)&b, bytes);
-		}
-		snprintf(res, sizeof(res), "0x%" PFMT64x, b & bitmask);
+		ret = rz_analysis_esil_mem_read(esil, addr, a, bytes);
+		ut64 b = rz_read_ble(a, esil->analysis->big_endian, bits);
+		rz_strf(res, "0x%" PFMT64x, b & bitmask);
 		rz_analysis_esil_push(esil, res);
 		esil->lastsz = bits;
 	}

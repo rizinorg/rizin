@@ -160,58 +160,37 @@ static ut64 rebase_offset_to_paddr(RzXNUKernelCacheObj *obj, struct section_t *s
 }
 
 typedef struct {
-	ut64 off, eob;
-	ut8 *buf;
-	int count;
+	ut64 eob;
+	RzBuffer *dst;
 	RzXNUKernelCacheObj *obj;
 } RebaseCtx;
 
-static void rebase_buffer(RzXNUKernelCacheObj *obj, ut64 off, ut8 *buf, ut64 count) {
-	if (obj->rebasing_buffer) {
-		return;
-	}
-	obj->rebasing_buffer = true;
-
+static void rebase_buffer(RzXNUKernelCacheObj *obj, RzBuffer *dst) {
 	rebase_info_populate(obj->rebase_info, obj);
 
-	ut64 eob = off + count;
+	ut64 eob = rz_buf_size(obj->cache_buf);
 	int i = 0;
 	RebaseCtx ctx;
-	ctx.off = off;
 	ctx.eob = eob;
-	ctx.buf = buf;
-	ctx.count = count;
+	ctx.dst = dst;
 	ctx.obj = obj;
 
 	for (; i < obj->rebase_info->n_ranges; i++) {
 		ut64 start = obj->rebase_info->ranges[i].offset;
-		ut64 end = start + obj->rebase_info->ranges[i].size;
-		if (end >= off && start <= eob) {
+		if (start < eob) {
 			iterate_rebase_list(obj->cache_buf, obj->rebase_info->multiplier, start, on_rebase_pointer, &ctx);
 		}
 	}
-
-	obj->rebasing_buffer = false;
 }
 
 static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, void *user) {
 	RebaseCtx *ctx = user;
-	if (offset < ctx->off) {
-		return true;
-	}
 	if (offset >= ctx->eob) {
 		return false;
 	}
-	ut64 in_buf = offset - ctx->off;
-	if (in_buf >= ctx->count || (in_buf + 8) > ctx->count) {
-		return false;
-	}
-
 	RzXNUKernelCacheParsedPointer ptr;
 	rz_xnu_kernelcache_parse_pointer(&ptr, decorated_addr, ctx->obj);
-
-	rz_write_le64(&ctx->buf[in_buf], ptr.address);
-
+	rz_buf_write_le64_at(ctx->dst, offset, ptr.address);
 	return true;
 }
 
@@ -237,81 +216,22 @@ RZ_API bool rz_xnu_kernelcache_parse_pointer(RzXNUKernelCacheParsedPointer *ptr,
 	return true;
 }
 
-typedef struct {
-	RzXNUKernelCacheObj *obj;
-	ut64 off;
-} BufCtx;
-
-static bool buf_init(RzBuffer *b, const void *user) {
-	BufCtx *ctx = RZ_NEW0(BufCtx);
-	if (!ctx) {
-		return false;
+RZ_API RzBuffer *rz_xnu_kernelcache_new_patched_buf(RzXNUKernelCacheObj *obj) {
+	RzBuffer *r = rz_buf_new_sparse_overlay(obj->cache_buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	if (!r) {
+		return NULL;
 	}
-	ctx->obj = (void *)user;
-	b->priv = ctx;
-	return true;
-}
 
-static bool buf_fini(RzBuffer *b) {
-	BufCtx *ctx = b->priv;
-	free(ctx);
-	return true;
-}
-
-static bool buf_resize(RzBuffer *b, ut64 newsize) {
-	BufCtx *ctx = b->priv;
-	return rz_buf_resize(ctx->obj->cache_buf, newsize);
-}
-
-static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
-	BufCtx *ctx = b->priv;
-	st64 r = rz_buf_read_at(ctx->obj->cache_buf, ctx->off, buf, len);
-	if (r <= 0 || !len) {
-		return r;
-	}
-	RzXNUKernelCacheObj *cache = ctx->obj;
-	if (cache->mach0->chained_starts) {
+	if (obj->mach0->chained_starts) {
 		MACH0_(rebase_buffer)
-		(ctx->obj->mach0, ctx->off, buf, RZ_MIN(r, len));
-	} else if (cache->rebase_info) {
-		rebase_buffer(cache, ctx->off, buf, RZ_MIN(r, len));
+		(obj->mach0, r);
+	} else if (obj->rebase_info) {
+		rebase_buffer(obj, r);
 	}
+
+	// from now on, all writes should propagate through to the actual file
+	rz_buf_sparse_set_write_mode(r, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 	return r;
-}
-
-static st64 buf_write(RzBuffer *b, const ut8 *buf, ut64 len) {
-	BufCtx *ctx = b->priv;
-	return rz_buf_write_at(ctx->obj->cache_buf, ctx->off, buf, len);
-}
-
-static ut64 buf_get_size(RzBuffer *b) {
-	BufCtx *ctx = b->priv;
-	return rz_buf_size(ctx->obj->cache_buf);
-}
-
-static st64 buf_seek(RzBuffer *b, st64 addr, int whence) {
-	BufCtx *ctx = b->priv;
-	return ctx->off = rz_seek_offset(ctx->off, rz_buf_size(b), addr, whence);
-}
-
-static ut8 *buf_get_whole_buf(RzBuffer *b, ut64 *sz) {
-	BufCtx *ctx = b->priv;
-	return (ut8 *)rz_buf_data(ctx->obj->cache_buf, sz);
-}
-
-static const RzBufferMethods buf_methods = {
-	.init = buf_init,
-	.fini = buf_fini,
-	.read = buf_read,
-	.write = buf_write,
-	.get_size = buf_get_size,
-	.resize = buf_resize,
-	.seek = buf_seek,
-	.get_whole_buf = buf_get_whole_buf
-};
-
-RZ_API RzBuffer *rz_xnu_kernelcache_new_rebasing_buf(RzXNUKernelCacheObj *obj) {
-	return rz_buf_new_with_methods(&buf_methods, obj);
 }
 
 RZ_API bool rz_xnu_kernelcache_needs_rebasing(RzXNUKernelCacheObj *obj) {

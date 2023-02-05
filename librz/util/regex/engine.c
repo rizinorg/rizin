@@ -98,8 +98,8 @@ static states step(struct re_guts *, sopno, sopno, states, int, states);
 #define BOW           (BOL + 4)
 #define EOW           (BOL + 5)
 #define CODEMAX       (BOL + 5) /* highest code used */
-#define NONCHAR(c)    ((c) > CHAR_MAX)
-#define NNONCHAR      (CODEMAX - CHAR_MAX)
+#define NONCHAR(c)    ((c) > OUT)
+#define NNONCHAR      (CODEMAX - OUT)
 #ifdef REDEBUG
 static void print(struct match *, char *, states, int, FILE *);
 #endif
@@ -735,8 +735,9 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst) {
 		/* next character */
 		lastc = c;
 		c = (p == m->endp) ? OUT : *p;
-		if (st == fresh)
+		if (EQ(st, fresh)) {
 			coldp = p;
+		}
 
 		/* is there an EOL and/or BOL between lastc and c? */
 		flagch = '\0';
@@ -783,7 +784,8 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst) {
 		}
 		st = step(m->g, startst, stopst, tmp, c, st);
 		SP("aft", st, c);
-		if (!EQ(step(m->g, startst, stopst, st, NOTHING, st), st)) {
+		ASSIGN(tmp, st);
+		if (!EQ(step(m->g, startst, stopst, tmp, NOTHING, tmp), st)) {
 			break;
 		}
 		p++;

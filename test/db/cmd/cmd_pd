@@ -252,8 +252,8 @@ e asm.cmt.right=false
 pd 1
 EOF
 EXPECT=<<EOF
-            [32m[7m0x00000000[0m      [33m48[37m89[37me5[0m         [37mrbp =[36m rsp[0m[0m[0m
-[0m            [32m[7m0x00000000[0m      [33m48[37m89[37me5[0m         [37mrbp =[36m rsp[0m[0m
+            [32m[7m0x00000000[0m      [33m48[37m89[37me5[0m         [37mrbp[0m[37m [0m[37m=[0m[37m [0m[36mrsp[0m[0m[0m
+[0m            [32m[7m0x00000000[0m      [33m48[37m89[37me5[0m         [37mrbp[0m[37m [0m[37m=[0m[37m [0m[36mrsp[0m[0m
 EOF
 RUN
 
@@ -268,7 +268,7 @@ e scr.color=1
 pd 1
 EOF
 EXPECT=<<EOF
-            [32m[7m0x00000000[0m      [37ma9[33m7e[32m00[0m         [35mlda  [36m #[33m0x007e[0m[0m[0m
+            [32m[7m0x00000000[0m      [37ma9[33m7e[32m00[0m         [35mlda[0m[37m   #[0m[33m0x007e[0m[0m[0m
 EOF
 RUN
 
@@ -593,7 +593,6 @@ RUN
 NAME=pd asm.sub.varonly
 FILE=malloc://1024
 CMDS=<<EOF
-e analysis.vars.stackname=true
 e asm.arch=x86
 e asm.bits=64
 e asm.sub.var=true
@@ -614,9 +613,9 @@ pd 1 @ 0~var
 pd 1 @ 7
 EOF
 EXPECT=<<EOF
-     ; var int64_t var_28h @ rsp+0x40
+     ; var int64_t var_28h @ stack - 0x28
      mov   rax, qword [var_28h]
-     ; var int64_t var_28h @ rsp+0x40
+     ; var int64_t var_28h @ stack - 0x28
      mov   rax, qword [rsp + var_28h]
 EOF
 RUN
@@ -898,8 +897,8 @@ e asm.sub.names=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
-            [32m0x0001145f[0m      [37mlea  [36m rdi[0m,[36m[36m [0m[36mstr.A_NULL_argv_0__was_passed_through_an_exec_system_call.[0m[36m[0m[0m
-            [32m0x0001145f[0m      [37mlea  [36m rdi[0m,[36m[36m [0m[[36m[36m0x0001b5d8[0m][36m[0m[0m
+            [32m0x0001145f[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [33mstr.A_NULL_argv_0__was_passed_through_an_exec_system_call.[0m[0m[0m
+            [32m0x0001145f[0m      [37mlea[0m[37m   [0m[36mrdi[0m[37m, [[0m[33m0x0001b5d8[0m[37m][0m[0m
 EOF
 RUN
 
@@ -1120,7 +1119,7 @@ e asm.noisy=false
 e asm.bytes=false
 e asm.cmt.off=false
 e str.escbslash=true
-(test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
+(test_str.enc enc; e bin.str.enc=${enc}; e bin.str.enc)
 .(test_str.enc guess)
 .(test_str.enc utf-8)
 .(test_str.enc utf-16le)
@@ -1147,7 +1146,7 @@ RUN
 NAME=bin.str.enc error handling
 FILE==
 CMDS=<<EOF
-(test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
+(test_str.enc enc; e bin.str.enc=${enc}; e bin.str.enc)
 .(test_str.enc UTF-32LE)
 .(test_str.enc cat_sat_on_keyboard)
 .(test_str.enc CAT_SAT_ON_KEYBOARD)
@@ -1158,8 +1157,8 @@ utf32le
 utf32le
 EOF
 EXPECT_ERR=<<EOF
-Unknown encoding: cat_sat_on_keyboard
-Unknown encoding: CAT_SAT_ON_KEYBOARD
+ERROR: core: bin.str.enc: unknown encoding: cat_sat_on_keyboard
+ERROR: core: bin.str.enc: unknown encoding: CAT_SAT_ON_KEYBOARD
 EOF
 RUN
 
@@ -1281,10 +1280,10 @@ af
 pd 2 @ 0x004010e8
 EOF
 EXPECT=<<EOF
-[0m[36m|[0m           [32m0x004010e8[0m      [35mpush[36m esi[0m[0m
+[0m[36m|[0m           [32m0x004010e8[0m      [35mpush[0m[37m [0m[36mesi[0m[0m
 [36m|[0m           [31m; 0x402004
 [0m[36m|[0m           [31m; DWORD GetCurrentProcessorNumber(void)
-[0m[36m|[0m           [32m0x004010e9[0m      [32mcall dword [sym.imp.KERNEL32.dll_GetCurrentProcessorNumber][0m
+[0m[36m|[0m           [32m0x004010e9[0m      [32mcall[0m[37m [0m[37mdword[0m[37m [[0m[33msym.imp.KERNEL32.dll_GetCurrentProcessorNumber[0m[37m][0m[0m
 EOF
 RUN
 
@@ -1441,7 +1440,6 @@ CMDS=<<EOF
 aaa
 e asm.bytes=true
 e asm.cmt.right=0
-e scr.colors=1
 e scr.html=1
 e str.escbslash=1
 pdJ 1 @ 0x08048532
@@ -1500,8 +1498,8 @@ EOF
 EXPECT=<<EOF
             0x080484aa      b8e1850408     mov   eax, 0x80485e1        ; eax=0x80485e1 "%ls"
 [{"offset":134513834,"text":"            0x080484aa      b8e1850408     mov   eax, 0x80485e1        ; eax=0x80485e1 \"%ls\""}]
-            [32m0x080484aa[0m      [37mb8[37me1[37m85[37m04[37m08[0m     [37mmov  [36m eax[0m,[36m[36m [33m0x80485e1[0m[0m[0m[31m        ; eax=0x80485e1 [7m"%ls"[27m[0m
-[{"offset":134513834,"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[37mb8\u001b[37me1\u001b[37m85\u001b[37m04\u001b[37m08\u001b[0m     \u001b[37mmov  \u001b[36m eax\u001b[0m,\u001b[36m\u001b[36m \u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[0m\u001b[31m        ; eax=0x80485e1 \u001b[7m\"%ls\"\u001b[27m\u001b[0m"}]
+            [32m0x080484aa[0m      [37mb8[37me1[37m85[37m04[37m08[0m     [37mmov[0m[37m   [0m[36meax[0m[37m, [0m[33m0x80485e1[0m[0m[0m[31m        ; eax=0x80485e1 [7m"%ls"[27m[0m
+[{"offset":134513834,"text":"            \u001b[32m0x080484aa\u001b[0m      \u001b[37mb8\u001b[37me1\u001b[37m85\u001b[37m04\u001b[37m08\u001b[0m     \u001b[37mmov\u001b[0m\u001b[37m   \u001b[0m\u001b[36meax\u001b[0m\u001b[37m, \u001b[0m\u001b[33m0x80485e1\u001b[0m\u001b[0m\u001b[0m\u001b[31m        ; eax=0x80485e1 \u001b[7m\"%ls\"\u001b[27m\u001b[0m"}]
 EOF
 RUN
 
@@ -1549,16 +1547,6 @@ FILE==
 CMDS=<<EOF
 e scr.null=true
 pI 0x200
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=pC - crash
-FILE==
-CMDS=<<EOF
-e scr.null=true
-pC 0x200
 EOF
 EXPECT=<<EOF
 EOF
@@ -1813,17 +1801,17 @@ e emu.str.inv=false
 pd 1 @ 0x161d
 EOF
 EXPECT=<<EOF
-            [32m0x0000161d[0m      [37mlea  [36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m               ; 0x21f7[31m ; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str.Blue_Pill[0m
-            [32m0x0000161d[0m      [37mlea  [36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m               ; 0x21f7[31m ; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str.Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[0m[37m   [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m[31m               ; 0x21f7[31m ; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str.Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[0m[37m   [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m[31m               ; 0x21f7[31m ; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str.Blue_Pill[0m
 
             [31m; 0x21f7
             [31m; "abcdefghi"
 [0m[31m[0m               [31m; [7m"\n  Blue Pill"[27m str.Blue_Pill
-[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+[0m            [32m0x0000161d[0m      [37mlea[0m[37m [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m
             [31m; 0x21f7
             [31m; [7m"abcdefghi"[27m
 [0m[31m[0m               [31m; "\n  Blue Pill" str.Blue_Pill
-[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+[0m            [32m0x0000161d[0m      [37mlea[0m[37m [0m[36meax[0m[37m, [[0m[36mesi[0m[37m [0m[37m-[0m[37m [0m[33mabcdefghi][0m[0m
 EOF
 RUN
 
@@ -1944,13 +1932,13 @@ s 0
 pd 1 @ 0x1457
 EOF
 EXPECT=<<EOF
-            [48;2;0;0;128m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea  [38;2;58;150;221m eax[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
-            [38;2;19;161;14m0x0000145d[27;22;24;25;28;39m      [38;2;193;156;0m50[27;22;24;25;28;39m             [38;2;136;23;152mpush [38;2;58;150;221m eax[0m[0m[0m[38;2;197;15;31m[0m
-            [38;2;19;161;14m0x0000145e[27;22;24;25;28;39m      [38;2;204;204;204m8b[38;2;204;204;204m86[38;2;204;204;204mf0[38;2;197;15;31mff[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mmov  [38;2;58;150;221m eax[0m,[38;2;58;150;221m dword [0m[[38;2;58;150;221mesi [0m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x10[0m][38;2;58;150;221m[0m[0m[0m[38;2;197;15;31m[0m
-            [44m[32m0x00001457[27;22;24;25;28;39m      [37m8d[37m86[37m89[37mdd[31mff[31mff[27;22;24;25;28;39m   [37mlea  [36m eax[27;22;24;25;28;39m,[36m [27;22;24;25;28;39m[[36mesi [27;22;24;25;28;39m-[36m[36m [33m0x2277[27;22;24;25;28;39m][36m[27;22;24;25;28;39m[0m[0m[0m[31m   ; " Take the Red Pill!! \n"[0m
-            [48;2;0;0;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea  [38;2;58;150;221m eax[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
-            [48;2;0;47;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea  [38;2;58;150;221m eax[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
-            [48;2;0;47;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea  [38;2;58;150;221m [48;2;128;0;0meax[48;2;0;47;0m[27;22;24;25;28;39m,[38;2;58;150;221m [27;22;24;25;28;39m[[38;2;58;150;221mesi [27;22;24;25;28;39m-[38;2;58;150;221m[38;2;58;150;221m [38;2;193;156;0m0x2277[27;22;24;25;28;39m][38;2;58;150;221m[27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
+            [48;2;0;0;128m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[27;22;24;25;28;39m[38;2;204;204;204m   [27;22;24;25;28;39m[38;2;58;150;221meax[27;22;24;25;28;39m[38;2;204;204;204m, [[27;22;24;25;28;39m[38;2;58;150;221mesi[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;204;204;204m-[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;193;156;0m0x2277[27;22;24;25;28;39m[38;2;204;204;204m][27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
+            [38;2;19;161;14m0x0000145d[27;22;24;25;28;39m      [38;2;193;156;0m50[27;22;24;25;28;39m             [38;2;136;23;152mpush[0m[38;2;204;204;204m  [0m[38;2;58;150;221meax[0m[0m[0m[38;2;197;15;31m[0m
+            [38;2;19;161;14m0x0000145e[27;22;24;25;28;39m      [38;2;204;204;204m8b[38;2;204;204;204m86[38;2;204;204;204mf0[38;2;197;15;31mff[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mmov[0m[38;2;204;204;204m   [0m[38;2;58;150;221meax[0m[38;2;204;204;204m, [0m[38;2;204;204;204mdword[0m[38;2;204;204;204m [[0m[38;2;58;150;221mesi[0m[38;2;204;204;204m [0m[38;2;204;204;204m-[0m[38;2;204;204;204m [0m[38;2;193;156;0m0x10[0m[38;2;204;204;204m][0m[0m[0m[38;2;197;15;31m[0m
+            [44m[32m0x00001457[27;22;24;25;28;39m      [37m8d[37m86[37m89[37mdd[31mff[31mff[27;22;24;25;28;39m   [37mlea[27;22;24;25;28;39m[37m   [27;22;24;25;28;39m[36meax[27;22;24;25;28;39m[37m, [[27;22;24;25;28;39m[36mesi[27;22;24;25;28;39m[37m [27;22;24;25;28;39m[37m-[27;22;24;25;28;39m[37m [27;22;24;25;28;39m[33m0x2277[27;22;24;25;28;39m[37m][27;22;24;25;28;39m[0m[0m[0m[31m   ; " Take the Red Pill!! \n"[0m
+            [48;2;0;0;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[27;22;24;25;28;39m[38;2;204;204;204m   [27;22;24;25;28;39m[38;2;58;150;221meax[27;22;24;25;28;39m[38;2;204;204;204m, [[27;22;24;25;28;39m[38;2;58;150;221mesi[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;204;204;204m-[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;193;156;0m0x2277[27;22;24;25;28;39m[38;2;204;204;204m][27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
+            [48;2;0;47;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[27;22;24;25;28;39m[38;2;204;204;204m   [27;22;24;25;28;39m[38;2;58;150;221meax[27;22;24;25;28;39m[38;2;204;204;204m, [[27;22;24;25;28;39m[38;2;58;150;221mesi[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;204;204;204m-[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;193;156;0m0x2277[27;22;24;25;28;39m[38;2;204;204;204m][27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
+            [48;2;0;47;0m[38;2;19;161;14m0x00001457[27;22;24;25;28;39m      [38;2;204;204;204m8d[38;2;204;204;204m86[38;2;204;204;204m89[38;2;204;204;204mdd[38;2;197;15;31mff[38;2;197;15;31mff[27;22;24;25;28;39m   [38;2;204;204;204mlea[27;22;24;25;28;39m[38;2;204;204;204m   [27;22;24;25;28;39m[38;2;58;150;221m[48;2;128;0;0meax[48;2;0;47;0m[27;22;24;25;28;39m[38;2;204;204;204m, [[27;22;24;25;28;39m[38;2;58;150;221mesi[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;204;204;204m-[27;22;24;25;28;39m[38;2;204;204;204m [27;22;24;25;28;39m[38;2;193;156;0m0x2277[27;22;24;25;28;39m[38;2;204;204;204m][27;22;24;25;28;39m[0m[0m[0m[38;2;197;15;31m   ; " Take the Red Pill!! \n"[0m
 EOF
 RUN
 
@@ -2032,30 +2020,30 @@ pd 4 @ 0x0001045c
 ?e
 e asm.sub.varonly=true
 s main
-afvn local2 var_ch
-afvn arg1 arg_8h
+afvn local2 var_10h
+afvn arg1 arg_4h
 pd 4 @ 0x0001045c
 EOF
 EXPECT=<<EOF
-|           0x0001045c      STR   R0, [var_8h]
-|           0x00010460      STR   R1, [var_ch]
-|           0x00010464      LDR   R0, [arg_8h]
-|           0x00010468      LDR   R1, [arg_ch]
+|           0x0001045c      STR   R0, [var_ch]
+|           0x00010460      STR   R1, [var_10h]
+|           0x00010464      LDR   R0, [arg_4h]
+|           0x00010468      LDR   R1, [arg_8h]
 
 |           0x0001045c      str   r0, [fp, -8]
 |           0x00010460      str   r1, [fp, -0xc]
 |           0x00010464      ldr   r0, [fp, 8]
 |           0x00010468      ldr   r1, [fp, 0xc]
 
-|           0x0001045c      [fp - var_8h] = r0
-|           0x00010460      [fp - var_ch] = r1
-|           0x00010464      r0 = [fp + arg_8h]
-|           0x00010468      r1 = [fp + arg_ch]
+|           0x0001045c      [fp - var_ch] = r0
+|           0x00010460      [fp - var_10h] = r1
+|           0x00010464      r0 = [fp + arg_4h]
+|           0x00010468      r1 = [fp + arg_8h]
 
-|           0x0001045c      [var_8h] = r0
+|           0x0001045c      [var_ch] = r0
 |           0x00010460      [local2] = r1
 |           0x00010464      r0 = [arg1]
-|           0x00010468      r1 = [arg_ch]
+|           0x00010468      r1 = [arg_8h]
 EOF
 RUN
 
@@ -2543,5 +2531,683 @@ EXPECT=<<EOF
 10
 3
 20
+EOF
+RUN
+
+NAME=mips varsub
+FILE=bins/elf/vars-mips-bp
+ARGS=-e bin.dbginfo=0
+CMDS=<<EOF
+s sym.varfunc
+af
+e asm.flags=false
+e asm.bytes=0
+e asm.comments=false
+e asm.sub.var=1
+e asm.sub.varonly=1
+pdf
+e asm.sub.varonly=0
+pdf
+e asm.pseudo=1
+e asm.sub.varonly=1
+pdf
+e asm.sub.varonly=0
+pdf
+EOF
+EXPECT=<<EOF
+/ sym.varfunc ();
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00000794      lui   gp, 2
+|           0x00000798      addiu gp, gp, -0x7db4
+|           0x0000079c      addu  gp, gp, t9
+|           0x000007a0      addiu sp, sp, -0x30
+|           0x000007a4      sw    ra, (var_4h)
+|           0x000007a8      sw    fp, (var_8h)
+|           0x000007ac      move  fp, sp
+|           0x000007b0      sw    gp, (var_20h)
+|           0x000007b4      addiu v0, zero, 1
+|           0x000007b8      sw    v0, (var_18h)
+|           0x000007bc      addiu v0, zero, 2
+|           0x000007c0      sw    v0, (var_14h)
+|           0x000007c4      addiu v0, zero, 3
+|           0x000007c8      sw    v0, (var_10h)
+|           0x000007cc      addiu v0, zero, 4
+|           0x000007d0      sw    v0, (var_ch)
+|           0x000007d4      lw    v0, -sym.leaffunc(gp)
+|           0x000007d8      move  t9, v0
+|           0x000007dc      bal   sym.leaffunc
+|           0x000007e0      nop
+|           0x000007e4      lw    gp, (var_20h)
+|           0x000007e8      lw    v0, (var_ch)
+|           0x000007ec      sw    v0, (var_14h)
+|           0x000007f0      lw    v0, (var_18h)
+|           0x000007f4      move  sp, fp
+|           0x000007f8      lw    ra, (var_4h)
+|           0x000007fc      lw    fp, (var_8h)
+|           0x00000800      addiu sp, sp, 0x30
+|           0x00000804      jr    ra
+\           0x00000808      nop
+/ sym.varfunc ();
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00000794      lui   gp, 2
+|           0x00000798      addiu gp, gp, -0x7db4
+|           0x0000079c      addu  gp, gp, t9
+|           0x000007a0      addiu sp, sp, -0x30
+|           0x000007a4      sw    ra, var_4h(sp)
+|           0x000007a8      sw    fp, var_8h(sp)
+|           0x000007ac      move  fp, sp
+|           0x000007b0      sw    gp, var_20h(sp)
+|           0x000007b4      addiu v0, zero, 1
+|           0x000007b8      sw    v0, var_18h(fp)
+|           0x000007bc      addiu v0, zero, 2
+|           0x000007c0      sw    v0, var_14h(fp)
+|           0x000007c4      addiu v0, zero, 3
+|           0x000007c8      sw    v0, var_10h(fp)
+|           0x000007cc      addiu v0, zero, 4
+|           0x000007d0      sw    v0, var_ch(fp)
+|           0x000007d4      lw    v0, -sym.leaffunc(gp)
+|           0x000007d8      move  t9, v0
+|           0x000007dc      bal   sym.leaffunc
+|           0x000007e0      nop
+|           0x000007e4      lw    gp, var_20h(fp)
+|           0x000007e8      lw    v0, var_ch(fp)
+|           0x000007ec      sw    v0, var_14h(fp)
+|           0x000007f0      lw    v0, var_18h(fp)
+|           0x000007f4      move  sp, fp
+|           0x000007f8      lw    ra, var_4h(sp)
+|           0x000007fc      lw    fp, var_8h(sp)
+|           0x00000800      addiu sp, sp, 0x30
+|           0x00000804      jr    ra
+\           0x00000808      nop
+/ sym.varfunc ();
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00000794      gp = 2 << 16
+|           0x00000798      gp = gp - 0x7db4
+|           0x0000079c      gp = gp + t9
+|           0x000007a0      sp = sp - 0x30
+|           0x000007a4      word [var_4h] = ra
+|           0x000007a8      word [var_8h] = fp
+|           0x000007ac      fp = sp
+|           0x000007b0      word [var_20h] = gp
+|           0x000007b4      v0 = 0 + 1
+|           0x000007b8      word [var_18h] = v0
+|           0x000007bc      v0 = 0 + 2
+|           0x000007c0      word [var_14h] = v0
+|           0x000007c4      v0 = 0 + 3
+|           0x000007c8      word [var_10h] = v0
+|           0x000007cc      v0 = 0 + 4
+|           0x000007d0      word [var_ch] = v0
+|           0x000007d4      v0 = word [gp - sym.leaffunc]
+|           0x000007d8      t9 = v0
+|           0x000007dc      call sym.leaffunc
+|           0x000007e0      
+|           0x000007e4      gp = word [var_20h]
+|           0x000007e8      v0 = word [var_ch]
+|           0x000007ec      word [var_14h] = v0
+|           0x000007f0      v0 = word [var_18h]
+|           0x000007f4      sp = fp
+|           0x000007f8      ra = word [var_4h]
+|           0x000007fc      fp = word [var_8h]
+|           0x00000800      sp = var_4h + 0x4
+|           0x00000804      return
+\           0x00000808      
+/ sym.varfunc ();
+|           ; var int32_t var_20h @ stack - 0x20
+|           ; var int32_t var_18h @ stack - 0x18
+|           ; var int32_t var_14h @ stack - 0x14
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
+|           ; var int32_t var_8h @ stack - 0x8
+|           ; var int32_t var_4h @ stack - 0x4
+|           0x00000794      gp = 2 << 16
+|           0x00000798      gp = gp - 0x7db4
+|           0x0000079c      gp = gp + t9
+|           0x000007a0      sp = sp - 0x30
+|           0x000007a4      word [sp + var_4h] = ra
+|           0x000007a8      word [sp + var_8h] = fp
+|           0x000007ac      fp = sp
+|           0x000007b0      word [sp + var_20h] = gp
+|           0x000007b4      v0 = 0 + 1
+|           0x000007b8      word [fp + var_18h] = v0
+|           0x000007bc      v0 = 0 + 2
+|           0x000007c0      word [fp + var_14h] = v0
+|           0x000007c4      v0 = 0 + 3
+|           0x000007c8      word [fp + var_10h] = v0
+|           0x000007cc      v0 = 0 + 4
+|           0x000007d0      word [fp + var_ch] = v0
+|           0x000007d4      v0 = word [gp - sym.leaffunc]
+|           0x000007d8      t9 = v0
+|           0x000007dc      call sym.leaffunc
+|           0x000007e0      
+|           0x000007e4      gp = word [fp + var_20h]
+|           0x000007e8      v0 = word [fp + var_ch]
+|           0x000007ec      word [fp + var_14h] = v0
+|           0x000007f0      v0 = word [fp + var_18h]
+|           0x000007f4      sp = fp
+|           0x000007f8      ra = word [sp + var_4h]
+|           0x000007fc      fp = word [sp + var_8h]
+|           0x00000800      sp = sp + var_4h + 0x4
+|           0x00000804      return
+\           0x00000808      
+EOF
+RUN
+
+NAME=Check output pdr and pdrj to be the same
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+aaa
+s main
+pdr
+pdrj~{}
+EOF
+EXPECT=<<EOF
+  ; DATA XREF from entry0 @ 0x80483e7
+/ int main (int argc, char **argv, char **envp);
+| ; var int32_t var_88h @ stack - 0x88
+| ; var int32_t var_7ch @ stack - 0x7c
+| 0x08048540      push  ebp
+| 0x08048541      mov   ebp, esp
+| 0x08048543      sub   esp, 0x88
+| 0x08048549      and   esp, 0xfffffff0
+| 0x0804854c      mov   eax, 0
+| 0x08048551      add   eax, 0xf                                       ; 15
+| 0x08048554      add   eax, 0xf                                       ; 15
+| 0x08048557      shr   eax, 4
+| 0x0804855a      shl   eax, 4
+| 0x0804855d      sub   esp, eax
+| 0x0804855f      mov   dword [esp], str.IOLI_Crackme_Level_0x05       ; [0x804868e:4]=0x494c4f49 ; "IOLI Crackme Level 0x05\n" ; const char *format
+| 0x08048566      call  sym.imp.printf                                 ; int printf(const char *format)
+| 0x0804856b      mov   dword [esp], str.Password:                     ; [0x80486a7:4]=0x73736150 ; "Password: " ; const char *format
+| 0x08048572      call  sym.imp.printf                                 ; int printf(const char *format)
+| 0x08048577      lea   eax, [var_7ch]
+| 0x0804857a      mov   dword [var_88h], eax
+| 0x0804857e      mov   dword [esp], data.080486b2                     ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
+| 0x08048585      call  sym.imp.scanf                                  ; int scanf(const char *format)
+| 0x0804858a      lea   eax, [var_7ch]
+| 0x0804858d      mov   dword [esp], eax                               ; int32_t arg_4h
+| 0x08048590      call  sym.check
+| 0x08048595      mov   eax, 0
+| 0x0804859a      leave
+\ 0x0804859b      ret
+
+[
+  {
+    "offset": 134513984,
+    "esil": "ebp,4,esp,-,=[4],4,esp,-=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514075,
+    "size": 1,
+    "opcode": "push ebp",
+    "disasm": "push ebp",
+    "bytes": "55",
+    "family": "cpu",
+    "type": "rpush",
+    "reloc": false,
+    "type_num": 268435468,
+    "type2_num": 0,
+    "flags": [
+      "main",
+      "sym.main"
+    ],
+    "xrefs_to": [
+      {
+        "addr": 134513639,
+        "type": "DATA"
+      }
+    ]
+  },
+  {
+    "offset": 134513985,
+    "esil": "esp,ebp,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514074,
+    "size": 2,
+    "opcode": "mov ebp, esp",
+    "disasm": "mov ebp, esp",
+    "bytes": "89e5",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 134513987,
+    "val": 136,
+    "esil": "136,esp,-=,136,0x80000000,-,!,31,$o,^,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=,32,$b,cf,:=,3,$b,af,:=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514070,
+    "size": 6,
+    "opcode": "sub esp, 0x88",
+    "disasm": "sub esp, 0x88",
+    "bytes": "81ec88000000",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 134513993,
+    "val": 4294967280,
+    "esil": "4294967280,esp,&=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "and esp, 0xfffffff0",
+    "disasm": "and esp, 0xfffffff0",
+    "bytes": "83e4f0",
+    "family": "cpu",
+    "type": "and",
+    "reloc": false,
+    "type_num": 27,
+    "type2_num": 0
+  },
+  {
+    "offset": 134513996,
+    "val": 0,
+    "esil": "0,eax,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514071,
+    "size": 5,
+    "opcode": "mov eax, 0",
+    "disasm": "mov eax, 0",
+    "bytes": "b800000000",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514001,
+    "ptr": 15,
+    "val": 15,
+    "esil": "15,eax,+=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,31,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "add eax, 0xf",
+    "disasm": "add eax, 0xf",
+    "bytes": "83c00f",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514004,
+    "ptr": 15,
+    "val": 15,
+    "esil": "15,eax,+=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,31,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "add eax, 0xf",
+    "disasm": "add eax, 0xf",
+    "bytes": "83c00f",
+    "family": "cpu",
+    "type": "add",
+    "reloc": false,
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514007,
+    "val": 4,
+    "esil": "0,cf,:=,1,4,-,1,<<,eax,&,?{,1,cf,:=,},4,eax,>>,eax,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "shr eax, 4",
+    "disasm": "shr eax, 4",
+    "bytes": "c1e804",
+    "family": "cpu",
+    "type": "shr",
+    "reloc": false,
+    "type_num": 22,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514010,
+    "esil": "0,4,!,!,?{,1,4,-,eax,<<,0x80000000,&,!,!,^,},4,eax,<<=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,cf,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "shl eax, 4",
+    "disasm": "shl eax, 4",
+    "bytes": "c1e004",
+    "family": "cpu",
+    "type": "shl",
+    "reloc": false,
+    "type_num": 23,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514013,
+    "esil": "eax,esp,-=,eax,0x80000000,-,!,31,$o,^,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=,32,$b,cf,:=,3,$b,af,:=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514074,
+    "size": 2,
+    "opcode": "sub esp, eax",
+    "disasm": "sub esp, eax",
+    "bytes": "29c4",
+    "family": "cpu",
+    "type": "sub",
+    "reloc": false,
+    "type_num": 18,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514015,
+    "ptr": 134514318,
+    "val": 134514318,
+    "esil": "134514318,esp,=[4]",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514069,
+    "size": 7,
+    "opcode": "mov dword [esp], 0x804868e",
+    "disasm": "mov dword [esp], str.IOLI_Crackme_Level_0x05",
+    "bytes": "c704248e860408",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0,
+    "xrefs_from": [
+      {
+        "addr": 134514318,
+        "type": "DATA"
+      }
+    ]
+  },
+  {
+    "offset": 134514022,
+    "esil": "134513556,eip,4,esp,-=,esp,=[],eip,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514071,
+    "size": 5,
+    "opcode": "call 0x8048394",
+    "disasm": "call sym.imp.printf",
+    "bytes": "e829feffff",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 134513556,
+    "fail": 134514027,
+    "xrefs_from": [
+      {
+        "addr": 134513556,
+        "type": "CALL"
+      }
+    ]
+  },
+  {
+    "offset": 134514027,
+    "ptr": 134514343,
+    "val": 134514343,
+    "esil": "134514343,esp,=[4]",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514069,
+    "size": 7,
+    "opcode": "mov dword [esp], 0x80486a7",
+    "disasm": "mov dword [esp], str.Password:",
+    "bytes": "c70424a7860408",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0,
+    "xrefs_from": [
+      {
+        "addr": 134514343,
+        "type": "DATA"
+      }
+    ]
+  },
+  {
+    "offset": 134514034,
+    "esil": "134513556,eip,4,esp,-=,esp,=[],eip,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514071,
+    "size": 5,
+    "opcode": "call 0x8048394",
+    "disasm": "call sym.imp.printf",
+    "bytes": "e81dfeffff",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 134513556,
+    "fail": 134514039,
+    "xrefs_from": [
+      {
+        "addr": 134513556,
+        "type": "CALL"
+      }
+    ]
+  },
+  {
+    "offset": 134514039,
+    "esil": "0x78,ebp,-,eax,=",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "lea eax, [ebp - 0x78]",
+    "disasm": "lea eax, [var_7ch]",
+    "bytes": "8d4588",
+    "family": "cpu",
+    "type": "lea",
+    "reloc": false,
+    "type_num": 33,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514042,
+    "esil": "eax,0x4,esp,+,=[4]",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514072,
+    "size": 4,
+    "opcode": "mov dword [esp + 4], eax",
+    "disasm": "mov dword [var_88h], eax",
+    "bytes": "89442404",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514046,
+    "ptr": 134514354,
+    "val": 134514354,
+    "esil": "134514354,esp,=[4]",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514069,
+    "size": 7,
+    "opcode": "mov dword [esp], 0x80486b2",
+    "disasm": "mov dword [esp], data.080486b2",
+    "bytes": "c70424b2860408",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0,
+    "xrefs_from": [
+      {
+        "addr": 134514354,
+        "type": "DATA"
+      }
+    ]
+  },
+  {
+    "offset": 134514053,
+    "esil": "134513524,eip,4,esp,-=,esp,=[],eip,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514071,
+    "size": 5,
+    "opcode": "call 0x8048374",
+    "disasm": "call sym.imp.scanf",
+    "bytes": "e8eafdffff",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 134513524,
+    "fail": 134514058,
+    "xrefs_from": [
+      {
+        "addr": 134513524,
+        "type": "CALL"
+      }
+    ]
+  },
+  {
+    "offset": 134514058,
+    "esil": "0x78,ebp,-,eax,=",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "lea eax, [ebp - 0x78]",
+    "disasm": "lea eax, [var_7ch]",
+    "bytes": "8d4588",
+    "family": "cpu",
+    "type": "lea",
+    "reloc": false,
+    "type_num": 33,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514061,
+    "esil": "eax,esp,=[4]",
+    "refptr": true,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514073,
+    "size": 3,
+    "opcode": "mov dword [esp], eax",
+    "disasm": "mov dword [esp], eax",
+    "bytes": "890424",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514064,
+    "esil": "134513864,eip,4,esp,-=,esp,=[],eip,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514071,
+    "size": 5,
+    "opcode": "call 0x80484c8",
+    "disasm": "call sym.check",
+    "bytes": "e833ffffff",
+    "family": "cpu",
+    "type": "call",
+    "reloc": false,
+    "type_num": 3,
+    "type2_num": 0,
+    "jump": 134513864,
+    "fail": 134514069,
+    "xrefs_from": [
+      {
+        "addr": 134513864,
+        "type": "CALL"
+      }
+    ]
+  },
+  {
+    "offset": 134514069,
+    "val": 0,
+    "esil": "0,eax,=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514071,
+    "size": 5,
+    "opcode": "mov eax, 0",
+    "disasm": "mov eax, 0",
+    "bytes": "b800000000",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514074,
+    "esil": "ebp,esp,=,esp,[4],ebp,=,4,esp,+=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514075,
+    "size": 1,
+    "opcode": "leave",
+    "disasm": "leave",
+    "bytes": "c9",
+    "family": "cpu",
+    "type": "pop",
+    "reloc": false,
+    "type_num": 14,
+    "type2_num": 0
+  },
+  {
+    "offset": 134514075,
+    "esil": "esp,[4],eip,=,4,esp,+=",
+    "refptr": false,
+    "fcn_addr": 134513984,
+    "fcn_last": 134514075,
+    "size": 1,
+    "opcode": "ret",
+    "disasm": "ret",
+    "bytes": "c3",
+    "family": "cpu",
+    "type": "ret",
+    "reloc": false,
+    "type_num": 5,
+    "type2_num": 0
+  }
+]
 EOF
 RUN

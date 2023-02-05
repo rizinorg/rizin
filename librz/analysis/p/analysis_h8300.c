@@ -48,16 +48,13 @@ https://www.classes.cs.uchicago.edu/archive/2006/winter/23000-1/docs/h8300.pdf
  */
 
 static void h8300_analysis_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	ut16 ad;
-
 	switch (buf[0]) {
 	case H8300_JMP_1:
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
 	case H8300_JMP_2:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		rz_mem_swapendian((ut8 *)&ad, buf + 2, sizeof(ut16));
-		op->jump = ad;
+		op->jump = rz_read_at_be16(buf, 2);
 		break;
 	case H8300_JMP_3:
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
@@ -67,16 +64,13 @@ static void h8300_analysis_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 }
 
 static void h8300_analysis_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
-	ut16 ad;
-
 	switch (buf[0]) {
 	case H8300_JSR_1:
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		break;
 	case H8300_JSR_2:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		rz_mem_swapendian((ut8 *)&ad, buf + 2, sizeof(ut16));
-		op->jump = ad;
+		op->jump = rz_read_at_be16(buf, 2);
 		op->fail = addr + 4;
 		break;
 	case H8300_JSR_3:
@@ -447,7 +441,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,1,<<,!,r%u%c,&=", rsB(), rdB(1));
 		return 0;
 	case H8300_BTST_R2R8: /*TODO*/
-		//¬ (<Bit No.> of <EAd>) → Z, extract bit value and shift it back
+		// ¬ (<Bit No.> of <EAd>) → Z, extract bit value and shift it back
 		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,0x7,r%u%c,&,1,<<,r%u%c,&,>>,!,Z,=",
 			rsB(), rsB(), rdB(1));
 		return 0;

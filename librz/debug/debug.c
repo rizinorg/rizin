@@ -381,7 +381,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
 	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
-	dbg->swstep = 0;
+	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
 	dbg->cb_printf = (void *)printf;
@@ -394,7 +394,6 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
 	dbg->maps_user = rz_debug_map_list_new();
-	dbg->q_regs = NULL;
 	dbg->call_frames = NULL;
 	dbg->main_arena_resolved = false;
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
@@ -404,6 +403,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->bp->iob.init = false;
 	dbg->bp->baddr = 0;
 	dbg->nt_x86_xstate_supported = true;
+	dbg->hash = rz_hash_new();
 	return dbg;
 }
 
@@ -414,6 +414,7 @@ RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
 
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 	if (dbg) {
+		rz_hash_free(dbg->hash);
 		rz_bp_free(dbg->bp);
 		free(dbg->snap_path);
 		rz_list_free(dbg->maps);
@@ -447,6 +448,11 @@ RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
 		if (ret != -1) {
 			dbg->reason.type = RZ_DEBUG_REASON_NONE; // after a successful attach, the process is not dead
 			rz_debug_select(dbg, pid, ret); // dbg->pid, dbg->tid);
+			// After an attach, all relevant info to build the reg profile should be available in the plugin.
+			// E.g. in the xnu debugger, the profile may not be available before the attach and cpu type is known.
+			if (!rz_debug_reg_profile_sync(dbg)) {
+				RZ_LOG_WARN("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
+			}
 		}
 	}
 	return ret;
@@ -565,17 +571,6 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		eprintf("rz_debug_execute: Cannot get program counter\n");
 	}
 	return (ra0);
-}
-
-RZ_API int rz_debug_startv(struct rz_debug_t *dbg, int argc, char **argv) {
-	/* TODO : rz_debug_startv unimplemented */
-	return false;
-}
-
-RZ_API int rz_debug_start(RzDebug *dbg, const char *cmd) {
-	/* TODO: this argc/argv parser is done in rz_io */
-	// TODO: parse cmd and generate argc and argv
-	return false;
 }
 
 RZ_API int rz_debug_detach(RzDebug *dbg, int pid) {
@@ -817,7 +812,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	if (!dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf))) {
 		return false;
 	}
-	if (!rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC)) {
+	if (rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		return false;
 	}
 	if (op.type == RZ_ANALYSIS_OP_TYPE_ILL) {
@@ -884,7 +879,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 		break;
 	}
 
-	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	const int align = rz_analysis_archinfo(dbg->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	for (i = 0; i < br; i++) {
 		if (align > 1) {
 			next[i] = next[i] - (next[i] % align);
@@ -988,7 +983,7 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!rz_debug_trace_ins_before(dbg)) {
-				eprintf("trace_ins_before: failed\n");
+				RZ_LOG_ERROR("debug: trace insert before has failed\n");
 			}
 		}
 
@@ -998,13 +993,13 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 			ret = rz_debug_step_hard(dbg, &bp);
 		}
 		if (!ret) {
-			eprintf("Stepping failed!\n");
+			RZ_LOG_ERROR("debug: failed to step\n");
 			return steps_taken;
 		}
 
 		if (dbg->session && dbg->recoil_mode == RZ_DBG_RECOIL_NONE) {
 			if (!rz_debug_trace_ins_after(dbg)) {
-				eprintf("trace_ins_after: failed\n");
+				RZ_LOG_ERROR("debug: trace insert after has failed\n");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;
@@ -1075,7 +1070,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
-		if (!rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("debug-step-over: Decode error at %" PFMT64x "\n", pc);
 			return steps_taken;
 		}
@@ -1220,7 +1215,7 @@ repeat:
 		/// until this code gets fixed
 		static bool (*linux_attach_new_process)(RzDebug * dbg, int pid) = NULL;
 		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_lib_dl_sym(NULL, "linux_attach_new_process");
+			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
 		}
 		if (linux_attach_new_process) {
 			linux_attach_new_process(dbg, dbg->forked_pid);
@@ -1375,7 +1370,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			dbg->iob.read_at(dbg->iob.io, buf_pc, buf, sizeof(buf));
 		}
 		// Analyze the opcode
-		if (!rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC)) {
+		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf("Decode error at %" PFMT64x "\n", pc);
 			return false;
 		}
@@ -1607,7 +1602,7 @@ RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	return false;
 }
 
-RZ_API RzList *rz_debug_frames(RzDebug *dbg, ut64 at) {
+RZ_API RzList /*<RzDebugFrame *>*/ *rz_debug_frames(RzDebug *dbg, ut64 at) {
 	if (dbg && dbg->cur && dbg->cur->frames) {
 		return dbg->cur->frames(dbg, at);
 	}
@@ -1627,6 +1622,12 @@ RZ_API int rz_debug_child_clone(RzDebug *dbg) {
 	return 0;
 }
 
+static bool debug_is_not_remote_debugger(RzDebug *dbg) {
+	return dbg->pid == -1 &&
+		strncmp(dbg->cur->name, "gdb", 3) &&
+		strncmp(dbg->cur->name, "bochs", 5);
+}
+
 RZ_API bool rz_debug_is_dead(RzDebug *dbg) {
 	if (!dbg->cur) {
 		return false;
@@ -1635,15 +1636,10 @@ RZ_API bool rz_debug_is_dead(RzDebug *dbg) {
 	if (!strcmp(dbg->cur->name, "io")) {
 		return false;
 	}
-	bool is_dead = (dbg->pid == -1 && strncmp(dbg->cur->name, "gdb", 3)) || (dbg->reason.type == RZ_DEBUG_REASON_DEAD);
+	bool is_dead = debug_is_not_remote_debugger(dbg) || (dbg->reason.type == RZ_DEBUG_REASON_DEAD);
 	if (dbg->pid > 0 && dbg->cur && dbg->cur->kill) {
 		is_dead = !dbg->cur->kill(dbg, dbg->pid, false, 0);
 	}
-#if 0
-	if (!is_dead && dbg->cur && dbg->cur->kill) {
-		is_dead = !dbg->cur->kill (dbg, dbg->pid, false, 0);
-	}
-#endif
 	if (is_dead) {
 		dbg->reason.type = RZ_DEBUG_REASON_DEAD;
 	}

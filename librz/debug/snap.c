@@ -47,18 +47,18 @@ RZ_API bool rz_debug_snap_contains(RzDebugSnap *snap, ut64 addr) {
 	return (snap->addr <= addr && addr >= snap->addr_end);
 }
 
-RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap, RzMsgDigestSize *size) {
-	ut8 *digest = rz_msg_digest_calculate_small_block("sha256", snap->data, snap->size, size);
+RZ_API ut8 *rz_debug_snap_get_hash(RzDebug *dbg, RzDebugSnap *snap, RzHashSize *size) {
+	ut8 *digest = rz_hash_cfg_calculate_small_block(dbg->hash, "sha256", snap->data, snap->size, size);
 	if (!digest) {
 		return NULL;
 	}
 	return digest;
 }
 
-RZ_API bool rz_debug_snap_is_equal(RzDebugSnap *a, RzDebugSnap *b) {
-	RzMsgDigestSize digest_size = 0;
-	ut8 *a_dgst = rz_debug_snap_get_hash(a, &digest_size);
-	ut8 *b_dgst = rz_debug_snap_get_hash(b, NULL);
+RZ_API bool rz_debug_snap_is_equal(RzDebug *dbg, RzDebugSnap *a, RzDebugSnap *b) {
+	RzHashSize digest_size = 0;
+	ut8 *a_dgst = rz_debug_snap_get_hash(dbg, a, &digest_size);
+	ut8 *b_dgst = rz_debug_snap_get_hash(dbg, b, NULL);
 
 	bool ret = a_dgst && b_dgst && !memcmp(a_dgst, b_dgst, digest_size);
 	free(a_dgst);

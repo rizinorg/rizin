@@ -69,7 +69,7 @@ RUN
 
 NAME=rz-find -v
 FILE==
-CMDS=!rz-find -v | grep -c build
+CMDS=!rz-find -v | grep -c commit
 EXPECT=<<EOF
 1
 EOF

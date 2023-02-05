@@ -46,7 +46,7 @@ RZ_API void rz_annotated_code_add_annotation(RzAnnotatedCode *code, RzCodeAnnota
 	rz_vector_push(&code->annotations, annotation);
 }
 
-RZ_API RzPVector *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t offset) {
+RZ_API RzPVector /*<RzCodeAnnotation *>*/ *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t offset) {
 	RzPVector *r = rz_pvector_new(NULL);
 	if (!r) {
 		return NULL;
@@ -60,7 +60,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t
 	return r;
 }
 
-RZ_API RzPVector *rz_annotated_code_annotations_range(RzAnnotatedCode *code, size_t start, size_t end) {
+RZ_API RzPVector /*<RzCodeAnnotation *>*/ *rz_annotated_code_annotations_range(RzAnnotatedCode *code, size_t start, size_t end) {
 	RzPVector *r = rz_pvector_new(NULL);
 	if (!r) {
 		return NULL;
@@ -75,7 +75,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_range(RzAnnotatedCode *code, siz
 	return r;
 }
 
-RZ_API RzVector *rz_annotated_code_line_offsets(RzAnnotatedCode *code) {
+RZ_API RzVector /*<ut64>*/ *rz_annotated_code_line_offsets(RzAnnotatedCode *code) {
 	RzVector *r = rz_vector_new(sizeof(ut64), NULL, NULL);
 	if (!r) {
 		return NULL;

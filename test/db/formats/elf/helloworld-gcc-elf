@@ -20,8 +20,8 @@ EXPECT=<<EOF
 mov.w fp, 0
 add ip, pc, 0, 12
 ldr r3, [0x00000460]
-ldr r0, [0x00000484]
-ldr r0, [0x000004b8]
+ldr r0, [data.00000484]
+ldr r0, [data.000004b8]
 push {r3, lr}
 add ip, pc, 0, 12
 b sym.register_tm_clones
@@ -329,7 +329,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e asm.bytes=true
 e scr.color=0
-pDi 10
+pDq 10
 EOF
 EXPECT=<<EOF
 0x08048300   sym._start:
@@ -537,7 +537,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 134513410,
-    "esil": "esp,[4],esi,=,4,esp,+=",
+    "esil": "esp,[4],4,esp,+=,esi,=",
     "refptr": false,
     "fcn_addr": 0,
     "fcn_last": 0,

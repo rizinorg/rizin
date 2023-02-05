@@ -67,7 +67,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return OMF_BASE_ADDR;
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *addr;
 
@@ -86,7 +86,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzList *ret;
 	ut32 ct_omf_sect = 0;
 
@@ -108,7 +108,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RzBinFile *bf) {
+static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *ret;
 	RzBinSymbol *sym;
 	OMF_symbol *sym_omf;

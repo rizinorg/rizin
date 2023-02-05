@@ -43,7 +43,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 		return 0;
 	}
 	if (len >= sizeof(float)) {
-		rz_mem_swaporcopy((ut8 *)&f, buf, sizeof(float), endian);
+		f = rz_read_ble_float(buf, endian);
 	}
 	if (addr && len > 3) {
 		ut32 tmpaddr = rz_read_ble32(buf, endian);
@@ -1055,7 +1055,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 		size %= ARRAYINDEX_COEF;
 	}
 	updateAddr(buf + i, 999, endian, &addr, NULL);
-	rz_mem_swaporcopy((ut8 *)&val_f, buf + i, sizeof(double), endian);
+	val_f = rz_read_at_ble_double(buf, i, endian);
 	if (MUSTSET) {
 		rz_strbuf_appendf(outbuf, "wv8 %s @ 0x%08" PFMT64x "\n", setval,
 			seeki + ((elem >= 0) ? elem * 8 : 0));
@@ -1077,7 +1077,7 @@ static void rz_type_format_double(RzStrBuf *outbuf, int endian, int mode,
 			while (size--) {
 				// XXX this 999 is scary
 				updateAddr(buf + i, 9999, endian, &addr, NULL);
-				rz_mem_swaporcopy((ut8 *)&val_f, buf + i, sizeof(double), endian);
+				val_f = rz_read_at_ble_double(buf, i, endian);
 				if (elem == -1 || elem == 0) {
 					rz_strbuf_appendf(outbuf, "%.17g", val_f);
 					if (elem == 0) {
@@ -1922,7 +1922,7 @@ static bool format_collect_cb(void *user, const void *k, const void *v) {
 	return true;
 }
 
-RZ_API RZ_OWN RzList *rz_type_db_format_all(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *formats = rz_list_newf(free);
 	ht_pp_foreach(typedb->formats, format_collect_cb, formats);
@@ -2746,7 +2746,7 @@ beach:
 	return i;
 }
 
-RZ_API char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+RZ_API RZ_OWN char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	RzStrBuf *outbuf = rz_strbuf_new("");
 	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, formatname, mode, setval, ofield);
@@ -2912,14 +2912,11 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
-		// Avoid infinite recursion in case of self-referential typedefs
-		if (rz_type_is_identifier(type->type)) {
-			const char *ttype = type_to_identifier(typedb, type->type);
-			if (!strcmp(ttype, type->name)) {
-				break;
-			}
+		RzType *unwrapped = rz_type_db_base_type_unwrap_typedef(typedb, type);
+		if (!unwrapped) {
+			break;
 		}
-		type_to_format_pair(typedb, format, fields, identifier, type->type);
+		type_to_format_pair(typedb, format, fields, identifier, unwrapped);
 		break;
 	}
 	default:
@@ -2962,7 +2959,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
  * \param typedb Types Database instance
  * \param name RzBaseType type name
  */
-RZ_API RZ_OWN char *rz_type_format(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
+RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {

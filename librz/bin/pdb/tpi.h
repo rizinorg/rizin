@@ -530,7 +530,7 @@ typedef struct {
 } Tpi_Type_MethodListMember;
 
 typedef struct {
-	RzList /* Tpi_Type_MethodListMember */ *members;
+	RzList /*<Tpi_Type_MethodListMember *>*/ *members;
 } Tpi_LF_MethodList;
 
 typedef struct {
@@ -578,7 +578,7 @@ typedef struct {
 } Tpi_LF_VBClass, Tpi_LF_IVBClass;
 
 typedef struct {
-	RzList /* RzPdbTpiType */ *substructs;
+	RzList /*<RzPdbTpiType *>*/ *substructs;
 } Tpi_LF_FieldList;
 
 typedef struct {

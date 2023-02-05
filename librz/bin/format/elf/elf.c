@@ -118,7 +118,7 @@ static bool init_phdr_sdb(ELFOBJ *bin) {
 		sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
 }
 
-static bool init_phdr_aux(ELFOBJ *bin, RzVector *sections, RzBinObjectLoadOptions *options) {
+static bool init_phdr_aux(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections, RzBinObjectLoadOptions *options) {
 	bin->segments = Elf_(rz_bin_elf_segments_new)(bin, sections, options);
 	if (!bin->segments) {
 		return false;
@@ -127,7 +127,7 @@ static bool init_phdr_aux(ELFOBJ *bin, RzVector *sections, RzBinObjectLoadOption
 	return init_phdr_sdb(bin);
 }
 
-static void init_phdr(ELFOBJ *bin, RzVector *sections, RzBinObjectLoadOptions *options) {
+static void init_phdr(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections, RzBinObjectLoadOptions *options) {
 	if (!bin->ehdr.e_phnum) {
 		RZ_LOG_WARN("There is no program header.\n");
 		return;
@@ -171,7 +171,7 @@ static bool init_shdr_sdb(ELFOBJ *bin) {
 		sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
 }
 
-static bool init_shdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector *sections) {
+static bool init_shdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	bin->sections = Elf_(rz_bin_elf_convert_sections)(bin, options, sections);
 	if (!bin->sections) {
 		return false;
@@ -180,7 +180,7 @@ static bool init_shdr_aux(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector
 	return init_shdr_sdb(bin);
 }
 
-static void init_shdr(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector *sections) {
+static void init_shdr(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	if (!init_shdr_aux(bin, options, sections)) {
 		RZ_LOG_WARN("Failed to initialize section header.\n");
 	}
@@ -191,7 +191,7 @@ static bool init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
 		sdb_num_set(bin->kv, "elf_shstrtab.size", size, 0);
 }
 
-static bool init_shstrtab_aux(ELFOBJ *bin, RzVector *sections) {
+static bool init_shstrtab_aux(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	if (!sections) {
 		return true;
 	}
@@ -210,7 +210,7 @@ static bool init_shstrtab_aux(ELFOBJ *bin, RzVector *sections) {
 	return init_shstrtab_sdb(bin, section->sh_offset, section->sh_size);
 }
 
-static void init_shstrtab(ELFOBJ *bin, RzVector *sections) {
+static void init_shstrtab(ELFOBJ *bin, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	if (!init_shstrtab_aux(bin, sections)) {
 		RZ_LOG_WARN("Failed to initialize section string table.\n");
 	}
@@ -240,7 +240,7 @@ static bool init_dt_dynamic_aux(ELFOBJ *bin) {
 
 static void init_dt_dynamic(ELFOBJ *bin) {
 	if (!init_dt_dynamic_aux(bin)) {
-		RZ_LOG_WARN("Failed to initialize ELF DT_DYNAMIC.\n");
+		RZ_LOG_INFO("Failed to initialize ELF DT_DYNAMIC.\n");
 	}
 }
 
@@ -254,13 +254,13 @@ static bool init_dynstr_aux(ELFOBJ *bin) {
 	ut64 size;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &size)) {
-		RZ_LOG_WARN("DT_STRTAB or DT_STRSZ key not found.\n");
+		RZ_LOG_INFO("DT_STRTAB or DT_STRSZ key not found.\n");
 		return false;
 	}
 
 	ut64 offset = Elf_(rz_bin_elf_v2p)(bin, addr);
 	if (offset == UT64_MAX) {
-		RZ_LOG_WARN("Failed to convert DT_STRTAB to a physical offset.\n");
+		RZ_LOG_INFO("Failed to convert DT_STRTAB to a physical offset.\n");
 		return false;
 	}
 
@@ -274,7 +274,7 @@ static bool init_dynstr_aux(ELFOBJ *bin) {
 
 static void init_dynstr(ELFOBJ *bin) {
 	if (!init_dynstr_aux(bin)) {
-		RZ_LOG_WARN("Failed to initialize string table for dynamic linking.\n");
+		RZ_LOG_INFO("Failed to initialize string table for dynamic linking.\n");
 	}
 }
 
@@ -289,7 +289,7 @@ static bool init_symbols_info_aux(ELFOBJ *bin) {
 
 static void init_symbols_info(ELFOBJ *bin) {
 	if (!init_symbols_info_aux(bin)) {
-		RZ_LOG_WARN("Failed to initialize GNU symbols information.\n")
+		RZ_LOG_INFO("Failed to initialize GNU symbols information.\n")
 	}
 }
 

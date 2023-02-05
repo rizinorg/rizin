@@ -34,7 +34,7 @@ typedef struct {
 	ut64 to;
 	ut64 cur;
 	RzPrint *pr;
-	RzList *keywords;
+	RzList /*<char *>*/ *keywords;
 	const char *mask;
 	const char *curfile;
 	const char *comma;
@@ -134,8 +134,9 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		} else {
 			printf("0x%" PFMT64x "\n", addr);
 			if (ro->pr) {
-				rz_print_hexdump(ro->pr, addr, (ut8 *)ro->buf + delta, 78, 16, 1, 1);
-				rz_cons_flush();
+				char *dump = rz_print_hexdump_str(ro->pr, addr, (ut8 *)ro->buf + delta, 78, 16, 1, 1);
+				printf("%s", dump);
+				free(dump);
 			}
 		}
 	}
@@ -153,7 +154,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 
 	if (pj) {
 		const char *section_name = s ? s->name : "";
-		const char *type_string = rz_bin_string_type(string->type);
+		const char *type_string = rz_str_enc_as_string(string->type);
 		pj_o(pj);
 		pj_kn(pj, "vaddr", string->vaddr);
 		pj_kn(pj, "paddr", string->paddr);

@@ -743,7 +743,7 @@ int rz_bin_omf_get_bits(rz_bin_omf_obj *obj) {
 	return 16;
 }
 
-int rz_bin_omf_send_sections(RzList *list, OMF_segment *section, rz_bin_omf_obj *obj) {
+int rz_bin_omf_send_sections(RzList /*<RzBinSection *>*/ *list, OMF_segment *section, rz_bin_omf_obj *obj) {
 	RzBinSection *new;
 	OMF_data *data = section->data;
 	ut32 ct_name = 1;

@@ -3,7 +3,6 @@ FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
 dm~?/
-dk 9
 EOF
 EXPECT=<<EOF
 6
@@ -15,10 +14,22 @@ FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
 dm~?
-dk 9
 EOF
 EXPECT=<<EOF
 9
+EOF
+RUN
+
+NAME=debug map flags count
+FILE=bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~?
+dm*~?
+EOF
+EXPECT=<<EOF
+9
+11
 EOF
 RUN
 

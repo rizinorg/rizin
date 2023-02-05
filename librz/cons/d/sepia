@@ -44,6 +44,7 @@ ec creg rgb:960
 ec flag rgb:ffd
 ec wordhl rgb:ff0000
 ec linehl rgb:210
+ec meta rgb:767676
 ec graph.true rgb:fd9
 ec graph.false rgb:431
 ec graph.ujump rgb:fd9

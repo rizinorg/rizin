@@ -229,15 +229,17 @@ RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *
 }
 
 /**
- * Perform a single step in the VM
+ * Repeatedly perform steps in the VM until the condition callback returns false
  *
  * If given, this syncs the contents of \p reg into the vm.
- * Then it disassembles an instruction at the program counter of the vm and executes it.
- * Finally, if no error occured, the contents are optionally synced back to \p reg.
+ * Then it repeatedly disassembles an instruction at the program counter of the vm and executes it as long as cond() returns true.
+ * Finally the contents are optionally synced back to \p reg.
  *
- * \return and indicator for which error occured, if any
+ * \return and indicator for which error occured, if any, or RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS if cond() returned false
  */
-RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg) {
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	bool (*cond)(RzAnalysisILVM *vm, void *user), void *user) {
+
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
 	if (!cur || !analysis->read_at) {
@@ -247,27 +249,57 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *anal
 	if (reg) {
 		rz_analysis_il_vm_sync_from_reg(vm, reg);
 	}
-	ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 
-	ut8 code[32] = { 0 };
-	analysis->read_at(analysis, addr, code, sizeof(code));
-	RzAnalysisOp op = { 0 };
-	int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT);
-	RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
+	RzAnalysisILStepResult res = RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS;
+	while (cond(vm, user)) {
+		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
+		ut8 code[32] = { 0 };
+		analysis->read_at(analysis, addr, code, sizeof(code));
+		RzAnalysisOp op = { 0 };
+		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT);
+		RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
-	RzAnalysisILStepResult res;
-	if (ilop) {
-		bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1));
-		res = succ ? RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS : RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
-		if (reg) {
-			rz_analysis_il_vm_sync_to_reg(vm, reg);
+		if (ilop) {
+			bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1));
+			if (!succ) {
+				res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
+			}
+		} else {
+			res = RZ_ANALYSIS_IL_STEP_INVALID_OP;
 		}
-	} else {
-		res = RZ_ANALYSIS_IL_STEP_INVALID_OP;
-	}
 
-	rz_analysis_op_fini(&op);
+		rz_analysis_op_fini(&op);
+		if (res != RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS) {
+			break;
+		}
+	}
+	if (reg) {
+		rz_analysis_il_vm_sync_to_reg(vm, reg);
+	}
 	return res;
+}
+
+static bool step_cond_once(RzAnalysisILVM *vm, void *user) {
+	bool *stepped = user;
+	if (*stepped) {
+		return false;
+	}
+	*stepped = true;
+	return true;
+}
+
+/**
+ * Perform a single step in the VM
+ *
+ * If given, this syncs the contents of \p reg into the vm.
+ * Then it disassembles an instruction at the program counter of the vm and executes it.
+ * Finally the contents are optionally synced back to \p reg.
+ *
+ * \return and indicator for which error occured, if any
+ */
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg) {
+	bool stepped = false;
+	return rz_analysis_il_vm_step_while(analysis, vm, reg, step_cond_once, &stepped);
 }
 
 /// @}
@@ -286,6 +318,7 @@ RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, false);
 	rz_analysis_il_vm_cleanup(analysis);
 	if (!analysis->cur || !analysis->cur->il_config) {
+		RZ_LOG_WARN("Could not set up VM. Analysis plugin or RZIL config was NULL.\n");
 		return false;
 	}
 	analysis->il_vm = rz_analysis_il_vm_new(analysis, analysis->reg);

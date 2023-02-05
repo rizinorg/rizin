@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
@@ -9,6 +10,31 @@
 
 #if __WINDOWS__
 #include <rz_windows.h>
+
+#if NTDDI_VERSION >= NTDDI_VISTA
+typedef _Success_(return != FALSE) BOOL(WINAPI *InitializeProcThreadAttributeList_t)(
+	_Out_writes_bytes_to_opt_(*lpSize, *lpSize) LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList,
+	_In_ DWORD dwAttributeCount,
+	_Reserved_ DWORD dwFlags,
+	_When_(lpAttributeList == nullptr, _Out_) _When_(lpAttributeList != nullptr, _Inout_) PSIZE_T lpSize);
+
+typedef BOOL(WINAPI *UpdateProcThreadAttribute_t)(
+	_Inout_ LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList,
+	_In_ DWORD dwFlags,
+	_In_ DWORD_PTR Attribute,
+	_In_reads_bytes_opt_(cbSize) PVOID lpValue,
+	_In_ SIZE_T cbSize,
+	_Out_writes_bytes_opt_(cbSize) PVOID lpPreviousValue,
+	_In_opt_ PSIZE_T lpReturnSize);
+
+typedef VOID(WINAPI *DeleteProcThreadAttributeList_t)(
+	_Inout_ LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList);
+
+static InitializeProcThreadAttributeList_t lpInitializeProcThreadAttributeList = NULL;
+static UpdateProcThreadAttribute_t lpUpdateProcThreadAttribute = NULL;
+static DeleteProcThreadAttributeList_t lpDeleteProcThreadAttributeList = NULL;
+#endif
+
 struct rz_subprocess_t {
 	HANDLE stdin_write;
 	HANDLE stdout_read;
@@ -19,6 +45,11 @@ struct rz_subprocess_t {
 	RzStrBuf err;
 };
 
+#define INVALID_POINTER_VALUE ((void *)PTRDIFF_MAX)
+
+static RzThreadLock *subproc_mutex = NULL;
+static long refcount = 0;
+static bool has_procthreadattr = false;
 static volatile long pipe_id = 0;
 static DWORD mode_stdin;
 static DWORD mode_stdout;
@@ -45,19 +76,87 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 	return true;
 }
 
+static RzThreadLock *get_subprocess_lock(void) {
+	RzThreadLock *lock;
+	do {
+		lock = InterlockedCompareExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE, INVALID_POINTER_VALUE);
+	} while (!lock);
+	return lock;
+}
+
 RZ_API bool rz_subprocess_init(void) {
+	long ref = InterlockedIncrement(&refcount);
+	RzThreadLock *lock = NULL;
+	if (ref == 1) {
+		lock = rz_th_lock_new(false);
+		if (!lock) {
+			InterlockedExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE);
+			InterlockedDecrement(&refcount);
+			return false;
+		}
+		// Enter lock before making it available, so we are the first to run
+		rz_th_lock_enter(lock);
+		InterlockedExchangePointer(&subproc_mutex, lock);
+	} else {
+		// Spin until theres a lock available or lock initialization failed
+		lock = get_subprocess_lock();
+		if (lock == INVALID_POINTER_VALUE) {
+			InterlockedDecrement(&refcount);
+			return false;
+		}
+		rz_th_lock_enter(lock);
+	}
+
+	if (ref > 1) {
+		// This is not the first call to this function, just leave
+		goto leave;
+	}
+
 	// Save current console mode
 	GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode_stdin);
 	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode_stdout);
 	GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &mode_stderr);
+
+#if NTDDI_VERSION >= NTDDI_VISTA
+	if (!has_procthreadattr && IsWindowsVistaOrGreater()) {
+		HMODULE kernel32 = LoadLibraryW(L"kernel32");
+		if (!kernel32) {
+			rz_sys_perror("LoadLibraryW(L\"kernel32\")");
+			goto leave;
+		}
+		lpInitializeProcThreadAttributeList = (InitializeProcThreadAttributeList_t)GetProcAddress(kernel32, "InitializeProcThreadAttributeList");
+		lpUpdateProcThreadAttribute = (UpdateProcThreadAttribute_t)GetProcAddress(kernel32, "UpdateProcThreadAttribute");
+		lpDeleteProcThreadAttributeList = (DeleteProcThreadAttributeList_t)GetProcAddress(kernel32, "DeleteProcThreadAttributeList");
+		if (lpInitializeProcThreadAttributeList && lpUpdateProcThreadAttribute && lpDeleteProcThreadAttributeList) {
+			has_procthreadattr = true;
+		}
+		FreeLibrary(kernel32);
+	}
+#endif
+leave:
+	rz_th_lock_leave(lock);
 	return true;
 }
 RZ_API void rz_subprocess_fini(void) {
+	RzThreadLock *lock = NULL;
+	do {
+		if (InterlockedCompareExchange(&refcount, -1, -1) == 0) {
+			// Shouldn't happen, someone called this function excessively
+			rz_warn_if_reached();
+			return;
+		}
+		lock = InterlockedExchangePointer(&subproc_mutex, NULL);
+	} while (!lock);
+	if (InterlockedDecrement(&refcount) > 0) {
+		InterlockedExchangePointer(&subproc_mutex, lock);
+		return;
+	}
 	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);
 	// Restore console mode
 	SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode_stdin);
 	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode_stdout);
 	SetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), mode_stderr);
+	rz_th_lock_free(lock);
 }
 
 // Create an env block that inherits the current vars but overrides the given ones
@@ -148,13 +247,26 @@ error:
 	return ret;
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+/**
+ * \brief Start a subprocess, using the options provided in \p opt
+ *
+ * \param opt RzSubprocessOpt struct
+ * \return RzSubprocess* The newly created subprocess
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
-	HANDLE stdin_read = GetStdHandle(STD_INPUT_HANDLE);
-	HANDLE stdout_write = GetStdHandle(STD_OUTPUT_HANDLE);
-	HANDLE stderr_write = GetStdHandle(STD_ERROR_HANDLE);
+	const HANDLE curr_stdin_handle = (HANDLE)_get_osfhandle(fileno(stdin));
+	const HANDLE curr_stdout_handle = (HANDLE)_get_osfhandle(fileno(stdout));
+	const HANDLE curr_stderr_handle = (HANDLE)_get_osfhandle(fileno(stderr));
+	HANDLE stdin_read = curr_stdin_handle;
+	HANDLE stdout_write = curr_stdout_handle;
+	HANDLE stderr_write = curr_stderr_handle;
 	LPWSTR lpFilePart;
 	PWCHAR cmd_exe = RZ_NEWS0(WCHAR, MAX_PATH);
+#if NTDDI_VERSION >= NTDDI_VISTA
+	LPPROC_THREAD_ATTRIBUTE_LIST attr_list = NULL;
+#endif
+	RzThreadLock *lock = NULL;
 
 	PWCHAR file = rz_utf8_to_utf16(opt->file);
 	if (!file) {
@@ -256,12 +368,46 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFOW start_info = { 0 };
-	start_info.cb = sizeof(start_info);
-	start_info.hStdError = stderr_write;
-	start_info.hStdOutput = stdout_write;
-	start_info.hStdInput = stdin_read;
-	start_info.dwFlags = STARTF_USESTDHANDLES;
+	DWORD dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
+	STARTUPINFOW start_info_short = { .cb = sizeof(STARTUPINFOW) };
+	STARTUPINFOW *start_info = &start_info_short;
+#if NTDDI_VERSION >= NTDDI_VISTA
+	STARTUPINFOEXW start_infoex = { .StartupInfo.cb = sizeof(STARTUPINFOEXW) };
+	if (has_procthreadattr) {
+		SIZE_T attr_list_size = 0;
+		if (!lpInitializeProcThreadAttributeList(NULL, 1, 0, &attr_list_size) &&
+			GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			goto error;
+		}
+		attr_list = malloc(attr_list_size);
+		if (!attr_list) {
+			goto error;
+		}
+		if (!lpInitializeProcThreadAttributeList(attr_list, 1, 0, &attr_list_size)) {
+			goto error;
+		}
+		HANDLE handle_list[3] = { stdin_read, stdout_write };
+		if (opt->stderr_pipe != RZ_SUBPROCESS_PIPE_STDOUT) {
+			handle_list[2] = stderr_write;
+		}
+		const int num_handles = opt->stderr_pipe != RZ_SUBPROCESS_PIPE_STDOUT ? 3 : 2;
+		if (!lpUpdateProcThreadAttribute(attr_list, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handle_list, num_handles * sizeof(HANDLE), NULL, NULL)) {
+			goto error;
+		}
+		start_info = (STARTUPINFOW *)&start_infoex;
+		start_infoex.lpAttributeList = attr_list;
+		dwCreationFlags |= EXTENDED_STARTUPINFO_PRESENT;
+	} else {
+		lock = get_subprocess_lock();
+	}
+#else
+	lock = get_subprocess_lock();
+#endif
+
+	start_info->hStdError = stderr_write;
+	start_info->hStdOutput = stdout_write;
+	start_info->hStdInput = stdin_read;
+	start_info->dwFlags = STARTF_USESTDHANDLES;
 
 	LPWSTR env = override_env(opt->envvars, opt->envvals, opt->env_size);
 	if (!CreateProcessW(
@@ -270,10 +416,10 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		    NULL, // process security attributes
 		    NULL, // primary thread security attributes
 		    TRUE, // handles are inherited
-		    CREATE_UNICODE_ENVIRONMENT, // creation flags
+		    dwCreationFlags, // creation flags
 		    env, // use parent's environment
 		    NULL, // use parent's current directory
-		    &start_info, // STARTUPINFO pointer
+		    start_info, // STARTUPINFO pointer
 		    &proc_info)) { // receives PROCESS_INFORMATION
 		free(env);
 		rz_sys_perror("CreateProcess");
@@ -286,13 +432,23 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 
 beach:
 
-	if (stdin_read && stdin_read != GetStdHandle(STD_INPUT_HANDLE)) {
+	if (lock) {
+		rz_th_lock_leave(lock);
+	}
+#if NTDDI_VERSION >= NTDDI_VISTA
+	if (attr_list) {
+		lpDeleteProcThreadAttributeList(attr_list);
+		free(attr_list);
+	}
+#endif
+
+	if (stdin_read && stdin_read != curr_stdin_handle) {
 		CloseHandle(stdin_read);
 	}
-	if (stderr_write && stderr_write != GetStdHandle(STD_ERROR_HANDLE) && stderr_write != stdout_write) {
+	if (stderr_write && stderr_write != curr_stderr_handle && stderr_write != stdout_write) {
 		CloseHandle(stderr_write);
 	}
-	if (stdout_write && stdout_write != GetStdHandle(STD_OUTPUT_HANDLE)) {
+	if (stdout_write && stdout_write != curr_stdout_handle) {
 		CloseHandle(stdout_write);
 	}
 	free(cmd_exe);
@@ -326,6 +482,19 @@ static bool do_read(HANDLE *f, char *buf, size_t buf_size, size_t n_bytes, OVERL
 		}
 	}
 	return false;
+}
+
+static void cancel_read(HANDLE *f, RzStrBuf *sb, char *buf, OVERLAPPED *overlapped) {
+	if (!CancelIo(f)) {
+		rz_sys_perror("CancelIo");
+	}
+	DWORD bytes_transferred;
+	if (GetOverlappedResult(f, overlapped, &bytes_transferred, TRUE) || GetLastError() == ERROR_OPERATION_ABORTED) {
+		rz_strbuf_append_n(sb, buf, bytes_transferred);
+	} else {
+		rz_sys_perror("GetOverlappedResult");
+	}
+	CloseHandle(overlapped->hEvent);
 }
 
 static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_ms, int pipe_fd, size_t n_bytes) {
@@ -364,8 +533,11 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	if (stderr_enabled) {
 		stderr_eof = do_read(proc->stderr_read, stderr_buf, sizeof(stderr_buf) - 1, n_bytes, &stderr_overlapped);
 	}
-
+	DWORD timeout = timeout_us_abs == UT64_MAX
+		? INFINITE
+		: (DWORD)(timeout_us_abs / RZ_USEC_PER_MSEC);
 	RzVector handles;
+	bool did_once = false;
 	rz_vector_init(&handles, sizeof(HANDLE), NULL, NULL);
 	while ((!bytes_enabled || n_bytes) && !child_dead) {
 		rz_vector_clear(&handles);
@@ -385,14 +557,25 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 			rz_vector_push(&handles, &proc->proc);
 		}
 
-		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
 			ut64 now = rz_time_now_mono();
 			if (now >= timeout_us_abs) {
-				return RZ_SUBPROCESS_TIMEDOUT;
+				if (did_once) {
+					rz_vector_clear(&handles);
+					if (stdout_enabled) {
+						cancel_read(proc->stderr_read, &proc->out, stdout_buf, &stderr_overlapped);
+					}
+					if (stderr_enabled) {
+						cancel_read(proc->stderr_read, &proc->err, stderr_buf, &stderr_overlapped);
+					}
+					return RZ_SUBPROCESS_TIMEDOUT;
+				}
+				timeout = 0;
+			} else {
+				timeout = (DWORD)((timeout_us_abs - now) / RZ_USEC_PER_MSEC);
 			}
-			timeout = (DWORD)((timeout_us_abs - now) / RZ_USEC_PER_MSEC);
 		}
+		did_once = true;
 		DWORD signaled = WaitForMultipleObjects(handles.len, handles.a, FALSE, timeout);
 		if (stdout_enabled && !stdout_eof && signaled == stdout_index) {
 			DWORD r;
@@ -441,8 +624,12 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		break;
 	}
 	rz_vector_clear(&handles);
-	CloseHandle(stdout_overlapped.hEvent);
-	CloseHandle(stderr_overlapped.hEvent);
+	if (stdout_overlapped.hEvent) {
+		CloseHandle(stdout_overlapped.hEvent);
+	}
+	if (stderr_overlapped.hEvent) {
+		CloseHandle(stderr_overlapped.hEvent);
+	}
 	return child_dead ? RZ_SUBPROCESS_DEAD : RZ_SUBPROCESS_BYTESREAD;
 }
 
@@ -520,6 +707,27 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	CloseHandle(proc->proc);
 	free(proc);
 }
+
+/**
+ * \brief Unimplemented on Windows
+ *
+ * \return RzPty* NULL pointer until it has been implemented
+ */
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RZ_LOG_ERROR("openpty: Not implemented for Windows!");
+	return NULL;
+}
+
+/**
+ * \brief Unimplemented on Windows
+ *
+ * \return bool false
+ */
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
+	RZ_LOG_ERROR("login_tty: Not implemented for Windows!");
+	return false;
+}
+
 #else // __WINDOWS__
 
 #include <errno.h>
@@ -534,6 +742,8 @@ struct rz_subprocess_t {
 	int ret;
 	RzStrBuf out;
 	RzStrBuf err;
+	int master_fd; ///< Needed to check whether PTY
+	int slave_fd;
 };
 
 static RzPVector subprocs;
@@ -554,7 +764,7 @@ static void handle_sigchld(int sig) {
 	rz_xwrite(sigchld_pipe[1], &b, 1);
 }
 
-static RzThreadFunctionRet sigchld_th(RzThread *th) {
+static void *sigchld_th(void *th) {
 	while (true) {
 		ut8 b;
 		ssize_t rd = read(sigchld_pipe[0], &b, 1);
@@ -601,7 +811,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 			subprocess_unlock();
 		}
 	}
-	return RZ_TH_STOP;
+	return NULL;
 }
 
 RZ_API bool rz_subprocess_init(void) {
@@ -615,7 +825,7 @@ RZ_API bool rz_subprocess_init(void) {
 		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
-	sigchld_thread = rz_th_new(sigchld_th, NULL, 0);
+	sigchld_thread = rz_th_new(sigchld_th, NULL);
 	if (!sigchld_thread) {
 		rz_sys_pipe_close(sigchld_pipe[0]);
 		rz_sys_pipe_close(sigchld_pipe[1]);
@@ -710,10 +920,121 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+static bool init_pipes(RzSubprocess *proc, const RzSubprocessOpt *opt, int stdin_pipe[], int stdout_pipe[], int stderr_pipe[], RzPty **new_pty) {
+	RzPty *pty = opt->pty;
+	if (new_pty) {
+		*new_pty = NULL;
+	}
+
+	/* If we need to use a PTY, we should create one right now */
+	if (!pty && (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stdout_pipe == RZ_SUBPROCESS_PIPE_PTY || opt->stderr_pipe == RZ_SUBPROCESS_PIPE_PTY)) {
+		pty = rz_subprocess_openpty(NULL, NULL, NULL);
+		if (!pty) {
+			return false;
+		}
+		if (new_pty) {
+			*new_pty = pty;
+		}
+	}
+
+	if (pty) {
+		proc->master_fd = pty->master_fd;
+		proc->slave_fd = pty->slave_fd;
+	}
+
+	switch (opt->stdin_pipe) {
+	case RZ_SUBPROCESS_PIPE_CREATE:
+		if (rz_sys_pipe(stdin_pipe, true) == -1) {
+			perror("pipe");
+			goto abort;
+		}
+		proc->stdin_fd = stdin_pipe[1];
+		break;
+	case RZ_SUBPROCESS_PIPE_PTY:
+		stdin_pipe[0] = pty->slave_fd;
+		stdin_pipe[1] = pty->master_fd;
+		proc->stdin_fd = stdin_pipe[1];
+		break;
+	case RZ_SUBPROCESS_PIPE_STDOUT:
+		RZ_LOG_ERROR("Invalid pipe option 'RZ_SUBPROCESS_PIPE_STDOUT' for stdin. Ignoring...\n");
+		break;
+	case RZ_SUBPROCESS_PIPE_NONE:
+		break;
+	}
+
+	switch (opt->stdout_pipe) {
+	case RZ_SUBPROCESS_PIPE_CREATE:
+		if (rz_sys_pipe(stdout_pipe, true) == -1) {
+			perror("pipe");
+			goto abort;
+		}
+		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			goto abort;
+		}
+		proc->stdout_fd = stdout_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_PTY:
+		stdout_pipe[0] = pty->master_fd;
+		stdout_pipe[1] = pty->slave_fd;
+		proc->stdout_fd = stdout_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_STDOUT:
+		RZ_LOG_ERROR("Invalid pipe option 'RZ_SUBPROCESS_PIPE_STDOUT' for stdout. Ignoring...\n");
+		break;
+	case RZ_SUBPROCESS_PIPE_NONE:
+		break;
+	}
+
+	switch (opt->stderr_pipe) {
+	case RZ_SUBPROCESS_PIPE_CREATE:
+		if (rz_sys_pipe(stderr_pipe, true) == -1) {
+			perror("pipe");
+			goto abort;
+		}
+		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			goto abort;
+		}
+		proc->stderr_fd = stderr_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_PTY:
+		stdout_pipe[0] = pty->master_fd;
+		stdout_pipe[1] = pty->slave_fd;
+		proc->stdout_fd = stdout_pipe[0];
+		break;
+	case RZ_SUBPROCESS_PIPE_STDOUT:
+		stderr_pipe[0] = stdout_pipe[0];
+		stderr_pipe[1] = stdout_pipe[1];
+		proc->stderr_fd = proc->stdout_fd;
+		break;
+	case RZ_SUBPROCESS_PIPE_NONE:
+		break;
+	}
+
+	return true;
+
+abort:
+	rz_subprocess_pty_free(pty);
+	if (new_pty) {
+		*new_pty = NULL;
+	}
+	return false;
+}
+
+/**
+ * \brief Start a subprocess, using the options provided in \p opt
+ *
+ * \param opt RzSubprocessOpt struct
+ * \return RzSubprocess* The newly created subprocess
+ */
+RZ_API RZ_OWN RzSubprocess *rz_subprocess_start_opt(RZ_NONNULL const RzSubprocessOpt *opt) {
+	rz_return_val_if_fail(opt, NULL);
+
 	RzSubprocess *proc = NULL;
 	char **child_env = NULL;
 	char **argv = calloc(opt->args_size + 2, sizeof(char *));
+	RzPty *new_pty = NULL;
 	if (!argv) {
 		return NULL;
 	}
@@ -732,6 +1053,8 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	proc->stdin_fd = -1;
 	proc->stdout_fd = -1;
 	proc->stderr_fd = -1;
+	proc->master_fd = -1;
+	proc->slave_fd = -1;
 	rz_strbuf_init(&proc->out);
 	rz_strbuf_init(&proc->err);
 
@@ -747,72 +1070,54 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	int stdin_pipe[2] = { -1, -1 };
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
-	if (opt->stdin_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stdin_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		proc->stdin_fd = stdin_pipe[1];
-	}
 
-	if (opt->stdout_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stdout_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-			perror("fcntl");
-			goto error;
-		}
-		proc->stdout_fd = stdout_pipe[0];
-	}
-
-	if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_CREATE) {
-		if (rz_sys_pipe(stderr_pipe, true) == -1) {
-			perror("pipe");
-			goto error;
-		}
-		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-			perror("fcntl");
-			goto error;
-		}
-		proc->stderr_fd = stderr_pipe[0];
-	} else if (opt->stderr_pipe == RZ_SUBPROCESS_PIPE_STDOUT) {
-		stderr_pipe[0] = stdout_pipe[0];
-		stderr_pipe[1] = stdout_pipe[1];
-		proc->stderr_fd = proc->stdout_fd;
+	if (!init_pipes(proc, opt, stdin_pipe, stdout_pipe, stderr_pipe, &new_pty)) {
+		goto error;
 	}
 
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
 	child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
-
 	proc->pid = rz_sys_fork();
+
 	if (proc->pid == -1) {
 		// fail
 		perror("fork");
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
+
 		if (stderr_pipe[1] != -1) {
 			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
 			}
-			if (proc->stderr_fd != proc->stdout_fd) {
+			if (proc->stderr_fd != proc->stdout_fd && proc->stderr_fd != proc->master_fd) {
 				rz_sys_pipe_close(stderr_pipe[1]);
 				rz_sys_pipe_close(stderr_pipe[0]);
 			}
 		}
+
 		if (stdout_pipe[1] != -1) {
 			while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
 			}
-			rz_sys_pipe_close(stdout_pipe[1]);
-			rz_sys_pipe_close(stdout_pipe[0]);
+			if (proc->stdout_fd != proc->master_fd) {
+				rz_sys_pipe_close(stdout_pipe[1]);
+				rz_sys_pipe_close(stdout_pipe[0]);
+			}
 		}
 		if (stdin_pipe[0] != -1) {
 			while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
 			}
-			rz_sys_pipe_close(stdin_pipe[0]);
-			rz_sys_pipe_close(stdin_pipe[1]);
+			if (proc->stdin_fd != proc->master_fd) {
+				rz_sys_pipe_close(stdin_pipe[0]);
+				rz_sys_pipe_close(stdin_pipe[1]);
+			}
+		}
+
+		if (proc->master_fd != -1 && close(proc->master_fd)) {
+			perror("close");
+		}
+		if (proc->slave_fd != -1 && close(proc->slave_fd)) {
+			perror("close");
 		}
 
 		// Use the previously created environment
@@ -825,18 +1130,45 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	destroy_child_env(child_env);
 	free(argv);
 
-	if (stdin_pipe[0] != -1) {
+	if (!opt->make_raw || proc->slave_fd == -1) {
+		goto no_term_change;
+	}
+
+#if HAVE_FORKPTY && HAVE_OPENPTY && HAVE_LOGIN_TTY
+	struct termios term_params;
+	/* Needed to avoid reading back the writes again from the TTY */
+	if (tcgetattr(proc->slave_fd, &term_params) != 0) {
+		perror("tcgetattr");
+		goto no_term_change;
+	}
+	cfmakeraw(&term_params);
+	/* This avoids ECHO, so we don't read back whatever we wrote */
+	if (tcsetattr(proc->slave_fd, TCSANOW, &term_params) != 0) {
+		perror("tcsetattr");
+	}
+#endif
+
+no_term_change:
+	if (proc->slave_fd != -1 && close(proc->slave_fd) == -1) {
+		perror("close");
+	}
+
+	if (new_pty) {
+		/* Free the RzPTY if we created it */
+		rz_subprocess_pty_free(new_pty);
+	}
+
+	if (stdin_pipe[0] != -1 && stdin_pipe[0] != proc->slave_fd) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
-	if (stdout_pipe[1] != -1) {
+	if (stdout_pipe[1] != -1 && stdout_pipe[1] != proc->slave_fd) {
 		rz_sys_pipe_close(stdout_pipe[1]);
 	}
-	if (stderr_pipe[1] != -1 && proc->stderr_fd != proc->stdout_fd) {
+	if (stderr_pipe[1] != -1 && proc->stderr_fd != proc->stdout_fd && stderr_pipe[1] != proc->slave_fd) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
 
 	rz_pvector_push(&subprocs, proc);
-
 	subprocess_unlock();
 
 	return proc;
@@ -848,41 +1180,54 @@ error:
 	if (proc && proc->killpipe[1] == -1) {
 		rz_sys_pipe_close(proc->killpipe[1]);
 	}
-	free(proc);
-	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0]) {
+	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0] && !(proc && stderr_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1]) {
+	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1] && !(proc && stderr_pipe[1] == proc->slave_fd)) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
-	if (stdout_pipe[0] != -1) {
+	if (stdout_pipe[0] != -1 && !(proc && stdout_pipe[0] == proc->master_fd)) {
 		rz_sys_pipe_close(stdout_pipe[0]);
 	}
-	if (stdout_pipe[1] != -1) {
+	if (stdout_pipe[1] != -1 && !(proc && stdout_pipe[1] == proc->slave_fd)) {
 		rz_sys_pipe_close(stdout_pipe[1]);
 	}
-	if (stdin_pipe[0] != -1) {
+	if (stdin_pipe[0] != -1 && !(proc && stdin_pipe[0] == proc->slave_fd)) {
 		rz_sys_pipe_close(stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] != -1) {
+	if (stdin_pipe[1] != -1 && !(proc && stdin_pipe[1] == proc->master_fd)) {
 		rz_sys_pipe_close(stdin_pipe[1]);
 	}
+	if (proc && proc->master_fd != -1) {
+		close(proc->master_fd);
+	}
+	if (proc && proc->slave_fd != -1) {
+		close(proc->slave_fd);
+	}
+	free(proc);
+
+	if (new_pty) {
+		/* Free the RzPTY if we created it */
+		rz_subprocess_pty_free(new_pty);
+	}
+
 	destroy_child_env(child_env);
 	subprocess_unlock();
 	return NULL;
 }
 
-static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes) {
+static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes, bool is_pty) {
 	char buf[BUFFER_SIZE];
 	size_t to_read = sizeof(buf);
 	if (n_bytes && to_read > n_bytes) {
 		to_read = n_bytes;
 	}
 	ssize_t sz = read(fd, buf, to_read);
-	if (sz < 0) {
-		perror("read");
-	} else if (sz == 0) {
+	if (sz == 0 || (is_pty && sz == -1 && errno == EIO)) {
+		/* In case of PTY, EIO (input/output error) denotes EOF, hence the manual checking */
 		*fd_eof = true;
+	} else if (sz < 0) {
+		perror("read");
 	} else {
 		rz_strbuf_append_n(sb, buf, (int)sz);
 	}
@@ -916,6 +1261,11 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 	bool child_dead = false;
 	bool timedout = true;
 	bool bytes_enabled = n_bytes != 0;
+
+	/* Check if stdout and stderr are connected to a PTY */
+	bool stdout_pty = proc->stdout_fd != -1 && proc->stdout_fd == proc->master_fd;
+	bool stderr_pty = proc->stderr_fd != -1 && proc->stderr_fd == proc->master_fd;
+
 	while ((!bytes_enabled || n_bytes) && ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead)) {
 		fd_set rfds;
 		FD_ZERO(&rfds);
@@ -963,14 +1313,14 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		timedout = true;
 		if (stdout_enabled && FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes);
+			size_t r = read_to_strbuf(&proc->out, proc->stdout_fd, &stdout_eof, n_bytes, stdout_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
 		}
 		if (stderr_enabled && FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
-			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes);
+			size_t r = read_to_strbuf(&proc->err, proc->stderr_fd, &stderr_eof, n_bytes, stderr_pty);
 			if (r > 0 && n_bytes) {
 				n_bytes -= r;
 			}
@@ -1003,7 +1353,9 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
  * \param timeout_ms Wait for at most this amount of millisecond
  */
 RZ_API RzSubprocessWaitReason rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
-	if (proc->stdin_fd != -1) {
+	/* Should not close proc->stdin_fd if the fork mode was PTY
+	(because it might point to the master fd, which needs to stay open to get the std{out,err}) */
+	if (proc->stdin_fd != -1 && proc->stdin_fd != proc->master_fd) {
 		// Close subprocess stdin to tell it that no more input will come from us
 		rz_sys_pipe_close(proc->stdin_fd);
 		proc->stdin_fd = -1;
@@ -1058,7 +1410,7 @@ RZ_API RzStrBuf *rz_subprocess_stdout_read(RzSubprocess *proc, size_t n, ut64 ti
  * \param proc Subprocess to communicate with
  * \param timeout_ms Wait for at most this amount of millisecond to read subprocess' stdout
  */
-RZ_API RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms) {
+RZ_API RZ_BORROW RzStrBuf *rz_subprocess_stdout_readline(RzSubprocess *proc, ut64 timeout_ms) {
 	rz_strbuf_fini(&proc->out);
 	rz_strbuf_init(&proc->out);
 	if (proc->stdout_fd != -1) {
@@ -1101,17 +1453,98 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	rz_strbuf_fini(&proc->err);
 	rz_sys_pipe_close(proc->killpipe[0]);
 	rz_sys_pipe_close(proc->killpipe[1]);
-	if (proc->stdin_fd != -1) {
+
+	if (proc->master_fd != -1) {
+		rz_sys_pipe_close(proc->master_fd);
+	}
+	if (proc->stdin_fd != -1 && proc->stdin_fd != proc->master_fd) {
 		rz_sys_pipe_close(proc->stdin_fd);
 	}
-	if (proc->stdout_fd != -1) {
+	if (proc->stdout_fd != -1 && proc->stdout_fd != proc->master_fd) {
 		rz_sys_pipe_close(proc->stdout_fd);
 	}
-	if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd) {
+	if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd && proc->stderr_fd != proc->master_fd) {
 		rz_sys_pipe_close(proc->stderr_fd);
 	}
 	free(proc);
 }
+
+/**
+ * \brief Call openpty(3) with the provided arguments
+ *
+ * \param slave_name The name of the slave PTY is stored in this
+ * This is marked as RZ_BORROW, so it's ownership no longer stays with the caller
+ * and is now owned by the returned RzPty struct
+ *
+ * \param term_params Terminal attributes (struct termios) for the forked process
+ * \param win_params Window attributes (struct winsize) for the forked process
+ *
+ * \return RzPty*
+ */
+RZ_API RZ_OWN RzPty *rz_subprocess_openpty(RZ_BORROW RZ_NULLABLE char *slave_name, RZ_NULLABLE void /* const struct termios */ *term_params, RZ_NULLABLE void /* const struct winsize */ *win_params) {
+	RzPty *pty = RZ_NEW0(RzPty);
+	int ret = rz_sys_openpty(&pty->master_fd, &pty->slave_fd, slave_name, NULL, NULL);
+
+	if (ret == -1) {
+		perror("openpty");
+		RZ_FREE(pty);
+		return NULL;
+	}
+
+	return pty;
+}
+
+/**
+ * \brief Call login_tty(3) on the provided \p pty
+ *
+ * \param pty RzPty struct
+ * \return bool true if login_tty succeeded, false otherwise
+ */
+RZ_API bool rz_subprocess_login_tty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
+	rz_return_val_if_fail(pty, false);
+
+	int ret = rz_sys_login_tty(pty->slave_fd);
+	if (ret == -1) {
+		perror("login_tty");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * \brief Closes the file descriptors associated with \p pty
+ *
+ * \param pty RzPty struct
+ * \return void
+ *
+ * No need to call this after you've used the \p pty in `rz_subprocess_start_opt`,
+ * since the file descriptors would already have been correctly closed
+ */
+RZ_API void rz_subprocess_close_pty(RZ_BORROW RZ_NONNULL const RzPty *pty) {
+	if (close(pty->master_fd) == -1) {
+		perror("close");
+	}
+	if (close(pty->slave_fd) == -1) {
+		perror("close");
+	}
+}
+
+/**
+ * \brief Free the \p pty
+ *
+ * \param pty RzPty struct
+ * \return void
+ */
+RZ_API void rz_subprocess_pty_free(RZ_OWN RzPty *pty) {
+	if (!pty) {
+		return;
+	}
+
+	RZ_FREE(pty->name);
+	free(pty);
+}
+
 #endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
@@ -1175,6 +1608,8 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
 		.stderr_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.pty = NULL,
+		.make_raw = /* does not matter */ false
 	};
 	return rz_subprocess_start_opt(&opt);
 }

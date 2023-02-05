@@ -22,9 +22,9 @@ e asm.arch=m680x
 ar
 EOF
 EXPECT=<<EOF
-pc = 0x00000000
-sp = 0x00000000
-a0 = 0x00000000
-a1 = 0x00000000
+pc = 0x0000
+sp = 0x0000
+a0 = 0x0000
+a1 = 0x0000
 EOF
 RUN

@@ -37,12 +37,12 @@ EVP_sha512
 	}
 
 #define rz_openssl_plugin_digest_size(pluginname, evpmd) \
-	static RzMsgDigestSize openssl_plugin_##pluginname##_digest_size(void *context) { \
+	static RzHashSize openssl_plugin_##pluginname##_digest_size(void *context) { \
 		return EVP_MD_size(evpmd()); \
 	}
 
 #define rz_openssl_plugin_block_size(pluginname, evpmd) \
-	static RzMsgDigestSize openssl_plugin_##pluginname##_block_size(void *context) { \
+	static RzHashSize openssl_plugin_##pluginname##_block_size(void *context) { \
 		return EVP_MD_block_size(evpmd()); \
 	}
 
@@ -77,13 +77,13 @@ EVP_sha512
 	}
 
 #define rz_openssl_plugin_small_block(pluginname, evpmd) \
-	static bool openssl_plugin_##pluginname##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) { \
+	static bool openssl_plugin_##pluginname##_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) { \
 		rz_return_val_if_fail((data) && (digest), false); \
 		const EVP_MD *evp_md = evpmd(); \
 		if (!evp_md) { \
 			return false; \
 		} \
-		RzMsgDigestSize dgst_size = EVP_MD_size(evp_md); \
+		RzHashSize dgst_size = EVP_MD_size(evp_md); \
 		ut8 *dgst = malloc(dgst_size); \
 		if (!dgst) { \
 			return false; \
@@ -116,7 +116,7 @@ EVP_sha512
 		return true; \
 	}
 
-#define rz_openssl_plugin_define_msg_digest(pluginname, evpmd, canhmac) \
+#define rz_openssl_plugin_define_hash_cfg(pluginname, evpmd, canhmac) \
 	rz_openssl_plugin_context_new(pluginname); \
 	rz_openssl_plugin_context_free(pluginname); \
 	rz_openssl_plugin_digest_size(pluginname, evpmd); \
@@ -125,7 +125,7 @@ EVP_sha512
 	rz_openssl_plugin_update(pluginname); \
 	rz_openssl_plugin_final(pluginname); \
 	rz_openssl_plugin_small_block(pluginname, evpmd); \
-	RzMsgDigestPlugin rz_msg_digest_plugin_##pluginname = { \
+	RzHashPlugin rz_hash_plugin_##pluginname = { \
 		.name = #pluginname, \
 		.license = "Apache 2.0", \
 		.author = "OpenSSL Team", \

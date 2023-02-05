@@ -1,11 +1,12 @@
-// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2014-2016 jfrankowski <jody.frankowski@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_FLIRT_H
 #define RZ_FLIRT_H
 
+#include <rz_types.h>
 #include <rz_list.h>
 #include <rz_analysis.h>
 
@@ -167,14 +168,14 @@ typedef struct rz_flirt_module_t {
 	// until but not including the first variant byte
 	// this is a custom crc16
 	ut32 length; // total length of the module
-	RzList *public_functions;
-	RzList *tail_bytes;
-	RzList *referenced_functions;
+	RzList /*<RzFlirtFunction *>*/ *public_functions;
+	RzList /*<RzFlirtTailByte *>*/ *tail_bytes;
+	RzList /*<RzFlirtFunction *>*/ *referenced_functions;
 } RzFlirtModule;
 
 typedef struct rz_flirt_node_t {
-	RzList *child_list;
-	RzList *module_list;
+	RzList /*<RzFlirtNode *>*/ *child_list;
+	RzList /*<RzFlirtModule *>*/ *module_list;
 	ut32 length; // length of the pattern
 	ut64 variant_mask; // this is the mask that will define variant bytes in ut8 *pattern_bytes
 	ut8 *pattern_bytes; // holds the pattern bytes of the signature
@@ -213,7 +214,8 @@ typedef struct rz_flirt_info_t {
 } RzFlirtInfo;
 
 RZ_API ut32 rz_sign_flirt_node_count_nodes(RZ_NONNULL const RzFlirtNode *node);
-RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysis, ut32 optimization, bool ignore_unknown);
+RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_from_function(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *func, bool tail_bytes);
 RZ_API void rz_sign_flirt_node_free(RZ_NULLABLE RzFlirtNode *node);
 RZ_API void rz_sign_flirt_info_fini(RZ_NULLABLE RzFlirtInfo *info);
 
@@ -257,7 +259,7 @@ RZ_API void rz_sign_sigdb_free(RzSigDb *db);
 RZ_API RZ_OWN RzSigDb *rz_sign_sigdb_load_database(RZ_NONNULL const char *sigdb_path, bool with_details);
 RZ_API bool rz_sign_sigdb_add_entry(RZ_NONNULL RzSigDb *db, RZ_NONNULL const RzSigDBEntry *entry);
 RZ_API bool rz_sign_sigdb_merge(RZ_NONNULL RzSigDb *db, RZ_NONNULL RzSigDb *db2);
-RZ_API RZ_OWN RzList /* RzSigDBEntry* */ *rz_sign_sigdb_list(RZ_NONNULL const RzSigDb *db);
+RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_sign_sigdb_list(RZ_NONNULL const RzSigDb *db);
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static RzList *backtrace_x86_64(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
 	RzDebugFrame *frame;
@@ -55,7 +55,7 @@ static RzList *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	return list;
 }
 // XXX: Do this work correctly?
-static RzList *backtrace_x86_64_analysis(RzDebug *dbg, ut64 at) {
+static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64_analysis(RzDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
 	RzDebugFrame *frame;

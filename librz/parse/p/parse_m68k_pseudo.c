@@ -13,7 +13,7 @@
 
 #include "parse_common.c"
 
-static RzList *m68k_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *m68k_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar m68k_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 += 2"),
@@ -59,7 +59,7 @@ static const RzPseudoReplace m68k_replace[] = {
 
 static const RzPseudoConfig m68k_config = RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(m68k_lexicon, m68k_replace, 4, m68k_tokenize);
 
-RzList *m68k_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *m68k_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	RzList *tokens = NULL;

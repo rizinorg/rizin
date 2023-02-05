@@ -34,7 +34,7 @@ typedef struct rz_crypto_t {
 	int output_size;
 	int dir;
 	void *user;
-	RzList *plugins;
+	RzList /*<RzCryptoPlugin *>*/ *plugins;
 } RzCrypto;
 
 typedef struct rz_crypto_plugin_t {
@@ -54,9 +54,11 @@ typedef struct rz_crypto_plugin_t {
 typedef ut64 RzCryptoSelector;
 
 #ifdef RZ_API
-RZ_API int rz_crypto_add(RzCrypto *cry, RzCryptoPlugin *h);
+RZ_API bool rz_crypto_plugin_add(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
+RZ_API bool rz_crypto_plugin_del(RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
 RZ_API RzCrypto *rz_crypto_new(void);
 RZ_API void rz_crypto_free(RzCrypto *cry);
+RZ_API void rz_crypto_reset(RzCrypto *cry);
 RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo);
 RZ_API bool rz_crypto_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
 RZ_API bool rz_crypto_set_iv(RzCrypto *cry, const ut8 *iv, int ivlen);

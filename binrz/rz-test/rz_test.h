@@ -135,7 +135,7 @@ typedef struct rz_test_test_t {
 } RzTest;
 
 typedef struct rz_test_test_database_t {
-	RzPVector tests;
+	RzPVector /*<RzTest *>*/ tests;
 	RzStrConstPool strpool;
 } RzTestDatabase;
 
@@ -179,15 +179,15 @@ typedef struct rz_test_test_result_info_t {
 
 RZ_API RzCmdTest *rz_test_cmd_test_new(void);
 RZ_API void rz_test_cmd_test_free(RzCmdTest *test);
-RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file);
+RZ_API RzPVector /*<RzCmdTest *>*/ *rz_test_load_cmd_test_file(const char *file);
 
 RZ_API RzAsmTest *rz_test_asm_test_new(void);
 RZ_API void rz_test_asm_test_free(RzAsmTest *test);
-RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char *file);
+RZ_API RzPVector /*<RzAsmTest *>*/ *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char *file);
 
 RZ_API RzJsonTest *rz_test_json_test_new(void);
 RZ_API void rz_test_json_test_free(RzJsonTest *test);
-RZ_API RzPVector *rz_test_load_json_test_file(const char *file);
+RZ_API RzPVector /*<RzJsonTest *>*/ *rz_test_load_json_test_file(const char *file);
 
 RZ_API RzTestDatabase *rz_test_test_database_new(void);
 RZ_API void rz_test_test_database_free(RzTestDatabase *db);

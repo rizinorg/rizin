@@ -14,17 +14,17 @@
 struct rz_bin_pemixed_obj_t {
 	const char *file;
 	int size;
-	struct PE_(rz_bin_pe_obj_t) * sub_bin_dos;
-	struct PE_(rz_bin_pe_obj_t) * sub_bin_native;
-	struct PE_(rz_bin_pe_obj_t) * sub_bin_net;
+	RzBinPEObj *sub_bin_dos;
+	RzBinPEObj *sub_bin_native;
+	RzBinPEObj *sub_bin_net;
 
 	RzBuffer *b;
 };
 
-// static int rz_bin_pemixed_init(struct rz_bin_pemixed_obj_t* bin, struct PE_(rz_bin_pe_obj_t)* pe_bin);
-struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t) * pe_bin);
-struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_obj_t) * pe_bin);
-struct PE_(rz_bin_pe_obj_t) * rz_bin_pemixed_extract(struct rz_bin_pemixed_obj_t *bin, int sub_bin);
+// static int rz_bin_pemixed_init(struct rz_bin_pemixed_obj_t* bin, RzBinPEObj* pe_bin);
+RzBinPEObj *rz_bin_pemixed_init_dos(RzBinPEObj *pe_bin);
+RzBinPEObj *rz_bin_pemixed_init_native(RzBinPEObj *pe_bin);
+RzBinPEObj *rz_bin_pemixed_extract(struct rz_bin_pemixed_obj_t *bin, int sub_bin);
 // static bool check_il_only(ut32 flags);
 void *rz_bin_pemixed_free(struct rz_bin_pemixed_obj_t *bin);
 struct rz_bin_pemixed_obj_t *rz_bin_pemixed_from_bytes_new(const ut8 *buf, ut64 size);

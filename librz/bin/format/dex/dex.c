@@ -217,7 +217,7 @@ static DexEncodedField *dex_new_encoded_field(RzBuffer *buf, ut64 base, ut64 *di
 	return encoded_field;
 }
 
-static DexEncodedMethod *dex_new_encoded_method(RzBuffer *buf, ut64 base, ut64 *diff_value_prev, bool first, RzPVector *method_ids) {
+static DexEncodedMethod *dex_new_encoded_method(RzBuffer *buf, ut64 base, ut64 *diff_value_prev, bool first, RzPVector /*<DexMethodId *>*/ *method_ids) {
 	DexEncodedMethod *encoded_method = RZ_NEW0(DexEncodedMethod);
 	if (!encoded_method) {
 		return NULL;
@@ -263,7 +263,7 @@ dex_new_encoded_method_fail:
 	return NULL;
 }
 
-static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzPVector *method_ids) {
+static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset, ut64 base, RzPVector /*<DexMethodId *>*/ *method_ids) {
 	DexClassDef *class_def = RZ_NEW0(DexClassDef);
 	if (!class_def) {
 		return NULL;
@@ -711,7 +711,7 @@ RZ_API RZ_OWN RzBinDex *rz_bin_dex_new(RZ_NONNULL RzBuffer *buf, ut64 base, RZ_N
 	return dex;
 }
 
-RZ_API char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
+RZ_API RZ_OWN char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
 	RzStrBuf *sb = NULL;
 	for (ut32 i = 0; i < CLASS_ACCESS_FLAGS_SIZE; ++i) {
 		const DexAccessFlagsReadable *afr = &access_flags_list[i];
@@ -736,7 +736,7 @@ RZ_API char *rz_bin_dex_access_flags_readable(ut32 access_flags) {
 /**
  * \brief Returns a RzList<RzBinString*> containing the dex strings
  */
-RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexString *string;
@@ -759,7 +759,7 @@ RZ_API RZ_OWN RzList /*<RzBinString*>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex 
 		bstr->length = string->size;
 		bstr->size = string->size;
 		bstr->string = rz_str_ndup(string->data, string->size);
-		bstr->type = RZ_BIN_STRING_ENC_UTF8;
+		bstr->type = RZ_STRING_ENC_UTF8;
 		if (!rz_list_append(strings, bstr)) {
 			free(bstr);
 		}
@@ -945,7 +945,7 @@ static RzBinSymbol *dex_method_to_symbol(RzBinDex *dex, DexEncodedMethod *encode
 	return symbol;
 }
 
-static RzList /*<RzBinSymbol*>*/ *dex_resolve_methods_in_class(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
+static RzList /*<RzBinSymbol *>*/ *dex_resolve_methods_in_class(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
 	RzList *methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!methods) {
 		return NULL;
@@ -1014,7 +1014,7 @@ static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encode
 	return field;
 }
 
-static RzList /*<RzBinField*>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
+static RzList /*<RzBinField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
 	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!fields) {
 		return NULL;
@@ -1081,7 +1081,7 @@ static RzBinSymbol *dex_field_to_symbol(RzBinDex *dex, DexEncodedField *encoded_
 	return field;
 }
 
-static RzList /*<RzBinSymbol*>*/ *dex_resolve_fields_in_class_as_symbols(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
+static RzList /*<RzBinSymbol *>*/ *dex_resolve_fields_in_class_as_symbols(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
 	RzList *fields = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!fields) {
 		return NULL;
@@ -1137,7 +1137,7 @@ static void free_rz_bin_class(RzBinClass *bclass) {
 /**
  * \brief Returns a RzList<RzBinClass*> containing the dex classes
  */
-RZ_API RZ_OWN RzList /*<RzBinClass*>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
@@ -1206,7 +1206,7 @@ static RzBinSection *section_new(const char *name, ut32 perm, ut32 size, ut64 pa
 /**
  * \brief Returns a RzList<RzBinSection*> containing the dex sections
  */
-RZ_API RZ_OWN RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	RzBinSection *section;
@@ -1238,7 +1238,7 @@ RZ_API RZ_OWN RzList /*<RzBinSection*>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDe
 /**
  * \brief Returns a RzList<RzBinField*> containing the dex fields
  */
-RZ_API RZ_OWN RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
@@ -1273,7 +1273,7 @@ RZ_API RZ_OWN RzList /*<RzBinField*>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *d
 /**
  * \brief Returns a RzList<RzBinSymbol*> containing the dex symbols
  */
-RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;
@@ -1385,7 +1385,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol*>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex 
 /**
  * \brief Returns a RzList<RzBinImport*> containing the dex imports
  */
-RZ_API RZ_OWN RzList /*<RzBinImport*>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexFieldId *field_id;
@@ -1528,7 +1528,7 @@ static int compare_strings(const void *a, const void *b) {
 /**
  * \brief Returns a RzList<char*> containing the dex libraries
  */
-RZ_API RZ_OWN RzList /*<char*>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexMethodId *method_id;
@@ -1701,7 +1701,7 @@ RZ_API RZ_OWN RzBinAddr *rz_bin_dex_resolve_symbol(RZ_NONNULL RzBinDex *dex, RzB
 	return ret;
 }
 
-static RzList /*<RzBinAddr*>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, DexClassDef *class_def) {
+static RzList /*<RzBinAddr *>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, DexClassDef *class_def) {
 	RzListIter *it;
 	DexEncodedMethod *encoded_method = NULL;
 	RzList *entrypoints = NULL;
@@ -1800,7 +1800,7 @@ static RzList /*<RzBinAddr*>*/ *dex_resolve_entrypoints_in_class(RzBinDex *dex, 
 /**
  * \brief Returns a RzList<RzBinAddr*> containing the dex entripoints
  */
-RZ_API RZ_OWN RzList /*<RzBinAddr*>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinAddr *>*/ *rz_bin_dex_entrypoints(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;

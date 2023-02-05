@@ -1,6 +1,9 @@
 #ifndef RZ_BIN_DWARF_H
 #define RZ_BIN_DWARF_H
 
+#include <rz_types.h>
+#include <rz_bin.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,8 +33,8 @@ struct rz_bin_source_line_info_builder_t;
 #define DW_LNE_set_address       0x02
 #define DW_LNE_define_file       0x03
 #define DW_LNE_set_discriminator 0x04 /* DWARF4 */
-#define DW_LNE_lo_user           0x80
-#define DW_LNE_hi_user           0xff
+#define DW_LNE_lo_user           0x80 /* DWARF3 */
+#define DW_LNE_hi_user           0xff /* DWARF3 */
 
 /* HP extensions. */
 #define DW_LNE_HP_negate_is_UV_update      0x11 /* 17 HP */
@@ -44,9 +47,6 @@ struct rz_bin_source_line_info_builder_t;
 #define DW_LNE_HP_negate_function_exit     0x18 /* 24 HP */
 #define DW_LNE_HP_negate_front_end_logical 0x19 /* 25 HP */
 #define DW_LNE_HP_define_proc              0x20 /* 32 HP */
-
-#define DW_LNE_lo_user 0x80 /* DWARF3 */
-#define DW_LNE_hi_user 0xff /* DWARF3 */
 
 /* debug_info tags */
 // this is not a real dwarf named entry, but I wanted to give it
@@ -899,7 +899,7 @@ typedef struct {
  * \brief Line info of all compilation units from the entire debug_line section
  */
 typedef struct {
-	RzList /*<RzBinDwarfLineUnit>*/ *units;
+	RzList /*<RzBinDwarfLineUnit *>*/ *units;
 	struct rz_bin_source_line_info_t *lines;
 } RzBinDwarfLineInfo;
 
@@ -916,7 +916,7 @@ typedef struct rz_bin_dwarf_loc_entry_t {
 } RzBinDwarfLocRange;
 
 typedef struct rz_bin_dwarf_loc_list_t {
-	RzList /*<RzBinDwarfLocRange>*/ *list;
+	RzList /*<RzBinDwarfLocRange *>*/ *list;
 	ut64 offset;
 } RzBinDwarfLocList;
 
@@ -947,12 +947,12 @@ RZ_API const char *rz_bin_dwarf_get_attr_form_name(ut64 form_code);
 RZ_API const char *rz_bin_dwarf_get_unit_type_name(ut64 unit_type);
 RZ_API const char *rz_bin_dwarf_get_lang_name(ut64 lang);
 
-RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile);
+RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da);
-RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size);
+RZ_API HtUP /*<offset, RzBinDwarfLocList *>*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size);
 RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set);
-RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table);
+RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table);
 RZ_API void rz_bin_dwarf_debug_info_free(RzBinDwarfDebugInfo *inf);
 RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da);
 

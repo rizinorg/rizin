@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_msg_digest.h>
+#include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 #include <xxhash.h>
 
@@ -16,11 +16,11 @@ static void plugin_xxhash32_context_free(void *context) {
 	XXH32_freeState((XXH32_state_t *)context);
 }
 
-static RzMsgDigestSize plugin_xxhash32_digest_size(void *context) {
+static RzHashSize plugin_xxhash32_digest_size(void *context) {
 	return RZ_HASH_XXHASH32_DIGEST_SIZE;
 }
 
-static RzMsgDigestSize plugin_xxhash32_block_size(void *context) {
+static RzHashSize plugin_xxhash32_block_size(void *context) {
 	return RZ_HASH_XXHASH32_BLOCK_LENGTH;
 }
 
@@ -46,7 +46,7 @@ static bool plugin_xxhash32_final(void *context, ut8 *digest) {
 	return true;
 }
 
-static bool plugin_xxhash32_small_block(const ut8 *data, ut64 size, ut8 **digest, RzMsgDigestSize *digest_size) {
+static bool plugin_xxhash32_small_block(const ut8 *data, ut64 size, ut8 **digest, RzHashSize *digest_size) {
 	rz_return_val_if_fail(data && digest, false);
 	ut8 *dgst = malloc(RZ_HASH_XXHASH32_DIGEST_SIZE);
 	if (!dgst) {
@@ -63,7 +63,7 @@ static bool plugin_xxhash32_small_block(const ut8 *data, ut64 size, ut8 **digest
 	return true;
 }
 
-RzMsgDigestPlugin rz_msg_digest_plugin_xxhash32 = {
+RzHashPlugin rz_hash_plugin_xxhash32 = {
 	.name = "xxhash32",
 	.license = "LGPL3",
 	.author = "deroad",
@@ -80,8 +80,8 @@ RzMsgDigestPlugin rz_msg_digest_plugin_xxhash32 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_MD,
-	.data = &rz_msg_digest_plugin_xxhash32,
+	.type = RZ_LIB_TYPE_HASH,
+	.data = &rz_hash_plugin_xxhash32,
 	.version = RZ_VERSION
 };
 #endif

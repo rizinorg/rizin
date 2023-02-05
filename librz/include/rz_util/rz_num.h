@@ -1,6 +1,8 @@
 #ifndef RZ_NUM_H
 #define RZ_NUM_H
 
+#include <rz_list.h>
+
 #define RZ_NUMCALC_STRSZ 1024
 
 #ifdef __cplusplus
@@ -84,24 +86,24 @@ RZ_API ut64 rz_num_tail_base(RzNum *num, ut64 addr, ut64 off);
 RZ_API void rz_num_minmax_swap(ut64 *a, ut64 *b);
 RZ_API void rz_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 RZ_API ut64 rz_num_math(RzNum *num, const char *str);
-RZ_API ut64 rz_num_get(RzNum *num, const char *str);
+RZ_API ut64 rz_num_get(RZ_NULLABLE RzNum *num, RZ_NULLABLE const char *str);
 RZ_API int rz_num_to_bits(char *out, ut64 num);
 RZ_API int rz_num_to_trits(char *out, ut64 num); // Rename this please
 RZ_API int rz_num_rand(int max);
 RZ_API void rz_num_irand(void);
-RZ_API ut16 rz_num_ntohs(ut16 foo);
 RZ_API ut64 rz_get_input_num_value(RzNum *num, const char *input_value);
 RZ_API bool rz_is_valid_input_num_value(RzNum *num, const char *input_value);
 RZ_API int rz_num_between(RzNum *num, const char *input_value);
 RZ_API bool rz_num_is_op(const char c);
 RZ_API int rz_num_str_len(const char *str);
 RZ_API int rz_num_str_split(char *str);
-RZ_API RzList *rz_num_str_split_list(char *str);
+RZ_API RzList /*<char *>*/ *rz_num_str_split_list(char *str);
 RZ_API void *rz_num_dup(ut64 n);
 RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str);
 RZ_API double rz_num_cos(double a);
 RZ_API double rz_num_sin(double a);
 RZ_API double rz_num_get_float(RzNum *num, const char *str);
+RZ_API bool rz_num_is_hex_prefix(const char *p);
 
 static inline st64 rz_num_abs(st64 num) {
 	return num < 0 ? -num : num;

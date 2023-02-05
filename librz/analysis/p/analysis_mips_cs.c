@@ -649,7 +649,11 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 		SET_SRC_DST_3_REG_OR_IMM(op);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		SET_SRC_DST_3_REG_OR_IMM(op);
+		if (OPCOUNT() == 2 && OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
+			SET_SRC_DST_2_REGS(op);
+		} else {
+			SET_SRC_DST_3_REG_OR_IMM(op);
+		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_DIV: // UDIV
 #if 0
@@ -1198,11 +1202,24 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return p ? strdup(p) : NULL;
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	return 4;
+static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
 }
 
-static RzList *analysis_preludes(RzAnalysis *analysis) {
+static RzList /*<RzSearchKeyword *>*/ *analysis_preludes(RzAnalysis *analysis) {
 #define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
 	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
 	KW("\x27\xbd\x00", 3, NULL, 0);

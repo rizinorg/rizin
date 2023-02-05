@@ -1,95 +1,97 @@
 #ifndef RZ_PKCS7_H
 #define RZ_PKCS7_H
 
+#include <rz_util/rz_x509.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct rz_pkcs7_certificaterevocationlists_t {
 	ut32 length;
-	RX509CertificateRevocationList **elements;
-} RPKCS7CertificateRevocationLists;
+	RzX509CertificateRevocationList **elements;
+} RzPKCS7CertificateRevocationLists;
 
 typedef struct rz_pkcs7_extendedcertificatesandcertificates_t {
 	ut32 length;
-	RX509Certificate **elements;
-} RPKCS7ExtendedCertificatesAndCertificates;
+	RzX509Certificate **elements;
+} RzPKCS7ExtendedCertificatesAndCertificates;
 
 typedef struct rz_pkcs7_digestalgorithmidentifiers_t {
 	ut32 length;
-	RX509AlgorithmIdentifier **elements;
-} RPKCS7DigestAlgorithmIdentifiers;
+	RzX509AlgorithmIdentifier **elements;
+} RzPKCS7DigestAlgorithmIdentifiers;
 
 typedef struct rz_pkcs7_contentinfo_t {
-	RASN1String *contentType; // OID
-	RASN1Binary *content; // optional. oid structure definition
-} RPKCS7ContentInfo;
+	RzASN1String *contentType; // OID
+	RzASN1Binary *content; // optional. oid structure definition
+} RzPKCS7ContentInfo;
 
 typedef struct rz_pkcs7_issuerandserialnumber_t {
-	RX509Name issuer;
-	RASN1Binary *serialNumber;
-} RPKCS7IssuerAndSerialNumber;
+	RzX509Name issuer;
+	RzASN1Binary *serialNumber;
+} RzPKCS7IssuerAndSerialNumber;
 
 typedef struct rz_pkcs7_attribute_t {
-	RASN1String *oid; // OID
-	RASN1Binary *data; // optional. oid structure definition
-} RPKCS7Attribute;
+	RzASN1String *oid; // OID
+	RzASN1Binary *data; // optional. oid structure definition
+} RzPKCS7Attribute;
 
 typedef struct rz_pkcs7_attributes_t {
 	ut32 length;
-	RPKCS7Attribute **elements;
-} RPKCS7Attributes;
+	RzPKCS7Attribute **elements;
+} RzPKCS7Attributes;
 
 typedef struct rz_pkcs7_signerinfo_t {
 	ut32 version;
-	RPKCS7IssuerAndSerialNumber issuerAndSerialNumber;
-	RX509AlgorithmIdentifier digestAlgorithm;
-	RPKCS7Attributes authenticatedAttributes; // Optional
-	RX509AlgorithmIdentifier digestEncryptionAlgorithm;
-	RASN1Binary *encryptedDigest;
-	RPKCS7Attributes unauthenticatedAttributes; // Optional
-} RPKCS7SignerInfo;
+	RzPKCS7IssuerAndSerialNumber issuerAndSerialNumber;
+	RzX509AlgorithmIdentifier digestAlgorithm;
+	RzPKCS7Attributes authenticatedAttributes; // Optional
+	RzX509AlgorithmIdentifier digestEncryptionAlgorithm;
+	RzASN1Binary *encryptedDigest;
+	RzPKCS7Attributes unauthenticatedAttributes; // Optional
+} RzPKCS7SignerInfo;
 
 typedef struct rz_pkcs7_signerinfos_t {
 	ut32 length;
-	RPKCS7SignerInfo **elements;
-} RPKCS7SignerInfos;
+	RzPKCS7SignerInfo **elements;
+} RzPKCS7SignerInfos;
 
 typedef struct rz_pkcs7_signeddata_t {
 	ut32 version;
-	RPKCS7DigestAlgorithmIdentifiers digestAlgorithms;
-	RPKCS7ContentInfo contentInfo;
-	RPKCS7ExtendedCertificatesAndCertificates certificates; // Optional
-	RPKCS7CertificateRevocationLists crls; // Optional
-	RPKCS7SignerInfos signerinfos;
-} RPKCS7SignedData;
+	RzPKCS7DigestAlgorithmIdentifiers digestAlgorithms;
+	RzPKCS7ContentInfo contentInfo;
+	RzPKCS7ExtendedCertificatesAndCertificates certificates; // Optional
+	RzPKCS7CertificateRevocationLists crls; // Optional
+	RzPKCS7SignerInfos signerinfos;
+} RzPKCS7SignedData;
 
 typedef struct rz_pkcs7_container_t {
-	RASN1String *contentType;
-	RPKCS7SignedData signedData;
-} RCMS;
+	RzASN1String *contentType;
+	RzPKCS7SignedData signedData;
+} RzCMS;
 
-typedef struct {
-	RASN1String *type; // OID
-	RASN1Binary *data; // optional.
-} SpcAttributeTypeAndOptionalValue;
+typedef struct rz_cms_attribute_type_optional_value_t {
+	RzASN1String *type; // OID
+	RzASN1Binary *data; // optional.
+} RzSpcAttributeTypeAndOptionalValue;
 
-typedef struct {
-	RX509AlgorithmIdentifier digestAlgorithm;
-	RASN1Binary *digest;
-} SpcDigestInfo;
+typedef struct rz_cms_digest_info_t {
+	RzX509AlgorithmIdentifier digestAlgorithm;
+	RzASN1Binary *digest;
+} RzSpcDigestInfo;
 
-typedef struct {
-	SpcAttributeTypeAndOptionalValue data;
-	SpcDigestInfo messageDigest;
-} SpcIndirectDataContent;
+typedef struct rz_cms_indirect_data_content_t {
+	RzSpcAttributeTypeAndOptionalValue data;
+	RzSpcDigestInfo messageDigest;
+} RzSpcIndirectDataContent;
 
-RZ_API RCMS *rz_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
-RZ_API void rz_pkcs7_free_cms(RCMS *container);
-RZ_API char *rz_pkcs7_cms_to_string(RCMS *container);
-RZ_API PJ *rz_pkcs7_cms_json(RCMS *container);
-RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms);
-RZ_API void rz_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo);
+RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 length);
+RZ_API void rz_pkcs7_cms_free(RZ_NULLABLE RzCMS *container);
+RZ_API RZ_OWN char *rz_pkcs7_cms_to_string(RZ_NULLABLE RzCMS *container);
+RZ_API void rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container, RZ_NONNULL PJ *pj);
+RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS *cms);
+RZ_API void rz_pkcs7_spcinfo_free(RZ_NULLABLE RzSpcIndirectDataContent *spcinfo);
 
 #ifdef __cplusplus
 }

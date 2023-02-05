@@ -1,0 +1,8 @@
+// SPDX-FileCopyrightText: .NET Foundation
+// SPDX-License-Identifier: MIT
+
+OPCODE_PREFIX(CIL_PRE_UNALIGNED,                  "unaligned.",       ShortInlineI,       0x12,    META)
+OPCODE_PREFIX(CIL_PRE_VOLATILE,                   "volatile.",        InlineNone,         0x13,    META)
+OPCODE_PREFIX(CIL_PRE_TAILCALL,                   "tail.",            InlineNone,         0x14,    META)
+OPCODE_PREFIX(CIL_PRE_CONSTRAINED,                "constrained.",     InlineType,         0x16,    META)
+OPCODE_PREFIX(CIL_PRE_READONLY,                   "readonly.",        InlineNone,         0x1E,    META)

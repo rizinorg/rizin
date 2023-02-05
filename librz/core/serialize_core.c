@@ -49,7 +49,6 @@ static const char *const config_exclude[] = {
 	"dir.source",
 	"dir.tmp",
 	"dir.types",
-	"dir.zigns",
 	"http.root",
 	"pdb.symstore",
 	"scr.color",
@@ -81,14 +80,14 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
 
-	const char *str = sdb_get(db, "offset", 0);
+	const char *str = sdb_const_get(db, "offset", 0);
 	if (!str || !*str) {
 		RZ_SERIALIZE_ERR(res, "missing offset in core");
 		return false;
 	}
 	core->offset = strtoull(str, NULL, 0);
 
-	str = sdb_get(db, "blocksize", 0);
+	str = sdb_const_get(db, "blocksize", 0);
 	if (!str || !*str) {
 		RZ_SERIALIZE_ERR(res, "missing blocksize in core");
 		return false;
@@ -163,8 +162,8 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return;
 	}
 	if (!desc->plugin || strcmp(desc->plugin->name, "default")) {
-		eprintf("Warning: The current file is not loaded as a regular file. "
-			"This is not supported in projects yet and it will be necessary to manually re-load to use the project.\n");
+		RZ_LOG_WARN("core: The current file is not loaded as a regular file. "
+			    "This is not supported in projects yet and it will be necessary to manually re-load to use the project.\n");
 		return;
 	}
 	const char *filename = desc->uri;

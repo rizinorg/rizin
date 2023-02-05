@@ -70,7 +70,7 @@ static int readline_callback(void *_a, const char *str) {
 	return 1;
 }
 
-RZ_API void rz_core_visual_asm(RzCore *core, ut64 off) {
+RZ_IPI void rz_core_visual_asm(RzCore *core, ut64 off) {
 	RzCoreVisualAsm cva = {
 		.core = core,
 		.off = off
@@ -83,7 +83,7 @@ RZ_API void rz_core_visual_asm(RzCore *core, ut64 off) {
 	if (cva.acode && cva.acode->len > 0) {
 		if (rz_cons_yesno('y', "Save changes? (Y/n)")) {
 			if (!rz_io_write_at(core->io, off, cva.acode->bytes, cva.acode->len)) {
-				eprintf("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
+				RZ_LOG_ERROR("core: Cannot write in here, check map permissions or reopen the file with oo+\n");
 				rz_cons_any_key(NULL);
 			}
 		}

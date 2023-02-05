@@ -2,9 +2,38 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // included from rtr.c
 
+static bool is_localhost(const char *address) {
+	if (RZ_STR_ISEMPTY(address)) {
+		return false;
+	}
+	return !strcmp(address, "::1") ||
+		!strcmp(address, "localhost") ||
+		!strcmp(address, "127.0.0.1") ||
+		!strcmp(address, "local");
+}
+
+static int rtr_http_stop(RzCore *u) {
+	RzCore *core = (RzCore *)u;
+	const int timeout = 1; // 1 second
+	const char *port;
+	RzSocket *sock;
+
+#if __WINDOWS__
+	rz_socket_http_server_set_breaked(&rz_cons_singleton()->context->breaked);
+#endif
+	if (((size_t)u) > 0xff) {
+		port = rz_config_get(core->config, "http.port");
+		sock = rz_socket_new(0);
+		(void)rz_socket_connect(sock, "localhost", port, RZ_SOCKET_PROTO_TCP, timeout);
+		rz_socket_free(sock);
+	}
+	rz_socket_free(s);
+	s = NULL;
+	return 0;
+}
+
 // return 1 on error
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
-	RzConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = RZ_EMPTY;
 	RzSocketHTTPRequest *rs;
 	char buf[32];
@@ -13,7 +42,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	RzSocketHTTPOptions so;
 	char *dir;
 	int iport;
-	const char *host = rz_config_get(core->config, "http.bind");
+	const char *bind = rz_config_get(core->config, "http.bind");
 	const char *index = rz_config_get(core->config, "http.index");
 	const char *root = rz_config_get(core->config, "http.root");
 	const char *homeroot = rz_config_get(core->config, "http.homeroot");
@@ -24,7 +53,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	if (!rz_file_is_directory(root)) {
 		if (!rz_file_is_directory(homeroot)) {
-			eprintf("Cannot find http.root or http.homeroot\n");
+			RZ_LOG_ERROR("core: cannot find http.root or http.homeroot\n");
 		}
 	}
 	if (!path) {
@@ -47,40 +76,18 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		port = buf;
 	}
 	s = rz_socket_new(false);
-	{
-		if (host && *host) {
-			if (!strcmp(host, "::1")) {
-				s->local = true;
-			} else if (!strcmp(host, "localhost")) {
-				s->local = true;
-			} else if (!strcmp(host, "127.0.0.1")) {
-				s->local = true;
-			} else if (!strcmp(host, "local")) {
-				s->local = true;
-				rz_config_set(core->config, "http.bind", "localhost");
-			} else if (host[0] == '0' || !strcmp(host, "public")) {
-				// public
-				host = "127.0.0.1";
-				rz_config_set(core->config, "http.bind", "0.0.0.0");
-				s->local = false;
-			} else {
-				s->local = true;
-			}
-		} else {
-			s->local = true;
-		}
-		memset(&so, 0, sizeof(so));
-	}
+	s->local = is_localhost(bind);
+	memset(&so, 0, sizeof(so));
 	if (!rz_socket_listen(s, port, NULL)) {
 		rz_socket_free(s);
-		eprintf("Cannot listen on http.port\n");
+		RZ_LOG_ERROR("core: cannot listen on http.port\n");
 		return 1;
 	}
 
 	if (browse == 'H') {
 		const char *browser = rz_config_get(core->config, "http.browser");
 		rz_sys_cmdf("%s http://%s:%d/%s &",
-			browser, host, atoi(port), path ? path : "");
+			browser, bind, atoi(port), path ? path : "");
 	}
 
 	so.httpauth = rz_config_get_i(core->config, "http.auth");
@@ -88,7 +95,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	if (so.httpauth) {
 		if (!httpauthfile) {
 			rz_socket_free(s);
-			eprintf("No user list set for HTTP Authentication\n");
+			RZ_LOG_ERROR("core: user list was not set for HTTP Authentication\n");
 			return 1;
 		}
 
@@ -98,7 +105,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			so.authtokens = rz_str_split_list(pfile, "\n", 0);
 		} else {
 			rz_socket_free(s);
-			eprintf("Empty list of HTTP users\n");
+			RZ_LOG_ERROR("core: the list of HTTP users is empty\n");
 			return 1;
 		}
 
@@ -106,21 +113,20 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		so.accept_timeout = 1;
 	}
 
-	origcfg = core->config;
-	newcfg = rz_config_clone(core->config);
-	core->config = newcfg;
+	// store current configs
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		return 0;
+	}
+	rz_config_hold_i(hc, "scr.color", "scr.html", "scr.interactive", "asm.cmt.right", "asm.bytes", NULL);
 
+	// set new configs
 	rz_config_set(core->config, "asm.cmt.right", "false");
-#if 0
-	// WHY
-	rz_config_set (core->config, "scr.html", "true");
-#endif
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "scr.interactive", "false");
-	eprintf("Starting http server...\n");
-	eprintf("open http://%s:%d/\n", host, atoi(port));
-	eprintf("rizin -C http://%s:%d/cmd/\n", host, atoi(port));
+
+	RZ_LOG_WARN("core: Starting http server...\nTo open a remote session, please use `rizin -C http://%s:%s/cmd/`\n", bind, port);
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;
@@ -129,6 +135,8 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	newblk = malloc(core->blocksize);
 	if (!newblk) {
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
 		rz_socket_free(s);
 		rz_list_free(so.authtokens);
 		free(pfile);
@@ -138,13 +146,9 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	core->block = newblk;
 	// TODO: handle mutex lock/unlock here
-	rz_cons_break_push((RzConsBreak)rz_core_rtr_http_stop, core);
+	rz_cons_break_push((RzConsBreak)rtr_http_stop, core);
 	while (!rz_cons_is_breaked()) {
-		/* restore environment */
-		core->config = origcfg;
-		rz_config_set(origcfg, "scr.html", rz_config_get(origcfg, "scr.html"));
-		rz_config_set_i(origcfg, "scr.color", rz_config_get_i(origcfg, "scr.color"));
-		rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
+
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
 
 		newoff = core->offset;
@@ -170,13 +174,8 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		core->offset = newoff;
 		core->block = newblk;
 		core->blocksize = newblksz;
-		/* set environment */
-		// backup and restore offset and blocksize
+
 		core->http_up = 1;
-		core->config = newcfg;
-		rz_config_set(newcfg, "scr.html", rz_config_get(newcfg, "scr.html"));
-		rz_config_set_i(newcfg, "scr.color", rz_config_get_i(newcfg, "scr.color"));
-		rz_config_set(newcfg, "scr.interactive", rz_config_get(newcfg, "scr.interactive"));
 
 		if (!rs) {
 			bed = rz_cons_sleep_begin();
@@ -197,7 +196,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			}
 			for (i = 0; i < count; i++) {
 				allows_host = rz_str_word_get0(allows, i);
-				// eprintf ("--- (%s) (%s)\n", host, peer);
+				// eprintf ("--- (%s) (%s)\n", bind, peer);
 				if (!strcmp(allows_host, peer)) {
 					accepted = true;
 					break;
@@ -327,7 +326,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 							if (out) {
 								char *res = rz_str_uri_encode(out);
 								char *newheaders = rz_str_newf(
-									"Content-Type: text/plain\n%s", headers);
+									"Content-Type: text/plain; charset=utf-8\n%s", headers);
 								rz_socket_http_response(rs, 200, out, 0, newheaders);
 								free(out);
 								free(newheaders);
@@ -402,13 +401,13 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 					if (f) {
 						const char *ct = NULL;
 						if (strstr(path, ".js")) {
-							ct = "Content-Type: application/javascript\n";
+							ct = "Content-Type: application/javascript; charset=utf-8\n";
 						}
 						if (strstr(path, ".css")) {
-							ct = "Content-Type: text/css\n";
+							ct = "Content-Type: text/css; charset=utf-8\n";
 						}
 						if (strstr(path, ".html")) {
-							ct = "Content-Type: text/html\n";
+							ct = "Content-Type: text/html; charset=utf-8\n";
 						}
 						char *hdr = rz_str_newf("%s%s", ct, headers);
 						rz_socket_http_response(rs, 200, f, (int)sz, hdr);
@@ -463,67 +462,25 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		rz_socket_http_close(rs);
 		free(dir);
 	}
-the_end : {
-	int timeout = rz_config_get_i(core->config, "http.timeout");
-	const char *host = rz_config_get(core->config, "http.bind");
-	const char *port = rz_config_get(core->config, "http.port");
-	const char *cors = rz_config_get(core->config, "http.cors");
-	const char *allow = rz_config_get(core->config, "http.allow");
-	core->config = origcfg;
-	rz_config_set_i(core->config, "http.timeout", timeout);
-	rz_config_set(core->config, "http.bind", host);
-	rz_config_set(core->config, "http.port", port);
-	rz_config_set(core->config, "http.cors", cors);
-	rz_config_set(core->config, "http.allow", allow);
-}
+the_end:
 	rz_cons_break_pop();
 	core->http_up = false;
 	free(pfile);
 	rz_socket_free(s);
-	rz_config_free(newcfg);
-	/* refresh settings - run callbacks */
-	rz_config_set(origcfg, "scr.html", rz_config_get(origcfg, "scr.html"));
-	rz_config_set_i(origcfg, "scr.color", rz_config_get_i(origcfg, "scr.color"));
-	rz_config_set(origcfg, "scr.interactive", rz_config_get(origcfg, "scr.interactive"));
+
+	// restore saved configs
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
 	return ret;
 }
 
-#if 0
-static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
-	if (!th) {
-		return false;
-	}
-	HttpThread *ht = th->user;
-	if (!ht || !ht->core) {
-		return false;
-	}
-	int ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-	RZ_FREE (ht->path);
-	if (ret) {
-		int p = rz_config_get_i (ht->core->config, "http.port");
-		rz_config_set_i (ht->core->config, "http.port",  p + 1);
-		if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
-			return RZ_TH_STOP;
-		}
-	}
-	return ret ? RZ_TH_REPEAT : RZ_TH_STOP;
-}
-#endif
-
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path) {
-	int ret;
+	int ret = 0;
 	if (launch == '-') {
-		if (httpthread) {
-			eprintf("Press ^C to stop the webserver\n");
-			rz_th_kill_free(httpthread);
-			httpthread = NULL;
-		} else {
-			eprintf("No webserver running\n");
-		}
 		return 0;
 	}
 	if (core->http_up) {
-		eprintf("http server is already running\n");
+		RZ_LOG_ERROR("core: http server is already running\n");
 		return 1;
 	}
 	if (launch == '&') {
@@ -532,30 +489,6 @@ RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *pa
 		}
 		return rz_core_cmdf(core, "& Rh%s", path);
 	}
-#if 0
-		if (httpthread) {
-			eprintf ("HTTP Thread is already running\n");
-			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
-			eprintf ("TODO: Use different eval environ for scr. for the web\n");
-			eprintf ("TODO: Visual mode should be enabled on local\n");
-		} else {
-			const char *tpath = rz_str_trim_head_ro (path + 1);
-			//HttpThread ht = { core, launch, strdup (tpath) };
-			HttpThread *ht = calloc (sizeof (HttpThread), 1);
-			ht->core = core;
-			ht->launch = launch;
-			ht->browse = browse;
-			ht->path = strdup (tpath);
-			httpthread = rz_th_new (rz_core_rtr_http_thread, ht, false);
-			if (httpthread) {
-				rz_th_setname (httpthread, "httpthread");
-			}
-			rz_th_start (httpthread, true);
-			eprintf ("Background http server started.\n");
-		}
-		return 0;
-	}
-#endif
 	do {
 		ret = rz_core_rtr_http_run(core, launch, browse, path);
 	} while (ret == -2);

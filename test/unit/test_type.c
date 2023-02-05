@@ -100,14 +100,14 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), "struct kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of struct to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of struct \"lappa\"");
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base2), "struct lappa { int32_t bar; struct kappa cow; }", "Incorrect conversion of struct to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -139,13 +139,13 @@ static bool test_types_get_base_type_union(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), "union kappa { int32_t bar; int32_t cow; }", "Incorrect conversion of union to string");
 
 	RzBaseType *base2 = rz_type_db_get_base_type(typedb, "lappa");
 	mu_assert_notnull(base2, "Couldn't create get base type of union \"lappa\"");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_UNION, base2->kind, "Wrong base type");
 	mu_assert_streq(base2->name, "lappa", "type name");
-	mu_assert_streq(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
+	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base2), "union lappa { int32_t bar; union kappa cow; }", "Incorrect conversion of union to string");
 
 	rz_type_db_free(typedb);
 	mu_end;
@@ -409,6 +409,8 @@ static bool test_enum_types(void) {
 	mu_assert_streq(cas->name, "GOO", "Incorrect name for enum case 2");
 	mu_assert_eq(cas->val, 0xFFFF, "Incorrect value for enum case 2");
 
+	mu_assert_eq(rz_type_db_base_get_bitsize(typedb, base), 32, "bitsize");
+
 	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
@@ -599,7 +601,7 @@ static bool test_type_as_pretty_string(void) {
 	char *pretty_str = rz_type_as_pretty_string(typedb, ttype, "c", RZ_TYPE_PRINT_NO_OPTS, 1);
 	mu_assert_streq(pretty_str, pretty_complex_const_pointer, "complex const pointer type is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_array_ptr_func_ptr, &error_msg);
@@ -611,7 +613,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "leet", RZ_TYPE_PRINT_MULTILINE, 1);
 	mu_assert_streq(pretty_str, pretty_struct_array_ptr_func_ptr_multiline, "struct array ptr func ptr type multiline is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_struct_in_struct, &error_msg);
@@ -638,7 +640,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_UNFOLD_ANON_ONLY, -1);
 	mu_assert_streq(pretty_str, pretty_struct_in_struct, "struct in struct type anon unfold is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_union_of_struct, &error_msg);
@@ -656,7 +658,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "maxmult", RZ_TYPE_PRINT_MULTILINE, -3);
 	mu_assert_streq(pretty_str, pretty_union_of_struct_max_multiline, "union of struct type max multiline is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, pretty_enum, &error_msg);
@@ -668,7 +670,7 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, "enumult", RZ_TYPE_PRINT_MULTILINE, -2);
 	mu_assert_streq(pretty_str, pretty_enum_multiline, "enum type multiline is ugly");
 	free(pretty_str);
-	free(ttype);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, "time_t;", &error_msg);
@@ -677,15 +679,19 @@ static bool test_type_as_pretty_string(void) {
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
 	mu_assert_streq(pretty_str, pretty_simple_typedef, "simple typedef type is ugly");
 	free(pretty_str);
+	rz_type_free(ttype);
 
 	error_msg = NULL;
 	ttype = rz_type_parse_string_single(typedb->parser, "non_t existent;", &error_msg);
 	mu_assert_notnull(ttype, "unknown type parse unsuccessfull");
 	mu_assert_null(error_msg, "parsing errors");
 	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, 10);
-	mu_assert_streq(pretty_str, "unknown_t;", "unknown type is ugly");
-	free(pretty_str);
+	mu_assert_streq_free(pretty_str, "unknown_t;", "non-existent type in database");
+	pretty_str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF | RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE, 10);
+	mu_assert_streq_free(pretty_str, "non_t;", "non-existent type in database");
+	rz_type_free(ttype);
 
+	rz_type_db_free(typedb);
 	mu_end;
 }
 
@@ -695,6 +701,7 @@ static bool test_array_types(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	// Zero-sized array
@@ -705,6 +712,7 @@ static bool test_array_types(void) {
 	mu_assert_notnull(ttype->array.type, "array type is not null");
 	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array type is identifier");
 	mu_assert_streq("int32_t", ttype->array.type->identifier.name, "identifer is \"int32_t\"");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 0, "bitsize");
 	rz_type_free(ttype);
 
 	// Real-sized array of arrays
@@ -718,6 +726,7 @@ static bool test_array_types(void) {
 	mu_assert_notnull(ttype->array.type->array.type, "array's array type is not null");
 	mu_assert_true(ttype->array.type->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array's array type is identifier");
 	mu_assert_streq("unsigned short", ttype->array.type->array.type->identifier.name, "identifer is \"unsigned short\"");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 6 * 7 * 2 * 8, "bitsize");
 	rz_type_free(ttype);
 
 	// Real-sized array of pointers
@@ -731,6 +740,9 @@ static bool test_array_types(void) {
 	mu_assert_notnull(ttype->array.type->pointer.type, "pointer type is not null");
 	mu_assert_true(ttype->array.type->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
 	mu_assert_false(ttype->array.type->pointer.type->identifier.is_const, "identifer is not const");
+
+	int sz = rz_type_db_get_bitsize(typedb, ttype);
+	mu_assert_eq(sz, 8 * 5 * 8, "bitsize");
 
 	mu_assert_streq("float", ttype->array.type->pointer.type->identifier.name, "identifer is \"float\"");
 	rz_type_free(ttype);
@@ -748,6 +760,7 @@ static bool test_struct_func_types(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	// Sturcture type with a function pointer
@@ -775,7 +788,7 @@ static bool test_struct_func_types(void) {
 	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->kind, "not function pointer");
 
 	RzCallable *call = member->type->pointer.type->callable;
-	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
+	mu_assert_streq_free(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	RzCallableArg *arg;
 	arg = *rz_pvector_index_ptr(call->args, 0);
@@ -785,6 +798,8 @@ static bool test_struct_func_types(void) {
 	arg = *rz_pvector_index_ptr(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), (4 + 8) * 8, "bitsize");
 
 	rz_type_free(ttype);
 
@@ -822,6 +837,8 @@ static bool test_struct_func_types(void) {
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq_free(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), (4 + 8) * 8, "bitsize");
+
 	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
@@ -838,6 +855,7 @@ static bool test_struct_array_types(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	// Structure type with a pointer to a function pointer and array
@@ -846,6 +864,8 @@ static bool test_struct_array_types(void) {
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "albalb", "albalb struct");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 0, "bitsize");
+	rz_type_free(ttype);
 
 	RzBaseType *base = rz_type_db_get_base_type(typedb, "albalb");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
@@ -869,13 +889,14 @@ static bool test_struct_array_types(void) {
 	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
 	mu_assert_false(ttype->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->identifier.name, "alb", "albalb struct");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	rz_type_free(ttype);
 
 	base = rz_type_db_get_base_type(typedb, "alb");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
 	mu_assert_streq(base->name, "alb", "type name");
 	mu_assert_streq_free(rz_type_db_base_type_as_string(typedb, base), array_ptr_struct_test, "type as string with multidimensional array of pointers");
 
-	rz_type_free(ttype);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -886,6 +907,7 @@ static bool test_struct_identifier_without_specifier(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "struct bla { int a; };", &error_msg);
@@ -901,6 +923,11 @@ static bool test_struct_identifier_without_specifier(void) {
 	mu_assert_eq(ttype->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "pointing to identifier");
 	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->pointer.type->identifier.name, "bla", "bla struct");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
+	ttype->pointer.type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED; // operations should still work without the specifier
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
 
 	rz_type_free(ttype);
 
@@ -914,6 +941,7 @@ static bool test_union_identifier_without_specifier(void) {
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
 
 	char *error_msg = NULL;
 	int r = rz_type_parse_string(typedb, "union bla { int a; };", &error_msg);
@@ -929,6 +957,11 @@ static bool test_union_identifier_without_specifier(void) {
 	mu_assert_eq(ttype->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "pointing to identifier");
 	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier not const");
 	mu_assert_streq(ttype->pointer.type->identifier.name, "bla", "bla union");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
+	ttype->pointer.type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED; // operations should still work without the specifier
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype), 8 * 8, "bitsize");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, ttype->pointer.type), 4 * 8, "bitsize of struct");
 
 	rz_type_free(ttype);
 
@@ -952,6 +985,7 @@ static bool test_edit_types(void) {
 	mu_assert_notnull(ttype, "array type parse successfull");
 	const char *id1 = rz_type_identifier(ttype);
 	mu_assert_false(rz_type_db_edit_base_type(typedb, id1, edit_array_old), "edit atomic base type");
+	rz_type_free(ttype);
 
 	ttype = rz_type_parse_string_single(typedb->parser, edit_struct_array_ptr_old, &error_msg);
 	mu_assert_notnull(ttype, "struct type parse successfull");
@@ -1014,6 +1048,660 @@ bool test_addr_bits(void) {
 	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
 	rz_type_db_set_bits(typedb, 16);
 	mu_assert_eq(rz_type_db_pointer_size(typedb), 32, "ptr size");
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_typedef_loop(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// Test typedefs with loops. This makes no sense in practice, but
+	// it is hard to guarantee that it will never happen.
+	//
+	// Test case:
+	//
+	// La --> Te --> Ra --> Lus
+	//        ^               |
+	//        |               |
+	//        \_______________/
+
+	RzBaseType *btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Lus");
+	btype->type = RZ_NEW0(RzType);
+	btype->type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	btype->type->identifier.name = strdup("Te");
+	rz_type_db_save_base_type(typedb, btype);
+	RzBaseType *prev = btype;
+
+	btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Ra");
+	btype->type = rz_type_identifier_of_base_type(typedb, prev, false);
+	rz_type_db_save_base_type(typedb, btype);
+	prev = btype;
+
+	btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Te");
+	btype->type = rz_type_identifier_of_base_type(typedb, prev, false);
+	rz_type_db_save_base_type(typedb, btype);
+	prev = btype;
+
+	btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("La");
+	btype->type = rz_type_identifier_of_base_type(typedb, prev, false);
+	rz_type_db_save_base_type(typedb, btype);
+
+	RzType *ttype = rz_type_identifier_of_base_type(typedb, btype, false);
+	mu_assert_notnull(ttype, "identifier");
+
+	// -- try all kinds of operations that may have issues with the loop created above
+
+	ut64 sz = rz_type_db_base_get_bitsize(typedb, btype);
+	mu_assert_eq(sz, 0, "no size");
+
+	char *str = rz_type_as_pretty_string(typedb, ttype, NULL, RZ_TYPE_PRINT_SHOW_TYPEDEF, -1);
+	mu_assert_streq_free(str, "typedef Te La;", "pretty str");
+
+	str = rz_base_type_as_format(typedb, btype);
+	mu_assert_streq_free(str, "", "format");
+
+	RzList *paths = rz_type_path_by_offset(typedb, ttype, 0, INT_MAX);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static void struct_union_add_member(RzTypeDB *typedb, RzBaseType *btype, const char *member_name, RzType *member_type) {
+	if (btype->type == RZ_BASE_TYPE_KIND_STRUCT) {
+		RzTypeStructMember *memb = rz_vector_push(&btype->struct_data.members, NULL);
+		memb->type = member_type;
+		memb->name = strdup(member_name);
+		memb->offset = 0;
+		memb->size = 0;
+	} else { // if (btype->type == RZ_BASE_TYPE_KIND_UNION)
+		RzTypeUnionMember *memb = rz_vector_push(&btype->union_data.members, NULL);
+		memb->type = member_type;
+		memb->name = strdup(member_name);
+		memb->offset = 0;
+		memb->size = 0;
+	}
+}
+
+bool test_struct_union_loop(RzBaseTypeKind kind) {
+	mu_assert_true(kind == RZ_BASE_TYPE_KIND_STRUCT || kind == RZ_BASE_TYPE_KIND_UNION, "test param");
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// Test structs or unions with loops in their members. This makes no sense in practice, but
+	// it is hard to guarantee that it will never happen.
+	//
+	// Test case:
+	//
+	// La --> Te -typedef+array-> Ra --> Lus
+	//        ^                            |
+	//        |                            |
+	//        \____________________________/
+
+	RzBaseType *la = rz_type_base_type_new(kind);
+	la->name = strdup("La");
+	rz_type_db_save_base_type(typedb, la);
+	RzBaseType *te = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	te->name = strdup("Te");
+	te->type = RZ_NEW0(RzType);
+	te->type->kind = RZ_TYPE_KIND_ARRAY;
+	te->type->array.count = 3;
+	te->type->array.type = RZ_NEW0(RzType);
+	te->type->array.type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	te->type->array.type->identifier.name = strdup("Ra");
+	rz_type_db_save_base_type(typedb, te);
+	RzBaseType *ra = rz_type_base_type_new(kind);
+	ra->name = strdup("Ra");
+	rz_type_db_save_base_type(typedb, ra);
+	RzBaseType *lus = rz_type_base_type_new(kind);
+	lus->name = strdup("Lus");
+	rz_type_db_save_base_type(typedb, lus);
+
+	struct_union_add_member(typedb, la, "member", rz_type_identifier_of_base_type_str(typedb, "Te"));
+	struct_union_add_member(typedb, ra, "member", rz_type_identifier_of_base_type_str(typedb, "Lus"));
+	struct_union_add_member(typedb, lus, "member", rz_type_identifier_of_base_type_str(typedb, "int"));
+
+	// No loop at this point, still ok
+
+	ut64 sz = rz_type_db_base_get_bitsize(typedb, la);
+	mu_assert_eq(sz, 3 * 4 * 8, "size");
+
+	// Now close the loop
+	struct_union_add_member(typedb, lus, "closure", rz_type_identifier_of_base_type_str(typedb, "Te"));
+
+	// -- try all kinds of operations that may have issues with the loop created above
+
+	sz = rz_type_db_base_get_bitsize(typedb, la);
+	// the actual size returned here is less important than the fact that it does not
+	// recurse infinitely.
+	mu_assert_eq(sz, 3 * 4 * 8, "size");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_path_by_offset_struct(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// -- simple
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+
+	RzList *paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	RzTypePath *path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 2, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".b", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	// -- recursive
+
+	ttype = rz_type_parse_string_single(typedb->parser, "struct World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "World", "parsed type");
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".ulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint64_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 8, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 2, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu.a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 10, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 12, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu.b", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 8, 2);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 2, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu.a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 8, 1);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 8, 0);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	// -- base type
+
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, "World");
+	mu_assert_notnull(btype, "get base type");
+
+	paths = rz_base_type_path_by_offset(typedb, btype, 8, 2);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 2, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu.a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_base_type_path_by_offset(typedb, btype, 8, 1);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	rz_list_free(paths);
+
+	paths = rz_base_type_path_by_offset(typedb, btype, 8, 0);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_path_by_offset_union(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// -- simple
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "union Card { int fish; uint32_t senf; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Card", "parsed type");
+
+	RzList *paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 2, "paths");
+	RzTypePath *path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".fish", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".senf", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 2, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	// -- recursive
+
+	ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+	rz_type_free(ttype);
+	ttype = rz_type_parse_string_single(typedb->parser, "union World { uint64_t ulu; Hello mulu; int32_t urshak; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "World", "parsed type");
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 4, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".ulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint64_t", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 2);
+	mu_assert_streq(path->path, ".mulu.a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	path = rz_list_get_n(paths, 3);
+	mu_assert_streq(path->path, ".urshak", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 8, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".mulu.b", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 2);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 4, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".ulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint64_t", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 2);
+	mu_assert_streq(path->path, ".mulu.a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	path = rz_list_get_n(paths, 3);
+	mu_assert_streq(path->path, ".urshak", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 1);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 3, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".ulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint64_t", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 2);
+	mu_assert_streq(path->path, ".urshak", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 0);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	// -- base type
+
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, "World");
+	mu_assert_notnull(btype, "get base type");
+
+	paths = rz_base_type_path_by_offset(typedb, btype, 0, 2);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 4, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".ulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint64_t", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 2);
+	mu_assert_streq(path->path, ".mulu.a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	path = rz_list_get_n(paths, 3);
+	mu_assert_streq(path->path, ".urshak", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_base_type_path_by_offset(typedb, btype, 0, 1);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 3, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".ulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint64_t", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, ".mulu", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 2);
+	mu_assert_streq(path->path, ".urshak", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_base_type_path_by_offset(typedb, btype, 0, 0);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_path_by_offset_array(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	// -- simple
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "int [5]", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_ARRAY, "parsed type");
+
+	RzList *paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	RzTypePath *path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[0]", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 1, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[1]", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 16, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[4]", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 19, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 20, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	// -- recursive
+
+	ttype = rz_type_parse_string_single(typedb->parser, "struct Hello { int a; uint32_t b; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Hello", "parsed type");
+	rz_type_free(ttype);
+
+	ttype = rz_type_parse_string_single(typedb->parser, "Hello [5]", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_ARRAY, "parsed type");
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 2, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[0]", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, "[0].a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 12, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[1].b", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 2);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 2, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[0]", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	path = rz_list_get_n(paths, 1);
+	mu_assert_streq(path->path, "[0].a", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 1);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, "[0]", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "Hello", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 0, 0);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_path_by_offset_typedef(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "struct Card { int fish; uint32_t senf; };", &error_msg);
+	mu_assert_notnull(ttype, "type parse successful");
+	mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+	mu_assert_streq(ttype->identifier.name, "Card", "parsed type");
+
+	RzBaseType *btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	btype->name = strdup("Alias");
+	btype->type = RZ_NEW0(RzType);
+	btype->type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	btype->type->identifier.name = strdup("Card");
+	rz_type_db_save_base_type(typedb, btype);
+
+	RzList *paths = rz_type_path_by_offset(typedb, ttype, 0, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	RzTypePath *path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".fish", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "int", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 1, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 5);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".senf", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	// Resolving a typedef should not count as a depth step as we
+	// can't observe it in the path.
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 1);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 1, "paths");
+	path = rz_list_get_n(paths, 0);
+	mu_assert_streq(path->path, ".senf", "paths");
+	mu_assert_eq(path->typ->kind, RZ_TYPE_KIND_IDENTIFIER, "paths");
+	mu_assert_streq(path->typ->identifier.name, "uint32_t", "paths");
+	rz_list_free(paths);
+
+	paths = rz_type_path_by_offset(typedb, ttype, 4, 0);
+	mu_assert_notnull(paths, "paths");
+	mu_assert_eq(rz_list_length(paths), 0, "paths");
+	rz_list_free(paths);
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
 	mu_end;
 }
 
@@ -1038,6 +1726,13 @@ int all_tests() {
 	mu_run_test(test_edit_types);
 	mu_run_test(test_references);
 	mu_run_test(test_addr_bits);
+	mu_run_test(test_typedef_loop);
+	mu_run_test(test_struct_union_loop, RZ_BASE_TYPE_KIND_STRUCT);
+	mu_run_test(test_struct_union_loop, RZ_BASE_TYPE_KIND_UNION);
+	mu_run_test(test_path_by_offset_struct);
+	mu_run_test(test_path_by_offset_union);
+	mu_run_test(test_path_by_offset_array);
+	mu_run_test(test_path_by_offset_typedef);
 	return tests_passed != tests_run;
 }
 

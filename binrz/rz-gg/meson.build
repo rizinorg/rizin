@@ -1,5 +1,4 @@
 executable('rz-gg', 'rz-gg.c',
-  c_args: executable_cflags,
   include_directories: [platform_inc],
   dependencies: [
     rz_util_dep,
@@ -16,5 +15,4 @@ executable('rz-gg', 'rz-gg.c',
   install: true,
   install_rpath: rpath_exe,
   implicit_include_directories: false,
-  link_args: executable_linkflags
 )

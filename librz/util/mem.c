@@ -20,7 +20,15 @@ RZ_API int rz_mem_count(const ut8 **addr) {
 	return i;
 }
 
-RZ_API int rz_mem_eq(ut8 *a, ut8 *b, int len) {
+/**
+ * \brief Compares memory \p a with \p b over \p len bytes.
+ *
+ * \param a Pointer to memory \p a.
+ * \param b Pointer to memory \p b.
+ * \param len Number of bytes to compare.
+ * \return bool True if memory bytes in memory \p a and  \p b match over \p len bytes. False otherwise.
+ */
+RZ_API int rz_mem_eq(const ut8 *a, const ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {
 		if (a[i] != b[i]) {
@@ -176,17 +184,6 @@ RZ_API int rz_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 		return false;
 	}
 	return true;
-}
-
-// The default endian is LE for streams.
-// This function either swaps or copies len bytes depending on bool big_endian
-// TODO: Remove completely
-RZ_API void rz_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian) {
-	if (big_endian) {
-		rz_mem_swapendian(dest, src, len);
-	} else {
-		memcpy(dest, src, len);
-	}
 }
 
 // This function unconditionally swaps endian of size bytes of orig -> dest

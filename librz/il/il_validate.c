@@ -644,6 +644,11 @@ typedef bool (*ValidateEffectFn)(VALIDATOR_EFFECT_ARGS);
 		} \
 	} while (0)
 
+VALIDATOR_EFFECT(empty) {
+	*type_out = RZ_IL_TYPE_EFFECT_NONE;
+	return true;
+}
+
 VALIDATOR_EFFECT(nop) {
 	*type_out = RZ_IL_TYPE_EFFECT_NONE;
 	return true;
@@ -809,6 +814,7 @@ VALIDATOR_EFFECT(branch) {
 }
 
 static ValidateEffectFn validate_effect_table[RZ_IL_OP_EFFECT_MAX] = {
+	[RZ_IL_OP_EMPTY] = VALIDATOR_EFFECT_NAME(empty),
 	[RZ_IL_OP_STORE] = VALIDATOR_EFFECT_NAME(store),
 	[RZ_IL_OP_STOREW] = VALIDATOR_EFFECT_NAME(storew),
 	[RZ_IL_OP_NOP] = VALIDATOR_EFFECT_NAME(nop),
@@ -838,7 +844,7 @@ static bool validate_effect(VALIDATOR_EFFECT_ARGS) {
  * \return whether the given op is valid under \p ctx
  */
 RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
-	RZ_NULLABLE RZ_OUT HtPP /* <const char *, RzILSortPure *> */ **local_var_sorts_out,
+	RZ_NULLABLE RZ_OUT HtPP /*<const char *, RzILSortPure *>*/ **local_var_sorts_out,
 	RZ_NULLABLE RZ_OUT RzILTypeEffect *type_out,
 	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
 	LocalContext local_ctx;

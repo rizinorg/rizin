@@ -13,7 +13,7 @@
 
 #include "parse_common.c"
 
-static RzList *_6502_tokenize(const char *assembly, size_t length);
+static RzList /*<char *>*/ *_6502_tokenize(const char *assembly, size_t length);
 
 static const RzPseudoGrammar _6502_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("adc", "a += (1 + 2)"),
@@ -70,7 +70,7 @@ static const RzPseudoGrammar _6502_lexicon[] = {
 
 static const RzPseudoConfig _6502_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(_6502_lexicon, 3, _6502_tokenize);
 
-RzList *_6502_tokenize(const char *assembly, size_t length) {
+RzList /*<char *>*/ *_6502_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
 	char *buf = NULL;
 	bool insert_zero = false;

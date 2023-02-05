@@ -82,9 +82,9 @@ RZ_API void rz_diff_free(RZ_NULLABLE RzDiff *diff);
 RZ_API RZ_BORROW const void *rz_diff_get_a(RZ_NONNULL RzDiff *diff);
 RZ_API RZ_BORROW const void *rz_diff_get_b(RZ_NONNULL RzDiff *diff);
 
-RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff);
-RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff);
-RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups);
+RZ_API RZ_OWN RzList /*<RzDiffMatch *>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzDiffOp *>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups);
 RZ_API bool rz_diff_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
 RZ_API bool rz_diff_sizes_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
 
@@ -93,7 +93,7 @@ RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE cons
 
 /* Distances algorithms */
 RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
-RZ_API bool rz_diff_levenstein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
+RZ_API bool rz_diff_levenshtein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
 
 #endif
 

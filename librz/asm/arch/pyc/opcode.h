@@ -47,7 +47,7 @@ typedef struct {
 	ut8 have_argument;
 	ut8 bits;
 	void *(*version_sig)();
-	RzList *opcode_arg_fmt;
+	RzList /*<pyc_arg_fmt *>*/ *opcode_arg_fmt;
 	pyc_opcode_object *opcodes;
 } pyc_opcodes;
 

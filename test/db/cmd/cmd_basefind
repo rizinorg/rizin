@@ -2,9 +2,9 @@
 NAME=basefind via rizin
 FILE=bins/firmware/stm32f103-dapboot-v1.20-bluepill.bin
 CMDS=<<EOF
-e basefind.threads.max=1
-e basefind.base.end=0x10000000
-e basefind.base.start=0x6000000
+e basefind.max.threads=1
+e basefind.search.start=0x06000000
+e basefind.search.end=0x10000000
 e log.level=3
 Bj
 Bq
@@ -18,11 +18,11 @@ score candidate
 4     0x08000000
 EOF
 EXPECT_ERR=<<EOF
-INFO: basefind: located 7 strings
+INFO: basefind: located 6 strings
 INFO: basefind: located 1459 pointers
-INFO: basefind: located 7 strings
+INFO: basefind: located 6 strings
 INFO: basefind: located 1459 pointers
-INFO: basefind: located 7 strings
+INFO: basefind: located 6 strings
 INFO: basefind: located 1459 pointers
 EOF
 RUN

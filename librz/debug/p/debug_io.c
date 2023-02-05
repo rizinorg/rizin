@@ -14,7 +14,7 @@ static int __io_step_over(RzDebug *dbg) {
 	return true;
 }
 
-static RzList *__io_maps(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *__io_maps(RzDebug *dbg) {
 	RzList *list = rz_list_new();
 	char *str = dbg->iob.system(dbg->iob.io, "dm");
 	if (!str) {

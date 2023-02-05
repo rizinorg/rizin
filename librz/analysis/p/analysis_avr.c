@@ -352,11 +352,21 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return strdup(p);
 }
 
-static int archinfo(RzAnalysis *analysis, int q) {
-	if (q == RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) {
+static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
 	}
-	return 2;
 }
 
 static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, ut64 at) {

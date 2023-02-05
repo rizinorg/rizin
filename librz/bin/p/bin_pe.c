@@ -120,16 +120,17 @@ static char *signature(RzBinFile *bf, bool json) {
 	}
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	if (json) {
-		PJ *pj = rz_pkcs7_cms_json(bin->cms);
-		if (pj) {
-			return pj_drain(pj);
+		PJ *pj = pj_new();
+		if (!pj) {
+			return strdup("{}");
 		}
-		return strdup("{}");
+		rz_pkcs7_cms_json(bin->cms, pj);
+		return pj_drain(pj);
 	}
 	return rz_pkcs7_cms_to_string(bin->cms);
 }
 
-static RzList *fields(RzBinFile *bf) {
+static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
@@ -480,6 +481,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.relocs = &relocs,
 	.minstrlen = 4,
 	.create = &create,
+	.get_offset = &get_offset,
 	.get_vaddr = &get_vaddr,
 	.hashes = &compute_hashes,
 	.resources = &resources,

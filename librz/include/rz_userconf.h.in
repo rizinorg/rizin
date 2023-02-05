@@ -1,13 +1,15 @@
 #ifndef RZ_CONFIGURE_H
 #define RZ_CONFIGURE_H
 
-#include "rz_version.h"
+#include "rz_build_version.h"
 
 // clang-format off
 #define RZ_CHECKS_LEVEL             @RZ_CHECKS_LEVEL@
 #define DEBUGGER                    @DEBUGGER@
 #define HAVE_THREADS                @HAVE_THREADS@
 #define HAVE_PTHREAD                @HAVE_PTHREAD@
+#define HAVE_LZMA                   @HAVE_LZMA@
+#define HAVE_ZLIB                   @HAVE_ZLIB@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
 #define HAVE_DECL_PROCCTL_ASLR_CTL  @HAVE_DECL_PROCCTL_ASLR_CTL@
 #define HAVE_ARC4RANDOM_UNIFORM     @HAVE_ARC4RANDOM_UNIFORM@
@@ -33,7 +35,6 @@
 #define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@
 #define USE_LIB_XXHASH              @USE_LIB_XXHASH@
 #define HAVE_LIB_SSL                @HAVE_OPENSSL@
-#define HAVE_LIBUV                  @HAVE_LIBUV@
 #define HAVE_PTRACE                 @HAVE_PTRACE@
 #define USE_PTRACE_WRAP             @USE_PTRACE_WRAP@
 #define HAVE_FORK                   @HAVE_FORK@
@@ -48,13 +49,19 @@
 #define HAVE_COPYFILE               @HAVE_COPYFILE@
 #define HAVE_COPY_FILE_RANGE        @HAVE_COPY_FILE_RANGE@
 #define HAVE_BACKTRACE              @HAVE_BACKTRACE@
+#define HAVE___BUILTIN_BSWAP16      @HAVE___BUILTIN_BSWAP16@
+#define HAVE___BUILTIN_BSWAP32      @HAVE___BUILTIN_BSWAP32@
+#define HAVE___BUILTIN_BSWAP64      @HAVE___BUILTIN_BSWAP64@
 
 #define HAVE_HEADER_LINUX_ASHMEM_H  @HAVE_HEADER_LINUX_ASHMEM_H@
 #define HAVE_HEADER_SYS_SHM_H       @HAVE_HEADER_SYS_SHM_H@
 #define HAVE_HEADER_SYS_IPC_H       @HAVE_HEADER_SYS_IPC_H@
 #define HAVE_HEADER_SYS_MMAN_H      @HAVE_HEADER_SYS_MMAN_H@
+#define HAVE_HEADER_INTTYPES_H      @HAVE_HEADER_INTTYPES_H@
 
 #define RZ_IS_PORTABLE @IS_PORTABLE@
+
+#define RZ_BINDIR_DEPTH @BINDIR_DEPTH@
 // clang-format on
 
 #define RZ_PREFIX  "@PREFIX@"
@@ -64,12 +71,9 @@
 #define RZ_DATDIR  "@DATADIR@"
 #define RZ_WWWROOT "@WWWROOT@"
 
-#define RZ_BINDIR_DEPTH  @BINDIR_DEPTH@
-
 #define RZ_PLUGINS  "@PLUGINS@"
 #define RZ_DATADIR  "@DATADIR_RZ@"
 #define RZ_SDB      "@SDB@"
-#define RZ_ZIGNS    "@ZIGNS@"
 #define RZ_SIGDB    "@SIGDB@"
 #define RZ_THEMES   "@THEMES@"
 #define RZ_FORTUNES "@FORTUNES@"
@@ -92,10 +96,6 @@
 #define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
 
 #define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
-// NOTE: Temporarly added only for compatibility reasons given that the plugin
-// directory has changed. For one release we are going to support also old paths
-// to give distros, plugin maintainers, etc. a bit more time to adapt
-#define RZ_HOME_OLD_PLUGINS RZ_JOIN_3_PATHS("share", "rizin", "plugins")
 
 #define RZ_HOME_CONFIG_RC     RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc")
 #define RZ_HOME_CONFIG_RC_DIR RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc.d")

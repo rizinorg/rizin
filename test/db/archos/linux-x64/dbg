@@ -24,3 +24,74 @@ efbeadde5dc36690
 5589e5cc5dc36690
 EOF
 RUN
+
+NAME=dk 9
+FILE=bins/elf/analysis/calls_x64
+ARGS=-a x86 -d
+CMDS=<<EOF
+dk 9
+dc
+EOF
+EXPECT=<<EOF
+EOF
+REGEXP_FILTER_ERR=child.*signal [0-9]+.*
+EXPECT_ERR=<<EOF
+child received signal 9
+EOF
+RUN
+
+NAME=dkn and dkN
+FILE==
+ARGS=
+CMDS=<<EOF
+dkn 1
+dkn 9
+dkn 200
+dkn 0
+dkn -15
+dkN SIGHUP
+dkN SIGKILL
+dkN SIGWAT
+EOF
+EXPECT=<<EOF
+SIGHUP
+SIGKILL
+1
+9
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid signal number
+ERROR: Invalid signal number
+ERROR: Invalid signal number
+ERROR: Invalid signal name
+EOF
+RUN
+
+NAME=dko and dkl
+FILE=bins/elf/analysis/calls_x64
+ARGS=-a x86 -d
+CMDS=<<EOF
+dkl~SIGTERM
+dko 15 skip
+dkl~SIGTERM
+dko 15 reset
+dkl~SIGTERM
+dko 15 skip
+dkl~SIGTERM
+dk 15
+dc
+dk 9
+dc
+EOF
+EXPECT=<<EOF
+15 SIGTERM
+15 SIGTERM skip
+15 SIGTERM
+15 SIGTERM skip
+[+] signal 15 aka SIGTERM received 2
+EOF
+REGEXP_FILTER_ERR=child.*signal [0-9]+.*
+EXPECT_ERR=<<EOF
+child received signal 9
+EOF
+RUN

@@ -41,7 +41,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 	if (core->search->align) {
 		int mod = addr % core->search->align;
 		if (mod) {
-			eprintf("Unaligned search at %d\n", mod);
+			RZ_LOG_ERROR("core: Unaligned search at %d\n", mod);
 			ret = mod;
 			goto seek_exit;
 		}
@@ -71,7 +71,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			free(ofile);
 			ofile = strdup(file);
 			if (!rz_magic_load(ck, file)) {
-				eprintf("failed rz_magic_load (\"%s\") %s\n", file, rz_magic_error(ck));
+				RZ_LOG_ERROR("core: failed rz_magic_load (\"%s\") %s\n", file, rz_magic_error(ck));
 				ck = NULL;
 				ret = -1;
 				goto seek_exit;
@@ -80,7 +80,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			const char *magicpath = rz_config_get(core->config, "dir.magic");
 			if (!rz_magic_load(ck, magicpath)) {
 				ck = NULL;
-				eprintf("failed rz_magic_load (dir.magic) %s\n", rz_magic_error(ck));
+				RZ_LOG_ERROR("core: failed rz_magic_load (dir.magic) %s\n", rz_magic_error(ck));
 				ret = -1;
 				goto seek_exit;
 			}
@@ -89,7 +89,7 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 	// repeat:
 	// if (v) rz_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	if (delta + 2 > core->blocksize) {
-		eprintf("EOB\n");
+		RZ_LOG_ERROR("core: EOB\n");
 		ret = -1;
 		goto seek_exit;
 	}

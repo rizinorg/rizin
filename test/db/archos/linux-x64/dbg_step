@@ -22,7 +22,6 @@ FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 id~?
-dk 9
 EOF
 EXPECT=<<EOF
 0
@@ -37,7 +36,6 @@ dr rax=rip > /dev/null
 ?vi rax-rip
 db @ rip
 dso
-dk 9
 ?vi rax-rip~?^0$
 EOF
 EXPECT=<<EOF
@@ -63,6 +61,7 @@ NAME=ds on calls and jumps
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 2ds
 dr rip
@@ -83,15 +82,20 @@ dr rip
 dc
 EOF
 EXPECT=<<EOF
-rip = 0x0040052f
-rip = 0x0040053c
-rip = 0x00400549
-rip = 0x0040054f
-rip = 0x0040055b
-rip = 0x00400567
-rip = 0x0040056e
-rip = 0x00400510
-Hello world
+rip = 0x000000000040052f
+rip = 0x000000000040053c
+rip = 0x0000000000400549
+rip = 0x000000000040054f
+rip = 0x000000000040055b
+rip = 0x0000000000400567
+rip = 0x000000000040056e
+rip = 0x0000000000400510
+EOF
+REGEXP_FILTER_ERR=<<EOF
+Process exited[ a-zA-Z0-9=]+
+EOF
+EXPECT_ERR=<<EOF
+Process exited with status=0x0
 EOF
 RUN
 
@@ -99,6 +103,7 @@ NAME=dso on call 1
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 ds
 dr rip
@@ -106,9 +111,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400575
-rip = 0x0040057c
-Hello world
+rip = 0x0000000000400575
+rip = 0x000000000040057c
 EOF
 RUN
 
@@ -116,6 +120,7 @@ NAME=dso on call 2
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 3ds
 dr rip
@@ -123,9 +128,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400539
-rip = 0x0040053b
-Hello world
+rip = 0x0000000000400539
+rip = 0x000000000040053b
 EOF
 RUN
 
@@ -133,6 +137,7 @@ NAME=dso on call 3
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 5ds
 dr rip
@@ -140,9 +145,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400546
-rip = 0x00400548
-Hello world
+rip = 0x0000000000400546
+rip = 0x0000000000400548
 EOF
 RUN
 
@@ -150,6 +154,7 @@ NAME=dso on call 4
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
+wao nop @ 0x00400529
 dcu main
 6ds
 dr rip
@@ -157,9 +162,8 @@ dso
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400549
-rip = 0x0040054e
-Hello world
+rip = 0x0000000000400549
+rip = 0x000000000040054e
 EOF
 RUN
 
@@ -172,7 +176,7 @@ dsu 0x400546
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400546
+rip = 0x0000000000400546
 EOF
 RUN
 
@@ -185,7 +189,22 @@ dsui mov eax
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400524
+0x00400575 7 call qword [0x600958]
+0x0040052f 10 movabs rax, 0x40053c
+0x00400539 2 call rax
+0x0040053c 10 movabs rax, 0x600968
+0x00400546 2 call qword [rax]
+0x00400549 5 call 0x40054f
+0x0040054f 10 movabs rax, 0x40055b
+0x00400559 2 jmp rax
+0x0040055b 10 movabs rax, 0x600980
+0x00400565 2 jmp qword [rax]
+0x00400567 7 jmp qword [0x600988]
+0x0040056e 5 call 0x400510
+0x00400510 10 movabs rdi, 0x600954
+0x0040051a 10 movabs rsi, 0x600948
+0x00400524 5 mov eax, 0
+rip = 0x0000000000400524
 EOF
 RUN
 
@@ -200,7 +219,7 @@ dsi rax=2
 dr rax
 EOF
 EXPECT=<<EOF
-rax = 0x00000002
+rax = 0x0000000000000002
 EOF
 RUN
 
@@ -228,7 +247,7 @@ dsue 0,eax,==
 dr rip
 EOF
 EXPECT=<<EOF
-0x00400529
+0x0000000000400529
 Hello world
 EOF
 RUN
@@ -242,7 +261,7 @@ dcu main
 dr rip
 EOF
 EXPECT=<<EOF
-rip = 0x00400582
+rip = 0x0000000000400582
 EOF
 RUN
 
@@ -255,7 +274,6 @@ dcu main
 EOF
 EXPECT=<<EOF
 0x400574
-Hello world
 EOF
 REGEXP_FILTER_ERR=<<EOF
 Continue[ a-zA-Z0-9]+

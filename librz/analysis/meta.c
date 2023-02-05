@@ -50,7 +50,7 @@ typedef struct {
 	RzAnalysisMetaType type;
 	const RzSpace *space;
 
-	RzPVector /*RzIntervalNode*/ *result;
+	RzPVector /*<RzIntervalNode *>*/ *result;
 } CollectCtx;
 
 static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
@@ -61,7 +61,7 @@ static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -74,7 +74,7 @@ static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -87,7 +87,7 @@ static RzPVector *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
+static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -189,7 +189,8 @@ RZ_API void rz_meta_del(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 
 }
 
 RZ_API bool rz_meta_set(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 size, const char *str) {
-	return rz_meta_set_with_subtype(a, type, 0, addr, size, str);
+	int subtype = type == RZ_META_TYPE_STRING ? RZ_STRING_ENC_UTF8 : 0;
+	return rz_meta_set_with_subtype(a, type, subtype, addr, size, str);
 }
 
 RZ_API bool rz_meta_set_with_subtype(RzAnalysis *m, RzAnalysisMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {
@@ -220,11 +221,11 @@ RZ_API RzPVector /*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnalysi
 	return collect_nodes_at(a, RZ_META_TYPE_ANY, rz_spaces_current(&a->meta_spaces), at);
 }
 
-RZ_API RzPVector *rz_meta_get_all_in(RzAnalysis *a, ut64 at, RzAnalysisMetaType type) {
+RZ_API RzPVector /*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_in(RzAnalysis *a, ut64 at, RzAnalysisMetaType type) {
 	return collect_nodes_in(a, type, rz_spaces_current(&a->meta_spaces), at);
 }
 
-RZ_API RzPVector *rz_meta_get_all_intersect(RzAnalysis *a, ut64 start, ut64 size, RzAnalysisMetaType type) {
+RZ_API RzPVector /*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_intersect(RzAnalysis *a, ut64 start, ut64 size, RzAnalysisMetaType type) {
 	rz_return_val_if_fail(size, NULL);
 	ut64 end = start + size - 1;
 	if (end < start) {

@@ -65,7 +65,10 @@ bool test_rz_bin(void) {
 	int i = 0;
 	rz_list_foreach (strings, it, s) {
 		mu_assert_streq(s->string, exp_strings[i], "String not found");
-		mu_assert_true(rz_bin_object_is_string(obj, s->vaddr), "is_string should be true");
+		mu_assert_true(rz_bin_object_get_string_at(obj, s->vaddr, true) != NULL, "is_string (virt) should be true");
+		mu_assert_false(rz_bin_object_get_string_at(obj, s->vaddr, false) != NULL, "is_string (phys) should be false");
+		mu_assert_true(rz_bin_object_get_string_at(obj, s->paddr, false) != NULL, "is_string (virt) should be false");
+		mu_assert_false(rz_bin_object_get_string_at(obj, s->paddr, true) != NULL, "is_string (phys) should be true");
 		i++;
 	}
 

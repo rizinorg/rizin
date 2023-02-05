@@ -78,6 +78,11 @@ static cache_hdr_t *read_cache_header(RzBuffer *cache_buf, ut64 offset) {
 	return hdr;
 }
 
+#define SHIFT_MAYBE(x) \
+	if (x) { \
+		x += offset; \
+	}
+
 static void populate_cache_headers(RzDyldCache *cache) {
 	cache->n_hdr = 0;
 	RzList *hdrs = rz_list_newf(NULL);
@@ -97,11 +102,6 @@ static void populate_cache_headers(RzDyldCache *cache) {
 		rz_list_append(hdrs, h);
 
 		ut64 size = h->codeSignatureOffset + h->codeSignatureSize;
-
-#define SHIFT_MAYBE(x) \
-	if (x) { \
-		x += offset; \
-	}
 
 		SHIFT_MAYBE(h->mappingOffset);
 		SHIFT_MAYBE(h->imagesOffset);
@@ -147,6 +147,8 @@ static void populate_cache_headers(RzDyldCache *cache) {
 beach:
 	rz_list_free(hdrs);
 }
+
+#undef SHIFT_MAYBE
 
 static void populate_cache_maps(RzDyldCache *cache) {
 	rz_return_if_fail(cache && cache->buf);
@@ -244,7 +246,7 @@ static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, cache_hdr_t *hdr, ca
 	return accel;
 }
 
-objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *cache) {
+RZ_API objc_cache_opt_info *rz_dyldcache_get_objc_opt_info(RzBinFile *bf, RzDyldCache *cache) {
 	objc_cache_opt_info *result = NULL;
 	RzListIter *iter;
 	RzDyldBinImage *bin;
@@ -405,7 +407,7 @@ static cache_imgxtr_t *read_cache_imgextra(RzBuffer *cache_buf, cache_hdr_t *hdr
 static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	char file[256];
 	char *lib_name = file;
-	if (rz_buf_read_at(cache_buf, img->pathFileOffset, (ut8 *)&file, sizeof(file)) == sizeof(file)) {
+	if (rz_buf_read_at(cache_buf, img->pathFileOffset, (ut8 *)file, sizeof(file)) == sizeof(file)) {
 		file[255] = 0;
 		return strdup(lib_name);
 	}
@@ -423,7 +425,7 @@ static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, cache_h
 	}
 	for (size_t i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
-		if (rz_buf_read_at(cache_buf, img[i].pathFileOffset, (ut8 *)&file, sizeof(file)) != sizeof(file)) {
+		if (rz_buf_read_at(cache_buf, img[i].pathFileOffset, (ut8 *)file, sizeof(file)) != sizeof(file)) {
 			continue;
 		}
 		file[255] = 0;
@@ -482,7 +484,7 @@ beach:
 	free(cmds);
 }
 
-static RzList *create_cache_bins(RzDyldCache *cache) {
+static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 	RzList *bins = rz_list_newf((RzListFree)free_bin);
 	if (!bins) {
 		return NULL;
@@ -771,7 +773,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 
 	ut64 offset = slideInfoOffset;
 	ut32 slide_info_version = 0;
-	if (rz_buf_read_at(cache_buf, offset, (ut8 *)&slide_info_version, 4) != 4) {
+	if (!rz_buf_read_le32_at(cache_buf, offset, &slide_info_version)) {
 		return NULL;
 	}
 
@@ -779,6 +781,10 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 		cache_slide3_t slide_info;
 		ut64 size = sizeof(cache_slide3_t);
 		if (rz_buf_fread_at(cache_buf, offset, (ut8 *)&slide_info, "4i1l", 1) < 20) {
+			return NULL;
+		}
+
+		if (UT32_MUL_OVFCHK(slide_info.page_starts_count, 2) || UT64_ADD_OVFCHK(offset, size)) {
 			return NULL;
 		}
 
@@ -1117,7 +1123,7 @@ RZ_API ut64 rz_dyldcache_get_slide(RzDyldCache *cache) {
 	return 0;
 }
 
-RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList *symbols, SetU *hash) {
+RZ_API void rz_dyldcache_symbols_from_locsym(RzDyldCache *cache, RzDyldBinImage *bin, RzList /*<RzBinSymbol *>*/ *symbols, SetU *hash) {
 	RzDyldLocSym *locsym = cache->locsym;
 	if (!locsym) {
 		return;

@@ -212,7 +212,7 @@ RZ_API bool rz_type_func_exist(RzTypeDB *typedb, RZ_NONNULL const char *name) {
  * \param typedb Type Database instance
  * \param name Name of the callable to search
  */
-RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, const char *name) {
+RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
@@ -227,7 +227,7 @@ RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, const char *name) {
  * \param typedb Type Database instance
  * \param name Name of the callable to search
  */
-RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, const char *name) {
+RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
@@ -259,7 +259,7 @@ RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *
  * \param typedb Type Database instance
  * \param name Name of the callable to search
  */
-RZ_API int rz_type_func_args_count(RzTypeDB *typedb, const char *name) {
+RZ_API int rz_type_func_args_count(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, 0);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
@@ -345,13 +345,14 @@ RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_n
  * \param name Name of the callable to search
  * \param type RzType return type
  */
-RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_OWN RZ_NONNULL RzType *type) {
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_BORROW RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && name && type, false);
 	RzCallable *callable = rz_type_func_get(typedb, name);
 	if (!callable) {
 		return false;
 	}
-	callable->ret = type;
+	rz_type_free(callable->ret);
+	callable->ret = rz_type_clone(type);
 	return true;
 }
 
@@ -564,7 +565,7 @@ static bool function_names_collect_cb(void *user, const void *k, const void *v) 
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_function_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *result = rz_list_newf(free);
 	ht_pp_foreach(typedb->callables, function_names_collect_cb, result);
@@ -585,7 +586,7 @@ static bool noreturn_function_names_collect_cb(void *user, const void *k, const 
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList *rz_type_noreturn_function_names(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_noreturn_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *noretl = rz_list_newf(free);
 	ht_pp_foreach(typedb->callables, noreturn_function_names_collect_cb, noretl);

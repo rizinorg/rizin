@@ -1,4 +1,4 @@
-asm_plugins = [
+asm_plugins_list = [
   '6502',
   '8051',
   'amd29k',
@@ -7,6 +7,7 @@ asm_plugins = [
   'avr',
   'bf',
   'chip8',
+  'cil',
   'cr16',
   'dalvik',
   'dcpu16',
@@ -35,6 +36,7 @@ asm_plugins = [
   'propeller',
   'pyc',
   'rsp',
+  'sh',
   'snes',
   'sparc_cs',
   'spc700',
@@ -51,13 +53,12 @@ asm_plugins = [
   'xap',
   'xcore_cs',
 ]
-
 if capstone_dep.version().split('.')[0].to_int() > 4
-  asm_plugins += 'riscv_cs'
+  asm_plugins_list += 'riscv_cs'
 endif
 
 if get_option('use_gpl')
-  asm_plugins += [
+  asm_plugins_list += [
     'arc',
     'cris_gnu',
     'hppa_gnu',
@@ -65,7 +66,6 @@ if get_option('use_gpl')
     'mips_gnu',
     'nios2',
     'riscv',
-    'sh',
     'sparc_gnu',
     'tricore',
     'vax',
@@ -73,6 +73,12 @@ if get_option('use_gpl')
     'z80',
   ]
 endif
+
+asm_plugins = {
+  'conf_name': 'plugins_asm',
+  'base_cname': 'rz_asm_plugin_',
+  'list': asm_plugins_list,
+}
 
 rz_asm_sources = [
   'asm.c',
@@ -87,6 +93,7 @@ rz_asm_sources = [
   'p/asm_avr.c',
   'p/asm_bf.c',
   'p/asm_chip8.c',
+  'p/asm_cil.c',
   'p/asm_cr16.c',
   'p/asm_dalvik.c',
   'p/asm_dcpu16.c',
@@ -115,6 +122,7 @@ rz_asm_sources = [
   'p/asm_propeller.c',
   'p/asm_pyc.c',
   'p/asm_rsp.c',
+  'p/asm_sh.c',
   'p/asm_snes.c',
   'p/asm_sparc_cs.c',
   'p/asm_spc700.c',
@@ -140,6 +148,7 @@ rz_asm_sources = [
   'arch/arm/arm_it.c',
   'arch/avr/disassembler.c',
   'arch/avr/assembler.c',
+  'arch/cil/cil_dis.c',
   'arch/cr16/cr16_disas.c',
   #'arch/dcpu16/asm.c',
   #'arch/dcpu16/dis.c',
@@ -204,6 +213,9 @@ rz_asm_sources = [
   'arch/pyc/opcode.c',
   'arch/pyc/pyc_dis.c',
   'arch/rsp/rsp_idec.c',
+  'arch/sh/disassembler.c',
+  'arch/sh/assembler.c',
+  'arch/sh/lookup.c',
   #'arch/snes/snesdis.c',
   #'arch/spc700/spc700dis.c',
   'arch/tms320/c55x_plus/c55plus.c',
@@ -247,7 +259,6 @@ if get_option('use_gpl')
     'arch/nios/gnu/nios2-opc.c',
     #'arch/riscv/riscv-opc.c',
     #'arch/riscv/riscv.c',
-    'arch/sh/gnu/sh-dis.c',
     'arch/sparc/gnu/sparc-dis.c',
     'arch/sparc/gnu/sparc-opc.c',
     'arch/tricore/gnu/cpu-tricore.c',
@@ -267,7 +278,6 @@ if get_option('use_gpl')
     'p/asm_mips_gnu.c',
     'p/asm_nios2.c',
     'p/asm_riscv.c',
-    'p/asm_sh.c',
     'p/asm_sparc_gnu.c',
     'p/asm_tricore.c',
     'p/asm_vax.c',
@@ -298,7 +308,6 @@ rz_asm_inc = [
 
 rz_asm = library('rz_asm', rz_asm_sources,
   include_directories: rz_asm_inc,
-  c_args: library_cflags,
   dependencies: [
     rz_util_dep,
     rz_config_dep,
@@ -312,7 +321,6 @@ rz_asm = library('rz_asm', rz_asm_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
@@ -323,43 +331,11 @@ rz_asm_dep = declare_dependency(link_with: rz_asm,
                                include_directories: rz_asm_inc)
 meson.override_dependency('rz_asm', rz_asm_dep)
 
-pkgconfig_mod.generate(rz_asm,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_asm',
-  filebase: 'rz_asm',
-  requires: [
-    'rz_util',
-    'rz_syscall',
-    'rz_parse',
-    'rz_flag',
-    'rz_bin',
-    'rz_socket'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_asm.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_syscall', 'rz_flag', 'rz_parse', 'rz_bin']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_asm.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_asm': {
+    'target': rz_asm,
+    'dependencies': ['rz_util', 'rz_config', 'rz_syscall', 'rz_flag', 'rz_parse', 'rz_bin'],
+    'plugins': [asm_plugins]
+}}
 
 subdir('d')
 subdir('cpus')

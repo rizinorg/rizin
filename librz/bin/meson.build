@@ -1,70 +1,75 @@
-bin_plugins = [
-  'any',
-  'art',
-  'avr',
-  'bf',
-  'bflt',
-  'bios',
-  'bootimg',
-  'cgc',
-  'coff',
-  'dex',
-  'dmp64',
-  'dol',
-  'dyldcache',
-  'elf',
-  'elf64',
-  'java',
-  'le',
-  'luac',
-  'mach0',
-  'mach064',
-  'mbn',
-  'mdmp',
-  'menuet',
-  'mz',
-  'ne',
-  'nes',
-  'nin3ds',
-  'ninds',
-  'ningb',
-  'ningba',
-  'nro',
-  'nso',
-  'omf',
-  'qnx',
-  'p9',
-  'pe',
-  'pe64',
-  'pebble',
-  'prg',
-  'psxexe',
-  'pyc',
-  'sfc',
-  'smd',
-  'sms',
-  'spc700',
-  'symbols',
-  'te',
-  'vsf',
-  'wasm',
-  'xbe',
-  'xnu_kernelcache',
-  'z64',
-  'zimg',
-]
+bin_plugins = {
+  'conf_name': 'plugins_bin',
+  'base_cname': 'rz_bin_plugin_',
+  'list': [
+    'any',
+    'art',
+    'avr',
+    'bf',
+    'bflt',
+    'bios',
+    'bootimg',
+    'cgc',
+    'coff',
+    'dex',
+    'dmp64',
+    'dol',
+    'dyldcache',
+    'elf',
+    'elf64',
+    'java',
+    'le',
+    'luac',
+    'mach0',
+    'mach064',
+    'mbn',
+    'mdmp',
+    'menuet',
+    'mz',
+    'ne',
+    'nes',
+    'nin3ds',
+    'ninds',
+    'ningb',
+    'ningba',
+    'nro',
+    'nso',
+    'omf',
+    'qnx',
+    'p9',
+    'pe',
+    'pe64',
+    'pebble',
+    'prg',
+    'psxexe',
+    'pyc',
+    'sfc',
+    'smd',
+    'sms',
+    'spc700',
+    'symbols',
+    'te',
+    'vsf',
+    'wasm',
+    'xbe',
+    'xnu_kernelcache',
+    'z64',
+    'zimg',
+  ],
+}
 
-bin_ldr_plugins = [
-  'ldr_linux',
-]
-
-bin_xtr_plugins = [
-  'xtr_fatmach0',
-  'xtr_sep64',
-]
+bin_xtr_plugins = {
+  'conf_name': 'plugins_bin_xtr',
+  'base_cname': 'rz_bin_xtr_plugin_',
+  'list': [
+    'xtr_fatmach0',
+    'xtr_sep64',
+  ],
+}
 
 rz_bin_sources = [
   'bfile.c',
+  'bfile_string.c',
   'bin.c',
   'bin_language.c',
   'bobj.c',
@@ -89,7 +94,6 @@ rz_bin_sources = [
   'p/bin_elf.c',
   'p/bin_elf64.c',
   'p/bin_java.c',
-  'p/bin_ldr_linux.c',
   'p/bin_le.c',
   'p/bin_luac.c',
   'p/bin_mach0.c',
@@ -202,8 +206,31 @@ rz_bin_sources = [
   'format/objc/mach0_classes.c',
   'format/omf/omf.c',
   'format/p9/p9bin.c',
+  'format/pe/dotnet.c',
   'format/pe/pe.c',
   'format/pe/pe64.c',
+  'format/pe/pe_info.c',
+  'format/pe/pe64_info.c',
+  'format/pe/pe_overlay.c',
+  'format/pe/pe64_overlay.c',
+  'format/pe/pe_hdr.c',
+  'format/pe/pe64_hdr.c',
+  'format/pe/pe_imports.c',
+  'format/pe/pe64_imports.c',
+  'format/pe/pe_exports.c',
+  'format/pe/pe64_exports.c',
+  'format/pe/pe_rsrc.c',
+  'format/pe/pe64_rsrc.c',
+  'format/pe/pe_tls.c',
+  'format/pe/pe64_tls.c',
+  'format/pe/pe_security.c',
+  'format/pe/pe64_security.c',
+  'format/pe/pe_section.c',
+  'format/pe/pe64_section.c',
+  'format/pe/pe_clr.c',
+  'format/pe/pe64_clr.c',
+  'format/pe/pe_debug.c',
+  'format/pe/pe64_debug.c',
   'format/pe/pemixed.c',
   'format/pyc/marshal.c',
   'format/pyc/pyc.c',
@@ -212,6 +239,7 @@ rz_bin_sources = [
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',
 
+  'pdb/cab_extract.c',
   'pdb/dbi.c',
   'pdb/gdata.c',
   'pdb/omap.c',
@@ -225,7 +253,7 @@ rz_bin_inc = [platform_inc, include_directories('format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
-  c_args: ['-DRZ_API_BIN_ONLY=1'] + library_cflags,
+  c_args: ['-DRZ_API_BIN_ONLY=1'],
   dependencies: [
     lz4_dep,
     yxml_dep,
@@ -238,11 +266,11 @@ rz_bin = library('rz_bin', rz_bin_sources,
     rz_cons_dep,
     rz_io_dep,
     rz_type_dep,
+    libmspack_dep,
   ],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  link_args: library_linkflags,
   soversion: rizin_libversion,
   version: rizin_version,
   name_suffix: lib_name_suffix,
@@ -253,41 +281,17 @@ rz_bin_dep = declare_dependency(link_with: rz_bin,
                                include_directories: rz_bin_inc)
 meson.override_dependency('rz_bin', rz_bin_dep)
 
-pkgconfig_mod.generate(rz_bin,
-  subdirs: 'librz',
-  version: rizin_version,
-  name: 'rz_bin',
-  filebase: 'rz_bin',
-  requires: pkgconfig_magic_requires + [
-    'rz_util',
-    'rz_io',
-    'rz_socket',
-    'rz_syscall',
-    'rz_type'
-  ],
-  description: 'rizin foundation libraries',
-  variables: [
-    'plugindir=@0@'.format(rizin_plugins),
-    'datdir=@0@'.format(rizin_datdir_rz),
-  ],
-)
-
-if not is_static_libs_only
-  conf = configuration_data()
-  conf.set('RZ_VERSION', rizin_version)
-  conf.set('RIZIN_MODULE', rz_bin.name())
-  conf.set('RIZIN_MODULE_DEPS', ' '.join(['rz_util', 'rz_io', 'rz_socket', 'rz_syscall', 'rz_type']))
-  conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
-  conf.set('INSTALL_INCDIR', rizin_incdir)
-  conf.set('INSTALL_LIBDIR', rizin_libdir)
-  conf.set('INSTALL_PLUGDIR', rizin_plugins)
-  conf.set('rizin_libname', rz_bin.name())
-  cmake_mod.configure_package_config_file(
-    name: conf.get('rizin_libname'),
-    input: '../RzModulesConfig.cmake.in',
-    install_dir: rizin_cmakedir / conf.get('rizin_libname'),
-    configuration: conf,
-  )
-endif
+modules += { 'rz_bin': {
+    'target': rz_bin,
+    'dependencies': [
+      'rz_magic',
+      'rz_util',
+      'rz_io',
+      'rz_socket',
+      'rz_syscall',
+      'rz_type'
+    ],
+    'plugins': [bin_plugins, bin_xtr_plugins]
+}}
 
 subdir('d')

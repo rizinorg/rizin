@@ -39,7 +39,7 @@ struct rz_bin_mz_obj_t {
 };
 
 RzBinAddr *rz_bin_mz_get_entrypoint(const struct rz_bin_mz_obj_t *bin);
-RzList *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin);
+RzList /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin);
 struct rz_bin_mz_reloc_t *rz_bin_mz_get_relocs(const struct rz_bin_mz_obj_t *bin);
 void *rz_bin_mz_free(struct rz_bin_mz_obj_t *bin);
 struct rz_bin_mz_obj_t *rz_bin_mz_new(const char *file);

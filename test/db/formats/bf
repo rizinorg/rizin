@@ -9,7 +9,7 @@ RUN
 NAME=2＋5.BF
 FILE=bins/bf/2＋5.BF
 CMDS=<<EOF
-(i key; i~^$0)
+(i key; i~^${key})
 ..(i file format size)
 EOF
 EXPECT=<<EOF

@@ -29,7 +29,7 @@ typedef struct rz_xnu_kernelcache_parsed_pointer_t {
 
 typedef struct rz_xnu_kernelcache_obj_t {
 	RzBuffer *cache_buf;
-	RzBuffer *rebased_buf;
+	RzBuffer *patched_buf;
 	RCFValueDict *prelink_info;
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
@@ -38,12 +38,11 @@ typedef struct rz_xnu_kernelcache_obj_t {
 	RzXNUKernelCacheRebaseInfo *rebase_info;
 	int (*original_io_read)(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
 	bool rebase_info_populated;
-	bool rebasing_buffer;
 	bool kexts_initialized;
 } RzXNUKernelCacheObj;
 
 RZ_API bool rz_xnu_kernelcache_buf_is_kernelcache(RzBuffer *b);
-RZ_API RzBuffer *rz_xnu_kernelcache_new_rebasing_buf(RzXNUKernelCacheObj *obj);
+RZ_API RzBuffer *rz_xnu_kernelcache_new_patched_buf(RzXNUKernelCacheObj *obj);
 RZ_API bool rz_xnu_kernelcache_needs_rebasing(RzXNUKernelCacheObj *obj);
 RZ_API bool rz_xnu_kernelcache_parse_pointer(RzXNUKernelCacheParsedPointer *ptr, ut64 decorated_addr, RzXNUKernelCacheObj *obj);
 

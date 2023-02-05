@@ -116,7 +116,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return bio ? bio->bi.kernel_addr : 0;
 }
 
-static RzList *strings(RzBinFile *bf) {
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return NULL;
 }
 
@@ -152,7 +152,7 @@ static bool check_buffer(RzBuffer *buf) {
 	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
 }
 
-static RzList *entries(RzBinFile *bf) {
+static RzList /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	RzBinAddr *ptr = NULL;
 	if (!bio) {
@@ -173,7 +173,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;

@@ -63,7 +63,7 @@ static const struct flag_translation flag_translation_table[] = {
 	{ SHF_COMPRESSED, "compressed" }
 };
 
-static bool create_section_from_phdr(ELFOBJ *bin, RzVector *result, const char *name, ut64 addr, ut64 sz) {
+static bool create_section_from_phdr(ELFOBJ *bin, RzVector /*<RzBinElfSection>*/ *result, const char *name, ut64 addr, ut64 sz) {
 	RzBinElfSection section = { 0 };
 
 	section.offset = Elf_(rz_bin_elf_v2p)(bin, addr);
@@ -100,7 +100,7 @@ static const char *get_plt_name(ELFOBJ *bin) {
 	return ".rela.plt";
 }
 
-static bool create_section_plt(ELFOBJ *bin, RzVector *result) {
+static bool create_section_plt(ELFOBJ *bin, RzVector /*<RzBinElfSection>*/ *result) {
 	ut64 addr;
 	ut64 size;
 
@@ -121,7 +121,7 @@ static void rz_bin_elf_section_free(void *e, RZ_UNUSED void *user) {
 	free(ptr->name);
 }
 
-static RzVector *get_sections_from_dt_dynamic(ELFOBJ *bin) {
+static RzVector /*<RzBinElfSection>*/ *get_sections_from_dt_dynamic(ELFOBJ *bin) {
 	ut64 addr;
 	ut64 size;
 
@@ -295,7 +295,7 @@ RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section_with_name)(RZ_NONNULL ELF
  *
  * Compare the flag to common option such as SHF_WRITE, SHF_ALLOC, ect
  */
-RZ_OWN RzList *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag) {
+RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag) {
 	RzList *flag_list = rz_list_new();
 	if (!flag_list) {
 		return NULL;
@@ -323,7 +323,7 @@ static RzBinElfSection convert_elf_section(ELFOBJ *bin, RzBinObjectLoadOptions *
 	return section;
 }
 
-static RzVector *convert_sections_from_shdr(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector *sections) {
+static RzVector /*<RzBinElfSection>*/ *convert_sections_from_shdr(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	if (!sections) {
 		return NULL;
 	}
@@ -346,7 +346,7 @@ static RzVector *convert_sections_from_shdr(ELFOBJ *bin, RzBinObjectLoadOptions 
 	return result;
 }
 
-static RzVector *convert_sections(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector *sections) {
+static RzVector /*<RzBinElfSection>*/ *convert_sections(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	RzVector *result = convert_sections_from_shdr(bin, options, sections);
 	if (result) {
 		return result;
@@ -359,7 +359,7 @@ static RzVector *convert_sections(ELFOBJ *bin, RzBinObjectLoadOptions *options, 
 	return result;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options, RzVector *sections) {
+RZ_OWN RzVector /*<RzBinElfSection>*/ *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections) {
 	rz_return_val_if_fail(bin && options, NULL);
 
 	RzVector *result = convert_sections(bin, options, sections);
@@ -375,7 +375,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NO
 	return result;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzVector /*<Elf_(Shdr)>*/ *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!bin->ehdr.e_shnum) {

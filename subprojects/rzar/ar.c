@@ -215,7 +215,7 @@ static int ar_parse_header(RzArFp *arf, filetable *tbl, ut64 arsize) {
  *
  * Open an ar/lib and returns all the object files inside it.
  */
-RZ_API RzList *ar_open_all(const char *arname, int perm) {
+RZ_API RzList /*<RzArFp *>*/ *ar_open_all(const char *arname, int perm) {
 	if (!arname) {
 		rz_sys_perror(__FUNCTION__);
 		return NULL;

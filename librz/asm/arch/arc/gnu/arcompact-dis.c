@@ -344,6 +344,9 @@ my_sprintf(struct arcDisState *state, char *buf, const char *format, ...) {
 	int size, leading_zero, regMap[2];
 	va_list ap;
 
+	if (!buf) {
+		return;
+	}
 	va_start(ap, format);
 	bp = buf;
 	*bp = 0;
@@ -3728,7 +3731,7 @@ int ARCompact_decodeInstr(bfd_vma address, /* Address of this instruction.  */
 	fprintf_ftype func = info->fprintf_func;
 	int bytes;
 	int lowbyte, highbyte;
-	char buf[256];
+	char buf[allOperandsSize + 1];
 
 	if (info->disassembler_options) {
 		parse_disassembler_options(info->disassembler_options);
@@ -3825,7 +3828,7 @@ int ARCompact_decodeInstr(bfd_vma address, /* Address of this instruction.  */
 			if (operand[0] != '@') {
 				/* Branch instruction with 3 operands, Translation is required
 				   only for the third operand. Print the first 2 operands */
-				strncpy(buf, operand, sizeof(buf));
+				strncpy(buf, operand, sizeof(buf) - 1);
 				buf[sizeof(buf) - 1] = '\0';
 				tmpBuffer = strtok(buf, "@");
 				(*func)(stream, "%s", tmpBuffer);

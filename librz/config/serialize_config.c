@@ -49,7 +49,7 @@ RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *co
 	RZ_NULLABLE const char *const *exclude, RZ_NULLABLE RzSerializeResultInfo *res) {
 	LoadConfigCtx ctx = { config, NULL };
 	if (exclude) {
-		ctx.exclude = ht_pp_new(NULL, NULL, NULL);
+		ctx.exclude = ht_pp_new0();
 		if (!ctx.exclude) {
 			return false;
 		}
