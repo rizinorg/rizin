@@ -2391,6 +2391,8 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
 	bv_abs = sign ? rz_bv_complement_2(bv) : rz_bv_dup(bv);
 
 	RzFloat *cast_float = rz_float_cast_float(bv_abs, format, mode);
+	rz_bv_free(bv_abs);
+
 	if (!cast_float) {
 		return NULL;
 	}
