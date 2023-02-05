@@ -6762,6 +6762,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 		RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(str);
 		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, op.type);
 		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
+		rz_strbuf_free(bw_str);
 		free(param);
 		return colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
 	} else {
