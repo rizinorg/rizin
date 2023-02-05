@@ -358,6 +358,7 @@ static bool core_analysis_name_print(RzCore *core, RzCmdStateOutput *state) {
 	}
 	default:
 		rz_warn_if_reached();
+		rz_core_analysis_name_free(p);
 		return false;
 	}
 

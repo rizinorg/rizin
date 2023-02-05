@@ -103,6 +103,7 @@ static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, 
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
 	if (!var) {
 		RZ_LOG_ERROR("Can't find variable named `%s`\n", name);
+		free(heap_comment);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (var->comment) {
