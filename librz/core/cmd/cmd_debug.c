@@ -2935,8 +2935,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_pid_select_forked_handler(RzCore *core, int argc
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_select(core->dbg, core->dbg->forked_pid, core->dbg->tid);
-	core->dbg->main_pid = core->dbg->forked_pid;
-	core->dbg->n_threads = 0;
+	core->dbg->n_threads = rz_list_length(core->dbg->threads);
 	core->dbg->forked_pid = -1;
 	return RZ_CMD_STATUS_OK;
 }

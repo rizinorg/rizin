@@ -526,7 +526,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 		orig = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ANY, &orig_sz);
 		if (!orig) {
-			eprintf("Cannot get register arena bytes\n");
+			RZ_LOG_ERROR("debug: cannot get register arena bytes\n");
 			return 0LL;
 		}
 		rpc = rz_reg_get_value(dbg->reg, ripc);
@@ -568,7 +568,7 @@ RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore)
 		free(orig);
 		eprintf("ra0=0x%08" PFMT64x "\n", ra0);
 	} else {
-		eprintf("rz_debug_execute: Cannot get program counter\n");
+		RZ_LOG_ERROR("debug: cannot get program counter\n");
 	}
 	return (ra0);
 }
@@ -735,7 +735,7 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			/* get the program coounter */
 			pc_ri = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], -1);
 			if (!pc_ri) { /* couldn't find PC?! */
-				eprintf("Couldn't find PC!\n");
+				RZ_LOG_ERROR("debug: couldn't find PC!\n");
 				return RZ_DEBUG_REASON_ERROR;
 			}
 
@@ -1071,7 +1071,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		}
 		// Analyze the opcode
 		if (rz_analysis_op(dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof(buf) - (pc - buf_pc), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
-			eprintf("debug-step-over: Decode error at %" PFMT64x "\n", pc);
+			RZ_LOG_ERROR("debug: failed to decode instruction at %" PFMT64x "\n", pc);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -1083,13 +1083,13 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		// Skip over all the subroutine calls
 		if (isStepOverable(op.type)) {
 			if (!rz_debug_continue_until(dbg, ins_size)) {
-				eprintf("Could not step over call @ 0x%" PFMT64x "\n", pc);
+				RZ_LOG_ERROR("debug: could not step over call @ 0x%" PFMT64x "\n", pc);
 				return steps_taken;
 			}
 		} else if ((op.prefix & (RZ_ANALYSIS_OP_PREFIX_REP | RZ_ANALYSIS_OP_PREFIX_REPNE | RZ_ANALYSIS_OP_PREFIX_LOCK))) {
 			// eprintf ("REP: skip to next instruction...\n");
 			if (!rz_debug_continue_until(dbg, ins_size)) {
-				eprintf("step over failed over rep\n");
+				RZ_LOG_ERROR("debug: failed to step over rep instruction\n");
 				return steps_taken;
 			}
 		} else {
@@ -1102,7 +1102,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 
 RZ_API bool rz_debug_goto_cnum(RzDebug *dbg, ut32 cnum) {
 	if (cnum > dbg->session->maxcnum) {
-		eprintf("Error: out of cnum range\n");
+		RZ_LOG_ERROR("debug: out of cnum range\n");
 		return false;
 	}
 	dbg->session->cnum = cnum;

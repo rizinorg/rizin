@@ -400,6 +400,16 @@ bool linux_set_options(RzDebug *dbg, int pid) {
 	// PTRACE_SETOPTIONS can fail because of the asynchronous nature of ptrace
 	// If the target is traced, the loop will always end with success
 	while (rz_debug_ptrace(dbg, PTRACE_SETOPTIONS, pid, 0, (rz_ptrace_data_t)(size_t)traceflags) == -1) {
+
+		if (errno == ESRCH) {
+			/* ESRCH 3 - No such process */
+			int status = 0;
+			if (waitpid(pid, &status, __WALL)) {
+				perror("waitpid");
+				return false;
+			}
+		}
+
 		void *bed = rz_cons_sleep_begin();
 		usleep(1000);
 		rz_cons_sleep_end(bed);
@@ -929,6 +939,9 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 				pid_info->pc = pc;
 			} else {
 				pid_info = rz_debug_pid_new(NULL, tid, uid, 's', pc);
+			}
+			if (!pid_info) {
+				continue;
 			}
 			rz_list_append(list, pid_info);
 			dbg->n_threads++;

@@ -499,7 +499,14 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #endif
 		if (WIFEXITED(status)) {
 			eprintf("child exited with status %d\n", WEXITSTATUS(status));
-			reason = RZ_DEBUG_REASON_DEAD;
+			if (pid == dbg->main_pid) {
+				rz_list_free(dbg->threads);
+				dbg->threads = NULL;
+				reason = R_DEBUG_REASON_DEAD;
+			} else {
+				reason = R_DEBUG_REASON_EXIT_TID;
+				linux_remove_thread(dbg, pid);
+			}
 		} else if (WIFSIGNALED(status)) {
 			eprintf("child received signal %d\n", WTERMSIG(status));
 			reason = RZ_DEBUG_REASON_SIGNAL;

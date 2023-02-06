@@ -305,9 +305,9 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	char *newfile = rz_str_newf("dbg://%s %s", escaped_path, args);
 	desc->uri = newfile;
 	desc->referer = NULL;
+	rz_core_file_reopen(core, newfile, 0, 2);
 	rz_config_set_i(core->config, "asm.bits", bits);
 	rz_config_set_b(core->config, "cfg.debug", true);
-	rz_core_file_reopen(core, newfile, 0, 2);
 	if (rz_config_get_i(core->config, "dbg.rebase")) {
 		__rebase_everything(core, old_sections, old_base);
 	}
