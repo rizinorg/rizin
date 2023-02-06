@@ -459,13 +459,22 @@ bool linux_select(RzDebug *dbg, int pid, int tid) {
 }
 
 bool linux_attach_new_process(RzDebug *dbg, int pid) {
+	eprintf("detach from process %d\n", dbg->pid);
 	linux_detach_all(dbg);
-	if (dbg->threads) {
-		rz_list_free(dbg->threads);
-		dbg->threads = NULL;
+
+	// free threads list.
+	rz_list_free(dbg->threads);
+	dbg->threads = NULL;
+
+	eprintf("attach to process %d\n", pid);
+	if (!linux_attach(dbg, pid)) {
+		return false;
 	}
 
-	if (!linux_attach(dbg, pid)) {
+	// wait for the process to spawn
+	int wstatus = 0;
+	if (waitpid(pid, &wstatus, __WALL)) {
+		perror("waitpid");
 		return false;
 	}
 
@@ -694,8 +703,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	// Attaching to a process that has already been started with PTRACE_TRACEME.
 	// sets errno to "Operation not permitted" which may be misleading.
 	// GETSIGINFO can be called multiple times and would fail without attachment.
-	if (rz_debug_ptrace(dbg, PTRACE_GETSIGINFO, ptid, NULL,
-		    (rz_ptrace_data_t)&sig) == -1) {
+	if (rz_debug_ptrace(dbg, PTRACE_GETSIGINFO, ptid, NULL, (rz_ptrace_data_t)&sig) == -1) {
 		if (rz_debug_ptrace(dbg, PTRACE_ATTACH, ptid, NULL, NULL) == -1) {
 			perror("ptrace (PT_ATTACH)");
 			return false;
@@ -734,6 +742,7 @@ int linux_attach(RzDebug *dbg, int pid) {
 		// So check if the requested thread is being traced already. If not, attach it
 		if (!rz_list_find(dbg->threads, &pid, &match_pid)) {
 			linux_attach_single_pid(dbg, pid);
+			dbg->tid = pid;
 		}
 	}
 	return pid;

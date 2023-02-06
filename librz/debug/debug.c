@@ -1211,14 +1211,14 @@ repeat:
 #if __linux__
 	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
-		/// if the plugin is not compiled link fails, so better do runtime linking
-		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug * dbg, int pid) = NULL;
-		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
-		}
-		if (linux_attach_new_process) {
-			linux_attach_new_process(dbg, dbg->forked_pid);
+		eprintf("moving from pid %d to %d\n", dbg->pid, dbg->forked_pid);
+		// when the pid in select differs from the dbg->pid, then it automatically
+		// switch to the new process.
+		if (rz_debug_select(dbg, dbg->forked_pid, dbg->tid)) {
+			dbg->n_threads = rz_list_length(dbg->threads);
+			dbg->forked_pid = -1;
+		} else {
+			RZ_LOG_ERROR("debug: failed to attach to new pid: %d\n", dbg->forked_pid);
 		}
 #endif
 		goto repeat;
