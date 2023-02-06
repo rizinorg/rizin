@@ -314,7 +314,7 @@ static RZ_OWN RzBitVector *gen_inf_bv(bool sign, RzFloatFormat format) {
 }
 
 /**
- * Trying to round float component
+ * deprecated rounding method
  * \param sign sign of float
  * \param exp ut32 value of exponent
  * \param sig RzBitVector significant bv before rounding `point` is at the 2nd bit counted from MSB (01.MM MMMM ...)
@@ -322,7 +322,7 @@ static RZ_OWN RzBitVector *gen_inf_bv(bool sign, RzFloatFormat format) {
  * \param mode Rounding mode
  * \return RzFloat A rounded float
  */
-static RZ_OWN RzFloat *
+static RZ_DEPRECATE RZ_OWN RzFloat *
 round_float_bv(bool sign, ut32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	ut32 bias = rz_float_get_format_info(format, RZ_FLOAT_INFO_BIAS);
 	ut32 emax = ((bias + 1) << 1) - 1;
@@ -522,15 +522,17 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 }
 
 /**
- * new version of rounding
+ * \brief Rounding method.
  * this function is a wrapper of round_significant, it manage the rounded result and exponent change
  * |f| = sig * 2^exp_no_bias
+ * \details it assumes first bit 1 as the hidden bit, and radix point is right after it.
  * TODO : report exception
- * TODO : test and then replace the old version
  * \param sign sign of bitvector
  * \param exp exponent value, biased
- * \param sig significant, form: 1.MMMM....
- * \param format format of float type
+ * \param sig significant, form: 1.MMMM...., for sub-normal,
+ * caller should set a fake hidden bit to match this format.
+ * \param format float sort of given exp and sig
+ * \param new_format format of target float sort
  * \param mode rounding mode
  * \return a float of type `format`, converted from `sig`
  */

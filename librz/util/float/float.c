@@ -1144,21 +1144,18 @@ static RZ_OWN RzFloat *fadd_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	// calculate significant
 	result_sig = rz_bv_add(l_borrowed_sig, r_borrowed_sig, &unused);
 
-	// if it produce a carry bit, we should normalize it (rshift 1 and exp + 1)
-	// but we do nothing, instead, we makes every non-carry number have the same
-	// form : 01X.M MMMM MMMM ... = 01.XM MMMM MMMM ... * (0b10)
-	//           ^------- point
-	// we don't need to ++exp explicitly,
-	// because after rounding, if the bit before point (carry bit) is 1
-	// we could add sig and exp directly, to represent (exp + 1) operation
-	// since the leading sig bit is an overlapping bit of exp part and sig part
-	if (!rz_bv_get(result_sig, carry_bit_pos) && !rz_bv_msb(result_sig)) {
-		result_exp_val -= 1;
-		rz_bv_lshift(result_sig, 1);
+	if (rz_bv_get(result_sig, carry_bit_pos)) {
+		result_exp_val += 1;
 	}
 
 	// round
-	result = round_float_bv(sign, result_exp_val, result_sig, format, mode);
+	result = round_float_bv_new(
+		sign,
+		result_exp_val,
+		result_sig,
+		format,
+		format,
+		mode);
 
 // clean
 clean:
@@ -1299,14 +1296,11 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 			sign = !sign;
 		}
 
-		// check if the small one (right) is normalized ?
+		// check if the small one (right) is sub-normal ?
 		if (r_borrow_exp_val != 0) {
 			// normalized, and then we recover the leading bit 1
 			// 1.MMMM MMMM ...
 			rz_bv_set(r_borrowed_sig, hidden_bit_pos, true);
-		} else {
-			// r_borrow << 1;
-			rz_bv_lshift(r_borrowed_sig, 1);
 		}
 
 		// revealed the hidden bit of the bigger one : 1.MMMM
@@ -1316,16 +1310,23 @@ static RZ_OWN RzFloat *fsub_mag(RZ_NONNULL RzFloat *left, RZ_NONNULL RzFloat *ri
 	}
 
 	// result_exp = bigger_exp
-	res_exp_val = l_borrow_exp_val - 1;
+	res_exp_val = l_borrow_exp_val;
 	// result_sig = bigger_sig - small_sig
 	result_sig = rz_bv_sub(l_borrowed_sig, r_borrowed_sig, &unused);
 
-	// normalize, already shifted free bits, reserve 1 will be fine
-	shift_dist = rz_bv_clz(result_sig) - 1;
-	res_exp_val -= shift_dist;
-	rz_bv_lshift(result_sig, shift_dist);
+	ut32 borrow_pos = hidden_bit_pos;
+	if (!rz_bv_get(result_sig, borrow_pos)) {
+		// borrow happens
+		res_exp_val -= 1;
+	}
 
-	result = round_float_bv(sign, res_exp_val, result_sig, format, mode);
+	result = round_float_bv_new(
+		sign,
+		res_exp_val,
+		result_sig,
+		format,
+		format,
+		mode);
 
 clean:
 	rz_bv_free(l_exp_squashed);
@@ -1427,59 +1428,71 @@ RZ_API RZ_OWN RzFloat *rz_float_mul_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	ut32 r_exp_val = rz_bv_to_ut32(r_exp_squashed);
 	ut32 shift_dist;
 
-	// normalize sub-normal num
-	if (l_exp_val == 0) {
-		// is sub-normal
-		// shift_dist = ctz - (sign + exponent width) + 1 (the leading sig bit) - extra bits
-		// note that stretched bv has 2 * total_len long, the extra bits has (total_len) long
-		shift_dist = rz_bv_clz(l_mantissa) - (1 + exp_len) + 1 - extra_len;
+	// no biased one
+	rz_bv_lshift(l_mantissa, exp_len - 1);
+	rz_bv_lshift(r_mantissa, exp_len - 1);
 
-		// sub_nor_exp = 1 - bias
-		// normalized_exp = sub_nor_exp - shift_dist = 1 - bias - shift_dist
-		// = (1 - shift_dist) - bias
-		// so the value of exponent field is (1 - shift_dist)
-		l_exp_val = 1 - shift_dist;
-		rz_bv_lshift(l_mantissa, shift_dist);
-	}
-
-	if (r_exp_val == 0) {
-		// is sub-normal
-		shift_dist = rz_bv_clz(r_mantissa) - (1 + exp_len) + 1 - extra_len;
-		r_exp_val = 1 - shift_dist;
-		rz_bv_lshift(r_mantissa, shift_dist);
-	}
-
-	ut32 result_exp_val = l_exp_val + r_exp_val - bias;
+	st32 lexp_nobias = rz_float_get_exponent_val_no_bias(left);
+	st32 rexp_nobias = rz_float_get_exponent_val_no_bias(right);
+	st32 result_exp_val = lexp_nobias + rexp_nobias;
 
 	// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
-	shift_dist = (exp_len + 1) - 2;
-	ut32 hiddent_bit_pos = total_len - 2;
-
-	rz_bv_lshift(l_mantissa, shift_dist);
-	rz_bv_lshift(r_mantissa, shift_dist + 1); // +1 due to leading 0 will accumulate
+	ut32 hidden_bit_pos = total_len - 2;
 
 	// set leading bit
-	rz_bv_set(l_mantissa, hiddent_bit_pos, true);
-	rz_bv_set(r_mantissa, hiddent_bit_pos + 1, true);
+	if (l_exp_val != 0) {
+		rz_bv_set(l_mantissa, hidden_bit_pos, true);
+	}
+
+	if (r_exp_val != 0) {
+		rz_bv_set(r_mantissa, hidden_bit_pos, true);
+	}
 
 	// multiplication
+	// since operands have 0H.MMMM... form, and 0H.MMMMM...
+	// result would be 00XX.MMMM...
 	result_sig = rz_bv_mul(l_mantissa, r_mantissa);
-	// recovered to lower bits
-	rz_bv_shift_right_jammed(result_sig, extra_len);
-	// cut extra bits from MSB
-	RzBitVector *tmp = rz_bv_cut_head(result_sig, extra_len);
-	rz_bv_free(result_sig);
-	result_sig = tmp;
-	tmp = NULL;
 
 	// check if a carry happen, if not, l-shift to force a leading 1
 	// check MSB and the bit after MSB
-	if (!rz_bv_get(result_sig, total_len - 2) && !rz_bv_msb(result_sig)) {
-		result_exp_val -= 1;
-		rz_bv_lshift(result_sig, 1);
+	if (rz_bv_get(result_sig, total_len + extra_len - 3)) {
+		// carry case, think about 01.10 * 01.10 => 0001.0010
+		// 001X.MMMM... -> 001.0MMMMM..
+		result_exp_val += 1;
+		rz_bv_shift_right_jammed(result_sig, 1);
 	}
 
-	result = round_float_bv(result_sign, result_exp_val, result_sig, format, mode);
+	// check result and normalize it if needed
+	ut32 clz = rz_bv_clz(result_sig);
+	if (clz > 3) {
+		// means there are sub normal as factor
+		// try shift
+		shift_dist = clz - 3;
+		if (result_exp_val - (st32)shift_dist < 1 - bias) {
+			// too small, represent as sub-normal
+			shift_dist = result_exp_val - (1 - bias);
+		}
+		rz_bv_lshift(result_sig, shift_dist);
+
+		// biased one
+		result_exp_val = 0;
+
+		// for those who may be sub-normal, use fake hidden bit for rounding
+		// note that result sig has 000H.MMMM... form
+		rz_bv_set(result_sig, rz_bv_len(result_sig) - 4, true);
+	}
+	// others has 0001.MMMM...
+	else {
+		result_exp_val += bias;
+	}
+
+	result = round_float_bv_new(
+		result_sign,
+		result_exp_val,
+		result_sig,
+		format,
+		format,
+		mode);
 
 	rz_bv_free(l_exp_squashed);
 	rz_bv_free(r_exp_squashed);
@@ -1616,22 +1629,24 @@ RZ_API RZ_OWN RzFloat *rz_float_div_ieee_bin(RZ_NONNULL RzFloat *left, RZ_NONNUL
 	// normalize it
 	// and make 01MM MMMM MMMM ... format
 	rz_bv_shift_right_jammed(result_sig, 2 - shift_dist);
-	RzBitVector *tmp = rz_bv_cut_head(result_sig, extra_len);
-	rz_bv_free(result_sig);
-	result_sig = tmp;
-	tmp = NULL;
 
 	// dec exp according to normalization
 	// exp -= shift
-	// exp -= 1 for rounding
-	result_exp_val -= shift_dist + 1;
+	result_exp_val -= shift_dist;
 
 	if ((st32)result_exp_val < 0) {
 		// underflow ?
 		result_exp_val = 0;
 	}
 
-	result = round_float_bv(result_sign, result_exp_val, result_sig, format, mode);
+	result = round_float_bv_new(
+		result_sign,
+		result_exp_val,
+		result_sig,
+		format,
+		format,
+		mode);
+
 	rz_bv_free(l_exp_squashed);
 	rz_bv_free(r_exp_squashed);
 	rz_bv_free(l_mantissa);
@@ -1885,14 +1900,20 @@ static RZ_OWN RzFloat *rz_float_rem_internal(RZ_NONNULL RzFloat *left, RZ_NONNUL
 
 	// recover IEEE mantissa and exponent
 	ez += man_len;
-	ez += bias;
+	ez = ez == 1 - bias ? 0 : ez + bias;
 
 	// apply to round_float_bv required format
 	// 01 MMMM MMMM ...
 	shift_dist = (st32)(exp_len - 1);
 	rz_bv_lshift(mz, shift_dist);
 
-	z = round_float_bv(sign_z, ez - 1, mz, left->r, mode);
+	z = round_float_bv_new(
+		sign_z,
+		ez,
+		mz,
+		left->r,
+		left->r,
+		mode);
 clean:
 	rz_bv_free(mx);
 	rz_bv_free(my);
@@ -1987,52 +2008,65 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 	ut32 b_exp_val = rz_bv_to_ut32(b_exp_squashed);
 	ut32 shift_dist;
 
-	// normalize sub-normal num
-	if (a_exp_val == 0) {
-		// is sub-normal
-		// shift_dist = ctz - (sign + exponent width) + 1 (the leading sig bit) - extra bits
-		// note that stretched bv has 2 * total_len long, the extra bits has (total_len) long
-		shift_dist = rz_bv_clz(a_mantissa) - (1 + exp_len) + 1 - extra_len;
-
-		// sub_nor_exp = 1 - bias
-		// normalized_exp = sub_nor_exp - shift_dist = 1 - bias - shift_dist
-		// = (1 - shift_dist) - bias
-		// so the value of exponent field is (1 - shift_dist)
-		a_exp_val = 1 - shift_dist;
-		rz_bv_lshift(a_mantissa, shift_dist);
-	}
-
-	if (b_exp_val == 0) {
-		// is sub-normal
-		shift_dist = rz_bv_clz(b_mantissa) - (1 + exp_len) + 1 - extra_len;
-		b_exp_val = 1 - shift_dist;
-		rz_bv_lshift(b_mantissa, shift_dist);
-	}
-
-	ut32 mul_exp_val = a_exp_val + b_exp_val - bias + 1;
-
 	// remember we would like to make 01.MM MMMM ... (but leave higher extra bits empty)
 	shift_dist = (exp_len + 1) - 2;
-	ut32 hiddent_bit_pos = total_len - 2;
+	ut32 hidden_bit_pos = total_len - 2;
 
 	rz_bv_lshift(a_mantissa, shift_dist);
 	rz_bv_lshift(b_mantissa, shift_dist);
 
+	st32 aexp_nobias = rz_float_get_exponent_val_no_bias(a);
+	st32 bexp_nobias = rz_float_get_exponent_val_no_bias(b);
+	st32 mul_exp_val = aexp_nobias + bexp_nobias;
+
 	// set leading bit
-	rz_bv_set(a_mantissa, hiddent_bit_pos, true);
-	rz_bv_set(b_mantissa, hiddent_bit_pos, true);
+	if (a_exp_val != 0) {
+		rz_bv_set(a_mantissa, hidden_bit_pos, true);
+	}
+
+	if (b_exp_val != 0) {
+		rz_bv_set(b_mantissa, hidden_bit_pos, true);
+	}
+
 	// multiplication
 	mul_sig = rz_bv_mul(a_mantissa, b_mantissa);
 
 	// check if a carry happen, if not, l-shift to force a leading 1
 	// check MSB and the bit after MSB
-	ut64 new_total_len = total_len + extra_len;
-	if (!rz_bv_get(mul_sig, new_total_len - 3) &&
-		!rz_bv_get(mul_sig, new_total_len - 2) &&
-		!rz_bv_get(mul_sig, new_total_len - 1)) {
-		mul_exp_val -= 1;
-		rz_bv_lshift(mul_sig, 1);
+	if (rz_bv_get(mul_sig, total_len + extra_len - 3)) {
+		// carry case, think about 01.10 * 01.10 => 0001.0010
+		// 001X.MMMM... -> 001.0MMMMM..
+		mul_exp_val += 1;
+		rz_bv_shift_right_jammed(mul_sig, 1);
 	}
+
+	// check result and normalize it if needed
+	ut32 clz = rz_bv_clz(mul_sig);
+	if (clz > 3) {
+		// means there are sub normal as factor
+		// try shift
+		shift_dist = clz - 3;
+		if (mul_exp_val - (st32)shift_dist < 1 - bias) {
+			// too small, represent as sub-normal
+			shift_dist = mul_exp_val - (1 - bias);
+		}
+		rz_bv_lshift(mul_sig, shift_dist);
+
+		// biased one
+		mul_exp_val = 0;
+
+		// for those who may be sub-normal, use fake hidden bit for rounding
+		// note that result sig has 000H.MMMM... form
+		rz_bv_set(mul_sig, rz_bv_len(mul_sig) - 4, true);
+	}
+	// others has 0001.MMMM...
+	else {
+		mul_exp_val += bias;
+	}
+
+	// note that mul sig has 000H.MMMM form
+	// addition we have 00H.MMMM form
+	rz_bv_lshift(mul_sig, 1);
 
 	// calculating addition
 	RzBitVector *c_exp_squashed = get_exp_squashed(c->s, c->r);
@@ -2057,10 +2091,10 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 	}
 
 	// prepare c_sig for addition
-	// set hidden bit 1 and shift (001.M MMMM ...)
-	hiddent_bit_pos = total_len - 3;
+	// set hidden bit 1 and shift to construct (00H.M MMMM ...)
+	hidden_bit_pos = total_len - 3;
 	rz_bv_lshift(c_mantissa, exp_len - 2);
-	rz_bv_set(c_mantissa, hiddent_bit_pos, true);
+	rz_bv_set(c_mantissa, hidden_bit_pos, true);
 	rz_bv_lshift(c_mantissa, extra_len);
 
 	st32 exp_diff_val = (st32)(mul_exp_val - c_exp_val);
@@ -2078,11 +2112,11 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 		// calc
 		res_sig = rz_bv_add(mul_sig, c_mantissa, NULL);
 
-		// check if we should normalize
-		if (!rz_bv_get(res_sig, new_total_len - 1) &&
-			!rz_bv_get(res_sig, new_total_len - 2)) {
-			res_exp_val -= 1;
-			rz_bv_lshift(res_sig, 1);
+		// check if we should normalize when carry
+		ut32 new_total_len = rz_bv_len(res_sig);
+		if (rz_bv_get(res_sig, new_total_len - 2)) {
+			res_exp_val += 1;
+			rz_bv_shift_right_jammed(res_sig, 1);
 		}
 	} else {
 		// sub
@@ -2113,7 +2147,8 @@ RZ_API RZ_OWN RzFloat *rz_float_fma_ieee_bin(RZ_NONNULL RzFloat *a, RZ_NONNULL R
 			res_sig = rz_bv_sub(mul_sig, c_mantissa, NULL);
 		}
 
-		shift_dist = rz_bv_clz(res_sig) - 1;
+		// note that we have 00H.MMMMM... form
+		shift_dist = rz_bv_clz(res_sig) - 2;
 		res_exp_val -= shift_dist;
 		if (shift_dist < 0) {
 			rz_bv_shift_right_jammed(res_sig, -shift_dist);
@@ -2139,7 +2174,13 @@ zero:
 	rz_bv_set(ret_f->s, total_len - 1, mode == RZ_FLOAT_RMODE_RTN);
 	goto clean;
 round:
-	ret_f = round_float_bv(res_sign, res_exp_val, res_sig, format, mode);
+	ret_f = round_float_bv_new(
+		res_sign,
+		res_exp_val,
+		res_sig,
+		format,
+		format,
+		mode);
 clean:
 	rz_bv_free(a_mantissa);
 	rz_bv_free(a_exp_squashed);
