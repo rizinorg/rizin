@@ -17,11 +17,6 @@
  */
 RZ_API RZ_OWN RzFloat *rz_il_float_new(RZ_NONNULL RzFloatFormat format, RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail((format != RZ_FLOAT_UNK) && bv, NULL);
-	// Task :
-	// 1. dup bv to make float
-	// 2. make sure bv length is equal with what `format` defined
-	// TODO : should we support cast here ?
-	//	interpret 31-bit vector as IEEE-BIN64 etc.
 
 	ut32 len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	if (len != bv->len) {

@@ -2381,6 +2381,12 @@ RZ_API RZ_OWN RzFloat *rz_float_round_to_integral(RZ_NONNULL RzFloat *f, RzFloat
 	}
 
 	ret = RZ_NEW0(RzFloat);
+	if (!ret) {
+		rz_bv_free(integeral_exp);
+		rz_bv_free(sig);
+		return ret;
+	}
+
 	ret->r = format;
 	ret->s = pack_float_bv(sign, integeral_exp, sig, format);
 
@@ -2557,7 +2563,19 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat format, RzFloatRMode mode) {
 	rz_return_val_if_fail(f, NULL);
 
-	// TODO: preprocess special float here
+	if (rz_float_is_nan(f)) {
+		return rz_float_new_qnan(format);
+	}
+
+	if (rz_float_is_inf(f)) {
+		return rz_float_new_inf(format, rz_float_get_sign(f));
+	}
+
+	if (rz_float_is_zero(f)) {
+		RzFloat *ret_zero = rz_float_new_zero(format);
+		rz_float_set_sign(ret_zero, rz_float_get_sign(f));
+		return ret_zero;
+	}
 
 	ut32 exp = float_exponent(f);
 	RzFloatFormat old_format = f->r;

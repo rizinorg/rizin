@@ -620,6 +620,11 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 
 	// pack to float
 	ret = RZ_NEW0(RzFloat);
+	if (!ret) {
+		rz_bv_free(exp_bv);
+		rz_bv_free(rounded_sig);
+		return NULL;
+	}
 	ret->s = pack_float_bv(sign, exp_bv, rounded_sig, new_format);
 	ret->r = format;
 

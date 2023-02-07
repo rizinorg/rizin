@@ -427,7 +427,6 @@ RZ_API bool rz_il_evaluate_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect
 RZ_API RZ_NULLABLE RZ_OWN RzFloat *rz_il_evaluate_float(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op) {
 	rz_return_val_if_fail(vm && op, NULL);
 
-	// TODO implement evaluate float
 	// check type and auto convertion between bitv/bool/val
 	RzILTypePure type = -1;
 	void *res = eval_pure(vm, op, &type);
