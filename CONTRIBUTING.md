@@ -33,30 +33,18 @@ Every so often, your PR will lag behind `dev` and get conflicts.
 To "update" your branch `my-awesome-feature`, you *rebase* it onto
 the latest `rizinorg/dev`, and *force-push* the result into your fork.
 
-#### Step 1: Switch to `dev` branch.
+#### Step 1: Rebase the `my-awesome-feature` branch.
 ```sh
-$ git checkout dev
+$ git pull --rebase https://github.com/rizinorg/rizin.git dev
 ```
-#### Step 2: Pull new commits published to rizinorg repo.
-```sh
-$ git pull https://github.com/rizinorg/rizin
-```
-#### Step 3: Switch back to `my-awesome-feature` branch.
-```sh
-$ git checkout my-awesome-feature
-```
-#### Step 4: Rebase the `my-awesome-feature` branch.
-```sh
-$ git rebase dev
-```
-Optionally, use the alternative mode "interactive rebase". It allows
+Optionally, you can use the alternative mode "interactive rebase"
 to `squash` your commits all into one, reorder, reword them, etc.
 ```sh
 $ git rebase -i dev
 ```
 Follow git instructions when conflicts arise.
 
-#### Step 5: Publish your updated local branch.
+#### Step 2: Publish your updated local branch.
 ```sh
 $ git push -f
 ```
