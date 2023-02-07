@@ -110,7 +110,7 @@ rules to make the git history more readable and consistent:
 * ##shell    - commandline, rzshell, ..
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
-* ##tools    - rz-pm, rz-run, rz-ax ... that don't fit in other categories
+* ##tools    - rz-run, rz-ax ... that don't fit in other categories
 * ##util     - core APIs
 * ##visual   - visual UI, including panels
 
