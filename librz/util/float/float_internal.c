@@ -239,6 +239,7 @@ static RzFloat *rz_half_float(RzFloat *f) {
 	RzBitVector *sub = rz_bv_new(total);
 	rz_bv_set(sub, exp_start, true);
 	RzFloat *half = rz_float_new(f->r);
+	rz_bv_free(half->s);
 	half->s = rz_bv_sub(f->s, sub, NULL);
 
 	rz_bv_free(sub);

@@ -547,6 +547,7 @@ bool f32_ieee_special_num_test(void) {
 	rz_float_free(div3);
 	rz_float_free(div4);
 	rz_float_free(div5);
+	rz_float_free(div6);
 
 	rz_float_free(cst_num);
 	rz_float_free(zero);
