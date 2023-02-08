@@ -314,10 +314,8 @@ static int internal_esil_mem_write_no_null(RzAnalysisEsil *esil, ut64 addr, cons
 }
 
 RZ_API int rz_analysis_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	rz_return_val_if_fail(esil && buf, 0);
 	int ret = 0;
-	if (!buf || !esil) {
-		return 0;
-	}
 	addr &= esil->addrmask;
 	if (esil->cb.hook_mem_write) {
 		ret = esil->cb.hook_mem_write(esil, addr, buf, len);
@@ -1809,14 +1807,13 @@ static bool esil_poke_n(RzAnalysisEsil *esil, int bits) {
 				src2 = rz_analysis_esil_pop(esil);
 				if (src2 && rz_analysis_esil_get_parm(esil, src2, &num2)) {
 					rz_write_ble(b, num, esil->analysis->big_endian, 64);
-					ret = rz_analysis_esil_mem_write(esil, addr, b, bytes);
-					if (ret == 0) {
-						rz_write_ble(b, num2, esil->analysis->big_endian, 64);
-						ret = rz_analysis_esil_mem_write(esil, addr + 8, b, bytes);
-					}
+					rz_analysis_esil_mem_write(esil, addr, b, bytes);
+					rz_write_ble(b, num2, esil->analysis->big_endian, 64);
+					rz_analysis_esil_mem_write(esil, addr + 8, b, bytes);
+					ret = true;
 					goto out;
 				}
-				ret = -1;
+				ret = false;
 				goto out;
 			}
 			// this is a internal peek performed before a poke
@@ -1831,7 +1828,8 @@ static bool esil_poke_n(RzAnalysisEsil *esil, int bits) {
 			esil->lastsz = bits;
 			num = num & bitmask;
 			rz_write_ble(b, num, esil->analysis->big_endian, bits);
-			ret = rz_analysis_esil_mem_write(esil, addr, b, bytes);
+			rz_analysis_esil_mem_write(esil, addr, b, bytes);
+			ret = true;
 		}
 	}
 out:
@@ -1931,7 +1929,7 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 	if (dst && isregornum(esil, dst, &addr)) {
 		if (bits == 128) {
 			ut8 a[sizeof(ut64) * 2] = { 0 };
-			ret = rz_analysis_esil_mem_read(esil, addr, a, bytes);
+			rz_analysis_esil_mem_read(esil, addr, a, bytes);
 			ut64 b = rz_read_ble(a, esil->analysis->big_endian, bits);
 			ut64 c = rz_read_ble(a + 8, esil->analysis->big_endian, bits);
 			rz_strf(res, "0x%" PFMT64x, b);
@@ -1939,15 +1937,16 @@ static bool esil_peek_n(RzAnalysisEsil *esil, int bits) {
 			rz_strf(res, "0x%" PFMT64x, c);
 			rz_analysis_esil_push(esil, res);
 			free(dst);
-			return ret;
+			return true;
 		}
 		ut64 bitmask = genmask(bits - 1);
 		ut8 a[sizeof(ut64)] = { 0 };
-		ret = rz_analysis_esil_mem_read(esil, addr, a, bytes);
+		rz_analysis_esil_mem_read(esil, addr, a, bytes);
 		ut64 b = rz_read_ble(a, esil->analysis->big_endian, bits);
 		rz_strf(res, "0x%" PFMT64x, b & bitmask);
 		rz_analysis_esil_push(esil, res);
 		esil->lastsz = bits;
+		ret = true;
 	}
 	free(dst);
 	return ret;
