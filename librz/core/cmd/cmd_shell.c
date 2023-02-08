@@ -17,7 +17,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char *
 	case 2:
 		p = rz_sys_getenv(argv[1]);
 		if (!p) {
-			return RZ_CMD_STATUS_ERROR;
+			return RZ_CMD_STATUS_OK;
 		}
 		rz_cons_println(p);
 		free(p);
