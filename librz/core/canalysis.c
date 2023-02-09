@@ -154,7 +154,7 @@ static bool get_string_at(RzCore *core, ut64 address, char **string, size_t *len
 
 		bstr = rz_bin_object_get_string_at(bobj, pointer, false);
 		if (!bstr) {
-			return can_search && (find_string_at(core, bobj, address, string, length, encoding) || find_string_at(core, bobj, pointer, string, length, encoding));
+			return can_search && (find_string_at(core, bobj, address, string, length, encoding) || (pointer != UT64_MAX && find_string_at(core, bobj, pointer, string, length, encoding)));
 		}
 	}
 

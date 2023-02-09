@@ -304,7 +304,7 @@ RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		? rz_io_vread_at_mapped(io, addr, buf, len)
 		: rz_io_pread_at(io, addr, buf, len) > 0;
 	if (io->cached & RZ_PERM_R) {
-		(void)rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
 }
@@ -325,7 +325,7 @@ RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		ret = rz_io_pread_at(io, addr, buf, len) > 0;
 	}
 	if (io->cached & RZ_PERM_R) {
-		(void)rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
 }
