@@ -737,47 +737,6 @@ jobs:
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
           meson test -C build-cpp-test --print-errorlogs
 
-  #  build-extras:
-  #    name: Build rizin extras and rzpipe
-  #    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-  #    needs: [test-tarball]
-  #    runs-on: ubuntu-22.04
-  #    env:
-  #      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
-  #      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
-  #    steps:
-  #    - uses: actions/download-artifact@v3
-  #      with:
-  #        name: rizin-src.tar.xz
-  #        path: ./
-  #    - name: Extract source tarball
-  #      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
-  #    - name: Install dependencies
-  #      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
-  #    - name: Install rizin
-  #      run: |
-  #        export PATH=$PATH:/usr/local/bin
-  #        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
-  #      working-directory: rizin
-  #    - name: Init rz-pm
-  #      run: rz-pm init && rz-pm update
-  #    - name: Compile and install plugins
-  #      run: |
-  #        set -e
-  #        for p in $TESTS ; do
-  #          echo $p
-  #          rz-pm -i $p
-  #        done
-  #        set +e
-  #    - name: Compile and install rzpipe
-  #      run: |
-  #        set -e
-  #        for p in $RZPIPE_TESTS ; do
-  #          echo $p
-  #          rz-pm -i $p
-  #        done
-  #        set +e
-
   build-rzpipe:
     name: Build rizin rzpipe
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'

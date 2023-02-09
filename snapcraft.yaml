@@ -27,9 +27,6 @@ apps:
   rizin:
     command: usr/bin/rizin
     plugs: [home]
-  rz-pm:
-    command: usr/bin/rz-pm
-    plugs: [home]
   rz-find:
     command: usr/bin/rz-find
     plugs: [home]
