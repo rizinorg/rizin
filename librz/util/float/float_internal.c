@@ -268,53 +268,6 @@ static RZ_OWN RzBitVector *pack_float_bv(bool sign, RzBitVector *exp, RzBitVecto
 }
 
 /**
- * Detecting if a significant should be rounded
- * \param sig RzBitVector significant bv before rounding `point` is at the 2nd bit counted from MSB (01.MM MMMM ...)
- * \param r_bits_bound ut32 boundary of round bits
- * \return bool return true if significant should be rounded, else return false
- */
-static inline bool detect_should_round(RzBitVector *sig, ut32 r_bits_bound) {
-	bool should_round = false;
-	for (ut32 i = 0; i < r_bits_bound; ++i) {
-		if (rz_bv_get(sig, i) == true) {
-			should_round = true;
-			break;
-		}
-	}
-	return should_round;
-}
-
-/**
- * Detecting if the round bits is in the halfway (MSB is 1, the other bits is 0)
- * \param sig RzBitVector significant bv before rounding `point` is at the 2nd bit counted from MSB (01.MM MMMM ...)
- * \param r_bits_bound ut32 boundary of round bits
- * \return bool return true if significant should be rounded, else return false
- */
-static bool detect_halfway(RzBitVector *sig, ut32 r_bits_bound) {
-	for (ut32 i = 0; i < r_bits_bound - 1; ++i) {
-		if (rz_bv_get(sig, i) == true) {
-			return false;
-		}
-	}
-
-	if (rz_bv_get(sig, r_bits_bound - 1) == true) {
-		return true;
-	}
-
-	return false;
-}
-
-/**
- * Generate an infinite bitvector
- * \param sign sign of an inf
- * \param format RzFloatFormat format of float
- * \return an infinite bitvector
- */
-static RZ_OWN RzBitVector *gen_inf_bv(bool sign, RzFloatFormat format) {
-	return NULL;
-}
-
-/**
  * detect if should drop extra tailing bits in rounding
  * GRS konwn as G(guard bit), R(round bit), and S(sticky bit)
  * they are 3 bits after the LSB bit of rounded result, which is drop in rounding
