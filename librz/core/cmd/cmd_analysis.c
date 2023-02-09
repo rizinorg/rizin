@@ -358,6 +358,7 @@ static bool core_analysis_name_print(RzCore *core, RzCmdStateOutput *state) {
 	}
 	default:
 		rz_warn_if_reached();
+		rz_core_analysis_name_free(p);
 		return false;
 	}
 
@@ -2282,7 +2283,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_bytes_handler(RzCore *core, in
 	}
 	default:
 		rz_warn_if_reached();
-		return RZ_CMD_STATUS_ERROR;
+		status = RZ_CMD_STATUS_ERROR;
+		goto fail;
 	}
 
 fail:

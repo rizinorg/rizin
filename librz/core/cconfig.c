@@ -2468,10 +2468,11 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
-		int v = node->i_value;
+		int v = (int)node->i_value;
 		ut64 old_v = core->bin->maxstrbuf;
 		if (v < 1) {
-			v = 4; // HACK
+			// when less than 1 always enforce 4 as the min string length.
+			v = 4;
 		}
 		core->bin->maxstrbuf = v;
 		if (v > old_v) {
@@ -2489,13 +2490,14 @@ static bool cb_binmaxstr(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
-		int v = node->i_value;
-		if (v < 0) {
+		int v = (int)node->i_value;
+		if (v < 1) {
 			v = 0;
 		}
 		core->bin->maxstrlen = v;
 		RzBinFile *bf = rz_bin_cur(core->bin);
 		if (bf && bf->o) {
+			bf->maxstrlen = v;
 			rz_bin_object_reset_strings(core->bin, bf, bf->o);
 		}
 		return true;
@@ -2507,13 +2509,15 @@ static bool cb_binminstr(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
-		int v = node->i_value;
+		int v = (int)node->i_value;
 		if (v < 1) {
-			v = 4; // HACK
+			// when less than 1 always enforce 4 as the min string length.
+			v = 4;
 		}
 		core->bin->minstrlen = v;
 		RzBinFile *bf = rz_bin_cur(core->bin);
 		if (bf && bf->o) {
+			bf->minstrlen = v;
 			rz_bin_object_reset_strings(core->bin, bf, bf->o);
 		}
 		return true;
@@ -3179,8 +3183,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");
 	SETBPREF("bin.relocs", "true", "Load relocs information at startup if available");
-	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for rz_bin");
-	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for rz_bin");
+	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for strings in bin plugins");
+	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for strings in bin plugins");
 	SETICB("bin.maxstrbuf", 1024 * 1024 * 10, &cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	n = NODECB("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC(n, "Default string encoding of binary");
@@ -3429,9 +3433,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	free(wwwroot);
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
-	SETPREF("http.maxport", "9999", "Last HTTP server port");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
-	SETI("http.dietime", 0, "Kill server after N seconds with no client");
+	SETI("http.stop.after", 0, "Stops the http server after N seconds if there are no client connected");
 	SETBPREF("http.verbose", "false", "Output server logs to stdout");
 	SETBPREF("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETBPREF("http.upload", "false", "Enable file uploads to /up/<filename>");

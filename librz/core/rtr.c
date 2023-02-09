@@ -129,13 +129,13 @@ static void dietime(int sig) {
 #endif
 
 static void activateDieTime(RzCore *core) {
-	int dt = rz_config_get_i(core->config, "http.dietime");
+	int dt = rz_config_get_i(core->config, "http.stop.after");
 	if (dt > 0) {
 #if __UNIX__
 		rz_sys_signal(SIGALRM, dietime);
 		alarm(dt);
 #else
-		RZ_LOG_ERROR("core: http.dietime only works on *nix systems\n");
+		RZ_LOG_ERROR("core: http.stop.after only works on *nix systems\n");
 #endif
 	}
 }

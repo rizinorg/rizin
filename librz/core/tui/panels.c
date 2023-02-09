@@ -4887,7 +4887,7 @@ void __init_sdb(RzCore *core) {
 	sdb_set(db, "Methods", "ic", 0);
 	sdb_set(db, "Relocs", "ir", 0);
 	sdb_set(db, "Headers", "iH", 0);
-	sdb_set(db, "File Hashes", "it", 0);
+	sdb_set(db, "File Hashes", "iT", 0);
 }
 
 void __init_almighty_db(RzCore *core) {

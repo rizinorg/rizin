@@ -1,10 +1,71 @@
 ### processthreadsapi.h ###
 
-LPPROCESS_INFORMATION=type
-type.LPPROCESS_INFORMATION=p
+_PROCESS_INFORMATION=struct
+struct._PROCESS_INFORMATION=hProcess,hThread,dwProcessId,dwThreadId
+struct._PROCESS_INFORMATION.hProcess=HANDLE,0,0
+struct._PROCESS_INFORMATION.hThread=HANDLE,4,0
+struct._PROCESS_INFORMATION.dwProcessId=DWORD,8,0
+struct._PROCESS_INFORMATION.dwThreadId=DWORD,12,0
 
-LPSTARTUPINFOA=type
-type.LPSTARTUPINFOA=p
+PROCESS_INFORMATION=typedef
+typedef.PROCESS_INFORMATION=struct _PROCESS_INFORMATION
 
-LPSTARTUPINFOW=type
-type.LPSTARTUPINFOW=p
+PPROCESS_INFORMATION=typedef
+typedef.PPROCESS_INFORMATION=struct _PROCESS_INFORMATION*
+
+LPPROCESS_INFORMATION=typedef
+typedef.LPPROCESS_INFORMATION=struct _PROCESS_INFORMATION*
+
+_STARTUPINFOA=struct
+struct._STARTUPINFOA=cb,lpReserved,lpDesktop,lpTitle,dwX,dwY,dwXSize,dwYSize,dwXCountChars,dwYCountChars,dwFillAttribute,dwFlags,wShowWindow,cbReserved2,lpReserved2,hStdInput,hStdOutput,hStdError
+struct._STARTUPINFOA.cb=DWORD,0,0
+struct._STARTUPINFOA.lpReserved=LPSTR,4,0
+struct._STARTUPINFOA.lpDesktop=LPSTR,8,0
+struct._STARTUPINFOA.lpTitle=LPSTR,12,0
+struct._STARTUPINFOA.dwX=DWORD,16,0
+struct._STARTUPINFOA.dwY=DWORD,20,0
+struct._STARTUPINFOA.dwXSize=DWORD,24,0
+struct._STARTUPINFOA.dwYSize=DWORD,28,0
+struct._STARTUPINFOA.dwXCountChars=DWORD,32,0
+struct._STARTUPINFOA.dwYCountChars=DWORD,36,0
+struct._STARTUPINFOA.dwFillAttribute=DWORD,40,0
+struct._STARTUPINFOA.dwFlags=DWORD,44,0
+struct._STARTUPINFOA.wShowWindow=WORD,48,0
+struct._STARTUPINFOA.cbReserved2=WORD,50,0
+struct._STARTUPINFOA.lpReserved2=LPBYTE,52,0
+struct._STARTUPINFOA.hStdInput=HANDLE,56,0
+struct._STARTUPINFOA.hStdOutput=HANDLE,60,0
+struct._STARTUPINFOA.hStdError=HANDLE,64,0
+
+STARTUPINFOA=typedef
+typedef.STARTUPINFOA=struct _STARTUPINFOA
+
+LPSTARTUPINFOA=typedef
+typedef.LPSTARTUPINFOA=struct _STARTUPINFOA*
+
+_STARTUPINFOW=struct
+struct._STARTUPINFOW=cb,lpReserved,lpDesktop,lpTitle,dwX,dwY,dwXSize,dwYSize,dwXCountChars,dwYCountChars,dwFillAttribute,dwFlags,wShowWindow,cbReserved2,lpReserved2,hStdInput,hStdOutput,hStdError
+struct._STARTUPINFOW.cb=DWORD,0,0
+struct._STARTUPINFOW.lpReserved=LPWSTR,4,0
+struct._STARTUPINFOW.lpDesktop=LPWSTR,8,0
+struct._STARTUPINFOW.lpTitle=LPWSTR,12,0
+struct._STARTUPINFOW.dwX=DWORD,16,0
+struct._STARTUPINFOW.dwY=DWORD,20,0
+struct._STARTUPINFOW.dwXSize=DWORD,24,0
+struct._STARTUPINFOW.dwYSize=DWORD,28,0
+struct._STARTUPINFOW.dwXCountChars=DWORD,32,0
+struct._STARTUPINFOW.dwYCountChars=DWORD,36,0
+struct._STARTUPINFOW.dwFillAttribute=DWORD,40,0
+struct._STARTUPINFOW.dwFlags=DWORD,44,0
+struct._STARTUPINFOW.wShowWindow=WORD,48,0
+struct._STARTUPINFOW.cbReserved2=WORD,50,0
+struct._STARTUPINFOW.lpReserved2=LPBYTE,52,0
+struct._STARTUPINFOW.hStdInput=HANDLE,56,0
+struct._STARTUPINFOW.hStdOutput=HANDLE,60,0
+struct._STARTUPINFOW.hStdError=HANDLE,64,0
+
+STARTUPINFOW=typedef
+typedef.STARTUPINFOW=struct _STARTUPINFOW
+
+LPSTARTUPINFOW=typedef
+typedef.LPSTARTUPINFOW=struct _STARTUPINFOW

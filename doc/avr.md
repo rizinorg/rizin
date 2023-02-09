@@ -10,14 +10,6 @@ Install SDK from Arduino:
 	https://www.arduino.cc/en/Main/Software
 	echo 'PATH="/Applications/Arduino.app//Contents/Java/hardware/tools/avr/bin/:$PATH"' >> ~/.profile
 
-Install avarice, the gdbserver <-> jtag:
-
-	rz-pm -i avarice
-
-Run the proxy:
-
-	rz-pm -r avarice --jtag /dev/tty.wch* --mkI :4242
-
 Using GDB:
 
 	(avr-gdb) target remote :4242

@@ -43,9 +43,11 @@ static bool shared_context_init(SharedContext *context, RzAnalysis *analysis_a, 
 	RzThreadQueue *unmatch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
 	if (!lock_a || !lock_b || !queue || !matches || !unmatch) {
 		rz_th_lock_free(lock_a);
+		lock_a = NULL;
 		rz_th_lock_free(lock_b);
 		rz_th_queue_free(queue);
 		rz_th_queue_free(matches);
+		rz_th_queue_free(unmatch);
 		return false;
 	}
 	context->queue = queue;

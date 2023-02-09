@@ -1287,7 +1287,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		__print_prompt();
 	}
 	rz_cons_break_push(NULL, NULL);
-	rz_cons_enable_mouse(I.hud);
 	for (;;) {
 		yank_flag = 0;
 		if (rz_cons_is_breaked()) {

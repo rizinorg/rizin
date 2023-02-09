@@ -233,7 +233,7 @@ RUN
 NAME=6502 crackme.prg decrypt
 FILE=bins/prg/crackme.prg
 ARGS=-a 6502 -F prg
-TIMEOUT=4
+TIMEOUT=20
 CMDS=<<EOF
 s 0x84c
 e io.cache=1

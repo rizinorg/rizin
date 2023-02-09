@@ -441,7 +441,7 @@ static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,1,<<,!,r%u%c,&=", rsB(), rdB(1));
 		return 0;
 	case H8300_BTST_R2R8: /*TODO*/
-		//¬ (<Bit No.> of <EAd>) → Z, extract bit value and shift it back
+		// ¬ (<Bit No.> of <EAd>) → Z, extract bit value and shift it back
 		rz_strbuf_appendf(&op->esil, "0x7,r%u%c,&,0x7,r%u%c,&,1,<<,r%u%c,&,>>,!,Z,=",
 			rsB(), rsB(), rdB(1));
 		return 0;

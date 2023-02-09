@@ -1151,3 +1151,23 @@ mnemonic: adds
 mnemonic: mov
 EOF
 RUN
+
+NAME=arm32 function is NOT cut off when setting lr with add before bx
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 10402de90040a0e100e08fe214ff2fe11080bde8
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 (int32_t arg1);
+|           ; arg int32_t arg1 @ r0
+|           0x00000000      push  {r4, lr}
+|           0x00000004      mov   r4, r0                               ; arg1
+|           0x00000008      add   lr, pc, 0
+|           0x0000000c      bx    r4
+\           0x00000010      pop   {r4, pc}
+EOF
+RUN

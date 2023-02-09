@@ -4913,7 +4913,7 @@ BOOL GetDefaultPrinterW(LPWSTR pszBuffer, int *pcchBuffer);
 INT ldap_parse_vlv_controlW(PLDAP ExternalHandle, PLDAPControlW *Control, PULONG TargetPos, PULONG ListCount, PBERVAL *Context, PINT ErrCode);
 EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 void SHGetSettings(unknown_t lpsfs, unknown_t dwMask);
-NTSTATUS NtNotifyChangeMultipleKeys(HANDLE MasterKeyHandle, ULONG Count, unknown_t *SubordinateObjects, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, ULONG CompletionFilter, BOOLEAN WatchTree, PVOID Buffer, ULONG BufferSize, BOOLEAN Asynchronous);
+NTSTATUS NtNotifyChangeMultipleKeys(HANDLE MasterKeyHandle, ULONG Count, OBJECT_ATTRIBUTES *SubordinateObjects, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, ULONG CompletionFilter, BOOLEAN WatchTree, PVOID Buffer, ULONG BufferSize, BOOLEAN Asynchronous);
 ULONG ldap_simple_bind(LDAP *ld, const PSTR dn, const PSTR passwd);
 HRESULT StrRetToBufW(unknown_t *pstr, unknown_t pidl, LPWSTR pszBuf, UINT cchBuf);
 BOOL SymFromName(HANDLE hProcess, PCSTR Name, PSYMBOL_INFO Symbol);

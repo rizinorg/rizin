@@ -270,10 +270,10 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 		}
 #endif
 		char *tmp = rz_str_newf(fmt, RZ_SYS_DIR, input);
+		free(input);
 		if (!tmp) {
 			return;
 		}
-		free(input);
 		input = tmp;
 	}
 	char *einput = rz_path_home_expand(input);

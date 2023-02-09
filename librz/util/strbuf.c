@@ -120,7 +120,7 @@ RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t l) {
  * \return      false when fails to to cut the current buffer into a substring
  */
 RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, size_t from, size_t len) {
-	rz_return_val_if_fail(sb && from >= 0 && len >= 0, false);
+	rz_return_val_if_fail(sb, false);
 	if (from >= sb->len) {
 		// trying to cut outside the buf
 		return !sb->len && !from; // but it's fine if both are 0

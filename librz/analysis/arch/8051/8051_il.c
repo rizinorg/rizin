@@ -443,7 +443,9 @@ RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL c
 		return NULL;
 	}
 
-	return i_op_dispatch(op);
+	RzILOpEffect *eff = i_op_dispatch(op);
+	free(op);
+	return eff;
 }
 
 #include "rz_il/rz_il_opbuilder_end.h"

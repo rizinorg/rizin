@@ -1306,6 +1306,10 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		ta->next = main_arena->next;
 		while (GH(is_arena)(core, m_arena, ta->next) && ta->next != m_arena) {
 			ut64 ta_addr = ta->next;
+			/* If the pointer is equal to unsigned -1, we assume it is invalid */
+			if (ta->next == GHT_MAX) {
+				break;
+			}
 			if (!GH(rz_heap_update_main_arena)(core, ta->next, ta)) {
 				goto end;
 			}
@@ -1483,11 +1487,11 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	if (tcache) {
 		offset = 16;
 		const int fc_offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
-		base = m_arena + offset + SZ * bin_num * 2 + 10 * SZ;
+		base = m_arena + offset + SZ * (ut64)bin_num * 2 + 10 * SZ;
 		initial_brk = ((brk_start >> 12) << 12) + fc_offset;
 	} else {
 		offset = 12 * SZ + sizeof(int) * 2;
-		base = m_arena + offset + SZ * bin_num * 2 - SZ * 2;
+		base = m_arena + offset + SZ * (ut64)bin_num * 2 - SZ * 2;
 		initial_brk = (brk_start >> 12) << 12;
 	}
 	bin->addr = base;

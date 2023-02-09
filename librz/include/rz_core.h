@@ -710,7 +710,7 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNUL
 RZ_API bool rz_core_analysis_sigdb_apply(RZ_NONNULL RzCore *core, RZ_NULLABLE int *n_applied, RZ_NULLABLE const char *filter);
 RZ_API void rz_core_analysis_sigdb_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTable *table);
 RZ_API RzList /*<RzAnalysisCycleHook *>*/ *rz_core_analysis_cycles(RzCore *core, int ccl);
-RZ_API RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
+RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_core_analysis_calls(RZ_NONNULL RzCore *core, bool imports_only);
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member);

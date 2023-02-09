@@ -29,7 +29,3 @@ install_man(
   'man/rz-sign.1',
   'man/rz-esil.7',
 )
-if get_option('enable_rz_pm')
-  subdir('rz-pm')
-  install_man('man/rz-pm.1')
-endif
