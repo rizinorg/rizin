@@ -263,38 +263,54 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 
 static int level = 0;
 static st64 delta = 0;
+// output is used to store the result of printCmds
+// and avoid duplicated analysis while j and k is pressed
+static char *output = NULL;
+// output_mode labels which printCmds' result is stored in output
+static int output_mode = -1;
+static int output_addr = -1;
 static int option = 0;
 static int variable_option = 0;
 static int printMode = 0;
 static bool selectPanel = false;
 
 static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
-	const ut64 addr = (level != 0 && level != 1)
+	ut64 addr = (level != 0 && level != 1)
 		? core->offset
 		: var_functions_show(core, option, 0, colpos);
-	// RzAnalysisFunction* fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	int h, w = rz_cons_get_size(&h);
-	// int sz = (fcn)? RZ_MIN (rz_analysis_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
-	const char *cmd;
-	if (printMode > 0 && printMode < lastPrintMode) {
-		cmd = printCmds[printMode];
-	} else {
-		cmd = printCmds[printMode = 0];
+	if (printMode == 1) { // px $r
+		addr += delta * 16;
 	}
-	char *cmdf = rz_str_newf("%s @ 0x%" PFMT64x, cmd, addr + delta);
-	if (!cmdf) {
-		return;
+	if (output_mode != printMode || output_addr != addr) {
+		const char *cmd;
+		if (printMode > 0 && printMode < lastPrintMode) {
+			cmd = printCmds[printMode];
+		} else {
+			cmd = printCmds[printMode = 0];
+		}
+		char *cmdf = rz_str_newf("%s @ 0x%" PFMT64x, cmd, addr);
+		if (!cmdf) {
+			return;
+		}
+		RZ_FREE(output); // free the result of the last printCmds
+		output = rz_core_cmd_str(core, cmdf);
+		output_mode = printMode;
+		output_addr = addr;
+		free(cmdf);
 	}
-	char *output = rz_core_cmd_str(core, cmdf);
 	if (output) {
 		// 'h - 2' because we have two new lines in rz_cons_printf
-		char *out = rz_str_ansi_crop(output, 0, 0, w - colpos, h - 2);
+		char *out;
+		if (printMode == 1) {
+			out = rz_str_ansi_crop(output, 0, 0, w - colpos, h - 2);
+		} else {
+			out = rz_str_ansi_crop(output, 0, delta, w - colpos, h - 2 + delta);
+		}
 		rz_cons_printf("\n%s\n", out);
 		free(out);
-		RZ_FREE(output);
 	}
-	free(cmdf);
 }
 
 static const char *help_fun_visual[] = {
@@ -700,7 +716,6 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			selectPanel = !selectPanel;
 			if (!selectPanel) {
 				delta = 0;
-				printMode = 0;
 			}
 			break;
 		case ':': {
@@ -787,6 +802,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			break;
 		case 'p':
 			printMode++;
+			delta = 0;
 			break;
 		case 'P':
 			if (printMode == 0) {
@@ -794,6 +810,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			} else {
 				printMode--;
 			}
+			delta = 0;
 			break;
 		case 'd':
 			rz_core_visual_define(core, "", 0);
@@ -839,8 +856,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		} break;
 		case 'j':
 			if (selectPanel) {
-				printMode = 1;
-				delta += 16;
+				delta += 1;
 			} else {
 				delta = 0;
 				switch (level) {
@@ -867,8 +883,9 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			break;
 		case 'k':
 			if (selectPanel) {
-				printMode = 1;
-				delta -= 16;
+				if (delta > 0) {
+					delta -= 1;
+				}
 			} else {
 				delta = 0;
 				switch (level) {
@@ -943,6 +960,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		}
 	}
 beach:
+	RZ_FREE(output);
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = olde_user;
 	core->cons->event_resize = olde;

@@ -897,7 +897,9 @@ static void ds_reflines_init(RzDisasmState *ds) {
 
 	lastaddr = UT64_MAX;
 
-	if (ds->show_lines_bb || ds->pj) {
+	// refline info is needed when it is shown as ascii,
+	// or returned as part of a json or C struct representation.
+	if (ds->show_lines_bb || ds->vec || ds->pj) {
 		ds_reflines_fini(ds);
 		analysis->reflines = rz_analysis_reflines_get(analysis,
 			ds->addr, ds->buf, ds->len, ds->l,
