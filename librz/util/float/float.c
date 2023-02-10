@@ -729,8 +729,8 @@ RZ_API bool rz_float_set_sign(RZ_NONNULL RzFloat *f, bool new_sign) {
 
 /**
  * \brief return the unsigned value of exponent part bitvector, aka biased exp in ieee
- * @param f float
- * @return biased exponent value, as unsigned integer
+ * \param f float
+ * \return biased exponent value, as unsigned integer
  */
 RZ_API RZ_OWN ut32 rz_float_get_exponent_val(RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, 0);
