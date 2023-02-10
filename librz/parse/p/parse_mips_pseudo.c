@@ -170,10 +170,12 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 
 	RzRegex var_re;
 	if (rz_regex_comp(&var_re, re_str, RZ_REGEX_EXTENDED | RZ_REGEX_ICASE) != 0) {
+		rz_regex_fini(&var_re);
 		return tstr;
 	}
 	RzRegexMatch match[4];
 	if (rz_regex_exec(&var_re, tstr, RZ_ARRAY_SIZE(match), match, 0) != 0) {
+		rz_regex_fini(&var_re);
 		return tstr;
 	}
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(match); i++) {

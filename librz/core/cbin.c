@@ -5255,7 +5255,7 @@ RZ_API bool rz_core_bin_archs_print(RZ_NONNULL RzBin *bin, RZ_NONNULL RzCmdState
 		struct arch_ctx ctx = { 0 };
 		ctx.offset = obj->boffset;
 		ctx.size = obj->obj_size;
-		ctx.arch = info ? info->arch : "unk_0";
+		ctx.arch = (info && info->arch) ? info->arch : "unk_0";
 		ctx.bits = info ? info->bits : 0;
 		ctx.machine = info ? info->machine : "unknown_machine";
 

@@ -87,8 +87,6 @@ RUN
 NAME=o =
 FILE=malloc://1024
 CMDS=<<EOF
-e file.nowarn=true
-e file.loadmethod=append
 o =;ol~?
 EOF
 EXPECT=<<EOF

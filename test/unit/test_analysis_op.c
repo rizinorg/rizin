@@ -124,9 +124,11 @@ bool test_rz_core_analysis_bytes() {
 
 bool test_rz_core_print_disasm() {
 	RzCore *core = rz_core_new();
+	rz_io_open_at(core->io, "malloc://0x100", RZ_PERM_RX, 0644, 0, NULL); // needed to get arrow info (is_valid_offset checks)
 	rz_core_set_asm_configs(core, "x86", 64, 0);
+	rz_config_set_b(core->config, "asm.lines", false); // arrow info in struct, but not in textual disasm
 	ut8 buf[128];
-	int len = rz_hex_str2bin("554889e5897dfc", buf);
+	int len = rz_hex_str2bin("554889e5897dfcebf8", buf);
 	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
 	RzCoreDisasmOptions options = {
 		.vec = vec,
@@ -135,7 +137,7 @@ bool test_rz_core_print_disasm() {
 	mu_assert_notnull(vec, "rz_core_print_disasm vec not null");
 	rz_core_print_disasm(core, 0, buf, len, len, NULL, &options);
 
-	mu_assert_eq(rz_pvector_len(vec), 3, "rz_core_print_disasm len");
+	mu_assert_eq(rz_pvector_len(vec), 4, "rz_core_print_disasm len");
 	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);
 	mu_assert_eq(t->offset, 0, "rz_core_print_disasm offset");
 	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
@@ -155,6 +157,13 @@ bool test_rz_core_print_disasm() {
 	mu_assert_eq(t->arrow, UT64_MAX, "rz_core_print_disasm arrow");
 	mu_assert_streq_free(rz_str_trim_dup(t->text),
 		"\x1b[32m0x00000004\x1b[0m      \x1b[37mmov\x1b[0m\x1b[37m   \x1b[0m\x1b[37mdword\x1b[0m\x1b[37m [\x1b[0m\x1b[36mrbp\x1b[0m\x1b[37m \x1b[0m\x1b[37m-\x1b[0m\x1b[37m \x1b[0m\x1b[33m4\x1b[0m\x1b[37m], \x1b[0m\x1b[36medi\x1b[0m\x1b[0m\x1b[0m",
+		"rz_core_print_disasm text");
+
+	t = rz_pvector_at(vec, 3);
+	mu_assert_eq(t->offset, 7, "rz_core_print_disasm offset");
+	mu_assert_eq(t->arrow, 1, "rz_core_print_disasm arrow");
+	mu_assert_streq_free(rz_str_trim_dup(t->text),
+		"\x1b[32m0x00000007\x1b[0m      \x1b[32mjmp\x1b[0m\x1b[37m   \x1b[0m\x1b[33m1\x1b[0m\x1b[0m\x1b[0m",
 		"rz_core_print_disasm text");
 
 	rz_core_free(core);
