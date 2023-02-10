@@ -101,10 +101,11 @@ static ut64 buf_bytes_get_size(RzBuffer *b) {
 
 static st64 buf_bytes_seek(RzBuffer *b, st64 addr, int whence) {
 	struct buf_bytes_priv *priv = get_priv_bytes(b);
-	if (addr < 0 && (-addr) > (st64)priv->offset) {
+	st64 val = rz_seek_offset(priv->offset, priv->length, addr, whence);
+	if (val == -1) {
 		return -1;
 	}
-	return priv->offset = rz_seek_offset(priv->offset, priv->length, addr, whence);
+	return priv->offset = val;
 }
 
 static ut8 *buf_bytes_get_whole_buf(RzBuffer *b, ut64 *sz) {
