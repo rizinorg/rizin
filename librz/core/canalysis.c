@@ -4774,22 +4774,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 
 	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		rz_core_analysis_value_pointers(core, RZ_OUTPUT_MODE_STANDARD);
-		rz_core_task_yield(&core->tasks);
-		bool pcache = rz_config_get_b(core->config, "io.pcache");
-		rz_config_set_b(core->config, "io.pcache", false);
-		notify = "Emulate functions to find computed references";
-		rz_core_notify_begin(core, "%s", notify);
-		if (plugin_supports_esil) {
-			rz_core_analysis_esil_references_all_functions(core);
-		}
-		rz_core_notify_done(core, "%s", notify);
-		rz_core_task_yield(&core->tasks);
-		rz_config_set_b(core->config, "io.pcache", pcache);
-		if (rz_cons_is_breaked()) {
-			return false;
-		}
 	}
-
 	if (rz_config_get_i(core->config, "analysis.autoname")) {
 		notify = "Speculatively constructing a function name "
 			 "for fcn.* and sym.func.* functions (aan)";
@@ -4884,6 +4869,26 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 
 	if (!is_unknown_file(core)) {
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
+	}
+
+	if (experimental && plugin_supports_esil) {
+		rz_core_task_yield(&core->tasks);
+		bool pcache = rz_config_get_b(core->config, "io.pcache");
+		rz_config_set_b(core->config, "io.pcache", false);
+		notify = "Emulate functions to find computed references";
+		rz_core_notify_begin(core, "%s", notify);
+		bool reg_flags_defined = rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS) != 0;
+		rz_core_analysis_esil_references_all_functions(core);
+		if (!reg_flags_defined) {
+			// hack to not leak flags if not wanted
+			rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_REGISTERS);
+		}
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
+		rz_config_set_b(core->config, "io.pcache", pcache);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
 	}
 
 	return true;
