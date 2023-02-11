@@ -349,14 +349,16 @@ RZ_API bool rz_io_desc_get_base(RzIODesc *desc, ut64 *base) {
 }
 
 RZ_API int rz_io_desc_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
-	if (desc && buf && (rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET) == addr)) {
+	ut64 val = rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET);
+	if (desc && buf && val != UT64_MAX && val == addr) {
 		return rz_io_desc_read(desc, buf, len);
 	}
 	return 0;
 }
 
 RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int len) {
-	if (desc && buf && (rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET) == addr)) {
+	ut64 val = rz_io_desc_seek(desc, addr, RZ_IO_SEEK_SET);
+	if (desc && buf && val != UT64_MAX && val == addr) {
 		return rz_io_desc_write(desc, buf, len);
 	}
 	return 0;

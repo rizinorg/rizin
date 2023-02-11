@@ -34,8 +34,11 @@ static ut64 rz_io_def_mmap_seek(RzIO *io, RzIOMMapFileObj *mmo, ut64 offset, int
 	// NOTE: io->off should not be set here and code outside RzIO should not
 	// rely on it to get the current seek. They should use `rz_io_seek` instead.
 	// Keep it here until all use cases of io->off are converted.
-	io->off = rz_buf_seek(mmo->buf, offset, iowhence2buf(whence));
-	return io->off;
+	st64 val = rz_buf_seek(mmo->buf, offset, iowhence2buf(whence));
+	if (val == -1) {
+		return -1;
+	}
+	return io->off = val;
 }
 
 static void rz_io_def_mmap_free(RzIOMMapFileObj *mmo) {

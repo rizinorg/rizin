@@ -319,12 +319,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=oC ob fix
+NAME=malloc ob fix
 FILE=--
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-oC 1024
+o malloc://1024
 obl
 EOF
 EXPECT=<<EOF

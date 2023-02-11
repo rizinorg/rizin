@@ -172,7 +172,7 @@ bool test_map(void) {
 
 	ut8 buf[8];
 	r = rz_io_read_at(core->io, 0, buf, sizeof(buf));
-	mu_assert_true(r, "io read");
+	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "unmapped read");
 	r = rz_io_read_at(core->io, 0xfe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
@@ -253,10 +253,10 @@ bool test_cfile_close(void) {
 
 	ut8 buf[8];
 	r = rz_io_read_at(core->io, 0xfe, buf, sizeof(buf));
-	mu_assert_true(r, "io read");
+	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "direct map read after close");
 	r = rz_io_read_at(core->io, 0x22e, buf, sizeof(buf));
-	mu_assert_true(r, "io read");
+	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "direct map read with zeroes end after close");
 
 	rz_core_free(core);
@@ -498,7 +498,7 @@ bool test_cfile_close_manual_vfile_fd(void) {
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 0, "io maps count");
 
 	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
-	mu_assert_true(r, "io read");
+	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "manual vfile map read");
 
 	rz_core_free(core);
@@ -538,7 +538,7 @@ bool test_cfile_close_manual_vfile_map(void) {
 	// now everything should be gone, including the vfile map which indirectly pointed into the core file's vfile fd
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 0, "io maps count");
 	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
-	mu_assert_true(r, "io read");
+	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "manual vfile map read");
 
 	rz_core_free(core);
