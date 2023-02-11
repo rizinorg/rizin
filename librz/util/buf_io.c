@@ -31,7 +31,11 @@ static bool buf_io_fini(RzBuffer *b) {
 
 static st64 buf_io_seek(RzBuffer *b, st64 addr, int whence) {
 	BufIOPriv *priv = b->priv;
-	priv->offset = rz_seek_offset(priv->offset, 0, addr, whence);
+	st64 val = rz_seek_offset(priv->offset, 0, addr, whence);
+	if (val == -1) {
+		return -1;
+	}
+	priv->offset = val;
 	// can't express the seek right if the highest bit is set,
 	// but at least tell the caller there was no error:
 	return RZ_MIN(priv->offset, ST64_MAX);

@@ -1825,9 +1825,13 @@ static bool insert_mode_enabled(RzCore *core) {
 	case 'f':
 		if (visual->insertNibble != -1) {
 			char hexpair[3] = { visual->insertNibble, ch, 0 };
-			rz_core_write_hexpair(core, core->offset + core->print->cur, hexpair);
-			core->print->cur++;
+			bool res = rz_core_write_hexpair(core, core->offset + core->print->cur, hexpair);
 			visual->insertNibble = -1;
+			if (!res) {
+				RZ_LOG_ERROR("Cannot write at address %" PFMT64x ".\n", core->offset + core->print->cur);
+				break;
+			}
+			core->print->cur++;
 		} else {
 			visual->insertNibble = ch;
 		}
@@ -2449,7 +2453,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_cons_flush();
 			rz_cons_set_raw(0);
 			if (ch == 'I') {
-				strcpy(buf, "wow ");
+				strcpy(buf, "wb ");
 				rz_line_set_prompt("insert hexpair block: ");
 				if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
@@ -2477,7 +2481,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				if (core->print->ocur != -1) {
 					int bs = RZ_ABS(core->print->cur - core->print->ocur) + 1;
 					core->blocksize = bs;
-					strcpy(buf, "wow ");
+					strcpy(buf, "wb ");
 				} else {
 					strcpy(buf, "wx ");
 				}

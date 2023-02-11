@@ -64,17 +64,26 @@ typedef enum {
 /* utils */
 
 /// change cur according to addr and whence (RZ_BUF_SET/RZ_BUF_CUR/RZ_BUF_END)
-static inline ut64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) {
+static inline st64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) {
 	switch (whence) {
 	case RZ_BUF_CUR:
-		return cur + (ut64)addr;
+		if (ST64_ADD_OVFCHK((st64)cur, addr)) {
+			return -1;
+		}
+		return cur + addr;
 	case RZ_BUF_SET:
+		if ((st64)addr < 0) {
+			return -1;
+		}
 		return addr;
 	case RZ_BUF_END:
-		return length + (ut64)addr;
+		if (ST64_ADD_OVFCHK((st64)length, addr)) {
+			return -1;
+		}
+		return length + addr;
 	default:
 		rz_warn_if_reached();
-		return cur;
+		return -1;
 	}
 }
 

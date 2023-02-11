@@ -31,7 +31,7 @@ static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_fl
 	RzVector *skyline = &io->map_skyline.v;
 	ut64 addr = vaddr;
 	size_t i;
-	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
+	bool ret = false, wrap = !prefix_mode && vaddr + len < vaddr;
 #define CMP(addr, part) ((addr) < rz_itv_end(((RzSkylineItem *)(part))->itv) - 1 ? -1 : (addr) > rz_itv_end(((RzSkylineItem *)(part))->itv) - 1 ? 1 \
 																		: 0)
 	// Let i be the first skyline part whose right endpoint > addr
@@ -49,7 +49,7 @@ static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_fl
 	while (i < rz_vector_len(skyline)) {
 		const RzSkylineItem *part = rz_vector_index_ptr(skyline, i);
 		// Right endpoint <= addr
-		if (rz_itv_end(part->itv) - 1 < addr) {
+		if (rz_itv_end(part->itv) == 0 || rz_itv_end(part->itv) - 1 < addr) {
 			i++;
 			if (wrap && i == rz_vector_len(skyline)) {
 				wrap = false;
@@ -84,9 +84,7 @@ static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_fl
 					break;
 				}
 			} else {
-				if (result != len1) {
-					ret = false;
-				}
+				ret = result == len1;
 				addr += len1;
 			}
 		} else if (prefix_mode) {
@@ -306,7 +304,7 @@ RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		? rz_io_vread_at_mapped(io, addr, buf, len)
 		: rz_io_pread_at(io, addr, buf, len) > 0;
 	if (io->cached & RZ_PERM_R) {
-		(void)rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
 }
@@ -327,7 +325,7 @@ RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		ret = rz_io_pread_at(io, addr, buf, len) > 0;
 	}
 	if (io->cached & RZ_PERM_R) {
-		(void)rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
 }
