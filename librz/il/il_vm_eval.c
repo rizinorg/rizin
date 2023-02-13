@@ -134,6 +134,7 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_LOAD] = rz_il_handler_load,
 	[RZ_IL_OP_LOADW] = rz_il_handler_loadw,
 
+	// Fbasic Theory
 	[RZ_IL_OP_FLOAT] = rz_il_handler_float,
 	[RZ_IL_OP_FBITS] = rz_il_handler_fbits,
 	[RZ_IL_OP_IS_FINITE] = rz_il_handler_is_finite,
@@ -158,20 +159,19 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FMOD] = rz_il_handler_fmod,
 	[RZ_IL_OP_FMAD] = rz_il_handler_fmad,
 
-	// TODO : uncomment them after implement it
-	/**
-	[RZ_IL_OP_FHYPOT] = rz_il_handler_fhypot,
-	[RZ_IL_OP_FPOW] = rz_il_handler_fpow,
-	[RZ_IL_OP_FROOTN] = rz_il_handler_frootn,
-	[RZ_IL_OP_FPOWN] = rz_il_handler_fpown,
-	[RZ_IL_OP_FCOMPOUND] = rz_il_handler_fcompound,
-
 	[RZ_IL_OP_FCAST_INT] = rz_il_handler_fcast_int,
 	[RZ_IL_OP_FCAST_SINT] = rz_il_handler_fcast_sint,
 	[RZ_IL_OP_FCAST_FLOAT] = rz_il_handler_fcast_float,
 	[RZ_IL_OP_FCAST_SFLOAT] = rz_il_handler_fcast_sfloat,
 	[RZ_IL_OP_FCONVERT] = rz_il_handler_fconvert,
-	**/
+
+	// Float Theory
+	// TODO : Implement other Float Theory operations
+	[RZ_IL_OP_FHYPOT] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FPOW] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FROOTN] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FPOWN] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FCOMPOUND] = rz_il_handler_pure_unimplemented,
 };
 
 RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX] = {
