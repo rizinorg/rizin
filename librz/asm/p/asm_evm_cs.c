@@ -59,13 +59,13 @@ fin:
 	return ret;
 }
 
-RzAsmPlugin rz_asm_plugin_sparc_cs = {
-	.name = "sparc",
-	.desc = "Capstone SPARC disassembler",
+RzAsmPlugin rz_asm_plugin_evm_cs = {
+	.name = "evm",
+	.desc = "Capstone EVM disassembler",
 	.license = "BSD",
-	.arch = "sparc",
+	.arch = "evm",
 	.cpus = "v9",
-	.bits = 32 | 64,
+	.bits = 256,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics
@@ -74,7 +74,7 @@ RzAsmPlugin rz_asm_plugin_sparc_cs = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
-	.data = &rz_asm_plugin_sparc_cs,
+	.data = &rz_asm_plugin_evm_cs,
 	.version = RZ_VERSION
 };
 #endif

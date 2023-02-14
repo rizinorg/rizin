@@ -6,7 +6,7 @@
 #include <capstone/capstone.h>
 #include <capstone/sparc.h>
 
-#if CS_API_MAJOR < 2
+#if CS_API_MAJOR < 5
 #error Old Capstone not supported
 #endif
 
@@ -398,13 +398,13 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
-	.name = "sparc",
-	.desc = "Capstone SPARC analysis",
+RzAnalysisPlugin rz_analysis_plugin_evm_cs = {
+	.name = "evm",
+	.desc = "Capstone EVM analysis",
 	.esil = false,
 	.license = "BSD",
-	.arch = "sparc",
-	.bits = 32 | 64,
+	.arch = "evm",
+	.bits = 256,
 	.archinfo = archinfo,
 	.op = &analop,
 	.get_reg_profile = &get_reg_profile,
@@ -413,7 +413,7 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANALYSIS,
-	.data = &rz_analysis_plugin_sparc_cs,
+	.data = &rz_analysis_plugin_evm_cs,
 	.version = RZ_VERSION
 };
 #endif

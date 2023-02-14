@@ -2214,6 +2214,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_cr16;
 extern RzAnalysisPlugin rz_analysis_plugin_cris;
 extern RzAnalysisPlugin rz_analysis_plugin_dalvik;
 extern RzAnalysisPlugin rz_analysis_plugin_ebc;
+extern RzAnalysisPlugin rz_analysis_plugin_evm_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_gb;
 extern RzAnalysisPlugin rz_analysis_plugin_h8300;
 extern RzAnalysisPlugin rz_analysis_plugin_hexagon;
