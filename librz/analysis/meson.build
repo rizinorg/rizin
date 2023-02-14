@@ -10,6 +10,7 @@ analysis_plugins_list = [
   'cr16',
   'dalvik',
   'ebc',
+  'evm_cs',
   'gb',
   'h8300',
   'hexagon',

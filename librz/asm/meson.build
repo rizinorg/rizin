@@ -12,6 +12,7 @@ asm_plugins_list = [
   'dalvik',
   'dcpu16',
   'ebc',
+  'evm_cs',
   'gb',
   'h8300',
   'hexagon',

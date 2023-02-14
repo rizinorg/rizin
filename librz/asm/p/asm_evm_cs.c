@@ -60,7 +60,7 @@ fin:
 }
 
 RzAsmPlugin rz_asm_plugin_evm_cs = {
-	.name = "evm",
+	.name = "evm.cs",
 	.desc = "Capstone EVM disassembler",
 	.license = "BSD",
 	.arch = "evm",
