@@ -98,6 +98,7 @@ rz_asm_sources = [
   'p/asm_dalvik.c',
   'p/asm_dcpu16.c',
   'p/asm_ebc.c',
+  'p/asm_evm_cs.c',
   'p/asm_gb.c',
   'p/asm_h8300.c',
   'p/asm_hexagon.c',

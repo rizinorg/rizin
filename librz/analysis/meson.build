@@ -121,6 +121,7 @@ rz_analysis_sources = [
   'p/analysis_cr16.c',
   'p/analysis_dalvik.c',
   'p/analysis_ebc.c',
+  'p/analysis_evm_cs.c',
   'p/analysis_gb.c',
   'p/analysis_h8300.c',
   'p/analysis_hexagon.c',
