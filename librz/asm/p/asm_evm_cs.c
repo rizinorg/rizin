@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2014-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2023 Yaroslav Yashin <yaroslav.yashin@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
