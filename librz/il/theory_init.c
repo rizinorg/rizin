@@ -48,6 +48,10 @@ void *rz_il_handler_var(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 		*type = RZ_IL_TYPE_PURE_BITVECTOR;
 		ret = rz_bv_dup(val->data.bv);
 		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		*type = RZ_IL_TYPE_PURE_FLOAT;
+		ret = rz_float_dup(val->data.f);
+		break;
 	default:
 		break;
 	}

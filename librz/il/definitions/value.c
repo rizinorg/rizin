@@ -51,6 +51,21 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b) {
 }
 
 /**
+ * Returns a new RzILVal (Float type)
+ * \param f RzFloat to set
+ * \return val RzILVal, pointer to this value
+ */
+RZ_API RZ_OWN RzILVal *rz_il_value_new_float(RZ_NONNULL RzFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILVal *ret = rz_il_value_new(RZ_IL_TYPE_PURE_FLOAT);
+	if (!ret) {
+		return NULL;
+	}
+	ret->data.f = f;
+	return ret;
+}
+
+/**
  * Create a value of the given sort filled with all zeroes or false
  */
 RZ_API RZ_OWN RzILVal *rz_il_value_new_zero_of(RzILSortPure sort) {
@@ -73,6 +88,13 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_zero_of(RzILSortPure sort) {
 			return NULL;
 		}
 		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		ret->data.f = rz_float_new_zero(sort.props.f.format);
+		if (!ret->data.f) {
+			rz_il_value_free(ret);
+			return NULL;
+		}
+		break;
 	}
 	return ret;
 }
@@ -86,6 +108,7 @@ RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL const RzILVal *val) {
 	rz_return_val_if_fail(val, NULL);
 	RzILBool *b = NULL;
 	RzBitVector *bv = NULL;
+	RzFloat *f = NULL;
 
 	switch (val->type) {
 	case RZ_IL_TYPE_PURE_BOOL:
@@ -94,6 +117,9 @@ RZ_API RZ_OWN RzILVal *rz_il_value_dup(RZ_NONNULL const RzILVal *val) {
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		bv = rz_bv_dup(val->data.bv);
 		return bv ? rz_il_value_new_bitv(bv) : NULL;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		f = rz_float_dup(val->data.f);
+		return f ? rz_il_value_new_float(f) : NULL;
 	default:
 		rz_warn_if_reached();
 		return NULL;
@@ -115,6 +141,9 @@ RZ_API void rz_il_value_free(RZ_NULLABLE RzILVal *val) {
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		rz_bv_free(val->data.bv);
 		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		rz_float_free(val->data.f);
+		break;
 	default:
 		break;
 	}
@@ -129,6 +158,9 @@ RZ_API RzILSortPure rz_il_value_get_sort(RZ_NONNULL RzILVal *val) {
 	r.type = val->type;
 	if (val->type == RZ_IL_TYPE_PURE_BITVECTOR) {
 		r.props.bv.length = rz_bv_len(val->data.bv);
+	}
+	if (val->type == RZ_IL_TYPE_PURE_FLOAT) {
+		r.props.f.format = val->data.f->r;
 	}
 	return r;
 }
@@ -145,6 +177,8 @@ RZ_API RZ_OWN RzBitVector *rz_il_value_to_bv(RZ_NONNULL const RzILVal *val) {
 		return rz_bv_new_from_ut64(1, val->data.b->b ? 1 : 0);
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_bv_dup(val->data.bv);
+	case RZ_IL_TYPE_PURE_FLOAT:
+		return rz_bv_dup(val->data.f->s);
 	default:
 		rz_warn_if_reached();
 		return NULL;
@@ -164,6 +198,8 @@ RZ_API bool rz_il_value_eq(RZ_NONNULL const RzILVal *a, RZ_NONNULL const RzILVal
 		return a->data.b->b == b->data.b->b;
 	case RZ_IL_TYPE_PURE_BITVECTOR:
 		return rz_bv_eq(a->data.bv, b->data.bv);
+	case RZ_IL_TYPE_PURE_FLOAT:
+		return rz_float_is_equal(a->data.f, b->data.f);
 	default:
 		rz_warn_if_reached();
 		return false;

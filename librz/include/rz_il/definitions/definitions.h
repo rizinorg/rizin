@@ -10,5 +10,6 @@
 #include <rz_il/definitions/value.h>
 #include <rz_il/definitions/variable.h>
 #include <rz_il/definitions/mem.h>
+#include <rz_il/definitions/float.h>
 
 #endif // RZ_IL_DEFINITIONS_H

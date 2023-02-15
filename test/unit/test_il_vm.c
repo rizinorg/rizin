@@ -868,6 +868,157 @@ static bool test_rzil_vm_op_compare() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_float() {
+	RzILVM *vm = rz_il_vm_new(0, 64, false);
+
+	// let f = 2.14 in
+	//   (ite (is_fneg f)
+	//	  (neg (fbits f))
+	//	  (fbits (fsucc f))
+	RzILOpBitVector *op;
+	op = rz_il_op_new_let("f",
+		rz_il_op_new_float_from_f64(2.14),
+		rz_il_op_new_ite(
+			rz_il_op_new_is_fneg(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE)),
+			rz_il_op_new_neg(
+				rz_il_op_new_fbits(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE))),
+			rz_il_op_new_fbits(
+				rz_il_op_new_fsucc(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE)))));
+
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, op);
+	rz_il_op_pure_free(op);
+	mu_assert_eq(rz_bv_to_ut64(bv), 0x40011EB851EB8520, "test let float operations");
+	rz_bv_free(bv);
+
+	// let x = 11.25 in
+	// let y = 15.02 in
+	//  (fmul (fabs (x - y)) x)
+	RzILOpFloat *fop;
+	fop = rz_il_op_new_let("x",
+		rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_64,
+			rz_il_op_new_bitv_from_ut64(64, 0x4026800000000000)),
+		rz_il_op_new_let("y",
+			rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_64,
+				rz_il_op_new_bitv_from_ut64(64, 0x402E0A3D70A3D70A)),
+			rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+				rz_il_op_new_fabs(
+					(rz_il_op_new_fsub(RZ_FLOAT_RMODE_RNE,
+						rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE),
+						rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE)))),
+				rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE))));
+
+	RzFloat *expect_f = rz_float_new_from_f64((15.02 - 11.25) * 11.25);
+	RzFloat *act_f = rz_il_evaluate_float(vm, fop);
+
+	rz_il_op_pure_free(fop);
+	mu_assert_false(rz_float_cmp(expect_f, act_f), "float calc gets the same result in c");
+	rz_float_free(expect_f);
+	rz_float_free(act_f);
+
+	// test float -> bool operations
+	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_64, false);
+	RzFloat *nan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_64);
+	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64);
+
+	// bind value to var, ownership transfered
+	rz_il_vm_create_global_var(vm, "inf", rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64));
+	rz_il_vm_create_global_var(vm, "nan", rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64));
+	rz_il_vm_create_global_var(vm, "zero", rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64));
+	rz_il_vm_set_global_var(vm, "inf", rz_il_value_new_float(pinf));
+	rz_il_vm_set_global_var(vm, "nan", rz_il_value_new_float(nan));
+	rz_il_vm_set_global_var(vm, "zero", rz_il_value_new_float(zero));
+
+	// is true (and (and is_inf is_nan) is_zero)
+	RzILOpBool *bop = rz_il_op_new_bool_and(
+		rz_il_op_new_bool_and(
+			rz_il_op_new_is_inf(rz_il_op_new_var("inf", RZ_IL_VAR_KIND_GLOBAL)),
+			rz_il_op_new_is_nan(rz_il_op_new_var("nan", RZ_IL_VAR_KIND_GLOBAL))),
+		rz_il_op_new_is_fzero(rz_il_op_new_var("zero", RZ_IL_VAR_KIND_GLOBAL)));
+
+	RzILBool *bool_ = rz_il_evaluate_bool(vm, bop);
+	rz_il_op_pure_free(bop);
+	mu_assert_true(bool_->b, "test fbasic bool operations");
+	rz_il_bool_free(bool_);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+static bool test_rzil_vm_op_fcast() {
+	// cast of float
+	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzFloat *act_float;
+	RzFloat *expect_float;
+
+	// (cast-float 1)
+	RzILOpFloat *op1 = rz_il_op_new_fcast_float(
+		RZ_FLOAT_IEEE754_BIN_64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(64, 1));
+	act_float = rz_il_evaluate_float(vm, op1);
+	expect_float = rz_float_new_from_f64(1.0);
+	rz_il_op_pure_free(op1);
+	mu_assert_false(rz_float_cmp(act_float, expect_float), "cast-float 1");
+	rz_float_free(act_float);
+	rz_float_free(expect_float);
+
+	// (cast-sfloat -1)
+	op1 = rz_il_op_new_fcast_sfloat(
+		RZ_FLOAT_IEEE754_BIN_64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_st64(64, -1));
+	act_float = rz_il_evaluate_float(vm, op1);
+	expect_float = rz_float_new_from_f64(-1.0);
+	rz_il_op_pure_free(op1);
+	mu_assert_false(rz_float_cmp(act_float, expect_float), "cast-sfloat -1");
+	rz_float_free(act_float);
+	rz_float_free(expect_float);
+
+	// (cast-float -1)
+	op1 = rz_il_op_new_fcast_float(
+		RZ_FLOAT_IEEE754_BIN_64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(64, -1));
+	act_float = rz_il_evaluate_float(vm, op1);
+	expect_float = rz_float_new_from_ut64_as_f64(0x43F0000000000000);
+	rz_il_op_pure_free(op1);
+	mu_assert_false(rz_float_cmp(act_float, expect_float), "cast-float -1");
+	rz_float_free(act_float);
+	rz_float_free(expect_float);
+
+	// (cast-int (cast-float 1))
+	RzILOpBitVector *op2 = rz_il_op_new_fcast_int(
+		64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_fcast_float(
+			RZ_FLOAT_IEEE754_BIN_64,
+			RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_bitv_from_ut64(64, 1)));
+	RzBitVector *bv = rz_il_evaluate_bitv(vm, op2);
+	rz_il_op_pure_free(op2);
+	mu_assert_eq(rz_bv_to_ut64(bv), 1, "cast-int cast-float 1");
+	rz_bv_free(bv);
+
+	// (convert 64 (cast-float 32 1))
+	op1 = rz_il_op_new_fconvert(
+		RZ_FLOAT_IEEE754_BIN_64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_fcast_float(
+			RZ_FLOAT_IEEE754_BIN_32,
+			RZ_FLOAT_RMODE_RNE,
+			rz_il_op_new_bitv_from_ut64(32, 1)));
+	act_float = rz_il_evaluate_float(vm, op1);
+	expect_float = rz_float_new_from_f64(1.0);
+
+	rz_il_op_pure_free(op1);
+	mu_assert_false(rz_float_cmp(act_float, expect_float), "fconvert 64-float -> 32 float");
+	rz_float_free(expect_float);
+	rz_float_free(act_float);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -894,6 +1045,8 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_shiftr);
 	mu_run_test(test_rzil_vm_op_shiftl);
 	mu_run_test(test_rzil_vm_op_compare);
+	mu_run_test(test_rzil_vm_op_float);
+	mu_run_test(test_rzil_vm_op_fcast);
 	return tests_passed != tests_run;
 }
 
