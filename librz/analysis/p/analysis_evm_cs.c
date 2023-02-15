@@ -13,48 +13,6 @@
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC    insn->detail->sparc.cc
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
-	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
-	cs_sparc *x = &insn->detail->sparc;
-	for (i = 0; i < x->op_count; i++) {
-		cs_sparc_op *op = x->operands + i;
-		pj_o(pj);
-		switch (op->type) {
-		case SPARC_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
-			break;
-		case SPARC_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", op->imm);
-			break;
-		case SPARC_OP_MEM:
-			pj_ks(pj, "type", "mem");
-			if (op->mem.base != SPARC_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
-			}
-			pj_ki(pj, "disp", op->mem.disp);
-			break;
-		default:
-			pj_ks(pj, "type", "invalid");
-			break;
-		}
-		pj_end(pj); /* o operand */
-	}
-	pj_end(pj); /* a operands */
-	pj_end(pj);
-
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
-}
-
 static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
@@ -110,7 +68,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		return -1;
 	}
 
-	mode = CS_MODE_LITTLE_ENDIAN;
+	mode = CS_MODE_BIG_ENDIAN;
 	if (!strcmp(a->cpu, "v9")) {
 		mode |= CS_MODE_V9;
 	}
@@ -120,7 +78,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		omode = mode;
 	}
 	if (handle == 0) {
-		ret = cs_open(CS_ARCH_SPARC, mode, &handle);
+		ret = cs_open(CS_ARCH_EVM, mode, &handle);
 		if (ret != CS_ERR_OK) {
 			return -1;
 		}
@@ -131,9 +89,6 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {
-		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			opex(&op->opex, handle, insn);
-		}
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
@@ -325,60 +280,15 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	const char *p =
+	return strdup(
 		"=PC	pc\n"
+		"=BP	bp\n"
 		"=SP	sp\n"
-		"=BP	fp\n"
-		"=A0	i0\n"
-		"=A1	i1\n"
-		"=A2	i2\n"
-		"=A3	i3\n"
-		"=A4	i4\n"
-		"=A5	i5\n"
-		"=R0	i7\n"
-		"gpr	psr	.32	0	0\n"
-		"gpr	pc	.32	4	0\n"
-		"gpr	npc	.32	8	0\n"
-		"gpr	y	.32	12	0\n"
-		/* r0-r7 are global aka g0-g7 */
-		"gpr	g0	.32	16	0\n"
-		"gpr	g1	.32	20	0\n"
-		"gpr	g2	.32	24	0\n"
-		"gpr	g3	.32	28	0\n"
-		"gpr	g4	.32	32	0\n"
-		"gpr	g5	.32	36	0\n"
-		"gpr	g6	.32	40	0\n"
-		"gpr	g7	.32	44	0\n"
-		/* r8-15 are out (o0-o7) */
-		"gpr	o0	.32	48	0\n"
-		"gpr	o1	.32	52	0\n"
-		"gpr	o2	.32	56	0\n"
-		"gpr	o3	.32	60	0\n"
-		"gpr	o4	.32	64	0\n"
-		"gpr	o5	.32	68	0\n"
-		"gpr	o6	.32	72	0\n"
-		"gpr	sp	.32	72	0\n"
-		"gpr	o7	.32	76	0\n"
-		/* r16-23 are local (l0-l7) */
-		"gpr	l0	.32	80	0\n"
-		"gpr	l1	.32	84	0\n"
-		"gpr	l2	.32	88	0\n"
-		"gpr	l3	.32	92	0\n"
-		"gpr	l4	.32	96	0\n"
-		"gpr	l5	.32	100	0\n"
-		"gpr	l6	.32	104	0\n"
-		"gpr	l7	.32	108	0\n"
-		/* r24-31 are in (i0-i7) */
-		"gpr	i0	.32	112	0\n"
-		"gpr	i1	.32	116	0\n"
-		"gpr	i2	.32	120	0\n"
-		"gpr	i3	.32	124	0\n"
-		"gpr	i4	.32	128	0\n"
-		"gpr	i5	.32	132	0\n"
-		"gpr	i6	.32	136	0\n"
-		"gpr	fp	.32	136	0\n"
-		"gpr	i7	.32	140	0\n";
-	return strdup(p);
+		"=A0	r0\n"
+		"gpr	sp	.256	0	0\n" // stack pointer
+		"gpr	pc	.32	256	0\n" // program counter
+		"gpr	bp	.32	288	0\n" // base pointer // unused
+	);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

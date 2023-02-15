@@ -11,11 +11,6 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	cs_insn *insn;
 	int n = -1, ret = -1;
 	int mode = CS_MODE_BIG_ENDIAN;
-	if (a->cpu && *a->cpu) {
-		if (!strcmp(a->cpu, "v9")) {
-			mode |= CS_MODE_V9;
-		}
-	}
 	if (op) {
 		memset(op, 0, sizeof(RzAsmOp));
 		op->size = 4;
@@ -23,7 +18,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (cd != 0) {
 		cs_close(&cd);
 	}
-	ret = cs_open(CS_ARCH_SPARC, mode, &cd);
+	ret = cs_open(CS_ARCH_EVM, mode, &cd);
 	if (ret) {
 		goto fin;
 	}
@@ -64,9 +59,8 @@ RzAsmPlugin rz_asm_plugin_evm_cs = {
 	.desc = "Capstone EVM disassembler",
 	.license = "BSD",
 	.arch = "evm",
-	.cpus = "v9",
 	.bits = 256,
-	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics
 };
