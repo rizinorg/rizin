@@ -7,10 +7,11 @@
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(RzAsm *asm_context, RzAsmOp *op, const ut8 *buf, int len) {
+	RZ_LOG_DEBUG("%s\n", "asm_evm_cs.c:disassemble")
 	cs_insn *insn;
 	int n = -1, ret = -1;
-	int mode = CS_MODE_BIG_ENDIAN;
+	int mode = CS_MODE_LITTLE_ENDIAN;
 	if (op) {
 		memset(op, 0, sizeof(RzAsmOp));
 		op->size = 4;
@@ -26,8 +27,8 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!op) {
 		return 0;
 	}
-	if (a->big_endian) {
-		n = cs_disasm(cd, buf, len, a->pc, 1, &insn);
+	if (asm_context->big_endian) {
+		n = cs_disasm(cd, buf, len, asm_context->pc, 1, &insn);
 	}
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
@@ -49,7 +50,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	// TODO: remove the '$'<registername> in the string
 	cs_free(insn, n);
 beach:
-// cs_close (&cd);
+	cs_close(&cd);
 fin:
 	return ret;
 }
@@ -59,10 +60,10 @@ RzAsmPlugin rz_asm_plugin_evm_cs = {
 	.desc = "Capstone EVM disassembler",
 	.license = "BSD",
 	.arch = "evm",
-	.bits = 256,
+	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.mnemonics = mnemonics
+	// .mnemonics = mnemonics
 };
 
 #ifndef RZ_PLUGIN_INCORE
