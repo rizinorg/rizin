@@ -74,6 +74,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
+  '-DCAPSTONE_HAS_EVM',
 ]
 
 libcapstone = library('capstone', cs_files,
