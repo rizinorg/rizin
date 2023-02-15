@@ -877,8 +877,7 @@ static bool test_rzil_vm_op_float() {
 	//	  (fbits (fsucc f))
 	RzILOpBitVector *op;
 	op = rz_il_op_new_let("f",
-		rz_il_op_new_float(RZ_FLOAT_IEEE754_BIN_64,
-			rz_il_op_new_bitv_from_ut64(64, 0x40011EB851EB851F)),
+		rz_il_op_new_float_from_f64(2.14),
 		rz_il_op_new_ite(
 			rz_il_op_new_is_fneg(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE)),
 			rz_il_op_new_neg(

@@ -734,6 +734,8 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL Rz
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, ut32 n_bits);
 
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f32(float f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fbits(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_finite(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_nan(RZ_NONNULL RzILOpFloat *f);
