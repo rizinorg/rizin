@@ -186,7 +186,7 @@ void *rz_il_handler_fcast_sfloat(RzILVM *vm, RzILOpPure *op, RzILTypePure *type)
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, cast.bv);
 	RzFloatFormat format = cast.format;
 	RzFloatRMode mode = cast.mode;
-	RzFloat *ret = rz_float_cast_float(bv, format, mode);
+	RzFloat *ret = rz_float_cast_sfloat(bv, format, mode);
 
 	rz_bv_free(bv);
 

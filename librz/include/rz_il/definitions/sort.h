@@ -65,6 +65,15 @@ static inline RzILSortPure rz_il_sort_pure_bv(ut32 length) {
 	return r;
 }
 
+static inline RzILSortPure rz_il_sort_pure_float(RzFloatFormat format) {
+	RzILSortPure r = {
+		RZ_IL_TYPE_PURE_FLOAT,
+		{ { 0 } },
+	};
+	r.props.f.format = format;
+	return r;
+}
+
 RZ_API RZ_OWN char *rz_il_sort_pure_stringify(RzILSortPure sort);
 
 typedef enum {

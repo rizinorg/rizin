@@ -151,7 +151,7 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FORDER] = rz_il_handler_forder,
 	[RZ_IL_OP_FROUND] = rz_il_handler_fround,
 	[RZ_IL_OP_FSQRT] = rz_il_handler_fsqrt,
-	[RZ_IL_OP_FRSQRT] = rz_il_handler_frsqrt,
+	[RZ_IL_OP_FRSQRT] = rz_il_handler_pure_unimplemented,
 	[RZ_IL_OP_FADD] = rz_il_handler_fadd,
 	[RZ_IL_OP_FSUB] = rz_il_handler_fsub,
 	[RZ_IL_OP_FMUL] = rz_il_handler_fmul,
