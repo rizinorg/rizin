@@ -170,12 +170,12 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value) 
  *
  *  value is a bitvector constant.
  */
-RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) {
 	RzBitVector *value = rz_bv_new_from_ut64(length, number);
 	if (!value) {
 		return NULL;
 	}
-	RzILOpBool *ret = RZ_NEW0(RzILOpBool);
+	RzILOpBitVector *ret = RZ_NEW0(RzILOpBitVector);
 	if (!ret) {
 		rz_bv_free(value);
 		return NULL;
@@ -190,12 +190,12 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number) 
  *
  *  value is a bitvector constant.
  */
-RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
 	RzBitVector *value = rz_bv_new_from_st64(length, number);
 	if (!value) {
 		return NULL;
 	}
-	RzILOpBool *ret = RZ_NEW0(RzILOpBool);
+	RzILOpBitVector *ret = RZ_NEW0(RzILOpBitVector);
 	if (!ret) {
 		rz_bv_free(value);
 		return NULL;
