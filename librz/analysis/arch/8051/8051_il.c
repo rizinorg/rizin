@@ -274,6 +274,10 @@ static RzILOpEffect *i_da(I8051Op *op) {
 		set_reg(I8051_CY, UGT(VARL("@a"), U8(0x99))),
 		set_a(VARL("@a")));
 }
+static RzILOpEffect *i_ijmp(I8051Op *op) {
+	rz_return_val_if_fail(op && op->argv[0], NULL);
+	return JMP(get_any(op->argv[0]));
+}
 static RzILOpEffect *i_jmp(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0], NULL);
 	return JMP(ADD(UNSIGNED(16, VAL_A), VARG_8051(I8051_DPTR)));
@@ -390,8 +394,8 @@ static inline RzILOpEffect *i_op_dispatch(I8051Op *op) {
 	case I_LCALL: return i_call(op);
 	case I_ADD: return i_add(op);
 	case I_ADDC: return i_addc(op);
+	case I_LJMP: return i_ijmp(op);
 	case I_AJMP:
-	case I_LJMP:
 	case I_SJMP:
 	case I_JMP: return i_jmp(op);
 	case I_ANL: return i_anl(op);
