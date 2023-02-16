@@ -381,10 +381,26 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 		op->argv = RZ_NEWS0(I8051OpAddressing *, op->argc);
 		switch (hi) {
 		case 0x70: {
-			op->argv[0] = lo == 0x4 ? addressing_register_a()
-						: addressing_pattern1(buf);
-			op->argv[1] = addressing_immediate(buf[1]);
-			op->len = lo == 0x5 ? 3 : 2;
+			switch (lo) {
+			case 4: {
+				op->argv[0] = addressing_register_a();
+				op->argv[1] = addressing_immediate(buf[1]);
+				op->len = 2;
+				break;
+			}
+			case 5: {
+				op->argv[0] = addressing_direct(buf[1]);
+				op->argv[1] = addressing_immediate(buf[2]);
+				op->len = 3;
+				break;
+			}
+			default: {
+				op->argv[0] = addressing_pattern1(buf);
+				op->argv[1] = addressing_immediate(buf[1]);
+				op->len = 2;
+				break;
+			}
+			}
 			break;
 		}
 		case 0x80: {
