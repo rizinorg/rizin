@@ -127,6 +127,7 @@ rz_il_definitions_files = [
   'rz_il/definitions/sort.h',
   'rz_il/definitions/value.h',
   'rz_il/definitions/variable.h',
+  'rz_il/definitions/float.h',
 ]
 install_headers(rz_il_definitions_files, install_dir: join_paths(rizin_incdir, 'rz_il', 'definitions'))
 
