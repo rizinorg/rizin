@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 imbillow <billow.fun@gmail.com>
+// SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _8051_IL_H_
