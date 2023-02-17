@@ -10,6 +10,30 @@
 #define RZ_FLOAT_H
 #include <rz_types.h>
 
+/**
+ *
+ * Portable float nums in C
+ */
+RZ_API float types_gen_f32_nan(void);
+RZ_API float types_gen_f32_inf(void);
+RZ_API double types_gen_f64_nan(void);
+RZ_API double types_gen_f64_inf(void);
+RZ_API long double types_gen_f128_nan(void);
+RZ_API long double types_gen_f128_inf(void);
+
+#define F32_NAN   (types_gen_f32_nan())
+#define F32_PINF  (types_gen_f32_inf())
+#define F32_NINF  (-types_gen_f32_inf())
+#define F64_NAN   (types_gen_f64_nan())
+#define F64_PINF  (types_gen_f64_inf())
+#define F64_NINF  (-types_gen_f64_inf())
+#define F80_NAN   (types_gen_f128_nan())
+#define F80_PINF  (types_gen_f128_inf())
+#define F80_NINF  (-types_gen_f128_inf())
+#define F128_NAN  (types_gen_f128_nan())
+#define F128_PINF (types_gen_f128_inf())
+#define F128_NINF (-types_gen_f128_inf())
+
 typedef enum rz_float_format_enum {
 	/// basic IEEE 754 float format enums
 	/// ref : https://en.wikipedia.org/wiki/IEEE_754#Basic_and_interchange_formats

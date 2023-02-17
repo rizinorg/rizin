@@ -21,6 +21,33 @@
 #include <math.h>
 
 /**
+ * define gen_nan and gen_inf for multiple types
+ */
+#define define_types_gen_nan(fname, ftype) \
+	inline ftype types_gen_##fname##_nan() { \
+		static ftype zero = 0; \
+		ftype ret = zero / zero; \
+		feclearexcept(FE_ALL_EXCEPT); \
+		return ret; \
+	}
+
+#define define_types_gen_inf(fname, ftype) \
+	inline ftype types_gen_##fname##_inf() { \
+		static ftype zero = 0; \
+		static ftype one = 1.0; \
+		ftype ret = one / zero; \
+		feclearexcept(FE_ALL_EXCEPT); \
+		return ret; \
+	}
+
+define_types_gen_nan(f32, float);
+define_types_gen_nan(f64, double);
+define_types_gen_nan(f128, long double);
+define_types_gen_inf(f32, float);
+define_types_gen_inf(f64, double);
+define_types_gen_inf(f128, long double);
+
+/**
  * \brief return the bitvector string of a float
  * \param f float
  * \return char* string of bitvector
