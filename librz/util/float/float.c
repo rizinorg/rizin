@@ -24,7 +24,7 @@
  * define gen_nan and gen_inf for multiple types
  */
 #define define_types_gen_nan(fname, ftype) \
-	inline ftype types_gen_##fname##_nan() { \
+	RZ_API inline ftype types_gen_##fname##_nan() { \
 		static ftype zero = 0; \
 		ftype ret = zero / zero; \
 		feclearexcept(FE_ALL_EXCEPT); \
@@ -32,7 +32,7 @@
 	}
 
 #define define_types_gen_inf(fname, ftype) \
-	inline ftype types_gen_##fname##_inf() { \
+	RZ_API inline ftype types_gen_##fname##_inf() { \
 		static ftype zero = 0; \
 		static ftype one = 1.0; \
 		ftype ret = one / zero; \
