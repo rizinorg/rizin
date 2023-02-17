@@ -49,6 +49,7 @@ static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
+static const RzCmdDescDetail o_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
@@ -10660,8 +10661,18 @@ static const RzCmdDescHelp plugins_parser_print_help = {
 	.args = plugins_parser_print_args,
 };
 
+static const RzCmdDescDetailEntry o_Examples_detail_entries[] = {
+	{ .text = "o", .arg_str = " myfile.exe", .comment = "Open myfile.exe file in read-only mode" },
+	{ .text = "o+", .arg_str = " myfile.exe", .comment = "Open myfile.exe file in read-write mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail o_details[] = {
+	{ .name = "Examples", .entries = o_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp o_help = {
 	.summary = "Open files and handle opened files",
+	.details = o_details,
 };
 static const RzCmdDescArg open_args[] = {
 	{
