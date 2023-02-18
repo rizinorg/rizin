@@ -1171,6 +1171,27 @@ commands:
             type: RZ_CMD_ARG_TYPE_OPTION
             flags: RZ_CMD_ARG_FLAG_OPTION
             optional: true
+        details:
+          - name: "Graph Type"
+            entries:
+              - text: "dataref"
+                comment: "Data reference graph"
+              - text: "funcall"
+                comment: "Function call graph"
+              - text: "diff"
+                comment: "Diff graph"
+              - text: "funblock"
+                comment: "Function basic block graph"
+              - text: "import"
+                comment: "Imports graph"
+              - text: "ref"
+                comment: "References graph"
+              - text: "line"
+                comment: "Line graph"
+              - text: "xref"
+                comment: "Cross references graph"
+              - text: "custom"
+                comment: "Custom made graph"
   #####################################################
   # Keep this in sync with dr in cmd_debug.yaml from here...
   - name: ar
