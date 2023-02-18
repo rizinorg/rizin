@@ -17,6 +17,7 @@ static const RzCmdDescDetail analysis_all_esil_details[2];
 static const RzCmdDescDetail analyze_all_preludes_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
 static const RzCmdDescDetail analysis_appcall_details[2];
+static const RzCmdDescDetail analysis_graph_write_details[2];
 static const RzCmdDescDetail ag_details[2];
 static const RzCmdDescDetail analysis_reg_cond_details[4];
 static const RzCmdDescDetail ar_details[2];
@@ -3431,6 +3432,22 @@ static const RzCmdDescHelp analysis_graph_custom_edge_remove_help = {
 	.args = analysis_graph_custom_edge_remove_args,
 };
 
+static const RzCmdDescDetailEntry analysis_graph_write_Graph_space_Type_detail_entries[] = {
+	{ .text = "dataref", .arg_str = NULL, .comment = "Data reference graph" },
+	{ .text = "funcall", .arg_str = NULL, .comment = "Function call graph" },
+	{ .text = "diff", .arg_str = NULL, .comment = "Diff graph" },
+	{ .text = "funblock", .arg_str = NULL, .comment = "Function basic block graph" },
+	{ .text = "import", .arg_str = NULL, .comment = "Imports graph" },
+	{ .text = "ref", .arg_str = NULL, .comment = "References graph" },
+	{ .text = "line", .arg_str = NULL, .comment = "Line graph" },
+	{ .text = "xref", .arg_str = NULL, .comment = "Cross references graph" },
+	{ .text = "custom", .arg_str = NULL, .comment = "Custom made graph" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_graph_write_details[] = {
+	{ .name = "Graph Type", .entries = analysis_graph_write_Graph_space_Type_detail_entries },
+	{ 0 },
+};
 static const char *analysis_graph_write_graphtype_choices[] = { "dataref", "funcall", "diff", "funblock", "import", "ref", "line", "xref", "custom", NULL };
 static const RzCmdDescArg analysis_graph_write_args[] = {
 	{
@@ -3456,6 +3473,7 @@ static const RzCmdDescArg analysis_graph_write_args[] = {
 };
 static const RzCmdDescHelp analysis_graph_write_help = {
 	.summary = "Write to path or display graph image (see graph.gv.format)",
+	.details = analysis_graph_write_details,
 	.args = analysis_graph_write_args,
 };
 
