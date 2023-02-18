@@ -34,6 +34,14 @@ static const char *i8051_registers_str[0xff] = {
 	[I8051_CY] = "cy",
 	[I8051_A] = "a",
 	[I8051_B] = "b",
+	[I8051_IE] = "ie",
+	[I8051_IP] = "ip",
+	[I8051_P0] = "p0",
+	[I8051_P1] = "p1",
+	[I8051_P2] = "p2",
+	[I8051_P3] = "p3",
+	[I8051_SCON] = "scon",
+	[I8051_SBUF] = "sbuf",
 	NULL,
 };
 
@@ -90,12 +98,49 @@ static inline RzILOpEffect *set_cy(RzILOpBitVector *v) {
 	return set_reg(I8051_CY, v);
 }
 
+static const ut8 regs[] = {
+	I8051_SP,
+	I8051_DPH,
+	I8051_DPL,
+	I8051_PCON,
+	I8051_TCON,
+	I8051_TMOD,
+	I8051_TL0,
+	I8051_TL1,
+	I8051_TH0,
+	I8051_TH1,
+	I8051_PSW,
+	I8051_A,
+	I8051_B,
+	I8051_IE,
+	I8051_IP,
+	I8051_P0,
+	I8051_P1,
+	I8051_P2,
+	I8051_P3,
+	I8051_SCON,
+	I8051_SBUF,
+};
+
+static bool is_address_register(ut8 addr) {
+	for (int i = 0; i < sizeof(regs); ++i) {
+		if (regs[i] == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static RzILOpPure *get_any(I8051OpAddressing *a) {
 	switch (a->mode) {
 	case I8051_ADDRESSING_REGISTER:
 		return val_register(a);
-	case I8051_ADDRESSING_DIRECT:
+	case I8051_ADDRESSING_DIRECT: {
+		if (is_address_register(a->d.addr)) {
+			return VARG(i8051_registers_str[a->d.addr]);
+		}
 		return LOAD(U16(a->d.addr));
+	}
 	case I8051_ADDRESSING_INDIRECT:
 		return LOAD(UNSIGNED(16, get_any(a->d.indirect)));
 	case I8051_ADDRESSING_IMMEDIATE:
@@ -123,8 +168,12 @@ static RzILOpEffect *set_any(I8051OpAddressing *a, RzILOpPure *v) {
 	case I8051_ADDRESSING_BIT: {
 		return STOREW(U16(a->d.addr), BOOL_TO_BV(v, 1));
 	}
-	case I8051_ADDRESSING_DIRECT:
+	case I8051_ADDRESSING_DIRECT: {
+		if (is_address_register(a->d.addr)) {
+			return set_reg(a->d.addr, v);
+		}
 		return STORE(U16(a->d.addr), v);
+	}
 	case I8051_ADDRESSING_INDIRECT:
 		return STORE(UNSIGNED(16, get_any(a->d.indirect)), v);
 	default:
