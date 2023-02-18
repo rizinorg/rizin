@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <math.h>
-#include <fenv.h>
 
 #define cut8  const unsigned char
 #define ut64  unsigned long long
