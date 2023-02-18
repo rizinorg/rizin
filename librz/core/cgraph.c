@@ -725,5 +725,6 @@ RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphT
 		return false;
 	}
 	rz_core_graph_write_graph(core, graph, path);
+	rz_graph_free(graph);
 	return true;
 }
