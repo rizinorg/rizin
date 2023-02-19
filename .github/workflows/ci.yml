@@ -135,6 +135,16 @@ jobs:
             timeout: 45
             cflags: "-Wno-cpp"
             allow_failure: false
+          - name: capstone-sys
+            os: ubuntu-22.04
+            build_system: meson
+            compiler: gcc
+            meson_options: -Dbuildtype=release -Duse_capstone_version=sys --werror
+            run_tests: false
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: "-Wno-cpp"
+            allow_failure: false
           - name: capstone-next
             os: ubuntu-22.04
             build_system: meson
