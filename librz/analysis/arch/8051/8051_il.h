@@ -94,14 +94,14 @@ typedef enum {
 } I8051AddressingMode;
 
 typedef enum {
-	I8051_R0 = 0,
-	I8051_R1,
-	I8051_R2,
-	I8051_R3,
-	I8051_R4,
-	I8051_R5,
-	I8051_R6,
-	I8051_R7,
+	I8051_R0 = 0x00,
+	I8051_R1 = 0x01,
+	I8051_R2 = 0x02,
+	I8051_R3 = 0x03,
+	I8051_R4 = 0x04,
+	I8051_R5 = 0x05,
+	I8051_R6 = 0x06,
+	I8051_R7 = 0x07,
 	I8051_SP = 0x81,
 	I8051_DPTR,
 	I8051_DPH = 0x83,
@@ -134,9 +134,36 @@ typedef enum {
 	I8051_SBUF = 0x99,
 } I8051Registers;
 
+typedef struct {
+	RzIODesc *desc;
+	ut32 addr;
+	const char *name;
+} i8051_map_entry;
+
+typedef struct {
+	const char *name;
+	ut32 map_code;
+	ut32 map_idata;
+	ut32 map_sfr;
+	ut32 map_xdata;
+	ut32 map_pdata;
+} i8051_cpu_model;
+
+typedef struct {
+	const i8051_cpu_model *cpu_curr_model;
+	i8051_map_entry mem_map[3];
+} i8051_plugin_context;
+
+enum i8051_map_entry_type {
+	I8051_IDATA = 0,
+	I8051_SFR = 1,
+	I8051_XDATA = 2,
+};
+
 typedef struct i8051_op_addressing_t {
 	ut64 pc;
 	I8051AddressingMode mode;
+	i8051_plugin_context *ctx;
 	union {
 		I8051Registers reg;
 		ut8 addr;

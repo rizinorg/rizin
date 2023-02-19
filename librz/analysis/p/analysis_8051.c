@@ -13,15 +13,6 @@
 #include "../asm/arch/8051/8051_disas.c"
 #include "../arch/8051/8051_il.h"
 
-typedef struct {
-	const char *name;
-	ut32 map_code;
-	ut32 map_idata;
-	ut32 map_sfr;
-	ut32 map_xdata;
-	ut32 map_pdata;
-} i8051_cpu_model;
-
 static const i8051_cpu_model cpu_models[] = {
 	{ .name = "8051-generic",
 		.map_code = 0,
@@ -60,27 +51,6 @@ static ut32 i8051_reg_read(RzReg *reg, const char *regname) {
 	}
 	return 0;
 }
-
-typedef struct {
-	RzIODesc *desc;
-	ut32 addr;
-	const char *name;
-} i8051_map_entry;
-
-static const int I8051_IDATA = 0;
-static const int I8051_SFR = 1;
-static const int I8051_XDATA = 2;
-
-static const i8051_map_entry init_mem_map[3] = {
-	{ NULL, UT32_MAX, "idata" },
-	{ NULL, UT32_MAX, "sfr" },
-	{ NULL, UT32_MAX, "xdata" }
-};
-
-typedef struct {
-	const i8051_cpu_model *cpu_curr_model;
-	i8051_map_entry mem_map[3];
-} i8051_plugin_context;
 
 static void map_cpu_memory(RzAnalysis *analysis, int entry, ut32 addr, ut32 size, bool force) {
 	i8051_plugin_context *ctx = analysis->plugin_data;
@@ -1279,6 +1249,11 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return op->size;
 }
 
+static const i8051_map_entry init_mem_map[3] = {
+	{ NULL, UT32_MAX, "idata" },
+	{ NULL, UT32_MAX, "sfr" },
+	{ NULL, UT32_MAX, "xdata" }
+};
 static bool i8051_init(void **user) {
 	i8051_plugin_context *ctx = RZ_NEW0(i8051_plugin_context);
 	if (!ctx) {
