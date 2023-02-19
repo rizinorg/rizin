@@ -250,15 +250,6 @@ commands:
   - name: o
     summary: Open files and handle opened files
     subcommands: cmd_open
-    details:
-      - name: Examples
-        entries:
-          - text: "o"
-            arg_str: " myfile.exe"
-            comment: Open myfile.exe file in read-only mode
-          - text: "o+"
-            arg_str: " myfile.exe"
-            comment: Open myfile.exe file in read-write mode
   - name: p
     cname: cmd_print
     summary: Print commands
