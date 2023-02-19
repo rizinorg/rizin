@@ -9,7 +9,7 @@
 #include <rz_analysis.h>
 #include <rz_il.h>
 #include <rz_types.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #define PPC_BYTE  8
 #define PPC_HWORD 16
