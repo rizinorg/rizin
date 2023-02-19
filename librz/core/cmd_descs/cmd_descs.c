@@ -49,6 +49,76 @@ static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
+static const RzCmdDescDetail open_details[2];
+static const RzCmdDescDetail open_write_details[2];
+static const RzCmdDescDetail open_list_details[2];
+static const RzCmdDescDetail open_show_current_details[2];
+static const RzCmdDescDetail open_close_details[2];
+static const RzCmdDescDetail open_close_all_details[2];
+static const RzCmdDescDetail open_core_file_details[2];
+static const RzCmdDescDetail open_malloc_details[2];
+static const RzCmdDescDetail open_nobin_details[2];
+static const RzCmdDescDetail open_nobin_write_details[2];
+static const RzCmdDescDetail on_details[2];
+static const RzCmdDescDetail reopen_details[2];
+static const RzCmdDescDetail reopen_write_details[2];
+static const RzCmdDescDetail reopen_binary_details[2];
+static const RzCmdDescDetail reopen_core_details[2];
+static const RzCmdDescDetail reopen_debug_details[2];
+static const RzCmdDescDetail reopen_debug_file_details[2];
+static const RzCmdDescDetail reopen_debug_rzrun_details[2];
+static const RzCmdDescDetail reopen_malloc_details[2];
+static const RzCmdDescDetail reopen_nobin_details[2];
+static const RzCmdDescDetail reopen_nobin_write_details[2];
+static const RzCmdDescDetail reopen_nobin_headers_details[2];
+static const RzCmdDescDetail reopen_nobin_write_headers_details[2];
+static const RzCmdDescDetail oo_details[2];
+static const RzCmdDescDetail open_plugins_details[2];
+static const RzCmdDescDetail open_list_ascii_details[2];
+static const RzCmdDescDetail open_arch_bits_details[2];
+static const RzCmdDescDetail open_binary_select_id_details[2];
+static const RzCmdDescDetail open_binary_select_fd_details[2];
+static const RzCmdDescDetail open_binary_del_details[2];
+static const RzCmdDescDetail open_binary_del_all_details[2];
+static const RzCmdDescDetail open_binary_list_details[2];
+static const RzCmdDescDetail open_binary_list_ascii_details[2];
+static const RzCmdDescDetail open_binary_show_details[2];
+static const RzCmdDescDetail open_binary_add_details[2];
+static const RzCmdDescDetail open_binary_file_details[2];
+static const RzCmdDescDetail open_binary_rebase_details[2];
+static const RzCmdDescDetail open_binary_reload_details[2];
+static const RzCmdDescDetail ob_details[2];
+static const RzCmdDescDetail open_use_details[2];
+static const RzCmdDescDetail open_prioritize_details[2];
+static const RzCmdDescDetail open_prioritize_next_details[2];
+static const RzCmdDescDetail open_prioritize_prev_details[2];
+static const RzCmdDescDetail open_prioritize_next_rotate_details[2];
+static const RzCmdDescDetail op_details[2];
+static const RzCmdDescDetail open_maps_map_details[2];
+static const RzCmdDescDetail open_maps_list_details[2];
+static const RzCmdDescDetail open_maps_list_cur_details[2];
+static const RzCmdDescDetail open_maps_list_ascii_details[2];
+static const RzCmdDescDetail open_maps_remove_details[2];
+static const RzCmdDescDetail open_maps_remove_all_details[2];
+static const RzCmdDescDetail open_maps_all_fd_details[2];
+static const RzCmdDescDetail open_maps_relocate_details[2];
+static const RzCmdDescDetail open_maps_relocate_current_details[2];
+static const RzCmdDescDetail open_maps_flags_details[2];
+static const RzCmdDescDetail open_maps_flags_global_details[2];
+static const RzCmdDescDetail open_maps_map_fd_details[2];
+static const RzCmdDescDetail open_maps_name_details[2];
+static const RzCmdDescDetail open_maps_name_del_details[2];
+static const RzCmdDescDetail open_maps_name_id_details[2];
+static const RzCmdDescDetail open_maps_name_id_del_details[2];
+static const RzCmdDescDetail omn_details[2];
+static const RzCmdDescDetail open_maps_resize_details[2];
+static const RzCmdDescDetail open_maps_prioritize_details[2];
+static const RzCmdDescDetail open_maps_prioritize_binid_details[2];
+static const RzCmdDescDetail open_maps_deprioritize_details[2];
+static const RzCmdDescDetail open_maps_prioritize_fd_details[2];
+static const RzCmdDescDetail omp_details[2];
+static const RzCmdDescDetail om_details[2];
+static const RzCmdDescDetail open_exchange_details[2];
 static const RzCmdDescDetail o_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail write_bits_details[2];
@@ -10674,6 +10744,14 @@ static const RzCmdDescHelp o_help = {
 	.summary = "Open files and handle opened files",
 	.details = o_details,
 };
+static const RzCmdDescDetailEntry open_Examples_detail_entries[] = {
+	{ .text = "o", .arg_str = " myfile.exe", .comment = "Open myfile.exe file in read-only mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_details[] = {
+	{ .name = "Examples", .entries = open_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_args[] = {
 	{
 		.name = "file",
@@ -10697,9 +10775,18 @@ static const RzCmdDescArg open_args[] = {
 };
 static const RzCmdDescHelp open_help = {
 	.summary = "Open <file>",
+	.details = open_details,
 	.args = open_args,
 };
 
+static const RzCmdDescDetailEntry open_write_Examples_detail_entries[] = {
+	{ .text = "o+", .arg_str = " myfile.exe", .comment = "Open myfile.exe file in read-write mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_write_details[] = {
+	{ .name = "Examples", .entries = open_write_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_write_args[] = {
 	{
 		.name = "file",
@@ -10723,25 +10810,53 @@ static const RzCmdDescArg open_write_args[] = {
 };
 static const RzCmdDescHelp open_write_help = {
 	.summary = "Open <file> in write mode",
+	.details = open_write_details,
 	.args = open_write_args,
 };
 
+static const RzCmdDescDetailEntry open_list_Examples_detail_entries[] = {
+	{ .text = "ol", .arg_str = NULL, .comment = "List all opened files" },
+	{ .text = "olj", .arg_str = NULL, .comment = "List all opened files in JSON mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_list_details[] = {
+	{ .name = "Examples", .entries = open_list_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_list_help = {
 	.summary = "List opened files",
+	.details = open_list_details,
 	.args = open_list_args,
 };
 
+static const RzCmdDescDetailEntry open_show_current_Examples_detail_entries[] = {
+	{ .text = "ol.j", .arg_str = NULL, .comment = "Show currently opened file in JSON mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_show_current_details[] = {
+	{ .name = "Examples", .entries = open_show_current_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_show_current_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_show_current_help = {
 	.summary = "Show currently opened file",
+	.details = open_show_current_details,
 	.args = open_show_current_args,
 };
 
+static const RzCmdDescDetailEntry open_close_Examples_detail_entries[] = {
+	{ .text = "o-", .arg_str = " 3", .comment = "Close the file with file descriptor 3" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_close_details[] = {
+	{ .name = "Examples", .entries = open_close_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_close_args[] = {
 	{
 		.name = "fd",
@@ -10752,17 +10867,35 @@ static const RzCmdDescArg open_close_args[] = {
 };
 static const RzCmdDescHelp open_close_help = {
 	.summary = "Close file descriptor",
+	.details = open_close_details,
 	.args = open_close_args,
 };
 
+static const RzCmdDescDetailEntry open_close_all_Examples_detail_entries[] = {
+	{ .text = "o--", .arg_str = NULL, .comment = "Close all files" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_close_all_details[] = {
+	{ .name = "Examples", .entries = open_close_all_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_close_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_close_all_help = {
 	.summary = "Close all files",
+	.details = open_close_all_details,
 	.args = open_close_all_args,
 };
 
+static const RzCmdDescDetailEntry open_core_file_Examples_detail_entries[] = {
+	{ .text = "oc", .arg_str = " myfile.exe", .comment = "Close all opened files and open myfile.exe" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_core_file_details[] = {
+	{ .name = "Examples", .entries = open_core_file_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_core_file_args[] = {
 	{
 		.name = "file",
@@ -10773,9 +10906,18 @@ static const RzCmdDescArg open_core_file_args[] = {
 };
 static const RzCmdDescHelp open_core_file_help = {
 	.summary = "Close all opened files and open <file>, like relaunching rizin",
+	.details = open_core_file_details,
 	.args = open_core_file_args,
 };
 
+static const RzCmdDescDetailEntry open_malloc_Examples_detail_entries[] = {
+	{ .text = "oC", .arg_str = " 100", .comment = "Open a `malloc://100` file, copying first 100 bytes from current file offset" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_malloc_details[] = {
+	{ .name = "Examples", .entries = open_malloc_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_malloc_args[] = {
 	{
 		.name = "len",
@@ -10787,11 +10929,30 @@ static const RzCmdDescArg open_malloc_args[] = {
 };
 static const RzCmdDescHelp open_malloc_help = {
 	.summary = "Open a 'malloc://<len>' file, copying the bytes from current offset",
+	.details = open_malloc_details,
 	.args = open_malloc_args,
 };
 
+static const RzCmdDescDetailEntry on_Examples_detail_entries[] = {
+	{ .text = "on", .arg_str = " myfile.exe", .comment = "Open myfile.exe without parsing binary info" },
+	{ .text = "on+", .arg_str = " myfile.exe", .comment = "Open myfile.exe in write mode, without parsing binary info" },
+	{ 0 },
+};
+static const RzCmdDescDetail on_details[] = {
+	{ .name = "Examples", .entries = on_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp on_help = {
 	.summary = "Open files without parsing binary info",
+	.details = on_details,
+};
+static const RzCmdDescDetailEntry open_nobin_Examples_detail_entries[] = {
+	{ .text = "on", .arg_str = " myfile.exe", .comment = "Open myfile.exe without parsing binary info" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_nobin_details[] = {
+	{ .name = "Examples", .entries = open_nobin_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg open_nobin_args[] = {
 	{
@@ -10816,9 +10977,18 @@ static const RzCmdDescArg open_nobin_args[] = {
 };
 static const RzCmdDescHelp open_nobin_help = {
 	.summary = "Open <file> without parsing binary info",
+	.details = open_nobin_details,
 	.args = open_nobin_args,
 };
 
+static const RzCmdDescDetailEntry open_nobin_write_Examples_detail_entries[] = {
+	{ .text = "on+", .arg_str = " myfile.exe", .comment = "Open myfile.exe in write mode, without parsing binary info" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_nobin_write_details[] = {
+	{ .name = "Examples", .entries = open_nobin_write_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_nobin_write_args[] = {
 	{
 		.name = "file",
@@ -10842,11 +11012,30 @@ static const RzCmdDescArg open_nobin_write_args[] = {
 };
 static const RzCmdDescHelp open_nobin_write_help = {
 	.summary = "Open <file> in write mode, without parsing binary info",
+	.details = open_nobin_write_details,
 	.args = open_nobin_write_args,
 };
 
+static const RzCmdDescDetailEntry oo_Examples_detail_entries[] = {
+	{ .text = "oo", .arg_str = NULL, .comment = "Reopen current file" },
+	{ .text = "oo", .arg_str = " 3", .comment = "Open file with file descriptor 3" },
+	{ 0 },
+};
+static const RzCmdDescDetail oo_details[] = {
+	{ .name = "Examples", .entries = oo_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp oo_help = {
 	.summary = "Reopen current file",
+	.details = oo_details,
+};
+static const RzCmdDescDetailEntry reopen_Examples_detail_entries[] = {
+	{ .text = "oo", .arg_str = " 3", .comment = "Open file with file descriptor 3" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_details[] = {
+	{ .name = "Examples", .entries = reopen_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg reopen_args[] = {
 	{
@@ -10859,9 +11048,18 @@ static const RzCmdDescArg reopen_args[] = {
 };
 static const RzCmdDescHelp reopen_help = {
 	.summary = "Reopen current file or file <fd>",
+	.details = reopen_details,
 	.args = reopen_args,
 };
 
+static const RzCmdDescDetailEntry reopen_write_Examples_detail_entries[] = {
+	{ .text = "oo+", .arg_str = " 3", .comment = "Open file with file descriptor 3 in write mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_write_details[] = {
+	{ .name = "Examples", .entries = reopen_write_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_write_args[] = {
 	{
 		.name = "fd",
@@ -10873,9 +11071,18 @@ static const RzCmdDescArg reopen_write_args[] = {
 };
 static const RzCmdDescHelp reopen_write_help = {
 	.summary = "Reopen current file or file <fd> in write mode",
+	.details = reopen_write_details,
 	.args = reopen_write_args,
 };
 
+static const RzCmdDescDetailEntry reopen_binary_Examples_detail_entries[] = {
+	{ .text = "oob", .arg_str = NULL, .comment = "Reopen current file and reload binary information" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_binary_details[] = {
+	{ .name = "Examples", .entries = reopen_binary_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_binary_args[] = {
 	{
 		.name = "baddr",
@@ -10888,19 +11095,37 @@ static const RzCmdDescArg reopen_binary_args[] = {
 };
 static const RzCmdDescHelp reopen_binary_help = {
 	.summary = "Reopen current file and reload binary information",
+	.details = reopen_binary_details,
 	.args = reopen_binary_args,
 };
 
+static const RzCmdDescDetailEntry reopen_core_Examples_detail_entries[] = {
+	{ .text = "ooc", .arg_str = NULL, .comment = "Reopen current file as if restarting rizin" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_core_details[] = {
+	{ .name = "Examples", .entries = reopen_core_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_core_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_core_help = {
 	.summary = "Reopen current file as if restarting rizin",
+	.details = reopen_core_details,
 	.args = reopen_core_args,
 };
 
 static const RzCmdDescHelp ood_help = {
 	.summary = "Reopen current file in debug mode",
+};
+static const RzCmdDescDetailEntry reopen_debug_Examples_detail_entries[] = {
+	{ .text = "ood", .arg_str = NULL, .comment = "Reopen current file in debug mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_debug_details[] = {
+	{ .name = "Examples", .entries = reopen_debug_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg reopen_debug_args[] = {
 	{
@@ -10914,9 +11139,18 @@ static const RzCmdDescArg reopen_debug_args[] = {
 };
 static const RzCmdDescHelp reopen_debug_help = {
 	.summary = "Reopen current file in debug mode",
+	.details = reopen_debug_details,
 	.args = reopen_debug_args,
 };
 
+static const RzCmdDescDetailEntry reopen_debug_file_Examples_detail_entries[] = {
+	{ .text = "oodf", .arg_str = " gdb://file", .comment = "Open gdb://file in debug mode" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_debug_file_details[] = {
+	{ .name = "Examples", .entries = reopen_debug_file_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_debug_file_args[] = {
 	{
 		.name = "uri",
@@ -10934,9 +11168,18 @@ static const RzCmdDescArg reopen_debug_file_args[] = {
 };
 static const RzCmdDescHelp reopen_debug_file_help = {
 	.summary = "Open <uri> in debug mode",
+	.details = reopen_debug_file_details,
 	.args = reopen_debug_file_args,
 };
 
+static const RzCmdDescDetailEntry reopen_debug_rzrun_Examples_detail_entries[] = {
+	{ .text = "oodr", .arg_str = " stdin=myfile.txt", .comment = "Reopen current file in debug mode with given \"stdin\" rz-run directive" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_debug_rzrun_details[] = {
+	{ .name = "Examples", .entries = reopen_debug_rzrun_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_debug_rzrun_args[] = {
 	{
 		.name = "rz-run-directives",
@@ -10948,49 +11191,103 @@ static const RzCmdDescArg reopen_debug_rzrun_args[] = {
 };
 static const RzCmdDescHelp reopen_debug_rzrun_help = {
 	.summary = "Reopen current file in debug mode with given rz-run directives",
+	.details = reopen_debug_rzrun_details,
 	.args = reopen_debug_rzrun_args,
 };
 
+static const RzCmdDescDetailEntry reopen_malloc_Examples_detail_entries[] = {
+	{ .text = "oom", .arg_str = NULL, .comment = "Reopen curent file in malloc://" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_malloc_details[] = {
+	{ .name = "Examples", .entries = reopen_malloc_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_malloc_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_malloc_help = {
 	.summary = "Reopen curent file in malloc://",
+	.details = reopen_malloc_details,
 	.args = reopen_malloc_args,
 };
 
+static const RzCmdDescDetailEntry reopen_nobin_Examples_detail_entries[] = {
+	{ .text = "oon", .arg_str = NULL, .comment = "Reopen curent file without loading binary information" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_nobin_details[] = {
+	{ .name = "Examples", .entries = reopen_nobin_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_nobin_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_help = {
 	.summary = "Reopen curent file without loading binary information",
+	.details = reopen_nobin_details,
 	.args = reopen_nobin_args,
 };
 
+static const RzCmdDescDetailEntry reopen_nobin_write_Examples_detail_entries[] = {
+	{ .text = "oon+", .arg_str = NULL, .comment = "Reopen curent file in write-mode without loading binary information" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_nobin_write_details[] = {
+	{ .name = "Examples", .entries = reopen_nobin_write_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_nobin_write_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_write_help = {
 	.summary = "Reopen curent file in write-mode without loading binary information",
+	.details = reopen_nobin_write_details,
 	.args = reopen_nobin_write_args,
 };
 
+static const RzCmdDescDetailEntry reopen_nobin_headers_Examples_detail_entries[] = {
+	{ .text = "oonn", .arg_str = NULL, .comment = "Reopen curent file without loading binary information but with header flags" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_nobin_headers_details[] = {
+	{ .name = "Examples", .entries = reopen_nobin_headers_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_nobin_headers_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_headers_help = {
 	.summary = "Reopen curent file without loading binary information but with header flags",
+	.details = reopen_nobin_headers_details,
 	.args = reopen_nobin_headers_args,
 };
 
+static const RzCmdDescDetailEntry reopen_nobin_write_headers_Examples_detail_entries[] = {
+	{ .text = "oonn+", .arg_str = NULL, .comment = "Reopen curent file in write-mode without loading binary information but with header flags" },
+	{ 0 },
+};
+static const RzCmdDescDetail reopen_nobin_write_headers_details[] = {
+	{ .name = "Examples", .entries = reopen_nobin_write_headers_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg reopen_nobin_write_headers_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_write_headers_help = {
 	.summary = "Reopen curent file in write-mode without loading binary information but with header flags",
+	.details = reopen_nobin_write_headers_details,
 	.args = reopen_nobin_write_headers_args,
 };
 
+static const RzCmdDescDetailEntry open_plugins_Examples_detail_entries[] = {
+	{ .text = "oLj", .arg_str = NULL, .comment = "List all IO plugins in JSON format" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_plugins_details[] = {
+	{ .name = "Examples", .entries = open_plugins_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_plugins_args[] = {
 	{
 		.name = "path",
@@ -11002,17 +11299,35 @@ static const RzCmdDescArg open_plugins_args[] = {
 };
 static const RzCmdDescHelp open_plugins_help = {
 	.summary = "List all IO plugins / Register IO plugin from <path>",
+	.details = open_plugins_details,
 	.args = open_plugins_args,
 };
 
+static const RzCmdDescDetailEntry open_list_ascii_Examples_detail_entries[] = {
+	{ .text = "o=", .arg_str = NULL, .comment = "List opened files in ASCII-art bars" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_list_ascii_details[] = {
+	{ .name = "Examples", .entries = open_list_ascii_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_list_ascii_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_list_ascii_help = {
 	.summary = "List opened files in ASCII-art bars",
+	.details = open_list_ascii_details,
 	.args = open_list_ascii_args,
 };
 
+static const RzCmdDescDetailEntry open_arch_bits_Examples_detail_entries[] = {
+	{ .text = "oa", .arg_str = " arm 64", .comment = "specify arm64 for the current open file" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_arch_bits_details[] = {
+	{ .name = "Examples", .entries = open_arch_bits_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_arch_bits_args[] = {
 	{
 		.name = "arch",
@@ -11034,11 +11349,29 @@ static const RzCmdDescArg open_arch_bits_args[] = {
 };
 static const RzCmdDescHelp open_arch_bits_help = {
 	.summary = "Specify <arch> and <bits> for the file <filename> or the current one if none is specified",
+	.details = open_arch_bits_details,
 	.args = open_arch_bits_args,
 };
 
+static const RzCmdDescDetailEntry ob_Examples_detail_entries[] = {
+	{ .text = "ob", .arg_str = " 1", .comment = "Switch to binary file with id 1" },
+	{ 0 },
+};
+static const RzCmdDescDetail ob_details[] = {
+	{ .name = "Examples", .entries = ob_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp ob_help = {
 	.summary = "Handle binary files",
+	.details = ob_details,
+};
+static const RzCmdDescDetailEntry open_binary_select_id_Examples_detail_entries[] = {
+	{ .text = "ob", .arg_str = " 1", .comment = "Switch to binary file with id 1" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_select_id_details[] = {
+	{ .name = "Examples", .entries = open_binary_select_id_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg open_binary_select_id_args[] = {
 	{
@@ -11050,9 +11383,18 @@ static const RzCmdDescArg open_binary_select_id_args[] = {
 };
 static const RzCmdDescHelp open_binary_select_id_help = {
 	.summary = "Switch to binary file with the given <id>",
+	.details = open_binary_select_id_details,
 	.args = open_binary_select_id_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_select_fd_Examples_detail_entries[] = {
+	{ .text = "obo", .arg_str = " 3", .comment = "Switch to binary file with file descriptor 3" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_select_fd_details[] = {
+	{ .name = "Examples", .entries = open_binary_select_fd_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_select_fd_args[] = {
 	{
 		.name = "fd",
@@ -11063,9 +11405,18 @@ static const RzCmdDescArg open_binary_select_fd_args[] = {
 };
 static const RzCmdDescHelp open_binary_select_fd_help = {
 	.summary = "Switch to binary file with the given <fd>",
+	.details = open_binary_select_fd_details,
 	.args = open_binary_select_fd_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_del_Examples_detail_entries[] = {
+	{ .text = "ob-", .arg_str = " 1", .comment = "Delete binary file with id 1" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_del_details[] = {
+	{ .name = "Examples", .entries = open_binary_del_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_del_args[] = {
 	{
 		.name = "id",
@@ -11076,41 +11427,86 @@ static const RzCmdDescArg open_binary_del_args[] = {
 };
 static const RzCmdDescHelp open_binary_del_help = {
 	.summary = "Delete binary file with the given <id>",
+	.details = open_binary_del_details,
 	.args = open_binary_del_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_del_all_Examples_detail_entries[] = {
+	{ .text = "ob-*", .arg_str = NULL, .comment = "Delete all binary files" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_del_all_details[] = {
+	{ .name = "Examples", .entries = open_binary_del_all_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_del_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_del_all_help = {
 	.summary = "Delete all binary files",
+	.details = open_binary_del_all_details,
 	.args = open_binary_del_all_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_list_Examples_detail_entries[] = {
+	{ .text = "obl", .arg_str = NULL, .comment = "List opened binary files" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_list_details[] = {
+	{ .name = "Examples", .entries = open_binary_list_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_list_help = {
 	.summary = "List opened binary files",
+	.details = open_binary_list_details,
 	.args = open_binary_list_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_list_ascii_Examples_detail_entries[] = {
+	{ .text = "obl=", .arg_str = NULL, .comment = "List opened binary files in ASCII art" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_list_ascii_details[] = {
+	{ .name = "Examples", .entries = open_binary_list_ascii_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_list_ascii_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_list_ascii_help = {
 	.summary = "List opened binary files in ASCII art",
+	.details = open_binary_list_ascii_details,
 	.args = open_binary_list_ascii_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_show_Examples_detail_entries[] = {
+	{ .text = "ob.", .arg_str = NULL, .comment = "Show id of binary file current address" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_show_details[] = {
+	{ .name = "Examples", .entries = open_binary_show_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_show_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_show_help = {
 	.summary = "Show id of binary file current address",
+	.details = open_binary_show_details,
 	.args = open_binary_show_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_add_Examples_detail_entries[] = {
+	{ .text = "oba", .arg_str = " <0xaddr>", .comment = "Open binary file for current file and load binary info with baseaddr at <0xaddr>" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_add_details[] = {
+	{ .name = "Examples", .entries = open_binary_add_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_add_args[] = {
 	{
 		.name = "loadaddr",
@@ -11123,9 +11519,18 @@ static const RzCmdDescArg open_binary_add_args[] = {
 };
 static const RzCmdDescHelp open_binary_add_help = {
 	.summary = "Open binary file for current file and load binary info with baseaddr at current offset",
+	.details = open_binary_add_details,
 	.args = open_binary_add_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_file_Examples_detail_entries[] = {
+	{ .text = "obf", .arg_str = " myfile.exe", .comment = "Load binary info for myfile.exe with baseaddr at current offset" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_file_details[] = {
+	{ .name = "Examples", .entries = open_binary_file_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_file_args[] = {
 	{
 		.name = "file",
@@ -11137,9 +11542,18 @@ static const RzCmdDescArg open_binary_file_args[] = {
 };
 static const RzCmdDescHelp open_binary_file_help = {
 	.summary = "Load binary info for the given file or current one with baseaddr at current offset",
+	.details = open_binary_file_details,
 	.args = open_binary_file_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_rebase_Examples_detail_entries[] = {
+	{ .text = "obr", .arg_str = " <0xaddr>", .comment = "Rebase current bin object with baseaddr <0xaddr>" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_rebase_details[] = {
+	{ .name = "Examples", .entries = open_binary_rebase_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_rebase_args[] = {
 	{
 		.name = "baddr",
@@ -11151,9 +11565,18 @@ static const RzCmdDescArg open_binary_rebase_args[] = {
 };
 static const RzCmdDescHelp open_binary_rebase_help = {
 	.summary = "Rebase current bin object",
+	.details = open_binary_rebase_details,
 	.args = open_binary_rebase_args,
 };
 
+static const RzCmdDescDetailEntry open_binary_reload_Examples_detail_entries[] = {
+	{ .text = "obR", .arg_str = NULL, .comment = "Reload the current buffer for setting of the bin (use once only)" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_binary_reload_details[] = {
+	{ .name = "Examples", .entries = open_binary_reload_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_binary_reload_args[] = {
 	{
 		.name = "baddr",
@@ -11166,9 +11589,18 @@ static const RzCmdDescArg open_binary_reload_args[] = {
 };
 static const RzCmdDescHelp open_binary_reload_help = {
 	.summary = "Reload the current buffer for setting of the bin (use once only)",
+	.details = open_binary_reload_details,
 	.args = open_binary_reload_args,
 };
 
+static const RzCmdDescDetailEntry open_use_Examples_detail_entries[] = {
+	{ .text = "ou", .arg_str = " 6", .comment = "Use file descriptor 6" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_use_details[] = {
+	{ .name = "Examples", .entries = open_use_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_use_args[] = {
 	{
 		.name = "fd",
@@ -11179,11 +11611,29 @@ static const RzCmdDescArg open_use_args[] = {
 };
 static const RzCmdDescHelp open_use_help = {
 	.summary = "Use specified <fd>",
+	.details = open_use_details,
 	.args = open_use_args,
 };
 
+static const RzCmdDescDetailEntry op_Examples_detail_entries[] = {
+	{ .text = "op", .arg_str = " 6", .comment = "Prioritize file with file descriptor 6" },
+	{ 0 },
+};
+static const RzCmdDescDetail op_details[] = {
+	{ .name = "Examples", .entries = op_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp op_help = {
 	.summary = "Select prioritized file",
+	.details = op_details,
+};
+static const RzCmdDescDetailEntry open_prioritize_Examples_detail_entries[] = {
+	{ .text = "op", .arg_str = " 6", .comment = "Prioritize file with file descriptor 6" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_prioritize_details[] = {
+	{ .name = "Examples", .entries = open_prioritize_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg open_prioritize_args[] = {
 	{
@@ -11195,35 +11645,80 @@ static const RzCmdDescArg open_prioritize_args[] = {
 };
 static const RzCmdDescHelp open_prioritize_help = {
 	.summary = "Prioritize file with file descriptor <fd>",
+	.details = open_prioritize_details,
 	.args = open_prioritize_args,
 };
 
+static const RzCmdDescDetailEntry open_prioritize_next_Examples_detail_entries[] = {
+	{ .text = "opn", .arg_str = NULL, .comment = "Prioritize next file in the list" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_prioritize_next_details[] = {
+	{ .name = "Examples", .entries = open_prioritize_next_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_prioritize_next_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_prioritize_next_help = {
 	.summary = "Prioritize next file in the list",
+	.details = open_prioritize_next_details,
 	.args = open_prioritize_next_args,
 };
 
+static const RzCmdDescDetailEntry open_prioritize_prev_Examples_detail_entries[] = {
+	{ .text = "opp", .arg_str = NULL, .comment = "Prioritize previous file in the list" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_prioritize_prev_details[] = {
+	{ .name = "Examples", .entries = open_prioritize_prev_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_prioritize_prev_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_prioritize_prev_help = {
 	.summary = "Prioritize previous file in the list",
+	.details = open_prioritize_prev_details,
 	.args = open_prioritize_prev_args,
 };
 
+static const RzCmdDescDetailEntry open_prioritize_next_rotate_Examples_detail_entries[] = {
+	{ .text = "opr", .arg_str = NULL, .comment = "Prioritize next file in the list (go back to first if on the last)" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_prioritize_next_rotate_details[] = {
+	{ .name = "Examples", .entries = open_prioritize_next_rotate_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_prioritize_next_rotate_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_prioritize_next_rotate_help = {
 	.summary = "Prioritize next file in the list (go back to first if on the last)",
+	.details = open_prioritize_next_rotate_details,
 	.args = open_prioritize_next_rotate_args,
 };
 
+static const RzCmdDescDetailEntry om_Examples_detail_entries[] = {
+	{ .text = "om", .arg_str = " 3 0x75000000 0x200 0x200 r--", .comment = "Create a new map for file descriptor 3 with vaddr->0x75000000 size->0x200 paddr->0x200 and flags->r--" },
+	{ 0 },
+};
+static const RzCmdDescDetail om_details[] = {
+	{ .name = "Examples", .entries = om_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp om_help = {
 	.summary = "Handle IO maps",
+	.details = om_details,
+};
+static const RzCmdDescDetailEntry open_maps_map_Examples_detail_entries[] = {
+	{ .text = "om", .arg_str = " 3 0x75000000 0x200 0x200 r--", .comment = "Create a new map for file descriptor 3 with vaddr->0x75000000 size->0x200 paddr->0x200 and flags->r--" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_map_details[] = {
+	{ .name = "Examples", .entries = open_maps_map_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg open_maps_map_args[] = {
 	{
@@ -11265,9 +11760,18 @@ static const RzCmdDescArg open_maps_map_args[] = {
 };
 static const RzCmdDescHelp open_maps_map_help = {
 	.summary = "Create a new map",
+	.details = open_maps_map_details,
 	.args = open_maps_map_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_list_Examples_detail_entries[] = {
+	{ .text = "oml", .arg_str = NULL, .comment = "List maps of all file descriptors" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_list_details[] = {
+	{ .name = "Examples", .entries = open_maps_list_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_list_args[] = {
 	{
 		.name = "fd",
@@ -11278,26 +11782,53 @@ static const RzCmdDescArg open_maps_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_list_help = {
-	.summary = "List maps of all file descriptor or only the specified <fd>",
+	.summary = "List maps of all file descriptors or only the specified <fd>",
+	.details = open_maps_list_details,
 	.args = open_maps_list_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_list_cur_Examples_detail_entries[] = {
+	{ .text = "oml.", .arg_str = NULL, .comment = "Show map at the current offset" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_list_cur_details[] = {
+	{ .name = "Examples", .entries = open_maps_list_cur_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_list_cur_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_list_cur_help = {
 	.summary = "Show map at the current offset",
+	.details = open_maps_list_cur_details,
 	.args = open_maps_list_cur_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_list_ascii_Examples_detail_entries[] = {
+	{ .text = "oml=", .arg_str = NULL, .comment = "List IO maps in ASCII art" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_list_ascii_details[] = {
+	{ .name = "Examples", .entries = open_maps_list_ascii_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_list_ascii_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_list_ascii_help = {
 	.summary = "List IO maps in ASCII art",
+	.details = open_maps_list_ascii_details,
 	.args = open_maps_list_ascii_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_remove_Examples_detail_entries[] = {
+	{ .text = "om-", .arg_str = " 4", .comment = "Remove the IO map with id 4" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_remove_details[] = {
+	{ .name = "Examples", .entries = open_maps_remove_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_remove_args[] = {
 	{
 		.name = "id",
@@ -11308,17 +11839,35 @@ static const RzCmdDescArg open_maps_remove_args[] = {
 };
 static const RzCmdDescHelp open_maps_remove_help = {
 	.summary = "Remove the IO map with corresponding <id>",
+	.details = open_maps_remove_details,
 	.args = open_maps_remove_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_remove_all_Examples_detail_entries[] = {
+	{ .text = "om-*", .arg_str = NULL, .comment = "Remove all IO maps" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_remove_all_details[] = {
+	{ .name = "Examples", .entries = open_maps_remove_all_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_remove_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_remove_all_help = {
 	.summary = "Remove all IO maps",
+	.details = open_maps_remove_all_details,
 	.args = open_maps_remove_all_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_all_fd_Examples_detail_entries[] = {
+	{ .text = "oma", .arg_str = " 3", .comment = "Create a IO map covering all VA for file descriptor 3" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_all_fd_details[] = {
+	{ .name = "Examples", .entries = open_maps_all_fd_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_all_fd_args[] = {
 	{
 		.name = "fd",
@@ -11330,9 +11879,18 @@ static const RzCmdDescArg open_maps_all_fd_args[] = {
 };
 static const RzCmdDescHelp open_maps_all_fd_help = {
 	.summary = "Create a IO map covering all VA for given <fd> or current one if not provided",
+	.details = open_maps_all_fd_details,
 	.args = open_maps_all_fd_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_relocate_Examples_detail_entries[] = {
+	{ .text = "omb", .arg_str = " 4 0x200400000", .comment = "Relocate map with id 4 to address 0x200400000" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_relocate_details[] = {
+	{ .name = "Examples", .entries = open_maps_relocate_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_relocate_args[] = {
 	{
 		.name = "id",
@@ -11349,9 +11907,18 @@ static const RzCmdDescArg open_maps_relocate_args[] = {
 };
 static const RzCmdDescHelp open_maps_relocate_help = {
 	.summary = "Relocate map with corresponding <id> to <addr>",
+	.details = open_maps_relocate_details,
 	.args = open_maps_relocate_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_relocate_current_Examples_detail_entries[] = {
+	{ .text = "omb.", .arg_str = " 0x200400000", .comment = "Relocate map at current offset to address 0x200400000" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_relocate_current_details[] = {
+	{ .name = "Examples", .entries = open_maps_relocate_current_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_relocate_current_args[] = {
 	{
 		.name = "addr",
@@ -11363,9 +11930,18 @@ static const RzCmdDescArg open_maps_relocate_current_args[] = {
 };
 static const RzCmdDescHelp open_maps_relocate_current_help = {
 	.summary = "Relocate map at current offset to <addr>",
+	.details = open_maps_relocate_current_details,
 	.args = open_maps_relocate_current_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_flags_Examples_detail_entries[] = {
+	{ .text = "omf", .arg_str = " w 1", .comment = "Change flags/perms for map with id 1" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_flags_details[] = {
+	{ .name = "Examples", .entries = open_maps_flags_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_flags_args[] = {
 	{
 		.name = "flags",
@@ -11382,9 +11958,18 @@ static const RzCmdDescArg open_maps_flags_args[] = {
 };
 static const RzCmdDescHelp open_maps_flags_help = {
 	.summary = "Change flags/perms for map with given <id> or current one",
+	.details = open_maps_flags_details,
 	.args = open_maps_flags_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_flags_global_Examples_detail_entries[] = {
+	{ .text = "omfg", .arg_str = " w", .comment = "Change flags/perms for all maps to -w-" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_flags_global_details[] = {
+	{ .name = "Examples", .entries = open_maps_flags_global_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_flags_global_args[] = {
 	{
 		.name = "flags",
@@ -11397,9 +11982,18 @@ static const RzCmdDescArg open_maps_flags_global_args[] = {
 static const RzCmdDescHelp open_maps_flags_global_help = {
 	.summary = "Change flags/perms for all maps",
 	.description = "Update flags of all maps. If <flags> starts with a +, the specified flags are added to the maps. If <flags> starts with a -, the specified flags are removed from the maps. Otherwise, the exact <flags> are set for each map.",
+	.details = open_maps_flags_global_details,
 	.args = open_maps_flags_global_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_map_fd_Examples_detail_entries[] = {
+	{ .text = "omm", .arg_str = " 3", .comment = "Create default map for file descriptor 3" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_map_fd_details[] = {
+	{ .name = "Examples", .entries = open_maps_map_fd_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_map_fd_args[] = {
 	{
 		.name = "fd",
@@ -11411,11 +12005,30 @@ static const RzCmdDescArg open_maps_map_fd_args[] = {
 };
 static const RzCmdDescHelp open_maps_map_fd_help = {
 	.summary = "Create default map for given <fd> or current one",
+	.details = open_maps_map_fd_details,
 	.args = open_maps_map_fd_args,
 };
 
+static const RzCmdDescDetailEntry omn_Examples_detail_entries[] = {
+	{ .text = "omni", .arg_str = " 4 mymap", .comment = "Set name of map with id 4 to mymap" },
+	{ .text = "omni-", .arg_str = " 4", .comment = "Delete name of map with id 4" },
+	{ 0 },
+};
+static const RzCmdDescDetail omn_details[] = {
+	{ .name = "Examples", .entries = omn_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp omn_help = {
 	.summary = "Handle maps names",
+	.details = omn_details,
+};
+static const RzCmdDescDetailEntry open_maps_name_Examples_detail_entries[] = {
+	{ .text = "omn", .arg_str = " mymap", .comment = "Set name of map which spans current seek to mymap" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_name_details[] = {
+	{ .name = "Examples", .entries = open_maps_name_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg open_maps_name_args[] = {
 	{
@@ -11428,17 +12041,35 @@ static const RzCmdDescArg open_maps_name_args[] = {
 };
 static const RzCmdDescHelp open_maps_name_help = {
 	.summary = "Set name of map which spans current seek",
+	.details = open_maps_name_details,
 	.args = open_maps_name_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_name_del_Examples_detail_entries[] = {
+	{ .text = "omn-", .arg_str = NULL, .comment = "Delete name of map which spans current seek" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_name_del_details[] = {
+	{ .name = "Examples", .entries = open_maps_name_del_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_name_del_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_name_del_help = {
 	.summary = "Delete name of map which spans current seek",
+	.details = open_maps_name_del_details,
 	.args = open_maps_name_del_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_name_id_Examples_detail_entries[] = {
+	{ .text = "omni", .arg_str = " 4 mymap", .comment = "Set name of map with id 4 to mymap" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_name_id_details[] = {
+	{ .name = "Examples", .entries = open_maps_name_id_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_name_id_args[] = {
 	{
 		.name = "id",
@@ -11455,9 +12086,18 @@ static const RzCmdDescArg open_maps_name_id_args[] = {
 };
 static const RzCmdDescHelp open_maps_name_id_help = {
 	.summary = "Set name of map with map <id>",
+	.details = open_maps_name_id_details,
 	.args = open_maps_name_id_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_name_id_del_Examples_detail_entries[] = {
+	{ .text = "omni-", .arg_str = " 4", .comment = "Delete name of map with id 4" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_name_id_del_details[] = {
+	{ .name = "Examples", .entries = open_maps_name_id_del_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_name_id_del_args[] = {
 	{
 		.name = "id",
@@ -11468,9 +12108,18 @@ static const RzCmdDescArg open_maps_name_id_del_args[] = {
 };
 static const RzCmdDescHelp open_maps_name_id_del_help = {
 	.summary = "Delete name of map with map <id>",
+	.details = open_maps_name_id_del_details,
 	.args = open_maps_name_id_del_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_resize_Examples_detail_entries[] = {
+	{ .text = "omr", .arg_str = " 4 0x1000", .comment = "Resize map with id 4" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_resize_details[] = {
+	{ .name = "Examples", .entries = open_maps_resize_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_resize_args[] = {
 	{
 		.name = "id",
@@ -11487,11 +12136,29 @@ static const RzCmdDescArg open_maps_resize_args[] = {
 };
 static const RzCmdDescHelp open_maps_resize_help = {
 	.summary = "Resize map with corresponding <id>",
+	.details = open_maps_resize_details,
 	.args = open_maps_resize_args,
 };
 
+static const RzCmdDescDetailEntry omp_Examples_detail_entries[] = {
+	{ .text = "omp", .arg_str = " 4", .comment = "Prioritize map with id 4" },
+	{ 0 },
+};
+static const RzCmdDescDetail omp_details[] = {
+	{ .name = "Examples", .entries = omp_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp omp_help = {
 	.summary = "Prioritize maps",
+	.details = omp_details,
+};
+static const RzCmdDescDetailEntry open_maps_prioritize_Examples_detail_entries[] = {
+	{ .text = "omp", .arg_str = " 4", .comment = "Prioritize map with id 4" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_prioritize_details[] = {
+	{ .name = "Examples", .entries = open_maps_prioritize_Examples_detail_entries },
+	{ 0 },
 };
 static const RzCmdDescArg open_maps_prioritize_args[] = {
 	{
@@ -11503,9 +12170,18 @@ static const RzCmdDescArg open_maps_prioritize_args[] = {
 };
 static const RzCmdDescHelp open_maps_prioritize_help = {
 	.summary = "Prioritize map with the corresponding id",
+	.details = open_maps_prioritize_details,
 	.args = open_maps_prioritize_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_prioritize_binid_Examples_detail_entries[] = {
+	{ .text = "ompb", .arg_str = " 1", .comment = "Prioritize maps of the bin associated with the binid 1" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_prioritize_binid_details[] = {
+	{ .name = "Examples", .entries = open_maps_prioritize_binid_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_prioritize_binid_args[] = {
 	{
 		.name = "fd",
@@ -11516,9 +12192,18 @@ static const RzCmdDescArg open_maps_prioritize_binid_args[] = {
 };
 static const RzCmdDescHelp open_maps_prioritize_binid_help = {
 	.summary = "Prioritize maps of the bin associated with the binid",
+	.details = open_maps_prioritize_binid_details,
 	.args = open_maps_prioritize_binid_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_deprioritize_Examples_detail_entries[] = {
+	{ .text = "ompd", .arg_str = " 1", .comment = "Deprioritize map with id 1" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_deprioritize_details[] = {
+	{ .name = "Examples", .entries = open_maps_deprioritize_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_deprioritize_args[] = {
 	{
 		.name = "id",
@@ -11529,9 +12214,18 @@ static const RzCmdDescArg open_maps_deprioritize_args[] = {
 };
 static const RzCmdDescHelp open_maps_deprioritize_help = {
 	.summary = "Deprioritize map with the corresponding id",
+	.details = open_maps_deprioritize_details,
 	.args = open_maps_deprioritize_args,
 };
 
+static const RzCmdDescDetailEntry open_maps_prioritize_fd_Examples_detail_entries[] = {
+	{ .text = "ompf", .arg_str = " 7", .comment = "Prioritize map by file descriptor 7" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_maps_prioritize_fd_details[] = {
+	{ .name = "Examples", .entries = open_maps_prioritize_fd_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_maps_prioritize_fd_args[] = {
 	{
 		.name = "fd",
@@ -11542,9 +12236,18 @@ static const RzCmdDescArg open_maps_prioritize_fd_args[] = {
 };
 static const RzCmdDescHelp open_maps_prioritize_fd_help = {
 	.summary = "Prioritize map by fd",
+	.details = open_maps_prioritize_fd_details,
 	.args = open_maps_prioritize_fd_args,
 };
 
+static const RzCmdDescDetailEntry open_exchange_Examples_detail_entries[] = {
+	{ .text = "ox", .arg_str = " 3 7", .comment = "Exchange the descs of 3 and 7 and keep the mapping" },
+	{ 0 },
+};
+static const RzCmdDescDetail open_exchange_details[] = {
+	{ .name = "Examples", .entries = open_exchange_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg open_exchange_args[] = {
 	{
 		.name = "fd",
@@ -11560,6 +12263,7 @@ static const RzCmdDescArg open_exchange_args[] = {
 };
 static const RzCmdDescHelp open_exchange_help = {
 	.summary = "Exchange the descs of <fd> and <fdx> and keep the mapping",
+	.details = open_exchange_details,
 	.args = open_exchange_args,
 };
 
