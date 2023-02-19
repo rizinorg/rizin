@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "ppc.h"
+#include "opcode/ppc.h"
 #include "ppc_il.h"
 #include "ppc_analysis.h"
 #include "rz_types_base.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_util/rz_assert.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
