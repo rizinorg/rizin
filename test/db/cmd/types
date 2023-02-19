@@ -8325,3 +8325,21 @@ typedef moo_t (0x48) "c*q a z"
 typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
 EOF
 RUN
+
+NAME=Typeclasses - tk
+FILE=--
+CMDS=<<EOF
+tk char8_t 
+tk "unsigned long long"
+tk pid_t
+tk double
+tk void
+EOF
+EXPECT=<<EOF
+Signed Integral
+Unsigned Integral
+Integral
+Floating
+None
+EOF
+RUN
