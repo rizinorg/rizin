@@ -19,6 +19,36 @@
 #include "float_internal.c"
 #include <rz_userconf.h>
 #include <math.h>
+#include <fenv.h>
+
+/**
+ * \defgroup Generate Nan and infinite for float/double/long double
+ * @ {
+ */
+#define define_types_gen_nan(fname, ftype) \
+	RZ_API ftype rz_types_gen_##fname##_nan() { \
+		static ftype zero = 0; \
+		ftype ret = zero / zero; \
+		feclearexcept(FE_ALL_EXCEPT); \
+		return ret; \
+	}
+
+#define define_types_gen_inf(fname, ftype) \
+	RZ_API ftype rz_types_gen_##fname##_inf() { \
+		static ftype zero = 0; \
+		static ftype one = 1.0; \
+		ftype ret = one / zero; \
+		feclearexcept(FE_ALL_EXCEPT); \
+		return ret; \
+	}
+
+define_types_gen_nan(f32, float);
+define_types_gen_nan(f64, double);
+define_types_gen_nan(f128, long double);
+define_types_gen_inf(f32, float);
+define_types_gen_inf(f64, double);
+define_types_gen_inf(f128, long double);
+/**@}*/
 
 /**
  * \brief return the bitvector string of a float
