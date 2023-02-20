@@ -16,9 +16,6 @@ content. Go step-by-step through it.
   - [ ] Cutter can be compiled with new version of Rizin.
   - [ ] Basic Cutter functions work well with new version of Rizin.
   - [ ] Cutter is in good shape to be released.
-- [ ] Check that [rz-pipe](https://github.com/rizinorg/rz-pipe) works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
-  - [ ] Compile [python rz-pipe](https://github.com/rizinorg/rz-pipe/tree/master/python).
-  - [ ] Test that python rz-pipe works by using the [usage example](https://github.com/rizinorg/rz-pipe/tree/master/python#usage-example).
 - [ ] Check that [rz-bindings](https://github.com/rizinorg/rz-bindgen) works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
 - [ ] Check that [rz-ghidra](https://github.com/rizinorg/rz-ghidra) works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
 - [ ] Check that [rizin-extras](https://github.com/rizinorg/rizin-extras/) and rz-keystone in particular works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
