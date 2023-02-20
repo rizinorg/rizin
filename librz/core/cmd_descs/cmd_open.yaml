@@ -87,23 +87,12 @@ commands:
     cname: open_close_all
     summary: Close all files
     args: []
-    details:
-      - name: Examples
-        entries:
-          - text: "o--"
-            comment: Close all files
   - name: oc
     cname: open_core_file
     summary: Close all opened files and open <file>, like relaunching rizin
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
-    details:
-      - name: Examples
-        entries:
-          - text: "oc"
-            arg_str: " myfile.exe"
-            comment: Close all opened files and open myfile.exe
   - name: oC
     cname: open_malloc
     summary: Open a 'malloc://<len>' file, copying the bytes from current offset
@@ -270,38 +259,18 @@ commands:
         cname: reopen_nobin
         summary: Reopen curent file without loading binary information
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "oon"
-                comment: Reopen curent file without loading binary information
       - name: oon+
         cname: reopen_nobin_write
         summary: Reopen curent file in write-mode without loading binary information
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "oon+"
-                comment: Reopen curent file in write-mode without loading binary information
       - name: oonn
         cname: reopen_nobin_headers
         summary: Reopen curent file without loading binary information but with header flags
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "oonn"
-                comment: Reopen curent file without loading binary information but with header flags
       - name: oonn+
         cname: reopen_nobin_write_headers
         summary: Reopen curent file in write-mode without loading binary information but with header flags
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "oonn+"
-                comment: Reopen curent file in write-mode without loading binary information but with header flags
     details:
       - name: Examples
         entries:
@@ -333,11 +302,6 @@ commands:
     cname: open_list_ascii
     summary: List opened files in ASCII-art bars
     args: []
-    details:
-      - name: Examples
-        entries:
-          - text: "o="
-            comment: List opened files in ASCII-art bars
   - name: oa
     cname: open_arch_bits
     summary: Specify <arch> and <bits> for the file <filename> or the current one if none is specified
@@ -398,11 +362,6 @@ commands:
         cname: open_binary_del_all
         summary: Delete all binary files
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "ob-*"
-                comment: Delete all binary files
       - name: obl
         cname: open_binary_list
         summary: List opened binary files
@@ -413,29 +372,14 @@ commands:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_TABLE
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "obl"
-                comment: List opened binary files
       - name: obl=
         cname: open_binary_list_ascii
         summary: List opened binary files in ASCII art
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "obl="
-                comment: List opened binary files in ASCII art
       - name: ob.
         cname: open_binary_show
         summary: Show id of binary file current address
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "ob."
-                comment: Show id of binary file current address
       - name: oba
         cname: open_binary_add
         summary: Open binary file for current file and load binary info with baseaddr at current offset
@@ -523,29 +467,14 @@ commands:
         cname: open_prioritize_next
         summary: Prioritize next file in the list
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "opn"
-                comment: Prioritize next file in the list
       - name: opp
         cname: open_prioritize_prev
         summary: Prioritize previous file in the list
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "opp"
-                comment: Prioritize previous file in the list
       - name: opr
         cname: open_prioritize_next_rotate
         summary: Prioritize next file in the list (go back to first if on the last)
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "opr"
-                comment: Prioritize next file in the list (go back to first if on the last)
     details:
       - name: Examples
         entries:
@@ -611,20 +540,10 @@ commands:
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "oml."
-                comment: Show map at the current offset
       - name: oml=
         cname: open_maps_list_ascii
         summary: List IO maps in ASCII art
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "oml="
-                comment: List IO maps in ASCII art
       - name: om-
         cname: open_maps_remove
         summary: Remove the IO map with corresponding <id>
@@ -641,11 +560,6 @@ commands:
         cname: open_maps_remove_all
         summary: Remove all IO maps
         args: []
-        details:
-          - name: Examples
-            entries:
-              - text: "om-*"
-                comment: Remove all IO maps
       - name: oma
         cname: open_maps_all_fd
         summary: Create a IO map covering all VA for given <fd> or current one if not provided
@@ -749,11 +663,6 @@ commands:
             cname: open_maps_name_del
             summary: Delete name of map which spans current seek
             args: []
-            details:
-              - name: Examples
-                entries:
-                  - text: "omn-"
-                    comment: Delete name of map which spans current seek
           - name: omni
             cname: open_maps_name_id
             summary: Set name of map with map <id>

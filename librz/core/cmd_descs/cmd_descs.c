@@ -55,8 +55,6 @@ static const RzCmdDescDetail open_write_details[2];
 static const RzCmdDescDetail open_list_details[2];
 static const RzCmdDescDetail open_show_current_details[2];
 static const RzCmdDescDetail open_close_details[2];
-static const RzCmdDescDetail open_close_all_details[2];
-static const RzCmdDescDetail open_core_file_details[2];
 static const RzCmdDescDetail open_malloc_details[2];
 static const RzCmdDescDetail open_nobin_details[2];
 static const RzCmdDescDetail open_nobin_write_details[2];
@@ -69,21 +67,12 @@ static const RzCmdDescDetail reopen_debug_details[2];
 static const RzCmdDescDetail reopen_debug_file_details[2];
 static const RzCmdDescDetail reopen_debug_rzrun_details[2];
 static const RzCmdDescDetail reopen_malloc_details[2];
-static const RzCmdDescDetail reopen_nobin_details[2];
-static const RzCmdDescDetail reopen_nobin_write_details[2];
-static const RzCmdDescDetail reopen_nobin_headers_details[2];
-static const RzCmdDescDetail reopen_nobin_write_headers_details[2];
 static const RzCmdDescDetail oo_details[2];
 static const RzCmdDescDetail open_plugins_details[2];
-static const RzCmdDescDetail open_list_ascii_details[2];
 static const RzCmdDescDetail open_arch_bits_details[2];
 static const RzCmdDescDetail open_binary_select_id_details[2];
 static const RzCmdDescDetail open_binary_select_fd_details[2];
 static const RzCmdDescDetail open_binary_del_details[2];
-static const RzCmdDescDetail open_binary_del_all_details[2];
-static const RzCmdDescDetail open_binary_list_details[2];
-static const RzCmdDescDetail open_binary_list_ascii_details[2];
-static const RzCmdDescDetail open_binary_show_details[2];
 static const RzCmdDescDetail open_binary_add_details[2];
 static const RzCmdDescDetail open_binary_file_details[2];
 static const RzCmdDescDetail open_binary_rebase_details[2];
@@ -91,16 +80,10 @@ static const RzCmdDescDetail open_binary_reload_details[2];
 static const RzCmdDescDetail ob_details[2];
 static const RzCmdDescDetail open_use_details[2];
 static const RzCmdDescDetail open_prioritize_details[2];
-static const RzCmdDescDetail open_prioritize_next_details[2];
-static const RzCmdDescDetail open_prioritize_prev_details[2];
-static const RzCmdDescDetail open_prioritize_next_rotate_details[2];
 static const RzCmdDescDetail op_details[2];
 static const RzCmdDescDetail open_maps_map_details[2];
 static const RzCmdDescDetail open_maps_list_details[2];
-static const RzCmdDescDetail open_maps_list_cur_details[2];
-static const RzCmdDescDetail open_maps_list_ascii_details[2];
 static const RzCmdDescDetail open_maps_remove_details[2];
-static const RzCmdDescDetail open_maps_remove_all_details[2];
 static const RzCmdDescDetail open_maps_all_fd_details[2];
 static const RzCmdDescDetail open_maps_relocate_details[2];
 static const RzCmdDescDetail open_maps_relocate_current_details[2];
@@ -108,7 +91,6 @@ static const RzCmdDescDetail open_maps_flags_details[2];
 static const RzCmdDescDetail open_maps_flags_global_details[2];
 static const RzCmdDescDetail open_maps_map_fd_details[2];
 static const RzCmdDescDetail open_maps_name_details[2];
-static const RzCmdDescDetail open_maps_name_del_details[2];
 static const RzCmdDescDetail open_maps_name_id_details[2];
 static const RzCmdDescDetail open_maps_name_id_del_details[2];
 static const RzCmdDescDetail omn_details[2];
@@ -10878,31 +10860,14 @@ static const RzCmdDescHelp open_close_help = {
 	.args = open_close_args,
 };
 
-static const RzCmdDescDetailEntry open_close_all_Examples_detail_entries[] = {
-	{ .text = "o--", .arg_str = NULL, .comment = "Close all files" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_close_all_details[] = {
-	{ .name = "Examples", .entries = open_close_all_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_close_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_close_all_help = {
 	.summary = "Close all files",
-	.details = open_close_all_details,
 	.args = open_close_all_args,
 };
 
-static const RzCmdDescDetailEntry open_core_file_Examples_detail_entries[] = {
-	{ .text = "oc", .arg_str = " myfile.exe", .comment = "Close all opened files and open myfile.exe" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_core_file_details[] = {
-	{ .name = "Examples", .entries = open_core_file_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_core_file_args[] = {
 	{
 		.name = "file",
@@ -10913,7 +10878,6 @@ static const RzCmdDescArg open_core_file_args[] = {
 };
 static const RzCmdDescHelp open_core_file_help = {
 	.summary = "Close all opened files and open <file>, like relaunching rizin",
-	.details = open_core_file_details,
 	.args = open_core_file_args,
 };
 
@@ -11219,71 +11183,35 @@ static const RzCmdDescHelp reopen_malloc_help = {
 	.args = reopen_malloc_args,
 };
 
-static const RzCmdDescDetailEntry reopen_nobin_Examples_detail_entries[] = {
-	{ .text = "oon", .arg_str = NULL, .comment = "Reopen curent file without loading binary information" },
-	{ 0 },
-};
-static const RzCmdDescDetail reopen_nobin_details[] = {
-	{ .name = "Examples", .entries = reopen_nobin_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg reopen_nobin_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_help = {
 	.summary = "Reopen curent file without loading binary information",
-	.details = reopen_nobin_details,
 	.args = reopen_nobin_args,
 };
 
-static const RzCmdDescDetailEntry reopen_nobin_write_Examples_detail_entries[] = {
-	{ .text = "oon+", .arg_str = NULL, .comment = "Reopen curent file in write-mode without loading binary information" },
-	{ 0 },
-};
-static const RzCmdDescDetail reopen_nobin_write_details[] = {
-	{ .name = "Examples", .entries = reopen_nobin_write_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg reopen_nobin_write_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_write_help = {
 	.summary = "Reopen curent file in write-mode without loading binary information",
-	.details = reopen_nobin_write_details,
 	.args = reopen_nobin_write_args,
 };
 
-static const RzCmdDescDetailEntry reopen_nobin_headers_Examples_detail_entries[] = {
-	{ .text = "oonn", .arg_str = NULL, .comment = "Reopen curent file without loading binary information but with header flags" },
-	{ 0 },
-};
-static const RzCmdDescDetail reopen_nobin_headers_details[] = {
-	{ .name = "Examples", .entries = reopen_nobin_headers_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg reopen_nobin_headers_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_headers_help = {
 	.summary = "Reopen curent file without loading binary information but with header flags",
-	.details = reopen_nobin_headers_details,
 	.args = reopen_nobin_headers_args,
 };
 
-static const RzCmdDescDetailEntry reopen_nobin_write_headers_Examples_detail_entries[] = {
-	{ .text = "oonn+", .arg_str = NULL, .comment = "Reopen curent file in write-mode without loading binary information but with header flags" },
-	{ 0 },
-};
-static const RzCmdDescDetail reopen_nobin_write_headers_details[] = {
-	{ .name = "Examples", .entries = reopen_nobin_write_headers_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg reopen_nobin_write_headers_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp reopen_nobin_write_headers_help = {
 	.summary = "Reopen curent file in write-mode without loading binary information but with header flags",
-	.details = reopen_nobin_write_headers_details,
 	.args = reopen_nobin_write_headers_args,
 };
 
@@ -11310,20 +11238,11 @@ static const RzCmdDescHelp open_plugins_help = {
 	.args = open_plugins_args,
 };
 
-static const RzCmdDescDetailEntry open_list_ascii_Examples_detail_entries[] = {
-	{ .text = "o=", .arg_str = NULL, .comment = "List opened files in ASCII-art bars" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_list_ascii_details[] = {
-	{ .name = "Examples", .entries = open_list_ascii_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_list_ascii_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_list_ascii_help = {
 	.summary = "List opened files in ASCII-art bars",
-	.details = open_list_ascii_details,
 	.args = open_list_ascii_args,
 };
 
@@ -11438,71 +11357,35 @@ static const RzCmdDescHelp open_binary_del_help = {
 	.args = open_binary_del_args,
 };
 
-static const RzCmdDescDetailEntry open_binary_del_all_Examples_detail_entries[] = {
-	{ .text = "ob-*", .arg_str = NULL, .comment = "Delete all binary files" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_binary_del_all_details[] = {
-	{ .name = "Examples", .entries = open_binary_del_all_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_binary_del_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_del_all_help = {
 	.summary = "Delete all binary files",
-	.details = open_binary_del_all_details,
 	.args = open_binary_del_all_args,
 };
 
-static const RzCmdDescDetailEntry open_binary_list_Examples_detail_entries[] = {
-	{ .text = "obl", .arg_str = NULL, .comment = "List opened binary files" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_binary_list_details[] = {
-	{ .name = "Examples", .entries = open_binary_list_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_binary_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_list_help = {
 	.summary = "List opened binary files",
-	.details = open_binary_list_details,
 	.args = open_binary_list_args,
 };
 
-static const RzCmdDescDetailEntry open_binary_list_ascii_Examples_detail_entries[] = {
-	{ .text = "obl=", .arg_str = NULL, .comment = "List opened binary files in ASCII art" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_binary_list_ascii_details[] = {
-	{ .name = "Examples", .entries = open_binary_list_ascii_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_binary_list_ascii_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_list_ascii_help = {
 	.summary = "List opened binary files in ASCII art",
-	.details = open_binary_list_ascii_details,
 	.args = open_binary_list_ascii_args,
 };
 
-static const RzCmdDescDetailEntry open_binary_show_Examples_detail_entries[] = {
-	{ .text = "ob.", .arg_str = NULL, .comment = "Show id of binary file current address" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_binary_show_details[] = {
-	{ .name = "Examples", .entries = open_binary_show_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_binary_show_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_binary_show_help = {
 	.summary = "Show id of binary file current address",
-	.details = open_binary_show_details,
 	.args = open_binary_show_args,
 };
 
@@ -11656,54 +11539,27 @@ static const RzCmdDescHelp open_prioritize_help = {
 	.args = open_prioritize_args,
 };
 
-static const RzCmdDescDetailEntry open_prioritize_next_Examples_detail_entries[] = {
-	{ .text = "opn", .arg_str = NULL, .comment = "Prioritize next file in the list" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_prioritize_next_details[] = {
-	{ .name = "Examples", .entries = open_prioritize_next_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_prioritize_next_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_prioritize_next_help = {
 	.summary = "Prioritize next file in the list",
-	.details = open_prioritize_next_details,
 	.args = open_prioritize_next_args,
 };
 
-static const RzCmdDescDetailEntry open_prioritize_prev_Examples_detail_entries[] = {
-	{ .text = "opp", .arg_str = NULL, .comment = "Prioritize previous file in the list" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_prioritize_prev_details[] = {
-	{ .name = "Examples", .entries = open_prioritize_prev_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_prioritize_prev_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_prioritize_prev_help = {
 	.summary = "Prioritize previous file in the list",
-	.details = open_prioritize_prev_details,
 	.args = open_prioritize_prev_args,
 };
 
-static const RzCmdDescDetailEntry open_prioritize_next_rotate_Examples_detail_entries[] = {
-	{ .text = "opr", .arg_str = NULL, .comment = "Prioritize next file in the list (go back to first if on the last)" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_prioritize_next_rotate_details[] = {
-	{ .name = "Examples", .entries = open_prioritize_next_rotate_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_prioritize_next_rotate_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_prioritize_next_rotate_help = {
 	.summary = "Prioritize next file in the list (go back to first if on the last)",
-	.details = open_prioritize_next_rotate_details,
 	.args = open_prioritize_next_rotate_args,
 };
 
@@ -11794,37 +11650,19 @@ static const RzCmdDescHelp open_maps_list_help = {
 	.args = open_maps_list_args,
 };
 
-static const RzCmdDescDetailEntry open_maps_list_cur_Examples_detail_entries[] = {
-	{ .text = "oml.", .arg_str = NULL, .comment = "Show map at the current offset" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_maps_list_cur_details[] = {
-	{ .name = "Examples", .entries = open_maps_list_cur_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_maps_list_cur_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_list_cur_help = {
 	.summary = "Show map at the current offset",
-	.details = open_maps_list_cur_details,
 	.args = open_maps_list_cur_args,
 };
 
-static const RzCmdDescDetailEntry open_maps_list_ascii_Examples_detail_entries[] = {
-	{ .text = "oml=", .arg_str = NULL, .comment = "List IO maps in ASCII art" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_maps_list_ascii_details[] = {
-	{ .name = "Examples", .entries = open_maps_list_ascii_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_maps_list_ascii_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_list_ascii_help = {
 	.summary = "List IO maps in ASCII art",
-	.details = open_maps_list_ascii_details,
 	.args = open_maps_list_ascii_args,
 };
 
@@ -11850,20 +11688,11 @@ static const RzCmdDescHelp open_maps_remove_help = {
 	.args = open_maps_remove_args,
 };
 
-static const RzCmdDescDetailEntry open_maps_remove_all_Examples_detail_entries[] = {
-	{ .text = "om-*", .arg_str = NULL, .comment = "Remove all IO maps" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_maps_remove_all_details[] = {
-	{ .name = "Examples", .entries = open_maps_remove_all_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_maps_remove_all_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_remove_all_help = {
 	.summary = "Remove all IO maps",
-	.details = open_maps_remove_all_details,
 	.args = open_maps_remove_all_args,
 };
 
@@ -12052,20 +11881,11 @@ static const RzCmdDescHelp open_maps_name_help = {
 	.args = open_maps_name_args,
 };
 
-static const RzCmdDescDetailEntry open_maps_name_del_Examples_detail_entries[] = {
-	{ .text = "omn-", .arg_str = NULL, .comment = "Delete name of map which spans current seek" },
-	{ 0 },
-};
-static const RzCmdDescDetail open_maps_name_del_details[] = {
-	{ .name = "Examples", .entries = open_maps_name_del_Examples_detail_entries },
-	{ 0 },
-};
 static const RzCmdDescArg open_maps_name_del_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp open_maps_name_del_help = {
 	.summary = "Delete name of map which spans current seek",
-	.details = open_maps_name_del_details,
 	.args = open_maps_name_del_args,
 };
 
