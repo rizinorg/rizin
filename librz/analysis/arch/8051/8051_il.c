@@ -184,21 +184,21 @@ static RzILOpPure *get_any(I8051OpAddressing *a) {
 static RzILOpEffect *set_any(I8051OpAddressing *a, RzILOpPure *v) {
 	switch (a->mode) {
 	case I8051_ADDRESSING_REGISTER: {
-		if (is_hook_register(a->d.reg)) {
-			return hook_register_write(a->d.reg, v);
-		} else {
-			return set_reg(a->d.reg, v);
-		}
+		//		if (is_hook_register(a->d.reg)) {
+		//			return hook_register_write(a->d.reg, v);
+		//		} else {
+		return set_reg(a->d.reg, v);
+		//		}
 	}
 	case I8051_ADDRESSING_BIT: {
 		return STOREW(U16(a->d.addr), BOOL_TO_BV(v, 1));
 	}
 	case I8051_ADDRESSING_DIRECT: {
-		if (is_hook_register(a->d.addr)) {
-			return hook_register_write(a->d.addr, v);
-		} else {
-			return STORE(U16(a->d.addr), v);
-		}
+		//		if (is_hook_register(a->d.addr)) {
+		//			return hook_register_write(a->d.addr, v);
+		//		} else {
+		return STORE(U16(a->d.addr), v);
+		//		}
 	}
 	case I8051_ADDRESSING_INDIRECT:
 		return STORE(UNSIGNED(16, get_any(a->d.indirect)), v);
