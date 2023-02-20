@@ -733,9 +733,9 @@ RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 				ase = findAssembler(a, ".ks");
 				if (!ase) {
 					ase = findAssembler(a, ".nz");
-					if (!ase) {
-						ase = findAssembler(a, NULL);
-					}
+				}
+				if (!ase) {
+					ase = findAssembler(a, NULL);
 				}
 			}
 		} else {
