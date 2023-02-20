@@ -604,3 +604,12 @@ EXPECT_ERR=<<EOF
 Invalid instruction of lifting not implemented.
 EOF
 RUN
+
+NAME=rz-asm #Add GAS/AT&T syntax support in asm.c assembler
+FILE==
+CMDS=!rz-asm -a x86 -s att "movl %eax, %ebx"
+EXPECT=
+EXPECT_ERR=<<EOF
+89c3
+EOF
+RUN
