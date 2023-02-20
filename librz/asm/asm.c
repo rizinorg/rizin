@@ -728,8 +728,7 @@ RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 			// Check if the syntax is GAS/AT&T.
 			if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 				ase = findAssembler(a, ".as");
-			}
-			else {
+			} else {
 				/* find callback if no assembler support in current plugin */
 				ase = findAssembler(a, ".ks");
 				if (!ase) {
