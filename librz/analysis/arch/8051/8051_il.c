@@ -73,7 +73,7 @@ static const bool i8051_register_is_bit[0xff] = {
 static RzILOpPure *val_register(I8051OpAddressing *a) {
 	I8051Registers r = a->d.reg;
 	if (r == I8051_PC) {
-		return U16(a->pc);
+		return U16(a->op->len);
 	} else {
 		return VARG(i8051_registers_str[a->d.reg]);
 	}
@@ -169,7 +169,7 @@ static RzILOpPure *get_any(I8051OpAddressing *a) {
 	case I8051_ADDRESSING_IMMEDIATE16:
 		return U16(a->d.constant);
 	case I8051_ADDRESSING_RELATIVE:
-		return U16(a->pc + a->d.addr);
+		return U16(a->op->pc + a->op->len + a->d.addr);
 	case I8051_ADDRESSING_ABSOLUTE:
 	case I8051_ADDRESSING_LONG:
 		return U16(a->d.addr16);

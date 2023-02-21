@@ -521,7 +521,7 @@ RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL con
 	}
 
 	for (int i = 0; i < op->argc; ++i) {
-		op->argv[i]->pc = pc;
+		op->argv[i]->op = op;
 		op->argv[i]->ctx = (i8051_plugin_context *)analysis->plugin_data;
 	}
 

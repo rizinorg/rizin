@@ -160,8 +160,10 @@ enum i8051_map_entry_type {
 	I8051_XDATA = 2,
 };
 
+struct i8051_op_t;
+
 typedef struct i8051_op_addressing_t {
-	ut64 pc;
+	struct i8051_op_t *op;
 	I8051AddressingMode mode;
 	i8051_plugin_context *ctx;
 	union {
