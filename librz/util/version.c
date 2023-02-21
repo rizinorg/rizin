@@ -20,7 +20,7 @@
  * \return The saved git commit hash as a string, or NULL if it's not available.
  */
 RZ_API RZ_OWN char *rz_version_gittip() {
-	char *datadir = rz_path_system(RZ_DATADIR);
+	char *datadir = rz_path_system(RZ_SYSTEM_DATADIR);
 	if (!datadir) {
 		return NULL;
 	}

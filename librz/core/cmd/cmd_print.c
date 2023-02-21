@@ -1082,19 +1082,21 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
 			char *prefix = rz_path_prefix(NULL);
-			char *sdb_format = rz_path_home_prefix(RZ_SDB_FORMAT);
+			char *sdb_format = rz_path_home_prefix(RZ_HOME_SDB_FORMAT);
+			char *system_sdb_format = rz_path_system(RZ_SYSTEM_SDB_FORMAT);
 			eprintf("|Usage: pfo [format-file]\n"
 				" %s\n"
-				" " RZ_JOIN_3_PATHS("%s", RZ_SDB_FORMAT, "") "\n",
-				sdb_format, prefix);
+				" %s\n",
+				sdb_format, system_sdb_format);
+			free(system_sdb_format);
 			free(sdb_format);
 			free(prefix);
 		} else if (_input[2] == ' ') {
 			const char *fname = rz_str_trim_head_ro(_input + 3);
-			char *home_formats = rz_path_home_prefix(RZ_SDB_FORMAT);
+			char *home_formats = rz_path_home_prefix(RZ_HOME_SDB_FORMAT);
 			char *home = rz_file_path_join(home_formats, fname);
 			free(home_formats);
-			char *system_formats = rz_path_system(RZ_SDB_FORMAT);
+			char *system_formats = rz_path_system(RZ_SYSTEM_SDB_FORMAT);
 			char *path = rz_file_path_join(system_formats, fname);
 			free(system_formats);
 			if (rz_str_endswith(_input, ".h")) {
@@ -1120,7 +1122,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			RzList *files;
 			RzListIter *iter;
 			const char *fn;
-			char *home = rz_path_home_prefix(RZ_SDB_FORMAT);
+			char *home = rz_path_home_prefix(RZ_HOME_SDB_FORMAT);
 			if (home) {
 				files = rz_sys_dir(home);
 				rz_list_foreach (files, iter, fn) {
@@ -1131,7 +1133,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				rz_list_free(files);
 				free(home);
 			}
-			char *path = rz_path_system(RZ_SDB_FORMAT);
+			char *path = rz_path_system(RZ_SYSTEM_SDB_FORMAT);
 			if (path) {
 				files = rz_sys_dir(path);
 				rz_list_foreach (files, iter, fn) {
@@ -3077,8 +3079,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				       "|   foo@ 0x40   # use 'foo' magic file on address 0x40\n"
 				       "|   @ 0x40      # use current magic file on address 0x40\n"
 				       "|   \\n         # append newline\n"
-				       "| e dir.magic  # defaults to " RZ_JOIN_2_PATHS("{RZ_PREFIX}", RZ_SDB_MAGIC) "\n"
-														    "| /m           # search for magic signatures\n");
+				       "| e dir.magic  # defaults to " RZ_JOIN_2_PATHS("{RZ_PREFIX}", RZ_SYSTEM_SDB_MAGIC) "\n"
+															   "| /m           # search for magic signatures\n");
 		} else if (input[1] == 'j') { // "pmj"
 			const char *filename = rz_str_trim_head_ro(input + 2);
 			PJ *pj = pj_new();

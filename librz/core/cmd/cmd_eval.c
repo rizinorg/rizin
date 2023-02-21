@@ -64,8 +64,8 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 		return true;
 	}
 
-	char *home_themes = rz_path_home_prefix(RZ_THEMES);
-	char *system_themes = rz_path_system(RZ_THEMES);
+	char *home_themes = rz_path_home_prefix(RZ_HOME_THEMES);
+	char *system_themes = rz_path_system(RZ_SYSTEM_THEMES);
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
 	free(system_themes);
@@ -124,13 +124,13 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 		return NULL;
 	}
 
-	char *path = rz_path_home_prefix(RZ_THEMES);
+	char *path = rz_path_home_prefix(RZ_HOME_THEMES);
 	if (path) {
 		list_themes_in_path(themes, path);
 		RZ_FREE(path);
 	}
 
-	path = rz_path_system(RZ_THEMES);
+	path = rz_path_system(RZ_SYSTEM_THEMES);
 	if (path) {
 		list_themes_in_path(themes, path);
 		RZ_FREE(path);

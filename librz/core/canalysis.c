@@ -4904,8 +4904,8 @@ static void analysis_sigdb_add(RzSigDb *sigs, const char *path, bool with_detail
  * \brief Returns all the signatures found in the default path.
  *
  * Scans for signature in the following paths:
- * - home path + RZ_SIGDB
- * - system install prefix path + RZ_SIGDB
+ * - home path + RZ_HOME_SIGDB
+ * - RZ_SYSTEM_SIGDB
  * - flirt.sigdb.path user custom sigdb path
  *
  * \param      core          The RzCore to use.
@@ -4921,13 +4921,13 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNUL
 	}
 
 	if (rz_config_get_b(core->config, "flirt.sigdb.load.home")) {
-		char *home_sigdb = rz_path_home_prefix(RZ_SIGDB);
+		char *home_sigdb = rz_path_home_prefix(RZ_HOME_SIGDB);
 		analysis_sigdb_add(sigs, home_sigdb, with_details);
 		free(home_sigdb);
 	}
 
 	if (rz_config_get_b(core->config, "flirt.sigdb.load.system")) {
-		char *system_sigdb = rz_path_system(RZ_SIGDB);
+		char *system_sigdb = rz_path_system(RZ_SYSTEM_SIGDB);
 		analysis_sigdb_add(sigs, system_sigdb, with_details);
 		free(system_sigdb);
 	}
@@ -5520,7 +5520,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *types_dir = rz_path_system(RZ_SYSTEM_SDB_TYPES);
 	rz_type_db_init(core->analysis->typedb, types_dir, analysis_arch, bits, os);
 	free(types_dir);
 }
@@ -5542,8 +5542,8 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	}
 
 	int bits = core->analysis->bits;
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
-	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
+	char *types_dir = rz_path_system(RZ_SYSTEM_SDB_TYPES);
+	char *home_types_dir = rz_path_home_prefix(RZ_HOME_SDB_TYPES);
 	char buf[40];
 	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
 	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));

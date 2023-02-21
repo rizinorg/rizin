@@ -13,11 +13,11 @@
 
 RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 	const char *c = rz_config_get(core->config, "hud.path");
-	char *system_hud_dir = rz_path_system(RZ_HUD);
+	char *system_hud_dir = rz_path_system(RZ_SYSTEM_HUD);
 	char *f = rz_file_path_join(system_hud_dir, "main");
 	free(system_hud_dir);
 	int use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *homehud = rz_path_home_prefix(RZ_HUD);
+	char *homehud = rz_path_home_prefix(RZ_HOME_HUD);
 	char *res = NULL;
 	char *p = 0;
 	rz_cons_singleton()->context->color_mode = use_color;

@@ -108,7 +108,7 @@ RZ_API void rz_path_set_prefix(RZ_NONNULL const char *path) {
  * \brief Return \p path prefixed by the Rizin install prefix
  *
  * The install prefix is taken from the build-time configuration RZ_PREFIX,
- * unless Rizin was not compiled as "portable". In such a case the prefix is
+ * unless Rizin was compiled as "portable". In such a case the prefix is
  * discovered from the path of the executable calling this function.
  *
  * \param path Path to put in the install prefix context or NULL to just get the install prefix
@@ -153,9 +153,15 @@ RZ_API RZ_OWN char *rz_path_libdir(void) {
 }
 
 /**
- * \brief Return the full system path of the given subpath \p path
+ * \brief Return the full system path of the given (subpath) \p path.
+ *
+ * If \p path is relative, then it is assumed to be under the Rizin system
+ * prefix (RZ_PREFIX), otherwise the path is duplicated and returned.
  */
 RZ_API RZ_OWN char *rz_path_system(RZ_NULLABLE const char *path) {
+	if (rz_file_is_abspath(path)) {
+		return strdup(path);
+	}
 	return rz_path_prefix(path);
 }
 
@@ -163,7 +169,7 @@ RZ_API RZ_OWN char *rz_path_system(RZ_NULLABLE const char *path) {
  * \brief Return the system path of the global rizinrc file
  */
 RZ_API RZ_OWN char *rz_path_system_rc(void) {
-	return rz_path_prefix(RZ_GLOBAL_RC);
+	return rz_path_prefix(RZ_SYSTEM_RC);
 }
 
 /**

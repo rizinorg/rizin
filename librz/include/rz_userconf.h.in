@@ -66,42 +66,49 @@
 #define RZ_BINDIR_DEPTH @BINDIR_DEPTH@
 // clang-format on
 
-#define RZ_PREFIX  "@PREFIX@"
-#define RZ_BINDIR  "@BINDIR@"
-#define RZ_LIBDIR  "@LIBDIR@"
-#define RZ_INCDIR  "@INCLUDEDIR@"
-#define RZ_DATDIR  "@DATADIR@"
-#define RZ_WWWROOT "@WWWROOT@"
+#define RZ_PREFIX "@PREFIX@"
+#define RZ_BINDIR "@BINDIR@"
+#define RZ_LIBDIR "@LIBDIR@"
+#define RZ_INCDIR "@INCLUDEDIR@"
+#define RZ_DATDIR "@DATADIR@"
 
-#define RZ_PLUGINS  "@PLUGINS@"
-#define RZ_DATADIR  "@DATADIR_RZ@"
-#define RZ_SDB      "@SDB@"
-#define RZ_SIGDB    "@SIGDB@"
-#define RZ_THEMES   "@THEMES@"
-#define RZ_FORTUNES "@FORTUNES@"
-#define RZ_FLAGS    "@FLAGS@"
-#define RZ_HUD      "@HUD@"
+#define RZ_SYSTEM_DATADIR  "@SYSTEM_DATADIR_RIZIN@"
+#define RZ_SYSTEM_WWWROOT  "@SYSTEM_WWWROOT@"
+#define RZ_SYSTEM_PLUGINS  "@SYSTEM_PLUGINS@"
+#define RZ_SYSTEM_SDB      "@SYSTEM_SDB@"
+#define RZ_SYSTEM_SIGDB    "@SYSTEM_SIGDB@"
+#define RZ_SYSTEM_THEMES   "@SYSTEM_THEMES@"
+#define RZ_SYSTEM_FORTUNES "@SYSTEM_FORTUNES@"
+#define RZ_SYSTEM_FLAGS    "@SYSTEM_FLAGS@"
+#define RZ_SYSTEM_HUD      "@SYSTEM_HUD@"
 
-#define RZ_SDB_ARCH_PLATFORMS RZ_JOIN_3_PATHS(RZ_SDB, "asm", "platforms")
-#define RZ_SDB_ARCH_CPUS      RZ_JOIN_3_PATHS(RZ_SDB, "asm", "cpus")
-#define RZ_SDB_TYPES          RZ_JOIN_2_PATHS(RZ_SDB, "types")
-#define RZ_SDB_OPCODES        RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
-#define RZ_SDB_REG            RZ_JOIN_2_PATHS(RZ_SDB, "reg")
-#define RZ_SDB_MAGIC          RZ_JOIN_2_PATHS(RZ_SDB, "magic")
-#define RZ_SDB_FORMAT         RZ_JOIN_2_PATHS(RZ_SDB, "format")
-#define RZ_PDB                RZ_JOIN_2_PATHS(RZ_DATADIR, "pdb")
-#define RZ_PROJECTS           RZ_JOIN_2_PATHS(RZ_DATADIR, "projects")
-#define RZ_BINRC              RZ_JOIN_2_PATHS(RZ_DATADIR, "rc.d")
+#define RZ_SYSTEM_SDB_ARCH_PLATFORMS RZ_JOIN_3_PATHS(RZ_SYSTEM_SDB, "asm", "platforms")
+#define RZ_SYSTEM_SDB_ARCH_CPUS      RZ_JOIN_3_PATHS(RZ_SYSTEM_SDB, "asm", "cpus")
+#define RZ_SYSTEM_SDB_TYPES          RZ_JOIN_2_PATHS(RZ_SYSTEM_SDB, "types")
+#define RZ_SYSTEM_SDB_OPCODES        RZ_JOIN_2_PATHS(RZ_SYSTEM_SDB, "opcodes")
+#define RZ_SYSTEM_SDB_REG            RZ_JOIN_2_PATHS(RZ_SYSTEM_SDB, "reg")
+#define RZ_SYSTEM_SDB_MAGIC          RZ_JOIN_2_PATHS(RZ_SYSTEM_SDB, "magic")
+#define RZ_SYSTEM_SDB_FORMAT         RZ_JOIN_2_PATHS(RZ_SYSTEM_SDB, "format")
+#define RZ_SYSTEM_RC                 RZ_JOIN_2_PATHS(RZ_SYSTEM_DATADIR, "rizinrc")
 
-#define RZ_HOME_PREFIX    ".local"
-#define RZ_HOME_CONFIGDIR RZ_JOIN_2_PATHS(".config", "rizin")
-#define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
-
-#define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
-
+#define RZ_HOME_PREFIX        ".local"
+#define RZ_HOME_DATADIR       "@HOME_DATADIR_RIZIN@"
+#define RZ_HOME_CONFIGDIR     RZ_JOIN_2_PATHS(".config", "rizin")
+#define RZ_HOME_CACHEDIR      RZ_JOIN_2_PATHS(".cache", "rizin")
+#define RZ_HOME_HISTORY       RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
 #define RZ_HOME_CONFIG_RC     RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc")
 #define RZ_HOME_CONFIG_RC_DIR RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc.d")
-#define RZ_GLOBAL_RC          RZ_JOIN_2_PATHS(RZ_DATADIR, "rizinrc")
+#define RZ_HOME_WWWROOT       "@HOME_WWWROOT@"
+#define RZ_HOME_PLUGINS       "@HOME_PLUGINS@"
+#define RZ_HOME_SIGDB         "@HOME_SIGDB@"
+#define RZ_HOME_THEMES        "@HOME_THEMES@"
+#define RZ_HOME_HUD           "@HOME_HUD@"
+#define RZ_HOME_SDB           "@HOME_SDB@"
+#define RZ_HOME_SDB_FORMAT    RZ_JOIN_2_PATHS(RZ_HOME_SDB, "format")
+#define RZ_HOME_SDB_TYPES     RZ_JOIN_2_PATHS(RZ_HOME_SDB, "types")
+#define RZ_HOME_PDB           RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
+#define RZ_HOME_PROJECTS      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
+#define RZ_HOME_BINRC         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")
 #define RZ_HOME_RC            ".rizinrc"
 
 #endif

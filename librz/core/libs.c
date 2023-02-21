@@ -54,12 +54,12 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		free(p);
 	}
 	if (where & RZ_CORE_LOADLIBS_HOME) {
-		char *hpd = rz_path_home_prefix(RZ_PLUGINS);
+		char *hpd = rz_path_home_prefix(RZ_HOME_PLUGINS);
 		rz_lib_opendir(core->lib, hpd, false);
 		free(hpd);
 	}
 	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
-		char *spd = rz_path_system(RZ_PLUGINS);
+		char *spd = rz_path_system(RZ_SYSTEM_PLUGINS);
 		rz_lib_opendir(core->lib, spd, false);
 		free(spd);
 	}
@@ -106,7 +106,7 @@ RZ_API int rz_core_loadlibs(RzCore *core, int where) {
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
+	char *homeplugindir = rz_path_home_prefix(RZ_HOME_PLUGINS);
 	RzList *files = rz_sys_dir(homeplugindir);
 	RzListIter *iter;
 	char *file;

@@ -106,7 +106,7 @@ RZ_API void rz_sysreg_item_free(RzSysregItem *s) {
 
 static bool load_sdb(Sdb **db, const char *name) {
 	rz_return_val_if_fail(db, false);
-	char *sdb_path = rz_path_system(RZ_SDB);
+	char *sdb_path = rz_path_system(RZ_SYSTEM_SDB);
 	char *file_name = rz_str_newf("%s.sdb", name);
 	char *file = rz_file_path_join(sdb_path, file_name);
 	free(file_name);
@@ -276,7 +276,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	}
 
 	if (sysregs_changed) {
-		char *regs_dir = rz_path_system(RZ_SDB_REG);
+		char *regs_dir = rz_path_system(RZ_SYSTEM_SDB_REG);
 		rz_sysreg_set_arch(s, arch, regs_dir);
 		free(regs_dir);
 	}

@@ -490,8 +490,8 @@ static void __load_plugins(RzAsmState *as) {
 		rz_lib_opendir(as->l, path, false);
 	}
 
-	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
-	char *sysplugindir = rz_path_system(RZ_PLUGINS);
+	char *homeplugindir = rz_path_home_prefix(RZ_HOME_PLUGINS);
+	char *sysplugindir = rz_path_system(RZ_SYSTEM_PLUGINS);
 	rz_lib_opendir(as->l, homeplugindir, false);
 	rz_lib_opendir(as->l, sysplugindir, false);
 	free(homeplugindir);

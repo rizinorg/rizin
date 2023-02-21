@@ -1184,8 +1184,8 @@ static void hash_load_plugins(RzHashContext *ctx) {
 		rz_lib_opendir(rl, path, false);
 	}
 
-	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
-	char *sysplugindir = rz_path_system(RZ_PLUGINS);
+	char *homeplugindir = rz_path_home_prefix(RZ_HOME_PLUGINS);
+	char *sysplugindir = rz_path_system(RZ_SYSTEM_PLUGINS);
 	rz_lib_opendir(rl, homeplugindir, false);
 	rz_lib_opendir(rl, sysplugindir, false);
 	free(homeplugindir);

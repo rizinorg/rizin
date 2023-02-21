@@ -835,7 +835,7 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
 static void load_scripts_for(RzCore *core, const char *name) {
 	char *file;
 	RzListIter *iter;
-	char *binrc = rz_path_home_prefix(RZ_BINRC);
+	char *binrc = rz_path_home_prefix(RZ_HOME_BINRC);
 	char tmp[50];
 	char *hdir = rz_file_path_join(binrc, rz_strf(tmp, "bin-%s", name));
 	free(binrc);

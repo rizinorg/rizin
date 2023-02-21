@@ -133,27 +133,39 @@ if host_machine.system() == 'windows'
   rizin_cmakedir = fs.as_posix(rizin_cmakedir).replace('/', '\\\\')
   rizin_incdir = fs.as_posix(rizin_incdir).replace('/', '\\\\')
   rizin_datdir = fs.as_posix(rizin_datdir).replace('/', '\\\\')
-  rizin_datdir_rz = rizin_datdir
-  rizin_wwwroot = rizin_datdir + '\\\\' + 'www'
-  rizin_sdb = rizin_datdir
-  rizin_sigdb = rizin_datdir + '\\\\' + 'sigdb'
-  rizin_themes = rizin_datdir + '\\\\' + 'cons'
-  rizin_fortunes = rizin_datdir + '\\\\' + 'fortunes'
-  rizin_flags = rizin_datdir + '\\\\' + 'flag'
-  rizin_hud = rizin_datdir + '\\\\' + 'hud'
-  rizin_plugins = rizin_libdir + '\\\\' + 'plugins'
-  rizin_bindings = rizin_libdir + '\\\\' + 'bindings'
+  rizin_datdir_rz = fs.as_posix(rizin_datdir).replace('/', '\\\\')
 else
   rizin_datdir_rz = rizin_datdir / 'rizin'
-  rizin_wwwroot = rizin_datdir_rz / 'www'
-  rizin_sdb = rizin_datdir_rz
-  rizin_sigdb = rizin_datdir_rz / 'sigdb'
-  rizin_themes = rizin_datdir_rz / 'cons'
-  rizin_fortunes = rizin_datdir_rz / 'fortunes'
-  rizin_flags = rizin_datdir_rz / 'flag'
-  rizin_hud = rizin_datdir_rz / 'hud'
-  rizin_plugins = rizin_libdir / 'rizin' / 'plugins'
-  rizin_bindings = rizin_libdir / 'rizin-bindings'
+endif
+rizin_wwwroot = rizin_datdir_rz / 'www'
+rizin_sdb = rizin_datdir_rz
+rizin_sigdb = rizin_datdir_rz / 'sigdb'
+rizin_themes = rizin_datdir_rz / 'cons'
+rizin_fortunes = rizin_datdir_rz / 'fortunes'
+rizin_flags = rizin_datdir_rz / 'flag'
+rizin_hud = rizin_datdir_rz / 'hud'
+rizin_plugins = rizin_libdir / 'rizin' / 'plugins'
+
+if get_option('portable')
+  system_rizin_datdir_rz = rizin_datdir_rz
+  system_rizin_wwwroot = rizin_wwwroot
+  system_rizin_sdb = rizin_sdb
+  system_rizin_sigdb = rizin_sigdb
+  system_rizin_themes = rizin_themes
+  system_rizin_fortunes = rizin_fortunes
+  system_rizin_flags = rizin_flags
+  system_rizin_hud = rizin_hud
+  system_rizin_plugins = rizin_plugins
+else
+  system_rizin_datdir_rz = rizin_prefix / rizin_datdir_rz
+  system_rizin_wwwroot = rizin_prefix / rizin_wwwroot
+  system_rizin_sdb = rizin_prefix / rizin_sdb
+  system_rizin_sigdb = rizin_prefix / rizin_sigdb
+  system_rizin_themes = rizin_prefix / rizin_themes
+  system_rizin_fortunes = rizin_prefix / rizin_fortunes
+  system_rizin_flags = rizin_prefix / rizin_flags
+  system_rizin_hud = rizin_prefix / rizin_hud
+  system_rizin_plugins = rizin_prefix / rizin_plugins
 endif
 
 # Calcualte BINDIR's depth to be able to find the root directory during runtime
@@ -171,14 +183,20 @@ opts_overwrite = [
   'rizin_flags',
   'rizin_hud',
   'rizin_plugins',
-  'rizin_bindings'
 ]
 foreach opt : opts_overwrite
   val = get_option(opt)
   if val != ''
-    set_variable(opt, val)
+    set_variable('system_' + opt, val)
   endif
 endforeach
+
+if host_machine.system() == 'windows'
+  foreach opt : opts_overwrite
+    set_variable(opt, fs.as_posix(get_variable(opt)).replace('/', '\\\\'))
+    set_variable('system_' + opt, fs.as_posix(get_variable('system_' + opt)).replace('/', '\\\\'))
+  endforeach
+endif
 
 cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx', check: true).stdout().strip()
 
@@ -366,19 +384,27 @@ foreach it : ccs
   it_userconf.set('BINDIR_DEPTH', bindir_depth)
   it_userconf.set('LIBDIR', rizin_libdir)
   it_userconf.set('INCLUDEDIR', rizin_incdir)
-  it_userconf.set('DATADIR_RZ', rizin_datdir_rz)
   is_ppc = it_machine.cpu_family() == 'ppc' or it_machine.cpu_family() == 'ppc64'
   it_userconf.set10('HAVE_JEMALLOC', it_machine.system() != 'windows' and (it_machine.system() != 'darwin' or not is_ppc))
   it_userconf.set('DATADIR', rizin_datdir)
-  it_userconf.set('WWWROOT', rizin_wwwroot)
-  it_userconf.set('SDB', rizin_sdb)
-  it_userconf.set('SIGDB', rizin_sigdb)
-  it_userconf.set('THEMES', rizin_themes)
-  it_userconf.set('FORTUNES', rizin_fortunes)
-  it_userconf.set('FLAGS', rizin_flags)
-  it_userconf.set('HUD', rizin_hud)
-  it_userconf.set('PLUGINS', rizin_plugins)
-  it_userconf.set('BINDINGS', rizin_bindings)
+  it_userconf.set('SYSTEM_DATADIR_RIZIN', system_rizin_datdir_rz)
+  it_userconf.set('SYSTEM_WWWROOT', system_rizin_wwwroot)
+  it_userconf.set('SYSTEM_SDB', system_rizin_sdb)
+  it_userconf.set('SYSTEM_SIGDB', system_rizin_sigdb)
+  it_userconf.set('SYSTEM_THEMES', system_rizin_themes)
+  it_userconf.set('SYSTEM_FORTUNES', system_rizin_fortunes)
+  it_userconf.set('SYSTEM_FLAGS', system_rizin_flags)
+  it_userconf.set('SYSTEM_HUD', system_rizin_hud)
+  it_userconf.set('SYSTEM_PLUGINS', system_rizin_plugins)
+  it_userconf.set('HOME_DATADIR_RIZIN', rizin_datdir_rz)
+  it_userconf.set('HOME_WWWROOT', rizin_wwwroot)
+  it_userconf.set('HOME_SDB', rizin_sdb)
+  it_userconf.set('HOME_SIGDB', rizin_sigdb)
+  it_userconf.set('HOME_THEMES', rizin_themes)
+  it_userconf.set('HOME_FORTUNES', rizin_fortunes)
+  it_userconf.set('HOME_FLAGS', rizin_flags)
+  it_userconf.set('HOME_HUD', rizin_hud)
+  it_userconf.set('HOME_PLUGINS', rizin_plugins)
   it_userconf.set10('HAVE_OPENSSL', sys_openssl.found())
   it_userconf.set10('WANT_DYLINK', true)
   it_userconf.set10('HAVE_PTRACE', have_ptrace)
@@ -727,7 +753,6 @@ summary({
   'bindir': rizin_bindir,
   'libdir': rizin_libdir,
   'includedir': rizin_incdir,
-  'datadir': rizin_datdir,
   'wwwroot': rizin_wwwroot,
   'sdb': rizin_sdb,
   'sigdb': rizin_sigdb,
@@ -736,7 +761,6 @@ summary({
   'flags': rizin_flags,
   'hud': rizin_hud,
   'plugins': rizin_plugins,
-  'bindings': rizin_bindings,
 }, section: 'Directories')
 
 summary({

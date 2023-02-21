@@ -113,7 +113,7 @@ static int bin_pe_parse_imports(RzBinPEObj *bin,
 					if (filename && rz_file_exists(filename)) {
 						db = sdb_new(NULL, filename, 0);
 					} else {
-						char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
+						char *formats_dir = rz_path_system(RZ_SYSTEM_SDB_FORMAT);
 						free(filename);
 						filename = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, symdllname);
 						free(formats_dir);
