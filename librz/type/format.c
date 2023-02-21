@@ -2884,7 +2884,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 		rz_vector_foreach(&type->union_data.members, memb) {
 			const char *membtype = type_to_identifier(typedb, memb->type);
 			// Avoid infinite recursion in case of self-referential unions
-			if (!strcmp(membtype, type->name)) {
+			if (!membtype || !strcmp(membtype, type->name)) {
 				continue;
 			}
 			if (rz_type_is_identifier(memb->type)) {
