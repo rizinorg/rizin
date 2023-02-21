@@ -1470,7 +1470,7 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX || insn->id == ARM_INS_QSAX;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	RzILOpBitVector *al = cast(17, UNSIGNED(16, a));
 	RzILOpBitVector *ah = cast(17, UNSIGNED(16, SHIFTR0(DUP(a), UN(5, 16))));
 	RzILOpBitVector *bl = cast(17, UNSIGNED(16, b));
@@ -1530,7 +1530,7 @@ static RzILOpEffect *qadd8(cs_insn *insn, bool is_thumb) {
 	}
 	bool is_signed = insn->id == ARM_INS_QADD8 || insn->id == ARM_INS_QSUB8;
 	bool is_sub = insn->id == ARM_INS_QSUB8 || insn->id == ARM_INS_UQSUB8;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	return SEQ5(
 		saturate(is_signed, is_sub, "rb0", 8,
 			is_sub
@@ -1679,7 +1679,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	bool is_signed = insn->id == ARM_INS_SADD16 || insn->id == ARM_INS_SHADD16 || insn->id == ARM_INS_SASX ||
 		insn->id == ARM_INS_SSAX || insn->id == ARM_INS_SHASX || insn->id == ARM_INS_SHSAX ||
 		insn->id == ARM_INS_SSUB16 || insn->id == ARM_INS_SHSUB16;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	al = cast(17, al);
 	ah = cast(17, ah);
 	bl = cast(17, bl);
@@ -1804,7 +1804,7 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 	if (set_ge) {
 		// Retroactively patch the ops to extend to 8 before the calculation because this is needed for ge
 		// Note: add/sub members here use the same structure, so using just `.add` is fine.
-		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 		r0->op.add.x = cast(9, r0->op.add.x);
 		r0->op.add.y = cast(9, r0->op.add.y);
 		r1->op.add.x = cast(9, r1->op.add.x);

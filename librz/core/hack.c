@@ -268,7 +268,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 	// TODO: op should not be an unstructered string
 	// TODO: asm/analysis plugins should provide the operations, instead of doing this here
-	bool (*hack)(RzCore *core, const char *op, const RzAnalysisOp *analop) = NULL;
+	bool (*hack)(RzCore * core, const char *op, const RzAnalysisOp *analop) = NULL;
 	const char *asmarch = rz_config_get(core->config, "asm.arch");
 	const int asmbits = core->rasm->bits;
 
