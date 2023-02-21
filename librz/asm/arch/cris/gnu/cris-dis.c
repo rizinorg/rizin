@@ -111,7 +111,7 @@ static int cris_constraint
 /* Parse disassembler options and store state in info.  FIXME: For the
    time being, we abuse static variables.  */
 
-bool
+bfd_boolean
 cris_parse_disassembler_options (disassemble_info *info,
 				 enum cris_disass_family distype)
 {
