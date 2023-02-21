@@ -17,6 +17,8 @@ content. Go step-by-step through it.
   - [ ] Basic Cutter functions work well with new version of Rizin.
   - [ ] Cutter is in good shape to be released.
 - [ ] Check that [rz-ghidra](https://github.com/rizinorg/rz-ghidra) works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
+- [ ] Check that [jsdec](https://github.com/rizinorg/jsdec) works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
+- [ ] Check that [rz-retdec](https://github.com/rizinorg/rz-retdec) works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
 - [ ] Check that [rizin-extras](https://github.com/rizinorg/rizin-extras/) and rz-keystone in particular works well with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
 - [ ] Check that core plugins in [rz-pm-db](https://github.com/rizinorg/rz-pm-db) can be installed correctly with the new version of Rizin. If not, fix as necessary and go back to previous steps until everything is ready.
 - [ ] Replace `RZ_PIPE_PY_VERSION` and `RZ_GHIDRA_VERSION` in [`Dockerfile`](https://github.com/rizinorg/rizin/blob/dev/Dockerfile) with the right commits from those repositories. Merge the commit with the Rizin changes in the `stable` branch.
@@ -24,6 +26,8 @@ content. Go step-by-step through it.
 - [ ] Finalize release notes.
 - [ ] Release Rizin and Cutter by making their release public on GitHub.
 - [ ] Tag rz-pipe for the new version.
-- [ ] Tag rz-bindings for the new version.
+- [ ] Tag [rz-bindgen](https://github.com/rizinorg/rz-bindgen) for the new version.
 - [ ] Tag rz-ghidra for the new version.
 - [ ] Tag rz-keystone/rizin-extras for the new version.
+- [ ] Tag jsdec for the new version.
+- [ ] Tag rz-retdec for the new version.
