@@ -68,6 +68,7 @@ static const bool i8051_register_is_bit[0xff] = {
 #define VAL_B        VARG_8051(I8051_B)
 #define VAL_CY       VARG_8051(I8051_CY)
 #define VAL_CY8      BOOL_TO_BV(VARG_8051(I8051_CY), 8)
+#define VAL_SP       VARG_8051(I8051_SP)
 
 static RzILOpPure *val_register(I8051OpAddressing *a) {
 	I8051Registers r = a->d.reg;
@@ -421,13 +422,10 @@ static RzILOpEffect *i_push(I8051Op *op) {
 	return push_stack(get_any(op->argv[0]));
 }
 static RzILOpEffect *i_ret(I8051Op *op) {
-	RzILOpPure *high_byte = LOAD(UNSIGNED(16, VARG_8051(I8051_SP)));
-	RzILOpPure *low_byte = LOAD(UNSIGNED(16, SUB(VARG_8051(I8051_SP), U8(1))));
-	return SEQ5(SETL("@hb", high_byte),
-		SETL("@lb", low_byte),
-		SETL("@pc", LOGAND(UNSIGNED(16, VARL("@lb")), UNSIGNED(16, SHIFTL0(VARL("@hb"), U8(8))))),
-		set_reg(I8051_SP, SUB(VARG_8051(I8051_SP), U8(2))),
-		JMP(VARL("@pc")));
+	return SEQ4(SETL("pch", LOAD(UNSIGNED(16, VAL_SP))),
+		SETL("pcl", LOAD(UNSIGNED(16, SUB(VAL_SP, U8(1))))),
+		set_reg(I8051_SP, SUB(VAL_SP, U8(2))),
+		JMP(APPEND(VARL("pch"), VARL("pcl"))));
 }
 static RzILOpEffect *i_rl(I8051Op *op) {
 	return set_a(LOGOR(SHIFTL0(VAL_A, U8(1)), SHIFTR0(VAL_A, U8(7))));
