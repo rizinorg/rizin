@@ -30,11 +30,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-asm -s att -a x86.as -b 64 movq %rdx, %rax
+NAME=rz-asm -s att -a x86.as -b 64 "movq %rdx, %rax"
 FILE==
 CMDS=!rz-asm -s att -a x86.as -b 64 "movq %rdx, %rax"
 EXPECT=<<EOF
 4889d0
+EOF
+RUN
+
+NAME=rz-asm -a x86 -s att "movl %eax, %ebx"
+FILE==
+CMDS=!rz-asm -a x86 -s att "movl %eax, %ebx"
+EXPECT=<<EOF
+89c3
 EOF
 RUN
 
