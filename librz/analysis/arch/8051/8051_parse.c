@@ -55,7 +55,7 @@ static I8051OpAddressing *addressing_bit(ut8 addr) {
 	return addressing_addr(I8051_ADDRESSING_BIT, addr);
 }
 
-static I8051OpAddressing *addressing_register(I8051Registers reg) {
+static I8051OpAddressing *addressing_register(I8051Register reg) {
 	I8051OpAddressing *a = RZ_NEW0(I8051OpAddressing);
 	if (!a) {
 		return NULL;
@@ -69,7 +69,7 @@ static inline I8051OpAddressing *addressing_register_a() {
 	return addressing_register(I8051_A);
 }
 
-static inline I8051OpAddressing *addressing_indexed(I8051Registers reg) {
+static inline I8051OpAddressing *addressing_indexed(I8051Register reg) {
 	I8051OpAddressing *a = RZ_NEW0(I8051OpAddressing);
 	if (!a) {
 		return NULL;

@@ -103,9 +103,8 @@ typedef enum {
 	I8051_R6 = 0x06,
 	I8051_R7 = 0x07,
 	I8051_SP = 0x81,
-	I8051_DPTR,
-	I8051_DPH = 0x83,
 	I8051_DPL = 0x82,
+	I8051_DPH = 0x83,
 	I8051_PCON = 0x87,
 	I8051_TCON = 0x88,
 	I8051_TMOD = 0x89,
@@ -132,7 +131,8 @@ typedef enum {
 	I8051_P3 = 0xB0,
 	I8051_SCON = 0x98,
 	I8051_SBUF = 0x99,
-} I8051Registers;
+	I8051_DPTR,
+} I8051Register;
 
 typedef struct {
 	RzIODesc *desc;
@@ -167,7 +167,7 @@ typedef struct i8051_op_addressing_t {
 	I8051AddressingMode mode;
 	i8051_plugin_context *ctx;
 	union {
-		I8051Registers reg;
+		I8051Register reg;
 		ut8 addr;
 		ut16 addr16;
 		ut16 constant;

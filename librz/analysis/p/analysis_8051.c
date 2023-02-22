@@ -1026,7 +1026,6 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r7	.8	7	0\n"
 		"gpr	acc	.8	8	0\n"
 		"gpr	b	.8	9	0\n"
-		"gpr	dptr	.16	10	0\n"
 		"gpr	dpl	.8	10	0\n"
 		"gpr	dph	.8	11	0\n"
 		"gpr	psw	.8	12	0\n"
