@@ -20,9 +20,10 @@ rz_cons_sources = [
   'cutf8.c'
 ]
 
+rz_cons_deps = [rz_util_dep]
 rz_cons = library('rz_cons', rz_cons_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep],
+  dependencies: rz_cons_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -32,13 +33,16 @@ rz_cons = library('rz_cons', rz_cons_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_cons_dep = declare_dependency(link_with: rz_cons,
-                                include_directories: [platform_inc])
+rz_cons_dep = declare_dependency(
+  link_with: rz_cons,
+  include_directories: [platform_inc],
+  variables:  {'name': 'rz_cons'},
+)
 meson.override_dependency('rz_cons', rz_cons_dep)
 
 modules += { 'rz_cons': {
     'target': rz_cons,
-    'dependencies': ['rz_util']
+    'dependencies': rz_cons_deps,
 }}
 
 subdir('d')

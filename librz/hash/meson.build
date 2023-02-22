@@ -131,12 +131,15 @@ rz_hash = library('rz_hash', rz_hash_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_hash_dep = declare_dependency(link_with: rz_hash,
-                                include_directories: [platform_inc])
+rz_hash_dep = declare_dependency(
+  link_with: rz_hash,
+  include_directories: [platform_inc],
+  variables:  {'name': 'rz_hash'},
+)
 meson.override_dependency('rz_hash', rz_hash_dep)
 
 modules += { 'rz_hash': {
     'target': rz_hash,
-    'dependencies': ['rz_util'],
+    'dependencies': dependencies,
     'plugins': [hash_plugins]
 }}

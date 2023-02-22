@@ -32,19 +32,14 @@ rz_sign = library('rz_sign', rz_sign_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_sign_dep = declare_dependency(link_with: rz_sign,
-                                include_directories: rz_sign_inc)
+rz_sign_dep = declare_dependency(
+  link_with: rz_sign,
+  include_directories: rz_sign_inc,
+  variables:  {'name': 'rz_sign'},
+)
 meson.override_dependency('rz_sign', rz_sign_dep)
 
 modules += { 'rz_sign': {
     'target': rz_sign,
-    'dependencies': [
-      'rz_util',
-      'rz_analysis',
-      'rz_diff',
-      'rz_hash',
-      'rz_type',
-      'rz_search',
-      'rz_flag',
-    ]
+    'dependencies': rz_sign_deps,
 }}

@@ -24,12 +24,14 @@ rz_il_inc = [
   platform_inc,
 ]
 
+rz_il_deps = [
+  rz_util_dep,
+  rz_reg_dep
+]
+
 rz_il = library('rz_il', rz_il_sources,
   include_directories: rz_il_inc,
-  dependencies: [
-    rz_util_dep,
-    rz_reg_dep
-  ],
+  dependencies: rz_il_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -39,11 +41,14 @@ rz_il = library('rz_il', rz_il_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_il_dep = declare_dependency(link_with: rz_il,
-                                include_directories: rz_il_inc)
+rz_il_dep = declare_dependency(
+  link_with: rz_il,
+  include_directories: rz_il_inc,
+  variables:  {'name': 'rz_il'},
+)
 meson.override_dependency('rz_il', rz_il_dep)
 
 modules += { 'rz_il': {
     'target': rz_il,
-    'dependencies': ['rz_util', 'rz_reg']
+    'dependencies': rz_il_deps,
 }}

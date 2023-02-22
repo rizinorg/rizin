@@ -262,25 +262,27 @@ rz_analysis_inc = [
   )
 ]
 
+rz_analysis_deps = [
+  rz_util_dep,
+  rz_crypto_dep,
+  rz_reg_dep,
+  rz_syscall_dep,
+  rz_search_dep,
+  rz_cons_dep,
+  rz_flag_dep,
+  rz_hash_dep,
+  rz_diff_dep,
+  rz_parse_dep,
+  rz_asm_dep,
+  rz_bin_dep,
+  rz_type_dep,
+  rz_il_dep,
+  capstone_dep
+]
+
 rz_analysis = library('rz_analysis', rz_analysis_sources,
   include_directories: rz_analysis_inc,
-  dependencies: [
-    rz_util_dep,
-    rz_crypto_dep,
-    rz_reg_dep,
-    rz_syscall_dep,
-    rz_search_dep,
-    rz_cons_dep,
-    rz_flag_dep,
-    rz_hash_dep,
-    rz_diff_dep,
-    rz_parse_dep,
-    rz_asm_dep,
-    rz_bin_dep,
-    rz_type_dep,
-    rz_il_dep,
-    capstone_dep
-  ],
+  dependencies: rz_analysis_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -290,28 +292,16 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_analysis_dep = declare_dependency(link_with: rz_analysis,
-                                include_directories: rz_analysis_inc)
+rz_analysis_dep = declare_dependency(
+  link_with: rz_analysis,
+  include_directories: rz_analysis_inc,
+  variables:  {'name': 'rz_analysis'},
+)
 meson.override_dependency('rz_analysis', rz_analysis_dep)
 
 modules += { 'rz_analysis': {
     'target': rz_analysis,
-    'dependencies': [
-      'rz_util',
-      'rz_crypto',
-      'rz_reg',
-      'rz_syscall',
-      'rz_search',
-      'rz_cons',
-      'rz_flag',
-      'rz_hash',
-      'rz_diff',
-      'rz_parse',
-      'rz_asm',
-      'rz_bin',
-      'rz_type',
-      'rz_il',
-    ],
+    'dependencies': rz_analysis_deps,
     'plugins': [analysis_plugins]
 }}
 

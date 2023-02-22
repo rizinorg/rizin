@@ -29,9 +29,10 @@ if host_machine.system() != 'windows'
   ]
 endif
 
+rz_lang_deps = [rz_util_dep, rz_cons_dep]
 rz_lang = library('rz_lang', rz_lang_sources,
   include_directories: platform_inc,
-  dependencies: [rz_util_dep, rz_cons_dep],
+  dependencies: rz_lang_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -41,12 +42,15 @@ rz_lang = library('rz_lang', rz_lang_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_lang_dep = declare_dependency(link_with: rz_lang,
-                                include_directories: [platform_inc])
+rz_lang_dep = declare_dependency(
+  link_with: rz_lang,
+  include_directories: [platform_inc],
+  variables:  {'name': 'rz_lang'},
+)
 meson.override_dependency('rz_lang', rz_lang_dep)
 
 modules += { 'rz_lang': {
     'target': rz_lang,
-    'dependencies': ['rz_util', 'rz_cons'],
+    'dependencies': rz_lang_deps,
     'plugins': [lang_plugins]
 }}

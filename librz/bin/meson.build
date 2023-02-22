@@ -251,23 +251,25 @@ rz_bin_sources = [
 
 rz_bin_inc = [platform_inc, include_directories('format')]
 
+rz_bin_deps = [
+  lz4_dep,
+  yxml_dep,
+  rz_util_dep,
+  rz_demangler_dep,
+  rz_socket_dep,
+  rz_magic_dep,
+  rz_hash_dep,
+  rz_syscall_dep,
+  rz_cons_dep,
+  rz_io_dep,
+  rz_type_dep,
+  libmspack_dep,
+]
+
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
   c_args: ['-DRZ_API_BIN_ONLY=1'],
-  dependencies: [
-    lz4_dep,
-    yxml_dep,
-    rz_util_dep,
-    rz_demangler_dep,
-    rz_socket_dep,
-    rz_magic_dep,
-    rz_hash_dep,
-    rz_syscall_dep,
-    rz_cons_dep,
-    rz_io_dep,
-    rz_type_dep,
-    libmspack_dep,
-  ],
+  dependencies: rz_bin_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -277,20 +279,16 @@ rz_bin = library('rz_bin', rz_bin_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_bin_dep = declare_dependency(link_with: rz_bin,
-                               include_directories: rz_bin_inc)
+rz_bin_dep = declare_dependency(
+  link_with: rz_bin,
+  include_directories: rz_bin_inc,
+  variables:  {'name': 'rz_bin'},
+)
 meson.override_dependency('rz_bin', rz_bin_dep)
 
 modules += { 'rz_bin': {
     'target': rz_bin,
-    'dependencies': [
-      'rz_magic',
-      'rz_util',
-      'rz_io',
-      'rz_socket',
-      'rz_syscall',
-      'rz_type'
-    ],
+    'dependencies': rz_bin_deps,
     'plugins': [bin_plugins, bin_xtr_plugins]
 }}
 

@@ -51,19 +51,15 @@ rz_main = library('rz_main', rz_main_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_main_dep = declare_dependency(link_with: rz_main,
-                                include_directories: [platform_inc],
-                                dependencies: rz_main_deps)
+rz_main_dep = declare_dependency(
+  link_with: rz_main,
+  include_directories: [platform_inc],
+  dependencies: rz_main_deps,
+  variables:  {'name': 'rz_main'},
+)
 meson.override_dependency('rz_main', rz_main_dep)
 
 modules += { 'rz_main': {
     'target': rz_main,
-    'dependencies': [
-      'rz_core',
-      'rz_demangler',
-      'rz_asm',
-      'rz_sign',
-      'rz_diff',
-      'rz_syscall'
-    ]
+    'dependencies': rz_main_deps,
 }}

@@ -25,13 +25,15 @@ rz_type_inc = [
   'parser',
 ]
 
+rz_type_deps = [
+  rz_util_dep,
+  tree_sitter_c_dep,
+  lrt
+]
+
 rz_type = library('rz_type', rz_type_sources,
   include_directories: rz_type_inc,
-  dependencies: [
-    rz_util_dep,
-    tree_sitter_c_dep,
-    lrt
-  ],
+  dependencies: rz_type_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -41,11 +43,14 @@ rz_type = library('rz_type', rz_type_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_type_dep = declare_dependency(link_with: rz_type,
-                                include_directories: rz_type_inc)
+rz_type_dep = declare_dependency(
+  link_with: rz_type,
+  include_directories: rz_type_inc,
+  variables:  {'name': 'rz_type'},
+)
 meson.override_dependency('rz_type', rz_type_dep)
 
 modules += { 'rz_type': {
     'target': rz_type,
-    'dependencies': ['rz_util']
+    'dependencies': rz_type_deps,
 }}

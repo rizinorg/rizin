@@ -48,15 +48,17 @@ rz_parse_sources = [
   'p/parse_z80_pseudo.c'
 ]
 
+rz_parse_deps = [
+  rz_util_dep,
+  rz_flag_dep,
+  rz_syscall_dep,
+  rz_reg_dep,
+  rz_cons_dep,
+]
+
 rz_parse = library('rz_parse', rz_parse_sources,
   include_directories: platform_inc,
-  dependencies: [
-    rz_util_dep,
-    rz_flag_dep,
-    rz_syscall_dep,
-    rz_reg_dep,
-    rz_cons_dep,
-  ],
+  dependencies: rz_parse_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -66,12 +68,15 @@ rz_parse = library('rz_parse', rz_parse_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_parse_dep = declare_dependency(link_with: rz_parse,
-                                 include_directories: platform_inc)
+rz_parse_dep = declare_dependency(
+  link_with: rz_parse,
+  include_directories: platform_inc,
+  variables:  {'name': 'rz_parse'},
+)
 meson.override_dependency('rz_parse', rz_parse_dep)
 
 modules += { 'rz_parse': {
     'target': rz_parse,
-    'dependencies': ['rz_util', 'rz_flag', 'rz_syscall', 'rz_reg', 'rz_cons'],
+    'dependencies': rz_parse_deps,
     'plugins': [parse_plugins]
 }}

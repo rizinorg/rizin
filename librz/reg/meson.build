@@ -6,9 +6,10 @@ rz_reg_sources = [
   'rvalue.c',
 ]
 
+rz_reg_deps = [rz_util_dep]
 rz_reg = library('rz_reg', rz_reg_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep],
+  dependencies: rz_reg_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -18,13 +19,16 @@ rz_reg = library('rz_reg', rz_reg_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_reg_dep = declare_dependency(link_with: rz_reg,
-                               include_directories: [platform_inc])
+rz_reg_dep = declare_dependency(
+  link_with: rz_reg,
+  include_directories: [platform_inc],
+  variables:  {'name': 'rz_reg'},
+)
 meson.override_dependency('rz_reg', rz_reg_dep)
 
 modules += { 'rz_reg': {
     'target': rz_reg,
-    'dependencies': ['rz_util']
+    'dependencies': rz_reg_deps,
 }}
 
 subdir('d')

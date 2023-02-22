@@ -155,7 +155,7 @@ rz_core_deps = [
   rz_debug_dep,
   rz_config_dep,
   rz_bin_dep,
-  platform_deps,
+] + platform_deps + [
   dependency('rzgdb'),
   dependency('rzheap'),
   shell_parser_dep,
@@ -175,39 +175,16 @@ rz_core = library('rz_core', rz_core_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_core_dep = declare_dependency(link_with: rz_core,
-                                include_directories: rz_core_inc)
+rz_core_dep = declare_dependency(
+  link_with: rz_core,
+  include_directories: rz_core_inc,
+  variables:  {'name': 'rz_core'},
+)
 meson.override_dependency('rz_core', rz_core_dep)
 
 modules += { 'rz_core': {
     'target': rz_core,
-    'dependencies': [
-      'rz_magic',
-      'rz_util',
-      'rz_demangler',
-      'rz_diff',
-      'rz_reg',
-      'rz_syscall',
-      'rz_search',
-      'rz_cons',
-      'rz_analysis',
-      'rz_socket',
-      'rz_type',
-      'rz_io',
-      'rz_lang',
-      'rz_hash',
-      'rz_flag',
-      'rz_parse',
-      'rz_egg',
-      'rz_debug',
-      'rz_crypto',
-      'rz_config',
-      'rz_bin',
-      'rz_asm',
-      'rz_bp',
-      'rz_sign',
-      'rz_il'
-    ],
+    'dependencies': rz_core_deps,
     'plugins': [core_plugins]
 }}
 

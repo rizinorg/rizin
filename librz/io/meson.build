@@ -111,8 +111,8 @@ rz_io_deps = [
   rz_hash_dep,
   rz_crypto_dep,
   rz_cons_dep,
-  platform_deps,
 ]
+rz_io_deps += platform_deps
 
 if get_option('use_gpl')
   rz_io_deps += dependency('rzqnx')
@@ -147,12 +147,15 @@ rz_io = library('rz_io', rz_io_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_io_dep = declare_dependency(link_with: rz_io,
-                              include_directories: platform_inc)
+rz_io_dep = declare_dependency(
+  link_with: rz_io,
+  include_directories: platform_inc,
+  variables:  {'name': 'rz_io'},
+)
 meson.override_dependency('rz_io', rz_io_dep)
 
 modules += { 'rz_io': {
     'target': rz_io,
-    'dependencies': ['rz_util', 'rz_socket', 'rz_hash', 'rz_crypto', 'rz_cons'],
+    'dependencies': rz_io_deps,
     'plugins': [io_plugins]
 }}

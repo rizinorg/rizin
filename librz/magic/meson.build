@@ -31,13 +31,14 @@ rz_magic = library('rz_magic', rz_magic_sources,
 
 rz_magic_dep = declare_dependency(
   link_with: rz_magic,
-  include_directories: platform_inc
+  include_directories: platform_inc,
+  variables:  {'name': 'rz_magic'},
 )
 meson.override_dependency('rz_magic', rz_magic_dep)
 
 modules += { 'rz_magic': {
     'target': rz_magic,
-    'dependencies': ['rz_util']
+    'dependencies': rz_magic_deps,
 }}
 
 subdir('d')

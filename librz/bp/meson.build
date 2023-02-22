@@ -26,9 +26,10 @@ rz_bp_sources = [
   'p/bp_x86.c'
 ]
 
+rz_bp_deps = [rz_util_dep]
 rz_bp = library('rz_bp', rz_bp_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep],
+  dependencies: rz_bp_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -38,12 +39,15 @@ rz_bp = library('rz_bp', rz_bp_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_bp_dep = declare_dependency(link_with: rz_bp,
-                              include_directories: [platform_inc])
+rz_bp_dep = declare_dependency(
+  link_with: rz_bp,
+  include_directories: [platform_inc],
+  variables:  {'name': 'rz_bp'},
+)
 meson.override_dependency('rz_bp', rz_bp_dep)
 
 modules += { 'rz_bp': {
     'target': rz_bp,
-    'dependencies': ['rz_util'],
+    'dependencies': rz_bp_deps,
     'plugins': [bp_plugins]
 }}

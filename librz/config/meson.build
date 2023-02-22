@@ -4,11 +4,10 @@ rz_config_sources = [
   'serialize_config.c'
 ]
 
+rz_config_deps = [rz_util_dep]
 rz_config = library('rz_config', rz_config_sources,
   include_directories: [platform_inc],
-  dependencies: [
-    rz_util_dep
-  ],
+  dependencies: rz_config_deps,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -18,11 +17,14 @@ rz_config = library('rz_config', rz_config_sources,
   name_prefix: lib_name_prefix,
 )
 
-rz_config_dep = declare_dependency(link_with: rz_config,
-                                  include_directories: [platform_inc])
+rz_config_dep = declare_dependency(
+  link_with: rz_config,
+  include_directories: [platform_inc],
+  variables:  {'name': 'rz_config'},
+)
 meson.override_dependency('rz_config', rz_config_dep)
 
 modules += { 'rz_config': {
     'target': rz_config,
-    'dependencies': ['rz_util']
+    'dependencies': rz_config_deps
 }}

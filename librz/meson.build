@@ -52,17 +52,23 @@ foreach module_name, module : modules
     version: rizin_version,
     name: module_name,
     filebase: module_name,
-    requires: module['dependencies'],
     description: 'rizin foundation libraries',
     variables: pkgconfig_vars,
   )
+
+  dependencies = []
+  foreach dep : module['dependencies']
+    if dep.type_name() == 'internal' and dep.get_variable(internal: 'name', default_value: '') != ''
+      dependencies += [dep.get_variable(internal: 'name')]
+    endif
+  endforeach
 
   # cmake
   if not is_static_libs_only
     conf = configuration_data()
     conf.set('RZ_VERSION', rizin_version)
     conf.set('RIZIN_MODULE', module['target'].name())
-    conf.set('RIZIN_MODULE_DEPS', ' '.join(module['dependencies']))
+    conf.set('RIZIN_MODULE_DEPS', ' '.join(dependencies))
     conf.set('PACKAGE_RELATIVE_PATH', cmake_package_relative_path)
     conf.set('INSTALL_INCDIR', rizin_incdir)
     conf.set('INSTALL_LIBDIR', rizin_libdir)
