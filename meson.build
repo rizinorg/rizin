@@ -210,6 +210,12 @@ if not capstone_dep.found()
       error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
     endif
     capstone_proj = subproject('capstone-v4', default_options: ['default_library=static'])
+  elif capstone_version == 'auto-sync'
+    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-auto-sync', check: false)
+    if r.returncode() == 1 and get_option('subprojects_check')
+      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    endif
+    capstone_proj = subproject('capstone-auto-sync', default_options: ['default_library=static'])
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
