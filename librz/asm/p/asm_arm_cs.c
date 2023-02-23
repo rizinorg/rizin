@@ -27,10 +27,9 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	for (i = 0; i < insn->detail->groups_count; i++) {
 		int id = insn->detail->groups[i];
 		switch (id) {
-		case ARM_GRP_ARM:
-		case ARM_GRP_THUMB:
-		case ARM_GRP_THUMB1ONLY:
-		case ARM_GRP_THUMB2:
+		case ARM_FEATURE_IsARM:
+		case ARM_FEATURE_IsThumb:
+		case ARM_FEATURE_IsThumb2:
 			continue;
 		default:
 			if (id < 128) {
