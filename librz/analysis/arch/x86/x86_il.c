@@ -349,7 +349,6 @@ static const char *x86_bound_regs_16[] = {
 	"bx", /* X86_REG_BX */
 	"cx", /* X86_REG_CX */
 	"dx", /* X86_REG_DX */
-	"ip", /* X86_REG_IP */
 	"sp", /* X86_REG_SP */
 	"bp", /* X86_REG_BP */
 	"si", /* X86_REG_SI */
@@ -366,7 +365,6 @@ static const char *x86_bound_regs_32[] = {
 	"ebx", /* X86_REG_EBX */
 	"ecx", /* X86_REG_ECX */
 	"edx", /* X86_REG_EDX */
-	"eip", /* X86_REG_EIP */
 	"esp", /* X86_REG_ESP */
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
@@ -390,7 +388,6 @@ static const char *x86_bound_regs_64[] = {
 	"rbx", /* X86_REG_RBX */
 	"rcx", /* X86_REG_RCX */
 	"rdx", /* X86_REG_RDX */
-	"rip", /* X86_REG_RIP */
 	"rsp", /* X86_REG_RSP */
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
