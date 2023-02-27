@@ -1771,6 +1771,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	} else {
 		patch_capstone_bugs(insn, a->bits, a->big_endian);
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			// TODO Remove after Capstone auto-sync update.
 			op->mnemonic = rz_str_newf("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0] ? " " : "",
