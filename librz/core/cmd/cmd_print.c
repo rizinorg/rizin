@@ -2591,7 +2591,7 @@ RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const c
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_println(str);
-	rz_free(str);
+	free(str);
 	return RZ_CMD_STATUS_OK;
 }
 
