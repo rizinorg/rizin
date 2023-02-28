@@ -170,7 +170,6 @@ typedef struct i8051_op_addressing_t {
 		I8051Register reg;
 		ut8 addr;
 		ut16 addr16;
-		ut16 constant;
 		struct i8051_op_addressing_t *indirect;
 	} d;
 } I8051OpAddressing;
