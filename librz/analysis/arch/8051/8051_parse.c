@@ -66,7 +66,7 @@ static I8051OpAddressing *addressing_register(I8051Register reg) {
 }
 
 static inline I8051OpAddressing *addressing_register_a() {
-	return addressing_register(I8051_A);
+	return addressing_register(I8051_ACC);
 }
 
 static inline I8051OpAddressing *addressing_indexed(I8051Register reg) {

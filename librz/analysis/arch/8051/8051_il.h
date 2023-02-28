@@ -121,7 +121,7 @@ typedef enum {
 	I8051_N = 0xD5,
 	I8051_AC = 0xD6,
 	I8051_CY = 0xD7,
-	I8051_A = 0xE0,
+	I8051_ACC = 0xE0,
 	I8051_B = 0xF0,
 	I8051_IE = 0xA8,
 	I8051_IP = 0xB8,
