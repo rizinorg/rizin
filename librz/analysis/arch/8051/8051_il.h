@@ -134,6 +134,17 @@ typedef enum {
 	I8051_DPTR,
 } I8051Register;
 
+enum I8051_PSW_MASKS {
+	PSWMASK_P = 0x01,
+	PSWMASK_UNUSED = 0x02,
+	PSWMASK_OV = 0x04,
+	PSWMASK_RS0 = 0x08,
+	PSWMASK_RS1 = 0x10,
+	PSWMASK_F0 = 0x20,
+	PSWMASK_AC = 0x40,
+	PSWMASK_C = 0x80
+};
+
 typedef struct {
 	RzIODesc *desc;
 	ut32 addr;

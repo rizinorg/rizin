@@ -1029,18 +1029,18 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	dpl	.8	10	0\n"
 		"gpr	dph	.8	11	0\n"
 		"gpr	psw	.8	12	0\n"
-		"flg	p	.1	12.0	0\n"
-		"flg	z	.1	12.1	0\n"
-		"flg	ov	.1	12.2	0\n"
-		"flg	rs0	.1	12.3	0\n"
-		"flg	rs1	.1	12.4	0\n"
-		"flg	n	.1	12.5	0\n"
-		"flg	ac	.1	12.6	0\n"
-		"flg	cy	.1	12.7	0\n"
+		//		"flg	p	.1	12.0	0\n"
+		//		"flg	z	.1	12.1	0\n"
+		//		"flg	ov	.1	12.2	0\n"
+		//		"flg	rs0	.1	12.3	0\n"
+		//		"flg	rs1	.1	12.4	0\n"
+		//		"flg	n	.1	12.5	0\n"
+		//		"flg	ac	.1	12.6	0\n"
+		//		"flg	cy	.1	12.7	0\n"
 		"gpr	sp	.8	13	0\n"
 		"gpr	pc	.16	15	0\n"
 		// aliases
-		"flg	c	.1	12.7	0\n"
+		//		"flg	c	.1	12.7	0\n"
 		// ---------------------------------------------------
 		// 8051 memory emulation control registers
 		// These registers map 8051 memory classes to r2's
