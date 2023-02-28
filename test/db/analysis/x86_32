@@ -3157,10 +3157,13 @@ EXPECT=<<EOF
                   "y": {
                     "opcode": "repeat",
                     "condition": {
-                      "opcode": "is_zero",
-                      "bv": {
-                        "opcode": "var",
-                        "value": "_val"
+                      "opcode": "!",
+                      "x": {
+                        "opcode": "is_zero",
+                        "bv": {
+                          "opcode": "var",
+                          "value": "_val"
+                        }
                       }
                     },
                     "data_eff": {

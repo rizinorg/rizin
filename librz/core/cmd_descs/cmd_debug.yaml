@@ -300,7 +300,10 @@ commands:
       - name: dcs
         summary: Continue until syscall
         cname: cmd_debug_continue_syscall
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args:
+          - name: syscall
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
       - name: dct
         summary: Traptrace from curseek to len, no argument to list
         cname: cmd_debug_continue_traptrace
