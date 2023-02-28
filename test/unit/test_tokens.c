@@ -402,7 +402,7 @@ static bool test_rz_colorize_generic_1(void) {
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop->buf_asm, p,
 		rz_asm_get_parse_param(a->reg, anaop->type), asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[33madc.w\x1b[0m\x1b[37m \x1b[0m\x1b[36mr8\x1b[0m\x1b[37m, \x1b[0m\x1b[36msb\x1b[0m\x1b[37m, \x1b[0m\x1b[36msl\x1b[0m\x1b[37m, \x1b[0m\x1b[37mlsl\x1b[0m\x1b[37m \x1b[0m\x1b[33m31\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[33madc.w\x1b[0m\x1b[37m \x1b[0m\x1b[36mr8\x1b[0m\x1b[37m, \x1b[0m\x1b[36mr9\x1b[0m\x1b[37m, \x1b[0m\x1b[36mr10\x1b[0m\x1b[37m, \x1b[0m\x1b[37mlsl\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x1f\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
