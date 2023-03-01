@@ -30,7 +30,6 @@ RZ_API void rz_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 RZ_API void rz_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits);
 RZ_API void rz_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize);
 RZ_API void *rz_mem_copy(void *dest, size_t dmax, const void *src, size_t smax);
-RZ_API void rz_mem_swapendian(ut8 *dest, const ut8 *orig, int size);
 RZ_API int rz_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 RZ_API const ut8 *rz_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 RZ_API const ut8 *rz_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
