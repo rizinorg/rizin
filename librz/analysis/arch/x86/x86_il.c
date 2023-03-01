@@ -3467,11 +3467,10 @@ IL_LIFTER(sub) {
  * Encoding: I, MI, MR
  */
 IL_LIFTER(test) {
-	RzILOpEffect *res = SETL("_res", LOGAND(x86_il_get_op(0), x86_il_get_op(1)));
-	RzILOpEffect *res_flags = x86_il_set_result_flags(VARL("_res"));
+	RzILOpEffect *res_flags = x86_il_set_result_flags(LOGAND(x86_il_get_op(0), x86_il_get_op(1)));
 	RzILOpEffect *arith_flags = SEQ2(SETG(EFLAGS(CF), IL_FALSE), SETG(EFLAGS(OF), IL_FALSE));
 
-	return SEQ3(res, res_flags, arith_flags);
+	return SEQ2(res_flags, arith_flags);
 }
 
 /**
