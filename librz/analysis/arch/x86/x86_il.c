@@ -734,13 +734,13 @@ static const struct extreg_lookup_helper_t extreg_lookup_table[] = {
 	extreg_lookup(, x86_il_get_gpr64, x86_il_set_gpr64)
 
 	// 8-bit wide (byte)
-	extreg_lookup(B, x86_il_get_gprl, x86_il_set_gprl)
+	extreg_lookup(B, x86_il_get_gprl, x86_il_set_gpr64)
 
 	// 16-bit wide (word)
-	extreg_lookup(W, x86_il_get_gpr16, x86_il_set_gpr16)
+	extreg_lookup(W, x86_il_get_gpr16, x86_il_set_gpr64)
 
 	// 32-bit wide (dword)
-	extreg_lookup(D, x86_il_get_gpr32, x86_il_set_gpr32)
+	extreg_lookup(D, x86_il_get_gpr32, x86_il_set_gpr64)
 };
 
 /**
@@ -810,7 +810,7 @@ static RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RzILOpPure *val, int bits) 
 		return entry.set_handler(get_bitness_reg(entry.index, bits), val, bits);
 	} else if ((ind = get_extreg_ind(reg)) != -1 && bits == 64) {
 		struct extreg_lookup_helper_t entry = extreg_lookup_table[ind];
-		return entry.set_handler(entry.base_reg, val, bits);
+		return entry.set_handler(entry.base_reg, UNSIGNED(64, val), bits);
 	}
 
 	return SETG(x86_registers[reg], val);
@@ -1271,7 +1271,7 @@ IL_LIFTER(invalid) {
  * \brief Unimplemented instruction
  */
 IL_LIFTER(unimpl) {
-	return NULL;
+	return EMPTY();
 }
 
 /* 8086/8088/80186/80286/80386/80486 instructions*/
