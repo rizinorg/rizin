@@ -4,7 +4,7 @@
 #include <rz_util.h>
 #include <rz_util/rz_alloc.h>
 
-RZ_API void *rz_malloc_aligned(size_t size, size_t alignment) {
+RZ_API RZ_OWN void *rz_malloc_aligned(size_t size, size_t alignment) {
 #if HAVE_POSIX_MEMALIGN
 	void *result = NULL;
 	if (posix_memalign(&result, alignment, size) != 0) {
@@ -33,4 +33,12 @@ RZ_API void rz_free_aligned(void *p) {
 #else
 	free(((void **)p)[-1]);
 #endif
+}
+
+RZ_API RZ_OWN void *rz_mem_alloc(size_t sz) {
+	return calloc(sz, 1);
+}
+
+RZ_API void rz_mem_free(void *p) {
+	free(p);
 }

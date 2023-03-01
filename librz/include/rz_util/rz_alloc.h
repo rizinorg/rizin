@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-RZ_API void *rz_malloc_aligned(size_t size, size_t alignment);
+RZ_API RZ_OWN void *rz_mem_alloc(size_t sz);
+RZ_API void rz_mem_free(void *);
+RZ_API RZ_OWN void *rz_malloc_aligned(size_t size, size_t alignment);
 RZ_API void rz_free_aligned(void *p);
 
 #endif

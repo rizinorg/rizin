@@ -343,14 +343,6 @@ RZ_API bool rz_mem_is_zero(const ut8 *b, int l) {
 	return true;
 }
 
-RZ_API void *rz_mem_alloc(int sz) {
-	return calloc(sz, 1);
-}
-
-RZ_API void rz_mem_free(void *p) {
-	free(p);
-}
-
 RZ_API void rz_mem_memzero(void *dst, size_t l) {
 #ifdef _MSC_VER
 	RtlSecureZeroMemory(dst, l);
