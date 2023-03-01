@@ -21,8 +21,6 @@ RZ_API ut64 rz_mem_get_num(const ut8 *b, int size);
 
 /* MEMORY POOL */
 RZ_API void *rz_mem_dup(const void *s, int l);
-RZ_API void *rz_mem_alloc(int sz);
-RZ_API void rz_mem_free(void *);
 RZ_API void rz_mem_memzero(void *, size_t);
 RZ_API void rz_mem_reverse(ut8 *b, int l);
 RZ_API int rz_mem_protect(void *ptr, int size, const char *prot);
