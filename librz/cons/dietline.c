@@ -10,12 +10,10 @@
 #if __WINDOWS__
 #include <windows.h>
 #define printf(...) rz_cons_win_printf(false, __VA_ARGS__)
-#define USE_UTF8    1
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <signal.h>
-#define USE_UTF8 1
 #endif
 
 static char *rz_line_nullstr = "";
@@ -152,12 +150,12 @@ RZ_API int rz_line_dietline_init(void) {
 	return true;
 }
 
-#if USE_UTF8
-/* read utf8 char into 's', return the length in bytes */
-static int rz_line_readchar_utf8(ut8 *s, int slen) {
-	// TODO: add support for w32
+/* \brief Reads UTF-8 char into \p s with maximum expected bytelength \p maxlen
+ * \return The length in bytes
+ */
+static int rz_line_readchar_utf8(ut8 *s, int maxlen) {
 	ssize_t len, i;
-	if (slen < 1) {
+	if (maxlen < 1) {
 		return 0;
 	}
 	int ch = rz_cons_readchar();
@@ -165,11 +163,6 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	*s = ch;
-#if 0
-	if ((t = read (0, s, 1)) != 1) {
-		return t;
-	}
-#endif
 	*s = rz_cons_controlz(*s);
 	if (*s < 0x80) {
 		len = 1;
@@ -182,7 +175,7 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 	} else {
 		return -1;
 	}
-	if (len > slen) {
+	if (len > maxlen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {
@@ -196,7 +189,6 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 	}
 	return len;
 }
-#endif
 
 RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb up, RzLineHistoryDownCb down) {
 	line->cb_history_up = up;
@@ -1245,9 +1237,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp = 0;
 	static int gcomp_is_rev = true;
 	char buf[10];
-#if USE_UTF8
 	int utflen;
-#endif
 	int ch = 0, key, i = 0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 	int prev_buflen = -1;
@@ -1300,32 +1290,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				I.buffer.length = 0;
 			}
 		}
-#if USE_UTF8
 		utflen = rz_line_readchar_utf8((ut8 *)buf, sizeof(buf));
 		if (utflen < 1) {
 			rz_cons_break_pop();
 			return NULL;
 		}
 		buf[utflen] = 0;
-#else
-#if __WINDOWS__
-		{
-			int len = rz_line_readchar_win((ut8 *)buf, sizeof(buf));
-			if (len < 1) {
-				rz_cons_break_pop();
-				return NULL;
-			}
-			buf[len] = 0;
-		}
-#else
-		ch = rz_cons_readchar();
-		if (ch == -1) {
-			rz_cons_break_pop();
-			return NULL;
-		}
-		buf[0] = ch;
-#endif
-#endif
 		bool o_do_setup_match = I.history.do_setup_match;
 		I.history.do_setup_match = true;
 		if (I.echo) {
@@ -1806,17 +1776,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				gcomp++;
 			}
 			{
-#if USE_UTF8
 				int size = utflen;
-#else
-				int size = 1;
-#endif
 				if (I.buffer.length + size >= RZ_LINE_BUFSIZE) {
 					break;
 				}
 			}
 			if (I.buffer.index < I.buffer.length) {
-#if USE_UTF8
 				if ((I.buffer.length + utflen) < sizeof(I.buffer.data)) {
 					I.buffer.length += utflen;
 					for (i = I.buffer.length; i > I.buffer.index; i--) {
@@ -1824,37 +1789,16 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					}
 					memcpy(I.buffer.data + I.buffer.index, buf, utflen);
 				}
-#else
-				for (i = ++I.buffer.length; i > I.buffer.index; i--) {
-					I.buffer.data[i] = I.buffer.data[i - 1];
-				}
-				I.buffer.data[I.buffer.index] = buf[0];
-#endif
 			} else {
-#if USE_UTF8
 				if ((I.buffer.length + utflen) < sizeof(I.buffer.data)) {
 					memcpy(I.buffer.data + I.buffer.length, buf, utflen);
 					I.buffer.length += utflen;
 				}
 				I.buffer.data[I.buffer.length] = '\0';
-#else
-				I.buffer.data[I.buffer.length] = buf[0];
-				I.buffer.length++;
-				if (I.buffer.length > (RZ_LINE_BUFSIZE - 1)) {
-					I.buffer.length--;
-				}
-				I.buffer.data[I.buffer.length] = '\0';
-#endif
 			}
-#if USE_UTF8
 			if ((I.buffer.index + utflen) <= I.buffer.length) {
 				I.buffer.index += utflen;
 			}
-#else
-			if (I.buffer.index < I.buffer.length) {
-				I.buffer.index++;
-			}
-#endif
 			break;
 		}
 		if (I.sel_widget && I.buffer.length != prev_buflen) {
