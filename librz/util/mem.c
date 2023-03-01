@@ -186,52 +186,7 @@ RZ_API int rz_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 	return true;
 }
 
-// This function unconditionally swaps endian of size bytes of orig -> dest
-// TODO: Remove completely
-RZ_API void rz_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
-	ut8 buffer[8];
-	switch (size) {
-	case 1:
-		*dest = *orig;
-		break;
-	case 2:
-		*buffer = *orig;
-		dest[0] = orig[1];
-		dest[1] = buffer[0];
-		break;
-	case 3:
-		*buffer = *orig;
-		dest[0] = orig[2];
-		dest[1] = orig[1];
-		dest[2] = buffer[0];
-		break;
-	case 4:
-		memcpy(buffer, orig, 4);
-		dest[0] = buffer[3];
-		dest[1] = buffer[2];
-		dest[2] = buffer[1];
-		dest[3] = buffer[0];
-		break;
-	case 8:
-		memcpy(buffer, orig, 8);
-		dest[0] = buffer[7];
-		dest[1] = buffer[6];
-		dest[2] = buffer[5];
-		dest[3] = buffer[4];
-		dest[4] = buffer[3];
-		dest[5] = buffer[2];
-		dest[6] = buffer[1];
-		dest[7] = buffer[0];
-		break;
-	default:
-		if (dest != orig) {
-			memmove(dest, orig, size);
-		}
-	}
-}
-
-// RZ_DOC rz_mem_mem: Finds the needle of nlen size into the haystack of hlen size
-// RZ_UNIT printf("%s\n", rz_mem_mem("food is pure lame", 20, "is", 2));
+/* \brief Finds the \p needle of \p nlen size into the \p haystack of \p hlen size */
 RZ_API const ut8 *rz_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen - nlen + 1;
 	if (hlen < 1 || nlen < 1) {
