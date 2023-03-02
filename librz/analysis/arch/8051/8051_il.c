@@ -164,6 +164,15 @@ static inline int8_t addr_to_int(ut8 addr) {
 		return -((~addr + 1) & 0x7FFF);
 	}
 }
+static inline uint8_t bitaddr(ut8 addr) {
+	if (addr > 0x7f) {
+		addr &= 0xf8;
+	} else {
+		addr >>= 3;
+		addr += 0x20;
+	}
+	return addr;
+}
 
 static RzILOpPure *i8051_addressing_get(I8051OpAddressing *a) {
 	switch (a->mode) {
@@ -204,7 +213,9 @@ static RzILOpEffect *i8051_addressing_set(I8051OpAddressing *a, RzILOpPure *v) {
 		return i8051_reg_set(a->d.reg, v);
 	}
 	case I8051_ADDRESSING_BIT: {
-		return STOREW(U16(a->d.addr), BOOL_TO_BV(v, 1));
+		ut8 addr = bitaddr(a->d.addr);
+		return STORE(U16(addr),
+			LOGOR(LOGAND(LOAD(U16(addr)), LOGNOT(SHIFTL0(U8(1), U8(a->d.addr & 7)))), SHIFTL0(v, U8(a->d.addr & 7))));
 	}
 	case I8051_ADDRESSING_DIRECT: {
 		if (a->d.addr <= 0x1f) {
@@ -234,19 +245,6 @@ static RzILOpEffect *i8051_addressing_set(I8051OpAddressing *a, RzILOpPure *v) {
 		rz_warn_if_reached();
 		return NULL;
 	}
-}
-
-static RzILOpEffect *i8051_addressing_set_bool(I8051OpAddressing *a, bool b) {
-#define BOOL(v) ((v) ? IL_TRUE : IL_FALSE)
-
-	if (a->mode == I8051_ADDRESSING_REGISTER) {
-		if (i8051_reg_is_psw_bit(a->d.reg)) {
-			return i8051_reg_set(a->d.reg, BOOL(b));
-		} else {
-			return i8051_reg_set(a->d.reg, U8(b));
-		}
-	}
-	return i8051_addressing_set(a, BOOL(b));
 }
 
 static RzILOpPure *carryout(RzILOpBitVector *a, RzILOpBitVector *b, RzILOpBitVector *c) {
@@ -331,11 +329,11 @@ static RzILOpEffect *i_inc(I8051Op *op) {
 
 static RzILOpEffect *i_clr(I8051Op *op) {
 	rz_return_val_if_fail(op, NULL);
-	return i8051_addressing_set_bool(op->argv[0], false);
+	return i8051_addressing_set(op->argv[0], U8(0));
 }
 static RzILOpEffect *i_setb(I8051Op *op) {
 	rz_return_val_if_fail(op, NULL);
-	return i8051_addressing_set_bool(op->argv[0], true);
+	return i8051_addressing_set(op->argv[0], U8(1));
 }
 static RzILOpEffect *i_cpl(I8051Op *op) {
 	rz_return_val_if_fail(op, NULL);
@@ -409,7 +407,7 @@ static RzILOpEffect *i_jnb(I8051Op *op) {
 }
 static RzILOpEffect *i_jbc(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
-	return BRANCH(i8051_addressing_get(op->argv[0]), SEQ2(i8051_addressing_set_bool(op->argv[0], false), JMP(i8051_addressing_get(op->argv[1]))), NOP());
+	return BRANCH(i8051_addressing_get(op->argv[0]), SEQ2(i8051_addressing_set(op->argv[0], U8(0)), JMP(i8051_addressing_get(op->argv[1]))), NOP());
 }
 static RzILOpEffect *i_jc(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0], NULL);
