@@ -157,6 +157,14 @@ static inline RzILOpEffect *i8051_reg_set(I8051Register reg, RzILOpBitVector *v)
 	return SETG_8051(reg, v);
 }
 
+static inline int8_t addr_to_int(ut8 addr) {
+	if ((addr & 0x8000) == 0) {
+		return addr;
+	} else {
+		return -((~addr + 1) & 0x7FFF);
+	}
+}
+
 static RzILOpPure *i8051_addressing_get(I8051OpAddressing *a) {
 	switch (a->mode) {
 	case I8051_ADDRESSING_REGISTER: {
@@ -176,7 +184,7 @@ static RzILOpPure *i8051_addressing_get(I8051OpAddressing *a) {
 	case I8051_ADDRESSING_IMMEDIATE16:
 		return U16(a->d.addr16);
 	case I8051_ADDRESSING_RELATIVE:
-		return U16(a->op->pc + a->op->len + a->d.addr);
+		return U16(addr_to_int(a->d.addr) + (int)a->op->pc + (int)a->op->len);
 	case I8051_ADDRESSING_ABSOLUTE:
 	case I8051_ADDRESSING_LONG:
 		return U16(a->d.addr16);
