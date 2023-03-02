@@ -38,8 +38,8 @@ RZ_API void rz_annotated_code_free(RzAnnotatedCode *code) {
 		return;
 	}
 	rz_vector_clear(&code->annotations);
-	rz_free(code->code);
-	rz_free(code);
+	free(code->code);
+	free(code);
 }
 
 RZ_API void rz_annotated_code_add_annotation(RzAnnotatedCode *code, RzCodeAnnotation *annotation) {

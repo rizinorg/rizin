@@ -313,6 +313,7 @@ static const RzCmdDescArg cmd_debug_add_watchpoint_args[2];
 static const RzCmdDescArg cmd_debug_set_cond_bp_win_args[3];
 static const RzCmdDescArg cmd_debug_continue_execution_args[2];
 static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
+static const RzCmdDescArg cmd_debug_continue_syscall_args[2];
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
 static const RzCmdDescArg cmd_debug_descriptor_open_args[2];
 static const RzCmdDescArg cmd_debug_descriptor_close_args[2];
@@ -6994,8 +6995,19 @@ static const RzCmdDescHelp cmd_debug_continue_ret_help = {
 	.args = cmd_debug_continue_ret_args,
 };
 
+static const RzCmdDescArg cmd_debug_continue_syscall_args[] = {
+	{
+		.name = "syscall",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
 static const RzCmdDescHelp cmd_debug_continue_syscall_help = {
 	.summary = "Continue until syscall",
+	.args = cmd_debug_continue_syscall_args,
 };
 
 static const RzCmdDescArg cmd_debug_continue_traptrace_args[] = {
@@ -18654,7 +18666,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_continue_ret_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcr", rz_cmd_debug_continue_ret_handler, &cmd_debug_continue_ret_help);
 	rz_warn_if_fail(cmd_debug_continue_ret_cd);
 
-	RzCmdDesc *cmd_debug_continue_syscall_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcs", rz_cmd_debug_continue_syscall, &cmd_debug_continue_syscall_help);
+	RzCmdDesc *cmd_debug_continue_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcs", rz_cmd_debug_continue_syscall_handler, &cmd_debug_continue_syscall_help);
 	rz_warn_if_fail(cmd_debug_continue_syscall_cd);
 
 	RzCmdDesc *cmd_debug_continue_traptrace_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dct", rz_cmd_debug_continue_traptrace_handler, &cmd_debug_continue_traptrace_help);
