@@ -549,3 +549,28 @@ RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL c
 }
 
 #include "rz_il/rz_il_opbuilder_end.h"
+
+RZ_IPI RzAnalysisILConfig *rz_8051_il_config(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	RzAnalysisILConfig *r = rz_analysis_il_config_new(16, analysis->big_endian, 16);
+	static const char *regs_bound[] = {
+		"r0",
+		"r1",
+		"r2",
+		"r3",
+		"r4",
+		"r5",
+		"r6",
+		"r7",
+		"acc",
+		"b",
+		"dpl",
+		"dph",
+		"psw",
+		"sp",
+		"pc",
+		NULL
+	};
+	r->reg_bindings = regs_bound;
+	return r;
+}

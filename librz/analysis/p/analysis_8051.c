@@ -1025,22 +1025,23 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
 		"gpr	acc	.8	8	0\n"
+		"gpr	a	.8	8	0\n"
 		"gpr	b	.8	9	0\n"
+		"gpr	dptr	.16	10	0\n"
 		"gpr	dpl	.8	10	0\n"
 		"gpr	dph	.8	11	0\n"
-		"gpr	psw	.8	12	0\n"
-		//		"flg	p	.1	12.0	0\n"
-		//		"flg	z	.1	12.1	0\n"
-		//		"flg	ov	.1	12.2	0\n"
-		//		"flg	rs0	.1	12.3	0\n"
-		//		"flg	rs1	.1	12.4	0\n"
-		//		"flg	n	.1	12.5	0\n"
-		//		"flg	ac	.1	12.6	0\n"
-		//		"flg	cy	.1	12.7	0\n"
+		"flg	psw	.8	12	0\n"
+		"flg	p	.1	.96	0\n"
+		"flg	z	.1	.97	0\n"
+		"flg	ov	.1	.98	0\n"
+		"flg	s0	.1	.99	0\n"
+		"flg	s1	.1	.100	0\n"
+		"flg	n	.1	.101	0\n"
+		"flg	ac	.1	.102	0\n"
+		"flg	cy	.1	.103	0\n"
+		"flg	c	.1	.103	0\n"
 		"gpr	sp	.8	13	0\n"
 		"gpr	pc	.16	15	0\n"
-		// aliases
-		//		"flg	c	.1	12.7	0\n"
 		// ---------------------------------------------------
 		// 8051 memory emulation control registers
 		// These registers map 8051 memory classes to r2's
@@ -1270,10 +1271,6 @@ static bool i8051_fini(void *user) {
 	return true;
 }
 
-static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
-	return rz_analysis_il_config_new(16, false, 16);
-}
-
 RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -1287,7 +1284,7 @@ RzAnalysisPlugin rz_analysis_plugin_8051 = {
 	.esil_fini = esil_i8051_fini,
 	.init = &i8051_init,
 	.fini = &i8051_fini,
-	.il_config = il_config,
+	.il_config = rz_8051_il_config,
 };
 
 #ifndef RZ_PLUGIN_INCORE
