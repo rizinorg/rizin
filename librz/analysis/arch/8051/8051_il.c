@@ -302,16 +302,21 @@ static RzILOpEffect *i_subb(I8051Op *op) {
 }
 static RzILOpEffect *i_div(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
-	return SEQ6(SETL("@a", i8051_addressing_get(op->argv[0])), SETL("@b", i8051_addressing_get(op->argv[1])),
-		i8051_reg_set(I8051_ACC, DIV(VARL("@a"), VARL("@b"))), i8051_reg_set(I8051_B, MOD(VARL("@a"), VARL("@b"))),
-		i8051_reg_set(I8051_CY, IL_FALSE), i8051_reg_set(I8051_OV, IS_ZERO(VARL("@b"))));
+	return SEQ6(SETL("@a", i8051_addressing_get(op->argv[0])),
+		SETL("@b", i8051_addressing_get(op->argv[1])),
+		i8051_reg_set(I8051_ACC, DIV(VARL("@a"), VARL("@b"))),
+		i8051_reg_set(I8051_B, MOD(VARL("@a"), VARL("@b"))),
+		i8051_reg_set(I8051_CY, IL_FALSE),
+		i8051_reg_set(I8051_OV, IS_ZERO(VARL("@b"))));
 }
 static RzILOpEffect *i_mul(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
-	return SEQ6(SETL("v", DIV(UNSIGNED(16, VAL_ACC), UNSIGNED(16, VAL_B))),
-		SETL("mbv", HI_BYTE(VARL("v"))),
-		i8051_reg_set(I8051_ACC, LO_BYTE(VARL("v"))), i8051_reg_set(I8051_B, VARL("mbv")),
-		i8051_reg_set(I8051_CY, IL_FALSE), i8051_reg_set(I8051_OV, NON_ZERO(VARL("mbv"))));
+	return SEQ6(SETL("v", MUL(UNSIGNED(16, VAL_ACC), UNSIGNED(16, VAL_B))),
+		SETL("MSB", HI_BYTE(VARL("v"))),
+		i8051_reg_set(I8051_ACC, LO_BYTE(VARL("v"))),
+		i8051_reg_set(I8051_B, VARL("MSB")),
+		i8051_reg_set(I8051_CY, IL_FALSE),
+		i8051_reg_set(I8051_OV, NON_ZERO(VARL("MSB"))));
 }
 
 static RzILOpEffect *i_dec(I8051Op *op) {
@@ -568,7 +573,6 @@ RZ_IPI RzAnalysisILConfig *rz_8051_il_config(RZ_NONNULL RzAnalysis *analysis) {
 		"dph",
 		"psw",
 		"sp",
-		"pc",
 		NULL
 	};
 	r->reg_bindings = regs_bound;
