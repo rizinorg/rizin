@@ -107,9 +107,16 @@ static const char *i8051_reg_names[0xff] = {
 
 #define LO_BYTE(x) UNSIGNED(8, x)
 #define HI_BYTE(x) UNSIGNED(8, SHIFTR0(x, U16(8)))
+#define BT8(x)     BOOL_TO_BV(x, 8)
 
 static inline RzILOpPure *bv_geti(RzILOpBitVector *v, ut8 i) {
 	return NON_ZERO(LOGAND(v, U8(1 << i)));
+}
+static inline RzILOpPure *bv_geti_bv(RzILOpBitVector *v, ut8 i) {
+	return BOOL_TO_BV(bv_geti(v, i), 8);
+}
+static inline RzILOpPure *bv_seti_copy(RzILOpBitVector *x, ut8 i, RzILOpBitVector *v) {
+	return LOGOR(LOGAND(x, LOGNOT(SHIFTL0(U8(1), U8(i)))), SHIFTL0(v, U8(i)));
 }
 
 #define VARG_8051(x) VARG(i8051_reg_names[x])
@@ -147,9 +154,7 @@ static inline RzILOpEffect *i8051_reg_set(I8051Register reg, RzILOpBitVector *v)
 			STORE(U16(I8051_DPH), VARL("dph'")), STORE(U16(I8051_DPL), VARL("dpl'")));
 	}
 	if (i8051_reg_is_psw_bit(reg)) {
-		return i8051_reg_set(I8051_PSW,
-			LOGOR(LOGAND(VARG_8051(I8051_PSW), LOGNOT(SHIFTL0(U8(1), U8(reg - I8051_PSW)))),
-				SHIFTL0(BOOL_TO_BV(v, 8), U8(reg - I8051_PSW))));
+		return i8051_reg_set(I8051_PSW, bv_seti_copy(VARG_8051(I8051_PSW), reg - I8051_PSW, v));
 	}
 	if (is_register_memory_map(reg)) {
 		return SEQ3(SETL("val", v), SETG_8051(reg, VARL("val")), STORE(U16(reg), VARL("val")));
@@ -214,8 +219,7 @@ static RzILOpEffect *i8051_addressing_set(I8051OpAddressing *a, RzILOpPure *v) {
 	}
 	case I8051_ADDRESSING_BIT: {
 		ut8 addr = bitaddr(a->d.addr);
-		return STORE(U16(addr),
-			LOGOR(LOGAND(LOAD(U16(addr)), LOGNOT(SHIFTL0(U8(1), U8(a->d.addr & 7)))), SHIFTL0(v, U8(a->d.addr & 7))));
+		return STORE(U16(addr), bv_seti_copy(LOAD(U16(addr)), a->d.addr & 7, v));
 	}
 	case I8051_ADDRESSING_DIRECT: {
 		if (a->d.addr <= 0x1f) {
@@ -255,9 +259,9 @@ static RzILOpEffect *set_add_carry(RzILOpBitVector *a, RzILOpBitVector *b, RzILO
 	rz_return_val_if_fail(a && b && c, NULL);
 	RzILOpPure *ov = OR(AND3(MSB(a), MSB(b), INV(MSB(c))), AND3(INV(MSB(DUP(a))), INV(MSB(DUP(b))), MSB(DUP(c))));
 	return SEQ4(SETL("carry", carryout(DUP(a), DUP(b), DUP(c))),
-		i8051_reg_set(I8051_CY, bv_geti(VARL("carry"), 7)),
-		i8051_reg_set(I8051_AC, bv_geti(VARL("carry"), 3)),
-		i8051_reg_set(I8051_OV, ov));
+		i8051_reg_set(I8051_CY, bv_geti_bv(VARL("carry"), 7)),
+		i8051_reg_set(I8051_AC, bv_geti_bv(VARL("carry"), 3)),
+		i8051_reg_set(I8051_OV, BT8(ov)));
 }
 
 static RzILOpPure *borrowin(RzILOpBitVector *a, RzILOpBitVector *b, RzILOpBitVector *c) {
@@ -267,12 +271,13 @@ static RzILOpPure *borrowin(RzILOpBitVector *a, RzILOpBitVector *b, RzILOpBitVec
 
 static RzILOpEffect *set_sub_curry(RzILOpBitVector *a, RzILOpBitVector *b, RzILOpBitVector *c) {
 	rz_return_val_if_fail(a && b && c, NULL);
+	RzILOpPure *ov = OR(AND(VARL("b6"), INV(VARL("b7"))), AND(INV(VARL("b6")), VARL("b7")));
 	return SEQ6(SETL("borrow", borrowin(a, b, c)),
 		SETL("b6", bv_geti(VARL("borrow"), 6)),
 		SETL("b7", bv_geti(VARL("borrow"), 7)),
-		i8051_reg_set(I8051_CY, VARL("b7")),
-		i8051_reg_set(I8051_AC, bv_geti(VARL("borrow"), 3)),
-		i8051_reg_set(I8051_OV, OR(AND(VARL("b6"), INV(VARL("b7"))), AND(INV(VARL("b6")), VARL("b7")))));
+		i8051_reg_set(I8051_CY, BT8(VARL("b7"))),
+		i8051_reg_set(I8051_AC, bv_geti_bv(VARL("borrow"), 3)),
+		i8051_reg_set(I8051_OV, BT8(ov)));
 }
 
 static RzILOpEffect *i_add(I8051Op *op) {
@@ -304,8 +309,8 @@ static RzILOpEffect *i_div(I8051Op *op) {
 		SETL("@b", i8051_addressing_get(op->argv[1])),
 		i8051_reg_set(I8051_ACC, DIV(VARL("@a"), VARL("@b"))),
 		i8051_reg_set(I8051_B, MOD(VARL("@a"), VARL("@b"))),
-		i8051_reg_set(I8051_CY, IL_FALSE),
-		i8051_reg_set(I8051_OV, IS_ZERO(VARL("@b"))));
+		i8051_reg_set(I8051_CY, U8(0)),
+		i8051_reg_set(I8051_OV, BT8(IS_ZERO(VARL("@b")))));
 }
 static RzILOpEffect *i_mul(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
@@ -313,8 +318,8 @@ static RzILOpEffect *i_mul(I8051Op *op) {
 		SETL("MSB", HI_BYTE(VARL("v"))),
 		i8051_reg_set(I8051_ACC, LO_BYTE(VARL("v"))),
 		i8051_reg_set(I8051_B, VARL("MSB")),
-		i8051_reg_set(I8051_CY, IL_FALSE),
-		i8051_reg_set(I8051_OV, NON_ZERO(VARL("MSB"))));
+		i8051_reg_set(I8051_CY, U8(0)),
+		i8051_reg_set(I8051_OV, BT8(NON_ZERO(VARL("MSB")))));
 }
 
 static RzILOpEffect *i_dec(I8051Op *op) {
@@ -335,24 +340,28 @@ static RzILOpEffect *i_setb(I8051Op *op) {
 	rz_return_val_if_fail(op, NULL);
 	return i8051_addressing_set(op->argv[0], U8(1));
 }
+
+static inline bool is_bitaddr(I8051OpAddressing *a) {
+	return (a->mode == I8051_ADDRESSING_REGISTER && i8051_reg_is_psw_bit(a->d.reg)) || a->mode == I8051_ADDRESSING_BIT;
+}
+
 static RzILOpEffect *i_cpl(I8051Op *op) {
-	rz_return_val_if_fail(op, NULL);
-	RzILOpPure *v = (op->argv[0]->mode == I8051_ADDRESSING_REGISTER && i8051_reg_is_psw_bit(op->argv[0]->d.reg)) || op->argv[0]->mode == I8051_ADDRESSING_BIT
-		? INV(i8051_addressing_get(op->argv[0]))
-		: LOGNOT(i8051_addressing_get(op->argv[0]));
+	rz_return_val_if_fail(op && op->argv[0], NULL);
+	RzILOpPure *v = i8051_addressing_get(op->argv[0]);
+	v = is_bitaddr(op->argv[0]) ? BT8(INV(v)) : LOGNOT(v);
 	return i8051_addressing_set(op->argv[0], v);
 }
 static RzILOpEffect *i_anl(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
-	if (op->argv[0]->mode == I8051_ADDRESSING_BIT || op->argv[1]->mode == I8051_ADDRESSING_BIT) {
-		return i8051_addressing_set(op->argv[0], AND(i8051_addressing_get(op->argv[0]), i8051_addressing_get(op->argv[1])));
+	if (is_bitaddr(op->argv[0]) || is_bitaddr(op->argv[1])) {
+		return i8051_addressing_set(op->argv[0], BT8(AND(i8051_addressing_get(op->argv[0]), i8051_addressing_get(op->argv[1]))));
 	}
 	return i8051_addressing_set(op->argv[0], LOGAND(i8051_addressing_get(op->argv[0]), i8051_addressing_get(op->argv[1])));
 }
 static RzILOpEffect *i_orl(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
-	if (op->argv[0]->mode == I8051_ADDRESSING_BIT || op->argv[1]->mode == I8051_ADDRESSING_BIT) {
-		return i8051_addressing_set(op->argv[0], OR(i8051_addressing_get(op->argv[0]), i8051_addressing_get(op->argv[1])));
+	if (is_bitaddr(op->argv[0]) || is_bitaddr(op->argv[1])) {
+		return i8051_addressing_set(op->argv[0], BT8(OR(i8051_addressing_get(op->argv[0]), i8051_addressing_get(op->argv[1]))));
 	}
 	return i8051_addressing_set(op->argv[0], LOGOR(i8051_addressing_get(op->argv[0]), i8051_addressing_get(op->argv[1])));
 }
@@ -362,6 +371,9 @@ static RzILOpEffect *i_xrl(I8051Op *op) {
 }
 static RzILOpEffect *i_mov(I8051Op *op) {
 	rz_return_val_if_fail(op && op->argv[0] && op->argv[1], NULL);
+	if (is_bitaddr(op->argv[0]) || is_bitaddr(op->argv[1])) {
+		return i8051_addressing_set(op->argv[0], BT8(i8051_addressing_get(op->argv[1])));
+	}
 	return i8051_addressing_set(op->argv[0], i8051_addressing_get(op->argv[1]));
 }
 static RzILOpEffect *i_movc(I8051Op *op) {
@@ -376,7 +388,7 @@ static RzILOpEffect *i_da(I8051Op *op) {
 		SETL("@a", VAL_ACC),
 		BRANCH(VARL("s0"), SETL("@a", ADD(VARL("@a"), U8(0x6))), NOP()),
 		BRANCH(VARL("s1"), SETL("@a", ADD(VARL("@a"), U8(0x60))), NOP()),
-		i8051_reg_set(I8051_CY, UGT(VARL("@a"), U8(0x99))),
+		i8051_reg_set(I8051_CY, BT8(UGT(VARL("@a"), U8(0x99)))),
 		i8051_reg_set(I8051_ACC, VARL("@a")));
 }
 static RzILOpEffect *i_ijmp(I8051Op *op) {
@@ -460,16 +472,16 @@ static RzILOpEffect *i_rl(I8051Op *op) {
 	return i8051_reg_set(I8051_ACC, LOGOR(SHIFTL0(VAL_ACC, U8(1)), SHIFTR0(VAL_ACC, U8(7))));
 }
 static RzILOpEffect *i_rlc(I8051Op *op) {
-	return SEQ3(SETL("cy", BOOL_TO_BV(i8051_reg_get_psw(I8051_CY), 8)),
-		i8051_reg_set(I8051_CY, NON_ZERO(SHIFTR0(VAL_ACC, U8(7)))),
+	return SEQ3(SETL("cy", BT8(i8051_reg_get_psw(I8051_CY))),
+		i8051_reg_set(I8051_CY, BT8(NON_ZERO(SHIFTR0(VAL_ACC, U8(7))))),
 		i8051_reg_set(I8051_ACC, LOGOR(SHIFTL0(VAL_ACC, U8(1)), VARL("cy"))));
 }
 static RzILOpEffect *i_rr(I8051Op *op) {
 	return i8051_reg_set(I8051_ACC, LOGOR(SHIFTR0(VAL_ACC, U8(1)), SHIFTL0(VAL_ACC, U8(7))));
 }
 static RzILOpEffect *i_rrc(I8051Op *op) {
-	return SEQ3(SETL("cy", BOOL_TO_BV(i8051_reg_get_psw(I8051_CY), 8)),
-		i8051_reg_set(I8051_CY, NON_ZERO(LOGAND(VAL_ACC, U8(0x1)))),
+	return SEQ3(SETL("cy", BT8(i8051_reg_get_psw(I8051_CY))),
+		i8051_reg_set(I8051_CY, BT8(NON_ZERO(LOGAND(VAL_ACC, U8(0x1))))),
 		i8051_reg_set(I8051_ACC, LOGOR(SHIFTL0(VAL_ACC, U8(1)), SHIFTL0(VARL("cy"), U8(7)))));
 }
 static RzILOpEffect *i_swap(I8051Op *op) {
