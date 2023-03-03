@@ -5,7 +5,6 @@ rz_search_sources = [
   'regexp.c',
   'privkey-find.c',
   'search.c',
-  'strings.c'
 ]
 
 rz_search = library('rz_search', rz_search_sources,
