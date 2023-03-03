@@ -70,6 +70,41 @@ RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max) {
 	return true;
 }
 
+RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+	rz_return_val_if_fail(s && buf && len, -1);
+
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = len,
+		.max_uni_blocks = s->string_max,
+		.min_str_length = s->string_min,
+		.prefer_big_endian = false,
+	};
+	RzList *str_list = rz_list_new();
+	if (!str_list) {
+		return 0;
+	}
+
+	int count = rz_scan_strings_raw(buf, str_list, &scan_opt, from, from + len, RZ_STRING_ENC_GUESS);
+	if (count <= 0) {
+		rz_list_free(str_list);
+		return false;
+	}
+
+	RzListIter *iter, *iter2;
+	RzSearchKeyword *kw;
+
+	int matches = 0;
+	rz_list_foreach (s->kws, iter, kw) {
+		RzDetectedString *dstr;
+		rz_list_foreach (str_list, iter2, dstr) {
+			rz_search_hit_new(s, kw, dstr->addr);
+			matches++;
+		}
+	}
+	RZ_FREE_CUSTOM(str_list, rz_list_free);
+	return matches;
+}
+
 RZ_API int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	eprintf("TODO: import librz/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
