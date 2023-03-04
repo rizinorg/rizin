@@ -4078,7 +4078,13 @@ RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char
 		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
 		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			rz_flag_rename(core->flags, flag, name);
+			if (!rz_flag_rename(core->flags, flag, name)) {
+				// If the rename failed, it may be because there is already a flag with the target name
+				if (rz_flag_get(core->flags, name)) {
+					// If that is the case, just unset the old one to not leak it (e.g. leaving behind fcn.<offset>)
+					rz_flag_unset(core->flags, flag);
+				}
+			}
 		} else {
 			// No flag or not specific to the function, create a new one.
 			rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
@@ -4701,11 +4707,26 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool plugin_supports_esil = core->analysis->cur->esil;
+	bool is_apple = is_apple_target(core);
 
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		rz_core_notify_done(core, "Find function and symbol names from golang binaries");
 		if (rz_core_analysis_recover_golang_functions(core)) {
 			rz_core_analysis_resolve_golang_strings(core);
+		}
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
+	}
+	if (is_apple) {
+		notify = "Recover all Objective-C selector stub names";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_core_analysis_objc_stubs(core); // "aalos"
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
 		}
 	}
 	rz_core_task_yield(&core->tasks);
@@ -4754,10 +4775,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (is_apple_target(core)) {
+	if (is_apple) {
 		notify = "Check for objc references";
 		rz_core_notify_begin(core, "%s", notify);
-		cmd_analysis_objc(core, true);
+		rz_core_analysis_objc_refs(core, true); // "aalor"
 		rz_core_notify_done(core, "%s", notify);
 	}
 	rz_core_task_yield(&core->tasks);

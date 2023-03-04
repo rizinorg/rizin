@@ -95,12 +95,16 @@ commands:
         summary: Language specific analysis commands
         subcommands:
           - name: aalg
-            summary: Recovers and analyze all Golang functions and strings
+            summary: Recover and analyze all Golang functions and strings
             cname: recover_all_golang_functions_strings
             args: []
-          - name: aalo
-            summary: Analyze all Objective-C references
+          - name: aalor
+            summary: Analyze all Objective-C references from selector usages to their implementations
             cname: analyze_all_objc_references
+            args: []
+          - name: aalos
+            summary: Recover all Objective-C selector stub names (__objc_stubs section contents)
+            cname: analyze_all_objc_stubs
             args: []
       - name: aan
         summary: Automatic rename functions commands

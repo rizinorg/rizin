@@ -6080,7 +6080,12 @@ RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core,
 }
 
 RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(cmd_analysis_objc(core, false));
+	return bool2status(rz_core_analysis_objc_refs(core, false));
+}
+
+RZ_IPI RzCmdStatus rz_analyze_all_objc_stubs_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_objc_stubs(core);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_autoname_all_functions_handler(RzCore *core, int argc, const char **argv) {
