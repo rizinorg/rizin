@@ -38,6 +38,15 @@ RZ_API int rz_mem_eq(const ut8 *a, const ut8 *b, int len) {
 	return true;
 }
 
+RZ_API bool rz_mem_eq_masked(const ut8 *a, const ut8 *b, const ut8 *mask, size_t size) {
+	for (size_t i = 0; i < size; i++) {
+		if ((a[i] & mask[i]) != (b[i] & mask[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 RZ_API void rz_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 	int i = 0, j;
 	while (i < dsize) {
@@ -53,27 +62,6 @@ RZ_API void *rz_mem_copy(void *dest, size_t dmax, const void *src, size_t smax) 
 	}
 	rz_return_val_if_fail(dest && src, NULL);
 	return memcpy(dest, src, (smax < dmax) ? smax : dmax);
-}
-
-RZ_API int rz_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
-	ut8 *mdest = malloc(len);
-	if (!mdest) {
-		return -1;
-	}
-	ut8 *morig = malloc(len);
-	if (!morig) {
-		free(mdest);
-		return -1;
-	}
-	int i;
-	for (i = 0; i < len; i++) {
-		mdest[i] = dest[i] & mask[i];
-		morig[i] = orig[i] & mask[i];
-	}
-	int ret = memcmp(mdest, morig, len);
-	free(mdest);
-	free(morig);
-	return ret;
 }
 
 RZ_API void rz_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
