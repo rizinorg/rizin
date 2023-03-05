@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 imbillow <billow.fun@gmail.com>
+// SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _8051_IL_H_
@@ -94,23 +94,24 @@ typedef enum {
 } I8051AddressingMode;
 
 typedef enum {
-	I8051_R0 = 0,
-	I8051_R1,
-	I8051_R2,
-	I8051_R3,
-	I8051_R4,
-	I8051_R5,
-	I8051_R6,
-	I8051_R7,
+	I8051_R0 = 0x00,
+	I8051_R1 = 0x01,
+	I8051_R2 = 0x02,
+	I8051_R3 = 0x03,
+	I8051_R4 = 0x04,
+	I8051_R5 = 0x05,
+	I8051_R6 = 0x06,
+	I8051_R7 = 0x07,
 	I8051_SP = 0x81,
-	I8051_DPTR,
+	I8051_DPL = 0x82,
+	I8051_DPH = 0x83,
 	I8051_PCON = 0x87,
-	I8051_TCON,
-	I8051_TMOD,
-	I8051_TL0,
-	I8051_TL1,
-	I8051_TH0,
-	I8051_TH1,
+	I8051_TCON = 0x88,
+	I8051_TMOD = 0x89,
+	I8051_TL0 = 0x8A,
+	I8051_TL1 = 0x8B,
+	I8051_TH0 = 0x8C,
+	I8051_TH1 = 0x8D,
 	I8051_PC,
 	I8051_PSW = 0xD0,
 	I8051_Z = 0xD1,
@@ -120,18 +121,66 @@ typedef enum {
 	I8051_N = 0xD5,
 	I8051_AC = 0xD6,
 	I8051_CY = 0xD7,
-	I8051_A = 0xE0,
-	I8051_B = 0xF0
-} I8051Registers;
+	I8051_ACC = 0xE0,
+	I8051_B = 0xF0,
+	I8051_IE = 0xA8,
+	I8051_IP = 0xB8,
+	I8051_P0 = 0x80,
+	I8051_P1 = 0x90,
+	I8051_P2 = 0xA0,
+	I8051_P3 = 0xB0,
+	I8051_SCON = 0x98,
+	I8051_SBUF = 0x99,
+	I8051_DPTR,
+} I8051Register;
+
+enum I8051_PSW_MASKS {
+	PSWMASK_P = 0x01,
+	PSWMASK_UNUSED = 0x02,
+	PSWMASK_OV = 0x04,
+	PSWMASK_RS0 = 0x08,
+	PSWMASK_RS1 = 0x10,
+	PSWMASK_F0 = 0x20,
+	PSWMASK_AC = 0x40,
+	PSWMASK_C = 0x80
+};
+
+typedef struct {
+	RzIODesc *desc;
+	ut32 addr;
+	const char *name;
+} i8051_map_entry;
+
+typedef struct {
+	const char *name;
+	ut32 map_code;
+	ut32 map_idata;
+	ut32 map_sfr;
+	ut32 map_xdata;
+	ut32 map_pdata;
+} i8051_cpu_model;
+
+typedef struct {
+	const i8051_cpu_model *cpu_curr_model;
+	i8051_map_entry mem_map[3];
+} i8051_plugin_context;
+
+enum i8051_map_entry_type {
+	I8051_IDATA = 0,
+	I8051_SFR = 1,
+	I8051_XDATA = 2,
+};
+
+struct i8051_op_t;
 
 typedef struct i8051_op_addressing_t {
-	ut64 pc;
+	struct i8051_op_t *op;
 	I8051AddressingMode mode;
+	i8051_plugin_context *ctx;
 	union {
-		I8051Registers reg;
+		I8051Register reg;
 		ut8 addr;
 		ut16 addr16;
-		ut16 constant;
 		struct i8051_op_addressing_t *indirect;
 	} d;
 } I8051OpAddressing;
@@ -147,5 +196,6 @@ typedef struct i8051_op_t {
 
 RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, int len, ut64 pc);
 RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, int len, ut64 pc);
+RZ_IPI RzAnalysisILConfig *rz_8051_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif //_8051_IL_H_
