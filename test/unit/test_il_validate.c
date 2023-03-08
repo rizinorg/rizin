@@ -58,6 +58,21 @@ static bool test_il_validate_pure_bitv() {
 	mu_end;
 }
 
+static bool test_il_validate_pure_float() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILOpPure *op = rz_il_op_new_float_from_f64(4.2);
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 static bool test_il_validate_pure_ite() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 

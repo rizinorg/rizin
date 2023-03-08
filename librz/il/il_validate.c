@@ -529,6 +529,21 @@ VALIDATOR_PURE(loadw) {
 	return true;
 }
 
+VALIDATOR_PURE(float) {
+	RzILOpArgsFloat *args = &op->op.float_;
+	RzILSortPure sort;
+
+	if (!args->bv) {
+		rz_strbuf_appendf(report_builder, "Bitvector in constant float op is NULL.\n");
+		return false;
+	}
+
+	VALIDATOR_DESCEND(args->bv, &sort);
+	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_BITVECTOR, "Float bv operand is not bitvector.\n");
+	*sort_out = rz_il_sort_pure_float(args->r);
+	return true;
+}
+
 static ValidatePureFn validate_pure_table[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_VAR] = VALIDATOR_PURE_NAME(var),
 	[RZ_IL_OP_ITE] = VALIDATOR_PURE_NAME(ite),
