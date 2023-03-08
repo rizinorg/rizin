@@ -694,7 +694,7 @@ RUN
 NAME=aav without vinfun
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
-af @ 0x0040dea4
+af @ 0x0040ddb0
 e analysis.vinfun=false
 aav
 pd 1 @ 0x0040decc~?andi
@@ -707,7 +707,7 @@ RUN
 NAME=aav with vinfun
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
-af @ 0x0040dea4
+af @ 0x0040ddb0
 e analysis.vinfun=true
 aav
 pd 1 @ 0x0040decc~?dword

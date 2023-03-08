@@ -3697,6 +3697,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	bool vinfunr = rz_config_get_b(core->config, "analysis.vinfunrange");
 	bool analyze_strings = rz_config_get_b(core->config, "analysis.strings");
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
 	ut64 from = search_itv.addr, to = rz_itv_end(search_itv);
@@ -3760,21 +3761,21 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 			}
 			switch (vsize) {
 			case 1:
-				value = *(ut8 *)v;
+				value = rz_read_ble8(v);
 				match = (buf[i] >= vmin && buf[i] <= vmax);
 				break;
 			case 2:
-				v16 = rz_read_le16(v); // TODO: support big endian
+				v16 = rz_read_ble16(v, big_endian);
 				match = (v16 >= vmin && v16 <= vmax);
 				value = v16;
 				break;
 			case 4:
-				v32 = rz_read_le32(v); // TODO: support big endian
+				v32 = rz_read_ble32(v, big_endian);
 				match = (v32 >= vmin && v32 <= vmax);
 				value = v32;
 				break;
 			case 8:
-				v64 = rz_read_le64(v); // TODO: support big endian
+				v64 = rz_read_ble64(v, big_endian);
 				match = (v64 >= vmin && v64 <= vmax);
 				value = v64;
 				break;
