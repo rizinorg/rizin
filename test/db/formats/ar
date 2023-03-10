@@ -319,11 +319,11 @@ EOF
 RUN
 
 NAME=Open only one object in the win archive file.
-FILE=ar://bins/ar/ucrtd.osmode.lib//d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os_objfre_i386_clog10l.obj
+FILE=ar://bins/ar/ucrtd.osmode.lib//d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os/objfre/i386/clog10l.obj
 CMDS=<<EOF
 ol
 EOF
 EXPECT=<<EOF
- 3 * r-x 0x000000b4 d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os_objfre_i386_clog10l.obj
+ 3 * r-x 0x000000b4 d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/osmode_debug_public/../not_callable_by_os/objfre/i386/clog10l.obj
 EOF
 RUN

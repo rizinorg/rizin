@@ -113,14 +113,22 @@ static int rz_io_ar_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	return ar_read_at((RzArFp *)fd->data, io->off, buf, count);
+	int res = ar_read_at((RzArFp *)fd->data, io->off, buf, count);
+	if (res > 0) {
+		io->off += res;
+	}
+	return res;
 }
 
 static int rz_io_ar_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	return ar_write_at((RzArFp *)fd->data, io->off, (void *)buf, count);
+	int res = ar_write_at((RzArFp *)fd->data, io->off, (void *)buf, count);
+	if (res > 0) {
+		io->off += res;
+	}
+	return res;
 }
 
 static int rz_io_ar_close(RzIODesc *fd) {
