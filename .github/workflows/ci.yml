@@ -40,7 +40,6 @@ jobs:
               - '.github/workflows/ci.yml'
               - 'test/**'
 
-  # TODO: build rz-bindings
   build-and-test:
     needs: changes
     name: ${{ matrix.name }}
