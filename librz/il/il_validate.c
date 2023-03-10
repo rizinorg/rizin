@@ -624,11 +624,17 @@ VALIDATOR_PURE(forder) {
 	char *ssx, *ssy;
 	ssx = rz_il_sort_pure_stringify(sx);
 	ssy = rz_il_sort_pure_stringify(sy);
-	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code), ssx, ssy);
-
+	// flatten validator assert
+	if (!(sx.props.f.format == sy.props.f.format)) {
+		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+			rz_il_op_pure_code_stringify(op->code), ssx, ssy);
+		free(ssx);
+		free(ssy);
+		return false;
+	}
 	free(ssx);
 	free(ssy);
+
 	*sort_out = rz_il_sort_pure_bool();
 	return true;
 }
@@ -661,8 +667,14 @@ VALIDATOR_PURE(float_binop_with_round) {
 	char *ssx, *ssy;
 	ssx = rz_il_sort_pure_stringify(sx);
 	ssy = rz_il_sort_pure_stringify(sy);
-	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code), ssx, ssy);
+	// flatten validator assert
+	if (!(sx.props.f.format == sy.props.f.format)) {
+		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+			rz_il_op_pure_code_stringify(op->code), ssx, ssy);
+		free(ssx);
+		free(ssy);
+		return false;
+	}
 	free(ssx);
 	free(ssy);
 
@@ -688,11 +700,17 @@ VALIDATOR_PURE(float_terop_with_round) {
 	ssy = rz_il_sort_pure_stringify(sy);
 	ssz = rz_il_sort_pure_stringify(sz);
 
-	VALIDATOR_ASSERT(
-		(sx.props.f.format == sy.props.f.format) && (sy.props.f.format == sz.props.f.format),
-		"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
-		rz_il_op_pure_code_stringify(op->code),
-		ssx, ssy, ssz);
+	if (!((sx.props.f.format == sy.props.f.format) &&
+		    (sx.props.f.format == sz.props.f.format))) {
+		rz_strbuf_appendf(report_builder,
+			"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
+			rz_il_op_pure_code_stringify(op->code),
+			ssx, ssy, ssz);
+		free(ssx);
+		free(ssy);
+		free(ssz);
+		return false;
+	}
 
 	free(ssx);
 	free(ssy);

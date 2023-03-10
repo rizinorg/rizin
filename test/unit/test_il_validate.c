@@ -1723,18 +1723,18 @@ bool all_tests() {
 	mu_run_test(test_il_validate_effect_blk);
 	mu_run_test(test_il_validate_effect_repeat);
 	mu_run_test(test_il_validate_effect_branch);
-	// mu_run_test(test_il_validate_pure_float);
-	// mu_run_test(test_il_validate_pure_fbits);
-	// mu_run_test(test_il_validate_pure_float_bool_uop);
-	// mu_run_test(test_il_validate_pure_float_uop);
-	// mu_run_test(test_il_validate_pure_float_uop_with_round);
-	// mu_run_test(test_il_validate_pure_forder);
-	// mu_run_test(test_il_validate_pure_float_binop_with_round);
-	// mu_run_test(test_il_validate_pure_float_terop_with_round);
-	// mu_run_test(test_il_validate_pure_float_hybridop_with_round);
-	// mu_run_test(test_il_validate_pure_fcast_to_int);
-	// mu_run_test(test_il_validate_pure_icast_to_float);
-	// mu_run_test(test_il_validate_pure_fconvert);
+	mu_run_test(test_il_validate_pure_float);
+	mu_run_test(test_il_validate_pure_fbits);
+	mu_run_test(test_il_validate_pure_float_bool_uop);
+	mu_run_test(test_il_validate_pure_float_uop);
+	mu_run_test(test_il_validate_pure_float_uop_with_round);
+	mu_run_test(test_il_validate_pure_forder);
+	mu_run_test(test_il_validate_pure_float_binop_with_round);
+	mu_run_test(test_il_validate_pure_float_terop_with_round);
+	mu_run_test(test_il_validate_pure_float_hybridop_with_round);
+	mu_run_test(test_il_validate_pure_fcast_to_int);
+	mu_run_test(test_il_validate_pure_icast_to_float);
+	mu_run_test(test_il_validate_pure_fconvert);
 
 	return tests_passed != tests_run;
 }
