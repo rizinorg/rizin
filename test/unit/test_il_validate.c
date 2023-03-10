@@ -1431,10 +1431,11 @@ static bool test_il_validate_pure_forder() {
 		rz_il_op_new_float_from_f64(12.345),
 		rz_il_op_new_float_from_f64(11.111));
 	RzILSortPure sort;
-	RzILValidateReport report = NULL;
+	RzILValidateReport report;
 	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+
 	mu_assert_true(val, "valid");
-	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bool()), "sort");
 	mu_assert_null(report, "no report");
 	rz_il_op_pure_free(op);
 
