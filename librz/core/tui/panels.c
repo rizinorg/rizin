@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include "../cmd_descs/cmd_descs.h"
 #include "../core_private.h"
 
 #define PANEL_NUM_LIMIT 9
@@ -3289,7 +3290,7 @@ int __calculator_cb(void *user) {
 			free(s);
 			break;
 		}
-		rz_core_cmdf(core, "? %s", s);
+		rz_help_calc_expr(core, s);
 		rz_cons_flush();
 		free(s);
 	}
@@ -3607,8 +3608,14 @@ int __writeValueCb(void *user) {
 	RzCore *core = (RzCore *)user;
 	char *res = __show_status_input(core, "insert number: ");
 	if (res) {
-		rz_core_cmdf(core, "\"wv %s\"", res);
+		ut64 value = rz_num_math(core->num, res);
+		if (core->num->nc.errors) {
+			RZ_LOG_ERROR("Could not convert argument to number");
+			free(res);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		free(res);
+		return rz_core_write_value_at(core, core->offset, value, 0) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 	}
 	return 0;
 }
@@ -4238,7 +4245,7 @@ void __init_menu_saved_layout(void *_core, const char *parent) {
 void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RzCore *core = (RzCore *)_core;
 	const char *color = core->cons->context->pal.graph_box2;
-	char *now = rz_core_cmd_str(core, "eco.");
+	char *now = rz_core_theme_get(core);
 	rz_str_split(now, '\n');
 	parent = "Settings.Colors";
 	RzList *list = __sorted_list(core, menus_Colors, COUNT(menus_Colors));
@@ -4253,7 +4260,6 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 		}
 		__add_menu(core, parent, pos, __settings_colors_cb);
 	}
-	free(now);
 	rz_list_free(list);
 	rz_strbuf_free(buf);
 }

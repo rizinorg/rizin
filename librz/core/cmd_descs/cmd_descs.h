@@ -1376,6 +1376,8 @@ RZ_IPI RzCmdStatus rz_egg_reset_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_egg_show_config_handler(RzCore *core, int argc, const char **argv);
 // "help"
 RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv);
+// "? <expr>"
+RZ_IPI void rz_help_calc_expr(RzCore* core, const char* input);
 // "H"
 RZ_IPI RzCmdStatus rz_history_list_or_exec_handler(RzCore *core, int argc, const char **argv);
 // "H-"
