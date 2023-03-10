@@ -128,6 +128,7 @@ static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContex
 	ctx->local_vars_available = ht_pp_new(NULL, var_kv_unown_free, NULL);
 	if (!ctx->local_vars_available) {
 		ht_pp_free(ctx->local_vars_known);
+		ctx->local_vars_known = NULL;
 		return false;
 	}
 	return true;
@@ -136,6 +137,8 @@ static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContex
 static void local_context_fini(LocalContext *ctx) {
 	ht_pp_free(ctx->local_vars_known);
 	ht_pp_free(ctx->local_vars_available);
+	ctx->local_vars_known = NULL;
+	ctx->local_vars_available = NULL;
 }
 
 static bool local_var_copy_known_cb(RZ_NONNULL void *user, const void *k, const void *v) {
@@ -618,9 +621,14 @@ VALIDATOR_PURE(forder) {
 	VALIDATOR_DESCEND(args->y, &sy);
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
+	char *ssx, *ssy;
+	ssx = rz_il_sort_pure_stringify(sx);
+	ssy = rz_il_sort_pure_stringify(sy);
 	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code), rz_il_sort_pure_stringify(sx), rz_il_sort_pure_stringify(sy));
+		rz_il_op_pure_code_stringify(op->code), ssx, ssy);
 
+	free(ssx);
+	free(ssy);
 	*sort_out = rz_il_sort_pure_bool();
 	return true;
 }
@@ -650,8 +658,13 @@ VALIDATOR_PURE(float_binop_with_round) {
 	VALIDATOR_DESCEND(args->y, &sy);
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
+	char *ssx, *ssy;
+	ssx = rz_il_sort_pure_stringify(sx);
+	ssy = rz_il_sort_pure_stringify(sy);
 	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code), rz_il_sort_pure_stringify(sx), rz_il_sort_pure_stringify(sy));
+		rz_il_op_pure_code_stringify(op->code), ssx, ssy);
+	free(ssx);
+	free(ssy);
 
 	*sort_out = rz_il_sort_pure_float(sx.props.f.format);
 	return true;
@@ -670,11 +683,20 @@ VALIDATOR_PURE(float_terop_with_round) {
 	VALIDATOR_DESCEND(args->z, &sz);
 	VALIDATOR_ASSERT(sz.type == RZ_IL_TYPE_PURE_FLOAT, "3rd operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
+	char *ssx, *ssy, *ssz;
+	ssx = rz_il_sort_pure_stringify(sx);
+	ssy = rz_il_sort_pure_stringify(sy);
+	ssz = rz_il_sort_pure_stringify(sz);
+
 	VALIDATOR_ASSERT(
 		(sx.props.f.format == sy.props.f.format) && (sy.props.f.format == sz.props.f.format),
 		"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
 		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx), rz_il_sort_pure_stringify(sy), rz_il_sort_pure_stringify(sz));
+		ssx, ssy, ssz);
+
+	free(ssx);
+	free(ssy);
+	free(ssz);
 
 	*sort_out = rz_il_sort_pure_float(sx.props.f.format);
 	return true;
@@ -782,7 +804,7 @@ static bool validate_pure(VALIDATOR_PURE_ARGS) {
  */
 RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
-	LocalContext local_ctx;
+	LocalContext local_ctx = { 0 };
 	if (!local_context_init(&local_ctx, ctx)) {
 		if (report_out) {
 			*report_out = NULL;
@@ -978,7 +1000,7 @@ VALIDATOR_EFFECT(repeat) {
 	RzILSortPure sc;
 	VALIDATOR_DESCEND_PURE(args->condition, &sc);
 	VALIDATOR_ASSERT(sc.type == RZ_IL_TYPE_PURE_BOOL, "Condition of repeat op is not boolean.\n");
-	LocalContext loop_ctx;
+	LocalContext loop_ctx = { 0 };
 	if (!local_context_copy(&loop_ctx, ctx)) {
 		return false;
 	}
@@ -986,7 +1008,12 @@ VALIDATOR_EFFECT(repeat) {
 	VALIDATOR_DESCEND_EFFECT(args->data_eff, &t, ctx, { local_context_fini(&loop_ctx); });
 	// Enforce (by overapproximation) that there are no effects after a ctrl effect, like in seq.
 	// In a loop, we just reject ctrl completely. This also matches BAP's `repeat : bool -> data eff -> data eff`.
-	VALIDATOR_ASSERT((t | RZ_IL_TYPE_EFFECT_DATA) == RZ_IL_TYPE_EFFECT_DATA, "Body operand of repeat op does not only perform data effects.");
+	if (!((t | RZ_IL_TYPE_EFFECT_DATA) == RZ_IL_TYPE_EFFECT_DATA)) {
+		rz_strbuf_appendf(report_builder, "Body operand of repeat op does not only perform data effects.");
+		local_context_fini(&loop_ctx);
+		return false;
+	}
+
 	bool val = local_context_meet(ctx, &loop_ctx, report_builder, "repeat");
 	local_context_fini(&loop_ctx);
 	*type_out = t;
@@ -998,7 +1025,7 @@ VALIDATOR_EFFECT(branch) {
 	RzILSortPure sc;
 	VALIDATOR_DESCEND_PURE(args->condition, &sc);
 	VALIDATOR_ASSERT(sc.type == RZ_IL_TYPE_PURE_BOOL, "Condition of branch op is not boolean.\n");
-	LocalContext false_ctx;
+	LocalContext false_ctx = { 0 };
 	if (!local_context_copy(&false_ctx, ctx)) {
 		return false;
 	}
@@ -1046,7 +1073,7 @@ RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILV
 	RZ_NULLABLE RZ_OUT HtPP /*<const char *, RzILSortPure *>*/ **local_var_sorts_out,
 	RZ_NULLABLE RZ_OUT RzILTypeEffect *type_out,
 	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
-	LocalContext local_ctx;
+	LocalContext local_ctx = { 0 };
 	if (!local_context_init(&local_ctx, ctx)) {
 		if (report_out) {
 			*report_out = NULL;
