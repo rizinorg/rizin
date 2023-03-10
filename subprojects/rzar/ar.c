@@ -177,8 +177,9 @@ static void ar_sanitize_name(RzArFp *arf) {
 			// thus the path needs to be unix only
 			arf->name[i] = '/';
 		} else if (!IS_PATH(arf->name[i])) {
-			trim_end = false;
 			arf->name[i] = '_';
+		} else {
+			trim_end = false;
 		}
 	}
 }
