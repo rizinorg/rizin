@@ -187,12 +187,12 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 							rz_cons_printf("%s..%s\n", tmp, Color_RESET);
 							print_full_func = false;
 						}
-						rz_free(tmp);
+						free(tmp);
 					}
 					if (print_full_func) {
 						rz_cons_println(var_functions);
 					}
-					rz_free(var_functions);
+					free(var_functions);
 				}
 			}
 		}

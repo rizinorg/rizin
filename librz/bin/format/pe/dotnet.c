@@ -326,7 +326,7 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 				index_sizes.methoddef;
 			ut32 rowcount = rowcounts->typedef_;
 
-			ut8 *rows = rz_calloc(rowcount, rowsize);
+			ut8 *rows = calloc(rowcount, rowsize);
 			if (!rz_buf_read(b, rows, (st64)rowsize * rowcount)) {
 				free(rows);
 				goto error;
@@ -373,7 +373,7 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 				index_sizes.blob + index_sizes.param;
 			ut32 rowcount = rowcounts->methoddef;
 
-			ut8 *rows = rz_calloc(rowcount, rowsize);
+			ut8 *rows = calloc(rowcount, rowsize);
 			if (!rz_buf_read(b, rows, (st64)rowsize * rowcount)) {
 				free(rows);
 				goto error;

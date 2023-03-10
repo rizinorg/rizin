@@ -1201,8 +1201,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 			.iov_base = &regs,
 			.iov_len = sizeof(regs)
 		};
-		ret = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, 1, &io);
-		// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
+		ret = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)(size_t)NT_PRSTATUS, &io);
 		if (ret != 0) {
 			rz_sys_perror("PTRACE_GETREGSET");
 			return false;

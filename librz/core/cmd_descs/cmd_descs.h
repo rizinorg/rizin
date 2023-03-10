@@ -925,7 +925,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_mapped_io_handler(RzCore *core, int arg
 // "dcr"
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_ret_handler(RzCore *core, int argc, const char **argv);
 // "dcs"
-RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc, const char **argv);
 // "dct"
 RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int argc, const char **argv);
 // "dcu"

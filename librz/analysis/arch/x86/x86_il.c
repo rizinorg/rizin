@@ -349,7 +349,6 @@ static const char *x86_bound_regs_16[] = {
 	"bx", /* X86_REG_BX */
 	"cx", /* X86_REG_CX */
 	"dx", /* X86_REG_DX */
-	"ip", /* X86_REG_IP */
 	"sp", /* X86_REG_SP */
 	"bp", /* X86_REG_BP */
 	"si", /* X86_REG_SI */
@@ -366,7 +365,6 @@ static const char *x86_bound_regs_32[] = {
 	"ebx", /* X86_REG_EBX */
 	"ecx", /* X86_REG_ECX */
 	"edx", /* X86_REG_EDX */
-	"eip", /* X86_REG_EIP */
 	"esp", /* X86_REG_ESP */
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
@@ -390,7 +388,6 @@ static const char *x86_bound_regs_64[] = {
 	"rbx", /* X86_REG_RBX */
 	"rcx", /* X86_REG_RCX */
 	"rdx", /* X86_REG_RDX */
-	"rip", /* X86_REG_RIP */
 	"rsp", /* X86_REG_RSP */
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
@@ -1081,12 +1078,12 @@ static struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 
 	/* We can stop shifting the "_val" once it is zero,
 	since the value of "_popcnt" wouldn't change any further */
-	RzILOpBool *termination_cond = IS_ZERO(VARL("_val"));
+	RzILOpBool *condition = NON_ZERO(VARL("_val"));
 
 	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), x86_bool_to_bv(LSB(VARL("_val")), 8)));
 	popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
 
-	RzILOpEffect *repeat_eff = REPEAT(termination_cond, popcnt);
+	RzILOpEffect *repeat_eff = REPEAT(condition, popcnt);
 
 	struct x86_parity_helper_t ret = {
 		.val = IS_ZERO(MOD(VARL("_popcnt"), U8(2))),

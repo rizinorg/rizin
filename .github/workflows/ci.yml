@@ -178,7 +178,7 @@ jobs:
         run: brew install pkg-config
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-12' && matrix.enabled
-        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
         run: pip3 install --user meson ninja PyYAML

@@ -3028,9 +3028,7 @@ static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, 
 static ut64 esilbreak_last_read = UT64_MAX;
 static ut64 esilbreak_last_data = UT64_MAX;
 
-static ut64 ntarget = UT64_MAX;
-
-// TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
+// TODO differentiate endian-aware mem_read with other reads
 static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzCore *core = esil->analysis->coreb.core;
 	ut8 str[128];
@@ -3057,28 +3055,21 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 			break;
 		}
 		// TODO incorrect
-		bool validRef = false;
 		if (trace && myvalid(core->io, refptr)) {
-			if (ntarget == UT64_MAX || ntarget == refptr) {
+			str[0] = 0;
+			if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
+				// RZ_LOG_ERROR("core: invalid read\n");
 				str[0] = 0;
-				if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
-					// RZ_LOG_ERROR("core: invalid read\n");
-					str[0] = 0;
-					validRef = false;
-				} else {
-					rz_analysis_xrefs_set(core->analysis, esil->address, refptr, RZ_ANALYSIS_XREF_TYPE_DATA);
-					str[sizeof(str) - 1] = 0;
-					add_string_ref(core, esil->address, refptr);
-					esilbreak_last_data = UT64_MAX;
-					validRef = true;
-				}
+			} else {
+				rz_analysis_xrefs_set(core->analysis, esil->address, refptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+				str[sizeof(str) - 1] = 0;
+				add_string_ref(core, esil->address, refptr);
+				esilbreak_last_data = UT64_MAX;
 			}
 		}
 
 		/** resolve ptr */
-		if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-			rz_analysis_xrefs_set(core->analysis, esil->address, addr, RZ_ANALYSIS_XREF_TYPE_DATA);
-		}
+		rz_analysis_xrefs_set(core->analysis, esil->address, addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 	}
 	return 0; // fallback
 }
