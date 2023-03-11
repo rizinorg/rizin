@@ -4261,6 +4261,7 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 		}
 		__add_menu(core, parent, pos, __settings_colors_cb);
 	}
+	free(now);
 	rz_list_free(list);
 	rz_strbuf_free(buf);
 }

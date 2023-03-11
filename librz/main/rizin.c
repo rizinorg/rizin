@@ -1223,7 +1223,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			const char *fstype = r->bin->cur->o->info->bclass;
 			rz_core_cmdf(r, "m /root %s @ 0", fstype);
 		}
-		rz_core_cmd0(r, "R!"); // initalize io subsystem
+		// initalize io subsystem
+		char *res = rz_io_system(r->io, NULL);
+		if (res) {
+			rz_cons_printf("%s\n", res);
+			free(res);
+		}
+
 		iod = r->io && fh ? rz_io_desc_get(r->io, fh->fd) : NULL;
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);
