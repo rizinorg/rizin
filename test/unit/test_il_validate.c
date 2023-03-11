@@ -1317,6 +1317,391 @@ static bool test_il_validate_effect_branch() {
 	mu_end;
 }
 
+static bool test_il_validate_pure_float() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILOpPure *op = rz_il_op_new_float_from_f64(4.2);
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_fbits() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fbits(rz_il_op_new_float_from_f64(12.345));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bv(64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fbits(rz_il_op_new_bitv_from_ut64(32, 0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of fbits op is not a float.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float_bool_uop() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_is_finite(rz_il_op_new_float_from_f64(12.345));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bool()), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_is_finite(rz_il_op_new_bitv_from_ut64(32, 0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of is_finite op is not a float.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float_uop() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fneg(rz_il_op_new_float_from_f64(12.345));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fneg(rz_il_op_new_bitv_from_ut64(32, 0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of fneg op is not a float.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float_uop_with_round() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fround(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(12.345));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fround(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(32, 0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of fround op is not a float.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_forder() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_forder(
+		rz_il_op_new_float_from_f64(12.345),
+		rz_il_op_new_float_from_f64(11.111));
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bool()), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_forder(
+		rz_il_op_new_bitv_from_ut64(32, 0),
+		rz_il_op_new_float_from_f64(11.111));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "Left operand of forder op is not a float.", "report");
+
+	op = rz_il_op_new_forder(
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_b0());
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "Right operand of forder op is not a float.", "report");
+
+	op = rz_il_op_new_forder(
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_float_from_f32(2.12f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "Op forder formats of left operand (float:1) and right operand (float:0) do not agree.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float_binop_with_round() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(12.345),
+		rz_il_op_new_float_from_f64(11.111));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(32, 0),
+		rz_il_op_new_float_from_f64(11.111));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "Left operand of fadd op is not a float.", "report");
+
+	op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_b0());
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "Right operand of fadd op is not a float.", "report");
+
+	op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_float_from_f32(2.12f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "Op fadd formats of left operand (float:1) and right operand (float:0) do not agree.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float_terop_with_round() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fmad(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(12.345),
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_float_from_f64(3.14));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fmad(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(32, 0),
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_float_from_f64(3.14));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "1st operand of fmad op is not a float.", "report");
+
+	op = rz_il_op_new_fmad(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_b0(),
+		rz_il_op_new_float_from_f64(3.14));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "2nd operand of fmad op is not a float.", "report");
+
+	op = rz_il_op_new_fmad(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_float_from_f64(3.14),
+		rz_il_op_new_b1());
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "3rd operand of fmad op is not a float.", "report");
+
+	op = rz_il_op_new_fmad(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.111),
+		rz_il_op_new_float_from_f32(2.12f),
+		rz_il_op_new_float_from_f32(3.14f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "types of operand in op fmad do not agree: operand1 (float:1) operand2 (float:0) operand3 (float:0)", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_float_hybridop_with_round() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILOpPure *op = rz_il_op_new_fcompound(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(0.28347),
+		rz_il_op_new_bitv_from_ut64(64, 21333));
+	RzILSortPure sort;
+	RzILValidateReport report;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fcompound(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(64, 21333),
+		rz_il_op_new_bitv_from_ut64(64, 89435));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "1st operand of fcompound op is not a float.", "report");
+
+	op = rz_il_op_new_fcompound(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(44.15),
+		rz_il_op_new_b1());
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "2nd operand of fcompound op is not a bitv.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_fcast_to_int() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fcast_int(
+		64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(12.345));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bv(64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fcast_int(
+		64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(64, 11));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of fcast_int op is not a float.", "report");
+
+	op = rz_il_op_new_fcast_int(
+		0,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.11));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "length of casted bitvector should not be 0.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_icast_to_float() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fcast_float(
+		RZ_FLOAT_IEEE754_BIN_64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(64, 12));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fcast_float(
+		RZ_FLOAT_IEEE754_BIN_64,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of fcast_float op is not a bitvector.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
+static bool test_il_validate_pure_fconvert() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+
+	RzILOpPure *op = rz_il_op_new_fconvert(
+		RZ_FLOAT_IEEE754_BIN_32,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(15.678));
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "valid");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_32)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fconvert(
+		RZ_FLOAT_IEEE754_BIN_32,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_bitv_from_ut64(64, 1201));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "operand of fconvert op is not a float.", "report");
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_validate_pure_null);
 	mu_run_test(test_il_validate_pure_bitv);
@@ -1347,6 +1732,19 @@ bool all_tests() {
 	mu_run_test(test_il_validate_effect_blk);
 	mu_run_test(test_il_validate_effect_repeat);
 	mu_run_test(test_il_validate_effect_branch);
+	mu_run_test(test_il_validate_pure_float);
+	mu_run_test(test_il_validate_pure_fbits);
+	mu_run_test(test_il_validate_pure_float_bool_uop);
+	mu_run_test(test_il_validate_pure_float_uop);
+	mu_run_test(test_il_validate_pure_float_uop_with_round);
+	mu_run_test(test_il_validate_pure_forder);
+	mu_run_test(test_il_validate_pure_float_binop_with_round);
+	mu_run_test(test_il_validate_pure_float_terop_with_round);
+	mu_run_test(test_il_validate_pure_float_hybridop_with_round);
+	mu_run_test(test_il_validate_pure_fcast_to_int);
+	mu_run_test(test_il_validate_pure_icast_to_float);
+	mu_run_test(test_il_validate_pure_fconvert);
+
 	return tests_passed != tests_run;
 }
 
