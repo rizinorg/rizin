@@ -1633,6 +1633,15 @@ static bool test_il_validate_pure_fcast_to_int() {
 	rz_il_op_pure_free(op);
 	mu_assert_streq_free(report, "operand of fcast_int op is not a float.", "report");
 
+	op = rz_il_op_new_fcast_int(
+		0,
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(11.11));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid");
+	rz_il_op_pure_free(op);
+	mu_assert_streq_free(report, "length of casted bitvector should not be 0.", "report");
+
 	rz_il_validate_global_context_free(ctx);
 	mu_end;
 }

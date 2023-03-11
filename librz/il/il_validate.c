@@ -536,11 +536,6 @@ VALIDATOR_PURE(float) {
 	RzILOpArgsFloat *args = &op->op.float_;
 	RzILSortPure sort;
 
-	if (!args->bv) {
-		rz_strbuf_appendf(report_builder, "Bitvector in constant float op is NULL.\n");
-		return false;
-	}
-
 	VALIDATOR_DESCEND(args->bv, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_BITVECTOR, "Float bv operand is not bitvector.\n");
 	*sort_out = rz_il_sort_pure_float(args->r);
@@ -574,7 +569,7 @@ VALIDATOR_PURE(float_uop) {
 
 	VALIDATOR_DESCEND(args->f, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
-	*sort_out = rz_il_sort_pure_float(sort.props.f.format);
+	*sort_out = sort;
 	return true;
 }
 
@@ -584,7 +579,7 @@ VALIDATOR_PURE(fcast_to_int) {
 
 	VALIDATOR_DESCEND(args->f, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
-
+	VALIDATOR_ASSERT(args->length != 0, "length of casted bitvector should not be 0.\n");
 	*sort_out = rz_il_sort_pure_bv(args->length);
 	return true;
 }
@@ -607,7 +602,7 @@ VALIDATOR_PURE(fconvert) {
 	VALIDATOR_DESCEND(args->f, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	*sort_out = rz_il_sort_pure_float(args->format);
+	*sort_out = sort;
 	return true;
 }
 
@@ -621,19 +616,17 @@ VALIDATOR_PURE(forder) {
 	VALIDATOR_DESCEND(args->y, &sy);
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	char *ssx, *ssy;
-	ssx = rz_il_sort_pure_stringify(sx);
-	ssy = rz_il_sort_pure_stringify(sy);
 	// flatten validator assert
 	if (!(sx.props.f.format == sy.props.f.format)) {
+		char *ssx = rz_il_sort_pure_stringify(sx);
+		char *ssy = rz_il_sort_pure_stringify(sy);
+
 		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
 			rz_il_op_pure_code_stringify(op->code), ssx, ssy);
 		free(ssx);
 		free(ssy);
 		return false;
 	}
-	free(ssx);
-	free(ssy);
 
 	*sort_out = rz_il_sort_pure_bool();
 	return true;
@@ -651,7 +644,7 @@ VALIDATOR_PURE(float_uop_with_round) {
 	VALIDATOR_DESCEND(args->f, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	*sort_out = rz_il_sort_pure_float(sort.props.f.format);
+	*sort_out = sort;
 	return true;
 }
 
@@ -664,21 +657,20 @@ VALIDATOR_PURE(float_binop_with_round) {
 	VALIDATOR_DESCEND(args->y, &sy);
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	char *ssx, *ssy;
-	ssx = rz_il_sort_pure_stringify(sx);
-	ssy = rz_il_sort_pure_stringify(sy);
 	// flatten validator assert
 	if (!(sx.props.f.format == sy.props.f.format)) {
+		char *ssx = rz_il_sort_pure_stringify(sx);
+		char *ssy = rz_il_sort_pure_stringify(sy);
+
 		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
 			rz_il_op_pure_code_stringify(op->code), ssx, ssy);
+
 		free(ssx);
 		free(ssy);
 		return false;
 	}
-	free(ssx);
-	free(ssy);
 
-	*sort_out = rz_il_sort_pure_float(sx.props.f.format);
+	*sort_out = sx;
 	return true;
 }
 
@@ -695,28 +687,24 @@ VALIDATOR_PURE(float_terop_with_round) {
 	VALIDATOR_DESCEND(args->z, &sz);
 	VALIDATOR_ASSERT(sz.type == RZ_IL_TYPE_PURE_FLOAT, "3rd operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	char *ssx, *ssy, *ssz;
-	ssx = rz_il_sort_pure_stringify(sx);
-	ssy = rz_il_sort_pure_stringify(sy);
-	ssz = rz_il_sort_pure_stringify(sz);
-
 	if (!((sx.props.f.format == sy.props.f.format) &&
 		    (sx.props.f.format == sz.props.f.format))) {
+		char *ssx = rz_il_sort_pure_stringify(sx);
+		char *ssy = rz_il_sort_pure_stringify(sy);
+		char *ssz = rz_il_sort_pure_stringify(sz);
+
 		rz_strbuf_appendf(report_builder,
 			"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
 			rz_il_op_pure_code_stringify(op->code),
 			ssx, ssy, ssz);
+
 		free(ssx);
 		free(ssy);
 		free(ssz);
 		return false;
 	}
 
-	free(ssx);
-	free(ssy);
-	free(ssz);
-
-	*sort_out = rz_il_sort_pure_float(sx.props.f.format);
+	*sort_out = sx;
 	return true;
 }
 
@@ -729,7 +717,7 @@ VALIDATOR_PURE(float_hybridop_with_round) {
 	VALIDATOR_DESCEND(args->n, &bs);
 	VALIDATOR_ASSERT(bs.type == RZ_IL_TYPE_PURE_BITVECTOR, "2nd operand of %s op is not a bitv. \n", rz_il_op_pure_code_stringify(op->code));
 
-	*sort_out = rz_il_sort_pure_float(fs.props.f.format);
+	*sort_out = fs;
 	return true;
 }
 
@@ -822,7 +810,7 @@ static bool validate_pure(VALIDATOR_PURE_ARGS) {
  */
 RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
-	LocalContext local_ctx = { 0 };
+	LocalContext local_ctx;
 	if (!local_context_init(&local_ctx, ctx)) {
 		if (report_out) {
 			*report_out = NULL;
@@ -831,7 +819,7 @@ RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValid
 	}
 	RzStrBuf report_builder;
 	rz_strbuf_init(&report_builder);
-	RzILSortPure sort = { 0 };
+	RzILSortPure sort;
 	bool valid = validate_pure(op, &sort, &report_builder, &local_ctx, NULL);
 	local_context_fini(&local_ctx);
 	if (sort_out) {
@@ -1018,7 +1006,7 @@ VALIDATOR_EFFECT(repeat) {
 	RzILSortPure sc;
 	VALIDATOR_DESCEND_PURE(args->condition, &sc);
 	VALIDATOR_ASSERT(sc.type == RZ_IL_TYPE_PURE_BOOL, "Condition of repeat op is not boolean.\n");
-	LocalContext loop_ctx = { 0 };
+	LocalContext loop_ctx;
 	if (!local_context_copy(&loop_ctx, ctx)) {
 		return false;
 	}
@@ -1043,7 +1031,7 @@ VALIDATOR_EFFECT(branch) {
 	RzILSortPure sc;
 	VALIDATOR_DESCEND_PURE(args->condition, &sc);
 	VALIDATOR_ASSERT(sc.type == RZ_IL_TYPE_PURE_BOOL, "Condition of branch op is not boolean.\n");
-	LocalContext false_ctx = { 0 };
+	LocalContext false_ctx;
 	if (!local_context_copy(&false_ctx, ctx)) {
 		return false;
 	}
@@ -1091,7 +1079,7 @@ RZ_API bool rz_il_validate_effect(RZ_NULLABLE RzILOpEffect *op, RZ_NONNULL RzILV
 	RZ_NULLABLE RZ_OUT HtPP /*<const char *, RzILSortPure *>*/ **local_var_sorts_out,
 	RZ_NULLABLE RZ_OUT RzILTypeEffect *type_out,
 	RZ_NULLABLE RZ_OUT RzILValidateReport *report_out) {
-	LocalContext local_ctx = { 0 };
+	LocalContext local_ctx;
 	if (!local_context_init(&local_ctx, ctx)) {
 		if (report_out) {
 			*report_out = NULL;
