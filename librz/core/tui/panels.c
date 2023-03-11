@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include "../cmd_descs/cmd_descs.h"
+#include <rz_cmd.h>
 #include "../core_private.h"
 
 #define PANEL_NUM_LIMIT 9
@@ -3290,7 +3290,7 @@ int __calculator_cb(void *user) {
 			free(s);
 			break;
 		}
-		rz_help_calc_expr(core, s);
+		rz_core_cmd_help_calc_expr(core, s);
 		rz_cons_flush();
 		free(s);
 	}
@@ -3612,10 +3612,10 @@ int __writeValueCb(void *user) {
 		if (core->num->nc.errors) {
 			RZ_LOG_ERROR("Could not convert argument to number");
 			free(res);
-			return RZ_CMD_STATUS_ERROR;
+			return -1; // error
 		}
 		free(res);
-		return rz_core_write_value_at(core, core->offset, value, 0) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+		return rz_core_write_value_at(core, core->offset, value, 0) ? 0 : -1;
 	}
 	return 0;
 }
@@ -4245,7 +4245,8 @@ void __init_menu_saved_layout(void *_core, const char *parent) {
 void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RzCore *core = (RzCore *)_core;
 	const char *color = core->cons->context->pal.graph_box2;
-	char *now = rz_core_theme_get(core);
+	const char *curtheme = rz_core_theme_get(core);
+	char* now = strdup(curtheme);
 	rz_str_split(now, '\n');
 	parent = "Settings.Colors";
 	RzList *list = __sorted_list(core, menus_Colors, COUNT(menus_Colors));
@@ -5194,7 +5195,8 @@ bool __handle_console(RzCore *core, RzPanel *panel, const int key) {
 		__panel_prompt(prompt, cmd, sizeof(cmd));
 		if (*cmd) {
 			if (!strcmp(cmd, "clear")) {
-				rz_core_cmd0(core, ":>$console");
+				// rz_core_cmd0(core, ":>$console");
+				rz_cons_clear00();
 			} else {
 				rz_core_cmdf(core, "?e %s %s>>$console", prompt, cmd);
 				rz_core_cmdf(core, "%s >>$console", cmd);

@@ -851,12 +851,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr(uri, "://")) {
-			rz_core_cmdf(r, "R+ %s", uri);
+			rz_core_rtr_add(r, uri);
 		} else {
 			argv[opt.ind] = rz_str_newf("http://%s/cmd/", argv[opt.ind]);
-			rz_core_cmdf(r, "R+ %s", argv[opt.ind]);
+			rz_core_rtr_add(r, argv[opt.ind]);
 		}
-		rz_core_cmd0(r, "R!=");
+		// rz_core_cmd0(r, "R!=");
+		RZ_FREE(r->cmdremote);
+		r->cmdremote = rz_str_trim_dup("0");
 		argv[opt.ind] = "-";
 	}
 
@@ -1348,10 +1350,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (do_analysis > 0) {
 		switch (do_analysis) {
-		case 1: rz_core_cmd0(r, "aa"); break;
-		case 2: rz_core_cmd0(r, "aaa"); break;
-		case 3: rz_core_cmd0(r, "aaaa"); break;
-		default: rz_core_cmd0(r, "aaaaa"); break;
+		case 1: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_SIMPLE); break;
+		case 2: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_DEEP); break;
+		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
+		default: rz_core_cmd_show_analysis_help(r); break;
 		}
 		rz_cons_flush();
 	}

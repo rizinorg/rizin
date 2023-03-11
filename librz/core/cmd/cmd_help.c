@@ -430,7 +430,7 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 	}
 }
 
-RZ_IPI void rz_help_calc_expr(void* data, const char* input) {
+RZ_API void rz_core_cmd_help_calc_expr(RzCore* data, const char* input) {
 	RzCore* core = (RzCore*)data;
 	char *asnum, unit[8];
 	ut32 s, a;
@@ -662,7 +662,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	} break;
 	case 'j': // "?j"
 	case ' ': // "? "
-		rz_help_calc_expr(core, input);
+		rz_core_cmd_help_calc_expr(core, input);
 		break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
