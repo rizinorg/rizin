@@ -4246,7 +4246,7 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RzCore *core = (RzCore *)_core;
 	const char *color = core->cons->context->pal.graph_box2;
 	const char *curtheme = rz_core_theme_get(core);
-	char* now = strdup(curtheme);
+	char *now = strdup(curtheme);
 	rz_str_split(now, '\n');
 	parent = "Settings.Colors";
 	RzList *list = __sorted_list(core, menus_Colors, COUNT(menus_Colors));

@@ -6419,8 +6419,8 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 	return start_addr;
 }
 
-RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type) {
-	rz_return_if_fail(core != NULL);
+RZ_API void rz_core_perform_auto_analysis(RzCore *core, RzCoreAnalysisType type) {
+	rz_return_if_fail(core);
 
 	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
 	char *debugger = NULL;

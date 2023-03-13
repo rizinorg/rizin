@@ -1277,9 +1277,9 @@ RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL
 
 /* rz_core_cmd replacement function declarations */
 // "? <expr>"
-RZ_API void rz_core_cmd_help_calc_expr(RZ_NONNULL RzCore* core, const char* input);
+RZ_API void rz_core_cmd_help_calc_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input);
 // a? or aaaaa like help message cases
-RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore* core);
+RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore *core);
 
 #endif
 

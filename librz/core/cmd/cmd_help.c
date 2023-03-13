@@ -430,15 +430,16 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 	}
 }
 
-RZ_API void rz_core_cmd_help_calc_expr(RzCore* core, const char* input) {
-	rz_return_if_fail(core != NULL);
+RZ_API void rz_core_cmd_help_calc_expr(RzCore *core, const char *input) {
+	rz_return_if_fail(core);
+	rz_return_if_fail(input);
 
 	char *asnum, unit[8];
 	ut32 s, a;
 	double d;
 	float f;
 	char number[128], out[128] = RZ_EMPTY;
-	const char* inputs = strdup(input + 1);
+	const char *inputs = strdup(input + 1);
 	RzList *list = rz_num_str_split_list(inputs);
 	const int list_len = rz_list_length(list);
 	PJ *pj = NULL;
