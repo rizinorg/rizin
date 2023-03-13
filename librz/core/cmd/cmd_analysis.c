@@ -2027,7 +2027,7 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API void rz_core_cmd_show_analysis_help(RzCore *core) {
+RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore *core) {
 	rz_return_if_fail(core);
 	rz_core_cmd_help(core, help_msg_a);
 }
