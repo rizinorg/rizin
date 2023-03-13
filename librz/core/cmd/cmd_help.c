@@ -430,14 +430,15 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 	}
 }
 
-RZ_API void rz_core_cmd_help_calc_expr(RzCore* data, const char* input) {
-	RzCore* core = (RzCore*)data;
+RZ_API void rz_core_cmd_help_calc_expr(RzCore* core, const char* input) {
+	rz_return_if_fail(core != NULL);
+
 	char *asnum, unit[8];
 	ut32 s, a;
 	double d;
 	float f;
 	char number[128], out[128] = RZ_EMPTY;
-	char *const inputs = strdup(input + 1);
+	const char* inputs = strdup(input + 1);
 	RzList *list = rz_num_str_split_list(inputs);
 	const int list_len = rz_list_length(list);
 	PJ *pj = NULL;
@@ -453,6 +454,7 @@ RZ_API void rz_core_cmd_help_calc_expr(RzCore* data, const char* input) {
 		ut64 n = rz_num_math(core->num, str);
 		if (core->num->dbz) {
 			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+			return;
 		}
 		asnum = rz_num_as_string(NULL, n, false);
 		/* decimal, hexa, octal */
