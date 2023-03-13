@@ -257,8 +257,7 @@ RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **ar
 }
 
 RZ_API void rz_core_rtr_enable(RzCore *core, const char *cmdremote) {
-	rz_return_if_fail(core);
-	rz_return_if_fail(cmdremote);
+	rz_return_if_fail(core && cmdremote);
 
 	RZ_FREE(core->cmdremote);
 	core->cmdremote = strdup(cmdremote);

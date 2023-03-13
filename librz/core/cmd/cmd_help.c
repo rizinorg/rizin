@@ -431,8 +431,7 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 }
 
 RZ_API void rz_core_cmd_help_calc_expr(RzCore *core, const char *input) {
-	rz_return_if_fail(core);
-	rz_return_if_fail(input);
+	rz_return_if_fail(core && input);
 
 	char *asnum, unit[8];
 	ut32 s, a;
