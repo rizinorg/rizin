@@ -224,4 +224,7 @@ typedef struct _utX {
 		return m ? *m = n, m : m; \
 	}
 
+#define RZ_STR_DEF(s) RZ_STR(s)
+#define RZ_STR(s)     #s
+
 #endif // RZ_TYPES_BASE_H
