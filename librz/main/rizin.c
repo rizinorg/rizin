@@ -856,9 +856,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			argv[opt.ind] = rz_str_newf("http://%s/cmd/", argv[opt.ind]);
 			rz_core_rtr_add(r, argv[opt.ind]);
 		}
-		// rz_core_cmd0(r, "R!=");
-		RZ_FREE(r->cmdremote);
-		r->cmdremote = rz_str_trim_dup("0");
+		rz_core_rtr_enable(r, "0");
 		argv[opt.ind] = "-";
 	}
 
