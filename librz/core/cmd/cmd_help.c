@@ -671,8 +671,8 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		}
 		if (input[1] == '?') {
-			rz_cons_printf("|Usage: ?q [num]  # Update $? without printing anything\n"
-				       "|?q 123; ?? x    # hexdump if 123 != 0");
+			rz_cons_printf("|Usage: ?q [num]  # Update $? without printing anything"
+				       "\n|?q 123; ?? x    # hexdump if 123 != 0");
 		} else {
 			const char *space = strchr(input, ' ');
 			if (space) {

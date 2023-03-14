@@ -1,0 +1,396 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_help
+commands:
+  - name: "?0"
+    summary: Set first tab as the current active tab
+    cname: set_active_tab_zero
+  - name: "?1"
+    summary: Set next tab as the current active tab
+    cname: set_active_tab_next
+  - name: "?r"
+    summary: Generate random number
+    cname: generate_random_number
+  - name: "?a"
+    summary: Print ASCII table
+    cname: print_ascii_table
+  - name: "?b"
+    summary: Base64 encode/decode commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+    - name: "?b "
+      summary: Base64 encode
+      cname: base64_encode
+      args:
+        - name: str
+          type: RZ_CMD_ARG_TYPE_STRING
+      details:
+        - name: Examples
+          entries:
+            - text: "?b"
+              arg_str: " ILoveRizin"
+              comment: "(SUxvdmVSaXppbgo=) Encodes given string into base64"
+    - name: "?b-"
+      summary: Base64 decode. Maximum input length = 4*(strlen(str)).
+      cname: base64_decode
+      args:
+        - name: b64str
+          type: RZ_CMD_ARG_TYPE_STRING
+      details:
+        - name: Examples
+          entries:
+            - text: "?b-"
+              arg_str: "SUxvdmVSaXppbgo="
+              comment: "(ILoveRizin) Decodes given base64 string"
+  - name: "?B"
+    summary: Get boundaries (start addr, stop addr) of different modes in Core.
+    description: "There are multiple search modes in Rizin that can be listed using the command `e search.in=?`. This command can be used to get boundaries of those search modes."
+    cname: print_boundaries_prot
+    args:
+      - name: mode
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "?B "
+            arg_str: "file"
+            comment: "Prints boundary of this file"
+          - text: "?B "
+            arg_str: "io.maps"
+            comment: "Prints boundaries of all io maps"
+  - name: "?h"
+    summary: Print hash value of given input
+    cname: print_djb2_hash
+    args:
+      - name: str
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "?h"
+            arg_str: "ILoveRizin"
+            comment: "0x56b7215a -> hashed value"
+  - name: "?F"
+    summary: Flush console
+    cname: flush_console
+  - name: "?f"
+    summary: bitstring manipulation.
+    description: "Treat given string as bitstring and get selected characters from bitstring using given value. Bits that are flagged in value are used to get characters from given string. Bitstring is treated in big-endian format"
+    cname: print_bitstring
+    args:
+      - name: value
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: bitstring
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "?f"
+            arg_str: " 28 Hello"
+            comment: "LLO (00111b selected : big-endian bitstring)"
+          - text: "?f"
+            arg_str: " 12 Hello"
+            comment: "LL (00110b selected : big-endian bitstring)"
+  - name: "?o"
+    summary: Evalue expression and print value in octal.
+    cname: eval_expr_print_octal
+    args:
+      - name: input
+      - type: RZ_CMD_ARG_TYPE_RZNUM
+    details:
+      - name: Examples
+        entries:
+        - text: "?o"
+          arg_str: "123"
+          comment: "0173 in octal"
+        - text: "?o"
+          arg_str: " 321"
+          comment: "0501 in octal"
+  - name: "?T"
+    summary: Print init time values
+    cname: print_init_time_values
+  - name: "?u"
+    summary: Convert evaluated numbers/expressions to K, M, G, T etc... units
+    cname: num_to_units
+    args:
+      - name: input
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: "?j"
+    summary: Evaluate given numerical expression
+    cname: calculate_expr
+    args:
+      - name: input
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: "? "
+    summary: Evaluate given numerical expression
+    cname: calculate_expr
+    args:
+      - name: input
+        type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: "?q"
+    summary: "Update $? (last evaluated expression) without printing anything"
+    cname: set_last_eval_expr
+    args:
+      - name: input
+        type: RZ_CMD_ARG_TYPE_RZNUM
+    details:
+      - name: Examples
+        entries:
+          - name: "?q"
+            arg_str: "123"
+            comment: "This will set $?. Then commands like ??x can be used to do some task by checking whether $? holds positive value or not."
+  - name: "?v"
+    summary: "Show value commands"
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: "?v"
+        summary: "Show last or currently evaluated expression"
+        cname: show_value
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?vx"
+        summary: "Show last or currently evaluated expression in hex"
+        cname: show_value_hex
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?vi1"
+        summary: "Show last or currently evaluated expression as 1 byte integer"
+        cname: show_value_i1
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?vi2"
+        summary: "Show last or currently evaluated expression as 2 byte integer"
+        cname: show_value_i2
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?vi4"
+        summary: "Show last or currently evaluated expression as 4 byte integer"
+        cname: show_value_i4
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?vi8"
+        summary: "Show last or currently evaluated expression as 8 byte integer"
+        cname: show_value_i8
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?vd"
+        summary: "Show last or currently evaluated expression as integer"
+        cname: show_value_i8
+        type: RZ_CMD_ARG_TYPE_ARGV
+  - name: "?="
+    summary: Replace the value of last evalued expression with given value
+    cname: set_core_num_value
+    type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?=="
+    summary: "Compare two given strings and set $? register to cmp result"
+    cname: compare_and_set_core_num_value
+    type: RZ_CMD_DESC_TYPE_ARGV
+    detail:
+      - name: Examples
+        entries:
+          - text: "?=="
+            arg_str: " str1 str2"
+            comment: "$? will be set to 0 if these two strings are equal, otherwise some other positive value."
+  - name: "?+"
+    summary: "Execute given command if $? register is greater than 0"
+    cname: exec_cmd_if_core_num_value_positive
+    type: RZ_CMD_DESC_TYPE_ARGV
+    detail:
+      - name: Examples
+        entries:
+          - text: "?=1; ?+"
+            arg_str: "??x"
+            comment: "Will display hexdump at current seek address"
+          - text: "?=-2; ?+"
+            arg_str: "??x"
+            comment: "Won't do anything"
+          - text: "?=0; ?+"
+            arg_str: "??x"
+            comment: "Won't do anything"
+  - name: "?-"
+    summary: "Execute given command if $? register is less than 0"
+    cname: exec_cmd_if_core_num_value_negative
+    type: RZ_CMD_DESC_TYPE_ARGV
+    detail:
+      - name: Examples
+        entries:
+          - text: "?=1; ?-"
+            arg_str: "??x"
+            comment: "Won't do anything"
+          - text: "?=-2; ?-"
+            arg_str: "??x"
+            comment: "Will display hexdump at current seek address"
+          - text: "?=0; ?+"
+            arg_str: "??x"
+            comment: "Won't do anything"
+  - name: "?&"
+    cname: show_help_tasks
+  - name: "?%"
+    cname: show_help_percent
+  - name: "?$"
+    cname: show_help_vars
+  - name: "?$?"
+    cname: show_help_msg_dollar
+  - name: "?V"
+    summary: Show version information
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: "?V"
+        summary: Show version info
+        cname: show_version_info
+      - name: "?V?"
+        summary: Show version info command help
+        cname: show_help_version_info
+      - name: "?Vc"
+        summary: Show numeric version
+        cname: show_version_numeric
+      - name: "?Vj"
+        summary: Show version info in JSON format
+        cname: show_version_json
+      - name: "?Vn"
+        summary: Show numeric version
+        cname: show_version_numeric2
+      - name: "?Vq"
+        summary: Quite mode version info
+        cname: show_version_quiet_mode
+      - name: "?V0"
+        summary: Show major version
+        cname: show_version_major
+      - name: "?V1"
+        summary: Show minor version
+        cname: show_version_minor
+      - name: "?V2"
+        summary: Show patch version
+        cname: show_version_patch
+  - name: "?l"
+    summary: String length calculation commands
+    subcommands:
+      - name: "?l"
+        summary: "Calculate length of given string and store in $? register"
+        cname: compute_string_length
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?lq"
+        summary: "Calculate length of given string and store in $? register but print nothing (quietly)."
+        cname: compute_string_length_quiet
+        type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?X"
+    summary: Show evaluated expression in hex
+    cname: calc_expr_show_hex
+    type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?x"
+    summary: String/Numeric to hex manipulation commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: "?x"
+        summary: ASCII string to hex string
+        cname: ascii_to_hex
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?x+"
+        summary: Numerical expression to hex
+        cname: numeric_expr_to_hex
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?x-"
+        summary: Hex string to ASCII string
+        cname: hex_to_ascii
+        type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?E"
+    summary: Clippy echo
+    cname: clippy_echo
+  - name: "?e"
+    summary: Echo commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: "?e"
+        summary: Echo after filtering all flags
+        cname: echo_msg
+        type: CMD_DESC_TYPE_ARGV
+        details:
+          - name: Examples
+            entries:
+              - text: "?e"
+                arg_str: " hello $"
+                comment: "prints \"hello<value of $ register>\""
+      - name: "?en"
+        summary: Echo after filtering all flags
+        cname: echo_msg
+        type: CMD_DESC_TYPE_ARGV
+        details:
+          - name: Examples
+            entries:
+              - text: "?en"
+                arg_str: " hello $"
+                comment: "prints \"hello<value of $ register>\""
+      - name: "?eg"
+        summary: Goto xy position in console
+        cname: echo_gotoxy
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?ec"
+        summary: Goto c-th column in console
+        cname: echo_goto_column
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?e="
+        summary: Evalue numerical and show a progress bar
+        cname: echo_show_progress
+        type: RZ_CMD_DESC_TYPE_ARGV
+      - name: "?et"
+        summary: Set title
+        cname: set_console_title
+        args:
+          - name: title
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: "?s"
+    summary: Generate sequence of numbers (?s from to step)
+    cname: generate_sequence
+    type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?P"
+    summary: Convert physical to virtual address
+    cname: phys2virt
+    type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?p"
+    summary: Virtual to physical address conversion
+    cname: virt2phys
+    type: RZ_CMD_DESC_TYPE_ARGV
+  - name: "?_"
+    summary: HUD input
+    cname: yank_hud_file
+    args:
+      - name: input
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: "?i"
+    summary: Input commands
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: "?i"
+        summary: "Input numerical expression and store in $? register"
+        cname: input_numerical_expr
+      - name: "?in"
+        summary: "Input YES/NO and store result in $? register"
+        cname: input_yesno
+      - name: "?iy"
+        summary: "Input YES/NO and store result in $? register"
+        cname: input_yesno
+      - name: "?ik"
+        summary: "Input any key. Does nothing else."
+        cname: input_any_key
+      - name: "?ip"
+        summary: "Yank HUD path and store result in $? register"
+        cname: input_yank_hud
+      - name: "?im"
+        summary: "Input message and display in console"
+        cname: input_msg
+      - name: "?if"
+        summary: "Input conditional and store result in $? register"
+        cname: input_conditional
+  - name: "?w"
+    summary: Get references of given address
+    cname: get_addr_references
+    type: RZ_CMD_DESC_TYPE_RZNUM
+  - name: "?t"
+    summary: Calculate time taken to run a command
+    cname: calculate_command_time
+  - name: "??"
+    subcommands:
+      - name: "??"
+        summary: "Display value in $? register"
+        cname: display_core_num_value
+      - name: "???"
+        summary: "Display ? Help"
+        cname: show_help_question
+      - name: "????"
+        summary: "What are you doing?"
+        cname: what_are_you_doing?
