@@ -986,8 +986,10 @@ RZ_IPI RzCmdStatus rz_calc_expr_show_hex_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_ascii_to_hex_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 0; argv[1]; i++) {
-		rz_cons_printf("%02x", argv[1][i]);
+	const char* str = argv[1];
+	int n = strlen(str);
+	for (int i = 0; i < n; i++) {
+		rz_cons_printf("%02x", str[i]);
 	}
 	rz_cons_newline();
 	return RZ_CMD_STATUS_OK;
