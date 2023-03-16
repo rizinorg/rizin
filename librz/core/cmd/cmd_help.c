@@ -52,7 +52,6 @@ static const char *help_msg_env[] = {
 	NULL
 };
 
-
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]", "", "",
 	"flag", "", "offset of flag",
@@ -435,63 +434,63 @@ RZ_API void rz_core_cmd_help_calc_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 }
 
 RZ_IPI int rz_cmd_help(void *data, const char *input) {
-/*
-	RzCore *core = (RzCore *)data;
-	RzIOMap *map;
-	const char *k;
-	RzListIter *iter;
-	char *p, out[128] = RZ_EMPTY;
-	ut64 n;
-	int i;
-	RzList *tmp;
+	/*
+		RzCore *core = (RzCore *)data;
+		RzIOMap *map;
+		const char *k;
+		RzListIter *iter;
+		char *p, out[128] = RZ_EMPTY;
+		ut64 n;
+		int i;
+		RzList *tmp;
 
-	switch (input[0]) {
-	case 'b': // "?b"
-		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
-			if (rz_num_between(core->num, input + 3) == -1) {
-				RZ_LOG_ERROR("core: Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
-			}
-		}
-	case '@': // "?@"
-		if (input[1] == '@') {
-			if (input[2] == '@') {
-				rz_core_cmd_help(core, help_msg_at_at_at);
-			} else {
-				rz_core_cmd_help(core, help_msg_at_at);
-			}
-		} else {
-			rz_core_cmd_help(core, help_msg_at);
-		}
-	case '?': // "??"
-		if (input[1] == '?') {
-			if (input[2] == '?') { // "???"
-				rz_core_clippy_print(core, "What are you doing?");
-				return 0;
-			}
-			if (input[2]) {
-				if (core->num->value) {
-					rz_core_cmd(core, input + 1, 0);
+		switch (input[0]) {
+		case 'b': // "?b"
+			} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
+				if (rz_num_between(core->num, input + 3) == -1) {
+					RZ_LOG_ERROR("core: Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 				}
-				break;
 			}
-			rz_core_cmd_help(core, help_msg_question);
-			return 0;
-		} else if (input[1]) {
-			if (core->num->value) {
-				core->num->value = rz_core_cmd(core, input + 1, 0);
+		case '@': // "?@"
+			if (input[1] == '@') {
+				if (input[2] == '@') {
+					rz_core_cmd_help(core, help_msg_at_at_at);
+				} else {
+					rz_core_cmd_help(core, help_msg_at_at);
+				}
+			} else {
+				rz_core_cmd_help(core, help_msg_at);
 			}
-		} else {
-			if (core->num->dbz) {
-				RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+		case '?': // "??"
+			if (input[1] == '?') {
+				if (input[2] == '?') { // "???"
+					rz_core_clippy_print(core, "What are you doing?");
+					return 0;
+				}
+				if (input[2]) {
+					if (core->num->value) {
+						rz_core_cmd(core, input + 1, 0);
+					}
+					break;
+				}
+				rz_core_cmd_help(core, help_msg_question);
+				return 0;
+			} else if (input[1]) {
+				if (core->num->value) {
+					core->num->value = rz_core_cmd(core, input + 1, 0);
+				}
+			} else {
+				if (core->num->dbz) {
+					RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+				}
+				rz_cons_printf("%" PFMT64d "\n", core->num->value);
 			}
-			rz_cons_printf("%" PFMT64d "\n", core->num->value);
+			break;
+		case '\0': // "?"
+		default:
+			break;
 		}
-		break;
-	case '\0': // "?"
-	default:
-		break;
-	}
-	*/
+		*/
 	return 0;
 }
 
@@ -499,7 +498,7 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 	char unit[8];
 	char number[128], out[128] = RZ_EMPTY;
 
-	for(int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		const char *str = argv[i];
 		if (!*str) {
 			continue;
@@ -518,7 +517,8 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 		rz_num_units(unit, sizeof(unit), n);
 
 		/* binary and floating point */
-		double d; float f;
+		double d;
+		float f;
 		rz_str_bits64(out, n);
 		f = d = core->num->fvalue;
 		/* adjust sign for nan floats, different libcs are confused */
@@ -529,10 +529,10 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 			d = -d;
 		}
 
-		if(state->mode == RZ_OUTPUT_MODE_JSON) {
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
 			PJ *pj = state->d.pj;
 			pj_o(pj);
-			if(n >> 32) {
+			if (n >> 32) {
 				pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
 				pj_ks(pj, "uint32", rz_strf(number, "%u", (ut32)n));
 			} else {
@@ -573,7 +573,7 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 			rz_num_to_trits(out, n);
 			rz_cons_printf("trits   0t%s\n", out);
 
-			char* asnum = rz_num_as_string(NULL, n, false);
+			char *asnum = rz_num_as_string(NULL, n, false);
 			if (asnum) {
 				rz_cons_printf("string  \"%s\"\n", asnum);
 				free(asnum);
@@ -589,7 +589,7 @@ RZ_IPI RzCmdStatus rz_set_active_tab_zero_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const char **argv) {
-	if(core->curtab < 0) {
+	if (core->curtab < 0) {
 		core->curtab = 0;
 	}
 	core->curtab++;
@@ -601,14 +601,14 @@ RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, con
 	ut64 b = 0;
 	ut32 r = UT32_MAX;
 
-	if(argc == 1) {
+	if (argc == 1) {
 		r = 0;
 	}
 
 	if (argc == 2) {
-		const char* out = argv[1];
+		const char *out = argv[1];
 		if (argc == 3) {
-			const char* p = argv[2];
+			const char *p = argv[2];
 			b = (ut32)rz_num_math(core->num, out);
 			r = (ut32)rz_num_math(core->num, p) - b;
 		} else {
@@ -633,7 +633,7 @@ RZ_IPI RzCmdStatus rz_print_ascii_table_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **argv) {
 	char out[128] = RZ_EMPTY;
 	ut64 n;
-	for(int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		n = rz_num_math(core->num, argv[i]);
 		rz_num_to_bits(out, n);
 		rz_cons_printf("%sb\n", out);
@@ -643,15 +643,15 @@ RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **
 
 RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char **argv) {
 	char *buf = NULL;
-	for(int i = 1; i < argc; i++){
+	for (int i = 1; i < argc; i++) {
 		const int buflen = (strlen(argv[i]) * 4) + 1;
-		buf = (char*)realloc((void*)buf, buflen*sizeof(char));
-		if(!buf) {
+		buf = (char *)realloc((void *)buf, buflen * sizeof(char));
+		if (!buf) {
 			RZ_LOG_ERROR("core: Out of memory!");
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_base64_encode(buf, (const ut8*)argv[i], strlen(argv[i]));
-		rz_cons_println((const char*)buf);
+		rz_base64_encode(buf, (const ut8 *)argv[i], strlen(argv[i]));
+		rz_cons_println((const char *)buf);
 	}
 	free(buf);
 	return RZ_CMD_STATUS_OK;
@@ -659,29 +659,29 @@ RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char **argv) {
 	ut8 *buf = NULL;
-	for(int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		const int buflen = (strlen(argv[i]) * 4) + 1;
-		buf = (ut8*)realloc((void*)buf, buflen*sizeof(ut8));
-		if(!buf) {
+		buf = (ut8 *)realloc((void *)buf, buflen * sizeof(ut8));
+		if (!buf) {
 			RZ_LOG_ERROR("core: Out of memory!");
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_base64_decode(buf, argv[i], -1);
-		rz_cons_println((const char*)buf);
+		rz_cons_println((const char *)buf);
 	}
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv) {
-	const char* mode = rz_str_trim_head_ro(argv[0]);
-	RzList* list = rz_core_get_boundaries_prot(core, -1, mode, "search");
+	const char *mode = rz_str_trim_head_ro(argv[0]);
+	RzList *list = rz_core_get_boundaries_prot(core, -1, mode, "search");
 	if (!list) {
 		RZ_LOG_ERROR("core: Failed to get boundaries protection values in RzList");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzListIter* iter;
-	RzIOMap* map;
+	RzListIter *iter;
+	RzIOMap *map;
 	rz_list_foreach (list, iter, map) {
 		rz_cons_printf("0x%" PFMT64x " 0x%" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
 	}
@@ -690,7 +690,7 @@ RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv) {
-	for(int i = i; i < argc; i++) {
+	for (int i = i; i < argc; i++) {
 		ut32 hash = (ut32)rz_str_djb2_hash(argv[i]);
 		rz_cons_printf("0x%08x\n", hash);
 	}
@@ -720,11 +720,11 @@ RZ_IPI RzCmdStatus rz_eval_expr_print_octal_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_print_init_time_values_handler(RzCore *core, int argc, const char **argv) {
 	rz_cons_printf("plug.init = %" PFMT64d "\n"
-			       "plug.load = %" PFMT64d "\n"
-			       "file.load = %" PFMT64d "\n",
-				   core->times->loadlibs_init_time,
-				   core->times->loadlibs_time,
-				   core->times->file_open_time);
+		       "plug.load = %" PFMT64d "\n"
+		       "file.load = %" PFMT64d "\n",
+		core->times->loadlibs_init_time,
+		core->times->loadlibs_time,
+		core->times->file_open_time);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -747,7 +747,7 @@ RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **argv) {
 	st64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -762,7 +762,7 @@ RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **ar
 
 RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -777,7 +777,7 @@ RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_show_value_i1_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -792,7 +792,7 @@ RZ_IPI RzCmdStatus rz_show_value_i1_handler(RzCore *core, int argc, const char *
 
 RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -803,12 +803,11 @@ RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char *
 	}
 	rz_cons_printf("%d\n", (st16)(n & UT16_MAX));
 	return RZ_CMD_STATUS_OK;
-
 }
 
 RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -819,11 +818,10 @@ RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char *
 	}
 	rz_cons_printf("%d\n", (st32)(n & UT32_MAX));
 	return RZ_CMD_STATUS_OK;
-
 }
 RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -834,11 +832,10 @@ RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char *
 	}
 	rz_cons_printf("%" PFMT64d "\n", (st64)(n & UT64_MAX));
 	return RZ_CMD_STATUS_OK;
-
 }
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv) {
 	st64 n;
-	if(argc == 1) {
+	if (argc == 1) {
 		n = core->num->value;
 	} else {
 		n = rz_num_math(core->num, argv[1]);
@@ -862,7 +859,7 @@ RZ_IPI RzCmdStatus rz_compare_and_set_core_num_value_handler(RzCore *core, int a
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive_handler(RzCore *core, int argc, const char **argv) {
-	for(int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		st64 n = (st64)core->num->value;
 		if (n > 0) {
 			rz_core_cmd(core, argv[1], 0);
@@ -872,7 +869,7 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive_handler(RzCore *core, 
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_negative_handler(RzCore *core, int argc, const char **argv) {
-	for(int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		st64 n = (st64)core->num->value;
 		if (n < 0) {
 			rz_core_cmd(core, argv[1], 0);
@@ -927,7 +924,7 @@ RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const
 
 RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv) {
 	PJ *pj = pj_new();
-	if(!pj){
+	if (!pj) {
 		RZ_LOG_ERROR("core: Out of memory!");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1027,7 +1024,7 @@ RZ_IPI RzCmdStatus rz_clippy_echo_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_echo_msg_newline_handler(RzCore *core, int argc, const char **argv) {
-	if(argc != 1) {
+	if (argc != 1) {
 		const char *msg = argv[1];
 		// TODO: replace all ${flagname} by its value in hexa
 		char *newmsg = filterFlags(core, msg);
@@ -1095,7 +1092,7 @@ RZ_IPI RzCmdStatus rz_generate_sequence_handler(RzCore *core, int argc, const ch
 	to = rz_num_math(core->num, argv[2]);
 	if (argc == 4) {
 		step = rz_num_math(core->num, argv[3]);
-		if(step == 0){
+		if (step == 0) {
 			step = 1;
 		}
 	} else {

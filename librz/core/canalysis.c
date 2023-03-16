@@ -6429,7 +6429,7 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 
 	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
 	ut64 old_offset = core->offset;
-	char* debugger = NULL;
+	char *debugger = NULL;
 	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
 	rz_core_notify_begin(core, "%s", notify);
 	rz_cons_break_push(NULL, NULL);
