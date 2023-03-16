@@ -178,9 +178,9 @@ commands:
       - RZ_OUTPUT_MODE_JSON
   - name: "?"
     cname: cmd_help
-    options: "[??]"
     summary: Help or evaluate math expression
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands: cmd_help
   - name: <
     cname: push_escaped
     summary: Push escaped string into the RzCons.readChar buffer

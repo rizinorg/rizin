@@ -6419,12 +6419,17 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 	return start_addr;
 }
 
+/**
+ * \brief Perform auto analysis based on given analysis type.
+ * \param core RzCore instance that'll be used to perform the analysis.
+ * \param type Analysis type.
+ * */
 RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type) {
 	rz_return_if_fail(core);
 
 	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
-	char *debugger = NULL;
 	ut64 old_offset = core->offset;
+	char* debugger = NULL;
 	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
 	rz_core_notify_begin(core, "%s", notify);
 	rz_cons_break_push(NULL, NULL);
