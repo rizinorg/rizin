@@ -754,7 +754,7 @@ RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%0x" PFMT64x "\n", n);
+	rz_cons_printf("0x%" PFMT64x "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
