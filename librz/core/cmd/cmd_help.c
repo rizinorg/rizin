@@ -690,7 +690,7 @@ RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = i; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		ut32 hash = (ut32)rz_str_djb2_hash(argv[i]);
 		rz_cons_printf("0x%08x\n", hash);
 	}

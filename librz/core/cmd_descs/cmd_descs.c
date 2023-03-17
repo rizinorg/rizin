@@ -18639,7 +18639,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *show_value_i8_cd = rz_cmd_desc_argv_new(core->rcmd, question_v_cd, "?vi8", rz_show_value_i8_handler, &show_value_i8_help);
 	rz_warn_if_fail(show_value_i8_cd);
 
-	RzCmdDesc *show_value_int_cd = rz_cmd_desc_argv_new(core->rcmd, question_v_cd, "?vd", rz_show_value_int_handler, &show_value_int_help);
+	RzCmdDesc *show_value_int_cd = rz_cmd_desc_argv_new(core->rcmd, question_v_cd, "?vi", rz_show_value_int_handler, &show_value_int_help);
 	rz_warn_if_fail(show_value_int_cd);
 
 	RzCmdDesc *set_core_num_value_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "?=", rz_set_core_num_value_handler, &set_core_num_value_help);

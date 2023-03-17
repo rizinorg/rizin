@@ -135,7 +135,7 @@ RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char **argv);
 // "?vi8"
 RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char **argv);
-// "?vd"
+// "?vi"
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv);
 // "?="
 RZ_IPI RzCmdStatus rz_set_core_num_value_handler(RzCore *core, int argc, const char **argv);

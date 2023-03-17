@@ -231,7 +231,7 @@ commands:
           - name: input
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: "?vd"
+      - name: "?vi"
         summary: Show last or currently evaluated expression as integer
         cname: show_value_int
         args:
