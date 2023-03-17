@@ -18,14 +18,14 @@ bool test_auto_analysis() {
 	rz_core_bin_load(core, fpath, loadaddr);
 
 	// aa
-	rz_core_peform_auto_analysis(core, RZ_CORE_ANALYSIS_SIMPLE);
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_SIMPLE);
 	RzList *simple_fcn_list = rz_analysis_function_list(core->analysis);
     mu_assert_notnull(simple_fcn_list, "simple function list");
     ut32 simple_fcn_list_length = rz_list_length(simple_fcn_list);
 	eprintf("functions count = %d\n", simple_fcn_list_length);
 
     // aaa
-	rz_core_peform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
 	RzList *deep_fcn_list = rz_analysis_function_list(core->analysis);
     mu_assert_notnull(deep_fcn_list, "simple function list");
     ut32 deep_fcn_list_length = rz_list_length(deep_fcn_list);
@@ -33,17 +33,17 @@ bool test_auto_analysis() {
 
     // more function should be detected in deep analysis
     // not true for all binaries but for most it must be true
-    mu_assert("deep analysis success", deep_fcn_list_length >= simple_fcn_list_length)
+    mu_assert("deep analysis success", deep_fcn_list_length >= simple_fcn_list_length);
 
     // aaa
-	rz_core_peform_auto_analysis(core, RZ_CORE_ANALYSIS_EXPERIMENTAL);
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_EXPERIMENTAL);
 	RzList *experimental_fcn_list = rz_analysis_function_list(core->analysis);
     mu_assert_notnull(experimental_fcn_list, "simple function list");
     ut32 experimental_fcn_list_length = rz_list_length(experimental_fcn_list);
 	eprintf("functions count = %d\n", experimental_fcn_list_length);
 
     // again more in experimental
-    mu_assert("deep analysis success", experimental_fcn_list_length >= deep_fcn_list_length)
+    mu_assert("deep analysis success", experimental_fcn_list_length >= deep_fcn_list_length);
 
     // free core and end test
 	rz_core_free(core);
