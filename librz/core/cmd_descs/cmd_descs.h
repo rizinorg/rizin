@@ -224,7 +224,7 @@ RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const 
 // "?t"
 RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, const char **argv);
 // "??"
-RZ_IPI RzCmdStatus rz_execute_command_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive2_handler(RzCore *core, int argc, const char **argv);
 // "<"
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv);
 // "aa"

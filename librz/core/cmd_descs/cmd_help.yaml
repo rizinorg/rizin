@@ -13,11 +13,6 @@ commands:
     args:
       - name: expr
         type: RZ_CMD_ARG_TYPE_STRING
-        no_space: true
-      - name: exprs
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
-        optional: tru
   - name: "?0"
     summary: Set first tab as the current active tab
     cname: set_active_tab_zero
@@ -48,11 +43,6 @@ commands:
         args:
           - name: num
             type: RZ_CMD_ARG_TYPE_RZNUM
-            no_space: true
-          - name: nums
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            flags: RZ_CMD_ARG_FLAG_ARRAY
-            optional: true
       - name: "?b64"
         summary: Base64 encode
         cname: base64_encode
@@ -88,7 +78,8 @@ commands:
                 arg_str: SUxvdmVSaXppbgo=
                 comment: (ILoveRizin) Decodes given base64 string
   - name: "?B"
-    summary: "Get boundaries (start addr, stop addr) of different modes in Core."
+    summary: >-
+      Get boundaries (start addr, stop addr) of different modes in Core.
     description: >-
       There are multiple search modes in Rizin that can be listed using the
       command `e search.in=?`. This command can be used to get boundaries of
@@ -184,7 +175,9 @@ commands:
         entries:
           - text: "?q"
             arg_str: "123"
-            comment: This will set $?. Then commands like ??x can be used to do some task by checking whether $? holds positive value or not.
+            comment: >-
+              This will set $?. Then commands like ??x can be used to do some
+              task by checking whether $? holds positive value or not.
   - name: "?v"
     summary: Show value commands
     type: RZ_CMD_DESC_TYPE_GROUP
@@ -299,11 +292,14 @@ commands:
             arg_str: "??x"
             comment: Won"t do anything
   - name: "?!"
-    summary: Execute command if result of last numeric expression evaluation (related) command was 0
+    summary: >-
+      Execute command if result of last numeric expression evaluation
+      (related) command was 0
     cname: exec_cmd_if_core_num_value_zero
     args:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
+        optional: true
   # - name: "?@"
   #   summary: "Help commands for ?@, ?@@ or ?@@@"
   #   type: RZ_CMD_DESC_TYPE_GROUP
@@ -386,7 +382,9 @@ commands:
           - name: str
             type: RZ_CMD_ARG_TYPE_STRING
       - name: "?lq"
-        summary: Calculate length of given string and store in $? register but print nothing (quietly).
+        summary: >-
+          Calculate length of given string and store in $? register but print
+          nothing (quietly).
         cname: compute_string_length_quiet
         args:
           - name: str
@@ -570,7 +568,7 @@ commands:
         type: RZ_CMD_ARG_TYPE_CMD
   - name: "??"
     summary: Execute command if $? register holds positive value
-    cname: execute_command_if_core_num_value_zero
+    cname: exec_cmd_if_core_num_value_positive2
     args:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD

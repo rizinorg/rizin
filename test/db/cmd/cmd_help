@@ -47,16 +47,16 @@ RUN
 FILE=malloc://1024
 CMDS=<<EOF
 ?v
-?=
-??
+# ?=
+# ??
 ?e
-?b
-?f
+# ?b
+# ?f
 ?p
-?s
-?x
-?X
-?l
+# ?s
+# ?x
+# ?X
+# ?l
 # ?t is used for get the execution time, thus shall be ignored.
 ?!
 ?+
@@ -64,17 +64,8 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0
-0x0
-0
 
-0b
 0x00000000
-
-0
-0
-0x0
-0x0
-0x0
 EOF
 RUN
 
@@ -106,7 +97,7 @@ RUN
 
 NAME="?v 'A'"
 FILE=--
-CMDS=?v 'A'
+CMDS=?v "'A'"
 EXPECT=<<EOF
 0x41
 EOF
@@ -114,7 +105,7 @@ RUN
 
 NAME="?v 'A'+3"
 FILE=--
-CMDS=?v 'A'+3
+CMDS=?v "'A'+3"
 EXPECT=<<EOF
 0x44
 EOF
@@ -122,7 +113,7 @@ RUN
 
 NAME="?v 3+'A'-3"
 FILE=--
-CMDS=?v 3+'A'-3
+CMDS=?v "3+'A'-3"
 EXPECT=<<EOF
 0x41
 EOF
@@ -130,7 +121,7 @@ RUN
 
 NAME="?v 33^'A'"
 FILE=--
-CMDS=?v 32^'A'
+CMDS=?v "32^'A'"
 EXPECT=<<EOF
 0x61
 EOF
@@ -439,7 +430,7 @@ CMDS=<<EOF
 ???~Usage
 EOF
 EXPECT=<<EOF
-Usage: ?[?[?]] expression   
+Usage: ?[j] <expr>   # Evaluate given numerical expression
 EOF
 RUN
 
@@ -494,9 +485,9 @@ RUN
 NAME=binary shift
 FILE==
 CMDS=<<EOF
-"?b 1<<1"
-"?b 1 << 1"
-"?b 1 << 2"
+?b 1<<1
+?b 1 << 1
+?b 1 << 2
 EOF
 EXPECT=<<EOF
 10b
@@ -508,12 +499,12 @@ RUN
 NAME="comparison operators"
 FILE==
 CMDS=<<EOF
-"?v 1<1"
-"?v 1<2"
-"?v 2<1"
-"?v 1>1"
-"?v 1>2"
-"?v 2>1"
+?v 1<1
+?v 1<2
+?v 2<1
+?v 1>1
+?v 1>2
+?v 2>1
 EOF
 EXPECT=<<EOF
 0x0

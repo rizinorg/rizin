@@ -60,7 +60,7 @@ RUN
 
 NAME="?e foo" "?e bar"
 FILE=malloc://1024
-CMDS="?e foo";"?e bar"
+CMDS=?e foo;?e bar
 EXPECT=<<EOF
 foo
 bar
@@ -69,7 +69,7 @@ RUN
 
 NAME=at3 "?vi $$"@3;"?e bar"
 FILE=malloc://1024
-CMDS="?vi $$"@ 3;?e bar
+CMDS=?vi $$ @ 3;?e bar
 EXPECT=<<EOF
 3
 bar
@@ -78,7 +78,7 @@ RUN
 
 NAME=at3 "?vi $$"@3;"?e bar"
 FILE=malloc://1024
-CMDS="?vi $$"@ 3;"?e bar"
+CMDS=?vi $$ @ 3; ?e bar
 EXPECT=<<EOF
 3
 bar
@@ -87,7 +87,7 @@ RUN
 
 NAME="?v 1>>>2 ror"
 FILE=malloc://1024
-CMDS="?v 1>>>2"
+CMDS=?v "1>>>2"
 EXPECT=<<EOF
 0x4000000000000000
 EOF
@@ -95,7 +95,7 @@ RUN
 
 NAME="?v 0xdeadbeef<<<40 rol"
 FILE=malloc://1024
-CMDS="?v 0xdeadbeef<<<40"
+CMDS=?v "0xdeadbeef<<<40"
 EXPECT=<<EOF
 0xadbeef00000000de
 EOF
@@ -160,11 +160,11 @@ FILE==
 CMDS=<<EOF
 # do not convert test to base64
 ?e aaa
-"?e bbb  "
+?e bbb
 ?e ccc
-"?e ddd     "
+?e ddd
 ?e eee
-"?e fff        "
+?e fff
 EOF
 EXPECT=<<EOF
 aaa

@@ -507,6 +507,7 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 		ut64 n = rz_num_math(core->num, str);
 		if (core->num->dbz) {
 			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+			core->num->dbz = 0;
 			return RZ_CMD_STATUS_ERROR;
 		}
 
@@ -565,6 +566,11 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 			rz_cons_printf("octal   0%" PFMT64o "\n", n);
 			rz_cons_printf("unit    %s\n", unit);
 			rz_cons_printf("segment %04x:%04x\n", s, a);
+			char *asnum = rz_num_as_string(NULL, n, false);
+			if (asnum) {
+				rz_cons_printf("string  \"%s\"\n", asnum);
+				free(asnum);
+			}
 			rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
 			rz_cons_printf("float   %ff\n", f);
 			rz_cons_printf("double  %lf\n", d);
@@ -572,12 +578,6 @@ RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char 
 			/* ternary*/
 			rz_num_to_trits(out, n);
 			rz_cons_printf("trits   0t%s\n", out);
-
-			char *asnum = rz_num_as_string(NULL, n, false);
-			if (asnum) {
-				rz_cons_printf("string  \"%s\"\n", asnum);
-				free(asnum);
-			}
 		}
 	}
 	return RZ_CMD_STATUS_OK;
@@ -633,11 +633,9 @@ RZ_IPI RzCmdStatus rz_print_ascii_table_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **argv) {
 	char out[128] = RZ_EMPTY;
 	ut64 n;
-	for (int i = 1; i < argc; i++) {
-		n = rz_num_math(core->num, argv[i]);
-		rz_num_to_bits(out, n);
-		rz_cons_printf("%sb\n", out);
-	}
+	n = rz_num_math(core->num, argv[1]);
+	rz_num_to_bits(out, n);
+	rz_cons_printf("%sb\n", out);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -746,7 +744,7 @@ RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **argv) {
-	st64 n;
+	ut64 n;
 	if (argc == 1) {
 		n = core->num->value;
 	} else {
@@ -756,7 +754,7 @@ RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%" PFMT64d "\n", n);
+	rz_cons_printf("%" PFMT64x "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -771,7 +769,7 @@ RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char 
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%08" PFMT64x "\n", n);
+	rz_cons_printf("0x%08" PFMT64x "\n", n); // differs from ?v here 0x%08
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -879,8 +877,12 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_negative_handler(RzCore *core, 
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv) {
-	if (core->num->value == 0) {
-		core->num->value = rz_core_cmd(core, argv[1], 0);
+	if (argc == 1) {
+		rz_cons_printf("%" PFMT64d "\n", core->num->value);
+	} else {
+		if (core->num->value == 0) {
+			core->num->value = rz_core_cmd(core, argv[1], 0);
+		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -986,7 +988,7 @@ RZ_IPI RzCmdStatus rz_calc_expr_show_hex_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_ascii_to_hex_handler(RzCore *core, int argc, const char **argv) {
-	const char* str = argv[1];
+	const char *str = argv[1];
 	int n = strlen(str);
 	for (int i = 0; i < n; i++) {
 		rz_cons_printf("%02x", str[i]);
@@ -1235,9 +1237,9 @@ RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_execute_command_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive2_handler(RzCore *core, int argc, const char **argv) {
 	if (core->num->value) {
-		rz_core_cmd(core, argv[1], 0);
+		core->num->value = rz_core_cmd(core, argv[1], 0);
 	}
 	return RZ_CMD_STATUS_OK;
 }

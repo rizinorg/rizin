@@ -108,9 +108,9 @@ static const RzCmdDescArg remote_rap_args[3];
 static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
-static const RzCmdDescArg calculate_expr_args[3];
+static const RzCmdDescArg calculate_expr_args[2];
 static const RzCmdDescArg generate_random_number_args[3];
-static const RzCmdDescArg print_binary_args[3];
+static const RzCmdDescArg print_binary_args[2];
 static const RzCmdDescArg base64_encode_args[3];
 static const RzCmdDescArg base64_decode_args[3];
 static const RzCmdDescArg print_boundaries_prot_args[2];
@@ -156,7 +156,7 @@ static const RzCmdDescArg input_msg_args[2];
 static const RzCmdDescArg input_conditional_args[2];
 static const RzCmdDescArg get_addr_references_args[2];
 static const RzCmdDescArg calculate_command_time_args[2];
-static const RzCmdDescArg execute_command_if_core_num_value_zero_args[2];
+static const RzCmdDescArg exec_cmd_if_core_num_value_positive2_args[2];
 static const RzCmdDescArg push_escaped_args[2];
 static const RzCmdDescArg analysis_all_esil_args[2];
 static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[2];
@@ -1473,14 +1473,7 @@ static const RzCmdDescArg calculate_expr_args[] = {
 	{
 		.name = "expr",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.no_space = true,
-
-	},
-	{
-		.name = "exprs",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1540,14 +1533,7 @@ static const RzCmdDescArg print_binary_args[] = {
 	{
 		.name = "num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.no_space = true,
-
-	},
-	{
-		.name = "nums",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1990,6 +1976,7 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_zero_args[] = {
 		.name = "cmd",
 		.type = RZ_CMD_ARG_TYPE_CMD,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -2506,7 +2493,7 @@ static const RzCmdDescHelp calculate_command_time_help = {
 	.args = calculate_command_time_args,
 };
 
-static const RzCmdDescArg execute_command_if_core_num_value_zero_args[] = {
+static const RzCmdDescArg exec_cmd_if_core_num_value_positive2_args[] = {
 	{
 		.name = "cmd",
 		.type = RZ_CMD_ARG_TYPE_CMD,
@@ -2515,9 +2502,9 @@ static const RzCmdDescArg execute_command_if_core_num_value_zero_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp execute_command_if_core_num_value_zero_help = {
+static const RzCmdDescHelp exec_cmd_if_core_num_value_positive2_help = {
 	.summary = "Execute command if $? register holds positive value",
-	.args = execute_command_if_core_num_value_zero_args,
+	.args = exec_cmd_if_core_num_value_positive2_args,
 };
 
 static const RzCmdDescArg push_escaped_args[] = {
@@ -18765,8 +18752,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *calculate_command_time_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "?t", rz_calculate_command_time_handler, &calculate_command_time_help);
 	rz_warn_if_fail(calculate_command_time_cd);
 
-	RzCmdDesc *execute_command_if_core_num_value_zero_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "??", rz_execute_command_if_core_num_value_zero_handler, &execute_command_if_core_num_value_zero_help);
-	rz_warn_if_fail(execute_command_if_core_num_value_zero_cd);
+	RzCmdDesc *exec_cmd_if_core_num_value_positive2_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "??", rz_exec_cmd_if_core_num_value_positive2_handler, &exec_cmd_if_core_num_value_positive2_help);
+	rz_warn_if_fail(exec_cmd_if_core_num_value_positive2_cd);
 
 	RzCmdDesc *push_escaped_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "<", rz_push_escaped_handler, &push_escaped_help);
 	rz_warn_if_fail(push_escaped_cd);
