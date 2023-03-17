@@ -12,7 +12,7 @@ if get_option('enable_tests')
     'analysis_graph',
     'analysis_il',
     'autocmplt',
-    'auto_analysis'
+    'auto_analysis',
     'basefind',
     'bin',
     'bin_vfiles',
@@ -64,6 +64,6 @@ if get_option('enable_tests')
       install_rpath: rpath_exe,
       implicit_include_directories: false,
     )
-    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env, suite: 'integration')
   endforeach
+    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env, suite: 'integration')
 endif
