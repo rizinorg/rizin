@@ -12,6 +12,7 @@ if get_option('enable_tests')
     'analysis_graph',
     'analysis_il',
     'autocmplt',
+    'auto_analysis'
     'basefind',
     'bin',
     'bin_vfiles',
