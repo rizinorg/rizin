@@ -175,7 +175,9 @@ commands:
         entries:
           - text: "?q"
             arg_str: "123"
-            comment: This will set $?. Then commands like ??x can be used to do some task by checking whether $? holds positive value or not.
+            comment: >-
+              This will set $?. Then commands like ??x can be used to do some task
+              by checking whether $? holds positive value or not.
   - name: "?v"
     summary: Show value commands
     type: RZ_CMD_DESC_TYPE_GROUP
