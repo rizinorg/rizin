@@ -128,7 +128,7 @@ static const RzCmdDescArg show_value_i8_args[2];
 static const RzCmdDescArg show_value_int_args[2];
 static const RzCmdDescArg set_core_num_value_args[2];
 static const RzCmdDescArg compare_and_set_core_num_value_args[3];
-static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[3];
+static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_negative_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_zero_args[2];
 static const RzCmdDescArg compute_string_length_args[2];
@@ -1929,13 +1929,7 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[] = {
 	{
 		.name = "cmd",
 		.type = RZ_CMD_ARG_TYPE_CMD,
-
-	},
-	{
-		.name = "cmds",
-		.type = RZ_CMD_ARG_TYPE_CMD,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1976,7 +1970,6 @@ static const RzCmdDescArg exec_cmd_if_core_num_value_zero_args[] = {
 		.name = "cmd",
 		.type = RZ_CMD_ARG_TYPE_CMD,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },

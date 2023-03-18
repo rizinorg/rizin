@@ -58,9 +58,9 @@ CMDS=<<EOF
 # ?X
 # ?l
 # ?t is used for get the execution time, thus shall be ignored.
-?!
-?+
-?-
+#?!
+#?+
+#?-
 EOF
 EXPECT=<<EOF
 0
@@ -143,7 +143,7 @@ float   1.000000f
 double  1.000000
 binary  0b00000001
 trits   0t1
-1
+0x1
 EOF
 RUN
 
@@ -163,7 +163,7 @@ float   0.000000f
 double  0.000000
 binary  0b00000000
 trits   0t0
-0
+0x0
 EOF
 RUN
 
@@ -499,12 +499,12 @@ RUN
 NAME="comparison operators"
 FILE==
 CMDS=<<EOF
-?v 1<1
-?v 1<2
-?v 2<1
-?v 1>1
-?v 1>2
-?v 2>1
+?v "1<1"
+?v "1<2"
+?v "2<1"
+?v "1>1"
+?v "1>2"
+?v "2>1"
 EOF
 EXPECT=<<EOF
 0x0

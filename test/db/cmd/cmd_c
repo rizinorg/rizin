@@ -1264,9 +1264,9 @@ NAME=cmd_cx
 FILE=bins/elf/ls
 CMDS=<<EOF
 cx 12 34 56 78 90 ab cd ef
-?!
+?v
 cx f3..1e
-?!
+?v
 EOF
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  12 ' '

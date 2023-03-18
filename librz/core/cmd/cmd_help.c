@@ -857,32 +857,24 @@ RZ_IPI RzCmdStatus rz_compare_and_set_core_num_value_handler(RzCore *core, int a
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		st64 n = (st64)core->num->value;
-		if (n > 0) {
-			rz_core_cmd(core, argv[1], 0);
-		}
+	st64 n = (st64)core->num->value;
+	if (n > 0) {
+		rz_core_cmd(core, argv[1], 0);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_negative_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		st64 n = (st64)core->num->value;
-		if (n < 0) {
-			rz_core_cmd(core, argv[1], 0);
-		}
+	st64 n = (st64)core->num->value;
+	if (n < 0) {
+		rz_core_cmd(core, argv[1], 0);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		rz_cons_printf("%" PFMT64d "\n", core->num->value);
-	} else {
-		if (core->num->value == 0) {
-			core->num->value = rz_core_cmd(core, argv[1], 0);
-		}
+	if (core->num->value == 0) {
+		core->num->value = rz_core_cmd(core, argv[1], 0);
 	}
 	return RZ_CMD_STATUS_OK;
 }

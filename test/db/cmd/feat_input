@@ -160,11 +160,11 @@ FILE==
 CMDS=<<EOF
 # do not convert test to base64
 ?e aaa
-?e bbb
+?e "bbb  "
 ?e ccc
-?e ddd
+?e "ddd     "
 ?e eee
-?e fff
+?e "fff        "
 EOF
 EXPECT=<<EOF
 aaa
