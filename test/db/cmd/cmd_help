@@ -58,12 +58,12 @@ CMDS=<<EOF
 # ?X
 # ?l
 # ?t is used for get the execution time, thus shall be ignored.
-#?!
-#?+
-#?-
+# ?!
+# ?+
+# ?-
 EOF
 EXPECT=<<EOF
-0
+0x0
 
 0x00000000
 EOF

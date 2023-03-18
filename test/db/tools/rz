@@ -74,7 +74,7 @@ FILE==
 CMDS=!!rizin -hh~RZ_USER_PLUGINS?
 EXPECT=<<EOF
 1
-EO
+EOF
 RUN
 
 NAME=rizin -L
