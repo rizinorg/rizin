@@ -3269,6 +3269,8 @@ static const char *cpusubtype_tostring(ut32 cputype, ut32 cpusubtype) {
 		case CPU_SUBTYPE_ARM64E: return "arm64e";
 		default: return "Unknown arm64 subtype";
 		}
+	case CPU_TYPE_ARM64_32:
+		return "arm64_32";
 	case CPU_TYPE_ARM:
 		switch (cpusubtype & 0xff) {
 		case CPU_SUBTYPE_ARM_ALL:
