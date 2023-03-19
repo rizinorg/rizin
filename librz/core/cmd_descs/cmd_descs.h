@@ -107,6 +107,8 @@ RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char **argv);
 // "?b64-"
 RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char **argv);
+// "?btw"
+RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char **argv);
 // "?B"
 RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv);
 // "?h"

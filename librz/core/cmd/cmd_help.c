@@ -6,6 +6,7 @@
 #include "rz_cons.h"
 #include "rz_core.h"
 #include "rz_util.h"
+#include "rz_types.h"
 
 static ut32 vernum(const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
@@ -434,63 +435,8 @@ RZ_API void rz_core_cmd_help_calc_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 }
 
 RZ_IPI int rz_cmd_help(void *data, const char *input) {
-	/*
-		RzCore *core = (RzCore *)data;
-		RzIOMap *map;
-		const char *k;
-		RzListIter *iter;
-		char *p, out[128] = RZ_EMPTY;
-		ut64 n;
-		int i;
-		RzList *tmp;
-
-		switch (input[0]) {
-		case 'b': // "?b"
-			} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
-				if (rz_num_between(core->num, input + 3) == -1) {
-					RZ_LOG_ERROR("core: Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
-				}
-			}
-		case '@': // "?@"
-			if (input[1] == '@') {
-				if (input[2] == '@') {
-					rz_core_cmd_help(core, help_msg_at_at_at);
-				} else {
-					rz_core_cmd_help(core, help_msg_at_at);
-				}
-			} else {
-				rz_core_cmd_help(core, help_msg_at);
-			}
-		case '?': // "??"
-			if (input[1] == '?') {
-				if (input[2] == '?') { // "???"
-					rz_core_clippy_print(core, "What are you doing?");
-					return 0;
-				}
-				if (input[2]) {
-					if (core->num->value) {
-						rz_core_cmd(core, input + 1, 0);
-					}
-					break;
-				}
-				rz_core_cmd_help(core, help_msg_question);
-				return 0;
-			} else if (input[1]) {
-				if (core->num->value) {
-					core->num->value = rz_core_cmd(core, input + 1, 0);
-				}
-			} else {
-				if (core->num->dbz) {
-					RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
-				}
-				rz_cons_printf("%" PFMT64d "\n", core->num->value);
-			}
-			break;
-		case '\0': // "?"
-		default:
-			break;
-		}
-		*/
+	// TODO: I don't know how to remove this function.
+	// It's called in cmd.c file in rz_core_cmd_init
 	return 0;
 }
 
@@ -668,6 +614,14 @@ RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char *
 		rz_cons_println((const char *)buf);
 	}
 	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char **argv) {
+	st64 f = rz_num_math(core->num, argv[1]);
+	st64 m = rz_num_math(core->num, argv[2]);
+	st64 l = rz_num_math(core->num, argv[3]);
+	core->num->value = RZ_BETWEEN(f, m, l);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -873,7 +827,7 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_negative_handler(RzCore *core, 
 }
 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv) {
-	if (core->num->value == 0) {
+	if (!core->num->value) {
 		core->num->value = rz_core_cmd(core, argv[1], 0);
 	}
 	return RZ_CMD_STATUS_OK;

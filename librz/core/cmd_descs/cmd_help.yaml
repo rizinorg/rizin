@@ -77,6 +77,16 @@ commands:
               - text: "?b64-"
                 arg_str: SUxvdmVSaXppbgo=
                 comment: (ILoveRizin) Decodes given base64 string
+  - name: "?btw"
+    summary: Check if middle number is between the other two (first and last)
+    cname: check_between
+    args:
+      - name: first
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: middle
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: last
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: "?B"
     summary: Get boundaries (start addr, stop addr) of different modes in Core.
     description: >-
@@ -293,22 +303,6 @@ commands:
     args:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
-  # - name: "?@"
-  #   summary: "Help commands for ?@, ?@@ or ?@@@"
-  #   type: RZ_CMD_DESC_TYPE_GROUP
-  #   subcommands:
-  #     - name: "?@"
-  #       summary: "Show help"
-  #       cname: show_help_at
-  #       args: []
-  #     - name: "?@@"
-  #       summary: "Show help"
-  #       cname: show_help_at_at
-  #       args: []
-  #     - name: "?@@@"
-  #       summary: "Show help for ?@"
-  #       cname: show_help_at_at_at
-  #       args: []
   - name: "?&"
     summary: Show help menu for task commands
     cname: show_help_tasks

@@ -113,6 +113,7 @@ static const RzCmdDescArg generate_random_number_args[3];
 static const RzCmdDescArg print_binary_args[2];
 static const RzCmdDescArg base64_encode_args[3];
 static const RzCmdDescArg base64_decode_args[3];
+static const RzCmdDescArg check_between_args[4];
 static const RzCmdDescArg print_boundaries_prot_args[2];
 static const RzCmdDescArg print_djb2_hash_args[3];
 static const RzCmdDescArg print_bitstring_args[3];
@@ -1601,6 +1602,30 @@ static const RzCmdDescHelp base64_decode_help = {
 	.summary = "Base64 decode. Maximum input length = 4*(strlen(str)).",
 	.details = base64_decode_details,
 	.args = base64_decode_args,
+};
+
+static const RzCmdDescArg check_between_args[] = {
+	{
+		.name = "first",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "middle",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "last",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp check_between_help = {
+	.summary = "Check if middle number is between the other two (first and last)",
+	.args = check_between_args,
 };
 
 static const RzCmdDescDetailEntry print_boundaries_prot_Examples_detail_entries[] = {
@@ -18577,6 +18602,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *base64_decode_cd = rz_cmd_desc_argv_new(core->rcmd, question_b_cd, "?b64-", rz_base64_decode_handler, &base64_decode_help);
 	rz_warn_if_fail(base64_decode_cd);
+
+	RzCmdDesc *check_between_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "?btw", rz_check_between_handler, &check_between_help);
+	rz_warn_if_fail(check_between_cd);
 
 	RzCmdDesc *print_boundaries_prot_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "?B", rz_print_boundaries_prot_handler, &print_boundaries_prot_help);
 	rz_warn_if_fail(print_boundaries_prot_cd);
