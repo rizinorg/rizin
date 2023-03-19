@@ -434,12 +434,6 @@ RZ_API void rz_core_cmd_help_calc_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 	}
 }
 
-RZ_IPI int rz_cmd_help(void *data, const char *input) {
-	// TODO: I don't know how to remove this function.
-	// It's called in cmd.c file in rz_core_cmd_init
-	return 0;
-}
-
 RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char unit[8];
 	char number[128], out[128] = RZ_EMPTY;
