@@ -4676,6 +4676,16 @@ static bool is_apple_target(RzCore *core) {
 	return bo ? strstr(bo->plugin->name, "mach") : false;
 }
 
+static void core_analysis_using_plugins(RzCore *core) {
+	RzListIter *it;
+	const RzCorePlugin *plugin;
+	rz_list_foreach (core->plugins, it, plugin) {
+		if (plugin->analysis) {
+			plugin->analysis(core);
+		}
+	}
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -4691,6 +4701,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool plugin_supports_esil = core->analysis->cur->esil;
+
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		rz_core_notify_done(core, "Find function and symbol names from golang binaries");
 		if (rz_core_analysis_recover_golang_functions(core)) {
@@ -4877,6 +4888,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
 
+	core_analysis_using_plugins(core);
 	return true;
 }
 

@@ -94,8 +94,7 @@ typedef enum {
 	RZ_CORE_WRITE_OP_SHIFT_RIGHT, ///< Write the shift right of existing byte and argument value
 } RzCoreWriteOp;
 
-typedef bool (*RzCorePluginInit)(RzCore *core);
-typedef bool (*RzCorePluginFini)(RzCore *core);
+typedef bool (*RzCorePluginCallback)(RzCore *core);
 
 typedef struct rz_core_plugin_t {
 	const char *name;
@@ -103,8 +102,9 @@ typedef struct rz_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RzCorePluginInit init;
-	RzCorePluginFini fini;
+	RzCorePluginCallback init;
+	RzCorePluginCallback fini;
+	RzCorePluginCallback analysis;
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
