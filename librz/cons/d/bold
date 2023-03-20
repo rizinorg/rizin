@@ -1,5 +1,13 @@
 # SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
+# BEGIN
+# Author: pancake
+# License: LGPL-3.0-only
+# Target Background: Light and dark!
+# Minimum colour depth: 16M
+# Description: A nice bold colour theme, gives you that warm ZSH feeling!
+# END
+
 
 ec b0x00 rgb:ccc
 ec b0x7f rgb:ccc

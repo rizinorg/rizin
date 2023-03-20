@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
+# BEGIN
+# Author: pancake
+# License: LGPL-3.0-only
+# Target Background: Light and Dark
+# Minimum colour depth: 16M
+# Description: A nice colour theme!
+# END
 
 ec b0x00 rgb:ccc
 ec b0x7f rgb:777

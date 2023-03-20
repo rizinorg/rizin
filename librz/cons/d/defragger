@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: 2018 Rene Laemmert <rlaemmert@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
+# BEGIN
+# Author: Rene Laemmert
+# License: LGPL-3.0-only
+# Target Background: Light
+# Minimum colour depth: 256
+# Description: A nice colour theme which looks good even with 256 colours!
+# END
 
 ec call rgb:ffff00
 ec ucall rgb:ffff00

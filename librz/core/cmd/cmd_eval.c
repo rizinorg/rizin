@@ -6,6 +6,7 @@
 #include <rz_core.h>
 #include "../core_private.h"
 
+
 static bool load_theme(RzCore *core, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
@@ -55,6 +56,21 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	bool failed = false;
+	const int len = strlen(name);
+	int question_mark_count = 0;
+	// bool question_mark_exists = false;
+
+
+	for(int i = 0;i<strlen(name);i++)
+	{
+		if(name[i] == '?')
+		{
+			question_mark_count++;
+			// question_mark_exists = true;
+		}
+	}
+
+	
 	if (!name || !*name) {
 		return false;
 	}
@@ -68,16 +84,60 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	char *system_themes = rz_path_system(RZ_THEMES);
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
+
+
 	free(system_themes);
 	free(home_themes);
 
-	if (!load_theme(core, home_file)) {
+
+	char *system_file_cpy = strdup(system_file);
+
+
+	if(name[len-1] == '?' && (question_mark_count == 1))
+	{	
+		system_file_cpy[strlen(system_file_cpy) - 1] = '\0';
+		FILE *path = rz_sys_fopen(system_file_cpy,"r");
+		rz_cons_printf("The new system file path is %s\n",system_file_cpy);
+		rz_cons_printf("The old system file path is %s\n",system_file);
+
+		if(!path)
+		{
+			RZ_LOG_ERROR("Error in opening colourscheme file at '%s'\n", system_file_cpy);
+			failed = true;
+			return !failed;
+		}
+		else{
+		rz_cons_printf("%s","File opened successfully!\n");
+		}
+
+		bool beginflag = false;		
+		char line[256];
+		while((fgets(line , sizeof(line) , path) != NULL) && (strcmp(line,"# END\n") != 0) )
+		{
+			
+			if(beginflag == true){
+
+				rz_cons_println(line);
+			}
+			if(strcmp(line,"# BEGIN\n" )== 0)
+			{
+				beginflag = true;
+			}
+		}
+
+	}
+	if(!(load_theme(core, home_file)) || (question_mark_count > 1)) 
+	{
+		rz_cons_printf("The home file before the normal colour scheme changer is %s",home_file);
+
 		if (load_theme(core, system_file)) {
 			core->curtheme = rz_str_dup(core->curtheme, name);
 		} else {
 			if (load_theme(core, name)) {
 				core->curtheme = rz_str_dup(core->curtheme, name);
-			} else {
+			}
+	
+			else {
 				RZ_LOG_ERROR("core: eco: cannot open colorscheme profile (%s)\n", name);
 				failed = true;
 			}
@@ -239,8 +299,12 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	PJ *pj = state->d.pj;
 	const char *th;
 	if (argc == 2) {
+		
 		return bool2status(rz_core_theme_load(core, argv[1]));
+
 	}
+	
+	
 	themes_list = rz_core_theme_list(core);
 	if (!themes_list) {
 		return RZ_CMD_STATUS_ERROR;
@@ -250,6 +314,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	}
 	rz_list_foreach (themes_list, th_iter, th) {
 		switch (state->mode) {
+
 		case RZ_OUTPUT_MODE_JSON: {
 			pj_s(pj, th);
 			break;
