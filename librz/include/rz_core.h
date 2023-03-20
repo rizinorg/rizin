@@ -102,9 +102,9 @@ typedef struct rz_core_plugin_t {
 	const char *license;
 	const char *author;
 	const char *version;
-	RzCorePluginCallback init;
-	RzCorePluginCallback fini;
-	RzCorePluginCallback analysis;
+	RzCorePluginCallback init; ///< Is called when the plugin is loaded by rizin
+	RzCorePluginCallback fini; ///< Is called when the plugin is unloaded by rizin
+	RzCorePluginCallback analysis; ///< Is called when automatic analysis is performed.
 } RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t RzCoreRtrHost;
