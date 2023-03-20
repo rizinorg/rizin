@@ -6420,6 +6420,15 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 }
 
 /**
+ * \brief Check if core is debugging.
+ * \param core RzCore instance performing analysis.
+ * \return true if core is debugging, false otherwise.
+ * */
+RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore* core) {
+	return core && core->io && core->io->desc && core->io->desc->plugin && core->io->desc->plugin->isdbg;
+}
+
+/**
  * \brief Perform auto analysis based on given analysis type.
  * \param core RzCore instance that'll be used to perform the analysis.
  * \param type Analysis type.
@@ -6427,27 +6436,30 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type) {
 	rz_return_if_fail(core);
 
-	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
 	ut64 old_offset = core->offset;
-	char *debugger = NULL;
 	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
 	rz_core_notify_begin(core, "%s", notify);
 	rz_cons_break_push(NULL, NULL);
+	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
 	rz_cons_break_timeout(timeout);
 	rz_core_analysis_all(core);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
-	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
-		goto finish;
-	}
-	// Run pending analysis immediately after analysis
-	// Usefull when running commands with ";" or via rizin -c,-i
-	debugger = core->dbg->cur ? strdup(core->dbg->cur->name) : strdup("esil");
-	if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
-		// set it only if is debugging
-		RZ_FREE(debugger);
+
+	// set debugger only if is debugging
+	char *debugger = NULL;
+	if (rz_core_is_debugging(core)) {
+		debugger = core->dbg->cur ? strdup(core->dbg->cur->name) : strdup("esil");
 	}
 	rz_cons_clear_line(1);
+
+	// if type was simple only then don't proceed further
+	if(type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
+		goto finish;
+	}
+
+	// Run pending analysis immediately after analysis
+	// Usefull when running commands with ";" or via rizin -c,-i
 	rz_core_analysis_everything(core, type == RZ_CORE_ANALYSIS_EXPERIMENTAL, debugger);
 finish:
 	rz_core_seek(core, old_offset, true);

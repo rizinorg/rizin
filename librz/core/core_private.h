@@ -60,6 +60,8 @@ RZ_IPI void rz_core_meta_print_list_in_function(RzCore *core, int type, ut64 add
 RZ_IPI void rz_core_meta_append(RzCore *core, const char *newcomment, RzAnalysisMetaType mtype, ut64 addr);
 RZ_IPI void rz_core_meta_editor(RzCore *core, RzAnalysisMetaType mtype, ut64 addr);
 
+RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ* pj);
+
 /* ctypes.c */
 // Enums
 RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj);

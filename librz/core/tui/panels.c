@@ -3290,7 +3290,7 @@ int __calculator_cb(void *user) {
 			free(s);
 			break;
 		}
-		rz_core_cmd_help_calc_expr(core, s);
+		rz_core_cmd_calculate_expr(core, s, NULL);
 		rz_cons_flush();
 		free(s);
 	}
@@ -5196,7 +5196,6 @@ bool __handle_console(RzCore *core, RzPanel *panel, const int key) {
 		__panel_prompt(prompt, cmd, sizeof(cmd));
 		if (*cmd) {
 			if (!strcmp(cmd, "clear")) {
-				// rz_core_cmd0(core, ":>$console");
 				rz_cons_clear00();
 			} else {
 				rz_core_cmdf(core, "?e %s %s>>$console", prompt, cmd);

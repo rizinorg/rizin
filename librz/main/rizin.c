@@ -1224,7 +1224,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		// initalize io subsystem
 		char *res = rz_io_system(r->io, NULL);
 		if (res) {
-			rz_cons_printf("%s\n", res);
+			rz_cons_println(res);
 			free(res);
 		}
 

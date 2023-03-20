@@ -336,191 +336,102 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 	}
 }
 
-RZ_API void rz_core_cmd_help_calc_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input) {
-	rz_return_if_fail(core && input);
+/// If third parameter (PJ) is NULL then standard output will be displayed
+/// If it's non-NULL then it's treated as a borrowd PJ and used and then
+/// printing will be done in JSON format and not standard one.
+/// So basically it's the third paramter that decides in which paramter
+/// data will be displayed.
+RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ* pj) {
+	rz_return_val_if_fail(core && input, false);
 
-	char *asnum, unit[8];
-	ut32 s, a;
-	double d;
-	float f;
-	char number[128], out[128] = RZ_EMPTY;
-	char *inputs = strdup(input + 1);
-	RzList *list = rz_num_str_split_list(inputs);
-	const int list_len = rz_list_length(list);
-	PJ *pj = NULL;
-	if (*input == 'j') {
-		pj = pj_new();
-		pj_o(pj);
-	}
-	for (ut32 i = 0; i < list_len; i++) {
-		const char *str = rz_list_pop_head(list);
-		if (!*str) {
-			continue;
-		}
-		ut64 n = rz_num_math(core->num, str);
-		if (core->num->dbz) {
-			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
-			return;
-		}
-		asnum = rz_num_as_string(NULL, n, false);
-		/* decimal, hexa, octal */
-		s = n >> 16 << 12;
-		a = n & 0x0fff;
-		rz_num_units(unit, sizeof(unit), n);
-		if (*input == 'j') {
-			pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
-			pj_ks(pj, "uint32", rz_strf(number, "%u", (ut32)n));
-			pj_ks(pj, "int64", rz_strf(number, "%" PFMT64d, (st64)n));
-			pj_ks(pj, "uint64", rz_strf(number, "%" PFMT64u, (ut64)n));
-			pj_ks(pj, "hex", rz_strf(number, "0x%08" PFMT64x, n));
-			pj_ks(pj, "octal", rz_strf(number, "0%" PFMT64o, n));
-			pj_ks(pj, "unit", unit);
-			pj_ks(pj, "segment", rz_strf(number, "%04x:%04x", s, a));
-
-		} else {
-			if (n >> 32) {
-				rz_cons_printf("int64   %" PFMT64d "\n", (st64)n);
-				rz_cons_printf("uint64  %" PFMT64u "\n", (ut64)n);
-			} else {
-				rz_cons_printf("int32   %d\n", (st32)n);
-				rz_cons_printf("uint32  %u\n", (ut32)n);
-			}
-			rz_cons_printf("hex     0x%" PFMT64x "\n", n);
-			rz_cons_printf("octal   0%" PFMT64o "\n", n);
-			rz_cons_printf("unit    %s\n", unit);
-			rz_cons_printf("segment %04x:%04x\n", s, a);
-
-			if (asnum) {
-				rz_cons_printf("string  \"%s\"\n", asnum);
-				free(asnum);
-			}
-		}
-		/* binary and floating point */
-		rz_str_bits64(out, n);
-		f = d = core->num->fvalue;
-		/* adjust sign for nan floats, different libcs are confused */
-		if (isnan(f) && signbit(f)) {
-			f = -f;
-		}
-		if (isnan(d) && signbit(d)) {
-			d = -d;
-		}
-		if (*input == 'j') {
-			pj_ks(pj, "fvalue", rz_strf(number, "%.1lf", core->num->fvalue));
-			pj_ks(pj, "float", rz_strf(number, "%ff", f));
-			pj_ks(pj, "double", rz_strf(number, "%lf", d));
-			pj_ks(pj, "binary", rz_strf(number, "0b%s", out));
-			rz_num_to_trits(out, n);
-			pj_ks(pj, "trits", rz_strf(number, "0t%s", out));
-		} else {
-			rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
-			rz_cons_printf("float   %ff\n", f);
-			rz_cons_printf("double  %lf\n", d);
-			rz_cons_printf("binary  0b%s\n", out);
-
-			/* ternary */
-			rz_num_to_trits(out, n);
-			rz_cons_printf("trits   0t%s\n", out);
-		}
-	}
-	if (*input == 'j') {
-		pj_end(pj);
-	}
-	free(inputs);
-	rz_list_free(list);
-	if (pj) {
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
-	}
-}
-
-RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	char unit[8];
 	char number[128], out[128] = RZ_EMPTY;
 
-	for (int i = 1; i < argc; i++) {
-		const char *str = argv[i];
-		if (!*str) {
-			continue;
-		}
-
-		ut64 n = rz_num_math(core->num, str);
-		if (core->num->dbz) {
-			RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
-			core->num->dbz = 0;
-			return RZ_CMD_STATUS_ERROR;
-		}
-
-		/* decimal, hexa, octal */
-		ut32 s, a;
-		s = n >> 16 << 12;
-		a = n & 0x0fff;
-		rz_num_units(unit, sizeof(unit), n);
-
-		/* binary and floating point */
-		double d;
-		float f;
-		rz_str_bits64(out, n);
-		f = d = core->num->fvalue;
-		/* adjust sign for nan floats, different libcs are confused */
-		if (isnan(f) && signbit(f)) {
-			f = -f;
-		}
-		if (isnan(d) && signbit(d)) {
-			d = -d;
-		}
-
-		if (state->mode == RZ_OUTPUT_MODE_JSON) {
-			PJ *pj = state->d.pj;
-			pj_o(pj);
-			if (n >> 32) {
-				pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
-				pj_ks(pj, "uint32", rz_strf(number, "%u", (ut32)n));
-			} else {
-				pj_ks(pj, "int64", rz_strf(number, "%" PFMT64d, (st64)n));
-				pj_ks(pj, "uint64", rz_strf(number, "%" PFMT64u, (ut64)n));
-			}
-			pj_ks(pj, "hex", rz_strf(number, "0x%08" PFMT64x, n));
-			pj_ks(pj, "octal", rz_strf(number, "0%" PFMT64o, n));
-			pj_ks(pj, "unit", unit);
-			pj_ks(pj, "segment", rz_strf(number, "%04x:%04x", s, a));
-			pj_ks(pj, "fvalue", rz_strf(number, "%.1lf", core->num->fvalue));
-			pj_ks(pj, "float", rz_strf(number, "%ff", f));
-			pj_ks(pj, "double", rz_strf(number, "%lf", d));
-			pj_ks(pj, "binary", rz_strf(number, "0b%s", out));
-			/* ternary */
-			rz_num_to_trits(out, n);
-			pj_ks(pj, "trits", rz_strf(number, "0t%s", out));
-
-			pj_end(pj);
-			rz_cons_printf("%s\n", pj_string(pj));
-		} else {
-			if (n >> 32) {
-				rz_cons_printf("int64   %" PFMT64d "\n", (st64)n);
-				rz_cons_printf("uint64  %" PFMT64u "\n", (ut64)n);
-			} else {
-				rz_cons_printf("int32   %d\n", (st32)n);
-				rz_cons_printf("uint32  %u\n", (ut32)n);
-			}
-			rz_cons_printf("hex     0x%" PFMT64x "\n", n);
-			rz_cons_printf("octal   0%" PFMT64o "\n", n);
-			rz_cons_printf("unit    %s\n", unit);
-			rz_cons_printf("segment %04x:%04x\n", s, a);
-			char *asnum = rz_num_as_string(NULL, n, false);
-			if (asnum) {
-				rz_cons_printf("string  \"%s\"\n", asnum);
-				free(asnum);
-			}
-			rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
-			rz_cons_printf("float   %ff\n", f);
-			rz_cons_printf("double  %lf\n", d);
-			rz_cons_printf("binary  0b%s\n", out);
-			/* ternary*/
-			rz_num_to_trits(out, n);
-			rz_cons_printf("trits   0t%s\n", out);
-		}
+	ut64 n = rz_num_math(core->num, input);
+	if (core->num->dbz) {
+		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
+		core->num->dbz = 0;
+		return false;
 	}
-	return RZ_CMD_STATUS_OK;
+
+	/* decimal, hexa, octal */
+	ut32 s, a;
+	s = n >> 16 << 12;
+	a = n & 0x0fff;
+	rz_num_units(unit, sizeof(unit), n);
+
+	/* binary and floating point */
+	double d;
+	float f;
+	rz_str_bits64(out, n);
+	f = d = core->num->fvalue;
+	/* adjust sign for nan floats, different libcs are confused */
+	if (isnan(f) && signbit(f)) {
+		f = -f;
+	}
+	if (isnan(d) && signbit(d)) {
+		d = -d;
+	}
+
+	if (pj) {;
+		pj_o(pj);
+		if (n >> 32) {
+			pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
+			pj_ks(pj, "uint32", rz_strf(number, "%u", (ut32)n));
+		} else {
+			pj_ks(pj, "int64", rz_strf(number, "%" PFMT64d, (st64)n));
+			pj_ks(pj, "uint64", rz_strf(number, "%" PFMT64u, (ut64)n));
+		}
+		pj_ks(pj, "hex", rz_strf(number, "0x%08" PFMT64x, n));
+		pj_ks(pj, "octal", rz_strf(number, "0%" PFMT64o, n));
+		pj_ks(pj, "unit", unit);
+		pj_ks(pj, "segment", rz_strf(number, "%04x:%04x", s, a));
+		pj_ks(pj, "fvalue", rz_strf(number, "%.1lf", core->num->fvalue));
+		pj_ks(pj, "float", rz_strf(number, "%ff", f));
+		pj_ks(pj, "double", rz_strf(number, "%lf", d));
+		pj_ks(pj, "binary", rz_strf(number, "0b%s", out));
+		/* ternary */
+		rz_num_to_trits(out, n);
+		pj_ks(pj, "trits", rz_strf(number, "0t%s", out));
+
+		pj_end(pj);
+	} else {
+		if (n >> 32) {
+			rz_cons_printf("int64   %" PFMT64d "\n", (st64)n);
+			rz_cons_printf("uint64  %" PFMT64u "\n", (ut64)n);
+		} else {
+			rz_cons_printf("int32   %d\n", (st32)n);
+			rz_cons_printf("uint32  %u\n", (ut32)n);
+		}
+		rz_cons_printf("hex     0x%" PFMT64x "\n", n);
+		rz_cons_printf("octal   0%" PFMT64o "\n", n);
+		rz_cons_printf("unit    %s\n", unit);
+		rz_cons_printf("segment %04x:%04x\n", s, a);
+		char *asnum = rz_num_as_string(NULL, n, false);
+		if (asnum) {
+			rz_cons_printf("string  \"%s\"\n", asnum);
+			free(asnum);
+		}
+		rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
+		rz_cons_printf("float   %ff\n", f);
+		rz_cons_printf("double  %lf\n", d);
+		rz_cons_printf("binary  0b%s\n", out);
+		/* ternary*/
+		rz_num_to_trits(out, n);
+		rz_cons_printf("trits   0t%s\n", out);
+	}
+
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	bool res;
+	if(state->mode == RZ_OUTPUT_MODE_JSON) {
+		res = rz_core_cmd_calculate_expr(core, argv[1], state->d.pj);
+	} else {
+		res = rz_core_cmd_calculate_expr(core, argv[1], NULL);
+	}
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_set_active_tab_zero_handler(RzCore *core, int argc, const char **argv) {

@@ -58,7 +58,7 @@ aaaa;bbb@23
 EOF
 RUN
 
-NAME="?e foo" "?e bar"
+NAME=?e foo; ?e bar
 FILE=malloc://1024
 CMDS=?e foo;?e bar
 EXPECT=<<EOF
@@ -67,7 +67,7 @@ bar
 EOF
 RUN
 
-NAME=at3 "?vi $$"@3;"?e bar"
+NAME=at3 ?vi $$ @ 3; ?e bar
 FILE=malloc://1024
 CMDS=?vi $$ @ 3;?e bar
 EXPECT=<<EOF
@@ -76,7 +76,7 @@ bar
 EOF
 RUN
 
-NAME=at3 "?vi $$"@3;"?e bar"
+NAME=at3 ?vi $$ @ 3; ?e bar
 FILE=malloc://1024
 CMDS=?vi $$ @ 3; ?e bar
 EXPECT=<<EOF
@@ -85,7 +85,7 @@ bar
 EOF
 RUN
 
-NAME="?v 1>>>2 ror"
+NAME=?v "1>>>2" ror
 FILE=malloc://1024
 CMDS=?v "1>>>2"
 EXPECT=<<EOF
@@ -93,7 +93,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME="?v 0xdeadbeef<<<40 rol"
+NAME=?v "0xdeadbeef<<<40" rol
 FILE=malloc://1024
 CMDS=?v "0xdeadbeef<<<40"
 EXPECT=<<EOF
