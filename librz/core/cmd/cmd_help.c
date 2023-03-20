@@ -341,7 +341,7 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 /// printing will be done in JSON format and not standard one.
 /// So basically it's the third paramter that decides in which paramter
 /// data will be displayed.
-RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ* pj) {
+RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ *pj) {
 	rz_return_val_if_fail(core && input, false);
 
 	char unit[8];
@@ -373,7 +373,8 @@ RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		d = -d;
 	}
 
-	if (pj) {;
+	if (pj) {
+		;
 		pj_o(pj);
 		if (n >> 32) {
 			pj_ks(pj, "int32", rz_strf(number, "%d", (st32)(n & UT32_MAX)));
@@ -426,7 +427,7 @@ RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const
 
 RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	bool res;
-	if(state->mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		res = rz_core_cmd_calculate_expr(core, argv[1], state->d.pj);
 	} else {
 		res = rz_core_cmd_calculate_expr(core, argv[1], NULL);

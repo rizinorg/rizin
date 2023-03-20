@@ -6424,7 +6424,7 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
  * \param core RzCore instance performing analysis.
  * \return true if core is debugging, false otherwise.
  * */
-RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore* core) {
+RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core) {
 	return core && core->io && core->io->desc && core->io->desc->plugin && core->io->desc->plugin->isdbg;
 }
 
@@ -6454,7 +6454,7 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	rz_cons_clear_line(1);
 
 	// if type was simple only then don't proceed further
-	if(type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
+	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
 		goto finish;
 	}
 
