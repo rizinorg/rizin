@@ -59,12 +59,11 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	const int len = strlen(name);
 	int question_mark_count = 0;
 	// bool question_mark_exists = false;
+	bool metainfo_shown = false;
 
 
-	for(int i = 0;i<strlen(name);i++)
-	{
-		if(name[i] == '?')
-		{
+	for(int i = 0;i<strlen(name);i++){
+		if(name[i] == '?'){
 			question_mark_count++;
 			// question_mark_exists = true;
 		}
@@ -93,42 +92,38 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	char *system_file_cpy = strdup(system_file);
 
 
-	if(name[len-1] == '?' && (question_mark_count == 1))
-	{	
+	if(name[len-1] == '?' && (question_mark_count == 1)){	
 		system_file_cpy[strlen(system_file_cpy) - 1] = '\0';
 		FILE *path = rz_sys_fopen(system_file_cpy,"r");
-		rz_cons_printf("The new system file path is %s\n",system_file_cpy);
-		rz_cons_printf("The old system file path is %s\n",system_file);
 
-		if(!path)
-		{
+		if(!path){
 			RZ_LOG_ERROR("Error in opening colourscheme file at '%s'\n", system_file_cpy);
 			failed = true;
 			return !failed;
 		}
 		else{
-		rz_cons_printf("%s","File opened successfully!\n");
+		rz_cons_printf("%s","Color theme details!\n");
 		}
 
 		bool beginflag = false;		
 		char line[256];
-		while((fgets(line , sizeof(line) , path) != NULL) && (strcmp(line,"# END\n") != 0) )
-		{
+		while((fgets(line , sizeof(line) , path) != NULL) && (strcmp(line,"# END\n") != 0) ){
 			
 			if(beginflag == true){
 
 				rz_cons_println(line);
 			}
-			if(strcmp(line,"# BEGIN\n" )== 0)
-			{
+			if(strcmp(line,"# BEGIN\n" )== 0){
 				beginflag = true;
 			}
 		}
+		metainfo_shown = true;
 
 	}
-	if(!(load_theme(core, home_file)) || (question_mark_count > 1)) 
-	{
-		rz_cons_printf("The home file before the normal colour scheme changer is %s",home_file);
+
+	/* The metainfo_shown variable was used because making the below if statement into an else statement kept throwing errors */
+
+	if((!(load_theme(core, home_file)) || (question_mark_count > 1)) && (metainfo_shown == false)) {
 
 		if (load_theme(core, system_file)) {
 			core->curtheme = rz_str_dup(core->curtheme, name);
