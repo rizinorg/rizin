@@ -484,8 +484,7 @@ RZ_IPI RzCmdStatus rz_print_ascii_table_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **argv) {
 	char out[128] = RZ_EMPTY;
-	ut64 n;
-	n = rz_num_math(core->num, argv[1]);
+	ut64 n = rz_num_math(core->num, argv[1]);
 	rz_num_to_bits(out, n);
 	rz_cons_printf("%sb\n", out);
 	return RZ_CMD_STATUS_OK;
@@ -561,8 +560,7 @@ RZ_IPI RzCmdStatus rz_flush_console_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_print_bitstring_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n = 0;
-	n = rz_num_get(core->num, argv[1]);
+	ut64 n = rz_num_get(core->num, argv[1]);
 	char out[128] = RZ_EMPTY;
 	rz_str_bits(out, (const ut8 *)&n, sizeof(n) * 8, argv[2]);
 	rz_cons_println(out);
@@ -604,12 +602,7 @@ RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	ut64 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -619,12 +612,7 @@ RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	ut64 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -634,12 +622,7 @@ RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_show_value_i1_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	st8 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -649,12 +632,7 @@ RZ_IPI RzCmdStatus rz_show_value_i1_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	st16 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -664,12 +642,7 @@ RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	st32 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -678,12 +651,7 @@ RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char **argv) {
-	ut64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	st64 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -692,12 +660,7 @@ RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv) {
-	st64 n;
-	if (argc == 1) {
-		n = core->num->value;
-	} else {
-		n = rz_num_math(core->num, argv[1]);
-	}
+	st64 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
@@ -738,11 +701,6 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int 
 	}
 	return RZ_CMD_STATUS_OK;
 }
-
-/* RZ_IPI RzCmdStatus rz_show_help_at_handler(RzCore *core, int argc, const char **argv) { */
-/* 	rz_core_cmd_help(core, help_msg_at); */
-/* 	return RZ_CMD_STATUS_OK; */
-/* } */
 
 RZ_IPI RzCmdStatus rz_show_help_tasks_handler(RzCore *core, int argc, const char **argv) {
 	helpCmdTasks(core);
@@ -880,7 +838,7 @@ RZ_IPI RzCmdStatus rz_clippy_echo_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_echo_msg_newline_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
+	if (argc > 1) {
 		const char *msg = argv[1];
 		// TODO: replace all ${flagname} by its value in hexa
 		char *newmsg = filterFlags(core, msg);
