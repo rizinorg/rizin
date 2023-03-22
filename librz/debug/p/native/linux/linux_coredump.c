@@ -34,6 +34,8 @@ typedef ut64 elf_offset_t;
 #define round_up(a)        ((((a) + (4) - (1)) / (4)) * (4))
 #define sizeof_round_up(b) round_up(sizeof(b))
 
+#define NO_STR_SZ 128
+
 static map_file_t mapping_file = { 0, 0 };
 static note_info_t note_info[NT_LENGHT_T];
 
@@ -141,13 +143,13 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		return NULL;
 	}
 	{
-		char no_str[128];
+		char no_str[NO_STR_SZ + 1];
 		long unsigned int no_lui;
 		int no_num;
 		char no_char;
 		ut32 no_ui;
-		sscanf(buff, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu"
-			     "%" PFMT64x " %" PFMT64x " %ld %lu",
+		sscanf(buff, "%d %" RZ_STR_DEF(NO_STR_SZ) "s %c %d %d %d %d %d %u %lu %lu %lu %lu"
+							  "%" PFMT64x " %" PFMT64x " %ld %lu",
 			&no_num, no_str, &no_char, &no_num, &no_num, &no_num,
 			&no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
 			&no_lui, &t->utime, &t->stime, &t->cutime, &t->cstime);
@@ -796,12 +798,12 @@ static proc_per_process_t *get_proc_process_content(RzDebug *dbg) {
 	/* /proc/[pid]/stat */
 	/* we only need few fields which are process-wide */
 	{
-		char no_str[128];
+		char no_str[NO_STR_SZ + 1];
 		long unsigned int no_lui;
 		long int no_li;
 		int no_num;
-		sscanf(buff, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu"
-			     "%lu %lu %ld %ld %ld %ld %ld",
+		sscanf(buff, "%d %" RZ_STR_DEF(NO_STR_SZ) "s %c %d %d %d %d %d %u %lu %lu %lu %lu"
+							  "%lu %lu %ld %ld %ld %ld %ld",
 			&p->pid, no_str, &p->s_name, &p->ppid, &p->pgrp, &no_num,
 			&no_num, &p->sid, &p->flag, &no_lui, &no_lui, &no_lui,
 			&no_lui, &no_lui, &no_lui, &no_li, &no_li,
