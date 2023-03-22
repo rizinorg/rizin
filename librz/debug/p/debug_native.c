@@ -86,6 +86,14 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
+#define PROC_NAME_SZ   1024
+#define PROC_REGION_SZ 100
+// PROC_REGION_SZ - 2 (used for `0x`). Due to how RZ_STR_DEF works this can't be
+// computed.
+#define PROC_REGION_LEFT_SZ 98
+#define PROC_PERM_SZ        5
+#define PROC_UNKSTR_SZ      128
+
 #if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__
 static int rz_debug_handle_signals(RzDebug *dbg) {
 #if __KFBSD__ || __NetBSD__
@@ -990,7 +998,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	RzList *list = NULL;
 #if __KFBSD__
 	int ign;
-	char unkstr[128];
+	char unkstr[PROC_UNKSTR_SZ + 1];
 #endif
 #if __APPLE__
 	list = xnu_dbg_maps(dbg, 0);
@@ -1006,8 +1014,8 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 	RzDebugMap *map;
 	int i, perm, unk = 0;
 	char *pos_c;
-	char path[1024], line[1024], name[1024];
-	char region[100], region2[100], perms[5];
+	char path[1024], line[1024], name[PROC_NAME_SZ + 1];
+	char region[PROC_REGION_SZ + 1], region2[PROC_REGION_SZ + 1], perms[PROC_PERM_SZ + 1];
 	FILE *fd;
 	if (dbg->pid == -1) {
 		// eprintf ("rz_debug_native_map_get: No selected pid (-1)\n");
@@ -1063,7 +1071,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
-		if (sscanf(line, "%s %s %d %d 0x%s %3s %d %d",
+		if (sscanf(line, "%" RZ_STR_DEF(PROC_REGION_LEFT_SZ) "s %" RZ_STR_DEF(PROC_REGION_LEFT_SZ) "s %d %d 0x%" RZ_STR_DEF(PROC_UNKSTR_SZ) "s %3s %d %d",
 			    &region[2], &region2[2], &ign, &ign,
 			    unkstr, perms, &ign, &ign) != 8) {
 			eprintf("%s: Unable to parse \"%s\"\n", __func__, path);
@@ -1082,7 +1090,7 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_map_get(RzDebug *dbg) {
 		ut64 offset = 0;
 		;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		i = sscanf(line, "%s %s %08" PFMT64x " %*s %*s %[^\n]", &region[2], perms, &offset, name);
+		i = sscanf(line, "%" RZ_STR_DEF(PROC_REGION_LEFT_SZ) "s %" RZ_STR_DEF(PROC_PERM_SZ) "s %08" PFMT64x " %*s %*s %" RZ_STR_DEF(PROC_NAME_SZ) "[^\n]", &region[2], perms, &offset, name);
 		if (i == 3) {
 			name[0] = '\0';
 		} else if (i != 4) {
