@@ -56,6 +56,13 @@ typedef struct {
 	int perm;
 } RzIOSelfSection;
 
+#define PROC_NAME_SZ   1024
+#define PROC_REGION_SZ 100
+// PROC_REGION_SZ - 2 (used for `0x`). Due to how RZ_STR_DEF works this can't be
+// computed.
+#define PROC_REGION_LEFT_SZ 98
+#define PROC_PERM_SZ        5
+
 static RzIOSelfSection self_sections[1024];
 static int self_sections_count = 0;
 static bool mameio = false;
@@ -91,8 +98,8 @@ static int update_self_regions(RzIO *io, int pid) {
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
-	char path[1024], line[1024];
-	char region[100], region2[100], perms[5];
+	char path[1024], line[1024], name[PROC_NAME_SZ + 1];
+	char region[PROC_REGION_SZ + 1], region2[PROC_REGION_SZ + 1], perms[PROC_PERM_SZ + 1];
 	snprintf(path, sizeof(path) - 1, "/proc/%d/maps", pid);
 	FILE *fd = rz_sys_fopen(path, "r");
 	if (!fd) {
@@ -107,8 +114,9 @@ static int update_self_regions(RzIO *io, int pid) {
 		if (line[0] == '\0') {
 			break;
 		}
-		path[0] = '\0';
-		sscanf(line, "%s %s %*s %*s %*s %[^\n]", region + 2, perms, path);
+		name[0] = '\0';
+		sscanf(line, "%" RZ_STR_DEF(PROC_REGION_LEFT_SZ) "s %" RZ_STR_DEF(PROC_PERM_SZ) "s %*s %*s %*s %" RZ_STR_DEF(PROC_NAME_SZ) "[^\n]",
+			region + 2, perms, name);
 		memcpy(region, "0x", 2);
 		pos_c = strchr(region + 2, '-');
 		if (pos_c) {
@@ -130,7 +138,7 @@ static int update_self_regions(RzIO *io, int pid) {
 		}
 		self_sections[self_sections_count].from = rz_num_get(NULL, region);
 		self_sections[self_sections_count].to = rz_num_get(NULL, region2);
-		self_sections[self_sections_count].name = strdup(path);
+		self_sections[self_sections_count].name = strdup(name);
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
 		rz_num_get(NULL, region2);
