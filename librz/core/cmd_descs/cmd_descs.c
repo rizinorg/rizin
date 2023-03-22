@@ -1580,7 +1580,7 @@ static const RzCmdDescArg recover_all_golang_functions_strings_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp recover_all_golang_functions_strings_help = {
-	.summary = "Recovers and analyze all Golang functions and strings",
+	.summary = "Recover and analyze all Golang functions and strings",
 	.args = recover_all_golang_functions_strings_args,
 };
 
@@ -1588,8 +1588,16 @@ static const RzCmdDescArg analyze_all_objc_references_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_all_objc_references_help = {
-	.summary = "Analyze all Objective-C references",
+	.summary = "Analyze all Objective-C references from selector usages to their implementations",
 	.args = analyze_all_objc_references_args,
+};
+
+static const RzCmdDescArg analyze_all_objc_stubs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_all_objc_stubs_help = {
+	.summary = "Recover all Objective-C selector stub names (__objc_stubs section contents)",
+	.args = analyze_all_objc_stubs_args,
 };
 
 static const RzCmdDescHelp aan_help = {
@@ -17509,8 +17517,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *recover_all_golang_functions_strings_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalg", rz_recover_all_golang_functions_strings_handler, &recover_all_golang_functions_strings_help);
 	rz_warn_if_fail(recover_all_golang_functions_strings_cd);
 
-	RzCmdDesc *analyze_all_objc_references_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalo", rz_analyze_all_objc_references_handler, &analyze_all_objc_references_help);
+	RzCmdDesc *analyze_all_objc_references_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalor", rz_analyze_all_objc_references_handler, &analyze_all_objc_references_help);
 	rz_warn_if_fail(analyze_all_objc_references_cd);
+
+	RzCmdDesc *analyze_all_objc_stubs_cd = rz_cmd_desc_argv_new(core->rcmd, aal_cd, "aalos", rz_analyze_all_objc_stubs_handler, &analyze_all_objc_stubs_help);
+	rz_warn_if_fail(analyze_all_objc_stubs_cd);
 
 	RzCmdDesc *aan_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aan", rz_autoname_all_functions_handler, &autoname_all_functions_help, &aan_help);
 	rz_warn_if_fail(aan_cd);
