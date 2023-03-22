@@ -451,11 +451,7 @@ RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, const char **argv) {
 	// TODO : Add support for 64bit random numbers
 	ut64 b = 0;
-	ut32 r = UT32_MAX;
-
-	if (argc == 1) {
-		r = 0;
-	}
+	ut32 r = argc < 2 ? 0 : UT32_MAX;
 
 	if (argc == 2) {
 		const char *out = argv[1];

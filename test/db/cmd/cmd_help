@@ -47,20 +47,8 @@ RUN
 FILE=malloc://1024
 CMDS=<<EOF
 ?v
-# ?=
-# ??
 ?e
-# ?b
-# ?f
 ?p
-# ?s
-# ?x
-# ?X
-# ?l
-# ?t is used for get the execution time, thus shall be ignored.
-# ?!
-# ?+
-# ?-
 EOF
 EXPECT=<<EOF
 0x0
@@ -601,5 +589,19 @@ EXPECT=<<EOF
 0x4028a0
 0x004028a0
 0x004028a0
+EOF
+RUN
+
+NAME=djb2 hash
+FILE==
+CMDS=<<EOF
+?h 1024
+?h ILoveRizin
+?h RizinLovesMe2
+EOF
+EXPECT=<<EOF
+0x50489162
+0x56b7215a
+0xe859883a
 EOF
 RUN
