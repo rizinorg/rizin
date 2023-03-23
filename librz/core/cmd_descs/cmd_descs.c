@@ -132,8 +132,7 @@ static const RzCmdDescArg compare_and_set_core_num_value_args[3];
 static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_negative_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_zero_args[2];
-static const RzCmdDescArg compute_string_length_args[2];
-static const RzCmdDescArg compute_string_length_quiet_args[2];
+static const RzCmdDescArg calculate_string_length_args[2];
 static const RzCmdDescArg calc_expr_show_hex_args[2];
 static const RzCmdDescArg ascii_to_hex_args[2];
 static const RzCmdDescArg numeric_expr_to_hex_args[2];
@@ -1740,7 +1739,7 @@ static const RzCmdDescArg eval_expr_print_octal_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp eval_expr_print_octal_help = {
-	.summary = "Evalue expression and print value in octal.",
+	.summary = "Evaluate expression and print value in octal.",
 	.details = eval_expr_print_octal_details,
 	.args = eval_expr_print_octal_args,
 };
@@ -2074,14 +2073,6 @@ static const RzCmdDescHelp show_version_numeric2_help = {
 	.args = show_version_numeric2_args,
 };
 
-static const RzCmdDescArg show_version_quiet_mode_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp show_version_quiet_mode_help = {
-	.summary = "Quite mode version info",
-	.args = show_version_quiet_mode_args,
-};
-
 static const RzCmdDescArg show_version_major_args[] = {
 	{ 0 },
 };
@@ -2106,10 +2097,7 @@ static const RzCmdDescHelp show_version_patch_help = {
 	.args = show_version_patch_args,
 };
 
-static const RzCmdDescHelp question_l_help = {
-	.summary = "String length calculation commands",
-};
-static const RzCmdDescArg compute_string_length_args[] = {
+static const RzCmdDescArg calculate_string_length_args[] = {
 	{
 		.name = "str",
 		.type = RZ_CMD_ARG_TYPE_STRING,
@@ -2118,23 +2106,9 @@ static const RzCmdDescArg compute_string_length_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp compute_string_length_help = {
-	.summary = "Calculate length of given string and store in $? register",
-	.args = compute_string_length_args,
-};
-
-static const RzCmdDescArg compute_string_length_quiet_args[] = {
-	{
-		.name = "str",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp compute_string_length_quiet_help = {
-	.summary = "Calculate length of given string and store in $? register but print nothing (quietly).",
-	.args = compute_string_length_quiet_args,
+static const RzCmdDescHelp calculate_string_length_help = {
+	.summary = "Calculate length of string. Quite mode stores value in `$?` register.",
+	.args = calculate_string_length_args,
 };
 
 static const RzCmdDescArg calc_expr_show_hex_args[] = {
@@ -2303,7 +2277,7 @@ static const RzCmdDescArg echo_show_progress_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp echo_show_progress_help = {
-	.summary = "Evalue numerical and show a progress bar",
+	.summary = "Evaluate numerical and show a progress bar",
 	.args = echo_show_progress_args,
 };
 
@@ -18676,7 +18650,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *show_help_dollar_cd = rz_cmd_desc_argv_new(core->rcmd, question__dollar__cd, "?$?", rz_show_help_dollar_handler, &show_help_dollar_help);
 	rz_warn_if_fail(show_help_dollar_cd);
 
-	RzCmdDesc *question_V_cd = rz_cmd_desc_group_new(core->rcmd, cmd_help_cd, "?V", rz_show_version_info_handler, &show_version_info_help, &question_V_help);
+	RzCmdDesc *question_V_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_help_cd, "?V", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_show_version_info_handler, &show_version_info_help, &question_V_help);
 	rz_warn_if_fail(question_V_cd);
 	RzCmdDesc *show_version_numeric_cd = rz_cmd_desc_argv_new(core->rcmd, question_V_cd, "?Vc", rz_show_version_numeric_handler, &show_version_numeric_help);
 	rz_warn_if_fail(show_version_numeric_cd);
@@ -18687,9 +18661,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *show_version_numeric2_cd = rz_cmd_desc_argv_new(core->rcmd, question_V_cd, "?Vn", rz_show_version_numeric2_handler, &show_version_numeric2_help);
 	rz_warn_if_fail(show_version_numeric2_cd);
 
-	RzCmdDesc *show_version_quiet_mode_cd = rz_cmd_desc_argv_new(core->rcmd, question_V_cd, "?Vq", rz_show_version_quiet_mode_handler, &show_version_quiet_mode_help);
-	rz_warn_if_fail(show_version_quiet_mode_cd);
-
 	RzCmdDesc *show_version_major_cd = rz_cmd_desc_argv_new(core->rcmd, question_V_cd, "?V0", rz_show_version_major_handler, &show_version_major_help);
 	rz_warn_if_fail(show_version_major_cd);
 
@@ -18699,10 +18670,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *show_version_patch_cd = rz_cmd_desc_argv_new(core->rcmd, question_V_cd, "?V2", rz_show_version_patch_handler, &show_version_patch_help);
 	rz_warn_if_fail(show_version_patch_cd);
 
-	RzCmdDesc *question_l_cd = rz_cmd_desc_group_new(core->rcmd, cmd_help_cd, "?l", rz_compute_string_length_handler, &compute_string_length_help, &question_l_help);
-	rz_warn_if_fail(question_l_cd);
-	RzCmdDesc *compute_string_length_quiet_cd = rz_cmd_desc_argv_new(core->rcmd, question_l_cd, "?lq", rz_compute_string_length_quiet_handler, &compute_string_length_quiet_help);
-	rz_warn_if_fail(compute_string_length_quiet_cd);
+	RzCmdDesc *calculate_string_length_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_help_cd, "?l", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_calculate_string_length_handler, &calculate_string_length_help);
+	rz_warn_if_fail(calculate_string_length_cd);
 
 	RzCmdDesc *calc_expr_show_hex_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_help_cd, "?X", rz_calc_expr_show_hex_handler, &calc_expr_show_hex_help);
 	rz_warn_if_fail(calc_expr_show_hex_cd);

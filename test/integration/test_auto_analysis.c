@@ -105,7 +105,7 @@ struct test_bin_fcn_level bin_fcn_list[] = {
 	{"bins/elf/ls", "fcn.00016320", RZ_CORE_ANALYSIS_DEEP},
 };
 
-const ut32 bin_fcn_list_size = sizeof(bin_fcn_list)/sizeof(bin_fcn_list[0]);
+const ut32 bin_fcn_list_size = RZ_ARRAY_SIZE(bin_fcn_list);
 
 bool test_fcn_list_size() {
 	for(ut32 i = 0; i < bin_fcn_list_size; ++i) {

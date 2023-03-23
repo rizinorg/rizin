@@ -718,10 +718,14 @@ RZ_IPI RzCmdStatus rz_show_help_dollar_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv) {
-	char *v = rz_version_str(NULL);
-	rz_cons_printf("%s\n", v);
-	free(v);
+RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
+		char *v = rz_version_str(NULL);
+		rz_cons_printf("%s\n", v);
+		free(v);
+	} else {
+		rz_cons_println(RZ_VERSION);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -756,10 +760,6 @@ RZ_IPI RzCmdStatus rz_show_version_numeric2_handler(RzCore *core, int argc, cons
 	rz_cons_printf("%d\n", RZ_VERSION_NUMBER);
 	return RZ_CMD_STATUS_OK;
 }
-RZ_IPI RzCmdStatus rz_show_version_quiet_mode_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_println(RZ_VERSION);
-	return RZ_CMD_STATUS_OK;
-}
 
 RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv) {
 	rz_cons_printf("%d\n", RZ_VERSION_MAJOR);
@@ -776,14 +776,11 @@ RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_compute_string_length_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_calculate_string_length_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	core->num->value = strlen(argv[1]);
-	rz_cons_printf("%" PFMT64d "\n", core->num->value);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_compute_string_length_quiet_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = strlen(argv[1]);
+	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_cons_printf("%" PFMT64d "\n", core->num->value);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

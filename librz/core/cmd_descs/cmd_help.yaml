@@ -150,7 +150,7 @@ commands:
             arg_str: " 12 Hello"
             comment: "LL (00110b selected : big-endian bitstring)"
   - name: "?o"
-    summary: Evalue expression and print value in octal.
+    summary: Evaluate expression and print value in octal.
     cname: eval_expr_print_octal
     args:
       - name: input
@@ -331,6 +331,10 @@ commands:
         summary: Show version info
         cname: show_version_info
         args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
       - name: "?Vc"
         summary: Show numeric version
         cname: show_version_numeric
@@ -342,10 +346,6 @@ commands:
       - name: "?Vn"
         summary: Show numeric version
         cname: show_version_numeric2
-        args: []
-      - name: "?Vq"
-        summary: Quite mode version info
-        cname: show_version_quiet_mode
         args: []
       - name: "?V0"
         summary: Show major version
@@ -360,20 +360,15 @@ commands:
         cname: show_version_patch
         args: []
   - name: "?l"
-    summary: String length calculation commands
-    subcommands:
-      - name: "?l"
-        summary: Calculate length of given string and store in $? register
-        cname: compute_string_length
-        args:
-          - name: str
-            type: RZ_CMD_ARG_TYPE_STRING
-      - name: "?lq"
-        summary: Calculate length of given string and store in $? register but print nothing (quietly).
-        cname: compute_string_length_quiet
-        args:
-          - name: str
-            type: RZ_CMD_ARG_TYPE_STRING
+    summary: Calculate length of string. Quite mode stores value in `$?` register.
+    cname: calculate_string_length
+    args:
+      - name: str
+        type: RZ_CMD_ARG_TYPE_STRING
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
   - name: "?X"
     summary: Show evaluated expression in hex
     cname: calc_expr_show_hex
@@ -452,7 +447,7 @@ commands:
           - name: c
             type: RZ_CMD_ARG_TYPE_RZNUM
       - name: "?e="
-        summary: Evalue numerical and show a progress bar
+        summary: Evaluate numerical and show a progress bar
         cname: echo_show_progress
         args:
           - name: prog

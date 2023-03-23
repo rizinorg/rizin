@@ -158,15 +158,13 @@ RZ_IPI RzCmdStatus rz_show_help_vars_handler(RzCore *core, int argc, const char 
 // "?$?"
 RZ_IPI RzCmdStatus rz_show_help_dollar_handler(RzCore *core, int argc, const char **argv);
 // "?V"
-RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "?Vc"
 RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv);
 // "?Vj"
 RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv);
 // "?Vn"
 RZ_IPI RzCmdStatus rz_show_version_numeric2_handler(RzCore *core, int argc, const char **argv);
-// "?Vq"
-RZ_IPI RzCmdStatus rz_show_version_quiet_mode_handler(RzCore *core, int argc, const char **argv);
 // "?V0"
 RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv);
 // "?V1"
@@ -174,9 +172,7 @@ RZ_IPI RzCmdStatus rz_show_version_minor_handler(RzCore *core, int argc, const c
 // "?V2"
 RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const char **argv);
 // "?l"
-RZ_IPI RzCmdStatus rz_compute_string_length_handler(RzCore *core, int argc, const char **argv);
-// "?lq"
-RZ_IPI RzCmdStatus rz_compute_string_length_quiet_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_calculate_string_length_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "?X"
 RZ_IPI RzCmdStatus rz_calc_expr_show_hex_handler(RzCore *core, int argc, const char **argv);
 // "?x"
