@@ -148,7 +148,7 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.entries = &entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
-	.symbols = &symbols,
+	.populate_symbols = &symbols,
 	.info = &info,
 	.strings = &strings,
 };

@@ -217,25 +217,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		ptr->name = strdup((char *)syms[i].name);
 		ptr->is_imported = syms[i].is_imported;
-		if (ptr->name[0] == '_' && !ptr->is_imported) {
-			char *dn = rz_bin_demangle(bf, ptr->name, ptr->name, ptr->vaddr, false);
-			if (dn) {
-				ptr->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(ptr->name[0])) {
-						ptr->classname = strdup(ptr->name);
-						ptr->classname[p - ptr->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						ptr->classname = strdup(p + 1);
-						p = strchr(ptr->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
 		ptr->forwarder = "NONE";
 		ptr->bind = (syms[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
@@ -288,6 +269,33 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	}
 	set_u_free(symcache);
 	return ret;
+}
+
+static void demangle(RZ_BORROW RzBinFile *bf, RZ_BORROW RzList /*<RzBinSymbol *>*/ *symbols) {
+	RzListIter *itr;
+	RzBinSymbol *sym;
+
+	rz_list_foreach (symbols, itr, sym) {
+		if (sym->name[0] == '_' && !sym->is_imported) {
+			char *dn = rz_bin_demangle(bf, NULL, sym->name, sym->vaddr, false);
+			if (dn) {
+				sym->dname = dn;
+				char *p = strchr(dn, '.');
+				if (p) {
+					if (IS_UPPER(sym->name[0])) {
+						sym->classname = strdup(sym->name);
+						sym->classname[p - sym->name] = 0;
+					} else if (IS_UPPER(p[1])) {
+						sym->classname = strdup(p + 1);
+						p = strchr(sym->classname, '.');
+						if (p) {
+							*p = 0;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *imports_by_name) {
@@ -840,7 +848,8 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.virtual_files = &virtual_files,
 	.maps = &maps,
 	.sections = &sections,
-	.symbols = &symbols,
+	.populate_symbols = &symbols,
+	.demangle_symbols = &demangle,
 	.imports = &imports,
 	.strings = &strings,
 	.size = &size,

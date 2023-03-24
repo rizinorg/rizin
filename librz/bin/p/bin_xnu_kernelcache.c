@@ -1264,6 +1264,21 @@ static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(ob
 		}
 		sym->name = strdup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
+		sym->forwarder = "NONE";
+		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? "LOCAL" : "GLOBAL";
+		sym->type = "FUNC";
+		sym->paddr = symbols[i].offset + bf->o->boffset + paddr;
+		sym->size = symbols[i].size;
+		sym->ordinal = ordinal + i;
+		rz_list_append(ret, sym);
+	}
+}
+
+static void demangle(RZ_BORROW RzBinFile *bf, RZ_BORROW RzList /*<RzBinSymbol *>*/ *symbols) {
+	RzListIter *itr;
+	RzBinSymbol *sym;
+
+	rz_list_foreach (symbols, itr, sym) {
 		if (sym->name[0] == '_') {
 			char *dn = rz_bin_demangle(bf, sym->name, sym->name, sym->vaddr, false);
 			if (dn) {
@@ -1283,13 +1298,6 @@ static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(ob
 				}
 			}
 		}
-		sym->forwarder = "NONE";
-		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? "LOCAL" : "GLOBAL";
-		sym->type = "FUNC";
-		sym->paddr = symbols[i].offset + bf->o->boffset + paddr;
-		sym->size = symbols[i].size;
-		sym->ordinal = ordinal + i;
-		rz_list_append(ret, sym);
 	}
 }
 
@@ -1939,7 +1947,8 @@ RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.baddr = &baddr,
 	.virtual_files = &virtual_files,
 	.maps = &maps,
-	.symbols = &symbols,
+	.populate_symbols = &symbols,
+	.demangle_symbols = &demangle,
 	.sections = &sections,
 	.check_buffer = &check_buffer,
 	.info = &info

@@ -528,7 +528,8 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinAddr *>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection *>*/ *(*sections)(RzBinFile *bf);
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
-	RzList /*<RzBinSymbol *>*/ *(*symbols)(RzBinFile *bf);
+	RzList /*<RzBinSymbol *>*/ *(*populate_symbols)(RzBinFile *bf); //< populate the symbols
+	void (*demangle_symbols)(RZ_BORROW RzBinFile *file, RZ_BORROW RzList /*<RzBinSymbol *>*/ *symbols); //< demangle the symbols (must be called after populate_symbols)
 	RzList /*<RzBinImport *>*/ *(*imports)(RzBinFile *bf);
 	RzList /*<RzBinString *>*/ *(*strings)(RzBinFile *bf);
 	RzBinInfo *(*info)(RzBinFile *bf);

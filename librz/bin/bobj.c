@@ -451,8 +451,8 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			rz_warn_if_fail(o->imports->free);
 		}
 	}
-	if (p->symbols) {
-		o->symbols = p->symbols(bf);
+	if (p->populate_symbols) {
+		o->symbols = p->populate_symbols(bf);
 		if (o->symbols) {
 			REBASE_PADDR(o, o->symbols, RzBinSymbol);
 			if (bin->filter) {
@@ -525,6 +525,10 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	}
 
 	o->lang = rz_bin_language_detect(bf);
+
+	if (p->demangle_symbols) {
+		p->demangle_symbols(bf, o->symbols);
+	}
 
 	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
 		if (p->classes) {

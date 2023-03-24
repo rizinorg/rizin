@@ -173,7 +173,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.entries = &entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
-	.symbols = &symbols,
+	.populate_symbols = &symbols,
 	.info = &info,
 	.get_vaddr = &get_vaddr,
 };

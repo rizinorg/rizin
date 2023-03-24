@@ -485,7 +485,7 @@ RzBinPlugin rz_bin_plugin_mdmp = {
 	.relocs = &mdmp_relocs,
 	.maps = &mdmp_maps,
 	.sections = &mdmp_sections,
-	.symbols = &mdmp_symbols,
+	.populate_symbols = &mdmp_symbols,
 	.strings = &mdmp_strings,
 };
 
