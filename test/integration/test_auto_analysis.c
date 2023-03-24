@@ -7,7 +7,17 @@
 
 #include "../unit/minunit.h"
 
-bool test_detected_functions_list_size(const char* fpath) {
+typedef struct test_fcn_level {
+	const char *fcn_name; ///< name of function
+	RzCoreAnalysisType analysis_type; ///< analysis level to test presence at
+} TestFcnLevel;
+
+typedef struct test_bin_fcn_level {
+	const char *fpath;
+	TestFcnLevel test_fcns[5]; ///< maximum of 5 functions (can be expanded)
+} TestBinFcnLevel;
+
+bool test_detected_functions_list_size(const char *fpath) {
 	// new core
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "new RzCore instance");
@@ -49,60 +59,99 @@ bool test_detected_functions_list_size(const char* fpath) {
 	mu_end;
 }
 
+// compare function for rz_list_find
+int cmp_fcn_name(const void *value, const void *list_data) {
+	RzAnalysisFunction *fcn = (RzAnalysisFunction*)list_data;
+	return strcmp((const char*)value, fcn->name);
+}
+
 // new functions can be found at analysis levels DEEP(aaa) and EXPERIMENTAL(aaaa)
-bool test_new_functions_detected_at_level(RzCoreAnalysisType analysis_type, const char* fpath, const char* fcn_name) {
+bool test_new_functions_detected_at_level(TestBinFcnLevel testbin) {
 	// new core
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "new RzCore instance");
 
 	// load test file
 	ut64 loadaddr = 0;
-	rz_core_bin_load(core, fpath, loadaddr);
+	rz_core_bin_load(core, testbin.fpath, loadaddr);
 
-	// perform analysis and get function list
-	rz_core_perform_auto_analysis(core, analysis_type);
+	// simple analyis will always be performed
+	RzCoreAnalysisType last_analysis_type = RZ_CORE_ANALYSIS_SIMPLE;
+	rz_core_perform_auto_analysis(core, last_analysis_type);
 	RzList *fcn_list = rz_analysis_function_list(core->analysis);
-	ut32 fcn_list_len = rz_list_length(fcn_list);
 	mu_assert_notnull(fcn_list, "function list retrieved");
 
-	// find requested function
-	bool found = false;
-	for(ut32 i = 0; i < fcn_list_len; ++i) {
-		RzAnalysisFunction *fcn = (RzAnalysisFunction*)rz_list_pop_head(fcn_list);
-		if(!strcmp(fcn->name, fcn_name)) {
-			found = true;
-			break;
+	for(ut32 i = 0; i < 5; i++) {
+		const char *fcn_name = testbin.test_fcns[i].fcn_name;
+		RzCoreAnalysisType analysis_type = testbin.test_fcns[i].analysis_type;
+		if(fcn_name == NULL) {
+			 break;
+		 }
+
+		// perform analysis and get function list
+		if(analysis_type != last_analysis_type) {
+			rz_core_perform_auto_analysis(core, analysis_type);
+			fcn_list = rz_analysis_function_list(core->analysis);
+			mu_assert_notnull(fcn_list, "function list retrieved");
+
+			last_analysis_type = analysis_type;
 		}
+
+		// search function
+		bool fcn_found = rz_list_find(fcn_list, fcn_name, cmp_fcn_name) != NULL;
+		mu_assert("function not found at given analysis level", fcn_found);
 	}
-	mu_assert_true(found, "new detected function found");
 
 	// free core and end test
 	rz_core_free(core);
 	mu_end;
 }
 
-struct test_bin_fcn_level {
-	const char* fpath;
-	const char* fcn_name;
-	RzCoreAnalysisType analysis_type;
-};
+TestBinFcnLevel bin_fcn_list[] = {
+	{
+		"bins/arm/elf/hello-world",
+		{
+			/* fun name */      /* analysis level */
+			{"fcn.00000522", RZ_CORE_ANALYSIS_EXPERIMENTAL},
+			{"entry.init0",  RZ_CORE_ANALYSIS_SIMPLE},
+			{NULL, 0} /* ending entry */
+		}
+	},
 
-struct test_bin_fcn_level bin_fcn_list[] = {
-	{"bins/arm/elf/hello-world", "fcn.00000522", RZ_CORE_ANALYSIS_EXPERIMENTAL},
+	{
+		"bins/arm/elf/hello-world-buildroot-201402",
+		{
+			/* fun name */    /* analysis level */
+			{"fcn.00008300", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.00008274", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.00008200", RZ_CORE_ANALYSIS_DEEP},
+			{NULL, 0} /* ending entry */
+		}
+	},
 
-	{"bins/arm/elf/hello-world-buildroot-201402", "fcn.00008300", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/arm/elf/hello-world-buildroot-201402", "fcn.00008274", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/arm/elf/hello-world-buildroot-201402", "fcn.00008200", RZ_CORE_ANALYSIS_DEEP},
+	{
+		"bins/arm/elf/hello-world-linaro-201201",
+		{
+			/* fun name */    /* analysis level */
+			{"fcn.00008334", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.00008298", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.000082a4", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.000083bc", RZ_CORE_ANALYSIS_EXPERIMENTAL},
+			{NULL, 0} /* ending entry */
+		}
+	},
 
-	{"bins/arm/elf/hello-world-linaro-201201", "fcn.00008334", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/arm/elf/hello-world-linaro-201201", "fcn.00008298", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/arm/elf/hello-world-linaro-201201", "fcn.000082a4", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/arm/elf/hello-world-linaro-201201", "fcn.000083bc", RZ_CORE_ANALYSIS_EXPERIMENTAL},
-
-	{"bins/elf/ls", "fcn.00016530", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/elf/ls", "fcn.0000f1b0", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/elf/ls", "fcn.00010be0", RZ_CORE_ANALYSIS_DEEP},
-	{"bins/elf/ls", "fcn.00016320", RZ_CORE_ANALYSIS_DEEP},
+	{
+		"bins/elf/ls",
+		{
+			/* fun name */    /* analysis level */
+			{"fcn.00016530", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.0000f1b0", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.00010be0", RZ_CORE_ANALYSIS_DEEP},
+			{"fcn.00016320", RZ_CORE_ANALYSIS_DEEP},
+			{NULL, 0} /* ending entry */
+		}
+	},
 };
 
 const ut32 bin_fcn_list_size = RZ_ARRAY_SIZE(bin_fcn_list);
@@ -116,7 +165,7 @@ bool test_fcn_list_size() {
 
 bool test_new_fcn_detected() {
 	for(ut32 i = 0; i < bin_fcn_list_size; ++i) {
-		test_new_functions_detected_at_level(bin_fcn_list[i].analysis_type, bin_fcn_list[i].fpath, bin_fcn_list[i].fcn_name);
+		test_new_functions_detected_at_level(bin_fcn_list[i]);
 	}
 	mu_end;
 }
