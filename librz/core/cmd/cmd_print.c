@@ -5546,7 +5546,7 @@ RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, 
 		// rz_config_set (core->config, "asm.bytes", "false");
 	}
 	rz_config_set(core->config, "asm.bytes", "false");
-	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
+	RzConsCanvas *c = rz_cons_canvas_new(w, rows + 1);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
 	rz_core_block_size(core, rows * 32);
