@@ -49,6 +49,7 @@ EXPECT=<<EOF
 0x00000000 bge 0x156a95c                0x0000000c ldrbmi r0, [r3, 0xf00]!
 0x00000004 bge 0x156424c                0x00000010 pli [r5, -0xf34]
 0x00000008 smlalshs sb, pc, r0, r0      0x00000014 sbcgt sl, r0, lr, asr sl
+
 EOF
 RUN
 
