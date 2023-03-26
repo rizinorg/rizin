@@ -2,22 +2,14 @@
 #define RZ_BITMAP_H
 
 #include <rz_types.h>
-
-#if RZ_SYS_BITS == 4
-#define BITWORD_BITS_SHIFT 5
-#define RzBitword          ut32
-#else
-#define BITWORD_BITS_SHIFT 6
-#define RzBitword          ut64
-#endif
+#include "rz_bitvector.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct rz_bitmap_t {
-	size_t length;
-	RzBitword *bitmap;
+	RzBitVector *bv;
 } RzBitmap;
 
 RZ_API RZ_OWN RzBitmap *rz_bitmap_new(size_t len);
