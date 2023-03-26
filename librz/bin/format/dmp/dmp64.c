@@ -283,7 +283,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	for (ut64 i = 0; i < num_pages; i++) {
 		if (!rz_bv_get(bitmap, i)) {
 			create_new_page = true;
-			continue ;
+			continue;
 		}
 		if (!create_new_page) {
 			page->size += DMP_PAGE_SIZE;
