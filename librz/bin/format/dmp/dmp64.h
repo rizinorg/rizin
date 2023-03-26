@@ -23,7 +23,7 @@ typedef struct {
 
 struct rz_bin_dmp64_obj_t {
 	dmp64_header *header;
-	dmp_bv_header *bv_header;
+	dmp_bmp_header *bmp_header;
 	dmp64_triage *triage64_header;
 
 	dmp_p_memory_run *runs;

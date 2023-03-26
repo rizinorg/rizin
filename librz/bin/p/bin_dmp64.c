@@ -41,11 +41,11 @@ static void header(RzBinFile *bf) {
 	rbin->cb_printf("  ProductType : 0x%08" PFMT32x "\n", obj->header->ProductType);
 	rbin->cb_printf("  SuiteMask : 0x%08" PFMT32x "\n", obj->header->SuiteMask);
 
-	if (obj->bv_header) {
+	if (obj->bmp_header) {
 		rbin->cb_printf("\nBITMAP_DUMP:\n");
-		rbin->cb_printf("  HeaderSize : 0x%08" PFMT64x "\n", obj->bv_header->FirstPage);
-		rbin->cb_printf("  BitmapSize : 0x%08" PFMT64x "\n", obj->bv_header->Pages);
-		rbin->cb_printf("  Pages : 0x%08" PFMT64x "\n", obj->bv_header->TotalPresentPages);
+		rbin->cb_printf("  HeaderSize : 0x%08" PFMT64x "\n", obj->bmp_header->FirstPage);
+		rbin->cb_printf("  BitmapSize : 0x%08" PFMT64x "\n", obj->bmp_header->Pages);
+		rbin->cb_printf("  Pages : 0x%08" PFMT64x "\n", obj->bmp_header->TotalPresentPages);
 	} else if (obj->triage64_header) {
 		rbin->cb_printf("\nTRIAGE_DUMP64:\n");
 		rbin->cb_printf("  ServicePackBuild : 0x%08" PFMT32x "\n", obj->triage64_header->ServicePackBuild);
@@ -110,10 +110,10 @@ static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
 	FIELD(dmp64_header, ProductType);
 	FIELD(dmp64_header, SuiteMask);
 
-	if (obj->bv_header) {
-		FIELD(dmp_bv_header, FirstPage);
-		FIELD(dmp_bv_header, Pages);
-		FIELD(dmp_bv_header, TotalPresentPages);
+	if (obj->bmp_header) {
+		FIELD(dmp_bmp_header, FirstPage);
+		FIELD(dmp_bmp_header, Pages);
+		FIELD(dmp_bmp_header, TotalPresentPages);
 	} else if (obj->triage64_header) {
 		FIELD(dmp64_triage, ServicePackBuild);
 		FIELD(dmp64_triage, SizeOfDump);

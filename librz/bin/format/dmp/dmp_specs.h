@@ -136,7 +136,7 @@ typedef struct {
 	ut64 TotalPresentPages;
 	ut64 Pages;
 	ut8 Bitmap[1];
-} dmp_bv_header;
+} dmp_bmp_header;
 
 typedef struct {
 	ut32 ServicePackBuild;

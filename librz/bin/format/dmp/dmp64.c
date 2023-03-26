@@ -265,23 +265,23 @@ static bool rz_bin_dmp64_init_triage_datablocks(struct rz_bin_dmp64_obj_t *obj) 
 }
 
 static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
-	if (!obj->bv_header) {
+	if (!obj->bmp_header) {
 		return false;
 	}
 	obj->pages = rz_list_newf(free);
 	if (!obj->pages) {
 		return false;
 	}
-	ut64 paddr_base = obj->bv_header->FirstPage;
-	ut64 num_pages = obj->bv_header->Pages;
-	RzBitVector *bitvc = rz_bv_new(num_pages);
-	rz_bv_set_from_bytes_le(bitvc, obj->bitmap, 0, num_pages);
+	ut64 paddr_base = obj->bmp_header->FirstPage;
+	ut64 num_pages = obj->bmp_header->Pages;
+	RzBitVector *bitmap = rz_bv_new(num_pages);
+	rz_bv_set_from_bytes_le(bitmap, obj->bitmap, 0, num_pages);
 
 	ut64 num_bitset = 0;
 	bool create_new_page = true;
 	dmp_page_desc *page;
 	for (ut64 i = 0; i < num_pages; i++) {
-		if (!rz_bv_get(bitvc, i)) {
+		if (!rz_bv_get(bitmap, i)) {
 			create_new_page = true;
 			continue ;
 		}
@@ -292,7 +292,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		}
 		page = RZ_NEW0(dmp_page_desc);
 		if (!page) {
-			rz_bv_free(bitvc);
+			rz_bv_free(bitmap);
 			return false;
 		}
 		if (UT64_MUL_OVFCHK(i, DMP_PAGE_SIZE)) {
@@ -306,40 +306,40 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		num_bitset++;
 		create_new_page = false;
 	}
-	if (obj->bv_header->TotalPresentPages != num_bitset) {
+	if (obj->bmp_header->TotalPresentPages != num_bitset) {
 		RZ_LOG_ERROR("The total present pages number (%" PFMT64u ") in the header "
 			     "does not match with the counted one (%" PFMT64u ").\n",
-			obj->bv_header->TotalPresentPages, num_bitset);
-		rz_bv_free(bitvc);
+			obj->bmp_header->TotalPresentPages, num_bitset);
+		rz_bv_free(bitmap);
 		return false;
 	}
 
-	rz_bv_free(bitvc);
+	rz_bv_free(bitmap);
 	return true;
 }
 
 static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
-	if (!(obj->bv_header = RZ_NEW0(dmp_bv_header))) {
-		RZ_LOG_ERROR("Cannot allocate dmp_bv_header.\n");
+	if (!(obj->bmp_header = RZ_NEW0(dmp_bmp_header))) {
+		RZ_LOG_ERROR("Cannot allocate dmp_bmp_header.\n");
 		return false;
 	}
-	if (rz_buf_read_at(obj->b, sizeof(dmp64_header), (ut8 *)obj->bv_header, rz_offsetof(dmp_bv_header, Bitmap)) < 0) {
+	if (rz_buf_read_at(obj->b, sizeof(dmp64_header), (ut8 *)obj->bmp_header, rz_offsetof(dmp_bmp_header, Bitmap)) < 0) {
 		RZ_LOG_ERROR("Cannot read bmp_header\n");
 		return false;
 	}
-	if (memcmp((ut8 *)obj->bv_header, DMP_BMP_MAGIC, 8) &&
-		memcmp((ut8 *)obj->bv_header, DMP_BMP_FULL_MAGIC, 8)) {
+	if (memcmp((ut8 *)obj->bmp_header, DMP_BMP_MAGIC, 8) &&
+		memcmp((ut8 *)obj->bmp_header, DMP_BMP_FULL_MAGIC, 8)) {
 		RZ_LOG_ERROR("Invalid Bitmap Magic\n");
 		return false;
 	}
 
-	obj->bv_header->FirstPage = rz_read_le64((ut8 *)&obj->bv_header->FirstPage);
-	obj->bv_header->TotalPresentPages = rz_read_le64((ut8 *)&obj->bv_header->TotalPresentPages);
-	obj->bv_header->Pages = rz_read_le64((ut8 *)&obj->bv_header->Pages);
+	obj->bmp_header->FirstPage = rz_read_le64((ut8 *)&obj->bmp_header->FirstPage);
+	obj->bmp_header->TotalPresentPages = rz_read_le64((ut8 *)&obj->bmp_header->TotalPresentPages);
+	obj->bmp_header->Pages = rz_read_le64((ut8 *)&obj->bmp_header->Pages);
 
-	ut64 bitmapsize = obj->bv_header->Pages / 8;
+	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc(1, bitmapsize);
-	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bv_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
+	if (rz_buf_read_at(obj->b, sizeof(dmp64_header) + rz_offsetof(dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		RZ_LOG_ERROR("Cannot read bitmap\n");
 		return false;
 	}
@@ -387,7 +387,7 @@ void rz_bin_dmp64_free(struct rz_bin_dmp64_obj_t *obj) {
 	rz_buf_free(obj->b);
 	obj->b = NULL;
 	free(obj->header);
-	free(obj->bv_header);
+	free(obj->bmp_header);
 	free(obj->triage64_header);
 	free(obj->runs);
 	free(obj->bitmap);
