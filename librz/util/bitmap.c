@@ -20,7 +20,7 @@ RZ_API void rz_bitmap_set_bytes(RZ_NONNULL RzBitmap *b, RZ_NONNULL const ut8 *bu
 }
 
 RZ_API void rz_bitmap_free(RZ_NULLABLE RzBitmap *b) {
-	if (!b || !b->bv) {
+	if (!b) {
 		return;
 	}
 	free(b->bv);
