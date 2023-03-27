@@ -10,7 +10,6 @@ rz_util_common_sources = [
   'axml.c',
   'base85.c',
   'base91.c',
-  'bitmap.c',
   'bitvector.c',
   'buf.c',
   'calc.c',
