@@ -188,9 +188,9 @@ aes
 .arf
 s 0x10000000
 cX 0x20000000
-arechodi
-arechosi
-arechocx
+ar?edi
+ar?esi
+ar?ecx
 EOF
 EXPECT=<<EOF
 0x20001000

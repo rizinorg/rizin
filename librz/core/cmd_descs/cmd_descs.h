@@ -2419,6 +2419,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char **argv);
 // "echo"
 RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char **argv);
+// "clippy"
+RZ_IPI RzCmdStatus rz_cmd_shell_clippy_handler(RzCore *core, int argc, const char **argv);
 // "cp"
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **argv);
 // "cd"
@@ -2445,8 +2447,6 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pkill_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "vernum"
 RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv);
-// "verjson"
-RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv);
 // "vermajor"
 RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv);
 // "verminor"

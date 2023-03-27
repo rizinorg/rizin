@@ -810,7 +810,8 @@ static const RzCmdDescArg cmd_shell_rm_args[2];
 static const RzCmdDescArg cmd_shell_sleep_args[2];
 static const RzCmdDescArg cmd_shell_uniq_args[2];
 static const RzCmdDescArg cmd_shell_uname_args[2];
-static const RzCmdDescArg cmd_shell_echo_args[3];
+static const RzCmdDescArg cmd_shell_echo_args[2];
+static const RzCmdDescArg cmd_shell_clippy_args[2];
 static const RzCmdDescArg cmd_shell_cp_args[3];
 static const RzCmdDescArg cmd_shell_cd_args[2];
 static const RzCmdDescArg cmd_shell_cat_args[2];
@@ -17995,12 +17996,6 @@ static const RzCmdDescHelp cmd_shell_uname_help = {
 
 static const RzCmdDescArg cmd_shell_echo_args[] = {
 	{
-		.name = "str",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
-
-	},
-	{
 		.name = "strs",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_ARRAY,
@@ -18012,6 +18007,21 @@ static const RzCmdDescArg cmd_shell_echo_args[] = {
 static const RzCmdDescHelp cmd_shell_echo_help = {
 	.summary = "Display a line of text",
 	.args = cmd_shell_echo_args,
+};
+
+static const RzCmdDescArg cmd_shell_clippy_args[] = {
+	{
+		.name = "strs",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_clippy_help = {
+	.summary = "echo but with a comic",
+	.args = cmd_shell_clippy_args,
 };
 
 static const RzCmdDescArg cmd_shell_cp_args[] = {
@@ -18191,14 +18201,6 @@ static const RzCmdDescArg show_version_numeric_args[] = {
 static const RzCmdDescHelp show_version_numeric_help = {
 	.summary = "Show numeric version",
 	.args = show_version_numeric_args,
-};
-
-static const RzCmdDescArg show_version_json_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp show_version_json_help = {
-	.summary = "Show version info in JSON format",
-	.args = show_version_json_args,
 };
 
 static const RzCmdDescArg show_version_major_args[] = {
@@ -21834,6 +21836,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_shell_echo_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "echo", rz_cmd_shell_echo_handler, &cmd_shell_echo_help);
 	rz_warn_if_fail(cmd_shell_echo_cd);
 
+	RzCmdDesc *cmd_shell_clippy_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "clippy", rz_cmd_shell_clippy_handler, &cmd_shell_clippy_help);
+	rz_warn_if_fail(cmd_shell_clippy_cd);
+
 	RzCmdDesc *cmd_shell_cp_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cp", rz_cmd_shell_cp_handler, &cmd_shell_cp_help);
 	rz_warn_if_fail(cmd_shell_cp_cd);
 
@@ -21870,13 +21875,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_shell_pkill_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "pkill", rz_cmd_shell_pkill_handler, &cmd_shell_pkill_help);
 	rz_warn_if_fail(cmd_shell_pkill_cd);
 
-	RzCmdDesc *ver_cd = rz_cmd_desc_group_state_new(core->rcmd, shell_cd, "ver", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_show_version_info_handler, &show_version_info_help, &ver_help);
+	RzCmdDesc *ver_cd = rz_cmd_desc_group_state_new(core->rcmd, shell_cd, "ver", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_show_version_info_handler, &show_version_info_help, &ver_help);
 	rz_warn_if_fail(ver_cd);
 	RzCmdDesc *show_version_numeric_cd = rz_cmd_desc_argv_new(core->rcmd, ver_cd, "vernum", rz_show_version_numeric_handler, &show_version_numeric_help);
 	rz_warn_if_fail(show_version_numeric_cd);
-
-	RzCmdDesc *show_version_json_cd = rz_cmd_desc_argv_new(core->rcmd, ver_cd, "verjson", rz_show_version_json_handler, &show_version_json_help);
-	rz_warn_if_fail(show_version_json_cd);
 
 	RzCmdDesc *show_version_major_cd = rz_cmd_desc_argv_new(core->rcmd, ver_cd, "vermajor", rz_show_version_major_handler, &show_version_major_help);
 	rz_warn_if_fail(show_version_major_cd);

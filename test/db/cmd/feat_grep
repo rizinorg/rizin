@@ -165,10 +165,10 @@ i~:..3
 i~:1..2
 i~:-2
 i~:-1
-echo "0\n1\n2\n3\n4"~:-2
-echo "0\n1\n2\n3\n4"~:-2..
-echo "0\n1\n2"~:0..
-echo "0\n1\n2"~:..
+echo 0\n1\n2\n3\n4~:-2
+echo 0\n1\n2\n3\n4~:-2..
+echo 0\n1\n2~:0..
+echo 0\n1\n2~:..
 EOF
 EXPECT=<<EOF
 fd      3

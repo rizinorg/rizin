@@ -143,14 +143,16 @@ RZ_API char *rz_hex_from_c_str(char *out, const char **code) {
 			}
 			default:
 				if (iter[0] == end_char) {
-					*out++ = abc[*iter >> 4];
-					*out++ = abc[*iter & 0xf];
+					ut8 x = *iter;
+					*out++ = abc[x >> 4];
+					*out++ = abc[x & 0xf];
 				}
 				return NULL;
 			}
 		} else {
-			*out++ = abc[*iter >> 4];
-			*out++ = abc[*iter & 0xf];
+			ut8 x = *iter;
+			*out++ = abc[x >> 4];
+			*out++ = abc[x & 0xf];
 		}
 	}
 	*code = iter;

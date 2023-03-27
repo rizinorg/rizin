@@ -374,40 +374,42 @@ RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_STANDARD: {
 		char *v = rz_version_str(NULL);
 		rz_cons_printf("%s\n", v);
 		free(v);
-	} else {
-		rz_cons_println(RZ_VERSION);
+		break;
 	}
+	case RZ_OUTPUT_MODE_QUIET: {
+		rz_cons_println(RZ_VERSION);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = state->d.pj;
+		pj_o(pj);
+		pj_ks(pj, "arch", RZ_SYS_ARCH);
+		pj_ks(pj, "os", RZ_SYS_OS);
+		pj_ki(pj, "bits", RZ_SYS_BITS);
+		pj_ki(pj, "major", RZ_VERSION_MAJOR);
+		pj_ki(pj, "minor", RZ_VERSION_MINOR);
+		pj_ki(pj, "patch", RZ_VERSION_PATCH);
+		pj_ki(pj, "number", RZ_VERSION_NUMBER);
+		pj_ki(pj, "nversion", vernum(RZ_VERSION));
+		pj_ks(pj, "version", RZ_VERSION);
+		pj_end(pj);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv) {
 	rz_cons_printf("%d\n", vernum(RZ_VERSION));
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv) {
-	PJ *pj = pj_new();
-	if (!pj) {
-		RZ_LOG_ERROR("core: Out of memory!");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	pj_o(pj);
-	pj_ks(pj, "arch", RZ_SYS_ARCH);
-	pj_ks(pj, "os", RZ_SYS_OS);
-	pj_ki(pj, "bits", RZ_SYS_BITS);
-	pj_ki(pj, "major", RZ_VERSION_MAJOR);
-	pj_ki(pj, "minor", RZ_VERSION_MINOR);
-	pj_ki(pj, "patch", RZ_VERSION_PATCH);
-	pj_ki(pj, "number", RZ_VERSION_NUMBER);
-	pj_ki(pj, "nversion", vernum(RZ_VERSION));
-	pj_ks(pj, "version", RZ_VERSION);
-	pj_end(pj);
-	rz_cons_printf("%s\n", pj_string(pj));
-	pj_free(pj);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -428,5 +430,147 @@ RZ_IPI RzCmdStatus rz_show_version_minor_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const char **argv) {
 	rz_cons_printf("%d\n", RZ_VERSION_PATCH);
+	return RZ_CMD_STATUS_OK;
+}
+
+static const char *avatar_orangg[] = {
+	"      _______\n"
+	"     /       \\      .-%s-.\n"
+	"   _| ( o) (o)\\_    | %s |\n"
+	"  / _     .\\. | \\  <| %s |\n"
+	"  \\| \\   ____ / 7`  | %s |\n"
+	"  '|\\|  `---'/      `-%s-'\n"
+	"     | /----. \\\n"
+	"     | \\___/  |___\n"
+	"     `-----'`-----'\n"
+};
+
+static const char *avatar_clippy[] = {
+	" .--.     .-%s-.\n"
+	" | _|     | %s |\n"
+	" | O O   <  %s |\n"
+	" |  |  |  | %s |\n"
+	" || | /   `-%s-'\n"
+	" |`-'|\n"
+	" `---'\n",
+	" .--.     .-%s-.\n"
+	" |   \\    | %s |\n"
+	" | O o   <  %s |\n"
+	" |   | /  | %s |\n"
+	" |  ( /   `-%s-'\n"
+	" |   / \n"
+	" `--'\n",
+	" .--.     .-%s-.\n"
+	" | _|_    | %s |\n"
+	" | O O   <  %s |\n"
+	" |  ||    | %s |\n"
+	" | _:|    `-%s-'\n"
+	" |   |\n"
+	" `---'\n",
+};
+
+static const char *avatar_clippy_utf8[] = {
+	" ╭──╮    ╭─%s─╮\n"
+	" │ _│    │ %s │\n"
+	" │ O O  <  %s │\n"
+	" │  │╭   │ %s │\n"
+	" ││ ││   ╰─%s─╯\n"
+	" │└─┘│\n"
+	" ╰───╯\n",
+	" ╭──╮    ╭─%s─╮\n"
+	" │ ╶│╶   │ %s │\n"
+	" │ O o  <  %s │\n"
+	" │  │  ╱ │ %s │\n"
+	" │ ╭┘ ╱  ╰─%s─╯\n"
+	" │ ╰ ╱\n"
+	" ╰──'\n",
+	" ╭──╮    ╭─%s─╮\n"
+	" │ _│_   │ %s │\n"
+	" │ O O  <  %s │\n"
+	" │  │╷   │ %s │\n"
+	" │  ││   ╰─%s─╯\n"
+	" │ ─╯│\n"
+	" ╰───╯\n",
+};
+
+static const char *avatar_cybcat[] = {
+	"     /\\.---./\\       .-%s-.\n"
+	" '--           --'   | %s |\n"
+	"----   ^   ^   ---- <  %s |\n"
+	"  _.-    Y    -._    | %s |\n"
+	"                     `-%s-'\n",
+	"     /\\.---./\\       .-%s-.\n"
+	" '--   @   @   --'   | %s |\n"
+	"----     Y     ---- <  %s |\n"
+	"  _.-    O    -._    | %s |\n"
+	"                     `-%s-'\n",
+	"     /\\.---./\\       .-%s-.\n"
+	" '--   =   =   --'   | %s |\n"
+	"----     Y     ---- <  %s |\n"
+	"  _.-    U    -._    | %s |\n"
+	"                     `-%s-'\n",
+};
+
+enum {
+	RZ_AVATAR_ORANGG,
+	RZ_AVATAR_CYBCAT,
+	RZ_AVATAR_CLIPPY,
+};
+
+/**
+ * \brief Get clippy echo string.
+ * \param msg The message to echo.
+ */
+RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const char *msg) {
+	rz_return_val_if_fail(core && msg, NULL);
+	int type = RZ_AVATAR_CLIPPY;
+	if (*msg == '+' || *msg == '3') {
+		char *space = strchr(msg, ' ');
+		if (!space) {
+			return NULL;
+		}
+		type = (*msg == '+') ? RZ_AVATAR_ORANGG : RZ_AVATAR_CYBCAT;
+		msg = space + 1;
+	}
+	const char *f;
+	int msglen = rz_str_len_utf8(msg);
+	char *s = strdup(rz_str_pad(' ', msglen));
+	char *l;
+
+	if (type == RZ_AVATAR_ORANGG) {
+		l = strdup(rz_str_pad('-', msglen));
+		f = avatar_orangg[0];
+	} else if (type == RZ_AVATAR_CYBCAT) {
+		l = strdup(rz_str_pad('-', msglen));
+		f = avatar_cybcat[rz_num_rand(RZ_ARRAY_SIZE(avatar_cybcat))];
+	} else if (rz_config_get_i(core->config, "scr.utf8")) {
+		l = (char *)rz_str_repeat("─", msglen);
+		f = avatar_clippy_utf8[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy_utf8))];
+	} else {
+		l = strdup(rz_str_pad('-', msglen));
+		f = avatar_clippy[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy))];
+	}
+
+	char *string = rz_str_newf(f, l, s, msg, s, l);
+	free(l);
+	free(s);
+	return string;
+}
+
+RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
+	char *string = rz_core_clippy(core, msg);
+	if (string) {
+		rz_cons_print(string);
+		free(string);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_shell_clippy_handler(RzCore *core, int argc, const char **argv) {
+	if (argc >= 2) {
+		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
+		rz_core_clippy_print(core, output);
+		free(output);
+	}
+	rz_cons_newline();
 	return RZ_CMD_STATUS_OK;
 }

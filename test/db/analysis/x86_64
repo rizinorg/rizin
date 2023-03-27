@@ -1383,7 +1383,7 @@ FILE=bins/pe/hello-mingw32
 CMDS=<<EOF
 aaa
 s 0x00401255
-pd 1~echoxitProcess\(UINT
+pd 1~?ExitProcess\(UINT
 EOF
 EXPECT=<<EOF
 1

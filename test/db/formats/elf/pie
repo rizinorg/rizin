@@ -95,7 +95,7 @@ RUN
 NAME=ELF: Candypop, main detection
 FILE=bins/elf/analysis/candypop
 ARGS=-A
-CMDS=? main~?0x1235
+CMDS=% main~?0x1235
 EXPECT=<<EOF
 1
 EOF

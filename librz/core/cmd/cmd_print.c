@@ -14,23 +14,6 @@
 
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-/* used by helpCmdTasks function */
-/* static const char *help_msg_amper[] = { */
-/* 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)", */
-/* 	"&", " <cmd>", "run <cmd> in a new background task", */
-/* 	"&t", " <cmd>", "run <cmd> in a new transient background task (auto-delete when it is finished)", */
-/* 	"&", "", "list all tasks", */
-/* 	"&j", "", "list all tasks (in JSON)", */
-/* 	"&=", " 3", "show output of task 3", */
-/* 	"&b", " 3", "break task 3", */
-/* 	"&-", " 1", "delete task #1 or schedule for deletion when it is finished", */
-/* 	"&", "-*", "delete all done tasks", */
-/* 	"&?", "", "show this help", */
-/* 	"&&", " 3", "wait until task 3 is finished", */
-/* 	"&&", "", "wait until all tasks are finished", */
-/* 	NULL */
-/* }; */
-
 static const char *help_msg_at[] = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
@@ -732,13 +715,6 @@ RZ_API void rz_core_set_asm_configs(RzCore *core, char *arch, ut32 bits, int seg
 	// if arch == x86 and bits == 16, segoff automatically changes
 	rz_config_set_i(core->config, "asm.segoff", segoff);
 }
-
-/* unused so compiler shows warning */
-/* still keeping this here because of this TODO message */
-/* static void helpCmdTasks(RzCore *core) { */
-/* 	// TODO: integrate with =h& and bg analysis/string/searches/.. */
-/* 	rz_core_cmd_help(core, help_msg_amper); */
-/* } */
 
 static void print_format_help_help_help_help(RzCore *core) {
 	const char *help_msg[] = {

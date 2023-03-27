@@ -82,15 +82,15 @@ def gen_testcase(cause, ins, inpairs, oins=""):
     inskey = cannonical(ins)
     insmkey = meta_cannonical(ins)
     insmmkey = meta_meta_cannonical(ins)
-    return dict(
-        cause=cause,
-        ins=ins,
-        inpairs=inpairs,
-        oins=oins,
-        case=inskey,
-        metacase=insmkey,
-        metametacase=insmmkey,
-    )
+    return {
+        "cause": cause,
+        "ins": ins,
+        "inpairs": inpairs,
+        "oins": oins,
+        "case": inskey,
+        "metacase": insmkey,
+        "metametacase": insmmkey,
+    }
 
 
 def check_hexpairs(orig_input_hexpairs):

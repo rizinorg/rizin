@@ -8,192 +8,6 @@
 #include "rz_util.h"
 #include "rz_types.h"
 
-static const char *avatar_orangg[] = {
-	"      _______\n"
-	"     /       \\      .-%s-.\n"
-	"   _| ( o) (o)\\_    | %s |\n"
-	"  / _     .\\. | \\  <| %s |\n"
-	"  \\| \\   ____ / 7`  | %s |\n"
-	"  '|\\|  `---'/      `-%s-'\n"
-	"     | /----. \\\n"
-	"     | \\___/  |___\n"
-	"     `-----'`-----'\n"
-};
-
-static const char *avatar_clippy[] = {
-	" .--.     .-%s-.\n"
-	" | _|     | %s |\n"
-	" | O O   <  %s |\n"
-	" |  |  |  | %s |\n"
-	" || | /   `-%s-'\n"
-	" |`-'|\n"
-	" `---'\n",
-	" .--.     .-%s-.\n"
-	" |   \\    | %s |\n"
-	" | O o   <  %s |\n"
-	" |   | /  | %s |\n"
-	" |  ( /   `-%s-'\n"
-	" |   / \n"
-	" `--'\n",
-	" .--.     .-%s-.\n"
-	" | _|_    | %s |\n"
-	" | O O   <  %s |\n"
-	" |  ||    | %s |\n"
-	" | _:|    `-%s-'\n"
-	" |   |\n"
-	" `---'\n",
-};
-
-static const char *avatar_clippy_utf8[] = {
-	" ╭──╮    ╭─%s─╮\n"
-	" │ _│    │ %s │\n"
-	" │ O O  <  %s │\n"
-	" │  │╭   │ %s │\n"
-	" ││ ││   ╰─%s─╯\n"
-	" │└─┘│\n"
-	" ╰───╯\n",
-	" ╭──╮    ╭─%s─╮\n"
-	" │ ╶│╶   │ %s │\n"
-	" │ O o  <  %s │\n"
-	" │  │  ╱ │ %s │\n"
-	" │ ╭┘ ╱  ╰─%s─╯\n"
-	" │ ╰ ╱\n"
-	" ╰──'\n",
-	" ╭──╮    ╭─%s─╮\n"
-	" │ _│_   │ %s │\n"
-	" │ O O  <  %s │\n"
-	" │  │╷   │ %s │\n"
-	" │  ││   ╰─%s─╯\n"
-	" │ ─╯│\n"
-	" ╰───╯\n",
-};
-
-static const char *avatar_cybcat[] = {
-	"     /\\.---./\\       .-%s-.\n"
-	" '--           --'   | %s |\n"
-	"----   ^   ^   ---- <  %s |\n"
-	"  _.-    Y    -._    | %s |\n"
-	"                     `-%s-'\n",
-	"     /\\.---./\\       .-%s-.\n"
-	" '--   @   @   --'   | %s |\n"
-	"----     Y     ---- <  %s |\n"
-	"  _.-    O    -._    | %s |\n"
-	"                     `-%s-'\n",
-	"     /\\.---./\\       .-%s-.\n"
-	" '--   =   =   --'   | %s |\n"
-	"----     Y     ---- <  %s |\n"
-	"  _.-    U    -._    | %s |\n"
-	"                     `-%s-'\n",
-};
-
-enum {
-	RZ_AVATAR_ORANGG,
-	RZ_AVATAR_CYBCAT,
-	RZ_AVATAR_CLIPPY,
-};
-
-/**
- * \brief Get clippy echo string.
- * \param msg The message to echo.
- */
-RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const char *msg) {
-	rz_return_val_if_fail(core && msg, NULL);
-	int type = RZ_AVATAR_CLIPPY;
-	if (*msg == '+' || *msg == '3') {
-		char *space = strchr(msg, ' ');
-		if (!space) {
-			return NULL;
-		}
-		type = (*msg == '+') ? RZ_AVATAR_ORANGG : RZ_AVATAR_CYBCAT;
-		msg = space + 1;
-	}
-	const char *f;
-	int msglen = rz_str_len_utf8(msg);
-	char *s = strdup(rz_str_pad(' ', msglen));
-	char *l;
-
-	if (type == RZ_AVATAR_ORANGG) {
-		l = strdup(rz_str_pad('-', msglen));
-		f = avatar_orangg[0];
-	} else if (type == RZ_AVATAR_CYBCAT) {
-		l = strdup(rz_str_pad('-', msglen));
-		f = avatar_cybcat[rz_num_rand(RZ_ARRAY_SIZE(avatar_cybcat))];
-	} else if (rz_config_get_i(core->config, "scr.utf8")) {
-		l = (char *)rz_str_repeat("─", msglen);
-		f = avatar_clippy_utf8[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy_utf8))];
-	} else {
-		l = strdup(rz_str_pad('-', msglen));
-		f = avatar_clippy[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy))];
-	}
-
-	char *string = rz_str_newf(f, l, s, msg, s, l);
-	free(l);
-	free(s);
-	return string;
-}
-
-RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
-	char *string = rz_core_clippy(core, msg);
-	if (string) {
-		rz_cons_print(string);
-		free(string);
-	}
-}
-
-/* keeping these functions because they can be useful in future */
-/* static const char *findBreakChar(const char *s) { */
-/* 	while (*s) { */
-/* 		if (!rz_name_validate_char(*s, true)) { */
-/* 			break; */
-/* 		} */
-/* 		s++; */
-/* 	} */
-/* 	return s; */
-/* } */
-
-/* keeping these functions because they can be useful in future */
-/* static char *filterFlags(RzCore *core, const char *msg) { */
-/* 	const char *dollar, *end; */
-/* 	char *word, *buf = NULL; */
-/* 	for (;;) { */
-/* 		dollar = strchr(msg, '$'); */
-/* 		if (!dollar) { */
-/* 			break; */
-/* 		} */
-/* 		buf = rz_str_appendlen(buf, msg, dollar - msg); */
-/* 		if (dollar[1] == '{') { */
-/* 			// find } */
-/* 			end = strchr(dollar + 2, '}'); */
-/* 			if (end) { */
-/* 				word = rz_str_newlen(dollar + 2, end - dollar - 2); */
-/* 				end++; */
-/* 			} else { */
-/* 				msg = dollar + 1; */
-/* 				buf = rz_str_append(buf, "$"); */
-/* 				continue; */
-/* 			} */
-/* 		} else { */
-/* 			end = findBreakChar(dollar + 1); */
-/* 			if (!end) { */
-/* 				end = dollar + strlen(dollar); */
-/* 			} */
-/* 			word = rz_str_newlen(dollar + 1, end - dollar - 1); */
-/* 		} */
-/* 		if (end && word) { */
-/* 			ut64 val = rz_num_math(core->num, word); */
-/* 			char num[32]; */
-/* 			snprintf(num, sizeof(num), "0x%" PFMT64x, val); */
-/* 			buf = rz_str_append(buf, num); */
-/* 			msg = end; */
-/* 		} else { */
-/* 			break; */
-/* 		} */
-/* 		free(word); */
-/* 	} */
-/* 	buf = rz_str_append(buf, msg); */
-/* 	return buf; */
-/* } */
-
 static const char *help_msg_greater_sign[] = {
 	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
 	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
@@ -232,11 +46,17 @@ RZ_API void rz_core_help_vars_print(RzCore *core) {
 	}
 }
 
-/// If third parameter (PJ) is NULL then standard output will be displayed
-/// If it's non-NULL then it's treated as a borrowd PJ and used and then
-/// printing will be done in JSON format and not standard one.
-/// So basically it's the third paramter that decides in which paramter
-/// data will be displayed.
+/**
+ * \brief If \p pj is NULL then standard output will be displayed
+ * If it's non-NULL then it's treated as a borrowed PJ and used and
+ * printing will be done in JSON format and not standard one.
+ * Hence the the third parameter decides in which format data will be displayed.
+ *
+ * \param core RzCore.
+ * \param input Input mathematical expression.
+ * \param pj Borrowed PJ if calculated value is to be printed in JSON format.
+ * \return true on success, false otherwise.
+ **/
 RZ_IPI bool rz_core_cmd_calculate_expr(RZ_NONNULL RzCore *core, RZ_NONNULL const char *input, RZ_BORROW PJ *pj) {
 	rz_return_val_if_fail(core && input, false);
 
@@ -779,28 +599,5 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive2_handler(RzCore *core,
 	if (core->num->value) {
 		core->num->value = rz_core_cmd(core, argv[1], 0);
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
-	const char *cmd_color = rz_cons_singleton()->context->pal.help;
-	const char *reset = rz_cons_singleton()->context->pal.reset;
-	rz_cons_printf("Welcome to Rizin!\n\n");
-	rz_cons_printf("Type %s?%s for a list of commands available.\n", cmd_color, reset);
-	rz_cons_printf("Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
-	rz_cons_printf("Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("Commands output can be redirected as in a regular shell, see %s>?%s for more info.\n", cmd_color, reset);
-	rz_cons_printf("You can grep commands output with the 'internal grep', see %s~?%s for more info.\n", cmd_color, reset);
-	rz_cons_printf("You can pipe an internal Rizin command to a system program, see %s|?%s for more info.\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("Chain multiple commands with %s;%s.\n", cmd_color, reset);
-	rz_cons_printf("Temporary modifiers are your friends, see %s@?%s for more info, but here some useful ones:\n", cmd_color, reset);
-	rz_cons_printf(" - %s@ %s temporarily switch to a different address\n", cmd_color, reset);
-	rz_cons_printf(" - %s@a:<arch>%s temporarily switch to a different architecture\n", cmd_color, reset);
-	rz_cons_printf(" - %s@e:<varname>=<varvalue>%s temporarily change an eval variable\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("There are a lot of settings that customize Rizin's behaviour, see them with %sel%s. Have a look at %se?%s to know how to interact with them.\n", cmd_color, reset, cmd_color, reset);
-	rz_cons_printf("You can save your preferred settings in %s~/.rizinrc%s.\n", cmd_color, reset);
 	return RZ_CMD_STATUS_OK;
 }
