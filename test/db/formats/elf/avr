@@ -16,7 +16,7 @@ RUN
 
 NAME=avr main address
 FILE=bins/elf/analysis/bugurtos-avr.elf
-CMDS=?v sym.main
+CMDS=%v sym.main
 EXPECT=<<EOF
 0x308
 EOF

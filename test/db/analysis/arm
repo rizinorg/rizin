@@ -900,7 +900,7 @@ FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 e asm.bits=16
 ao@ 0x568
-?e --
+echo --
 ao@ 0x50e
 EOF
 EXPECT=<<EOF
@@ -1126,7 +1126,7 @@ pi 4
 ao @ 0x102~mnemonic
 ao @ 0x106~mnemonic
 ao @ 0x108~mnemonic
-?e -- Update after code change
+echo -- Update after code change
 wx 1846
 pi 4
 ao @ 0x102~mnemonic

@@ -30,12 +30,12 @@ commands:
     details:
       - name: Examples
         entries:
-          - text: "%"
+          - text: "env"
             comment: List all environment variables
-          - text: "%"
+          - text: "env"
             arg_str: "SHELL"
             comment: Print value of SHELL variable
-          - text: "%"
+          - text: "env"
             arg_str: "TMPDIR=/tmp"
             comment: Set TMPDIR to "/tmp"
           - text: "env"
@@ -109,9 +109,13 @@ commands:
     summary: Display a line of text
     cname: cmd_shell_echo
     args:
-      - name: argument
+      - name: str
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+      - name: strs
         type: RZ_CMD_ARG_TYPE_STRING
         flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
   - name: cp
     summary: Copy <src> file to <dst>
     cname: cmd_shell_cp
@@ -187,3 +191,45 @@ commands:
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: ver
+    summary: Show version information
+    type: RZ_CMD_DESC_TYPE_GROUP
+    subcommands:
+      - name: ver
+        summary: Show version info
+        cname: show_version_info
+        args: []
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+      - name: vernum
+        summary: Show numeric version
+        cname: show_version_numeric
+        args: []
+      - name: verjson
+        summary: Show version info in JSON format
+        cname: show_version_json
+        args: []
+      - name: vermajor
+        summary: Show major version
+        cname: show_version_major
+        args: []
+      - name: verminor
+        summary: Show minor version
+        cname: show_version_minor
+        args: []
+      - name: verpatch
+        summary: Show patch version
+        cname: show_version_patch
+        args: []
+  - name: time
+    summary: Calculate time taken to run a command
+    cname: calculate_command_time
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+  - name: inittime
+    summary: Print init time values
+    cname: print_init_time_values
+    args: []

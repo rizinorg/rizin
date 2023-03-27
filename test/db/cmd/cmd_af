@@ -101,7 +101,7 @@ BROKEN=1
 CMDS=<<EOF
 s sym.imp.write
 af
-?v $FS
+%v $FS
 EOF
 EXPECT=<<EOF
 before:
@@ -161,21 +161,21 @@ af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 af-
 af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 6 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 afb+ 0x4017c0 0x4017c0 11 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
 EOF
 EXPECT=<<EOF
@@ -218,17 +218,17 @@ af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 9 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 pdr
-?e
+echo
 afb+ 0x4017c0 0x4017c0 12 0x4017dd 0x4017cd
 afi~size
 afb
-?e
+echo
 pdf
-?e
+echo
 pdr
 EOF
 EXPECT=<<EOF
@@ -421,10 +421,10 @@ f sym.b @ 8
 e asm.flags.real=0
 af @@f
 afl
-?e --
+echo --
 af- @@f
 afl
-?e --
+echo --
 e asm.flags.real=1
 af @@f
 afl

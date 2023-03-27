@@ -1812,32 +1812,115 @@
         ]
       }
     },
+    "percent_mark_identifier": {
+      "type": "STRING",
+      "value": "%"
+    },
+    "percent_percent_mark_identifier": {
+      "type": "STRING",
+      "value": "%%"
+    },
+    "math_mark_identifier": {
+      "type": "PATTERN",
+      "value": "%[a-zA-Z0-9]*[!@#$&\\-.+=]*"
+    },
     "_math_arged_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
-        "type": "SEQ",
+        "type": "CHOICE",
         "members": [
           {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "ALIAS",
-              "content": {
-                "type": "SYMBOL",
-                "name": "question_mark_identifier"
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "command",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "percent_mark_identifier"
+                }
               },
-              "named": true,
-              "value": "cmd_identifier"
-            }
+              {
+                "type": "FIELD",
+                "name": "args",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "args"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
+                }
+              }
+            ]
           },
           {
-            "type": "FIELD",
-            "name": "args",
-            "content": {
-              "type": "SYMBOL",
-              "name": "args"
-            }
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "command",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "percent_percent_mark_identifier"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "args",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "args"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "command",
+                "content": {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "math_mark_identifier"
+                  },
+                  "named": true,
+                  "value": "cmd_identifier"
+                }
+              },
+              {
+                "type": "FIELD",
+                "name": "args",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "args"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
+                }
+              }
+            ]
           }
         ]
       }
@@ -2798,17 +2881,8 @@
       }
     },
     "_env_stmt_identifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "%"
-        },
-        {
-          "type": "STRING",
-          "value": "env"
-        }
-      ]
+      "type": "STRING",
+      "value": "env"
     },
     "_last_stmt": {
       "type": "SEQ",

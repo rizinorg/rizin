@@ -728,9 +728,9 @@ e asm.arch=arm
 e asm.bits=64
 wx 1ffc0371 # cmp w0, 0xff
 ar w0=0x55
-?v pstate & 0xf0000000
+%v pstate & 0xf0000000
 aes
-?v pstate & 0xf0000000
+%v pstate & 0xf0000000
 ar nf
 ar zf
 ar cf

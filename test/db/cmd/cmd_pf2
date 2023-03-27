@@ -232,7 +232,7 @@ FILE==
 CMDS=<<EOF
 wv8 0x400921fb54442d18
 pf F
-?e
+echo
 wv8 0x3e901b2b20000000
 pf q
 pf F
@@ -277,9 +277,9 @@ CMDS=<<EOF
 wz ABCDE
 (pf2 format; pf ${format}; pfj ${format})
 .(pf2 z)
-?e
+echo
 .(pf2 [3]z)
-?e
+echo
 .(pf2 [7]z)
 EOF
 EXPECT=<<EOF
@@ -299,8 +299,8 @@ FILE=malloc://2048
 ARGS=-m 1000
 CMDS=<<EOF
 e io.cache=false
-?e --- io.unalloc = true ---
-?e
+echo --- io.unalloc = true ---
+echo
 e io.unalloc=true
 e io.va=true
 s 3046
@@ -309,29 +309,29 @@ pf [2]z
 pf z
 pf [5]z
 pf z @ 0xfffff
-?e
+echo
 e io.va=false
 s 2046
 pf [2]z
 pf z
 pf [5]z
 pf z @ 0xfffff
-?e
+echo
 e io.va=true
 oml
-?e ----
+echo ----
 om-*
 om 3 1000 1024 0 rwx
 om 3 2024 1024 1024 rwx
 oml
 wz CD @ 2023
 pf z @ 2023
-?e ----
+echo ----
 om- 2
 om 3 2024 1024 1024 -wx
 oml
 pf z @ 2023
-?e ----
+echo ----
 om- 2
 oml
 pf z @ 2023

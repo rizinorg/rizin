@@ -296,11 +296,11 @@ NAME=/ac mov ebx
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /ac mov ebx
-?e --
+echo --
 /ac MoV ebX
-?e --
+echo --
 /acj mov ebx
-?e --
+echo --
 /acj MoV ebX
 EOF
 EXPECT=<<EOF
@@ -318,11 +318,11 @@ NAME=/aa mov ebx
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 /aa mov ebx
-?e --
+echo --
 /aa MoV ebX
-?e --
+echo --
 /aaj mov ebx
-?e --
+echo --
 /aaj MoV ebX
 EOF
 EXPECT=<<EOF

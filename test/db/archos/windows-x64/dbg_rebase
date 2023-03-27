@@ -2,9 +2,9 @@ NAME=function rebase
 FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
-?v main-`e bin.baddr`
+%v main-`e bin.baddr`
 doc
-?v main-`e bin.baddr`
+%v main-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x1000
@@ -17,9 +17,9 @@ FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
 db @ main
-?v main-`dbl~main[0]`
+%v main-`dbl~main[0]`
 doc
-?v main-`dbl~main[0]`
+%v main-`dbl~main[0]`
 EOF
 EXPECT=<<EOF
 0x0
@@ -32,9 +32,9 @@ FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
 aa
-?v `axt @ main~entry0[1]`-`e bin.baddr`
+%v `axt @ main~entry0[1]`-`e bin.baddr`
 doc
-?v `axt @ main~entry0[1]`-`e bin.baddr`
+%v `axt @ main~entry0[1]`-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x1203
@@ -48,9 +48,9 @@ ARGS=-d
 CMDS=<<EOF
 fs test
 f testflag @ main+10
-?v `fl~testflag[0]`-`e bin.baddr`
+%v `fl~testflag[0]`-`e bin.baddr`
 doc
-?v `fl~testflag[0]`-`e bin.baddr`
+%v `fl~testflag[0]`-`e bin.baddr`
 EOF
 EXPECT=<<EOF
 0x100a

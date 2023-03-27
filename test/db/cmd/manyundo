@@ -4,26 +4,26 @@ CMDS=<<EOF
 sh*
 # Force a wraparound in the undo/redo buffer.
 100sd +1
-sh* ; ?v $$ ; ?e
+sh* ; %v $$ ; echo
 shj~{62}
 shj~{63}
 
 # Make sure get back to the last available undo.
 100shu
-sh* ; ?v $$ ; ?e
+sh* ; %v $$ ; echo
 
 # And redo must work of course.
 100shr
-sh* ; ?v $$ ; ?e
+sh* ; %v $$ ; echo
 
 # Seeking inside the undo list must destroy the redo list.
 50shu
-sh* ; ?v $$ ; ?e
+sh* ; %v $$ ; echo
 shj~{12}
 shj~{13}
 shj~{14}
 s 0x100
-sh* ; ?v $$ ; ?e
+sh* ; %v $$ ; echo
 EOF
 EXPECT=<<EOF
 # Current seek @ 0x0

@@ -1,6 +1,6 @@
 NAME=ELF: long symbol names
 FILE=bins/elf/analysis/longsym
-CMDS=?lq `isq~pata`;?vi
+CMDS=%lq `isq~pata`;%vi
 EXPECT=<<EOF
 194
 EOF

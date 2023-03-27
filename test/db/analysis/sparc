@@ -71,7 +71,7 @@ e asm.bytes=true
 s sym.zwrite
 af
 afb
-?e
+echo
 pdf
 EOF
 EXPECT=<<EOF

@@ -26,11 +26,11 @@ Pointer type statements
 Environment variable command
 ==============================
 
-%
-%SHELL
-%TMPDIR=/tmp
-%SHELL;
-%TMPDIR=/tmp;
+env
+env SHELL
+env TMPDIR=/tmp
+env SHELL;
+env TMPDIR=/tmp;
 
 ---
 

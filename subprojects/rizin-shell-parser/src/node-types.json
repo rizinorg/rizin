@@ -270,6 +270,14 @@
             "named": true
           },
           {
+            "type": "percent_mark_identifier",
+            "named": true
+          },
+          {
+            "type": "percent_percent_mark_identifier",
+            "named": true
+          },
+          {
             "type": "system_identifier",
             "named": true
           },
@@ -10988,10 +10996,6 @@
     "named": false
   },
   {
-    "type": "%",
-    "named": false
-  },
-  {
     "type": "'",
     "named": false
   },
@@ -11208,10 +11212,6 @@
     "named": false
   },
   {
-    "type": "env",
-    "named": false
-  },
-  {
     "type": "file_descriptor",
     "named": true
   },
@@ -11229,6 +11229,14 @@
   },
   {
     "type": "macro_name",
+    "named": true
+  },
+  {
+    "type": "percent_mark_identifier",
+    "named": true
+  },
+  {
+    "type": "percent_percent_mark_identifier",
     "named": true
   },
   {

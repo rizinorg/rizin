@@ -1001,7 +1001,7 @@ td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
 aht foo.b @ 0x00000004
 pi 2
-?e ---
+echo ---
 pd 2
 EOF
 EXPECT=<<EOF
@@ -1024,7 +1024,7 @@ aht foo.c @ 0x00000000
 aht foo.c @ 0x00000008
 aht foo.b @ 0x00000004
 pi 3
-?e ---
+echo ---
 pd 3
 EOF
 EXPECT=<<EOF
@@ -1051,7 +1051,7 @@ aht foo.b @ 0x00000003
 aht foo.c @ 0x00000006
 aht foo.c @ 0x00000009
 pi 4
-?e ---
+echo ---
 pd 4
 EOF
 EXPECT=<<EOF
@@ -1078,7 +1078,7 @@ td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 af
 tl "struct bar" 0x1958
-?e
+echo
 pdf~bar.
 EOF
 EXPECT=<<EOF
@@ -1102,7 +1102,7 @@ wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 tl "struct bar" 0x1958
 af
 aat @ fcn.00000000
-?e
+echo
 pdf~bar.
 EOF
 EXPECT=<<EOF
@@ -1153,7 +1153,7 @@ aa
 s main
 td "struct Books {char  title[50];char  author[50]; char  subject[100];};"
 tl "struct Books" 0x00177f18
-?e
+echo
 pdf~Books
 EOF
 EXPECT=<<EOF
@@ -1179,7 +1179,7 @@ s main
 ahr 0x00000597 @ 0x00000592
 tl "struct Test" 0x00002020
 s 0x000005a8
-?e
+echo
 pd 3
 EOF
 EXPECT=<<EOF
@@ -1400,12 +1400,12 @@ to bins/headers/12272.h
 ts A
 ts "anonymous struct 0"
 ts "anonymous struct 1"
-?e ----
+echo ----
 tsc A
 tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 tsc O
-?e ----
+echo ----
 tt A
 tt B
 tt O
@@ -2072,10 +2072,10 @@ NAME=tn common
 FILE=bins/pe/pe.exe
 CMDS=<<EOF
 tn
-?e ---
+echo ---
 tn- FatalExit
 tn
-?e ---
+echo ---
 tn-*
 tn
 EOF
@@ -2149,11 +2149,11 @@ FILE=bins/elf/ls.odd
 CMDS=<<EOF
 aaaa
 txf main
-?e =
+echo =
 txf fcn.00011b90
-?e =
+echo =
 tx size_t
-?e =
+echo =
 tx "size_t *"
 EOF
 EXPECT=<<EOF
@@ -2194,7 +2194,7 @@ td "struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};"
 td "struct foo4 {char gap[4];int bar;};"
 td "struct foo5 {int gap;int bar;};"
 ahts 4 ~foo
-?e =
+echo =
 wx c7400400000000
 aht foo.bar
 pd 1
@@ -2236,7 +2236,7 @@ t~LPCWSTR
 t~LPACCEL
 t~PDWORD64
 t~int16_t
-?e ------------------------------------------
+echo ------------------------------------------
 tf
 EOF
 EXPECT=<<EOF

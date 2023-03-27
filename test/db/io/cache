@@ -32,7 +32,7 @@ RUN
 NAME=io.cache: Writing after end of file
 FILE=malloc://1024
 CMDS=<<EOF
-?e
+echo
 b 0xf
 p8
 w no-cache
@@ -73,7 +73,7 @@ NAME=io.cache: empty file
 FILE=.empty.tmp
 BROKEN=1
 CMDS=<<EOF
-?e
+echo
 b 15
 p8
 w no-cache
@@ -95,7 +95,7 @@ wci
 p8
 # File was correctly writen.
 cat .empty.tmp
-?e
+echo
 EOF
 EXPECT=<<EOF
 

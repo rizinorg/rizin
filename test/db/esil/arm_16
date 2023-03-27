@@ -73,7 +73,7 @@ ar sp=0x00108000
 .arf
 wa "cmp r1, 16"
 aes
-?v cpsr & 0xf0000000
+%v cpsr & 0xf0000000
 EOF
 EXPECT=<<EOF
 0x80000000
@@ -92,7 +92,7 @@ ar cpsr=0xffffffff
 .arf
 wa "cmp r1, 16"
 aes
-?v cpsr & 0xf0000000
+%v cpsr & 0xf0000000
 EOF
 EXPECT=<<EOF
 0x80000000
@@ -112,7 +112,7 @@ ar cpsr=0x40000000
 .arf
 wa "cmp r1, 16"
 aes
-?v cpsr & 0xf0000000
+%v cpsr & 0xf0000000
 EOF
 EXPECT=<<EOF
 0x60000000
@@ -132,7 +132,7 @@ ar cpsr=0x00000000
 .arf
 wa "cmp r1, 16"
 aes
-?v cpsr & 0xf0000000
+%v cpsr & 0xf0000000
 EOF
 EXPECT=<<EOF
 0x60000000

@@ -21,8 +21,6 @@ RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const char **argv);
 // "$"
 RZ_IPI int rz_cmd_alias(void *data, const char *input);
-// "%"
-RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv);
 // "&"
 RZ_IPI RzCmdStatus rz_tasks_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "&t"
@@ -91,137 +89,97 @@ RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv);
 // "?*"
 RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-// "?"
+// "%"
 RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "?0"
+// "%0"
 RZ_IPI RzCmdStatus rz_set_active_tab_zero_handler(RzCore *core, int argc, const char **argv);
-// "?1"
+// "%1"
 RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const char **argv);
-// "?r"
+// "%r"
 RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, const char **argv);
-// "?a"
+// "%a"
 RZ_IPI RzCmdStatus rz_print_ascii_table_handler(RzCore *core, int argc, const char **argv);
-// "?b"
+// "%b"
 RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **argv);
-// "?b64"
+// "%b64"
 RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char **argv);
-// "?b64-"
+// "%b64-"
 RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char **argv);
-// "?btw"
+// "%btw"
 RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char **argv);
-// "?B"
+// "%B"
 RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv);
-// "?h"
+// "%h"
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv);
-// "?F"
+// "%F"
 RZ_IPI RzCmdStatus rz_flush_console_handler(RzCore *core, int argc, const char **argv);
-// "?f"
+// "%f"
 RZ_IPI RzCmdStatus rz_print_bitstring_handler(RzCore *core, int argc, const char **argv);
-// "?o"
+// "%o"
 RZ_IPI RzCmdStatus rz_eval_expr_print_octal_handler(RzCore *core, int argc, const char **argv);
-// "?T"
-RZ_IPI RzCmdStatus rz_print_init_time_values_handler(RzCore *core, int argc, const char **argv);
-// "?u"
+// "%u"
 RZ_IPI RzCmdStatus rz_num_to_units_handler(RzCore *core, int argc, const char **argv);
-// "?q"
+// "%q"
 RZ_IPI RzCmdStatus rz_set_last_eval_expr_handler(RzCore *core, int argc, const char **argv);
-// "?v"
+// "%v"
 RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **argv);
-// "?vx"
+// "%vx"
 RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char **argv);
-// "?vi1"
+// "%vi1"
 RZ_IPI RzCmdStatus rz_show_value_i1_handler(RzCore *core, int argc, const char **argv);
-// "?vi2"
+// "%vi2"
 RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char **argv);
-// "?vi4"
+// "%vi4"
 RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char **argv);
-// "?vi8"
+// "%vi8"
 RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char **argv);
-// "?vi"
+// "%vi"
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv);
-// "?="
+// "%="
 RZ_IPI RzCmdStatus rz_set_core_num_value_handler(RzCore *core, int argc, const char **argv);
-// "?=="
+// "%=="
 RZ_IPI RzCmdStatus rz_compare_and_set_core_num_value_handler(RzCore *core, int argc, const char **argv);
-// "?+"
+// "%+"
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive_handler(RzCore *core, int argc, const char **argv);
-// "?-"
+// "%-"
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_negative_handler(RzCore *core, int argc, const char **argv);
-// "?!"
+// "%!"
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv);
-// "?&"
-RZ_IPI RzCmdStatus rz_show_help_tasks_handler(RzCore *core, int argc, const char **argv);
-// "?%?"
-RZ_IPI RzCmdStatus rz_show_help_percent_handler(RzCore *core, int argc, const char **argv);
-// "?$"
-RZ_IPI RzCmdStatus rz_show_help_vars_handler(RzCore *core, int argc, const char **argv);
-// "?$?"
-RZ_IPI RzCmdStatus rz_show_help_dollar_handler(RzCore *core, int argc, const char **argv);
-// "?V"
-RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "?Vc"
-RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv);
-// "?Vj"
-RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv);
-// "?Vn"
-RZ_IPI RzCmdStatus rz_show_version_numeric2_handler(RzCore *core, int argc, const char **argv);
-// "?V0"
-RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv);
-// "?V1"
-RZ_IPI RzCmdStatus rz_show_version_minor_handler(RzCore *core, int argc, const char **argv);
-// "?V2"
-RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const char **argv);
-// "?l"
+// "%l"
 RZ_IPI RzCmdStatus rz_calculate_string_length_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "?X"
+// "%X"
 RZ_IPI RzCmdStatus rz_calc_expr_show_hex_handler(RzCore *core, int argc, const char **argv);
-// "?x"
+// "%x"
 RZ_IPI RzCmdStatus rz_ascii_to_hex_handler(RzCore *core, int argc, const char **argv);
-// "?x+"
+// "%x+"
 RZ_IPI RzCmdStatus rz_numeric_expr_to_hex_handler(RzCore *core, int argc, const char **argv);
-// "?x-"
+// "%x-"
 RZ_IPI RzCmdStatus rz_hex_to_ascii_handler(RzCore *core, int argc, const char **argv);
-// "?E"
-RZ_IPI RzCmdStatus rz_clippy_echo_handler(RzCore *core, int argc, const char **argv);
-// "?e"
-RZ_IPI RzCmdStatus rz_echo_msg_newline_handler(RzCore *core, int argc, const char **argv);
-// "?en"
-RZ_IPI RzCmdStatus rz_echo_msg_no_newline_handler(RzCore *core, int argc, const char **argv);
-// "?eg"
-RZ_IPI RzCmdStatus rz_echo_gotoxy_handler(RzCore *core, int argc, const char **argv);
-// "?ec"
-RZ_IPI RzCmdStatus rz_echo_goto_column_handler(RzCore *core, int argc, const char **argv);
-// "?e="
-RZ_IPI RzCmdStatus rz_echo_show_progress_handler(RzCore *core, int argc, const char **argv);
-// "?et"
-RZ_IPI RzCmdStatus rz_set_console_title_handler(RzCore *core, int argc, const char **argv);
-// "?s"
+// "%s"
 RZ_IPI RzCmdStatus rz_generate_sequence_handler(RzCore *core, int argc, const char **argv);
-// "?P"
+// "%P"
 RZ_IPI RzCmdStatus rz_phys2virt_handler(RzCore *core, int argc, const char **argv);
-// "?p"
+// "%p"
 RZ_IPI RzCmdStatus rz_virt2phys_handler(RzCore *core, int argc, const char **argv);
-// "?_"
+// "%_"
 RZ_IPI RzCmdStatus rz_yank_hud_file_handler(RzCore *core, int argc, const char **argv);
-// "?i"
+// "%i"
 RZ_IPI RzCmdStatus rz_input_numerical_expr_handler(RzCore *core, int argc, const char **argv);
-// "?in"
+// "%in"
 RZ_IPI RzCmdStatus rz_input_yesno_no_handler(RzCore *core, int argc, const char **argv);
-// "?iy"
+// "%iy"
 RZ_IPI RzCmdStatus rz_input_yesno_yes_handler(RzCore *core, int argc, const char **argv);
-// "?ik"
+// "%ik"
 RZ_IPI RzCmdStatus rz_input_any_key_handler(RzCore *core, int argc, const char **argv);
-// "?ip"
+// "%ip"
 RZ_IPI RzCmdStatus rz_input_yank_hud_handler(RzCore *core, int argc, const char **argv);
-// "?im"
+// "%im"
 RZ_IPI RzCmdStatus rz_input_msg_handler(RzCore *core, int argc, const char **argv);
-// "?if"
+// "%if"
 RZ_IPI RzCmdStatus rz_input_conditional_handler(RzCore *core, int argc, const char **argv);
-// "?w"
+// "%w"
 RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const char **argv);
-// "?t"
-RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, const char **argv);
-// "??"
+// "%%"
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive2_handler(RzCore *core, int argc, const char **argv);
 // "<"
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv);
@@ -2445,6 +2403,8 @@ RZ_IPI RzCmdStatus rz_yank_string_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char **argv);
 // "diff"
 RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char **argv);
+// "env"
+RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv);
 // "exit"
 RZ_IPI RzCmdStatus rz_cmd_shell_exit_handler(RzCore *core, int argc, const char **argv);
 // "ls"
@@ -2481,6 +2441,22 @@ RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_shell_fortune_handler(RzCore *core, int argc, const char **argv);
 // "pkill"
 RZ_IPI RzCmdStatus rz_cmd_shell_pkill_handler(RzCore *core, int argc, const char **argv);
+// "ver"
+RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "vernum"
+RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv);
+// "verjson"
+RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv);
+// "vermajor"
+RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv);
+// "verminor"
+RZ_IPI RzCmdStatus rz_show_version_minor_handler(RzCore *core, int argc, const char **argv);
+// "verpatch"
+RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const char **argv);
+// "time"
+RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, const char **argv);
+// "inittime"
+RZ_IPI RzCmdStatus rz_print_init_time_values_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
 RZ_IPI void rzshell_cmddescs_init(RzCore *core);

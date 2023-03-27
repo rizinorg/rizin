@@ -1,6 +1,6 @@
 NAME=@@= 10 20 30
 FILE==
-CMDS=?v $$ @@= 10 20 30
+CMDS=%v $$ @@= 10 20 30
 EXPECT=<<EOF
 0xa
 0x14
@@ -12,7 +12,7 @@ NAME=@@c:/c fs:
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 e search.in=bin.sections
-?v $$ @@c:/ad fs:[ra
+%v $$ @@c:/ad fs:[ra
 EOF
 EXPECT=<<EOF
 0x100005078
@@ -23,7 +23,7 @@ NAME=@@c:/c/a fs:
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 e search.in=bin.sections
-?v $$ @@c:/ao fs:[ra
+%v $$ @@c:/ao fs:[ra
 EOF
 EXPECT=<<EOF
 0x100004cd7
@@ -35,7 +35,7 @@ RUN
 
 NAME=@@= 10   20   30
 FILE==
-CMDS=?v $$ @@= 10   20   30
+CMDS=%v $$ @@= 10   20   30
 EXPECT=<<EOF
 0xa
 0x14

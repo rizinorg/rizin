@@ -204,19 +204,19 @@ CMDS=<<EOF
 e asm.arch=avr
 wa "inc r1 ; swap r1 ; inc r1 ; swap r1 ; inc r1"
 aezi
-?e increase r1
+echo increase r1
 aezs
 ar r1
-?e swap nibbles
+echo swap nibbles
 aezs
 ar r1
-?e increase r1
+echo increase r1
 aezs
 ar r1
-?e swap nibbles
+echo swap nibbles
 aezs
 ar r1
-?e increase r1
+echo increase r1
 aezs
 ar r1
 EOF
@@ -246,9 +246,9 @@ wa "add r30, r16" @ 0x8
 wa "adc r31, r17" @ 0xa   
 aezi
 aezse 4~name
-?e add
+echo add
 aezse
-?e add with carry
+echo add with carry
 aezse
 EOF
 EXPECT=<<EOF
@@ -320,9 +320,9 @@ wa "lsl r17" @ 8
 # r16 /= 2
 wa "lsr r16" @ 10
 aezi
-?e Arithmetic Signed Shift Right
+echo Arithmetic Signed Shift Right
 aezse 4
-?e Logical Shift Left & Right
+echo Logical Shift Left & Right
 aezse 2
 EOF
 EXPECT=<<EOF
@@ -461,11 +461,11 @@ wa "and r17, r16" @ 20
 wa "pop r16" @ 22
 wa "ret" @ 24
 
-?e instructions
+echo instructions
 pdq 5
 pdq 5 @ 16
-?e
-?e initial machine status
+echo
+echo initial machine status
 px 16 @ 0x70
 aezi
 aezs 3
@@ -473,22 +473,22 @@ ar pc
 ar sp
 ar r16
 ar r17
-?e
-?e call subroutine & stack pointer
+echo
+echo call subroutine & stack pointer
 aezse 1
 ar pc
 ar sp
 px 16 @ 0x70
-?e
-?e execute subroutine
+echo
+echo execute subroutine
 aezs 4
 ar pc
 ar sp
 ar r16
 ar r17
 px 16 @ 0x70
-?e
-?e execute return
+echo
+echo execute return
 aezs
 ar pc
 ar sp

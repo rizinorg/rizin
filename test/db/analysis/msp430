@@ -4,7 +4,7 @@ CMDS=<<EOF
 s main
 aF
 pif
-?e
+echo
 afi
 EOF
 EXPECT=<<EOF
@@ -61,7 +61,7 @@ CMDS=<<EOF
 s main
 aF
 pif
-?e
+echo
 afi
 EOF
 EXPECT=<<EOF

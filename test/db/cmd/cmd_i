@@ -53,7 +53,7 @@ op 3
 e io.va=0
 s entry0
 pi 1
-?p
+%p
 EOF
 EXPECT=<<EOF
 xor ebp, ebp
@@ -64,7 +64,7 @@ RUN
 NAME=ibib
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-?e works
+echo works
 ib;ib
 EOF
 EXPECT=<<EOF
@@ -3822,24 +3822,24 @@ RUN
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-?e -- default --
+echo -- default --
 iz
-?e -- geq 12 --
+echo -- geq 12 --
 e bin.minstr=12
 iz
-?e -- geq 13 --
+echo -- geq 13 --
 e bin.minstr=13
 iz
-?e -- geq 0 --
+echo -- geq 0 --
 e bin.minstr=0
 iz
-?e -- leq 12 --
+echo -- leq 12 --
 e bin.maxstr=12
 iz
-?e -- leq 11 --
+echo -- leq 11 --
 e bin.maxstr=11
 iz
-?e -- no limit --
+echo -- no limit --
 e bin.maxstr=0
 iz
 EOF
@@ -3876,12 +3876,12 @@ RUN
 NAME=iz (__cfstring)
 FILE=bins/mach0/hello-objc-osx
 CMDS=<<EOF
-?e -- default --
+echo -- default --
 iz
-?e -- geq 12 --
+echo -- geq 12 --
 e bin.minstr=12
 iz
-?e -- leq 13 --
+echo -- leq 13 --
 e bin.maxstr=12
 iz
 EOF
@@ -4445,10 +4445,10 @@ FILE==
 CMDS=<<EOF
 wz QUVWXWYZ[\\]^_R
 px 16
-?e
+echo
 e str.escbslash=false  # default
 izz
-?e
+echo
 e str.escbslash=true
 izz
 EOF
@@ -4475,11 +4475,11 @@ wz k\0i\0abcdefgh
 .(izzenc ascii)
 .(izzenc utf8)
 .(izzenc utf16le)
-?e
+echo
 wx 00250025002500250000
 .(izzenc guess)
 .(izzenc utf16le)
-?e
+echo
 wx 26252625262526250000
 .(izzenc guess)
 .(izzenc utf16le)
@@ -4605,47 +4605,47 @@ RUN
 NAME=iz/izz bin.str.purge
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
-?e --1--
+echo --1--
 e bin.str.purge=false
 izz~0x00412420
-?e --2--
+echo --2--
 e bin.str.purge=true
 izz~0x00412420  # Should print nothing
-?e --3--
+echo --3--
 (test_iz;iz~0x004131d8;iz~0x00413228;iz~0x00413233;iz~0x0041323a)
 e bin.str.purge=false
 .(test_iz)
-?e --4--
+echo --4--
 e bin.str.purge=true
 .(test_iz)
-?e --5--
+echo --5--
 e bin.str.purge=0x004131d8,0x00413228,0x0041323a
 .(test_iz)
-?e --6--
+echo --6--
 e bin.str.purge=true,0x00413228
 .(test_iz)
-?e --7--
+echo --7--
 e bin.str.purge=0x4131d8-0x413233
 .(test_iz)
-?e --8--
+echo --8--
 e bin.str.purge=0x413230-0x413240,0x4131d8
 .(test_iz)
-?e --9--
+echo --9--
 e bin.str.purge=true,0x413228-0x413228
 .(test_iz)
-?e --10--
+echo --10--
 e bin.str.purge=0x413100-0x413300,!0x413233
 .(test_iz)
-?e --11--
+echo --11--
 e bin.str.purge=true,!0x41323a
 .(test_iz)
-?e --12--
+echo --12--
 e bin.str.purge=true,!0x41323a,0x41323a
 .(test_iz)
-?e --13--
+echo --13--
 e bin.str.purge=true,0x4131d8,!0x4131d8
 .(test_iz)
-?e --14--
+echo --14--
 e bin.str.purge=all,!0x413220-0x413235
 .(test_iz)
 EOF
@@ -4900,9 +4900,9 @@ NAME=iee elf Cd (32-bit)
 FILE=bins/elf/before-after-main
 CMDS=<<EOF
 pD $SS @ section..preinit_array
-?e
+echo
 pD $SS @ section..init_array
-?e
+echo
 pD $SS @ section..fini_array
 EOF
 EXPECT=<<EOF
@@ -4945,9 +4945,9 @@ NAME=iee elf Cd (64-bit)
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
 s section..preinit_array
-?e
+echo
 pD $SS @ section..init_array
-?e
+echo
 pD $SS @ section..fini_array
 EOF
 EXPECT=<<EOF
@@ -5485,21 +5485,21 @@ RUN
 NAME=ix (source line info)
 FILE=bins/elf/dwarf3_many_comp_units.elf
 CMDS=<<EOF
-?e -- Everything
+echo -- Everything
 ix
-?e -- Everything in json
+echo -- Everything in json
 ixj
-?e -- Single address (exact match)
+echo -- Single address (exact match)
 ix. @ 0x00001401
-?e -- Single address (still covered)
+echo -- Single address (still covered)
 ix. @ 0x00001402
-?e -- Single address (not covered anymore)
+echo -- Single address (not covered anymore)
 ix. @ 0x00001403
-?e -- Single address in json
+echo -- Single address in json
 ix.j @ 0x000013a2
-?e -- File Summary
+echo -- File Summary
 ixf
-?e -- File Summary in json
+echo -- File Summary in json
 ixfj
 EOF
 EXPECT=<<EOF
@@ -5591,7 +5591,7 @@ NAME=ix same-addr samples
 FILE=bins/elf/libstdc++.so.6
 CMDS=<<EOF
 ix. @ 0x00091004
-?e --
+echo --
 ix.j @ 0x00091004
 EOF
 EXPECT=<<EOF
@@ -5610,9 +5610,9 @@ CMDS=<<EOF
 (pI_all; e asm.bits; iI~^bits; iIq~^bits; iIj~{.bits})
 . bins/flat/=.bin.rz
 .(pI_all)
-?e
-?e ------
-?e
+echo
+echo ------
+echo
 e asm.bits=64
 .(pI_all)
 EOF

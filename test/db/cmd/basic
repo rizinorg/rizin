@@ -4,7 +4,7 @@ CMDS=<<EOF
 w test
 w test @ 333
 w test @ 666
-?e
+echo
 e search.in=block
 b 777
 / test

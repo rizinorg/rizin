@@ -1,7 +1,7 @@
 NAME=fatmach0 IO test 32bit
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b32
-CMDS=?v entry0;p8 8 @ entry0
+CMDS=%v entry0;p8 8 @ entry0
 EXPECT=<<EOF
 0x1f44
 6a0089e583e4f083
@@ -11,7 +11,7 @@ RUN
 NAME=fatmach0 IO test 64bit
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b64
-CMDS=?v entry0;p8 8 @ entry0
+CMDS=%v entry0;p8 8 @ entry0
 EXPECT=<<EOF
 0x100000ef8
 6a004889e54883e4
@@ -21,7 +21,7 @@ RUN
 NAME=fatmach0 PPC entry0
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a ppc -b32
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1f64
 EOF

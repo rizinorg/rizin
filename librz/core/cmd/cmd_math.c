@@ -8,174 +8,6 @@
 #include "rz_util.h"
 #include "rz_types.h"
 
-static ut32 vernum(const char *s) {
-	// XXX this is known to be buggy, only works for strings like "x.x.x"
-	// XXX anything like "x.xx.x" will break the parsing
-	// XXX -git is ignored, maybe we should shift for it
-	char *a = strdup(s);
-	a = rz_str_replace(a, ".", "0", 1);
-	char *dash = strchr(a, '-');
-	if (dash) {
-		*dash = 0;
-	}
-	ut32 res = atoi(a);
-	free(a);
-	return res;
-}
-
-static const char *help_msg_percent[] = {
-	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
-	"%", "", "list all environment variables",
-	"%", "SHELL", "prints SHELL value",
-	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
-	NULL
-};
-
-// NOTE: probably not all environment vars takes sesnse
-// because they can be replaced by commands in the given
-// command.. we should only expose the most essential and
-// unidirectional ones.
-static const char *help_msg_env[] = {
-	"\nEnvironment:", "", "",
-	"RZ_FILE", "", "file name",
-	"RZ_OFFSET", "", "10base offset 64bit value",
-	"RZ_XOFFSET", "", "same as above, but in 16 base",
-	"RZ_BSIZE", "", "block size",
-	"RZ_ENDIAN", "", "'big' or 'little'",
-	"RZ_IOVA", "", "is io.va true? virtual addressing (1,0)",
-	"RZ_DEBUG", "", "debug mode enabled? (1,0)",
-	"RZ_SIZE", "", "file size",
-	"RZ_ARCH", "", "value of asm.arch",
-	"RZ_BITS", "", "arch reg size (8, 16, 32, 64)",
-	"RZ_BIN_LANG", "", "assume this lang to demangle",
-	"RZ_BIN_DEMANGLE", "", "demangle or not",
-	"RZ_BIN_PDBSERVER", "", "e pdb.server",
-	NULL
-};
-
-static const char *help_msg_question_v[] = {
-	"Usage: ?v [$.]", "", "",
-	"flag", "", "offset of flag",
-	"$", "{ev}", "get value of eval config variable",
-	"$$", "", "here (current virtual seek)",
-	"$$$", "", "current non-temporary virtual seek",
-	"$?", "", "last comparison value",
-	"$alias", "=value", "alias commands (simple macros)",
-	"$B", "", "base address (aligned lowest map address)",
-	"$b", "", "block size",
-	"$c", "", "get terminal width in character columns",
-	"$Cn", "", "get nth call of function",
-	"$D", "", "current debug map base address ?v $D @ rsp",
-	"$DB", "", "same as dbg.baddr, progam base address",
-	"$DD", "", "current debug map size",
-	"$Dn", "", "get nth data reference in function",
-	"$e", "", "1 if end of block, else 0",
-	"$e", "{flag}", "end of flag (flag->offset + flag->size)",
-	"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
-	"$F", "", "Same as $FB",
-	"$Fb", "", "begin of basic block",
-	"$FB", "", "begin of function",
-	"$Fe", "", "end of basic block",
-	"$FE", "", "end of function",
-	"$Ff", "", "function false destination",
-	"$Fi", "", "basic block instructions",
-	"$FI", "", "function instructions",
-	"$Fj", "", "function jump destination",
-	"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)",
-	"$FS", "", "function size (linear length)",
-	"$Fs", "", "size of the current basic block",
-	"$FSS", "", "function size (sum bb sizes)",
-	"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
-	"$Ja", "", "get nth jump of function",
-	"$k{kv}", "", "get value of an sdb query value",
-	"$l", "", "opcode length",
-	"$M", "", "map address (lowest map address)",
-	"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
-	"$MM", "", "map size (lowest map address)",
-	"$O", "", "cursor here (current offset pointed by the cursor)",
-	"$o", "", "here (current disk io offset)",
-	"$p", "", "getpid()",
-	"$P", "", "pid of children (only in debug)",
-	"$r", "", "get console height (in rows, see $c for columns)",
-	"$r", "{reg}", "get value of named register",
-	"$s", "", "file size",
-	"$S", "", "section offset",
-	"$SS", "", "section size",
-	"$s", "{flag}", "get size of flag",
-	"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
-	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
-	"$Xn", "", "get nth xref of function",
-	"RzNum", "", "$variables usable in math expressions",
-	NULL
-};
-
-static const char *help_msg_greater_sign[] = {
-	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
-	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
-	"[cmd] > $alias", "", "save the output of the command as an alias (see $?)",
-	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
-	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
-	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
-	NULL
-};
-
-static void cmd_help_percent(RzCore *core) {
-	rz_core_cmd_help(core, help_msg_percent);
-	rz_core_cmd_help(core, help_msg_env);
-}
-
-static const char *findBreakChar(const char *s) {
-	while (*s) {
-		if (!rz_name_validate_char(*s, true)) {
-			break;
-		}
-		s++;
-	}
-	return s;
-}
-
-static char *filterFlags(RzCore *core, const char *msg) {
-	const char *dollar, *end;
-	char *word, *buf = NULL;
-	for (;;) {
-		dollar = strchr(msg, '$');
-		if (!dollar) {
-			break;
-		}
-		buf = rz_str_appendlen(buf, msg, dollar - msg);
-		if (dollar[1] == '{') {
-			// find }
-			end = strchr(dollar + 2, '}');
-			if (end) {
-				word = rz_str_newlen(dollar + 2, end - dollar - 2);
-				end++;
-			} else {
-				msg = dollar + 1;
-				buf = rz_str_append(buf, "$");
-				continue;
-			}
-		} else {
-			end = findBreakChar(dollar + 1);
-			if (!end) {
-				end = dollar + strlen(dollar);
-			}
-			word = rz_str_newlen(dollar + 1, end - dollar - 1);
-		}
-		if (end && word) {
-			ut64 val = rz_num_math(core->num, word);
-			char num[32];
-			snprintf(num, sizeof(num), "0x%" PFMT64x, val);
-			buf = rz_str_append(buf, num);
-			msg = end;
-		} else {
-			break;
-		}
-		free(word);
-	}
-	buf = rz_str_append(buf, msg);
-	return buf;
-}
-
 static const char *avatar_orangg[] = {
 	"      _______\n"
 	"     /       \\      .-%s-.\n"
@@ -261,34 +93,6 @@ enum {
 };
 
 /**
- * \brief Returns all the $ variable names in a NULL-terminated array.
- */
-RZ_API const char **rz_core_help_vars_get(RzCore *core) {
-	static const char *vars[] = {
-		"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
-		"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
-		"$fl", "$FS", "$Fs", "$FSS", "$j", "$Ja", "$l", "$M", "$m", "$MM", "$O",
-		"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
-	};
-	return vars;
-}
-
-RZ_API void rz_core_help_vars_print(RzCore *core) {
-	int i = 0;
-	const char **vars = rz_core_help_vars_get(core);
-	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
-	while (vars[i]) {
-		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
-		if (wideOffsets) {
-			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-		} else {
-			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-		}
-		i++;
-	}
-}
-
-/**
  * \brief Get clippy echo string.
  * \param msg The message to echo.
  */
@@ -333,6 +137,98 @@ RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 	if (string) {
 		rz_cons_print(string);
 		free(string);
+	}
+}
+
+/* keeping these functions because they can be useful in future */
+/* static const char *findBreakChar(const char *s) { */
+/* 	while (*s) { */
+/* 		if (!rz_name_validate_char(*s, true)) { */
+/* 			break; */
+/* 		} */
+/* 		s++; */
+/* 	} */
+/* 	return s; */
+/* } */
+
+/* keeping these functions because they can be useful in future */
+/* static char *filterFlags(RzCore *core, const char *msg) { */
+/* 	const char *dollar, *end; */
+/* 	char *word, *buf = NULL; */
+/* 	for (;;) { */
+/* 		dollar = strchr(msg, '$'); */
+/* 		if (!dollar) { */
+/* 			break; */
+/* 		} */
+/* 		buf = rz_str_appendlen(buf, msg, dollar - msg); */
+/* 		if (dollar[1] == '{') { */
+/* 			// find } */
+/* 			end = strchr(dollar + 2, '}'); */
+/* 			if (end) { */
+/* 				word = rz_str_newlen(dollar + 2, end - dollar - 2); */
+/* 				end++; */
+/* 			} else { */
+/* 				msg = dollar + 1; */
+/* 				buf = rz_str_append(buf, "$"); */
+/* 				continue; */
+/* 			} */
+/* 		} else { */
+/* 			end = findBreakChar(dollar + 1); */
+/* 			if (!end) { */
+/* 				end = dollar + strlen(dollar); */
+/* 			} */
+/* 			word = rz_str_newlen(dollar + 1, end - dollar - 1); */
+/* 		} */
+/* 		if (end && word) { */
+/* 			ut64 val = rz_num_math(core->num, word); */
+/* 			char num[32]; */
+/* 			snprintf(num, sizeof(num), "0x%" PFMT64x, val); */
+/* 			buf = rz_str_append(buf, num); */
+/* 			msg = end; */
+/* 		} else { */
+/* 			break; */
+/* 		} */
+/* 		free(word); */
+/* 	} */
+/* 	buf = rz_str_append(buf, msg); */
+/* 	return buf; */
+/* } */
+
+static const char *help_msg_greater_sign[] = {
+	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
+	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
+	"[cmd] > $alias", "", "save the output of the command as an alias (see $?)",
+	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
+	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
+	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
+	NULL
+};
+
+/**
+ * \brief Returns all the $ variable names in a NULL-terminated arr
+ */
+RZ_API const char **rz_core_help_vars_get(RzCore *core) {
+	static const char *vars[] = {
+		"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
+		"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
+		"$fl", "$FS", "$Fs", "$FSS", "$j", "$Ja", "$l", "$M", "$m", "$MM", "$O",
+		"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
+	};
+	return vars;
+}
+
+RZ_API void rz_core_help_vars_print(RzCore *core) {
+	int i = 0;
+	const char **vars = rz_core_help_vars_get(core);
+	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
+	while (vars[i]) {
+		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
+		if (wideOffsets) {
+			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+		} else {
+			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+		}
+		i++;
 	}
 }
 
@@ -570,16 +466,6 @@ RZ_IPI RzCmdStatus rz_eval_expr_print_octal_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_init_time_values_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("plug.init = %" PFMT64d "\n"
-		       "plug.load = %" PFMT64d "\n"
-		       "file.load = %" PFMT64d "\n",
-		core->times->loadlibs_init_time,
-		core->times->loadlibs_time,
-		core->times->file_open_time);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_num_to_units_handler(RzCore *core, int argc, const char **argv) {
 	char unit[8];
 	ut64 n = rz_num_math(core->num, argv[1]);
@@ -698,81 +584,8 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_show_help_tasks_handler(RzCore *core, int argc, const char **argv) {
-	helpCmdTasks(core);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_help_percent_handler(RzCore *core, int argc, const char **argv) {
-	cmd_help_percent(core);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_show_help_vars_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_help_vars_print(core);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_help_dollar_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_cmd_help(core, help_msg_question_v);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		char *v = rz_version_str(NULL);
-		rz_cons_printf("%s\n", v);
-		free(v);
-	} else {
-		rz_cons_println(RZ_VERSION);
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", vernum(RZ_VERSION));
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_json_handler(RzCore *core, int argc, const char **argv) {
-	PJ *pj = pj_new();
-	if (!pj) {
-		RZ_LOG_ERROR("core: Out of memory!");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	pj_o(pj);
-	pj_ks(pj, "arch", RZ_SYS_ARCH);
-	pj_ks(pj, "os", RZ_SYS_OS);
-	pj_ki(pj, "bits", RZ_SYS_BITS);
-	pj_ki(pj, "major", RZ_VERSION_MAJOR);
-	pj_ki(pj, "minor", RZ_VERSION_MINOR);
-	pj_ki(pj, "patch", RZ_VERSION_PATCH);
-	pj_ki(pj, "number", RZ_VERSION_NUMBER);
-	pj_ki(pj, "nversion", vernum(RZ_VERSION));
-	pj_ks(pj, "version", RZ_VERSION);
-	pj_end(pj);
-	rz_cons_printf("%s\n", pj_string(pj));
-	pj_free(pj);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_numeric2_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_NUMBER);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_MAJOR);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_minor_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_MINOR);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_PATCH);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -825,74 +638,6 @@ RZ_IPI RzCmdStatus rz_hex_to_ascii_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_clippy_echo_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_clippy_print(core, argv[1]);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_echo_msg_newline_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 1) {
-		const char *msg = argv[1];
-		// TODO: replace all ${flagname} by its value in hexa
-		char *newmsg = filterFlags(core, msg);
-		rz_str_unescape(newmsg);
-		rz_cons_print(newmsg);
-		free(newmsg);
-	}
-	rz_cons_newline();
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_echo_msg_no_newline_handler(RzCore *core, int argc, const char **argv) {
-	const char *msg = argv[1];
-	// TODO: replace all ${flagname} by its value in hexa
-	char *newmsg = filterFlags(core, msg);
-	rz_str_unescape(newmsg);
-	rz_cons_print(newmsg);
-	free(newmsg);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_echo_gotoxy_handler(RzCore *core, int argc, const char **argv) {
-	int x = atoi(argv[1]);
-	int y = atoi(argv[2]);
-	rz_cons_gotoxy(x, y);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_echo_goto_column_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_column(rz_num_math(core->num, argv[1]));
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_echo_show_progress_handler(RzCore *core, int argc, const char **argv) {
-	ut64 pc = rz_num_math(core->num, argv[1]);
-	RzBarOptions opts = {
-		.unicode = rz_config_get_b(core->config, "scr.utf8"),
-		.thinline = !rz_config_get_b(core->config, "scr.hist.block"),
-		.legend = true,
-		.offset = rz_config_get_b(core->config, "hex.offset"),
-		.offpos = 0,
-		.cursor = false,
-		.curpos = 0,
-		.color = rz_config_get_i(core->config, "scr.color")
-	};
-	RzStrBuf *strbuf = rz_progressbar(&opts, pc, 80);
-	if (!strbuf) {
-		RZ_LOG_ERROR("Cannot generate progressbar\n");
-	} else {
-		char *bar = rz_strbuf_drain(strbuf);
-		rz_cons_print(bar);
-		free(bar);
-	}
-	rz_cons_newline();
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_set_console_title_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_set_title(argv[1]);
-	return RZ_CMD_STATUS_OK;
-}
 RZ_IPI RzCmdStatus rz_generate_sequence_handler(RzCore *core, int argc, const char **argv) {
 	ut64 from, to, step;
 	from = rz_num_math(core->num, argv[1]);
@@ -1027,16 +772,6 @@ RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const 
 	}
 	rz_cons_println(rstr);
 	free(rstr);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, const char **argv) {
-	ut64 start = rz_time_now_mono();
-	rz_core_cmd(core, argv[1], 0);
-	ut64 end = rz_time_now_mono();
-	double seconds = (double)(end - start) / RZ_USEC_PER_SEC;
-	core->num->value = (ut64)seconds;
-	rz_cons_printf("%lf\n", seconds);
 	return RZ_CMD_STATUS_OK;
 }
 

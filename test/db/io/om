@@ -19,11 +19,11 @@ NAME=omlt
 FILE=bins/elf/ls
 CMDS=<<EOF
 omlt
-?e
+echo
 omlt:quiet
-?e
+echo
 omlt:size
-?e
+echo
 omlt:name/str/fmap.LOAD3:size:quiet
 EOF
 EXPECT=<<EOF

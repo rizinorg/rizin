@@ -23,7 +23,7 @@ RUN
 NAME=Checking file size
 FILE=bins/dex/HelloSlack.dex
 CMDS=<<EOF
-?v $s
+%v $s
 iZ
 EOF
 EXPECT=<<EOF
@@ -34,7 +34,7 @@ RUN
 
 NAME=DEX: entrypoint
 FILE=bins/dex/HelloSlack.dex
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1000001c0
 EOF
@@ -290,11 +290,11 @@ BROKEN=1
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
 ix
-?e --
+echo --
 ix.@0x000002f4
-?e --
+echo --
 ix.@0x00000318
-?e --
+echo --
 ix~?
 EOF
 EXPECT=<<EOF

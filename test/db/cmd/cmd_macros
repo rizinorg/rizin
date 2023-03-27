@@ -1,7 +1,7 @@
-NAME=(msg x;?e ${x})
+NAME=(msg x;echo ${x})
 FILE==
 CMDS=<<EOF
-(msg x;?e ${x})
+(msg x;echo ${x})
 .(msg HelloWorld)
 EOF
 EXPECT=<<EOF
@@ -9,12 +9,12 @@ HelloWorld
 EOF
 RUN
 
-NAME=(msg x;?e ${x})
+NAME=(msg x;echo ${x})
 FILE==
 CMDS=<<EOF
-(msg x;?e ${x})
+(msg x;echo ${x})
 .(msg HelloWorld)
-?e hiz
+echo hiz
 EOF
 EXPECT=<<EOF
 HelloWorld
@@ -22,10 +22,10 @@ hiz
 EOF
 RUN
 
-NAME=.(msg x y;?e ${x} ${y})
+NAME=.(msg x y;echo ${x} ${y})
 FILE==
 CMDS=<<EOF
-(msg x y;?e ${x} ${y})
+(msg x y;echo ${x} ${y})
 .(msg Hello World)
 EOF
 EXPECT=<<EOF
@@ -36,7 +36,7 @@ RUN
 NAME=.(msg "foo bar")
 FILE==
 CMDS=<<EOF
-(msg x;?e ${x})
+(msg x;echo ${x})
 .(msg "Hello World")
 EOF
 EXPECT=<<EOF
@@ -47,7 +47,7 @@ RUN
 NAME=.(msg foo\ bar)
 FILE==
 CMDS=<<EOF
-(msg x;?e ${x})
+(msg x;echo ${x})
 .(msg Hello\ World)
 EOF
 EXPECT=<<EOF
@@ -80,9 +80,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=3(foo;?e a;?e b)()
+NAME=3(foo;echo a;echo b)()
 FILE==
-CMDS=2(foo;?e a;?e b)()
+CMDS=2(foo;echo a;echo b)()
 EXPECT=<<EOF
 a
 b
@@ -91,13 +91,13 @@ b
 EOF
 RUN
 
-NAME=?v $$ @@f:foo*
+NAME=%v $$ @@f:foo*
 FILE==
 CMDS=<<EOF
 f foo.one @ 1
 f foo.bar @ 2
 f foo.cow @ 3
-?v $$ @@f:foo*
+%v $$ @@f:foo*
 EOF
 EXPECT=<<EOF
 0x1
@@ -106,13 +106,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=?v
+NAME=%v
 FILE==
 CMDS=<<EOF
 f foo.one @ 1
 f foo.bar @ 2
 f foo.cow @ 3
-(_;?v $$)() @@f:foo*
+(_;%v $$)() @@f:foo*
 EOF
 EXPECT=<<EOF
 0x1
@@ -124,8 +124,8 @@ RUN
 NAME=multiple commands
 FILE==
 CMDS=<<EOF
-(foo x y; p8 ${x} @ ${y}; ?e Hello ${x})(2 0)
-(bar x y; p8 ${x} @ ${y}; ?e Hello ${x}; ?e World ${y})(1 0)
+(foo x y; p8 ${x} @ ${y}; echo Hello ${x})(2 0)
+(bar x y; p8 ${x} @ ${y}; echo Hello ${x}; echo World ${y})(1 0)
 (zas x y; .(foo ${y} ${x}))(3 1)
 EOF
 EXPECT=<<EOF
@@ -142,14 +142,14 @@ RUN
 NAME=..(
 FILE==
 CMDS=<<EOF
-(foo1 fst; ?e ${fst})
-(foo2 fst snd; ?e ${fst}; ?v ${snd})
+(foo1 fst; echo ${fst})
+(foo2 fst snd; echo ${fst}; %v ${snd})
 ..(foo1 xyz)
-?e -----
+echo -----
 ..(foo1 abc def)
-?e -----
+echo -----
 ..(foo2 xyz 11)
-?e -----
+echo -----
 ..(foo2 abc 10 def 9)
 EOF
 EXPECT=<<EOF
@@ -171,7 +171,7 @@ RUN
 NAME=arity errors
 FILE==
 CMDS=<<EOF
-(foo0; ?e foo0)
+(foo0; echo foo0)
 .(foo0 1)
 EOF
 EXPECT_ERR=<<EOF
@@ -183,7 +183,7 @@ RUN
 NAME=arity errors 2
 FILE==
 CMDS=<<EOF
-(foo0; ?e foo0)
+(foo0; echo foo0)
 ..(foo0 1)
 EOF
 EXPECT_ERR=<<EOF
@@ -195,7 +195,7 @@ RUN
 NAME=arity errors 3
 FILE==
 CMDS=<<EOF
-(foo1 fst; ?e foo1 ${fst})
+(foo1 fst; echo foo1 ${fst})
 .(foo1)
 EOF
 EXPECT_ERR=<<EOF
@@ -207,7 +207,7 @@ RUN
 NAME=arity errors 4
 FILE==
 CMDS=<<EOF
-(foo1 fst; ?e foo1 ${fst})
+(foo1 fst; echo foo1 ${fst})
 .(foo1 1 2)
 EOF
 EXPECT_ERR=<<EOF
@@ -219,7 +219,7 @@ RUN
 NAME=arity errors 5
 FILE==
 CMDS=<<EOF
-(foo1 fst; ?e foo1 ${fst})
+(foo1 fst; echo foo1 ${fst})
 ..(foo1)
 EOF
 EXPECT_ERR=<<EOF
@@ -231,7 +231,7 @@ RUN
 NAME=arity errors 6
 FILE==
 CMDS=<<EOF
-(foo2 fst snd; ?e foo2_0 ${fst}; ?e foo2_1 ${snd})
+(foo2 fst snd; echo foo2_0 ${fst}; echo foo2_1 ${snd})
 ..(foo2 1)
 EOF
 EXPECT_ERR=<<EOF
@@ -243,7 +243,7 @@ RUN
 NAME=arity errors 7
 FILE==
 CMDS=<<EOF
-(foo2 fst snd; ?e foo2_0 ${fst}; ?e foo2_1 ${snd})
+(foo2 fst snd; echo foo2_0 ${fst}; echo foo2_1 ${snd})
 ..(foo2)
 EOF
 EXPECT_ERR=<<EOF

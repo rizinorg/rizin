@@ -36,7 +36,7 @@ NAME=pd v8 and cortex
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
-?e
+echo
 pad fff7c0ea@e:asm.cpu=v8
 pad fff7c0ea@e:asm.cpu=cortex
 pad fff7c0ea@e:asm.cpu=v8
@@ -692,7 +692,7 @@ s 0x004017c0
 af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
-?e
+echo
 e asm.lines.fcn=false
 pdf
 EOF
@@ -722,7 +722,7 @@ s 0x004017c0
 af+ fcn2.0x004017c0 @ 0x004017c0
 afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
 pdf
-?e
+echo
 e asm.lines.fcn=false
 e asm.fcn.size=true
 pdf
@@ -1126,7 +1126,7 @@ e str.escbslash=true
 pd 1 @ 0x004016c0
 .(test_str.enc utf32-le)
 pd 1 @ 0x004016ed
-?e
+echo
 .(test_str.enc UTF32BE)
 .(test_str.enc UTF16-LE)
 EOF
@@ -1561,20 +1561,20 @@ af
 s 0x00404886
 e bin.str.purge=false
 pd 2
-?e --1--
+echo --1--
 e bin.str.purge=true
 pd 2
-?e --2--
+echo --2--
 e bin.str.purge=0x4028a0
 pd 2
-?e --3--
+echo --3--
 e bin.str.purge=0x412420,0x4028a0
 pd 2
-?e --4--
+echo --4--
 e bin.str.purge=true
 pd 1 @ 0x004028e0
 pd 1 @ 0x00402abd
-?e --5--
+echo --5--
 e bin.str.purge=true,0x414fbf
 pd 1 @ 0x004028e0
 pd 1 @ 0x00402abd
@@ -1613,10 +1613,10 @@ s 0x0008049c
 e bin.str.purge=
 e emu.str.off=false
 pd 2
-?e ----
+echo ----
 e emu.str.off=true
 pd 2
-?e ----
+echo ----
 e bin.str.purge=0x80510
 pd 2
 EOF
@@ -1793,7 +1793,7 @@ e emu.str.inv=true
 pd 1 @ 0x161d
 e emu.str.inv=false
 pd 1 @ 0x161d
-?e
+echo
 e asm.cmt.right=false
 e emu.str.inv=true
 pd 1 @ 0x161d
@@ -2008,16 +2008,16 @@ e asm.pseudo=false
 e asm.sub.var=true
 e asm.ucase=true
 pd 4 @ 0x0001045c
-?e
+echo
 e asm.sub.var=false
 e asm.ucase=false
 pd 4 @ 0x0001045c
-?e
+echo
 e asm.pseudo=true
 e asm.sub.var=true
 e asm.sub.varonly=false
 pd 4 @ 0x0001045c
-?e
+echo
 e asm.sub.varonly=true
 s main
 afvn local2 var_10h
@@ -2121,7 +2121,7 @@ e asm.bytes=true
 e asm.imm.str=true
 e asm.cmt.right=false
 pd 1 @ 0x9b3
-?e
+echo
 pdJ 1 @ 0x9b3
 EOF
 EXPECT=<<EOF
@@ -2207,7 +2207,7 @@ e asm.bytes=true
 e asm.lines.ret=1
 s 0x08048414
 pd 2
-?e
+echo
 pdJ 2
 EOF
 EXPECT=<<EOF
@@ -2445,7 +2445,7 @@ CMDS=<<EOF
 e asm.cmt.il=1
 e asm.cmt.right=0
 pd 3 @ 0x80e
-?e --
+echo --
 e asm.cmt.right=1
 pd 3 @ 0x80e
 EOF
@@ -2470,7 +2470,7 @@ CMDS=<<EOF
 e asm.cmt.esil=1
 e asm.cmt.right=0
 pd 3 @ 0x80e
-?e --
+echo --
 e asm.cmt.right=1
 pd 3 @ 0x80e
 EOF

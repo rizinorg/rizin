@@ -3,19 +3,19 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
-?e true
+echo true
 pd 1~[0]
 e asm.segoff=true
-?e true
+echo true
 pd 1~[0]
 e asm.segoff=true
-?e true
+echo true
 pd 1~[0]
 e asm.segoff=false
-?e false
+echo false
 pd 1~[0]
 e asm.segoff=true
-?e true
+echo true
 pd 1~[0]
 EOF
 EXPECT=<<EOF

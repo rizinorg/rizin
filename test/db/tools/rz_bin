@@ -1063,7 +1063,7 @@ NAME=rz-bin -Pj
 FILE=bins/pdb/minimal.pdb
 CMDS=<<EOF
 !rz-bin -Pj ${RZ_FILE}~{}
-?e
+echo
 EOF
 EXPECT=<<EOF
 {

@@ -258,7 +258,7 @@ FILE=bins/mach0/hello-macos-arm64e-objc-stubs
 CMDS=<<EOF
 aalos
 fl@F:objc-stubs
-?e --
+echo --
 fl@F:symbols~objc_msgSend
 EOF
 EXPECT=<<EOF
@@ -276,7 +276,7 @@ CMDS=<<EOF
 aaa
 pif @ main
 afl~msgSend
-?e -- clean function rename
+echo -- clean function rename
 s 0x100003da0
 pdf
 EOF

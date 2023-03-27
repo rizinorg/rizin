@@ -78,7 +78,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_magic.c"
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
-#include "cmd_help.c"
+#include "cmd_math.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",

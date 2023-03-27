@@ -4,7 +4,7 @@ CMDS=<<EOF
 aaa
 s main
 afvs*
-?e ---
+echo ---
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_118h
 afvt s1 "struct S1"
@@ -33,7 +33,7 @@ s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_118h
 pi 4 @ 0x004004be
-?e ---
+echo ---
 afvt s1 "struct S1"
 pi 4 @ 0x004004be
 EOF

@@ -97,7 +97,7 @@ RUN
 
 NAME=fatmach0 entry0
 FILE=bins/mach0/fatmach0-3true
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -114,7 +114,7 @@ RUN
 NAME=fatmach0 entry1
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1f44
 EOF
@@ -159,7 +159,7 @@ RUN
 NAME=fatmach0 entry2
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a ppc -b 32
-CMDS=?v entry0
+CMDS=%v entry0
 EXPECT=<<EOF
 0x1f64
 EOF

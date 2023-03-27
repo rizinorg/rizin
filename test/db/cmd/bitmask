@@ -6,11 +6,11 @@ wx 414243
 e scr.null=1
 cx 41..43 2>/dev/null
 e scr.null=0
-?! ?e thats fine
+%! echo thats fine
 e scr.null=1
 cx 41..11 2>/dev/null
 e scr.null=0
-?! ?e thats wrong
+%! echo thats wrong
 EOF
 EXPECT=<<EOF
 thats fine
