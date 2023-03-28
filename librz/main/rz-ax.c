@@ -130,56 +130,6 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	return true;
 }
 
-static void print_hex_from_base2(char *base2) {
-	bool first = true;
-	const int len = strlen(base2);
-	if (len < 1) {
-		return;
-	}
-
-	// we split each section by 8 bits and have bytes.
-	ut32 bytes_size = (len >> 3) + (len & 7 ? 1 : 0);
-	ut8 *bytes = calloc(bytes_size, sizeof(ut8));
-	if (!bytes) {
-		eprintf("cannot allocate %d bytes\n", bytes_size);
-		return;
-	}
-
-	int c = len & 7;
-	if (c) {
-		// align counter to 8 bits
-		c = 8 - c;
-	}
-	for (int i = 0, j = 0; i < len && j < bytes_size; i++, c++) {
-		if (base2[i] != '1' && base2[i] != '0') {
-			eprintf("invalid base2 number %c at char %d\n", base2[i], i);
-			free(bytes);
-			return;
-		}
-		// c & 7 is c % 8
-		if (c > 0 && !(c & 7)) {
-			j++;
-		}
-		bytes[j] <<= 1;
-		bytes[j] |= base2[i] - '0';
-	}
-
-	printf("0x");
-	for (int i = 0; i < bytes_size; ++i) {
-		if (first) {
-			if (i != (bytes_size - 1) && !bytes[i]) {
-				continue;
-			}
-			printf("%x", bytes[i]);
-			first = false;
-		} else {
-			printf("%02x", bytes[i]);
-		}
-	}
-	printf("\n");
-	free(bytes);
-}
-
 static void print_ascii_table(void) {
 	printf("%s", ret_ascii_table());
 }
@@ -233,6 +183,40 @@ static int help(void) {
 		"  -v      version              ;  rz-ax -v\n"
 		"  -p      position of set bits ;  rz-ax -p 0xb3\n");
 	return true;
+}
+
+char *rz_ax_parse_bitstring(const char *bitstring) {
+	// Check that bitstring starts with "0b"
+	if (strncmp(bitstring, "0b", 2) != 0) {
+		RZ_LOG_ERROR("rz-ax: bitstring must start with '0b'\n");
+		return NULL;
+	}
+	// Get the length of the bitstring
+	size_t bitlen = strlen(bitstring) - 2;
+	// Check that bitstring is "0b" only
+	if (!bitlen) {
+		RZ_LOG_ERROR("rz-ax: bitstring is too short\n");
+		return NULL;
+	}
+	// Create a bitvector of the appropriate size
+	RzBitVector *bitv = rz_bv_new(bitlen);
+	if (!bitv) {
+		RZ_LOG_ERROR("rz-ax: failed to allocate memory for bitvector\n");
+		return NULL;
+	}
+	// Check that bitstring contains only '0' and '1'
+	for (size_t i = 0; i < bitlen; i++) {
+		if (bitstring[i + 2] == '1') {
+			rz_bv_set(bitv, i, true);
+		} else if (bitstring[i + 2] != '0') {
+			RZ_LOG_ERROR("rz-ax: bitstring must contain only '0' and '1'\n");
+			return NULL;
+		}
+	}
+	// Convert the bitvector to a string
+	char *str = rz_bv_as_string(bitv);
+	rz_bv_free(bitv);
+	return str;
 }
 
 static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
@@ -613,7 +597,13 @@ dotherax:
 
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_BIN_TO_BIGNUM)) { // -L
-		print_hex_from_base2(str);
+		char *temp = rz_ax_parse_bitstring(str);
+		if (!temp) {
+			return false;
+		}
+		printf("%s\n", temp);
+		free(temp);
+
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_DUMP_C_BYTES)) { // -i
 		static const char start[] = "unsigned char buf[] = {";
@@ -736,3 +726,4 @@ RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 	num = NULL;
 	return 0;
 }
+
