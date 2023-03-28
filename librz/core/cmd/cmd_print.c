@@ -5553,7 +5553,7 @@ RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, 
 	for (i = 0; i < columns; i++) {
 		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
 		// TODO: Use the API directly
-		char *cmd = rz_str_newf("pdq %d @i:%d", rows, rows * i);
+		char *cmd = rz_str_newf("pdq %d @i:%d", rows, i ? rows * i -1 : rows * i);
 		char *dis = rz_core_cmd_str(core, cmd);
 		rz_cons_canvas_write(c, dis);
 		free(cmd);

@@ -46,9 +46,9 @@ wx 55aa55aa909055aa9090ff20000ff34534ff55f45eaac0c0c0cdf534
 pCd 3
 EOF
 EXPECT=<<EOF
-0x00000000 bge 0x156a95c                0x0000000c ldrbmi r0, [r3, 0xf00]!
-0x00000004 bge 0x156424c                0x00000010 pli [r5, -0xf34]
-0x00000008 smlalshs sb, pc, r0, r0      0x00000014 sbcgt sl, r0, lr, asr sl
+0x00000000 bge 0x156a95c                0x00000008 smlalshs sb, pc, r0, r0
+0x00000004 bge 0x156424c                0x0000000c ldrbmi r0, [r3, 0xf00]!
+0x00000008 smlalshs sb, pc, r0, r0      0x00000010 pli [r5, -0xf34]
 EOF
 RUN
 
