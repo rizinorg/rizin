@@ -274,14 +274,14 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
 	ut64 num_pages = obj->bmp_header->Pages;
-	RzBitmap *bitmap = rz_bitmap_new(num_pages);
-	rz_bitmap_set_bytes(bitmap, obj->bitmap, num_pages / 8);
+	RzBitVector *bitmap = rz_bv_new(num_pages);
+	rz_bv_set_from_bytes_le(bitmap, obj->bitmap, 0, num_pages);
 
 	ut64 num_bitset = 0;
 	bool create_new_page = true;
 	dmp_page_desc *page;
 	for (ut64 i = 0; i < num_pages; i++) {
-		if (!rz_bitmap_test(bitmap, i)) {
+		if (!rz_bv_get(bitmap, i)) {
 			create_new_page = true;
 			continue;
 		}
@@ -292,7 +292,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		}
 		page = RZ_NEW0(dmp_page_desc);
 		if (!page) {
-			rz_bitmap_free(bitmap);
+			rz_bv_free(bitmap);
 			return false;
 		}
 		if (UT64_MUL_OVFCHK(i, DMP_PAGE_SIZE)) {
@@ -310,11 +310,11 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		RZ_LOG_ERROR("The total present pages number (%" PFMT64u ") in the header "
 			     "does not match with the counted one (%" PFMT64u ").\n",
 			obj->bmp_header->TotalPresentPages, num_bitset);
-		rz_bitmap_free(bitmap);
+		rz_bv_free(bitmap);
 		return false;
 	}
 
-	rz_bitmap_free(bitmap);
+	rz_bv_free(bitmap);
 	return true;
 }
 
