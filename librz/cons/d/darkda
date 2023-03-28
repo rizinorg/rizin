@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2018 securisec
 # SPDX-License-Identifier: LGPL-3.0-only
-# BEGIN
+# META
 # Author: securisec
 # License: LGPL-3.0-only
 # Target Background: Light and Dark
 # Minimum colour depth: 256
 # Description: A nice dark theme which looks good even with 256 colours!
-# END
+# ATEM
 
 ec b0x00 rgb:7c7c61
 ec b0x7f rgb:aaff00

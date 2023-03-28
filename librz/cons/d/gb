@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
-# BEGIN
+# META
 # Author: pancake
 # License: LGPL-3.0-only
 # Target Background: Light
 # Minimum colour depth: 256
 # Description: A nice colour theme!
-# END
+# ATEM
+
 ec comment rgb:86c06c
 ec usrcmt rgb:86c06c
 ec mov rgb:306850

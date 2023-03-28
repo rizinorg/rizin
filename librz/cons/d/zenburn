@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
 
-# BEGIN
+# META
 # Author: pancake
 # License: LGPL-3.0-only
 # Target Background: Light 
@@ -9,7 +9,7 @@
 # Description: A nice colour theme! 
 # Additional details: Background of the terminal must be 134 o 033, one can do xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:ff/ff/c7
 # Refernce: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr
-# END
+# ATEM
 
 # background of the terminal must be 134 o 033 # xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:ff/ff/c7
 # ref: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr

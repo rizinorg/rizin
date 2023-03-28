@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2016 oblique <psyberbits@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
-# BEGIN
+# META
 # Author: oblique
 # License: LGPL-3.0-only
 # Target Background: Light
 # Minimum colour depth: 256
 # Description: A nice colour theme!
-# END
+# ATEM
 
 ec b0x7f rgb:ff5f5f
 ec b0xff rgb:ff005f

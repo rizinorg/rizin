@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
-# BEGIN
+# META
 # Author: pancake
 # License: LGPL-3.0-only
 # Target Background: Preferably Dark
 # Minimum colour depth: 256
 # Description: Matrix inspired theme!
-# END
+# ATEM
 
 ec b0x00 rgb:030
 ec b0x7f rgb:0f0
