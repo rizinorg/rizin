@@ -66,25 +66,33 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 
 	char *home_themes = rz_path_home_prefix(RZ_THEMES);
 	char *system_themes = rz_path_system(RZ_THEMES);
+	char *extra_themes = rz_path_extra(RZ_THEMES);
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
+	char *extra_file = extra_themes ? rz_file_path_join(extra_themes, name) : NULL;
 	free(system_themes);
 	free(home_themes);
+	free(extra_themes);
 
 	if (!load_theme(core, home_file)) {
 		if (load_theme(core, system_file)) {
 			core->curtheme = rz_str_dup(core->curtheme, name);
 		} else {
-			if (load_theme(core, name)) {
+			if (extra_file && load_theme(core, extra_file)) {
 				core->curtheme = rz_str_dup(core->curtheme, name);
 			} else {
-				RZ_LOG_ERROR("core: eco: cannot open colorscheme profile (%s)\n", name);
-				failed = true;
+				if (load_theme(core, name)) {
+					core->curtheme = rz_str_dup(core->curtheme, name);
+				} else {
+					RZ_LOG_ERROR("core: eco: cannot open colorscheme profile (%s)\n", name);
+					failed = true;
+				}
 			}
 		}
 	}
 	free(home_file);
 	free(system_file);
+	free(extra_file);
 	return !failed;
 }
 
@@ -131,6 +139,12 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core) {
 	}
 
 	path = rz_path_system(RZ_THEMES);
+	if (path) {
+		list_themes_in_path(themes, path);
+		RZ_FREE(path);
+	}
+
+	path = rz_path_extra(RZ_THEMES);
 	if (path) {
 		list_themes_in_path(themes, path);
 		RZ_FREE(path);

@@ -618,10 +618,11 @@ RZ_API bool rz_core_yank_hud_path(RzCore *core, const char *input, int dir);
 RZ_API bool rz_core_yank_file(RzCore *core, ut64 len, ut64 addr, const char *filename);
 RZ_API bool rz_core_yank_file_all(RzCore *core, const char *filename);
 
-#define RZ_CORE_LOADLIBS_ENV    1
-#define RZ_CORE_LOADLIBS_HOME   2
-#define RZ_CORE_LOADLIBS_SYSTEM 4
-#define RZ_CORE_LOADLIBS_CONFIG 8
+#define RZ_CORE_LOADLIBS_ENV    (1 << 0)
+#define RZ_CORE_LOADLIBS_HOME   (1 << 1)
+#define RZ_CORE_LOADLIBS_SYSTEM (1 << 2)
+#define RZ_CORE_LOADLIBS_CONFIG (1 << 3)
+#define RZ_CORE_LOADLIBS_EXTRA  (1 << 4)
 #define RZ_CORE_LOADLIBS_ALL    UT32_MAX
 
 RZ_API void rz_core_loadlibs_init(RzCore *core);

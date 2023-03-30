@@ -126,6 +126,7 @@ rizin_libdir = get_option('libdir')
 rizin_cmakedir = rizin_libdir / 'cmake'
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
+extra_prefix = get_option('extra_prefix')
 if host_machine.system() == 'windows'
   rizin_prefix = fs.as_posix(rizin_prefix).replace('/', '\\\\')
   rizin_bindir = fs.as_posix(rizin_bindir).replace('/', '\\\\')
@@ -133,28 +134,22 @@ if host_machine.system() == 'windows'
   rizin_cmakedir = fs.as_posix(rizin_cmakedir).replace('/', '\\\\')
   rizin_incdir = fs.as_posix(rizin_incdir).replace('/', '\\\\')
   rizin_datdir = fs.as_posix(rizin_datdir).replace('/', '\\\\')
-  rizin_datdir_rz = rizin_datdir
-  rizin_wwwroot = rizin_datdir + '\\\\' + 'www'
-  rizin_sdb = rizin_datdir
-  rizin_sigdb = rizin_datdir + '\\\\' + 'sigdb'
-  rizin_themes = rizin_datdir + '\\\\' + 'cons'
-  rizin_fortunes = rizin_datdir + '\\\\' + 'fortunes'
-  rizin_flags = rizin_datdir + '\\\\' + 'flag'
-  rizin_hud = rizin_datdir + '\\\\' + 'hud'
-  rizin_plugins = rizin_libdir + '\\\\' + 'plugins'
-  rizin_bindings = rizin_libdir + '\\\\' + 'bindings'
+  rizin_datdir_rz = fs.as_posix(rizin_datdir).replace('/', '\\\\')
 else
   rizin_datdir_rz = rizin_datdir / 'rizin'
-  rizin_wwwroot = rizin_datdir_rz / 'www'
-  rizin_sdb = rizin_datdir_rz
-  rizin_sigdb = rizin_datdir_rz / 'sigdb'
-  rizin_themes = rizin_datdir_rz / 'cons'
-  rizin_fortunes = rizin_datdir_rz / 'fortunes'
-  rizin_flags = rizin_datdir_rz / 'flag'
-  rizin_hud = rizin_datdir_rz / 'hud'
-  rizin_plugins = rizin_libdir / 'rizin' / 'plugins'
-  rizin_bindings = rizin_libdir / 'rizin-bindings'
 endif
+
+load_dirs = {
+  'rizin_sdb': rizin_datdir_rz,
+  'rizin_wwwroot': rizin_datdir_rz / 'www',
+  'rizin_sigdb': rizin_datdir_rz / 'sigdb',
+  'rizin_themes': rizin_datdir_rz / 'cons',
+  'rizin_fortunes': rizin_datdir_rz / 'fortunes',
+  'rizin_flags': rizin_datdir_rz / 'flag',
+  'rizin_hud': rizin_datdir_rz / 'hud',
+  'rizin_plugins': rizin_libdir / 'rizin' / 'plugins',
+  'rizin_bindings': rizin_libdir / 'rizin-bindings',
+}
 
 # Calcualte BINDIR's depth to be able to find the root directory during runtime
 # in portable builds
@@ -162,21 +157,16 @@ py_cmd = 'import os; from pathlib import Path; print(len(Path(os.path.normpath(r
 py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
 bindir_depth = py_cmd.stdout().strip()
 
-opts_overwrite = [
-  'rizin_wwwroot',
-  'rizin_sdb',
-  'rizin_sigdb',
-  'rizin_themes',
-  'rizin_fortunes',
-  'rizin_flags',
-  'rizin_hud',
-  'rizin_plugins',
-  'rizin_bindings'
-]
-foreach opt : opts_overwrite
-  val = get_option(opt)
+foreach load_dir, default_subdir : load_dirs
+  val = get_option(load_dir)
   if val != ''
-    set_variable(opt, val)
+    set_variable(load_dir, val)
+  else
+    val = default_subdir
+    if host_machine.system() == 'windows'
+      val = fs.as_posix(val).replace('/', '\\\\')
+    endif
+    set_variable(load_dir, val)
   endif
 endforeach
 
@@ -361,6 +351,11 @@ foreach it : ccs
   it_userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
   it_userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
   it_userconf.set10('DEBUGGER', has_debugger)
+  if extra_prefix != ''
+    it_userconf.set_quoted('EXTRA_PREFIX', extra_prefix)
+  else
+    it_userconf.set10('EXTRA_PREFIX', false)
+  endif
   it_userconf.set('PREFIX', rizin_prefix)
   it_userconf.set('BINDIR', rizin_bindir)
   it_userconf.set('BINDIR_DEPTH', bindir_depth)

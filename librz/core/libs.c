@@ -48,7 +48,7 @@ static void loadSystemPlugins(RzCore *core, int where) {
 	}
 	if (where & RZ_CORE_LOADLIBS_ENV) {
 		char *p = rz_sys_getenv(RZ_LIB_ENV);
-		if (p && *p) {
+		if (RZ_STR_ISNOTEMPTY(p)) {
 			rz_lib_opendir(core->lib, p, false);
 		}
 		free(p);
@@ -62,6 +62,13 @@ static void loadSystemPlugins(RzCore *core, int where) {
 		char *spd = rz_path_system(RZ_PLUGINS);
 		rz_lib_opendir(core->lib, spd, false);
 		free(spd);
+	}
+	if (where & RZ_CORE_LOADLIBS_EXTRA) {
+		char *epd = rz_path_extra(RZ_PLUGINS);
+		if (epd) {
+			rz_lib_opendir(core->lib, epd, false);
+		}
+		free(epd);
 	}
 #endif
 }

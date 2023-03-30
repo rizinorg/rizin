@@ -4960,6 +4960,12 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNUL
 		free(system_sigdb);
 	}
 
+	if (rz_config_get_b(core->config, "flirt.sigdb.load.extra")) {
+		char *extra_sigdb = rz_path_extra(RZ_SIGDB);
+		analysis_sigdb_add(sigs, extra_sigdb, with_details);
+		free(extra_sigdb);
+	}
+
 	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
 	analysis_sigdb_add(sigs, user_sigdb, with_details);
 
