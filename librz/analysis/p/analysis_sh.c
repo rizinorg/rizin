@@ -1104,8 +1104,9 @@ static int sh_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d
 	SHOp *ilop = sh_disassembler(opcode);
 	SHILContext *ctx = RZ_NEW0(SHILContext);
 	ctx->use_banked = true;
-
-	rz_sh_il_opcode(analysis, op, addr, ilop, ctx);
+	if (ilop) {
+		rz_sh_il_opcode(analysis, op, addr, ilop, ctx);
+	}
 	RZ_FREE(ctx);
 	RZ_FREE(ilop);
 
