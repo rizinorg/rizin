@@ -2,8 +2,8 @@ NAME=fe
 FILE==
 CMDS=<<EOF
 f foo @ 123
-fe foo;?? ?e hello
-fe bar;?? ?e world
+fe foo;%% echo hello
+fe bar;%% echo world
 EOF
 EXPECT=<<EOF
 hello
@@ -321,7 +321,7 @@ aaa
 f. blah
 f.l
 s 0
-?e outside
+echo outside
 f.
 EOF
 EXPECT=<<EOF
@@ -338,9 +338,9 @@ af
 f. patata
 f.lj
 s 0
-?e outside
+echo outside
 f.l
-?e all
+echo all
 f.l*j
 EOF
 EXPECT=<<EOF
@@ -438,7 +438,7 @@ FILE==
 CMDS=<<EOF
 fa foo bar+3
 f bar @ 3
-?v foo
+%v foo
 EOF
 EXPECT=<<EOF
 0x6
@@ -449,7 +449,7 @@ NAME=flag alias infinite check
 FILE==
 CMDS=<<EOF
 fa foo foo+3
-?v foo
+%v foo
 EOF
 EXPECT=<<EOF
 0x3

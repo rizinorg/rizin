@@ -42,11 +42,11 @@ RUN
 NAME=nso data
 FILE=bins/nso/application.nso
 CMDS=<<EOF
-?e text
+echo text
 p8 0x30 @ 0x08000080
-?e ro
+echo ro
 p8 0x30 @ 0x08021000
-?e data
+echo data
 p8 0x30 @ 0x0802f000
 p8 0x30 @ 0x0802f350
 EOF

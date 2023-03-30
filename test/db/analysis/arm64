@@ -9,9 +9,9 @@ wx 00013fd6 # BLR x8
 ao~type[1]
 ao@ 0~type[1]
 /at call
-?e --
+echo --
 /at ucall
-?e --
+echo --
 /at rcall
 EOF
 EXPECT=<<EOF
@@ -81,7 +81,7 @@ NAME=ao mte irg addg
 FILE=bins/mach0/hello-mte
 CMDS=<<EOF
 ao@ 0x100007f10
-?e --
+echo --
 ao@ 0x100007f14
 EOF
 EXPECT=<<EOF
@@ -127,9 +127,9 @@ ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 91a0090c918201099ac813e8
 ao@ 0
-?e ---
+echo ---
 ao@ 4
-?e ---
+echo ---
 ao@ 8
 EOF
 EXPECT=<<EOF

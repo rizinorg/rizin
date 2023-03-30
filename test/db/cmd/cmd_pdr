@@ -63,13 +63,13 @@ e analysis.jmp.mid=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
-?e
+echo
 pdr
-?e
+echo
 pdrj~{}
-?e
+echo
 pir
-?e
+echo
 pirj~{}
 EOF
 EXPECT=<<EOF

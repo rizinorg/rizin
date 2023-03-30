@@ -5,7 +5,7 @@ wx 2f @ 0x100
 wx 2f @ 0x110
 wx 2f @ 0x120
 /x 2f > /dev/null
-?vi $?
+%vi $?
 EOF
 EXPECT=<<EOF
 3
@@ -17,7 +17,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
 /x 01020304
-?v hit0_0
+%v hit0_0
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 01020304
@@ -30,7 +30,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
 /x 01 02 03 04
-?v hit0_0
+%v hit0_0
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 01020304
@@ -43,7 +43,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
 /x 01020304:ffffffff
-?v hit0_0
+%v hit0_0
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 01020304
@@ -56,7 +56,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
 /x 01 02 03 04
-?v hit0_0
+%v hit0_0
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 01020304
@@ -73,7 +73,7 @@ wx 2080998f00000000d4a22527
 e search.from=0
 e search.to=12
 s/x 00002027:0000f0ff
-?v $$
+%v $$
 q
 EOF
 EXPECT=<<EOF
@@ -91,7 +91,7 @@ wx 2080998f00000000d4a22527
 e search.from=0
 e search.to=12
 s/x 2027:f0ff
-?v $$
+%v $$
 q
 EOF
 EXPECT=<<EOF

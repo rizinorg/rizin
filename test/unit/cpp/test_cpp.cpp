@@ -13,7 +13,7 @@
 
 bool test_cpp(void) {
 	RzCore *core = rz_core_new();
-	char *r = rz_core_cmd_str(core, "?e Hello from C++!");
+	char *r = rz_core_cmd_str(core, "echo Hello from C++!");
 	mu_assert_streq(r, "Hello from C++!\n", "cmd");
 	rz_core_free(core);
 	mu_end;

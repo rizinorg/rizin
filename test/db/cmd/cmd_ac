@@ -4,7 +4,7 @@ CMDS=<<EOF
 ac Flatline
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF
@@ -21,7 +21,7 @@ ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
 acil Flatline
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 EOF
@@ -48,21 +48,21 @@ acm Flatline PrayerPosition 0x1337 0x42
 acm Flatline RemainIndoors 0xdeadbeef
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
-?e --
+echo --
 acm- Flatline PrayerPosition
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
-?e --
+echo --
 acm- Flatline RemainIndoors
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 EOF
@@ -107,14 +107,14 @@ ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
-?e --
+echo --
 acmn Flatline PrayerPosition Marigold
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 EOF
@@ -158,29 +158,29 @@ acv Flatline 0x1337
 
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 
-?e --
+echo --
 ac- Album
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 
-?e --
+echo --
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
-?e --
+echo --
 ac- Flatline
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 EOF
@@ -266,7 +266,7 @@ acb Flatline PeripherySong
 acb Flatline NiceSong 0x42
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 acbl Flatline
 EOF
@@ -298,13 +298,13 @@ acb Flatline PeripherySong
 acb Flatline NiceSong 0x42
 acbl Flatline
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
-?e --
+echo --
 acb- Flatline 0
 acbl Flatline
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF
@@ -340,7 +340,7 @@ acv Deadwing 0x1337
 acv Deadwing 0xdeadbeef 0x42
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 EOF
@@ -369,10 +369,10 @@ acv Deadwing 0xdeadbeef 0x42
 acv Deadwing 0xefefef 0x42 0x20
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
-?e --
+echo --
 acv- Deadwing 0
 acll
 fl @F:classes
@@ -413,14 +413,14 @@ acv PorcupineTreeAlbum 0x1337 0x42
 acm PorcupineTreeAlbum Listen 0xdeadbeef
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
-?e --
+echo --
 acn PorcupineTreeAlbum Masterpiece
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 fl @F:classes
 EOF
@@ -619,7 +619,7 @@ acv Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 acm Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatline Uluuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuumulu 0x12345
 acll
 k analysis/classes/*
-?e -
+echo -
 k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF

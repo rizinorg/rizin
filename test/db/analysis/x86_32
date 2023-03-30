@@ -118,7 +118,7 @@ CMDS=<<EOF
 s 0x08048a8b
 af
 afb
-?e
+echo
 pdf
 EOF
 EXPECT=<<EOF
@@ -4157,14 +4157,14 @@ NAME=tiny1 aae non-start-bb first
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e io.cache=true
-$orig_end=?e `omlt:va_end:quiet`
+$orig_end=echo `omlt:va_end:quiet`
 omr 1 `omlt:size:quiet`+2
 s `$orig_end`
 wa "jmp entry0"
 aF
 aae
 agf
-?e
+echo
 afl
 EOF
 EXPECT=<<EOF
@@ -4250,7 +4250,7 @@ e asm.var=0
 e asm.xrefs=0
 pdf
 
-?e --- in jumptable
+echo --- in jumptable
 pd 10 @ 0x08049410
 EOF
 EXPECT=<<EOF

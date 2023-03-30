@@ -9,7 +9,7 @@ wx 90
 pi 1 # hack this shouldnt be here
 ds
 .dr*
-?v rip-a
+%v rip-a
 EOF
 EXPECT=<<EOF
 nop
@@ -33,10 +33,10 @@ FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
 dr rax=rip > /dev/null
-?vi rax-rip
+%vi rax-rip
 db @ rip
 dso
-?vi rax-rip~?^0$
+%vi rax-rip~?^0$
 EOF
 EXPECT=<<EOF
 0
@@ -270,7 +270,7 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
 dcu main
-?v $$
+%v $$
 EOF
 EXPECT=<<EOF
 0x400574

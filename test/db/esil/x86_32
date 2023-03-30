@@ -12,7 +12,7 @@ wa "mov eax, 0x1234;push eax"
 2aes
 .arf
 ar esp
-?v [esp]
+%v [esp]
 EOF
 EXPECT=<<EOF
 esp = 0x00107ffc

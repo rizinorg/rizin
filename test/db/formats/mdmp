@@ -552,7 +552,7 @@ NAME=mdmp reload file
 FILE=bins/mdmp/calc.dmp
 CMDS=<<EOF
 obR
-?e ok
+echo ok
 EOF
 EXPECT=<<EOF
 ok

@@ -634,7 +634,7 @@ RUN
 NAME=entry point and bin format - arduino
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
-?v $$
+%v $$
 i~arch[1]
 EOF
 EXPECT=<<EOF
@@ -646,7 +646,7 @@ RUN
 NAME=entry point and bin format - jumpy
 FILE=bins/firmware/jumpy.bin
 CMDS=<<EOF
-?v $$
+%v $$
 i~arch[1]
 EOF
 EXPECT=<<EOF

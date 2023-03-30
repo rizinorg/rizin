@@ -4,8 +4,8 @@ ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 db @ entry0
-e cmd.bp="?e cmd.bp ran"
-dbc "?e bpcmd ran" @ `dbl:start~:2`
+e cmd.bp="echo cmd.bp ran"
+dbc "echo bpcmd ran" @ `dbl:start~:2`
 dc
 EOF
 EXPECT=<<EOF

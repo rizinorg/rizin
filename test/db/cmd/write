@@ -426,7 +426,7 @@ FILE=malloc://1024
 NAME=address after wxs at tmpseek
 CMDS=<<EOF
 2 wx 9090 @ 8 @e:cfg.wseek=true
-?vi $$
+%vi $$
 EOF
 EXPECT=<<EOF
 0

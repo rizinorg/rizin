@@ -1618,10 +1618,6 @@
         },
         {
           "type": "SYMBOL",
-          "name": "_math_arged_stmt"
-        },
-        {
-          "type": "SYMBOL",
           "name": "_pointer_arged_stmt"
         },
         {
@@ -1807,36 +1803,6 @@
                   "type": "BLANK"
                 }
               ]
-            }
-          }
-        ]
-      }
-    },
-    "_math_arged_stmt": {
-      "type": "PREC_LEFT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "ALIAS",
-              "content": {
-                "type": "SYMBOL",
-                "name": "question_mark_identifier"
-              },
-              "named": true,
-              "value": "cmd_identifier"
-            }
-          },
-          {
-            "type": "FIELD",
-            "name": "args",
-            "content": {
-              "type": "SYMBOL",
-              "name": "args"
             }
           }
         ]
@@ -2798,17 +2764,8 @@
       }
     },
     "_env_stmt_identifier": {
-      "type": "CHOICE",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "%"
-        },
-        {
-          "type": "STRING",
-          "value": "env"
-        }
-      ]
+      "type": "STRING",
+      "value": "env"
     },
     "_last_stmt": {
       "type": "SEQ",

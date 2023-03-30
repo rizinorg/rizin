@@ -44,7 +44,7 @@ cb 0x133713371337133713 9
 cb 0xf1f2fa1e0ff2 4
 cb 0x1a0ff2 3
 cb 0x33445566778899aa 8
-?e -- be
+echo -- be
 e cfg.bigendian=1
 cb 0x1a0ff2 3
 cb 0x33445566778899aa 8
@@ -116,7 +116,7 @@ FILE=bins/elf/ls
 ARGS=-e scr.columns=160
 CMDS=<<EOF
 cc 0x5af0
-?e --------
+echo --------
 cc 0x5ae0
 EOF
 EXPECT=<<EOF
@@ -161,7 +161,7 @@ FILE=bins/elf/ls
 ARGS=-e scr.columns=160
 CMDS=<<EOF
 ccc 0x5ad0
-?e --------
+echo --------
 ccc 0x5ae0
 EOF
 EXPECT=<<EOF
@@ -481,7 +481,7 @@ NAME=cmd_cu
 FILE=bins/elf/ls
 CMDS=<<EOF
 cu 0x5af0
-?e --------
+echo --------
 cu 0x5ae0
 EOF
 EXPECT=<<EOF
@@ -541,13 +541,13 @@ NAME=cmd_cu_num
 FILE=bins/elf/ls
 CMDS=<<EOF
 cu1 0x5ad0
-?e --------
+echo --------
 cu2 0x5ad0
-?e --------
+echo --------
 cu4 0x5ad0
-?e --------
+echo --------
 cu8 0x5ad0
-?e -------- be
+echo -------- be
 cu4 0x5ad0 @e:cfg.bigendian=1
 EOF
 EXPECT=<<EOF
@@ -1229,10 +1229,10 @@ NAME=cmd_cw
 FILE=bins/elf/ls
 CMDS=<<EOF
 cwl
-?e --------
+echo --------
 cw 8 'pd 2' @ 0x5ae0
 cwl
-?e --------
+echo --------
 cwx @ 0x5ae0
 cwl
 EOF
@@ -1264,9 +1264,9 @@ NAME=cmd_cx
 FILE=bins/elf/ls
 CMDS=<<EOF
 cx 12 34 56 78 90 ab cd ef
-?!
+%v
 cx f3..1e
-?!
+%v
 EOF
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  12 ' '

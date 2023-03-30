@@ -681,6 +681,16 @@ typedef struct rz_core_analysis_name_t {
 	ut64 offset;
 } RzCoreAnalysisName;
 
+/**
+ *  Defines the level of analysis performed by
+ * `rz_core_perform_auto_analysis`
+ * */
+typedef enum {
+	RZ_CORE_ANALYSIS_SIMPLE, ///< aa
+	RZ_CORE_ANALYSIS_DEEP, ///< aaa
+	RZ_CORE_ANALYSIS_EXPERIMENTAL, ///< aaaa
+} RzCoreAnalysisType;
+
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
@@ -717,6 +727,9 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL const char *struct_member);
 RZ_API bool rz_core_analysis_continue_until_syscall(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_analysis_continue_until_call(RZ_NONNULL RzCore *core);
+
+RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type);
 
 RZ_API st64 rz_core_analysis_coverage_count(RZ_NONNULL RzCore *core);
 RZ_API st64 rz_core_analysis_code_count(RZ_NONNULL RzCore *core);
@@ -1266,6 +1279,9 @@ RZ_API bool rz_platform_index_add_flags_comments(RzCore *core);
 typedef bool (*RzCmdRegSync)(RzCore *core, RzRegisterType type, bool write);
 RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *name, ut64 val);
 RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter);
+
+RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore *core);
+RZ_API void rz_core_rtr_enable(RZ_NONNULL RzCore *core, const char *cmdremote);
 
 #endif
 

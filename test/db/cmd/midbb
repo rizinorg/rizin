@@ -8,7 +8,7 @@ s 0x560e67
 af
 e asm.bb.middle=true
 pD 0x560eb3-$$
-?e
+echo
 e asm.bb.middle=false
 pD 0x560eb3-$$
 EOF
@@ -90,19 +90,19 @@ e analysis.nopskip=false
 e analysis.jmp.mid=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-?e
-?e ----1----
-?e
+echo
+echo ----1----
+echo
 e asm.bb.middle=true
 pDj 19~{}
-?e
-?e ----2----
-?e
+echo
+echo ----2----
+echo
 e asm.bb.middle=false
 pDj 19~{}
-?e
-?e ----3----
-?e
+echo
+echo ----3----
+echo
 e asm.bb.middle=true
 pdfj~{}
 EOF
@@ -530,7 +530,7 @@ wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
 pdq 6
-?e
+echo
 e asm.bb.middle=false
 pdq 6
 EOF
@@ -564,7 +564,7 @@ wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 e asm.bb.middle=true
 pif
-?e
+echo
 e asm.bb.middle=false
 pif
 EOF
@@ -595,20 +595,20 @@ e asm.bb.middle=true
 e asm.flags.middle=2
 f sym.dummy @ 0x560e7d
 pd 2 @ 0x560e7a
-?e
+echo
 fm 0x560e7c @ sym.dummy
 pd 3 @ 0x560e7a
-?e
+echo
 fm 0x560e96 @ sym.dummy
 pd 2 @ 0x560e95
-?e
+echo
 fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
-?e
+echo
 e asm.bb.middle=false
 f sym.real @ 0x00560e95
 pd 3 @ 0x560e95
-?e
+echo
 pd 3 @ 0x560e95 @e:scr.color=1
 EOF
 EXPECT=<<EOF

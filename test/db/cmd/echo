@@ -1,6 +1,6 @@
 NAME=t/echo
 FILE==
-CMDS=?e hello world
+CMDS=echo hello world
 EXPECT=<<EOF
 hello world
 EOF

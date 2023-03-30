@@ -51,8 +51,8 @@ aets+
 4aes
 (ar reg; ar ${reg})
 ..(ar rbx rdi rip rflags rsp)
-?e qword[0x0] = `pv8 @ 0`
-?e
+echo qword[0x0] = `pv8 @ 0`
+echo
 dtel
 EOF
 EXPECT=<<EOF

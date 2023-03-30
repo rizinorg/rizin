@@ -78,7 +78,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 #include "cmd_magic.c"
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
-#include "cmd_help.c"
+#include "cmd_math.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
@@ -5594,7 +5594,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	} cmds[] = {
 		{ "$", "alias", rz_cmd_alias },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
-		{ "?", "help message", rz_cmd_help },
 		{ "a", "analysis", rz_cmd_analysis },
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "p", "print current block", rz_cmd_print },
@@ -5630,4 +5629,27 @@ RZ_IPI RzCmdStatus rz_basefind_compute_handler(RzCore *core, int argc, const cha
 		pointer_size = 64;
 	}
 	return bool2status(rz_core_bin_basefind_print(core, pointer_size, state));
+}
+
+RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
+	const char *cmd_color = rz_cons_singleton()->context->pal.help;
+	const char *reset = rz_cons_singleton()->context->pal.reset;
+	rz_cons_printf("Welcome to Rizin!\n\n");
+	rz_cons_printf("Type %s?%s for a list of commands available.\n", cmd_color, reset);
+	rz_cons_printf("Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
+	rz_cons_printf("Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);
+	rz_cons_printf("\n");
+	rz_cons_printf("Commands output can be redirected as in a regular shell, see %s>?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf("You can grep commands output with the 'internal grep', see %s~?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf("You can pipe an internal Rizin command to a system program, see %s|?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf("\n");
+	rz_cons_printf("Chain multiple commands with %s;%s.\n", cmd_color, reset);
+	rz_cons_printf("Temporary modifiers are your friends, see %s@?%s for more info, but here some useful ones:\n", cmd_color, reset);
+	rz_cons_printf(" - %s@ %s temporarily switch to a different address\n", cmd_color, reset);
+	rz_cons_printf(" - %s@a:<arch>%s temporarily switch to a different architecture\n", cmd_color, reset);
+	rz_cons_printf(" - %s@e:<varname>=<varvalue>%s temporarily change an eval variable\n", cmd_color, reset);
+	rz_cons_printf("\n");
+	rz_cons_printf("There are a lot of settings that customize Rizin's behaviour, see them with %sel%s. Have a look at %se?%s to know how to interact with them.\n", cmd_color, reset, cmd_color, reset);
+	rz_cons_printf("You can save your preferred settings in %s~/.rizinrc%s.\n", cmd_color, reset);
+	return RZ_CMD_STATUS_OK;
 }

@@ -1,9 +1,9 @@
 NAME=ppc-asserts
 FILE=bins/elf/powerpc-linux-gnu-symexec-palindrome
 CMDS=<<EOF
-%RZ_DEBUG_ASSERT=1
+env RZ_DEBUG_ASSERT=1
 aaa
-?e done
+echo done
 EOF
 EXPECT=<<EOF
 done
@@ -431,7 +431,7 @@ RUN
 NAME=ppc-elf entry0 name issue
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
-?e
+echo
 e asm.flags=true
 e asm.bytes=true
 pdq 1
@@ -721,7 +721,7 @@ e asm.bits=32
 e asm.cpu=vle
 e cfg.bigendian=true
 pd 10
-?e ensure that the endianness is kept
+echo ensure that the endianness is kept
 pd 10
 EOF
 EXPECT=<<EOF

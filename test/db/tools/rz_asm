@@ -582,7 +582,7 @@ NAME=rz-asm RzIL
 FILE=
 CMDS=<<EOF
 !rz-asm -a bf -I 3e
-?v $?
+%v $?
 EOF
 EXPECT=<<EOF
 (set ptr (+ (var ptr) (bv 64 0x1)))
@@ -595,7 +595,7 @@ NAME=rz-asm RzIL failure
 FILE=
 CMDS=<<EOF
 !rz-asm -a bf -I 00
-?v $?
+%v $?
 EOF
 EXPECT=<<EOF
 0x1

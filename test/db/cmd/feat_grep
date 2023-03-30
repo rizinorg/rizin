@@ -1,13 +1,13 @@
-NAME=?e ~
+NAME=echo ~
 FILE=malloc://1024
-CMDS=?e jeje~jojo
+CMDS=echo jeje~jojo
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=?e \~
+NAME=echo \~
 FILE=malloc://1024
-CMDS=?e jeje\~jojo
+CMDS=echo jeje\~jojo
 EXPECT=<<EOF
 jeje~jojo
 EOF
@@ -93,27 +93,27 @@ RUN
 
 NAME=i;$s
 FILE=malloc://1024
-CMDS=?v `i~size[1]`-$s;?! ?e works
+CMDS=%v `i~size[1]`-$s;%! echo works
 EXPECT=<<EOF
 0x0
 works
 EOF
 RUN
 
-NAME=?e~[0]
+NAME=echo~[0]
 FILE=malloc://1024
-CMDS=?e 0x3~[0];?e 0x999~[0]
+CMDS=echo 0x3~[0];echo 0x999~[0]
 EXPECT=<<EOF
 0x3
 0x999
 EOF
 RUN
 
-NAME=?e~[0]
+NAME=echo~[0]
 FILE=malloc://1024
 CMDS=<<EOF
-?e hello world~[0]
-?e hello world~[1]
+echo hello world~[0]
+echo hello world~[1]
 EOF
 EXPECT=<<EOF
 hello
@@ -165,10 +165,10 @@ i~:..3
 i~:1..2
 i~:-2
 i~:-1
-?e 0\n1\n2\n3\n4~:-2
-?e 0\n1\n2\n3\n4~:-2..
-?e 0\n1\n2~:0..
-?e 0\n1\n2~:..
+echo 0\n1\n2\n3\n4~:-2
+echo 0\n1\n2\n3\n4~:-2..
+echo 0\n1\n2~:0..
+echo 0\n1\n2~:..
 EOF
 EXPECT=<<EOF
 fd      3
@@ -220,10 +220,10 @@ NAME=multigrep2
 BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
-?e hello world~hello~!boing
-?e hello world~hello~world
-?e hello world~!boing~world
-?e hello world~!boing~!pongo
+echo hello world~hello~!boing
+echo hello world~hello~world
+echo hello world~!boing~world
+echo hello world~!boing~!pongo
 EOF
 EXPECT=<<EOF
 hello world
@@ -236,8 +236,8 @@ RUN
 NAME=colgrep
 FILE==
 CMDS=<<EOF
-?e 0x3~[0]
-?e 0x999~[0]'
+echo 0x3~[0]
+echo 0x999~[0]'
 EOF
 EXPECT=<<EOF
 0x3
@@ -248,8 +248,8 @@ RUN
 NAME=colgrep
 FILE==
 CMDS=<<EOF
-?e hello world~[0]
-?e hello world~[1]
+echo "hello world"~[0]
+echo "hello world"~[1]
 EOF
 EXPECT=<<EOF
 hello
@@ -260,9 +260,9 @@ RUN
 NAME=colgrep
 FILE==
 CMDS=<<EOF
-?e a\na b\na b c~[0]
-?e a\na b\na b c~[1]
-?e a\na b\na b c~[2]
+echo "a\na b\na b c"~[0]
+echo "a\na b\na b c"~[1]
+echo "a\na b\na b c"~[2]
 EOF
 EXPECT=<<EOF
 a
@@ -311,8 +311,8 @@ RUN
 NAME=sort lines
 FILE==
 CMDS=<<EOF
-?e 3\n2\n4\n1~$
-?e 3\n2\n4\n1~$!
+echo "3\n2\n4\n1"~$
+echo "3\n2\n4\n1"~$!
 EOF
 EXPECT=<<EOF
 1
@@ -329,9 +329,9 @@ RUN
 NAME=escaped chars
 FILE==
 CMDS=<<EOF
-?e Hello\x40World~Hello\@
-?e Hello\x24World~Hello\@
-?e Hello\n\x23World~\#
+echo "Hello\x40World"~Hello\@
+echo "Hello\x24World"~Hello\@
+echo "Hello\n\x23World"~\#
 EOF
 EXPECT=<<EOF
 Hello@World
@@ -342,7 +342,7 @@ RUN
 NAME=escaped chars 2
 FILE==
 BROKEN=1
-CMDS=?e Hello\n\x3bWorld~\;
+CMDS=echo Hello\n\x3bWorld~\;
 EXPECT=<<EOF
 ;World
 EOF
@@ -351,7 +351,7 @@ RUN
 NAME=multi-command single-line grep
 FILE==
 CMDS=<<EOF
-?e Hello World; ?e 4e2420~4e2420
+echo Hello World; echo 4e2420~4e2420
 EOF
 EXPECT=<<EOF
 Hello World

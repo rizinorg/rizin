@@ -43,22 +43,22 @@ ar r14 = 0x73
 ar r15 = 0x21
 .(regs)
 aei
-?e -- round 0; aes; .(regs)
-?e -- round 1; aes; .(regs)
-?e -- round 2; aes; .(regs)
-?e -- round 3; aes; .(regs)
-?e -- round 4; aes; .(regs)
-?e -- round 5; aes; .(regs)
-?e -- round 6; aes; .(regs)
-?e -- round 7; aes; .(regs)
-?e -- round 8; aes; .(regs)
-?e -- round 9; aes; .(regs)
-?e -- round 10; aes; .(regs)
-?e -- round 11; aes; .(regs)
-?e -- round 12; aes; .(regs)
-?e -- round 13; aes; .(regs)
-?e -- round 14; aes; .(regs)
-?e -- round 15; aes; .(regs)
+echo -- round 0; aes; .(regs)
+echo -- round 1; aes; .(regs)
+echo -- round 2; aes; .(regs)
+echo -- round 3; aes; .(regs)
+echo -- round 4; aes; .(regs)
+echo -- round 5; aes; .(regs)
+echo -- round 6; aes; .(regs)
+echo -- round 7; aes; .(regs)
+echo -- round 8; aes; .(regs)
+echo -- round 9; aes; .(regs)
+echo -- round 10; aes; .(regs)
+echo -- round 11; aes; .(regs)
+echo -- round 12; aes; .(regs)
+echo -- round 13; aes; .(regs)
+echo -- round 14; aes; .(regs)
+echo -- round 15; aes; .(regs)
 ar pcl
 EOF
 EXPECT=<<EOF
@@ -379,23 +379,23 @@ ar r15 = 0x21
 .(regs)
 aei
 aes
-?e decrypt?; ar hf
-?e -- round 0; aes; .(regs)
-?e -- round 1; aes; .(regs)
-?e -- round 2; aes; .(regs)
-?e -- round 3; aes; .(regs)
-?e -- round 4; aes; .(regs)
-?e -- round 5; aes; .(regs)
-?e -- round 6; aes; .(regs)
-?e -- round 7; aes; .(regs)
-?e -- round 8; aes; .(regs)
-?e -- round 9; aes; .(regs)
-?e -- round 10; aes; .(regs)
-?e -- round 11; aes; .(regs)
-?e -- round 12; aes; .(regs)
-?e -- round 13; aes; .(regs)
-?e -- round 14; aes; .(regs)
-?e -- round 15; aes; .(regs)
+echo decrypt?; ar hf
+echo -- round 0; aes; .(regs)
+echo -- round 1; aes; .(regs)
+echo -- round 2; aes; .(regs)
+echo -- round 3; aes; .(regs)
+echo -- round 4; aes; .(regs)
+echo -- round 5; aes; .(regs)
+echo -- round 6; aes; .(regs)
+echo -- round 7; aes; .(regs)
+echo -- round 8; aes; .(regs)
+echo -- round 9; aes; .(regs)
+echo -- round 10; aes; .(regs)
+echo -- round 11; aes; .(regs)
+echo -- round 12; aes; .(regs)
+echo -- round 13; aes; .(regs)
+echo -- round 14; aes; .(regs)
+echo -- round 15; aes; .(regs)
 ar pcl
 arb~[5-]~:0
 EOF
@@ -701,7 +701,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 019f
 aei
-(mul x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(mul x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
 .(mul 42 13)
 .(mul 0xff 0xff)
 .(mul 0 42)
@@ -761,7 +761,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 0102
 aei
-(muls x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(muls x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
 .(muls 42 13)
 .(muls 0xff 0xff)
 .(muls 0 42)
@@ -821,7 +821,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 0103
 aei
-(mulsu x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(mulsu x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
 .(mulsu 42 13)
 .(mulsu 0xff 0xff)
 .(mulsu 0 42)
@@ -917,7 +917,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 0903
 aei
-(fmul x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(fmul x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
 .(fmul 42 13)
 .(fmul 0xff 0xff)
 .(fmul 0 42)
@@ -977,7 +977,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 8103
 aei
-(fmuls x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(fmuls x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
 .(fmuls 42 13)
 .(fmuls 0xff 0xff)
 .(fmuls 0 42)
@@ -1037,7 +1037,7 @@ CMDS=<<EOF
 e asm.arch=avr
 wx 8903
 aei
-(fmulsu x y; ?e ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; ?e r0; ar r0; ?e r1; ar r1; ?e r16; ar r16; ?e r17; ar r17; ?e sreg; ar sreg)
+(fmulsu x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
 .(fmulsu 42 13)
 .(fmulsu 0xff 0xff)
 .(fmulsu 0 42)
@@ -1132,7 +1132,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
 aei
-(adiw h l x; ?e ======== ${h}:${l} + ${x} ========; wa "adiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+(adiw h l x; echo ======== ${h}:${l} + ${x} ========; wa "adiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; echo r26; ar r26; echo r27; ar r27; echo sreg; ar sreg)
 .(adiw 0xca 0xfe 0x3f)
 .(adiw 0x0a 0xfe 0x3f)
 .(adiw 0xff 0xff 0x01)
@@ -1206,7 +1206,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
 aei
-(sbiw h l x; ?e ======== ${h}:${l} - ${x} ========; wa "sbiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; ?e r26; ar r26; ?e r27; ar r27; ?e sreg; ar sreg)
+(sbiw h l x; echo ======== ${h}:${l} - ${x} ========; wa "sbiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; echo r26; ar r26; echo r27; ar r27; echo sreg; ar sreg)
 .(sbiw 0xca 0x21 0x3f)
 .(sbiw 0x00 0x10 0x3f)
 .(sbiw 0x80 0x00 0x01)

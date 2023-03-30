@@ -98,7 +98,7 @@ RUN
 NAME=rz-bin -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-%RZ_BIN_PREFIX=prixfixe
+env RZ_BIN_PREFIX=prixfixe
 !rz-bin -S ${RZ_FILE}
 !rz-bin -SS ${RZ_FILE}
 EOF
@@ -1063,7 +1063,7 @@ NAME=rz-bin -Pj
 FILE=bins/pdb/minimal.pdb
 CMDS=<<EOF
 !rz-bin -Pj ${RZ_FILE}~{}
-?e
+echo
 EOF
 EXPECT=<<EOF
 {

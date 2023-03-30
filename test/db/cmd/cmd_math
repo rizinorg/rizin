@@ -1,0 +1,474 @@
+FILE=malloc://1024
+NAME=%vi-1
+CMDS=<<EOF
+%vi 0xffffffff
+%vi8 0xffffffff
+%vi4 0xffffffff
+%vi2 0xffffffff
+%vi1 0xffffffff
+%vi4 0xffffffff
+%vi2 0xffff
+%vi1 0xff
+EOF
+EXPECT=<<EOF
+4294967295
+4294967295
+-1
+-1
+-1
+-1
+-1
+-1
+EOF
+RUN
+
+FILE=malloc://1024
+NAME=%vi-8
+CMDS=<<EOF
+%vi 0xfffffff8
+%vi4 0xfffffff8
+%vi2 0xfffffff8
+%vi1 0xfffffff8
+%vi4 0xfffffff8
+%vi2 0xfff8
+%vi1 0xf8
+EOF
+EXPECT=<<EOF
+4294967288
+-8
+-8
+-8
+-8
+-8
+-8
+EOF
+RUN
+
+FILE=malloc://1024
+CMDS=<<EOF
+%v
+%p
+EOF
+EXPECT=<<EOF
+0x0
+0x00000000
+EOF
+RUN
+
+NAME=%v
+FILE=--
+CMDS=<<EOF
+%v 1024
+%v 0x42
+EOF
+EXPECT=<<EOF
+0x400
+0x42
+EOF
+RUN
+
+
+NAME="%v 'A'"
+FILE=--
+CMDS=%v "'A'"
+EXPECT=<<EOF
+0x41
+EOF
+RUN
+
+NAME="%v 'A'+3"
+FILE=--
+CMDS=%v "'A'+3"
+EXPECT=<<EOF
+0x44
+EOF
+RUN
+
+NAME="%v 3+'A'-3"
+FILE=--
+CMDS=%v "3+'A'-3"
+EXPECT=<<EOF
+0x41
+EOF
+RUN
+
+NAME="%v 33^'A'"
+FILE=--
+CMDS=%v "32^'A'"
+EXPECT=<<EOF
+0x61
+EOF
+RUN
+
+NAME="% 1;%v"
+FILE=--
+CMDS=% 1;%v
+EXPECT=<<EOF
+int32   1
+uint32  1
+hex     0x1
+octal   01
+unit    1
+segment 0000:0001
+string  "\x01"
+fvalue  1.0
+float   1.000000f
+double  1.000000
+binary  0b00000001
+trits   0t1
+0x1
+EOF
+RUN
+
+NAME="% 0;%v"
+FILE=--
+CMDS=% 0;%v
+EXPECT=<<EOF
+int32   0
+uint32  0
+hex     0x0
+octal   00
+unit    0
+segment 0000:0000
+string  "\0"
+fvalue  0.0
+float   0.000000f
+double  0.000000
+binary  0b00000000
+trits   0t0
+0x0
+EOF
+RUN
+
+NAME="% -1"
+FILE=--
+CMDS=% -1
+EXPECT=<<EOF
+int64   -1
+uint64  18446744073709551615
+hex     0xffffffffffffffff
+octal   01777777777777777777777
+unit    16E
+segment fffff000:0fff
+string  "\xff\xff\xff\xff\xff\xff\xff\xff"
+fvalue  -1.0
+float   -1.000000f
+double  -1.000000
+binary  0b1111111111111111111111111111111111111111111111111111111111111111
+trits   0t11112220022122120101211020120210210211220
+EOF
+RUN
+
+NAME="% 2*1.5"
+FILE=--
+CMDS=% 2*1.5
+EXPECT=<<EOF
+int32   2
+uint32  2
+hex     0x2
+octal   02
+unit    2
+segment 0000:0002
+string  "\x02"
+fvalue  3.0
+float   3.000000f
+double  3.000000
+binary  0b00000010
+trits   0t2
+EOF
+RUN
+
+NAME="% 2**3"
+FILE=--
+CMDS=% 2**3
+EXPECT=<<EOF
+int32   8
+uint32  8
+hex     0x8
+octal   010
+unit    8
+segment 0000:0008
+string  "\b"
+fvalue  8.0
+float   8.000000f
+double  8.000000
+binary  0b00001000
+trits   0t22
+EOF
+RUN
+
+NAME="% -25**3"
+FILE=--
+CMDS=% -25**3
+EXPECT=<<EOF
+int64   -15625
+uint64  18446744073709535991
+hex     0xffffffffffffc2f7
+octal   01777777777777777741367
+unit    16.0E
+segment fffff000:02f7
+string  "\xf7\xc2\xff\xff\xff\xff\xff\xff"
+fvalue  -15625.0
+float   -15625.000000f
+double  -15625.000000
+binary  0b1111111111111111111111111111111111111111111111111100001011110111
+trits   0t11112220022122120101211020120210000102020
+EOF
+RUN
+
+NAME="% -76**2"
+FILE=--
+CMDS=% -76**2
+EXPECT=<<EOF
+int32   5776
+uint32  5776
+hex     0x1690
+octal   013220
+unit    5.6K
+segment 0000:0690
+string  "\x90\x16"
+fvalue  5776.0
+float   5776.000000f
+double  5776.000000
+binary  0b0001011010010000
+trits   0t21220221
+EOF
+RUN
+
+NAME="% 10**-2"
+FILE=--
+CMDS=% 10**-2
+EXPECT=<<EOF
+int32   0
+uint32  0
+hex     0x0
+octal   00
+unit    0
+segment 0000:0000
+string  "\0"
+fvalue  0.0
+float   0.010000f
+double  0.010000
+binary  0b00000000
+trits   0t0
+EOF
+RUN
+
+NAME="% 1024**0"
+FILE=--
+CMDS=% 1024**0
+EXPECT=<<EOF
+int32   1
+uint32  1
+hex     0x1
+octal   01
+unit    1
+segment 0000:0001
+string  "\x01"
+fvalue  1.0
+float   1.000000f
+double  1.000000
+binary  0b00000001
+trits   0t1
+EOF
+RUN
+
+NAME="% 2**4.5"
+FILE=--
+CMDS=% 2**4.5
+EXPECT=<<EOF
+int32   16
+uint32  16
+hex     0x10
+octal   020
+unit    16
+segment 0000:0010
+string  "\x10"
+fvalue  16.0
+float   16.000000f
+double  16.000000
+binary  0b00010000
+trits   0t121
+EOF
+RUN
+
+NAME="% 10 ** 2 * 3"
+FILE=--
+CMDS=% 10 ** 2 * 3
+EXPECT=<<EOF
+int32   300
+uint32  300
+hex     0x12c
+octal   0454
+unit    300
+segment 0000:012c
+string  ",\x01"
+fvalue  300.0
+float   300.000000f
+double  300.000000
+binary  0b0000000100101100
+trits   0t102010
+EOF
+RUN
+
+NAME="% 10 ** 2 / 3"
+FILE=--
+CMDS=% 10 ** 2 / 3
+EXPECT=<<EOF
+int32   33
+uint32  33
+hex     0x21
+octal   041
+unit    33
+segment 0000:0021
+string  "!"
+fvalue  33.3
+float   33.333332f
+double  33.333333
+binary  0b00100001
+trits   0t1020
+EOF
+RUN
+
+NAME="% 10 ** 2 + 3"
+FILE=--
+CMDS=% 10 ** 2 + 3
+EXPECT=<<EOF
+int32   103
+uint32  103
+hex     0x67
+octal   0147
+unit    103
+segment 0000:0067
+string  "g"
+fvalue  103.0
+float   103.000000f
+double  103.000000
+binary  0b01100111
+trits   0t10211
+EOF
+RUN
+
+NAME="% 10 - 2 ** 3"
+FILE=--
+CMDS=% 10 - 2 ** 3
+EXPECT=<<EOF
+int32   2
+uint32  2
+hex     0x2
+octal   02
+unit    2
+segment 0000:0002
+string  "\x02"
+fvalue  2.0
+float   2.000000f
+double  2.000000
+binary  0b00000010
+trits   0t2
+EOF
+RUN
+
+NAME="% 2**-1+4"
+FILE=--
+CMDS=% 2**-1+4
+EXPECT=<<EOF
+int32   4
+uint32  4
+hex     0x4
+octal   04
+unit    4
+segment 0000:0004
+string  "\x04"
+fvalue  4.5
+float   4.500000f
+double  4.500000
+binary  0b00000100
+trits   0t11
+EOF
+RUN
+
+NAME="math help"
+FILE==
+CMDS=<<EOF
+%?~Usage
+EOF
+EXPECT=<<EOF
+Usage: %[?]   # Math commands
+EOF
+RUN
+
+NAME=expr with parentheses
+FILE==
+CMDS=<<EOF
+%v (0x10000192c + 4294965314) & 0xffffffff
+EOF
+EXPECT=<<EOF
+0x116e
+EOF
+RUN
+
+NAME=binary shift
+FILE==
+CMDS=<<EOF
+%b 1<<1
+%b 1 << 1
+%b 1 << 2
+EOF
+EXPECT=<<EOF
+10b
+10b
+100b
+EOF
+RUN
+
+NAME="comparison operators"
+FILE==
+CMDS=<<EOF
+%v "1<1"
+%v "1<2"
+%v "2<1"
+%v "1>1"
+%v "1>2"
+%v "2>1"
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+0x0
+0x0
+0x0
+0x1
+EOF
+RUN
+
+NAME=%p and %P ignore io.va
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+%p main @e:io.va=true
+%p main @e:io.va=false
+%v main
+%P 0x28a0 @e:io.va=1
+%P 0x28a0 @e:io.va=0
+EOF
+EXPECT=<<EOF
+0x000028a0
+0x000028a0
+0x4028a0
+0x004028a0
+0x004028a0
+EOF
+RUN
+
+NAME=djb2 hash
+FILE==
+CMDS=<<EOF
+%h 1024
+%h ILoveRizin
+%h RizinLovesMe2
+EOF
+EXPECT=<<EOF
+0x50489162
+0x56b7215a
+0xe859883a
+EOF
+RUN

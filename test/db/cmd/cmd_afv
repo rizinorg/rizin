@@ -4,7 +4,7 @@ CMDS=<<EOF
 afvr-*
 afvs- 42
 afvs- ulumulu
-?e not segfaulted
+echo not segfaulted
 EOF
 EXPECT=<<EOF
 not segfaulted

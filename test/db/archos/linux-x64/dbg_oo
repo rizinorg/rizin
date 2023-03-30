@@ -56,7 +56,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
 oml
-?e
+echo
 ood > /dev/null
 oml
 EOF
@@ -76,14 +76,14 @@ db @ main+3
 ood > $_
 dc # should hit the first breakpoint
 .drf
-?v eip-main
+%v eip-main
 ood > $_
 dc # should hit the first breakpoint
 .drf
-?v eip-main
+%v eip-main
 dc # should hit the the second breakpoint
 .drf
-?v eip-main
+%v eip-main
 EOF
 EXPECT=<<EOF
 0x0

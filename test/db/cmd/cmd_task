@@ -1,7 +1,7 @@
 NAME=&
 FILE==
 CMDS=<<EOF
-& ?e Hello\nfrom\na task!
+& echo "Hello\nfrom\na task!"
 && 1
 &= 1
 EOF
@@ -16,7 +16,7 @@ RUN
 NAME=& + grep
 FILE==
 CMDS=<<EOF
-& "?e Hello\nfrom\na task!~task"
+& "echo \"Hello\nfrom\na task!\"~a task!"
 && 1
 &= 1
 EOF
@@ -29,11 +29,11 @@ RUN
 NAME=&j
 FILE==
 CMDS=<<EOF
-& ?e Hello\nfrom\na task!
+& echo Hello\nfrom\na task!
 && 1
 &j
 EOF
 EXPECT=<<EOF
-[{"id":0,"state":"running","transient":false},{"id":1,"state":"done","transient":false,"cmd":"?e Hello\\nfrom\\na task!"}]
+[{"id":0,"state":"running","transient":false},{"id":1,"state":"done","transient":false,"cmd":"echo Hello\\nfrom\\na task!"}]
 EOF
 RUN

@@ -13,7 +13,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 f foo @ 2
 f bar @ 4
-?v bar/foo
+%v bar/foo
 EOF
 EXPECT=<<EOF
 0x2
@@ -23,8 +23,8 @@ RUN
 NAME=div $$
 FILE=malloc://1024
 CMDS=<<EOF
-?v 10/2
-?v $$/2@ 10
+%v 10/2
+%v $$/2@ 10
 EOF
 EXPECT=<<EOF
 0x5
@@ -36,8 +36,8 @@ NAME=div [0]
 FILE=malloc://1024
 CMDS=<<EOF
 wv 10
-?v [0]/2
-?v $$/2@ [0]
+%v [0]/2
+%v $$/2@ [0]
 EOF
 EXPECT=<<EOF
 0x5
@@ -48,9 +48,9 @@ RUN
 NAME=basic
 FILE=malloc://1024
 CMDS=<<EOF
-?v 0x10+0x30
-?v 1+3*2
-?v (1+3)*2
+%v 0x10+0x30
+%v 1+3*2
+%v (1+3)*2
 EOF
 EXPECT=<<EOF
 0x40
@@ -63,10 +63,10 @@ NAME=sum
 FILE==
 CMDS=<<EOF
 f a@ 3
-?v a+3
-?v a +3
-?v a+ 3
-?v 3 + 3
+%v a+3
+%v a +3
+%v a+ 3
+%v 3 + 3
 EOF
 EXPECT=<<EOF
 0x6
@@ -79,7 +79,7 @@ RUN
 NAME=binary
 FILE==
 CMDS=<<EOF
-?e
+echo
 !rz-ax Bxff3f0000fcff
 !rz-ax Bxff3ffcff
 EOF
@@ -98,7 +98,7 @@ s beach; s
 s batch; s
 s th; s
 s h; s
-?e
+echo
 s 33o; s
 s 383o; s
 s 9o; s
@@ -107,29 +107,29 @@ s 0177; s
 s 0187; s
 s 08; s
 s 0; s
-?e
+echo
 s 101b; s
 s 121b; s
 s 3b; s
 s b; s
-?e
+echo
 s 121t; s
 s 131t; s
 s 4t; s
 s t; s
-?e
+echo
 s 1k; s
 s 1.5K; s
 s 2a1k; s
 s bk; s
 s k; s
-?e
+echo
 s 1m; s
 s 1.5M; s
 s 2a1m; s
 s bm; s
 s m; s
-?e
+echo
 s 1g; s
 s 1.5G; s
 s 2a1g; s

@@ -224,7 +224,7 @@ NAME=Xcode symbols cache (line numbers)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
 ix
-?e --
+echo --
 ix.@ `is~viewDidLoad[2]`
 ix.@ 0x100006430
 EOF
@@ -272,7 +272,7 @@ NAME=Xcode symbols cache new (line numbers)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
 CMDS=<<EOF
 ix
-?e --
+echo --
 ix.@ `is~viewDidLoad[2]`
 ix.@ 0x100006430
 EOF

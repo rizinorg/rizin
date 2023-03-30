@@ -10,7 +10,7 @@ NAME=io/neg 2
 FILE==
 CMDS=<<EOF
 sd -1000
-? $o~?0x0
+% $o~?0x0
 EOF
 EXPECT=<<EOF
 1
