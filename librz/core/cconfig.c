@@ -3700,6 +3700,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.ignore.unknown", true, "When enabled, on FLIRT creation it will ignore any function starting with `fcn.`");
 	SETPREF("flirt.sigdb.path", "", "Additional user defined rizin sigdb location to load on the filesystem.");
 	SETB("flirt.sigdb.load.system", true, "Load signatures from the system path");
+	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
 
 	rz_config_lock(cfg, true);
