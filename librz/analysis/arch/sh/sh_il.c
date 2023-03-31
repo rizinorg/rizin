@@ -1651,7 +1651,7 @@ static RzILOpEffect *sh_il_sts(const SHOp *op, ut64 pc, RzAnalysis *analysis, SH
  * To be used for valid SuperH-4 instruction which yet haven't been lifted to the IL
  */
 static RzILOpEffect *sh_il_unimpl(const SHOp *op, ut64 pc, RzAnalysis *analysis, SHILContext *ctx) {
-	RZ_LOG_WARN("SuperH: Instruction with opcode 0x%04x is unimplemented\n", op->opcode);
+	RZ_LOG_DEBUG("SuperH: Instruction with opcode 0x%04x is unimplemented\n", op->opcode);
 	return EMPTY();
 }
 
