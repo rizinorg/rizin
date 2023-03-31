@@ -189,11 +189,6 @@ RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_ascii_table_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%s", ret_ascii_table());
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **argv) {
 	char out[128] = RZ_EMPTY;
 	ut64 n = rz_num_math(core->num, argv[1]);
@@ -263,11 +258,6 @@ RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char
 		ut32 hash = (ut32)rz_str_djb2_hash(argv[i]);
 		rz_cons_printf("0x%08x\n", hash);
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_flush_console_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_flush();
 	return RZ_CMD_STATUS_OK;
 }
 

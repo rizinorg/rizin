@@ -97,8 +97,6 @@ RZ_IPI RzCmdStatus rz_set_active_tab_zero_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const char **argv);
 // "%r"
 RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, const char **argv);
-// "%a"
-RZ_IPI RzCmdStatus rz_print_ascii_table_handler(RzCore *core, int argc, const char **argv);
 // "%b"
 RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **argv);
 // "%b64"
@@ -111,8 +109,6 @@ RZ_IPI RzCmdStatus rz_check_between_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, const char **argv);
 // "%h"
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv);
-// "%F"
-RZ_IPI RzCmdStatus rz_flush_console_handler(RzCore *core, int argc, const char **argv);
 // "%f"
 RZ_IPI RzCmdStatus rz_print_bitstring_handler(RzCore *core, int argc, const char **argv);
 // "%o"
@@ -2399,6 +2395,8 @@ RZ_IPI RzCmdStatus rz_yank_hex_print_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_yank_paste_handler(RzCore *core, int argc, const char **argv);
 // "yz"
 RZ_IPI RzCmdStatus rz_yank_string_handler(RzCore *core, int argc, const char **argv);
+// "ascii"
+RZ_IPI RzCmdStatus rz_cmd_shell_ascii_table_handler(RzCore *core, int argc, const char **argv);
 // "date"
 RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char **argv);
 // "diff"
@@ -2437,6 +2435,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv);
 // "clear"
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv);
+// "flush"
+RZ_IPI RzCmdStatus rz_cmd_shell_flush_handler(RzCore *core, int argc, const char **argv);
 // "which"
 RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char **argv);
 // "fortune"
