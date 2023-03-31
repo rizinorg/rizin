@@ -6,7 +6,6 @@
 #include <rz_core.h>
 #include "../core_private.h"
 
-
 static bool load_theme(RzCore *core, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
@@ -54,22 +53,41 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 	return true;
 }
 
-RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
+static bool print_meta_info(RzCore *core, RzCmdStateOutput *state, RzThemeInfo *MetaInfo, const char *name) {
 	bool failed = false;
-	const int len = strlen(name);
+
+	if (MetaInfo->author != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->author, '\0'));
+	}
+	if (MetaInfo->license != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->license, '\0'));
+	}
+	if (MetaInfo->targetbg != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->targetbg, '\0'));
+	}
+	if (MetaInfo->mincolordepth != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->mincolordepth, '\0'));
+	}
+	if (MetaInfo->desc != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->desc, '\0'));
+	}
+	if (MetaInfo->additionaldts != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->additionaldts, '\0'));
+	}
+	if (MetaInfo->refs != NULL) {
+		rz_cons_printf("%s", rz_str_append(MetaInfo->refs, '\0'));
+	}
+
+	return (!failed);
+}
+
+RZ_API bool rz_core_theme_load(RzCore *core, const char *name, RzCmdStateOutput *state) {
+	bool failed = false;
+	// const int len = strl	en(name);
 	int question_mark_count = 0;
 	// bool question_mark_exists = false;
 	bool metainfo_shown = false;
 
-
-	for(int i = 0;i<strlen(name);i++){
-		if(name[i] == '?'){
-			question_mark_count++;
-			// question_mark_exists = true;
-		}
-	}
-
-	
 	if (!name || !*name) {
 		return false;
 	}
@@ -84,46 +102,77 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
 
-
 	free(system_themes);
 	free(home_themes);
 
+	if (state->mode == RZ_OUTPUT_MODE_LONG /*&& (question_mark_count == 1)*/) {
 
-	char *system_file_cpy = strdup(system_file);
+		// populate the structure RzThemeInfo only when second argument is present abcd
 
+		RzThemeInfo *MetaInfo = malloc(2 * sizeof(RzThemeInfo));
+		MetaInfo->additionaldts = NULL;
+		MetaInfo->refs = NULL;
+		char *system_file_cpy;
+		system_file_cpy = rz_str_dup(system_file_cpy, system_file);
 
-	if(name[len-1] == '?' && (question_mark_count == 1)){	
-		system_file_cpy[strlen(system_file_cpy) - 1] = '\0';
-		FILE *path = rz_sys_fopen(system_file_cpy,"r");
+		FILE *path = rz_sys_fopen(system_file_cpy, "r");
 
-		if(!path){
+		if (!path) {
 			RZ_LOG_ERROR("Error in opening colourscheme file at '%s'\n", system_file_cpy);
 			failed = true;
 			return !failed;
-		}
-		else{
-		rz_cons_printf("%s","Color theme details!\n");
+		} else {
+			rz_cons_printf("%s", "Color theme details!\n");
 		}
 
-		bool beginflag = false;		
+		bool beginflag = false;
 		char line[256];
-		while((fgets(line , sizeof(line) , path) != NULL) && (strcmp(line,"# END\n") != 0) ){
-			
-			if(beginflag == true){
+		while ((fgets(line, sizeof(line), path) != NULL) /*(rz_file_slurp_line(path,line,0)!=NULL)*/ && (rz_str_cmp(line, "# ATEM\n", -1) != 0)) {
 
-				rz_cons_println(line);
+			if (beginflag == true) {
+
+				if (strstr(line, "Author") != NULL) {
+					MetaInfo->author = strdup(line);
+				}
+
+				if (strstr(line, "License") != NULL) {
+					MetaInfo->license = strdup(line);
+				}
+
+				if (strstr(line, "Background") != NULL) {
+					MetaInfo->targetbg = strdup(line);
+				}
+
+				if (strstr(line, "depth") != NULL) {
+					MetaInfo->mincolordepth = strdup(line);
+				}
+
+				if (strstr(line, "Description") != NULL) {
+					MetaInfo->desc = strdup(line);
+				}
+
+				if (strstr(line, "Details") != NULL) {
+					MetaInfo->additionaldts = strdup(line);
+				}
+
+				if (strstr(line, "References") != NULL) {
+					MetaInfo->refs = strdup(line);
+				}
 			}
-			if(strcmp(line,"# BEGIN\n" )== 0){
+			if (rz_str_cmp(line, "# META\n", -1) == 0) {
 				beginflag = true;
 			}
 		}
-		metainfo_shown = true;
 
+		if (print_meta_info(core, state, MetaInfo, name)) {
+			metainfo_shown = true;
+		} else {
+			failed = true;
+		}
 	}
+	/* The metainfo_shown boolean was used because making the below if statement into an else statement kept throwing errors */
 
-	/* The metainfo_shown variable was used because making the below if statement into an else statement kept throwing errors */
-
-	if((!(load_theme(core, home_file)) || (question_mark_count > 1)) && (metainfo_shown == false)) {
+	if ((!(load_theme(core, home_file)) || (question_mark_count > 1)) && (metainfo_shown == false)) {
 
 		if (load_theme(core, system_file)) {
 			core->curtheme = rz_str_dup(core->curtheme, name);
@@ -131,7 +180,7 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 			if (load_theme(core, name)) {
 				core->curtheme = rz_str_dup(core->curtheme, name);
 			}
-	
+
 			else {
 				RZ_LOG_ERROR("core: eco: cannot open colorscheme profile (%s)\n", name);
 				failed = true;
@@ -215,7 +264,7 @@ RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	rz_list_free(files);
 	files = NULL;
 done:
-	rz_core_theme_load(core, core->curtheme);
+	rz_core_theme_load(core, core->curtheme, NULL);
 	rz_list_free(files);
 }
 
@@ -294,12 +343,10 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	PJ *pj = state->d.pj;
 	const char *th;
 	if (argc == 2) {
-		
-		return bool2status(rz_core_theme_load(core, argv[1]));
 
+		return bool2status(rz_core_theme_load(core, argv[1], state));
 	}
-	
-	
+
 	themes_list = rz_core_theme_list(core);
 	if (!themes_list) {
 		return RZ_CMD_STATUS_ERROR;
@@ -338,7 +385,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_current_theme_handler(RzCore *core, in
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_reload_current_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_theme_load(core, rz_core_theme_get(core));
+	rz_core_theme_load(core, rz_core_theme_get(core), NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
