@@ -70,6 +70,12 @@ static ut32 vernum(const char *s) {
 	return res;
 }
 
+// ascii
+RZ_IPI RzCmdStatus rz_cmd_shell_ascii_table_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_printf("%s", ret_ascii_table());
+	return RZ_CMD_STATUS_OK;
+}
+
 // env
 RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char **argv) {
 	char *p, **e;
@@ -284,6 +290,12 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char 
 // cls
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv) {
 	rz_cons_clear00();
+	return RZ_CMD_STATUS_OK;
+}
+
+// flush
+RZ_IPI RzCmdStatus rz_cmd_shell_flush_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_flush();
 	return RZ_CMD_STATUS_OK;
 }
 

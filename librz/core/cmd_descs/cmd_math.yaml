@@ -29,10 +29,6 @@ commands:
         type: RZ_CMD_ARG_TYPE_RZNUM
       - name: uplimit
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: "%a"
-    summary: Print ASCII table
-    cname: print_ascii_table
-    args: []
   - name: "%b"
     summary: Base64 encode/decode and print binary commands
     type: RZ_CMD_DESC_TYPE_GROUP
@@ -123,10 +119,6 @@ commands:
           - text: "%h"
             arg_str: ILoveRizin
             comment: 0x56b7215a -> hashed value
-  - name: "%F"
-    summary: Flush console
-    cname: flush_console
-    args: []
   - name: "%f"
     summary: bitstring manipulation.
     description: >-

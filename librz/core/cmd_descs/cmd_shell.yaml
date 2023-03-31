@@ -4,6 +4,10 @@
 name: cmd_shell
 type: RZ_CMD_DESC_TYPE_GROUP
 commands:
+  - name: ascii
+    summary: Print ASCII table
+    cname: cmd_shell_ascii_table
+    args: []
   - name: date
     summary: Get current date
     cname: cmd_shell_date
@@ -179,6 +183,10 @@ commands:
     summary: clear
     cname: cmd_shell_cls
     handler: cmd_shell_clear
+    args: []
+  - name: flush
+    summary: Flush console
+    cname: cmd_shell_flush
     args: []
   - name: which
     cname: cmd_shell_which

@@ -1503,14 +1503,6 @@ static const RzCmdDescHelp generate_random_number_help = {
 	.args = generate_random_number_args,
 };
 
-static const RzCmdDescArg print_ascii_table_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp print_ascii_table_help = {
-	.summary = "Print ASCII table",
-	.args = print_ascii_table_args,
-};
-
 static const RzCmdDescHelp perc_b_help = {
 	.summary = "Base64 encode/decode and print binary commands",
 };
@@ -1665,14 +1657,6 @@ static const RzCmdDescHelp print_djb2_hash_help = {
 	.summary = "Print hash value of given input",
 	.details = print_djb2_hash_details,
 	.args = print_djb2_hash_args,
-};
-
-static const RzCmdDescArg flush_console_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp flush_console_help = {
-	.summary = "Flush console",
-	.args = flush_console_args,
 };
 
 static const RzCmdDescDetailEntry print_bitstring_Examples_detail_entries[] = {
@@ -17840,6 +17824,14 @@ static const RzCmdDescHelp shell_help = {
 	.summary = "Common shell commands",
 	.sort_subcommands = true,
 };
+static const RzCmdDescArg cmd_shell_ascii_table_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_ascii_table_help = {
+	.summary = "Print ASCII table",
+	.args = cmd_shell_ascii_table_args,
+};
+
 static const RzCmdDescArg cmd_shell_date_args[] = {
 	{ 0 },
 };
@@ -18148,6 +18140,14 @@ static const RzCmdDescHelp cmd_shell_cls_help = {
 	.args = cmd_shell_cls_args,
 };
 
+static const RzCmdDescArg cmd_shell_flush_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_shell_flush_help = {
+	.summary = "Flush console",
+	.args = cmd_shell_flush_args,
+};
+
 static const RzCmdDescArg cmd_shell_which_args[] = {
 	{
 		.name = "command",
@@ -18388,9 +18388,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *generate_random_number_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%r", rz_generate_random_number_handler, &generate_random_number_help);
 	rz_warn_if_fail(generate_random_number_cd);
 
-	RzCmdDesc *print_ascii_table_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%a", rz_print_ascii_table_handler, &print_ascii_table_help);
-	rz_warn_if_fail(print_ascii_table_cd);
-
 	RzCmdDesc *perc_b_cd = rz_cmd_desc_group_new(core->rcmd, cmd_math_cd, "%b", rz_print_binary_handler, &print_binary_help, &perc_b_help);
 	rz_warn_if_fail(perc_b_cd);
 	RzCmdDesc *base64_encode_cd = rz_cmd_desc_argv_new(core->rcmd, perc_b_cd, "%b64", rz_base64_encode_handler, &base64_encode_help);
@@ -18407,9 +18404,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_djb2_hash_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%h", rz_print_djb2_hash_handler, &print_djb2_hash_help);
 	rz_warn_if_fail(print_djb2_hash_cd);
-
-	RzCmdDesc *flush_console_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%F", rz_flush_console_handler, &flush_console_help);
-	rz_warn_if_fail(flush_console_cd);
 
 	RzCmdDesc *print_bitstring_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%f", rz_print_bitstring_handler, &print_bitstring_help);
 	rz_warn_if_fail(print_bitstring_cd);
@@ -21806,6 +21800,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *shell_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "shell", NULL, NULL, &shell_help);
 	rz_warn_if_fail(shell_cd);
+	RzCmdDesc *cmd_shell_ascii_table_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "ascii", rz_cmd_shell_ascii_table_handler, &cmd_shell_ascii_table_help);
+	rz_warn_if_fail(cmd_shell_ascii_table_cd);
+
 	RzCmdDesc *cmd_shell_date_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "date", rz_cmd_shell_date_handler, &cmd_shell_date_help);
 	rz_warn_if_fail(cmd_shell_date_cd);
 
@@ -21865,6 +21862,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_shell_cls_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "cls", rz_cmd_shell_clear_handler, &cmd_shell_cls_help);
 	rz_warn_if_fail(cmd_shell_cls_cd);
+
+	RzCmdDesc *cmd_shell_flush_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "flush", rz_cmd_shell_flush_handler, &cmd_shell_flush_help);
+	rz_warn_if_fail(cmd_shell_flush_cd);
 
 	RzCmdDesc *cmd_shell_which_cd = rz_cmd_desc_argv_new(core->rcmd, shell_cd, "which", rz_cmd_shell_which_handler, &cmd_shell_which_help);
 	rz_warn_if_fail(cmd_shell_which_cd);
