@@ -292,6 +292,7 @@ typedef struct {
 	int _tabsoff;
 	bool dwarfFile;
 	bool dwarfAbspath;
+	bool dwarfShowLines;
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
@@ -721,6 +722,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_dwarf = rz_config_get_b(core->config, "asm.dwarf");
 	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.dwarf.file");
 	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.dwarf.abspath");
+	ds->dwarfShowLines = rz_config_get_b(ds->core->config,"asm.dwarf.lines");
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
 	ds->show_size = rz_config_get_b(core->config, "asm.size");
@@ -3436,6 +3438,7 @@ static void ds_print_indent(RzDisasmState *ds) {
 }
 
 static void ds_print_optype(RzDisasmState *ds) {
+	// rz_cons_println("Line number 3441,inside ds_print_optype");
 	if (ds->show_optype) {
 		const char *optype = rz_analysis_optype_to_string(ds->analysis_op.type);
 		ds_print_color_reset(ds);
@@ -3445,6 +3448,7 @@ static void ds_print_optype(RzDisasmState *ds) {
 }
 
 static void ds_print_opstr(RzDisasmState *ds) {
+	// rz_cons_println("Line number 3451,inside ds_print_opstr ");
 	ds_print_indent(ds);
 	if (ds->asm_instr) {
 		rz_cons_strcat(ds->opstr);
@@ -3602,13 +3606,16 @@ static int ds_print_shortcut(RzDisasmState *ds, ut64 addr, int pos) {
 	if (shortcut) {
 		if (ds->core->is_asmqjmps_letter) {
 			rz_cons_printf("%s[o%s]", ch, shortcut);
+			rz_cons_println("Line 3606");
 			slen++;
 		} else {
 			rz_cons_printf("%s[%s]", ch, shortcut);
+			rz_cons_println("Line 3611");
 		}
 		free(shortcut);
 	} else {
 		rz_cons_printf("%s[?]", ch);
+		rz_cons_println("Line 3616");
 	}
 	if (ds->show_color) {
 		if (ds->core->print->resetbg) {
@@ -3665,6 +3672,7 @@ static bool ds_print_core_vmode(RzDisasmState *ds, int pos) {
 	RzCore *core = ds->core;
 	bool gotShortcut = false;
 	int i, slen = 0;
+	// rz_cons_println("Line number 3673 in print_core_vmode");
 
 	if (!core->vmode) {
 		return false;
@@ -3812,6 +3820,7 @@ static void ds_align_comment(RzDisasmState *ds) {
 }
 
 static void ds_print_dwarf(RzDisasmState *ds) {
+	// rz_cons_println("Line number 3823,inside ds_print_dwarf ");
 	if (ds->show_dwarf) {
 		// TODO: cache value in ds
 		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
@@ -4602,6 +4611,7 @@ static void ds_pre_emulation(RzDisasmState *ds) {
 }
 
 static void ds_print_esil_analysis_init(RzDisasmState *ds) {
+	// rz_cons_println("Line 4611 in esil_analysis_init");
 	RzCore *core = ds->core;
 	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 	if (!pc) {
@@ -5263,6 +5273,7 @@ static void ds_start_line_highlight(RzDisasmState *ds) {
 }
 
 static void ds_end_line_highlight(RzDisasmState *ds) {
+	// rz_cons_println("Line number 5275,inside ds_end_line_highlight ");
 	if (ds->show_color && line_highlighted(ds)) {
 		rz_cons_strcat(Color_RESET);
 	}
@@ -5393,8 +5404,11 @@ toro:
 	if (!ds->l) {
 		ds->l = core->blocksize;
 	}
+	// rz_cons_println("Line number 5403, in core_print_disasm");
 	rz_cons_break_push(NULL, NULL);
+	// rz_cons_println("Line number 5405, in core_print_disasm");
 	for (idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, ds->index += inc, ds->lines++) {
+		// rz_cons_println("Line number 5403, in core_print_disasm, first if statement");
 		ds->at = ds->addr + idx;
 		ds->vat = rz_core_pava(core, ds->at);
 		if (rz_cons_is_breaked()) {
@@ -5408,8 +5422,10 @@ toro:
 			ds_free(ds);
 			return 0; // break;
 		}
+		// rz_cons_println("Line number 5420, in core_print_disasm");
 		if (core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
 			if (!core->analysis->iob.is_valid_offset(core->analysis->iob.io, ds->at, 0)) {
+				// rz_cons_println("Line number 5424, in 2nd if statement, core_print_disasm");	//doesnt even come here?!
 				ds_begin_line(ds);
 				ds_print_labels(ds, f);
 				ds_setup_print_pre(ds, false, false);
@@ -5422,6 +5438,7 @@ toro:
 				continue;
 			}
 		}
+		// rz_cons_println("Line number 5437, in core_print_disasm");
 		rz_core_seek_arch_bits(core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = rz_core_hint_begin(core, ds->hint, ds->at);
@@ -5443,11 +5460,14 @@ toro:
 		f = ds->fcn = fcnIn(ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ds_show_comments_right(ds);
 		// TRY adding here
+		// rz_cons_println("Line number 5459,before 3rd if block in core_print_disasm");
 		RzType *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
 		if (link_type) {
+			// rz_cons_println("Line number 5462,inside 3rd if block, outside the nested if block in core_print_disasm");		//doesnt come here also!
 			char *fmt = rz_type_as_format_pair(core->analysis->typedb, link_type);
 			const char *typename = rz_type_identifier(link_type);
 			if (fmt && typename) {
+				// rz_cons_println("Line number 5466,inside the 3rd if block, inside its nested if block in core_print_disasm");	//obciously doesnt come here too
 				rz_cons_printf("(%s)\n", typename);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
 				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, link_type);
@@ -5460,6 +5480,7 @@ toro:
 			}
 			free(link_type);
 		} else {
+			// rz_cons_println("Line number 5479, in core_print_disasm");
 			if (idx >= 0) {
 				ret = ds_disassemble(ds, buf + addrbytes * idx, len - addrbytes * idx);
 				if (ret == -31337) {
@@ -5493,8 +5514,11 @@ toro:
 				ds->analysis_op.ptr = ds->hint->ptr;
 			}
 		}
+		// rz_cons_println("Line number 5513,before bbline in core_print_disasm");
 		ds_print_bbline(ds);
+		// rz_cons_println("Line number 5515,after bbline in core_print_disasm");
 		if (ds->at >= addr) {
+			// rz_cons_println("Line number 5517, in core_print_disasm");
 			rz_print_set_rowoff(core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
 		skip_bytes_flag = handleMidFlags(core, ds, true);
@@ -5510,7 +5534,9 @@ toro:
 			ds_show_flags(ds, true);
 			ds->at -= skip_bytes_flag;
 		}
+		// rz_cons_println("Line number 5403, before ds->pdf in core_print_disasm");
 		if (ds->pdf) {
+			// rz_cons_println("Line number 5403,inside ds->pdf  in core_print_disasm");
 			static bool sparse = false;
 			RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in(core->analysis, ds->pdf, ds->at);
 			if (!bb) {
@@ -5530,12 +5556,14 @@ toro:
 			}
 			sparse = false;
 		}
+		// rz_cons_println("Line number 5555,outside the ds->pdf is statement in core_print_disasm");
 		ds_control_flow_comments(ds);
 		ds_adistrick_comments(ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions(ds);
-
+		// rz_cons_println("Line number 5560,after some commnds in core_print_disasm");
 		if (ds->show_comments && !ds->show_comment_right) {
+			// rz_cons_println("Line number 5562, inside show comments in core_print_disasm");
 			ds_show_refs(ds);
 			ds_build_op_str(ds, false);
 			ds_print_cmt_esil(ds);
@@ -5552,11 +5580,12 @@ toro:
 				ds_print_esil_analysis(ds);
 			}
 			if ((ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_CALL || ds->analysis_op.type & RZ_ANALYSIS_OP_TYPE_UCALL) && ds->show_calls) {
+				// rz_cons_println("Line number 5579, inside call hints if statement core_print_disasm");
 				ds_print_calls_hints(ds);
 			}
 			ds_show_comments_describe(ds);
 		}
-
+		// rz_cons_println("Line number 5584,outside show comments, before some printing stuff in core_print_disasm");
 		f = fcnIn(ds, ds->addr, 0);
 		ds_begin_line(ds);
 		ds_print_labels(ds, f);
@@ -5565,6 +5594,7 @@ toro:
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight(ds);
 		ds_print_offset(ds);
+		// rz_cons_println("Line number 5593,after some of that printing stuff in core_print_disasm");
 		////
 		RzAnalysisFunction *fcn = f;
 		if (fcn) {
@@ -5577,6 +5607,7 @@ toro:
 			}
 		}
 		////
+		// rz_cons_println("Line number 5606,before print metainfos in core_print_disasm");
 		int mi_type;
 		bool mi_found = ds_print_meta_infos(ds, buf, len, idx, &mi_type);
 		if (ds->asm_hint_pos == 0) {
@@ -5586,13 +5617,17 @@ toro:
 				ds_print_core_vmode(ds, ds->asm_hint_pos);
 			}
 		}
+		// rz_cons_println("Line number 5616,after print metainfos, before some op_size print statements in core_print_disasm");
 		ds_print_op_size(ds);
 		ds_print_trace(ds);
 		ds_print_cycles(ds);
 		ds_print_family(ds);
 		ds_print_stackptr(ds);
+		// rz_cons_println("Line number 5622,after op_size print statements in core_print_disasm");
 		if (mi_found) {
+			// rz_cons_println("Line number 5624,inside mi_foudnd,before print_dwarf in core_print_disasm");
 			ds_print_dwarf(ds);
+			// rz_cons_println("Line number 5626,after print_dwarf in core_print_disasm");
 			ret = ds_print_middle(ds, ret);
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
@@ -5622,11 +5657,13 @@ toro:
 				}
 			}
 		} else {
+			// rz_cons_println("Line number 5656,no mi_info found, else statement in core_print_disasm");
 			/* show cursor */
 			ds_print_show_cursor(ds);
 			if (!ds->show_bytes_right) {
 				ds_print_show_bytes(ds);
 			}
+			// rz_cons_println("Line number 5662,before print stmts in core_print_disasm");
 			ds_print_lines_right(ds);
 			ds_print_optype(ds);
 			ds_build_op_str(ds, true);
@@ -5634,6 +5671,7 @@ toro:
 			ds_end_line_highlight(ds);
 			ds_print_dwarf(ds);
 			ret = ds_print_middle(ds, ret);
+			// rz_cons_println("Line number 5670,after print stmts in core_print_disasm");
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
 			if (core->rasm->syntax != RZ_ASM_SYNTAX_INTEL) {
