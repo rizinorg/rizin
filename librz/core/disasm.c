@@ -3829,17 +3829,17 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 
 	RzBinFile *binfile = core->bin->cur;
 	if (!binfile || !binfile->o) {
-		rz_cons_printf("No file loaded.\n");
+		// rz_cons_printf("No file loaded.\n");
 		binFileExists = false;
 		// return false;
 	}
 	RzBinSourceLineInfo *li = binfile->o->lines;
 	if (!li) {
-		rz_cons_printf("No source info available.\n");
+		// rz_cons_printf("No source infooooooo available.\n");
 		SourceLineInfoExists = false;
 		// return true;
 	}
-	if (ds->dwarfShowLines) {
+	if (ds->dwarfShowLines && SourceLineInfoExists && binFileExists) {
 		// rz_cons_printf("Number of samples is li->samples_count=%ld",li->samples_count);
 		// const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);
 		// for (size_t i = 0; (i < li->samples_count && s); i++,s = rz_bin_source_line_info_get_next(li, s)) {
@@ -3860,19 +3860,18 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 				break;
 			}
 			temps = &li->samples[i] ;
-			// rz_cons_printf("The address of the [%ld]th sample is %lld",i,temps->address);
+
+			ds_align_comment(ds);
 			if(ds->vat == temps->address) {
 			// rz_cons_printf(/*"0x%08" PFMT64x */ "\t%s\t"/*temps->address,*/,temps->file ? temps->file : "-");
-			rz_cons_printf("\tLine number%s",temps->file ? temps->file : "-");
+				rz_cons_printf("\tLine number%s",temps->file ? temps->file : "-");
 
-			if (temps->line) {
-				rz_cons_printf("%" PFMT32u "\n", temps->line);
-			} else {
-				rz_cons_print("-\n");
+				if (temps->line) {
+					rz_cons_printf("%" PFMT32u "\n", temps->line);
+				} else {
+					rz_cons_print("-\n");
+				}
 			}
-			}
-
-
 
 		}
 		rz_cons_break_pop();
@@ -5787,8 +5786,10 @@ toro:
 			ds_build_op_str(ds, true);
 			ds_print_opstr(ds);
 			ds_end_line_highlight(ds);
+			// rz_cons_printf("%s","After end_line_highlights");
 			ds_print_dwarf(core, state, ds);
 			ret = ds_print_middle(ds, ret);
+			// rz_cons_printf("%s","After ds_print_middle");
 			// rz_cons_println("Line number 5670,after print stmts in core_print_disasm");
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
@@ -5818,7 +5819,7 @@ toro:
 				ds_print_fcn_name(ds);
 				ds_print_demangled(ds);
 				ds_print_color_reset(ds);
-				ds_print_comments_right(ds);
+				ds_print_comments_right(ds); 
 				ds_print_esil_analysis(ds);
 				ds_show_refs(ds);
 			}
