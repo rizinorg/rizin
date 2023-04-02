@@ -3032,6 +3032,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
 	SETBPREF("asm.dwarf.abspath", "false", "Show absolute path in asm.dwarf");
 	SETBPREF("asm.dwarf.file", "true", "Show filename of asm.dwarf in pd");
+	SETBPREF("asm.dwarf.lines","false","Show DWARF source line information at disassembly");
 	SETBPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETBPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETBPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
