@@ -350,7 +350,8 @@ static void ds_print_sysregs(RzDisasmState *ds);
 static void ds_print_fcn_name(RzDisasmState *ds);
 static void ds_print_as_string(RzDisasmState *ds);
 static bool ds_print_core_vmode(RzDisasmState *ds, int pos);
-static void ds_print_dwarf(RzDisasmState *ds);
+// static void ds_print_dwarf(RzDisasmState *ds);
+static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState *ds);
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
@@ -722,7 +723,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_dwarf = rz_config_get_b(core->config, "asm.dwarf");
 	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.dwarf.file");
 	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.dwarf.abspath");
-	ds->dwarfShowLines = rz_config_get_b(ds->core->config,"asm.dwarf.lines");
+	ds->dwarfShowLines = rz_config_get_b(ds->core->config, "asm.dwarf.lines");
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
 	ds->show_size = rz_config_get_b(core->config, "asm.size");
@@ -2718,6 +2719,7 @@ static void ds_control_flow_comments(RzDisasmState *ds) {
 }
 
 static void ds_print_lines_right(RzDisasmState *ds) {
+	// rz_cons_println("Line Number 2722, inside ds_print_lines_right");
 	if (ds->linesright && ds->show_lines_bb && ds->line) {
 		ds_print_ref_lines(ds->line, ds->line_col, ds);
 	}
@@ -3819,8 +3821,124 @@ static void ds_align_comment(RzDisasmState *ds) {
 	rz_cons_print(" ");
 }
 
-static void ds_print_dwarf(RzDisasmState *ds) {
+static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState *ds) {
 	// rz_cons_println("Line number 3823,inside ds_print_dwarf ");
+
+	bool binFileExists = true;
+	bool SourceLineInfoExists = true;
+
+	RzBinFile *binfile = core->bin->cur;
+	if (!binfile || !binfile->o) {
+		rz_cons_printf("No file loaded.\n");
+		binFileExists = false;
+		// return false;
+	}
+	RzBinSourceLineInfo *li = binfile->o->lines;
+	if (!li) {
+		rz_cons_printf("No source info available.\n");
+		SourceLineInfoExists = false;
+		// return true;
+	}
+	if (ds->dwarfShowLines) {
+		// rz_cons_printf("Number of samples is li->samples_count=%ld",li->samples_count);
+		// const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);
+		// for (size_t i = 0; (i < li->samples_count && s); i++,s = rz_bin_source_line_info_get_next(li, s)) {
+		// 	rz_cons_printf("The source line address is %llu",s->address);
+		// }
+		// rz_cmd_state_output_array_start(state);
+		// 		for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);s; s = rz_bin_source_line_info_get_next(li, s)) {
+		// 	rz_core_bin_print_source_line_sample(core, s, state);
+		// 	rz_cons_printf("address after fetching next one purpotedly is %lld ",s->address);
+		// }
+		rz_cmd_state_output_array_start(state);
+		rz_cons_break_push(NULL, NULL);
+		RzBinSourceLineSample *temps = NULL;
+		// rz_cons_printf("The ds->vat data is %lld",ds->vat);
+		// rz_cons_printf("The address is samples if %lld",temps->address);
+		for(size_t i = 0; i<li->samples_count;i++) {
+			if (rz_cons_is_breaked()) {
+				break;
+			}
+			temps = &li->samples[i] ;
+			// rz_cons_printf("The address of the [%ld]th sample is %lld",i,temps->address);
+			if(ds->vat == temps->address) {
+			// rz_cons_printf(/*"0x%08" PFMT64x */ "\t%s\t"/*temps->address,*/,temps->file ? temps->file : "-");
+			rz_cons_printf("\tLine number%s",temps->file ? temps->file : "-");
+
+			if (temps->line) {
+				rz_cons_printf("%" PFMT32u "\n", temps->line);
+			} else {
+				rz_cons_print("-\n");
+			}
+			}
+
+
+
+		}
+		rz_cons_break_pop();
+		rz_cmd_state_output_array_end(state);
+
+
+
+		// rz_cons_break_push(NULL, NULL);
+		// RzBinSourceLineSample *temps = NULL;
+
+		// for (size_t i = 0; i < li->samples_count; i++) {
+		// 	if (rz_cons_is_breaked()) {
+		// 		break;
+		// 	}
+		// 	temps = &li->samples[i] ;
+		// 	rz_cons_printf("The address in sample[%ld] is %llu",i,temps->address);
+
+		// 	// rz_core_bin_print_source_line_sample(core, &li->samples[i], state);
+		// 	rz_cons_printf("0x%08" PFMT64x "\t%s\t", temps->address, temps->file ? temps->file : "-");
+		// 	if (temps->line) {
+		// 		rz_cons_printf("%" PFMT32u "\n", temps->line);
+		// 	} else {
+		// 		rz_cons_print("-\n");
+		// 	}	
+
+		// }
+
+
+
+
+
+		// rz_cmd_state_output_array_start(state);
+		// // for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);s; s = rz_bin_source_line_info_get_next(li, s)){
+		// // 	/*core,s,state*/
+		// // 	// rz_cons_printf("0x%08" PFMT64x "\t%s\t",s->address, s->file ? s->file : "-");
+		// // 	// if (s->line) {
+		// // 	// rz_cons_printf("%" PFMT32u "\n", s->line);
+		// // 	// } else {
+		// // 	// rz_cons_print("-\n");
+		// // 	// }
+		// // 	// rz_core_bin_print_source_line_sample(core, s, state);
+
+		// // }
+		// rz_cons_break_push(NULL, NULL);
+		// const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);	
+		// for (size_t i = 0; i < li->samples_count; i++) {
+		// if (rz_cons_is_breaked()) {
+		// 	break;
+		// }
+		// // if(/*offset address is same as the curret offset of the line info li, then print it*/){
+		// for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);s; s = rz_bin_source_line_info_get_next(li, s)) {
+
+		// 	rz_cons_printf("core->offset is equal to %llu and the address in sourcelinesample is %llu ",core->offset,s->address);
+		// 	if(core->offset == s->address)
+		// 	rz_core_bin_print_source_line_sample(core, s, state);
+		// }
+		// // if(core->offset == s->address){
+		// // 	rz_cons_println("Offset address is equal to line info address");
+		// // 	rz_core_bin_print_source_line_sample(core, &li->samples[i], state);
+		// // }
+		// }
+		// rz_cons_break_pop();
+		// rz_cmd_state_output_array_end(state);
+		
+	}
+
 	if (ds->show_dwarf) {
 		// TODO: cache value in ds
 		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
@@ -5585,12 +5703,12 @@ toro:
 			}
 			ds_show_comments_describe(ds);
 		}
-		// rz_cons_println("Line number 5584,outside show comments, before some printing stuff in core_print_disasm");
+		// rz_cons_println("Line number 5584,outside show comments, before some offset printing stuff in core_print_disasm");
 		f = fcnIn(ds, ds->addr, 0);
 		ds_begin_line(ds);
 		ds_print_labels(ds, f);
-		ds_setup_print_pre(ds, false, false);
-		ds_print_lines_left(ds);
+		ds_setup_print_pre(ds, false, false);		//prints the "arrow" lines
+		ds_print_lines_left(ds);					//prints out a gap?
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight(ds);
 		ds_print_offset(ds);
@@ -5626,7 +5744,7 @@ toro:
 		// rz_cons_println("Line number 5622,after op_size print statements in core_print_disasm");
 		if (mi_found) {
 			// rz_cons_println("Line number 5624,inside mi_foudnd,before print_dwarf in core_print_disasm");
-			ds_print_dwarf(ds);
+			ds_print_dwarf(core, state, ds);
 			// rz_cons_println("Line number 5626,after print_dwarf in core_print_disasm");
 			ret = ds_print_middle(ds, ret);
 
@@ -5669,7 +5787,7 @@ toro:
 			ds_build_op_str(ds, true);
 			ds_print_opstr(ds);
 			ds_end_line_highlight(ds);
-			ds_print_dwarf(ds);
+			ds_print_dwarf(core, state, ds);
 			ret = ds_print_middle(ds, ret);
 			// rz_cons_println("Line number 5670,after print stmts in core_print_disasm");
 
