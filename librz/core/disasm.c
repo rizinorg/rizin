@@ -3840,16 +3840,7 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 		// return true;
 	}
 	if (ds->dwarfShowLines && SourceLineInfoExists && binFileExists) {
-		// rz_cons_printf("Number of samples is li->samples_count=%ld",li->samples_count);
-		// const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);
-		// for (size_t i = 0; (i < li->samples_count && s); i++,s = rz_bin_source_line_info_get_next(li, s)) {
-		// 	rz_cons_printf("The source line address is %llu",s->address);
-		// }
-		// rz_cmd_state_output_array_start(state);
-		// 		for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);s; s = rz_bin_source_line_info_get_next(li, s)) {
-		// 	rz_core_bin_print_source_line_sample(core, s, state);
-		// 	rz_cons_printf("address after fetching next one purpotedly is %lld ",s->address);
-		// }
+
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
 		RzBinSourceLineSample *temps = NULL;
@@ -3878,63 +3869,6 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 		rz_cmd_state_output_array_end(state);
 
 
-
-		// rz_cons_break_push(NULL, NULL);
-		// RzBinSourceLineSample *temps = NULL;
-
-		// for (size_t i = 0; i < li->samples_count; i++) {
-		// 	if (rz_cons_is_breaked()) {
-		// 		break;
-		// 	}
-		// 	temps = &li->samples[i] ;
-		// 	rz_cons_printf("The address in sample[%ld] is %llu",i,temps->address);
-
-		// 	// rz_core_bin_print_source_line_sample(core, &li->samples[i], state);
-		// 	rz_cons_printf("0x%08" PFMT64x "\t%s\t", temps->address, temps->file ? temps->file : "-");
-		// 	if (temps->line) {
-		// 		rz_cons_printf("%" PFMT32u "\n", temps->line);
-		// 	} else {
-		// 		rz_cons_print("-\n");
-		// 	}	
-
-		// }
-
-
-
-
-
-		// rz_cmd_state_output_array_start(state);
-		// // for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);s; s = rz_bin_source_line_info_get_next(li, s)){
-		// // 	/*core,s,state*/
-		// // 	// rz_cons_printf("0x%08" PFMT64x "\t%s\t",s->address, s->file ? s->file : "-");
-		// // 	// if (s->line) {
-		// // 	// rz_cons_printf("%" PFMT32u "\n", s->line);
-		// // 	// } else {
-		// // 	// rz_cons_print("-\n");
-		// // 	// }
-		// // 	// rz_core_bin_print_source_line_sample(core, s, state);
-
-		// // }
-		// rz_cons_break_push(NULL, NULL);
-		// const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);	
-		// for (size_t i = 0; i < li->samples_count; i++) {
-		// if (rz_cons_is_breaked()) {
-		// 	break;
-		// }
-		// // if(/*offset address is same as the curret offset of the line info li, then print it*/){
-		// for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);s; s = rz_bin_source_line_info_get_next(li, s)) {
-
-		// 	rz_cons_printf("core->offset is equal to %llu and the address in sourcelinesample is %llu ",core->offset,s->address);
-		// 	if(core->offset == s->address)
-		// 	rz_core_bin_print_source_line_sample(core, s, state);
-		// }
-		// // if(core->offset == s->address){
-		// // 	rz_cons_println("Offset address is equal to line info address");
-		// // 	rz_core_bin_print_source_line_sample(core, &li->samples[i], state);
-		// // }
-		// }
-		// rz_cons_break_pop();
-		// rz_cmd_state_output_array_end(state);
 		
 	}
 
