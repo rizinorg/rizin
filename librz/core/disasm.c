@@ -3829,13 +3829,12 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 
 	RzBinFile *binfile = core->bin->cur;
 	if (!binfile || !binfile->o) {
-		// rz_cons_printf("No file loaded.\n");
+		rz_cons_printf("No file loaded.\n");
 		binFileExists = false;
 		// return false;
 	}
 	RzBinSourceLineInfo *li = binfile->o->lines;
 	if (!li) {
-		// rz_cons_printf("No source infooooooo available.\n");
 		SourceLineInfoExists = false;
 		// return true;
 	}
@@ -3844,18 +3843,16 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
 		RzBinSourceLineSample *temps = NULL;
-		// rz_cons_printf("The ds->vat data is %lld",ds->vat);
-		// rz_cons_printf("The address is samples if %lld",temps->address);
-		for(size_t i = 0; i<li->samples_count;i++) {
+		for (size_t i = 0; i < li->samples_count; i++) {
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			temps = &li->samples[i] ;
+			temps = &li->samples[i];
 
 			ds_align_comment(ds);
-			if(ds->vat == temps->address) {
-			// rz_cons_printf(/*"0x%08" PFMT64x */ "\t%s\t"/*temps->address,*/,temps->file ? temps->file : "-");
-				rz_cons_printf("\tLine number%s",temps->file ? temps->file : "-");
+			if (ds->vat == temps->address) {
+				// rz_cons_printf(/*"0x%08" PFMT64x */ "\t%s\t"/*temps->address,*/,temps->file ? temps->file : "-");
+				rz_cons_printf("\tLine number%s", temps->file ? temps->file : "-");
 
 				if (temps->line) {
 					rz_cons_printf("%" PFMT32u "\n", temps->line);
@@ -3863,13 +3860,9 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 					rz_cons_print("-\n");
 				}
 			}
-
 		}
 		rz_cons_break_pop();
 		rz_cmd_state_output_array_end(state);
-
-
-		
 	}
 
 	if (ds->show_dwarf) {
@@ -5640,8 +5633,8 @@ toro:
 		f = fcnIn(ds, ds->addr, 0);
 		ds_begin_line(ds);
 		ds_print_labels(ds, f);
-		ds_setup_print_pre(ds, false, false);		//prints the "arrow" lines
-		ds_print_lines_left(ds);					//prints out a gap?
+		ds_setup_print_pre(ds, false, false); // prints the "arrow" lines
+		ds_print_lines_left(ds); // prints out a gap?
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight(ds);
 		ds_print_offset(ds);
@@ -5753,7 +5746,7 @@ toro:
 				ds_print_fcn_name(ds);
 				ds_print_demangled(ds);
 				ds_print_color_reset(ds);
-				ds_print_comments_right(ds); 
+				ds_print_comments_right(ds);
 				ds_print_esil_analysis(ds);
 				ds_show_refs(ds);
 			}
