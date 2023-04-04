@@ -51,13 +51,11 @@ static bool buf_mmap_fini(RzBuffer *b) {
 
 static bool buf_mmap_resize(RzBuffer *b, ut64 newsize) {
 	struct buf_mmap_priv *priv = get_priv_mmap(b);
-	if (newsize > priv->mmap->len) {
-		ut8 *t = rz_file_mmap_resize(priv->mmap, newsize);
-		if (!t) {
-			return false;
-		}
-		priv->bytes_priv.buf = t;
+	ut8 *t = rz_file_mmap_resize(priv->mmap, newsize);
+	if (!t) {
+		return false;
 	}
+	priv->bytes_priv.buf = t;
 	priv->bytes_priv.length = newsize;
 	return true;
 }
