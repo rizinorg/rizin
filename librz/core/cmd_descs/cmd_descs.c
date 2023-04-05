@@ -109,11 +109,11 @@ static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg calculate_expr_args[2];
 static const RzCmdDescArg generate_random_number_args[3];
 static const RzCmdDescArg print_binary_args[2];
-static const RzCmdDescArg base64_encode_args[3];
-static const RzCmdDescArg base64_decode_args[3];
+static const RzCmdDescArg base64_encode_args[2];
+static const RzCmdDescArg base64_decode_args[2];
 static const RzCmdDescArg check_between_args[4];
 static const RzCmdDescArg print_boundaries_prot_args[2];
-static const RzCmdDescArg print_djb2_hash_args[3];
+static const RzCmdDescArg print_djb2_hash_args[2];
 static const RzCmdDescArg print_bitstring_args[3];
 static const RzCmdDescArg eval_expr_print_octal_args[2];
 static const RzCmdDescArg num_to_units_args[2];
@@ -1528,16 +1528,9 @@ static const RzCmdDescDetail base64_encode_details[] = {
 };
 static const RzCmdDescArg base64_encode_args[] = {
 	{
-		.name = "str",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.no_space = true,
-
-	},
-	{
 		.name = "strs",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -1549,7 +1542,7 @@ static const RzCmdDescHelp base64_encode_help = {
 };
 
 static const RzCmdDescDetailEntry base64_decode_Examples_detail_entries[] = {
-	{ .text = "%b64-", .arg_str = "SUxvdmVSaXppbgo=", .comment = "(ILoveRizin) Decodes given base64 string" },
+	{ .text = "%b64- ", .arg_str = "SUxvdmVSaXppbgo=", .comment = "(ILoveRizin) Decodes given base64 string" },
 	{ 0 },
 };
 static const RzCmdDescDetail base64_decode_details[] = {
@@ -1558,16 +1551,9 @@ static const RzCmdDescDetail base64_decode_details[] = {
 };
 static const RzCmdDescArg base64_decode_args[] = {
 	{
-		.name = "b64str",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.no_space = true,
-
-	},
-	{
 		.name = "b64strs",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -1628,7 +1614,7 @@ static const RzCmdDescHelp print_boundaries_prot_help = {
 };
 
 static const RzCmdDescDetailEntry print_djb2_hash_Examples_detail_entries[] = {
-	{ .text = "%h", .arg_str = "ILoveRizin", .comment = "0x56b7215a -> hashed value" },
+	{ .text = "%h ", .arg_str = "ILoveRizin", .comment = "0x56b7215a -> hashed value" },
 	{ 0 },
 };
 static const RzCmdDescDetail print_djb2_hash_details[] = {
@@ -1637,16 +1623,9 @@ static const RzCmdDescDetail print_djb2_hash_details[] = {
 };
 static const RzCmdDescArg print_djb2_hash_args[] = {
 	{
-		.name = "str",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.no_space = true,
-
-	},
-	{
 		.name = "strs",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_ARRAY,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -1688,7 +1667,7 @@ static const RzCmdDescHelp print_bitstring_help = {
 };
 
 static const RzCmdDescDetailEntry eval_expr_print_octal_Examples_detail_entries[] = {
-	{ .text = "%o", .arg_str = "123", .comment = "0173 in octal" },
+	{ .text = "%o", .arg_str = " 123", .comment = "0173 in octal" },
 	{ .text = "%o", .arg_str = " 321", .comment = "0501 in octal" },
 	{ 0 },
 };
@@ -1899,9 +1878,9 @@ static const RzCmdDescHelp compare_and_set_core_num_value_help = {
 };
 
 static const RzCmdDescDetailEntry exec_cmd_if_core_num_value_positive_Examples_detail_entries[] = {
-	{ .text = "%=1; %+", .arg_str = "%%x", .comment = "Will display hexdump at current seek address" },
-	{ .text = "%=-2; %+", .arg_str = "%%x", .comment = "Won\"t do anything" },
-	{ .text = "%=0; %+", .arg_str = "%%x", .comment = "Won\"t do anything" },
+	{ .text = "%=1; %+", .arg_str = " %%x", .comment = "Will display hexdump at current seek address" },
+	{ .text = "%=-2; %+", .arg_str = " %%x", .comment = "Won\"t do anything" },
+	{ .text = "%=0; %+", .arg_str = " %%x", .comment = "Won\"t do anything" },
 	{ 0 },
 };
 static const RzCmdDescDetail exec_cmd_if_core_num_value_positive_details[] = {
@@ -1924,9 +1903,9 @@ static const RzCmdDescHelp exec_cmd_if_core_num_value_positive_help = {
 };
 
 static const RzCmdDescDetailEntry exec_cmd_if_core_num_value_negative_Examples_detail_entries[] = {
-	{ .text = "%=1; %-", .arg_str = "%%x", .comment = "Won\"t do anything" },
-	{ .text = "%=-2; %-", .arg_str = "%%x", .comment = "Will display hexdump at current seek address" },
-	{ .text = "%=0; %+", .arg_str = "%%x", .comment = "Won\"t do anything" },
+	{ .text = "%=1; %-", .arg_str = " %%x", .comment = "Won\"t do anything" },
+	{ .text = "%=-2; %-", .arg_str = " %%x", .comment = "Will display hexdump at current seek address" },
+	{ .text = "%=0; %+", .arg_str = " %%x", .comment = "Won\"t do anything" },
 	{ 0 },
 };
 static const RzCmdDescDetail exec_cmd_if_core_num_value_negative_details[] = {
