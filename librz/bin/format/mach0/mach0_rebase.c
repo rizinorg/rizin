@@ -35,12 +35,12 @@ static bool read_raw_ptr(ut16 fmt, RzBuffer *buf, ut64 cursor, ut64 *out) {
 RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
 	rz_return_if_fail(obj && dst);
 	ut64 eob = rz_buf_size(obj->b);
-	ut64 nsegs_to_rebase = RZ_MIN(obj->nchained_starts, obj->nsegs);
+	ut64 nsegs_to_rebase = RZ_MIN(obj->chained_fixups.starts_count, obj->nsegs);
 	for (int i = 0; i < nsegs_to_rebase; i++) {
-		if (!obj->chained_starts[i]) {
+		if (!obj->chained_fixups.starts[i]) {
 			continue;
 		}
-		struct rz_dyld_chained_starts_in_segment *segment = obj->chained_starts[i];
+		struct rz_dyld_chained_starts_in_segment *segment = obj->chained_fixups.starts[i];
 		ut64 page_size = segment->page_size;
 		ut64 start = obj->segs[i].fileoff;
 		ut64 end = start + obj->segs[i].filesize;
@@ -190,12 +190,12 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
 }
 
 RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj) {
-	return !!obj->chained_starts;
+	return !!obj->chained_fixups.starts;
 }
 
 RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index) {
-	if (seg_index >= obj->nsegs || seg_index >= obj->nchained_starts) {
+	if (seg_index >= obj->nsegs || seg_index >= obj->chained_fixups.starts_count) {
 		return false;
 	}
-	return obj->chained_starts && obj->chained_starts[seg_index];
+	return obj->chained_fixups.starts && obj->chained_fixups.starts[seg_index];
 }

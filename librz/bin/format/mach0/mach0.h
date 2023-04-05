@@ -114,6 +114,14 @@ struct MACH0_(opts_t) {
 	bool patch_relocs;
 };
 
+/**
+ * Info parsed from struct dyld_chained_fixups_header and descendants
+ */
+struct mach0_chained_fixups_t {
+	struct rz_dyld_chained_starts_in_segment **starts;
+	ut32 starts_count;
+};
+
 struct MACH0_(obj_t) {
 	struct MACH0_(opts_t) options;
 	struct MACH0_(mach_header) hdr;
@@ -121,8 +129,7 @@ struct MACH0_(obj_t) {
 	char *intrp;
 	char *compiler;
 	int nsegs;
-	struct rz_dyld_chained_starts_in_segment **chained_starts;
-	ut32 nchained_starts;
+	struct mach0_chained_fixups_t chained_fixups;
 	struct MACH0_(section) * sects;
 	int nsects;
 	struct MACH0_(nlist) * symtab;
