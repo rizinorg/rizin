@@ -1468,15 +1468,18 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 	if (header.starts_offset > size) {
 		return false;
 	}
-	if (!rz_buf_read_le32_at(bin->b, starts_at, &bin->nchained_starts)) {
+	if (!rz_buf_read_le32_at(bin->b, starts_at, &bin->chained_fixups.starts_count)) {
 		return false;
 	}
-	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nchained_starts);
-	if (!bin->chained_starts) {
+	struct mach0_chained_fixups_t *cf = &bin->chained_fixups;
+
+	// chained starts
+	cf->starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, cf->starts_count);
+	if (!cf->starts) {
 		return false;
 	}
 	ut64 cursor = starts_at + sizeof(ut32);
-	for (size_t i = 0; i < bin->nchained_starts; i++) {
+	for (size_t i = 0; i < cf->starts_count; i++) {
 		ut32 seg_off;
 		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
 			cursor += sizeof(ut32);
@@ -1489,7 +1492,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 s
 		if (!cur_seg) {
 			return false;
 		}
-		bin->chained_starts[i] = cur_seg;
+		cf->starts[i] = cur_seg;
 		if (!read_dyld_chained_starts_in_segment(cur_seg, bin->b, starts_at + seg_off)) {
 			return false;
 		}
@@ -1521,9 +1524,10 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
 	if (!bin->nsegs) {
 		return false;
 	}
-	bin->nchained_starts = bin->nsegs;
-	bin->chained_starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, bin->nchained_starts);
-	if (!bin->chained_starts) {
+	struct mach0_chained_fixups_t *cf = &bin->chained_fixups;
+	cf->starts_count = bin->nsegs;
+	cf->starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, cf->starts_count);
+	if (!cf->starts) {
 		return false;
 	}
 	size_t wordsize = get_word_size(bin);
@@ -1571,13 +1575,13 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
 				const size_t ps = 0x1000;
 				if (!cur_seg || cur_seg_idx != seg_idx) {
 					cur_seg_idx = seg_idx;
-					cur_seg = bin->chained_starts[seg_idx];
+					cur_seg = cf->starts[seg_idx];
 					if (!cur_seg) {
 						cur_seg = RZ_NEW0(struct rz_dyld_chained_starts_in_segment);
 						if (!cur_seg) {
 							break;
 						}
-						bin->chained_starts[seg_idx] = cur_seg;
+						cf->starts[seg_idx] = cur_seg;
 						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
 						cur_seg->page_size = ps;
 						cur_seg->page_count = ((bin->segs[seg_idx].vmsize + (ps - 1)) & ~(ps - 1)) / ps;
@@ -2078,14 +2082,15 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	free(mo->signature);
 	free(mo->intrp);
 	free(mo->compiler);
-	if (mo->chained_starts) {
-		for (i = 0; i < mo->nchained_starts; i++) {
-			if (mo->chained_starts[i]) {
-				free(mo->chained_starts[i]->page_start);
-				free(mo->chained_starts[i]);
+	struct mach0_chained_fixups_t *cf = &mo->chained_fixups;
+	if (cf->starts) {
+		for (i = 0; i < cf->starts_count; i++) {
+			if (cf->starts[i]) {
+				free(cf->starts[i]->page_start);
+				free(cf->starts[i]);
 			}
 		}
-		free(mo->chained_starts);
+		free(cf->starts);
 	}
 	rz_pvector_free(mo->patchable_relocs);
 	rz_skiplist_free(mo->relocs);
