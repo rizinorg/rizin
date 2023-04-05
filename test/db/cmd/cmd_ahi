@@ -395,7 +395,7 @@ ahi 10
 pd 1
 ahi 10u
 pd 1
-?e
+echo
 ah-
 wa "cmp rax, -1"
 pd 1

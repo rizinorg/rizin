@@ -60,7 +60,7 @@ CMDS=<<EOF
 aaa
 s 0x4901
 afb~4901
-?e
+echo
 e asm.bytes=false
 s main+98
 pd 3
@@ -644,92 +644,6 @@ Type Info at 0x08048fac:
 EOF
 RUN
 
-NAME=aac on mips be
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-1268
-EOF
-RUN
-
-NAME=raw aac with maps (less because of wrong map address)
-FILE=bins/elf/analysis/mipsbe-busybox
-ARGS=-n -m 0x80000 -a mips -b32 -e cfg.bigendian=true
-CMDS=<<EOF
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-4
-EOF
-RUN
-
-NAME=raw aac (using a PIC bin)
-FILE=bins/elf/libmagic.so
-CMDS=<<EOF
-aac
-afl~?
-EOF
-EXPECT=<<EOF
-199
-EOF
-RUN
-
-NAME=raw aac with maps (using a PIC bin)
-FILE=bins/elf/libmagic.so
-ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
-CMDS=<<EOF
-aac
-e search.in=io.maps
-afl~?
-EOF
-EXPECT=<<EOF
-94
-EOF
-RUN
-
-NAME=aav without vinfun
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040dea4
-e analysis.vinfun=false
-aav
-pd 1 @ 0x0040decc~?andi
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=aav with vinfun
-FILE=bins/elf/analysis/mipsbe-busybox
-CMDS=<<EOF
-af @ 0x0040dea4
-e analysis.vinfun=true
-aav
-pd 1 @ 0x0040decc~?dword
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=aav thumb detection
-FILE=bins/firmware/armthumb.bin
-ARGS=-aarm -b32
-CMDS=<<EOF
-aav
-fl
-EOF
-EXPECT=<<EOF
-0x0000000d 4 aav.0x0000000d
-EOF
-RUN
-
-
 NAME=sym is not fcn
 FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
@@ -1265,7 +1179,7 @@ e asm.bytes=false
 s main
 af
 s sym.imp.puts
-?e
+echo
 pd 3
 EOF
 EXPECT=<<EOF
@@ -1349,26 +1263,6 @@ EOF
 EXPECT=<<EOF
   ; [0x1048:8]=0x500 "Hello"
   0x00000000      mov rsi, qword [rip + 0x1041]
-EOF
-RUN
-
-
-NAME=no string on cbz
-FILE=malloc://8096
-CMDS=<<EOF
-e asm.bytes=true
-e asm.arch=arm
-e asm.bits=64
-e cfg.bigendian=false
-e emu.str=true
-wv 0x52800015
-wv 0x340000b5 @ 4
-w hello @ 0x18
-pd 2
-EOF
-EXPECT=<<EOF
-            0x00000000      15008052       movz  w21, 0
-        ,=< 0x00000004      b5000034       cbz   w21, 0x18             ; likely
 EOF
 RUN
 
@@ -1481,18 +1375,6 @@ EXPECT=<<EOF
 int category
 int fd
 unsigned long request
-EOF
-RUN
-
-NAME=Function definition
-FILE=bins/elf/arm1.bin
-CMDS=<<EOF
-afr @ main
-s 0x000082cc
-pd 1~?*xmalloc
-EOF
-EXPECT=<<EOF
-1
 EOF
 RUN
 
@@ -1948,7 +1830,7 @@ FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 aa
 s main
-?e
+echo
 afvR
 afvW
 EOF
@@ -2893,12 +2775,12 @@ e analysis.jmp.mid=false
 wx b8210000c1ebfdbb2c0000000000
 af
 afi
-?e
+echo
 afb
-?e
+echo
 e asm.bb.middle=true
 pdf
-?e
+echo
 e asm.bb.middle=false
 pdf
 EOF
@@ -2951,13 +2833,13 @@ e asm.bits=64
 e analysis.nopskip=false
 e asm.bb.middle=true
 e analysis.jmp.mid=true
-(show_fcn bin; wx ${bin}; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)
+(show_fcn bin; wx ${bin}; af-*; af; afi; echo; afb; echo; pdr; echo; agf; echo; e asm.bb.middle=true; pdf; echo; e asm.bb.middle=false; pdf)
 .(show_fcn b8210000c1ebfdbb2c000000cc)
-?e
+echo
 .(show_fcn b8210000c1ebfdbb2c000000ebf6)
-?e
+echo
 .(show_fcn b8210000c1ebfdbb2c000000ebf7)
-?e
+echo
 .(show_fcn 0f1f440000b8210000c1ebfdbb2c000000ebf0)
 EOF
 EXPECT=<<EOF
@@ -3312,11 +3194,11 @@ e asm.bytes=true
 e asm.bits=64
 wx b821c10010ebf9
 s 3
-af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; pdf
-?e
+af; afi; echo; afb; echo; pdr; echo; agf; echo; pdf
+echo
 e asm.bb.middle=false
 pd 2 @ 0
-?e
+echo
 e asm.bb.middle=true
 pd 3 @ 0
 EOF
@@ -3410,9 +3292,9 @@ af; af-*
 s 3
 af
 pdr
-?e
+echo
 agf
-?e
+echo
 afll
 EOF
 EXPECT=<<EOF

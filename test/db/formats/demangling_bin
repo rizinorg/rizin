@@ -120,14 +120,14 @@ e asm.bytes=false
 (pd_calls; pd 1 @ 0x0804921a; pd 1 @ 0x08049249; pd 1 @ 0x08049278)
 e asm.cmt.right=true
 .(pd_calls)
-?e
+echo
 e asm.cmt.right=false
 .(pd_calls)
-?e
+echo
 e asm.cmt.right=true
 aa
 .(pd_calls)
-?e
+echo
 e asm.demangle=false
 .(pd_calls)
 EOF
@@ -161,16 +161,16 @@ aa
 s sym.__x86.get_pc_thunk.bx
 e asm.demangle=true
 pd 1
-?e
+echo
 agf
-?e
+echo
 e asm.demangle=false
 pd 1
-?e
+echo
 s 0x08049390
 e asm.demangle=true
 pd 1
-?e
+echo
 e asm.demangle=false
 pd 1
 EOF
@@ -222,7 +222,7 @@ e asm.bytes=false
 aaa
 e asm.demangle=true
 pd 1 @ sym.imp._Unwind_Resume
-?e
+echo
 e asm.demangle=false
 pd 1 @ sym.imp._Unwind_Resume
 EOF

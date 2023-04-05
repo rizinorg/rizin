@@ -235,7 +235,7 @@ DEFINE_RZ_BUF_WRITE_BLE(64)
 
 static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result, size_t size) {
 	rz_return_val_if_fail(b && offset && result, false);
-	if (rz_buf_read_at(b, *offset, result, size) != size) {
+	if (rz_buf_read_at(b, *offset, result, size) != (st64)size) {
 		return false;
 	}
 	*offset += size;
@@ -254,7 +254,7 @@ static inline bool rz_buf_read_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOU
 
 static inline bool rz_buf_write_offset(RZ_NONNULL RzBuffer *b, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL ut8 *result, size_t size) {
 	rz_return_val_if_fail(b && offset && result, false);
-	if (rz_buf_write_at(b, *offset, result, size) != size) {
+	if (rz_buf_write_at(b, *offset, result, size) != (st64)size) {
 		return false;
 	}
 	*offset += size;

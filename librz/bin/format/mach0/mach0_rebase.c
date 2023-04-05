@@ -20,6 +20,17 @@
 
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
+#define IS_FMT_32(fmt) (fmt == DYLD_CHAINED_PTR_32 || fmt == DYLD_CHAINED_PTR_32_CACHE || fmt == DYLD_CHAINED_PTR_32_FIRMWARE)
+
+static bool read_raw_ptr(ut16 fmt, RzBuffer *buf, ut64 cursor, ut64 *out) {
+	if (IS_FMT_32(fmt)) {
+		ut32 val = 0;
+		bool r = rz_buf_read_le32_at(buf, cursor, &val);
+		*out = val;
+		return r;
+	}
+	return rz_buf_read_le64_at(buf, cursor, out);
+}
 
 RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
 	rz_return_if_fail(obj && dst);
@@ -36,9 +47,8 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
 		if (start > eob || page_size < 1) {
 			continue;
 		}
-		ut64 page_idx = 0;
 		ut64 page_end_idx = (RZ_MIN(eob, end) - start) / page_size;
-		for (; page_idx <= page_end_idx; page_idx++) {
+		for (ut64 page_idx = 0; page_idx <= page_end_idx; page_idx++) {
 			if (!segment->page_start || page_idx >= segment->page_count) {
 				break;
 			}
@@ -49,7 +59,7 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
 			ut64 cursor = start + page_idx * page_size + page_start;
 			while (cursor < eob && cursor < end) {
 				ut64 raw_ptr = 0;
-				if (!rz_buf_read_le64_at(obj->b, cursor, &raw_ptr)) {
+				if (!read_raw_ptr(segment->pointer_format, obj->b, cursor, &raw_ptr)) {
 					break;
 				}
 				bool is_auth = IS_PTR_AUTH(raw_ptr);
@@ -136,12 +146,35 @@ RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
 					}
 					break;
 				}
+				case DYLD_CHAINED_PTR_32: {
+					stride = 4;
+					struct dyld_chained_ptr_32_bind bind;
+					dyld_chained_ptr_32_bind_read(&bind, raw_ptr);
+					if (bind.bind) {
+						delta = bind.next;
+					} else {
+						struct dyld_chained_ptr_32_rebase rebase;
+						dyld_chained_ptr_32_rebase_read(&rebase, raw_ptr);
+						delta = rebase.next;
+						if (rebase.target > segment->max_valid_pointer) {
+							// "stolen" non-ptr integers to make a chain, see OutputFile::chain32bitPointers in ld64
+							ptr_value = rebase.target - (0x04000000 + segment->max_valid_pointer) / 2;
+						} else {
+							ptr_value = rebase.target;
+						}
+					}
+					break;
+				}
 				default:
 					RZ_LOG_WARN("Unsupported Mach-O pointer format: %u at paddr 0x%" PFMT64x "\n",
 						segment->pointer_format, cursor);
 					goto break_it_all;
 				}
-				if (cursor <= eob - 8) {
+				if (IS_FMT_32(segment->pointer_format)) {
+					if (cursor <= eob - 4) {
+						rz_buf_write_le32_at(dst, cursor, ptr_value);
+					}
+				} else if (cursor <= eob - 8) {
 					rz_buf_write_le64_at(dst, cursor, ptr_value);
 				}
 				cursor += delta * stride;

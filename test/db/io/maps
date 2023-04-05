@@ -147,7 +147,7 @@ e asm.comments=false
 e io.unalloc=true
 e io.unalloc.ch=
 pd 6
-?e
+echo
 px 16
 EOF
 EXPECT=<<EOF

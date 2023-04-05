@@ -164,7 +164,7 @@ RUN
 
 NAME=rz-gg debruijn sequence 1
 FILE==
-CMDS=!rz-gg -r -P 2; ?e
+CMDS=!rz-gg -r -P 2; echo
 EXPECT=<<EOF
 AA
 EOF
@@ -172,7 +172,7 @@ RUN
 
 NAME=rz-gg debruijn sequence 2
 FILE==
-CMDS=!rz-gg -P 2 -r; ?e
+CMDS=!rz-gg -P 2 -r; echo
 EXPECT=<<EOF
 AA
 EOF

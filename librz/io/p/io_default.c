@@ -17,12 +17,12 @@ typedef struct rz_io_mmo_t {
 
 static int iowhence2buf(int whence) {
 	switch (whence) {
-	case RZ_BUF_CUR:
-		return RZ_IO_SEEK_CUR;
-	case RZ_BUF_SET:
-		return RZ_IO_SEEK_SET;
-	case RZ_BUF_END:
-		return RZ_IO_SEEK_END;
+	case RZ_IO_SEEK_CUR:
+		return RZ_BUF_CUR;
+	case RZ_IO_SEEK_SET:
+		return RZ_BUF_SET;
+	case RZ_IO_SEEK_END:
+		return RZ_BUF_END;
 	default:
 		rz_warn_if_reached();
 		return -1;

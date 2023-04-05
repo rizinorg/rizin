@@ -2027,6 +2027,11 @@ RZ_IPI RzCmdStatus rz_analysis_global_variable_retype_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_API void rz_core_cmd_show_analysis_help(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	rz_core_cmd_help(core, help_msg_a);
+}
+
 RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut32 tbs = core->blocksize;
@@ -5894,55 +5899,18 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_find_paths_handler(RzCore *core, int 
 	return status;
 }
 
-typedef enum {
-	CORE_ANALYSIS_SIMPLE, ///< aa
-	CORE_ANALYSIS_DEEP, ///< aaa
-	CORE_ANALYSIS_EXPERIMENTAL, ///< aaaa
-} CoreAnalysisType;
-
-static void core_perform_auto_analysis(RzCore *core, CoreAnalysisType type) {
-	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
-	char *debugger = NULL;
-	ut64 old_offset = core->offset;
-	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
-	rz_core_notify_begin(core, "%s", notify);
-	rz_cons_break_push(NULL, NULL);
-	rz_cons_break_timeout(timeout);
-	rz_core_analysis_all(core);
-	rz_core_notify_done(core, "%s", notify);
-	rz_core_task_yield(&core->tasks);
-	if (type == CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
-		goto finish;
-	}
-	// Run pending analysis immediately after analysis
-	// Usefull when running commands with ";" or via rizin -c,-i
-	debugger = core->dbg->cur ? strdup(core->dbg->cur->name) : strdup("esil");
-	if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
-		// set it only if is debugging
-		RZ_FREE(debugger);
-	}
-	rz_cons_clear_line(1);
-	rz_core_analysis_everything(core, type == CORE_ANALYSIS_EXPERIMENTAL, debugger);
-finish:
-	rz_core_seek(core, old_offset, true);
-	// XXX this shouldnt be called. flags muts be created wheen the function is registered
-	rz_core_analysis_flag_every_function(core);
-	rz_cons_break_pop();
-	RZ_FREE(debugger);
-}
-
 RZ_IPI RzCmdStatus rz_analyze_simple_handler(RzCore *core, int argc, const char **argv) {
-	core_perform_auto_analysis(core, CORE_ANALYSIS_SIMPLE);
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_SIMPLE);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_everything_handler(RzCore *core, int argc, const char **argv) {
-	core_perform_auto_analysis(core, CORE_ANALYSIS_DEEP);
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int argc, const char **argv) {
-	core_perform_auto_analysis(core, CORE_ANALYSIS_EXPERIMENTAL);
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_EXPERIMENTAL);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6080,7 +6048,12 @@ RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core,
 }
 
 RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc, const char **argv) {
-	return bool2status(cmd_analysis_objc(core, false));
+	return bool2status(rz_core_analysis_objc_refs(core, false));
+}
+
+RZ_IPI RzCmdStatus rz_analyze_all_objc_stubs_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_analysis_objc_stubs(core);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_autoname_all_functions_handler(RzCore *core, int argc, const char **argv) {

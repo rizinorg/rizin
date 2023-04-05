@@ -13,5 +13,6 @@
 #define IS_WHITESPACE(x) ((x) == ' ' || (x) == '\t')
 #define IS_UPPER(c)      ((c) >= 'A' && (c) <= 'Z')
 #define IS_LOWER(c)      ((c) >= 'a' && (c) <= 'z')
+#define IS_ALPHANUM(c)   (IS_DIGIT(c) || IS_UPPER(c) || IS_LOWER(c))
 
 #endif //  RZ_STR_UTIL_H

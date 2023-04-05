@@ -24,14 +24,6 @@
 		} \
 	} while (0)
 
-static const char *help_msg_dcs[] = {
-	"Usage:", "dcs", " Continue until syscall",
-	"dcs", "", "Continue until next syscall",
-	"dcs [str]", "", "Continue until next call to the 'str' syscall",
-	"dcs", "*", "Trace all syscalls, a la strace",
-	NULL
-};
-
 static const char *help_msg_dcu[] = {
 	"Usage:", "dcu", " Continue until address",
 	"dcu.", "", "Alias for dcu $$ (continue until current address",
@@ -2520,24 +2512,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int arg
 }
 
 // dcs
-RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-	switch (input[0]) {
-	case '*':
-		cmd_debug_cont_syscall(core, "-1");
-		break;
-	case ' ':
-		cmd_debug_cont_syscall(core, input + 2);
-		break;
-	case '\0':
+	if (argc > 1) {
+		if (!strcmp(argv[1], "*")) {
+			cmd_debug_cont_syscall(core, "-1");
+		} else {
+			cmd_debug_cont_syscall(core, argv[1]);
+		}
+	} else {
 		cmd_debug_cont_syscall(core, NULL);
-		break;
-	default:
-	case '?':
-		rz_core_cmd_help(core, help_msg_dcs);
-		break;
 	}
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);

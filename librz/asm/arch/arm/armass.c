@@ -6187,12 +6187,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						RZ_LOG_ERROR("assembler: arm: %s: lsb + width out of bounds\n", ops[i].name);
 						return 0;
 					}
-					ut32 tmp;
-					rz_mem_swapendian((ut8 *)(void *)&tmp, (const ut8 *)(void *)&ao->o, sizeof(tmp));
+					ut32 tmp = rz_swap_ut32(ao->o);
 					tmp |= lsb << 7;
 					tmp |= msb << 16;
 					tmp |= reg << 12;
-					rz_mem_swapendian((ut8 *)(void *)&ao->o, (const ut8 *)(void *)&tmp, sizeof(tmp));
+					ao->o = rz_swap_ut32(tmp);
 					break;
 				}
 				}

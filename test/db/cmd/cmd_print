@@ -696,14 +696,14 @@ CMDS=<<EOF
 e io.unalloc=true
 e scr.color=0
 .(print)
-?e
+echo
 e io.unalloc.ch=-
 .(print)
-?e
+echo
 e scr.color=3
 e io.unalloc.ch=
 .(print)
-?e
+echo
 e io.unalloc.ch=?
 .(print)
 EOF

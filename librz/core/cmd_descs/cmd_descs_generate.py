@@ -185,7 +185,7 @@ class Arg:
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
             return self.cd.cname + "_" + compute_cname(self.name) + "_choices"
 
-        raise Exception("_get_choices_cname should be called on ARG_TYPE_CHOICES only")
+        raise TypeError("_get_choices_cname should be called on ARG_TYPE_CHOICES only")
 
     def _get_union(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
@@ -728,7 +728,7 @@ def createcd(cd):
     elif cd.type == CD_TYPE_GROUP:
         formatted_string = createcd_typegroup(cd)
     else:
-        raise Exception("Not handled cd type")
+        raise TypeError("Not handled cd type")
 
     return formatted_string
 

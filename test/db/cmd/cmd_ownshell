@@ -1,14 +1,14 @@
 NAME=mkdir; ls
 FILE==
 CMDS=<<EOF
-mkdir .tmp
-rm .tmp/blah/bleh
-rm .tmp/blah
-mkdir .tmp/blah
-? 1+1 > .tmp/blah/bleh
-ls -l .tmp/blah~bleh[4]
-rm .tmp/blah/bleh
-rm .tmp/blah
+mkdir ./.tmp
+rm ./.tmp/blah/bleh
+rm ./.tmp/blah
+mkdir ./.tmp/blah
+% 1+1 > ./.tmp/blah/bleh
+ls -l ./.tmp/blah~bleh[4]
+rm ./.tmp/blah/bleh
+rm ./.tmp/blah
 EOF
 EXPECT=<<EOF
 .tmp/blah/bleh
@@ -32,7 +32,7 @@ rm /tmp/foo/bar/foo
 rm /tmp/foo/bar
 rm /tmp/foo
 mkdir -p /tmp/foo/bar/foo
-? 1+1 > /tmp/foo/bar/foo/fooz
+% 1+1 > /tmp/foo/bar/foo/fooz
 ls /tmp/foo/bar/foo
 rm /tmp/foo/bar/foo/fooz
 rm /tmp/foo/bar/foo

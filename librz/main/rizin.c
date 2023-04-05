@@ -851,12 +851,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr(uri, "://")) {
-			rz_core_cmdf(r, "R+ %s", uri);
+			rz_core_rtr_add(r, uri);
 		} else {
 			argv[opt.ind] = rz_str_newf("http://%s/cmd/", argv[opt.ind]);
-			rz_core_cmdf(r, "R+ %s", argv[opt.ind]);
+			rz_core_rtr_add(r, argv[opt.ind]);
 		}
-		rz_core_cmd0(r, "R!=");
+		rz_core_rtr_enable(r, "0");
 		argv[opt.ind] = "-";
 	}
 
@@ -1221,7 +1221,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			const char *fstype = r->bin->cur->o->info->bclass;
 			rz_core_cmdf(r, "m /root %s @ 0", fstype);
 		}
-		rz_core_cmd0(r, "R!"); // initalize io subsystem
+		// initalize io subsystem
+		char *res = rz_io_system(r->io, NULL);
+		if (res) {
+			rz_cons_println(res);
+			free(res);
+		}
+
 		iod = r->io && fh ? rz_io_desc_get(r->io, fh->fd) : NULL;
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);
@@ -1348,10 +1354,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (do_analysis > 0) {
 		switch (do_analysis) {
-		case 1: rz_core_cmd0(r, "aa"); break;
-		case 2: rz_core_cmd0(r, "aaa"); break;
-		case 3: rz_core_cmd0(r, "aaaa"); break;
-		default: rz_core_cmd0(r, "aaaaa"); break;
+		case 1: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_SIMPLE); break;
+		case 2: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_DEEP); break;
+		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
+		default: rz_core_cmd_show_analysis_help(r); break;
 		}
 		rz_cons_flush();
 	}

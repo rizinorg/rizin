@@ -40,7 +40,6 @@ jobs:
               - '.github/workflows/ci.yml'
               - 'test/**'
 
-  # TODO: build rz-bindings
   build-and-test:
     needs: changes
     name: ${{ matrix.name }}
@@ -366,7 +365,12 @@ jobs:
           echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
-
+      - name: Fix containers (Jessie)
+        if: matrix.container == 'debian:jessie'
+        run: |
+          echo "deb http://archive.debian.org/debian jessie main" > /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian-security jessie/updates main" >> /etc/apt/sources.list
+          echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
       - name: Install tools
         run: apt-get update --yes --force-yes && apt-get install --yes --force-yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
       - name: Install Python source build dependencies

@@ -1,6 +1,6 @@
 NAME=t/backtickgrep
 FILE==
-CMDS=?v `i~size[1]`-$s;?! ?e works
+CMDS=%v `i~size[1]`-$s;%! echo works
 EXPECT=<<EOF
 0x0
 works

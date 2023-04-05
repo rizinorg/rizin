@@ -1,6 +1,6 @@
 NAME=ELF: endbr-main-mov
 FILE=bins/elf/endbr-main
-CMDS=?v main
+CMDS=%v main
 ARGS=-e log.level=4
 EXPECT=<<EOF
 0x401126
@@ -14,7 +14,7 @@ RUN
 
 NAME=ELF: main
 FILE=bins/elf/analysis/main
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x400506
 EOF
@@ -23,7 +23,7 @@ RUN
 NAME=ELF: main rebased 0
 FILE=bins/elf/analysis/pie-main
 ARGS=-B 0x200000
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x203bd0
 EOF
@@ -32,7 +32,7 @@ RUN
 NAME=ELF: main rebased 1
 FILE=bins/elf/analysis/pie-main
 ARGS=-B 0x100000
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x103bd0
 EOF
@@ -41,7 +41,7 @@ RUN
 NAME=ELF: main rebased 2
 FILE=bins/elf/analysis/main
 ARGS=-B 0x200000
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x200506
 EOF
@@ -56,7 +56,7 @@ RUN
 
 NAME=ELF: sym.main
 FILE=bins/elf/analysis/main
-CMDS=?v sym.main
+CMDS=%v sym.main
 EXPECT=<<EOF
 0x400506
 EOF
@@ -64,7 +64,7 @@ RUN
 
 NAME=ELF: pie main
 FILE=bins/elf/analysis/pie-main
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x3bd0
 EOF
@@ -72,7 +72,7 @@ RUN
 
 NAME=MIPS: main
 FILE=bins/elf/analysis/mips-main
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x4006f0
 EOF
@@ -80,7 +80,7 @@ RUN
 
 NAME=main non common LD script
 FILE=bins/elf/analysis/custom_ldscript
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x1c00844
 EOF
@@ -88,7 +88,7 @@ RUN
 
 NAME=main wrong sections
 FILE=bins/elf/analysis/main_wrong_sect
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x400506
 EOF
@@ -96,7 +96,7 @@ RUN
 
 NAME=main detection linux64 endbr64
 FILE=bins/elf/analysis/linux_x64_endbr64
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x4070
 EOF
@@ -105,7 +105,7 @@ RUN
 NAME=main - arm - buildroot-201402
 FILE=bins/arm/elf/hello_world-buildroot-201402
 CMDS=<<EOF
-?v main
+%v main
 aaa
 afo @ main
 !!rz-bin -M ${RZ_FILE}
@@ -124,7 +124,7 @@ RUN
 NAME=main - arm - linaro-201201
 FILE=bins/arm/elf/hello_world-linaro-201201
 CMDS=<<EOF
-?v main
+%v main
 aaa
 afo @ main
 !!rz-bin -M ${RZ_FILE}
@@ -143,7 +143,7 @@ RUN
 NAME=main - arm - linaro-201902
 FILE=bins/arm/elf/hello_world-linaro-201902
 CMDS=<<EOF
-?v main
+%v main
 aaa
 afo @ main
 !!rz-bin -M ${RZ_FILE}
@@ -161,7 +161,7 @@ RUN
 
 NAME=main fedora 35 x86_64 ls (#1864)
 FILE=bins/elf/analysis/fedora_35_x86_64bit_ls
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x4d80
 EOF
@@ -169,7 +169,7 @@ RUN
 
 NAME=main graalvm java (#2072)
 FILE=bins/elf/analysis/graalvm-example-truncated
-CMDS=?v main
+CMDS=%v main
 EXPECT=<<EOF
 0x424250
 EOF

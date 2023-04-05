@@ -696,7 +696,7 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
 	char *table_text = rz_table_tostring(table);
 	rz_cons_printf("\n%s\n", table_text);
-	rz_free(table_text);
+	free(table_text);
 	rz_table_free(table);
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;

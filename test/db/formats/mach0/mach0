@@ -356,3 +356,21 @@ address     min         max         name                       super
 0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  
 EOF
 RUN
+
+NAME=arm64_32, DYLD_CHAINED_PTR_32
+FILE=bins/mach0/arm64_32-fixups-nonptr
+CMDS=<<EOF
+i~machine
+pxr4 0x100 @ 0xc000
+EOF
+EXPECT=<<EOF
+machine  arm64_32
+0x0000c000 0x0000bf94  .... @ sym._some_struct 49044 0.__TEXT.__text section.0.__TEXT.__text,_myfunc,func.0000bf94 R X 'ret'
+0x0000c004 ..[ null bytes ]..   00000000 
+0x0000c078 0x00001234  4... 4660
+0x0000c07c 0x0000002a  *... 42 ascii ('*')
+0x0000c080 0x00000056  V... 86 ascii ('V')
+0x0000c084 0x0000bf98  .... 49048 0.__TEXT.__text _myotherfunc,func.0000bf98 R X 'ret'
+0x0000c088 ..[ null bytes ]..   00000000 
+EOF
+RUN

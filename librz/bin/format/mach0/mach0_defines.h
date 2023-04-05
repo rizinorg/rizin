@@ -1663,6 +1663,33 @@ static inline void dyld_chained_ptr_arm64e_auth_bind24_read(struct dyld_chained_
 	READ_BITS(dst->auth, 1);
 }
 
+// DYLD_CHAINED_PTR_32
+struct dyld_chained_ptr_32_rebase {
+	ut32 target : 26,
+		next : 5,
+		bind : 1; // == 0
+};
+
+static inline void dyld_chained_ptr_32_rebase_read(struct dyld_chained_ptr_32_rebase *dst, ut32 raw_val) {
+	READ_BITS(dst->target, 26);
+	READ_BITS(dst->next, 5);
+	READ_BITS(dst->bind, 1);
+}
+
+struct dyld_chained_ptr_32_bind {
+	ut32 ordinal : 20,
+		addend : 6,
+		next : 5,
+		bind : 1; // == 1
+};
+
+static inline void dyld_chained_ptr_32_bind_read(struct dyld_chained_ptr_32_bind *dst, ut32 raw_val) {
+	READ_BITS(dst->ordinal, 20);
+	READ_BITS(dst->addend, 6);
+	READ_BITS(dst->next, 5);
+	READ_BITS(dst->bind, 1);
+}
+
 // When adding more structs/readers here, also add tests to test/unit/test_bin_mach0.c!
 
 #undef READ_BITS

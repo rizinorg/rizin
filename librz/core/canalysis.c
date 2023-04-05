@@ -3028,9 +3028,7 @@ static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, 
 static ut64 esilbreak_last_read = UT64_MAX;
 static ut64 esilbreak_last_data = UT64_MAX;
 
-static ut64 ntarget = UT64_MAX;
-
-// TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
+// TODO differentiate endian-aware mem_read with other reads
 static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzCore *core = esil->analysis->coreb.core;
 	ut8 str[128];
@@ -3057,28 +3055,21 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 			break;
 		}
 		// TODO incorrect
-		bool validRef = false;
 		if (trace && myvalid(core->io, refptr)) {
-			if (ntarget == UT64_MAX || ntarget == refptr) {
+			str[0] = 0;
+			if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
+				// RZ_LOG_ERROR("core: invalid read\n");
 				str[0] = 0;
-				if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
-					// RZ_LOG_ERROR("core: invalid read\n");
-					str[0] = 0;
-					validRef = false;
-				} else {
-					rz_analysis_xrefs_set(core->analysis, esil->address, refptr, RZ_ANALYSIS_XREF_TYPE_DATA);
-					str[sizeof(str) - 1] = 0;
-					add_string_ref(core, esil->address, refptr);
-					esilbreak_last_data = UT64_MAX;
-					validRef = true;
-				}
+			} else {
+				rz_analysis_xrefs_set(core->analysis, esil->address, refptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+				str[sizeof(str) - 1] = 0;
+				add_string_ref(core, esil->address, refptr);
+				esilbreak_last_data = UT64_MAX;
 			}
 		}
 
 		/** resolve ptr */
-		if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-			rz_analysis_xrefs_set(core->analysis, esil->address, addr, RZ_ANALYSIS_XREF_TYPE_DATA);
-		}
+		rz_analysis_xrefs_set(core->analysis, esil->address, addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 	}
 	return 0; // fallback
 }
@@ -3706,6 +3697,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
 	bool vinfunr = rz_config_get_b(core->config, "analysis.vinfunrange");
 	bool analyze_strings = rz_config_get_b(core->config, "analysis.strings");
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
 	ut64 from = search_itv.addr, to = rz_itv_end(search_itv);
@@ -3769,21 +3761,21 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 			}
 			switch (vsize) {
 			case 1:
-				value = *(ut8 *)v;
+				value = rz_read_ble8(v);
 				match = (buf[i] >= vmin && buf[i] <= vmax);
 				break;
 			case 2:
-				v16 = rz_read_le16(v); // TODO: support big endian
+				v16 = rz_read_ble16(v, big_endian);
 				match = (v16 >= vmin && v16 <= vmax);
 				value = v16;
 				break;
 			case 4:
-				v32 = rz_read_le32(v); // TODO: support big endian
+				v32 = rz_read_ble32(v, big_endian);
 				match = (v32 >= vmin && v32 <= vmax);
 				value = v32;
 				break;
 			case 8:
-				v64 = rz_read_le64(v); // TODO: support big endian
+				v64 = rz_read_ble64(v, big_endian);
 				match = (v64 >= vmin && v64 <= vmax);
 				value = v64;
 				break;
@@ -4087,7 +4079,13 @@ RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char
 		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
 		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			rz_flag_rename(core->flags, flag, name);
+			if (!rz_flag_rename(core->flags, flag, name)) {
+				// If the rename failed, it may be because there is already a flag with the target name
+				if (rz_flag_get(core->flags, name)) {
+					// If that is the case, just unset the old one to not leak it (e.g. leaving behind fcn.<offset>)
+					rz_flag_unset(core->flags, flag);
+				}
+			}
 		} else {
 			// No flag or not specific to the function, create a new one.
 			rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
@@ -4685,6 +4683,16 @@ static bool is_apple_target(RzCore *core) {
 	return bo ? strstr(bo->plugin->name, "mach") : false;
 }
 
+static void core_analysis_using_plugins(RzCore *core) {
+	RzListIter *it;
+	const RzCorePlugin *plugin;
+	rz_list_foreach (core->plugins, it, plugin) {
+		if (plugin->analysis) {
+			plugin->analysis(core);
+		}
+	}
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -4700,10 +4708,26 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool plugin_supports_esil = core->analysis->cur->esil;
+	bool is_apple = is_apple_target(core);
+
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		rz_core_notify_done(core, "Find function and symbol names from golang binaries");
 		if (rz_core_analysis_recover_golang_functions(core)) {
 			rz_core_analysis_resolve_golang_strings(core);
+		}
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
+	}
+	if (is_apple) {
+		notify = "Recover all Objective-C selector stub names";
+		rz_core_notify_begin(core, "%s", notify);
+		rz_core_analysis_objc_stubs(core); // "aalos"
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
 		}
 	}
 	rz_core_task_yield(&core->tasks);
@@ -4752,10 +4776,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (is_apple_target(core)) {
+	if (is_apple) {
 		notify = "Check for objc references";
 		rz_core_notify_begin(core, "%s", notify);
-		cmd_analysis_objc(core, true);
+		rz_core_analysis_objc_refs(core, true); // "aalor"
 		rz_core_notify_done(core, "%s", notify);
 	}
 	rz_core_task_yield(&core->tasks);
@@ -4886,6 +4910,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
 	}
 
+	core_analysis_using_plugins(core);
 	return true;
 }
 
@@ -6392,4 +6417,54 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 		start_addr = rz_core_prevop_addr_heuristic(core, start_addr);
 	}
 	return start_addr;
+}
+
+/**
+ * \brief Check if core is debugging.
+ * \param core RzCore instance performing analysis.
+ * \return true if core is debugging, false otherwise.
+ * */
+RZ_API bool rz_core_is_debugging(RZ_NONNULL RzCore *core) {
+	return core && core->io && core->io->desc && core->io->desc->plugin && core->io->desc->plugin->isdbg;
+}
+
+/**
+ * \brief Perform auto analysis based on given analysis type.
+ * \param core RzCore instance that'll be used to perform the analysis.
+ * \param type Analysis type.
+ * */
+RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysisType type) {
+	rz_return_if_fail(core);
+
+	ut64 old_offset = core->offset;
+	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
+	rz_core_notify_begin(core, "%s", notify);
+	rz_cons_break_push(NULL, NULL);
+	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
+	rz_cons_break_timeout(timeout);
+	rz_core_analysis_all(core);
+	rz_core_notify_done(core, "%s", notify);
+	rz_core_task_yield(&core->tasks);
+
+	// set debugger only if is debugging
+	char *debugger = NULL;
+	if (rz_core_is_debugging(core)) {
+		debugger = core->dbg->cur ? strdup(core->dbg->cur->name) : strdup("esil");
+	}
+	rz_cons_clear_line(1);
+
+	// if type was simple only then don't proceed further
+	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
+		goto finish;
+	}
+
+	// Run pending analysis immediately after analysis
+	// Usefull when running commands with ";" or via rizin -c,-i
+	rz_core_analysis_everything(core, type == RZ_CORE_ANALYSIS_EXPERIMENTAL, debugger);
+finish:
+	rz_core_seek(core, old_offset, true);
+	// XXX this shouldnt be called. flags muts be created wheen the function is registered
+	rz_core_analysis_flag_every_function(core);
+	rz_cons_break_pop();
+	RZ_FREE(debugger);
 }

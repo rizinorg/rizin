@@ -86,7 +86,7 @@ e scr.interactive=true
 e scr.columns=80
 e scr.rows=12
 < q; V
-?e
+echo
 EOF
 EXPECT=<<EOF
 [?25l[0;0H[0m[0x00005ae0 [Xadvc]0 11% 192 bins/elf/ls]> xc @ entry0                          
@@ -114,7 +114,7 @@ e scr.interactive=true
 e scr.columns=10
 e scr.rows=1
 < q; V
-?e
+echo
 EOF
 EXPECT=<<EOF
 [?25l[0;0H[0m[0x00005ae[0J[0m[s[6;0H[Link[7;0Hlibcap.[0m

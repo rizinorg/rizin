@@ -13,7 +13,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-?e @@r~xmm0
+echo @@r~xmm0
 EOF
 EXPECT=<<EOF
 xmm0l: 
@@ -39,7 +39,7 @@ NAME=3p8
 FILE==
 CMDS=<<EOF
 3p8 1
-?e hi
+echo hi
 EOF
 EXPECT=<<EOF
 00
@@ -49,9 +49,9 @@ hi
 EOF
 RUN
 
-NAME=3p8;?e hi
+NAME=3p8;echo hi
 FILE==
-CMDS=3p8 1;?e hi
+CMDS=3p8 1;echo hi
 EXPECT=<<EOF
 00
 00
@@ -60,9 +60,9 @@ hi
 EOF
 RUN
 
-NAME=2p8 1;?e hi
+NAME=2p8 1;echo hi
 FILE==
-CMDS=2p8 1;?e hi
+CMDS=2p8 1;echo hi
 EXPECT=<<EOF
 00
 00

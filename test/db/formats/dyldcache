@@ -159,13 +159,13 @@ NAME=dyldcache arm64 with objc
 FILE=bins/dyldcache/dyld_shared_cache_arm64-macOS-objc
 CMDS=<<EOF
 i
-?e --
+echo --
 ic
 icf Test
 icm Test
 icf __NSUnrecognizedTaggedPointer
 icm __NSUnrecognizedTaggedPointer
-?e --
+echo --
 pxr 8 @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist
 EOF
 EXPECT=<<EOF
@@ -252,13 +252,13 @@ NAME=dyldcache arm64e with objc
 FILE=bins/dyldcache/dyld_shared_cache_arm64e-macOS-objc
 CMDS=<<EOF
 i
-?e --
+echo --
 ic
 icf Test
 icm Test
 icf NSObject
 icm NSObject
-?e --
+echo --
 pxr 8 @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist
 EOF
 EXPECT=<<EOF

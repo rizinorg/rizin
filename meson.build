@@ -458,6 +458,8 @@ foreach it : ccs
       ['__builtin_bswap16', '', []],
       ['__builtin_bswap32', '', []],
       ['__builtin_bswap64', '', []],
+      ['posix_memalign', '#include <stdlib.h>', []],
+      ['_aligned_malloc', '#include <malloc.h>', []],
     ]
     func = item[0]
     ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])

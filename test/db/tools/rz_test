@@ -27,7 +27,7 @@ RUN
 NAME=BROKEN=0 with comment
 BROKEN=0 # Use BROKEN=0 to unbreak this. Don't remove this line!
 FILE==
-CMDS=?e Test for BROKEN=0
+CMDS=echo Test for BROKEN=0
 EXPECT=<<EOF
 Test for BROKEN=0
 EOF

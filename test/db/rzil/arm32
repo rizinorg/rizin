@@ -5,15 +5,15 @@ CMDS=<<EOF
 wx 0f0053e3
 aezi
 ar r3=0
-?e -- 0x0 - 0xf
+echo -- 0x0 - 0xf
 aezs
 ar 1
-?e -- 0xf - 0xf
+echo -- 0xf - 0xf
 ar pc=0
 ar r3=0xf
 aezs
 ar 1
-?e -- 0x10 - 0xf
+echo -- 0x10 - 0xf
 ar pc=0
 ar r3=0x10
 aezs
@@ -81,34 +81,34 @@ wx 10f110e7
 aezi
 ar r0=42
 ar r1=5
-?e -- 42 / 5
+echo -- 42 / 5
 aezs
 ar r0
-?e -- 42 / 0
+echo -- 42 / 0
 ar pc=0
 ar r0=42
 ar r1=0
 aezs
 ar r0
-?e -- 0 / 0
+echo -- 0 / 0
 ar pc=0
 ar r0=0
 ar r1=0
 aezs
 ar r0
-?e -- -2^31 / -1
+echo -- -2^31 / -1
 ar pc=0
 ar r0=0x80000000
 ar r1=0xffffffff
 aezs
 ar r0
-?e -- -42 / 5
+echo -- -42 / 5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=5
 aezs
 ar r0
-?e -- -42 / -5
+echo -- -42 / -5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=0xfffffffb
@@ -139,34 +139,34 @@ wx 10f130e7
 aezi
 ar r0=42
 ar r1=5
-?e -- 42 / 5
+echo -- 42 / 5
 aezs
 ar r0
-?e -- 42 / 0
+echo -- 42 / 0
 ar pc=0
 ar r0=42
 ar r1=0
 aezs
 ar r0
-?e -- 0 / 0
+echo -- 0 / 0
 ar pc=0
 ar r0=0
 ar r1=0
 aezs
 ar r0
-?e -- -2^31 / -1
+echo -- -2^31 / -1
 ar pc=0
 ar r0=0x80000000
 ar r1=0xffffffff
 aezs
 ar r0
-?e -- -42 / 5
+echo -- -42 / 5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=5
 aezs
 ar r0
-?e -- -42 / -5
+echo -- -42 / -5
 ar pc=0
 ar r0=0xffffffd6
 ar r1=0xfffffffb

@@ -37,7 +37,7 @@ acl
 acll~\@
 avra~0x0000c1c8:0
 avra~vmi:0
-?e `avraj~{[0]}`~{:
+echo `avraj~{[0]}`~{:
 EOF
 EXPECT=<<EOF
 [A]
@@ -64,7 +64,7 @@ acl
 acll~\@
 avra~0x100008378:0
 avra~vmi:0
-?e `avraj~{[0]}`~{:
+echo `avraj~{[0]}`~{:
 EOF
 EXPECT=<<EOF
 [A]
@@ -91,7 +91,7 @@ acl
 acll~\@
 avra~0x100008370:0
 avra~vmi:0
-?e `avraj~{[0]}`~{:
+echo `avraj~{[0]}`~{:
 EOF
 EXPECT=<<EOF
 [A]

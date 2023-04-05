@@ -8,10 +8,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=.?e ?e
+NAME=.echo echo
 FILE=--
 CMDS=<<EOF
-.?e ?e hello world
+.echo echo hello world
 EOF
 EXPECT=<<EOF
 hello world
@@ -24,14 +24,14 @@ CMDS=<<EOF
 #!pipe echo hello
 $foo=#!pipe echo hello
 $foo
-?e --
+echo --
 "$foo=#!pipe echo hello"
 $foo
-?e --
+echo --
 $-*
 $foo=\#!pipe echo hello
 $foo
-?e --
+echo --
 $-*
 EOF
 EXPECT=<<EOF

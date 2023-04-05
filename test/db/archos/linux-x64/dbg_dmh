@@ -20,7 +20,7 @@ ARGS=-d
 CMDS=<<EOF
 dcu main
 dmh | tail -n 2
-?e ----
+echo ----
 7dso
 dmh | tail -n 3
 EOF

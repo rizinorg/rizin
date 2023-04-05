@@ -6,7 +6,7 @@ CMDS=<<EOF
 oodf gdb://127.0.0.1:12346
 db @ main
 dc
-?v main-`s`+1
+%v main-`s`+1
 doc
 EOF
 EXPECT=<<EOF

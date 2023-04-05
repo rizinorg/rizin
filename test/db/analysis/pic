@@ -2,10 +2,10 @@ NAME=pic regs
 FILE=
 CMDS=<<EOF
 e asm.arch=pic
-?e =============== midrange
+echo =============== midrange
 e asm.cpu=midrange
 ar
-?e =============== pic18
+echo =============== pic18
 e asm.cpu=pic18
 ar
 EOF

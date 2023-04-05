@@ -196,7 +196,7 @@ RUN
 NAME=esil x86-64
 FILE==
 CMDS=<<EOF
-?e
+echo
 e asm.arch=x86
 e asm.bits=64
 wx 488d7768
@@ -213,7 +213,7 @@ RUN
 NAME=esil x86-64
 FILE==
 CMDS=<<EOF
-?e
+echo
 e asm.arch=x86
 e asm.bits=64
 wx 488dbdc0fbffff
@@ -230,7 +230,7 @@ RUN
 NAME=esil x86-64
 FILE==
 CMDS=<<EOF
-?e
+echo
 e asm.arch=x86
 e asm.bits=64
 wx c705dd40000001000000
@@ -271,9 +271,9 @@ ar rsp=0x00108000
 .arf
 ar rdi=0xFFFFFFFFFFFFFFFF
 ae rdi,rsp,=[8]
-?v [rsp]
-?v [rsp+4]
-?v [rsp+8]
+%v [rsp]
+%v [rsp+4]
+%v [rsp+8]
 EOF
 EXPECT=<<EOF
 0xffffffffffffffff
@@ -297,7 +297,7 @@ ae rdi,rsp,=[8]
 .arf
 ae rsp,[8],rax,=
 .arf
-?v rax
+%v rax
 EOF
 EXPECT=<<EOF
 0xffffffffffffffff
@@ -412,7 +412,7 @@ e asm.bits=64
 e asm.arch=x86
 e analysis.arch=x86
 wx b8010000000f34b801000000cd80ebfe
-e cmd.esil.intr="?e SYSCALL"
+e cmd.esil.intr="echo SYSCALL"
 10aes
 EOF
 EXPECT=<<EOF

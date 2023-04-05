@@ -11,7 +11,7 @@ dr rip
 $rsp_after=$`dr rsp`
 2dsb
 dr rip
-?v `dr rsp~[1]`-`$rsp_after~[0]`
+%v `dr rsp~[1]`-`$rsp_after~[0]`
 EOF
 EXPECT=<<EOF
 rip = 0x00000000004028b6
@@ -36,7 +36,7 @@ dsb
 dsb
 dr rax
 dr rip
-?v `dr rsp~[1]`-`$rsp_after~[0]`
+%v `dr rsp~[1]`-`$rsp_after~[0]`
 EOF
 EXPECT=<<EOF
 rax = 0x0000000000600980

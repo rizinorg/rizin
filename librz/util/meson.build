@@ -1,6 +1,6 @@
 subdir('sdb/src')
 
-rz_util_sources = [
+rz_util_common_sources = [
   'alloc.c',
   'annotated_code.c',
   'ascii_table.c',
@@ -10,7 +10,6 @@ rz_util_sources = [
   'axml.c',
   'base85.c',
   'base91.c',
-  'bitmap.c',
   'bitvector.c',
   'buf.c',
   'calc.c',
@@ -83,6 +82,7 @@ rz_util_sources = [
   'w32-sys.c',
   'x509.c',
 ]
+rz_util_sources = rz_util_common_sources
 
 rz_util_deps = [ldl, lrt, mth, th, utl] + platform_deps
 if zlib_dep.found()
@@ -162,8 +162,9 @@ if meson.is_cross_build()
     install_dir: rizin_incdir
   )
   rz_util_native_includes = [include_directories('.'), rz_util_includes]
+  rz_util_native_sources = rz_util_common_sources + ['big.c']
 
-  rz_util_native = static_library('rz_util_native', rz_util_sources, libsdb_sources,
+  rz_util_native = static_library('rz_util_native', rz_util_native_sources, libsdb_sources,
     include_directories: rz_util_native_includes,
     dependencies: rz_util_native_deps,
     implicit_include_directories: false,

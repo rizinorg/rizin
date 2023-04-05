@@ -1,15 +1,16 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2019-2020 pancake
 // SPDX-License-Identifier: LGPL-3.0-only
-
-/* This code has been based on Alvaro's
- * rzpipe-python script which was based on FireEye script for IDA Pro.
- *
- * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
- */
 
 #include <rz_core.h>
 
 #include "core_private.h"
+
+/* The reference analysis code has been based on Alvaro's
+ * rzpipe-python script which was based on FireEye script for IDA Pro.
+ *
+ * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
+ */
 
 typedef struct {
 	RzCore *core;
@@ -298,10 +299,311 @@ static bool objc_find_refs(RzCore *core) {
 	return true;
 }
 
-RZ_API bool cmd_analysis_objc(RzCore *core, bool auto_analysis) {
+RZ_API bool rz_core_analysis_objc_refs(RzCore *core, bool auto_analysis) {
 	rz_return_val_if_fail(core, 0);
 	if (!auto_analysis) {
 		objc_analyze(core);
 	}
 	return objc_find_refs(core);
+}
+
+static const ut8 objc_stubs_pattern_x86_64[] = {
+	0x48, 0x8b, 0x35, 0x00, 0x00, 0x00, 0x00, // mov   rsi, qword [<str pointer addr>]
+	0xff, 0x25, 0x00, 0x00, 0x00, 0x00 // jmp   qword reloc.objc_msgSend
+};
+static const ut8 objc_stubs_mask_x86_64[] = {
+	0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, // mov   rsi, qword [<str pointer addr>]
+	0xff, 0xff, 0x00, 0x00, 0x00, 0x00 // jmp   qword reloc.objc_msgSend
+};
+
+// clang -arch arm64e ...
+static const ut8 objc_stubs_pattern_arm64e[] = {
+	0x01, 0x00, 0x00, 0x90, // adrp  x1, <section.__DATA.__objc_const>
+	0x21, 0x00, 0x40, 0xf9, // ldr   x1, [x1, <selector string ptr offset>]
+	0x11, 0x00, 0x00, 0x90, // adrp  x17, <reloc base>
+	0x31, 0x02, 0x00, 0x91, // add   x17, x17, <reloc offset>
+	0x30, 0x02, 0x40, 0xf9, // ldr   x16, [x17]
+	0x11, 0x0a, 0x1f, 0xd7, // braa  x16, x17
+	0x20, 0x00, 0x20, 0xd4, // brk   1
+	0x20, 0x00, 0x20, 0xd4 // brk   1
+};
+static const ut8 objc_stubs_mask_arm64e[] = {
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
+	0xff, 0x03, 0xc0, 0xff, // ldr   x1, [x1, <selector string ptr offset>]
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x17, <reloc base>
+	0xff, 0x03, 0xc0, 0xff, // add   x17, x17, <reloc offset>
+	0xff, 0xff, 0xff, 0xff, // ldr   x16, [x17]
+	0xff, 0xff, 0xff, 0xff, // braa  x16, x17
+	0xff, 0xff, 0xff, 0xff, // brk   1
+	0xff, 0xff, 0xff, 0xff // brk   1
+};
+
+// clang -arch arm64 ...
+static const ut8 objc_stubs_pattern_arm64[] = {
+	0x01, 0x00, 0x00, 0x90, // adrp  x1, <section.__DATA.__objc_const>
+	0x21, 0x00, 0x40, 0xf9, // ldr   x1, [x1, <selector string ptr offset>]
+	0x10, 0x00, 0x00, 0x90, // adrp  x16, <reloc base>
+	0x10, 0x02, 0x40, 0xf9, // ldr   x16, [x17, <reloc offset>]
+	0x00, 0x02, 0x1f, 0xd6, // br    x16
+	0x20, 0x00, 0x20, 0xd4, // brk   1
+	0x20, 0x00, 0x20, 0xd4, // brk   1
+	0x20, 0x00, 0x20, 0xd4 // brk   1
+};
+static const ut8 objc_stubs_mask_arm64[] = {
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
+	0xff, 0x03, 0xc0, 0xff, // ldr   x1, [x1, <selector string ptr offset>]
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x16, <reloc base>
+	0xff, 0x0f, 0xe0, 0xff, // ldr   x16, [x16, <reloc offset>]
+	0xff, 0xff, 0xff, 0xff, // br    x16
+	0xff, 0xff, 0xff, 0xff, // brk   1
+	0xff, 0xff, 0xff, 0xff, // brk   1
+	0xff, 0xff, 0xff, 0xff // brk   1
+};
+
+// clang -arch arm64 -Wl,-objc_stubs_small ... (-arch arm64e -Wl,-objc_stubs_small exists too but generates nonsense)
+static const ut8 objc_stubs_pattern_arm64_small[] = {
+	0x01, 0x00, 0x00, 0x90, // adrp  x1, <section.__DATA.__objc_const>
+	0x21, 0x00, 0x40, 0xf9, // ldr   x1, [x1, <selector string ptr offset>]
+	0x00, 0x00, 0x00, 0x14 // b    <sym.imp.objc_msgSend>
+};
+static const ut8 objc_stubs_mask_arm64_small[] = {
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
+	0xff, 0x03, 0xc0, 0xff, // ldr   x1, [x1, <selector string ptr offset>]
+	0x00, 0x00, 0x00, 0xfc, // b    <sym.imp.objc_msgSend>
+};
+
+static const ut8 objc_stubs_pattern_arm64_32[] = {
+	0x01, 0x00, 0x00, 0x90, // adrp  x1, <section.__DATA.__objc_const>
+	0x21, 0x00, 0x40, 0xb9, // ldr   w1, [x1, <selector string ptr offset>]
+	0x10, 0x00, 0x00, 0x90, // adrp  x16, <reloc base>
+	0x10, 0x02, 0x40, 0xb9, // ldr   w16, [x17, <reloc offset>]
+	0x00, 0x02, 0x1f, 0xd6, // br    x16
+	0x20, 0x00, 0x20, 0xd4, // brk   1
+	0x20, 0x00, 0x20, 0xd4, // brk   1
+	0x20, 0x00, 0x20, 0xd4 // brk   1
+};
+static const ut8 objc_stubs_mask_arm64_32[] = {
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
+	0xff, 0x03, 0xc0, 0xff, // ldr   w1, [x1, <selector string ptr offset>]
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x16, <reloc base>
+	0xff, 0x0f, 0xe0, 0xff, // ldr   w16, [x16, <reloc offset>]
+	0xff, 0xff, 0xff, 0xff, // br    x16
+	0xff, 0xff, 0xff, 0xff, // brk   1
+	0xff, 0xff, 0xff, 0xff, // brk   1
+	0xff, 0xff, 0xff, 0xff // brk   1
+};
+
+static const ut8 objc_stubs_pattern_arm64_32_small[] = {
+	0x01, 0x00, 0x00, 0x90, // adrp  x1, <section.__DATA.__objc_const>
+	0x21, 0x00, 0x40, 0xb9, // ldr   w1, [x1, <selector string ptr offset>]
+	0x00, 0x00, 0x00, 0x14 // b    <sym.imp.objc_msgSend>
+};
+static const ut8 objc_stubs_mask_arm64_32_small[] = {
+	0x1f, 0x00, 0x00, 0x9f, // adrp  x1, <section.__DATA.__objc_const>
+	0xff, 0x03, 0xc0, 0xff, // ldr   w1, [x1, <selector string ptr offset>]
+	0x00, 0x00, 0x00, 0xfc, // b    <sym.imp.objc_msgSend>
+};
+
+static ut64 arm64_adrp_get_addr(ut64 pc, ut32 op) {
+	ut64 imm = (((op >> 5) & 0x7ffff) << 2) | ((op >> 29) & 3);
+	imm <<= 12;
+	if (imm & (1ULL << 32)) {
+		// sign extend
+		imm = (((ut64)-1LL) << 33) | imm;
+	}
+	return (pc & ~0xfffULL) + imm;
+}
+
+static ut64 arm64_get_imm12(ut32 op) {
+	return (op >> 10) & 0xfff;
+}
+
+/**
+ * Try to read the actual selector string through a pointer
+ *
+ * \param str_ptr_addr the address where a pointer to the selector string is
+ * \param ptr_size size of the pointer in bytes
+ * \param selector_out buffer to write the selector string to
+ * \param selector_out_sz buffer size of \p selector_out
+ */
+static bool read_selector_indirect(RzIO *io, ut64 str_ptr_addr, size_t ptr_size, char *selector_out, size_t selector_out_sz) {
+	ut8 ptr[8];
+	if (!rz_io_read_at_mapped(io, str_ptr_addr, ptr, ptr_size)) {
+		return false;
+	}
+	ut64 str_addr = ptr_size == 4 ? rz_read_le32(ptr) : rz_read_le64(ptr);
+	if (rz_io_nread_at(io, str_addr, (ut8 *)selector_out, selector_out_sz - 1) <= 0) {
+		return false;
+	}
+	selector_out[selector_out_sz - 1] = '\0';
+	return true;
+}
+
+static bool objc_stubs_extract_arm64(RzCore *core, ut8 *stub_contents, ut64 addr, char *selector_out, size_t selector_out_sz, size_t ptr_size) {
+	ut64 str_base = arm64_adrp_get_addr(addr, rz_read_le32(stub_contents));
+	ut64 str_off = arm64_get_imm12(rz_read_le32(stub_contents + 4)) * ptr_size;
+	ut64 str_ptr = str_base + str_off;
+	return read_selector_indirect(core->io, str_ptr, ptr_size, selector_out, selector_out_sz);
+}
+
+static bool objc_stubs_extract_arm64_64(RzCore *core, ut8 *stub_contents, ut64 addr, char *selector_out, size_t selector_out_sz) {
+	return objc_stubs_extract_arm64(core, stub_contents, addr, selector_out, selector_out_sz, 8);
+}
+
+static bool objc_stubs_extract_arm64_32(RzCore *core, ut8 *stub_contents, ut64 addr, char *selector_out, size_t selector_out_sz) {
+	return objc_stubs_extract_arm64(core, stub_contents, addr, selector_out, selector_out_sz, 4);
+}
+
+static bool objc_stubs_extract_x86_64(RzCore *core, ut8 *stub_contents, ut64 addr, char *selector_out, size_t selector_out_sz) {
+	// mov   rsi, qword [<str pointer addr>]
+	// Encoded as:
+	//   48 - REX opcode for 64bit operand
+	//   8b - opcode: MOV Gv, Ev
+	//   35 - ModRM:
+	//          reg = 6 = rsi
+	//          mod / r/m = 0 / 5 = disp32
+	//   followed by 4 bytes forming the disp32
+	st32 disp32 = rz_read_le32(stub_contents + 3);
+	ut64 str_ptr = addr + 7 + (st64)disp32;
+	return read_selector_indirect(core->io, str_ptr, 8, selector_out, selector_out_sz);
+}
+
+typedef struct {
+	const ut8 *pattern;
+	const ut8 *mask;
+	size_t size;
+	bool (*extract_selector_str)(RzCore *core, ut8 *stub_contents, ut64 addr, char *selector_out, size_t selector_out_sz);
+} ObjcStubsPattern;
+
+#define PATTERN(name, extract_fn) \
+	{ objc_stubs_pattern_##name, objc_stubs_mask_##name, sizeof(objc_stubs_pattern_##name), extract_fn }
+
+static const ObjcStubsPattern objc_stubs_patterns[] = {
+	PATTERN(arm64e, objc_stubs_extract_arm64_64),
+	PATTERN(arm64, objc_stubs_extract_arm64_64),
+	PATTERN(arm64_small, objc_stubs_extract_arm64_64),
+	PATTERN(arm64_32, objc_stubs_extract_arm64_32),
+	PATTERN(arm64_32_small, objc_stubs_extract_arm64_32),
+	PATTERN(x86_64, objc_stubs_extract_x86_64),
+	{ 0 }
+};
+
+#undef PATTERN
+
+static bool flag_with_space_exists_at(RzCore *core, ut64 addr, RzSpace *space) {
+	const RzList *existing = rz_flag_get_list(core->flags, addr);
+	if (!existing) {
+		return false;
+	}
+	RzListIter *it;
+	RzFlagItem *fi;
+	rz_list_foreach (existing, it, fi) {
+		if (fi->space && fi->space == space) {
+			// Do not create a flag if there is already a symbol (unstripped bin)
+			return true;
+		}
+	}
+	return false;
+}
+
+static void apply_selector_stub_at(RzCore *core, ut64 addr, ut32 size, char *selector) {
+	char name[512];
+	RzFlagItem *fi = rz_flag_set_next(core->flags, rz_strf(name, "stub.objc_msgSend$%s", selector), addr, size);
+	if (!fi) {
+		return;
+	}
+	rz_flag_item_set_realname(fi, rz_strf(name, "objc_msgSend$%s", selector));
+	// If there is already a function (e.g. from aa), rename it too
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (fcn) {
+		rz_core_analysis_function_rename(core, addr, fi->name);
+	}
+}
+
+static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
+	// Selecting only a subset of the known patterns would be possible by checking the architecture.
+	// But as long as there are only a few, checking them all for all binaries is ok.
+	const ObjcStubsPattern *patterns = objc_stubs_patterns;
+
+	size_t max_pattern_sz = 0;
+	size_t min_pattern_sz = SIZE_MAX;
+	for (const ObjcStubsPattern *pattern = patterns; pattern->pattern; pattern++) {
+		if (pattern->size > max_pattern_sz) {
+			max_pattern_sz = pattern->size;
+		}
+		if (pattern->size < min_pattern_sz) {
+			min_pattern_sz = pattern->size;
+		}
+	}
+	ut64 offset = 0;
+	ut8 *stub_contents = malloc(max_pattern_sz);
+	if (!stub_contents) {
+		return;
+	}
+	RzSpace *symbols_space = rz_spaces_get(&core->flags->spaces, RZ_FLAGS_FS_SYMBOLS);
+	rz_flag_space_push(core->flags, "objc-stubs");
+	rz_cons_break_push(NULL, NULL);
+	while (offset + min_pattern_sz <= size && !rz_cons_is_breaked()) {
+		ut64 addr = start + offset;
+		size_t read_sz = RZ_MIN(max_pattern_sz, size - offset);
+		if (!rz_io_read_at_mapped(core->io, addr, stub_contents, read_sz)) {
+			RZ_LOG_ERROR("Failed to read in __objc_stubs at 0x%" PFMT64x "\n", addr);
+			break;
+		}
+		ut64 stride = 0;
+		for (const ObjcStubsPattern *pattern = patterns; pattern->pattern; pattern++) {
+			if (pattern->size > read_sz) {
+				// not enough bytes remaining in section for this pattern to match
+				continue;
+			}
+			if (!rz_mem_eq_masked(stub_contents, pattern->pattern, pattern->mask, pattern->size)) {
+				// no match
+				continue;
+			}
+			stride = pattern->size;
+			if (flag_with_space_exists_at(core, addr, symbols_space)) {
+				// there is already a symbol, no need to annotate
+				break;
+			}
+			char selector[256];
+			if (!pattern->extract_selector_str(core, stub_contents, addr, selector, sizeof(selector))) {
+				break;
+			}
+			// An optional sanity check here would be to also assert that really objc_msgSend is
+			// called and no other function.
+			apply_selector_stub_at(core, addr, pattern->size, selector);
+			break;
+		}
+		if (!stride) {
+			// no pattern matched, cancel the entire search because the section is not in a known format.
+			break;
+		}
+		offset += stride;
+	}
+	rz_cons_break_pop();
+	rz_flag_space_pop(core->flags);
+	free(stub_contents);
+}
+
+/**
+ * Analyze the __objc_stubs section and assign names to all detected
+ * selector stubs found
+ */
+RZ_API void rz_core_analysis_objc_stubs(RzCore *core) {
+	rz_return_if_fail(core);
+	RzList *sections = rz_bin_get_sections(core->bin);
+	if (!sections) {
+		return;
+	}
+	RzBinSection *stubs_section;
+	RzListIter *iter;
+	rz_list_foreach (sections, iter, stubs_section) {
+		if (strstr(stubs_section->name, "__objc_stubs")) {
+			goto found;
+		}
+	}
+	RZ_LOG_ERROR("__objc_stubs section not found for analysis");
+	return;
+found:
+	analyze_objc_stubs(core, stubs_section->vaddr, stubs_section->vsize);
 }

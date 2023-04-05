@@ -109,8 +109,9 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 		if (input[1] == 'q') {
 			RZ_FREE(core->cmdremote);
 		} else if (input[1] == '=') { // R!=0 or R!= for iosystem
-			RZ_FREE(core->cmdremote);
-			core->cmdremote = rz_str_trim_dup(input + 2);
+			const char *cmdremote = rz_str_trim_dup(input + 2);
+			rz_core_rtr_enable(core, cmdremote);
+			RZ_FREE(cmdremote);
 		} else {
 			char *res = rz_io_system(core->io, input + 1);
 			if (res) {
@@ -203,8 +204,9 @@ RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const char **argv) {
-	RZ_FREE(core->cmdremote);
-	core->cmdremote = rz_str_trim_dup(argc > 1 ? argv[1] : "0");
+	const char *cmdremote = rz_str_trim_dup(argc > 1 ? argv[1] : "0");
+	rz_core_rtr_enable(core, cmdremote);
+	RZ_FREE(cmdremote);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -252,4 +254,11 @@ RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_OK;
 	}
 	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_API void rz_core_rtr_enable(RZ_NONNULL RzCore *core, const char *cmdremote) {
+	rz_return_if_fail(core && cmdremote);
+
+	RZ_FREE(core->cmdremote);
+	core->cmdremote = strdup(cmdremote);
 }

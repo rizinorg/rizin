@@ -10,7 +10,7 @@ static bool test_rzpipe(void) {
 #ifndef __WINDOWS__
 	RzPipe *r = rzpipe_open(RIZIN_BUILD_PATH " -q0 =");
 	mu_assert("rzpipe can spawn", r);
-	char *hello = rzpipe_cmd(r, "?e hello world");
+	char *hello = rzpipe_cmd(r, "echo hello world");
 	mu_assert_streq(hello, "hello world\n", "rzpipe hello world");
 	free(hello);
 	rzpipe_close(r);

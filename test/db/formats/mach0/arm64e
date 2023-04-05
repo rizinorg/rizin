@@ -2,17 +2,17 @@ NAME=macOS arm64
 FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
 oml
-?e --
-?e regular got
+echo --
+echo regular got
 pxQ 0x28 @ 0x100008000
-?e --
-?e cstring
+echo --
+echo cstring
 px 0x18 @ 0x100004008
-?e --
-?e local fcn ptr (auth, !bind)
+echo --
+echo local fcn ptr (auth, !bind)
 pxr 0x18 @ sym._fcns
-?e --
-?e global (!auth, bind)
+echo --
+echo global (!auth, bind)
 px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF
@@ -48,17 +48,17 @@ NAME=macOS arm64e with BIND_OPCODE_THREADED
 FILE=bins/mach0/hello-macos-arm64e
 CMDS=<<EOF
 oml
-?e --
-?e __auth_got (auth, bind)
+echo --
+echo __auth_got (auth, bind)
 pxQ 0x28 @ 0x100004000
-?e --
-?e cstring (!auth, !bind)
+echo --
+echo cstring (!auth, !bind)
 px 0x18 @ 0x100004028
-?e --
-?e local fcn ptr (auth, !bind)
+echo --
+echo local fcn ptr (auth, !bind)
 pxr 0x18 @ sym._fcns
-?e --
-?e global (!auth, bind)
+echo --
+echo global (!auth, bind)
 px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF

@@ -51,19 +51,19 @@ RUN
 NAME=Quotes and substitution - rzshell
 FILE==
 CMDS=<<EOF
-w "Hello $(?e World)"
+w "Hello $(echo World)"
 ps
 w0 15
-w 'Hello $(?e World)'
+w 'Hello $(echo World)'
 ps
 w0 15
-w "Hello \$(?e World)"
+w "Hello \$(echo World)"
 ps
 w0 15
 EOF
 EXPECT=<<EOF
 Hello World
-Hello $(?e World)
-Hello $(?e World)
+Hello $(echo World)
+Hello $(echo World)
 EOF
 RUN

@@ -21,7 +21,7 @@ RUN
 NAME=obj main address
 FILE=bins/elf/analysis/test.obj
 BROKEN=1
-CMDS=?v sym.main
+CMDS=%v sym.main
 EXPECT=<<EOF
 0x10
 EOF
@@ -30,7 +30,7 @@ RUN
 NAME=obj main address
 FILE=bins/elf/analysis/test.obj
 BROKEN=1
-CMDS=?v sym.main
+CMDS=%v sym.main
 EXPECT=<<EOF
 0x200010
 EOF

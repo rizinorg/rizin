@@ -1028,7 +1028,7 @@ RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize) {
 		_close(m->fd);
 	}
 #elif __UNIX__
-	if (m->buf && munmap(m->buf, m->len) != 0) {
+	if (m->buf && m->len != 0 && munmap(m->buf, m->len) != 0) {
 		return NULL;
 	}
 #endif
