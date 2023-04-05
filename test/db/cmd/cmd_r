@@ -44,10 +44,10 @@ r
 wb 4142434445
 r- 4
 ps 5
-o- 3
+o- `olt:uri/str/tmp_r_file:fd:quiet`
 o .tmp_r_file
 r
-o- 3
+o- `olt:uri/str/tmp_r_file:fd:quiet`
 rm .tmp_r_file
 EOF
 EXPECT=<<EOF
