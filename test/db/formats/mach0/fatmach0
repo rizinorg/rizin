@@ -2,7 +2,7 @@ NAME=fatmach0 string location
 FILE=bins/mach0/BatteryLife
 CMDS=<<EOF
 s str.batteryLevel
-ps
+ps @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 batteryLevel
@@ -42,7 +42,7 @@ NAME=fatmach0 arm32 string location
 FILE=bins/mach0/BatteryLife.arm_32.0
 CMDS=<<EOF
 s str.batteryLevel
-ps
+ps @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 batteryLevel

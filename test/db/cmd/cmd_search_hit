@@ -16,7 +16,7 @@ NAME=cmd.hit sugar for /j
 FILE=malloc://1024
 CMDS=<<EOF
 w hello @ 10
-psz @@/j hello
+ps @@/j hello
 EOF
 EXPECT=<<EOF
 hello

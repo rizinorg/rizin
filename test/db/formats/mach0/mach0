@@ -277,11 +277,12 @@ NAME=mach0 exports trie
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF
 iE~_AlamofireVersionString?
-psz@ sym._AlamofireVersionString
+ps @ sym._AlamofireVersionString @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 1
 @(#)PROGRAM:Alamofire  PROJECT:Pods-1
+
 EOF
 RUN
 

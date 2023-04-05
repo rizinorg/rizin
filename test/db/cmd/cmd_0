@@ -338,62 +338,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ps 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=ps 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psi 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psi 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psb 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psb 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psx 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psx 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psz 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psz 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psp 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psp 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psu 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psu 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=psw 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=psw 0
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=pu 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pu 0

@@ -12,9 +12,9 @@ b 64
 w hello world
 y 5
 yy @ 6
-psz
+ps
 yy 4 @ 0xB
-psz
+ps
 EOF
 EXPECT=<<EOF
 hello hello
