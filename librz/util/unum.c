@@ -22,8 +22,7 @@ RZ_API bool rz_num_is_hex_prefix(const char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-// TODO: rename to rz_num_srand()
-static void rz_srand(int seed) {
+static void rz_num_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -32,19 +31,25 @@ static void rz_srand(int seed) {
 #endif
 }
 
-static int rz_rand(int mod) {
+static ut64 rz_rand(ut64 mod) {
+	ut64 r;
 #if HAVE_ARC4RANDOM_UNIFORM
-	return (int)arc4random_uniform(mod);
+	r = (ut64)arc4random_uniform(mod);
+	r *= (ut64)arc4random_uniform(mod);
 #else
-	return rand() % mod;
+	r = (ut64)rand();
+	r *= (ut64)rand();
+	r %= mod;
 #endif
+
+	return r;
 }
 
 RZ_API void rz_num_irand(void) {
-	rz_srand(rz_time_now());
+	rz_num_srand(rz_time_now());
 }
 
-RZ_API int rz_num_rand(int max) {
+RZ_API ut64 rz_num_rand(ut64 max) {
 	static bool rand_initialized = false;
 	if (!rand_initialized) {
 		rz_num_irand();

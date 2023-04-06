@@ -25,15 +25,15 @@ bool test_rz_rbtree_cont_insert() {
 	RContRBTree *tree = rz_rbtree_cont_new();
 	ut32 i;
 	for (i = 0; i < 2000; i++) {
-		ut32 v = (ut32)rz_num_rand(UT32_MAX >> 1);
-		rz_rbtree_cont_insert(tree, (void *)(size_t)v, simple_cmp, NULL);
+		ut64 v = (ut64)rz_num_rand(UT64_MAX >> 1);
+		rz_rbtree_cont_insert(tree, (void *)v, simple_cmp, NULL);
 	}
 	i = 0;
 	bool ret = true;
 	void *v;
 	RBIter ator;
 	rz_rbtree_cont_foreach(tree, ator, v) {
-		const ut32 next = (ut32)(size_t)v;
+		const ut64 next = (ut64)v;
 		ret &= (i <= next);
 		i = next;
 	}
