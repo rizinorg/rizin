@@ -59,13 +59,11 @@ RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI int rz_cmd_heap_bins_list_print(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	call_handler(rz_cmd_heap_bins_list_print, input);
+	return 0;
 }
 
 RZ_IPI int rz_cmd_heap_fastbins_print(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	call_handler(rz_cmd_heap_fastbins_print, input);
+	return 0;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {

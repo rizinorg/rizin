@@ -129,47 +129,6 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 }
 
 RZ_IPI int rz_cmd_info_kuery(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	RzBinObject *o = rz_bin_cur_object(core->bin);
-	Sdb *db = o ? o->kv : NULL;
-	switch (input[0]) {
-	case 'v':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, input + 2);
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '*':
-		rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
-		break;
-	case '.':
-	case ' ':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, input + 1);
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '\0':
-		if (db) {
-			char *o = sdb_querys(db, NULL, 0, "*");
-			if (o && *o) {
-				rz_cons_print(o);
-			}
-			free(o);
-		}
-		break;
-	case '?':
-	default:
-		RZ_LOG_ERROR("core: Usage: ik [sdb-query]\n");
-		RZ_LOG_ERROR("core: Usage: ik*    # load all header information\n");
-		return 1;
-	}
 	return 0;
 }
 

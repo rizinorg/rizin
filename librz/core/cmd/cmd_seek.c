@@ -92,61 +92,9 @@ RZ_IPI int rz_core_seek_opcode(RzCore *core, int n, bool silent) {
 }
 
 static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
-	if (input[0] == '?') {
-		RZ_LOG_ERROR("core: Usage: so [-][n]\n");
-		return;
-	}
-	if (!strcmp(input, "-")) {
-		input = "-1";
-	}
-	int n = rz_num_math(core->num, input);
-	if (n == 0) {
-		n = 1;
-	}
-	rz_core_seek_opcode(core, n, silent);
 }
 
 RZ_IPI int rz_seek_search(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	const char *pfx = rz_config_get(core->config, "search.prefix");
-	const ut64 saved_from = rz_config_get_i(core->config, "search.from");
-	const ut64 saved_maxhits = rz_config_get_i(core->config, "search.maxhits");
-	int kwidx = core->search->n_kws; // (int)rz_config_get_i (core->config, "search.kwidx")-1;
-	if (kwidx < 0) {
-		kwidx = 0;
-	}
-	switch (input[0]) {
-	case ' ':
-	case 'v':
-	case 'V':
-	case 'w':
-	case 'W':
-	case 'z':
-	case 'm':
-	case 'c':
-	case 'A':
-	case 'e':
-	case 'E':
-	case 'i':
-	case 'R':
-	case 'r':
-	case '/':
-	case 'x':
-		rz_config_set_i(core->config, "search.from", core->offset + 1);
-		rz_config_set_i(core->config, "search.maxhits", 1);
-		rz_core_cmdf(core, "sd 1@e:cfg.seek.silent=true; /%s; sd -1@e:cfg.seek.silent=true; s %s%d_0; f- %s%d_0",
-			input, pfx, kwidx, pfx, kwidx);
-		rz_config_set_i(core->config, "search.from", saved_from);
-		rz_config_set_i(core->config, "search.maxhits", saved_maxhits);
-		break;
-	case '?':
-		RZ_LOG_ERROR("core: Usage: s/.. arg.\n");
-		rz_cons_printf("/?\n");
-		break;
-	default:
-		RZ_LOG_ERROR("core: unknown search method\n");
-		break;
-	}
 	return 0;
 }
 

@@ -631,8 +631,6 @@ RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API RzCmdStatus rz_core_cmd0_rzshell(RzCore *core, const char *cmd);
-RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each);
-RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each);
 RZ_API char *rz_core_op_str(RzCore *core, ut64 addr);
 RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask);
 RZ_API char *rz_core_disassemble_instr(RzCore *core, ut64 addr, int l);

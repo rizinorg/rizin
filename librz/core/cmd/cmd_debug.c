@@ -24,25 +24,6 @@
 		} \
 	} while (0)
 
-static const char *help_msg_dcu[] = {
-	"Usage:", "dcu", " Continue until address",
-	"dcu.", "", "Alias for dcu $$ (continue until current address",
-	"dcu", " address", "Continue until address",
-	"dcu", " [..tail]", "Continue until the range",
-	"dcu", " [from] [to]", "Continue until the range",
-	NULL
-};
-
-static const char *help_msg_dmi[] = {
-	"Usage: dmi", "", " # List/Load Symbols",
-	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
-	"dmia", "[j|q|*] [libname]", "List all info of target lib",
-	"dmi*", "", "List symbols of target lib in rizin commands",
-	"dmi.", "", "List closest symbol to the current address",
-	"dmiv", "", "Show address of given symbol for given lib",
-	NULL
-};
-
 struct dot_trace_ght {
 	RzGraph /*<struct trace_node *>*/ *graph;
 	Sdb *graphnodes;
@@ -830,172 +811,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 
 // dmi
 RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	CMD_CHECK_DEBUG_DEAD(core);
-	RzListIter *iter;
-	RzDebugMap *map;
-	ut64 addr = core->offset;
-	switch (input[0]) {
-	case '\0': // "dmi" alias of "dmm"
-	{
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		cmd_debug_modules(core, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
-		break;
-	}
-	case ' ': // "dmi "
-	case '*': // "dmi*"
-	case 'v': // "dmiv"
-	case 'j': // "dmij"
-	case 'q': // "dmiq"
-	case 'a': // "dmia"
-	{
-		const char *libname = NULL, *symname = NULL, *a0;
-		int mode;
-		ut64 baddr = 0LL;
-		char *ptr;
-		int i = 1;
-		bool symbols_only = true;
-		if (input[0] == 'a') {
-			symbols_only = false;
-			input++;
-		}
-		PJ *pj = NULL;
-		switch (input[0]) {
-		case 's':
-			mode = RZ_MODE_SET;
-			break;
-		case '*':
-			mode = RZ_MODE_RIZINCMD;
-			break;
-		case 'j':
-			mode = RZ_MODE_JSON;
-			pj = pj_new();
-			if (!pj) {
-				return false;
-			}
-			break;
-		case 'q':
-			mode = input[1] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
-			break;
-		default:
-			mode = RZ_MODE_PRINT;
-			break;
-		}
-		ptr = strdup(input[0] ? rz_str_trim_head_ro(input + 1) : "");
-		if (!ptr || !*ptr) {
-			rz_core_cmd(core, "dmm", 0);
-			free(ptr);
-			pj_free(pj);
-			break;
-		}
-		if (symbols_only) {
-			i = rz_str_word_set0(ptr);
-		}
-		switch (i) {
-		case 2:
-			symname = rz_str_word_get0(ptr, 1);
-			// fall through
-		case 1:
-			a0 = rz_str_word_get0(ptr, 0);
-			addr = rz_num_get(core->num, a0);
-			if (!addr || addr == UT64_MAX) {
-				libname = rz_str_word_get0(ptr, 0);
-			}
-			break;
-		}
-		if (libname && !addr) {
-			addr = addroflib(core, rz_file_basename(libname));
-			if (addr == UT64_MAX) {
-				RZ_LOG_ERROR("core: Unknown library, or not found in dm\n");
-			}
-		}
-		map = get_closest_map(core, addr);
-		if (map) {
-			RzCoreBinFilter filter;
-			filter.offset = UT64_MAX;
-			filter.name = (char *)symname;
-			baddr = map->addr;
-
-			if (libname) {
-				const char *file = map->file ? map->file : map->name;
-				char *newfile = NULL;
-				if (!rz_file_exists(file)) {
-					newfile = rz_file_temp("memlib");
-					if (newfile) {
-						file = newfile;
-						rz_core_dump(core, file, baddr, map->size, false);
-					}
-				}
-				get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
-				if (newfile) {
-					if (!rz_file_rm(newfile)) {
-						RZ_LOG_ERROR("core: Error when removing %s\n", newfile);
-					}
-					free(newfile);
-				}
-			} else {
-				RzBinFile *bf = rz_bin_cur(core->bin);
-				if (bf) {
-					rz_bin_set_baddr(core->bin, map->addr);
-					RzCmdStateOutput state;
-					rz_cmd_state_output_init(&state, rad2mode(mode));
-					rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-					rz_cmd_state_output_print(&state);
-					rz_cmd_state_output_fini(&state);
-					rz_bin_set_baddr(core->bin, baddr);
-				}
-			}
-		}
-		if (mode == RZ_MODE_JSON) {
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-		}
-		free(ptr);
-	} break;
-	case '.': // "dmi."
-	{
-		map = get_closest_map(core, addr);
-		if (map) {
-			ut64 closest_addr = UT64_MAX;
-			RzList *symbols = rz_bin_get_symbols(core->bin);
-			RzBinSymbol *symbol, *closest_symbol = NULL;
-
-			rz_list_foreach (symbols, iter, symbol) {
-				if (symbol->vaddr > addr) {
-					if (symbol->vaddr - addr < closest_addr) {
-						closest_addr = symbol->vaddr - addr;
-						closest_symbol = symbol;
-					}
-				} else {
-					if (addr - symbol->vaddr < closest_addr) {
-						closest_addr = addr - symbol->vaddr;
-						closest_symbol = symbol;
-					}
-				}
-			}
-			RzBinFile *bf = rz_bin_cur(core->bin);
-			if (closest_symbol && bf) {
-				RzCoreBinFilter filter;
-				filter.offset = UT64_MAX;
-				filter.name = (char *)closest_symbol->name;
-
-				rz_bin_set_baddr(core->bin, map->addr);
-				RzCmdStateOutput state;
-				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-				rz_cmd_state_output_print(&state);
-				rz_cmd_state_output_fini(&state);
-			}
-		}
-	} break;
-	default:
-		rz_core_cmd_help(core, help_msg_dmi);
-		break;
-	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1129,15 +944,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 
 // dmx
 RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	CMD_CHECK_DEBUG_DEAD(core);
-#if HAVE_JEMALLOC
-	if (core->rasm->bits == 64) {
-		return cmd_dbg_map_jemalloc_64(core, input);
-	} else {
-		return cmd_dbg_map_jemalloc_32(core, input);
-	}
-#endif
 	return RZ_CMD_STATUS_ERROR;
 }
 
@@ -1469,69 +1275,6 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	rz_cons_break_pop();
 }
 
-static bool cmd_dcu(RzCore *core, const char *input) {
-	const char *ptr = NULL;
-	ut64 from, to, pc;
-	bool dcu_range = false;
-	bool invalid = (!input[0] || !input[1] || !input[2]);
-	if (invalid || (input[2] != ' ' && input[2] != '.')) {
-		rz_core_cmd_help(core, help_msg_dcu);
-		return false;
-	}
-	to = UT64_MAX;
-	if (input[2] == '.') {
-		ptr = strchr(input + 3, ' ');
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = rz_num_tail(core->num, core->offset, input + 2);
-			if (ptr[1] == '.') {
-				to = rz_num_tail(core->num, core->offset, ptr + 2);
-			} else {
-				to = rz_num_math(core->num, ptr + 1);
-			}
-			dcu_range = true;
-		} else {
-			from = rz_num_tail(core->num, core->offset, input + 2);
-		}
-	} else {
-		ptr = strchr(input + 3, ' ');
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = rz_num_math(core->num, input + 3);
-			if (ptr[1] == '.') {
-				to = rz_num_tail(core->num, core->offset, ptr + 2);
-			} else {
-				to = rz_num_math(core->num, ptr + 1);
-			}
-			dcu_range = true;
-		} else {
-			from = rz_num_math(core->num, input + 3);
-		}
-	}
-	if (core->num->nc.errors && rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("core: Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
-		return false;
-	}
-	if (to == UT64_MAX) {
-		to = from;
-	}
-	if (dcu_range) {
-		rz_cons_break_push(NULL, NULL);
-		do {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			rz_debug_step(core->dbg, 1);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(core->dbg, "PC");
-			RZ_LOG_WARN("core: Continue 0x%08" PFMT64x " > 0x%08" PFMT64x " < 0x%08" PFMT64x "\n",
-				from, pc, to);
-		} while (pc < from || pc > to);
-		rz_cons_break_pop();
-	} else {
-		return rz_core_debug_continue_until(core, from, to);
-	}
-	return true;
-}
-
 // dsu
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
 	rz_reg_arena_swap(core->dbg->reg, true);
@@ -1651,8 +1394,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, con
 
 // dta
 RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	rz_debug_trace_at(core->dbg, input);
 	return 0;
 }
 
@@ -2531,20 +2272,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc,
 
 // dcu
 RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	CMD_CHECK_DEBUG_DEAD(core);
-	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-	if (input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_dcu);
-	} else if (input[0] == '.' || input[0] == '\0') {
-		cmd_dcu(core, "cu $$");
-	} else {
-		char *tmpinp = rz_str_newf("cu %s", input + 1);
-		cmd_dcu(core, tmpinp);
-		free(tmpinp);
-	}
-	rz_cons_break_pop();
-	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 

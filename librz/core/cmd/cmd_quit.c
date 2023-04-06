@@ -35,19 +35,6 @@ RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const cha
 }
 
 static int cmd_Quit(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '!') {
-		if (input[1] == '!') {
-			exit(0);
-			return -2;
-		}
-		rz_config_set(core->config, "scr.histsave", "false");
-	}
-	if (IS_DIGIT(input[0]) || input[0] == ' ') {
-		core->num->value = rz_num_math(core->num, input);
-	} else {
-		core->num->value = -1;
-	}
 	return -2;
 }
 
