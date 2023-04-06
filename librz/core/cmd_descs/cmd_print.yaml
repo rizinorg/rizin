@@ -812,52 +812,98 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-  - name: psc
-    summary: Generate a C/C++ string
-    cname: print_string_c_cpp
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-    args: []
-  - name: psw
-    summary: Print buffer as a utf16le string
-    cname: print_utf16le
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: psW
-    summary: Print buffer as a utf32le string
-    cname: print_utf32le
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: psm
-    summary: Print buffer as a utf16be string
-    cname: print_utf16be
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: psM
-    summary: Print buffer as a utf32be string
-    cname: print_utf32be
-    modes:
-      - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_JSON
-    args:
-      - name: type
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
+  - name: ps
+    summary: Print string at the current offset
+    subcommands:
+      - name: ps
+        summary: Print the autodetected string at the current offset (not zero-terminated)
+        cname: print_string_auto_detect
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: delimiter
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "null"
+            choices: ["null", "block"]
+      - name: ps+
+        summary: Print libc++ std::string (same-endian, ascii, zero-terminated)
+        cname: print_string_as_libcpp_string
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psb
+        summary: Print all the strings in current block
+        cname: print_strings_current_block
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: psc
+        summary: Generate a C/C++ string
+        cname: print_string_c_cpp
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: psi
+        summary: Print the first string in the current block
+        cname: print_first_string_current_block
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: psp
+        summary: Print the pascal string at the current offset
+        cname: print_pascal_string
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: bits
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "8"
+            choices: ["8", "16", "32", "64"]
+      - name: pss
+        summary: Print string at the current offset in screen (wrap width)
+        cname: print_string_wrap_width
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args: []
+      - name: psm
+        summary: Print buffer as a utf16be string
+        cname: print_utf16be
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psM
+        summary: Print buffer as a utf32be string
+        cname: print_utf32be
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psn
+        summary: Print string with escaped new lines
+        cname: print_string_escaped_newlines
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psw
+        summary: Print buffer as a utf16le string
+        cname: print_utf16le
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: psW
+        summary: Print buffer as a utf32le string
+        cname: print_utf32le
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
   - name: pv
     summary: Print bytes based on current bitness and endianness
     subcommands:
