@@ -500,9 +500,6 @@ static ut64 rz_num_op(RzNum *num, char op, ut64 a, ut64 b) {
 	return b;
 }
 
-/**
- *
- **/
 RZ_API static ut64 rz_num_math_internal(RzNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
