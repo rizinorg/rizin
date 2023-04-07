@@ -776,7 +776,7 @@ RZ_API bool rz_core_write_random_at(RzCore *core, ut64 addr, size_t len) {
 
 	rz_num_irand();
 	for (int i = 0; i < len; i++) {
-		buf[i] = rz_num_rand(256);
+		buf[i] = rz_num_rand32(256);
 	}
 
 	if (!rz_core_write_at(core, addr, buf, len)) {

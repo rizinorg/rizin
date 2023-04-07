@@ -165,25 +165,18 @@ RZ_IPI RzCmdStatus rz_set_active_tab_next_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, const char **argv) {
-	// TODO : Add support for 64bit random numbers
-	ut64 b = 0;
-	ut32 r = argc < 2 ? 0 : UT32_MAX;
+	const char *lowlimit = argv[1];
+	ut64 low = (ut32)rz_num_math(core->num, lowlimit);
 
-	if (argc == 2) {
-		const char *out = argv[1];
-		if (argc == 3) {
-			const char *p = argv[2];
-			b = (ut32)rz_num_math(core->num, out);
-			r = (ut32)rz_num_math(core->num, p) - b;
-		} else {
-			r = (ut32)rz_num_math(core->num, out);
-		}
+	const char *uplimit = argv[2];
+	ut64 high = (ut32)rz_num_math(core->num, uplimit);
+
+	if (low >= high) {
+		RZ_LOG_ERROR("core : Invalid arguments passed to %s : low-limit shouldn't be more then high-limit", argv[0]);
+		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!r) {
-		r = UT32_MAX >> 1;
-	}
-	core->num->value = (ut64)(b + rz_num_rand(r));
+	core->num->value = (ut64)(low + rz_num_rand64(high - low));
 	rz_cons_printf("0x%" PFMT64x "\n", core->num->value);
 
 	return RZ_CMD_STATUS_OK;

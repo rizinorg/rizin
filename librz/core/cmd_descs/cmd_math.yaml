@@ -43,13 +43,9 @@ commands:
         summary: Base64 encode
         cname: base64_encode
         args:
-          - name: str
-            type: RZ_CMD_ARG_TYPE_STRING
-            no_space: true
           - name: strs
             type: RZ_CMD_ARG_TYPE_STRING
             flags: RZ_CMD_ARG_FLAG_ARRAY
-            optional: true
         details:
           - name: Examples
             entries:
@@ -60,17 +56,13 @@ commands:
         summary: Base64 decode. Maximum input length = 4*(strlen(str)).
         cname: base64_decode
         args:
-          - name: b64str
-            type: RZ_CMD_ARG_TYPE_STRING
-            no_space: true
           - name: b64strs
             type: RZ_CMD_ARG_TYPE_STRING
             flags: RZ_CMD_ARG_FLAG_ARRAY
-            optional: true
         details:
           - name: Examples
             entries:
-              - text: "%b64-"
+              - text: "%b64- "
                 arg_str: SUxvdmVSaXppbgo=
                 comment: (ILoveRizin) Decodes given base64 string
   - name: "%btw"
@@ -106,17 +98,13 @@ commands:
     summary: Print hash value of given input
     cname: print_djb2_hash
     args:
-      - name: str
-        type: RZ_CMD_ARG_TYPE_STRING
-        no_space: true
       - name: strs
         type: RZ_CMD_ARG_TYPE_STRING
         flags: RZ_CMD_ARG_FLAG_ARRAY
-        optional: true
     details:
       - name: Examples
         entries:
-          - text: "%h"
+          - text: "%h "
             arg_str: ILoveRizin
             comment: 0x56b7215a -> hashed value
   - name: "%f"
@@ -151,7 +139,7 @@ commands:
       - name: Examples
         entries:
           - text: "%o"
-            arg_str: "123"
+            arg_str: " 123"
             comment: 0173 in octal
           - text: "%o"
             arg_str: " 321"
@@ -259,13 +247,13 @@ commands:
       - name: Examples
         entries:
           - text: "%=1; %+"
-            arg_str: "%%x"
+            arg_str: " %%x"
             comment: Will display hexdump at current seek address
           - text: "%=-2; %+"
-            arg_str: "%%x"
+            arg_str: " %%x"
             comment: Won"t do anything
           - text: "%=0; %+"
-            arg_str: "%%x"
+            arg_str: " %%x"
             comment: Won"t do anything
   - name: "%-"
     summary: Execute given command if $? register is less than 0
@@ -277,13 +265,13 @@ commands:
       - name: Examples
         entries:
           - text: "%=1; %-"
-            arg_str: "%%x"
+            arg_str: " %%x"
             comment: Won"t do anything
           - text: "%=-2; %-"
-            arg_str: "%%x"
+            arg_str: " %%x"
             comment: Will display hexdump at current seek address
           - text: "%=0; %+"
-            arg_str: "%%x"
+            arg_str: " %%x"
             comment: Won"t do anything
   - name: "%!"
     summary: Execute command if result of last numeric expression evaluation (related) command was 0

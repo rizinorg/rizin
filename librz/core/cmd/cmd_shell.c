@@ -554,13 +554,13 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 		f = avatar_orangg[0];
 	} else if (type == RZ_AVATAR_CYBCAT) {
 		l = strdup(rz_str_pad('-', msglen));
-		f = avatar_cybcat[rz_num_rand(RZ_ARRAY_SIZE(avatar_cybcat))];
+		f = avatar_cybcat[rz_num_rand32(RZ_ARRAY_SIZE(avatar_cybcat))];
 	} else if (rz_config_get_i(core->config, "scr.utf8")) {
 		l = (char *)rz_str_repeat("─", msglen);
-		f = avatar_clippy_utf8[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy_utf8))];
+		f = avatar_clippy_utf8[rz_num_rand32(RZ_ARRAY_SIZE(avatar_clippy_utf8))];
 	} else {
 		l = strdup(rz_str_pad('-', msglen));
-		f = avatar_clippy[rz_num_rand(RZ_ARRAY_SIZE(avatar_clippy))];
+		f = avatar_clippy[rz_num_rand32(RZ_ARRAY_SIZE(avatar_clippy))];
 	}
 
 	char *string = rz_str_newf(f, l, s, msg, s, l);
