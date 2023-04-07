@@ -25,7 +25,7 @@ bool test_rz_rbtree_cont_insert() {
 	RContRBTree *tree = rz_rbtree_cont_new();
 	ut32 i;
 	for (i = 0; i < 2000; i++) {
-		ut64 v = (ut64)rz_num_rand(UT64_MAX >> 1);
+		ut64 v = (ut64)rz_num_rand64(UT64_MAX >> 1);
 		rz_rbtree_cont_insert(tree, (void *)v, simple_cmp, NULL);
 	}
 	i = 0;

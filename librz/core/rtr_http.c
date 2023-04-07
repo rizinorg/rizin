@@ -71,7 +71,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 
 	if (!strcmp(port, "0")) {
 		rz_num_irand();
-		iport = 1024 + rz_num_rand(45256);
+		iport = 1024 + rz_num_rand32(45256);
 		snprintf(buf, sizeof(buf), "%d", iport);
 		port = buf;
 	}
