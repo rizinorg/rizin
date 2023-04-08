@@ -3831,7 +3831,7 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 		SourceLineInfoExists = false;
 		// return true;
 	}
-	if (ds->dwarfShowLines && SourceLineInfoExists && binFileExists) {
+	if (ds->dwarfShowLines && ds->show_dwarf && SourceLineInfoExists && binFileExists) {
 
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
