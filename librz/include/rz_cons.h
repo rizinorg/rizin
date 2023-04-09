@@ -71,15 +71,16 @@ typedef struct rz_cons_bind_t {
 
 typedef struct rz_theme_info {
 
-    char *author;
-    char *license;
-    char *targetbg;
-    char *mincolordepth;
-    char *desc;
-    char *additionaldts;
-    char *refs;
-    
-}RzThemeInfo;
+	char *name;
+	char *author;
+	char *license;
+	char *targetbg;
+	char *mincolordepth;
+	char *desc;
+	char *additionaldts;
+	char *refs;
+
+} RzThemeInfo;
 
 typedef struct rz_cons_grep_t {
 	char strings[RZ_CONS_GREP_WORDS][RZ_CONS_GREP_WORD_SIZE];
