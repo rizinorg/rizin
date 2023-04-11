@@ -740,7 +740,6 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		RzLine *line = core->cons->line;
 		if (!line->sdbshell_hist) {
 			line->sdbshell_hist = rz_list_newf(free);
-			rz_list_append(line->sdbshell_hist, rz_str_new("\0"));
 		}
 		RzList *sdb_hist = line->sdbshell_hist;
 		rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
