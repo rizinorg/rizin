@@ -4,9 +4,6 @@
 const SPECIAL_CHARACTERS = ["\\s", "@", "|", "#", '"', "'", ">", ";", "$", "`", "~", "\\", ",", "(", ")"];
 const SPEC_SPECIAL_CHARACTERS = ["\\s", "@", "|", "#", '"', "'", ">", ";", "$", "`", "~", "\\", ",", "(", ")", ":"];
 
-const PF_SPECIAL_CHARACTERS = ["\\s", "@", "|", "#", '"', "'", ">", ";", "$", "`", "~", "\\", "(", ")"];
-
-const PF_DOT_SPECIAL_CHARACTERS = PF_SPECIAL_CHARACTERS.concat([".", "="]);
 const SPECIAL_CHARACTERS_EQUAL = SPECIAL_CHARACTERS.concat(["="]);
 const SPECIAL_CHARACTERS_COMMA = SPECIAL_CHARACTERS.concat([","]);
 
@@ -26,37 +23,13 @@ const SPEC_ARG_IDENTIFIER_BASE = choice(
   /\${[^\r\n $}]+}/,
   /\\./,
 );
-const PF_DOT_ARG_IDENTIFIER_BASE = choice(
-  repeat1(noneOf(...PF_DOT_SPECIAL_CHARACTERS)),
-  "$$$",
-  "$$",
-  /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
-  /\\./,
-);
-const PF_ARG_IDENTIFIER_BASE = choice(
-  repeat1(noneOf(...PF_SPECIAL_CHARACTERS)),
-  "$$$",
-  "$$",
-  /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
-  /\\./,
-);
 
 module.exports = grammar({
   name: "rzcmd",
 
   extras: ($) => [$._comment, /[ \t]*/],
 
-  externals: ($) => [
-    $._cmd_identifier,
-    $._help_stmt,
-    $.file_descriptor,
-    $._eq_sep_concat,
-    $._concat,
-    $._concat_pf_dot,
-    $._spec_sep,
-  ],
+  externals: ($) => [$._cmd_identifier, $._help_stmt, $.file_descriptor, $._eq_sep_concat, $._concat, $._spec_sep],
 
   inline: ($) => [$.stmt_delimiter, $.stmt_delimiter_singleline],
 
@@ -92,7 +65,6 @@ module.exports = grammar({
         $._pipe_stmt,
         $.grep_stmt,
         $.legacy_quoted_stmt,
-        $._pf_stmts,
       ),
 
     _tmp_stmt: ($) =>
@@ -232,7 +204,6 @@ module.exports = grammar({
         $._system_stmt,
         $._interpret_stmt,
         $._env_stmt,
-        $._pf_arged_stmt,
         $._last_stmt,
         $._simple_arged_stmt_question,
       ),
@@ -276,70 +247,6 @@ module.exports = grammar({
         ),
       ),
     _interpret_search_identifier: ($) => seq("./"),
-    _pf_arged_stmt: ($) =>
-      choice(
-        seq(field("command", alias($.pf_dot_cmd_identifier, $.cmd_identifier))),
-        seq(field("command", alias("pfo", $.cmd_identifier)), field("args", $.args)),
-      ),
-    _pf_stmts: ($) =>
-      prec.left(
-        1,
-        choice(
-          // pf fmt, pf* fmt_name|fmt, pfc fmt_name|fmt, pfd.fmt_name, pfj fmt_name|fmt, pfq fmt, pfs.struct_name, pfs format
-          alias($.pf_cmd, $.arged_stmt),
-          // pf.fmt_name.field_name, pf.fmt_name.field_name[i], pf.fmt_name.field_name=33, pfv.fmt_name[.field]
-          alias($.pf_dot_cmd, $.arged_stmt),
-          // pf.name [0|cnt]fmt
-          alias($.pf_new_cmd, $.arged_stmt),
-          // Cf [sz] [fmt]
-          alias($.Cf_cmd, $.arged_stmt),
-          // pf., pfo fdf_name: will be handled as regular arged_stmt
-        ),
-      ),
-    Cf_cmd: ($) =>
-      prec.left(
-        seq(field("command", alias("Cf", $.cmd_identifier)), optional(field("args", alias($._Cf_args, $.args)))),
-      ),
-    _Cf_args: ($) => seq($.arg, $.pf_args),
-    pf_dot_cmd_identifier: ($) => "pf.",
-    pf_dot_full_cmd_identifier: ($) => /pf[*cjqsv]\./,
-    pf_new_cmd: ($) =>
-      seq(
-        field("command", alias($.pf_dot_cmd_identifier, $.cmd_identifier)),
-        $._concat_pf_dot,
-        field("args", $.pf_new_args),
-      ),
-    pf_dot_cmd: ($) =>
-      prec.left(
-        1,
-        seq(
-          field("command", alias(choice($.pf_dot_cmd_identifier, $.pf_dot_full_cmd_identifier), $.cmd_identifier)),
-          $._concat_pf_dot,
-          field("args", $.pf_dot_cmd_args),
-        ),
-      ),
-    pf_cmd: ($) => seq(field("command", alias(/pf[*cjqs]?/, $.cmd_identifier)), field("args", $.pf_args)),
-    pf_new_args: ($) => seq(alias($.pf_dot_arg, $.pf_arg), $.pf_args),
-    pf_dot_cmd_args: ($) =>
-      seq(alias($.pf_dot_args, $.pf_args), optional(seq(alias("=", $.pf_arg_identifier), $.pf_args))),
-    _pf_dot_arg_identifier: ($) => argIdentifier(PF_DOT_ARG_IDENTIFIER_BASE),
-    _pf_arg_parentheses: ($) => seq(alias("(", $.pf_arg_identifier), $.pf_args, alias(")", $.pf_arg_identifier)),
-    pf_arg_identifier: ($) => argIdentifier(PF_ARG_IDENTIFIER_BASE),
-    _pf_arg: ($) => choice($.pf_arg_identifier, $._pf_arg_parentheses, $.cmd_substitution_arg),
-    _pf_dot_arg: ($) => choice(alias($._pf_dot_arg_identifier, $.pf_arg_identifier), $.cmd_substitution_arg),
-    pf_concatenation: ($) => prec(-1, seq($._pf_arg, repeat1(prec(-1, seq($._concat, $._pf_arg))))),
-    pf_dot_concatenation: ($) => prec(-1, seq($._pf_dot_arg, repeat1(prec(-1, seq($._concat_pf_dot, $._pf_dot_arg))))),
-    pf_arg: ($) => choice($._pf_arg, $.pf_concatenation),
-    pf_dot_arg: ($) => choice($._pf_dot_arg, alias($.pf_dot_concatenation, $.pf_concatenation)),
-    pf_args: ($) => prec.left(repeat1($.pf_arg)),
-    pf_dot_args: ($) =>
-      prec.left(
-        1,
-        seq(
-          alias($.pf_dot_arg, $.pf_arg),
-          repeat(seq($._concat_pf_dot, ".", $._concat_pf_dot, alias($.pf_dot_arg, $.pf_arg))),
-        ),
-      ),
     _env_stmt: ($) =>
       prec.left(
         seq(

@@ -197,11 +197,11 @@ struct {
 EOF
 RUN
 
-NAME=mac ls pfc.fmt
+NAME=mac ls pfc .fmt
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
-pf.fmt bcFiuf foo bar baz cow one two
-pfc.fmt
+pfn fmt "bcFiuf foo bar baz cow one two"
+pfc .fmt
 EOF
 EXPECT=<<EOF
 struct fmt {

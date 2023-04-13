@@ -4401,8 +4401,9 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 			ut64 regval = rz_debug_reg_get(core->dbg, var->storage.reg);
 			r = rz_core_print_hexdump_refs(core, wordsize, wordsize, regval);
 		} else {
-			// TODO: convert to API
-			r = rz_core_cmd_strf(core, "pf r (%s)", var->storage.reg);
+			char *regfmt = rz_str_newf("r (%s)", var->storage.reg);
+			r = rz_core_print_format(core, regfmt, RZ_PRINT_MUSTSEE, core->offset);
+			free(regfmt);
 		}
 		rz_strbuf_append(sb, r);
 		free(r);
@@ -4415,8 +4416,7 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 			int wordsize = rz_analysis_get_address_bits(core->analysis) / 8;
 			r = rz_core_print_hexdump_refs(core, wordsize, wordsize, addr);
 		} else {
-			// TODO: convert to API
-			r = rz_core_cmd_strf(core, "pf %s @ 0x%" PFMT64x, fmt, addr);
+			r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, addr);
 		}
 		rz_strbuf_append(sb, r);
 		free(r);

@@ -21,26 +21,26 @@ RUN
 NAME=pf.-x
 FILE==
 CMDS=<<EOF
-pf.foo xxd
-pf.~foo
-pf.-foo
-pf.~foo
+pfn foo xxd
+pfn~foo
+pf- foo
+pfn~foo
 EOF
 EXPECT=<<EOF
-pf.foo xxd
+foo "xxd"
 EOF
 RUN
 
-NAME=pf.-*
+NAME=pf-*
 FILE==
 CMDS=<<EOF
-pf.foo xxd
-pf.~foo
-pf.-*
-pf.~foo
+pfn foo xxd
+pfn~foo
+pf-*
+pfn~foo
 EOF
 EXPECT=<<EOF
-pf.foo xxd
+foo "xxd"
 EOF
 RUN
 
@@ -80,8 +80,8 @@ RUN
 NAME=seteq
 FILE=malloc://1024
 CMDS=<<EOF
-pf.foo xd foo bar
-pf.foo
+pfn foo "xd foo bar"
+pf. foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
@@ -110,8 +110,8 @@ RUN
 NAME=seteq2
 FILE=malloc://1024
 CMDS=<<EOF
-pf.foo=xd foo bar
-pf.foo
+pfn foo "xd foo bar"
+pf. foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
@@ -152,12 +152,12 @@ CMDS=<<EOF
 wx e58e26
 pf u ulebtest
 wx 00000000e58e258e2525 @ 0x10
-pf.plop [4]u ulebtest
-pf.plop @ 0x14
-pf.plop.ulebtest[2]=42 @ 0x14
-.pf.plop.ulebtest[2]=42 @ 0x14
-pf.plop @ 0x14
-pfj.plop @ 0x14
+pfn plop [4]u ulebtest
+pf. plop @ 0x14
+pfw plop.ulebtest[2]=42 @ 0x14
+.pfw plop.ulebtest[2]=42 @ 0x14
+pf. plop @ 0x14
+pf.j plop @ 0x14
 EOF
 EXPECT=<<EOF
  ulebtest : 0x00000000 = 624485
@@ -176,9 +176,9 @@ e asm.arch=x86
 e analysis.arch=x86
 ar eax=4000
 ar eip=42
-pf.plop rr (eax)reg1 (eip)reg2
-pf.plop
-pfj.plop
+pfn plop "rr (eax)reg1 (eip)reg2"
+pf. plop
+pf.j plop
 EOF
 EXPECT=<<EOF
  reg1 : eax : 0x00000fa0
@@ -197,8 +197,8 @@ wx 2a @ 0x20
 w TROLL @ 0x30
 wx a00f @ 0x40
 e asm.bits=32 # pointer size
-pf.plop *z*i*w nb name blob
-pf.plop
+pfn plop *z*i*w nb name blob
+pf. plop
 EOF
 EXPECT=<<EOF
    nb : (*0x30)0x00000000 = "TROLL"
@@ -266,8 +266,8 @@ NAME=named obj
 FILE=malloc://1024
 CMDS=<<EOF
 wx a00f00004b
-pf.troll ic lol cat
-pf.troll
+pfn troll "ic lol cat"
+pf. troll
 EOF
 EXPECT=<<EOF
  lol : 0x00000000 = 4000
@@ -279,8 +279,8 @@ NAME=array obj
 FILE=malloc://1024
 CMDS=<<EOF
 wx a00f00004b2a0000004c
-pf.troll 2ic nb plop
-pf.troll
+pfn troll "2ic nb plop"
+pf. troll
 EOF
 EXPECT=<<EOF
 0x00000000 [0] {
@@ -298,11 +298,11 @@ NAME=write test
 FILE=malloc://1024
 CMDS=<<EOF
 wx 32000000424c41424c41424c41424c41
-pf.troll izi hu swagg plop
-.pf.troll.hu=42
-.pf.troll.swagg=B*A AA
-.pf.troll.plop=4000
-pf.troll
+pfn troll "izi hu swagg plop"
+.pfw troll.hu 42
+.pfw troll.swagg "B*A AA"
+.pfw troll.plop 4000
+pf. troll
 EOF
 EXPECT=<<EOF
     hu : 0x00000000 = 42
@@ -315,11 +315,11 @@ NAME=write wide string
 FILE=malloc://1024
 CMDS=<<EOF
 wx 42004c00410042004c00410042004c00410042004c0041000000a00f0000
-pf.troll Zi swagg plop
-pf.troll
-.pf.troll.swagg=BWA AA
-.pf.troll.plop=42
-pf.troll
+pfn troll "Zi swagg plop"
+pf. troll
+.pfw troll.swagg "BWA AA"
+.pfw troll.plop "42"
+pf. troll
 EOF
 EXPECT=<<EOF
  swagg : 0x00000000 = BLABLABLABLA
@@ -421,9 +421,9 @@ wx 2a @ 0x08
 wx 10 @ 0x0a
 wx efbe @ 0x0e
 wx 20 @ 0x10
-pf.troll iw integer word
-pf.plop i??i firstInt (troll)One (troll)Two secondInt
-pf.plop
+pfn troll "iw integer word"
+pfn plop "i??i firstInt (troll)One (troll)Two secondInt"
+pf. plop
 EOF
 EXPECT=<<EOF
   firstInt : 0x00000000 = 42
@@ -445,9 +445,9 @@ CMDS=<<EOF
 e asm.bits=32
 wx 2a000000a00f00001234100000006416
 wx 2a0000002a @ 0x10
-pf.troll iw*? integer word (troll)Bah
-pf.plop i?w firstInt (troll)Boh plop
-pf.plop
+pfn troll "iw*? integer word (troll)Bah"
+pfn plop "i?w firstInt (troll)Boh plop"
+pf. plop
 EOF
 EXPECT=<<EOF
  firstInt : 0x00000000 = 42
@@ -469,10 +469,10 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 wx 2a000000a00f0000a02000000172
-pf.struct xx first second
-pf.union 0i?w integer (struct)swagg word
-pf.plop i?w firstInt (union)Boh plop
-pf.plop
+pfn struct "xx first second"
+pfn union "0i?w integer (struct)swagg word"
+pfn plop "i?w firstInt (union)Boh plop"
+pf. plop
 EOF
 EXPECT=<<EOF
  firstInt : 0x00000000 = 42
@@ -495,10 +495,10 @@ e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
 wx 800600000040 @ 0x20
 wx 14000000641620000000 @ 0x30
-pf.troll iw*? integer word (troll)Bah
-pf.plop i?w first (troll)Boh bwa
-pf.gobelin ww?x blah meh (plop)Buh foo
-pf.gobelin
+pfn troll "iw*? integer word (troll)Bah"
+pfn plop "i?w first (troll)Boh bwa"
+pfn gobelin "ww?x blah meh (plop)Buh foo"
+pf. gobelin
 EOF
 EXPECT=<<EOF
  blah : 0x00000000 = 0x1234
@@ -531,10 +531,10 @@ e asm.bits=32
 wx 341289679a020000a00f00002a00300000001442
 wx 800600000040 @ 0x20
 wx 14000000641620000000 @ 0x30
-pf.troll iw*? integer word (troll)Bah
-pf.plop i?w first (troll)Boh bwa
-pf.gobelin ww? blah meh (plop)Buh
-pf*.gobelin
+pfn troll "iw*? integer word (troll)Bah"
+pfn plop "i?w first (troll)Boh bwa"
+pfn gobelin "ww? blah meh (plop)Buh"
+pf.* gobelin
 EOF
 EXPECT=<<EOF
 f blah @ 0x00000000
@@ -582,9 +582,9 @@ NAME=struct size
 FILE=malloc://256
 CMDS=<<EOF
 e asm.bits=32
-pf.plop wi word int
-pf.troll bciwqfdoxs:S.[4]z[2]B[4]E? byte char int word quad float hexa octal hex strp wstrp str bitfield enum (plop)struct
-pfs.troll
+pfn plop "wi word int"
+pfn troll "bciwqfdoxs:S.[4]z[2]B[4]E? byte char int word quad float hexa octal hex strp wstrp str bitfield enum (plop)struct"
+pfs troll
 EOF
 EXPECT=<<EOF
 65
@@ -597,7 +597,7 @@ ARGS=-nn
 CMDS=<<EOF
 e asm.bits=32
 s 0x80
-pfv.pe_nt_image_headers32.optionalHeader.dataDirectory[5].virtualAddress
+pfv .pe_nt_image_headers32.optionalHeader.dataDirectory[5].virtualAddress
 EOF
 EXPECT=<<EOF
 0x0000c000
@@ -630,9 +630,9 @@ f test 4 @ 0x20
 w SWAG
 wx 04 @ test
 wx 20 @ 0x4
-pf.plop ip int ptr
+pfn plop "ip int ptr"
 pf [`pfv p @ test`]c
-pf [*`pfv.plop.ptr`]c
+pf [*`pfv .plop.ptr`]c
 EOF
 EXPECT=<<EOF
 0x00000000 = [ 'S', 'W', 'A', 'G' ]
@@ -645,7 +645,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
 wx 71776572747975696f706173646667686a6b6c7a786376626e6d71776572747975696f706173646667686a6b6c7a786376626e6d
-pf.plop ip int ptr
+pfn plop "ip int ptr"
 pf {2}? (plop)structname @ 0
 EOF
 EXPECT=<<EOF
@@ -665,8 +665,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
 wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
-pf.abc ic...i:pii a b c d e f
-pf.abc
+pfn abc "ic...i:pii a b c d e f"
+pf. abc
 EOF
 EXPECT=<<EOF
  a : 0x00000000 = 50462976
@@ -683,7 +683,7 @@ FILE=bins/pe/ch22.exe
 ARGS=-nn
 CMDS=<<EOF
 s 0x80
-pf.pe_nt_image_headers32
+pf. pe_nt_image_headers32
 EOF
 EXPECT=<<EOF
       signature : 0x00000080 = "PE"
@@ -814,24 +814,24 @@ RUN
 NAME=Infinite Recursion segfault 1
 FILE=malloc://1024
 CMDS=<<EOF
-pf._NT_TIB ? (_NT_TIB)Self
-pf._NT_TIB > /dev/null
-pf.~NT_TIB
+pfn _NT_TIB "? (_NT_TIB)Self"
+pf. _NT_TIB > /dev/null
+pfn~NT_TIB
 EOF
 EXPECT=<<EOF
-pf._NT_TIB ? (_NT_TIB)Self
+_NT_TIB "? (_NT_TIB)Self"
 EOF
 RUN
 
 NAME=Infinite Recursion segfault 2
 FILE=malloc://1024
 CMDS=<<EOF
-pf._NT_TIB pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
-pf._NT_TIB > /dev/null
-pf.~NT_TIB
+pfn _NT_TIB "pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self"
+pf. _NT_TIB > /dev/null
+pfn~NT_TIB
 EOF
 EXPECT=<<EOF
-pf._NT_TIB pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
+_NT_TIB "pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self"
 EOF
 RUN
 
@@ -842,8 +842,8 @@ CMDS=<<EOF
 e cfg.bigendian=true
 wb 4142434431323334
 td "enum ascii{ LETTER_A=0x41, LETTER_D=0x44, DIGIT_1=0x31, DIGIT_4=0x34}"
-pf.somestring [1]E[1]E[1]E[1]E[1]E[1]E[1]E[1]E (ascii)B1 (ascii)B2 (ascii)B3 (ascii)B4 (ascii)B5 (ascii)B6 (ascii)B7 (ascii)B8
-pf.somestring
+pfn somestring "[1]E[1]E[1]E[1]E[1]E[1]E[1]E[1]E (ascii)B1 (ascii)B2 (ascii)B3 (ascii)B4 (ascii)B5 (ascii)B6 (ascii)B7 (ascii)B8"
+pf. somestring
 EOF
 EXPECT=<<EOF
  B1 : 0x00000000 = B1 (enum ascii) = 0x41 ; LETTER_A
@@ -861,8 +861,8 @@ NAME=union pf
 FILE=malloc://1024
 CMDS=<<EOF
 wv4 1234
-"pf i;i"
-pf i,,,,i
+pf "i;i"
+pf "i,,,,i"
 EOF
 EXPECT=<<EOF
 0x00000000 = 1234
@@ -909,12 +909,12 @@ CMDS=<<EOF
 wv2 0x1234
 wv4 0x56789abc @ 0x2
 wv8 0xdef0123456789abc @ 0x6
-pf.third w t1
-pf.second ?x (third)t s1
-pf.first ?q (second)s f1
-pf.first
+pfn third "w t1"
+pfn second "?x (third)t s1"
+pfn first "?q (second)s f1"
+pf. first
 echo
-pfj.first~{}
+pf.j first~{}
 EOF
 EXPECT=<<EOF
   s : 
@@ -967,18 +967,18 @@ FILE==
 CMDS=<<EOF
 wx 7f
 wv8 0xdef0123456789abc @ 0x1
-pf.fourth b fo1
-pf.third ? (fourth)fo
-pf.second ? (third)t
-pf.start ?q (second)s f1
-pf.start
+pfn fourth "b fo1"
+pfn third "? (fourth)fo"
+pfn second "? (third)t"
+pfn start "?q (second)s f1"
+pf. start
 echo
-pfj.start~{}
+pf.j start~{}
 echo
-pf.full ? (second)s
-pf.full
+pfn full "? (second)s"
+pf. full
 echo
-pfj.full~{}
+pf.j full~{}
 EOF
 EXPECT=<<EOF
   s : 

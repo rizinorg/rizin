@@ -169,7 +169,6 @@ format_files = [
   'elf64',
   'elf_enums',
   'pe32',
-  'trx',
   'mz',
   'zip'
 ]
