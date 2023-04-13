@@ -15,6 +15,7 @@ if get_option('enable_tests')
     'auto_analysis',
     'basefind',
     'bin',
+    'bin_symbols',
     'bin_vfiles',
     'cpu_platform_profiles',
     'dwarf',
