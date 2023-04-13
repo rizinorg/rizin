@@ -291,7 +291,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
 		pj_ks(pj, "cc", cc_name(x->cc));
 	}
-	if (x->mem_barrier != ARM_MB_INVALID) {
+	if (x->mem_barrier != ARM_MB_RESERVED_0) {
 		pj_ki(pj, "mem_barrier", x->mem_barrier - 1);
 	}
 	pj_end(pj);
