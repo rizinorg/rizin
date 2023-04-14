@@ -1238,7 +1238,7 @@ static Sdb *get_verneed_entry_sdb(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size
 
 		sdb_free(sdb_vernaux);
 
-		if(!vernaux_entry.vna_next) {
+		if (!vernaux_entry.vna_next) {
 			break;
 		}
 
