@@ -350,7 +350,6 @@ static void ds_print_sysregs(RzDisasmState *ds);
 static void ds_print_fcn_name(RzDisasmState *ds);
 static void ds_print_as_string(RzDisasmState *ds);
 static bool ds_print_core_vmode(RzDisasmState *ds, int pos);
-// static void ds_print_dwarf(RzDisasmState *ds);
 static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState *ds);
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
@@ -3820,35 +3819,39 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 	bool SourceLineInfoExists = true;
 
 	RzBinFile *binfile = core->bin->cur;
-	if (!binfile || !binfile->o) {
-		// rz_cons_printf("No file loaded.\n");
-		binFileExists = false;
-		// return false;
-	}
+	// if (!binfile || !binfile->o) {
+	// 	// rz_cons_printf("No file loaded.\n");
+	// 	binFileExists = false;
+	// 	// return false;
+	// }
 	RzBinSourceLineInfo *li = binfile->o->lines;
-	if (!li) {
-		// rz_cons_printf("No Source line information available");
-		SourceLineInfoExists = false;
-		// return true;
-	}
-	if (ds->dwarfShowLines && ds->show_dwarf && SourceLineInfoExists && binFileExists) {
+	// if (!li) {
+	// 	// rz_cons_printf("No Source line information available");
+	// 	SourceLineInfoExists = false;
+	// 	// return true;
+	// }
+	if (ds->dwarfShowLines && ds->show_dwarf/* && SourceLineInfoExists && binFileExists*/) {
 
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
-		RzBinSourceLineSample *temps = NULL;
+		RzBinSourceLineSample *linesampleinfo = NULL;
+		char *path = strdup(rz_config_get(core->config,"file.path"));
+		char *filename = strrchr(path,'/');
+		// rz_cons_printf("The filename is :%s",filename); 
+		
 		for (size_t i = 0; i < li->samples_count; i++) {
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			temps = &li->samples[i];
+			linesampleinfo = &li->samples[i];
 
 			ds_align_comment(ds);
-			if (ds->vat == temps->address) {
-				// rz_cons_printf(/*"0x%08" PFMT64x */ "\t%s\t"/*temps->address,*/,temps->file ? temps->file : "-");
-				rz_cons_printf("\tLine number%s", temps->file ? temps->file : "-");
+			if (ds->vat == linesampleinfo->address) {
+				// rz_cons_printf("\tLine number%s", temps->file ? temps->file : "-");
+				rz_cons_printf("\t ; %s:%s",filename,linesampleinfo->file ? linesampleinfo->file:"");
 
-				if (temps->line) {
-					rz_cons_printf("%" PFMT32u "\n", temps->line);
+				if (linesampleinfo->line) {
+					rz_cons_printf("%" PFMT32u "\n", linesampleinfo->line);
 				} else {
 					rz_cons_print("-\n");
 				}
