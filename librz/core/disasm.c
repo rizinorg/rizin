@@ -3817,39 +3817,25 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 
 	bool binFileExists = true;
 	bool SourceLineInfoExists = true;
-
 	RzBinFile *binfile = core->bin->cur;
-	// if (!binfile || !binfile->o) {
-	// 	// rz_cons_printf("No file loaded.\n");
-	// 	binFileExists = false;
-	// 	// return false;
-	// }
 	RzBinSourceLineInfo *li = binfile->o->lines;
-	// if (!li) {
-	// 	// rz_cons_printf("No Source line information available");
-	// 	SourceLineInfoExists = false;
-	// 	// return true;
-	// }
-	if (ds->dwarfShowLines && ds->show_dwarf/* && SourceLineInfoExists && binFileExists*/) {
 
+	if (ds->dwarfShowLines && ds->show_dwarf/* && SourceLineInfoExists && binFileExists*/) {
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
 		RzBinSourceLineSample *linesampleinfo = NULL;
 		char *path = strdup(rz_config_get(core->config,"file.path"));
 		char *filename = strrchr(path,'/');
-		// rz_cons_printf("The filename is :%s",filename); 
 		
 		for (size_t i = 0; i < li->samples_count; i++) {
 			if (rz_cons_is_breaked()) {
 				break;
 			}
 			linesampleinfo = &li->samples[i];
-
 			ds_align_comment(ds);
 			if (ds->vat == linesampleinfo->address) {
 				// rz_cons_printf("\tLine number%s", temps->file ? temps->file : "-");
 				rz_cons_printf("\t ; %s:%s",filename,linesampleinfo->file ? linesampleinfo->file:"");
-
 				if (linesampleinfo->line) {
 					rz_cons_printf("%" PFMT32u "\n", linesampleinfo->line);
 				} else {
