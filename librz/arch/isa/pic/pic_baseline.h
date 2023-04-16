@@ -76,6 +76,7 @@ typedef enum {
 } PicBaselineOpcode;
 
 PicBaselineOpcode pic_baseline_get_opcode(ut16 instr);
+PicBaselineOpArgs pic_baseline_get_opargs(PicBaselineOpcode opcode);
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode);
 int pic_baseline_disassemble(RzAsmOp *op, const ut8 *b, int l);
 
