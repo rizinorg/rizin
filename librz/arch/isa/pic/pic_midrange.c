@@ -62,6 +62,9 @@ static const PicMidrangeOpInfo
 static const char *PicMidrangeFsrOps[] = { "++FSR%d", "--FSR%d", "FSR%d++",
 	"FSR%d--" };
 
+/**
+ * \brief Decode a Pic Midrange instruction to it's corresponding opcode enum.
+ * */
 PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr) {
 	if (instr & (1 << 14)) {
 		return PIC_MIDRANGE_OPCODE_INVALID;
@@ -149,6 +152,26 @@ PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr) {
 	return PIC_MIDRANGE_OPCODE_INVALID;
 }
 
+/**
+ * \brief Get \c PicMidrangeOpArgs corresponding to given \c PicMidrangeOpcode.
+ *
+ * \param opcode
+ * \return Corresponding \c OpArgs enum, -1 on failure.
+ * */
+PicMidrangeOpArgs pic_midrange_get_opargs(PicMidrangeOpcode opcode) {
+	if (opcode >= PIC_MIDRANGE_OPCODE_INVALID) {
+		return -1;
+	}
+	return pic_midrange_op_info[opcode].args;
+}
+
+/**
+ * \brief Get opcode information (mnemonic and arguments) corresponding
+ * to a given \c PicMidrangeOpcode.
+ *
+ * \param opcode
+ * \return \c PicMidrangeOpInfo pointer.
+ * */
 const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 	if (opcode >= PIC_MIDRANGE_OPCODE_INVALID) {
 		return NULL;
@@ -156,6 +179,16 @@ const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode) {
 	return &pic_midrange_op_info[opcode];
 }
 
+/**
+ * \brief Disassemble a PIC Midrange instruction.
+ *
+ * \param op RzAsmOp to tell number of instructions decoded.
+ * \param opbuf Decoded instruction mnemonic will be stored in this before return.
+ * \param b Opcode buffer containing PicMidrange opcodes.
+ * \param l Length of opcode buffer \p b.
+ *
+ * \return Number of decoded bytes (2 on success, 1 on failure).
+ * */
 int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
@@ -190,54 +223,63 @@ int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l) {
 		rz_asm_op_set_asm(op, op_info->mnemonic);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_2F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_2F_MASK_F);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_2F_GET_F(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_7F:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_7F_MASK_F);
+		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1D_7F:
 		rz_asm_op_setf_asm(op, "%s 0x%x, %c", op_info->mnemonic,
-			instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F,
-			(instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7 ? 'f' : 'w');
+			PIC_MIDRANGE_OP_ARGS_7F_GET_F(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_6K:
 		if (opcode == PIC_MIDRANGE_OPCODE_ADDFSR) {
-			rz_asm_op_setf_asm(op, "%s FSR%d, 0x%x", op_info->mnemonic,
-				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
-					6,
-				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K);
+			rz_asm_op_setf_asm(op, "%s FSR%d, 0x%x",
+				op_info->mnemonic,
+				PIC_MIDRANGE_OP_ARGS_1N_6K_GET_N(instr) >> 6,
+				PIC_MIDRANGE_OP_ARGS_1N_6K_GET_K(instr));
 		} else {
-			rz_asm_op_setf_asm(op, "%s 0x%x[FSR%d]", op_info->mnemonic,
-				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K,
-				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >> 6);
+			rz_asm_op_setf_asm(op, "%s 0x%x[FSR%d]",
+				op_info->mnemonic,
+				PIC_MIDRANGE_OP_ARGS_1N_6K_GET_K(instr),
+				PIC_MIDRANGE_OP_ARGS_1N_6K_GET_N(instr) >> 6);
 		}
 		break;
 	case PIC_MIDRANGE_OP_ARGS_3B_7F:
-		rz_asm_op_setf_asm(op, "%s 0x%x, %d", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F,
-			(instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7);
+		rz_asm_op_setf_asm(op, "%s 0x%x, %d",
+			op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_3B_7F_GET_F(instr),
+			PIC_MIDRANGE_OP_ARGS_3B_7F_GET_B(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_4K:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_4K_MASK_K);
+		rz_asm_op_setf_asm(op, "%s 0x%x",
+			op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_4K_GET_K(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_8K:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_8K_MASK_K);
+		rz_asm_op_setf_asm(op, "%s 0x%x",
+			op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_8K_GET_K(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_9K:
-		branch = (instr & PIC_MIDRANGE_OP_ARGS_9K_MASK_K);
+		branch = PIC_MIDRANGE_OP_ARGS_9K_GET_K(instr);
 		branch |= ((branch & 0x100) ? 0xfe00 : 0);
 		rz_asm_op_setf_asm(op, "%s %s0x%x",
-			op_info->mnemonic, branch < 0 ? "-" : "",
-			branch < 0 ? -branch : branch);
+			op_info->mnemonic,
+			branch < 0 ? "-" : "",
+			(branch < 0 ? -branch : branch));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_11K:
-		rz_asm_op_setf_asm(op, "%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
+		rz_asm_op_setf_asm(op, "%s 0x%x",
+			op_info->mnemonic,
+			PIC_MIDRANGE_OP_ARGS_11K_GET_K(instr));
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_2M:
-		snprintf(
-			fsr_op, sizeof(fsr_op),
-			PicMidrangeFsrOps[instr &
-				PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
-			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2);
+		snprintf(fsr_op, sizeof(fsr_op),
+			PicMidrangeFsrOps[instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
+			PIC_MIDRANGE_OP_ARGS_1N_2M_GET_N(instr) >> 2);
 		rz_asm_op_setf_asm(op, "%s %s", op_info->mnemonic, fsr_op);
 		break;
 	default:
