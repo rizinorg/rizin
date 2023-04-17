@@ -1812,11 +1812,11 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
 			buf[0] = rz_cons_readchar_timeout(50);
-			switch (buf[0]) {
+			switch ((signed char)buf[0]) {
 			case 127: // alt+bkspace
 				backward_kill_word(MINOR_BREAK);
 				break;
-			case 27: // escape key, goto vi mode
+			case -1: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
 					if (I.hud) {
 						I.hud->vi = true;
