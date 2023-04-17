@@ -24,20 +24,6 @@ typedef enum {
 	MAJOR_BREAK
 } BreakMode;
 
-/**
- * an entry of undo. it represents either a text insertion, deletion, or both.
- * \see undo_add_entry
- */
-typedef struct rz_line_undo_entry_t {
-	int offset; ///< the beginning index of buffer edit.
-	char *deleted_text; ///< text to be deleted. null-terminated
-	int deleted_len; ///< the length of deleted text
-	char *inserted_text; ///< text to be inserted. null-terminated.
-	int inserted_len; ///< the length of inserted text.
-	bool continuous_next; ///< if true, redo function will continuously process the next entry.
-	bool continuous_prev; ///< if true, undo function will continuously process the previous entry.
-} RzLineUndoEntry;
-
 static inline bool is_undo_entry_valid(const RzLineUndoEntry *e) {
 	if (!e) {
 		return false;

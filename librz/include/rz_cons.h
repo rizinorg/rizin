@@ -1138,6 +1138,20 @@ typedef char *(*RzLineEditorCb)(void *core, const char *str);
 typedef int (*RzLineHistoryUpCb)(RzLine *line);
 typedef int (*RzLineHistoryDownCb)(RzLine *line);
 
+/**
+ * an entry of undo. it represents either a text insertion, deletion, or both.
+ * \see undo_add_entry
+ */
+typedef struct rz_line_undo_entry_t {
+	int offset; ///< the beginning index of buffer edit.
+	char *deleted_text; ///< text to be deleted. null-terminated
+	int deleted_len; ///< the length of deleted text
+	char *inserted_text; ///< text to be inserted. null-terminated.
+	int inserted_len; ///< the length of inserted text.
+	bool continuous_next; ///< if true, redo function will continuously process the next entry.
+	bool continuous_prev; ///< if true, undo function will continuously process the previous entry.
+} RzLineUndoEntry;
+
 struct rz_line_t {
 	RzLineCompletion completion;
 	RzLineNSCompletion ns_completion;
