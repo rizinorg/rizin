@@ -794,7 +794,9 @@ jobs:
           mkdir rizin && pwd && ls -l
           tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
       - name: Install dependencies
-        run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+        run: |
+          sudo apt update
+          sudo apt-get --assume-yes install cmake swig pkg-config clang libclang-dev llvm wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
@@ -805,9 +807,6 @@ jobs:
         with:
           repository: rizinorg/rz-bindgen
           path: rz-bindgen
-      - name: Install dependencies
-        run: |
-          sudo apt install --assume-yes libclang-14-dev
       - name: Build rz-bindgen
         run: |
           meson setup --prefix=/usr -Dplugin=enabled build
