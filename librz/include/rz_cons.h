@@ -1138,6 +1138,8 @@ typedef char *(*RzLineEditorCb)(void *core, const char *str);
 typedef int (*RzLineHistoryUpCb)(RzLine *line);
 typedef int (*RzLineHistoryDownCb)(RzLine *line);
 
+typedef struct rz_line_undo_entry_t RzLineUndoEntry;
+
 struct rz_line_t {
 	RzLineCompletion completion;
 	RzLineNSCompletion ns_completion;
