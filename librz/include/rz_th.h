@@ -74,6 +74,7 @@ RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *u
 RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
 RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
 RZ_API RZ_OWN RzList /*<void *>*/ *rz_th_queue_pop_all(RZ_NONNULL RzThreadQueue *queue);
+RZ_API bool rz_th_queue_notify_all(RZ_NONNULL RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_empty(RZ_NONNULL RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue);
 

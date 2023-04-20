@@ -271,33 +271,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static void demangle(RZ_BORROW RzBinFile *bf, RZ_BORROW RzList /*<RzBinSymbol *>*/ *symbols) {
-	RzListIter *itr;
-	RzBinSymbol *sym;
-
-	rz_list_foreach (symbols, itr, sym) {
-		if (sym->name[0] == '_' && !sym->is_imported) {
-			char *dn = rz_bin_demangle(bf, NULL, sym->name, sym->vaddr, false);
-			if (dn) {
-				sym->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(sym->name[0])) {
-						sym->classname = strdup(sym->name);
-						sym->classname[p - sym->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						sym->classname = strdup(p + 1);
-						p = strchr(sym->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *imports_by_name) {
 	if (imports_by_name) {
 		bool found = false;
@@ -848,8 +821,7 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.virtual_files = &virtual_files,
 	.maps = &maps,
 	.sections = &sections,
-	.populate_symbols = &symbols,
-	.demangle_symbols = &demangle,
+	.symbols = &symbols,
 	.imports = &imports,
 	.strings = &strings,
 	.size = &size,

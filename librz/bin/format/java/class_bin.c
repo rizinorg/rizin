@@ -1046,6 +1046,15 @@ static char *add_class_name_to_name(char *name, char *classname) {
 	return strdup(name);
 }
 
+static char *demangle_java_and_free(char *mangled) {
+	if (!mangled) {
+		return NULL;
+	}
+	char *demangled = rz_demangler_java(mangled);
+	free(mangled);
+	return demangled;
+}
+
 /**
  * \brief Returns a RzList<RzBinSymbol*> containing the class methods
  */
@@ -1097,7 +1106,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(R
 			}
 
 			symbol->classname = rz_bin_java_class_name(bin);
-			symbol->dname = rz_str_newf("%s%s", method_name, desc);
+			symbol->dname = demangle_java_and_free(rz_str_newf("%s%s", method_name, desc));
 			symbol->name = add_class_name_to_name(method_name, symbol->classname);
 			symbol->size = size;
 			symbol->bind = java_method_is_global(method) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
@@ -1257,6 +1266,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ
 			}
 			symbol->classname = rz_bin_java_class_name(bin);
 			symbol->name = add_class_name_to_name(field_name, symbol->classname);
+			symbol->dname = rz_demangler_java(symbol->name);
 			symbol->size = 0;
 			symbol->bind = java_field_is_global(field) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 			symbol->type = RZ_BIN_TYPE_OBJECT_STR;
@@ -1487,6 +1497,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbol
 			} else {
 				symbol->dname = strdup(method_name);
 			}
+			symbol->dname = demangle_java_and_free(symbol->dname);
 			symbol->classname = rz_str_newf("L%s;", classname);
 			symbol->libname = classname;
 			rz_str_replace_ch(symbol->libname, '/', '.', 1);

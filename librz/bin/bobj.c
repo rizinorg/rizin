@@ -451,8 +451,8 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			rz_warn_if_fail(o->imports->free);
 		}
 	}
-	if (p->populate_symbols) {
-		o->symbols = p->populate_symbols(bf);
+	if (p->symbols) {
+		o->symbols = p->symbols(bf);
 		if (o->symbols) {
 			REBASE_PADDR(o, o->symbols, RzBinSymbol);
 			if (bin->filter) {
@@ -521,14 +521,17 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		o->info->compiler = rz_bin_file_golang_compiler(bf);
 		if (o->info->compiler) {
 			o->info->lang = "go";
+			o->lang = RZ_BIN_LANGUAGE_GO;
 		}
 	}
 
-	o->lang = rz_bin_language_detect(bf);
-
-	if (p->demangle_symbols) {
-		p->demangle_symbols(bf, o->symbols);
+	RzBinLanguage lang = RZ_BIN_LANGUAGE_MASK(o->lang);
+	if (lang == RZ_BIN_LANGUAGE_UNKNOWN ||
+		lang == RZ_BIN_LANGUAGE_C) {
+		o->lang = rz_bin_language_detect(bf);
 	}
+
+	rz_bin_demangle_symbols(bf, o->symbols, o->lang);
 
 	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
 		if (p->classes) {

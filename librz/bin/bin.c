@@ -156,9 +156,6 @@ RZ_API void rz_bin_resource_free(RzBinResource *res) {
 }
 
 RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s) {
-	if (s->dup_count) {
-		return sdb_fmt("%s_%d", s->name, s->dup_count);
-	}
 	return s->name;
 }
 

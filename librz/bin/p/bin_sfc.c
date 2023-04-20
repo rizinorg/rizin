@@ -294,7 +294,7 @@ RzBinPlugin rz_bin_plugin_sfc = {
 	.entries = &entries,
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
-	.populate_symbols = &symbols,
+	.symbols = &symbols,
 	.info = &info,
 	.mem = &mem,
 };

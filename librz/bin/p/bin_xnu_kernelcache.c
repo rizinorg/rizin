@@ -1274,33 +1274,6 @@ static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(ob
 	}
 }
 
-static void demangle(RZ_BORROW RzBinFile *bf, RZ_BORROW RzList /*<RzBinSymbol *>*/ *symbols) {
-	RzListIter *itr;
-	RzBinSymbol *sym;
-
-	rz_list_foreach (symbols, itr, sym) {
-		if (sym->name[0] == '_') {
-			char *dn = rz_bin_demangle(bf, sym->name, sym->name, sym->vaddr, false);
-			if (dn) {
-				sym->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(sym->name[0])) {
-						sym->classname = strdup(sym->name);
-						sym->classname[p - sym->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						sym->classname = strdup(p + 1);
-						p = strchr(sym->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 #define IS_KERNEL_ADDR(x) ((x & 0xfffffff000000000L) == 0xfffffff000000000L)
 
 typedef struct _r_sysent {
@@ -1947,8 +1920,7 @@ RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.baddr = &baddr,
 	.virtual_files = &virtual_files,
 	.maps = &maps,
-	.populate_symbols = &symbols,
-	.demangle_symbols = &demangle,
+	.symbols = &symbols,
 	.sections = &sections,
 	.check_buffer = &check_buffer,
 	.info = &info

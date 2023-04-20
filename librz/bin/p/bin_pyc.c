@@ -147,7 +147,7 @@ RzBinPlugin rz_bin_plugin_pyc = {
 	.entries = &entries,
 	.sections = &sections,
 	.baddr = &baddr,
-	.populate_symbols = &symbols,
+	.symbols = &symbols,
 	.destroy = &destroy
 };
 

@@ -110,17 +110,15 @@ RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *
 	if (!res) {
 		return;
 	}
-	sym->dup_count = 0;
 
 	const char *oname = sdb_fmt("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
 	RzBinSymbol *prev_sym = ht_pp_find(ht, oname, NULL);
 	if (!prev_sym) {
 		if (!ht_pp_insert(ht, oname, sym)) {
-			RZ_LOG_WARN("Failed to insert dup_count in ht");
+			RZ_LOG_WARN("Failed to insert sym in ht");
 			return;
 		}
 	} else {
-		sym->dup_count = prev_sym->dup_count + 1;
 		ht_pp_update(ht, oname, sym);
 	}
 }

@@ -165,6 +165,19 @@ RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool t
 }
 
 /**
+ * \brief  Notifies any queue users awaiting for data (thread-safe)
+ *
+ * \param  queue The RzThreadQueue to use to notify all users.
+ *
+ * \return On success returns true, otherwise false
+ */
+RZ_API bool rz_th_queue_notify_all(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, false);
+	rz_th_cond_signal_all(queue->cond);
+	return true;
+}
+
+/**
  * \brief  Returns true if the queue is empty (thread-safe)
  *
  * \param  queue The RzThreadQueue to check

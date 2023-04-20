@@ -915,6 +915,15 @@ static char *dex_resolve_library(const char *library) {
 	return demangled;
 }
 
+static char *demangle_java_and_free(char *mangled) {
+	if (!mangled) {
+		return NULL;
+	}
+	char *demangled = rz_demangler_java(mangled);
+	free(mangled);
+	return demangled;
+}
+
 static RzBinSymbol *dex_method_to_symbol(RzBinDex *dex, DexEncodedMethod *encoded_method, DexMethodId *method_id, bool is_imported) {
 	RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
 	if (!symbol) {
@@ -925,7 +934,7 @@ static RzBinSymbol *dex_method_to_symbol(RzBinDex *dex, DexEncodedMethod *encode
 	symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
 	symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
 	symbol->libname = dex_resolve_library(symbol->classname);
-	symbol->dname = dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx, varargs);
+	symbol->dname = demangle_java_and_free(dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx, varargs));
 	symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 	symbol->is_imported = is_imported;
 	symbol->visibility = encoded_method->access_flags & UT32_MAX;
@@ -1331,7 +1340,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		}
 
 		field->name = dex_resolve_string_id(dex, field_id->name_idx);
-		field->classname = dex_resolve_type_id(dex, field_id->class_idx);
+		field->classname = demangle_java_and_free(dex_resolve_type_id(dex, field_id->class_idx));
 		field->libname = dex_resolve_library(field->classname);
 		field->bind = RZ_BIN_BIND_WEAK_STR;
 		field->type = RZ_BIN_TYPE_FIELD_STR;
@@ -1356,9 +1365,9 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		}
 
 		method->name = dex_resolve_string_id(dex, method_id->name_idx);
-		method->classname = dex_resolve_type_id(dex, method_id->class_idx);
+		method->classname = demangle_java_and_free(dex_resolve_type_id(dex, method_id->class_idx));
 		method->libname = dex_resolve_library(method->classname);
-		method->dname = dex_resolve_proto_id(dex, method->name, method_id->proto_idx, false);
+		method->dname = demangle_java_and_free(dex_resolve_proto_id(dex, method->name, method_id->proto_idx, false));
 		method->bind = RZ_BIN_BIND_WEAK_STR;
 		method->is_imported = true;
 		method->type = RZ_BIN_TYPE_METH_STR;
