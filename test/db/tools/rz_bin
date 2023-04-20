@@ -884,13 +884,13 @@ EOF
 EXPECT=<<EOF
 Language 'Invalid' is unsupported
 List of supported languages:
-java   LGPL3    deroad
-msvc   LGPL3    inisider
-objc   LGPL3    pancake
-pascal LGPL3    deroad
-c++    GPL-2    Free Software Foundation
-rust   LGPL3    pancake
-swift  MIT      pancake
+java   LGPL3        deroad
+msvc   LGPL3        inisider
+objc   LGPL3        pancake
+pascal LGPL3        deroad
+c++    GPL-2,LGPL3  FSF/deroad
+rust   LGPL3        Dhruv Maroo
+swift  MIT          pancake
 EOF
 RUN
 

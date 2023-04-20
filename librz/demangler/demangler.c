@@ -17,14 +17,18 @@
 	}
 
 #if WITH_GPL
-DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2", "Free Software Foundation", libdemangle_handler_cxx);
-// rust demangler requires the cpp one.
-DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "pancake", libdemangle_handler_rust);
-#endif
+// cpp demangler contains GPL2 code and LGPL3 for delphi
+DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_handler_cxx);
+#else
+// cpp demangler contain only the LGPL3 for delphi
+DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "deroad", libdemangle_handler_cxx);
+#endif /* WITH_GPL */
+
 #if WITH_SWIFT_DEMANGLER
 DEFINE_DEMANGLER_PLUGIN(swift, "swift", "MIT", "pancake", libdemangle_handler_swift);
 #endif
 
+DEFINE_DEMANGLER_PLUGIN(rust, "rust", "LGPL3", "Dhruv Maroo", libdemangle_handler_rust);
 DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_java);
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
@@ -45,11 +49,7 @@ RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol) {
  * \brief Demangles c++ symbols
  */
 RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
-#if WITH_GPL
 	return libdemangle_handler_cxx(symbol);
-#else
-	return NULL;
-#endif
 }
 
 /**
@@ -70,11 +70,7 @@ RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol) {
  * \brief Demangles rust symbols
  */
 RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol) {
-#if WITH_GPL
 	return libdemangle_handler_rust(symbol);
-#else
-	return NULL;
-#endif
 }
 
 /**
