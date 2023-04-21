@@ -1287,7 +1287,6 @@ RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONN
 	return NULL;
 }
 
-#if WITH_GPL
 static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	char *out = rz_demangler_cxx(symbol);
 	if (!out || !bf) {
@@ -1329,14 +1328,8 @@ static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 }
 
 static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
-	char *str = NULL;
-	if (!(str = bin_demangle_cxx(binfile, symbol, vaddr))) {
-		return str;
-	}
-	free(str);
 	return rz_demangler_rust(symbol);
 }
-#endif
 
 /**
  * \brief Demangles a symbol based on the language or the RzBinFile data
@@ -1441,13 +1434,8 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 	case RZ_BIN_LANGUAGE_OBJC: demangled = rz_demangler_objc(symbol); break;
 	case RZ_BIN_LANGUAGE_MSVC: demangled = rz_demangler_msvc(symbol); break;
 	case RZ_BIN_LANGUAGE_PASCAL: demangled = rz_demangler_pascal(symbol); break;
-#if WITH_GPL
 	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
-#else
-	case RZ_BIN_LANGUAGE_RUST: demangled = NULL; break;
-	case RZ_BIN_LANGUAGE_CXX: demangled = NULL; break;
-#endif
 	default:
 		if (bin) {
 			rz_demangler_resolve(bin->demangler, symbol, language, &demangled);
