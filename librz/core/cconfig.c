@@ -1036,6 +1036,13 @@ static bool cb_binforce(void *user, void *data) {
 	return true;
 }
 
+static bool cb_bindemangle(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->bin->demangle = node->i_value;
+	return true;
+}
+
 static bool cb_asmsyntax(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3177,7 +3184,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
-	SETBPREF("bin.demangle", "true", "Import demangled symbols from RzBin");
+	SETCB("bin.demangle", "true", &cb_bindemangle, "Import demangled symbols from RzBin");
 	SETBPREF("bin.demangle.libs", "false", "Show library name on demangled symbols names");
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");

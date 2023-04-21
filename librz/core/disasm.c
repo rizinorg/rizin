@@ -4331,14 +4331,11 @@ static void ds_print_demangled(RzDisasmState *ds) {
 }
 
 static void ds_print_relocs(RzDisasmState *ds) {
-	char *demname = NULL;
+	char *name = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
 		return;
 	}
 	RzCore *core = ds->core;
-	const char *lang = rz_config_get(core->config, "bin.lang");
-	bool demangle = rz_config_get_b(core->config, "asm.demangle");
-	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	RzBinReloc *rel = rz_core_getreloc(core, ds->at, ds->analysis_op.size);
 	const char *rel_label = "RELOC";
 	if (!rel) {
@@ -4357,17 +4354,12 @@ static void ds_print_relocs(RzDisasmState *ds) {
 		int len = ds->cmtcol - cells;
 		rz_cons_memset(' ', len);
 		if (rel->import) {
-			if (demangle) {
-				demname = rz_bin_demangle(core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib);
-			}
-			rz_cons_printf("; %s %d %s", rel_label, rel->type, demname ? demname : rel->import->name);
+			rz_cons_printf("; %s %d %s", rel_label, rel->type, rel->import->name);
 		} else if (rel->symbol) {
-			if (demangle) {
-				demname = rz_bin_demangle(core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
-			}
+			name = rel->symbol->dname ? rel->symbol->dname : rel->symbol->name;
 			rz_cons_printf("; %s %d %s @ 0x%08" PFMT64x,
 				rel_label,
-				rel->type, demname ? demname : rel->symbol->name,
+				rel->type, name,
 				rel->symbol->vaddr);
 			if (rel->addend) {
 				if (rel->addend > 0) {
@@ -4379,7 +4371,6 @@ static void ds_print_relocs(RzDisasmState *ds) {
 		} else {
 			rz_cons_printf("; %s %d ", rel_label, rel->type);
 		}
-		free(demname);
 	}
 }
 
@@ -5219,8 +5210,8 @@ static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
 				name = rel->import->name;
-			} else if (rel && rel->symbol && rel->symbol->name) {
-				name = rel->symbol->name;
+			} else if (rel && rel->symbol) {
+				name = rel->symbol->dname ? rel->symbol->dname : rel->symbol->name;
 			}
 		}
 	}

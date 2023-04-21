@@ -19,21 +19,18 @@
 		} \
 	} while (0)
 
-static const char *get_symbol_name(RzBinSymbol *bsym) {
-	const char *symbol = NULL;
-	symbol = bsym->name;
-
-	if (!strncmp(symbol, "__OBJC_$", strlen("__OBJC_$"))) {
-		// this is never a symbol
+static const char *get_mangled_name(const char *mangled) {
+	if (!strncmp(mangled, "__OBJC_$", strlen("__OBJC_$"))) {
+		// this is never a mangled name
 		return NULL;
 	}
 
-	skip_prefix_s(symbol, "reloc.");
-	skip_prefix_s(symbol, "imp.");
-	skip_prefix_s(symbol, "target.");
-	skip_prefix_n(symbol, "__OBJC_", 1);
+	skip_prefix_s(mangled, "reloc.");
+	skip_prefix_s(mangled, "imp.");
+	skip_prefix_s(mangled, "target.");
+	skip_prefix_n(mangled, "__OBJC_", 1);
 
-	return RZ_STR_ISEMPTY(symbol) ? NULL : symbol;
+	return RZ_STR_ISEMPTY(mangled) ? NULL : mangled;
 }
 
 #undef skip_prefix
@@ -43,12 +40,12 @@ static void demangle_symbol_only(RzBinSymbol *bsym, const RzDemanglerPlugin *plu
 		return;
 	}
 
-	const char *symbol = get_symbol_name(bsym);
-	if (!symbol) {
+	const char *mangled = get_mangled_name(bsym->name);
+	if (!mangled) {
 		return;
 	}
 
-	bsym->dname = plugin->demangle(symbol);
+	bsym->dname = plugin->demangle(mangled);
 }
 
 static void demangle_symbol_and_update_class(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin) {
@@ -56,12 +53,12 @@ static void demangle_symbol_and_update_class(RzBinSymbol *bsym, const RzDemangle
 		return;
 	}
 
-	const char *symbol = get_symbol_name(bsym);
-	if (!symbol) {
+	const char *mangled = get_mangled_name(bsym->name);
+	if (!mangled) {
 		return;
 	}
 
-	bsym->dname = plugin->demangle(symbol);
+	bsym->dname = plugin->demangle(mangled);
 
 	if (!bsym->dname || bsym->is_imported) {
 		return;
@@ -96,8 +93,8 @@ static RzThreadIterator demangler_get_symbol_iterator(RzBinFile *bf) {
 
 RZ_IPI void rz_bin_demangle_symbols(RzBinFile *bf, const RzList /*<RzBinSymbol*>*/ *symbols, RzBinLanguage lang) {
 	lang = RZ_BIN_LANGUAGE_MASK(lang);
-	size_t max_size = rz_list_length(symbols);
-	if (!bf || !bf->rbin || max_size < 1 || lang == RZ_BIN_LANGUAGE_UNKNOWN) {
+	size_t length = rz_list_length(symbols);
+	if (!bf || !bf->rbin || length < 1 || lang == RZ_BIN_LANGUAGE_UNKNOWN) {
 		return;
 	}
 
@@ -137,4 +134,132 @@ RZ_IPI void rz_bin_demangle_symbol(RzBinFile *bf, RzBinSymbol *symbol, RzBinLang
 
 	RzThreadIterator iterator = demangler_get_symbol_iterator(bf);
 	iterator(symbol, plugin);
+}
+
+static void demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin) {
+	if (!import->name) {
+		return;
+	}
+
+	const char *mangled = get_mangled_name(import->name);
+	if (!mangled) {
+		return;
+	}
+
+	char *demangled = plugin->demangle(mangled);
+	if (!demangled) {
+		return;
+	}
+
+	free(import->name);
+	import->name = demangled;
+}
+
+RZ_IPI void rz_bin_demangle_imports(RzBinFile *bf, const RzList /*<RzBinImport*>*/ *imports, RzBinLanguage lang) {
+	lang = RZ_BIN_LANGUAGE_MASK(lang);
+	size_t length = rz_list_length(imports);
+	if (!bf || !bf->rbin || length < 1 || lang == RZ_BIN_LANGUAGE_UNKNOWN) {
+		return;
+	}
+
+	const RzDemanglerPlugin *plugin = NULL;
+	const char *language = rz_bin_language_to_string(lang);
+	if (!language) {
+		return;
+	}
+
+	// optimize by excluding langs which doesn't demangle.
+	plugin = rz_demangler_plugin_get(bf->rbin->demangler, language);
+	if (!plugin) {
+		RZ_LOG_INFO("bin: there are no available demanglers for '%s'\n", language);
+		return;
+	}
+
+	rz_th_iterate_list(imports, (RzThreadIterator)demangle_import, RZ_THREAD_POOL_ALL_CORES, plugin);
+}
+
+RZ_IPI void rz_bin_demangle_import(RzBinFile *bf, RzBinImport *import, RzBinLanguage lang) {
+	if (!import || !import->name || !bf || !bf->rbin) {
+		return;
+	}
+
+	const char *language = rz_bin_language_to_string(RZ_BIN_LANGUAGE_MASK(lang));
+	if (!language) {
+		return;
+	}
+
+	// optimize by excluding langs which doesn't demangle.
+	const RzDemanglerPlugin *plugin = rz_demangler_plugin_get(bf->rbin->demangler, language);
+	if (!plugin) {
+		RZ_LOG_INFO("bin: there are no available demanglers for '%s'\n", language);
+		return;
+	}
+
+	demangle_import(import, plugin);
+}
+
+static void demangle_reloc(RzBinReloc *reloc, const RzDemanglerPlugin *plugin) {
+	if (reloc->import) {
+		demangle_import(reloc->import, plugin);
+	}
+	if (reloc->symbol) {
+		demangle_symbol_only(reloc->symbol, plugin);
+	}
+}
+
+RZ_IPI void rz_bin_demangle_relocs(RzBinFile *bf, const RzBinRelocStorage *storage, RzBinLanguage lang) {
+	if (!storage || !bf || !bf->rbin) {
+		return;
+	}
+
+	lang = RZ_BIN_LANGUAGE_MASK(lang);
+	size_t count = storage->relocs_count + storage->target_relocs_count;
+	if (!bf || !bf->rbin || count < 1 || lang == RZ_BIN_LANGUAGE_UNKNOWN) {
+		return;
+	}
+
+	const RzDemanglerPlugin *plugin = NULL;
+	const char *language = rz_bin_language_to_string(lang);
+	if (!language) {
+		return;
+	}
+
+	// optimize by excluding langs which doesn't demangle.
+	plugin = rz_demangler_plugin_get(bf->rbin->demangler, language);
+	if (!plugin) {
+		RZ_LOG_INFO("bin: there are no available demanglers for '%s'\n", language);
+		return;
+	}
+
+	RzPVector pvec = { 0 };
+	pvec.v.elem_size = sizeof(void *);
+	pvec.v.capacity = 0;
+
+	pvec.v.a = (void *)storage->relocs;
+	pvec.v.len = storage->relocs_count;
+	rz_th_iterate_pvector(&pvec, (RzThreadIterator)demangle_reloc, RZ_THREAD_POOL_ALL_CORES, plugin);
+
+	pvec.v.a = (void *)storage->target_relocs;
+	pvec.v.len = storage->target_relocs_count;
+	rz_th_iterate_pvector(&pvec, (RzThreadIterator)demangle_reloc, RZ_THREAD_POOL_ALL_CORES, plugin);
+}
+
+RZ_IPI void rz_bin_demangle_reloc(RzBinFile *bf, RzBinReloc *reloc, RzBinLanguage lang) {
+	if (!reloc || !bf || !bf->rbin) {
+		return;
+	}
+
+	const char *language = rz_bin_language_to_string(RZ_BIN_LANGUAGE_MASK(lang));
+	if (!language) {
+		return;
+	}
+
+	// optimize by excluding langs which doesn't demangle.
+	const RzDemanglerPlugin *plugin = rz_demangler_plugin_get(bf->rbin->demangler, language);
+	if (!plugin) {
+		RZ_LOG_INFO("bin: there are no available demanglers for '%s'\n", language);
+		return;
+	}
+
+	demangle_reloc(reloc, plugin);
 }

@@ -530,7 +530,11 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		o->lang = rz_bin_language_detect(bf);
 	}
 
-	rz_bin_demangle_symbols(bf, o->symbols, o->lang);
+	if (bf->rbin->demangle) {
+		rz_bin_demangle_symbols(bf, o->symbols, o->lang);
+		rz_bin_demangle_imports(bf, o->imports, o->lang);
+		rz_bin_demangle_relocs(bf, o->relocs, o->lang);
+	}
 
 	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) {
 		if (p->classes) {

@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 #include <rz_types.h>
 #include <rz_list.h>
+#include <rz_vector.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +86,7 @@ RZ_API bool rz_atomic_bool_get(RZ_NONNULL RzAtomicBool *tbool);
 RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 
 RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE const void *user);
+RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector *pvec, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE const void *user);
 
 #endif
 

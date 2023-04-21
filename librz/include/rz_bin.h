@@ -359,6 +359,7 @@ struct rz_bin_t {
 	char *strenc;
 	ut64 filter_rules;
 	bool verbose;
+	bool demangle;
 	bool use_xtr; // use extract plugins when loading a file?
 	bool strseach_check_ascii_freq; // str.search.check_ascii_freq
 	RzStrConstPool constpool;

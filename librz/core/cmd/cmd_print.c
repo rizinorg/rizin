@@ -5108,8 +5108,8 @@ RZ_IPI RzCmdStatus rz_print_calls_function_handler(RzCore *core, int argc, const
 			if (rel) {
 				if (rel && rel->import && rel->import->name) {
 					dst2 = rel->import->name;
-				} else if (rel && rel->symbol && rel->symbol->name) {
-					dst2 = rel->symbol->name;
+				} else if (rel && rel->symbol) {
+					dst2 = rel->symbol->dname ? rel->symbol->dname : rel->symbol->name;
 				}
 			} else {
 				dst2 = dst;

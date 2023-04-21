@@ -2213,11 +2213,8 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 
 	RzBinObject *o = bf->o;
 
-	bool bin_demangle = rz_config_get_i(core->config, "bin.demangle");
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
-	const char *lang = rz_config_get(core->config, "bin.lang");
 	int va = VA_TRUE; // XXX relocs always vaddr?
-	char *name = NULL;
+	const char *relname = NULL;
 
 	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, o);
 	if (!relocs) {
@@ -2236,29 +2233,24 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 
+		// take care with very long symbol names! do not use sdb_fmt or similar
+		if (reloc->import) {
+			relname = reloc->import->name;
+		} else if (reloc->symbol) {
+			relname = reloc->symbol->dname ? reloc->symbol->dname : reloc->symbol->name;
+		}
+
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			char *mn = NULL;
-			char *relname = NULL;
-
-			// take care with very long symbol names! do not use sdb_fmt or similar
-			if (reloc->import) {
-				mn = rz_bin_demangle(core->bin->cur, lang, reloc->import->name, addr, keep_lib);
-				relname = strdup(reloc->import->name);
-			} else if (reloc->symbol) {
-				mn = rz_bin_demangle(core->bin->cur, lang, reloc->symbol->name, addr, keep_lib);
-				relname = strdup(reloc->symbol->name);
-			}
 
 			// check if name is available
 			if (!RZ_STR_ISEMPTY(relname)) {
 				pj_ks(state->d.pj, "name", relname);
 			}
-			pj_ks(state->d.pj, "demname", rz_str_get(mn));
 			pj_ks(state->d.pj, "type", bin_reloc_type_name(reloc));
 			pj_kn(state->d.pj, "vaddr", reloc->vaddr);
 			pj_kn(state->d.pj, "paddr", reloc->paddr);
@@ -2271,29 +2263,15 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 			pj_kb(state->d.pj, "is_ifunc", reloc->is_ifunc);
 			pj_end(state->d.pj);
 
-			free(mn);
-			free(relname);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			name = reloc->import
-				? strdup(reloc->import->name)
-				: reloc->symbol ? strdup(reloc->symbol->name)
-						: NULL;
-			if (bin_demangle) {
-				char *mn = rz_bin_demangle(core->bin->cur, NULL, name, addr, keep_lib);
-				if (RZ_STR_ISNOTEMPTY(mn)) {
-					free(name);
-					name = mn;
-				}
-			}
-			char *reloc_name = construct_reloc_name(reloc, name);
+			char *reloc_name = construct_reloc_name(reloc, relname);
 			RzStrBuf *buf = rz_strbuf_new(NULL);
 			if (core->bin->prefix) {
 				rz_strbuf_appendf(buf, "%s.", core->bin->prefix);
 			}
 			rz_strbuf_append(buf, rz_str_get(reloc_name));
 			free(reloc_name);
-			RZ_FREE(name);
 			if (reloc->addend) {
 				if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
 					rz_strbuf_append(buf, " +");

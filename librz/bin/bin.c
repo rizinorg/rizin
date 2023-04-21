@@ -754,6 +754,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
 	bin->want_dbginfo = true;
+	bin->demangle = true;
 	bin->cur = NULL;
 	bin->hash = rz_hash_new();
 	if (!bin->hash) {
