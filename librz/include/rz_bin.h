@@ -283,6 +283,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinClass *>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;
+	HtPP *fields_ht;
 	RzBinSourceLineInfo *lines;
 	RzList /*<RzBinMem *>*/ *mem;
 	char *regstate;
@@ -651,7 +652,6 @@ typedef struct rz_bin_class_t {
 	// TODO: char *module;
 	char *super;
 	char *visibility_str; // XXX only used by java
-	int index;
 	ut64 addr;
 	RzList /*<RzBinSymbol *>*/ *methods;
 	RzList /*<RzBinField *>*/ *fields;
@@ -957,13 +957,9 @@ RZ_API const char *rz_bin_entry_type_string(int etype);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
 
-// RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzList /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf);
-// RzBinFile.add
-RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *binfile, const char *name, const char *super, int view);
-RZ_API RzBinSymbol *rz_bin_file_add_method(RzBinFile *bf, const char *classname, const char *name, int nargs);
-// RzBinFile.find
+
 RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, int bits);
 RZ_API RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bin_id);
 RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd);
@@ -981,14 +977,23 @@ RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
 
 // binobject functions
-RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
+RZ_API bool rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name);
-RZ_API void rz_bin_mem_free(void *data);
+
+// class
+RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name, RZ_NULLABLE const char *super);
+RZ_API RzBinSymbol *rz_bin_object_find_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method);
+RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method, ut64 paddr, ut64 vaddr);
+RZ_API RzBinField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *field);
+RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *field, int size, ut64 paddr, ut64 vaddr);
+
+RZ_API void rz_bin_mem_free(RzBinMem *data);
 
 // demangle functions
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const char *language, RZ_NULLABLE const char *symbol, ut64 vaddr, bool libs);

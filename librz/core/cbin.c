@@ -1141,6 +1141,8 @@ static void reloc_set_flag(RzCore *r, RzBinReloc *reloc, const char *prefix, ut6
 	if (existing && existing->offset == flag_addr) {
 		// Mostly important for target flags.
 		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
+		free(reloc_name);
+		free(flag_name);
 		return;
 	}
 	RzFlagItem *fi = rz_flag_set_next(r->flags, flag_name, flag_addr, bin_reloc_size(reloc));
@@ -2242,7 +2244,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
+			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, relname);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -2264,14 +2266,8 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 			pj_end(state->d.pj);
 
 			break;
-		case RZ_OUTPUT_MODE_TABLE:
-			char *reloc_name = construct_reloc_name(reloc, relname);
-			RzStrBuf *buf = rz_strbuf_new(NULL);
-			if (core->bin->prefix) {
-				rz_strbuf_appendf(buf, "%s.", core->bin->prefix);
-			}
-			rz_strbuf_append(buf, rz_str_get(reloc_name));
-			free(reloc_name);
+		case RZ_OUTPUT_MODE_TABLE: {
+			RzStrBuf *buf = rz_strbuf_new(relname);
 			if (reloc->addend) {
 				if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
 					rz_strbuf_append(buf, " +");
@@ -2295,6 +2291,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 			}
 			free(res);
 			break;
+		}
 		default:
 			rz_warn_if_reached();
 			break;
@@ -3704,7 +3701,7 @@ static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	// super class
 	fn = rz_core_bin_super_build_flag_name(c);
 	if (fn) {
-		rz_cons_printf("\"f %s @ %d\"\n", fn, c->index);
+		rz_cons_printf("\"f %s @ 0x%" PFMT64x "\"\n", fn, c->addr);
 		free(fn);
 	}
 
@@ -3958,7 +3955,6 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "classname", c->name);
 			pj_kN(state->d.pj, "addr", c->addr);
-			pj_ki(state->d.pj, "index", c->index);
 			if (c->super) {
 				pj_ks(state->d.pj, "visibility", c->visibility_str ? c->visibility_str : "");
 				pj_ks(state->d.pj, "super", c->super);

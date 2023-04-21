@@ -314,7 +314,7 @@ static RzList /*<RzBinMem *>*/ *mdmp_mem(RzBinFile *bf) {
 	ut64 index;
 	ut64 state, type, a_protect;
 
-	if (!(ret = rz_list_newf(rz_bin_mem_free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_mem_free))) {
 		return NULL;
 	}
 

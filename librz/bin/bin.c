@@ -1312,15 +1312,7 @@ static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	}
 
 	*method_name = 0;
-	RzBinSymbol *sym = rz_bin_file_add_method(bf, out, method_name + 2, 0);
-	if (sym) {
-		if (sym->vaddr != 0 && sym->vaddr != vaddr) {
-			RZ_LOG_INFO("Duplicated method found: %s\n", sym->name);
-		}
-		if (sym->vaddr == 0) {
-			sym->vaddr = vaddr;
-		}
-	}
+	rz_bin_object_add_method(bf->o, out, method_name + 2, 0, vaddr);
 	*method_name = ':';
 	return out;
 }
@@ -1446,4 +1438,16 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 		demangled = d;
 	}
 	return demangled;
+}
+
+RZ_API void rz_bin_mem_free(RzBinMem *mem) {
+	if (!mem) {
+		return;
+	}
+
+	if (mem->mirrors) {
+		mem->mirrors->free = (RzListFree)rz_bin_mem_free;
+		rz_list_free(mem->mirrors);
+	}
+	free(mem);
 }

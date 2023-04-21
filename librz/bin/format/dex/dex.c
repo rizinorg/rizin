@@ -1190,7 +1190,6 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		bclass->super = demangle_java_and_free(dex_resolve_type_id(dex, class_def->superclass_idx));
 		bclass->visibility = class_def->access_flags;
 		bclass->visibility_str = rz_bin_dex_access_flags_readable(class_def->access_flags);
-		bclass->index = class_def->class_idx;
 		bclass->addr = class_def->offset;
 		bclass->methods = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
 		bclass->fields = dex_resolve_fields_in_class(dex, class_def, inserted_fields);

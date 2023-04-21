@@ -26,20 +26,16 @@ RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
 RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
+RZ_IPI bool rz_bin_object_process_data(RzBinFile *bf, RzBinObject *o);
 
-RZ_IPI void rz_bin_class_free(RzBinClass *c);
-RZ_IPI RzBinSymbol *rz_bin_class_add_method(RzBinFile *binfile, const char *classname, const char *name, int nargs);
-RZ_IPI void rz_bin_class_add_field(RzBinFile *binfile, const char *classname, const char *name);
+RZ_IPI void rz_bin_class_free(RzBinClass *k);
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd);
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname);
 
-RZ_IPI void rz_bin_demangle_symbol(RzBinFile *bf, RzBinSymbol *symbol, RzBinLanguage lang);
-RZ_IPI void rz_bin_demangle_symbols(RzBinFile *bf, const RzList /*<RzBinSymbol*>*/ *symbols, RzBinLanguage lang);
-RZ_IPI void rz_bin_demangle_import(RzBinFile *bf, RzBinSymbol *import, RzBinLanguage lang);
-RZ_IPI void rz_bin_demangle_imports(RzBinFile *bf, const RzList /*<RzBinImport*>*/ *imports, RzBinLanguage lang);
-RZ_IPI void rz_bin_demangle_reloc(RzBinFile *bf, RzBinReloc *reloc, RzBinLanguage lang);
-RZ_IPI void rz_bin_demangle_relocs(RzBinFile *bf, const RzBinRelocStorage *storage, RzBinLanguage lang);
+RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin);
+RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin);
+RZ_IPI bool rz_bin_demangle_reloc(RzBinReloc *reloc, const RzDemanglerPlugin *plugin);
 
 struct rz_bin_string_database_t {
 	RzList /*<RzBinString *>*/ *list; ///< Contains all the strings in list form
