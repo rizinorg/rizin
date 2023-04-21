@@ -3817,7 +3817,7 @@ RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL R
 	}
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "Xissss", "address", "index", "class", "flags", "name", "type", NULL);
+	rz_cmd_state_output_set_columnsf(state, "Xisssss", "address", "index", "class", "flags", "name", "type", NULL);
 
 	rz_list_foreach (cs, iter, c) {
 		if (class_name && (!c->name || strcmp(c->name, class_name))) {

@@ -903,18 +903,6 @@ static ut64 dex_access_flags_to_bin_flags(ut64 access_flags) {
 	return flags;
 }
 
-static char *dex_resolve_library(const char *library) {
-	if (!library || library[0] != 'L') {
-		return NULL;
-	}
-	char *demangled = strdup(library + 1);
-	rz_str_replace_ch(demangled, '/', '.', 1);
-	if (RZ_STR_ISNOTEMPTY(demangled)) {
-		demangled[strlen(demangled) - 1] = 0;
-	}
-	return demangled;
-}
-
 static char *demangle_java_and_free(char *mangled) {
 	if (!mangled) {
 		return NULL;
@@ -922,6 +910,25 @@ static char *demangle_java_and_free(char *mangled) {
 	char *demangled = rz_demangler_java(mangled);
 	free(mangled);
 	return demangled;
+}
+
+static void set_lib_and_class_name(char *mangled, char **out_class, char **out_lib) {
+	if (!mangled) {
+		return;
+	}
+	bool is_java_lang = !strncmp(mangled, "Ljava/lang", strlen("Ljava/lang"));
+
+	char *object = demangle_java_and_free(mangled);
+	if (!object) {
+		return;
+	}
+
+	*out_class = object;
+	if (!is_java_lang || !strncmp(object, "java.lang", strlen("java.lang"))) {
+		*out_lib = strdup(object);
+	} else {
+		*out_lib = rz_str_newf("java.lang.%s", object);
+	}
 }
 
 static RzBinSymbol *dex_method_to_symbol(RzBinDex *dex, DexEncodedMethod *encoded_method, DexMethodId *method_id, bool is_imported) {
@@ -932,8 +939,8 @@ static RzBinSymbol *dex_method_to_symbol(RzBinDex *dex, DexEncodedMethod *encode
 
 	bool varargs = dex_is_varargs(encoded_method->access_flags);
 	symbol->name = dex_resolve_string_id(dex, method_id->name_idx);
-	symbol->classname = dex_resolve_type_id(dex, method_id->class_idx);
-	symbol->libname = dex_resolve_library(symbol->classname);
+	char *mangled = dex_resolve_type_id(dex, method_id->class_idx);
+	set_lib_and_class_name(mangled, &symbol->classname, &symbol->libname);
 	symbol->dname = demangle_java_and_free(dex_resolve_proto_id(dex, symbol->name, method_id->proto_idx, varargs));
 	symbol->bind = dex_is_static(encoded_method->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 	symbol->is_imported = is_imported;
@@ -1017,7 +1024,7 @@ static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encode
 	field->visibility = encoded_field->access_flags & UT32_MAX;
 	field->visibility_str = rz_bin_dex_access_flags_readable(access_flags);
 	field->name = dex_resolve_string_id(dex, field_id->name_idx);
-	field->type = dex_resolve_type_id(dex, field_id->type_idx);
+	field->type = demangle_java_and_free(dex_resolve_type_id(dex, field_id->type_idx));
 	field->flags = dex_access_flags_to_bin_flags(access_flags);
 
 	return field;
@@ -1075,8 +1082,8 @@ static RzBinSymbol *dex_field_to_symbol(RzBinDex *dex, DexEncodedField *encoded_
 	}
 
 	field->name = dex_resolve_string_id(dex, field_id->name_idx);
-	field->classname = dex_resolve_type_id(dex, field_id->class_idx);
-	field->libname = dex_resolve_library(field->classname);
+	char *mangled = dex_resolve_type_id(dex, field_id->class_idx);
+	set_lib_and_class_name(mangled, &field->classname, &field->libname);
 	field->bind = dex_is_static(encoded_field->access_flags) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 	field->is_imported = false;
 	field->visibility = encoded_field->access_flags & UT32_MAX;
@@ -1179,8 +1186,8 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 			break;
 		}
 
-		bclass->name = dex_resolve_type_id(dex, class_def->class_idx);
-		bclass->super = dex_resolve_type_id(dex, class_def->superclass_idx);
+		bclass->name = demangle_java_and_free(dex_resolve_type_id(dex, class_def->class_idx));
+		bclass->super = demangle_java_and_free(dex_resolve_type_id(dex, class_def->superclass_idx));
 		bclass->visibility = class_def->access_flags;
 		bclass->visibility_str = rz_bin_dex_access_flags_readable(class_def->access_flags);
 		bclass->index = class_def->class_idx;
@@ -1340,8 +1347,8 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		}
 
 		field->name = dex_resolve_string_id(dex, field_id->name_idx);
-		field->classname = demangle_java_and_free(dex_resolve_type_id(dex, field_id->class_idx));
-		field->libname = dex_resolve_library(field->classname);
+		char *mangled = dex_resolve_type_id(dex, field_id->class_idx);
+		set_lib_and_class_name(mangled, &field->classname, &field->libname);
 		field->bind = RZ_BIN_BIND_WEAK_STR;
 		field->type = RZ_BIN_TYPE_FIELD_STR;
 		field->is_imported = true;
@@ -1365,8 +1372,8 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		}
 
 		method->name = dex_resolve_string_id(dex, method_id->name_idx);
-		method->classname = demangle_java_and_free(dex_resolve_type_id(dex, method_id->class_idx));
-		method->libname = dex_resolve_library(method->classname);
+		char *mangled = dex_resolve_type_id(dex, method_id->class_idx);
+		set_lib_and_class_name(mangled, &method->classname, &method->libname);
 		method->dname = demangle_java_and_free(dex_resolve_proto_id(dex, method->name, method_id->proto_idx, false));
 		method->bind = RZ_BIN_BIND_WEAK_STR;
 		method->is_imported = true;
@@ -1446,28 +1453,12 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 			break;
 		}
 
-		char *object = dex_resolve_type_id(dex, field_id->class_idx);
-		if (RZ_STR_ISEMPTY(object)) {
-			free(object);
-			free(import);
-			break;
-		}
-		rz_str_replace_char(object, ';', 0);
-
-		char *class_name = (char *)rz_str_rchr(object, NULL, '/');
-		if (class_name) {
-			class_name[0] = 0;
-			class_name++;
-		}
-		rz_str_replace_ch(object, '/', '.', 1);
-
 		import->name = dex_resolve_string_id(dex, field_id->name_idx);
-		import->libname = class_name ? strdup(object + 1) : NULL;
-		import->classname = strdup(class_name ? class_name : object + 1);
+		char *mangled = dex_resolve_type_id(dex, field_id->class_idx);
+		set_lib_and_class_name(mangled, &import->classname, &import->libname);
 		import->bind = RZ_BIN_BIND_WEAK_STR;
 		import->type = RZ_BIN_TYPE_FIELD_STR;
 		import->ordinal = ordinal;
-		free(object);
 
 		if (!rz_list_append(imports, import)) {
 			rz_bin_import_free(import);
@@ -1494,30 +1485,14 @@ RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex
 			break;
 		}
 
-		char *object = dex_resolve_type_id(dex, method_id->class_idx);
-		if (RZ_STR_ISEMPTY(object)) {
-			free(object);
-			rz_bin_import_free(import);
-			break;
-		}
-		rz_str_replace_char(object, ';', 0);
-
-		char *class_name = (char *)rz_str_rchr(object, NULL, '/');
-		if (class_name) {
-			class_name[0] = 0;
-			class_name++;
-		}
-		rz_str_replace_ch(object, '/', '.', 1);
-
 		char *name = dex_resolve_string_id(dex, method_id->name_idx);
 		import->name = dex_resolve_proto_id(dex, name, method_id->proto_idx, false);
-		import->libname = class_name ? strdup(object + 1) : NULL;
-		import->classname = strdup(class_name ? class_name : object + 1);
+		char *mangled = dex_resolve_type_id(dex, method_id->class_idx);
+		set_lib_and_class_name(mangled, &import->classname, &import->libname);
 		import->bind = RZ_BIN_BIND_WEAK_STR;
 		import->type = RZ_BIN_TYPE_FUNC_STR;
 		import->ordinal = ordinal;
 		free(name);
-		free(object);
 
 		if (!rz_list_append(imports, import)) {
 			rz_bin_import_free(import);
