@@ -1005,6 +1005,11 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 			}
 
 			if (vernaux_entry.vna_other != versym) {
+
+				if (!vernaux_entry.vna_next) {
+					break;
+				}
+
 				vernaux_entry_offset += vernaux_entry.vna_next;
 				continue;
 			}
@@ -1024,6 +1029,10 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 			}
 
 			return true;
+		}
+
+		if (!verneed_entry.vn_next) {
+			break;
 		}
 
 		verneed_entry_offset += verneed_entry.vn_next;
