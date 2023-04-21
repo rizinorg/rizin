@@ -5,12 +5,6 @@
 #include <rz_bin.h>
 #include <rz_th.h>
 
-typedef struct bin_demangling_s {
-	const RzDemanglerPlugin *plugin;
-	RzThreadQueue *queue;
-	bool update_class_name;
-} bin_demangling_t;
-
 #define skip_prefix_s(s, p) \
 	do { \
 		if (!strncmp(s, p, strlen(p))) { \
@@ -44,15 +38,32 @@ static const char *get_symbol_name(RzBinSymbol *bsym) {
 
 #undef skip_prefix
 
-static void demangle_symbol(const RzDemanglerPlugin *plugin, RzBinSymbol *bsym, bool update_class_name) {
+static void demangle_symbol_only(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin) {
+	if (bsym->dname) {
+		return;
+	}
+
 	const char *symbol = get_symbol_name(bsym);
 	if (!symbol) {
 		return;
 	}
 
 	bsym->dname = plugin->demangle(symbol);
-	// eprintf("sym->name: '%s' -> '%s'\n", bsym->name, bsym->dname);
-	if (!update_class_name || !bsym->dname || bsym->is_imported) {
+}
+
+static void demangle_symbol_and_update_class(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin) {
+	if (bsym->dname) {
+		return;
+	}
+
+	const char *symbol = get_symbol_name(bsym);
+	if (!symbol) {
+		return;
+	}
+
+	bsym->dname = plugin->demangle(symbol);
+
+	if (!bsym->dname || bsym->is_imported) {
 		return;
 	}
 	// this step is used only by kernelcache and mach0
@@ -68,41 +79,28 @@ static void demangle_symbol(const RzDemanglerPlugin *plugin, RzBinSymbol *bsym, 
 	}
 }
 
-static void *thread_demangle_cb(bin_demangling_t *bdem) {
-	const RzDemanglerPlugin *plugin = bdem->plugin;
-	RzThreadQueue *queue = bdem->queue;
-	bool update_class_name = bdem->update_class_name;
-	RzBinSymbol *bsym = NULL;
-
-	while ((bsym = rz_th_queue_pop(queue, false))) {
-		demangle_symbol(plugin, bsym, update_class_name);
-	}
-	return NULL;
-}
-
-static bool demangler_should_update_class_name(RzBinFile *bf) {
+static RzThreadIterator demangler_get_symbol_iterator(RzBinFile *bf) {
 	if (!bf) {
-		return false;
+		return (RzThreadIterator)demangle_symbol_only;
 	}
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 
-	return plugin && plugin->name && (!strcmp(plugin->name, "kernelcache") ||
-						 // mach0 and mach064
-						 !strncmp(plugin->name, "mach0", strlen("mach0")));
+	if (plugin &&
+		plugin->name &&
+		(!strcmp(plugin->name, "kernelcache") ||
+			!strncmp(plugin->name, "mach0", strlen("mach0")))) {
+		return (RzThreadIterator)demangle_symbol_and_update_class;
+	}
+	return (RzThreadIterator)demangle_symbol_only;
 }
 
-RZ_IPI void rz_bin_demangle_symbols(RzBinFile *bf, const RzList *symbols, RzBinLanguage lang) {
+RZ_IPI void rz_bin_demangle_symbols(RzBinFile *bf, const RzList /*<RzBinSymbol*>*/ *symbols, RzBinLanguage lang) {
 	lang = RZ_BIN_LANGUAGE_MASK(lang);
 	size_t max_size = rz_list_length(symbols);
 	if (!bf || !bf->rbin || max_size < 1 || lang == RZ_BIN_LANGUAGE_UNKNOWN) {
 		return;
 	}
 
-	bin_demangling_t shared;
-	RzListIter *it;
-	RzBinSymbol *symbol;
-	RzThreadPool *pool = NULL;
-	RzThreadQueue *queue = NULL;
 	const RzDemanglerPlugin *plugin = NULL;
 	const char *language = rz_bin_language_to_string(lang);
 	if (!language) {
@@ -116,39 +114,8 @@ RZ_IPI void rz_bin_demangle_symbols(RzBinFile *bf, const RzList *symbols, RzBinL
 		return;
 	}
 
-	pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
-	queue = rz_th_queue_new(max_size, NULL);
-	if (!queue || !pool) {
-		RZ_LOG_ERROR("bin: failed to allocate memory for threaded demangling\n");
-		goto fail;
-	}
-
-	rz_list_foreach (symbols, it, symbol) {
-		if (symbol->dname) {
-			continue;
-		}
-		rz_th_queue_push(queue, symbol, true);
-	}
-
-	shared.update_class_name = demangler_should_update_class_name(bf);
-	shared.plugin = plugin;
-	shared.queue = queue;
-
-	ut32 pool_size = rz_th_pool_size(pool);
-	RZ_LOG_VERBOSE("bin: using %u threads for threaded demangling\n", pool_size);
-
-	for (ut32 i = 0; i < pool_size; ++i) {
-		RzThread *th = rz_th_new((RzThreadFunction)thread_demangle_cb, &shared);
-		if (th) {
-			rz_th_pool_add_thread(pool, th);
-		}
-	}
-
-	rz_th_pool_wait(pool);
-
-fail:
-	rz_th_queue_free(queue);
-	rz_th_pool_free(pool);
+	RzThreadIterator iterator = demangler_get_symbol_iterator(bf);
+	rz_th_iterate_list(symbols, iterator, RZ_THREAD_POOL_ALL_CORES, plugin);
 }
 
 RZ_IPI void rz_bin_demangle_symbol(RzBinFile *bf, RzBinSymbol *symbol, RzBinLanguage lang) {
@@ -168,6 +135,6 @@ RZ_IPI void rz_bin_demangle_symbol(RzBinFile *bf, RzBinSymbol *symbol, RzBinLang
 		return;
 	}
 
-	bool update_class_name = demangler_should_update_class_name(bf);
-	demangle_symbol(plugin, symbol, update_class_name);
+	RzThreadIterator iterator = demangler_get_symbol_iterator(bf);
+	iterator(symbol, plugin);
 }

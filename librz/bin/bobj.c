@@ -526,8 +526,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	}
 
 	RzBinLanguage lang = RZ_BIN_LANGUAGE_MASK(o->lang);
-	if (lang == RZ_BIN_LANGUAGE_UNKNOWN ||
-		lang == RZ_BIN_LANGUAGE_C) {
+	if (lang == RZ_BIN_LANGUAGE_UNKNOWN) {
 		o->lang = rz_bin_language_detect(bf);
 	}
 

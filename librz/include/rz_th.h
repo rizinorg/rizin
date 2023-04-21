@@ -26,6 +26,7 @@ typedef struct rz_th_t RzThread;
 typedef struct rz_th_pool_t RzThreadPool;
 typedef struct rz_th_queue_t RzThreadQueue;
 typedef void *(*RzThreadFunction)(void *user);
+typedef void (*RzThreadIterator)(void *element, const void *user);
 
 typedef struct rz_atomic_bool_t RzAtomicBool;
 
@@ -82,6 +83,8 @@ RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value);
 RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool);
 RZ_API bool rz_atomic_bool_get(RZ_NONNULL RzAtomicBool *tbool);
 RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
+
+RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE const void *user);
 
 #endif
 
