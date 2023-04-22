@@ -1556,7 +1556,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	case 'A': // "aeA"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_aea);
-			rz_cons_printf("");
 		} else if (input[1] == 'r') {
 			cmd_aea(core, 1 + (1 << 1), core->offset, rz_num_math(core->num, input + 2));
 		} else if (input[1] == 'w') {

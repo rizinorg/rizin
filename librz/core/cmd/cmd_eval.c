@@ -53,7 +53,7 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 	return true;
 }
 
-static bool print_meta_info(RzCore *core, RzCmdStateOutput *state, RzThemeInfo *meta_info) {
+RZ_API bool rz_core_theme_print_metainfo(RzCore *core, RzCmdStateOutput *state, RzThemeInfo *meta_info) {
 	bool failed = false;
 
 	if (meta_info->author != NULL) {
@@ -77,15 +77,69 @@ static bool print_meta_info(RzCore *core, RzCmdStateOutput *state, RzThemeInfo *
 	if (meta_info->refs != NULL) {
 		rz_cons_printf("%s", meta_info->refs);
 	}
-
 	return (!failed);
+}
+
+RZ_API RzThemeInfo *rz_core_theme_load_metainfo(RzCore *core, const char *name, RzCmdStateOutput *state) {
+	RzThemeInfo *meta_info = malloc(2 * sizeof(RzThemeInfo));
+	meta_info->additionaldts = NULL;
+	meta_info->refs = NULL;
+	meta_info->load_status = false;
+	if (!name || !*name) {
+		return meta_info;
+	}
+
+	char *home_themes = rz_path_home_prefix(RZ_THEMES);
+	char *system_themes = rz_path_system(RZ_THEMES);
+	char *home_file = rz_file_path_join(home_themes, name);
+	char *system_file = rz_file_path_join(system_themes, name);
+	free(system_themes);
+	free(home_themes);
+	FILE *path = rz_sys_fopen(system_file, "r");
+	if (!path) {
+		RZ_LOG_ERROR("Error in opening colorscheme file at '%s'\n", system_file);
+		return meta_info;
+	} else {
+		rz_cons_printf("Color theme details!\n");
+	}
+	bool beginflag = true;
+	char line[256];
+
+	while ((fgets(line, sizeof(line), path) != NULL) && (rz_str_cmp(line, "# ATEM\n", -1) != 0)) {
+		if (beginflag == true) {
+			if (strstr(line, "Author") != NULL) {
+				meta_info->author = strdup(line);
+			}
+			if (strstr(line, "License") != NULL) {
+				meta_info->license = strdup(line);
+			}
+			if (strstr(line, "Background") != NULL) {
+				meta_info->targetbg = strdup(line);
+			}
+			if (strstr(line, "depth") != NULL) {
+				meta_info->mincolordepth = strdup(line);
+			}
+			if (strstr(line, "Description") != NULL) {
+				meta_info->desc = strdup(line);
+			}
+			if (strstr(line, "Details") != NULL) {
+				meta_info->additionaldts = strdup(line);
+			}
+			if (strstr(line, "References") != NULL) {
+				meta_info->refs = strdup(line);
+			}
+		}
+		if (rz_str_cmp(line, "# META\n", -1) == 0) {
+			beginflag = true;
+			meta_info->name = strdup(name);
+		}
+	}
+	meta_info->load_status = true;
+	return meta_info;
 }
 
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name, RzCmdStateOutput *state) {
 	bool failed = false;
-	int question_mark_count = 0;
-	bool metainfo_shown = false;
-
 	if (!name || !*name) {
 		return false;
 	}
@@ -99,64 +153,10 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name, RzCmdStateOutput 
 	char *system_themes = rz_path_system(RZ_THEMES);
 	char *home_file = rz_file_path_join(home_themes, name);
 	char *system_file = rz_file_path_join(system_themes, name);
-
 	free(system_themes);
 	free(home_themes);
 
-	if (state->mode == RZ_OUTPUT_MODE_LONG) {
-		RzThemeInfo *meta_info = malloc(2 * sizeof(RzThemeInfo)); // populate the structure RzThemeInfo only when second argument is present
-		meta_info->additionaldts = NULL;
-		meta_info->refs = NULL;
-		char *system_file_cpy;
-		system_file_cpy = rz_str_dup(system_file_cpy, system_file);
-		FILE *path = rz_sys_fopen(system_file_cpy, "r");
-		if (!path) {
-			RZ_LOG_ERROR("Error in opening colourscheme file at '%s'\n", system_file_cpy);
-			failed = true;
-			return !failed;
-		} else {
-			rz_cons_printf("Color theme details!\n");
-		}
-		bool beginflag = false;
-		char line[256];
-
-		while ((fgets(line, sizeof(line), path) != NULL) /*(rz_file_slurp_line(path,line,0)!=NULL)*/ && (rz_str_cmp(line, "# ATEM\n", -1) != 0)) {
-			if (beginflag == true) {
-				if (strstr(line, "Author") != NULL) {
-					meta_info->author = strdup(line);
-				}
-				if (strstr(line, "License") != NULL) {
-					meta_info->license = strdup(line);
-				}
-				if (strstr(line, "Background") != NULL) {
-					meta_info->targetbg = strdup(line);
-				}
-				if (strstr(line, "depth") != NULL) {
-					meta_info->mincolordepth = strdup(line);
-				}
-				if (strstr(line, "Description") != NULL) {
-					meta_info->desc = strdup(line);
-				}
-				if (strstr(line, "Details") != NULL) {
-					meta_info->additionaldts = strdup(line);
-				}
-				if (strstr(line, "References") != NULL) {
-					meta_info->refs = strdup(line);
-				}
-			}
-			if (rz_str_cmp(line, "# META\n", -1) == 0) {
-				beginflag = true;
-				meta_info->name = strdup(name);
-			}
-		}
-		if (print_meta_info(core, state, meta_info)) {
-			metainfo_shown = true;
-		} else {
-			failed = true;
-		}
-	}
-	/* The metainfo_shown boolean was used because making the below if statement into an else statement kept throwing errors */
-	if ((!(load_theme(core, home_file)) || (question_mark_count > 1)) && (metainfo_shown == false)) {
+	if (!(load_theme(core, home_file))) {
 		if (load_theme(core, system_file)) {
 			core->curtheme = rz_str_dup(core->curtheme, name);
 		} else {
@@ -323,9 +323,17 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	RzListIter *th_iter;
 	PJ *pj = state->d.pj;
 	const char *th;
-	// int done = 0;
 	if (argc == 2) {
-		return bool2status(rz_core_theme_load(core, argv[1], state));
+		if (state->mode == RZ_OUTPUT_MODE_LONG) {
+			RzThemeInfo *meta_info = malloc(2 * sizeof(RzThemeInfo));
+			meta_info->additionaldts = NULL;
+			meta_info->refs = NULL;
+			meta_info = rz_core_theme_load_metainfo(core, argv[1], state);
+			bool theme_metainfo_successfully_print = rz_core_theme_print_metainfo(core, state, meta_info);
+			return bool2status(meta_info->load_status && theme_metainfo_successfully_print);
+		} else {
+			return bool2status(rz_core_theme_load(core, argv[1], state));
+		}
 	}
 
 	themes_list = rz_core_theme_list(core);
@@ -335,8 +343,11 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
+	/*If the output mode is long(ecol), and there are insufficient arguments, then an error message is displayed.
+	Else all the available themes are listed out, conforming with the functionality of the eco command*/
 	if (state->mode == RZ_OUTPUT_MODE_LONG && argc < 2) {
 		RZ_LOG_ERROR("The verbose ecol command requires a color theme as an argument\n");
+		return RZ_CMD_STATUS_ERROR;
 	} else {
 		rz_list_foreach (themes_list, th_iter, th) {
 			switch (state->mode) {

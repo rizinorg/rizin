@@ -70,7 +70,6 @@ typedef struct rz_cons_bind_t {
 } RzConsBind;
 
 typedef struct rz_theme_info {
-
 	char *name;
 	char *author;
 	char *license;
@@ -79,7 +78,7 @@ typedef struct rz_theme_info {
 	char *desc;
 	char *additionaldts;
 	char *refs;
-
+	bool load_status;
 } RzThemeInfo;
 
 typedef struct rz_cons_grep_t {
