@@ -107,7 +107,7 @@ static void process_objc_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	}
 
 	if (symbol->classname) {
-		rz_bin_object_add_class(o, symbol->classname, NULL);
+		rz_bin_object_add_class(o, symbol->classname, NULL, symbol->vaddr);
 	}
 }
 
@@ -141,11 +141,6 @@ static char *get_swift_field(const char *demangled, const char *classname) {
 
 static void process_swift_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	if (!symbol->classname) {
-		return;
-	}
-
-	RzBinClass *c = rz_bin_object_add_class(o, symbol->classname, NULL);
-	if (!c) {
 		return;
 	}
 
@@ -233,13 +228,6 @@ static void process_symbols(RzBinFile *bf, RzBinObject *o) {
 	rz_th_lock_free(context.lock);
 }
 
-static int compare_bin_class(RzBinClass *a, RzBinClass *b) {
-	if (!a->name || !b->name) {
-		return a->name > b->name ? 1 : (a->name < b->name ? -1 : 0);
-	}
-	return strcmp(a->name, b->name);
-}
-
 RZ_IPI bool rz_bin_object_process_data(RzBinFile *bf, RzBinObject *o) {
 	// as first thing, we need to detect the language of the binary
 	// we can detect this based on the compiler.
@@ -260,7 +248,5 @@ RZ_IPI bool rz_bin_object_process_data(RzBinFile *bf, RzBinObject *o) {
 	// once we know the language we can process the data.
 	process_symbols(bf, o);
 
-	// sort all the data.
-	rz_list_sort(o->classes, (RzListComparator)compare_bin_class);
 	return true;
 }

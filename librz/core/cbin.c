@@ -2216,7 +2216,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	RzBinObject *o = bf->o;
 
 	int va = VA_TRUE; // XXX relocs always vaddr?
-	const char *relname = NULL;
+	char *relname = NULL;
 
 	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, o);
 	if (!relocs) {
@@ -2234,13 +2234,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	for (size_t i = 0; i < relocs->relocs_count; i++) {
 		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
-
-		// take care with very long symbol names! do not use sdb_fmt or similar
-		if (reloc->import) {
-			relname = reloc->import->name;
-		} else if (reloc->symbol) {
-			relname = reloc->symbol->dname ? reloc->symbol->dname : reloc->symbol->name;
-		}
+		relname = construct_reloc_name(reloc, NULL);
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
@@ -2296,6 +2290,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 			rz_warn_if_reached();
 			break;
 		}
+		free(relname);
 	}
 	rz_cmd_state_output_array_end(state);
 	return true;
@@ -3524,10 +3519,18 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 	} else {
 		rz_cons_printf("%s %s {\n", visibility, c->name);
 	}
-
+	RzBinSymbol *last = NULL;
 	if (rz_list_length(c->methods) > 0) {
 		has_methods = true;
 		rz_list_foreach (c->methods, iter, sym) {
+			if (last && !strcmp(last->name, sym->name) &&
+				last->method_flags == sym->method_flags) {
+				// some methods might be dup but with different addresses.
+				// to make this output more coherent, we skip them unless
+				// they are very different from the flag side.
+				continue;
+			}
+			last = sym;
 			const char *type = sym->type ? sym->type : "void";
 			const char *name = sym->dname ? sym->dname : sym->name;
 
@@ -3592,19 +3595,6 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 }
 #undef CXX_BIN_VISIBILITY_FLAGS
 
-static inline char *demangle_class(const char *classname) {
-	if (!classname || classname[0] != 'L') {
-		return strdup(classname ? classname : "?");
-	}
-	char *demangled = strdup(classname + 1);
-	if (!demangled) {
-		return strdup(classname);
-	}
-	rz_str_replace_ch(demangled, '/', '.', 1);
-	demangled[strlen(demangled) - 1] = 0;
-	return demangled;
-}
-
 static inline char *demangle_type(const char *any) {
 	if (!any) {
 		return strdup("unknown");
@@ -3634,15 +3624,15 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	RzBinSymbol *sym;
 	bool simplify = false;
 	char *package = NULL, *classname = NULL;
-	char *tmp = (char *)rz_str_rchr(c->name, NULL, '/');
+	char *tmp = (char *)rz_str_rchr(c->name, NULL, '.');
 	if (tmp) {
-		package = demangle_class(c->name);
+		package = strdup(c->name);
 		classname = strdup(tmp + 1);
 		classname[strlen(classname) - 1] = 0;
 		simplify = true;
 	} else {
 		package = strdup("defpackage");
-		classname = demangle_class(c->name);
+		classname = strdup(c->name);
 	}
 
 	rz_cons_printf("package %s;\n\n", package);
