@@ -67,7 +67,7 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 	struct cEnv_t *cEnv = calloc(1, sizeof(struct cEnv_t));
 	bool use_clang;
 	char *buffer = NULL;
-	char *output = NULL;
+	char *incdir = NULL;
 
 	if (!cEnv) {
 		return NULL;
@@ -79,15 +79,9 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 
 	cEnv->SFLIBPATH = rz_sys_getenv("SFLIBPATH");
 	if (!cEnv->SFLIBPATH) {
-		output = rz_sys_cmd_strf("rizin -hh | grep INCDIR | awk '{print $2}'");
-		if (!output || (output[0] == '\0')) {
-			eprintf("Cannot find SFLIBPATH env var.\n"
-				"Please define it, or fix rizin installation.\n");
-			goto fail;
-		}
+		incdir = rz_path_incdir();
 
-		output[strlen(output) - 1] = '\0'; // strip the ending '\n'
-		if (!(cEnv->SFLIBPATH = rz_str_newf("%s/sflib", output))) {
+		if (!(cEnv->SFLIBPATH = rz_str_newf("%s/sflib", incdir))) {
 			goto fail;
 		}
 	}
@@ -199,12 +193,12 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 	}
 
 	free(buffer);
-	free(output);
+	free(incdir);
 	return cEnv;
 
 fail:
 	free(buffer);
-	free(output);
+	free(incdir);
 	rz_egg_Cfile_free_cEnv(cEnv);
 	return NULL;
 }
