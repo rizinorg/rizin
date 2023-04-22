@@ -1,0 +1,7 @@
+NAME=sym_version
+FILE=bins/elf/sym_version
+CMDS=
+EXPECT=<<EOF
+EOF
+TIMEOUT=5
+RUN
