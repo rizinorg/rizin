@@ -443,7 +443,7 @@ static bool create_set_phdr(RzBuffer *result, Elf_(Word) baddr, int codelen) {
 		rz_buf_append_ut32(result, length) && // p_filesz
 		rz_buf_append_ut32(result, length) && // p_memsz
 		rz_buf_append_ut32(result, PF_X | PF_R) && // p_flags
-		rz_buf_append_ut64(result, 0x1000); // p_align
+		rz_buf_append_ut32(result, 0x1000); // p_align
 #endif
 }
 
