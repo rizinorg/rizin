@@ -66,30 +66,42 @@ RZ_IPI void rz_bin_demangle_relocs(RzBinFile *bf, const RzBinRelocStorage *stora
 #endif
 
 static void process_cxx_symbol(RzBinObject *o, RzBinSymbol *symbol) {
-	const char *bracket = strchr(symbol->dname, '(');
-	if (!bracket) {
+	if (strstr(symbol->dname, " for ")) {
+		/* these symbols are not fields nor methods. */
 		return;
 	}
 
+	bool is_method = true;
+	const char *limit = strchr(symbol->dname, '(');
+	if (!limit) {
+		limit = symbol->dname + (strlen(symbol->dname) - 1);
+		is_method = false;
+	}
+
+	// find where to split symbol.
 	char *str = symbol->dname;
 	char *ptr = NULL;
-	char *method_name = NULL;
+	char *name = NULL;
 	for (;;) {
 		ptr = strstr(str, "::");
-		if (!ptr || ptr > bracket) {
+		if (!ptr || ptr > limit) {
 			break;
 		}
-		method_name = ptr;
+		name = ptr;
 		str = ptr + 2;
 	}
 
-	if (RZ_STR_ISEMPTY(method_name)) {
+	if (RZ_STR_ISEMPTY(name)) {
 		return;
 	}
 
-	*method_name = 0;
-	rz_bin_object_add_method(o, symbol->dname, method_name + 2, symbol->paddr, symbol->vaddr);
-	*method_name = ':';
+	*name = 0;
+	if (is_method) {
+		rz_bin_object_add_method(o, symbol->dname, name + 2, symbol->paddr, symbol->vaddr);
+	} else {
+		rz_bin_object_add_field(o, symbol->dname, name + 2, symbol->size, symbol->paddr, symbol->vaddr);
+	}
+	*name = ':';
 }
 
 static void process_objc_symbol(RzBinObject *o, RzBinSymbol *symbol) {

@@ -3588,7 +3588,8 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 			if (f->visibility & RZ_BIN_METH_CONST) {
 				rz_cons_print("const ");
 			}
-			rz_cons_printf("%s %s;\n", f->type, f->name);
+			const char *ftype = f->type ? f->type : "unknown";
+			rz_cons_printf("%s %s;\n", ftype, f->name);
 		}
 	}
 	rz_cons_printf("}\n");
