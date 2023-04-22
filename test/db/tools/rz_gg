@@ -503,7 +503,6 @@ EOF
 RUN
 
 NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r
-BROKEN=1
 FILE==
 CMDS=!rz-gg -k darwin -a x86 -b 32 bins/other/rz-gg/simple_cmp.r
 EXPECT=<<EOF
@@ -588,7 +587,6 @@ EOF
 RUN
 
 NAME=rz-gg -k darwin -a x86 -b 64 simple_cmp.r
-BROKEN=1
 FILE==
 CMDS=!rz-gg -k darwin -a x86 -b 64 bins/other/rz-gg/simple_cmp.r
 EXPECT=<<EOF
