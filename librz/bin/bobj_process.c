@@ -27,7 +27,7 @@ static void process_rust(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr
 		str = ptr + 2;
 	}
 
-	if (RZ_STR_ISEMPTY(name + 2)) {
+	if (!name || RZ_STR_ISEMPTY(name + 2)) {
 		return;
 	}
 
@@ -57,16 +57,15 @@ static void process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr)
 	char *str = demangled;
 	char *ptr = NULL;
 	char *name = NULL;
-	for (;;) {
-		ptr = strstr(str, "::");
-		if (!ptr || ptr > limit) {
+	while ((ptr = strstr(str, "::"))) {
+		if (ptr > limit) {
 			break;
 		}
 		name = ptr;
 		str = ptr + 2;
 	}
 
-	if (RZ_STR_ISEMPTY(name + 2)) {
+	if (!name || RZ_STR_ISEMPTY(name + 2)) {
 		return;
 	}
 

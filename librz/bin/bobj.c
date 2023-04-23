@@ -205,32 +205,6 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	free(o);
 }
 
-static char *swiftField(const char *dn, const char *cn) {
-	if (!dn || !cn) {
-		return NULL;
-	}
-
-	char *p = strstr(dn, ".getter_");
-	if (!p) {
-		p = strstr(dn, ".setter_");
-		if (!p) {
-			p = strstr(dn, ".method_");
-		}
-	}
-	if (p) {
-		char *q = strstr(dn, cn);
-		if (q && q[strlen(cn)] == '.') {
-			q = strdup(q + strlen(cn) + 1);
-			char *r = strchr(q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
-}
-
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz) {
 	rz_return_val_if_fail(bf && plugin, NULL);
@@ -246,20 +220,12 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	}
 	o->obj_size = (bytes_sz >= sz + offset) ? sz : 0;
 	o->boffset = offset;
-	o->regstate = NULL;
-	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
-	o->glue_to_class_field = ht_pp_new0();
-	o->glue_to_class_method = ht_pp_new0();
-	o->name_to_class_object = ht_pp_new0();
-	o->vaddr_to_class_method = ht_up_new0();
-	o->import_name_symbols = ht_pp_new0();
-	o->baddr_shift = 0;
 	o->plugin = plugin;
 
 	if (plugin && plugin->load_buffer) {
 		if (!plugin->load_buffer(bf, o, bf->buf, bf->sdb)) {
 			if (bf->rbin->verbose) {
-				RZ_LOG_ERROR("rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
+				RZ_LOG_ERROR("bin: load_buffer failed for %s plugin\n", plugin->name);
 			}
 			rz_bin_object_free(o);
 			return NULL;
@@ -294,40 +260,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	bf->sdb->refs++;
 
 	return o;
-}
-
-static void filter_classes(RzBinFile *bf, RzList /*<RzBinClass *>*/ *list) {
-	HtPU *db = ht_pu_new0();
-	HtPP *ht = ht_pp_new0();
-	RzListIter *iter, *iter2;
-	RzBinClass *cls;
-	RzBinSymbol *sym;
-	rz_list_foreach (list, iter, cls) {
-		if (!cls->name) {
-			continue;
-		}
-		int namepad_len = strlen(cls->name) + 32;
-		char *namepad = malloc(namepad_len + 1);
-		if (!namepad) {
-			RZ_LOG_ERROR("Cannot allocate %d byte(s)\n", namepad_len);
-			break;
-		}
-
-		strcpy(namepad, cls->name);
-		char *p = rz_bin_filter_name(bf, db, 0 /*cls->index*/, namepad);
-		if (p) {
-			namepad = p;
-		}
-		free(cls->name);
-		cls->name = namepad;
-		rz_list_foreach (cls->methods, iter2, sym) {
-			if (sym->name) {
-				rz_bin_filter_sym(bf, ht, sym->vaddr, sym);
-			}
-		}
-	}
-	ht_pu_free(db);
-	ht_pp_free(ht);
 }
 
 RZ_API bool rz_bin_object_reload(RzBinFile *bf, RzBinObject *o) {
@@ -485,18 +417,18 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 	return symbol;
 }
 
-RZ_API RzBinField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *field, ut64 vaddr) {
+RZ_API RzBinClassField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *field, ut64 vaddr) {
 	rz_return_val_if_fail(o && klass && field, NULL);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, field, vaddr);
 	if (!key) {
 		return NULL;
 	}
-	RzBinField *sym = (RzBinField *)ht_pp_find(o->glue_to_class_field, key, NULL);
+	RzBinClassField *sym = (RzBinClassField *)ht_pp_find(o->glue_to_class_field, key, NULL);
 	free(key);
 	return sym;
 }
 
-RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, ut64 paddr, ut64 vaddr) {
+RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, ut64 paddr, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(klass) && RZ_STR_ISNOTEMPTY(name), NULL);
 	if (rz_bin_object_find_field(o, klass, name, vaddr)) {
 		return NULL;

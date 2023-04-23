@@ -4,21 +4,21 @@
 
 typedef struct process_section_s {
 	ut64 loadaddr;
-	RzThreadHtPP *db;
+	RzThreadHtPP *filter_db;
 } process_section_t;
 
 static void process_handle_section(RzBinSection *section, process_section_t *process) {
 	// rebase physical address
 	section->paddr += process->loadaddr;
-}
 
-static void process_handle_section_and_filter(RzBinSection *section, process_section_t *process) {
-	// rebase physical address
-	section->paddr += process->loadaddr;
+	if (!process->filter_db) {
+		// we do not have to filter the names.
+		return;
+	}
 
 	// check if section name was already found, then rename it.
-	if (!rz_th_ht_pp_find(process->db, section->name, NULL)) {
-		rz_th_ht_pp_insert(process->db, section->name, section);
+	if (!rz_th_ht_pp_find(process->filter_db, section->name, NULL)) {
+		rz_th_ht_pp_insert(process->filter_db, section->name, section);
 		return;
 	}
 
@@ -39,14 +39,9 @@ static void set_and_process_sections(RzBinFile *bf, RzBinObject *o) {
 	RzThreadIterator iterator = (RzThreadIterator)process_handle_section;
 	process_section_t process = {
 		.loadaddr = o->opts.loadaddr,
-		.db = NULL,
+		.filter_db = bin->filter ? rz_th_ht_pp_new0() : NULL,
 	};
 
-	if (bin->filter) {
-		iterator = (RzThreadIterator)process_handle_section_and_filter;
-		process.db = rz_th_ht_pp_new0();
-	}
-
 	rz_th_iterate_list(o->sections, iterator, RZ_THREAD_POOL_ALL_CORES, &process);
-	rz_th_ht_pp_free(process.db);
+	rz_th_ht_pp_free(process.filter_db);
 }
