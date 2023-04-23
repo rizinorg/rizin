@@ -773,9 +773,6 @@ typedef struct rz_bin_field_t {
 	ut64 flags;
 } RzBinField;
 
-RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
-RZ_API void rz_bin_field_free(RzBinField *field);
-
 typedef struct rz_bin_class_field_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -787,9 +784,6 @@ typedef struct rz_bin_class_field_t {
 	char *visibility_str;
 	ut64 flags;
 } RzBinClassField;
-
-RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type);
-RZ_API void rz_bin_class_field_free(RzBinClassField *field);
 
 typedef struct rz_bin_mem_t {
 	char *name;
@@ -827,6 +821,12 @@ typedef struct rz_bin_bind_t {
 	RzBinDemangle demangle;
 	ut32 visibility;
 } RzBinBind;
+
+RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
+RZ_API void rz_bin_field_free(RzBinField *field);
+RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type);
+RZ_API void rz_bin_class_field_free(RzBinClassField *field);
+RZ_API void rz_bin_class_free(RzBinClass *k);
 
 RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);
@@ -1020,10 +1020,6 @@ RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin);
 
 /* filter.c */
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
-RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList /*<RzBinSymbol *>*/ *list);
-RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList /*<RzBinSection *>*/ *list);
-RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 addr, char *name);
-RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
 RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
 

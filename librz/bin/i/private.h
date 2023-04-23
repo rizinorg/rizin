@@ -30,8 +30,6 @@ RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
 RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
 RZ_IPI bool rz_bin_object_process_plugin_data(RzBinFile *bf, RzBinObject *o);
 
-RZ_IPI void rz_bin_class_free(RzBinClass *k);
-
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd);
 RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, RzBinObjectLoadOptions *opts, int fd, const char *pluginname);
 
@@ -40,7 +38,7 @@ RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin 
 
 RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b);
 RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b);
-RZ_IPI int rz_bin_compare_field(RzBinField *a, RzBinField *b);
+RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b);
 
 struct rz_bin_string_database_t {
 	RzList /*<RzBinString *>*/ *list; ///< Contains all the strings in list form

@@ -288,15 +288,15 @@ RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject 
 	return o->relocs;
 }
 
-RZ_IPI void rz_bin_class_free(RzBinClass *k) {
+RZ_API void rz_bin_class_free(RzBinClass *k) {
 	if (!k) {
 		return;
 	}
 	free(k->name);
 	free(k->super);
-	rz_list_free(k->methods);
-	rz_list_free(k->fields);
 	free(k->visibility_str);
+	rz_list_free(k->fields);
+	rz_list_free(k->methods);
 	free(k);
 }
 
@@ -320,33 +320,39 @@ static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *s
 }
 
 RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b) {
-	st64 ret = strcmp(a->name, b->name);
-	if (!ret) {
-		return b->addr - a->addr;
+	st64 ret = 0;
+	if (a->name && b->name && (ret = strcmp(a->name, b->name))) {
+		return ret;
 	}
-	return ret;
+	return a->addr - b->addr;
 }
 
 RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b) {
-	st64 ret = strcmp(a->classname, b->classname);
-	if (ret) {
+	st64 ret = 0;
+	if ((ret = a->vaddr - b->vaddr)) {
 		return ret;
-	} else if ((ret = strcmp(a->name, b->name))) {
+	} else if ((ret = a->paddr - b->paddr)) {
 		return ret;
-	} else if ((ret = b->vaddr - a->vaddr)) {
+	} else if (a->classname && b->classname && (ret = strcmp(a->classname, b->classname))) {
+		return ret;
+	} else if (a->name && b->name && (ret = strcmp(a->name, b->name))) {
 		return ret;
 	}
-	return b->paddr - a->paddr;
+	return 0;
 }
 
-RZ_IPI int rz_bin_compare_field(RzBinField *a, RzBinField *b) {
+RZ_IPI int rz_bin_compare_class_field(RzBinClassField *a, RzBinClassField *b) {
 	st64 ret = 0;
-	if ((ret = strcmp(a->name, b->name))) {
+	if ((ret = a->vaddr - b->vaddr)) {
 		return ret;
-	} else if ((ret = b->vaddr - a->vaddr)) {
+	} else if ((ret = a->paddr - b->paddr)) {
+		return ret;
+	} else if (a->classname && b->classname && (ret = strcmp(a->classname, b->classname))) {
+		return ret;
+	} else if (a->name && b->name && (ret = strcmp(a->name, b->name))) {
 		return ret;
 	}
-	return b->paddr - a->paddr;
+	return 0;
 }
 
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name, RZ_NULLABLE const char *super, ut64 vaddr) {
@@ -389,16 +395,18 @@ RZ_API RzBinSymbol *rz_bin_object_find_method(RZ_NONNULL RzBinObject *o, RZ_NONN
 
 RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method, ut64 paddr, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(klass) && RZ_STR_ISNOTEMPTY(method), NULL);
-	if (rz_bin_object_find_method(o, klass, method, vaddr)) {
+	RzBinSymbol *symbol = NULL;
+	RzBinClass *c = NULL;
+
+	if ((symbol = rz_bin_object_find_method(o, klass, method, vaddr))) {
+		return symbol;
+	}
+
+	if (!(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
 		return NULL;
 	}
 
-	RzBinClass *c = ht_pp_find(o->name_to_class_object, klass, NULL);
-	if (!c && !(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
-		return NULL;
-	}
-
-	RzBinSymbol *symbol = rz_bin_symbol_new(method, paddr, vaddr);
+	symbol = rz_bin_symbol_new(method, paddr, vaddr);
 	if (!symbol) {
 		return NULL;
 	}
@@ -408,6 +416,7 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 		rz_list_sort(c->methods, (RzListComparator)rz_bin_compare_method);
 	}
 	rz_list_add_sorted(c->methods, symbol, (RzListComparator)rz_bin_compare_method);
+
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method, vaddr);
 	if (key) {
 		ht_pp_insert(o->glue_to_class_method, key, symbol);
@@ -430,24 +439,26 @@ RZ_API RzBinClassField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_N
 
 RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, ut64 paddr, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(klass) && RZ_STR_ISNOTEMPTY(name), NULL);
-	if (rz_bin_object_find_field(o, klass, name, vaddr)) {
+	RzBinClassField *field = NULL;
+	RzBinClass *c = NULL;
+
+	if ((field = rz_bin_object_find_field(o, klass, name, vaddr))) {
+		return field;
+	}
+
+	if (!(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
 		return NULL;
 	}
 
-	RzBinClass *c = ht_pp_find(o->name_to_class_object, klass, NULL);
-	if (!c && !(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
-		return NULL;
-	}
-
-	RzBinClassField *field = rz_bin_class_field_new(paddr, vaddr, name, klass, NULL, NULL);
+	field = rz_bin_class_field_new(paddr, vaddr, name, klass, NULL, NULL);
 	if (!field) {
 		return NULL;
 	}
 
 	if (!c->fields->sorted) {
-		rz_list_sort(c->fields, (RzListComparator)rz_bin_compare_field);
+		rz_list_sort(c->fields, (RzListComparator)rz_bin_compare_class_field);
 	}
-	rz_list_add_sorted(c->fields, field, (RzListComparator)rz_bin_compare_field);
+	rz_list_add_sorted(c->fields, field, (RzListComparator)rz_bin_compare_class_field);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name, vaddr);
 	if (key) {
 		ht_pp_insert(o->glue_to_class_field, key, field);

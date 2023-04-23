@@ -22,7 +22,7 @@ static void process_handle_section(RzBinSection *section, process_section_t *pro
 		return;
 	}
 
-	char *name = rz_str_newf("%s_%08" PFMT64x, section->name, section->vaddr);
+	char *name = rz_str_newf("%s_%08" PFMT64x, section->name, section->paddr);
 	free(section->name);
 	section->name = name;
 }

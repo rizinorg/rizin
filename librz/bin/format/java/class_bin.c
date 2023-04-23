@@ -1995,20 +1995,6 @@ RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin,
 	pj_end(j);
 }
 
-static void bin_class_free(void /*RzBinClass*/ *k) {
-	RzBinClass *bclass = (RzBinClass *)k;
-	if (!bclass) {
-		return;
-	}
-
-	rz_list_free(bclass->methods);
-	rz_list_free(bclass->fields);
-	free(bclass->name);
-	free(bclass->super);
-	free(bclass->visibility_str);
-	free(bclass);
-}
-
 /**
  * \brief Returns a RzList<RzBinClass*> containing only the class of the bin
  */
@@ -2016,7 +2002,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL
 	rz_return_val_if_fail(bin, NULL);
 
 	RzBinClass *bclass = NULL;
-	RzList *list = rz_list_newf(bin_class_free);
+	RzList *list = rz_list_newf((RzListFree)rz_bin_class_free);
 	if (!list) {
 		return NULL;
 	}

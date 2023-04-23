@@ -2047,8 +2047,6 @@ RZ_API bool rz_core_bin_cur_export_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RzCoreBinFilter *filter) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 
-	int bin_demangle = rz_config_get_i(core->config, "bin.demangle");
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	const RzList *imports = rz_bin_object_get_imports(bf->o);
 	RzBinObject *o = bf->o;
@@ -2064,7 +2062,6 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 		}
 
 		char *symname = import->name ? strdup(import->name) : NULL;
-		char *libname = import->libname ? strdup(import->libname) : NULL;
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
 		ut64 addr = sym ? rva(o, sym->paddr, sym->vaddr, va) : UT64_MAX;
 
@@ -2077,22 +2074,6 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 			goto next;
 		}
 
-		if (RZ_STR_ISNOTEMPTY(import->classname)) {
-			char *tmp = rz_str_newf("%s.%s", import->classname, symname);
-			if (tmp) {
-				free(symname);
-				symname = tmp;
-			}
-		}
-
-		if (bin_demangle) {
-			char *dname = rz_bin_demangle(core->bin->cur, NULL, symname, addr, keep_lib);
-			if (dname) {
-				free(symname);
-				symname = dname;
-			}
-		}
-
 		if (core->bin->prefix) {
 			char *prname = rz_str_newf("%s.%s", core->bin->prefix, symname);
 			free(symname);
@@ -2100,7 +2081,7 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("%s%s%s\n", libname ? libname : "", libname ? " " : "", symname);
+			rz_cons_printf("%s%s%s\n", import->libname ? import->libname : "", import->libname ? " " : "", symname);
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
 			rz_cons_println(symname);
@@ -2119,8 +2100,8 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 				pj_ks(state->d.pj, "descriptor", import->descriptor);
 			}
 			pj_ks(state->d.pj, "name", symname);
-			if (libname) {
-				pj_ks(state->d.pj, "libname", libname);
+			if (import->libname) {
+				pj_ks(state->d.pj, "libname", import->libname);
 			}
 			if (addr != UT64_MAX) {
 				pj_kn(state->d.pj, "plt", addr);
@@ -2133,7 +2114,7 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 				addr,
 				import->bind ? import->bind : "NONE",
 				import->type ? import->type : "NONE",
-				libname ? libname : "",
+				import->libname ? import->libname : "",
 				symname);
 			break;
 		default:
@@ -2142,7 +2123,6 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 		}
 	next:
 		RZ_FREE(symname);
-		RZ_FREE(libname);
 	}
 
 	rz_cmd_state_output_array_end(state);
@@ -3774,7 +3754,7 @@ RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL R
 
 	RzListIter *iter, *iter2;
 	RzBinClass *c;
-	RzBinField *f;
+	RzBinClassField *f;
 	int m = 0;
 
 	const RzList *cs = rz_bin_object_get_classes(bf->o);

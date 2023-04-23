@@ -189,12 +189,6 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBi
 	sym->name = strdup(read_name);
 }
 
-static int sort_by_offset(const void *_a, const void *_b) {
-	RzBinField *a = (RzBinField *)_a;
-	RzBinField *b = (RzBinField *)_b;
-	return a->offset - b->offset;
-}
-
 static bool read_sivarlist(struct MACH0_(SIVarList) * il, RzBuffer *buf, ut64 base, bool bigendian) {
 	ut64 offset = base;
 	return rz_buf_read_ble32_offset(buf, &offset, &il->entsize, bigendian) &&
@@ -250,7 +244,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		if (!r) {
 			return;
 		}
-		field = RZ_NEW0(RzBinClassField);
+		field = rz_bin_class_field_new(UT64_MAX, UT64_MAX, NULL, klass->name, NULL, NULL);
 		memset(&i, '\0', sizeof(struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof(struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -306,8 +300,8 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 				}
 				name[name_len] = 0;
 			}
-			// XXX the field name shouldnt contain the class name
-			field->name = rz_str_newf("%s::%s%s", klass->name, "(ivar)", name);
+
+			field->name = rz_str_newf("%s::(ivar)%s", klass->name, name);
 			RZ_FREE(name);
 		}
 
@@ -339,7 +333,6 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 			} else {
 				field->type = NULL;
 			}
-			field->classname = rz_str_new(klass->name);
 			rz_list_append(klass->fields, field);
 		} else {
 			goto error;
@@ -347,13 +340,8 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		p += sizeof(struct MACH0_(SIVar));
 		offset += sizeof(struct MACH0_(SIVar));
 	}
-	if (!rz_list_empty(klass->fields)) {
-		rz_list_sort(klass->fields, sort_by_offset);
-	}
-	RzBinClassField *isa_field = RZ_NEW0(RzBinClassField);
-	isa_field->name = strdup("isa");
-	isa_field->classname = rz_str_new(klass->name);
-	isa_field->type = strdup("struct objc_class *");
+
+	RzBinClassField *isa_field = rz_bin_class_field_new(UT64_MAX, UT64_MAX, "isa", klass->name, NULL, "struct objc_class *");
 	rz_list_prepend(klass->fields, isa_field);
 	return;
 error:
@@ -369,7 +357,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 	char *name = NULL;
 	int len;
 	bool bigendian;
-	RzBinField *property = NULL;
+	RzBinClassField *property = NULL;
 	ut8 sopl[sizeof(struct MACH0_(SObjcPropertyList))] = { 0 };
 	ut8 sop[sizeof(struct MACH0_(SObjcProperty))] = { 0 };
 
@@ -414,7 +402,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 			return;
 		}
 
-		if (!(property = RZ_NEW0(RzBinField))) {
+		if (!(property = rz_bin_class_field_new(UT64_MAX, UT64_MAX, NULL, klass->name, NULL, NULL))) {
 			return;
 		}
 
@@ -464,8 +452,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 					goto error;
 				}
 			}
-			property->name = rz_str_newf("%s::%s%s", klass->name,
-				"(property)", name);
+			property->name = rz_str_newf("%s::(property)%s", klass->name, name);
 			RZ_FREE(name);
 		}
 #if 0
@@ -496,7 +483,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 	}
 	return;
 error:
-	RZ_FREE(property);
+	rz_bin_class_field_free(property);
 	RZ_FREE(name);
 	return;
 }
@@ -835,7 +822,7 @@ static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 				}
 				name[name_len] = 0;
 			}
-			class_name = rz_str_newf("%s::%s%s", klass->name, "(protocol)", name);
+			class_name = rz_str_newf("%s::(protocol)%s", klass->name, name);
 			RZ_FREE(name);
 		}
 

@@ -979,7 +979,7 @@ RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const cha
 		return NULL;
 	}
 
-	ptr->vaddr = vaddr;
+	ptr->vaddr = vaddr ? vaddr : UT64_MAX;
 	ptr->paddr = paddr;
 	ptr->name = rz_str_new(name);
 	ptr->classname = rz_str_new(classname);

@@ -81,13 +81,6 @@ static void process_handle_symbol(RzBinSymbol *symbol, process_symbol_ctx_t *pro
 		}
 	}
 
-	if (symbol->classname) {
-		rz_th_lock_enter(process->lang_lock);
-		rz_bin_object_add_class(obj, symbol->classname, NULL, symbol->vaddr);
-		rz_th_lock_leave(process->lang_lock);
-		return;
-	}
-
 	// demangle the symbol
 	if (!rz_bin_demangle_symbol(symbol, process->plugin) ||
 		!process->language) {

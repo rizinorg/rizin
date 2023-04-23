@@ -1025,7 +1025,6 @@ static RzBinClassField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *e
 	field->visibility_str = rz_bin_dex_access_flags_readable(access_flags);
 	char *mangled = dex_resolve_type_id(dex, field_id->class_idx);
 	set_lib_and_class_name(mangled, &field->classname, &field->libname);
-	free(mangled);
 	field->name = dex_resolve_string_id(dex, field_id->name_idx);
 	field->type = demangle_java_and_free(dex_resolve_type_id(dex, field_id->type_idx));
 	field->flags = dex_access_flags_to_bin_flags(access_flags);
@@ -1141,18 +1140,6 @@ static RzList /*<RzBinSymbol *>*/ *dex_resolve_fields_in_class_as_symbols(RzBinD
 	return fields;
 }
 
-static void free_rz_bin_class(RzBinClass *bclass) {
-	if (!bclass) {
-		return;
-	}
-	rz_list_free(bclass->methods);
-	rz_list_free(bclass->fields);
-	free(bclass->name);
-	free(bclass->super);
-	free(bclass->visibility_str);
-	free(bclass);
-}
-
 /**
  * \brief Returns a RzList<RzBinClass*> containing the dex classes
  */
@@ -1175,7 +1162,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		return NULL;
 	}
 
-	classes = rz_list_newf((RzListFree)free_rz_bin_class);
+	classes = rz_list_newf((RzListFree)rz_bin_class_free);
 	if (!classes) {
 		free(inserted_fields);
 		free(inserted_methods);
@@ -1198,7 +1185,7 @@ RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex 
 		bclass->fields = dex_resolve_fields_in_class(dex, class_def, inserted_fields);
 
 		if (!rz_list_append(classes, bclass)) {
-			free_rz_bin_class(bclass);
+			rz_bin_class_free(bclass);
 			break;
 		}
 	}

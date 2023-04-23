@@ -66,7 +66,7 @@ static void process_handle_class(RzBinClass *klass, process_class_ctx_t *ctx) {
 	}
 
 	rz_list_sort(klass->methods, (RzListComparator)rz_bin_compare_method);
-	rz_list_sort(klass->fields, (RzListComparator)rz_bin_compare_field);
+	rz_list_sort(klass->fields, (RzListComparator)rz_bin_compare_class_field);
 }
 
 static void set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
@@ -78,7 +78,7 @@ static void set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
 		!plugin->classes || !(o->classes = plugin->classes(bf))) {
 		o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
 	}
-	rz_warn_if_fail(o->classes->free == (RzListFree)rz_bin_class_free);
+	rz_warn_if_fail(o->classes->free);
 
 	ht_pp_free(o->name_to_class_object);
 	ht_pp_free(o->glue_to_class_method);

@@ -174,8 +174,8 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RzBinFile *bf, RzBinObject *o) {
 
 	// now we can process the data.
 	const RzDemanglerPlugin *plugin = process_get_demangler_plugin_from_lang(bf, o->lang);
-	process_imports(bf, o, plugin);
 	process_symbols(bf, o, plugin);
+	process_imports(bf, o, plugin);
 	set_and_process_relocs(bf, o, plugin);
 
 	return true;
