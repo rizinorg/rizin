@@ -219,7 +219,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	int len;
 	bool bigendian;
 	mach0_ut ivar_offset;
-	RzBinField *field = NULL;
+	RzBinClassField *field = NULL;
 	ut8 offs[sizeof(mach0_ut)] = { 0 };
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
@@ -250,7 +250,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 		if (!r) {
 			return;
 		}
-		field = RZ_NEW0(RzBinField);
+		field = RZ_NEW0(RzBinClassField);
 		memset(&i, '\0', sizeof(struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof(struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -280,7 +280,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 				goto error;
 			}
 			ivar_offset = rz_read_ble(offs, bigendian, 8 * sizeof(mach0_ut));
-			field->offset = ivar_offset;
+			field->paddr = ivar_offset;
 		}
 		r = va2pa(i.name, NULL, &left, bf);
 		if (r) {
@@ -339,6 +339,7 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 			} else {
 				field->type = NULL;
 			}
+			field->classname = rz_str_new(klass->name);
 			rz_list_append(klass->fields, field);
 		} else {
 			goto error;
@@ -349,16 +350,14 @@ static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinClass
 	if (!rz_list_empty(klass->fields)) {
 		rz_list_sort(klass->fields, sort_by_offset);
 	}
-	RzBinField *isa_field = RZ_NEW0(RzBinField);
+	RzBinClassField *isa_field = RZ_NEW0(RzBinClassField);
 	isa_field->name = strdup("isa");
-	isa_field->size = sizeof(mach0_ut);
+	isa_field->classname = rz_str_new(klass->name);
 	isa_field->type = strdup("struct objc_class *");
-	isa_field->vaddr = 0;
-	isa_field->offset = 0;
 	rz_list_prepend(klass->fields, isa_field);
 	return;
 error:
-	rz_bin_field_free(field);
+	rz_bin_class_field_free(field);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1304,12 +1303,12 @@ RZ_API RzList /*<RzBinClass *>*/ *MACH0_(parse_classes)(RzBinFile *bf, objc_cach
 			// RZ_LOG_ERROR("RzBinClass allocation error\n");
 			goto get_classes_error;
 		}
-		if (!(klass->methods = rz_list_new())) {
+		if (!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 			// retain just for debug
 			// RZ_LOG_ERROR("RzList<RzBinField> allocation error\n");
 			goto get_classes_error;
 		}
-		if (!(klass->fields = rz_list_new())) {
+		if (!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
 			// retain just for debug
 			// RZ_LOG_ERROR("RzList<RzBinSymbol> allocation error\n");
 			goto get_classes_error;
@@ -1396,11 +1395,11 @@ static RzList /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzBuff
 		if (!(klass = RZ_NEW0(RzBinClass))) {
 			goto error;
 		}
-		if (!(klass->methods = rz_list_new())) {
+		if (!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 			RZ_FREE(klass);
 			goto error;
 		}
-		if (!(klass->fields = rz_list_new())) {
+		if (!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
 			RZ_FREE(klass);
 			goto error;
 		}

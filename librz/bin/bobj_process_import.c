@@ -4,20 +4,29 @@
 
 typedef struct process_import_ctx_s {
 	RzBinObject *object;
-	ProcessDemangle demangle;
 	ProcessLanguage language;
 	const RzDemanglerPlugin *plugin;
 	RzThreadLock *lang_lock;
 } process_import_ctx_t;
 
+static void process_rust_import(RzBinObject *o, RzBinImport *import) {
+	if (!import->type) {
+		return;
+	}
+	bool is_method = !strcmp(import->type, RZ_BIN_TYPE_FUNC_STR) ||
+		!strcmp(import->type, RZ_BIN_TYPE_IFACE_STR) ||
+		!strcmp(import->type, RZ_BIN_TYPE_METH_STR);
+	process_rust(o, import->name, UT64_MAX, UT64_MAX, is_method);
+}
+
 static void process_cxx_import(RzBinObject *o, RzBinImport *import) {
-	process_cxx(o, import->name, 0, UT64_MAX, UT64_MAX);
+	process_cxx(o, import->name, UT64_MAX, UT64_MAX);
 }
 
 static ProcessLanguage process_language_import(RzBinObject *o) {
 	switch (o->lang) {
 	case RZ_BIN_LANGUAGE_RUST:
-		/* fall-thru */
+		return (ProcessLanguage)process_rust_import;
 	case RZ_BIN_LANGUAGE_CXX:
 		return (ProcessLanguage)process_cxx_import;
 	default:
@@ -29,7 +38,7 @@ static void process_handle_import(RzBinImport *import, process_import_ctx_t *pro
 	RzBinObject *obj = process->object;
 
 	// demangle the import
-	if (!process->demangle(import, process->plugin) ||
+	if (!rz_bin_demangle_import(import, process->plugin) ||
 		!process->language) {
 		return;
 	}
@@ -49,8 +58,7 @@ static void process_imports(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlug
 
 	process_import_ctx_t context = {
 		.object = o,
-		.language = (ProcessLanguage)process_language_import(o),
-		.demangle = (ProcessDemangle)rz_bin_demangle_import,
+		.language = process_language_import(o),
 		.plugin = plugin,
 		.lang_lock = rz_th_lock_new(true),
 	};

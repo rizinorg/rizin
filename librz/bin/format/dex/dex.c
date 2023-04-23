@@ -1054,7 +1054,7 @@ static RzList /*<RzBinClassField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex
 
 		RzBinClassField *field = dex_field_to_bin_field(dex, encoded_field, field_id, true);
 		if (!field || !rz_list_append(fields, field)) {
-			rz_bin_field_free(field);
+			rz_bin_class_field_free(field);
 			break;
 		}
 	}
@@ -1071,7 +1071,7 @@ static RzList /*<RzBinClassField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex
 
 		RzBinClassField *field = dex_field_to_bin_field(dex, encoded_field, field_id, false);
 		if (!field || !rz_list_append(fields, field)) {
-			rz_bin_field_free(field);
+			rz_bin_class_field_free(field);
 			break;
 		}
 	}
@@ -1269,7 +1269,7 @@ RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBin
 		return NULL;
 	}
 
-	fields = rz_list_newf((RzListFree)rz_bin_field_free);
+	fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	if (!fields) {
 		free(inserted);
 		return NULL;

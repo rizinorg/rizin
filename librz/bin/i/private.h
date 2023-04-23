@@ -37,7 +37,6 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
 
 RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin);
 RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin);
-RZ_IPI bool rz_bin_demangle_reloc(RzBinReloc *reloc, const RzDemanglerPlugin *plugin);
 
 RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b);
 RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b);

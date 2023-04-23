@@ -36,7 +36,7 @@ static const char *get_mangled_name(const char *mangled) {
 #undef skip_prefix_n
 
 RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin) {
-	if (bsym->dname) {
+	if (!plugin || bsym->dname) {
 		return false;
 	}
 
@@ -50,6 +50,10 @@ RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *p
 }
 
 RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin) {
+	if (!plugin) {
+		return false;
+	}
+
 	const char *mangled = get_mangled_name(import->name);
 	if (!mangled) {
 		return false;
@@ -63,15 +67,4 @@ RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin 
 	free(import->name);
 	import->name = demangled;
 	return true;
-}
-
-RZ_IPI bool rz_bin_demangle_reloc(RzBinReloc *reloc, const RzDemanglerPlugin *plugin) {
-	bool res = false;
-	if (reloc->import) {
-		res |= rz_bin_demangle_import(reloc->import, plugin) ? 1 : 0;
-	}
-	if (reloc->symbol) {
-		res |= rz_bin_demangle_symbol(reloc->symbol, plugin) ? 1 : 0;
-	}
-	return res;
 }

@@ -496,7 +496,7 @@ RZ_API RzBinField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_NONNUL
 	return sym;
 }
 
-RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, int size, ut64 paddr, ut64 vaddr) {
+RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, ut64 paddr, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(klass) && RZ_STR_ISNOTEMPTY(name), NULL);
 	if (rz_bin_object_find_field(o, klass, name, vaddr)) {
 		return NULL;
@@ -507,7 +507,7 @@ RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, 
 		return NULL;
 	}
 
-	RzBinField *field = rz_bin_field_new(paddr, vaddr, size, name, NULL, NULL, false);
+	RzBinClassField *field = rz_bin_class_field_new(paddr, vaddr, name, klass, NULL, NULL);
 	if (!field) {
 		return NULL;
 	}

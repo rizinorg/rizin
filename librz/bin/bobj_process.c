@@ -6,7 +6,6 @@
 #include <rz_th.h>
 #include "i/private.h"
 
-typedef bool (*ProcessDemangle)(void *element, const void *user);
 typedef void (*ProcessLanguage)(RzBinObject *o, const void *user);
 
 static const RzDemanglerPlugin *process_get_demangler_plugin_from_lang(RzBinFile *bf, RzBinLanguage language) {
@@ -18,8 +17,31 @@ static const RzDemanglerPlugin *process_get_demangler_plugin_from_lang(RzBinFile
 	return rz_demangler_plugin_get(bf->rbin->demangler, lang_s);
 }
 
-static void process_cxx(RzBinObject *o, char *demangled, int size, ut64 paddr, ut64 vaddr) {
-	if (strstr(demangled, " for ")) {
+static void process_rust(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr, bool is_method) {
+	// find where to split symbol.
+	char *str = demangled;
+	char *ptr = NULL;
+	char *name = NULL;
+	while ((ptr = strstr(str, "::"))) {
+		name = ptr;
+		str = ptr + 2;
+	}
+
+	if (RZ_STR_ISEMPTY(name + 2)) {
+		return;
+	}
+
+	*name = 0;
+	if (is_method) {
+		rz_bin_object_add_method(o, demangled, name + 2, paddr, vaddr);
+	} else {
+		rz_bin_object_add_field(o, demangled, name + 2, paddr, vaddr);
+	}
+	*name = ':';
+}
+
+static void process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr) {
+	if (strstr(demangled, " for ") || strstr(demangled, " to ")) {
 		/* these symbols are not fields nor methods. */
 		return;
 	}
@@ -44,7 +66,7 @@ static void process_cxx(RzBinObject *o, char *demangled, int size, ut64 paddr, u
 		str = ptr + 2;
 	}
 
-	if (RZ_STR_ISEMPTY(name)) {
+	if (RZ_STR_ISEMPTY(name + 2)) {
 		return;
 	}
 
@@ -52,7 +74,7 @@ static void process_cxx(RzBinObject *o, char *demangled, int size, ut64 paddr, u
 	if (is_method) {
 		rz_bin_object_add_method(o, demangled, name + 2, paddr, vaddr);
 	} else {
-		rz_bin_object_add_field(o, demangled, name + 2, size, paddr, vaddr);
+		rz_bin_object_add_field(o, demangled, name + 2, paddr, vaddr);
 	}
 	*name = ':';
 }
@@ -85,14 +107,14 @@ static char *get_swift_field(const char *demangled, const char *classname) {
 	return NULL;
 }
 
-static void process_swift(RzBinObject *o, char *classname, char *demangled, int size, ut64 paddr, ut64 vaddr) {
+static void process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
 	if (!classname) {
 		return;
 	}
 
 	char *name = get_swift_field(demangled, classname);
 	if (name) {
-		rz_bin_object_add_field(o, classname, name, size, paddr, vaddr);
+		rz_bin_object_add_field(o, classname, name, paddr, vaddr);
 		free(name);
 		return;
 	}
@@ -111,55 +133,16 @@ static void process_swift(RzBinObject *o, char *classname, char *demangled, int 
 }
 #endif /* WITH_SWIFT_DEMANGLER */
 
-#if 0
-RZ_IPI void rz_bin_demangle_relocs(RzBinFile *bf, const RzBinRelocStorage *storage, RzBinLanguage lang) {
-	if (!storage || !bf || !bf->rbin) {
-		return;
-	}
-
-	lang = RZ_BIN_LANGUAGE_MASK(lang);
-	size_t count = storage->relocs_count + storage->target_relocs_count;
-	if (!bf || !bf->rbin || count < 1 || lang == RZ_BIN_LANGUAGE_UNKNOWN) {
-		return;
-	}
-
-	const RzDemanglerPlugin *plugin = NULL;
-	const char *language = rz_bin_language_to_string(lang);
-	if (!language) {
-		return;
-	}
-
-	// optimize by excluding langs which doesn't demangle.
-	plugin = rz_demangler_plugin_get(bf->rbin->demangler, language);
-	if (!plugin) {
-		RZ_LOG_INFO("bin: there are no available demanglers for '%s'\n", language);
-		return;
-	}
-
-	RzPVector pvec = { 0 };
-	pvec.v.elem_size = sizeof(void *);
-	pvec.v.capacity = 0;
-
-	pvec.v.a = (void *)storage->relocs;
-	pvec.v.len = storage->relocs_count;
-	rz_th_iterate_pvector(&pvec, (RzThreadIterator)demangle_reloc, RZ_THREAD_POOL_ALL_CORES, plugin);
-
-	pvec.v.a = (void *)storage->target_relocs;
-	pvec.v.len = storage->target_relocs_count;
-	rz_th_iterate_pvector(&pvec, (RzThreadIterator)demangle_reloc, RZ_THREAD_POOL_ALL_CORES, plugin);
-}
-#endif
-
 #include "bobj_process_class.c"
 #include "bobj_process_entry.c"
 #include "bobj_process_field.c"
 #include "bobj_process_file.c"
 #include "bobj_process_import.c"
 #include "bobj_process_map.c"
-#include "bobj_process_reloc.c"
 #include "bobj_process_section.c"
 #include "bobj_process_string.c"
 #include "bobj_process_symbol.c"
+#include "bobj_process_reloc.c"
 
 RZ_IPI bool rz_bin_object_process_plugin_data(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && bf->rbin && o && o->plugin, false);
@@ -170,7 +153,6 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RzBinFile *bf, RzBinObject *o) {
 	set_imports(bf, o);
 	set_symbols(bf, o);
 	set_and_process_sections(bf, o);
-	set_and_process_relocs(bf, o);
 	set_and_process_strings(bf, o);
 	set_and_process_fields(bf, o);
 	set_and_process_classes(bf, o);
@@ -195,6 +177,7 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RzBinFile *bf, RzBinObject *o) {
 	const RzDemanglerPlugin *plugin = process_get_demangler_plugin_from_lang(bf, o->lang);
 	process_imports(bf, o, plugin);
 	process_symbols(bf, o, plugin);
+	set_and_process_relocs(bf, o, plugin);
 
 	return true;
 }

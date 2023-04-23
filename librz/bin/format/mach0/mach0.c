@@ -2274,7 +2274,7 @@ RzList /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
 RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bin->sections_cache) {
-		return bin->sections_cache;
+		return rz_list_clone(bin->sections_cache);
 	}
 	RzList *list = rz_list_newf((RzListFree)rz_bin_section_free);
 	size_t i, j;
@@ -2348,7 +2348,7 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 		}
 	}
 	bin->sections_cache = list;
-	return list;
+	return rz_list_clone(list);
 }
 
 char *MACH0_(section_type_to_string)(ut64 type) {

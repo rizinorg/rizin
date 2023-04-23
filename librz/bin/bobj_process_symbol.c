@@ -4,7 +4,6 @@
 
 typedef struct process_symbol_ctx_s {
 	RzBinObject *object;
-	ProcessDemangle demangle;
 	ProcessLanguage language;
 	const RzDemanglerPlugin *plugin;
 	RzThreadHtPP *imports;
@@ -30,21 +29,31 @@ static void process_objc_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	}
 }
 
+static void process_rust_symbol(RzBinObject *o, RzBinSymbol *symbol) {
+	if (!symbol->type) {
+		return;
+	}
+	bool is_method = !strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR) ||
+		!strcmp(symbol->type, RZ_BIN_TYPE_IFACE_STR) ||
+		!strcmp(symbol->type, RZ_BIN_TYPE_METH_STR);
+	process_rust(o, symbol->dname, symbol->paddr, symbol->vaddr, is_method);
+}
+
 static void process_cxx_symbol(RzBinObject *o, RzBinSymbol *symbol) {
-	process_cxx(o, symbol->dname, symbol->size, symbol->paddr, symbol->vaddr);
+	process_cxx(o, symbol->dname, symbol->paddr, symbol->vaddr);
 }
 
 #if WITH_SWIFT_DEMANGLER
 // this process function does not work with the Apple demangler.
 static void process_swift_symbol(RzBinObject *o, RzBinSymbol *symbol) {
-	process_swift(o, symbol->classname, symbol->dname, symbol->size, symbol->paddr, symbol->vaddr);
+	process_swift(o, symbol->classname, symbol->dname, symbol->paddr, symbol->vaddr);
 }
 #endif
 
 static ProcessLanguage process_language_symbol(RzBinObject *o) {
 	switch (o->lang) {
 	case RZ_BIN_LANGUAGE_RUST:
-		/* fall-thru */
+		return (ProcessLanguage)process_rust_symbol;
 	case RZ_BIN_LANGUAGE_CXX:
 		return (ProcessLanguage)process_cxx_symbol;
 	case RZ_BIN_LANGUAGE_OBJC:
@@ -72,9 +81,15 @@ static void process_handle_symbol(RzBinSymbol *symbol, process_symbol_ctx_t *pro
 		}
 	}
 
+	if (symbol->classname) {
+		rz_th_lock_enter(process->lang_lock);
+		rz_bin_object_add_class(obj, symbol->classname, NULL, symbol->vaddr);
+		rz_th_lock_leave(process->lang_lock);
+		return;
+	}
+
 	// demangle the symbol
-	if (!process->plugin ||
-		!process->demangle(symbol, process->plugin) ||
+	if (!rz_bin_demangle_symbol(symbol, process->plugin) ||
 		!process->language) {
 		return;
 	}
@@ -94,8 +109,7 @@ static void process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlug
 
 	process_symbol_ctx_t context = {
 		.object = o,
-		.language = (ProcessLanguage)process_language_symbol(o),
-		.demangle = (ProcessDemangle)rz_bin_demangle_symbol,
+		.language = process_language_symbol(o),
 		.plugin = plugin,
 		.imports = rz_th_ht_pp_new0(),
 		.lang_lock = rz_th_lock_new(true),
@@ -119,7 +133,7 @@ static void set_symbols(RzBinFile *bf, RzBinObject *o) {
 	RzBinPlugin *plugin = o->plugin;
 
 	rz_list_free(o->symbols);
-	if (!plugin->symbols || !(o->symbols = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
-		o->symbols = plugin->symbols(bf);
+	if (!plugin->symbols || !(o->symbols = plugin->symbols(bf))) {
+		o->symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	}
 }
