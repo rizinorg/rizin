@@ -120,6 +120,10 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 			} else if (!strncmp(name, "objc_", 5)) {
 				is_objc = true;
 			}
+			if (is_blocks && is_objc) {
+				// avoid looping if both are set.
+				break;
+			}
 		}
 	}
 	rz_list_foreach (o->libs, iter, lib) {

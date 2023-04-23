@@ -115,15 +115,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return list;
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
-	if (!jclass) {
-		return NULL;
-	}
-
-	return rz_bin_java_class_fields_as_binfields(jclass);
-}
-
 static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
@@ -208,7 +199,6 @@ RzBinPlugin rz_bin_plugin_java = {
 	.strings = &strings,
 	.enrich_asm = &enrich_asm,
 	.info = &info,
-	.fields = fields,
 	.libs = libs,
 	.classes = classes,
 	.demangle_type = demangle_type,

@@ -86,7 +86,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(R
 RZ_API void rz_bin_java_class_methods_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_bin_java_class_methods_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
-RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API void rz_bin_java_class_fields_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_bin_java_class_fields_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJavaClass *bin);

@@ -8,6 +8,8 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
+#define RZ_BIN_FMT_CLASS_HT_GLUE "%s#%s#%" PFMT64x
+
 RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int fd, const char *xtrname, bool steal_ptr);
 RZ_IPI RzBinObject *rz_bin_file_object_find_by_id(RzBinFile *binfile, ut32 binobj_id);
 RZ_IPI RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
@@ -26,7 +28,7 @@ RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
 RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
-RZ_IPI bool rz_bin_object_process_data(RzBinFile *bf, RzBinObject *o);
+RZ_IPI bool rz_bin_object_process_plugin_data(RzBinFile *bf, RzBinObject *o);
 
 RZ_IPI void rz_bin_class_free(RzBinClass *k);
 
@@ -36,6 +38,10 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
 RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin);
 RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin);
 RZ_IPI bool rz_bin_demangle_reloc(RzBinReloc *reloc, const RzDemanglerPlugin *plugin);
+
+RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b);
+RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b);
+RZ_IPI int rz_bin_compare_field(RzBinField *a, RzBinField *b);
 
 struct rz_bin_string_database_t {
 	RzList /*<RzBinString *>*/ *list; ///< Contains all the strings in list form

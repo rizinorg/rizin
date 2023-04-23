@@ -3499,7 +3499,7 @@ static inline bool is_known_namespace(const char *string) {
 #define CXX_BIN_VISIBILITY_FLAGS (RZ_BIN_METH_PUBLIC | RZ_BIN_METH_PRIVATE | RZ_BIN_METH_PROTECTED)
 static void classdump_cpp(RzCore *r, RzBinClass *c) {
 	RzListIter *iter;
-	RzBinField *f;
+	RzBinClassField *f;
 	RzBinSymbol *sym;
 	ut64 used = UT64_MAX;
 	bool has_methods = false;
@@ -3620,7 +3620,7 @@ static inline const char *resolve_java_visibility(const char *v) {
 }
 
 static void classdump_java(RzCore *r, RzBinClass *c) {
-	RzBinField *f;
+	RzBinClassField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
 	bool simplify = false;
@@ -3679,7 +3679,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	RzListIter *iter2;
 	RzBinFile *bf = rz_bin_cur(r->bin);
-	RzBinField *f;
+	RzBinClassField *f;
 	RzBinSymbol *sym;
 
 	// class
@@ -4664,7 +4664,7 @@ RZ_API RZ_OWN char *rz_core_bin_method_build_flag_name(RZ_NONNULL RzBinClass *cl
  * \brief Returns the flag name of a class field
  *
  **/
-RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinField *field) {
+RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinClassField *field) {
 	rz_return_val_if_fail(cls && field, NULL);
 	if (!cls->name || !field->name) {
 		return NULL;

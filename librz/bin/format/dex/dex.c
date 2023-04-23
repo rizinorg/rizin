@@ -1008,8 +1008,8 @@ static RzList /*<RzBinSymbol *>*/ *dex_resolve_methods_in_class(RzBinDex *dex, D
 	return methods;
 }
 
-static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encoded_field, DexFieldId *field_id, bool is_static) {
-	RzBinField *field = RZ_NEW0(RzBinField);
+static RzBinClassField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encoded_field, DexFieldId *field_id, bool is_static) {
+	RzBinClassField *field = RZ_NEW0(RzBinClassField);
 	if (!field) {
 		return NULL;
 	}
@@ -1023,6 +1023,9 @@ static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encode
 	field->paddr = encoded_field->offset;
 	field->visibility = encoded_field->access_flags & UT32_MAX;
 	field->visibility_str = rz_bin_dex_access_flags_readable(access_flags);
+	char *mangled = dex_resolve_type_id(dex, field_id->class_idx);
+	set_lib_and_class_name(mangled, &field->classname, &field->libname);
+	free(mangled);
 	field->name = dex_resolve_string_id(dex, field_id->name_idx);
 	field->type = demangle_java_and_free(dex_resolve_type_id(dex, field_id->type_idx));
 	field->flags = dex_access_flags_to_bin_flags(access_flags);
@@ -1030,8 +1033,8 @@ static RzBinField *dex_field_to_bin_field(RzBinDex *dex, DexEncodedField *encode
 	return field;
 }
 
-static RzList /*<RzBinField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
-	RzList *fields = rz_list_newf((RzListFree)rz_bin_field_free);
+static RzList /*<RzBinClassField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex, DexClassDef *class_def, ut8 *inserted) {
+	RzList *fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	if (!fields) {
 		return NULL;
 	}
@@ -1049,7 +1052,7 @@ static RzList /*<RzBinField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex, Dex
 		inserted[encoded_field->field_idx] = true;
 		field_id = (DexFieldId *)rz_pvector_at(dex->field_ids, encoded_field->field_idx);
 
-		RzBinField *field = dex_field_to_bin_field(dex, encoded_field, field_id, true);
+		RzBinClassField *field = dex_field_to_bin_field(dex, encoded_field, field_id, true);
 		if (!field || !rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
 			break;
@@ -1066,7 +1069,7 @@ static RzList /*<RzBinField *>*/ *dex_resolve_fields_in_class(RzBinDex *dex, Dex
 		inserted[encoded_field->field_idx] = true;
 		field_id = (DexFieldId *)rz_pvector_at(dex->field_ids, encoded_field->field_idx);
 
-		RzBinField *field = dex_field_to_bin_field(dex, encoded_field, field_id, false);
+		RzBinClassField *field = dex_field_to_bin_field(dex, encoded_field, field_id, false);
 		if (!field || !rz_list_append(fields, field)) {
 			rz_bin_field_free(field);
 			break;
@@ -1251,9 +1254,9 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinD
 }
 
 /**
- * \brief Returns a RzList<RzBinField*> containing the dex fields
+ * \brief Returns a RzList<RzBinClassField*> containing the dex fields
  */
-RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex) {
+RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 
 	DexClassDef *class_def;

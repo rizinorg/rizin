@@ -1307,12 +1307,12 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ
 }
 
 /**
- * \brief Returns a RzList<RzBinField*> containing the class fields
+ * \brief Returns a RzList<RzBinClassField*> containing the class fields
  */
-RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
+RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf((RzListFree)rz_bin_field_free);
+	RzList *list = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	if (!list) {
 		return NULL;
 	}
@@ -1334,11 +1334,14 @@ RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(R
 			if (!name) {
 				continue;
 			}
-			RzBinField *bf = rz_bin_field_new(field->offset, field->offset, 0, name, NULL, NULL, false);
+
+			char *ftype = demangle_java_and_free(java_class_constant_pool_stringify_at(bin, field->descriptor_index));
+			RzBinClassField *bf = rz_bin_class_field_new(field->offset, field->offset, name, NULL, NULL, ftype);
+			free(ftype);
 			if (bf) {
+				set_lib_and_class_name(rz_bin_java_class_name(bin), &bf->classname, &bf->libname);
 				bf->visibility = field->access_flags;
 				bf->flags = java_access_flags_to_bin_flags(field->access_flags);
-				bf->type = demangle_java_and_free(java_class_constant_pool_stringify_at(bin, field->descriptor_index));
 				rz_list_append(list, bf);
 			}
 			free(name);

@@ -1,5 +1,6 @@
+
 // SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2020-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_TH_H
@@ -12,6 +13,7 @@
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_vector.h>
+#include <rz_util/rz_th_ht.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,10 +90,10 @@ RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE const void *user);
 RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector *pvec, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE const void *user);
 
-#endif
+#endif /* RZ_API */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* RZ_TH_H */

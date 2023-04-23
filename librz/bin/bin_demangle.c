@@ -50,10 +50,6 @@ RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *p
 }
 
 RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin) {
-	if (!import->name) {
-		return false;
-	}
-
 	const char *mangled = get_mangled_name(import->name);
 	if (!mangled) {
 		return false;

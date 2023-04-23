@@ -281,9 +281,10 @@ typedef struct rz_bin_object_t {
 	RzBinRelocStorage *relocs;
 	RzBinStrDb *strings;
 	RzList /*<RzBinClass *>*/ *classes;
-	HtPP *classes_ht;
-	HtPP *methods_ht;
-	HtPP *fields_ht;
+	HtPP *name_to_class_object; ///< map[char *]RzBinClass
+	HtPP *glue_to_class_method; ///< map[char *]RzBinSymbol
+	HtPP *glue_to_class_field; ///< map[char *]RzBinClassField
+	HtUP *vaddr_to_class_method; ///< map[ut64]RzBinSymbol
 	RzBinSourceLineInfo *lines;
 	RzList /*<RzBinMem *>*/ *mem;
 	char *regstate;
@@ -292,7 +293,6 @@ typedef struct rz_bin_object_t {
 	struct rz_bin_plugin_t *plugin;
 	RzBinLanguage lang;
 	RZ_DEPRECATE RZ_BORROW Sdb *kv; ///< deprecated, put info in C structures instead of this (holds a copy of another pointer.)
-	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
 
@@ -654,7 +654,7 @@ typedef struct rz_bin_class_t {
 	char *visibility_str; // XXX only used by java
 	ut64 addr;
 	RzList /*<RzBinSymbol *>*/ *methods;
-	RzList /*<RzBinField *>*/ *fields;
+	RzList /*<RzBinClassField *>*/ *fields;
 	// RzList *interfaces; // <char *>
 	int visibility;
 } RzBinClass;
@@ -765,10 +765,8 @@ typedef struct rz_bin_field_t {
 	ut64 paddr;
 	int size;
 	int offset;
-	ut32 visibility;
 	char *name;
 	char *type;
-	char *visibility_str;
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
@@ -777,6 +775,21 @@ typedef struct rz_bin_field_t {
 
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
 RZ_API void rz_bin_field_free(RzBinField *field);
+
+typedef struct rz_bin_class_field_t {
+	ut64 vaddr;
+	ut64 paddr;
+	char *name;
+	char *classname;
+	char *libname;
+	char *type;
+	ut32 visibility;
+	char *visibility_str;
+	ut64 flags;
+} RzBinClassField;
+
+RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type);
+RZ_API void rz_bin_class_field_free(RzBinClassField *field);
 
 typedef struct rz_bin_mem_t {
 	char *name;
@@ -977,7 +990,7 @@ RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
 RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
 
 // binobject functions
-RZ_API bool rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
+RZ_API bool rz_bin_object_reload(RzBinFile *binfile, RzBinObject *o);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);

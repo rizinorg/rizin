@@ -180,25 +180,25 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 		return;
 	}
 	free(o->regstate);
+	ht_pp_free(o->glue_to_class_field);
+	ht_pp_free(o->glue_to_class_method);
+	ht_pp_free(o->name_to_class_object);
+	ht_pp_free(o->import_name_symbols);
+	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
-	ht_up_free(o->addrzklassmethod);
+	rz_bin_reloc_storage_free(o->relocs);
+	rz_bin_source_line_info_free(o->lines);
+	rz_bin_string_database_free(o->strings);
+	rz_list_free(o->classes);
 	rz_list_free(o->entries);
-	rz_list_free(o->maps);
-	rz_list_free(o->vfiles);
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
 	rz_list_free(o->libs);
-	rz_bin_reloc_storage_free(o->relocs);
-	rz_list_free(o->sections);
-	rz_bin_string_database_free(o->strings);
-	ht_pp_free(o->import_name_symbols);
-	rz_list_free(o->symbols);
-	rz_list_free(o->classes);
-	ht_pp_free(o->classes_ht);
-	ht_pp_free(o->methods_ht);
-	ht_pp_free(o->fields_ht);
-	rz_bin_source_line_info_free(o->lines);
+	rz_list_free(o->maps);
 	rz_list_free(o->mem);
+	rz_list_free(o->sections);
+	rz_list_free(o->symbols);
+	rz_list_free(o->vfiles);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
@@ -231,40 +231,6 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
-static RzList /*<RzBinClass *>*/ *classes_from_symbols(RzBinFile *bf) {
-	RzBinSymbol *sym;
-	RzListIter *iter;
-	rz_list_foreach (bf->o->symbols, iter, sym) {
-		if (!sym->name || sym->name[0] != '_') {
-			continue;
-		}
-		const char *cn = sym->classname;
-		if (cn) {
-			RzBinClass *c = rz_bin_object_add_class(bf->o, sym->classname, NULL, UT64_MAX);
-			if (!c) {
-				continue;
-			}
-			// swift specific
-			char *dn = sym->dname;
-			char *fn = swiftField(dn, cn);
-			if (fn) {
-				RzBinField *f = rz_bin_field_new(sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
-				rz_list_append(c->fields, f);
-				free(fn);
-			} else {
-				char *mn = strstr(dn, "..");
-				if (!mn) {
-					mn = strstr(dn, cn);
-					if (mn && mn[strlen(cn)] == '.') {
-						rz_list_append(c->methods, sym);
-					}
-				}
-			}
-		}
-	}
-	return bf->o->classes;
-}
-
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz) {
 	rz_return_val_if_fail(bf && plugin, NULL);
@@ -282,9 +248,10 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	o->boffset = offset;
 	o->regstate = NULL;
 	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
-	o->classes_ht = ht_pp_new0();
-	o->methods_ht = ht_pp_new0();
-	o->fields_ht = ht_pp_new0();
+	o->glue_to_class_field = ht_pp_new0();
+	o->glue_to_class_method = ht_pp_new0();
+	o->name_to_class_object = ht_pp_new0();
+	o->vaddr_to_class_method = ht_up_new0();
 	o->import_name_symbols = ht_pp_new0();
 	o->baddr_shift = 0;
 	o->plugin = plugin;
@@ -309,7 +276,9 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	// extracted from a set of bytes in the file
 	rz_bin_file_set_obj(bf->rbin, bf, o);
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
-	rz_bin_object_set_items(bf, o);
+
+	bf->o = o;
+	rz_bin_object_reload(bf, o);
 
 	if (!bf->rbin->sdb) {
 		return o;
@@ -361,250 +330,8 @@ static void filter_classes(RzBinFile *bf, RzList /*<RzBinClass *>*/ *list) {
 	ht_pp_free(ht);
 }
 
-static void rz_bin_object_rebuild_classes_ht(RzBinObject *o) {
-	ht_pp_free(o->classes_ht);
-	ht_pp_free(o->methods_ht);
-	o->classes_ht = ht_pp_new0();
-	o->methods_ht = ht_pp_new0();
-
-	RzListIter *it, *it2;
-	RzBinClass *klass;
-	RzBinSymbol *method;
-	rz_list_foreach (o->classes, it, klass) {
-		if (klass->name) {
-			ht_pp_insert(o->classes_ht, klass->name, klass);
-
-			rz_list_foreach (klass->methods, it2, method) {
-				const char *name = sdb_fmt("%s::%s", klass->name, method->name);
-				ht_pp_insert(o->methods_ht, name, method);
-			}
-		}
-	}
-}
-
-RZ_API bool rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
-	rz_return_val_if_fail(bf && o && o->plugin, false);
-
-	RzBin *bin = bf->rbin;
-	RzBinPlugin *p = o->plugin;
-	int minlen = (bf->rbin->minstrlen > 0) ? bf->rbin->minstrlen : p->minstrlen;
-	bf->o = o;
-
-	if (p->file_type) {
-		int type = p->file_type(bf);
-		if (type == RZ_BIN_TYPE_CORE) {
-			if (p->regstate) {
-				o->regstate = p->regstate(bf);
-			}
-		}
-	}
-
-	if (p->boffset) {
-		o->boffset = p->boffset(bf);
-	}
-	// XXX: no way to get info from xtr pluginz?
-	// Note, object size can not be set from here due to potential
-	// inconsistencies
-	if (p->size) {
-		o->size = p->size(bf);
-	}
-	// XXX this is expensive because is O(n^n)
-	if (p->binsym) {
-		for (size_t i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
-			o->binsym[i] = p->binsym(bf, i);
-			if (o->binsym[i]) {
-				o->binsym[i]->paddr += o->opts.loadaddr;
-			}
-		}
-	}
-	if (p->entries) {
-		rz_list_free(o->entries);
-		o->entries = p->entries(bf);
-		REBASE_PADDR(o, o->entries, RzBinAddr);
-	}
-	if (p->virtual_files) {
-		rz_list_free(o->vfiles);
-		o->vfiles = p->virtual_files(bf);
-	}
-	if (p->maps) {
-		rz_list_free(o->maps);
-		o->maps = p->maps(bf);
-#if 0
-		if (o->maps) {
-			REBASE_PADDR(o, o->maps, RzBinMap);
-		}
-#endif
-	}
-	if (p->fields) {
-		rz_list_free(o->fields);
-		o->fields = p->fields(bf);
-#if 0
-		if (o->fields) {
-			rz_warn_if_fail(o->fields->free);
-			REBASE_PADDR(o, o->fields, RzBinField);
-		}
-#endif
-	}
-	if (p->imports) {
-		rz_list_free(o->imports);
-		o->imports = p->imports(bf);
-		if (o->imports) {
-			rz_warn_if_fail(o->imports->free);
-		}
-	}
-	if (p->symbols) {
-		rz_list_free(o->symbols);
-		o->symbols = p->symbols(bf);
-#if 0
-		if (o->symbols) {
-			REBASE_PADDR(o, o->symbols, RzBinSymbol);
-			if (bin->filter) {
-				rz_bin_filter_symbols(bf, o->symbols);
-			}
-			o->import_name_symbols = ht_pp_new0();
-			if (o->import_name_symbols) {
-				RzBinSymbol *sym;
-				RzListIter *it;
-				rz_list_foreach (o->symbols, it, sym) {
-					if (!sym->is_imported || !sym->name || !*sym->name) {
-						continue;
-					}
-					ht_pp_insert(o->import_name_symbols, sym->name, sym);
-				}
-			}
-		}
-#endif
-	}
-	if (p->libs) {
-		rz_list_free(o->libs);
-		o->libs = p->libs(bf);
-	}
-	if (p->sections) {
-		rz_list_free(o->sections);
-		o->sections = p->sections(bf);
-		REBASE_PADDR(o, o->sections, RzBinSection);
-		if (bin->filter) {
-			rz_bin_filter_sections(bf, o->sections);
-		}
-	}
-
-	o->info = p->info ? p->info(bf) : NULL;
-
-	if (bin->filter_rules & (RZ_BIN_REQ_RELOCS | RZ_BIN_REQ_IMPORTS)) {
-		if (p->relocs) {
-			RzList *l = p->relocs(bf);
-			if (l) {
-				REBASE_PADDR(o, l, RzBinReloc);
-				o->relocs = rz_bin_reloc_storage_new(l);
-			}
-		}
-	}
-	if (bin->filter_rules & RZ_BIN_REQ_STRINGS) {
-		RzList *strings = NULL;
-		if (p->strings) {
-			strings = p->strings(bf);
-		} else {
-			// when a bin plugin does not provide it's own strings
-			// we always take all the strings found in the binary
-			// the method also converts the paddrs to vaddrs
-			strings = rz_bin_file_strings(bf, minlen, true);
-		}
-		if (bin->debase64) {
-			bin_object_decode_all_base64_strings(strings);
-		}
-
-		REBASE_PADDR(o, strings, RzBinString);
-		// RzBinStrDb becomes the owner of the RzList strings
-		o->strings = rz_bin_string_database_new(strings);
-	}
-
-#if 0
-	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
-		free(o->info->compiler);
-		o->info->compiler = rz_bin_file_golang_compiler(bf);
-		if (o->info->compiler) {
-			o->info->lang = "go";
-			o->lang = RZ_BIN_LANGUAGE_GO;
-		}
-	}
-
-	RzBinLanguage lang = RZ_BIN_LANGUAGE_MASK(o->lang);
-	if (lang == RZ_BIN_LANGUAGE_UNKNOWN) {
-		o->lang = rz_bin_language_detect(bf);
-	}
-
-	if (bf->rbin->demangle) {
-		rz_bin_demangle_symbols(bf, o->symbols, o->lang);
-		rz_bin_demangle_imports(bf, o->imports, o->lang);
-		rz_bin_demangle_relocs(bf, o->relocs, o->lang);
-	}
-#endif
-
-	if (bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES) && p->classes) {
-		rz_list_free(o->classes);
-		o->classes = p->classes(bf);
-#if 0
-		if (p->classes) {
-			o->classes = p->classes(bf);
-			if (!classes) {
-				// XXX we should probably merge them instead
-				rz_list_free(o->classes);
-				o->classes = classes;
-				rz_bin_object_rebuild_classes_ht(o);
-			}
-
-			if (o->lang == RZ_BIN_LANGUAGE_SWIFT) {
-				o->classes = classes_from_symbols(bf);
-			}
-		} else {
-			RzList *classes = classes_from_symbols(bf);
-			if (classes) {
-				o->classes = classes;
-			}
-		}
-
-		if (bin->filter) {
-			filter_classes(bf, o->classes);
-		}
-
-		// cache addr=class+method
-		if (o->classes) {
-			RzList *klasses = o->classes;
-			RzListIter *iter, *iter2;
-			RzBinClass *klass;
-			RzBinSymbol *method;
-			if (!o->addrzklassmethod) {
-				// this is slow. must be optimized, but at least its cached
-				o->addrzklassmethod = ht_up_new0();
-				rz_list_foreach (klasses, iter, klass) {
-					rz_list_foreach (klass->methods, iter2, method) {
-						ht_up_insert(o->addrzklassmethod, method->vaddr, method);
-					}
-				}
-			}
-		}
-#endif
-	}
-	if (p->lines) {
-		rz_bin_source_line_info_free(o->lines);
-		o->lines = p->lines(bf);
-	}
-	if (p->get_sdb) {
-		Sdb *new_kv = p->get_sdb(bf);
-		if (new_kv != o->kv) {
-			sdb_free(o->kv);
-		}
-		o->kv = new_kv;
-	}
-	if (p->mem) {
-		rz_list_free(o->mem);
-		o->mem = p->mem(bf);
-	}
-	if (p->resources) {
-		rz_list_free(o->resources);
-		o->resources = p->resources(bf);
-	}
-	return rz_bin_object_process_data(bf, o);
+RZ_API bool rz_bin_object_reload(RzBinFile *bf, RzBinObject *o) {
+	return rz_bin_object_process_plugin_data(bf, o);
 }
 
 RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
@@ -643,7 +370,7 @@ RZ_IPI void rz_bin_class_free(RzBinClass *k) {
 
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(o && name, NULL);
-	return ht_pp_find(o->classes_ht, name, NULL);
+	return ht_pp_find(o->name_to_class_object, name, NULL);
 }
 
 static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *super, ut64 address) {
@@ -654,13 +381,13 @@ static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *s
 
 	c->name = strdup(name);
 	c->super = rz_str_new(super);
-	c->methods = rz_list_new();
-	c->fields = rz_list_new();
+	c->methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	c->fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
 	c->addr = address;
 	return c;
 }
 
-static int compare_bin_class(RzBinClass *a, RzBinClass *b) {
+RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b) {
 	st64 ret = strcmp(a->name, b->name);
 	if (!ret) {
 		return b->addr - a->addr;
@@ -668,10 +395,32 @@ static int compare_bin_class(RzBinClass *a, RzBinClass *b) {
 	return ret;
 }
 
+RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b) {
+	st64 ret = strcmp(a->classname, b->classname);
+	if (ret) {
+		return ret;
+	} else if ((ret = strcmp(a->name, b->name))) {
+		return ret;
+	} else if ((ret = b->vaddr - a->vaddr)) {
+		return ret;
+	}
+	return b->paddr - a->paddr;
+}
+
+RZ_IPI int rz_bin_compare_field(RzBinField *a, RzBinField *b) {
+	st64 ret = 0;
+	if ((ret = strcmp(a->name, b->name))) {
+		return ret;
+	} else if ((ret = b->vaddr - a->vaddr)) {
+		return ret;
+	}
+	return b->paddr - a->paddr;
+}
+
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name, RZ_NULLABLE const char *super, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(name), NULL);
 
-	RzBinClass *oclass = ht_pp_find(o->classes_ht, name, NULL);
+	RzBinClass *oclass = ht_pp_find(o->name_to_class_object, name, NULL);
 	if (oclass) {
 		if (super && !oclass->super) {
 			oclass->super = strdup(super);
@@ -688,35 +437,22 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 	}
 
 	if (!o->classes->sorted) {
-		rz_list_sort(o->classes, (RzListComparator)compare_bin_class);
+		rz_list_sort(o->classes, (RzListComparator)rz_bin_compare_class);
 	}
-	rz_list_add_sorted(o->classes, oclass, (RzListComparator)compare_bin_class);
-	ht_pp_insert(o->classes_ht, name, oclass);
+	rz_list_add_sorted(o->classes, oclass, (RzListComparator)rz_bin_compare_class);
+	ht_pp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
 
-#define FMT_CLASS_HT_GLUE "%s#%s#%" PFMT64x
 RZ_API RzBinSymbol *rz_bin_object_find_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method, ut64 vaddr) {
-	rz_return_val_if_fail(o && klass && method && vaddr != UT64_MAX, NULL);
-	char *key = rz_str_newf(FMT_CLASS_HT_GLUE, klass, method, vaddr);
+	rz_return_val_if_fail(o && klass && method, NULL);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method, vaddr);
 	if (!key) {
 		return NULL;
 	}
-	RzBinSymbol *sym = (RzBinSymbol *)ht_pp_find(o->methods_ht, key, NULL);
+	RzBinSymbol *sym = (RzBinSymbol *)ht_pp_find(o->glue_to_class_method, key, NULL);
 	free(key);
 	return sym;
-}
-
-static int compare_bin_method(RzBinSymbol *a, RzBinSymbol *b) {
-	st64 ret = strcmp(a->classname, b->classname);
-	if (ret) {
-		return ret;
-	} else if ((ret = strcmp(a->name, b->name))) {
-		return ret;
-	} else if ((ret = b->vaddr - a->vaddr)) {
-		return ret;
-	}
-	return b->paddr - a->paddr;
 }
 
 RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *method, ut64 paddr, ut64 vaddr) {
@@ -725,7 +461,7 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 		return NULL;
 	}
 
-	RzBinClass *c = ht_pp_find(o->classes_ht, klass, NULL);
+	RzBinClass *c = ht_pp_find(o->name_to_class_object, klass, NULL);
 	if (!c && !(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
 		return NULL;
 	}
@@ -737,12 +473,12 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 	symbol->classname = rz_str_new(klass);
 
 	if (!c->methods->sorted) {
-		rz_list_sort(c->methods, (RzListComparator)compare_bin_method);
+		rz_list_sort(c->methods, (RzListComparator)rz_bin_compare_method);
 	}
-	rz_list_add_sorted(c->methods, symbol, (RzListComparator)compare_bin_method);
-	char *key = rz_str_newf(FMT_CLASS_HT_GLUE, klass, method, vaddr);
+	rz_list_add_sorted(c->methods, symbol, (RzListComparator)rz_bin_compare_method);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method, vaddr);
 	if (key) {
-		ht_pp_insert(o->methods_ht, key, symbol);
+		ht_pp_insert(o->glue_to_class_method, key, symbol);
 		free(key);
 	}
 
@@ -751,23 +487,13 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 
 RZ_API RzBinField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *field, ut64 vaddr) {
 	rz_return_val_if_fail(o && klass && field, NULL);
-	char *key = rz_str_newf(FMT_CLASS_HT_GLUE, klass, field, vaddr);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, field, vaddr);
 	if (!key) {
 		return NULL;
 	}
-	RzBinField *sym = (RzBinField *)ht_pp_find(o->fields_ht, key, NULL);
+	RzBinField *sym = (RzBinField *)ht_pp_find(o->glue_to_class_field, key, NULL);
 	free(key);
 	return sym;
-}
-
-static int compare_bin_field(RzBinField *a, RzBinField *b) {
-	st64 ret = 0;
-	if ((ret = strcmp(a->name, b->name))) {
-		return ret;
-	} else if ((ret = b->vaddr - a->vaddr)) {
-		return ret;
-	}
-	return b->paddr - a->paddr;
 }
 
 RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *klass, RZ_NONNULL const char *name, int size, ut64 paddr, ut64 vaddr) {
@@ -776,7 +502,7 @@ RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, 
 		return NULL;
 	}
 
-	RzBinClass *c = ht_pp_find(o->classes_ht, klass, NULL);
+	RzBinClass *c = ht_pp_find(o->name_to_class_object, klass, NULL);
 	if (!c && !(c = rz_bin_object_add_class(o, klass, NULL, UT64_MAX))) {
 		return NULL;
 	}
@@ -787,17 +513,16 @@ RZ_API RZ_BORROW RzBinField *rz_bin_object_add_field(RZ_NONNULL RzBinObject *o, 
 	}
 
 	if (!c->fields->sorted) {
-		rz_list_sort(c->fields, (RzListComparator)compare_bin_field);
+		rz_list_sort(c->fields, (RzListComparator)rz_bin_compare_field);
 	}
-	rz_list_add_sorted(c->fields, field, (RzListComparator)compare_bin_field);
-	char *key = rz_str_newf(FMT_CLASS_HT_GLUE, klass, name, vaddr);
+	rz_list_add_sorted(c->fields, field, (RzListComparator)rz_bin_compare_field);
+	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name, vaddr);
 	if (key) {
-		ht_pp_insert(o->fields_ht, key, field);
+		ht_pp_insert(o->glue_to_class_field, key, field);
 		free(key);
 	}
 	return field;
 }
-#undef FMT_CLASS_HT_GLUE
 
 /**
  * \brief Find the symbol that represents the given import

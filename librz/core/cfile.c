@@ -819,16 +819,13 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 }
 
 RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
-	if (!core || !core->bin || !core->bin->cur) {
-		return 0;
-	}
-	if (baddr == UT64_MAX) {
+	if (!core || !core->bin || !core->bin->cur || baddr == UT64_MAX) {
 		return 0;
 	}
 	RzBinFile *bf = core->bin->cur;
 	bf->o->opts.baseaddr = baddr;
 	bf->o->opts.loadaddr = baddr;
-	rz_bin_object_set_items(bf, bf->o);
+	rz_bin_object_reload(bf, bf->o);
 	return 1;
 }
 
