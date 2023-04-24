@@ -1327,8 +1327,31 @@ static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	return out;
 }
 
-static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
-	return rz_demangler_rust(symbol);
+static char *bin_demangle_rust(RzBinFile *bf, const char *symbol, ut64 vaddr) {
+	char *demangled = rz_demangler_rust(symbol);
+	if (!demangled) {
+		return demangled;
+	}
+
+	char *str = demangled;
+	char *ptr = NULL;
+	char *name = NULL;
+	while ((ptr = strstr(str, "::"))) {
+		name = ptr;
+		str = ptr + 2;
+	}
+
+	if (!name || RZ_STR_ISEMPTY(name + 2)) {
+		return demangled;
+	}
+
+	*name = 0;
+	RzBinSymbol *sym = rz_bin_file_add_method(bf, demangled, name + 2, 0);
+	if (sym && sym->vaddr == 0) {
+		sym->vaddr = vaddr;
+	}
+	*name = ':';
+	return demangled;
 }
 
 /**
