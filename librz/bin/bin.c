@@ -949,28 +949,57 @@ RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules) {
 /* RzBinField */
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
 	RzBinField *ptr = RZ_NEW0(RzBinField);
-	if (ptr) {
-		ptr->name = strdup(name);
-		ptr->comment = (comment && *comment) ? strdup(comment) : NULL;
-		ptr->format = (format && *format) ? strdup(format) : NULL;
-		ptr->format_named = format_named;
-		ptr->paddr = paddr;
-		ptr->size = size;
-		//	ptr->visibility = any default visibility?
-		ptr->vaddr = vaddr;
+	if (!ptr) {
+		return NULL;
 	}
+
+	ptr->name = rz_str_new(name);
+	ptr->comment = rz_str_new(comment);
+	ptr->format = rz_str_new(format);
+	ptr->format_named = format_named;
+	ptr->paddr = paddr;
+	ptr->size = size;
+	ptr->vaddr = vaddr;
 	return ptr;
 }
 
 RZ_API void rz_bin_field_free(RzBinField *field) {
-	if (field) {
-		free(field->name);
-		free(field->visibility_str);
-		free(field->type);
-		free(field->comment);
-		free(field->format);
-		free(field);
+	if (!field) {
+		return;
 	}
+	free(field->name);
+	free(field->type);
+	free(field->comment);
+	free(field->format);
+	free(field);
+}
+
+/* RzBinClassField */
+RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type) {
+	RzBinClassField *ptr = RZ_NEW0(RzBinClassField);
+	if (!ptr) {
+		return NULL;
+	}
+
+	ptr->vaddr = vaddr ? vaddr : UT64_MAX;
+	ptr->paddr = paddr;
+	ptr->name = rz_str_new(name);
+	ptr->classname = rz_str_new(classname);
+	ptr->libname = rz_str_new(libname);
+	ptr->type = rz_str_new(type);
+	return ptr;
+}
+
+RZ_API void rz_bin_class_field_free(RzBinClassField *field) {
+	if (!field) {
+		return;
+	}
+	free(field->name);
+	free(field->classname);
+	free(field->libname);
+	free(field->type);
+	free(field->visibility_str);
+	free(field);
 }
 
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
