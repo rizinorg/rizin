@@ -411,8 +411,8 @@ RELROCS  false
 NX       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
-  ;-- sym.LTestVariableSwitchUp_.TestMultipleVariable__V:
-/ method.static.LTestVariableSwitchUp_.TestMultipleVariable__V ();
+  ;-- sym.TestVariableSwitchUp.void_TestMultipleVariable:
+/ method.static.TestVariableSwitchUp.void_TestMultipleVariable ();
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic Ljava/lang/Integer;.valueOf(I)Ljava/lang/Integer;
 | 0x00000302      4b             astore_0
@@ -5320,21 +5320,21 @@ NAME=ic (file Java)
 FILE=bins/java/Hello.class
 CMDS=<<EOF
 ic
-icf 'LHello;'
-icm 'LHello;'
+icf 'Hello'
+icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min        max        name    super            
-----------------------------------------------------------
-0x00000000 0x0000022b 0x000002d3 LHello; java/lang/Object
-address    index class   flags name type               
--------------------------------------------------------
-0x0000020b 0     LHello; P     who  Ljava/lang/String;
-address    index class   flags name                        
------------------------------------------------------------
-0x0000022b 0     LHello; p     <init>(Ljava/lang/String;)V
-0x00000263 1     LHello; p     say()V
-0x000002aa 2     LHello; sp    main([Ljava/lang/String;)V
+address    min        max        name  super  
+----------------------------------------------
+0x00000000 0x0000022b 0x000002d3 Hello Object
+address    index class flags name type   
+-----------------------------------------
+0x0000020b 0     Hello P     who  String
+address    index class flags name                
+-------------------------------------------------
+0x0000022b 0     Hello p     void <init>(String)
+0x00000263 1     Hello p     void say()
+0x000002aa 2     Hello sp    void main(String[])
 EOF
 RUN
 
@@ -5346,9 +5346,9 @@ icfj
 icmj
 EOF
 EXPECT=<<EOF
-[{"classname":"LHello;","addr":0,"index":0,"visibility":"public","super":"java/lang/Object","methods":[{"name":"LHello;.<init>","flags":["public"],"addr":555},{"name":"LHello;.say","flags":["public"],"addr":611},{"name":"LHello;.main","flags":["static","public"],"addr":682}],"fields":[{"name":"who","type":"Ljava/lang/String;","flags":["private"],"addr":523}]}]
-[{"type":"Ljava/lang/String;","name":"who","class":"LHello;","flags":["private"],"addr":523}]
-[{"name":"<init>(Ljava/lang/String;)V","class":"LHello;","flags":["public"],"addr":555},{"name":"say()V","class":"LHello;","flags":["public"],"addr":611},{"name":"main([Ljava/lang/String;)V","class":"LHello;","flags":["static","public"],"addr":682}]
+[{"classname":"Hello","addr":0,"index":0,"visibility":"public","super":"Object","methods":[{"name":"Hello.<init>","flags":["public"],"addr":555},{"name":"Hello.say","flags":["public"],"addr":611},{"name":"Hello.main","flags":["static","public"],"addr":682}],"fields":[{"name":"who","type":"String","flags":["private"],"addr":523}]}]
+[{"type":"String","name":"who","class":"Hello","flags":["private"],"addr":523}]
+[{"name":"void <init>(String)","class":"Hello","flags":["public"],"addr":555},{"name":"void say()","class":"Hello","flags":["public"],"addr":611},{"name":"void main(String[])","class":"Hello","flags":["static","public"],"addr":682}]
 EOF
 RUN
 
@@ -5356,7 +5356,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002d3] LHello; java/lang/Object
+0x00000000 [0x0000022b - 0x000002d3] Hello Object
 EOF
 RUN
 
@@ -5364,7 +5364,7 @@ NAME=icqq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icQ
 EXPECT=<<EOF
-LHello;
+Hello
 EOF
 RUN
 
@@ -5380,7 +5380,7 @@ BROKEN=1
 FILE=bins/java/Hello.class
 CMDS=iqqc
 EXPECT=<<EOF
-LHello;
+Hello
 EOF
 RUN
 
