@@ -352,9 +352,6 @@ RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	if (a->acur == p) {
 		a->acur = NULL;
 	}
-	if (p->fini && !p->fini(a->plugin_data)) {
-		return false;
-	}
 	return rz_list_delete_data(a->plugins, p);
 }
 

@@ -190,9 +190,6 @@ RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPl
 		plugin_fini(analysis);
 		analysis->cur = NULL;
 	}
-	if (p->fini && !p->fini(analysis->plugin_data)) {
-		return false;
-	}
 	return rz_list_delete_data(analysis->plugins, p);
 }
 
