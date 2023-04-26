@@ -491,12 +491,12 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 		case 't':
 		case 'T': padding_byte = 0xcc; break;
 		default:
-			RZ_LOG_ERROR("Invalid padding format (%c)\n", *p);
-			RZ_LOG_ERROR("Valid ones are:\n");
-			RZ_LOG_ERROR("	s S : NULL byte");
-			RZ_LOG_ERROR("	n N : nop");
-			RZ_LOG_ERROR("	a A : 0x41");
-			RZ_LOG_ERROR("	t T : trap (0xcc)");
+			RZ_LOG_ERROR("Invalid padding format (%c)\nValid ones are:\n"
+				     "	s S : NULL byte\n"
+				     "	n N : nop\n"
+				     "	a A : 0x41\n"
+				     "	t T : trap (0xcc)\n",
+				*p ? *p : ' ');
 			free(o);
 			return false;
 		}
