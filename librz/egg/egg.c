@@ -218,7 +218,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 		const char *os = rz_egg_os_as_string(egg->os);
 		char *textFile = rz_egg_Cfile_parser(fileSanitized, arch, os, egg->bits);
 		if (!textFile) {
-			RZ_LOG_ERROR("Failure while parsing '%s'\n", fileSanitized);
+			RZ_LOG_ERROR("egg: failure while parsing '%s'\n", fileSanitized);
 			free(fileSanitized);
 			return false;
 		}
@@ -227,7 +227,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 		if (buf && l > 0) {
 			rz_egg_raw(egg, (const ut8 *)buf, (int)l);
 		} else {
-			RZ_LOG_ERROR("Error loading '%s'\n", textFile);
+			RZ_LOG_ERROR("egg: error loading '%s'\n", textFile);
 		}
 		rz_file_rm(textFile);
 		free(fileSanitized);
@@ -241,7 +241,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 			fmt = 0;
 		}
 		if (!rz_egg_include(egg, file, fmt)) {
-			RZ_LOG_ERROR("Cannot open '%s'\n", file);
+			RZ_LOG_ERROR("egg: cannot open '%s'\n", file);
 			return false;
 		}
 	}
@@ -374,7 +374,7 @@ RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list) {
 			}
 			// LEAK rz_asm_code_free (asmcode);
 		} else {
-			eprintf("fail assembling\n");
+			RZ_LOG_ERROR("egg: fail assembling\n");
 		}
 	}
 	bool ret = code ? asmcode != NULL : true;
@@ -399,7 +399,7 @@ RZ_API int rz_egg_compile(RzEgg *egg) {
 	for (; b;) {
 		rz_egg_lang_parsechar(egg, b);
 		if (egg->lang.elem_n >= sizeof(egg->lang.elem)) {
-			eprintf("ERROR: elem too large.\n");
+			RZ_LOG_ERROR("egg: elem too large.\n");
 			break;
 		}
 		int r = rz_buf_read(egg->src, (ut8 *)&b, sizeof(b));
@@ -409,7 +409,7 @@ RZ_API int rz_egg_compile(RzEgg *egg) {
 		// XXX: some parse fail errors are false positives :(
 	}
 	if (egg->context > 0) {
-		eprintf("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
+		RZ_LOG_ERROR("egg: expected '}' at the end of the file. %d left\n", egg->context);
 		return false;
 	}
 	// TODO: handle errors here
@@ -475,7 +475,7 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 		number = strtol(p, NULL, 10);
 
 		if (number < 1) {
-			eprintf("Invalid padding length at %d\n", number);
+			RZ_LOG_ERROR("egg: invalid padding length at %d\n", number);
 			free(o);
 			return false;
 		}
@@ -491,12 +491,12 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 		case 't':
 		case 'T': padding_byte = 0xcc; break;
 		default:
-			eprintf("Invalid padding format (%c)\n", *p);
-			eprintf("Valid ones are:\n");
-			eprintf("	s S : NULL byte");
-			eprintf("	n N : nop");
-			eprintf("	a A : 0x41");
-			eprintf("	t T : trap (0xcc)");
+			RZ_LOG_ERROR("Invalid padding format (%c)\nValid ones are:\n"
+				     "	s S : NULL byte\n"
+				     "	n N : nop\n"
+				     "	a A : 0x41\n"
+				     "	t T : trap (0xcc)\n",
+				*p ? *p : ' ');
 			free(o);
 			return false;
 		}
@@ -539,7 +539,7 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
-				eprintf("%s Shellcode has failed\n", p->name);
+				RZ_LOG_ERROR("egg: %s Shellcode has failed\n", p->name);
 				return false;
 			}
 			ut64 tmpsz;
@@ -608,22 +608,26 @@ RZ_API void rz_egg_finalize(RzEgg *egg) {
 			const ut8 *buf = rz_buf_data(ep->b, &sz);
 			int r = rz_buf_write_at(egg->bin, ep->off, buf, sz);
 			if (r < sz) {
-				eprintf("Error during patch\n");
+				RZ_LOG_ERROR("egg: error during patch\n");
 				return;
 			}
 		} else {
-			eprintf("Cannot patch outside\n");
+			RZ_LOG_ERROR("egg: cannot patch outside\n");
 			return;
 		}
 	}
 }
 
-RZ_API void rz_egg_pattern(RzEgg *egg, int size) {
+RZ_API bool rz_egg_pattern(RzEgg *egg, int size) {
+	bool ok = false;
+
 	char *ret = rz_debruijn_pattern((int)size, 0, NULL);
 	if (ret) {
-		rz_egg_prepend_bytes(egg, (const ut8 *)ret, strlen(ret));
-		free(ret);
+		ok = rz_egg_prepend_bytes(egg, (const ut8 *)ret, strlen(ret));
 	} else {
-		eprintf("Invalid debruijn pattern length.\n");
+		RZ_LOG_ERROR("egg: invalid debruijn pattern length.\n");
 	}
+
+	free(ret);
+	return ok;
 }
