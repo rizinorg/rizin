@@ -49,7 +49,7 @@ RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol) {
  * \brief Demangles c++ symbols
  */
 RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol) {
-	return libdemangle_handler_cxx(symbol);
+	return libdemangle_handler_cpp(symbol);
 }
 
 /**
