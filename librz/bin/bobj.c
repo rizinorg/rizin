@@ -257,7 +257,7 @@ static RzList /*<RzBinClass *>*/ *classes_from_symbols(RzBinFile *bf) {
 			char *dn = sym->dname;
 			char *fn = swiftField(dn, cn);
 			if (fn) {
-				RzBinField *f = rz_bin_field_new(sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
+				RzBinClassField *f = rz_bin_class_field_new(sym->vaddr, sym->paddr, fn, sym->classname, NULL, NULL);
 				rz_list_append(c->fields, f);
 				free(fn);
 			} else {

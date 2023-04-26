@@ -117,7 +117,7 @@ address     index class flags name
 0x100003aa0 5     Test  c     someStaticMethod
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x1000080f0 1     Test        Test::(ivar)someField i
 EOF
 RUN
@@ -149,7 +149,7 @@ address     index class flags name
 0x100003a70 5     Test  c     someStaticMethod
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x1000080f0 1     Test        Test::(ivar)someField i
 EOF
 RUN
