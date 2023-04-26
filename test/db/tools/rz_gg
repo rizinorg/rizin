@@ -21,7 +21,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -142,7 +142,7 @@ NAME=rz-gg empty file
 FILE==
 CMDS=!rz-gg ""
 EXPECT_ERR=<<EOF
-Cannot open empty path
+ERROR: rz-gg: cannot open empty path
 EOF
 RUN
 
@@ -150,7 +150,7 @@ NAME=rz-gg empty include
 FILE=bins/other/rz-gg/hi.c
 CMDS=!rz-gg -I "" bins/other/rz-gg/hi.c
 EXPECT_ERR=<<EOF
-Cannot open empty include path
+ERROR: rz-gg: cannot open empty include path
 EOF
 RUN
 
@@ -158,7 +158,7 @@ NAME=rz-gg empty contents
 FILE=bins/other/rz-gg/hi.c
 CMDS=!rz-gg -C "" bins/other/rz-gg/hi.c
 EXPECT_ERR=<<EOF
-Cannot open empty contents path
+ERROR: rz-gg: cannot open empty contents path
 EOF
 RUN
 
@@ -201,7 +201,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -286,7 +286,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -371,7 +371,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -458,7 +458,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -542,7 +542,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
@@ -626,7 +626,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: egg: cannot patch outside
 EOF
 RUN
 
