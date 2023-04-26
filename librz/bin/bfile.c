@@ -511,15 +511,16 @@ RZ_IPI RzBinClass *rz_bin_class_new(const char *name, const char *super, int vie
 	return c;
 }
 
-RZ_IPI void rz_bin_class_free(RzBinClass *k) {
-	if (k && k->name) {
-		free(k->name);
-		free(k->super);
-		rz_list_free(k->methods);
-		rz_list_free(k->fields);
-		free(k->visibility_str);
-		free(k);
+RZ_API void rz_bin_class_free(RzBinClass *k) {
+	if (!k) {
+		return;
 	}
+	free(k->name);
+	free(k->super);
+	rz_list_free(k->methods);
+	rz_list_free(k->fields);
+	free(k->visibility_str);
+	free(k);
 }
 
 RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *bf, const char *name, const char *super, int view) {
