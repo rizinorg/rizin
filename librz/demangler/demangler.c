@@ -18,7 +18,7 @@
 
 #if WITH_GPL
 // cpp demangler contains GPL2 code and LGPL3 for delphi
-DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_handler_cxx);
+DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "GPL-2,LGPL3", "FSF/deroad", libdemangle_handler_cpp);
 #else
 // cpp demangler contain only the LGPL3 for delphi
 DEFINE_DEMANGLER_PLUGIN(cpp, "c++", "LGPL3", "deroad", libdemangle_handler_cpp);
