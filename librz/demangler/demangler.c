@@ -4,6 +4,7 @@
 
 #include <rz_demangler.h>
 #include <rz_util.h>
+;
 #include <rz_libdemangle.h>
 #include <rz_lib.h>
 #include <config.h>
