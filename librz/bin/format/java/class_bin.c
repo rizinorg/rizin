@@ -5,6 +5,8 @@
 #include "class_bin.h"
 #include "class_private.h"
 
+#define startswith(a, b) (!strncmp(a, b, strlen(b)))
+
 #define ACCESS_FLAG_MASK_SRC (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PRIVATE | ACCESS_FLAG_PROTECTED | ACCESS_FLAG_STATIC | ACCESS_FLAG_FINAL)
 
 #define CLASS_ACCESS_FLAGS_SIZE 16
@@ -387,10 +389,10 @@ RZ_API RZ_BORROW const char *rz_bin_java_class_language(RZ_NONNULL RzBinJavaClas
 				continue;
 			}
 			string = java_constant_pool_stringify(cpool);
-			if (string && !strncmp(string, "kotlin/jvm", 10)) {
+			if (string && startswith(string, "kotlin/jvm")) {
 				language = "kotlin";
 				break;
-			} else if (string && !strncmp(string, "org/codehaus/groovy/runtime", 27)) {
+			} else if (string && startswith(string, "org/codehaus/groovy/runtime")) {
 				language = "groovy";
 				break;
 			}
@@ -473,6 +475,9 @@ RZ_API RZ_OWN char *rz_bin_java_class_super(RZ_NONNULL RzBinJavaClass *bin) {
 		return strdup("unknown_super");
 	}
 	char *tmp = java_class_constant_pool_stringify_at(bin, index);
+	if (!tmp) {
+		return NULL;
+	}
 	char *class_name = rz_str_newf("L%s;", tmp);
 	free(tmp);
 	return class_name;
@@ -1054,7 +1059,7 @@ static char *demangle_java_and_free(char *mangled) {
 	if (!mangled) {
 		return NULL;
 	}
-	if (!strncmp(mangled, "unknown_", strlen("unknown_"))) {
+	if (startswith(mangled, "unknown_")) {
 		return mangled;
 	}
 	char *demangled = rz_demangler_java(mangled);
@@ -1066,7 +1071,7 @@ static void set_lib_and_class_name(char *mangled, char **out_class, char **out_l
 	if (!mangled) {
 		return;
 	}
-	bool is_java_lang = !strncmp(mangled, "Ljava/lang", strlen("Ljava/lang"));
+	bool is_java_lang = startswith(mangled, "Ljava/lang");
 
 	char *object = demangle_java_and_free(mangled);
 	if (!object) {
@@ -1074,7 +1079,7 @@ static void set_lib_and_class_name(char *mangled, char **out_class, char **out_l
 	}
 
 	*out_class = object;
-	if (is_java_lang && strncmp(object, "java.lang", strlen("java.lang"))) {
+	if (is_java_lang && !startswith(object, "java.lang")) {
 		*out_lib = rz_str_newf("java.lang.%s", object);
 	} else {
 		*out_lib = strdup(object);

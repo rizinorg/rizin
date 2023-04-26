@@ -8,6 +8,8 @@
 #define DEX_INVALID_CLASS  "Lunknown_class;"
 #define DEX_INVALID_METHOD "unknown_method"
 
+#define startswith(a, b) (!strncmp(a, b, strlen(b)))
+
 typedef struct dex_access_flags_readable_t {
 	ut32 flag;
 	const char *readable;
@@ -916,7 +918,7 @@ static void set_lib_and_class_name(char *mangled, char **out_class, char **out_l
 	if (!mangled) {
 		return;
 	}
-	bool is_java_lang = !strncmp(mangled, "Ljava/lang", strlen("Ljava/lang"));
+	bool is_java_lang = startswith(mangled, "Ljava/lang");
 
 	char *object = demangle_java_and_free(mangled);
 	if (!object) {
@@ -924,7 +926,7 @@ static void set_lib_and_class_name(char *mangled, char **out_class, char **out_l
 	}
 
 	*out_class = object;
-	if (!is_java_lang || !strncmp(object, "java.lang", strlen("java.lang"))) {
+	if (!is_java_lang || startswith(object, "java.lang")) {
 		*out_lib = strdup(object);
 	} else {
 		*out_lib = rz_str_newf("java.lang.%s", object);
@@ -1547,7 +1549,7 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_dex_libraries(RZ_NONNULL RzBinDex *dex
 		}
 
 		char *object = dex_resolve_type_id(dex, method_id->class_idx);
-		if (RZ_STR_ISEMPTY(object) || *object != 'L' || !strncmp(object, "Ljava/", strlen("Ljava/"))) {
+		if (RZ_STR_ISEMPTY(object) || *object != 'L' || startswith(object, "Ljava/")) {
 			free(object);
 			continue;
 		}
@@ -2001,19 +2003,19 @@ RZ_API RZ_OWN char *rz_bin_dex_version(RZ_NONNULL RzBinDex *dex) {
 	rz_return_val_if_fail(dex, NULL);
 	// https://cs.android.com/android/platform/superproject/+/master:dalvik/dx/src/com/android/dex/DexFormat.java;l=55;bpv=1;bpt=0
 	// https://developer.android.com/studio/releases/platforms
-	if (!strncmp((char *)dex->version, "009", 3)) {
+	if (startswith((char *)dex->version, "009")) {
 		return strdup("Android M3 release (Nov-Dec 2007)");
-	} else if (!strncmp((char *)dex->version, "013", 3)) {
+	} else if (startswith((char *)dex->version, "013")) {
 		return strdup("Android M5 release (Feb-Mar 2008)");
-	} else if (!strncmp((char *)dex->version, "035", 3)) {
+	} else if (startswith((char *)dex->version, "035")) {
 		return strdup("Android 3.2 (API level 13 and earlier)");
-	} else if (!strncmp((char *)dex->version, "037", 3)) {
+	} else if (startswith((char *)dex->version, "037")) {
 		return strdup("Android 7 (API level 24 and earlier)");
-	} else if (!strncmp((char *)dex->version, "038", 3)) {
+	} else if (startswith((char *)dex->version, "038")) {
 		return strdup("Android 8 (API level 26 and earlier)");
-	} else if (!strncmp((char *)dex->version, "039", 3)) {
+	} else if (startswith((char *)dex->version, "039")) {
 		return strdup("Android 9 (API level 28 and earlier)");
-	} else if (!strncmp((char *)dex->version, "040", 3)) {
+	} else if (startswith((char *)dex->version, "040")) {
 		return strdup("Android 10+ (Aug 2019)");
 	}
 	return NULL;
