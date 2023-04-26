@@ -215,7 +215,7 @@ jobs:
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
             fi
           fi
-          meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
+          meson setup --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
         env:
           ASAN: ${{ matrix.asan }}
           CC: ${{ matrix.compiler }}
@@ -332,7 +332,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build
-        run: meson --prefix=/usr build && ninja -C build
+        run: meson setup --prefix=/usr build && ninja -C build
         working-directory: rizin
       - name: Install
         run: ninja -C build install
@@ -402,7 +402,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson --prefix=/usr build && ninja -C build
+        run: meson setup --prefix=/usr build && ninja -C build
         working-directory: rizin
       - name: Install with Ninja
         run: ninja -C build install
@@ -448,7 +448,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson --prefix=/usr -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror build && ninja -C build
+        run: meson setup --prefix=/usr -Dbuildtype=debugoptimized -Db_sanitize=address,undefined --werror build && ninja -C build
         working-directory: rizin
         env:
           CFLAGS: -DASAN=1 -DRZ_ASSERT_STDOUT=1 -Wno-cpp
@@ -496,7 +496,7 @@ jobs:
         run: git clone https://github.com/rizinorg/rizin-testbins test/bins
         working-directory: rizin
       - name: Build with Meson + Ninja
-        run: meson --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
+        run: meson setup --prefix=/usr -Dbuildtype=release --werror build && ninja -C build
         working-directory: rizin
         env:
           CFLAGS: -Wno-cpp
@@ -531,7 +531,7 @@ jobs:
       - name: Compile with meson
         run: |
           mkdir -p ${HOME}/rizin-static
-          meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dinstall_sigdb=true -Dstatic_runtime=true -Dportable=true build
+          meson setup --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dinstall_sigdb=true -Dstatic_runtime=true -Dportable=true build
           ninja -C build && ninja -C build install
           tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
         working-directory: rizin
@@ -580,7 +580,7 @@ jobs:
       - name: Create archive
         run: |
           export PATH=${HOME}/.local/bin:${PATH}
-          meson build
+          meson setup build
           cd build
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
@@ -610,7 +610,7 @@ jobs:
       - name: Install rizin
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+          meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Check that installed rizin runs
         run: rizin -qcq /bin/ls
@@ -713,7 +713,7 @@ jobs:
         run: |
           export PATH=${HOME}/.local/bin:${PATH}
           sed -i 's@\${ANDROID_NDK}@'"${ANDROID_NDK}"'@' .github/meson-android-${{ matrix.name }}.ini
-          meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+          meson setup --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
           ninja -C build && ninja -C build install
       - name: Create rizin-android-${{ matrix.name }}.tar.gz
         run: |
@@ -739,12 +739,12 @@ jobs:
       - name: Compile & Install Rizin
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          meson --buildtype release --prefix=/usr build
+          meson setup --buildtype release --prefix=/usr build
           ninja -C build && sudo ninja -C build install
       - name: Compile C++ test
         run: |
           export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          meson --prefix=/usr build-cpp-test ./test/unit/cpp
+          meson setup --prefix=/usr build-cpp-test ./test/unit/cpp
           meson compile -C build-cpp-test
       - name: Run C++ test
         run: |
@@ -771,7 +771,7 @@ jobs:
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
-          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+          meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Install rz-pipe-py
         run: |
@@ -800,7 +800,7 @@ jobs:
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
-          meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+          meson setup --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         working-directory: rizin
       - name: Checkout rz-bindgen
         uses: actions/checkout@v3

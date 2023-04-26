@@ -77,7 +77,7 @@ jobs:
     - name: Meson setup
       env:
           CC: tcc
-      run: meson --prefix=/usr build
+      run: meson setup --prefix=/usr build
     - name: Meson compile and install
       run: ninja -C build && sudo ninja -C build install
     - name: Run unit tests
