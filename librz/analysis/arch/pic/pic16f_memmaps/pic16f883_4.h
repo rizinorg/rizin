@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Siddharth Mishra <admin@brightprogrammer.in>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /**
  * This file describes the memory map of PICF16883/4 device in PIC16F family.
  * */

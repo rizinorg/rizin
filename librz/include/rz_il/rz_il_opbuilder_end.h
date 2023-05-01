@@ -51,6 +51,7 @@
 
 #undef NON_ZERO
 #undef IS_ZERO
+#undef BITN
 #undef MSB
 #undef LSB
 #undef EQ

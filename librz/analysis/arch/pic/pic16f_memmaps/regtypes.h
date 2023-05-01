@@ -1,3 +1,11 @@
+// SPDX-FileCopyrightText: 2023 Siddharth Mishra <admin@brightprogrammer.in>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * Defines the various reigster types supported by the PIC16F family
+ * and a lookup table to map from these register types to their string names.
+ * */
+
 #ifndef RZ_PIC_MIDRANGE_PIC_REGTYPES_H
 #define RZ_PIC_MIDRANGE_PIC_REGTYPES_H
 
@@ -90,6 +98,7 @@ typedef enum pic_midrange_reg_type_t {
     REG_RESERVED,
     REG_FREG, /* normal indexed file register */
     REG_UNIMPLEMENTED, /* unimplemented registers are read as 0 */
+    REG_NUM /* can be used when a function fails and want to return an invalid value */
 } PicMidrangeRegType;
 
 /**

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Siddharth Mishra <admin@brightprogrammer.in>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef PIC16F_MEMMAPS_H_
 #define PIC16F_MEMMAPS_H_
 
