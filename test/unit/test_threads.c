@@ -81,6 +81,46 @@ bool test_thread_queue(void) {
 	mu_end;
 }
 
+bool test_thread_ht(void) {
+	bool v_boolean = false;
+	const char *element = NULL;
+
+	RzThreadHtPP *ht = rz_th_ht_pp_new0();
+	mu_assert_notnull(ht, "rz_th_ht_pp_new0() null check");
+
+	v_boolean = true;
+	element = (const char *)rz_th_ht_pp_find(ht, "not found", &v_boolean);
+	mu_assert_false(v_boolean, "the search must say not found");
+	mu_assert_null(element, "the search must return NULL");
+
+	v_boolean = rz_th_ht_pp_insert(ht, "foo", "bar");
+	mu_assert_true(v_boolean, "the insert must succeed");
+
+	v_boolean = false;
+	element = (const char *)rz_th_ht_pp_find(ht, "foo", &v_boolean);
+	mu_assert_true(v_boolean, "the search must say found");
+	mu_assert_notnull(element, "the search must NOT return NULL");
+	mu_assert_streq(element, "bar", "expecting to find 'bar' when searching for 'foo'");
+
+	element = (const char *)rz_th_ht_pp_find(ht, "foo", NULL);
+	mu_assert_notnull(element, "the search must NOT return NULL");
+	mu_assert_streq(element, "bar", "expecting to find 'bar' when searching for 'foo'");
+
+	v_boolean = rz_th_ht_pp_delete(ht, "not found");
+	mu_assert_false(v_boolean, "the delete must fail");
+
+	v_boolean = rz_th_ht_pp_delete(ht, "foo");
+	mu_assert_true(v_boolean, "the delete must succeed");
+
+	v_boolean = true;
+	element = (const char *)rz_th_ht_pp_find(ht, "foo", &v_boolean);
+	mu_assert_false(v_boolean, "the search must say not found");
+	mu_assert_null(element, "the search must return NULL");
+
+	rz_th_ht_pp_free(ht);
+	mu_end;
+}
+
 void thread_set_bool_arg(bool *value, bool *user) {
 	*value = true;
 	*user = true;
@@ -185,6 +225,7 @@ bool test_thread_iterator_pvec(void) {
 int all_tests() {
 	mu_run_test(test_thread_pool_cores);
 	mu_run_test(test_thread_queue);
+	mu_run_test(test_thread_ht);
 	mu_run_test(test_thread_iterator_list);
 	mu_run_test(test_thread_iterator_pvec);
 	return tests_passed != tests_run;
