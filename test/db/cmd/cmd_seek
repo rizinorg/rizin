@@ -346,3 +346,22 @@ EXPECT=<<EOF
 0x543a0
 EOF
 RUN
+
+NAME=seek to 'is' symbol
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+(prs sym; is~${sym}; s ${sym}; s)
+.(prs func_X)
+.(prs imp.printf)
+.(prs _GLOBAL_OFFSET_TABLE_)
+EOF
+EXPECT=<<EOF
+47  0x00000510 0x00400510 LOCAL  NOTYPE 0        func_X
+0x400510
+1   0x000003e0 0x004003e0 GLOBAL FUNC   16       imp.printf
+0x4003e0
+62  0x00000908 0x00600908 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+0x600908
+EOF
+EXPECT_ERR=
+RUN

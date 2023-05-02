@@ -856,6 +856,46 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				ret = rz_reg_get_value(reg, r);
 				return ret;
 			}
+
+			RzBinFile *bf = rz_bin_cur(core->bin);
+			if (bf) {
+				const RzList *symbols = rz_bin_object_get_symbols(bf->o);
+				RzBinSymbol *symbol;
+				RzListIter *iter;
+				bool found = false;
+				const char *symname = str;
+				// TODO: Instead of this, follow symbols_print() and use rz_core_sym_name_init().
+				if (rz_str_startswith(str, "imp.")) {
+					symname += 4;
+				}
+				rz_list_foreach (symbols, iter, symbol) {
+					if (!symbol->name) {
+						continue;
+					}
+					if (!strcmp(symbol->name, symname)) {
+						found = true;
+						break;
+					}
+				}
+				if (found) {
+					const char *prefixes[] = { "sym", "loc", "obj" };
+					for (int i = 0; i < RZ_ARRAY_SIZE(prefixes); i++) {
+						char *flagname = rz_str_newf("%s.%s", prefixes[i], str);
+						if (flagname) {
+							rz_name_filter(flagname, 0, true);
+							if ((flag = rz_flag_get(core->flags, flagname))) {
+								ret = flag->offset;
+								if (ok) {
+									*ok = true;
+								}
+								free(flagname);
+								return ret;
+							}
+						}
+						free(flagname);
+					}
+				}
+			}
 		}
 		break;
 	}
