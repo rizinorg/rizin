@@ -13,6 +13,8 @@
 #include <rz_list.h>
 #include <rz_vector.h>
 
+#include <rz_util/rz_th_ht.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
