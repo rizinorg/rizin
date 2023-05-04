@@ -309,10 +309,6 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		case WASM_OP_F32CONST:
 		case WASM_OP_F64CONST:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-			{
-				ut8 arg = data[1];
-				rz_strbuf_setf(&op->esil, "4,sp,-=,%d,sp,=[4]", arg);
-			}
 			break;
 		case WASM_OP_I64ADD:
 		case WASM_OP_I32ADD:
@@ -328,7 +324,6 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case WASM_OP_NOP:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-			rz_strbuf_setf(&op->esil, "%s", "");
 			break;
 		case WASM_OP_CALL:
 		case WASM_OP_CALLINDIRECT:
@@ -338,7 +333,6 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			if (op->jump != UT64_MAX) {
 				op->ptr = op->jump;
 			}
-			rz_strbuf_setf(&op->esil, "4,sp,-=,0x%" PFMT64x ",sp,=[4],0x%" PFMT64x ",pc,=", op->fail, op->jump);
 			break;
 		case WASM_OP_RETURN:
 			// should be ret, but if there the analisys is stopped.
@@ -473,7 +467,6 @@ RzAnalysisPlugin rz_analysis_plugin_wasm = {
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.op = &wasm_op,
-	.esil = true
 };
 
 #ifndef RZ_PLUGIN_INCORE
