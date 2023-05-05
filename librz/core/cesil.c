@@ -223,7 +223,7 @@ repeat:
 	st64 follow = (st64)rz_config_get_i(core->config, "dbg.follow");
 	if (follow > 0) {
 		ut64 pc = rz_reg_getv(core->analysis->reg, name);
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+		if ((pc < core->offset) || (pc >= (core->offset + follow))) {
 			rz_core_seek_to_register(core, "PC", false);
 		}
 	}

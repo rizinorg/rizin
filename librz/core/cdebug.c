@@ -952,7 +952,7 @@ RZ_API void rz_core_dbg_follow_seek_register(RzCore *core) {
 		return;
 	}
 	ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-	if ((pc < core->offset) || (pc > (core->offset + follow))) {
+	if ((pc < core->offset) || (pc >= (core->offset + follow))) {
 		rz_core_seek_to_register(core, "PC", false);
 	}
 }

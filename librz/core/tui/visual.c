@@ -3142,7 +3142,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 			// check dbg.follow here
 			int follow = (int)(st64)rz_config_get_i(core->config, "dbg.follow");
 			if (follow > 0) {
-				if ((curpc < core->offset) || (curpc > (core->offset + follow))) {
+				if ((curpc < core->offset) || (curpc >= (core->offset + follow))) {
 					rz_core_seek(core, curpc, true);
 				}
 			} else if (follow < 0) {
