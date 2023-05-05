@@ -3330,7 +3330,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	} else {
 		rz_config_set_i(cfg, "dbg.follow", 32);
 	}
-	rz_config_desc(cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
+	rz_config_desc(cfg, "dbg.follow", "Follow program counter when pc >= core->offset + dbg.follow");
 	SETBPREF("dbg.rebase", "true", "Rebase analysis/meta/comments/flags when reopening file in debugger");
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 	SETBPREF("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
