@@ -130,6 +130,7 @@ static const RzCmdDescArg compare_and_set_core_num_value_args[3];
 static const RzCmdDescArg exec_cmd_if_core_num_value_positive_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_negative_args[2];
 static const RzCmdDescArg exec_cmd_if_core_num_value_zero_args[2];
+static const RzCmdDescArg exec_cmd_if_core_num_value_nonzero_args[2];
 static const RzCmdDescArg calculate_string_length_args[2];
 static const RzCmdDescArg calc_expr_show_hex_args[2];
 static const RzCmdDescArg ascii_to_hex_args[2];
@@ -146,7 +147,6 @@ static const RzCmdDescArg input_yank_hud_args[2];
 static const RzCmdDescArg input_msg_args[2];
 static const RzCmdDescArg input_conditional_args[2];
 static const RzCmdDescArg get_addr_references_args[2];
-static const RzCmdDescArg exec_cmd_if_core_num_value_positive2_args[2];
 static const RzCmdDescArg push_escaped_args[2];
 static const RzCmdDescArg analysis_all_esil_args[2];
 static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[2];
@@ -1941,6 +1941,20 @@ static const RzCmdDescHelp exec_cmd_if_core_num_value_zero_help = {
 	.args = exec_cmd_if_core_num_value_zero_args,
 };
 
+static const RzCmdDescArg exec_cmd_if_core_num_value_nonzero_args[] = {
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_CMD,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp exec_cmd_if_core_num_value_nonzero_help = {
+	.summary = "Execute command if result of last numeric expression evaluation (related) command was not 0",
+	.args = exec_cmd_if_core_num_value_nonzero_args,
+};
+
 static const RzCmdDescArg calculate_string_length_args[] = {
 	{
 		.name = "str",
@@ -2188,20 +2202,6 @@ static const RzCmdDescArg get_addr_references_args[] = {
 static const RzCmdDescHelp get_addr_references_help = {
 	.summary = "Get references of given address",
 	.args = get_addr_references_args,
-};
-
-static const RzCmdDescArg exec_cmd_if_core_num_value_positive2_args[] = {
-	{
-		.name = "cmd",
-		.type = RZ_CMD_ARG_TYPE_CMD,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp exec_cmd_if_core_num_value_positive2_help = {
-	.summary = "Execute command if $? register holds positive value",
-	.args = exec_cmd_if_core_num_value_positive2_args,
 };
 
 static const RzCmdDescArg push_escaped_args[] = {
@@ -18480,6 +18480,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *exec_cmd_if_core_num_value_zero_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%!", rz_exec_cmd_if_core_num_value_zero_handler, &exec_cmd_if_core_num_value_zero_help);
 	rz_warn_if_fail(exec_cmd_if_core_num_value_zero_cd);
 
+	RzCmdDesc *exec_cmd_if_core_num_value_nonzero_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%%", rz_exec_cmd_if_core_num_value_nonzero_handler, &exec_cmd_if_core_num_value_nonzero_help);
+	rz_warn_if_fail(exec_cmd_if_core_num_value_nonzero_cd);
+
 	RzCmdDesc *calculate_string_length_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_math_cd, "%l", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_calculate_string_length_handler, &calculate_string_length_help);
 	rz_warn_if_fail(calculate_string_length_cd);
 
@@ -18528,9 +18531,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *get_addr_references_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%w", rz_get_addr_references_handler, &get_addr_references_help);
 	rz_warn_if_fail(get_addr_references_cd);
-
-	RzCmdDesc *exec_cmd_if_core_num_value_positive2_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_math_cd, "%%", rz_exec_cmd_if_core_num_value_positive2_handler, &exec_cmd_if_core_num_value_positive2_help);
-	rz_warn_if_fail(exec_cmd_if_core_num_value_positive2_cd);
 
 	RzCmdDesc *push_escaped_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "<", rz_push_escaped_handler, &push_escaped_help);
 	rz_warn_if_fail(push_escaped_cd);
