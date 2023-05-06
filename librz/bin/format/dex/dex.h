@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_DEX_H
@@ -209,7 +209,7 @@ RZ_API ut64 rz_bin_dex_debug_info(RZ_NONNULL RzBinDex *dex);
 
 RZ_API RZ_OWN RzList /*<RzBinString *>*/ *rz_bin_dex_strings(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_dex_classes(RZ_NONNULL RzBinDex *dex);
-RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex);
+RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_dex_fields(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_dex_sections(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex *dex);
 RZ_API RZ_OWN RzList /*<RzBinImport *>*/ *rz_bin_dex_imports(RZ_NONNULL RzBinDex *dex);

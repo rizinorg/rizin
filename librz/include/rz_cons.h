@@ -1042,6 +1042,7 @@ RZ_API RZ_OWN RzStrBuf *rz_rangebar(RZ_NONNULL RzBarOptions *opts, ut64 startA, 
 /* rz_line */
 #define RZ_LINE_BUFSIZE  4096
 #define RZ_LINE_HISTSIZE 256
+#define RZ_LINE_UNDOSIZE 512
 
 #define RZ_EDGES_X_INC 4
 
@@ -1137,11 +1138,14 @@ typedef char *(*RzLineEditorCb)(void *core, const char *str);
 typedef int (*RzLineHistoryUpCb)(RzLine *line);
 typedef int (*RzLineHistoryDownCb)(RzLine *line);
 
+typedef struct rz_line_undo_entry_t RzLineUndoEntry;
+
 struct rz_line_t {
 	RzLineCompletion completion;
 	RzLineNSCompletion ns_completion;
 	RzLineBuffer buffer;
 	RzLineHistory history;
+	RzVector /*<RzLineUndoEntry>*/ *undo_vec;
 	RzSelWidget *sel_widget;
 	/* callbacks */
 	RzLineHistoryUpCb cb_history_up;
@@ -1155,6 +1159,8 @@ struct rz_line_t {
 	char *prompt;
 	RzList /*<char *>*/ *kill_ring;
 	int kill_ring_ptr;
+	int undo_cursor;
+	bool undo_continue;
 	char *clipboard;
 	int disable;
 	void *user;
@@ -1181,7 +1187,7 @@ RZ_API RzLine *rz_line_singleton(void);
 RZ_API void rz_line_free(void);
 RZ_API RZ_OWN char *rz_line_get_prompt(void);
 RZ_API void rz_line_set_prompt(const char *prompt);
-RZ_API int rz_line_dietline_init(void);
+RZ_API bool rz_line_dietline_init(void);
 RZ_API void rz_line_clipboard_push(const char *str);
 RZ_API void rz_line_hist_free(void);
 RZ_API void rz_line_autocomplete(void);

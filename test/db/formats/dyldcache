@@ -226,7 +226,7 @@ address     min         max         name                          super
 0x00000000  0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x182068038 1     Test        Test::(ivar)someField i
 address     index class flags name                         
 -----------------------------------------------------------
@@ -319,7 +319,7 @@ address     min         max         name                          super
 0x00000000  0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
-0x00000000  0     Test        isa                   struct objc_class *
+----------  0     Test        isa                   struct objc_class *
 0x18206c038 1     Test        Test::(ivar)someField i
 address     index class flags name                         
 -----------------------------------------------------------
@@ -331,12 +331,12 @@ address     index class flags name
 0x180018a38 5     Test  c     someStaticMethod
 address     index class    flags name                                 type                
 ------------------------------------------------------------------------------------------
-0x00000000  0     NSObject       isa                                  struct objc_class *
+----------  0     NSObject       isa                                  struct objc_class *
 0x18206d1c4 1     NSObject       NSObject::(ivar)isa                  #
-0x00000000  2     NSObject       NSObject::(property)hash             
-0x00000000  3     NSObject       NSObject::(property)superclass       
-0x00000000  4     NSObject       NSObject::(property)description      
-0x00000000  5     NSObject       NSObject::(property)debugDescription 
+----------  2     NSObject       NSObject::(property)hash             
+----------  3     NSObject       NSObject::(property)superclass       
+----------  4     NSObject       NSObject::(property)description      
+----------  5     NSObject       NSObject::(property)debugDescription 
 address     index class    flags name                                   
 ------------------------------------------------------------------------
 0x18004144c 0     NSObject       init

@@ -623,7 +623,7 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) 
 
 static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
 	(void)user;
-	printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+	printf("%-6s %-12s %s\n", plugin->language, plugin->license, plugin->author);
 	return true;
 }
 

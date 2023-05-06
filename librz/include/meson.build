@@ -107,6 +107,7 @@ rz_util_files = [
   'rz_util/rz_subprocess.h',
   'rz_util/rz_sys.h',
   'rz_util/rz_table.h',
+  'rz_util/rz_th_ht.h',
   'rz_util/rz_time.h',
   'rz_util/rz_tree.h',
   'rz_util/rz_uleb128.h',

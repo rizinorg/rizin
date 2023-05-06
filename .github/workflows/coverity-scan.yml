@@ -34,7 +34,7 @@ jobs:
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Meson
-        run: meson build
+        run: meson setup build
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Build with cov-build

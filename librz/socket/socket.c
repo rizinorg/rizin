@@ -251,7 +251,7 @@ RZ_API RzSocket *rz_socket_new(bool is_ssl) {
 
 RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) {
 	// XXX TODO: dont use sockets, we can achieve the same with pipes
-	const int port = 2000 + rz_num_rand(2000);
+	const int port = 2000 + rz_num_rand32(2000);
 	int childPid = rz_sys_fork();
 	if (childPid == 0) {
 		char *a = rz_str_replace(strdup(cmd), "\\", "\\\\", true);

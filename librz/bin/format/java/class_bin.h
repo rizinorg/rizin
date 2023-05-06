@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2023 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_BIN_JAVA_CLASS_H
@@ -86,7 +87,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_methods_as_symbols(R
 RZ_API void rz_bin_java_class_methods_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_bin_java_class_methods_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
-RZ_API RZ_OWN RzList /*<RzBinField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin);
+RZ_API RZ_OWN RzList /*<RzBinClassField *>*/ *rz_bin_java_class_fields_as_binfields(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API void rz_bin_java_class_fields_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_bin_java_class_fields_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
 RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_const_pool_as_symbols(RZ_NONNULL RzBinJavaClass *bin);
@@ -97,5 +98,6 @@ RZ_API RZ_OWN RzList /*<RzBinSection *>*/ *rz_bin_java_class_as_sections(RZ_NONN
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_bin_java_class_as_libraries(RZ_NONNULL RzBinJavaClass *bin);
 RZ_API void rz_bin_java_class_interfaces_as_text(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL RzStrBuf *sb);
 RZ_API void rz_bin_java_class_interfaces_as_json(RZ_NONNULL RzBinJavaClass *bin, RZ_NONNULL PJ *j);
+RZ_API RZ_OWN RzList /*<RzBinClass *>*/ *rz_bin_java_class_as_classes(RZ_NONNULL RzBinJavaClass *bin);
 
 #endif /* RZ_BIN_JAVA_CLASS_H */

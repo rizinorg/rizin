@@ -240,7 +240,7 @@ RzIOZipFileObj *rz_io_zip_create_new_file(const char *archivename, const char *f
 		zfo->archivename = strdup(archivename);
 		zfo->name = strdup(sb ? sb->name : filename);
 		zfo->entry = !sb ? -1 : sb->index;
-		zfo->fd = rz_num_rand(0xFFFF); // XXX: Use rz_io_fd api
+		zfo->fd = rz_num_rand32(0xFFFF); // XXX: Use rz_io_fd api
 		zfo->perm = perm;
 		zfo->mode = mode;
 		zfo->rw = rw;

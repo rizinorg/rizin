@@ -949,28 +949,57 @@ RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules) {
 /* RzBinField */
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
 	RzBinField *ptr = RZ_NEW0(RzBinField);
-	if (ptr) {
-		ptr->name = strdup(name);
-		ptr->comment = (comment && *comment) ? strdup(comment) : NULL;
-		ptr->format = (format && *format) ? strdup(format) : NULL;
-		ptr->format_named = format_named;
-		ptr->paddr = paddr;
-		ptr->size = size;
-		//	ptr->visibility = any default visibility?
-		ptr->vaddr = vaddr;
+	if (!ptr) {
+		return NULL;
 	}
+
+	ptr->name = rz_str_new(name);
+	ptr->comment = rz_str_new(comment);
+	ptr->format = rz_str_new(format);
+	ptr->format_named = format_named;
+	ptr->paddr = paddr;
+	ptr->size = size;
+	ptr->vaddr = vaddr;
 	return ptr;
 }
 
 RZ_API void rz_bin_field_free(RzBinField *field) {
-	if (field) {
-		free(field->name);
-		free(field->visibility_str);
-		free(field->type);
-		free(field->comment);
-		free(field->format);
-		free(field);
+	if (!field) {
+		return;
 	}
+	free(field->name);
+	free(field->type);
+	free(field->comment);
+	free(field->format);
+	free(field);
+}
+
+/* RzBinClassField */
+RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type) {
+	RzBinClassField *ptr = RZ_NEW0(RzBinClassField);
+	if (!ptr) {
+		return NULL;
+	}
+
+	ptr->vaddr = vaddr ? vaddr : UT64_MAX;
+	ptr->paddr = paddr;
+	ptr->name = rz_str_new(name);
+	ptr->classname = rz_str_new(classname);
+	ptr->libname = rz_str_new(libname);
+	ptr->type = rz_str_new(type);
+	return ptr;
+}
+
+RZ_API void rz_bin_class_field_free(RzBinClassField *field) {
+	if (!field) {
+		return;
+	}
+	free(field->name);
+	free(field->classname);
+	free(field->libname);
+	free(field->type);
+	free(field->visibility_str);
+	free(field);
 }
 
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
@@ -1287,7 +1316,6 @@ RZ_API const RzBinXtrPlugin *rz_bin_xtrplugin_get(RZ_NONNULL RzBin *bin, RZ_NONN
 	return NULL;
 }
 
-#if WITH_GPL
 static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	char *out = rz_demangler_cxx(symbol);
 	if (!out || !bf) {
@@ -1328,15 +1356,32 @@ static char *bin_demangle_cxx(RzBinFile *bf, const char *symbol, ut64 vaddr) {
 	return out;
 }
 
-static char *bin_demangle_rust(RzBinFile *binfile, const char *symbol, ut64 vaddr) {
-	char *str = NULL;
-	if (!(str = bin_demangle_cxx(binfile, symbol, vaddr))) {
-		return str;
+static char *bin_demangle_rust(RzBinFile *bf, const char *symbol, ut64 vaddr) {
+	char *demangled = rz_demangler_rust(symbol);
+	if (!demangled) {
+		return demangled;
 	}
-	free(str);
-	return rz_demangler_rust(symbol);
+
+	char *str = demangled;
+	char *ptr = NULL;
+	char *name = NULL;
+	while ((ptr = strstr(str, "::"))) {
+		name = ptr;
+		str = ptr + 2;
+	}
+
+	if (!name || RZ_STR_ISEMPTY(name + 2)) {
+		return demangled;
+	}
+
+	*name = 0;
+	RzBinSymbol *sym = rz_bin_file_add_method(bf, demangled, name + 2, 0);
+	if (sym && sym->vaddr == 0) {
+		sym->vaddr = vaddr;
+	}
+	*name = ':';
+	return demangled;
 }
-#endif
 
 /**
  * \brief Demangles a symbol based on the language or the RzBinFile data
@@ -1441,13 +1486,8 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBinFile *bf, RZ_NULLABLE const
 	case RZ_BIN_LANGUAGE_OBJC: demangled = rz_demangler_objc(symbol); break;
 	case RZ_BIN_LANGUAGE_MSVC: demangled = rz_demangler_msvc(symbol); break;
 	case RZ_BIN_LANGUAGE_PASCAL: demangled = rz_demangler_pascal(symbol); break;
-#if WITH_GPL
 	case RZ_BIN_LANGUAGE_RUST: demangled = bin_demangle_rust(bf, symbol, vaddr); break;
 	case RZ_BIN_LANGUAGE_CXX: demangled = bin_demangle_cxx(bf, symbol, vaddr); break;
-#else
-	case RZ_BIN_LANGUAGE_RUST: demangled = NULL; break;
-	case RZ_BIN_LANGUAGE_CXX: demangled = NULL; break;
-#endif
 	default:
 		if (bin) {
 			rz_demangler_resolve(bin->demangler, symbol, language, &demangled);

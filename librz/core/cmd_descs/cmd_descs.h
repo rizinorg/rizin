@@ -1925,16 +1925,30 @@ RZ_IPI RzCmdStatus rz_cmd_print_raw_gunzip_verbose_handler(RzCore *core, int arg
 RZ_IPI RzCmdStatus rz_cmd_print_raw_printable_handler(RzCore *core, int argc, const char **argv);
 // "prz"
 RZ_IPI RzCmdStatus rz_cmd_print_raw_string_handler(RzCore *core, int argc, const char **argv);
+// "ps"
+RZ_IPI RzCmdStatus rz_print_string_auto_detect_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "ps+"
+RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psb"
+RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psc"
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-// "psw"
-RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-// "psW"
-RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psi"
+RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psp"
+RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pss"
+RZ_IPI RzCmdStatus rz_print_string_wrap_width_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psm"
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psM"
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psn"
+RZ_IPI RzCmdStatus rz_print_string_escaped_newlines_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psw"
+RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "psW"
+RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pv"
 RZ_IPI RzCmdStatus rz_print_value_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pv1"

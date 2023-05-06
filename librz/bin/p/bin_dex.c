@@ -104,15 +104,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return rz_bin_dex_symbols(dex);
 }
 
-static RzList /*<RzBinField *>*/ *fields(RzBinFile *bf) {
-	RzBinDex *dex = rz_bin_file_get_dex(bf);
-	if (!dex) {
-		return NULL;
-	}
-
-	return rz_bin_dex_fields(dex);
-}
-
 static RzList /*<char *>*/ *libraries(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
@@ -257,7 +248,6 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.get_name = &get_name,
 	.get_offset = &get_offset,
 	.info = &info,
-	.fields = fields,
 	.libs = libraries,
 	.classes = classes,
 	.demangle_type = demangle_type,

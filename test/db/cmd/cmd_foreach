@@ -258,7 +258,7 @@ RUN
 NAME=iter string
 FILE=./bins/elf/hello_world
 CMDS=<<EOF
-psz @@iz
+ps @@iz
 EOF
 EXPECT=<<EOF
 Hello

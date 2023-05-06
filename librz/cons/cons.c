@@ -183,13 +183,13 @@ static inline void __cons_write(const char *obuf, int olen) {
 RZ_API RzColor rz_cons_color_random(ut8 alpha) {
 	RzColor rcolor = { 0 };
 	if (CTX(color_mode) > COLOR_MODE_16) {
-		rcolor.r = rz_num_rand(0xff);
-		rcolor.g = rz_num_rand(0xff);
-		rcolor.b = rz_num_rand(0xff);
+		rcolor.r = rz_num_rand32(0xff);
+		rcolor.g = rz_num_rand32(0xff);
+		rcolor.b = rz_num_rand32(0xff);
 		rcolor.a = alpha;
 		return rcolor;
 	}
-	int r = rz_num_rand(16);
+	int r = rz_num_rand32(16);
 	switch (r) {
 	case 0:
 	case 1: rcolor = (RzColor)RzColor_RED; break;

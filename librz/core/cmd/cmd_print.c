@@ -250,23 +250,6 @@ static const char *help_detail2_pf[] = {
 	NULL
 };
 
-static const char *help_msg_ps[] = {
-	"Usage:", "ps[bijqpsuwWxz+] [N]", "Print String",
-	"ps", "", "print string",
-	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
-	"psb", "", "print strings in current block",
-	"psi", "", "print string inside curseek",
-	"psj", "", "print string in JSON format",
-	"psp", "[j]", "print pascal string",
-	"pss", "", "print string in screen (wrap width)",
-	"psu", "[zj]", "print utf16 unicode (json)",
-	"psw", "[j]", "print 16bit wide little endian string",
-	"psW", "[j]", "print 32bit wide little endian string",
-	"psx", "", "show string with escaped chars",
-	"psz", "[j]", "print zero-terminated string",
-	NULL
-};
-
 static const char *help_msg_px[] = {
 	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
 	"px", "", "show hexdump",
@@ -1688,7 +1671,7 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 			"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n");
 		break;
 	case 's': // "x/s"
-		rz_core_cmdf(core, "psb %d @ 0x%" PFMT64x, count * size, addr);
+		rz_core_cmdf(core, "psb @! %d @ 0x%" PFMT64x, count * size, addr);
 		break;
 	case 'o': // "x/o"
 		rz_core_cmdf(core, "pxo %d @ 0x%" PFMT64x, count * size, addr);
@@ -2564,6 +2547,221 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 	}
 }
 
+static RzCmdStatus core_auto_detect_and_print_string(RzCore *core, bool stop_at_nil, ut32 offset, RzOutputMode mode) {
+	const ut8 *buffer = core->block + offset;
+	const ut32 length = core->blocksize - offset;
+	const char *enc_name = rz_config_get(core->config, "bin.str.enc");
+	RzStrEnc encoding = rz_str_enc_string_as_type(enc_name);
+	RzStrStringifyOpt opt = { 0 };
+
+	if (encoding == RZ_STRING_ENC_GUESS) {
+		encoding = rz_str_guess_encoding_from_buffer(buffer, length);
+	}
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		opt.buffer = buffer;
+		opt.length = length;
+		opt.encoding = encoding;
+		opt.stop_at_nil = stop_at_nil;
+		core_print_raw_buffer(&opt);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		print_json_string(core, buffer, length, encoding, stop_at_nil);
+		break;
+	default:
+		RZ_LOG_ERROR("core: unsupported output mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_string_auto_detect_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	bool stop_at_nil = !strcmp(argv[1], "null");
+	return core_auto_detect_and_print_string(core, stop_at_nil, 0, mode);
+}
+
+RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut32 bitness = (ut32)rz_config_get_i(core->config, "asm.bits");
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+
+	switch (bitness) {
+	case 32:
+		/* fall-thru */
+	case 64:
+		break;
+	default:
+		RZ_LOG_ERROR("core: %u bits are not supported by %s\n", bitness, argv[0]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut32 min_size = (bitness / 8) * 3;
+	if (core->blocksize < 2 || core->blocksize < min_size) {
+		RZ_LOG_ERROR("core: the block size is too small to read string (expected at least %u but got %u bytes).\n", core->blocksize, min_size);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzCmdStatus status = RZ_CMD_STATUS_ERROR;
+	if (*core->block & 0x1) { // "long" string
+		const ut8 *ptr = core->block + (bitness / 8) * 2;
+		ut64 old_offset = core->offset;
+		ut64 new_offset = rz_read_ble(ptr, big_endian, bitness);
+
+		rz_core_seek(core, new_offset, SEEK_SET);
+		rz_core_block_read(core);
+
+		status = core_auto_detect_and_print_string(core, true, 0, mode);
+
+		rz_core_seek(core, old_offset, SEEK_SET);
+		rz_core_block_read(core);
+	} else {
+		status = core_auto_detect_and_print_string(core, true, 1, mode);
+	}
+
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzListIter *it = NULL;
+	RzDetectedString *detected = NULL;
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = core->blocksize,
+		.max_uni_blocks = 4,
+		.min_str_length = core->bin->minstrlen,
+		.prefer_big_endian = false,
+	};
+
+	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!found) {
+		RZ_LOG_ERROR("core: failed to allocate RzList\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
+		rz_list_free(found);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_list_foreach (found, it, detected) {
+		ut64 address = core->offset + detected->addr;
+		if (mode != RZ_OUTPUT_MODE_QUIET) {
+			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
+		}
+		rz_cons_memcat(detected->string, detected->size);
+		rz_cons_newline();
+	}
+
+	rz_list_free(found);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzDetectedString *detected = NULL;
+	RzUtilStrScanOptions scan_opt = {
+		.buf_size = core->blocksize,
+		.max_uni_blocks = 4,
+		.min_str_length = core->bin->minstrlen,
+		.prefer_big_endian = false,
+	};
+
+	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!found) {
+		RZ_LOG_ERROR("core: failed to allocate RzList\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
+		rz_list_free(found);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	detected = rz_list_first(found);
+	if (detected) {
+		rz_cons_memcat(detected->string, detected->size);
+		rz_cons_newline();
+	}
+
+	rz_list_free(found);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzStrStringifyOpt opt = { 0 };
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	ut64 string_len = 0;
+	ut32 offset = 0;
+
+	if (!strcmp(argv[1], "8")) {
+		string_len = (ut64)core->block[0];
+		offset = 1;
+	} else if (!strcmp(argv[1], "16")) {
+		string_len = rz_read_ble16(core->block, big_endian);
+		offset = 2;
+	} else if (!strcmp(argv[1], "32")) {
+		string_len = rz_read_ble32(core->block, big_endian);
+		offset = 4;
+	} else {
+		string_len = rz_read_ble64(core->block, big_endian);
+		offset = 8;
+	}
+
+	if (string_len < 1) {
+		RZ_LOG_ERROR("core: string length is zero\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if ((string_len + offset) > core->blocksize) {
+		RZ_LOG_ERROR("core: string length exceeds block size\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		opt.buffer = core->block + offset;
+		opt.length = string_len;
+		opt.encoding = RZ_STRING_ENC_8BIT;
+		opt.stop_at_nil = true;
+		core_print_raw_buffer(&opt);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		print_json_string(core, core->block + offset, string_len, RZ_STRING_ENC_8BIT, true);
+		break;
+	default:
+		RZ_LOG_ERROR("core: unsupported output mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_string_wrap_width_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	int h, w = rz_cons_get_size(&h);
+	int colwidth = rz_config_get_i(core->config, "hex.cols") * 2;
+	int width = (colwidth == 32) ? w : colwidth; // w;
+	ut64 blocksize = core->blocksize;
+
+	ut64 len = (h * w) / 3;
+	rz_core_block_size(core, len);
+
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = len;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.wrap_at = width;
+	core_print_raw_buffer(&opt);
+	rz_core_block_size(core, blocksize);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_string_escaped_newlines_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzStrStringifyOpt opt = { 0 };
+	opt.buffer = core->block;
+	opt.length = core->blocksize;
+	opt.encoding = RZ_STRING_ENC_8BIT;
+	opt.escape_nl = true;
+	core_print_raw_buffer(&opt);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	char *str = rz_core_print_string_c_cpp(core);
 	if (!str) {
@@ -2784,268 +2982,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_cons_printf("%s\n", res);
 				free(res);
 			}
-		}
-		break;
-	case 's': // "ps"
-		switch (input[1]) {
-		case '?': // "ps?"
-			rz_core_cmd_help(core, help_msg_ps);
-			break;
-		case 'j': // "psj"
-			if (l > 0) {
-				if (input[2] == ' ' && input[3]) {
-					len = rz_num_math(core->num, input + 3);
-					len = RZ_MIN(len, core->blocksize);
-				}
-				RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, len);
-				print_json_string(core, core->block, len, enc, l != len);
-			}
-			break;
-		case 'i': // "psi"
-			if (l > 0) {
-				ut8 *buf = malloc(1024 + 1);
-				int delta = 512;
-				ut8 *p, *e, *b;
-				if (!buf) {
-					return 0;
-				}
-				buf[1024] = 0;
-				if (core->offset < delta) {
-					delta = core->offset;
-				}
-				p = buf + delta;
-				rz_io_read_at(core->io, core->offset - delta, buf, 1024);
-				for (b = p; b > buf; b--) {
-					if (!IS_PRINTABLE(*b)) {
-						b++;
-						break;
-					}
-				}
-				for (e = p; e < (buf + 1024); e++) {
-					if (!IS_PRINTABLE(*b)) {
-						*e = 0;
-						e--;
-						break;
-					}
-				}
-				rz_cons_strcat((const char *)b);
-				rz_cons_newline();
-				// rz_print_string (core->print, core->offset, b,
-				// (size_t)(e-b), 0);
-				free(buf);
-			}
-			break;
-		case 'x': // "psx"
-			if (l > 0) {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = block;
-				opt.length = len;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.escape_nl = true;
-				core_print_raw_buffer(&opt);
-			}
-			break;
-		case 'b': // "psb"
-			if (l > 0) {
-				int quiet = input[2] == 'q'; // "psbq"
-				char *s = malloc(core->blocksize + 1);
-				int i, j, hasnl = 0;
-				if (s) {
-					if (!quiet) {
-						rz_print_offset(core->print, core->offset, 0, 0, 0, 0, NULL);
-					}
-					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
-						char ch = (char)block[i];
-						if (!ch) {
-							if (!hasnl) {
-								s[j] = 0;
-								if (*s) {
-									rz_cons_println(s);
-									if (!quiet) {
-										rz_print_offset(core->print, core->offset + i, 0, 0, 0, 0, NULL);
-									}
-								}
-								j = 0;
-								s[0] = 0;
-							}
-							hasnl = 1;
-							continue;
-						}
-						hasnl = 0;
-						if (IS_PRINTABLE(ch)) {
-							s[j++] = ch;
-						}
-					}
-					s[j] = 0;
-					rz_cons_print(s); // TODO: missing newline?
-					free(s);
-				}
-			}
-			break;
-		case 'z': // "psz"
-			if (l > 0) {
-				char *s = malloc(core->blocksize + 1);
-				int i, j;
-				if (s) {
-					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
-						char ch = (char)core->block[i];
-						if (!ch) {
-							break;
-						}
-						if (IS_PRINTABLE(ch)) {
-							s[j++] = ch;
-						}
-					}
-					s[j] = '\0';
-					if (input[2] == 'j') { // pszj
-						print_json_string(core, (const ut8 *)s, j, RZ_STRING_ENC_8BIT, true);
-					} else {
-						rz_cons_println(s);
-					}
-					free(s);
-				}
-			}
-			break;
-		case 'p': // "psp"
-			if (l > 0) {
-				int mylen = core->block[0];
-				// TODO: add support for 2-4 byte length pascal strings
-				if (mylen < core->blocksize) {
-					if (input[2] == 'j') { // pspj
-						print_json_string(core, core->block + 1, mylen, RZ_STRING_ENC_8BIT, true);
-					} else {
-						RzStrStringifyOpt opt = { 0 };
-						opt.buffer = core->block + 1;
-						opt.length = mylen;
-						opt.encoding = RZ_STRING_ENC_8BIT;
-						opt.stop_at_nil = true;
-						core_print_raw_buffer(&opt);
-					}
-					core->num->value = mylen;
-				} else {
-					core->num->value = 0; // error
-				}
-			}
-			break;
-		case 'w': // "psw"
-			if (l > 0) {
-				if (input[2] == 'j') { // pswj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
-				} else {
-					RzStrStringifyOpt opt = { 0 };
-					opt.buffer = core->block;
-					opt.length = len;
-					opt.encoding = RZ_STRING_ENC_UTF16LE;
-					opt.stop_at_nil = true;
-					core_print_raw_buffer(&opt);
-				}
-			}
-			break;
-		case 'W': // "psW"
-			if (l > 0) {
-				if (input[2] == 'j') { // psWj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
-				} else {
-					RzStrStringifyOpt opt = { 0 };
-					opt.buffer = core->block;
-					opt.length = len;
-					opt.encoding = RZ_STRING_ENC_UTF32LE;
-					opt.stop_at_nil = true;
-					core_print_raw_buffer(&opt);
-				}
-			}
-			break;
-		case ' ': // "ps"
-		{
-			RzStrEnc enc = rz_str_guess_encoding_from_buffer(core->block, l);
-			RzStrStringifyOpt opt = { 0 };
-			opt.buffer = core->block;
-			opt.length = l;
-			opt.encoding = enc;
-			core_print_raw_buffer(&opt);
-		} break;
-		case 'u': // "psu"
-			if (l > 0) {
-				bool json = input[2] == 'j'; // "psuj"
-				if (input[2] == 'z') { // "psuz"
-					int i, z;
-					const char *p = (const char *)core->block;
-					for (i = 0, z = 0; i < len; i++) {
-						// looking for double zeros '\0\0'.
-						if (!p[i] && !z)
-							z = 1;
-						else if (!p[i] && z) {
-							len = i - 1;
-							break;
-						}
-					}
-					json = input[3] == 'j'; // "psuzj"
-				}
-				if (json) { // psuj
-					print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
-				} else {
-					char *str = rz_str_utf16_encode((const char *)core->block, len);
-					rz_cons_println(str);
-					free(str);
-				}
-			}
-			break;
-		case 's': // "pss"
-			if (l > 0) {
-				int h, w = rz_cons_get_size(&h);
-				int colwidth = rz_config_get_i(core->config, "hex.cols") * 2;
-				int width = (colwidth == 32) ? w : colwidth; // w;
-				int bs = core->blocksize;
-				if (len == bs) {
-					len = (h * w) / 3;
-					rz_core_block_size(core, len);
-				}
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block;
-				opt.length = len;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.wrap_at = width;
-				core_print_raw_buffer(&opt);
-				rz_core_block_size(core, bs);
-			}
-			break;
-		case '+': { // "ps+"
-			ut64 bitness = rz_config_get_i(core->config, "asm.bits");
-			if (bitness != 32 && bitness != 64) {
-				RZ_LOG_ERROR("core: %" PFMT64u " bits are not supported by this command\n", bitness);
-				break;
-			}
-			if (len < (bitness / 8) * 3) {
-				RZ_LOG_ERROR("Block size is too small to read string.\n");
-				break;
-			}
-			const bool json = input[2] == 'j'; // ps+j
-			if (*core->block & 0x1) { // "long" string
-				const ut8 *ptr = core->block + (bitness / 8) * 2;
-				rz_core_cmdf(core, "ps%c @ 0x%" PFMT64x, json ? 'j' : ' ', rz_read_ble(ptr, core->analysis->big_endian, bitness));
-			} else if (json) {
-				print_json_string(core, core->block + 1, len - 1, RZ_STRING_ENC_8BIT, true);
-			} else {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block + 1;
-				opt.length = len - 1;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.stop_at_nil = true;
-				core_print_raw_buffer(&opt);
-			}
-		} break;
-		default:
-			if (l > 0) {
-				RzStrStringifyOpt opt = { 0 };
-				opt.buffer = core->block;
-				opt.length = len;
-				opt.encoding = RZ_STRING_ENC_8BIT;
-				opt.stop_at_nil = true;
-				core_print_raw_buffer(&opt);
-			}
-			break;
 		}
 		break;
 	case 'm': // "pm"
@@ -3269,89 +3205,57 @@ RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int of
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16LE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16LE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF16LE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32le_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32LE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32LE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF32LE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_utf16be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF16BE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF16BE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF16BE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_print_utf32be_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	ut64 oldsize = core->blocksize;
-	ut64 len = argc == 2 ? rz_num_math(core->num, argv[1]) : oldsize;
-	if (len > oldsize) {
-		rz_core_block_size(core, len);
-	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		print_json_string(core, core->block, len, RZ_STRING_ENC_UTF32BE, true);
+		print_json_string(core, core->block, core->blocksize, RZ_STRING_ENC_UTF32BE, true);
 	} else {
 		RzStrStringifyOpt opt = { 0 };
 		opt.buffer = core->block;
-		opt.length = len;
+		opt.length = core->blocksize;
 		opt.encoding = RZ_STRING_ENC_UTF32BE;
 		opt.stop_at_nil = true;
 		core_print_raw_buffer(&opt);
-	}
-	if (len > oldsize) {
-		rz_core_block_size(core, oldsize);
 	}
 	return RZ_CMD_STATUS_OK;
 }

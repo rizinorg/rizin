@@ -428,7 +428,7 @@ _dA_  32         tms320      LGPLv3  TMS320 DSP family (c54x,c55x,c55x+,c64x)
 _d__  32         tms320c64x  BSD     Capstone TMS320c64x disassembler
 _dAe  32         v810        LGPL3   v810 disassembly plugin (by pancake)
 _dAe  32         v850        LGPL3   v850 disassembly plugin
-adAe  32         wasm        MIT     WebAssembly (by cgvwzq) v0.1.0
+adA_  32         wasm        MIT     WebAssembly (by cgvwzq) v0.1.0
 a___  16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
 _dAe  16 32 64   x86         BSD     Capstone X86 disassembler
 a___  16 32 64   x86.nasm    LGPL3   X86 nasm assembler

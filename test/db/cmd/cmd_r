@@ -38,12 +38,12 @@ r
 w ABC
 r+ 3
 w ABC
-ps 3
+ps @! 3
 r 0x40
 r
 wb 4142434445
 r- 4
-ps 5
+ps @! 5
 o- `olt:uri/str/tmp_r_file:fd:quiet`
 o .tmp_r_file
 r

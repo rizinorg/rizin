@@ -3487,12 +3487,12 @@ static char *objc_name_toc(const char *objc_name) {
 static void classdump_c(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("typedef struct class_%s {\n", c->name);
 	RzListIter *iter2;
-	RzBinField *f;
+	RzBinClassField *f;
 	rz_list_foreach (c->fields, iter2, f) {
 		if (f->type && f->name) {
 			char *n = objc_name_toc(f->name);
 			char *t = objc_type_toc(f->type);
-			rz_cons_printf("    %s %s; // %d\n", t, n, f->offset);
+			rz_cons_printf("    %s %s;\n", t, n);
 			free(t);
 			free(n);
 		}
@@ -3507,7 +3507,7 @@ static void classdump_objc(RzCore *r, RzBinClass *c) {
 		rz_cons_printf("@interface %s\n{\n", c->name);
 	}
 	RzListIter *iter2, *iter3;
-	RzBinField *f;
+	RzBinClassField *f;
 	RzBinSymbol *sym;
 	rz_list_foreach (c->fields, iter2, f) {
 		if (f->name && rz_regex_match("ivar", "e", f->name)) {
@@ -3541,7 +3541,7 @@ static inline bool is_known_namespace(const char *string) {
 #define CXX_BIN_VISIBILITY_FLAGS (RZ_BIN_METH_PUBLIC | RZ_BIN_METH_PRIVATE | RZ_BIN_METH_PROTECTED)
 static void classdump_cpp(RzCore *r, RzBinClass *c) {
 	RzListIter *iter;
-	RzBinField *f;
+	RzBinClassField *f;
 	RzBinSymbol *sym;
 	ut64 used = UT64_MAX;
 	bool has_methods = false;
@@ -3622,25 +3622,13 @@ static void classdump_cpp(RzCore *r, RzBinClass *c) {
 			if (f->visibility & RZ_BIN_METH_CONST) {
 				rz_cons_print("const ");
 			}
-			rz_cons_printf("%s %s;\n", f->type, f->name);
+			const char *ftype = f->type ? f->type : "unknown_t";
+			rz_cons_printf("%s %s;\n", ftype, f->name);
 		}
 	}
 	rz_cons_printf("}\n");
 }
 #undef CXX_BIN_VISIBILITY_FLAGS
-
-static inline char *demangle_class(const char *classname) {
-	if (!classname || classname[0] != 'L') {
-		return strdup(classname ? classname : "?");
-	}
-	char *demangled = strdup(classname + 1);
-	if (!demangled) {
-		return strdup(classname);
-	}
-	rz_str_replace_ch(demangled, '/', '.', 1);
-	demangled[strlen(demangled) - 1] = 0;
-	return demangled;
-}
 
 static inline char *demangle_type(const char *any) {
 	if (!any) {
@@ -3666,20 +3654,20 @@ static inline const char *resolve_java_visibility(const char *v) {
 }
 
 static void classdump_java(RzCore *r, RzBinClass *c) {
-	RzBinField *f;
+	RzBinClassField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
 	bool simplify = false;
 	char *package = NULL, *classname = NULL;
-	char *tmp = (char *)rz_str_rchr(c->name, NULL, '/');
+	char *tmp = (char *)rz_str_rchr(c->name, NULL, '.');
 	if (tmp) {
-		package = demangle_class(c->name);
+		package = strdup(c->name);
 		classname = strdup(tmp + 1);
 		classname[strlen(classname) - 1] = 0;
 		simplify = true;
 	} else {
 		package = strdup("defpackage");
-		classname = demangle_class(c->name);
+		classname = strdup(c->name);
 	}
 
 	rz_cons_printf("package %s;\n\n", package);
@@ -3725,7 +3713,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
 	RzListIter *iter2;
 	RzBinFile *bf = rz_bin_cur(r->bin);
-	RzBinField *f;
+	RzBinClassField *f;
 	RzBinSymbol *sym;
 
 	// class
@@ -3820,7 +3808,7 @@ RZ_API bool rz_core_bin_class_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL R
 
 	RzListIter *iter, *iter2;
 	RzBinClass *c;
-	RzBinField *f;
+	RzBinClassField *f;
 	int m = 0;
 
 	const RzList *cs = rz_bin_object_get_classes(bf->o);
@@ -3946,7 +3934,7 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 	RzListIter *iter, *iter2, *iter3;
 	RzBinSymbol *sym;
 	RzBinClass *c;
-	RzBinField *f;
+	RzBinClassField *f;
 
 	const RzList *cs = rz_bin_object_get_classes(bf->o);
 	if (!cs) {
@@ -4711,7 +4699,7 @@ RZ_API RZ_OWN char *rz_core_bin_method_build_flag_name(RZ_NONNULL RzBinClass *cl
  * \brief Returns the flag name of a class field
  *
  **/
-RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinField *field) {
+RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls, RZ_NONNULL RzBinClassField *field) {
 	rz_return_val_if_fail(cls && field, NULL);
 	if (!cls->name || !field->name) {
 		return NULL;

@@ -9,7 +9,7 @@ lang     rust
 EOF
 RUN
 
-NAME=LANGUAGES : rust disasembly
+NAME=LANGUAGES : rust disassembly
 FILE=bins/abi_bins/elf/languages/rust/tree_traversal
 CMDS=<<EOF
 pi 10

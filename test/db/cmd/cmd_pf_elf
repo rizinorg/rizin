@@ -397,7 +397,7 @@ pf? elf_header
 pfs.elf_header
 echo
 wz `pf? elf_header`
-(pfelf num; pf.elf_header${num} {${num}}`psz`; pf? elf_header${num}; pfs.elf_header${num})
+(pfelf num; pf.elf_header${num} {${num}}`ps`; pf? elf_header${num}; pfs.elf_header${num})
 .(pfelf 1)
 echo
 .(pfelf 2)

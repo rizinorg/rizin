@@ -22,8 +22,7 @@ RZ_API bool rz_num_is_hex_prefix(const char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-// TODO: rename to rz_num_srand()
-static void rz_srand(int seed) {
+static void rz_num_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -32,19 +31,40 @@ static void rz_srand(int seed) {
 #endif
 }
 
-static int rz_rand(int mod) {
+static ut32 rz_rand32(ut32 mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
-	return (int)arc4random_uniform(mod);
+	return (ut32)arc4random_uniform(mod);
 #else
-	return rand() % mod;
+	return (ut32)rand() % mod;
 #endif
 }
 
-RZ_API void rz_num_irand(void) {
-	rz_srand(rz_time_now());
+static ut64 rz_rand64(ut64 mod) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	return (ut64)arc4random_uniform(mod) << 32 | (ut64)arc4random_uniform(mod);
+#else
+	return ((ut64)rand() << 32 | (ut64)rand()) % mod;
+#endif
 }
 
-RZ_API int rz_num_rand(int max) {
+/**
+ * \brief Seed the random number generator.
+ **/
+RZ_API void rz_num_irand(void) {
+	rz_num_srand(rz_time_now());
+}
+
+// NOTE: The random generator will be seeded twice
+// but I don't think that'll be a problem since it'll
+// be seeded twice at max
+
+/**
+ * \brief Generate 32 bit random numbers.
+ *
+ * \param max Maximum value of generated random numbers.
+ * \return Random value between 0 to max.
+ **/
+RZ_API ut32 rz_num_rand32(ut32 max) {
 	static bool rand_initialized = false;
 	if (!rand_initialized) {
 		rz_num_irand();
@@ -53,9 +73,34 @@ RZ_API int rz_num_rand(int max) {
 	if (!max) {
 		max = 1;
 	}
-	return rz_rand(max);
+	return rz_rand32(max);
 }
 
+/**
+ * \brief Generate 64 bit random numbers.
+ *
+ * \param max Maximum value of generated random numbers.
+ * \return Random value between 0 to max.
+ **/
+RZ_API ut64 rz_num_rand64(ut64 max) {
+	static bool rand_initialized = false;
+	if (!rand_initialized) {
+		rz_num_irand();
+		rand_initialized = true;
+	}
+	if (!max) {
+		max = 1;
+	}
+	return rz_rand64(max);
+}
+
+/**
+ * \brief Swap a and b if a is greater than b.
+ * 64-bit version.
+ *
+ * \param a Pointer to first value.
+ * \param b Pointer to second value.
+ **/
 RZ_API void rz_num_minmax_swap(ut64 *a, ut64 *b) {
 	if (*a > *b) {
 		ut64 tmp = *a;
@@ -64,6 +109,13 @@ RZ_API void rz_num_minmax_swap(ut64 *a, ut64 *b) {
 	}
 }
 
+/**
+ * \brief Swap a and b if a is greater than b.
+ * 32bit integer version.
+ *
+ * \param a Pointer to first value.
+ * \param b Pointer to second value.
+ **/
 RZ_API void rz_num_minmax_swap_i(int *a, int *b) {
 	if (*a > *b) {
 		ut64 tmp = *a;
@@ -72,6 +124,14 @@ RZ_API void rz_num_minmax_swap_i(int *a, int *b) {
 	}
 }
 
+/**
+ * \brief Create a new RzNum for handling numerical expressions.
+ *
+ * \param cb Callback.
+ * \param cb2 Second callback.
+ * \param ptr User defined data.
+ * \return Created RzNum pointer on success, NULL otherwise.
+ **/
 RZ_API RzNum *rz_num_new(RzNumCallback cb, RzNumCallback2 cb2, void *ptr) {
 	RzNum *num = RZ_NEW0(RzNum);
 	if (!num) {
@@ -84,6 +144,11 @@ RZ_API RzNum *rz_num_new(RzNumCallback cb, RzNumCallback2 cb2, void *ptr) {
 	return num;
 }
 
+/**
+ * \brief Destroy the RzNum object.
+ *
+ * \param RzNum to be destroy.
+ **/
 RZ_API void rz_num_free(RzNum *num) {
 	free(num);
 }
@@ -453,6 +518,13 @@ RZ_API static ut64 rz_num_math_internal(RzNum *num, char *s) {
 }
 #endif /* !RZ_NUM_USE_CALC */
 
+/**
+ * \brief Compute an numerical expression.
+ *
+ * \param num RzNum instance.
+ * \param str Numerical expression.
+ * \return Evaluated expression's value.
+ **/
 RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
 #if RZ_NUM_USE_CALC
 	ut64 ret;
@@ -529,6 +601,13 @@ RZ_API ut64 rz_num_math(RzNum *num, const char *str) {
 #endif
 }
 
+/**
+ * \brief Check if given string represents a float value or not.
+ *
+ * \param num RzNum instance.
+ * \param str Numerical value.
+ * \return Non zero value if float, 0 otherwise.
+ **/
 RZ_API int rz_num_is_float(RzNum *num, const char *str) {
 	return (IS_DIGIT(*str) && (strchr(str, '.') || str[strlen(str) - 1] == 'f'));
 }

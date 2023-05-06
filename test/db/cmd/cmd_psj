@@ -2,7 +2,7 @@ NAME=psj ascii
 FILE=malloc://128
 CMDS=<<EOF
 wx 72697a696e20697320636f6f6c
-psj 13
+psj @!13
 EOF
 EXPECT=<<EOF
 {"string":"rizin is cool","offset":0,"section":"unknown","length":13,"type":"ascii"}
@@ -13,7 +13,7 @@ NAME=psj ascii 2
 FILE=bins/elf/analysis/hello-android-arm
 CMDS=<<EOF
 s 0x00008358
-psj 11
+psj @!11
 EOF
 EXPECT=<<EOF
 {"string":"Hello World","offset":33624,"section":".rodata","length":11,"type":"ascii"}
@@ -24,7 +24,7 @@ NAME=psj utf8
 FILE=malloc://128
 CMDS=<<EOF
 wx e9bb91e5aea2
-psj 6
+psj @!6 @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 {"string":"\u00e9\u00bb\u0091\u00e5\u00ae\u00a2","offset":0,"section":"unknown","length":6,"type":"utf8"}
@@ -35,7 +35,7 @@ NAME=psj utf8 (#9064)
 FILE==
 CMDS=<<EOF
 wz "...\"..����..."
-psj 13
+psj @!13 @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 {"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf8"}
@@ -44,7 +44,7 @@ RUN
 
 NAME=psj utf32le
 FILE=bins/elf/crackme0x00b
-CMDS=psj 32 @ obj.pass.1964
+CMDS=psj @!64 @ obj.pass.1964
 EXPECT=<<EOF
 {"string":"w0wgreat","offset":134520896,"section":".data","length":8,"type":"utf32le"}
 EOF
@@ -52,7 +52,7 @@ RUN
 
 NAME=psj utf32be
 FILE=bins/elf/crackme0x00b
-CMDS=psj 32 @ 0x0804a03d
+CMDS=psj @!64 @ 0x0804a03d
 EXPECT=<<EOF
 {"string":"w0wgreat","offset":134520893,"section":".data","length":8,"type":"utf32be"}
 EOF

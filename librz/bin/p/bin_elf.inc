@@ -407,12 +407,12 @@ static bool create_set_e_machine(RzBuffer *result, bool is_arm) {
 #endif
 }
 
-static bool create_set_ehdr(RzBuffer *result, bool is_arm) {
+static bool create_set_ehdr(RzBuffer *result, Elf_(Word) baddr, bool is_arm) {
 	return create_set_e_ident(result) &&
 		rz_buf_append_ut16(result, ET_EXEC) &&
 		create_set_e_machine(result, is_arm) &&
 		rz_buf_append_ut32(result, EV_CURRENT) &&
-		rz_buf_append_word(result, sizeof(Elf_(Ehdr)) + sizeof(Elf_(Phdr))) && // e_entry
+		rz_buf_append_word(result, baddr + sizeof(Elf_(Ehdr)) + sizeof(Elf_(Phdr))) && // e_entry
 		rz_buf_append_word(result, sizeof(Elf_(Ehdr))) && // e_phoff
 		rz_buf_append_word(result, 0) && // e_shoff
 		rz_buf_append_ut32(result, 0) && // e_flags
@@ -443,7 +443,7 @@ static bool create_set_phdr(RzBuffer *result, Elf_(Word) baddr, int codelen) {
 		rz_buf_append_ut32(result, length) && // p_filesz
 		rz_buf_append_ut32(result, length) && // p_memsz
 		rz_buf_append_ut32(result, PF_X | PF_R) && // p_flags
-		rz_buf_append_ut64(result, 0x1000); // p_align
+		rz_buf_append_ut32(result, 0x1000); // p_align
 #endif
 }
 
@@ -467,7 +467,7 @@ static RzBuffer *create_elf(RzBin *bin, const ut8 *code, int codelen, const ut8 
 	bool is_arm = !strcmp(opt->arch, "arm");
 	Elf_(Word) baddr = create_get_baddr(is_arm);
 
-	if (!create_set_ehdr(result, is_arm) ||
+	if (!create_set_ehdr(result, baddr, is_arm) ||
 		!create_set_phdr(result, baddr, codelen) ||
 		!rz_buf_append_bytes(result, code, codelen)) {
 		rz_buf_free(result);

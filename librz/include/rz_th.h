@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2020-2023 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_TH_H
@@ -11,6 +11,9 @@
 #define _GNU_SOURCE
 #include <rz_types.h>
 #include <rz_list.h>
+#include <rz_vector.h>
+
+#include <rz_util/rz_th_ht.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +29,7 @@ typedef struct rz_th_t RzThread;
 typedef struct rz_th_pool_t RzThreadPool;
 typedef struct rz_th_queue_t RzThreadQueue;
 typedef void *(*RzThreadFunction)(void *user);
+typedef void (*RzThreadIterator)(void *element, void *user);
 
 typedef struct rz_atomic_bool_t RzAtomicBool;
 
@@ -82,10 +86,13 @@ RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool);
 RZ_API bool rz_atomic_bool_get(RZ_NONNULL RzAtomicBool *tbool);
 RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 
-#endif
+RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE void *user);
+RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, size_t max_threads, RZ_NULLABLE void *user);
+
+#endif /* RZ_API */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* RZ_TH_H */

@@ -653,7 +653,7 @@ typedef struct rz_bin_class_t {
 	int index;
 	ut64 addr;
 	RzList /*<RzBinSymbol *>*/ *methods;
-	RzList /*<RzBinField *>*/ *fields;
+	RzList /*<RzBinClassField *>*/ *fields;
 	// RzList *interfaces; // <char *>
 	int visibility;
 } RzBinClass;
@@ -765,18 +765,25 @@ typedef struct rz_bin_field_t {
 	ut64 paddr;
 	int size;
 	int offset;
-	ut32 visibility;
 	char *name;
 	char *type;
-	char *visibility_str;
 	char *comment;
 	char *format;
 	bool format_named; // whether format is the name of a format or a raw pf format string
 	ut64 flags;
 } RzBinField;
 
-RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
-RZ_API void rz_bin_field_free(RzBinField *field);
+typedef struct rz_bin_class_field_t {
+	ut64 vaddr;
+	ut64 paddr;
+	char *name;
+	char *classname;
+	char *libname;
+	char *type;
+	ut32 visibility;
+	char *visibility_str;
+	ut64 flags;
+} RzBinClassField;
 
 typedef struct rz_bin_mem_t {
 	char *name;
@@ -814,6 +821,12 @@ typedef struct rz_bin_bind_t {
 	RzBinDemangle demangle;
 	ut32 visibility;
 } RzBinBind;
+
+RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
+RZ_API void rz_bin_field_free(RzBinField *field);
+RZ_API RzBinClassField *rz_bin_class_field_new(ut64 vaddr, ut64 paddr, const char *name, const char *classname, const char *libname, const char *type);
+RZ_API void rz_bin_class_field_free(RzBinClassField *field);
+RZ_API void rz_bin_class_free(RzBinClass *k);
 
 RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile);
 RZ_API void rz_bin_map_free(RzBinMap *map);

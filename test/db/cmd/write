@@ -341,13 +341,13 @@ CMDS=<<EOF
 e io.va=0
 e io.pcache=true
 s 0
-ps 2
+ps @! 2
 wx 9090
 p8 2
 e io.pcache=0
 sd +1
 s 0
-ps 2
+ps @! 2
 EOF
 EXPECT=<<EOF
 MZ
@@ -363,9 +363,9 @@ w 0123456789abcde
 w a\57b\0
 w 1\0532\0 @ 0x4
 w 0\1741\0 @ 0x8
-ps
-ps @ 0x4
-ps @ 0x8
+ps @e:bin.str.enc=utf8
+ps @ 0x4 @e:bin.str.enc=utf8
+ps @ 0x8 @e:bin.str.enc=utf8
 EOF
 EXPECT=<<EOF
 a/b
