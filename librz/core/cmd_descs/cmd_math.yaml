@@ -279,6 +279,12 @@ commands:
     args:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
+  - name: "%%"
+    summary: Execute command if result of last numeric expression evaluation (related) command was not 0
+    cname: exec_cmd_if_core_num_value_nonzero
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
   - name: "%l"
     summary: Calculate length of string. Quite mode stores value in `$?` register.
     cname: calculate_string_length
@@ -399,9 +405,3 @@ commands:
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: "%%"
-    summary: Execute command if $? register holds positive value
-    cname: exec_cmd_if_core_num_value_positive2
-    args:
-      - name: cmd
-        type: RZ_CMD_ARG_TYPE_CMD

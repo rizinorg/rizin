@@ -387,6 +387,13 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_nonzero_handler(RzCore *core, int argc, const char **argv) {
+	if (core->num->value) {
+		core->num->value = rz_core_cmd(core, argv[1], 0);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_show_help_vars_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_help_vars_print(core);
 	return RZ_CMD_STATUS_OK;
@@ -575,12 +582,5 @@ RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const 
 	}
 	rz_cons_println(rstr);
 	free(rstr);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive2_handler(RzCore *core, int argc, const char **argv) {
-	if (core->num->value) {
-		core->num->value = rz_core_cmd(core, argv[1], 0);
-	}
 	return RZ_CMD_STATUS_OK;
 }

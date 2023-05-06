@@ -141,6 +141,8 @@ RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_negative_handler(RzCore *core, int argc, const char **argv);
 // "%!"
 RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_zero_handler(RzCore *core, int argc, const char **argv);
+// "%%"
+RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_nonzero_handler(RzCore *core, int argc, const char **argv);
 // "%l"
 RZ_IPI RzCmdStatus rz_calculate_string_length_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "%X"
@@ -175,8 +177,6 @@ RZ_IPI RzCmdStatus rz_input_msg_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_input_conditional_handler(RzCore *core, int argc, const char **argv);
 // "%w"
 RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const char **argv);
-// "%%"
-RZ_IPI RzCmdStatus rz_exec_cmd_if_core_num_value_positive2_handler(RzCore *core, int argc, const char **argv);
 // "<"
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv);
 // "aa"
