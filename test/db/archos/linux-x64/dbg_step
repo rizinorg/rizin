@@ -290,7 +290,7 @@ CMDS=<<EOF
 e dbg.follow=1
 e asm.bytes=1
 dcu main
-dr r13=0x00400574  # For Ubuntu 20.04
+dr r13=rip+1  # For Ubuntu 20.04
 pd 2
 s
 ds
@@ -299,9 +299,9 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- rax:
-            ;-- r13:
             ;-- rip:
             0x00400574      55             push  rbp
+            ;-- r13:
             0x00400575      ff1425580960.  call  qword [loc.pnt_0]     ; 0x600958 ; "/\x05@"
 0x400574
 0x400575
