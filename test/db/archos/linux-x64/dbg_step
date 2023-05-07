@@ -290,6 +290,7 @@ CMDS=<<EOF
 e dbg.follow=1
 e asm.bytes=1
 dcu main
+dr r13=0x00400574  # For Ubuntu 20.04
 pd 2
 s
 ds
