@@ -1118,13 +1118,13 @@ bool test_typedef_loop(void) {
 }
 
 static void struct_union_add_member(RzTypeDB *typedb, RzBaseType *btype, const char *member_name, RzType *member_type) {
-	if (btype->type == RZ_BASE_TYPE_KIND_STRUCT) {
+	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		RzTypeStructMember *memb = rz_vector_push(&btype->struct_data.members, NULL);
 		memb->type = member_type;
 		memb->name = strdup(member_name);
 		memb->offset = 0;
 		memb->size = 0;
-	} else { // if (btype->type == RZ_BASE_TYPE_KIND_UNION)
+	} else { // if (btype->kind == RZ_BASE_TYPE_KIND_UNION)
 		RzTypeUnionMember *memb = rz_vector_push(&btype->union_data.members, NULL);
 		memb->type = member_type;
 		memb->name = strdup(member_name);

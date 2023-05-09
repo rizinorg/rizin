@@ -705,7 +705,7 @@ RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL
  * \brief Convert \p graph to an image, and write it to \p filename.
  */
 RZ_API bool rz_core_graph_write_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL const char *filename) {
-	rz_return_val_if_fail(core && graph && filename, NULL);
+	rz_return_val_if_fail(core && graph && filename, false);
 	char *dot_text = rz_core_graph_to_dot_str(core, graph);
 	if (!dot_text) {
 		return false;

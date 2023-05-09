@@ -196,7 +196,7 @@ RZ_API RZ_OWN RzType *rz_type_callable(RZ_NONNULL RZ_OWN RzCallable *callable) {
 RZ_API bool rz_type_atomic_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ1, RZ_NONNULL const RzType *typ2) {
 	// We aim to compare only atomic types, we can't compare more complex ones for now
 	rz_return_val_if_fail(typ1 && typ2, false);
-	rz_return_val_if_fail(typ1->kind == RZ_TYPE_KIND_IDENTIFIER && typ2 == RZ_TYPE_KIND_IDENTIFIER, false);
+	rz_return_val_if_fail(typ1->kind == RZ_TYPE_KIND_IDENTIFIER && typ2->kind == RZ_TYPE_KIND_IDENTIFIER, false);
 	rz_return_val_if_fail(typ1->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED, false);
 	rz_return_val_if_fail(typ2->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED, false);
 	rz_return_val_if_fail(typ1->identifier.name, false);

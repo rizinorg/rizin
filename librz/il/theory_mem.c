@@ -20,7 +20,7 @@ void *rz_il_handler_load(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 }
 
 bool rz_il_handler_store(RzILVM *vm, RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, NULL);
+	rz_return_val_if_fail(vm && op, false);
 
 	RzILOpArgsStore *op_store = &op->op.store;
 
@@ -53,7 +53,7 @@ void *rz_il_handler_loadw(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 }
 
 bool rz_il_handler_storew(RzILVM *vm, RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, NULL);
+	rz_return_val_if_fail(vm && op, false);
 
 	RzILOpArgsStoreW *op_storew = &op->op.storew;
 

@@ -98,7 +98,7 @@ bool rz_il_handler_blk(RzILVM *vm, RzILOpEffect *op) {
 }
 
 bool rz_il_handler_repeat(RzILVM *vm, RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, NULL);
+	rz_return_val_if_fail(vm && op, false);
 
 	RzILOpArgsRepeat *op_repeat = &op->op.repeat;
 	bool res = true;

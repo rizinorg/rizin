@@ -127,7 +127,7 @@ RZ_API RZ_OWN RZ_NULLABLE RzILVal *rz_il_var_set_remove_var(RzILVarSet *vs, cons
  * \return whether the value was successfully bound
  */
 RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal *val) {
-	rz_return_val_if_fail(vs && name && val, NULL);
+	rz_return_val_if_fail(vs && name && val, false);
 	RzILVar *var = ht_pp_find(vs->vars, name, NULL);
 	if (!var || !rz_il_sort_pure_eq(var->sort, rz_il_value_get_sort(val))) {
 		if (!var) {
