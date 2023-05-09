@@ -4,6 +4,10 @@
 #ifndef SDB_PRIVATE_H_
 #define SDB_PRIVATE_H_
 
+#if __WINDOWS__
+#include <io.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
