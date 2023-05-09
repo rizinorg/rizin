@@ -393,7 +393,7 @@ RZ_API RzArFp *ar_open_file(const char *arname, int perm, const char *filename) 
 		return NULL;
 	}
 
-	RzArFp *arf = arfp_new(b, NULL);
+	RzArFp *arf = arfp_new(b, false);
 	if (!arf) {
 		rz_buf_free(b);
 		return NULL;

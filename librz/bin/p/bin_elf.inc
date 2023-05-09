@@ -193,7 +193,7 @@ static int check_buffer_aux(RzBuffer *buf) {
 #endif
 
 static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, RZ_UNUSED Sdb *sdb) {
-	rz_return_val_if_fail(obj, NULL);
+	rz_return_val_if_fail(obj, false);
 
 	ELFOBJ *bin = Elf_(rz_bin_elf_new_buf)(buf, &obj->opts);
 	if (!bin) {

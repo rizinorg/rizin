@@ -318,9 +318,9 @@ static void *eval_pure(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpPure *op, RZ_NONN
 }
 
 static bool eval_effect(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILOpEffect *op) {
-	rz_return_val_if_fail(vm && op, NULL);
+	rz_return_val_if_fail(vm && op, false);
 	RzILOpEffectHandler handler = vm->op_handler_effect_table[op->code];
-	rz_return_val_if_fail(handler, NULL);
+	rz_return_val_if_fail(handler, false);
 	return handler(vm, op);
 }
 

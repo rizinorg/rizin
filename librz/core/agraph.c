@@ -4903,7 +4903,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
  * \return Success
  */
 RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail) {
-	rz_return_val_if_fail(ag && g, NULL);
+	rz_return_val_if_fail(ag && g, false);
 	ag->need_reload_nodes = false;
 	// Cache lookup to build edges
 	HtPPOptions pointer_options = { 0 };

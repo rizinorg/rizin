@@ -95,7 +95,7 @@ RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char 
  * Returns true in case of success.
  */
 RZ_API bool rz_config_toggle(RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
+	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (!node) {
 		return false;
@@ -390,7 +390,7 @@ RZ_API const char *rz_config_node_desc(RzConfigNode *node, RZ_NULLABLE const cha
 }
 
 RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, NULL);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name) && cfg, false);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		ht_pp_delete(cfg->ht, node->name);
