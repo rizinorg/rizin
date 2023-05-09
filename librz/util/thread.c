@@ -19,7 +19,7 @@ static RZ_TH_RET_T thread_main_function(void *_th) {
 #endif
 	RzThread *th = (RzThread *)_th;
 	th->retv = th->function(th->user);
-	return NULL;
+	return (RZ_TH_RET_T)0;
 }
 
 RZ_IPI RZ_TH_TID rz_th_self(void) {
