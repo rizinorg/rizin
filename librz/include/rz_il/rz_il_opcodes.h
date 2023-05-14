@@ -388,6 +388,7 @@ typedef struct rz_il_op_args_float_unary_t RzILOpArgsFneg;
 typedef struct rz_il_op_args_float_unary_t RzILOpArgsFabs;
 typedef struct rz_il_op_args_float_unary_t RzILOpArgsFsucc;
 typedef struct rz_il_op_args_float_unary_t RzILOpArgsFpred;
+typedef struct rz_il_op_args_float_unary_t RzILOpArgsFCastraw;
 
 /**
  * \brief op structure for cast to bv from float
@@ -567,6 +568,7 @@ typedef enum {
 	RZ_IL_OP_FABS,
 	RZ_IL_OP_FCAST_INT,
 	RZ_IL_OP_FCAST_SINT,
+	RZ_IL_OP_FCAST_RAW,
 	RZ_IL_OP_FCAST_FLOAT,
 	RZ_IL_OP_FCAST_SFLOAT,
 	RZ_IL_OP_FCONVERT,
@@ -657,6 +659,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFabs fabs;
 		RzILOpArgsFCastint fcast_int;
 		RzILOpArgsFCastsint fcast_sint;
+		RzILOpArgsFCastraw fcast_raw;
 		RzILOpArgsFCastfloat fcast_float;
 		RzILOpArgsFCastsfloat fcast_sfloat;
 		RzILOpArgsFconvert fconvert;
@@ -747,6 +750,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fneg(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_raw(RZ_NONNULL RzILOpFloat *x);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
