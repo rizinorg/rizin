@@ -4776,7 +4776,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	RzCore *core = ds->core;
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *pc;
-	int (*hook_mem_write)(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	int (*hook_mem_write)(RzAnalysisEsil * esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = rz_core_pava(core, ds->at);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
