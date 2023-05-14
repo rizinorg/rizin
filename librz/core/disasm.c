@@ -3814,30 +3814,27 @@ static void ds_align_comment(RzDisasmState *ds) {
 }
 
 static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState *ds) {
+	if (!ds->show_dwarf) {
+		return;
+	}
 
-	bool binFileExists = true;
-	bool SourceLineInfoExists = true;
-	RzBinFile *binfile = core->bin->cur;
-	RzBinSourceLineInfo *li = binfile->o->lines;
-
-	if (ds->dwarfShowLines && ds->show_dwarf /* && SourceLineInfoExists && binFileExists*/) {
+	if (ds->dwarfShowLines) {
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
-		RzBinSourceLineSample *linesampleinfo = NULL;
-		char *path = strdup(rz_config_get(core->config, "file.path"));
+		const char *path = rz_config_get(core->config, "file.path");
 		char *filename = strrchr(path, '/');
 
+		RzBinSourceLineInfo *li = core->bin->cur->o->lines;
 		for (size_t i = 0; i < li->samples_count; i++) {
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			linesampleinfo = &li->samples[i];
+			RzBinSourceLineSample *sample = &li->samples[i];
 			ds_align_comment(ds);
-			if (ds->vat == linesampleinfo->address) {
-				// rz_cons_printf("\tLine number%s", temps->file ? temps->file : "-");
-				rz_cons_printf("\t ; %s:%s", filename, linesampleinfo->file ? linesampleinfo->file : "");
-				if (linesampleinfo->line) {
-					rz_cons_printf("%" PFMT32u "\n", linesampleinfo->line);
+			if (ds->vat == sample->address) {
+				rz_cons_printf("\t ; %s:%s", filename, sample->file ? sample->file : "");
+				if (sample->line) {
+					rz_cons_printf("%" PFMT32u "\n", sample->line);
 				} else {
 					rz_cons_print("-\n");
 				}
@@ -3847,40 +3844,35 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 		rz_cmd_state_output_array_end(state);
 	}
 
-	if (ds->show_dwarf) {
-		// TODO: cache value in ds
-		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
-		free(ds->sl);
-		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
-		if (ds->sl) {
-			if ((!ds->osl || (ds->osl && strcmp(ds->sl, ds->osl)))) {
-				char *line = strdup(ds->sl);
-				if (!line) {
-					return;
-				}
-				rz_str_replace_char(line, '\t', ' ');
-				rz_str_replace_char(line, '\x1b', ' ');
-				rz_str_replace_char(line, '\r', ' ');
-				rz_str_replace_char(line, '\n', '\x00');
-				rz_str_trim(line);
-				if (!*line) {
-					free(line);
-					return;
-				}
-				// handle_set_pre (ds, "  ");
-				ds_align_comment(ds);
-				if (ds->show_color) {
-					rz_cons_printf("%s; %s" Color_RESET, ds->pal_comment, line);
-				} else {
-					rz_cons_printf("; %s", line);
-				}
-				free(ds->osl);
-				ds->osl = ds->sl;
-				ds->sl = NULL;
-				free(line);
-			}
-		}
+	// TODO: cache value in ds
+	int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
+	free(ds->sl);
+	ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
+	if (RZ_STR_ISEMPTY(ds->sl))
+		return;
+	if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
+		return;
+	char *line = strdup(ds->sl);
+	rz_str_replace_char(line, '\t', ' ');
+	rz_str_replace_char(line, '\x1b', ' ');
+	rz_str_replace_char(line, '\r', ' ');
+	rz_str_replace_char(line, '\n', '\x00');
+	rz_str_trim(line);
+	if (RZ_STR_ISEMPTY(line)) {
+		free(line);
+		return;
 	}
+	// handle_set_pre (ds, "  ");
+	ds_align_comment(ds);
+	if (ds->show_color) {
+		rz_cons_printf("%s; %s" Color_RESET, ds->pal_comment, line);
+	} else {
+		rz_cons_printf("; %s", line);
+	}
+	free(ds->osl);
+	ds->osl = ds->sl;
+	ds->sl = NULL;
+	free(line);
 }
 
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf) {
@@ -4784,7 +4776,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	RzCore *core = ds->core;
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *pc;
-	int (*hook_mem_write)(RzAnalysisEsil * esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	int (*hook_mem_write)(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = rz_core_pava(core, ds->at);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
