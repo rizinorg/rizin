@@ -3820,13 +3820,13 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 	RzBinFile *binfile = core->bin->cur;
 	RzBinSourceLineInfo *li = binfile->o->lines;
 
-	if (ds->dwarfShowLines && ds->show_dwarf/* && SourceLineInfoExists && binFileExists*/) {
+	if (ds->dwarfShowLines && ds->show_dwarf /* && SourceLineInfoExists && binFileExists*/) {
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
 		RzBinSourceLineSample *linesampleinfo = NULL;
-		char *path = strdup(rz_config_get(core->config,"file.path"));
-		char *filename = strrchr(path,'/');
-		
+		char *path = strdup(rz_config_get(core->config, "file.path"));
+		char *filename = strrchr(path, '/');
+
 		for (size_t i = 0; i < li->samples_count; i++) {
 			if (rz_cons_is_breaked()) {
 				break;
@@ -3835,7 +3835,7 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 			ds_align_comment(ds);
 			if (ds->vat == linesampleinfo->address) {
 				// rz_cons_printf("\tLine number%s", temps->file ? temps->file : "-");
-				rz_cons_printf("\t ; %s:%s",filename,linesampleinfo->file ? linesampleinfo->file:"");
+				rz_cons_printf("\t ; %s:%s", filename, linesampleinfo->file ? linesampleinfo->file : "");
 				if (linesampleinfo->line) {
 					rz_cons_printf("%" PFMT32u "\n", linesampleinfo->line);
 				} else {
