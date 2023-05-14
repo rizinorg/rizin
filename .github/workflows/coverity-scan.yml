@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '0 18 * * 2,4' # Bi-weekly at 18:00 UTC on Tuesday and Thursday
 
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   latest:
     runs-on: ubuntu-22.04
