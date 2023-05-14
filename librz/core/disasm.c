@@ -3822,7 +3822,7 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 		rz_cmd_state_output_array_start(state);
 		rz_cons_break_push(NULL, NULL);
 		const char *path = rz_config_get(core->config, "file.path");
-		char *filename = strrchr(path, '/');
+		char *filename = strrchr(path, '/') + 1;
 
 		RzBinSourceLineInfo *li = core->bin->cur->o->lines;
 		for (size_t i = 0; i < li->samples_count; i++) {
@@ -3832,9 +3832,9 @@ static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState 
 			RzBinSourceLineSample *sample = &li->samples[i];
 			ds_align_comment(ds);
 			if (ds->vat == sample->address) {
-				rz_cons_printf("\t ; %s:%s", filename, sample->file ? sample->file : "");
+				rz_cons_printf(" ; %s", rz_str_get(filename));
 				if (sample->line) {
-					rz_cons_printf("%" PFMT32u "\n", sample->line);
+					rz_cons_printf(":%" PFMT32u, sample->line);
 				} else {
 					rz_cons_print("-\n");
 				}
