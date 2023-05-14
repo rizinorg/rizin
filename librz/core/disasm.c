@@ -350,7 +350,7 @@ static void ds_print_sysregs(RzDisasmState *ds);
 static void ds_print_fcn_name(RzDisasmState *ds);
 static void ds_print_as_string(RzDisasmState *ds);
 static bool ds_print_core_vmode(RzDisasmState *ds, int pos);
-static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState *ds);
+static void ds_print_dwarf(RzDisasmState *ds);
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
@@ -3813,66 +3813,42 @@ static void ds_align_comment(RzDisasmState *ds) {
 	rz_cons_print(" ");
 }
 
-static void ds_print_dwarf(RzCore *core, RzCmdStateOutput *state, RzDisasmState *ds) {
+static void ds_print_dwarf(RzDisasmState *ds) {
 	if (!ds->show_dwarf) {
 		return;
 	}
 
 	if (ds->dwarfShowLines) {
-		rz_cmd_state_output_array_start(state);
-		rz_cons_break_push(NULL, NULL);
-		const char *path = rz_config_get(core->config, "file.path");
-		char *filename = strrchr(path, '/') + 1;
-
-		RzBinSourceLineInfo *li = core->bin->cur->o->lines;
-		for (size_t i = 0; i < li->samples_count; i++) {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			RzBinSourceLineSample *sample = &li->samples[i];
-			ds_align_comment(ds);
-			if (ds->vat == sample->address) {
-				rz_cons_printf(" ; %s", rz_str_get(filename));
-				if (sample->line) {
-					rz_cons_printf(":%" PFMT32u, sample->line);
-				} else {
-					rz_cons_print("-\n");
-				}
-			}
+		// TODO: cache value in ds
+		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
+		free(ds->sl);
+		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
+		if (RZ_STR_ISEMPTY(ds->sl))
+			return;
+		if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
+			return;
+		char *line = strdup(ds->sl);
+		rz_str_replace_char(line, '\t', ' ');
+		rz_str_replace_char(line, '\x1b', ' ');
+		rz_str_replace_char(line, '\r', ' ');
+		rz_str_replace_char(line, '\n', '\x00');
+		rz_str_trim(line);
+		if (RZ_STR_ISEMPTY(line)) {
+			free(line);
+			return;
 		}
-		rz_cons_break_pop();
-		rz_cmd_state_output_array_end(state);
-	}
-
-	// TODO: cache value in ds
-	int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
-	free(ds->sl);
-	ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
-	if (RZ_STR_ISEMPTY(ds->sl))
-		return;
-	if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
-		return;
-	char *line = strdup(ds->sl);
-	rz_str_replace_char(line, '\t', ' ');
-	rz_str_replace_char(line, '\x1b', ' ');
-	rz_str_replace_char(line, '\r', ' ');
-	rz_str_replace_char(line, '\n', '\x00');
-	rz_str_trim(line);
-	if (RZ_STR_ISEMPTY(line)) {
+		// handle_set_pre (ds, "  ");
+		ds_align_comment(ds);
+		if (ds->show_color) {
+			rz_cons_printf("%s; %s" Color_RESET, ds->pal_comment, line);
+		} else {
+			rz_cons_printf("; %s", line);
+		}
+		free(ds->osl);
+		ds->osl = ds->sl;
+		ds->sl = NULL;
 		free(line);
-		return;
 	}
-	// handle_set_pre (ds, "  ");
-	ds_align_comment(ds);
-	if (ds->show_color) {
-		rz_cons_printf("%s; %s" Color_RESET, ds->pal_comment, line);
-	} else {
-		rz_cons_printf("; %s", line);
-	}
-	free(ds->osl);
-	ds->osl = ds->sl;
-	ds->sl = NULL;
-	free(line);
 }
 
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf) {
@@ -5616,7 +5592,7 @@ toro:
 		ds_print_family(ds);
 		ds_print_stackptr(ds);
 		if (mi_found) {
-			ds_print_dwarf(core, state, ds);
+			ds_print_dwarf(ds);
 			ret = ds_print_middle(ds, ret);
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
@@ -5656,7 +5632,7 @@ toro:
 			ds_build_op_str(ds, true);
 			ds_print_opstr(ds);
 			ds_end_line_highlight(ds);
-			ds_print_dwarf(core, state, ds);
+			ds_print_dwarf(ds);
 			ret = ds_print_middle(ds, ret);
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
