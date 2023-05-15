@@ -2200,7 +2200,7 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 			ds->comment = strdup(item->comment);
 		}
 	} else if (vartype) {
-		ds->comment = rz_str_newf("%s; %s %s%s; %s", COLOR_ARG(ds, func_var_type), vartype, Color_RESET, COLOR(ds, usrcmt), comment);
+		ds->comment = rz_str_newf("%s; %s %s%s; %s", COLOR_ARG(ds, func_var_type), vartype, COLOR_RESET(ds), COLOR(ds, usrcmt), comment);
 	} else {
 		ds->comment = rz_str_newf("%s; %s", COLOR_ARG(ds, usrcmt), comment);
 	}
@@ -2740,7 +2740,7 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 	if (ds->show_color) {
 		pre = strlen(color) + 1;
 		snprintf(out, outsz - pre, "%s %s", color, sect);
-		strcat(out, Color_RESET);
+		strcat(out, COLOR_RESET(ds));
 		out[outsz - 1] = 0;
 	} else {
 		rz_str_ncpy(out + 1, sect, outsz - 2);
