@@ -5,6 +5,7 @@
 typedef RzILOpPure Pure;
 typedef RzILOpEffect Effect;
 typedef RzILOpBool Bool;
+typedef RzILOpBitVector BitVector;
 
 // TODO: Handle different releases
 
@@ -39,8 +40,8 @@ typedef RzILOpBool Bool;
  * and will the next instruction be in the delay slot?
  * \return Effect*
  * */
-typedef Effect *(*MipsILLifterFunction)(cs_insn *, ut32, bool);
-#define IL_LIFTER(name) static Effect *MipsLifter_##name(cs_insn *insn, ut32 pc)
+typedef Effect *(*MipsILLifterFunction)(cs_insn *, ut32);
+#define IL_LIFTER(name)      static Effect *MipsLifter_##name(cs_insn *insn, ut32 pc)
 #define IL_LIFTER_NAME(name) MipsLifter_##name
 
 // size of gprs in 32 bits
@@ -73,114 +74,146 @@ typedef Effect *(*MipsILLifterFunction)(cs_insn *, ut32, bool);
 
 // register names to  map from enum to strings
 static char *cpu_reg_enum_to_name_map[] = {
-    [MIPS_REG_PC] = "pc",
+	[MIPS_REG_PC] = "pc",
 
-    [MIPS_REG_0] = "zero",
+	[MIPS_REG_0] = "zero",
 
-    [MIPS_REG_1] = "r1",
-    [MIPS_REG_2] = "r2",
-    [MIPS_REG_3] = "r3",
-    [MIPS_REG_4] = "r4",
-    [MIPS_REG_5] = "r5",
-    [MIPS_REG_6] = "r6",
-    [MIPS_REG_7] = "r7",
-    [MIPS_REG_8] = "r8",
-    [MIPS_REG_9] = "r9",
-    [MIPS_REG_10] = "r10",
-    [MIPS_REG_11] = "r11",
-    [MIPS_REG_12] = "r12",
-    [MIPS_REG_13] = "r13",
-    [MIPS_REG_14] = "r14",
-    [MIPS_REG_15] = "r15",
-    [MIPS_REG_16] = "r16",
-    [MIPS_REG_17] = "r17",
-    [MIPS_REG_18] = "r18",
-    [MIPS_REG_19] = "r19",
-    [MIPS_REG_20] = "r20",
-    [MIPS_REG_21] = "r21",
-    [MIPS_REG_22] = "r22",
-    [MIPS_REG_23] = "r23",
-    [MIPS_REG_24] = "r24",
-    [MIPS_REG_25] = "r25",
-    [MIPS_REG_26] = "r26",
-    [MIPS_REG_27] = "r27",
-    [MIPS_REG_28] = "r28",
-    [MIPS_REG_29] = "r29",
-    [MIPS_REG_30] = "r30",
-    [MIPS_REG_31] = "r31",
+	[MIPS_REG_1] = "r1",
+	[MIPS_REG_2] = "r2",
+	[MIPS_REG_3] = "r3",
+	[MIPS_REG_4] = "r4",
+	[MIPS_REG_5] = "r5",
+	[MIPS_REG_6] = "r6",
+	[MIPS_REG_7] = "r7",
+	[MIPS_REG_8] = "r8",
+	[MIPS_REG_9] = "r9",
+	[MIPS_REG_10] = "r10",
+	[MIPS_REG_11] = "r11",
+	[MIPS_REG_12] = "r12",
+	[MIPS_REG_13] = "r13",
+	[MIPS_REG_14] = "r14",
+	[MIPS_REG_15] = "r15",
+	[MIPS_REG_16] = "r16",
+	[MIPS_REG_17] = "r17",
+	[MIPS_REG_18] = "r18",
+	[MIPS_REG_19] = "r19",
+	[MIPS_REG_20] = "r20",
+	[MIPS_REG_21] = "r21",
+	[MIPS_REG_22] = "r22",
+	[MIPS_REG_23] = "r23",
+	[MIPS_REG_24] = "r24",
+	[MIPS_REG_25] = "r25",
+	[MIPS_REG_26] = "r26",
+	[MIPS_REG_27] = "r27",
+	[MIPS_REG_28] = "r28",
+	[MIPS_REG_29] = "r29",
+	[MIPS_REG_30] = "r30",
+	[MIPS_REG_31] = "r31",
 
-    [MIPS_REG_F0] = "f0",
-    [MIPS_REG_F1] = "f1",
-    [MIPS_REG_F2] = "f2",
-    [MIPS_REG_F3] = "f3",
-    [MIPS_REG_F4] = "f4",
-    [MIPS_REG_F5] = "f5",
-    [MIPS_REG_F6] = "f6",
-    [MIPS_REG_F7] = "f7",
-    [MIPS_REG_F8] = "f8",
-    [MIPS_REG_F9] = "f9",
-    [MIPS_REG_F10] = "f10",
-    [MIPS_REG_F11] = "f11",
-    [MIPS_REG_F12] = "f12",
-    [MIPS_REG_F13] = "f13",
-    [MIPS_REG_F14] = "f14",
-    [MIPS_REG_F15] = "f15",
-    [MIPS_REG_F16] = "f16",
-    [MIPS_REG_F17] = "f17",
-    [MIPS_REG_F18] = "f18",
-    [MIPS_REG_F19] = "f19",
-    [MIPS_REG_F20] = "f20",
-    [MIPS_REG_F21] = "f21",
-    [MIPS_REG_F22] = "f22",
-    [MIPS_REG_F23] = "f23",
-    [MIPS_REG_F24] = "f24",
-    [MIPS_REG_F25] = "f25",
-    [MIPS_REG_F26] = "f26",
-    [MIPS_REG_F27] = "f27",
-    [MIPS_REG_F28] = "f28",
-    [MIPS_REG_F29] = "f29",
-    [MIPS_REG_F30] = "f30",
-    [MIPS_REG_F31] = "f31",
+	[MIPS_REG_F0] = "f0",
+	[MIPS_REG_F1] = "f1",
+	[MIPS_REG_F2] = "f2",
+	[MIPS_REG_F3] = "f3",
+	[MIPS_REG_F4] = "f4",
+	[MIPS_REG_F5] = "f5",
+	[MIPS_REG_F6] = "f6",
+	[MIPS_REG_F7] = "f7",
+	[MIPS_REG_F8] = "f8",
+	[MIPS_REG_F9] = "f9",
+	[MIPS_REG_F10] = "f10",
+	[MIPS_REG_F11] = "f11",
+	[MIPS_REG_F12] = "f12",
+	[MIPS_REG_F13] = "f13",
+	[MIPS_REG_F14] = "f14",
+	[MIPS_REG_F15] = "f15",
+	[MIPS_REG_F16] = "f16",
+	[MIPS_REG_F17] = "f17",
+	[MIPS_REG_F18] = "f18",
+	[MIPS_REG_F19] = "f19",
+	[MIPS_REG_F20] = "f20",
+	[MIPS_REG_F21] = "f21",
+	[MIPS_REG_F22] = "f22",
+	[MIPS_REG_F23] = "f23",
+	[MIPS_REG_F24] = "f24",
+	[MIPS_REG_F25] = "f25",
+	[MIPS_REG_F26] = "f26",
+	[MIPS_REG_F27] = "f27",
+	[MIPS_REG_F28] = "f28",
+	[MIPS_REG_F29] = "f29",
+	[MIPS_REG_F30] = "f30",
+	[MIPS_REG_F31] = "f31",
 };
 
+// char*
 #define REG_PC() REG_NAME(MIPS_REG_PC)
-#define ILREG_PC() VARG(REG_PC())
+// Pure*
+#define IL_REG_PC() VARG(REG_PC())
 
+// char*
 #define REG_R(idx) REG_NAME(MIPS_REG_##idx)
-#define ILREG_R(idx) REG_R(idx)
+// Pure*
+#define IL_REG_R(idx) VARG(REG_R(idx))
 
+// char*
 #define REG_F(idx) REG_NAME(MIPS_REG_F##idx)
-#define ILREG_F(idx) REG_F(idx)
+// Pure*
+#define IL_REG_F(idx) VARG(REG_F(idx))
 
 // returns Pure*
-#define REG_NAME(regenum)   cpu_reg_enum_to_name_map[regenum]
-#define ILREG_OPND(opndidx) VARG(REG_OPND(opndidx))
+#define REG_NAME(regenum)    cpu_reg_enum_to_name_map[regenum]
+#define IL_REG_OPND(opndidx) VARG(REG_OPND(opndidx))
 
 // TODO: add status handlers
 
 // res must be a global variable
 // x and y must be local variable
-#define ILCHECK_OVERFLOW(x, y, res) AND(XOR(MSB(VARL(x)), MSB(VARG(res))), XOR(MSB(VARL(y)), MSB(VARG(res))))
-#define ILCHECK_CARRY(x, y, res)    OR(AND(MSB(VARL(x)), MSB(VARL(y))), AND(OR(MSB(VARL(x)), MSB(VARL(y))), INV(MSB(VARG(res)))))
+// returns Bool*
+#define IL_CHECK_OVERFLOW(x, y, res) IS_ZERO(AND(XOR(MSB(VARL(x)), MSB(VARG(res))), XOR(MSB(VARL(y)), MSB(VARG(res)))))
+#define IL_CHECK_CARRY(x, y, res)    IS_ZERO(OR(AND(MSB(VARL(x)), MSB(VARL(y))), AND(OR(MSB(VARL(x)), MSB(VARL(y))), INV(MSB(VARG(res))))))
 
 // if second operands is an immediate value and only first and third are VARL compatible
-#define ILCHECK_OVERFLOWI(x, y, res) AND(XOR(MSB(VARL(x)), MSB(VARG(res))), XOR(MSB(y), MSB(VARG(res))))
-#define ILCHECK_CARRYI(x, y, res)    OR(AND(MSB(VARL(x)), MSB(y)), AND(OR(MSB(VARL(x)), MSB(y)), INV(MSB(VARG(res)))))
+// returns Bool*
+#define IL_CHECK_OVERFLOWI(x, y, res) IS_ZERO(AND(XOR(MSB(VARL(x)), MSB(VARG(res))), XOR(MSB(y), MSB(VARG(res)))))
+#define IL_CHECK_CARRYI(x, y, res)    IS_ZERO(OR(AND(MSB(VARL(x)), MSB(y)), AND(OR(MSB(VARL(x)), MSB(y)), INV(MSB(VARG(res))))))
 
 // rd must be a global variable
 // rs and rt must be local variables
-#define ILADD(rd, rs, rt) SETG((rd), ADD(VARL(rs), VARL(rt)))
-#define ILAND(rd, rs, rt) SETG((rd), LOGAND(VARL(rs), VARL(rt)))
+// returns Effect*
+#define IL_ADD(rd, rs, rt) SETG((rd), ADD(VARL(rs), VARL(rt)))
+#define IL_AND(rd, rs, rt) SETG((rd), LOGAND(VARL(rs), VARL(rt)))
+// returns Bool*
+#define IL_EQ(rs, rt)  EQ(VARL(rs), VARL(rt))
+#define IL_NE(rs, rt)  INV(IL_EQ(rs, rt))
+#define IL_ULT(rs, rt) ULT(VARL(rs), VARL(rt))
+#define IL_ULE(rs, rt) ULE(VARL(rs), VARL(rt))
+#define IL_UGT(rs, rt) UGT(VARL(rs), VARL(rt))
+#define IL_UGE(rs, rt) UGE(VARL(rs), VARL(rt))
+#define IL_SLT(rs, rt) SLT(VARL(rs), VARL(rt))
+#define IL_SLE(rs, rt) SLE(VARL(rs), VARL(rt))
+#define IL_SGT(rs, rt) SGT(VARL(rs), VARL(rt))
+#define IL_SGE(rs, rt) SGE(VARL(rs), VARL(rt))
 
 // imm is an immediate
-#define ILADDI(rd, rs, imm) SETG((rd), ADD(VARL(rs), imm))
-#define ILANDI(rd, rs, imm) SETG((rd), LOGAND(VARL(rs), imm))
+// returns Effect*
+#define IL_ADDI(rd, rs, imm) SETG((rd), ADD(VARL(rs), imm))
+#define IL_ANDI(rd, rs, imm) SETG((rd), LOGAND(VARL(rs), imm))
+// returns Bool*
+#define IL_EQI(rs, imm)  EQ(VARL(rs), imm)
+#define IL_NEI(rs, imm)  INV(IL_EQI(rs, imm))
+#define IL_ULTI(rs, imm) ULT(VARL(rs), imm)
+#define IL_ULEI(rs, imm) ULE(VARL(rs), imm)
+#define IL_UGTI(rs, imm) UGT(VARL(rs), imm)
+#define IL_UGEI(rs, imm) UGE(VARL(rs), imm)
+#define IL_SLTI(rs, imm) SLT(VARL(rs), imm)
+#define IL_SLEI(rs, imm) SLE(VARL(rs), imm)
+#define IL_SGTI(rs, imm) SGT(VARL(rs), imm)
+#define IL_SGEI(rs, imm) SGE(VARL(rs), imm)
 
 // MISSING: ABS.fmt
 // MISSING: ADD.fmt
 
 IL_LIFTER(ABSQ_S) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -190,16 +223,16 @@ IL_LIFTER(ABSQ_S) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(ADD) {
-    // get operand registers
-    Effect *rs = SETL("rs", ILREG_OPND(1));
-    Effect *rt = SETL("rt", ILREG_OPND(2));
+	// get operand registers
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	Effect *rt = SETL("rt", IL_REG_OPND(2));
 
-    // perform addition and set to destination register
-    Effect *add_op = ILADD(REG_OPND(0), "rs", "rt");
-    Pure *overflow_check_op = IS_ZERO(ILCHECK_OVERFLOW("rs", "rt", REG_OPND(0)));
-    Effect *update_status_op = NULL; // TODO: set status flag
+	// perform addition and set to destination register
+	Effect *add_op = IL_ADD(REG_OPND(0), "rs", "rt");
+	Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
+	Effect *update_status_op = NOP(); // TODO: set status flag
 
-    return SEQ5(rs, rt, add_op, overflow_check_op, update_status_op);
+	return SEQ4(rs, rt, add_op, update_status_op);
 }
 
 /**
@@ -209,59 +242,59 @@ IL_LIFTER(ADD) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIUPC) {
-    st32 imm_val = (st32)IMM_OPND(1);
-    imm_val = SIGN_EXTEND(imm_val, 21, GPRLEN);
-    Pure *imm = S32(imm_val);
+	st32 imm_val = (st32)IMM_OPND(1);
+	imm_val = SIGN_EXTEND(imm_val, 21, GPRLEN);
+	BitVector *imm = S32(imm_val);
 
-    Effect *add_op = SETG(REG_OPND(0), ADD(U32(pc), imm));
+	Effect *add_op = SETG(REG_OPND(0), ADD(U32(pc), imm));
 
-    return add_op; // no need to return SEQ2(imm, add_op) here
+	return add_op; // no need to return SEQ2(imm, add_op) here
 }
 
 IL_LIFTER(ADDIUR1SP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDIUR2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDIUS5) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDIUSP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDQH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDQH_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDSC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDS_A) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDS_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDS_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDU16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDUH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDUH_R) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -271,27 +304,27 @@ IL_LIFTER(ADDUH_R) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDU) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
-    Effect *rt = SETL("rt", ILREG_OPND(2));
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	Effect *rt = SETL("rt", IL_REG_OPND(2));
 
-    Effect *add_op = ILADD(REG_OPND(0), "rs", "rt");
-    return SEQ3(rs, rt, add_op);
+	Effect *add_op = IL_ADD(REG_OPND(0), "rs", "rt");
+	return SEQ3(rs, rt, add_op);
 }
 
 IL_LIFTER(ADDU_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDVI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADDWC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ADD_A) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -301,17 +334,17 @@ IL_LIFTER(ADD_A) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(ADDI) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
 
-    st32 imm_val = (st32)IMM_OPND(1);
-    imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
-    Pure *imm = S32(imm_val);
+	st32 imm_val = (st32)IMM_OPND(1);
+	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
+	BitVector *imm = S32(imm_val);
 
-    Effect *add_op = ILADDI(REG_OPND(0), "rs", imm);
-    Pure *overflow_check_op = IS_ZERO(ILCHECK_OVERFLOWI("rs", imm, REG_OPND(0)));
-    Effect *update_status_op = NULL; // TODO: update status
+	Effect *add_op = IL_ADDI(REG_OPND(0), "rs", imm);
+	Bool *overflow = IL_CHECK_OVERFLOWI("rs", imm, REG_OPND(0));
+	Effect *update_status_op = NOP(); // TODO: update status
 
-    return SEQ5(rs, imm, add_op, overflow_check_op, update_status_op);
+	return SEQ3(rs, add_op, update_status_op);
 }
 
 /**
@@ -321,15 +354,16 @@ IL_LIFTER(ADDI) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIU) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
 
-    st32 imm_val = (st32)IMM_OPND(1);
-    imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
-    Pure *imm = S32(imm_val);
+	st32 imm_val = (st32)IMM_OPND(1);
+	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
+	BitVector *imm = S32(imm_val);
 
-    Effect *add_op = ILADDI(REG_OPND(0), "rs", imm);
+	// add and set to rt
+	Effect *add_op = IL_ADDI(REG_OPND(0), "rs", imm);
 
-    return SEQ2(rs, add_op);
+	return SEQ2(rs, add_op);
 }
 
 /**
@@ -341,13 +375,17 @@ IL_LIFTER(ADDIU) {
  * Exceptions: None
  * */
 IL_LIFTER(ALIGN) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
-    Effect *rt = SETL("rt", ILREG_OPND(2));
-    ut8 bp = 8 * IMM_OPND(3); // 8*bp is used everywhere
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	Effect *rt = SETL("rt", IL_REG_OPND(2));
+	ut8 bp = 8 * IMM_OPND(3); // 8*bp is used everywhere
 
-    Effect *align_op = SETL(REG_OPND(0), LOGOR(SHIFTL0(VARL("rt"), U8(bp)), SHIFTR0(VARL("rs"), U8(GPRLEN - bp))));
+	BitVector *left = SHIFTL0(VARL("rt"), U8(bp));
+	BitVector *right = SHIFTR0(VARL("rs"), U8(GPRLEN - bp));
+	BitVector *align = LOGOR(left, right);
 
-    return SEQ3(rs, rt, align_op);
+	Effect *set_op = SETL(REG_OPND(0), align);
+
+	return SEQ3(rs, rt, set_op);
 }
 
 // MISSING: ALNV.PS
@@ -359,14 +397,14 @@ IL_LIFTER(ALIGN) {
  * Exceptions: None
  * */
 IL_LIFTER(ALUIPC) {
-    // NOTE: Do I really need to sign extend here?
-    // Value after and before sign extension should be same.
-    st32 imm_val = IMM_OPND(1) << 16;
-    Pure *imm = S32(imm_val);
+	// NOTE: Do I really need to sign extend here?
+	// Value after and before sign extension should be same.
+	st32 imm = IMM_OPND(1) << 16;
+	BitVector *new_pc = U32(0xFFFF0000 & (pc + imm));
 
-    Effect *and_add_op = SETG(REG_OPND(0), LOGAND(U32(0xFFFF0000), ADD(U32(pc), imm)));
+	Effect *set_reg_op = SETG(REG_OPND(0), new_pc);
 
-    return and_add_op;
+	return set_reg_op;
 }
 
 /**
@@ -377,19 +415,20 @@ IL_LIFTER(ALUIPC) {
  * Exceptions: None
  * */
 IL_LIFTER(AND) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
-    Effect *rt = SETL("rt", ILREG_OPND(2));
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	Effect *rt = SETL("rt", IL_REG_OPND(2));
 
-    Effect *and_op = ILAND(REG_OPND(0), "rs", "rt");
+	// AND and set to rd
+	Effect *and_op = IL_AND(REG_OPND(0), "rs", "rt");
 
-    return SEQ3(rs, rt, and_op);
+	return SEQ3(rs, rt, and_op);
 }
 
 IL_LIFTER(AND16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ANDI16) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -399,25 +438,26 @@ IL_LIFTER(ANDI16) {
  * Exceptions: None
  * */
 IL_LIFTER(ANDI) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
 
-    st32 imm_val = (st32)IMM_OPND(2);
-    imm_val = ZERO_EXTEND(imm_val, 16, GPRLEN);
-    Pure *imm = S32(imm_val);
+	st32 imm_val = (st32)IMM_OPND(2);
+	imm_val = ZERO_EXTEND(imm_val, 16, GPRLEN);
+	BitVector *imm = S32(imm_val);
 
-    Effect *and_op = ILANDI(REG_OPND(0), "rs", imm);
+	// AND and set ot rd
+	Effect *and_op = IL_ANDI(REG_OPND(0), "rs", imm);
 
-    return SEQ2(rs, and_op);
+	return SEQ2(rs, and_op);
 }
 
 IL_LIFTER(APPEND) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ASUB_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ASUB_U) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -427,15 +467,16 @@ IL_LIFTER(ASUB_U) {
  * Exceptions: None
  * */
 IL_LIFTER(AUI) {
-    Effect *rs = SETL("rs", ILREG_OPND(1));
+	Effect *rs = SETL("rs", IL_REG_OPND(1));
 
-    // NOTE: Sign extend here?
-    st32 imm_val = (st32)IMM_OPND(2) << 16;
-    Pure *imm = S32(imm_val);
+	// NOTE: Sign extend here?
+	st32 imm_val = (st32)IMM_OPND(2) << 16;
+	BitVector *imm = S32(imm_val);
 
-    Effect *add_op = ILADDI(REG_OPND(0), "rs", imm);
+	// add and set to rd
+	Effect *add_op = IL_ADDI(REG_OPND(0), "rs", imm);
 
-    return SEQ2(rs, add_op);
+	return SEQ2(rs, add_op);
 }
 
 /**
@@ -445,32 +486,32 @@ IL_LIFTER(AUI) {
  * Exceptions: None
  * */
 IL_LIFTER(AUIPC) {
-    // NOTE: Sign extend here?
-    st32 imm_val = (st32)IMM_OPND(1) << 16;
-    Pure *imm = S32(imm_val);
+	// NOTE: Sign extend here?
+	st32 imm = (st32)IMM_OPND(1) << 16;
+	BitVector *new_pc = S32(pc + imm);
 
-    Effect *add_op = SETG(REG_OPND(0), ADD(U32(pc), imm));
+	Effect *set_reg_op = SETG(REG_OPND(0), new_pc);
 
-    return add_op;
+	return set_reg_op;
 }
 
 IL_LIFTER(AVER_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(AVER_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(AVE_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(AVE_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(B16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BADDU) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -478,21 +519,18 @@ IL_LIFTER(BADDU) {
  * To do an unconditional PC relative procedure call.
  * Format: BAL offset
  * Description: procedure_call
- * Exceptions: ReservedInstructionException
+ * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BAL) {
-    st32 offset_val = (st32)IMM_OPND(0) << 2;
-    offset_val = SIGN_EXTEND(offset_val, 18, GPRLEN);
-    Pure* offset = S32(offset_val);
+	st32 offset = (st32)IMM_OPND(0) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
 
-    // store link in r31
-    Effect* link_op = SETG(REG_R(31), U32(pc + 8));
+	// store link in r31 and jump
+	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+	Effect *jump_op = JMP(jump_target);
 
-    // calculate jump target and make jump
-    Pure* jump_target = ADD(U32(pc), offset);
-    Effect* jump_op = JMP(jump_target);
-
-    return SEQ2(link_op, jump_op);
+	return SEQ2(link_op, jump_op);
 }
 
 /**
@@ -502,66 +540,64 @@ IL_LIFTER(BAL) {
  * Exceptions: None
  * */
 IL_LIFTER(BALC) {
-    st32 offset_val = (st32)IMM_OPND(0) << 2;
-    offset_val = SIGN_EXTEND(offset_val, 28, GPRLEN);
-    Pure* offset = S32(offset_val);
+	st32 offset = (st32)IMM_OPND(0) << 2;
+	offset = SIGN_EXTEND(offset, 28, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
 
-    // store link in r31
-    Effect* link_op = SETG(REG_R(31), U32(pc + 4));
+	// store link in r31
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
-    // calculate jump target and make jump
-    Pure* jump_target = ADD(U32(pc + 4), offset);
-    Effect* jump_op = JMP(jump_target);
+	// calculate jump target and make jump
+	Effect *jump_op = JMP(jump_target);
 
-    return SEQ2(link_op, jump_op);
+	return SEQ2(link_op, jump_op);
 }
 
 IL_LIFTER(BALIGN) {
-    return NULL;
+	return NULL;
 }
 
 IL_LIFTER(BBIT0) {
-    return NULL;
+	return NULL;
 }
 
 IL_LIFTER(BBIT032) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BBIT1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BBIT132) {
-    return NULL;
+	return NULL;
 }
 
 /**
  * Branch Compact
  * Format: BC offset
- * Description: PC <- PC + 4 + sign_extend(offset << 2)
- * Exceptions: None
+ * Description: PC <- PC + 4 + sign_extend(offset << 2) (no delay slot)
+ * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BC) {
-    st32 offset_val = (st32)IMM_OPND(0) << 2;
-    offset_val = SIGN_EXTEND(offset_val, 28, GPRLEN);
-    Pure* offset = S32(offset_val);
+	st32 offset = (st32)IMM_OPND(0) << 2;
+	offset = SIGN_EXTEND(offset, 28, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
 
-    Pure* jump_target = ADD(U32(pc + 4), offset);
-    Effect* jump_op = JMP(jump_target);
+	Effect *jump_op = JMP(jump_target);
 
-    return jump_op;
+	return jump_op;
 }
 
 IL_LIFTER(BC0F) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC0FL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC0T) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC0TL) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -571,26 +607,37 @@ IL_LIFTER(BC0TL) {
  * Exceptions: CoprocessorUnusable.
  * */
 IL_LIFTER(BC1EQZ) {
-    Pure* ft = ILREG_OPND(0);
+	Pure *ft = IL_REG_OPND(0);
 
-    // compute jump address
-    st32 offset_val = (st32)IMM_OPND(1) << 2;
-    offset_val = SIGN_EXTEND(offset_val, 18, GPRLEN);
-    Pure* offset = S32(offset_val);
-    Pure* jmp_addr = ADD(U32(pc + 4), offset);
+	// compute jump address
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
 
-    // make branch on condition
-    Bool* cond = IS_ZERO(LOGAND(ft, U32(1)));
-    Effect* branch_op = BRANCH(cond, JMP(jmp_addr), NOP());
+	// create branch condition
+	BitVector *ft_bv = FCAST_RAW(ft);
+	BitVector *ft_bit0 = LOGAND(ft_bv, U32(1));
+	Bool *cond = IS_ZERO(ft_bit0);
 
-    return branch_op;
+	// make branch
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return branch_op;
 }
 
+/**
+ * Branch on FP False
+ * Format: BC1F offset (cc = 0 implied)
+ *         BC1F cc, offset
+ * Description: if FPR[ft] & 1 == 0 then branch
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC1F) {
-    return NULL;
+	return NULL;
 }
+
 IL_LIFTER(BC1FL) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -600,250 +647,733 @@ IL_LIFTER(BC1FL) {
  * Exceptions: CoprocessorUnusable.
  * */
 IL_LIFTER(BC1NEZ) {
-    Pure* ft = ILREG_OPND(0);
+	Pure *ft = IL_REG_OPND(0);
 
-    // compute jump address
-    st32 offset_val = (st32)IMM_OPND(1) << 2;
-    offset_val = SIGN_EXTEND(offset_val, 18, GPRLEN);
-    Pure* offset = S32(offset_val);
-    Pure* jmp_addr = ADD(U32(pc + 4), offset);
+	// compute jump address
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
 
-    // make branch on condition
-    Bool* cond = EQ(LOGAND(ft, U32(1)));
-    Effect* branch_op = BRANCH(cond, JMP(jmp_addr), NOP());
+	// make condition for branch
+	BitVector *ft_bv = FCAST_RAW(ft);
+	BitVector *ft_bit0 = LOGAND(ft_bv, U32(1));
+	Bool *cond = INV(IS_ZERO(ft_bit0));
 
-    return branch_op;
+	// branch on condn
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return branch_op;
 }
 
 IL_LIFTER(BC1T) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC1TL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC2EQZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC2F) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC2FL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC2NEZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC2T) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC2TL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC3F) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC3FL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC3T) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BC3TL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BCLRI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BCLR) {
-    return NULL;
+	return NULL;
 }
 
+/**
+ * Branch on Equal
+ * Format: BEQ rs, rt, offset
+ * Description: if GPR[rs] = GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BEQ) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	Bool *cond = IL_EQ("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
 
+/**
+ * Branch on Equal
+ * Format: BEQ rs, rt, offset
+ * Description: if GPR[rs] = GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BEQC) {
-    return NULL;
+	// NOTE: difference between BEQ and BEQC is in
+	// jump address calculation and delay slot management
+	// all compact instructions add an extra 4 to pc
+
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Bool *cond = IL_EQ("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
+/**
+ * Branch on Equal Likely
+ * Format: BEQL rs, rt, offset
+ * Description: if GPR[rs] = GPR[rt] then branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BEQL) {
-    return NULL;
+	// NOTE: same as BEQ but difference is in management of delay slot
+
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	Bool *cond = IL_EQ("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
 IL_LIFTER(BEQZ16) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Equal to Zero And Link Compact
+ * Format: BEQZALC rt, offset
+ * Description: GPR[rt] == 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BEQZALC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-equal-to
+	Bool *cond = IL_EQI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
 IL_LIFTER(BEQZC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BGEC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BGEUC) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch on Greater Than or Equal to Zero
+ * Format: BGEZ rs, offset
+ * Description: if GPR[rs] >= 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEZ) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-greater-than-equal-to
+	Bool *cond = IL_SGEI("rs", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rs, branch_op);
 }
+
+/**
+ * Branch on Greater Than or Equal to Zero and Link
+ * Format: BGEZAL rs, offset
+ * Description: if GPR[rs] >= then branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEZAL) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+
+	// signed-greater-than-equal-to
+	Bool *cond = IL_SGEI("rs", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, link_op, branch_op);
 }
+
+/**
+ * Branch Greater than Equal to Zero And Link Compact
+ * Format: BGEZALC rt, offset
+ * Description: GPR[rt] >= 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEZALC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-greater-than-equal-to
+	Bool *cond = IL_SGEI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
+/**
+ * Branch Greater than Equal to Zero And Link Likely
+ * Format: BGEZALL rt, offset
+ * Description: GPR[rt] >= 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEZALL) {
-    return NULL;
+	// NOTE: same as BGEZALC, difference is in delay-slot handling
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-greater-than-equal-to
+	Bool *cond = IL_SGEI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
 IL_LIFTER(BGEZALS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BGEZC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BGEZL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BGTZ) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Greater than Zero And Link Compact
+ * Format: BGTZALC rt, offset
+ * Description: GPR[rt] >= 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGTZALC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-greater-than
+	Bool *cond = IL_SGTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
 IL_LIFTER(BGTZC) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Greater than Zero Likely
+ * Format: BGTZL rt, offset
+ * Description: GPR[rt] >= 0 then branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGTZL) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-greater-than
+	Bool *cond = IL_SGTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rt, branch_op);
 }
+
 IL_LIFTER(BINSLI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BINSL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BINSRI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BINSR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BITREV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BITSWAP) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Less than Equal to Zero
+ * Format: BLEZL rs, rt, offset
+ * Description: GPR[rs] <= 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLEZ) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-less-than-equal-to
+	Bool *cond = IL_SLEI("rs", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rs, branch_op);
 }
+
+/**
+ * Branch Less than Equal to Zero And Link Compact
+ * Format: BLEZALC rt, offset
+ * Description: GPR[rt] <= 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLEZALC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-less-than-equal-to
+	Bool *cond = IL_SLEI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
+/**
+ * TODO: Verify this with ISA, not in mips32
+ * Branch Less than Equal to Zero And Link Compact
+ * Format: BLEZC rt, offset
+ * Description: GPR[rt] <= 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLEZC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than-equal-to
+	Bool *cond = IL_SLEI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rt, branch_op);
 }
-IL_LIFTER(BLEZL) {
-    return NULL;
-}
+
+/**
+ * Branch Less Than Compact
+ * Format: BLTC rs, rt, offset
+ * Description: GPR[rs] < GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTC) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than
+	Bool *cond = IL_SLT("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
+/**
+ * Branch Less than Equal to Zero Likely
+ * Format: BLEZL rs, rt, offset
+ * Description: GPR[rs] <= 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
+IL_LIFTER(BLEZL) {
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-less-than-equal-to
+	Bool *cond = IL_SLEI("rs", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rs, branch_op);
+}
+
+/**
+ * Branch Less Than Unsigned Compact
+ * Format: BLTUC rs, rt, offset
+ * Description: GPR[rs] < GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTUC) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than
+	Bool *cond = IL_ULT("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
+/**
+ * Branch Less Than to Zero
+ * Format: BLTZ rt, offset
+ * Description: GPR[rt] < 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTZ) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-less-than
+	Bool *cond = IL_SLTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rt, branch_op);
 }
+
+/**
+ * Branch Less Than to Zero And Link
+ * Format: BLTZAL rt, offset
+ * Description: GPR[rt] < 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTZAL) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-less-than
+	Bool *cond = IL_SLTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
+/**
+ * Branch Less Than Zero And Link Compact
+ * Format: BLTZALC rt, offset
+ * Description: GPR[rt] < 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTZALC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-less-than
+	Bool *cond = IL_SLTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
+/**
+ * Branch Less Than to Zero And Link Likely
+ * Format: BLTZALL rt, offset
+ * Description: GPR[rt] < 0 then link and branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTZALL) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-less-than
+	Bool *cond = IL_SLTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
 IL_LIFTER(BLTZALS) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Less Than to Zero Compact
+ * Format: BLTZC rt, offset
+ * Description: GPR[rt] < 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTZC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than
+	Bool *cond = IL_SLTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rt, branch_op);
 }
+
+/**
+ * Branch Less Than to Zero Likely
+ * Format: BLTZL rt, offset
+ * Description: GPR[rt] < 0 then branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BLTZL) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-less-than
+	Bool *cond = IL_SLTI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ2(rt, branch_op);
 }
+
 IL_LIFTER(BMNZI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BMNZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BMZI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BMZ) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Not Equal
+ * Format: BNE rs, rt, offset
+ * Description: if GPR[rs] != GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BNE) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	Bool *cond = IL_NE("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
+/**
+ * Branch Not Equal Compact
+ * Format: BNEC rs, rt, offset
+ * Description: if GPR[rs] != GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BNEC) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Bool *cond = IL_NE("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
 IL_LIFTER(BNEGI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BNEG) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Not Equal Likely
+ * Format: BNEL rs, rt, offset
+ * Description: if GPR[rs] != GPR[rt] then branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BNEL) {
-    return NULL;
+	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Effect *rt = SETL("rt", IL_REG_OPND(1));
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Bool *cond = IL_NE("rs", "rt");
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rs, rt, branch_op);
 }
+
 IL_LIFTER(BNEZ16) {
-    return NULL;
+	return NULL;
 }
+
+/**
+ * Branch Not Equal to Zero And Link Compact
+ * Format: BNEZALC rt, offset
+ * Description: GPR[rt] != 0 then link and branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BNEZALC) {
-    return NULL;
+	Effect *rt = SETL("rt", IL_REG_OPND(0));
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-not-equal-equal-to
+	Bool *cond = IL_NEI("rt", S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+
+	return SEQ3(rt, link_op, branch_op);
 }
+
 IL_LIFTER(BNEZC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BNVC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BNZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BOVC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BPOSGE32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BREAK) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BREAK16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BSELI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BSEL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BSETI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BSET) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BEQZ) {
-    return NULL;
+	return NULL;
 }
 
 /**
@@ -853,1482 +1383,1480 @@ IL_LIFTER(BEQZ) {
  * Exceptions: ReservedInstructionException
  * */
 IL_LIFTER(B) {
-    st32 offset_val = (st32)IMM_OPND(0) << 2;
-    offset_val = SIGN_EXTEND(offset_val, 18, GPRLEN);
-    Pure* offset = S32(offset_val);
+	st32 offset = (st32)IMM_OPND(0) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
 
-    Pure* jump_target = ADD(U32(pc), offset);
-    Effect* jump_op = JMP(jump_target);
-
-    return jump_op;
+	Effect *jump_op = JMP(jump_target);
+	return jump_op;
 }
 
 IL_LIFTER(BNEZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BTEQZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(BTNEZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CACHE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CEIL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CEQI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CFC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CFCMSA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CINS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CINS32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLASS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLEI_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLEI_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLE_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLE_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLO) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLTI_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLTI_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLT_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLT_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CLZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CMPGDU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CMPGU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CMPU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CMP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(COPY_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(COPY_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CTC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CTCMSA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CVT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(C) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(CMPI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DADD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DADDI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DADDIU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DADDU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DAHI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DALIGN) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DATI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DAUI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DBITSWAP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DCLO) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DCLZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DDIV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DDIVU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DERET) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DEXT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DEXTM) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DEXTU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DINS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DINSM) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DINSU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DIV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DIVU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DIV_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DIV_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DLSA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMFC0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMFC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMFC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMOD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMODU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMTC0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMTC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMTC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMUH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMUHU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMUL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMULT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMULTU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DMULU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DOTP_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DOTP_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPADD_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPADD_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPAQX_SA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPAQX_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPAQ_SA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPAQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPAU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPAX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPOP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSQX_SA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSQX_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSQ_SA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSUB_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSUB_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPSX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DPS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DROTR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DROTR32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DROTRV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSBH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSHD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSLL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSLL32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSLLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSRA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSRA32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSRAV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSRL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSRL32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSRLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(DSUBU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EHB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ERET) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTPDP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTPDPV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTPV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTRV_RS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTRV_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTRV_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTRV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTR_RS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTR_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTR_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(EXTS32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ABS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FADD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCAF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCLASS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCLE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCLT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCNE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCOR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCUEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCULE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCULT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCUNE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FCUN) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FDIV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FEXDO) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FEXP2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FEXUPL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FEXUPR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FFINT_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FFINT_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FFQL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FFQR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FILL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FLOG2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FLOOR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMADD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMAX_A) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMAX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMIN_A) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMIN) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMSUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FMUL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MUL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NEG) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FRCP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FRINT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FRSQRT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSAF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSLE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSLT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSNE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSOR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSQRT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SQRT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSUEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSULE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSULT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSUNE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FSUN) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FTINT_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FTINT_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FTQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FTRUNC_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(FTRUNC_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(HADD_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(HADD_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(HSUB_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(HSUB_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ILVEV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ILVL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ILVOD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ILVR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(INS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(INSERT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(INSV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(INSVE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(J) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JAL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALRS16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALRS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JIALC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JIC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JR16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JRADDIUSP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JRC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALRC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LBU16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LBUX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LBU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDC3) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDPC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LDXC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LHU16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LHX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LHU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LI16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LLD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LSA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LUXC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LUI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LW) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LW16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWC3) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWM16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWM32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWPC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWUPC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWXC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LWXS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(LI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MADD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MADDF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MADDR_Q) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MADDU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MADDV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MADD_Q) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAQ_SA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAXA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAXI_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAXI_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAX_A) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAX) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAX_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MAX_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MFC0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MFC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MFC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MFHC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MFHI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MFLO) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MINA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MINI_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MINI_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MIN_A) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MIN) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MIN_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MIN_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MODSUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MODU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOD_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOD_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOVE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOVEP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOVF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOVN) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOVT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MOVZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MSUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MSUBF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MSUBR_Q) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MSUBU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MSUBV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MSUB_Q) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTC0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTHC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTHI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTHLIP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTLO) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTM0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTM1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTM2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTP0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTP1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MTP2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MUH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MUHU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULEQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULEU_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULQ_RS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULR_Q) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULSAQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULSA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULTU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MULV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MUL_Q) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(MUL_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NLOC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NLZC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NMADD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NMSUB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NOR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NORI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NOT16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NOT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(OR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(OR16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ORI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PACKRL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PAUSE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PCKEV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PCKOD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PCNT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PICK) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(POP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECEQU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECEU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECRQU_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECRQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECRQ_RS) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECR_SRA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PRECR_SRA_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PREF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(PREPEND) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(RADDU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(RDDSP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(RDHWR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(REPLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(REPL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(RINT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ROTR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ROTRV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ROUND) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SAT_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SAT_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SB16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SCD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDBBP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDBBP16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDC3) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SDXC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SEB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SEH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SELEQZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SELNEZ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SEL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SEQI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SH16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHILO) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHILOV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHLLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHLLV_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHLL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHLL_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHRAV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHRAV_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHRA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHRA_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHRLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SHRL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLDI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLD) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLL16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLLI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLTI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLTIU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SLTU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SNE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SNEI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SPLATI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SPLAT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRA) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRAI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRARI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRAR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRAV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRL16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRLI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRLRI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRLR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SRLV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SSNOP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(ST) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBQH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBQH_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBQ_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBSUS_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBSUU_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBS_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBS_U) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBU16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBUH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBUH_R) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBU_S) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBVI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUBV) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SUXC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SW) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SW16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWC2) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWC3) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWM16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWM32) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SWXC1) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SYNC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SYNCI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(SYSCALL) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TEQ) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TEQI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TGE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TGEI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TGEIU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TGEU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLBP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLBR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLBWI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLBWR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLTI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLTIU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TLTU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TNE) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TNEI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(TRUNC) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(V3MULU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(VMM0) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(VMULU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(VSHF) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(WAIT) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(WRDSP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(WSBH) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(XOR) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(XOR16) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(XORI) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NOP) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(NEGU) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JALR_HB) {
-    return NULL;
+	return NULL;
 }
 IL_LIFTER(JR_HB) {
-    return NULL;
+	return NULL;
 }
 
 // clang-format off
@@ -2969,18 +3497,18 @@ MipsILLifterFunction mips_lifters[] = {
  * \return Valid RzILOpEffect* on success, NULL otherwise.
  **/
 RZ_IPI Effect *mips32_il(RZ_NONNULL cs_insn *insn, ut32 pc) {
-    rz_return_val_if_fail(insn, NULL);
+	rz_return_val_if_fail(insn, NULL);
 
-    MipsILLifterFunction fn = mips_lifters[INSN_ID(insn)];
-    if (fn) {
-        Effect* op = fn(insn, pc, &delay_slot);
-        return op;
-    }
+	MipsILLifterFunction fn = mips_lifters[INSN_ID(insn)];
+	if (fn) {
+		Effect *op = fn(insn, pc);
+		return op;
+	}
 
-    rz_warn_if_reached();
-    return NULL;
+	rz_warn_if_reached();
+	return NULL;
 }
 
 RZ_IPI RzAnalysisILConfig *mips32_il_config() {
-    return NULL;
+	return NULL;
 }
