@@ -292,6 +292,7 @@ typedef struct {
 	int _tabsoff;
 	bool dwarfFile;
 	bool dwarfAbspath;
+	bool dwarfShowLines;
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
@@ -721,6 +722,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_dwarf = rz_config_get_b(core->config, "asm.dwarf");
 	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.dwarf.file");
 	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.dwarf.abspath");
+	ds->dwarfShowLines = rz_config_get_b(ds->core->config, "asm.dwarf.lines");
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
 	ds->show_size = rz_config_get_b(core->config, "asm.size");
@@ -3812,39 +3814,40 @@ static void ds_align_comment(RzDisasmState *ds) {
 }
 
 static void ds_print_dwarf(RzDisasmState *ds) {
-	if (ds->show_dwarf) {
+	if (!ds->show_dwarf) {
+		return;
+	}
+
+	if (ds->dwarfShowLines) {
 		// TODO: cache value in ds
 		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
 		free(ds->sl);
 		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
-		if (ds->sl) {
-			if ((!ds->osl || (ds->osl && strcmp(ds->sl, ds->osl)))) {
-				char *line = strdup(ds->sl);
-				if (!line) {
-					return;
-				}
-				rz_str_replace_char(line, '\t', ' ');
-				rz_str_replace_char(line, '\x1b', ' ');
-				rz_str_replace_char(line, '\r', ' ');
-				rz_str_replace_char(line, '\n', '\x00');
-				rz_str_trim(line);
-				if (!*line) {
-					free(line);
-					return;
-				}
-				// handle_set_pre (ds, "  ");
-				ds_align_comment(ds);
-				if (ds->show_color) {
-					rz_cons_printf("%s; %s" Color_RESET, ds->pal_comment, line);
-				} else {
-					rz_cons_printf("; %s", line);
-				}
-				free(ds->osl);
-				ds->osl = ds->sl;
-				ds->sl = NULL;
-				free(line);
-			}
+		if (RZ_STR_ISEMPTY(ds->sl))
+			return;
+		if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
+			return;
+		char *line = strdup(ds->sl);
+		rz_str_replace_char(line, '\t', ' ');
+		rz_str_replace_char(line, '\x1b', ' ');
+		rz_str_replace_char(line, '\r', ' ');
+		rz_str_replace_char(line, '\n', '\x00');
+		rz_str_trim(line);
+		if (RZ_STR_ISEMPTY(line)) {
+			free(line);
+			return;
 		}
+		// handle_set_pre (ds, "  ");
+		ds_align_comment(ds);
+		if (ds->show_color) {
+			rz_cons_printf("%s; %s" Color_RESET, ds->pal_comment, line);
+		} else {
+			rz_cons_printf("; %s", line);
+		}
+		free(ds->osl);
+		ds->osl = ds->sl;
+		ds->sl = NULL;
+		free(line);
 	}
 }
 
@@ -5534,7 +5537,6 @@ toro:
 		ds_adistrick_comments(ds);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		ds_show_functions(ds);
-
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs(ds);
 			ds_build_op_str(ds, false);
@@ -5556,7 +5558,6 @@ toro:
 			}
 			ds_show_comments_describe(ds);
 		}
-
 		f = fcnIn(ds, ds->addr, 0);
 		ds_begin_line(ds);
 		ds_print_labels(ds, f);
@@ -5576,7 +5577,6 @@ toro:
 				}
 			}
 		}
-		////
 		int mi_type;
 		bool mi_found = ds_print_meta_infos(ds, buf, len, idx, &mi_type);
 		if (ds->asm_hint_pos == 0) {
