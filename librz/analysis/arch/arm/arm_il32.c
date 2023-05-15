@@ -105,11 +105,56 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 	return var ? VARG(var) : NULL;
 }
 
+/**
+ * Return the data width of given data type
+ * note: Those data_type which contains 2 type (F16.F64, F32.F16)
+ * is out of the scope of this function
+ */
+static ut32 arm_data_width(arm_vectordata_type vec_type) {
+	switch (vec_type) {
+	case ARM_VECTORDATA_I32:
+	case ARM_VECTORDATA_S32:
+	case ARM_VECTORDATA_F32:
+		return 32;
+	case ARM_VECTORDATA_I8:
+		return 8;
+	case ARM_VECTORDATA_I16:
+		return 16;
+	case ARM_VECTORDATA_I64:
+	case ARM_VECTORDATA_F64:
+		return 64;
+	case ARM_VECTORDATA_INVALID:
+		return 0;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+/**
+ * Return the width of given reg
+ */
+static ut32 arm_reg_width(arm_reg reg) {
+	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
+		return 32;
+	}
+	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
+		return 64;
+	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		return 128;
+	}
+
+	return 0;
+}
+
 #define PC(addr, is_thumb)      (addr + (is_thumb ? 4 : 8))
 #define PCALIGN(addr, is_thumb) (PC(addr, is_thumb) & ~3ul)
 #define REG_VAL(id)             read_reg(PC(insn->address, is_thumb), id)
 #define REG(n)                  REG_VAL(REGID(n))
 #define MEMBASE(x)              REG_VAL(insn->detail->arm.operands[x].mem.base)
+#define DT_WIDTH(insn)          arm_data_width(insn->detail->arm.vector_data)
+#define REG_WIDTH(n)            arm_reg_width(REGID(n))
 
 /**
  * IL to write the given capstone reg
@@ -2319,16 +2364,68 @@ static RzILOpEffect *tbb(cs_insn *insn, bool is_thumb) {
  * ARM: vmov
  */
 static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
-	if (OPCOUNT() != 2 || !ISREG(0) || !ISREG(1)) {
+	if (OPCOUNT() < 2 || !ISREG(0) || (!ISIMM(1) && !ISREG(1))) {
 		// for now, only support vmov rt, rn
 		return NULL;
 	}
+
+	// vmov for immediate must be unconditional
+	// vmov.<dt> <Qd>, or vmov.<dt> <Dd>
+	// vmov.F32 <Sd>, or vmov.F64 <Qd>
+	if (ISIMM(1)) {
+		// possible : I8, I16, I32, I64, F32 for Q/D register
+		// possible : F32 for S register
+		// possible : F64 for D register
+		ut32 imm_width = DT_WIDTH(insn);
+		if (!imm_width) {
+			return NULL;
+		}
+		// process move imm
+		ut32 reg_width = REG_WIDTH(0);
+		if (reg_width < imm_width) {
+			return NULL;
+		}
+
+		RzILOpBitVector *imm_bv = ARG(1);
+		arm_vectordata_type vec_type = insn->detail->arm.vector_data;
+		if (vec_type == ARM_VECTORDATA_F32 && reg_width == 32) {
+			// F32 -> Sn
+			// convert to F32
+		}
+
+		if (vec_type == ARM_VECTORDATA_F64 && reg_width == 64) {
+			// F64 -> Dn
+			// convert to F64
+		}
+
+		int replicated_times = reg_width / imm_width;
+		for (int i = 0; i < replicated_times; ++i) {
+			// imm from ARG is u32, should repeat
+			// Q1 : Register Alias for S/D/Q, choose S as unit ?
+			// Q2 : Get Imm by vector_data type ?
+			// Q3 : where to "repeat" data, here or in get_imm ?
+		}
+	}
+
+	// vmov rd, rn, where rd
 	RzILOpBitVector *val = ARG(1);
 	if (!val) {
 		return NULL;
 	}
 	return write_reg(REGID(0), val);
 }
+
+/**
+ * For Extend Instruction Set
+ * TODO: Split to a seperate file and include before arm lifter
+ * VFP and NEON
+ */
+
+/**
+ * Capstone: ARM_INS_VLD1, ARM_INS_VLD2, ARM_INS_VLD3, ARM_INS_VLD4, ARM_INS_VLDR
+ * ARM_INS_VLDMDB, ARM_INS_VLDMIA
+ * ARM: vldr, vldm
+ */
 
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
