@@ -367,7 +367,7 @@ static bool line_highlighted(RzDisasmState *ds);
 static int ds_print_shortcut(RzDisasmState *ds, ut64 addr, int pos);
 static inline void ds_init_theme(RzDisasmState *ds) {
 	RzCore *core = ds->core;
-	ds->theme.comment = core->cons->context->pal.comment;
+	ds->theme.pal_comment = core->cons->context->pal.comment;
 #define P(x) (core->cons && core->cons->context->pal.x) ? core->cons->context->pal.x
 	ds->theme.comment = P(comment)
 	    : Color_CYAN;
@@ -5336,6 +5336,8 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	if (!ds->vec && ds->pj && !pj) {
 		pj_a(ds->pj);
 	}
+	rz_cons_set_flush(true);
+
 toro:
 	// uhm... is this necessary? imho can be removed
 	rz_asm_set_pc(core->rasm, rz_core_pava(core, ds->addr + idx));
