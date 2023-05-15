@@ -719,10 +719,10 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->indent_space = rz_config_get_i(core->config, "asm.indentspace");
 	ds->tracespace = rz_config_get_i(core->config, "asm.tracespace");
 	ds->cyclespace = rz_config_get_i(core->config, "asm.cyclespace");
-	ds->show_dwarf = rz_config_get_b(core->config, "asm.dwarf");
-	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.dwarf.file");
-	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.dwarf.abspath");
-	ds->dwarfShowLines = rz_config_get_b(ds->core->config, "asm.dwarf.lines");
+	ds->show_dwarf = rz_config_get_b(core->config, "asm.debuginfo");
+	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.debuginfo.file");
+	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.debuginfo.abspath");
+	ds->dwarfShowLines = rz_config_get_b(ds->core->config, "asm.debuginfo.lines");
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
 	ds->show_size = rz_config_get_b(core->config, "asm.size");

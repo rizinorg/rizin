@@ -3029,10 +3029,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETBPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI("asm.indentspace", 2, "How many spaces to indent the code");
-	SETBPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
-	SETBPREF("asm.dwarf.abspath", "false", "Show absolute path in asm.dwarf");
-	SETBPREF("asm.dwarf.file", "true", "Show filename of asm.dwarf in pd");
-	SETBPREF("asm.dwarf.lines", "true", "Show DWARF source line information at disassembly");
+	SETBPREF("asm.debuginfo", "false", "Show debug info comment at disassembly");
+	SETBPREF("asm.debuginfo.abspath", "false", "Show absolute path in asm.debuginfo");
+	SETBPREF("asm.debuginfo.file", "true", "Show filename of asm.debuginfo in pd");
+	SETBPREF("asm.debuginfo.lines", "true", "Show debug info source line information at disassembly");
 	SETBPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETBPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETBPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
