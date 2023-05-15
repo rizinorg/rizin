@@ -117,7 +117,7 @@ typedef struct {
 	int tracespace;
 	int cyclespace;
 	int show_indent;
-	bool show_dwarf;
+	bool asm_debuginfo;
 	bool show_size;
 	bool show_trace;
 	bool show_family;
@@ -290,9 +290,9 @@ typedef struct {
 	// caches
 	char *_tabsbuf;
 	int _tabsoff;
-	bool dwarfFile;
-	bool dwarfAbspath;
-	bool dwarfShowLines;
+	bool asm_debuginfo_file;
+	bool asm_debuginfo_abspath;
+	bool asm_debuginfo_lines;
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
@@ -719,10 +719,10 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->indent_space = rz_config_get_i(core->config, "asm.indentspace");
 	ds->tracespace = rz_config_get_i(core->config, "asm.tracespace");
 	ds->cyclespace = rz_config_get_i(core->config, "asm.cyclespace");
-	ds->show_dwarf = rz_config_get_b(core->config, "asm.debuginfo");
-	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.debuginfo.file");
-	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.debuginfo.abspath");
-	ds->dwarfShowLines = rz_config_get_b(ds->core->config, "asm.debuginfo.lines");
+	ds->asm_debuginfo = rz_config_get_b(core->config, "asm.debuginfo");
+	ds->asm_debuginfo_file = rz_config_get_b(ds->core->config, "asm.debuginfo.file");
+	ds->asm_debuginfo_abspath = rz_config_get_b(ds->core->config, "asm.debuginfo.abspath");
+	ds->asm_debuginfo_lines = rz_config_get_b(ds->core->config, "asm.debuginfo.lines");
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
 	ds->show_size = rz_config_get_b(core->config, "asm.size");
@@ -3814,13 +3814,13 @@ static void ds_align_comment(RzDisasmState *ds) {
 }
 
 static void ds_print_dwarf(RzDisasmState *ds) {
-	if (!ds->show_dwarf) {
+	if (!ds->asm_debuginfo) {
 		return;
 	}
 
-	if (ds->dwarfShowLines) {
+	if (ds->asm_debuginfo_lines) {
 		// TODO: cache value in ds
-		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
+		int dwarfFile = (int)ds->asm_debuginfo_file + (int)ds->asm_debuginfo_abspath;
 		free(ds->sl);
 		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
 		if (RZ_STR_ISEMPTY(ds->sl))
