@@ -5264,10 +5264,6 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	RZ_NULLABLE RzCoreDisasmOptions *options) {
 	rz_return_val_if_fail(core && buf, 0);
 
-#ifdef DEBUGGER
-	rz_cons_set_flush(true);
-#endif
-
 	PJ *pj = state ? state->d.pj : NULL;
 	bool json = state && state->mode == RZ_OUTPUT_MODE_JSON;
 
@@ -5724,10 +5720,6 @@ toro:
 	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */
 	rz_reg_arena_pop(core->analysis->reg);
-
-#ifdef DEBUGGER
-	rz_cons_set_flush(false);
-#endif
 	return addrbytes * idx; //-ds->lastfail;
 }
 
