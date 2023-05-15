@@ -117,7 +117,7 @@ typedef struct {
 	int tracespace;
 	int cyclespace;
 	int show_indent;
-	bool asm_debuginfo;
+	ut32 debuginfo;
 	bool show_size;
 	bool show_trace;
 	bool show_family;
@@ -290,9 +290,6 @@ typedef struct {
 	// caches
 	char *_tabsbuf;
 	int _tabsoff;
-	bool asm_debuginfo_file;
-	bool asm_debuginfo_abspath;
-	bool asm_debuginfo_lines;
 	bool showpayloads;
 	bool showrelocs;
 	int cmtcount;
@@ -309,6 +306,24 @@ typedef struct {
 
 	RzPVector /*<RzAnalysisDisasmText *>*/ *vec;
 } RzDisasmState;
+
+// Function to set or clear a flag based on a boolean value
+static inline void set_flag(uint32_t *flags, uint32_t flag, bool value) {
+	if (value) {
+		// Set the flag
+		*flags |= flag;
+	} else {
+		// Clear the flag
+		*flags &= ~flag;
+	}
+}
+
+enum debuginfo_flag_enum_t {
+	DEBUGINFO = 1 << 0,
+	DEBUGINFO_ABSPATH = 1 << 1,
+	DEBUGINFO_FILE = 1 << 2,
+	DEBUGINFO_LINES = 1 << 3,
+};
 
 static void ds_setup_print_pre(RzDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RzDisasmState *ds, bool tail, bool middle);
@@ -350,7 +365,7 @@ static void ds_print_sysregs(RzDisasmState *ds);
 static void ds_print_fcn_name(RzDisasmState *ds);
 static void ds_print_as_string(RzDisasmState *ds);
 static bool ds_print_core_vmode(RzDisasmState *ds, int pos);
-static void ds_print_dwarf(RzDisasmState *ds);
+static void ds_print_debuginfo(RzDisasmState *ds);
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
@@ -719,10 +734,12 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->indent_space = rz_config_get_i(core->config, "asm.indentspace");
 	ds->tracespace = rz_config_get_i(core->config, "asm.tracespace");
 	ds->cyclespace = rz_config_get_i(core->config, "asm.cyclespace");
-	ds->asm_debuginfo = rz_config_get_b(core->config, "asm.debuginfo");
-	ds->asm_debuginfo_file = rz_config_get_b(ds->core->config, "asm.debuginfo.file");
-	ds->asm_debuginfo_abspath = rz_config_get_b(ds->core->config, "asm.debuginfo.abspath");
-	ds->asm_debuginfo_lines = rz_config_get_b(ds->core->config, "asm.debuginfo.lines");
+
+	set_flag(&ds->debuginfo, DEBUGINFO, rz_config_get_b(core->config, "asm.debuginfo"));
+	set_flag(&ds->debuginfo, DEBUGINFO_FILE, rz_config_get_b(core->config, "asm.debuginfo.file"));
+	set_flag(&ds->debuginfo, DEBUGINFO_ABSPATH, rz_config_get_b(core->config, "asm.debuginfo.abspath"));
+	set_flag(&ds->debuginfo, DEBUGINFO_LINES, rz_config_get_b(core->config, "asm.debuginfo.lines"));
+
 	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
 	ds->show_size = rz_config_get_b(core->config, "asm.size");
@@ -3813,16 +3830,17 @@ static void ds_align_comment(RzDisasmState *ds) {
 	rz_cons_print(" ");
 }
 
-static void ds_print_dwarf(RzDisasmState *ds) {
-	if (!ds->asm_debuginfo) {
+static void ds_print_debuginfo(RzDisasmState *ds) {
+	if (!(ds->debuginfo & DEBUGINFO)) {
 		return;
 	}
 
-	if (ds->asm_debuginfo_lines) {
+	if (ds->debuginfo & DEBUGINFO_LINES) {
 		// TODO: cache value in ds
-		int dwarfFile = (int)ds->asm_debuginfo_file + (int)ds->asm_debuginfo_abspath;
+		int file_and_abspath = (ds->debuginfo & DEBUGINFO_FILE) ? 1 : 0;
+		file_and_abspath += (ds->debuginfo & DEBUGINFO_ABSPATH) ? 1 : 0;
 		free(ds->sl);
-		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, dwarfFile);
+		ds->sl = rz_bin_addr2text(ds->core->bin, ds->at, file_and_abspath);
 		if (RZ_STR_ISEMPTY(ds->sl))
 			return;
 		if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
@@ -4752,7 +4770,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	RzCore *core = ds->core;
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *pc;
-	int (*hook_mem_write)(RzAnalysisEsil * esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	int (*hook_mem_write)(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = rz_core_pava(core, ds->at);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
@@ -5592,7 +5610,7 @@ toro:
 		ds_print_family(ds);
 		ds_print_stackptr(ds);
 		if (mi_found) {
-			ds_print_dwarf(ds);
+			ds_print_debuginfo(ds);
 			ret = ds_print_middle(ds, ret);
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
@@ -5632,7 +5650,7 @@ toro:
 			ds_build_op_str(ds, true);
 			ds_print_opstr(ds);
 			ds_end_line_highlight(ds);
-			ds_print_dwarf(ds);
+			ds_print_debuginfo(ds);
 			ret = ds_print_middle(ds, ret);
 
 			ds_print_asmop_payload(ds, buf + addrbytes * idx);
