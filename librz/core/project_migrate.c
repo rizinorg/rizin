@@ -484,7 +484,7 @@ static inline bool sdb_rename(Sdb *db, const char *old_key, const char *new_key)
 		return false;
 	}
 	sdb_unset(db, old_key, 0);
-	sdb_set(db, new_key, val, 0);
+	sdb_set_owned(db, new_key, val, 0);
 	return true;
 }
 
