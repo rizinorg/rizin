@@ -5,6 +5,8 @@
 #include <rz_project.h>
 
 #include "../unit/minunit.h"
+#include "rz_config.h"
+#include "sdb.h"
 
 /**
  * \file
@@ -404,14 +406,18 @@ static bool test_migrate_v10_v11_stack_vars_sp() {
 static bool test_migrate_v2_v12() {
 	RzProject *prj = rz_project_load_file_raw("prj/v2-types-empty.rzdb");
 	mu_assert_notnull(prj, "load raw project");
+
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
-	bool s = rz_project_migrate(prj, 12, res);
+	bool s = rz_project_migrate(prj, 2, res);
 	mu_assert_true(s, "migrate success");
 
 	Sdb *core_db = sdb_ns(prj, "core", false);
 	mu_assert_notnull(core_db, "core ns");
 	Sdb *config_db = sdb_ns(core_db, "config", false);
 	mu_assert_notnull(config_db, "debug ns");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo", 0), "asm.debuginfo");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.abspath", 0), "asm.debuginfo.abspath");
+	mu_assert_notnull(sdb_const_get(config_db, "asm.debuginfo.file", 0), "asm.debuginfo.file");
 
 	rz_serialize_result_info_free(res);
 	rz_project_free(prj);
@@ -843,6 +849,19 @@ static bool test_load_v9_v10_stack_vars_sp(int version, const char *prj_file) {
 	mu_end;
 }
 
+static bool test_load_v12() {
+	RzCore *core = rz_core_new();
+	BEGIN_LOAD_TEST(core, 12, "prj/v12-types-empty.rzdb");
+
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo"), "asm.debuginfo");
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.abspath"), "asm.debuginfo.abspath");
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.file"), "asm.debuginfo.file");
+	mu_assert_notnull(rz_config_get(core->config, "asm.debuginfo.lines"), "asm.debuginfo.lines");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_migrate_v1_v2_noreturn);
 	mu_run_test(test_migrate_v1_v2_noreturn_empty);
@@ -877,6 +896,7 @@ int all_tests() {
 	mu_run_test(test_load_v9_v10_stack_vars_sp, 9, "prj/v9-sp-vars.rzdb");
 	mu_run_test(test_load_v9_v10_stack_vars_bp, 10, "prj/v10-bp-vars.rzdb");
 	mu_run_test(test_load_v9_v10_stack_vars_sp, 10, "prj/v10-sp-vars.rzdb");
+	mu_run_test(test_load_v12);
 	return tests_passed != tests_run;
 }
 
