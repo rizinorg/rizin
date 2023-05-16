@@ -101,6 +101,14 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 		RzILOpBitVector *var = VARG(reg_var_name(ARM_REG_D0 + idx / 2));
 		return UNSIGNED(32, idx % 2 ? SHIFTR0(var, UN(7, 32)) : var);
 	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		ut32 low_dr_idx = (reg - ARM_REG_Q0) << 1;
+		ut32 high_dr_idx = low_dr_idx + 1;
+		RzILOpBitVector *low_var = VARG(reg_var_name(ARM_REG_D0 + low_dr_idx));
+		RzILOpBitVector *high_var = VARG(reg_var_name(ARM_REG_D0 + high_dr_idx));
+		return APPEND(high_var, low_var);
+	}
+
 	const char *var = reg_var_name(reg);
 	return var ? VARG(var) : NULL;
 }
@@ -131,30 +139,13 @@ static ut32 arm_data_width(arm_vectordata_type vec_type) {
 	}
 }
 
-/**
- * Return the width of given reg
- */
-static ut32 arm_reg_width(arm_reg reg) {
-	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
-		return 32;
-	}
-	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
-		return 64;
-	}
-	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
-		return 128;
-	}
-
-	return 0;
-}
-
 #define PC(addr, is_thumb)      (addr + (is_thumb ? 4 : 8))
 #define PCALIGN(addr, is_thumb) (PC(addr, is_thumb) & ~3ul)
 #define REG_VAL(id)             read_reg(PC(insn->address, is_thumb), id)
 #define REG(n)                  REG_VAL(REGID(n))
 #define MEMBASE(x)              REG_VAL(insn->detail->arm.operands[x].mem.base)
 #define DT_WIDTH(insn)          arm_data_width(insn->detail->arm.vector_data)
-#define REG_WIDTH(n)            arm_reg_width(REGID(n))
+#define REG_WIDTH(n)            reg_bits(REGID(n))
 
 /**
  * IL to write the given capstone reg
@@ -170,6 +161,15 @@ static RzILOpEffect *write_reg(arm_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector *v
 			v = SHIFTL0(v, UN(6, 32));
 		}
 		return SETG(reg_var_name(dreg), LOGOR(masked, v));
+	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		arm_reg low_reg = ARM_REG_D0 + ((reg - ARM_REG_Q0) << 1);
+		arm_reg high_reg = low_reg + 1;
+		RzILOpBitVector *low_val = UNSIGNED(64, v);
+		RzILOpBitVector *high_val = UNSIGNED(64, SHIFTR0(v, UN(8, 64)));
+		return SEQ2(
+			SETG(reg_var_name(low_reg), low_val),
+			SETG(reg_var_name(high_reg), high_val));
 	}
 	const char *var = reg_var_name(reg);
 	if (!var) {
@@ -298,6 +298,67 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm_op *op, 
 }
 
 /**
+ * For VFP/NEON instruction immediate value
+ * <imm> in Arm ref manual: "A constant of the type specified by <dt>.
+ * This constant is replicated enough times to fill the destination register.
+ */
+static RzILOpBitVector *repeated_imm(ut32 imm_width, ut32 dreg_width, ut32 imm) {
+	ut64 final_imm = 0;
+	ut32 repeat_times = dreg_width / imm_width;
+	ut64 tmp = imm;
+
+	if (dreg_width == 128) {
+		// for <Qd> registers
+		ut64 imm_low = 0;
+		ut64 imm_high = 0;
+
+		for (int i = 0; i < repeat_times / 2; ++i) {
+			imm_low += tmp;
+			imm_high += tmp;
+			tmp <<= imm_width;
+		}
+
+		return (APPEND(UN(64, imm_high), UN(64, imm_low)));
+	}
+
+	// for <Dd> and <Sd>
+	for (int i = 0; i < repeat_times; ++i) {
+		final_imm += tmp;
+		tmp <<= imm_width;
+	}
+
+	return UN(dreg_width, final_imm);
+}
+
+static ut32 get_imm(cs_insn *insn, int n, RZ_NULLABLE RzILOpBool **carry_out) {
+	if (carry_out) {
+		*carry_out = NULL;
+	}
+	cs_arm_op *op = &insn->detail->arm.operands[n];
+	ut32 imm = IMM(n);
+	if (op->shift.type == ARM_SFT_INVALID && ISIMM(n + 1)) {
+		// sometimes capstone encoded the shift like this, see also comment below
+		ut32 ror = IMM(n + 1);
+		imm = (imm >> ror) | (imm << (32 - ror));
+	}
+
+	if (carry_out) {
+		// Some "movs"s leave c alone, some set it to the highest bit of the result.
+		// Determining which one it is from capstone's info is tricky:
+		// Arm defines that it is set when the imm12's rotate value is not 0.
+		// This is the case when:
+		// * capstone disassembles to something like "movs r0, 0, 2", giving us an explicit third operand
+		// * capstone disassembles to something like "movs r0, 0x4000000" without the third operand,
+		//   but we can see that the value is larger than 8 bits, so there must be a shift.
+		if (ISIMM(n + 1) || imm > 0xff) {
+			*carry_out = (imm & (1ul << 31)) ? IL_TRUE : IL_FALSE;
+		}
+	}
+
+	return imm;
+}
+
+/**
  * IL to retrieve the value of the \p n -th arg of \p insn
  * \p carry_out filled with the carry value of NULL if it does not change
  */
@@ -324,24 +385,7 @@ static RzILOpBitVector *arg(cs_insn *insn, bool is_thumb, int n, RZ_NULLABLE RzI
 		return r ? shift(r, carry_out, op->shift.type, dist) : NULL;
 	}
 	case ARM_OP_IMM: {
-		ut32 imm = IMM(n);
-		if (op->shift.type == ARM_SFT_INVALID && ISIMM(n + 1)) {
-			// sometimes capstone encoded the shift like this, see also comment below
-			ut32 ror = IMM(n + 1);
-			imm = (imm >> ror) | (imm << (32 - ror));
-		}
-		if (carry_out) {
-			// Some "movs"s leave c alone, some set it to the highest bit of the result.
-			// Determining which one it is from capstone's info is tricky:
-			// Arm defines that it is set when the imm12's rotate value is not 0.
-			// This is the case when:
-			// * capstone disassembles to something like "movs r0, 0, 2", giving us an explicit third operand
-			// * capstone disassembles to something like "movs r0, 0x4000000" without the third operand,
-			//   but we can see that the value is larger than 8 bits, so there must be a shift.
-			if (ISIMM(n + 1) || imm > 0xff) {
-				*carry_out = (imm & (1ul << 31)) ? IL_TRUE : IL_FALSE;
-			}
-		}
+		ut32 imm = get_imm(insn, n, carry_out);
 		return U32(imm);
 	}
 	case ARM_OP_MEM: {
@@ -2380,31 +2424,17 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 		if (!imm_width) {
 			return NULL;
 		}
-		// process move imm
 		ut32 reg_width = REG_WIDTH(0);
 		if (reg_width < imm_width) {
 			return NULL;
 		}
 
-		RzILOpBitVector *imm_bv = ARG(1);
-		arm_vectordata_type vec_type = insn->detail->arm.vector_data;
-		if (vec_type == ARM_VECTORDATA_F32 && reg_width == 32) {
-			// F32 -> Sn
-			// convert to F32
+		ut32 imm = get_imm(insn, 1, NULL);
+		RzILOpBitVector *imm_bv = repeated_imm(imm_width, reg_width, imm);
+		if (!imm_bv) {
+			return NULL;
 		}
-
-		if (vec_type == ARM_VECTORDATA_F64 && reg_width == 64) {
-			// F64 -> Dn
-			// convert to F64
-		}
-
-		int replicated_times = reg_width / imm_width;
-		for (int i = 0; i < replicated_times; ++i) {
-			// imm from ARG is u32, should repeat
-			// Q1 : Register Alias for S/D/Q, choose S as unit ?
-			// Q2 : Get Imm by vector_data type ?
-			// Q3 : where to "repeat" data, here or in get_imm ?
-		}
+		return write_reg(REGID(0), imm_bv);
 	}
 
 	// vmov rd, rn, where rd
