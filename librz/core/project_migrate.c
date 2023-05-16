@@ -333,7 +333,7 @@ RZ_API bool rz_project_migrate_v9_v10(RzProject *prj, RzSerializeResultInfo *res
 // --
 // Migration 10 -> 11
 //
-// Changes from 59f32b6db89c09c16fadbda6a098e326b73e03d8
+// Changes from d9950f74792c1dfb565ac491cc7ef706b80e6044
 //   - Removed analysis.vars.stackname config var
 //   - In RzAnalysisVar JSON, "kind", "arg" and "delta" are removed. Instead, there is either a "stack"
 //     or a "reg" key, but never both.
@@ -471,7 +471,7 @@ RZ_API bool rz_project_migrate_v10_v11(RzProject *prj, RzSerializeResultInfo *re
 // --
 // Migration 11 -> 12
 //
-// Changes from <commit hash not yet known>
+// Changes from 59f32b6db89c09c16fadbda6a098e326b73e03d8
 //   - Rename config var `asm.dwarf` to `asm.debuginfo`
 //   - Rename config var `asm.dwarf.abspath` to `asm.debuginfo.abspath`
 //   - Rename config var `asm.dwarf.file` to `asm.debuginfo.file`
