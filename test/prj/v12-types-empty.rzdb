@@ -1,6 +1,6 @@
 /
 type=rizin rz-db project
-version=2
+version=12
 
 /core
 blocksize=0x100
@@ -9,19 +9,21 @@ offset=0x8048400
 /core/analysis
 
 /core/analysis/blocks
-0x8048290={"size":25,"jump":134513326,"fail":134513321,"traced":true,"ninstr":7,"op_pos":[1,4,9,15,21,23],"stackptr":12,"parent_stackptr":0}
-0x80482a9={"size":5,"jump":134513326,"ninstr":1,"stackptr":-4,"parent_stackptr":12}
-0x80482ae={"size":5,"traced":true,"ninstr":3,"op_pos":[3,4],"stackptr":-4,"parent_stackptr":12}
-0x80482d0={"size":6,"ninstr":1,"parent_stackptr":0}
-0x80482e0={"size":6,"ninstr":1,"parent_stackptr":0}
-0x80482f0={"size":6,"ninstr":1,"parent_stackptr":0}
-0x8048300={"size":33,"traced":true,"ninstr":13,"op_pos":[2,3,5,8,9,10,11,16,21,22,23,28],"stackptr":28,"parent_stackptr":0}
-0x8048330={"size":4,"traced":true,"ninstr":2,"op_pos":[3],"stackptr":-4,"parent_stackptr":0}
-0x8048340={"size":15,"jump":134513488,"fail":134513487,"traced":true,"ninstr":4,"op_pos":[5,10,13],"parent_stackptr":0,"cmpval":6}
-0x804834f={"size":1,"ninstr":1,"stackptr":-4,"parent_stackptr":0}
-0x8048350={"size":9,"jump":134513487,"fail":134513497,"traced":true,"ninstr":3,"op_pos":[5,7],"parent_stackptr":0}
-0x8048359={"size":17,"traced":true,"ninstr":7,"op_pos":[1,3,6,13,15,16],"stackptr":20,"parent_stackptr":0}
-0x8048400={"size":28,"traced":true,"ninstr":9,"op_pos":[1,3,6,9,16,21,26,27],"stackptr":12,"parent_stackptr":0}
+0x8048290={"size":25,"jump":134513326,"fail":134513321,"traced":true,"ninstr":7,"op_pos":[1,4,9,15,21,23]}
+0x80482a9={"size":5,"jump":134513326,"ninstr":1}
+0x80482ae={"size":5,"traced":true,"ninstr":3,"op_pos":[3,4]}
+0x80482d0={"size":6,"ninstr":1}
+0x80482e0={"size":6,"ninstr":1}
+0x80482f0={"size":6,"ninstr":1}
+0x8048300={"size":33,"traced":true,"ninstr":13,"op_pos":[2,3,5,8,9,10,11,16,21,22,23,28]}
+0x8048330={"size":4,"traced":true,"ninstr":2,"op_pos":[3]}
+0x8048340={"size":15,"jump":134513488,"fail":134513487,"traced":true,"ninstr":4,"op_pos":[5,10,13],"cmpval":6}
+0x804834f={"size":1,"ninstr":1}
+0x8048350={"size":9,"jump":134513487,"fail":134513497,"traced":true,"ninstr":3,"op_pos":[5,7]}
+0x8048359={"size":17,"traced":true,"ninstr":7,"op_pos":[1,3,6,13,15,16]}
+0x8048400={"size":28,"traced":true,"ninstr":9,"op_pos":[1,3,6,9,16,21,26,27]}
+
+/core/analysis/callables
 
 /core/analysis/cc
 borland=cc
@@ -71,14 +73,14 @@ watcom=cc
 /core/analysis/classes/attrs
 
 /core/analysis/functions
-0x8048290={"name":"fcn.08048290","bits":32,"type":1,"cc":"cdecl","stack":-4,"maxstack":12,"ninstr":11,"bp_frame":true,"diff":{},"bbs":[134513296,134513321,134513326]}
-0x80482d0={"name":"sym.imp.puts","bits":32,"type":4,"cc":"cdecl","stack":0,"maxstack":0,"ninstr":1,"bp_frame":true,"diff":{},"bbs":[134513360]}
-0x80482e0={"name":"loc.imp.__gmon_start","bits":32,"type":1,"cc":"cdecl","stack":0,"maxstack":0,"ninstr":1,"bp_frame":true,"diff":{},"bbs":[134513376]}
-0x80482f0={"name":"sym.imp.__libc_start_main","bits":32,"type":4,"cc":"cdecl","stack":0,"maxstack":0,"ninstr":1,"bp_frame":true,"diff":{},"bbs":[134513392]}
-0x8048300={"name":"entry0","bits":32,"type":1,"cc":"cdecl","stack":28,"maxstack":28,"ninstr":13,"diff":{},"bbs":[134513408]}
-0x8048330={"name":"fcn.08048330","bits":32,"type":1,"cc":"cdecl","stack":-4,"maxstack":0,"ninstr":2,"bp_frame":true,"diff":{},"bbs":[134513456]}
-0x8048340={"name":"fcn.08048340","bits":32,"type":1,"cc":"cdecl","stack":-4,"maxstack":28,"ninstr":15,"bp_frame":true,"bp_off":4,"diff":{},"bbs":[134513472,134513487,134513488,134513497]}
-0x8048400={"name":"main","bits":32,"type":4,"cc":"cdecl","stack":12,"maxstack":20,"ninstr":9,"bp_frame":true,"bp_off":4,"diff":{},"bbs":[134513664]}
+0x8048290={"name":"fcn.08048290","bits":32,"type":1,"cc":"cdecl","stack":-4,"maxstack":12,"ninstr":11,"bp_frame":true,"bbs":[134513296,134513321,134513326]}
+0x80482d0={"name":"sym.imp.puts","bits":32,"type":4,"cc":"cdecl","stack":0,"maxstack":0,"ninstr":1,"bp_frame":true,"bbs":[134513360]}
+0x80482e0={"name":"loc.imp.__gmon_start","bits":32,"type":1,"cc":"cdecl","stack":0,"maxstack":0,"ninstr":1,"bp_frame":true,"bbs":[134513376]}
+0x80482f0={"name":"sym.imp.__libc_start_main","bits":32,"type":4,"cc":"cdecl","stack":0,"maxstack":0,"ninstr":1,"bp_frame":true,"bbs":[134513392]}
+0x8048300={"name":"entry0","bits":32,"type":1,"cc":"cdecl","stack":28,"maxstack":28,"ninstr":13,"bbs":[134513408]}
+0x8048330={"name":"fcn.08048330","bits":32,"type":1,"cc":"cdecl","stack":-4,"maxstack":0,"ninstr":2,"bp_frame":true,"bbs":[134513456]}
+0x8048340={"name":"fcn.08048340","bits":32,"type":1,"cc":"cdecl","stack":-4,"maxstack":28,"ninstr":15,"bp_frame":true,"bp_off":4,"bbs":[134513472,134513487,134513488,134513497]}
+0x8048400={"name":"main","bits":32,"type":4,"cc":"cdecl","stack":12,"maxstack":20,"ninstr":9,"bp_frame":true,"bp_off":4,"bbs":[134513664]}
 
 /core/analysis/hints
 
@@ -106,9 +108,15 @@ bin=s
 
 /core/analysis/noreturn
 
-/core/analysis/pins
+/core/analysis/typelinks
 
 /core/analysis/types
+type.unknown_t=d
+type.unknown_t.size=32
+type.unknown_t.typeclass=Integral
+unknown_t=type
+
+/core/analysis/vars
 
 /core/analysis/xrefs
 0x8048000=[{"to":134512711,"type":"c"}]
@@ -167,15 +175,8 @@ bin=s
 0x804851f=[{"to":134513953,"type":"c"}]
 0x8049634=[{"to":134518200,"type":"c"}]
 
-/core/analysis/zigns
-
-/core/analysis/zigns/spaces
-name=zs
-spacestack=["*"]
-
-/core/analysis/zigns/spaces/spaces
-
 /core/config
+analysis.apply.signature=true
 analysis.arch=x86
 analysis.armthumb=false
 analysis.autoname=false
@@ -188,7 +189,6 @@ analysis.datarefs=false
 analysis.delay=true
 analysis.depth=64
 analysis.detectwrites=false
-analysis.endsize=true
 analysis.esil=false
 analysis.fcnprefix=fcn
 analysis.from=0xffffffffffffffff
@@ -209,6 +209,7 @@ analysis.jmp.retpoline=true
 analysis.jmp.tailcall=0
 analysis.jmp.tbl=true
 analysis.jmp.tblmax=512
+analysis.jmp.tblmaxoffset=0x00001000
 analysis.limits=false
 analysis.loads=false
 analysis.nonull=0
@@ -218,19 +219,19 @@ analysis.ptrdepth=3
 analysis.pushret=false
 analysis.recont=false
 analysis.refstr=false
+analysis.resolve.pointers=true
 analysis.rnr=false
 analysis.roregs=gp,zero
 analysis.sleep=0
 analysis.strings=false
 analysis.timeout=0
 analysis.to=0xffffffffffffffff
+analysis.trap.after=false
 analysis.trycatch=false
 analysis.types.constraint=false
 analysis.types.spec=gcc
 analysis.types.verbose=false
 analysis.vars=true
-analysis.vars.stackname=false
-analysis.verbose=false
 analysis.vinfun=true
 analysis.vinfunrange=false
 asm.analysis=false
@@ -246,6 +247,7 @@ asm.capitalize=false
 asm.cmt.col=71
 asm.cmt.esil=false
 asm.cmt.flgrefs=true
+asm.cmt.il=false
 asm.cmt.off=nodup
 asm.cmt.patch=false
 asm.cmt.refs=false
@@ -254,13 +256,14 @@ asm.comments=true
 asm.cpu=x86
 asm.cycles=false
 asm.cyclespace=false
+asm.debuginfo=false
+asm.debuginfo.abspath=false
+asm.debuginfo.file=true
+asm.debuginfo.lines=true
 asm.decode=false
 asm.decoff=false
 asm.demangle=true
 asm.describe=false
-asm.dwarf=false
-asm.dwarf.abspath=false
-asm.dwarf.file=true
 asm.emu=false
 asm.esil=false
 asm.family=false
@@ -355,6 +358,13 @@ asm.xrefs=true
 asm.xrefs.code=true
 asm.xrefs.fold=5
 asm.xrefs.max=20
+basefind.alignment=0x00001000
+basefind.max.threads=0
+basefind.min.score=1
+basefind.min.string=10
+basefind.progress=false
+basefind.search.end=0xf0000000
+basefind.search.start=0
 bin.at=false
 bin.b64str=false
 bin.baddr=0x08048000
@@ -371,7 +381,6 @@ bin.libs=false
 bin.maxstr=0
 bin.maxstrbuf=0x00a00000
 bin.minstr=0
-bin.rawstr=false
 bin.relocs=true
 bin.str.enc=guess
 bin.strings=true
@@ -385,15 +394,12 @@ cfg.fortunes=true
 cfg.fortunes.clippy=false
 cfg.fortunes.file=tips
 cfg.newtab=false
-cfg.oldshell=false
-cfg.oldshell.autocompletion=true
 cfg.plugins=true
 cfg.prefixdump=dump
 cfg.seek.histsize=63
 cfg.seek.silent=false
 cfg.user=pid42081
 cfg.wseek=false
-cmd.demangle=false
 cmd.depth=10
 cmd.hitinfo=1
 cmd.repeat=false
@@ -401,7 +407,6 @@ dbg.aftersyscall=true
 dbg.backend=native
 dbg.bep=loader
 dbg.bpinmaps=true
-dbg.bpsize=1
 dbg.bpsysign=false
 dbg.btalgo=fuzzy
 dbg.btdepth=128
@@ -428,7 +433,7 @@ dbg.slow=false
 dbg.status=false
 dbg.swstep=false
 dbg.threads=false
-dbg.trace=0
+dbg.trace=false
 dbg.trace.inrange=false
 dbg.trace.libs=true
 dbg.trace.tag=0
@@ -436,17 +441,19 @@ dbg.trace_continue=true
 dbg.verbose=true
 diff.bare=false
 diff.from=0
-diff.levenstein=false
 diff.sort=addr
 diff.to=0
 dir.depth=10
-dir.home=/home/akochkov
-dir.magic=/home/akochkov/.local/share/rizin/0.3.0-git/magic
-dir.plugins=/home/akochkov/.local/lib64/rizin/0.3.0-git
-dir.prefix=/home/akochkov/.local
-dir.projects=~/.local/share/rizin/projects
+dir.home=/Users/aya
+dir.magic=/Users/aya/CLionProjects/rizin/.local/share/rizin/magic
+dir.plugins=/Users/aya/CLionProjects/rizin/.local/lib/rizin/plugins
+dir.prefix=/Users/aya/CLionProjects/rizin/.local
+dir.projects=/Users/aya/.local/share/rizin/projects
+dir.tmp=/var/folders/8l/16n8dx551zq1m5375zcl8yvm0000gn/T/
 dir.types=/usr/include
-dir.zigns=~/.local/share/rizin/zigns
+elf.checks.sections=true
+elf.checks.segments=true
+elf.load.sections=true
 emu.lazy=false
 emu.pre=false
 emu.skip=ds
@@ -479,9 +486,17 @@ file.loadalign=0x00000400
 file.openmany=1
 file.path=/home/akochkov/rizin/rizin-testbins/elf/elf_stripped
 file.type=elf
+flirt.ignore.unknown=true
+flirt.node.optimize=2
+flirt.sig.deflate=false
+flirt.sig.file=all
+flirt.sig.library=Built with rizin 0.6.0
+flirt.sig.os=all
+flirt.sig.version=10
+flirt.sigdb.load.home=true
+flirt.sigdb.load.system=true
 graph.aeab=false
 graph.body=true
-graph.bubble=false
 graph.bytes=false
 graph.cmtright=false
 graph.comments=true
@@ -526,15 +541,14 @@ http.bind=localhost
 http.browser=xdg-open
 http.colon=false
 http.cors=false
-http.dietime=0
 http.dirlist=false
 http.homeroot=~/.local/share/rizin/www
 http.index=index.html
 http.log=true
-http.maxport=9999
 http.maxsize=0
 http.port=9090
-http.root=/home/akochkov/.local/share/rizin/0.3.0-git/www
+http.root=/Users/aya/CLionProjects/rizin/.local/share/rizin/www
+http.stop.after=0
 http.timeout=3
 http.upget=false
 http.upload=false
@@ -543,7 +557,7 @@ http.verbose=false
 io.0xff=255
 io.aslr=false
 io.autofd=true
-io.cache=0
+io.cache=false
 io.cache.auto=false
 io.cache.read=false
 io.cache.write=false
@@ -565,9 +579,9 @@ magic.depth=100
 pdb.autoload=0
 pdb.extract=1
 pdb.server=https://msdl.microsoft.com/download/symbols
-pdb.symstore=/home/akochkov/.local/share/rizin/pdb
-pdb.useragent=Microsoft-Symbol-Server/6.11.0001.402
-prj.file=prj/v2-typelink.rzdb
+pdb.symstore=/Users/aya/.local/share/rizin/pdb
+prj.compress=false
+prj.file=prj/v2-types-empty.rzdb
 rap.loop=true
 rop.comments=false
 rop.conditional=false
@@ -575,9 +589,11 @@ rop.db=true
 rop.len=5
 rop.sdb=false
 rop.subchains=false
+rzil.step.events.read=false
+rzil.step.events.write=true
 scr.bgfill=false
 scr.breaklines=false
-scr.color=2
+scr.color=1
 scr.color.args=true
 scr.color.bytes=true
 scr.color.grep=false
@@ -592,7 +608,6 @@ scr.fgets=false
 scr.fix.columns=0
 scr.fix.rows=0
 scr.flush=false
-scr.fps=false
 scr.gadgets=true
 scr.highlight.grep=false
 scr.hist.block=true
@@ -609,6 +624,7 @@ scr.panelborder=false
 scr.prompt=true
 scr.prompt.file=false
 scr.prompt.flag=false
+scr.prompt.flag.only=false
 scr.prompt.mode=false
 scr.prompt.popup=false
 scr.prompt.sect=false
@@ -622,12 +638,14 @@ scr.slow=true
 scr.square=true
 scr.strconv=asciiesc
 scr.utf8=true
-scr.utf8.curvy=true
+scr.utf8.curvy=false
+scr.visual.mode=0
 scr.wheel=true
 scr.wheel.nkey=false
 scr.wheel.speed=4
 scr.wideoff=false
 search.align=0
+search.case_sensitive=smart
 search.chunk=0
 search.contiguous=true
 search.distance=0
@@ -647,33 +665,24 @@ stack.delta=0
 stack.reg=SP
 stack.size=64
 str.escbslash=false
+str.search.check_ascii_freq=true
 tcp.islocal=false
 time.fmt=%Y-%m-%d %H:%M:%S %z
 time.zone=0
-zign.autoload=false
-zign.diff.bthresh=1.0
-zign.diff.gthresh=1.0
-zign.match.bytes=true
-zign.match.graph=true
-zign.match.hash=true
-zign.match.offset=false
-zign.match.refs=true
-zign.match.types=false
-zign.maxsz=500
-zign.mincc=10
-zign.minsz=16
-zign.prefix=sign
-zign.threshold=0.0
 zoom.byte=h
 zoom.from=0
 zoom.in=io.map
 zoom.maxsz=512
 zoom.to=0
 
+/core/debug
+
+/core/debug/breakpoints
+
 /core/file
-absolute=/home/akochkov/rizin/rizin-testbins/elf/elf_stripped
+absolute=/Users/aya/CLionProjects/rizin/test/bins/elf/elf_stripped
 raw=bins/elf/elf_stripped
-relative=../../-testbins/elf/elf_stripped
+relative=../bins/elf/elf_stripped
 
 /core/flags
 base=0
