@@ -614,7 +614,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	rz_config_set(r->config, "analysis.arch", info->arch);
 	snprintf(str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
 	rz_config_set(r->config, "asm.bits", str);
-	rz_config_set(r->config, "asm.dwarf",
+	rz_config_set(r->config, "asm.debuginfo",
 		(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
 	v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	if (v != -1) {

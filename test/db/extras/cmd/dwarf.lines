@@ -3,11 +3,9 @@ FILE=bins/elf/ada_test_dwarf
 CMDS=<<EOF
 aaa
 s main
-e asm.dwarf=false
-e asm.dwarf.lines=false
+e asm.debuginfo.lines=false
 pdf
-e asm.dwarf=true
-e asm.dwarf.lines=true
+e asm.debuginfo.lines=true
 pdf
 EOF
 EXPECT=<<EOF
