@@ -479,7 +479,7 @@ RZ_API bool rz_project_migrate_v10_v11(RzProject *prj, RzSerializeResultInfo *re
 //
 
 static inline bool sdb_rename(Sdb *db, const char *old_key, const char *new_key) {
-	const char *val = sdb_get(db, old_key, 0);
+	char *val = sdb_get(db, old_key, 0);
 	if (!val) {
 		return false;
 	}
