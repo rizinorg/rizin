@@ -89,6 +89,19 @@ static ut32 reg_bits(arm_reg reg) {
 	return 32;
 }
 
+static bool is_core_reg(arm_reg reg) {
+	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
+		return false;
+	}
+	if (reg >= ARM_REG_D0 && reg <= ARM_REG_D31) {
+		return false;
+	}
+	if (reg >= ARM_REG_Q0 && reg <= ARM_REG_Q15) {
+		return false;
+	}
+	return true;
+}
+
 /**
  * IL to read the given capstone reg
  */
@@ -111,6 +124,20 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 
 	const char *var = reg_var_name(reg);
 	return var ? VARG(var) : NULL;
+}
+
+/**
+ * Return IL of bitvector store in register lane
+ * The length of such bitv is `data_size`
+ */
+static RzILOpBitVector *read_reg_lane(arm_reg reg, ut32 lane, ut32 data_size) {
+	if (is_core_reg(reg)) {
+		return NULL;
+	}
+
+	ut32 shift_dist = lane * data_size;
+	RzILOpBitVector *reg_val = read_reg(0, reg);
+	return UNSIGNED(data_size, SHIFTR0(reg_val, UN(8, shift_dist)));
 }
 
 /**
@@ -146,6 +173,9 @@ static ut32 arm_data_width(arm_vectordata_type vec_type) {
 #define MEMBASE(x)              REG_VAL(insn->detail->arm.operands[x].mem.base)
 #define DT_WIDTH(insn)          arm_data_width(insn->detail->arm.vector_data)
 #define REG_WIDTH(n)            reg_bits(REGID(n))
+#define NEON_LANE(n)            insn->detail->arm.operands[n].neon_lane
+#define VVEC_SIZE(insn)         insn->detail->arm.vector_size
+#define VVEC_DT(insn)           insn->detail->arm.vector_data
 
 /**
  * IL to write the given capstone reg
@@ -2403,6 +2433,12 @@ static RzILOpEffect *tbb(cs_insn *insn, bool is_thumb) {
 	return JMP(ADD(U32(PC(insn->address, is_thumb)), SHIFTL0(UNSIGNED(32, off), UN(5, 1))));
 }
 
+static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILOpBitVector *v) {
+	ut32 reg_size = reg_bits(reg);
+	RzILOpBitVector *sft_val = SHIFTL0(UNSIGNED(reg_size, v), UN(8, vec_size * lane));
+	return write_reg(reg, sft_val);
+}
+
 /**
  * Capstone: ARM_INS_VMOV
  * ARM: vmov
@@ -2437,7 +2473,71 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 		return write_reg(REGID(0), imm_bv);
 	}
 
-	// vmov rd, rn, where rd
+	// 2 core registers and 1 double-word register
+	if (OPCOUNT() == 3) {
+		if (!is_core_reg(REGID(0))) {
+			// vmov <Dm> <Rt1> <Rt2>, Dm[low] = Rt1, Dm[high] = Rt2
+			RzILOpBitVector *rt1_val = REG(1);
+			RzILOpBitVector *rt2_val = REG(2);
+			if (!rt1_val || !rt2_val) {
+				return NULL;
+			}
+			return write_reg(REGID(0), APPEND(rt2_val, rt1_val));
+		}
+		// vmov <Rt1> <Rt2> <Dm>, Rt1 = Dm[low], Rt2 = Dm[high]
+		RzILOpBitVector *reg_val = REG(2);
+		if (!reg_val) {
+			return NULL;
+		}
+		RzILOpBitVector *rt1_val = UNSIGNED(32, reg_val);
+		RzILOpBitVector *rt2_val = UNSIGNED(32, SHIFTR0(UN(8, 32), reg_val));
+		return SEQ2(write_reg(REGID(0), rt1_val),
+			write_reg(REGID(1), rt2_val));
+	}
+
+	// 2 core registers and 2 single-word registers
+	// vmov <Sm1> <Sm2> <Rt1> <Rt2>
+	// vmov <Rt1> <Rt2> <Sm1> <Sm2>
+	if (OPCOUNT() == 4) {
+		RzILOpBitVector *rt1_val = REG(2);
+		RzILOpBitVector *rt2_val = REG(3);
+		if (!rt1_val || !rt2_val) {
+			return NULL;
+		}
+		return SEQ2(write_reg(REGID(0), rt1_val),
+			write_reg(REGID(1), rt2_val));
+	}
+
+	// core register to scalar
+	if (NEON_LANE(0) != -1 && !is_core_reg(REGID(0)) && is_core_reg(REGID(1))) {
+		// vmov.<vec_size> <Dd>[lane], <Rt>
+		// <Dd>[lane] = <Rt>{vecsize - 1 : 0}
+		if (!VVEC_SIZE(insn) || NEON_LANE(0) == -1) {
+			return NULL;
+		}
+		RzILOpBitVector *rt_val = UNSIGNED(VVEC_SIZE(insn), REG(1));
+		return write_reg_lane(REGID(0), NEON_LANE(0), VVEC_SIZE(insn), rt_val);
+	}
+
+	// scalar to core register
+	if (NEON_LANE(1) != -1 && !is_core_reg(REGID(1)) && is_core_reg(REGID(0))) {
+		// vmov.<dt> <Rt> <Dd>[lane]
+		// <Rt> = extend_to_32(<Dd>[lane], lane has size of dt)
+		// unsigned/signed extend is specified by <dt> in capstone
+		if (VVEC_DT(insn) == ARM_VECTORDATA_INVALID) {
+			return NULL;
+		}
+		bool use_zero_ext = true;
+		if (VVEC_DT(insn) == ARM_VECTORDATA_S8 || VVEC_DT(insn) == ARM_VECTORDATA_S16) {
+			use_zero_ext = false;
+		}
+		RzILOpBitVector *lane_val = read_reg_lane(REGID(1), NEON_LANE(1), DT_WIDTH(insn));
+		RzILOpBitVector *ext_lane_val = use_zero_ext ? UNSIGNED(32, lane_val) : SIGNED(32, lane_val);
+		return write_reg(REGID(0), ext_lane_val);
+	}
+
+	// 1. vmov rd, rn
+	// 2. core register and single-word register
 	RzILOpBitVector *val = ARG(1);
 	if (!val) {
 		return NULL;
