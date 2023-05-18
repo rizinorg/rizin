@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Siddharth Mishra <admin@brightprogrammer.in>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "mips_il.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
@@ -40,8 +43,8 @@ typedef RzILOpBitVector BitVector;
  * and will the next instruction be in the delay slot?
  * \return Effect*
  * */
-typedef Effect *(*MipsILLifterFunction)(cs_insn *, ut32);
-#define IL_LIFTER(name)      static Effect *MipsLifter_##name(cs_insn *insn, ut32 pc)
+typedef Effect *(*MipsILLifterFunction)(RzAnalysis*, cs_insn *, ut32);
+#define IL_LIFTER(name)      static Effect *MipsLifter_##name(RzAnalysis* analysis, cs_insn *insn, ut32 pc)
 #define IL_LIFTER_NAME(name) MipsLifter_##name
 
 // size of gprs in 32 bits
@@ -54,7 +57,7 @@ typedef Effect *(*MipsILLifterFunction)(cs_insn *, ut32);
 #define ZERO_EXTEND(v, nv, n) v & ~(((st64)(1 << (n - nv)) - 1) << nv)
 
 // get instruction operand count
-#define OPND_CNT() ((insn)->detail->mips.op_count)
+#define OPND_COUNT() ((insn)->detail->mips.op_count)
 // get instruction operand at given index type
 #define OPND_TYPE(idx) ((insn)->detail->mips.operands[(idx)].type)
 
@@ -65,6 +68,8 @@ typedef Effect *(*MipsILLifterFunction)(cs_insn *, ut32);
 // get instruction operand at given index
 #define OPND_IS_MEM(insn, idx) INSN_OPND_TYPE(insn, idx) == MIPS_OP_MEM
 #define MEM_OPND(idx)          ((insn)->detail->mips.operands[(idx)].mem)
+#define MEM_OPND_BASE(idx)     REG_NAME(MEM_OPND(idx).base)
+#define MEM_OPND_OFFSET(idx)   MEM_OPND(idx).disp
 
 // get instruction operand at given index
 #define OPND_IS_IMM(insn, idx) INSN_OPND_TYPE(insn, idx) == MIPS_OP_IMM
@@ -110,6 +115,9 @@ static char *cpu_reg_enum_to_name_map[] = {
 	[MIPS_REG_30] = "r30",
 	[MIPS_REG_31] = "r31",
 
+	[MIPS_REG_HI] = "hi",
+	[MIPS_REG_LO] = "lo",
+
 	[MIPS_REG_F0] = "f0",
 	[MIPS_REG_F1] = "f1",
 	[MIPS_REG_F2] = "f2",
@@ -145,13 +153,14 @@ static char *cpu_reg_enum_to_name_map[] = {
 };
 
 // char*
-#define REG_PC() REG_NAME(MIPS_REG_PC)
-// Pure*
-#define IL_REG_PC() VARG(REG_PC())
-
-// char*
+#define REG_PC()   REG_NAME(MIPS_REG_PC)
+#define REG_HI()   REG_NAME(MIPS_REG_HI)
+#define REG_LO()   REG_NAME(MIPS_REG_LO)
 #define REG_R(idx) REG_NAME(MIPS_REG_##idx)
 // Pure*
+#define IL_REG_PC()   VARG(REG_PC())
+#define IL_REG_HI()   VARG(REG_HI())
+#define IL_REG_LO()   VARG(REG_LO())
 #define IL_REG_R(idx) VARG(REG_R(idx))
 
 // char*
@@ -162,6 +171,8 @@ static char *cpu_reg_enum_to_name_map[] = {
 // returns Pure*
 #define REG_NAME(regenum)    cpu_reg_enum_to_name_map[regenum]
 #define IL_REG_OPND(opndidx) VARG(REG_OPND(opndidx))
+#define IL_MEM_OPND_BASE(opndidx) VARG(MEM_OPND_BASE(opndidx))
+#define IL_MEM_OPND_OFFSET(opndidx) S32(SIGN_EXTEND(MEM_OPND_OFFSET(opndidx), 16, GPRLEN))
 
 // TODO: add status handlers
 
@@ -179,8 +190,12 @@ static char *cpu_reg_enum_to_name_map[] = {
 // rd must be a global variable
 // rs and rt must be local variables
 // returns Effect*
-#define IL_ADD(rd, rs, rt) SETG((rd), ADD(VARL(rs), VARL(rt)))
-#define IL_AND(rd, rs, rt) SETG((rd), LOGAND(VARL(rs), VARL(rt)))
+#define IL_ADD(rd, rs, rt)  SETG((rd), ADD(VARL(rs), VARL(rt)))
+#define IL_AND(rd, rs, rt)  SETG((rd), LOGAND(VARL(rs), VARL(rt)))
+#define IL_SDIV(rd, rs, rt) SETG(rd, SDIV(VARL(rs), VARL(rt)))
+#define IL_SMOD(rd, rs, rt) SETG(rd, SMOD(VARL(rs), VARL(rt)))
+#define IL_DIV(rd, rs, rt)  SETG(rd, DIV(VARL(rs), VARL(rt)))
+#define IL_MOD(rd, rs, rt)  SETG(rd, MOD(VARL(rs), VARL(rt)))
 // returns Bool*
 #define IL_EQ(rs, rt)  EQ(VARL(rs), VARL(rt))
 #define IL_NE(rs, rt)  INV(IL_EQ(rs, rt))
@@ -223,16 +238,16 @@ IL_LIFTER(ABSQ_S) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(ADD) {
-	// get operand registers
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
-	Effect *rt = SETL("rt", IL_REG_OPND(2));
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
 
-	// perform addition and set to destination register
-	Effect *add_op = IL_ADD(REG_OPND(0), "rs", "rt");
-	Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
+	BitVector *sum = ADD(rs, rt);
+	Effect * set_rd = SETG(rd, sum);
+	// Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
 	Effect *update_status_op = NOP(); // TODO: set status flag
 
-	return SEQ4(rs, rt, add_op, update_status_op);
+	return SEQ2(set_rd, update_status_op);
 }
 
 /**
@@ -242,13 +257,15 @@ IL_LIFTER(ADD) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIUPC) {
+	char *rs = REG_OPND(0);
+
 	st32 imm_val = (st32)IMM_OPND(1);
 	imm_val = SIGN_EXTEND(imm_val, 21, GPRLEN);
 	BitVector *imm = S32(imm_val);
 
-	Effect *add_op = SETG(REG_OPND(0), ADD(U32(pc), imm));
-
-	return add_op; // no need to return SEQ2(imm, add_op) here
+	BitVector *sum = ADD(U32(pc), imm);
+	Effect *set_rs = SETG(rs, sum);
+	return set_rs;
 }
 
 IL_LIFTER(ADDIUR1SP) {
@@ -304,11 +321,13 @@ IL_LIFTER(ADDUH_R) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDU) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
-	Effect *rt = SETL("rt", IL_REG_OPND(2));
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
 
-	Effect *add_op = IL_ADD(REG_OPND(0), "rs", "rt");
-	return SEQ3(rs, rt, add_op);
+	BitVector *sum = ADD(rs, rt);
+	Effect *set_rd = SETG(rd, sum);
+	return set_rd;
 }
 
 IL_LIFTER(ADDU_S) {
@@ -334,17 +353,19 @@ IL_LIFTER(ADD_A) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(ADDI) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	st32 imm_val = (st32)IMM_OPND(1);
 	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
 	BitVector *imm = S32(imm_val);
 
-	Effect *add_op = IL_ADDI(REG_OPND(0), "rs", imm);
-	Bool *overflow = IL_CHECK_OVERFLOWI("rs", imm, REG_OPND(0));
+	BitVector *sum = ADD(rs, imm);
+	Effect *set_rt = SETG(rt, sum);
+	// Bool *overflow = IL_CHECK_OVERFLOWI("rs", imm, REG_OPND(0));
 	Effect *update_status_op = NOP(); // TODO: update status
 
-	return SEQ3(rs, add_op, update_status_op);
+	return SEQ2(set_rt, update_status_op);
 }
 
 /**
@@ -354,16 +375,16 @@ IL_LIFTER(ADDI) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIU) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	st32 imm_val = (st32)IMM_OPND(1);
 	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
 	BitVector *imm = S32(imm_val);
 
-	// add and set to rt
-	Effect *add_op = IL_ADDI(REG_OPND(0), "rs", imm);
-
-	return SEQ2(rs, add_op);
+	BitVector *sum = ADD(rs, imm);
+	Effect *set_rt = SETG(rt, sum);
+	return set_rt;
 }
 
 /**
@@ -375,17 +396,17 @@ IL_LIFTER(ADDIU) {
  * Exceptions: None
  * */
 IL_LIFTER(ALIGN) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
-	Effect *rt = SETL("rt", IL_REG_OPND(2));
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
 	ut8 bp = 8 * IMM_OPND(3); // 8*bp is used everywhere
 
-	BitVector *left = SHIFTL0(VARL("rt"), U8(bp));
-	BitVector *right = SHIFTR0(VARL("rs"), U8(GPRLEN - bp));
+	BitVector *left = SHIFTL0(rt, U8(bp));
+	BitVector *right = SHIFTR0(rs, U8(GPRLEN - bp));
 	BitVector *align = LOGOR(left, right);
 
-	Effect *set_op = SETL(REG_OPND(0), align);
-
-	return SEQ3(rs, rt, set_op);
+	Effect *set_rd = SETG(rd, align);
+	return set_rd;
 }
 
 // MISSING: ALNV.PS
@@ -395,33 +416,32 @@ IL_LIFTER(ALIGN) {
  * Format: ALUIPC rs, immediate
  * Description: GPR[rs] <- ~0x0FFFF & (PC + sign_extend(immediate << 16))
  * Exceptions: None
+ * NOTE: Check for sign extension
  * */
 IL_LIFTER(ALUIPC) {
-	// NOTE: Do I really need to sign extend here?
-	// Value after and before sign extension should be same.
+	char *rs = REG_OPND(0);
+
 	st32 imm = IMM_OPND(1) << 16;
 	BitVector *new_pc = U32(0xFFFF0000 & (pc + imm));
 
-	Effect *set_reg_op = SETG(REG_OPND(0), new_pc);
-
-	return set_reg_op;
+	Effect *set_rs = SETG(rs, new_pc);
+	return set_rs;
 }
 
 /**
- * And
- * Perform bitwise logical AND.
+ * Logical And
  * Format: AND rd, rs, rt
  * Description: GPR[rd] <- GPR[rs] and GPR[rt]
  * Exceptions: None
  * */
 IL_LIFTER(AND) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
-	Effect *rt = SETL("rt", IL_REG_OPND(2));
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
 
-	// AND and set to rd
-	Effect *and_op = IL_AND(REG_OPND(0), "rs", "rt");
-
-	return SEQ3(rs, rt, and_op);
+	BitVector *and = LOGAND(rs, rt);
+	Effect *set_rd = SETG(rd, and);
+	return set_rd;
 }
 
 IL_LIFTER(AND16) {
@@ -438,16 +458,16 @@ IL_LIFTER(ANDI16) {
  * Exceptions: None
  * */
 IL_LIFTER(ANDI) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	st32 imm_val = (st32)IMM_OPND(2);
 	imm_val = ZERO_EXTEND(imm_val, 16, GPRLEN);
 	BitVector *imm = S32(imm_val);
 
-	// AND and set ot rd
-	Effect *and_op = IL_ANDI(REG_OPND(0), "rs", imm);
-
-	return SEQ2(rs, and_op);
+	BitVector *and = LOGAND(rs, imm);
+	Effect *set_rd = SETG(rd, and);
+	return set_rd;
 }
 
 IL_LIFTER(APPEND) {
@@ -465,18 +485,18 @@ IL_LIFTER(ASUB_U) {
  * Format: AUI rd, rs, immediate
  * Description: GPR[rd] <- GPR[rs] and sign_extend(immediate << 16)
  * Exceptions: None
+ * NOTE: Check sign extension
  * */
 IL_LIFTER(AUI) {
-	Effect *rs = SETL("rs", IL_REG_OPND(1));
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
-	// NOTE: Sign extend here?
 	st32 imm_val = (st32)IMM_OPND(2) << 16;
 	BitVector *imm = S32(imm_val);
 
-	// add and set to rd
-	Effect *add_op = IL_ADDI(REG_OPND(0), "rs", imm);
-
-	return SEQ2(rs, add_op);
+	BitVector *sum = ADD(rs, imm);
+	Effect *set_rd = SETG(rd, sum);
+	return set_rd;
 }
 
 /**
@@ -484,15 +504,15 @@ IL_LIFTER(AUI) {
  * Format: AUIPC rs, immediate
  * Description: GPR[rs] <- PC and immediate << 16
  * Exceptions: None
+ * NOTE: Check sign extension
  * */
 IL_LIFTER(AUIPC) {
-	// NOTE: Sign extend here?
+	char *rs = REG_OPND(0);
 	st32 imm = (st32)IMM_OPND(1) << 16;
 	BitVector *new_pc = S32(pc + imm);
 
-	Effect *set_reg_op = SETG(REG_OPND(0), new_pc);
-
-	return set_reg_op;
+	Effect *set_rs = SETG(rs, new_pc);
+	return set_rs;
 }
 
 IL_LIFTER(AVER_S) {
@@ -544,10 +564,7 @@ IL_LIFTER(BALC) {
 	offset = SIGN_EXTEND(offset, 28, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
-	// store link in r31
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
-
-	// calculate jump target and make jump
 	Effect *jump_op = JMP(jump_target);
 
 	return SEQ2(link_op, jump_op);
@@ -583,7 +600,6 @@ IL_LIFTER(BC) {
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	Effect *jump_op = JMP(jump_target);
-
 	return jump_op;
 }
 
@@ -615,13 +631,12 @@ IL_LIFTER(BC1EQZ) {
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	// create branch condition
-	BitVector *ft_bv = FCAST_RAW(ft);
+	BitVector *ft_bv = F2BV(ft);
 	BitVector *ft_bit0 = LOGAND(ft_bv, U32(1));
 	Bool *cond = IS_ZERO(ft_bit0);
 
 	// make branch
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
 	return branch_op;
 }
 
@@ -655,7 +670,7 @@ IL_LIFTER(BC1NEZ) {
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	// make condition for branch
-	BitVector *ft_bv = FCAST_RAW(ft);
+	BitVector *ft_bv = F2BV(ft);
 	BitVector *ft_bit0 = LOGAND(ft_bv, U32(1));
 	Bool *cond = INV(IS_ZERO(ft_bit0));
 
@@ -715,17 +730,16 @@ IL_LIFTER(BCLR) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BEQ) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
-	Bool *cond = IL_EQ("rs", "rt");
+	Bool *cond = EQ(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -735,21 +749,16 @@ IL_LIFTER(BEQ) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BEQC) {
-	// NOTE: difference between BEQ and BEQC is in
-	// jump address calculation and delay slot management
-	// all compact instructions add an extra 4 to pc
-
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
-	Bool *cond = IL_EQ("rs", "rt");
+	Bool *cond = EQ(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -759,19 +768,16 @@ IL_LIFTER(BEQC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BEQL) {
-	// NOTE: same as BEQ but difference is in management of delay slot
-
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
-	Bool *cond = IL_EQ("rs", "rt");
+	Bool *cond = EQ(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 IL_LIFTER(BEQZ16) {
@@ -785,7 +791,7 @@ IL_LIFTER(BEQZ16) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BEQZALC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -794,20 +800,53 @@ IL_LIFTER(BEQZALC) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-equal-to
-	Bool *cond = IL_EQI("rt", S32(0));
+	Bool *cond = IS_ZERO(rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 IL_LIFTER(BEQZC) {
 	return NULL;
 }
+
+/**
+ * Branch Greater than Equal to Compact
+ * Format: BLTC rs, rt, offset
+ * Description: GPR[rs] < GPR[rt] then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEC) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than
+	Bool *cond = SGE(rs, rt);
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+	return branch_op;
 }
+
+/**
+ * Branch Greater than Equal to Unsigned Compact
+ * Format: BLTC rs, rt, offset
+ * Description: unsigned(GPR[rs]) >= unsigned(GPR[rt]) then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEUC) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	st32 offset = (st32)IMM_OPND(2) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than
+	Bool *cond = UGE(rs, rt);
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+	return branch_op;
 }
 
 /**
@@ -817,17 +856,16 @@ IL_LIFTER(BGEUC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BGEZ) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Pure *rs = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
 	// signed-greater-than-equal-to
-	Bool *cond = IL_SGEI("rs", S32(0));
+	Bool *cond = SGE(rs, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rs, branch_op);
+	return branch_op;
 }
 
 /**
@@ -837,7 +875,7 @@ IL_LIFTER(BGEZ) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BGEZAL) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Pure *rs = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -846,10 +884,9 @@ IL_LIFTER(BGEZAL) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
 
 	// signed-greater-than-equal-to
-	Bool *cond = IL_SGEI("rs", S32(0));
+	Bool *cond = SGE(rs, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 /**
@@ -859,7 +896,7 @@ IL_LIFTER(BGEZAL) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BGEZALC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -868,10 +905,9 @@ IL_LIFTER(BGEZALC) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-greater-than-equal-to
-	Bool *cond = IL_SGEI("rt", S32(0));
+	Bool *cond = SGE(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 /**
@@ -882,7 +918,7 @@ IL_LIFTER(BGEZALC) {
  * */
 IL_LIFTER(BGEZALL) {
 	// NOTE: same as BGEZALC, difference is in delay-slot handling
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -891,33 +927,80 @@ IL_LIFTER(BGEZALL) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-greater-than-equal-to
-	Bool *cond = IL_SGEI("rt", S32(0));
+	Bool *cond = SGE(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 IL_LIFTER(BGEZALS) {
 	return NULL;
 }
+
+/**
+ * Branch Greater than Equal to Zero Compact
+ * Format: BGEZC rt, offset
+ * Description: GPR[rt] >= 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEZC) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than-equal-to
+	Bool *cond = SGE(rt, S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+	return branch_op;
 }
+
+/**
+ * Branch Greater than Equal to Zero Likely
+ * Format: BGEZL rt, offset
+ * Description: GPR[rt] >= 0 then branch_likely
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGEZL) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32(pc + offset);
+
+	// signed-less-than-equal-to
+	Bool *cond = SGE(rt, S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+	return branch_op;
 }
+
+/**
+ * Branch Greater than Equal to Zero
+ * Format: BGEZC rt, offset
+ * Description: GPR[rt] >= 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGTZ) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	// signed-less-than-equal-to
+	Bool *cond = SGE(rt, S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+	return branch_op;
 }
 
 /**
  * Branch Greater than Zero And Link Compact
  * Format: BGTZALC rt, offset
- * Description: GPR[rt] >= 0 then link and branch
+ * Description: GPR[rt] > 0 then link and branch
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BGTZALC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -926,14 +1009,30 @@ IL_LIFTER(BGTZALC) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-greater-than
-	Bool *cond = IL_SGTI("rt", S32(0));
+	Bool *cond = SGT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
+/**
+ * Branch Greater than Zero Compact
+ * Format: BGTZC rt, offset
+ * Description: GPR[rt] > 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BGTZC) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+
+	st32 offset = (st32)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = U32((pc + 4) + offset);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+
+	// signed-greater-than
+	Bool *cond = SGT(rt, S32(0));
+	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
+	return SEQ2(link_op, branch_op);
 }
 
 /**
@@ -943,17 +1042,16 @@ IL_LIFTER(BGTZC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BGTZL) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
 	// signed-greater-than
-	Bool *cond = IL_SGTI("rt", S32(0));
+	Bool *cond = SGT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rt, branch_op);
+	return branch_op;
 }
 
 IL_LIFTER(BINSLI) {
@@ -971,8 +1069,25 @@ IL_LIFTER(BINSR) {
 IL_LIFTER(BITREV) {
 	return NULL;
 }
+
+/**
+ * Swaps (reverses) bits in each byte
+ * Format: BITSWAP rd, rt
+ * Description: GPR[rd].byte(i) <- reverse_bits_in_byte(GPR[rt].byte(i)) for all bytes i
+ * Exceptions: None
+ * */
 IL_LIFTER(BITSWAP) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	Effect *swap0 = SETL("temp", LOGOR(SHIFTR0(LOGAND(DUP(rt), U32(0xAAAAAAAA)), U32(1)), SHIFTL0(LOGAND(rt, U32(0x55555555)), U32(1))));
+	Effect *swap1 = SETL("temp", LOGOR(SHIFTR0(LOGAND(VARL("temp"), U32(0xCCCCCCCC)), U32(2)), SHIFTL0(LOGAND(VARL("temp"), U32(0x33333333)), U32(2))));
+	Effect *swap2 = SETL("temp", LOGOR(SHIFTR0(LOGAND(VARL("temp"), U32(0xF0F0F0F0)), U32(4)), SHIFTL0(LOGAND(VARL("temp"), U32(0x0F0F0F0F)), U32(4))));
+	Effect *swap3 = SETL("temp", LOGOR(SHIFTR0(LOGAND(VARL("temp"), U32(0xFF00FF00)), U32(8)), SHIFTL0(LOGAND(VARL("temp"), U32(0x00FF00FF)), U32(8))));
+	Effect *swap4 = SETG(rd, LOGOR(SHIFTR0(VARL("temp"), U32(16)), SHIFTL0(VARL("temp"), U32(16))));
+
+	Effect *bitswap_op = SEQ5(swap0, swap1, swap2, swap3, swap4);
+	return bitswap_op;
 }
 
 /**
@@ -982,17 +1097,16 @@ IL_LIFTER(BITSWAP) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLEZ) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Pure *rs = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = IL_SLEI("rs", S32(0));
+	Bool *cond = SLE(rs, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rs, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1002,7 +1116,7 @@ IL_LIFTER(BLEZ) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLEZALC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -1011,31 +1125,28 @@ IL_LIFTER(BLEZALC) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-less-than-equal-to
-	Bool *cond = IL_SLEI("rt", S32(0));
+	Bool *cond = SLE(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 /**
- * TODO: Verify this with ISA, not in mips32
- * Branch Less than Equal to Zero And Link Compact
+ * Branch Less than Equal to Zero Compact
  * Format: BLEZC rt, offset
- * Description: GPR[rt] <= 0 then link and branch
+ * Description: GPR[rt] <= 0 then branch
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLEZC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = IL_SLEI("rt", S32(0));
+	Bool *cond = SLE(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1045,18 +1156,17 @@ IL_LIFTER(BLEZC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTC) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	// signed-less-than
-	Bool *cond = IL_SLT("rs", "rt");
+	Bool *cond = SLT(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1066,17 +1176,16 @@ IL_LIFTER(BLTC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLEZL) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
+	Pure *rs = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = IL_SLEI("rs", S32(0));
+	Bool *cond = SLE(rs, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rs, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1086,18 +1195,17 @@ IL_LIFTER(BLEZL) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTUC) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	// signed-less-than
-	Bool *cond = IL_ULT("rs", "rt");
+	Bool *cond = ULT(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1107,17 +1215,16 @@ IL_LIFTER(BLTUC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTZ) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
 	// signed-less-than
-	Bool *cond = IL_SLTI("rt", S32(0));
+	Bool *cond = SLT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1127,7 +1234,7 @@ IL_LIFTER(BLTZ) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTZAL) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -1136,10 +1243,9 @@ IL_LIFTER(BLTZAL) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-less-than
-	Bool *cond = IL_SLTI("rt", S32(0));
+	Bool *cond = SLT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 /**
@@ -1149,7 +1255,7 @@ IL_LIFTER(BLTZAL) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTZALC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -1158,10 +1264,9 @@ IL_LIFTER(BLTZALC) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-less-than
-	Bool *cond = IL_SLTI("rt", S32(0));
+	Bool *cond = SLT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 /**
@@ -1171,7 +1276,7 @@ IL_LIFTER(BLTZALC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTZALL) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -1180,10 +1285,9 @@ IL_LIFTER(BLTZALL) {
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
 	// signed-less-than
-	Bool *cond = IL_SLTI("rt", S32(0));
+	Bool *cond = SLT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 IL_LIFTER(BLTZALS) {
@@ -1197,17 +1301,16 @@ IL_LIFTER(BLTZALS) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTZC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
 	// signed-less-than
-	Bool *cond = IL_SLTI("rt", S32(0));
+	Bool *cond = SLT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1217,17 +1320,16 @@ IL_LIFTER(BLTZC) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BLTZL) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
 	// signed-less-than
-	Bool *cond = IL_SLTI("rt", S32(0));
+	Bool *cond = SLT(rt, S32(0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ2(rt, branch_op);
+	return branch_op;
 }
 
 IL_LIFTER(BMNZI) {
@@ -1250,17 +1352,16 @@ IL_LIFTER(BMZ) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BNE) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32(pc + offset);
 
-	Bool *cond = IL_NE("rs", "rt");
+	Bool *cond = INV(EQ(rs, rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 /**
@@ -1270,17 +1371,16 @@ IL_LIFTER(BNE) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BNEC) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
-	Bool *cond = IL_NE("rs", "rt");
+	Bool *cond = INV(EQ(rs, rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 IL_LIFTER(BNEGI) {
@@ -1297,17 +1397,16 @@ IL_LIFTER(BNEG) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BNEL) {
-	Effect *rs = SETL("rs", IL_REG_OPND(0));
-	Effect *rt = SETL("rt", IL_REG_OPND(1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
 
 	st32 offset = (st32)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = U32((pc + 4) + offset);
 
-	Bool *cond = IL_NE("rs", "rt");
+	Bool *cond = INV(EQ(rs, rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rs, rt, branch_op);
+	return branch_op;
 }
 
 IL_LIFTER(BNEZ16) {
@@ -1321,7 +1420,7 @@ IL_LIFTER(BNEZ16) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BNEZALC) {
-	Effect *rt = SETL("rt", IL_REG_OPND(0));
+	Pure *rt = IL_REG_OPND(0);
 
 	st32 offset = (st32)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
@@ -1329,11 +1428,9 @@ IL_LIFTER(BNEZALC) {
 
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
-	// signed-not-equal-equal-to
-	Bool *cond = IL_NEI("rt", S32(0));
+	Bool *cond = INV(IS_ZERO(rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-
-	return SEQ3(rt, link_op, branch_op);
+	return SEQ2(link_op, branch_op);
 }
 
 IL_LIFTER(BNEZC) {
@@ -1439,9 +1536,34 @@ IL_LIFTER(CLE_S) {
 IL_LIFTER(CLE_U) {
 	return NULL;
 }
+
+/**
+ * Count Leading Ones in word.
+ * Format: CLO rd, rs
+ * Description: GPR[rd] <- count_leading_ones(GPR[rs])
+ * Exceptions: None.
+ * */
 IL_LIFTER(CLO) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	Effect *reset_rd = SETG(rd, U32(0));
+	Effect *mask = SETL("mask", U32(0x80000000));
+
+	// keep running while (rs & mask != 0)
+	// since mask is starting at 1 << 31, it'll run max 32 times
+	Bool *loop_cond = INV(IS_ZERO(LOGAND(rs, VARL("mask"))));
+
+	// update mask and count
+	// each time loop runs means bit at index is flagged, so simply add 1 to cnt
+	Effect *mask_update = SETL("mask", SHIFTR0(VARL("mask"), U32(1)));
+	Effect *cnt_update = SETG(rd, ADD(VARG(rd), U32(1)));
+	Effect *loop_body = SEQ2(mask_update, cnt_update)
+
+	Effect *loop = REPEAT(loop_cond, loop_body);
+	return SEQ3(reset_rd, mask, loop);
 }
+
 IL_LIFTER(CLTI_S) {
 	return NULL;
 }
@@ -1454,9 +1576,34 @@ IL_LIFTER(CLT_S) {
 IL_LIFTER(CLT_U) {
 	return NULL;
 }
+
+/**
+ * Count Leading Zeroes in word.
+ * Format: CLO rd, rs
+ * Description: GPR[rd] <- count_leading_ones(GPR[rs])
+ * Exceptions: None.
+ * */
 IL_LIFTER(CLZ) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	Effect *reset_rd = SETG(rd, U32(0));
+	Effect *mask = SETL("mask", U32(0x80000000));
+
+	// keep running while (rs & mask != 0)
+	// since mask is starting at 1 << 31, it'll run max 32 times
+	Bool *loop_cond = IS_ZERO(LOGAND(rs, VARL("mask")));
+
+	// update mask and count
+	// each time loop runs means bit at index is flagged, so simply add 1 to cnt
+	Effect *mask_update = SETL("mask", SHIFTR0(VARL("mask"), U32(1)));
+	Effect *cnt_update = SETG(rd, ADD(VARG(rd), U32(1)));
+	Effect *loop_body = SEQ2(mask_update, cnt_update)
+
+	Effect *loop = REPEAT(loop_cond, loop_body);
+	return SEQ3(reset_rd, mask, loop);
 }
+
 IL_LIFTER(CMPGDU) {
 	return NULL;
 }
@@ -1523,9 +1670,20 @@ IL_LIFTER(DCLO) {
 IL_LIFTER(DCLZ) {
 	return NULL;
 }
+
+/**
+ * // NOTE: IN MIPS64
+ * Doubleword Signed Divide
+ * Format: DDIV rs, rt
+ * Description: (LO, HI <- GPR[rs] / GPR[rt])
+ *              Result is UNPREDICTABLE if GPR[rt] = 0
+ * Exceptions: None
+ * */
 IL_LIFTER(DDIV) {
 	return NULL;
 }
+
+// NOTE: IN MIPS64
 IL_LIFTER(DDIVU) {
 	return NULL;
 }
@@ -1553,12 +1711,63 @@ IL_LIFTER(DINSM) {
 IL_LIFTER(DINSU) {
 	return NULL;
 }
+
+/**
+ * Divide Word (Signed)
+ * Format: DIV rs, rt
+ *         DIV rd, rs, rt
+ * Description: (HI, LO) <- GPR[rs] / GPR[rt]
+ *              GPR[rd] <- (divide.signed(GPR[rs], GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DIV) {
-	return NULL;
+	if (OPND_COUNT() == 2) {
+		Pure *rs = IL_REG_OPND(0);
+		Pure *rt = IL_REG_OPND(1);
+
+		BitVector *quotient = SDIV(DUP(rs), DUP(rt));
+		BitVector *remainder = SDIV(rs, rt);
+
+		Effect *set_lo = SETG(REG_LO(), quotient);
+		Effect *set_hi = SETG(REG_HI(), remainder);
+		return SEQ2(set_lo, set_hi);
+	} else {
+		Pure *rs = IL_REG_OPND(1);
+		Pure *rt = IL_REG_OPND(2);
+
+		Pure *quotient = SDIV(rs, rt);
+
+		Effect *set_lo = SETG(REG_LO(), quotient);
+		return set_lo;
+	}
 }
+
+/**
+ * Divide Word (Unsigned)
+ * Format: DIV rs, rt
+ *         DIV rd, rs, rt
+ * Description: (HI, LO) <- GPR[rs] / GPR[rt]
+ *              GPR[rd] <- (divide.usigned(GPR[rs], GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DIVU) {
-	return NULL;
+	// NOTE: ISA devide opertions are suspicuous
+	if (OPND_COUNT() == 2) {
+		Pure *rs = IL_REG_OPND(0);
+		Pure *rt = IL_REG_OPND(1);
+
+		Effect *quotient_op = IL_DIV(REG_LO(), "rs", "rt");
+		Effect *remainder_op = IL_MOD(REG_HI(), "rs", "rt");
+		return SEQ4(rs, rt, quotient_op, remainder_op);
+	} else {
+		Pure *rs = IL_REG_OPND(1);
+		Pure *rt = IL_REG_OPND(2);
+
+		Effect *quotient_op = IL_DIV(REG_OPND(0), "rs", "rt");
+		return SEQ3(rs, rt, quotient_op);
+	}
 }
+
 IL_LIFTER(DIV_S) {
 	return NULL;
 }
@@ -1877,9 +2086,28 @@ IL_LIFTER(FMSUB) {
 IL_LIFTER(FMUL) {
 	return NULL;
 }
+
+/**
+ * Multiply Signed Word, Low Word
+ * Format: MUL rd, rs, rt
+ * Description: GPR[rd] <- lo_word(multiply.signed(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(MUL) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs64 = SIGNED(64, rs);
+	BitVector *rt64 = SIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+
+	Effect *set_rd = SETG(rd, prod_lo);
+	return set_rd;
 }
+
 IL_LIFTER(NEG) {
 	return NULL;
 }
@@ -1919,9 +2147,26 @@ IL_LIFTER(SQRT) {
 IL_LIFTER(FSUB) {
 	return NULL;
 }
+
+/**
+ * Subtract word
+ * Format: SUB rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] - GPR[rt]
+ * Exceptions: IntegerOverflow
+ * */
 IL_LIFTER(SUB) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *sum = SUB(rs, rt);
+	Effect * set_rd = SETG(rd, sum);
+	// Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
+	Effect *update_status_op = NOP(); // TODO: set status flag
+
+	return SEQ2(set_rd, update_status_op);
 }
+
 IL_LIFTER(FSUEQ) {
 	return NULL;
 }
@@ -1988,15 +2233,70 @@ IL_LIFTER(INSV) {
 IL_LIFTER(INSVE) {
 	return NULL;
 }
+
+/**
+ * Jump
+ * Format: J target
+ * Description: 256 MB PC "region" jump, not a "relative" one.
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(J) {
-	return NULL;
+	st32 instr_index = 0x3FFFFFFF & ((st32)IMM_OPND(0) << 2);
+	st32 new_pc = (pc & 0xC0000000) | instr_index;
+	BitVector *jump_target = S32(new_pc);
+
+	Effect *jmp_op = JMP(jump_target);
+	return jmp_op;
 }
+
+/**
+ * Jump And Link
+ * Format: JAL target
+ * Description: Link to R31 and make a 256 MB PC "region" jump, not a "relative" one.
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(JAL) {
-	return NULL;
+	st32 instr_index = 0x3FFFFFFF & ((st32)IMM_OPND(0) << 2);
+	st32 new_pc = (pc & 0xC0000000) | instr_index;
+	BitVector *jump_target = S32(new_pc);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+	Effect *jmp_op = JMP(jump_target);
+
+	return SEQ2(link_op, jmp_op);
 }
+
+/**
+ * Jump And Link Register
+ * Format: JALR rs (rd = 31)
+ *         JALR rd, rs
+ * Description: Link to rd and jump to rs (basically a procedure call)
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: Confirm this later, there's difference in management
+ *       of jump between devices that support microMIPS & MIPS16
+ *       and devices that don't
+ *       FOR NOW I ASSUME THE EMULATED DEVICE DOESN'T SUPPORT THOSE
+ * TODO: Handle the "else" case in microMIPS uplifting phase!
+ * */
 IL_LIFTER(JALR) {
-	return NULL;
+	char *rd = NULL;
+	Pure *rs = NULL;
+	if (OPND_COUNT() == 1) {
+		rd = REG_R(31);
+		rs = IL_REG_OPND(0);
+	} else {
+		rd = REG_OPND(0);
+		rs = IL_REG_OPND(1);
+	}
+
+	Effect *link_op = SETG(rd, U32(pc + 8));
+	Pure *jump_target = rs;
+	Effect *jmp_op = JMP(jump_target);
+
+	return SEQ2(link_op, jmp_op);
 }
+
 IL_LIFTER(JALRS16) {
 	return NULL;
 }
@@ -2006,18 +2306,83 @@ IL_LIFTER(JALRS) {
 IL_LIFTER(JALS) {
 	return NULL;
 }
+
+/**
+ * Jump And Link Exchange
+ * Format: JALX target
+ * Description: Link to r31 and jump to rs (basically a procedure call)
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: See "JALR" note
+ * TODO: Handle "else" case
+ * */
 IL_LIFTER(JALX) {
-	return NULL;
+	st32 target_instr = (st32)IMM_OPND(0) << 2;
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+	BitVector *jump_target = U32((pc & 0xC0000000) | target_instr);
+	Effect *jmp_op = JMP(jump_target);
+
+	return SEQ2(link_op, jmp_op);
 }
+
+/**
+ * Jump Indexed And Link Compact
+ * Format: JIALC rt, offset
+ * Description: GPR[31] <- PC+4, PC <- (GPR[rt] + sign_extend(offset))
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: See "JALR" note
+ * TODO: Handle "else" case
+ * */
 IL_LIFTER(JIALC) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	st32 offset = (st32)IMM_OPND(1);
+	offset = SIGN_EXTEND(offset, 16, GPRLEN);
+
+	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	BitVector *jump_target = ADD(rs, S32(offset));
+	Effect *jmp_op = JMP(jump_target);
+
+	return SEQ3(rs, link_op, jmp_op);
 }
+
+/**
+ * Jump Indexed Compact
+ * Format: JIC rt, offset
+ * Description: PC <- (GPR[rt] + sign_extend(offset))
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: See "JALR" note
+ * TODO: Handle "else" case
+ * */
 IL_LIFTER(JIC) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	st32 offset = (st32)IMM_OPND(1);
+	offset = SIGN_EXTEND(offset, 16, GPRLEN);
+
+	BitVector *jump_target = ADD(rs, S32(offset));
+	Effect *jmp_op = JMP(jump_target);
+
+	return jmp_op;
 }
+
+/**
+ * Jump Register
+ * Format: JR rs
+ * Description: PC <- GPR[rs]
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: See "JALR" note
+ * TODO: Handle "else" case
+ * */
 IL_LIFTER(JR) {
-	return NULL;
+	Pure *jump_target = IL_REG_OPND(0);
+	Effect *jmp_op = JMP(jump_target);
+
+	return jmp_op;
 }
+
 IL_LIFTER(JR16) {
 	return NULL;
 }
@@ -2030,24 +2395,64 @@ IL_LIFTER(JRC) {
 IL_LIFTER(JALRC) {
 	return NULL;
 }
+
+/**
+ * Load Byte
+ * Format: LB rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LB) {
-	return NULL;
+	char* rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *byte = LOADW(8, memaddr);
+	BitVector *sign_extended_byte = SIGNED(GPRLEN, byte);
+
+	Effect *set_rt = SETG(rt, sign_extended_byte);
+	return set_rt;
 }
+
+// MISSING: LBE
+
 IL_LIFTER(LBU16) {
 	return NULL;
 }
 IL_LIFTER(LBUX) {
 	return NULL;
 }
+
+/**
+ * Load Byte Unsigned
+ * Format: LBU rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LBU) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *byte = LOADW(8, memaddr);
+	BitVector *zero_extended_byte = UNSIGNED(GPRLEN, byte);
+
+	Effect *set_rt = SETG(rt, zero_extended_byte);
+	return set_rt;
 }
+
+// MISSING: LBUE
+
 IL_LIFTER(LD) {
 	return NULL;
 }
+
 IL_LIFTER(LDC1) {
 	return NULL;
 }
+
 IL_LIFTER(LDC2) {
 	return NULL;
 }
@@ -2069,39 +2474,148 @@ IL_LIFTER(LDR) {
 IL_LIFTER(LDXC1) {
 	return NULL;
 }
+
+/**
+ * Load Halfword
+ * Format: LH rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LH) {
-	return NULL;
+	char* rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *halfword = LOADW(16, memaddr);
+	BitVector *sign_extended_halfword = SIGNED(GPRLEN, halfword);
+
+	Effect *set_rt = SETG(rt, sign_extended_halfword);
+	return set_rt;
 }
+
+// MISSING: LHE
+
 IL_LIFTER(LHU16) {
 	return NULL;
 }
 IL_LIFTER(LHX) {
 	return NULL;
 }
+
+/**
+ * Load Halfword Unsigned
+ * Format: LHU rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LHU) {
-	return NULL;
+	char* rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *halfword = LOADW(16, memaddr);
+	BitVector *zero_extended_halfword = UNSIGNED(GPRLEN, halfword);
+
+	Effect *set_rt = SETG(rt, zero_extended_halfword);
+	return set_rt;
 }
+
+// MISSING: LHUE
+
 IL_LIFTER(LI16) {
 	return NULL;
 }
+
+/**
+ * Load Linked Word
+ * Format: LL rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LL) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	// NOTE: size of offset relase 6 is different
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	// Bool *aligned = IS_ZERO(LOGAND(addr, U32(3)));
+	// TODO: address alignment check, signal address error
+	BitVector *word = LOADW(GPRLEN, memaddr);
+
+	Effect *set_rt = SETG(rt, word);
+	return set_rt;
 }
+
+// MISSING: LLE
+// MISSING: LLWP
+// MISSING: LLWPE
+
 IL_LIFTER(LLD) {
 	return NULL;
 }
+
+/**
+ * Load Scaled Address
+ * Format: LSA rd, rs, rt, sa
+ * Description: GPR[rd] <- sign_extend.32((GPR[rs] << (sa+1)) + GPR[rt])
+ * Exceptions: None
+ * NOTE: Sign extend here?
+ * */
 IL_LIFTER(LSA) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+	ut8 sa = (ut8)IMM_OPND(3);
+
+	BitVector *scaled_rs = SHIFTL0(rs, U8(sa+1));
+	BitVector *scaled_address = ADD(scaled_rs, rt);
+
+	Effect *set_rd = SETG(rd, scaled_address);
+	return set_rd;
 }
+
 IL_LIFTER(LUXC1) {
 	return NULL;
 }
+
+/**
+ * Load Upper Immediate
+ * Format: LUI rt, immediate
+ * Description: GPR[rt] <- immediate << 16
+ * Exceptions: None
+ * */
 IL_LIFTER(LUI) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	st32 imm = (st32)IMM_OPND(1);
+
+	Effect *set_rt = SETG(rt, S32(imm << 16));
+	return set_rt;
 }
+
+/**
+ * Load Word
+ * Format: LW rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset)
+ * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
+ * NOTE: Sign extend here?
+ * */
 IL_LIFTER(LW) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *word = LOADW(GPRLEN, memaddr);
+
+	Effect *set_rt = SETG(rt, word);
+	return set_rt;
 }
+
+// MISSING : LWE
+
 IL_LIFTER(LW16) {
 	return NULL;
 }
@@ -2114,24 +2628,125 @@ IL_LIFTER(LWC2) {
 IL_LIFTER(LWC3) {
 	return NULL;
 }
+
+/**
+ * Load Word Left
+ * Format: LWL rt, offset(base)
+ * Description: GPR[rt] <- GPR[rt] MERGE memory[GPR[base] + offset]
+ * Exceptions: None
+ * */
 IL_LIFTER(LWL) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), U32(3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
+	BitVector *word = LOADW(GPRLEN, aligned_memaddr);
+
+	Effect *b0, *b1, *b2, *b3;
+	if(analysis->big_endian) {
+		b3 = SETG(rt, LOGOR(LOGAND(word, U32(0xFF000000)), LOGAND(VARG(rt), U32(0x00FFFFFF))));
+
+		Bool *b2cond = EQ(DUP(memaddr_low2bit), U32(2));
+		b2 = BRANCH(b2cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0xFFFF0000)), LOGAND(VARG(rt), U32(0x0000FFFF)))), b3);
+
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0xFFFFFF00)), LOGAND(VARG(rt), U32(0x000000FF)))), b2);
+
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, SETG(rt, DUP(word)), b1);
+	} else {
+		b3 = SETG(rt, word);
+
+		Bool *b2cond = EQ(DUP(memaddr_low2bit), U32(2));
+		b2 = BRANCH(b2cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0xFFFFFF00)), LOGAND(VARG(rt), U32(0x000000FF)))), b3);
+
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0xFFFF0000)), LOGAND(VARG(rt), U32(0x0000FFFF)))), b2);
+
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0xFF000000)), LOGAND(VARG(rt), U32(0x00FFFFFF)))), b1);
+	}
+
+	return SEQ4(b0, b1, b2, b3);
 }
+
 IL_LIFTER(LWM16) {
 	return NULL;
 }
 IL_LIFTER(LWM32) {
 	return NULL;
 }
+
+/**
+ * Load Word PC relative
+ * Format: LWPC rs, offset
+ * Description: GPR[rt] <- memory[GPR[base] + offset)
+ * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
+ * NOTE: Sign extend here?
+ * */
 IL_LIFTER(LWPC) {
-	return NULL;
+	char *rs = REG_OPND(0);
+	Pure *base = IL_REG_PC();
+	BitVector* offset = S32((st32)IMM_OPND(1) << 2);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *word = LOADW(GPRLEN, memaddr);
+
+	Effect *set_rs = SETG(rs, word);
+	return set_rs;
 }
+
 IL_LIFTER(LWP) {
 	return NULL;
 }
+
+/**
+ * Load Word Right
+ * Format: LWR rt, offset(base)
+ * Description: GPR[rt] <- GPR[rt] MERGE memory[GPR[base] + offset]
+ * Exceptions: None
+ * */
 IL_LIFTER(LWR) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *memaddr_low2bit = LOGAND(memaddr, U32(3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
+	BitVector *word = LOADW(GPRLEN, aligned_memaddr);
+
+	Effect *b0, *b1, *b2, *b3;
+	if(analysis->big_endian) {
+		b3 = SETG(rt, word);
+
+		Bool *b2cond = EQ(DUP(memaddr_low2bit), U32(2));
+		b2 = BRANCH(b2cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0x00FFFFFF)), LOGAND(VARG(rt), U32(0xFF000000)))), b3);
+
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0x0000FFFF)), LOGAND(VARG(rt), U32(0xFFFF0000)))), b2);
+
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0x000000FF)), LOGAND(VARG(rt), U32(0xFFFFFF00)))), b1);
+	} else {
+		b3 = SETG(rt, LOGOR(LOGAND(word, U32(0x000000FF)), LOGAND(VARG(rt), U32(0xFFFFFF00))));
+
+		Bool *b2cond = EQ(DUP(memaddr_low2bit), U32(2));
+		b2 = BRANCH(b2cond, SETG(rt, LOGAND(LOGOR(DUP(word), U32(0x0000FFFF)), LOGAND(VARG(rt), U32(0xFFFF0000)))), b3);
+
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(word), U32(0x00FFFFFF)), LOGAND(VARG(rt), U32(0xFF000000)))), b2);
+
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, SETG(rt, DUP(word)), b1);
+	}
+
+	return SEQ4(b0, b1, b2, b3);
 }
+
 IL_LIFTER(LWUPC) {
 	return NULL;
 }
@@ -2150,18 +2765,79 @@ IL_LIFTER(LWXS) {
 IL_LIFTER(LI) {
 	return NULL;
 }
+
+/**
+ * Multiply and Add signed word to HI, LO
+ * Format: MADD rs, rt
+ * Description: (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(MADD) {
-	return NULL;
+	char *hi = REG_HI();
+	char *lo = REG_LO();
+
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *rs64 = SIGNED(64, rs);
+	BitVector *rt64 = SIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
+	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+
+	BitVector *diff = ADD(hi_lo, prod);
+
+	BitVector *diff_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(diff), U32(32)));
+	BitVector *diff_lo = CAST(32, IL_FALSE, diff);
+
+	Effect *set_hi = SETG(hi, diff_hi);
+	Effect *set_lo = SETG(lo, diff_lo);
+
+	return SEQ2(set_hi, set_lo);
 }
+
 IL_LIFTER(MADDF) {
 	return NULL;
 }
 IL_LIFTER(MADDR_Q) {
 	return NULL;
 }
+
+
+/**
+ * Multiply and Add Unsigned word to HI, LO
+ * Format: MADDU rs, rt
+ * Description: (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(MADDU) {
-	return NULL;
+	char *hi = REG_HI();
+	char *lo = REG_LO();
+
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *rs64 = UNSIGNED(64, rs);
+	BitVector *rt64 = UNSIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
+	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+
+	BitVector *diff = ADD(hi_lo, prod);
+
+	BitVector *diff_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(diff), U32(32)));
+	BitVector *diff_lo = CAST(32, IL_FALSE, diff);
+
+	Effect *set_hi = SETG(hi, diff_hi);
+	Effect *set_lo = SETG(lo, diff_lo);
+
+	return SEQ2(set_hi, set_lo);
 }
+
 IL_LIFTER(MADDV) {
 	return NULL;
 }
@@ -2207,12 +2883,35 @@ IL_LIFTER(MFC2) {
 IL_LIFTER(MFHC1) {
 	return NULL;
 }
+
+/**
+ * Move From HI register
+ * Format: MFHI rd
+ * Description: GPR[rd] <- HI
+ * Exceptions: None
+ * */
 IL_LIFTER(MFHI) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *hi = VARG(REG_HI());
+
+	Effect *set_rd = SETG(rd, hi);
+	return set_rd;
 }
+
+/**
+ * Move From LO register
+ * Format: MFLO rd
+ * Description: GPR[rd] <- LO
+ * Exceptions: None
+ * */
 IL_LIFTER(MFLO) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *lo = VARG(REG_LO());
+
+	Effect *set_rd = SETG(rd, lo);
+	return set_rd;
 }
+
 IL_LIFTER(MINA) {
 	return NULL;
 }
@@ -2234,15 +2933,43 @@ IL_LIFTER(MIN_S) {
 IL_LIFTER(MIN_U) {
 	return NULL;
 }
+
+/**
+ * Modulo Words (Signed)
+ * Format: DIV rd, rs, rt
+ * Description: GPR[rd] <- (modulo.signed(GPR[rs], GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(MOD) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *remainder = SMOD(rs, rt);
+	Effect *set_rd = SETG(rd, remainder);
+	return set_rd;
 }
+
 IL_LIFTER(MODSUB) {
 	return NULL;
 }
+
+/**
+ * Modulo Words (Unigned)
+ * Format: DIV rd, rs, rt
+ * Description: GPR[rd] <- (modulo.usigned(GPR[rs], GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(MODU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *remainder = MOD(rs, rt);
+	Effect *set_rd = SETG(rd, remainder);
+	return set_rd;
 }
+
 IL_LIFTER(MOD_S) {
 	return NULL;
 }
@@ -2258,27 +2985,114 @@ IL_LIFTER(MOVEP) {
 IL_LIFTER(MOVF) {
 	return NULL;
 }
+
+/**
+ * Move conditional on Not zero
+ * Format: MOVN rd, rs, rt
+ * Description: if GPR[rt] == 0 then GPR[rd] <- GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(MOVN) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	Bool *rt_is_zero = INV(IS_ZERO(rt));
+	Effect *movz = BRANCH(rt_is_zero, SETG(rd, rs), NOP());
+	return movz;
 }
+
 IL_LIFTER(MOVT) {
 	return NULL;
 }
+
+/**
+ * Move conditional on Zero
+ * Format: MOVZ rd, rs, rt
+ * Description: if GPR[rt] == 0 then GPR[rd] <- GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(MOVZ) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	Bool *rt_is_zero = IS_ZERO(rt);
+	Effect *movz = BRANCH(rt_is_zero, SETG(rd, rs), NOP());
+	return movz;
 }
+
+/**
+ * Multiply and Subtract Word to HI, LO
+ * Format: MSUB rs, rt
+ * Description: (HI, LO) <- (HI, LO) - GPR[rs] x GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(MSUB) {
-	return NULL;
+	char *hi = REG_HI();
+	char *lo = REG_LO();
+
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *rs64 = SIGNED(64, rs);
+	BitVector *rt64 = SIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
+	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+
+	BitVector *diff = SUB(hi_lo, prod);
+
+	BitVector *diff_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(diff), U32(32)));
+	BitVector *diff_lo = CAST(32, IL_FALSE, diff);
+
+	Effect *set_hi = SETG(hi, diff_hi);
+	Effect *set_lo = SETG(lo, diff_lo);
+
+	return SEQ2(set_hi, set_lo);
 }
+
 IL_LIFTER(MSUBF) {
 	return NULL;
 }
 IL_LIFTER(MSUBR_Q) {
 	return NULL;
 }
+
+/**
+ * Multiply and Subtract Unsigned word to HI, LO
+ * Format: MSUBU rs, rt
+ * Description: (HI, LO) <- (HI, LO) - GPR[rs] x GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(MSUBU) {
-	return NULL;
+	char *hi = REG_HI();
+	char *lo = REG_LO();
+
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *rs64 = UNSIGNED(64, rs);
+	BitVector *rt64 = UNSIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
+	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+
+	BitVector *diff = SUB(hi_lo, prod);
+
+	BitVector *diff_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(diff), U32(32)));
+	BitVector *diff_lo = CAST(32, IL_FALSE, diff);
+
+	Effect *set_hi = SETG(hi, diff_hi);
+	Effect *set_lo = SETG(lo, diff_lo);
+
+	return SEQ2(set_hi, set_lo);
 }
+
 IL_LIFTER(MSUBV) {
 	return NULL;
 }
@@ -2297,15 +3111,41 @@ IL_LIFTER(MTC2) {
 IL_LIFTER(MTHC1) {
 	return NULL;
 }
+
+/**
+ * Move To HI register
+ * Format: MTHI rs
+ * Description: HI <- GPR[rs]
+ * Exceptions: None
+ *
+ * NOTE: Take a look at restrictions during testing phase
+ * */
 IL_LIFTER(MTHI) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+
+	Effect *set_hi = SETG(REG_HI(), rs);
+	return set_hi;
 }
+
 IL_LIFTER(MTHLIP) {
 	return NULL;
 }
+
+/**
+ * Move To LO register
+ * Format: MTLO rs
+ * Description: LO <- GPR[rs]
+ * Exceptions: None
+ *
+ * NOTE: Take a look at restrictions during testing phase
+ * */
 IL_LIFTER(MTLO) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+
+	Effect *set_lo = SETG(REG_LO(), rs);
+	return set_lo;
 }
+
 IL_LIFTER(MTM0) {
 	return NULL;
 }
@@ -2324,12 +3164,50 @@ IL_LIFTER(MTP1) {
 IL_LIFTER(MTP2) {
 	return NULL;
 }
+
+/**
+ * Multiply Words Signed, High Word
+ * Format: MUH rd, rs, rt
+ * Description: GPR[rd] <- hi_word(multiply.signed(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(MUH) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs64 = SIGNED(64, rs);
+	BitVector *rt64 = SIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(prod, U32(32)));
+
+	Effect *set_rd = SETG(rd, prod_hi);
+	return set_rd;
 }
+
+
+/**
+ * Multiply Words Unsigned, High Word
+ * Format: MUHU rd, rs, rt
+ * Description: GPR[rd] <- hi_word(multiply.unsigned(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(MUHU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs64 = UNSIGNED(64, rs);
+	BitVector *rt64 = UNSIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(prod, U32(32)));
+
+	Effect *set_rd = SETG(rd, prod_hi);
+	return set_rd;
 }
+
 IL_LIFTER(MULEQ_S) {
 	return NULL;
 }
@@ -2351,15 +3229,82 @@ IL_LIFTER(MULSAQ_S) {
 IL_LIFTER(MULSA) {
 	return NULL;
 }
+
+/**
+ * Multiply Signed
+ * Format: MULT rs, rt
+ * Description: (HI, LO) <- GPR[rs] x GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(MULT) {
-	return NULL;
+	char *hi = REG_HI();
+	char *lo = REG_LO();
+
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *rs64 = SIGNED(64, rs);
+	BitVector *rt64 = SIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(prod), U32(32)));
+	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+
+	Effect *set_hi = SETG(hi, prod_hi);
+	Effect *set_lo = SETG(lo, prod_lo);
+
+	return SEQ2(set_hi, set_lo);
 }
+
+/**
+ * Multiply Unsigned
+ * Format: MULTU rs, rt
+ * Description: (HI, LO) <- GPR[rs] x GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(MULTU) {
-	return NULL;
+	char *hi = REG_HI();
+	char *lo = REG_LO();
+
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *rs64 = UNSIGNED(64, rs);
+	BitVector *rt64 = UNSIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(prod), U32(32)));
+	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+
+	Effect *set_hi = SETG(hi, prod_hi);
+	Effect *set_lo = SETG(lo, prod_lo);
+
+	return SEQ2(set_hi, set_lo);
 }
+
+// MISSING: NAL
+
+/**
+ * Multiply Unigned Word, Low Word
+ * Format: MULU rd, rs, rt
+ * Description: GPR[rd] <- lo_word(multiply.unsigned(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(MULU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs64 = UNSIGNED(64, rs);
+	BitVector *rt64 = UNSIGNED(64, rt);
+	BitVector *prod = MUL(rs64, rt64);
+
+	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+
+	Effect *set_rd = SETG(rd, prod_lo);
+	return set_rd;
 }
+
 IL_LIFTER(MULV) {
 	return NULL;
 }
@@ -2381,27 +3326,85 @@ IL_LIFTER(NMADD) {
 IL_LIFTER(NMSUB) {
 	return NULL;
 }
+
+/**
+ * NOR
+ * Format: NOR rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] NOR GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(NOR) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *nor_rs_rt = LOGNOT(LOGOR(rs, rt));
+	Effect *set_rd = SETG(rd, nor_rs_rt);
+	return set_rd;
 }
+
+/**
+ * NOR Immediate
+ * Format: NORI rt, rs, immediate
+ * Description: GPR[rt] <- GPR[rs] NOR immediate
+ * Exceptions: None
+ *
+ * NOTE: Not in MIPS32 ISA
+ * */
 IL_LIFTER(NORI) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = U32((ut32)IMM_OPND(2));
+
+	BitVector *or_rs_imm = LOGNOT(LOGOR(rs, imm));
+	Effect *set_rt = SETG(rt, or_rs_imm);
+	return set_rt;
 }
+
 IL_LIFTER(NOT16) {
 	return NULL;
 }
+
 IL_LIFTER(NOT) {
 	return NULL;
 }
+
+/**
+ * OR
+ * Format: OR rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] OR GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(OR) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *or_rs_rt = LOGOR(rs, rt);
+	Effect *set_rd = SETG(rd, or_rs_rt);
+	return set_rd;
 }
+
 IL_LIFTER(OR16) {
 	return NULL;
 }
+
+/**
+ * OR Immediate
+ * Format: ORI rt, rs, immediate
+ * Description: GPR[rt] <- GPR[rs] OR immediate
+ * Exceptions: None
+ * */
 IL_LIFTER(ORI) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = U32((ut32)IMM_OPND(2));
+
+	BitVector *or_rs_imm = LOGOR(rs, imm);
+	Effect *set_rt = SETG(rt, or_rs_imm);
+	return set_rt;
 }
+
 IL_LIFTER(PACKRL) {
 	return NULL;
 }
@@ -2474,12 +3477,43 @@ IL_LIFTER(REPL) {
 IL_LIFTER(RINT) {
 	return NULL;
 }
+
+/**
+ * Rotate Word Right
+ * Format: ROTR rd, rt, sa
+ * Description: GPR[rd] < GPR[rt] x(right) sa
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(ROTR) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = U8((ut8)IMM_OPND(2));
+
+	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(sa)));
+	BitVector *right = SHIFTR0(rt, sa);
+	BitVector *rotr = LOGOR(left, right);
+
+	return SETG(rd, rotr);
 }
+
+/**
+ * Rotate Word Right Variable
+ * Format: ROTRV rd, rt, rs
+ * Description: GPR[rd] < GPR[rt] x(right) sa
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(ROTRV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = CAST(8, IL_FALSE, IL_REG_OPND(2));
+
+	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(rs)));
+	BitVector *right = SHIFTR0(rt, rs);
+	BitVector *rotr = LOGOR(left, right);
+
+	return SETG(rd, rotr);
 }
+
 IL_LIFTER(ROUND) {
 	return NULL;
 }
@@ -2489,9 +3523,25 @@ IL_LIFTER(SAT_S) {
 IL_LIFTER(SAT_U) {
 	return NULL;
 }
+
+/**
+ * Store Byte
+ * Format: SB rt, offset(base)
+ * Description: memory[GPR[base] + offset] <- GPR[rt]
+ * Exceptions:TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SB) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	Effect *store_op = STOREW(memaddr, CAST(8, IL_FALSE, rt));
+	return store_op;
 }
+
+// MISSING: SBE
+
 IL_LIFTER(SB16) {
 	return NULL;
 }
@@ -2528,18 +3578,64 @@ IL_LIFTER(SDR) {
 IL_LIFTER(SDXC1) {
 	return NULL;
 }
+
+/**
+ * Sign-Extend Byte
+ * Format: SEB rd, rt
+ * Description: GPR[rd] <- SignExtend(GPR[rt])
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(SEB) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	Effect *seb_op = SETG(rd, (SIGNED(32, CAST(8, IL_FALSE, rt))));
+	return seb_op;
 }
+/**
+ * Sign-Extend Halfword
+ * Format: SEH rt, offset(base)
+ * Description: GPR[rd] <- SignExtend(GPR[rt])
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(SEH) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	Effect *seb_op = SETG(rd, (SIGNED(32, CAST(16, IL_FALSE, rt))));
+	return seb_op;
 }
+
+/**
+ * Select integer GPR value or zero
+ * Format: SELEQZ rd, rs, rt
+ * Description: GPR[rd] <- GPR[rt] ? 0 : GPR[rs]
+ * Exceptions: None.
+ * */
 IL_LIFTER(SELEQZ) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	Bool *cond = IS_ZERO(rt);
+	return BRANCH(cond, NOP(), SETG(rd, rs));
 }
+
+/**
+ * Select integer GPR value or zero
+ * Format: SELEQZ rd, rs, rt
+ * Description: GPR[rd] <- GPR[rt] ? 0 : GPR[rs]
+ * Exceptions: None.
+ * */
 IL_LIFTER(SELNEZ) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	Bool *cond = IS_ZERO(rt);
+	return BRANCH(cond, SETG(rd, rs), NOP());
 }
+
 IL_LIFTER(SEL) {
 	return NULL;
 }
@@ -2549,9 +3645,23 @@ IL_LIFTER(SEQ) {
 IL_LIFTER(SEQI) {
 	return NULL;
 }
+
+/**
+ * Store Halfword
+ * Format: SH rt, offset(base)
+ * Description: memory[GPR[base] + offset] <- GPR[rt]
+ * Exceptions:TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SH) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	Effect *store_op = STOREW(memaddr, CAST(16, IL_FALSE, rt));
+	return store_op;
 }
+
 IL_LIFTER(SH16) {
 	return NULL;
 }
@@ -2600,30 +3710,109 @@ IL_LIFTER(SLDI) {
 IL_LIFTER(SLD) {
 	return NULL;
 }
+
+/**
+ * Shift word Left Logical
+ * Format: SLL rd, rt, sa
+ * Description: GPR[rd] <- GPR[rt] << sa
+ * Exceptions: None
+ * */
 IL_LIFTER(SLL) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = U32((ut32)IMM_OPND(2));
+
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
 IL_LIFTER(SLL16) {
 	return NULL;
 }
 IL_LIFTER(SLLI) {
 	return NULL;
 }
+
+/**
+ * Shift word Left Logical Variable
+ * Format: SRLV rd, rt, rs
+ * Description: GPR[rd] <- GPR[rt] << GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(SLLV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(2);
+
+	BitVector *sa = LOGAND(rs, U32(0x0000001F));
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
+/**
+ * Set on Less Than
+ * Format: SLT rd, rs, rt
+ * Description: GPR[rd] <- (GPR[rs] < sign_extend(immediate))
+ * Exceptions: None
+ * */
 IL_LIFTER(SLT) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	// signed-less-than
+	Bool *slt = SLT(rs, rt);
+	return SETG(rd, UNSIGNED(GPRLEN, slt));
 }
+
+/**
+ * Set on Less Than Immediate
+ * Format: SLTI rt, rs, immediate
+ * Description: GPR[rd] <- (GPR[rs] < sign_extend(immediate))
+ * Exceptions: None
+ * */
 IL_LIFTER(SLTI) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = S32(SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
+
+	// signed-less-than
+	Bool *slt = SLT(rs, imm);
+	return SETG(rt, UNSIGNED(GPRLEN, slt));
 }
+
+/**
+ * Set on Less Than Immediate Unsigned
+ * Format: SLTIU rt, rs, immediate
+ * Description: GPR[rd] <- (GPR[rs] < sign_extend(immediate))
+ * Exceptions: None
+ * */
 IL_LIFTER(SLTIU) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = S32(SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
+
+	Bool *ult = ULT(rs, imm);
+	return SETG(rt, UNSIGNED(GPRLEN, ult));
 }
+
+/**
+ * Set on Less Than Unsigned
+ * Format: SLTU rd, rs, rt
+ * Description: GPR[rd] <- (GPR[rs] < GPR[rs])
+ * Exceptions: None
+ * */
 IL_LIFTER(SLTU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	Bool *ult = ULT(rs, rt);
+	return SETG(rd, UNSIGNED(GPRLEN, ult));
 }
+
 IL_LIFTER(SNE) {
 	return NULL;
 }
@@ -2636,9 +3825,25 @@ IL_LIFTER(SPLATI) {
 IL_LIFTER(SPLAT) {
 	return NULL;
 }
+
+/**
+ * Shift word Right Arithmetic
+ * Format: SRAV rd, rt, rs
+ * Description: GPR[rd] <- (GPR[rt])^s || GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(SRA) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = U8((ut8)IMM_OPND(2));
+
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+	BitVector *msbcopy = SHIFTL0(SUB(SHIFTL0(S32(1), sa), S32(1)), SUB(U32(GPRLEN), sa));
+
+	Effect *sra = BRANCH(IS_ZERO(MSB(rt)), SETG(rd, DUP(shifted_rt)), SETG(rd, LOGOR(msbcopy, shifted_rt)));
+	return sra;
 }
+
 IL_LIFTER(SRAI) {
 	return NULL;
 }
@@ -2648,12 +3853,42 @@ IL_LIFTER(SRARI) {
 IL_LIFTER(SRAR) {
 	return NULL;
 }
+
+/**
+ * Shift word Right Arithmetic Variable
+ * Format: SRAV rd, rt, rs
+ * Description: GPR[rd] <- (GPR[rt])^s || GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(SRAV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(2);
+
+	BitVector *sa = LOGAND(rs, U32(0x0000001F));
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+
+	BitVector *msbcopy = SHIFTL0(SUB(SHIFTL0(S32(1), sa), S32(1)), SUB(U32(GPRLEN), sa));
+	Effect *srav = BRANCH(IS_ZERO(MSB(rt)), SETG(rd, DUP(shifted_rt)), SETG(rd, LOGOR(msbcopy, shifted_rt)));
+	return srav;
 }
+
+/**
+ * Shift word Right Logical
+ * Format: SRL rd, rt, sa
+ * Description: GPR[rd] <- GPR[rt] >> sa
+ * Exceptions: None
+ * */
 IL_LIFTER(SRL) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = U32((ut32)IMM_OPND(2));
+
+	BitVector *shifted_rt = SHIFTR0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
 IL_LIFTER(SRL16) {
 	return NULL;
 }
@@ -2666,9 +3901,24 @@ IL_LIFTER(SRLRI) {
 IL_LIFTER(SRLR) {
 	return NULL;
 }
+
+/**
+ * Shift word Right Logical Variable
+ * Format: SRLV rd, rt, rs
+ * Description: GPR[rd] <- GPR[rt] >> GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(SRLV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(2);
+
+	BitVector *sa = LOGAND(rs, U32(0x0000001F));
+	BitVector *shifted_rt = SHIFTR0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
 IL_LIFTER(SSNOP) {
 	return NULL;
 }
@@ -2708,9 +3958,23 @@ IL_LIFTER(SUBUH) {
 IL_LIFTER(SUBUH_R) {
 	return NULL;
 }
+
+/**
+ * Subtract word Unsigned
+ * Format: SUBU rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] - GPR[rt]
+ * Exceptions: IntegerOverflow
+ * */
 IL_LIFTER(SUBU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *sum = SUB(rs, rt);
+	Effect *set_rd = SETG(rd, sum);
+	return set_rd;
 }
+
 IL_LIFTER(SUBU_S) {
 	return NULL;
 }
@@ -2723,9 +3987,23 @@ IL_LIFTER(SUBV) {
 IL_LIFTER(SUXC1) {
 	return NULL;
 }
+
+/**
+ * Store Word
+ * Format: SW rt, offset(base)
+ * Description: memory[GPR[base] + offset] <- GPR[rt]
+ * Exceptions:TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SW) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	Effect *store_op = STOREW(memaddr, rt);
+	return store_op;
 }
+
 IL_LIFTER(SW16) {
 	return NULL;
 }
@@ -2738,9 +4016,65 @@ IL_LIFTER(SWC2) {
 IL_LIFTER(SWC3) {
 	return NULL;
 }
+
+/**
+ * Store Word Left
+ * Format: SWL rt, offset(base)
+ * Description: Store most significant part of word to an unaligned memory address
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SWL) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	// compute memory address, get lower two bytes and get aligned memory address
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), U32(3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
+
+	// increasing size of upper bytes by index
+	BitVector *rt_hi1 = CAST(8, IL_FALSE, SHIFTR0(DUP(rt), U8(3*8)));
+	BitVector *rt_hi2 = CAST(2*8, IL_FALSE, SHIFTR0(DUP(rt), U8(2*8)));
+	BitVector *rt_hi3 = CAST(3*8, IL_FALSE, SHIFTR0(DUP(rt), U8(8)));
+	BitVector *rt_hi4 = rt;
+
+	Effect *b0, *b1, *b2, *b3;
+	if(analysis->big_endian) {
+		// store higher byte to memory's lower byte
+		b3 = STOREW(aligned_memaddr, rt_hi1);
+
+		// store higher two bytes to memory's lower two bytes
+		Bool *b2cond = EQ(memaddr_low2bit, U32(2));
+		b2 = BRANCH(b2cond, STOREW(DUP(aligned_memaddr), rt_hi2), b3);
+
+		// store higher three bytes to memory's lower three bytes
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, STOREW(DUP(aligned_memaddr), rt_hi3), b2);
+
+		// store higher four (all) bytes to memory's lower four (all) bytes
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, STOREW(DUP(aligned_memaddr), rt_hi4), b1);
+	} else {
+		// store higher four (all) bytes to memory's lower four (all) bytes
+		b3 = STOREW(aligned_memaddr, rt_hi4);
+
+		// store higher three bytes to memory's lower three bytes
+		Bool *b2cond = EQ(memaddr_low2bit, U32(2));
+		b2 = BRANCH(b2cond, STOREW(DUP(aligned_memaddr), rt_hi3), b3);
+
+		// store higher two bytes to memory's lower two bytes
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, STOREW(DUP(aligned_memaddr), rt_hi2), b2);
+
+		// store higher byte to memory's lower byte
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, STOREW(DUP(aligned_memaddr), rt_hi1), b1);
+	}
+
+	return SEQ4(b0, b1, b2, b3);
 }
+
 IL_LIFTER(SWM16) {
 	return NULL;
 }
@@ -2750,9 +4084,70 @@ IL_LIFTER(SWM32) {
 IL_LIFTER(SWP) {
 	return NULL;
 }
+
+/**
+ * Store Word Right
+ * Format: SWR rt, offset(base)
+ * Description: Store most significant part of word to an unaligned memory address
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SWR) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), U32(3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
+
+	// increasing size of lower bytes by index
+	BitVector *rt_lo1 = CAST(8, IL_FALSE, DUP(rt));
+	BitVector *rt_lo2 = CAST(2*8, IL_FALSE, DUP(rt));
+	BitVector *rt_lo3 = CAST(3*8, IL_FALSE, DUP(rt));
+	BitVector *rt_lo4 = rt;
+
+	Effect *b0, *b1, *b2, *b3;
+	if(analysis->big_endian) {
+		// lower four bytes from register get stored in higher four bytes of memory, so basically a simple store
+		b3 = STOREW(aligned_memaddr, rt_lo4);
+
+		// lower three bytes of register get stored to memory's higher three bytes
+		Bool *b2cond = EQ(memaddr_low2bit, U32(2));
+		BitVector *memaddr_hi3 = ADD(DUP(aligned_memaddr), U32(1));
+		b2 = BRANCH(b2cond, STOREW(memaddr_hi3, rt_lo3), b3);
+
+		// lower two bytes of register get stored to memory's higher two bytes
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		BitVector *memaddr_hi2 = ADD(DUP(aligned_memaddr), U32(2));
+		b1 = BRANCH(b1cond, STOREW(memaddr_hi2, rt_lo2), b2);
+
+		// lower byte of register get stored to memory's higher byte
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		BitVector *memaddr_hi1 = ADD(DUP(aligned_memaddr), U32(3));
+		b0 = BRANCH(b0cond, STOREW(memaddr_hi1, rt_lo1), b1);
+	} else {
+		// lower byte gets stored into higher byte of memory
+		BitVector *memaddr_hi1 = ADD(DUP(aligned_memaddr), U32(3));
+		b3 = STOREW(memaddr_hi1, rt_lo1);
+
+		// lower two bytes go to higher two bytes of memory
+		Bool *b2cond = EQ(memaddr_low2bit, U32(2));
+		BitVector *memaddr_hi2 = ADD(DUP(aligned_memaddr), U32(2));
+		b2 = BRANCH(b2cond, STOREW(memaddr_hi2, rt_lo2), b3);
+
+		// lower three bytes go to higher three bytes of memory
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		BitVector *memaddr_hi3 = ADD(DUP(aligned_memaddr), U32(1));
+		b1 = BRANCH(b1cond, STOREW(memaddr_hi3, rt_lo3), b2);
+
+		// lower four (all) bytes go to higher four (all) bytes of memory
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, STOREW(aligned_memaddr, rt_lo4), b1);
+	}
+
+	return SEQ4(b0, b1, b2, b3);
 }
+
 IL_LIFTER(SWXC1) {
 	return NULL;
 }
@@ -2837,26 +4232,98 @@ IL_LIFTER(WRDSP) {
 IL_LIFTER(WSBH) {
 	return NULL;
 }
+
+/**
+ * XOR
+ * Format: XOR rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] XOR GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(XOR) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *xor_rs_rt = LOGXOR(rs, rt);
+	Effect *set_rd = SETG(rd, xor_rs_rt);
+	return set_rd;
 }
+
 IL_LIFTER(XOR16) {
 	return NULL;
 }
+
+/**
+ * XOR Immediate
+ * Format: XORI rt, rs, immediate
+ * Description: GPR[rt] <- GPR[rs] XOR immediate
+ * Exceptions: None
+ * */
 IL_LIFTER(XORI) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = U32((ut32)IMM_OPND(2));
+
+	BitVector *xor_rs_imm = LOGXOR(rs, imm);
+	Effect *set_rt = SETG(rt, xor_rs_imm);
+	return set_rt;
 }
+
+/**
+ * NOP
+ * Format: NOP
+ * Description: NOP
+ * Exceptions: None
+ * */
 IL_LIFTER(NOP) {
-	return NULL;
+	return NOP();
 }
+
 IL_LIFTER(NEGU) {
 	return NULL;
 }
+
+/**
+ * Jump And Link Register (Hazard Barrier)
+ * Format: JALRHB rs (rd = 31)
+ *         JALRHB rd, rs
+ * Description: Link to rd and jump to rs (basically a procedure call)
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: See "JALR" note
+ * TODO: Handle the "else" case in microMIPS uplifting phase!
+ * */
 IL_LIFTER(JALR_HB) {
-	return NULL;
+	char *rd = NULL;
+	Pure *rs = NULL;
+	if (OPND_COUNT() == 1) {
+		rd = REG_R(31);
+		rs = IL_REG_OPND(0);
+	} else {
+		rd = REG_OPND(0);
+		rs = IL_REG_OPND(1);
+	}
+
+	Effect *link_op = SETG(rd, U32(pc + 8));
+	Pure *jump_target = rs;
+	Effect *jmp_op = JMP(jump_target);
+
+	return SEQ2(link_op, jmp_op);
 }
+/**
+ * Jump Register
+ * Format: JR rs
+ * Description: PC <- GPR[rs]
+ * Exceptions: ReservedInstruction
+ *
+ * NOTE: See "JALR" note
+ * TODO: Handle "else" case, Handle ClearHazard() ?
+ * */
 IL_LIFTER(JR_HB) {
-	return NULL;
+	Pure *jump_target = IL_REG_OPND(0);
+	Effect *jmp_op = JMP(jump_target);
+
+	return jmp_op;
 }
 
 // clang-format off
@@ -3496,12 +4963,16 @@ MipsILLifterFunction mips_lifters[] = {
  * \param pc Instruction address of current instruction.
  * \return Valid RzILOpEffect* on success, NULL otherwise.
  **/
-RZ_IPI Effect *mips32_il(RZ_NONNULL cs_insn *insn, ut32 pc) {
-	rz_return_val_if_fail(insn, NULL);
+RZ_IPI Effect *mips32_il(RZ_NONNULL RzAnalysis* analysis, RZ_NONNULL cs_insn *insn, ut32 pc) {
+	rz_return_val_if_fail(analysis && insn, NULL);
+	if(INSN_ID(insn) >= MIPS_INS_ENDING) {
+		RZ_LOG_ERROR("RzIL MIPS : Invalid MIPS instruction.")
+		return NULL;
+	}
 
 	MipsILLifterFunction fn = mips_lifters[INSN_ID(insn)];
 	if (fn) {
-		Effect *op = fn(insn, pc);
+		Effect *op = fn(analysis, insn, pc);
 		return op;
 	}
 

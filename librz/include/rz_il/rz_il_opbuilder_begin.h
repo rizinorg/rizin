@@ -48,8 +48,6 @@
 #define CAST(l, f, v)    rz_il_op_new_cast(l, f, v)
 #define BOOL_TO_BV(b, l) ITE(b, UN(l, 1), UN(l, 0))
 
-#define FCAST_RAW(f) rz_il_op_new_fcast_raw(f);
-
 #define SN(l, val) rz_il_op_new_bitv_from_st64(l, val)
 #define S8(val)    SN(8, val)
 #define S16(val)   SN(16, val)
