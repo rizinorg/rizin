@@ -1,0 +1,83 @@
+NAME="dwarf: lines"
+FILE=bins/elf/ada_test_dwarf
+CMDS=<<EOF
+aaa
+s main
+e asm.debuginfo.lines=false
+pdf
+e asm.debuginfo.lines=true
+pdf
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x2271
+            ;-- main:
+/ int dbg.main (int argc, char **argv, char **envp);
+|           ; arg int argc @ rdi
+|           ; arg char **argv @ rsi
+|           ; arg char **envp @ rdx
+|           ; var char **var_30h @ stack - 0x30
+|           ; var char **var_28h @ stack - 0x28
+|           ; var int var_1ch @ stack - 0x1c
+|           ; var system__address ensure_reference @ stack - 0x18
+|           ; var struct ada_main__main__seh___PAD seh @ stack - 0x10
+|           0x00002742      push  rbp                                  ; integer main(const integer argc,void * const  argv,void * const  envp);
+|           0x00002743      mov   rbp, rsp
+|           0x00002746      sub   rsp, 0x30
+|           0x0000274a      mov   dword [var_1ch], edi                 ; argc
+|           0x0000274d      mov   qword [var_28h], rsi                 ; argv
+|           0x00002751      mov   qword [var_30h], rdx                 ; envp
+|           0x00002755      lea   rax, obj.__gnat_ada_main_program_name ; 0x3038 ; "_ada_ada_test"
+|           0x0000275c      mov   qword [ensure_reference], rax
+|           0x00002760      mov   eax, dword [var_1ch]
+|           0x00002763      mov   dword [obj.gnat_argc], eax           ; [0x51c0:4]=0
+|           0x00002769      mov   rax, qword [var_28h]
+|           0x0000276d      mov   qword [obj.gnat_argv], rax           ; [0x5128:8]=0
+|           0x00002774      mov   rax, qword [var_30h]
+|           0x00002778      mov   qword [obj.gnat_envp], rax           ; [0x5090:8]=0
+|           0x0000277f      lea   rax, [seh.F]
+|           0x00002783      mov   rdi, rax
+|           0x00002786      call  sym.imp.__gnat_initialize
+|           0x0000278b      call  dbg.adainit
+|           0x00002790      call  dbg._ada_ada_test
+|           0x00002795      call  dbg.adafinal
+|           0x0000279a      call  sym.imp.__gnat_finalize
+|           0x0000279f      mov   eax, dword [obj.gnat_exit_status]    ; [0x50f0:4]=0
+|           0x000027a5      leave
+\           0x000027a6      ret
+            ; DATA XREF from entry0 @ 0x2271
+            ;-- main:
+/ int dbg.main (int argc, char **argv, char **envp);
+|           ; arg int argc @ rdi
+|           ; arg char **argv @ rsi
+|           ; arg char **envp @ rdx
+|           ; var char **var_30h @ stack - 0x30
+|           ; var char **var_28h @ stack - 0x28
+|           ; var int var_1ch @ stack - 0x1c
+|           ; var system__address ensure_reference @ stack - 0x18
+|           ; var struct ada_main__main__seh___PAD seh @ stack - 0x10
+|           0x00002742      push  rbp                                  ; b~ada_test.adb:207 ; integer main(const integer argc,void * const  argv,void * const  envp);
+|           0x00002743      mov   rbp, rsp
+|           0x00002746      sub   rsp, 0x30
+|           0x0000274a      mov   dword [var_1ch], edi                 ; argc
+|           0x0000274d      mov   qword [var_28h], rsi                 ; argv
+|           0x00002751      mov   qword [var_30h], rdx                 ; envp
+|           0x00002755      lea   rax, obj.__gnat_ada_main_program_name ; b~ada_test.adb:220 ; 0x3038 ; "_ada_ada_test"
+|           0x0000275c      mov   qword [ensure_reference], rax
+|           0x00002760      mov   eax, dword [var_1ch]                 ; b~ada_test.adb:224
+|           0x00002763      mov   dword [obj.gnat_argc], eax           ; [0x51c0:4]=0
+|           0x00002769      mov   rax, qword [var_28h]                 ; b~ada_test.adb:225
+|           0x0000276d      mov   qword [obj.gnat_argv], rax           ; [0x5128:8]=0
+|           0x00002774      mov   rax, qword [var_30h]                 ; b~ada_test.adb:226
+|           0x00002778      mov   qword [obj.gnat_envp], rax           ; [0x5090:8]=0
+|           0x0000277f      lea   rax, [seh.F]                         ; b~ada_test.adb:228
+|           0x00002783      mov   rdi, rax
+|           0x00002786      call  sym.imp.__gnat_initialize
+|           0x0000278b      call  dbg.adainit                          ; b~ada_test.adb:229
+|           0x00002790      call  dbg._ada_ada_test                    ; b~ada_test.adb:230
+|           0x00002795      call  dbg.adafinal                         ; b~ada_test.adb:231
+|           0x0000279a      call  sym.imp.__gnat_finalize              ; b~ada_test.adb:232
+|           0x0000279f      mov   eax, dword [obj.gnat_exit_status]    ; b~ada_test.adb:233 ; [0x50f0:4]=0
+|           0x000027a5      leave                                      ; b~ada_test.adb:234
+\           0x000027a6      ret
+EOF
+RUN

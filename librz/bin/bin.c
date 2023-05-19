@@ -439,10 +439,10 @@ RZ_API bool rz_bin_xtr_plugin_del(RzBin *bin, RZ_NONNULL RzBinXtrPlugin *plugin)
 	rz_list_foreach_safe (bin->binfiles, it, tmp, bf) {
 		if (bf->curxtr == plugin) {
 			rz_bin_file_delete(bin, bf);
+			if (!plugin_fini(bin, plugin)) {
+				return false;
+			}
 		}
-	}
-	if (!plugin_fini(bin, plugin)) {
-		return false;
 	}
 	return rz_list_delete_data(bin->binxtrs, plugin);
 }

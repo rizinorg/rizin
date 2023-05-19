@@ -554,7 +554,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	}
 	rz_config_hold_i(hc,
 		"asm.offset",
-		"asm.dwarf",
+		"asm.debuginfo",
 		"asm.tabs",
 		"asm.emu",
 		"emu.str",
@@ -571,7 +571,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 	// force defaults
 	rz_config_set_i(core->config, "emu.str", true);
 	rz_config_set_i(core->config, "asm.offset", true);
-	rz_config_set_i(core->config, "asm.dwarf", true);
+	rz_config_set_i(core->config, "asm.debuginfo", true);
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set_i(core->config, "asm.tabs", 0);
 	rz_config_set_i(core->config, "scr.html", 0);

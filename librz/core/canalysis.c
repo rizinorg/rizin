@@ -3700,7 +3700,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
-	ut64 from = search_itv.addr, to = rz_itv_end(search_itv);
+	ut64 from = rz_itv_begin(search_itv), to = rz_itv_end(search_itv);
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {
@@ -3744,6 +3744,9 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				}
 				continue;
 			}
+		}
+		if (size <= vsize) {
+			break;
 		}
 		for (i = 0; i <= (size - vsize); i++) {
 			void *v = (buf + i);
@@ -5494,7 +5497,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 			}
 			rz_core_notify_done(core, "Value from 0x%08" PFMT64x " to 0x%08" PFMT64x " (aav)", from, to);
 			rz_list_foreach (list, iter, map) {
-				ut64 begin = map->itv.addr;
+				ut64 begin = rz_itv_begin(map->itv);
 				ut64 end = rz_itv_end(map->itv);
 				if (rz_cons_is_breaked()) {
 					break;

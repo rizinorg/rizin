@@ -90,7 +90,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 	}
 	hold = rz_config_hold_new(core->config);
 	rz_config_hold_s(hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
-		"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.usercomments", "asm.instr", NULL);
+		"asm.indent", "asm.bytes", "asm.comments", "asm.debuginfo", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		rz_config_set(core->config, "asm.hint.pos", "-2");
 		rz_config_set(core->config, "asm.lines", "false");
@@ -102,7 +102,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 	}
 	rz_config_set(core->config, "asm.cmt.col", "0");
 	rz_config_set(core->config, "asm.offset", "false");
-	rz_config_set(core->config, "asm.dwarf", "true");
+	rz_config_set(core->config, "asm.debuginfo", "true");
 	rz_config_set(core->config, "asm.bytes", "false");
 	rz_config_set(core->config, "asm.comments", "false");
 	rz_config_set(core->config, "asm.usercomments", "true");
