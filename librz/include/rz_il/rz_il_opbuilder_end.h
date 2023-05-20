@@ -37,6 +37,10 @@
 #undef INT2F
 #undef SINT2F
 #undef FCONVERT
+#undef FLOATV16
+#undef FLOATV32
+#undef FLOATV64
+#undef FLOATV128
 #undef FSUCC
 #undef FPRED
 #undef FORDER
@@ -45,15 +49,8 @@
 #undef FRSQRT
 #undef FADD
 #undef FSUB
-#undef FMUL
-#undef FDIV
-#undef FMOD
-#undef FHYPOT
 #undef FPOW
 #undef FMAD
-#undef FROOTN
-#undef FPOWN
-#undef FCOMPOUND
 
 #undef IL_FALSE
 #undef IL_TRUE
