@@ -46,9 +46,11 @@
 #undef FORDER
 #undef FROUND
 #undef FSQRT
-#undef FRSQRT
 #undef FADD
 #undef FSUB
+#undef FMUL
+#undef FDIV
+#undef FMOD
 #undef FPOW
 #undef FMAD
 
