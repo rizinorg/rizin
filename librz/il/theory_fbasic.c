@@ -164,19 +164,6 @@ void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	return ret;
 }
 
-void *rz_il_handler_fcast_raw(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
-	rz_return_val_if_fail(vm && op && type, NULL);
-
-	RzILOpArgsFCastraw cast_raw = op->op.fcast_raw;
-	RzFloat *f = rz_il_evaluate_float(vm, cast_raw.f);
-	RzBitVector *ret = rz_float_to_raw_bitv(f);
-
-	rz_float_free(f);
-
-	*type = RZ_IL_TYPE_PURE_BITVECTOR;
-	return ret;
-}
-
 void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type) {
 	rz_return_val_if_fail(vm && op && type, NULL);
 

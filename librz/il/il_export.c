@@ -1384,8 +1384,6 @@ RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) 
 		return "fcast_int";
 	case RZ_IL_OP_FCAST_SINT:
 		return "fcast_sint";
-	case RZ_IL_OP_FCAST_RAW:
-		return "fcast_raw";
 	case RZ_IL_OP_FCAST_FLOAT:
 		return "fcast_float";
 	case RZ_IL_OP_FCAST_SFLOAT:

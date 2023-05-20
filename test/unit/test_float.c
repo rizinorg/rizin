@@ -1395,14 +1395,6 @@ bool f32_ieee_cast_test(void) {
 	rz_float_free(old_f);
 	rz_float_free(expect_f);
 	rz_float_free(new_cast);
-
-	// cast float to raw bitv.
-	fval = rz_float_new_from_ut32_as_f32(0xC00007EF);
-	val = rz_float_to_raw_bitv(fval);
-	mu_assert_true(is_equal_bv(fval->s, val), "check if is really a dup");
-	rz_float_free(fval);
-	rz_bv_free(val);
-
 	mu_end;
 }
 
