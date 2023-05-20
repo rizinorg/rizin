@@ -1390,7 +1390,7 @@ NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=true
+e asm.debuginfo=true
 e analysis.nopskip=true # if set to true it breaks the test
 aa
 pd 1 @ main
@@ -1416,7 +1416,7 @@ BROKEN=1
 FILE=bins/elf/dwarf3_many_comp_units.elf 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 13 @ main
 EOF
@@ -1449,7 +1449,7 @@ BROKEN=1
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 75 @ dbg.main
 EOF
@@ -1596,7 +1596,7 @@ BROKEN=1
 FILE=bins/elf/dwarf_rust_bubble 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 40 @  dbg.bubble_sort_i32
 EOF
@@ -1681,7 +1681,7 @@ BROKEN=1
 FILE=bins/elf/ppc64_sudoku_dwarf 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pdf @  dbg.init
 EOF
@@ -1717,7 +1717,7 @@ BROKEN=1
 FILE=bins/elf/ada_test_dwarf 
 CMDS=<<EOF
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pdf @  dbg.main
 EOF
@@ -1765,7 +1765,7 @@ FILE=bins/efi/freepascal_test_dwarf
 CMDS=<<EOF
 e analysis.jmp.cref=true
 e asm.bytes=true
-e asm.dwarf=false
+e asm.debuginfo=false
 aaa
 pd 20 @  dbg.palya
 EOF

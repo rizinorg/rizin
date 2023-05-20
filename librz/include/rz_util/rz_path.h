@@ -14,6 +14,7 @@ RZ_API RZ_OWN char *rz_path_bindir(void);
 RZ_API RZ_OWN char *rz_path_libdir(void);
 
 RZ_API RZ_OWN char *rz_path_system(RZ_NULLABLE const char *path);
+RZ_API RZ_OWN char *rz_path_extra(RZ_NULLABLE const char *path);
 RZ_API RZ_OWN char *rz_path_home_prefix(RZ_NULLABLE const char *path);
 RZ_API RZ_OWN char *rz_path_home(RZ_NULLABLE const char *path);
 

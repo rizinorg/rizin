@@ -91,7 +91,7 @@ Shared buffer size 0x400
 
             ;-- section.sect_0:
 / entry0 ();
-|           0x00401000      push  0x401080                             ; LPOSVERSIONINFOA lpVersionInformation [0m; [00] -rwx section size 4096 named sect_0
+|           0x00401000      push  0x401080                             ; LPOSVERSIONINFOA lpVersionInformation ; [00] -rwx section size 4096 named sect_0
 |           0x00401005      call  dword [sym.imp.kernel32.dll_GetVersionExA] ; 0x4011b4 ; BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation)
 |           0x0040100b      push  dword [0x401090]
 |           0x00401011      push  dword [0x40108c]

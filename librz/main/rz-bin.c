@@ -702,6 +702,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	if (!(tmp = rz_sys_getenv("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
 		char *plugindir = rz_path_system(RZ_PLUGINS);
+		char *extraplugindir = rz_path_extra(RZ_PLUGINS);
 		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_DEMANGLER, "demangler plugins",
 			&lib_demangler_cb, &lib_demangler_dt, bin->demangler);
@@ -716,8 +717,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		rz_lib_opendir(l, homeplugindir, false);
 		rz_lib_opendir(l, plugindir, false);
+		if (extraplugindir) {
+			rz_lib_opendir(l, extraplugindir, false);
+		}
 		free(homeplugindir);
 		free(plugindir);
+		free(extraplugindir);
 		free(path);
 		rz_lib_free(l);
 	}
