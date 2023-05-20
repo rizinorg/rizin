@@ -72,7 +72,6 @@ void *rz_il_handler_fneg(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fabs(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcast_int(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcast_sint(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
-void *rz_il_handler_fcast_raw(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcast_float(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fcast_sfloat(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fconvert(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
@@ -162,7 +161,6 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 
 	[RZ_IL_OP_FCAST_INT] = rz_il_handler_fcast_int,
 	[RZ_IL_OP_FCAST_SINT] = rz_il_handler_fcast_sint,
-	[RZ_IL_OP_FCAST_RAW] = rz_il_handler_fcast_raw,
 	[RZ_IL_OP_FCAST_FLOAT] = rz_il_handler_fcast_float,
 	[RZ_IL_OP_FCAST_SFLOAT] = rz_il_handler_fcast_sfloat,
 	[RZ_IL_OP_FCONVERT] = rz_il_handler_fconvert,

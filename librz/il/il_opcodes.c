@@ -873,13 +873,6 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode
 	return ret;
 }
 
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_raw(RZ_NONNULL RzILOpFloat *f) {
-	rz_return_val_if_fail(f, NULL);
-	RzILOpBitVector *ret;
-	rz_il_op_new_1(BitVector, RZ_IL_OP_FCAST_RAW, RzILOpArgsFCastraw, fcast_raw, f);
-	return ret;
-}
-
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILOpFloat *ret;
@@ -1230,9 +1223,6 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		CONST_CP2(fcast_sint, length, mode);
 		DUP_OP1(fcast_sint, f);
 		break;
-	case RZ_IL_OP_FCAST_RAW:
-		DUP_OP1(fcast_raw, f);
-		break;
 	case RZ_IL_OP_FCAST_FLOAT:
 		CONST_CP2(fcast_float, format, mode);
 		DUP_OP1(fcast_float, bv);
@@ -1455,11 +1445,6 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 		break;
 	case RZ_IL_OP_FCAST_INT:
 	case RZ_IL_OP_FCAST_SINT:
-		rz_il_op_free_1(pure, fcast_sint, f);
-		break;
-	case RZ_IL_OP_FCAST_RAW:
-		rz_il_op_free_1(pure, fcast_raw, f);
-		break;
 	case RZ_IL_OP_FCONVERT:
 		rz_il_op_free_1(pure, fconvert, f);
 		break;

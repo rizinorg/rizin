@@ -584,16 +584,6 @@ VALIDATOR_PURE(fcast_to_int) {
 	return true;
 }
 
-VALIDATOR_PURE(fcast_to_raw) {
-	RzILOpArgsFbits *args = &op->op.fbits;
-	RzILSortPure sort;
-
-	VALIDATOR_DESCEND(args->f, &sort);
-	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
-	*sort_out = rz_il_sort_pure_bv(rz_float_get_format_info(sort.props.f.format, RZ_FLOAT_INFO_TOTAL_LEN));
-	return true;
-}
-
 VALIDATOR_PURE(icast_to_float) {
 	RzILOpArgsFCastfloat *args = &op->op.fcast_float;
 	RzILSortPure sort;
@@ -791,7 +781,6 @@ static ValidatePureFn validate_pure_table[RZ_IL_OP_PURE_MAX] = {
 	[RZ_IL_OP_FMAD] = VALIDATOR_PURE_NAME(float_terop_with_round),
 	[RZ_IL_OP_FCAST_INT] = VALIDATOR_PURE_NAME(fcast_to_int),
 	[RZ_IL_OP_FCAST_SINT] = VALIDATOR_PURE_NAME(fcast_to_int),
-	[RZ_IL_OP_FCAST_RAW] = VALIDATOR_PURE_NAME(fcast_to_raw),
 	[RZ_IL_OP_FCAST_FLOAT] = VALIDATOR_PURE_NAME(icast_to_float),
 	[RZ_IL_OP_FCAST_SFLOAT] = VALIDATOR_PURE_NAME(icast_to_float),
 	[RZ_IL_OP_FCONVERT] = VALIDATOR_PURE_NAME(fconvert),

@@ -2876,13 +2876,3 @@ RZ_API RZ_OWN RzBitVector *rz_float_round_significant(bool sign, RzBitVector *si
 RZ_API RZ_OWN RzFloat *rz_float_round_bv_and_pack(bool sign, st32 exp, RzBitVector *sig, RzFloatFormat format, RzFloatRMode mode) {
 	return round_float_bv_new(sign, exp, sig, format, format, mode);
 }
-
-/**
- * \brief  Returns a copy of the internal bitvector
- * \param  f float number
- * \return On success a valid pointer, otherwise NULL.
- */
-RZ_API RZ_OWN RzBitVector *rz_float_to_raw_bitv(RZ_NONNULL RzFloat *f) {
-	rz_return_val_if_fail(f, NULL);
-	return rz_bv_dup(f->s);
-}
