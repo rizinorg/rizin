@@ -1,6 +1,13 @@
 # SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 # SPDX-License-Identifier: LGPL-3.0-only
-
+# META
+# Author: Florian Märkl
+# License: LGPL-3.0-only
+# Target Background: Light and Dark
+# Minimum colour depth: 256
+# Description: Theme based on Armin Ronacher's summerfruit.vim
+# Refernces: https://www.vim.org/scripts/script.php?script_id=1872  
+# ATEM
 # Based on Armin Ronacher's summerfruit.vim
 # https://www.vim.org/scripts/script.php?script_id=1872
 

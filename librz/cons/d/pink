@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: 2013 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
+# META
+# Author: pancake
+# License: LGPL-3.0-only
+# Target Background: Light and Dark
+# Minimum colour depth: 16M
+# Description: Pink theme!
+# ATEM
 
 ec comment rgb:72d
 ec help rgb:f5d

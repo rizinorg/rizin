@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: 2017 xarkes <antide.petit@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
+# META
+# Author: carkes
+# License: LGPL-3.0-only
+# Target Background: Light
+# Minimum colour depth: 256
+# Description: Based off Cutter's GUI!
+# ATEM
 
 ec comment rgb:8e8c8b
 ec usrcmt rgb:8e8c8b

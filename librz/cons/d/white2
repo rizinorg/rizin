@@ -1,5 +1,12 @@
 # SPDX-FileCopyrightText: 2018 securisec
 # SPDX-License-Identifier: LGPL-3.0-only
+# META
+# Author: securisec
+# License: LGPL-3.0-only
+# Target Background: Light
+# Minimum colour depth: 256
+# Description: A nice colour theme!
+# ATEM
 
 ec ai.exec rgb:6d6
 ec ai.read rgb:66d

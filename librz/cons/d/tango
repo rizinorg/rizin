@@ -1,5 +1,15 @@
 # SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
 # SPDX-License-Identifier: LGPL-3.0-only
+# META
+# Author: pancake
+# License: LGPL-3.0-only
+# Target Background: Light and Dark
+# Minimum colour depth: 256
+# Description: A nice colour theme!
+# Additional Details: Background of the terminal must be 134 o 033 , xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:d0/d0/d0
+# References: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr
+# ATEM
+
 
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:d0/d0/d0

@@ -412,7 +412,9 @@ RZ_API bool rz_core_plugin_fini(RzCore *core);
 // #define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_core_theme_list(RZ_NONNULL RzCore *core);
 RZ_API char *rz_core_theme_get(RzCore *core);
-RZ_API bool rz_core_theme_load(RzCore *core, const char *name);
+RZ_API bool rz_core_theme_load(RzCore *core, const char *name, RzCmdStateOutput *state);
+RZ_API RzThemeInfo *rz_core_theme_load_metainfo(RzCore *core, const char *name, RzCmdStateOutput *state);
+RZ_API bool rz_core_theme_print_metainfo(RzCore *core, RzCmdStateOutput *state, RzThemeInfo *meta_info);
 RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
