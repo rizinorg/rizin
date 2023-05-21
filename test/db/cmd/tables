@@ -71,7 +71,7 @@ NAME=tables csv
 FILE=bins/elf/analysis/elf-virtualtable
 CMDS=<<EOF
 flt:size/ne/0:addr/ne/0x00000000:/head/10:csv~:..20
-flt:space/eq/relocs:addr/cols/name:/head/3:json~{}
+flt:space/eq/relocs:cols/name:/head/3:json~{}
 flt:/head/10:/tail/4:space/cols/name
 flt:/page/2/10:sort/cols/space/size/name:name/sort/inc:fancy
 EOF
@@ -90,36 +90,42 @@ addr,size,space,name
 [
   {
     "addr": 6296136,
+    "size": 8,
+    "space": "relocs",
     "name": "reloc.__gmon_start"
   },
   {
     "addr": 6296168,
+    "size": 8,
+    "space": "relocs",
     "name": "reloc.std::ostream::operator___int"
   },
   {
     "addr": 6296176,
+    "size": 8,
+    "space": "relocs",
     "name": "reloc.operator_delete_void"
   }
 ]
-space    name                                                                         
---------------------------------------------------------------------------------------
-classes  class.std::basic_ostream_char__std::char_traits_char_____std::endl_char__std
-classes  class.B
-classes  class.A
-classes  class.C
-segments segment.LOAD0
+space            name                  
+---------------------------------------
+sections         section..interp
+segments         segment.INTERP
+symbols.sections sym..interp
+sections         section..note.ABI_tag
+segments         segment.NOTE
 .------------------------------------------------------.
 | space            | size | name                       |
 )------------------------------------------------------(
-| sections         | 28   | section..interp            |
-| sections         | 32   | section..note.ABI_tag      |
+| sections         | 497  | section..dynstr            |
+| sections         | 432  | section..dynsym            |
+| sections         | 56   | section..gnu.hash          |
+| sections         | 36   | section..gnu.version       |
 | sections         | 36   | section..note.gnu.build_id |
-| segments         | 28   | segment.INTERP             |
-| segments         | 4132 | segment.LOAD0              |
 | segments         | 68   | segment.NOTE               |
-| segments         | 448  | segment.PHDR               |
-| segments         | 64   | segment.ehdr               |
-| symbols.sections | 0    | sym..interp                |
+| symbols.sections | 0    | sym..dynstr                |
+| symbols.sections | 0    | sym..dynsym                |
+| symbols.sections | 0    | sym..gnu.hash              |
 | symbols.sections | 0    | sym..note.ABI_tag          |
 | symbols.sections | 0    | sym..note.gnu.build_id     |
 `------------------------------------------------------'
