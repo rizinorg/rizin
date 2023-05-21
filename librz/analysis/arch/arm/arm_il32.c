@@ -17,6 +17,7 @@
 static const char *regs_bound_32[] = {
 	"lr", "sp",
 	"qf", "vf", "cf", "zf", "nf", "gef",
+	"fpscr",
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
 	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
 	"d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
@@ -2546,6 +2547,73 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 }
 
 /**
+ * Capstone: ARM_INS_VMRS
+ * ARM: vmrs
+ * read extension/NEON system register into core register
+ */
+static RzILOpEffect *vmrs(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || !ISREG(1)) {
+		return NULL;
+	}
+
+	// VMRS <Rt>, FPSCR only
+	if (REGID(1) != ARM_REG_FPSCR) {
+		return NULL;
+	}
+
+	// if <Rt> is APSR, transfer to flags
+	if (REGID(1) == ARM_REG_APSR_NZCV) {
+		RzILOpBitVector *val = VARG("fpscr");
+		return SEQ4(
+			SETG("nf", INV(IS_ZERO(LOGAND(val, U32(1ul << 31))))),
+			SETG("zf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 30))))),
+			SETG("cf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 29))))),
+			SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 28))))));
+	}
+
+	if (REGID(0) >= ARM_REG_R0 && REGID(0) <= ARM_REG_R14) {
+		return write_reg(REGID(0), VARG("fpscr"));
+	}
+
+	return NULL;
+}
+
+/**
+ * Capstone: ARM_INS_VMSR
+ * ARM: vmsr
+ * write core register value into extension/NEON system register
+ */
+static RzILOpEffect *vmsr(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || REGID(0) != ARM_REG_FPSCR) {
+		return NULL;
+	}
+
+	RzILOpBitVector *val;
+	if (REGID(1) == ARM_REG_CPSR || REGID(1) == ARM_REG_SPSR || REGID(1) == ARM_REG_APSR) {
+		val = LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+						LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
+							SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16)))))));
+	}
+
+	else if (REGID(1) == ARM_REG_APSR_NZCV) {
+		val = LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+						U32(0)))));
+	}
+
+	else {
+		val = ARG(1);
+	}
+
+	return SETG("fpscr", val);
+}
+
+/**
  * For Extend Instruction Set
  * TODO: Split to a seperate file and include before arm lifter
  * VFP and NEON
@@ -2865,7 +2933,10 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return ldm(insn, is_thumb);
 	case ARM_INS_VMOV:
 		return vmov(insn, is_thumb);
-
+	case ARM_INS_VMSR:
+		return vmsr(insn, is_thumb);
+	case ARM_INS_VMRS:
+		return vmrs(insn, is_thumb);
 	default:
 		return NULL;
 	}
