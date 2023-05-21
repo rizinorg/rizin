@@ -215,15 +215,15 @@ PIE      false
 RELROCS  false
 NX       false
 --
-address     min         max         name                          super    
----------------------------------------------------------------------------
-0x182068040 0x1800189f8 0x180018b90 Test                          NSObject
-0x18206a028 0x18003aa78 0x18003aa94 Object                        Object
-0x18206a050 0x18206a050 0x18206a050 __IncompleteProtocol          NSObject
-0x18206a0a0 0x18003aa98 0x18003ab98 Protocol                      NSObject
-0x18206a140 0x18003e8dc 0x18003e8e4 __NSUnrecognizedTaggedPointer NSObject
-0x18206a0f0 0x18003cfc4 0x18003d788 NSObject                      NSObject
-0x00000000  0x180014f94 0x180014f98 std                           
+min         max         name                          super    
+---------------------------------------------------------------
+0x1800189f8 0x180018b90 Test                          NSObject
+0x18003aa78 0x18003aa94 Object                        Object
+----------  0x00000000  __IncompleteProtocol          NSObject
+0x18003aa98 0x18003ab98 Protocol                      NSObject
+0x18003e8dc 0x18003e8e4 __NSUnrecognizedTaggedPointer NSObject
+0x18003cfc4 0x18003d788 NSObject                      NSObject
+0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
 ----------  0     Test        isa                   struct objc_class *
@@ -308,15 +308,15 @@ PIE      false
 RELROCS  false
 NX       false
 --
-address     min         max         name                          super    
----------------------------------------------------------------------------
-0x184078000 0x180018a14 0x180018bbc Test                          NSObject
-0x184079098 0x18003e224 0x18003e240 Object                        Object
-0x1840790c0 0x1840790c0 0x1840790c0 __IncompleteProtocol          NSObject
-0x184079110 0x18003e244 0x18003e3b4 Protocol                      NSObject
-0x1840791b0 0x180042ac8 0x180042ad0 __NSUnrecognizedTaggedPointer NSObject
-0x184079160 0x180040eb8 0x180042ac4 NSObject                      NSObject
-0x00000000  0x180014f94 0x180014f98 std                           
+min         max         name                          super    
+---------------------------------------------------------------
+0x180018a14 0x180018bbc Test                          NSObject
+0x18003e224 0x18003e240 Object                        Object
+----------  0x00000000  __IncompleteProtocol          NSObject
+0x18003e244 0x18003e3b4 Protocol                      NSObject
+0x180042ac8 0x180042ad0 __NSUnrecognizedTaggedPointer NSObject
+0x180040eb8 0x180042ac4 NSObject                      NSObject
+0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
 ----------  0     Test        isa                   struct objc_class *

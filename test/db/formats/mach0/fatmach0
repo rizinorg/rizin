@@ -254,11 +254,11 @@ icf SceneDelegate
 icm SceneDelegate
 EOF
 EXPECT=<<EOF
-address     min         max         name           super 
----------------------------------------------------------
-0x100009298 0x100001e90 0x100001e90 ViewController 
-0x1000092c0 0x100001ee4 0x1000020a4 AppDelegate    
-0x100009310 0x1000021d0 0x100002494 SceneDelegate  
+min         max         name           super 
+---------------------------------------------
+0x100001e90 0x100001e90 ViewController 
+0x100001ee4 0x1000020a4 AppDelegate    
+0x1000021d0 0x100002494 SceneDelegate  
 address index class flags name type 
 ------------------------------------
 address     index class          flags name        

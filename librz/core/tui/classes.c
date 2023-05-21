@@ -47,15 +47,15 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 			if (show_color) {
 				if (i == *idx) {
 					const char *clr = Color_BLUE;
-					rz_cons_printf(Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW "  %s\n" Color_RESET,
-						i, clr, c->addr, c->name);
+					rz_cons_printf(Color_GREEN ">>" Color_RESET " %02d %s" Color_YELLOW " %s\n" Color_RESET,
+						i, clr, c->name);
 				} else {
-					rz_cons_printf("-  %02d %s0x%08" PFMT64x Color_RESET "  %s\n",
-						i, core->cons->context->pal.offset, c->addr, c->name);
+					rz_cons_printf("-  %02d %s" Color_RESET " %s\n",
+						i, core->cons->context->pal.offset, c->name);
 				}
 			} else {
-				rz_cons_printf("%s %02d 0x%08" PFMT64x "  %s\n",
-					(i == *idx) ? ">>" : "- ", i, c->addr, c->name);
+				rz_cons_printf("%s %02d %s\n",
+					(i == *idx) ? ">>" : "- ", i, c->name);
 			}
 			if (i++ == *idx) {
 				cur = c;

@@ -449,8 +449,8 @@ vaddr      paddr      hvaddr     haddr      type
 0x08048300 0x00000300 0x08048018 0x00000018 program
 
 [Classes]
-address min max name super 
----------------------------
+min max name super 
+-------------------
 
 [Symbols]
 nth paddr      vaddr      bind   type   size lib name                                   
@@ -836,9 +836,9 @@ FILE=bins/java/test.class
 CMDS=!rz-bin -c ${RZ_FILE}
 EXPECT=<<EOF
 [Classes]
-address    min        max        name super              
----------------------------------------------------------
-0x00000000 0x000008f9 0x00000bcd test groovy.lang.Script
+min        max        name super              
+----------------------------------------------
+0x000008f9 0x00000bcd test groovy.lang.Script
 
 EOF
 RUN
@@ -847,7 +847,7 @@ NAME=rz-bin -cq
 FILE=bins/java/test.class
 CMDS=!rz-bin -cq ${RZ_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000bcd] test groovy.lang.Script
+[0x000008f9 - 0x00000bcd] test groovy.lang.Script
 EOF
 RUN
 

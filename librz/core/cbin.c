@@ -1564,18 +1564,9 @@ RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 	RzListIter *iter;
 	RzBinClass *c;
 	rz_list_foreach (cs, iter, c) {
-		if (!c || !c->name || !c->name[0]) {
+		if (!c) {
 			continue;
 		}
-
-		// set class flag
-		char *classname = rz_str_newf("class.%s", c->name);
-		if (!classname) {
-			break;
-		}
-		rz_name_filter(classname, 0, true);
-		rz_flag_set(core->flags, classname, c->addr, 1);
-		free(classname);
 
 		// set method flags
 		RzBinSymbol *sym;
@@ -3710,25 +3701,11 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("}\n\n");
 }
 
-static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
+static void bin_class_print_rizin(RzCore *r, RzBinClass *c) {
 	RzListIter *iter2;
 	RzBinFile *bf = rz_bin_cur(r->bin);
 	RzBinClassField *f;
 	RzBinSymbol *sym;
-
-	// class
-	char *fn = rz_core_bin_class_build_flag_name(c);
-	if (fn) {
-		rz_cons_printf("\"f %s @ 0x%" PFMT64x "\"\n", fn, at_min);
-		free(fn);
-	}
-
-	// super class
-	fn = rz_core_bin_super_build_flag_name(c);
-	if (fn) {
-		rz_cons_printf("\"f %s @ %d\"\n", fn, c->index);
-		free(fn);
-	}
 
 	// class fields
 	rz_list_foreach (c->fields, iter2, f) {
@@ -3942,7 +3919,7 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 	}
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "XXXss", "address", "min", "max", "name", "super", NULL);
+	rz_cmd_state_output_set_columnsf(state, "XXss", "min", "max", "name", "super", NULL);
 
 	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_println("fs classes");
@@ -3962,15 +3939,11 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 				}
 			}
 		}
-		if (at_min == UT64_MAX) {
-			at_min = c->addr;
-			at_max = c->addr; // XXX + size?
-		}
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("0x%08" PFMT64x " [0x%08" PFMT64x " - 0x%08" PFMT64x "] %s%s%s\n",
-				c->addr, at_min, at_max, c->name, c->super ? " " : "",
+			rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s%s%s\n",
+				at_min, at_max, c->name, c->super ? " " : "",
 				c->super ? c->super : "");
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
@@ -3979,8 +3952,6 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "classname", c->name);
-			pj_kN(state->d.pj, "addr", c->addr);
-			pj_ki(state->d.pj, "index", c->index);
 			if (c->super) {
 				pj_ks(state->d.pj, "visibility", c->visibility_str ? c->visibility_str : "");
 				pj_ks(state->d.pj, "super", c->super);
@@ -4013,10 +3984,10 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_RIZIN:
-			bin_class_print_rizin(core, c, at_min);
+			bin_class_print_rizin(core, c);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "XXXss", c->addr, at_min, at_max, c->name, c->super);
+			rz_table_add_rowf(state->d.t, "XXss", at_min, at_max, c->name, c->super);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -4619,52 +4590,6 @@ static void resolve_method_flags(RzStrBuf *buf, ut64 flags) {
 			rz_strbuf_appendf(buf, ".%s", flag_string);
 		}
 	}
-}
-
-/**
- * \brief Returns the flag name of a class
- *
- **/
-RZ_API RZ_OWN char *rz_core_bin_class_build_flag_name(RZ_NONNULL RzBinClass *cls) {
-	rz_return_val_if_fail(cls, NULL);
-	char *ret = NULL;
-	if (!cls->name) {
-		return NULL;
-	}
-
-	if (cls->visibility_str) {
-		char *copy = strdup(cls->visibility_str);
-		rz_str_replace_ch(copy, ' ', '.', 1);
-		ret = rz_str_newf("class.%s.%s", copy, cls->name);
-		free(copy);
-	} else {
-		ret = rz_str_newf("class.public.%s", cls->name);
-	}
-	rz_name_filter(ret, -1, true);
-	return ret;
-}
-
-/**
- * \brief Returns the flag name of a super class
- *
- **/
-RZ_API RZ_OWN char *rz_core_bin_super_build_flag_name(RZ_NONNULL RzBinClass *cls) {
-	rz_return_val_if_fail(cls, NULL);
-	char *ret = NULL;
-	if (!cls->name || !cls->super) {
-		return NULL;
-	}
-
-	if (cls->visibility_str) {
-		char *copy = strdup(cls->visibility_str);
-		rz_str_replace_ch(copy, ' ', '.', 1);
-		ret = rz_str_newf("super.%s.%s.%s", copy, cls->name, cls->super);
-		free(copy);
-	} else {
-		ret = rz_str_newf("super.public.%s.%s", cls->name, cls->super);
-	}
-	rz_name_filter(ret, -1, true);
-	return ret;
 }
 
 /**

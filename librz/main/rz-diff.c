@@ -907,25 +907,6 @@ static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 
 /**************************************** classes ***************************************/
 
-static ut32 class_hash_addr(const RzBinClass *elem) {
-	ut32 hash = rz_diff_hash_data((const ut8 *)elem->name, strlen(elem->name));
-	hash ^= rz_diff_hash_data((const ut8 *)elem->super, strlen(elem->super));
-	hash ^= (ut32)(elem->addr >> 32);
-	hash ^= (ut32)elem->addr;
-	return hash;
-}
-
-static int class_compare_addr(const RzBinClass *a, const RzBinClass *b) {
-	int ret;
-	IF_STRCMP_S(ret, a->super, b->super);
-	IF_STRCMP_S(ret, a->name, b->name);
-	return a->addr - b->addr;
-}
-
-static void class_stringify_addr(const RzBinClass *elem, RzStrBuf *sb) {
-	rz_strbuf_setf(sb, "0x%016" PFMT64x " %s %s\n", elem->addr, SAFE_STR(elem->super), elem->name);
-}
-
 static ut32 class_hash(const RzBinClass *elem) {
 	ut32 hash = rz_diff_hash_data((const ut8 *)elem->name, strlen(elem->name));
 	hash ^= rz_diff_hash_data((const ut8 *)elem->super, strlen(elem->super));
@@ -943,7 +924,7 @@ static void class_stringify(const RzBinClass *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->super), elem->name);
 }
 
-static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -962,9 +943,9 @@ static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 
 	RzDiffMethods methods = {
 		.elem_at = (RzDiffMethodElemAt)rz_diff_list_elem_at,
-		.elem_hash = (RzDiffMethodElemHash)(compare_addr ? class_hash_addr : class_hash),
-		.compare = (RzDiffMethodCompare)(compare_addr ? class_compare_addr : class_compare),
-		.stringify = (RzDiffMethodStringify)(compare_addr ? class_stringify_addr : class_stringify),
+		.elem_hash = (RzDiffMethodElemHash)class_hash,
+		.compare = (RzDiffMethodCompare)class_compare,
+		.stringify = (RzDiffMethodStringify)class_stringify,
 		.ignore = NULL,
 	};
 
@@ -1361,7 +1342,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		diff = rz_diff_bytes_new(a_buffer, a_size, b_buffer, b_size, NULL);
 		break;
 	case DIFF_TYPE_CLASSES:
-		diff = rz_diff_classes_new(&dfile_a, &dfile_b, ctx->compare_addresses);
+		diff = rz_diff_classes_new(&dfile_a, &dfile_b);
 		break;
 	case DIFF_TYPE_COMMAND:
 		diff = rz_diff_command_new(ctx);

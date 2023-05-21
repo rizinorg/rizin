@@ -82,9 +82,9 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min         max         name  super  
-------------------------------------------------
-0x00000174 0x1000001a4 0x10000021e Hello Object
+min         max         name  super  
+-------------------------------------
+0x1000001a4 0x10000021e Hello Object
 address     index class flags name type   
 ------------------------------------------
 0x100000336 0     Hello P     who  String
@@ -118,7 +118,7 @@ NAME=DEX Hello.dex classes quiet (icq command)
 FILE=bins/dex/Hello.dex
 CMDS=icq
 EXPECT=<<EOF
-0x00000174 [0x1000001a4 - 0x10000021e] Hello Object
+[0x1000001a4 - 0x10000021e] Hello Object
 EOF
 RUN
 
@@ -172,8 +172,6 @@ CMDS=fl
 EXPECT=<<EOF
 0x00000000 1460 section.file
 0x00000000 0 sym.System.out
-0x000001e8 1 class.Hello
-0x00000208 1 class.World
 0x100000228 908 section.data
 0x100000238 20 sym.Hello.void__init
 0x100000238 1 method.public.constructor.Hello.void__init

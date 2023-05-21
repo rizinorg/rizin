@@ -104,9 +104,9 @@ EXPECT=<<EOF
 0500000000002080
 643e000001000000
 0x100004038 0x0000000100003e64   d>...... 4294983268 3.__TEXT.__cstring str.static_method_called,section.3.__TEXT.__cstring R X 'invalid' static method called
-address     min         max         name super 
------------------------------------------------
-0x1000080f8 0x100003a7c 0x100003be0 Test 
+min         max         name super 
+-----------------------------------
+0x100003a7c 0x100003be0 Test 
 address     index class flags name                         
 -----------------------------------------------------------
 0x100003a7c 0     Test        init
@@ -136,9 +136,9 @@ EXPECT=<<EOF
 04000000000009c0
 083e000001000000
 033f000001000000
-address     min         max         name super 
------------------------------------------------
-0x1000080f8 0x100003a4c 0x100003bc0 Test 
+min         max         name super 
+-----------------------------------
+0x100003a4c 0x100003bc0 Test 
 address     index class flags name                         
 -----------------------------------------------------------
 0x100003a4c 0     Test        init

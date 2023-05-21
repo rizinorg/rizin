@@ -492,9 +492,9 @@ icf 'unknown_class'
 icm 'unknown_class'
 EOF
 EXPECT=<<EOF
-address    min        max        name          super         
--------------------------------------------------------------
-0x00000000 0x00000000 0x00000000 unknown_class unknown_super
+min        max        name          super         
+--------------------------------------------------
+---------- 0x00000000 unknown_class unknown_super
 address index class flags name type 
 ------------------------------------
 address index class flags name 
@@ -511,9 +511,9 @@ icf 'DemoTest'
 icm 'DemoTest'
 EOF
 EXPECT=<<EOF
-address    min        max        name     super  
--------------------------------------------------
-0x00000000 0x00000190 0x00000236 DemoTest Object
+min        max        name     super  
+--------------------------------------
+0x00000190 0x00000236 DemoTest Object
 address index class flags name type 
 ------------------------------------
 address    index class    flags name                
@@ -534,9 +534,9 @@ icf 'CaseTableSwitch'
 icm 'CaseTableSwitch'
 EOF
 EXPECT=<<EOF
-address    min        max        name            super  
---------------------------------------------------------
-0x00000000 0x00000464 0x00000d74 CaseTableSwitch Object
+min        max        name            super  
+---------------------------------------------
+0x00000464 0x00000d74 CaseTableSwitch Object
 address index class flags name type 
 ------------------------------------
 address    index class           flags name                         
@@ -561,9 +561,9 @@ icf 'unknown_class'
 icm 'unknown_class'
 EOF
 EXPECT=<<EOF
-address    min        max        name          super         
--------------------------------------------------------------
-0x00000000 0x00000000 0x00000000 unknown_class unknown_super
+min        max        name          super         
+--------------------------------------------------
+---------- 0x00000000 unknown_class unknown_super
 address index class flags name type 
 ------------------------------------
 address index class flags name 
@@ -580,9 +580,9 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min        max        name  super  
-----------------------------------------------
-0x00000000 0x0000022b 0x000002d3 Hello Object
+min        max        name  super  
+-----------------------------------
+0x0000022b 0x000002d3 Hello Object
 address    index class flags name type   
 -----------------------------------------
 0x0000020b 0     Hello P     who  String
@@ -603,9 +603,9 @@ icf 'HiKt'
 icm 'HiKt'
 EOF
 EXPECT=<<EOF
-address    min        max        name super  
----------------------------------------------
-0x00000000 0x00000225 0x00000256 HiKt Object
+min        max        name super  
+----------------------------------
+0x00000225 0x00000256 HiKt Object
 address index class flags name type 
 ------------------------------------
 address    index class flags name                
@@ -623,9 +623,9 @@ icf 'Test'
 icm 'Test'
 EOF
 EXPECT=<<EOF
-address    min        max        name super  
----------------------------------------------
-0x00000000 0x00000120 0x00000131 Test Object
+min        max        name super  
+----------------------------------
+0x00000120 0x00000131 Test Object
 address index class flags name type 
 ------------------------------------
 address    index class flags name                
@@ -643,9 +643,9 @@ icf 'JDWPExecCmd'
 icm 'JDWPExecCmd'
 EOF
 EXPECT=<<EOF
-address    min        max        name        super  
-----------------------------------------------------
-0x00000000 0x00000339 0x0000044d JDWPExecCmd Object
+min        max        name        super  
+-----------------------------------------
+0x00000339 0x0000044d JDWPExecCmd Object
 address index class flags name type 
 ------------------------------------
 address    index class       flags name               
@@ -664,9 +664,9 @@ icf 'org.radare2.installer.MainActivity'
 icm 'org.radare2.installer.MainActivity'
 EOF
 EXPECT=<<EOF
-address    min        max        name                               super                
------------------------------------------------------------------------------------------
-0x00000000 0x00001c87 0x000029ea org.radare2.installer.MainActivity android.app.Activity
+min        max        name                               super                
+------------------------------------------------------------------------------
+0x00001c87 0x000029ea org.radare2.installer.MainActivity android.app.Activity
 address    index class                              flags name                   type                              
 -------------------------------------------------------------------------------------------------------------------
 0x00001c1f 0     org.radare2.installer.MainActivity P     outputView             android.widget.TextView
@@ -714,9 +714,9 @@ icf 'Main'
 icm 'Main'
 EOF
 EXPECT=<<EOF
-address    min        max        name super  
----------------------------------------------
-0x00000000 0x00000389 0x00000482 Main Object
+min        max        name super  
+----------------------------------
+0x00000389 0x00000482 Main Object
 address index class flags name type 
 ------------------------------------
 address    index class flags name                
@@ -731,8 +731,8 @@ NAME=Java list classes sjybq.class
 FILE=bins/java/sjybq.class
 CMDS=ic
 EXPECT=<<EOF
-address min max name super 
----------------------------
+min max name super 
+-------------------
 EOF
 RUN
 
@@ -745,9 +745,9 @@ icf 'test'
 icm 'test'
 EOF
 EXPECT=<<EOF
-address    min        max        name super              
----------------------------------------------------------
-0x00000000 0x000008f9 0x00000bcd test groovy.lang.Script
+min        max        name super              
+----------------------------------------------
+0x000008f9 0x00000bcd test groovy.lang.Script
 address    index class flags name             type                                     
 ---------------------------------------------------------------------------------------
 0x000008c9 0     test  sPh   $staticClassInfo org.codehaus.groovy.reflection.ClassInfo
@@ -775,9 +775,9 @@ icf 'TryWithResources'
 icm 'TryWithResources'
 EOF
 EXPECT=<<EOF
-address    min        max        name             super            
--------------------------------------------------------------------
-0x00000000 0x00000421 0x00004f31 TryWithResources RuntimeException
+min        max        name             super            
+--------------------------------------------------------
+0x00000421 0x00004f31 TryWithResources RuntimeException
 address    index class            flags name type             
 --------------------------------------------------------------
 0x000003f9 0     TryWithResources sp    $    TryWithResources

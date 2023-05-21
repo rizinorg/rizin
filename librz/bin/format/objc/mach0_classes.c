@@ -1155,7 +1155,6 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 	i += sizeof(mach0_ut);
 	c.data = rz_read_ble(&sc[i], bigendian, 8 * sizeof(mach0_ut));
 
-	klass->addr = c.isa;
 	if (c.superclass) {
 		klass->super = get_class_name(c.superclass, bf, buf);
 	} else if (relocs) {
@@ -1181,10 +1180,8 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 #endif
 	if (!is_meta_class && !dupe) {
 		mach0_ut isa_n_value = get_isa_value();
-		ut64 tmp = klass->addr;
 		MACH0_(get_class_t)
 		(c.isa + isa_n_value, bf, buf, klass, true, relocs, oi);
-		klass->addr = tmp;
 	}
 }
 
@@ -1520,8 +1517,6 @@ RZ_API void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 		RZ_FREE(target_class_name);
 		RZ_FREE(demangled);
 	}
-
-	klass->addr = p;
 
 	RZ_FREE(category_name);
 

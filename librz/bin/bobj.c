@@ -340,7 +340,9 @@ static void filter_classes(RzBinFile *bf, RzList /*<RzBinClass *>*/ *list) {
 	RzListIter *iter, *iter2;
 	RzBinClass *cls;
 	RzBinSymbol *sym;
+	int idx = -1;
 	rz_list_foreach (list, iter, cls) {
+		idx++;
 		if (!cls->name) {
 			continue;
 		}
@@ -352,7 +354,7 @@ static void filter_classes(RzBinFile *bf, RzList /*<RzBinClass *>*/ *list) {
 		}
 
 		strcpy(namepad, cls->name);
-		char *p = rz_bin_filter_name(bf, db, cls->index, namepad);
+		char *p = rz_bin_filter_name(bf, db, idx, namepad);
 		if (p) {
 			namepad = p;
 		}

@@ -647,15 +647,11 @@ typedef struct rz_bin_section_map_t {
 
 typedef struct rz_bin_class_t {
 	char *name;
-	// TODO: char *module;
 	char *super;
-	char *visibility_str; // XXX only used by java
-	int index;
-	ut64 addr;
+	ut32 visibility;
+	char *visibility_str;
 	RzList /*<RzBinSymbol *>*/ *methods;
 	RzList /*<RzBinClassField *>*/ *fields;
-	// RzList *interfaces; // <char *>
-	int visibility;
 } RzBinClass;
 
 #define RzBinSectionName   rz_offsetof(RzBinSection, name)

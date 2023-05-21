@@ -536,7 +536,6 @@ RZ_API RzBinClass *rz_bin_file_add_class(RzBinFile *bf, const char *name, const 
 	c = rz_bin_class_new(name, super, view);
 	if (c) {
 		// XXX. no need for a list, the ht is iterable too
-		c->index = rz_list_length(bf->o->classes);
 		rz_list_append(bf->o->classes, c);
 		ht_pp_insert(bf->o->classes_ht, name, c);
 	}
