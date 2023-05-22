@@ -2441,6 +2441,12 @@ static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILO
 }
 
 /**
+ * For Extend Instruction Set
+ * TODO: Split to a seperate file and include before arm lifter
+ * VFP and NEON
+ */
+
+/**
  * Capstone: ARM_INS_VMOV
  * ARM: vmov
  */
@@ -2614,16 +2620,106 @@ static RzILOpEffect *vmsr(cs_insn *insn, bool is_thumb) {
 }
 
 /**
- * For Extend Instruction Set
- * TODO: Split to a seperate file and include before arm lifter
- * VFP and NEON
+ * Capstone: ARM_INS_VAND, ARM_INS_VORR, ARM_INS_VORN, ARM_INS_VEOR, ARM_INS_VBIC,
+ * vand, vorr, vorn, veor, vbic
  */
+static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || OPCOUNT() < 2) {
+		return NULL;
+	}
+
+	// has following types:
+	// 1. bitwise_op <dst>, #imm
+	// 2. bitwise_op <dst>, <src1>, <src2>
+	RzILOpBitVector *src_a = ARG(OPCOUNT() - 2);
+	RzILOpBitVector *src_b;
+
+	// pseudo-instruction VAND(imm) disassembly produces VBIC(imm)
+	// pseudo-instruction VORN(imm) disassembly produces VORR(imm)
+	if (insn->id == ARM_INS_VBIC || insn->id == ARM_INS_VORR) {
+		ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
+		src_b = repeated_imm(DT_WIDTH(insn), REG_WIDTH(0), imm);
+	} else {
+		src_b = REG_VAL(OPCOUNT() - 1);
+	}
+
+	if (!src_a || !src_b) {
+		rz_il_op_pure_free(src_a);
+		rz_il_op_pure_free(src_b);
+		return NULL;
+	}
+
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM_INS_VAND:
+		res = LOGAND(src_a, src_b);
+		break;
+	case ARM_INS_VORR:
+		res = LOGOR(src_a, src_b);
+		break;
+	case ARM_INS_VORN:
+		res = LOGOR(src_a, LOGNOT(src_b));
+		break;
+	case ARM_INS_VEOR:
+		res = LOGXOR(src_a, src_b);
+		break;
+	case ARM_INS_BIC:
+		res = LOGAND(src_a, LOGNOT(src_b));
+		break;
+	default:
+		rz_il_op_pure_free(src_a);
+		rz_il_op_pure_free(src_b);
+		return NULL;
+	}
+
+	return write_reg(REGID(0), res);
+}
 
 /**
- * Capstone: ARM_INS_VLD1, ARM_INS_VLD2, ARM_INS_VLD3, ARM_INS_VLD4, ARM_INS_VLDR
- * ARM_INS_VLDMDB, ARM_INS_VLDMIA
- * ARM: vldr, vldm
+ * Capstone: ARM_INS_VBIT, ARM_INS_VBIF, ARM_INS_VBSL
+ * ARM: vbit, vbif, vbsl
  */
+static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || OPCOUNT() < 3) {
+		return NULL;
+	}
+
+	// v<op> <Qd>, <Qn>, <Qm>
+	// v<op> <Dd>, <Dn>, <Dm>
+	RzILOpBitVector *d = REG_VAL(0);
+	RzILOpBitVector *n = REG_VAL(1);
+	RzILOpBitVector *m = REG_VAL(2);
+
+	if (!d || !n || !m) {
+		rz_il_op_pure_free(d);
+		rz_il_op_pure_free(n);
+		rz_il_op_pure_free(m);
+		return NULL;
+	}
+
+	RzILOpBitVector *res;
+	switch (insn->id) {
+	case ARM_INS_VBIF:
+		// Rd = (d and m) or (n and not(m))
+		res = LOGOR(LOGAND(d, m), LOGAND(n, LOGNOT(m)));
+		break;
+	case ARM_INS_VBIT:
+		// Rd = (n and m) or (d and not(m))
+		res = LOGOR(LOGAND(n, m), LOGAND(d, LOGNOT(m)));
+		break;
+	case ARM_INS_VBSL:
+		// Rd = (n and d) or (m and not(d))
+		res = LOGOR(LOGAND(n, d), LOGAND(m, LOGNOT(d)));
+		break;
+	default:
+		rz_il_op_pure_free(d);
+		rz_il_op_pure_free(n);
+		rz_il_op_pure_free(m);
+		return NULL;
+	}
+
+	return write_reg(REGID(0), res);
+}
 
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
@@ -2937,6 +3033,16 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vmsr(insn, is_thumb);
 	case ARM_INS_VMRS:
 		return vmrs(insn, is_thumb);
+	case ARM_INS_VAND:
+	case ARM_INS_VBIC:
+	case ARM_INS_VORR:
+	case ARM_INS_VORN:
+	case ARM_INS_VEOR:
+		return vbitwise(insn, is_thumb);
+	case ARM_INS_VBIT:
+	case ARM_INS_VBIF:
+	case ARM_INS_VBSL:
+		return vbit_insert(insn, is_thumb);
 	default:
 		return NULL;
 	}
