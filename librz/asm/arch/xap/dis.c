@@ -428,7 +428,7 @@ static int decode_known(struct state *s, struct directive *d) {
 		fmtsz += 2;
 
 	// can be cleaned, no need to fmtsz
-	snprintf(fmt, sizeof(fmt), "%s0x%%.%dX", sign, fmtsz);
+	rz_strf(fmt, "%s0x%%.%dX", sign, fmtsz);
 	snprintf(tmp, sizeof(tmp), fmt, d->d_operand);
 	strcat(d->d_asm, tmp);
 

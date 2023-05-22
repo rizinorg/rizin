@@ -291,29 +291,29 @@ static char *getarg(struct Getarg *gop, int n, int set, char *setop, int sel, ut
 
 		if (index) {
 			if (scale > 1) {
-				snprintf(buf_, BUF_SZ, "%s%s,%d,*,", out, index, scale);
+				rz_strf(buf_, "%s%s,%d,*,", out, index, scale);
 			} else {
-				snprintf(buf_, BUF_SZ, "%s%s,", out, index);
+				rz_strf(buf_, "%s%s,", out, index);
 			}
 			strncpy(out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (base) {
-			snprintf(buf_, BUF_SZ, "%s%s,", out, base);
+			rz_strf(buf_, "%s%s,", out, base);
 			strncpy(out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (component_count > 1) {
 			if (component_count > 2) {
-				snprintf(buf_, BUF_SZ, "%s+,", out);
+				rz_strf(buf_, "%s+,", out);
 				strncpy(out, buf_, BUF_SZ);
 			}
 			if (disp < 0) {
-				snprintf(buf_, BUF_SZ, "%s-", out);
+				rz_strf(buf_, "%s-", out);
 			} else {
-				snprintf(buf_, BUF_SZ, "%s+", out);
+				rz_strf(buf_, "%s+", out);
 			}
 			strncpy(out, buf_, BUF_SZ);
 		} else {
@@ -327,13 +327,13 @@ static char *getarg(struct Getarg *gop, int n, int set, char *setop, int sel, ut
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
-			snprintf(buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size == 10 ? 8 : op.size);
+			rz_strf(buf_, "%s,%s=[%d]", out, setarg, op.size == 10 ? 8 : op.size);
 			strncpy(out, buf_, BUF_SZ);
 		} else if (set == 0) {
 			if (!*out) {
 				strcpy(out, "0");
 			}
-			snprintf(buf_, BUF_SZ, "%s,[%d]", out, op.size == 10 ? 8 : op.size);
+			rz_strf(buf_, "%s,[%d]", out, op.size == 10 ? 8 : op.size);
 			strncpy(out, buf_, BUF_SZ);
 		}
 		out[BUF_SZ - 1] = 0;
