@@ -2477,6 +2477,12 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 		if (!imm_bv) {
 			return NULL;
 		}
+
+		// vmvn Dd, imm
+		if (insn->id == ARM_INS_VMVN) {
+			imm_bv = LOGNOT(imm_bv);
+		}
+
 		return write_reg(REGID(0), imm_bv);
 	}
 
@@ -2549,6 +2555,12 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 	if (!val) {
 		return NULL;
 	}
+
+	// vmvn Qd, Qn
+	if (insn->id == ARM_INS_VMVN) {
+		val = LOGNOT(val);
+	}
+
 	return write_reg(REGID(0), val);
 }
 
@@ -3028,6 +3040,7 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VPOP:
 		return ldm(insn, is_thumb);
 	case ARM_INS_VMOV:
+	case ARM_INS_VMVN:
 		return vmov(insn, is_thumb);
 	case ARM_INS_VMSR:
 		return vmsr(insn, is_thumb);
