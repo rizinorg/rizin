@@ -7,7 +7,7 @@
 #include "core_private.h"
 #include "core_private_base.h"
 
-static bool core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
+static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri);
 static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
@@ -302,7 +302,8 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	int bits = core->rasm->bits;
 	char *bin_abspath = rz_file_abspath(binpath);
 	char *escaped_path = rz_str_arg_escape(bin_abspath);
-	char *newfile = rz_str_newf("dbg://%s %s", escaped_path, args);
+	char *newfile = RZ_STR_ISEMPTY(args) ? rz_str_newf("dbg://%s", escaped_path)
+					     : rz_str_newf("dbg://%s %s", escaped_path, args);
 	desc->uri = newfile;
 	desc->referer = NULL;
 	rz_config_set_i(core->config, "asm.bits", bits);
