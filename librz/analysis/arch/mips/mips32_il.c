@@ -43,8 +43,8 @@ typedef RzILOpBitVector BitVector;
  * and will the next instruction be in the delay slot?
  * \return Effect*
  * */
-typedef Effect *(*MipsILLifterFunction)(RzAnalysis*, cs_insn *, ut32);
-#define IL_LIFTER(name)      static Effect *MipsLifter_##name(RzAnalysis* analysis, cs_insn *insn, ut32 pc)
+typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32);
+#define IL_LIFTER(name)      static Effect *MipsLifter_##name(RzAnalysis *analysis, cs_insn *insn, ut32 pc)
 #define IL_LIFTER_NAME(name) MipsLifter_##name
 
 // size of gprs in 32 bits
@@ -169,9 +169,9 @@ static char *cpu_reg_enum_to_name_map[] = {
 #define IL_REG_F(idx) VARG(REG_F(idx))
 
 // returns Pure*
-#define REG_NAME(regenum)    cpu_reg_enum_to_name_map[regenum]
-#define IL_REG_OPND(opndidx) VARG(REG_OPND(opndidx))
-#define IL_MEM_OPND_BASE(opndidx) VARG(MEM_OPND_BASE(opndidx))
+#define REG_NAME(regenum)           cpu_reg_enum_to_name_map[regenum]
+#define IL_REG_OPND(opndidx)        VARG(REG_OPND(opndidx))
+#define IL_MEM_OPND_BASE(opndidx)   VARG(MEM_OPND_BASE(opndidx))
 #define IL_MEM_OPND_OFFSET(opndidx) S32(SIGN_EXTEND(MEM_OPND_OFFSET(opndidx), 16, GPRLEN))
 
 // TODO: add status handlers
@@ -243,7 +243,7 @@ IL_LIFTER(ADD) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *sum = ADD(rs, rt);
-	Effect * set_rd = SETG(rd, sum);
+	Effect *set_rd = SETG(rd, sum);
 	// Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
 	Effect *update_status_op = NOP(); // TODO: set status flag
 
@@ -1558,7 +1558,7 @@ IL_LIFTER(CLO) {
 	// each time loop runs means bit at index is flagged, so simply add 1 to cnt
 	Effect *mask_update = SETL("mask", SHIFTR0(VARL("mask"), U32(1)));
 	Effect *cnt_update = SETG(rd, ADD(VARG(rd), U32(1)));
-	Effect *loop_body = SEQ2(mask_update, cnt_update)
+	Effect *loop_body = SEQ2(mask_update, cnt_update);
 
 	Effect *loop = REPEAT(loop_cond, loop_body);
 	return SEQ3(reset_rd, mask, loop);
@@ -1598,7 +1598,7 @@ IL_LIFTER(CLZ) {
 	// each time loop runs means bit at index is flagged, so simply add 1 to cnt
 	Effect *mask_update = SETL("mask", SHIFTR0(VARL("mask"), U32(1)));
 	Effect *cnt_update = SETG(rd, ADD(VARG(rd), U32(1)));
-	Effect *loop_body = SEQ2(mask_update, cnt_update)
+	Effect *loop_body = SEQ2(mask_update, cnt_update);
 
 	Effect *loop = REPEAT(loop_cond, loop_body);
 	return SEQ3(reset_rd, mask, loop);
@@ -2160,7 +2160,7 @@ IL_LIFTER(SUB) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *sum = SUB(rs, rt);
-	Effect * set_rd = SETG(rd, sum);
+	Effect *set_rd = SETG(rd, sum);
 	// Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
 	Effect *update_status_op = NOP(); // TODO: set status flag
 
@@ -2403,7 +2403,7 @@ IL_LIFTER(JALRC) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LB) {
-	char* rt = REG_OPND(0);
+	char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -2482,7 +2482,7 @@ IL_LIFTER(LDXC1) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LH) {
-	char* rt = REG_OPND(0);
+	char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -2510,7 +2510,7 @@ IL_LIFTER(LHX) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LHU) {
-	char* rt = REG_OPND(0);
+	char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -2570,7 +2570,7 @@ IL_LIFTER(LSA) {
 	Pure *rt = IL_REG_OPND(2);
 	ut8 sa = (ut8)IMM_OPND(3);
 
-	BitVector *scaled_rs = SHIFTL0(rs, U8(sa+1));
+	BitVector *scaled_rs = SHIFTL0(rs, U8(sa + 1));
 	BitVector *scaled_address = ADD(scaled_rs, rt);
 
 	Effect *set_rd = SETG(rd, scaled_address);
@@ -2646,7 +2646,7 @@ IL_LIFTER(LWL) {
 	BitVector *word = LOADW(GPRLEN, aligned_memaddr);
 
 	Effect *b0, *b1, *b2, *b3;
-	if(analysis->big_endian) {
+	if (analysis->big_endian) {
 		b3 = SETG(rt, LOGOR(LOGAND(word, U32(0xFF000000)), LOGAND(VARG(rt), U32(0x00FFFFFF))));
 
 		Bool *b2cond = EQ(DUP(memaddr_low2bit), U32(2));
@@ -2690,7 +2690,7 @@ IL_LIFTER(LWM32) {
 IL_LIFTER(LWPC) {
 	char *rs = REG_OPND(0);
 	Pure *base = IL_REG_PC();
-	BitVector* offset = S32((st32)IMM_OPND(1) << 2);
+	BitVector *offset = S32((st32)IMM_OPND(1) << 2);
 
 	BitVector *memaddr = ADD(base, offset);
 	BitVector *word = LOADW(GPRLEN, memaddr);
@@ -2720,7 +2720,7 @@ IL_LIFTER(LWR) {
 	BitVector *word = LOADW(GPRLEN, aligned_memaddr);
 
 	Effect *b0, *b1, *b2, *b3;
-	if(analysis->big_endian) {
+	if (analysis->big_endian) {
 		b3 = SETG(rt, word);
 
 		Bool *b2cond = EQ(DUP(memaddr_low2bit), U32(2));
@@ -2804,7 +2804,6 @@ IL_LIFTER(MADDF) {
 IL_LIFTER(MADDR_Q) {
 	return NULL;
 }
-
 
 /**
  * Multiply and Add Unsigned word to HI, LO
@@ -3185,7 +3184,6 @@ IL_LIFTER(MUH) {
 	Effect *set_rd = SETG(rd, prod_hi);
 	return set_rd;
 }
-
 
 /**
  * Multiply Words Unsigned, High Word
@@ -4034,13 +4032,13 @@ IL_LIFTER(SWL) {
 	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
 
 	// increasing size of upper bytes by index
-	BitVector *rt_hi1 = CAST(8, IL_FALSE, SHIFTR0(DUP(rt), U8(3*8)));
-	BitVector *rt_hi2 = CAST(2*8, IL_FALSE, SHIFTR0(DUP(rt), U8(2*8)));
-	BitVector *rt_hi3 = CAST(3*8, IL_FALSE, SHIFTR0(DUP(rt), U8(8)));
+	BitVector *rt_hi1 = CAST(8, IL_FALSE, SHIFTR0(DUP(rt), U8(3 * 8)));
+	BitVector *rt_hi2 = CAST(2 * 8, IL_FALSE, SHIFTR0(DUP(rt), U8(2 * 8)));
+	BitVector *rt_hi3 = CAST(3 * 8, IL_FALSE, SHIFTR0(DUP(rt), U8(8)));
 	BitVector *rt_hi4 = rt;
 
 	Effect *b0, *b1, *b2, *b3;
-	if(analysis->big_endian) {
+	if (analysis->big_endian) {
 		// store higher byte to memory's lower byte
 		b3 = STOREW(aligned_memaddr, rt_hi1);
 
@@ -4102,12 +4100,12 @@ IL_LIFTER(SWR) {
 
 	// increasing size of lower bytes by index
 	BitVector *rt_lo1 = CAST(8, IL_FALSE, DUP(rt));
-	BitVector *rt_lo2 = CAST(2*8, IL_FALSE, DUP(rt));
-	BitVector *rt_lo3 = CAST(3*8, IL_FALSE, DUP(rt));
+	BitVector *rt_lo2 = CAST(2 * 8, IL_FALSE, DUP(rt));
+	BitVector *rt_lo3 = CAST(3 * 8, IL_FALSE, DUP(rt));
 	BitVector *rt_lo4 = rt;
 
 	Effect *b0, *b1, *b2, *b3;
-	if(analysis->big_endian) {
+	if (analysis->big_endian) {
 		// lower four bytes from register get stored in higher four bytes of memory, so basically a simple store
 		b3 = STOREW(aligned_memaddr, rt_lo4);
 
@@ -4963,9 +4961,9 @@ MipsILLifterFunction mips_lifters[] = {
  * \param pc Instruction address of current instruction.
  * \return Valid RzILOpEffect* on success, NULL otherwise.
  **/
-RZ_IPI Effect *mips32_il(RZ_NONNULL RzAnalysis* analysis, RZ_NONNULL cs_insn *insn, ut32 pc) {
+RZ_IPI Effect *mips32_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn, ut32 pc) {
 	rz_return_val_if_fail(analysis && insn, NULL);
-	if(INSN_ID(insn) >= MIPS_INS_ENDING) {
+	if (INSN_ID(insn) >= MIPS_INS_ENDING) {
 		RZ_LOG_ERROR("RzIL MIPS : Invalid MIPS instruction.")
 		return NULL;
 	}
