@@ -55,7 +55,7 @@ static bool pal_seek(RzCore *core, RzConsPalSeekMode mode, const char *file, RzL
 
 RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	bool failed = false;
-	if (!name || !*name) {
+	if (RZ_STR_ISEMPTY(name)) {
 		return false;
 	}
 	if (!rz_str_cmp(name, "default", strlen(name))) {
@@ -74,22 +74,29 @@ RZ_API bool rz_core_theme_load(RzCore *core, const char *name) {
 	free(home_themes);
 	free(extra_themes);
 
-	if (!load_theme(core, home_file)) {
-		if (load_theme(core, system_file)) {
-			core->curtheme = rz_str_dup(core->curtheme, name);
-		} else {
-			if (extra_file && load_theme(core, extra_file)) {
-				core->curtheme = rz_str_dup(core->curtheme, name);
-			} else {
-				if (load_theme(core, name)) {
-					core->curtheme = rz_str_dup(core->curtheme, name);
-				} else {
-					RZ_LOG_ERROR("core: eco: cannot open colorscheme profile (%s)\n", name);
-					failed = true;
-				}
-			}
-		}
+	if (load_theme(core, home_file)) {
+		goto success;
 	}
+
+	if (load_theme(core, system_file)) {
+		goto success;
+	}
+
+	if (load_theme(core, extra_file)) {
+		goto success;
+	}
+
+	if (load_theme(core, name)) {
+		goto success;
+	}
+
+	RZ_LOG_ERROR("core: cannot open colorscheme profile (%s)\n", name);
+	failed = true;
+	goto fail;
+
+success:
+	core->curtheme = rz_str_dup(core->curtheme, name);
+fail:
 	free(home_file);
 	free(system_file);
 	free(extra_file);
