@@ -88,6 +88,10 @@
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
 
+// TODO: add `feq` as prime operator in fbasic
+// https://smtlib.cs.uiowa.edu/theories-FloatingPoint.shtml
+#define FEQ(flx, fly) AND(FORDER(flx, fly), FORDER(fly, flx))
+
 #define IL_FALSE  rz_il_op_new_b0()
 #define IL_TRUE   rz_il_op_new_b1()
 #define INV(x)    rz_il_op_new_bool_inv(x)

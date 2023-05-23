@@ -29,54 +29,102 @@ static const char *regs_bound_32[] = {
  */
 static const char *reg_var_name(arm_reg reg) {
 	switch (reg) {
-	case ARM_REG_LR: return "lr";
-	case ARM_REG_SP: return "sp";
-	case ARM_REG_D0: return "d0";
-	case ARM_REG_D1: return "d1";
-	case ARM_REG_D2: return "d2";
-	case ARM_REG_D3: return "d3";
-	case ARM_REG_D4: return "d4";
-	case ARM_REG_D5: return "d5";
-	case ARM_REG_D6: return "d6";
-	case ARM_REG_D7: return "d7";
-	case ARM_REG_D8: return "d8";
-	case ARM_REG_D9: return "d9";
-	case ARM_REG_D10: return "d10";
-	case ARM_REG_D11: return "d11";
-	case ARM_REG_D12: return "d12";
-	case ARM_REG_D13: return "d13";
-	case ARM_REG_D14: return "d14";
-	case ARM_REG_D15: return "d15";
-	case ARM_REG_D16: return "d16";
-	case ARM_REG_D17: return "d17";
-	case ARM_REG_D18: return "d18";
-	case ARM_REG_D19: return "d19";
-	case ARM_REG_D20: return "d20";
-	case ARM_REG_D21: return "d21";
-	case ARM_REG_D22: return "d22";
-	case ARM_REG_D23: return "d23";
-	case ARM_REG_D24: return "d24";
-	case ARM_REG_D25: return "d25";
-	case ARM_REG_D26: return "d26";
-	case ARM_REG_D27: return "d27";
-	case ARM_REG_D28: return "d28";
-	case ARM_REG_D29: return "d29";
-	case ARM_REG_D30: return "d30";
-	case ARM_REG_D31: return "d31";
-	case ARM_REG_R0: return "r0";
-	case ARM_REG_R1: return "r1";
-	case ARM_REG_R2: return "r2";
-	case ARM_REG_R3: return "r3";
-	case ARM_REG_R4: return "r4";
-	case ARM_REG_R5: return "r5";
-	case ARM_REG_R6: return "r6";
-	case ARM_REG_R7: return "r7";
-	case ARM_REG_R8: return "r8";
-	case ARM_REG_R9: return "r9";
-	case ARM_REG_R10: return "r10";
-	case ARM_REG_R11: return "r11";
-	case ARM_REG_R12: return "r12";
-	default: return NULL;
+	case ARM_REG_LR:
+		return "lr";
+	case ARM_REG_SP:
+		return "sp";
+	case ARM_REG_D0:
+		return "d0";
+	case ARM_REG_D1:
+		return "d1";
+	case ARM_REG_D2:
+		return "d2";
+	case ARM_REG_D3:
+		return "d3";
+	case ARM_REG_D4:
+		return "d4";
+	case ARM_REG_D5:
+		return "d5";
+	case ARM_REG_D6:
+		return "d6";
+	case ARM_REG_D7:
+		return "d7";
+	case ARM_REG_D8:
+		return "d8";
+	case ARM_REG_D9:
+		return "d9";
+	case ARM_REG_D10:
+		return "d10";
+	case ARM_REG_D11:
+		return "d11";
+	case ARM_REG_D12:
+		return "d12";
+	case ARM_REG_D13:
+		return "d13";
+	case ARM_REG_D14:
+		return "d14";
+	case ARM_REG_D15:
+		return "d15";
+	case ARM_REG_D16:
+		return "d16";
+	case ARM_REG_D17:
+		return "d17";
+	case ARM_REG_D18:
+		return "d18";
+	case ARM_REG_D19:
+		return "d19";
+	case ARM_REG_D20:
+		return "d20";
+	case ARM_REG_D21:
+		return "d21";
+	case ARM_REG_D22:
+		return "d22";
+	case ARM_REG_D23:
+		return "d23";
+	case ARM_REG_D24:
+		return "d24";
+	case ARM_REG_D25:
+		return "d25";
+	case ARM_REG_D26:
+		return "d26";
+	case ARM_REG_D27:
+		return "d27";
+	case ARM_REG_D28:
+		return "d28";
+	case ARM_REG_D29:
+		return "d29";
+	case ARM_REG_D30:
+		return "d30";
+	case ARM_REG_D31:
+		return "d31";
+	case ARM_REG_R0:
+		return "r0";
+	case ARM_REG_R1:
+		return "r1";
+	case ARM_REG_R2:
+		return "r2";
+	case ARM_REG_R3:
+		return "r3";
+	case ARM_REG_R4:
+		return "r4";
+	case ARM_REG_R5:
+		return "r5";
+	case ARM_REG_R6:
+		return "r6";
+	case ARM_REG_R7:
+		return "r7";
+	case ARM_REG_R8:
+		return "r8";
+	case ARM_REG_R9:
+		return "r9";
+	case ARM_REG_R10:
+		return "r10";
+	case ARM_REG_R11:
+		return "r11";
+	case ARM_REG_R12:
+		return "r12";
+	default:
+		return NULL;
 	}
 }
 
@@ -88,6 +136,28 @@ static ut32 reg_bits(arm_reg reg) {
 		return 128;
 	}
 	return 32;
+}
+
+static bool is_vec_signed(arm_vectordata_type vec_type) {
+	switch (vec_type) {
+	case ARM_VECTORDATA_S8:
+	case ARM_VECTORDATA_S16:
+	case ARM_VECTORDATA_S32:
+	case ARM_VECTORDATA_S64:
+	case ARM_VECTORDATA_I8:
+	case ARM_VECTORDATA_I16:
+	case ARM_VECTORDATA_I32:
+	case ARM_VECTORDATA_I64:
+		return true;
+	case ARM_VECTORDATA_U8:
+	case ARM_VECTORDATA_U16:
+	case ARM_VECTORDATA_U32:
+	case ARM_VECTORDATA_U64:
+		return false;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
 }
 
 static bool is_core_reg(arm_reg reg) {
@@ -149,15 +219,22 @@ static RzILOpBitVector *read_reg_lane(arm_reg reg, ut32 lane, ut32 data_size) {
 static ut32 arm_data_width(arm_vectordata_type vec_type) {
 	switch (vec_type) {
 	case ARM_VECTORDATA_I32:
+	case ARM_VECTORDATA_U32:
 	case ARM_VECTORDATA_S32:
 	case ARM_VECTORDATA_F32:
 		return 32;
 	case ARM_VECTORDATA_I8:
+	case ARM_VECTORDATA_U8:
+	case ARM_VECTORDATA_S8:
 		return 8;
 	case ARM_VECTORDATA_I16:
+	case ARM_VECTORDATA_S16:
+	case ARM_VECTORDATA_U16:
 		return 16;
 	case ARM_VECTORDATA_I64:
 	case ARM_VECTORDATA_F64:
+	case ARM_VECTORDATA_U64:
+	case ARM_VECTORDATA_S64:
 		return 64;
 	case ARM_VECTORDATA_INVALID:
 		return 0;
@@ -263,7 +340,8 @@ static bool is_reg_shift(arm_shifter type) {
 	}
 }
 
-static RZ_NULLABLE RzILOpBitVector *shift(RzILOpBitVector *val, RZ_NULLABLE RzILOpBool **carry_out, arm_shifter type, RZ_OWN RzILOpBitVector *dist) {
+static RZ_NULLABLE RzILOpBitVector *
+shift(RzILOpBitVector *val, RZ_NULLABLE RzILOpBool **carry_out, arm_shifter type, RZ_OWN RzILOpBitVector *dist) {
 	switch (type) {
 	case ARM_SFT_ASR:
 	case ARM_SFT_ASR_REG:
@@ -602,7 +680,9 @@ static RzILOpEffect *add_sub(cs_insn *insn, bool is_thumb) {
 		// alias for adr
 		return adr(insn, is_thumb);
 	}
-	bool is_sub = insn->id == ARM_INS_SUB || insn->id == ARM_INS_SUBW || insn->id == ARM_INS_RSB || insn->id == ARM_INS_RSC || insn->id == ARM_INS_SBC;
+	bool is_sub =
+		insn->id == ARM_INS_SUB || insn->id == ARM_INS_SUBW || insn->id == ARM_INS_RSB || insn->id == ARM_INS_RSC ||
+		insn->id == ARM_INS_SBC;
 	RzILOpBitVector *a = ARG(OPCOUNT() > 2 ? 1 : 0);
 	RzILOpBitVector *b = ARG(OPCOUNT() > 2 ? 2 : 1);
 	if (insn->id == ARM_INS_RSB || insn->id == ARM_INS_RSC) {
@@ -684,7 +764,8 @@ static RzILOpEffect *mul(cs_insn *insn, bool is_thumb) {
 static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	bool is_double = insn->id == ARM_INS_LDRD || insn->id == ARM_INS_LDREXD;
 	size_t mem_idx = is_double ? 2 : 1;
-	if (!ISREG(0) || !ISMEM(mem_idx) || (is_double && (!ISREG(1) || REGID(0) == ARM_REG_PC || REGID(1) == ARM_REG_PC))) {
+	if (!ISREG(0) || !ISMEM(mem_idx) ||
+		(is_double && (!ISREG(1) || REGID(0) == ARM_REG_PC || REGID(1) == ARM_REG_PC))) {
 		return NULL;
 	}
 	RzILOpBitVector *addr;
@@ -995,13 +1076,15 @@ static RzILOpEffect *uxt(cs_insn *insn, bool is_thumb) {
 	if (!ISREG(0)) {
 		return NULL;
 	}
-	bool is_add = insn->id == ARM_INS_UXTAB || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTAB || insn->id == ARM_INS_SXTAH;
+	bool is_add = insn->id == ARM_INS_UXTAB || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTAB ||
+		insn->id == ARM_INS_SXTAH;
 	RzILOpBitVector *src = ARG(is_add ? 2 : 1);
 	if (!src) {
 		return NULL;
 	}
 	ut32 src_bits =
-		insn->id == ARM_INS_UXTH || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTH || insn->id == ARM_INS_SXTAH
+		insn->id == ARM_INS_UXTH || insn->id == ARM_INS_UXTAH || insn->id == ARM_INS_SXTH ||
+			insn->id == ARM_INS_SXTAH
 		? 16
 		: 8;
 	RzILOpBitVector *val = UNSIGNED(src_bits, src);
@@ -1260,6 +1343,7 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 }
 
 #if CS_API_MAJOR > 3
+
 /**
  * Capstone: ARM_INS_HVC
  * ARM: hvc
@@ -1267,6 +1351,7 @@ static void label_svc(RzILVM *vm, RzILOpEffect *op) {
 static RzILOpEffect *hvc(cs_insn *insn, bool is_thumb) {
 	return GOTO("hvc");
 }
+
 #endif
 
 static void label_hvc(RzILVM *vm, RzILOpEffect *op) {
@@ -1449,7 +1534,9 @@ static RzILOpEffect *pkhbt(cs_insn *insn, bool is_thumb) {
  * \p min minimal value of the range to saturate into
  * \p min maximal value of the range to saturate into
  */
-static RzILOpEffect *saturate_signed_to_range(const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q, st64 min, st64 max) {
+static RzILOpEffect *
+saturate_signed_to_range(const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q, st64 min,
+	st64 max) {
 	return SEQ2(
 		SETL("er", val),
 		BRANCH(SGT(VARL("er"), SN(ext_bits, max)),
@@ -1459,7 +1546,8 @@ static RzILOpEffect *saturate_signed_to_range(const char *dst, ut32 bits, RzILOp
 				SETL(dst, UNSIGNED(bits, VARL("er"))))));
 }
 
-static RzILOpEffect *saturate_signed(bool to_signed, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
+static RzILOpEffect *
+saturate_signed(bool to_signed, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
 	st64 max = to_signed ? (1ull << (bits - 1)) - 1 : (1ull << bits) - 1;
 	st64 min = to_signed ? -max - 1 : 0;
 	return saturate_signed_to_range(dst, bits, val, ext_bits, set_q, min, max);
@@ -1472,7 +1560,8 @@ static RzILOpEffect *saturate_signed(bool to_signed, const char *dst, ut32 bits,
  * \p val value to saturate, of \p ext_bits bits
  * \p set_q whether to set the q flag on saturation
  */
-static RzILOpEffect *saturate_unsigned(bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
+static RzILOpEffect *
+saturate_unsigned(bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
 	ut64 max = (1ull << bits) - 1;
 	ut64 min = 0;
 	return SEQ2(
@@ -1482,7 +1571,8 @@ static RzILOpEffect *saturate_unsigned(bool is_sub, const char *dst, ut32 bits, 
 			SETL(dst, UNSIGNED(bits, VARL("er")))));
 }
 
-static RzILOpEffect *saturate(bool sign, bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
+static RzILOpEffect *
+saturate(bool sign, bool is_sub, const char *dst, ut32 bits, RzILOpBitVector *val, ut32 ext_bits, bool set_q) {
 	return sign
 		? saturate_signed(true, dst, bits, val, ext_bits, set_q)
 		: saturate_unsigned(is_sub, dst, bits, val, ext_bits, set_q);
@@ -1589,7 +1679,8 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 	if (!eff) {
 		return NULL;
 	}
-	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX || insn->id == ARM_INS_QSAX;
+	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX ||
+		insn->id == ARM_INS_QSAX;
 	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	RzILOpBitVector *al = cast(17, UNSIGNED(16, a));
 	RzILOpBitVector *ah = cast(17, UNSIGNED(16, SHIFTR0(DUP(a), UN(5, 16))));
@@ -1626,7 +1717,8 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 		h = ADD(ah, bh);
 		break;
 	}
-	return SEQ3(saturate(is_signed, l_sub, "rl", 16, l, 17, false), saturate(is_signed, h_sub, "rh", 16, h, 17, false), eff);
+	return SEQ3(saturate(is_signed, l_sub, "rl", 16, l, 17, false), saturate(is_signed, h_sub, "rh", 16, h, 17, false),
+		eff);
 }
 
 /**
@@ -1659,18 +1751,24 @@ static RzILOpEffect *qadd8(cs_insn *insn, bool is_thumb) {
 			9, false),
 		saturate(is_signed, is_sub, "rb1", 8,
 			is_sub
-				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8)))))
-				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8))))),
+				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8)))))
+				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 8)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 8))))),
 			9, false),
 		saturate(is_signed, is_sub, "rb2", 8,
 			is_sub
-				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16)))))
-				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16))))),
+				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16)))))
+				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 16)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 16))))),
 			9, false),
 		saturate(is_signed, is_sub, "rb3", 8,
 			is_sub
-				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24)))))
-				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))), cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24))))),
+				? SUB(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24)))))
+				: ADD(cast(9, UNSIGNED(8, SHIFTR0(DUP(a), UN(5, 24)))),
+					  cast(9, UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24))))),
 			9, false),
 		eff);
 }
@@ -1735,7 +1833,8 @@ static RzILOpEffect *revsh(cs_insn *insn, bool is_thumb) {
 	if (!v) {
 		return NULL;
 	}
-	return write_reg(REGID(0), LET("r", APPEND(UNSIGNED(8, v), UNSIGNED(8, SHIFTR0(DUP(v), UN(5, 8)))), SIGNED(32, VARLP("r"))));
+	return write_reg(REGID(0),
+		LET("r", APPEND(UNSIGNED(8, v), UNSIGNED(8, SHIFTR0(DUP(v), UN(5, 8)))), SIGNED(32, VARLP("r"))));
 }
 
 /**
@@ -1848,7 +1947,8 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	}
 	bool set_ge = !halve;
 	RzILOpBitVector *res = halve
-		? APPEND(UNSIGNED(16, SHIFTRA(VARL("res1"), UN(4, 1))), UNSIGNED(16, SHIFTRA(VARL("res0"), UN(4, 1))))
+		? APPEND(UNSIGNED(16, SHIFTRA(VARL("res1"), UN(4, 1))),
+			  UNSIGNED(16, SHIFTRA(VARL("res0"), UN(4, 1))))
 		: APPEND(UNSIGNED(16, VARL("res1")), UNSIGNED(16, VARL("res0")));
 	RzILOpEffect *eff = write_reg(REGID(0), res);
 	if (!eff) {
@@ -1920,7 +2020,8 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 		break;
 	}
 	bool set_ge = !halve;
-	bool is_signed = insn->id == ARM_INS_SADD8 || insn->id == ARM_INS_SHADD8 || insn->id == ARM_INS_SSUB8 || insn->id == ARM_INS_SHSUB8;
+	bool is_signed = insn->id == ARM_INS_SADD8 || insn->id == ARM_INS_SHADD8 || insn->id == ARM_INS_SSUB8 ||
+		insn->id == ARM_INS_SHSUB8;
 	if (set_ge) {
 		// Retroactively patch the ops to extend to 8 before the calculation because this is needed for ge
 		// Note: add/sub members here use the same structure, so using just `.add` is fine.
@@ -2001,9 +2102,13 @@ static RzILOpEffect *sel(cs_insn *insn, bool is_thumb) {
 		APPEND(
 			APPEND(
 				UNSIGNED(8, SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 3))), b, a), UN(5, 24))),
-				UNSIGNED(8, SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 2))), DUP(b), DUP(a)), UN(5, 16)))),
+				UNSIGNED(8,
+					SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 2))), DUP(b), DUP(a)),
+						UN(5, 16)))),
 			APPEND(
-				UNSIGNED(8, SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 1))), DUP(b), DUP(a)), UN(5, 8))),
+				UNSIGNED(8,
+					SHIFTR0(ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1 << 1))), DUP(b), DUP(a)),
+						UN(5, 8))),
 				UNSIGNED(8, ITE(IS_ZERO(LOGAND(VARG("gef"), UN(4, 1))), DUP(b), DUP(a))))));
 }
 
@@ -2123,7 +2228,8 @@ static RzILOpEffect *umull(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpBitVector *absdiff(RzILOpBitVector *a, RzILOpBitVector *b) {
-	return LET("a", a, LET("b", b, ITE(ULE(VARLP("a"), VARLP("b")), SUB(VARLP("b"), VARLP("a")), SUB(VARLP("a"), VARLP("b")))));
+	return LET("a", a,
+		LET("b", b, ITE(ULE(VARLP("a"), VARLP("b")), SUB(VARLP("b"), VARLP("a")), SUB(VARLP("a"), VARLP("b")))));
 }
 
 /**
@@ -2188,7 +2294,8 @@ static RzILOpEffect *smlabb(cs_insn *insn, bool is_thumb) {
 	b = UNSIGNED(16, b);
 	RzILOpBitVector *product;
 	ut32 extend_bits;
-	if (insn->id == ARM_INS_SMLAD || insn->id == ARM_INS_SMLADX || insn->id == ARM_INS_SMLSD || insn->id == ARM_INS_SMLSDX) {
+	if (insn->id == ARM_INS_SMLAD || insn->id == ARM_INS_SMLADX || insn->id == ARM_INS_SMLSD ||
+		insn->id == ARM_INS_SMLSDX) {
 		extend_bits = 34; // need more bits for the larger range that can be reached here
 		RzILOpBitVector *ah = SIGNED(extend_bits, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16))));
 		RzILOpBitVector *bh = SIGNED(extend_bits, UNSIGNED(16, exchange_b ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))));
@@ -2261,7 +2368,8 @@ static RzILOpEffect *smlal(cs_insn *insn, bool is_thumb) {
 		b = SIGNED(64, b);
 	}
 	RzILOpBitVector *product;
-	if (insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX || insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX) {
+	if (insn->id == ARM_INS_SMLALD || insn->id == ARM_INS_SMLALDX || insn->id == ARM_INS_SMLSLD ||
+		insn->id == ARM_INS_SMLSLDX) {
 		RzILOpBitVector *ah = SIGNED(64, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16))));
 		RzILOpBitVector *bh = SIGNED(64, UNSIGNED(16, exchange_b ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))));
 		product = insn->id == ARM_INS_SMLSLD || insn->id == ARM_INS_SMLSLDX
@@ -2416,7 +2524,8 @@ static RzILOpEffect *smulbb(cs_insn *insn, bool is_thumb) {
 		res = SUB(res,
 			MUL(
 				SIGNED(32, UNSIGNED(16, SHIFTR0(DUP(ra), UN(5, 16)))),
-				SIGNED(32, UNSIGNED(16, insn->id == ARM_INS_SMUSDX ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))))));
+				SIGNED(32,
+					UNSIGNED(16, insn->id == ARM_INS_SMUSDX ? DUP(rb) : SHIFTR0(DUP(rb), UN(5, 16))))));
 	}
 	return write_reg(REGID(0), res);
 }
@@ -2614,17 +2723,13 @@ static RzILOpEffect *vmsr(cs_insn *insn, bool is_thumb) {
 					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
 						LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
 							SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16)))))));
-	}
-
-	else if (REGID(1) == ARM_REG_APSR_NZCV) {
+	} else if (REGID(1) == ARM_REG_APSR_NZCV) {
 		val = LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
 			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
 				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
 					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
 						U32(0)))));
-	}
-
-	else {
+	} else {
 		val = ARG(1);
 	}
 
@@ -2734,6 +2839,102 @@ static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
 }
 
 /**
+ * Capstone: ARM_INS_VCEQ, ARM_INS_VCGE, ARM_INS_VCGT, ARM_INS_VCLE, ARM_INS_VCLT
+ * ARM_INS_VACGE, ARM_INS_VACGT
+ * ARM: vceq, vcge, vcgt, vcle, vclt, vacge, vacgt, [pseudo: vacle, vaclt]
+ */
+static RzILOpEffect *vcmp(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) && OPCOUNT() < 3) {
+		return NULL;
+	}
+
+	if (VVEC_DT(insn) == ARM_VECTORDATA_F32) {
+		ut32 vec_size = 32;
+		RzILOpEffect *eff = NULL;
+		for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
+			RzILOpFloat *l_elem = BV2F(RZ_FLOAT_IEEE754_BIN_32,
+				read_reg_lane(REGID(1), i, vec_size));
+			RzILOpFloat *r_elem = ISIMM(2) ? F32(0.0f) : BV2F(RZ_FLOAT_IEEE754_BIN_32, read_reg_lane(REGID(2), i, vec_size));
+			RzILOpBool *cond;
+			switch (insn->id) {
+			case ARM_INS_VCEQ:
+				cond = FEQ(l_elem, r_elem);
+				break;
+			case ARM_INS_VCGE:
+				cond = INV(FORDER(l_elem, r_elem));
+				break;
+			case ARM_INS_VCGT:
+				cond = FORDER(r_elem, l_elem);
+				break;
+			case ARM_INS_VCLE:
+				cond = INV(FORDER(r_elem, l_elem));
+				break;
+			case ARM_INS_VCLT:
+				cond = FORDER(l_elem, r_elem);
+				break;
+			case ARM_INS_VACGE:
+				cond = INV(FORDER(FABS(l_elem), FABS(r_elem)));
+				break;
+			case ARM_INS_VACGT:
+				cond = FORDER(FABS(r_elem), FABS(l_elem));
+				break;
+			default:
+				cond = NULL;
+				rz_il_op_pure_free(l_elem);
+				rz_il_op_pure_free(r_elem);
+				rz_il_op_effect_free(eff);
+				return NULL;
+			}
+
+			eff = SEQ2(eff,
+				write_reg_lane(REGID(0), i, vec_size,
+					ITE(cond, LOGNOT(UN(vec_size, 0)), UN(vec_size, 0))));
+		}
+		return eff;
+	}
+
+	// for integer number
+	ut32 vec_size = DT_WIDTH(insn);
+	RzILOpEffect *eff = NULL;
+	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
+		RzILOpBitVector *l_elem = read_reg_lane(REGID(1), i, vec_size);
+		RzILOpBitVector *r_elem = ISIMM(2) ? UN(vec_size, 0) : read_reg_lane(REGID(2), i, vec_size);
+
+		RzILOpBool *cond;
+		bool as_signed = is_vec_signed(VVEC_DT(insn));
+		switch (insn->id) {
+		case ARM_INS_VCEQ:
+			cond = EQ(l_elem, r_elem);
+			break;
+		case ARM_INS_VCGE:
+			cond = as_signed ? SGE(l_elem, r_elem) : UGE(l_elem, r_elem);
+			break;
+		case ARM_INS_VCGT:
+			cond = as_signed ? SGT(l_elem, r_elem) : UGT(l_elem, r_elem);
+			break;
+		case ARM_INS_VCLE:
+			cond = as_signed ? SLE(l_elem, r_elem) : ULE(l_elem, r_elem);
+			break;
+		case ARM_INS_VCLT:
+			cond = as_signed ? SLT(l_elem, r_elem) : SLE(l_elem, r_elem);
+			break;
+		default:
+			cond = NULL;
+			rz_il_op_pure_free(l_elem);
+			rz_il_op_pure_free(r_elem);
+			rz_il_op_effect_free(eff);
+			return NULL;
+		}
+
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, vec_size,
+				ITE(cond, LOGNOT(UN(vec_size, 0)), UN(vec_size, 0))));
+	}
+
+	return eff;
+}
+
+/**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
  * Currently unimplemented:
@@ -2764,7 +2965,7 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_PLDW:
 	case ARM_INS_PLI:
 	case ARM_INS_YIELD:
-	// barriers/synchronization
+		// barriers/synchronization
 	case ARM_INS_DMB:
 	case ARM_INS_DSB:
 	case ARM_INS_ISB:
@@ -3029,8 +3230,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_TBH:
 		return tbb(insn, is_thumb);
 
-	// --
-	// Advanced SIMD and Floating-point
+		// --
+		// Advanced SIMD and Floating-point
 	case ARM_INS_VSTMIA:
 	case ARM_INS_VSTMDB:
 	case ARM_INS_VPUSH:
@@ -3056,6 +3257,14 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VBIF:
 	case ARM_INS_VBSL:
 		return vbit_insert(insn, is_thumb);
+	case ARM_INS_VACGT:
+	case ARM_INS_VACGE:
+	case ARM_INS_VCEQ:
+	case ARM_INS_VCGE:
+	case ARM_INS_VCGT:
+	case ARM_INS_VCLE:
+	case ARM_INS_VCLT:
+		return vcmp(insn, is_thumb);
 	default:
 		return NULL;
 	}
