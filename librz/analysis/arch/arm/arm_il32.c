@@ -2843,7 +2843,7 @@ static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
  * ARM_INS_VACGE, ARM_INS_VACGT
  * ARM: vceq, vcge, vcgt, vcle, vclt, vacge, vacgt, [pseudo: vacle, vaclt]
  */
-static RzILOpEffect *vcmp(cs_insn *insn, bool is_thumb) {
+static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 	if (!ISREG(0) && OPCOUNT() < 3) {
 		return NULL;
 	}
@@ -3264,7 +3264,7 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VCGT:
 	case ARM_INS_VCLE:
 	case ARM_INS_VCLT:
-		return vcmp(insn, is_thumb);
+		return vec_cmp(insn, is_thumb);
 	default:
 		return NULL;
 	}
