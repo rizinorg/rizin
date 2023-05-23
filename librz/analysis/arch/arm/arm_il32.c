@@ -2934,6 +2934,29 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 	return eff;
 }
 
+static RzILOpEffect *vtst(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		return NULL;
+	}
+
+	// vtst <Vd>, <Vn>, <Vm>
+	// for each lane:
+	// Vd = iszero((n and m)) ? zero : not(zero)
+	ut32 vec_size = VVEC_SIZE(insn);
+	RzILOpEffect *eff = NULL;
+	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
+		RzILOpBitVector *n = read_reg_lane(REGID(1), i, vec_size);
+		RzILOpBitVector *m = read_reg_lane(REGID(2), i, vec_size);
+		RzILOpBitVector *d = ITE(IS_ZERO(LOGAND(n, m)),
+			UN(vec_size, 0),
+			LOGNOT(UN(vec_size, 0)));
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, vec_size, d));
+	}
+
+	return eff;
+}
+
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
@@ -3247,6 +3270,7 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vmsr(insn, is_thumb);
 	case ARM_INS_VMRS:
 		return vmrs(insn, is_thumb);
+	// NEON (advanced SIMD)
 	case ARM_INS_VAND:
 	case ARM_INS_VBIC:
 	case ARM_INS_VORR:
@@ -3265,6 +3289,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VCLE:
 	case ARM_INS_VCLT:
 		return vec_cmp(insn, is_thumb);
+	case ARM_INS_VTST:
+		return vtst(insn, is_thumb);
 	default:
 		return NULL;
 	}
