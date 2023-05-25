@@ -90,7 +90,7 @@
 
 // TODO: add `feq` as prime operator in fbasic
 // https://smtlib.cs.uiowa.edu/theories-FloatingPoint.shtml
-#define FEQ(flx, fly) AND(FORDER(flx, fly), FORDER(fly, flx))
+#define FEQ(flx, fly) INV(AND(FORDER(flx, fly), FORDER(fly, flx)))
 
 #define IL_FALSE  rz_il_op_new_b0()
 #define IL_TRUE   rz_il_op_new_b1()
