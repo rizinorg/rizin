@@ -519,18 +519,19 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			goto next;
 		}
 
-		ut32 j;
-		ut16 *depArray = NULL;
+		ut16 *dep_array = NULL;
 		cache_imgxtr_t *extras = NULL;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
+			size_t dep_array_count = 0;
 			if (cache->accel) {
-				depArray = RZ_NEWS0(ut16, cache->accel->depListCount);
-				if (!depArray) {
+				dep_array_count = cache->accel->depListCount;
+				dep_array = RZ_NEWS0(ut16, dep_array_count);
+				if (!dep_array) {
 					goto next;
 				}
 
-				if (rz_buf_fread_at(cache->buf, cache->accel->depListOffset, (ut8 *)depArray, "s", cache->accel->depListCount) != cache->accel->depListCount * 2) {
+				if (rz_buf_fread_at(cache->buf, cache->accel->depListOffset, (ut8 *)dep_array, "s", dep_array_count) != dep_array_count * 2) {
 					goto next;
 				}
 
@@ -542,7 +543,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				path_to_idx = create_path_to_index(cache->buf, img, hdr);
 			}
 
-			for (j = 0; j < hdr->imagesCount; j++) {
+			for (ut32 j = 0; j < hdr->imagesCount; j++) {
 				bool printing = !deps[j];
 				char *lib_name = get_lib_name(cache->buf, &img[j]);
 				if (!lib_name) {
@@ -561,10 +562,16 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 				RZ_FREE(lib_name);
 				deps[j]++;
 
-				if (extras && depArray) {
-					ut32 k;
-					for (k = extras[j].dependentsStartArrayIndex; depArray[k] != 0xffff; k++) {
-						ut16 dep_index = depArray[k] & 0x7fff;
+				if (extras && dep_array) {
+					for (ut32 k = extras[j].dependentsStartArrayIndex;; k++) {
+						if (k >= dep_array_count) {
+							RZ_LOG_ERROR("dyldcache: depList overflow\n");
+							break;
+						}
+						if (dep_array[k] == 0xffff) {
+							break;
+						}
+						ut16 dep_index = dep_array[k] & 0x7fff;
 						deps[dep_index]++;
 
 						char *dep_name = get_lib_name(cache->buf, &img[dep_index]);
@@ -582,11 +589,11 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			}
 
 			ht_pu_free(path_to_idx);
-			RZ_FREE(depArray);
+			RZ_FREE(dep_array);
 			RZ_FREE(extras);
 		}
 
-		for (j = 0; j < hdr->imagesCount; j++) {
+		for (ut32 j = 0; j < hdr->imagesCount; j++) {
 			if (deps && !deps[j]) {
 				continue;
 			}
@@ -640,7 +647,7 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 			}
 		}
 	next:
-		RZ_FREE(depArray);
+		RZ_FREE(dep_array);
 		RZ_FREE(extras);
 		RZ_FREE(img);
 	}
