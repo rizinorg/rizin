@@ -1146,7 +1146,6 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr
 			// TODO: The following is only an educated guess. There is actually more involved in calculating the
 			//       CFA correctly.
 			kind = LOCATION_CFA;
-			offset += ctx->analysis->bits / 8; // guessed return address size
 		} break;
 		default:
 			break;
@@ -1645,7 +1644,7 @@ static bool apply_fcn_variable(FcnVariableCtx *ctx, const char *var_name, char *
 		rz_flag_set_next(ctx->flags, global_name, offset, 4);
 		free(global_name);
 	} else {
-		if (ctx->fcn) {
+		if (!ctx->fcn) {
 			goto beach;
 		}
 		RzAnalysisVar var;
@@ -1676,13 +1675,18 @@ beach:
 
 static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
 	const char *fmt = kind == VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
+	const char *var_fmt = kind == VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
+
 	char *var_names_key = rz_str_newf(fmt, ctx->func_sname);
 	char *vars = sdb_get(ctx->dwarf_sdb, var_names_key, NULL);
 	free(var_names_key);
 
+	if (kind == FORMAL_PARAMETER && RZ_STR_ISNOTEMPTY(vars) && strlen(vars) >= 1) {
+		rz_analysis_function_delete_arg_vars(ctx->fcn);
+	}
+
 	char *var_name;
 	sdb_aforeach(var_name, vars) {
-		const char *var_fmt = kind == VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
 		char *var_key = rz_str_newf(var_fmt, ctx->func_sname, var_name);
 		char *var_data = sdb_get(ctx->dwarf_sdb, var_key, NULL);
 		free(var_key);
@@ -1723,21 +1727,18 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
 			char *real_name_key = rz_str_newf("fcn.%s.name", func_sname);
-			char *real_name = sdb_get(dwarf_sdb, real_name_key, 0);
+			const char *real_name = sdb_const_get(dwarf_sdb, real_name_key, 0);
 			free(real_name_key);
 
 			char *dwf_name = rz_str_newf("dbg.%s", real_name);
-			free(real_name);
-
 			rz_analysis_function_rename(fcn, dwf_name);
 			free(dwf_name);
 
-			char *tmp = rz_str_newf("fcn.%s.sig", func_sname);
-			char *fcnstr = sdb_get(dwarf_sdb, tmp, 0);
-			free(tmp);
+			char *sig_key = rz_str_newf("fcn.%s.sig", func_sname);
+			const char *fcnstr = sdb_const_get(dwarf_sdb, sig_key, 0);
+			free(sig_key);
 			/* Apply signature as a comment at a function address */
 			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
-			free(fcnstr);
 		}
 
 		FcnVariableCtx ctx = {
