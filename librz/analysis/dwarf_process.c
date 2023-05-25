@@ -1267,85 +1267,104 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 	return 0;
 }
 
-static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/ *variables, Sdb *sdb) {
+static inline char *sdb_build_var_data(Variable *var) {
+	if (!var->location) {
+		/* NULL location probably means optimized out, maybe put a comment there */
+		return NULL;
+	}
+	switch (var->location->kind) {
+	case LOCATION_BP:
+	case LOCATION_CFA: {
+		/* value = "type, storage, additional info based on storage (offset)" */
+		return rz_str_newf("%s,%" PFMT64d ",%s",
+			var->location->kind == LOCATION_CFA ? "c" : "b",
+			var->location->offset, var->type);
+	} break;
+	case LOCATION_SP: {
+		/* value = "type, storage, additional info based on storage (offset)" */
+		return rz_str_newf("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
+	} break;
+	case LOCATION_GLOBAL: {
+		/* value = "type, storage, additional info based on storage (address)" */
+		return rz_str_newf("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
+	} break;
+	case LOCATION_REGISTER: {
+		/* value = "type, storage, additional info based on storage (register name)" */
+		return rz_str_newf("%s,%s,%s", "r", var->location->reg_name, var->type);
+	} break;
+	default:
+		/* else location is unknown (optimized out), skip the var */
+		break;
+	}
+	return NULL;
+}
+
+static inline void sdb_save_dwarf_fcn_vars(Sdb *sdb, RzList /*<Variable *>*/ *vars, const char *kind) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	RzListIter *iter;
+	Variable *var;
+	rz_list_foreach (vars, iter, var) {
+		char *val = sdb_build_var_data(var);
+		if (!val) {
+			continue;
+		}
+		char *fmt = rz_str_newf("%s.%s", kind, var->name);
+		char *key = rz_str_newf(fmt, var->name);
+		sdb_set_owned(sdb, key, val, 0);
+		free(key);
+		free(fmt);
+
+		if (iter->n) {
+			rz_strbuf_appendf(sb, "%s,", var->name);
+		} else {
+			rz_strbuf_append(sb, var->name);
+		}
+	}
+	char *key = rz_str_newf("%ss", kind);
+	sdb_set_owned(sdb, key, rz_strbuf_drain(sb), 0);
+	free(key);
+}
+
+static void
+sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/ *variables, Sdb *sdb) {
 	char *sname = rz_str_sanitize_sdb_key(dwarf_fcn->name);
 	sdb_set(sdb, sname, "fcn", 0);
 
 	char *addr_key = rz_str_newf("fcn.%s.addr", sname);
 	char *addr_val = rz_str_newf("0x%" PFMT64x "", dwarf_fcn->addr);
-	sdb_set(sdb, addr_key, addr_val, 0);
+	sdb_set_owned(sdb, addr_key, addr_val, 0);
 	free(addr_key);
-	free(addr_val);
 
 	/* so we can have name without sanitization */
 	char *name_key = rz_str_newf("fcn.%s.name", sname);
-	char *name_val = rz_str_newf("%s", dwarf_fcn->name);
-	sdb_set(sdb, name_key, name_val, 0);
+	sdb_set(sdb, name_key, dwarf_fcn->name, 0);
 	free(name_key);
-	free(name_val);
 
 	char *signature_key = rz_str_newf("fcn.%s.sig", sname);
 	sdb_set(sdb, signature_key, dwarf_fcn->signature, 0);
 	free(signature_key);
 
-	RzStrBuf vars;
-	rz_strbuf_init(&vars);
-	RzStrBuf args;
-	rz_strbuf_init(&args);
+	RzList *args = rz_list_new();
+	RzList *vars = rz_list_new();
 	RzListIter *iter;
 	Variable *var;
 	rz_list_foreach (variables, iter, var) {
-		if (!var->location) {
-			/* NULL location probably means optimized out, maybe put a comment there */
-			continue;
+		if (var->kind == FORMAL_PARAMETER) {
+			rz_list_append(args, var);
+		} else {
+			rz_list_append(vars, var);
 		}
-		char *val = NULL;
-		switch (var->location->kind) {
-		case LOCATION_BP:
-		case LOCATION_CFA: {
-			/* value = "type, storage, additional info based on storage (offset)" */
-			val = rz_str_newf("%s,%" PFMT64d ",%s",
-				var->location->kind == LOCATION_CFA ? "c" : "b",
-				var->location->offset, var->type);
-		} break;
-		case LOCATION_SP: {
-			/* value = "type, storage, additional info based on storage (offset)" */
-			val = rz_str_newf("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
-		} break;
-		case LOCATION_GLOBAL: {
-			/* value = "type, storage, additional info based on storage (address)" */
-			val = rz_str_newf("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
-		} break;
-		case LOCATION_REGISTER: {
-			/* value = "type, storage, additional info based on storage (register name)" */
-			val = rz_str_newf("%s,%s,%s", "r", var->location->reg_name, var->type);
-		} break;
-		default:
-			/* else location is unknown (optimized out), skip the var */
-			break;
-		}
-
-		rz_strbuf_appendf(var->kind == FORMAL_PARAMETER ? &args : &vars, "%s,", var->name);
-		const char *fmt = var->kind == FORMAL_PARAMETER ? "fcn.%s.arg.%s" : "fcn.%s.var.%s";
-		char *key = rz_str_newf(fmt, sname, var->name);
-		sdb_set(sdb, key, val, 0);
-		free(key);
-		free(val);
 	}
-	if (vars.len > 0) { /* remove the extra , */
-		rz_strbuf_slice(&vars, 0, vars.len - 1); /* leaks? */
-	}
-	char *vars_key = rz_str_newf("fcn.%s.vars", sname);
-	char *vars_val = rz_strbuf_drain_nofree(&vars);
-	sdb_set_owned(sdb, vars_key, vars_val, 0);
-	char *args_key = rz_str_newf("fcn.%s.args", sname);
-	char *args_val = rz_strbuf_drain_nofree(&args);
-	sdb_set_owned(sdb, args_key, args_val, 0);
 
-	free(vars_key);
-	free(vars_val);
-	rz_strbuf_fini(&vars);
-	rz_strbuf_fini(&args);
+	char *prefix = rz_str_newf("fcn.%s.arg", sname);
+	sdb_save_dwarf_fcn_vars(sdb, args, prefix);
+	rz_list_free(args);
+	free(prefix);
+	prefix = rz_str_newf("fcn.%s.var", sname);
+	sdb_save_dwarf_fcn_vars(sdb, vars, prefix);
+	rz_list_free(vars);
+	free(prefix);
+
 	free(sname);
 }
 
@@ -1659,19 +1678,21 @@ static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
 	const char *fmt = kind == VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
 	char *var_names_key = rz_str_newf(fmt, ctx->func_sname);
 	char *vars = sdb_get(ctx->dwarf_sdb, var_names_key, NULL);
+	free(var_names_key);
+
 	char *var_name;
 	sdb_aforeach(var_name, vars) {
 		const char *var_fmt = kind == VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
 		char *var_key = rz_str_newf(var_fmt, ctx->func_sname, var_name);
 		char *var_data = sdb_get(ctx->dwarf_sdb, var_key, NULL);
+		free(var_key);
+
 		if (RZ_STR_ISNOTEMPTY(var_data)) {
 			apply_fcn_variable(ctx, var_name, var_data, kind);
 		}
-		free(var_key);
 		free(var_data);
 		sdb_aforeach_next(var_name);
 	}
-	free(var_names_key);
 	free(vars);
 }
 

@@ -176,8 +176,8 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	check_kv("fcn.Dog::walk__.addr", "0x401380");
 	check_kv("fcn.Dog::walk__.sig", "int Dog::walk()(struct Dog * this);");
 	check_kv("fcn.Dog::walk__.name", "Dog::walk()");
-	check_kv("fcn.Mammal::walk__.vars", "this");
-	check_kv("fcn.Mammal::walk__.var.this", "b,-8,struct Mammal *");
+	check_kv("fcn.Mammal::walk__.args", "this");
+	check_kv("fcn.Mammal::walk__.arg.this", "b,-8,struct Mammal *");
 
 	check_kv("main", "fcn");
 	check_kv("fcn.main.addr", "0x401160");
@@ -306,7 +306,8 @@ static bool test_dwarf_function_parsing_rust(void) {
 
 	check_kv("bubble_sort__str_", "fcn");
 	check_kv("bubble_sort_i32_", "fcn");
-	check_kv("fcn.bubble_sort_i32_.vars", "values,n,swapped,iter,__next,val,i");
+	check_kv("fcn.bubble_sort_i32_.args", "values");
+	check_kv("fcn.bubble_sort_i32_.vars", "n,swapped,iter,__next,val,i");
 	check_kv("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
 	check_kv("fcn.bubble_sort_i32_.var.i", "s,176,usize");
 	check_kv("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
