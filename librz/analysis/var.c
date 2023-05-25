@@ -1396,20 +1396,31 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		free(vartype);
 	}
 
+	RzList *args = rz_list_new();
 	rz_list_foreach (cache->stackvars, iter, var) {
-		if (rz_analysis_var_is_arg(var)) {
-			if (!rz_list_empty(cache->regvars) && comma) {
-				rz_strbuf_append(buf, ", ");
-				comma = false;
-			}
-			char *vartype = rz_type_as_string(analysis->typedb, var->type);
-			tmp_len = strlen(vartype);
-			rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
-				tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-				var->name, iter->n ? ", " : "");
-			free(vartype);
+		if (!rz_analysis_var_is_arg(var)) {
+			continue;
+		}
+
+		if (var->kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
+			rz_list_prepend(args, var);
+		} else {
+			rz_list_append(args, var);
 		}
 	}
+	rz_list_foreach (args, iter, var) {
+		if (!rz_list_empty(cache->regvars) && comma) {
+			rz_strbuf_append(buf, ", ");
+			comma = false;
+		}
+		char *vartype = rz_type_as_string(analysis->typedb, var->type);
+		tmp_len = strlen(vartype);
+		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
+			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
+			var->name, iter->n ? ", " : "");
+		free(vartype);
+	}
+	rz_list_free(args);
 
 beach:
 	rz_strbuf_append(buf, ");");

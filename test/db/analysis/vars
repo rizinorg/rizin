@@ -543,22 +543,24 @@ EOF
 EXPECT=<<EOF
             ;-- varfunc:
 / dbg.varfunc ();
-|           ; var int lightbulb @ stack - 0x18
-|           ; var int sun @ stack - 0x14
-|           ; var int last @ stack - 0x10
-|           ; var int chance @ stack - 0xc
+|           ; var int lightbulb @ stack - 0x20
+|           ; var int sun @ stack - 0x1c
+|           ; var int last @ stack - 0x18
+|           ; var int chance @ stack - 0x14
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_ch @ stack - 0xc
 |           0x0000113c      push  rbp
 |           0x0000113d      mov   rbp, rsp
 |           0x00001140      sub   rsp, 0x10
-|           0x00001144      mov   dword [lightbulb], 1
-|           0x0000114b      mov   dword [sun], 2
-|           0x00001152      mov   dword [last], 3
-|           0x00001159      mov   dword [chance], 4
+|           0x00001144      mov   dword [last], 1
+|           0x0000114b      mov   dword [chance], 2
+|           0x00001152      mov   dword [var_10h], 3
+|           0x00001159      mov   dword [var_ch], 4
 |           0x00001160      mov   eax, 0
 |           0x00001165      call  dbg.leaffunc
-|           0x0000116a      mov   eax, dword [chance]
-|           0x0000116d      mov   dword [sun], eax
-|           0x00001170      mov   eax, dword [lightbulb]
+|           0x0000116a      mov   eax, dword [var_ch]
+|           0x0000116d      mov   dword [chance], eax
+|           0x00001170      mov   eax, dword [last]
 |           0x00001173      leave
 \           0x00001174      ret
 EOF
@@ -590,19 +592,21 @@ EOF
 EXPECT=<<EOF
             ;-- varfunc:
 / dbg.varfunc ();
-|           ; var int lightbulb @ stack - 0x10
-|           ; var int sun @ stack - 0xc
-|           ; var int last @ stack - 0x8
-|           ; var int chance @ stack - 0x4
+|           ; var int lightbulb @ stack - 0x18
+|           ; var int sun @ stack - 0x14
+|           ; var int last @ stack - 0x10
+|           ; var int chance @ stack - 0xc
+|           ; var int64_t var_8h @ stack - 0x8
+|           ; var int64_t var_4h @ stack - 0x4
 |           0x00001137      sub   rsp, 0x10
 |           0x0000113b      mov   dword [rsp], 1
-|           0x00001142      mov   dword [sun], 2
-|           0x0000114a      mov   dword [last], 3
-|           0x00001152      mov   dword [chance], 4
+|           0x00001142      mov   dword [chance], 2
+|           0x0000114a      mov   dword [var_8h], 3
+|           0x00001152      mov   dword [var_4h], 4
 |           0x0000115a      mov   eax, 0
 |           0x0000115f      call  dbg.leaffunc
-|           0x00001164      mov   eax, dword [chance]
-|           0x00001168      mov   dword [sun], eax
+|           0x00001164      mov   eax, dword [var_4h]
+|           0x00001168      mov   dword [chance], eax
 |           0x0000116c      mov   eax, dword [rsp]
 |           0x0000116f      add   rsp, 0x10
 \           0x00001173      ret
