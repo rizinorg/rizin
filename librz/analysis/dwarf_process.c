@@ -1325,7 +1325,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/
 		}
 
 		rz_strbuf_appendf(var->kind == FORMAL_PARAMETER ? &args : &vars, "%s,", var->name);
-		const char *fmt = var->kind == FORMAL_PARAMETER ? "fcn.%s.args" : "fcn.%s.vars";
+		const char *fmt = var->kind == FORMAL_PARAMETER ? "fcn.%s.arg.%s" : "fcn.%s.var.%s";
 		char *key = rz_str_newf(fmt, sname, var->name);
 		sdb_set(sdb, key, val, 0);
 		free(key);
@@ -1592,6 +1592,77 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp(v, "fcn");
 }
 
+typedef struct {
+	RzAnalysis *analysis;
+	RzAnalysisFunction *fcn;
+	RzFlag *flags;
+	Sdb *dwarf_sdb;
+	char *func_sname;
+} FcnVariableCtx;
+
+static bool apply_fcn_variable(FcnVariableCtx *ctx, const char *var_name, char *var_data, VariableKind var_kind) {
+	char *extra = NULL;
+	char *kind = sdb_anext(var_data, &extra);
+	char *type = NULL;
+	extra = sdb_anext(extra, &type);
+	if (!extra) {
+		return false;
+	}
+	RzType *ttype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
+	if (!ttype) {
+		return false;
+	}
+
+	st64 offset = 0;
+	if (*kind != 'r') {
+		offset = strtol(extra, NULL, 10);
+	}
+	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
+		char *global_name = rz_str_newf("global_%s", var_name);
+		rz_flag_unset_off(ctx->flags, offset);
+		rz_flag_set_next(ctx->flags, global_name, offset, 4);
+		free(global_name);
+	} else if (*kind == 'r' && ctx->fcn) {
+		RzRegItem *i = rz_reg_get(ctx->analysis->reg, extra, -1);
+		if (!i) {
+			return false;
+		}
+		RzAnalysisVarStorage stor;
+		rz_analysis_var_storage_init_reg(&stor, extra);
+		rz_analysis_function_set_var(ctx->fcn, &stor, ttype, 4, var_name);
+	} else if (ctx->fcn) { /* kind == 'b' || kind == 's' || kind == 'c' (stack variables) */
+		RzAnalysisVarStorage stor;
+		RzStackAddr addr = offset;
+		if (*kind == 'b') {
+			addr -= ctx->fcn->bp_off;
+		}
+		rz_analysis_var_storage_init_stack(&stor, addr);
+		rz_analysis_function_set_var(ctx->fcn, &stor, ttype, 4, var_name);
+	}
+	rz_type_free(ttype);
+	return true;
+}
+
+static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
+	const char *fmt = kind == VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
+	char *var_names_key = rz_str_newf(fmt, ctx->func_sname);
+	char *vars = sdb_get(ctx->dwarf_sdb, var_names_key, NULL);
+	char *var_name;
+	sdb_aforeach(var_name, vars) {
+		const char *var_fmt = kind == VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
+		char *var_key = rz_str_newf(var_fmt, ctx->func_sname, var_name);
+		char *var_data = sdb_get(ctx->dwarf_sdb, var_key, NULL);
+		if (RZ_STR_ISNOTEMPTY(var_data)) {
+			apply_fcn_variable(ctx, var_name, var_data, kind);
+		}
+		free(var_key);
+		free(var_data);
+		sdb_aforeach_next(var_name);
+	}
+	free(var_names_key);
+	free(vars);
+}
+
 /**
  * \brief Use parsed DWARF function info from Sdb in the function analysis
  *  XXX right now we only save parsed name and variables, we can't use signature now
@@ -1635,60 +1706,16 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
 			free(fcnstr);
 		}
-		char *var_names_key = rz_str_newf("fcn.%s.vars", func_sname);
-		char *vars = sdb_get(dwarf_sdb, var_names_key, NULL);
-		char *var_name;
-		sdb_aforeach(var_name, vars) {
-			char *var_key = rz_str_newf("fcn.%s.var.%s", func_sname, var_name);
-			char *var_data = sdb_get(dwarf_sdb, var_key, NULL);
-			if (!var_data) {
-				goto loop_end;
-			}
-			char *extra = NULL;
-			char *kind = sdb_anext(var_data, &extra);
-			char *type = NULL;
-			extra = sdb_anext(extra, &type);
-			if (!extra) {
-				goto loop_end;
-			}
-			RzType *ttype = rz_type_parse_string_single(analysis->typedb->parser, type, NULL);
-			if (!ttype) {
-				goto loop_end;
-			}
-			st64 offset = 0;
-			if (*kind != 'r') {
-				offset = strtol(extra, NULL, 10);
-			}
-			if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
-				char *global_name = rz_str_newf("global_%s", var_name);
-				rz_flag_unset_off(flags, offset);
-				rz_flag_set_next(flags, global_name, offset, 4);
-				free(global_name);
-			} else if (*kind == 'r' && fcn) {
-				RzRegItem *i = rz_reg_get(analysis->reg, extra, -1);
-				if (!i) {
-					goto loop_end;
-				}
-				RzAnalysisVarStorage stor;
-				rz_analysis_var_storage_init_reg(&stor, extra);
-				rz_analysis_function_set_var(fcn, &stor, ttype, 4, var_name);
-			} else if (fcn) { /* kind == 'b' || kind == 's' || kind == 'c' (stack variables) */
-				RzAnalysisVarStorage stor;
-				RzStackAddr addr = offset;
-				if (*kind == 'b') {
-					addr -= fcn->bp_off;
-				}
-				rz_analysis_var_storage_init_stack(&stor, addr);
-				rz_analysis_function_set_var(fcn, &stor, ttype, 4, var_name);
-			}
-			rz_type_free(ttype);
-			free(var_key);
-			free(var_data);
-		loop_end:
-			sdb_aforeach_next(var_name);
-		}
-		free(var_names_key);
-		free(vars);
+
+		FcnVariableCtx ctx = {
+			.analysis = analysis,
+			.flags = flags,
+			.dwarf_sdb = dwarf_sdb,
+			.func_sname = func_sname,
+			.fcn = fcn,
+		};
+		apply_fcn_variables(&ctx, VARIABLE);
+		apply_fcn_variables(&ctx, FORMAL_PARAMETER);
 	}
 	ls_free(sdb_list);
 }
