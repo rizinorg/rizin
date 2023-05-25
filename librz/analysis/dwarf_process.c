@@ -49,6 +49,7 @@ typedef struct dwarf_var_location_t {
 } VariableLocation;
 
 typedef enum variable_kind_t {
+	INVALID = 0,
 	FORMAL_PARAMETER,
 	VARIABLE,
 	UNSPECIFIED_PARAMETERS,
@@ -1617,30 +1618,41 @@ static bool apply_fcn_variable(FcnVariableCtx *ctx, const char *var_name, char *
 	if (*kind != 'r') {
 		offset = strtol(extra, NULL, 10);
 	}
+
+	bool ret = false;
 	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
 		char *global_name = rz_str_newf("global_%s", var_name);
 		rz_flag_unset_off(ctx->flags, offset);
 		rz_flag_set_next(ctx->flags, global_name, offset, 4);
 		free(global_name);
-	} else if (*kind == 'r' && ctx->fcn) {
-		RzRegItem *i = rz_reg_get(ctx->analysis->reg, extra, -1);
-		if (!i) {
-			return false;
+	} else {
+		if (ctx->fcn) {
+			goto beach;
 		}
-		RzAnalysisVarStorage stor;
-		rz_analysis_var_storage_init_reg(&stor, extra);
-		rz_analysis_function_set_var(ctx->fcn, &stor, ttype, 4, var_name);
-	} else if (ctx->fcn) { /* kind == 'b' || kind == 's' || kind == 'c' (stack variables) */
-		RzAnalysisVarStorage stor;
-		RzStackAddr addr = offset;
-		if (*kind == 'b') {
-			addr -= ctx->fcn->bp_off;
+		RzAnalysisVar var;
+		memset(&var, 0, sizeof(RzAnalysisVar));
+		var.name = strdup(var_name);
+		var.type = ttype;
+		var.kind = (RzAnalysisVarKind)var_kind;
+		if (*kind == 'r') {
+			RzRegItem *i = rz_reg_get(ctx->analysis->reg, extra, -1);
+			if (!i) {
+				goto beach;
+			}
+			rz_analysis_var_storage_init_reg(&var.storage, extra);
+		} else { /* kind == 'b' || kind == 's' || kind == 'c' (stack variables) */
+			RzStackAddr addr = offset;
+			if (*kind == 'b') {
+				addr -= ctx->fcn->bp_off;
+			}
+			rz_analysis_var_storage_init_stack(&var.storage, addr);
 		}
-		rz_analysis_var_storage_init_stack(&stor, addr);
-		rz_analysis_function_set_var(ctx->fcn, &stor, ttype, 4, var_name);
+		rz_analysis_function_add_var(ctx->fcn, &var, 4);
+		ret = true;
 	}
+beach:
 	rz_type_free(ttype);
-	return true;
+	return ret;
 }
 
 static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
@@ -1714,8 +1726,8 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			.func_sname = func_sname,
 			.fcn = fcn,
 		};
-		apply_fcn_variables(&ctx, VARIABLE);
 		apply_fcn_variables(&ctx, FORMAL_PARAMETER);
+		apply_fcn_variables(&ctx, VARIABLE);
 	}
 	ls_free(sdb_list);
 }
