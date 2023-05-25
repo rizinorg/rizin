@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2012-2020 houndthe <cgkajm@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_strbuf.h"
 #include <rz_util.h>
 #include <rz_type.h>
 #include <sdb.h>
@@ -47,10 +48,17 @@ typedef struct dwarf_var_location_t {
 	const char *reg_name; /* string literal */
 } VariableLocation;
 
+typedef enum variable_kind_t {
+	FORMAL_PARAMETER,
+	VARIABLE,
+	UNSPECIFIED_PARAMETERS,
+} VariableKind;
+
 typedef struct dwarf_variable_t {
 	VariableLocation *location;
 	char *name;
 	char *type;
+	VariableKind kind;
 } Variable;
 
 static void variable_free(Variable *var) {
@@ -1175,8 +1183,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 		bool get_linkage_name = prefer_linkage_name(ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
-		size_t j;
-		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
+		for (size_t j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			const char *name = NULL;
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
@@ -1215,6 +1222,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 					}
 				}
 				if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
+					var->kind = FORMAL_PARAMETER;
 					/* arguments sometimes have only type, create generic argX */
 					if (type) {
 						if (!name) {
@@ -1231,6 +1239,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 					}
 					argNumber++;
 				} else { /* DW_TAG_variable */
+					var->kind = VARIABLE;
 					if (name && type) {
 						var->name = strdup(name);
 						var->type = type_as_string(ctx->analysis->typedb, type);
@@ -1280,6 +1289,8 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/
 
 	RzStrBuf vars;
 	rz_strbuf_init(&vars);
+	RzStrBuf args;
+	rz_strbuf_init(&args);
 	RzListIter *iter;
 	Variable *var;
 	rz_list_foreach (variables, iter, var) {
@@ -1287,49 +1298,36 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/
 			/* NULL location probably means optimized out, maybe put a comment there */
 			continue;
 		}
-		char *key = NULL;
 		char *val = NULL;
 		switch (var->location->kind) {
 		case LOCATION_BP:
 		case LOCATION_CFA: {
 			/* value = "type, storage, additional info based on storage (offset)" */
-
-			rz_strbuf_appendf(&vars, "%s,", var->name);
-			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
 			val = rz_str_newf("%s,%" PFMT64d ",%s",
 				var->location->kind == LOCATION_CFA ? "c" : "b",
 				var->location->offset, var->type);
-			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_SP: {
 			/* value = "type, storage, additional info based on storage (offset)" */
-
-			rz_strbuf_appendf(&vars, "%s,", var->name);
-			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
 			val = rz_str_newf("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
-			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_GLOBAL: {
 			/* value = "type, storage, additional info based on storage (address)" */
-
-			rz_strbuf_appendf(&vars, "%s,", var->name);
-			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
 			val = rz_str_newf("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
-			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_REGISTER: {
 			/* value = "type, storage, additional info based on storage (register name)" */
-
-			rz_strbuf_appendf(&vars, "%s,", var->name);
-			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
 			val = rz_str_newf("%s,%s,%s", "r", var->location->reg_name, var->type);
-			sdb_set(sdb, key, val, 0);
 		} break;
-
 		default:
 			/* else location is unknown (optimized out), skip the var */
 			break;
 		}
+
+		rz_strbuf_appendf(var->kind == FORMAL_PARAMETER ? &args : &vars, "%s,", var->name);
+		const char *fmt = var->kind == FORMAL_PARAMETER ? "fcn.%s.args" : "fcn.%s.vars";
+		char *key = rz_str_newf(fmt, sname, var->name);
+		sdb_set(sdb, key, val, 0);
 		free(key);
 		free(val);
 	}
@@ -1337,11 +1335,16 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/
 		rz_strbuf_slice(&vars, 0, vars.len - 1); /* leaks? */
 	}
 	char *vars_key = rz_str_newf("fcn.%s.vars", sname);
-	char *vars_val = rz_str_newf("%s", rz_strbuf_get(&vars));
-	sdb_set(sdb, vars_key, vars_val, 0);
+	char *vars_val = rz_strbuf_drain_nofree(&vars);
+	sdb_set_owned(sdb, vars_key, vars_val, 0);
+	char *args_key = rz_str_newf("fcn.%s.args", sname);
+	char *args_val = rz_strbuf_drain_nofree(&args);
+	sdb_set_owned(sdb, args_key, args_val, 0);
+
 	free(vars_key);
 	free(vars_val);
 	rz_strbuf_fini(&vars);
+	rz_strbuf_fini(&args);
 	free(sname);
 }
 
