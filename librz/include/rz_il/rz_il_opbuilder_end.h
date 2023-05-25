@@ -129,38 +129,4 @@
 #undef JMP
 #undef GOTO
 
-#undef SINGLEV
-#undef DOUBLEV
-#undef FLOATV
-#undef FLOATV16
-#undef FLOATV32
-#undef FLOATV64
-#undef FLOATV128
-
-#undef FBITS
-#undef IS_FINITE
-#undef IS_NAN
-#undef IS_INF
-#undef IS_FZERO
-#undef IS_FNEG
-#undef IS_FPOS
-#undef FNEG
-#undef FABS
-#undef FSUCC
-#undef FPRED
-#undef FLOAT_TO_UN
-#undef FLOAT_TO_SN
-#undef UN_TO_FLOAT
-#undef SN_TO_FLOAT
-#undef FCONVERT_TO
-#undef FORDER
-#undef FROUND
-#undef FSQRT
-#undef FADD
-#undef FSUB
-#undef FMUL
-#undef FDIV
-#undef FMOD
-#undef FMAD
-
 #undef RZ_IL_OPBUILDER_BEGIN_H

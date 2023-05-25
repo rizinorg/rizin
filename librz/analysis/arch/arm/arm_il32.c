@@ -29,102 +29,54 @@ static const char *regs_bound_32[] = {
  */
 static const char *reg_var_name(arm_reg reg) {
 	switch (reg) {
-	case ARM_REG_LR:
-		return "lr";
-	case ARM_REG_SP:
-		return "sp";
-	case ARM_REG_D0:
-		return "d0";
-	case ARM_REG_D1:
-		return "d1";
-	case ARM_REG_D2:
-		return "d2";
-	case ARM_REG_D3:
-		return "d3";
-	case ARM_REG_D4:
-		return "d4";
-	case ARM_REG_D5:
-		return "d5";
-	case ARM_REG_D6:
-		return "d6";
-	case ARM_REG_D7:
-		return "d7";
-	case ARM_REG_D8:
-		return "d8";
-	case ARM_REG_D9:
-		return "d9";
-	case ARM_REG_D10:
-		return "d10";
-	case ARM_REG_D11:
-		return "d11";
-	case ARM_REG_D12:
-		return "d12";
-	case ARM_REG_D13:
-		return "d13";
-	case ARM_REG_D14:
-		return "d14";
-	case ARM_REG_D15:
-		return "d15";
-	case ARM_REG_D16:
-		return "d16";
-	case ARM_REG_D17:
-		return "d17";
-	case ARM_REG_D18:
-		return "d18";
-	case ARM_REG_D19:
-		return "d19";
-	case ARM_REG_D20:
-		return "d20";
-	case ARM_REG_D21:
-		return "d21";
-	case ARM_REG_D22:
-		return "d22";
-	case ARM_REG_D23:
-		return "d23";
-	case ARM_REG_D24:
-		return "d24";
-	case ARM_REG_D25:
-		return "d25";
-	case ARM_REG_D26:
-		return "d26";
-	case ARM_REG_D27:
-		return "d27";
-	case ARM_REG_D28:
-		return "d28";
-	case ARM_REG_D29:
-		return "d29";
-	case ARM_REG_D30:
-		return "d30";
-	case ARM_REG_D31:
-		return "d31";
-	case ARM_REG_R0:
-		return "r0";
-	case ARM_REG_R1:
-		return "r1";
-	case ARM_REG_R2:
-		return "r2";
-	case ARM_REG_R3:
-		return "r3";
-	case ARM_REG_R4:
-		return "r4";
-	case ARM_REG_R5:
-		return "r5";
-	case ARM_REG_R6:
-		return "r6";
-	case ARM_REG_R7:
-		return "r7";
-	case ARM_REG_R8:
-		return "r8";
-	case ARM_REG_R9:
-		return "r9";
-	case ARM_REG_R10:
-		return "r10";
-	case ARM_REG_R11:
-		return "r11";
-	case ARM_REG_R12:
-		return "r12";
-	default:
-		return NULL;
+	case ARM_REG_LR: return "lr";
+	case ARM_REG_SP: return "sp";
+	case ARM_REG_D0: return "d0";
+	case ARM_REG_D1: return "d1";
+	case ARM_REG_D2: return "d2";
+	case ARM_REG_D3: return "d3";
+	case ARM_REG_D4: return "d4";
+	case ARM_REG_D5: return "d5";
+	case ARM_REG_D6: return "d6";
+	case ARM_REG_D7: return "d7";
+	case ARM_REG_D8: return "d8";
+	case ARM_REG_D9: return "d9";
+	case ARM_REG_D10: return "d10";
+	case ARM_REG_D11: return "d11";
+	case ARM_REG_D12: return "d12";
+	case ARM_REG_D13: return "d13";
+	case ARM_REG_D14: return "d14";
+	case ARM_REG_D15: return "d15";
+	case ARM_REG_D16: return "d16";
+	case ARM_REG_D17: return "d17";
+	case ARM_REG_D18: return "d18";
+	case ARM_REG_D19: return "d19";
+	case ARM_REG_D20: return "d20";
+	case ARM_REG_D21: return "d21";
+	case ARM_REG_D22: return "d22";
+	case ARM_REG_D23: return "d23";
+	case ARM_REG_D24: return "d24";
+	case ARM_REG_D25: return "d25";
+	case ARM_REG_D26: return "d26";
+	case ARM_REG_D27: return "d27";
+	case ARM_REG_D28: return "d28";
+	case ARM_REG_D29: return "d29";
+	case ARM_REG_D30: return "d30";
+	case ARM_REG_D31: return "d31";
+	case ARM_REG_R0: return "r0";
+	case ARM_REG_R1: return "r1";
+	case ARM_REG_R2: return "r2";
+	case ARM_REG_R3: return "r3";
+	case ARM_REG_R4: return "r4";
+	case ARM_REG_R5: return "r5";
+	case ARM_REG_R6: return "r6";
+	case ARM_REG_R7: return "r7";
+	case ARM_REG_R8: return "r8";
+	case ARM_REG_R9: return "r9";
+	case ARM_REG_R10: return "r10";
+	case ARM_REG_R11: return "r11";
+	case ARM_REG_R12: return "r12";
+	default: return NULL;
 	}
 }
 
@@ -3253,8 +3205,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_TBH:
 		return tbb(insn, is_thumb);
 
-		// --
-		// Advanced SIMD and Floating-point
+	// --
+	// Advanced SIMD and Floating-point
 	case ARM_INS_VSTMIA:
 	case ARM_INS_VSTMDB:
 	case ARM_INS_VPUSH:
