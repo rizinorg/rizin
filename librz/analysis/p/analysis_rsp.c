@@ -1,9 +1,6 @@
 // SPDX-FileCopyrightText: 2016-2017 bobby.smiles32 <bobby.smiles32@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /*
- * TODO: finish esil support of the non vector instructions
- * TODO: implement vector instruction using custom esil commands
- * (will be easier than pure esil approach)
  * TODO: refactor code to simplify per opcode analysis
  */
 
@@ -18,7 +15,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	int i;
 	typedef struct {
 		RzAnalysisValue *value;
-		char esil[32];
 	} ParsedOperands;
 
 	ParsedOperands parsed_operands[RSP_MAX_OPNDS];
@@ -33,7 +29,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->size = 4;
 	op->addr = addr;
-	rz_strbuf_set(&op->esil, "TODO");
 
 	iw = rz_read_ble32(b, analysis->big_endian);
 	rz_instr = rsp_instruction_decode(addr, iw);
@@ -41,25 +36,19 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	/* parse operands */
 	for (i = 0; i < rz_instr.noperands; i++) {
 		parsed_operands[i].value = rz_analysis_value_new();
-		parsed_operands[i].esil[0] = '\0';
 
 		switch (rz_instr.operands[i].type) {
 		case RSP_OPND_GP_REG:
-			snprintf(parsed_operands[i].esil, sizeof(parsed_operands[i].esil), "%s", rsp_gp_reg_soft_names[rz_instr.operands[i].u]);
 			parsed_operands[i].value->reg = rz_reg_get(analysis->reg, rsp_gp_reg_soft_names[rz_instr.operands[i].u], RZ_REG_TYPE_GPR);
 			break;
 		case RSP_OPND_ZIMM:
 		case RSP_OPND_SHIFT_AMOUNT:
-			snprintf(parsed_operands[i].esil, sizeof(parsed_operands[i].esil), "%" PFMT64d, rz_instr.operands[i].u);
 			parsed_operands[i].value->imm = op->val = rz_instr.operands[i].u;
 			break;
 		case RSP_OPND_SIMM:
-			snprintf(parsed_operands[i].esil, sizeof(parsed_operands[i].esil), "%" PFMT64d, rz_instr.operands[i].s);
 			parsed_operands[i].value->imm = op->val = rz_instr.operands[i].s;
 			break;
 		case RSP_OPND_BASE_OFFSET:
-			snprintf(parsed_operands[i].esil, sizeof(parsed_operands[i].esil),
-				"%" PFMT64d ",%s,+", rz_instr.operands[i].s, rsp_gp_reg_soft_names[rz_instr.operands[i].u]);
 			parsed_operands[i].value->reg = rz_reg_get(analysis->reg, rsp_gp_reg_soft_names[rz_instr.operands[i].u], RZ_REG_TYPE_GPR);
 			parsed_operands[i].value->imm = rz_instr.operands[i].s;
 			break;
@@ -69,12 +58,10 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			op->jump = rz_instr.operands[i].u;
 			op->fail = rsp_mem_addr(addr + 8, RSP_IMEM_OFFSET);
 			op->eob = 1;
-			snprintf(parsed_operands[i].esil, sizeof(parsed_operands[i].esil), "%" PFMT64d, rz_instr.operands[i].u);
 			parsed_operands[i].value->imm = rz_instr.operands[i].u;
 			parsed_operands[i].value->memref = 4;
 			break;
 		case RSP_OPND_C0_REG:
-			snprintf(parsed_operands[i].esil, sizeof(parsed_operands[i].esil), "%s", rsp_c0_reg_names[rz_instr.operands[i].u]);
 			parsed_operands[i].value->reg = rz_reg_get(analysis->reg, rsp_c0_reg_names[rz_instr.operands[i].u], RZ_REG_TYPE_GPR);
 			break;
 		case RSP_OPND_C2_CREG:
@@ -94,7 +81,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case RSP_OP_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		rz_strbuf_set(&op->esil, ",");
 		break;
 	case RSP_OP_BREAK:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
@@ -104,7 +90,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_ADD:
 	case RSP_OP_ADDU:
@@ -114,7 +99,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,+,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SUB:
 	case RSP_OP_SUBU:
@@ -122,7 +106,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,-,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_AND:
 	case RSP_OP_ANDI:
@@ -130,7 +113,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,&,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_OR:
 	case RSP_OP_ORI:
@@ -138,7 +120,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,|,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_XOR:
 	case RSP_OP_XORI:
@@ -146,7 +127,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,^,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_NOR:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOR;
@@ -161,7 +141,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,<<,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SRL:
 	case RSP_OP_SRLV:
@@ -169,7 +148,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,>>,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SRA:
 	case RSP_OP_SRAV:
@@ -188,21 +166,18 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[1] = parsed_operands[2].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,<,$z,?{,1,%s,=,}{,0,%s,=,}", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_J:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
-		rz_strbuf_setf(&op->esil, "%s,PC,=", parsed_operands[0].esil);
 		break;
 	case RSP_OP_JAL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
-		rz_strbuf_setf(&op->esil, "%s,PC,=,0x%08" PFMT64x ",RA,=", parsed_operands[0].esil, op->fail);
 		break;
 	case RSP_OP_JR:
 		/* if register is RA, this is a return */
@@ -215,7 +190,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = rz_analysis_value_new();
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
-		rz_strbuf_setf(&op->esil, "%s,PC,=", parsed_operands[0].esil);
 		break;
 	case RSP_OP_BEQ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -224,7 +198,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,==,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil, parsed_operands[2].esil);
 		break;
 	case RSP_OP_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -233,7 +206,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,==,$z,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil, parsed_operands[2].esil);
 		break;
 	case RSP_OP_BLEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -242,8 +214,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,!,%s,0x80000000,&,!,!,|,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
-		//		rz_strbuf_setf (&op->esil, "0,%s,<=,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGTZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -252,8 +222,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,0x80000000,&,!,%s,!,!,&,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
-		//		rz_strbuf_setf (&op->esil, "0,%s,>,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -262,8 +230,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,0x80000000,&,!,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
-		//		rz_strbuf_setf (&op->esil, "0,%s,<,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGEZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -272,8 +238,6 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst->reg = rz_reg_get(analysis->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,0x80000000,&,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
-		//		rz_strbuf_setf (&op->esil, "0,%s,>=,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZAL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
@@ -298,70 +262,58 @@ static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[0]->memref = op->refptr = 1;
-		// FIXME: sign extend
-		rz_strbuf_setf(&op->esil, "%s,[1],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LH:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[0]->memref = op->refptr = 2;
-		// FIXME: sign extend
-		rz_strbuf_setf(&op->esil, "%s,[2],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LW:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[0]->memref = op->refptr = 4;
-		rz_strbuf_setf(&op->esil, "%s,[4],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LBU:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[0]->memref = op->refptr = 1;
-		rz_strbuf_setf(&op->esil, "%s,[1],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LHU:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
 		op->src[0]->memref = op->refptr = 2;
-		rz_strbuf_setf(&op->esil, "%s,[2],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SB:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->src[0] = parsed_operands[0].value;
 		op->dst = parsed_operands[1].value;
 		op->dst->memref = op->refptr = 1;
-		rz_strbuf_setf(&op->esil, "%s,%s,=[1]", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_SH:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->src[0] = parsed_operands[0].value;
 		op->dst = parsed_operands[1].value;
 		op->dst->memref = op->refptr = 2;
-		rz_strbuf_setf(&op->esil, "%s,%s,=[2]", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_SW:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->src[0] = parsed_operands[0].value;
 		op->dst = parsed_operands[1].value;
 		op->dst->memref = op->refptr = 4;
-		rz_strbuf_setf(&op->esil, "%s,%s,=[4]", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_MFC0:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = parsed_operands[0].value;
 		op->src[0] = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_MTC0:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->src[0] = parsed_operands[0].value;
 		op->dst = parsed_operands[1].value;
-		rz_strbuf_setf(&op->esil, "%s,%s,=", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_MFC2:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
@@ -703,7 +655,6 @@ RzAnalysisPlugin rz_analysis_plugin_rsp = {
 	.desc = "RSP code analysis plugin",
 	.license = "LGPL3",
 	.arch = "rsp",
-	.esil = true,
 	.bits = 32,
 	.op = &rsp_op,
 	.archinfo = &archinfo,
