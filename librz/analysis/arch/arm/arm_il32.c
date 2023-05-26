@@ -226,7 +226,7 @@ static RzILOpEffect *write_reg(arm_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector *v
 		arm_reg low_reg = ARM_REG_D0 + ((reg - ARM_REG_Q0) << 1);
 		arm_reg high_reg = low_reg + 1;
 		RzILOpBitVector *low_val = UNSIGNED(64, v);
-		RzILOpBitVector *high_val = UNSIGNED(64, SHIFTR0(v, UN(8, 64)));
+		RzILOpBitVector *high_val = UNSIGNED(64, SHIFTR0(DUP(v), UN(8, 64)));
 		return SEQ2(
 			SETG(reg_var_name(low_reg), low_val),
 			SETG(reg_var_name(high_reg), high_val));
@@ -359,6 +359,25 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm_op *op, 
 }
 
 /**
+ * Replicate given value to `dreg_width` length
+ * Note the ownership of `val` will be transfered
+ */
+static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RzILOpBitVector *val) {
+	ut32 repeat_times = dreg_width / val_width;
+	if (dreg_width % val_width != 0) {
+		return NULL;
+	}
+
+	RzILOpBitVector *ext_val = UNSIGNED(dreg_width, val);
+	RzILOpBitVector *rep_val = ext_val;
+	for (int i = 0; i < repeat_times - 1; ++i) {
+		rep_val = OR(rep_val, SHIFTL0(DUP(ext_val), UN(8, val_width * i)));
+	}
+
+	return rep_val;
+}
+
+/**
  * For VFP/NEON instruction immediate value
  * <imm> in Arm ref manual: "A constant of the type specified by <dt>.
  * This constant is replicated enough times to fill the destination register.
@@ -370,10 +389,10 @@ static RzILOpBitVector *repeated_imm(ut32 imm_width, ut32 dreg_width, ut32 imm) 
 
 	if (dreg_width == 128) {
 		// for <Qd> registers
-		ut64 imm_low = 0;
-		ut64 imm_high = 0;
+		ut64 imm_low = tmp;
+		ut64 imm_high = tmp;
 
-		for (int i = 0; i < repeat_times / 2; ++i) {
+		for (int i = 0; i < repeat_times / 2 - 1; ++i) {
 			imm_low += tmp;
 			imm_high += tmp;
 			tmp <<= imm_width;
@@ -383,7 +402,8 @@ static RzILOpBitVector *repeated_imm(ut32 imm_width, ut32 dreg_width, ut32 imm) 
 	}
 
 	// for <Dd> and <Sd>
-	for (int i = 0; i < repeat_times; ++i) {
+	final_imm = tmp;
+	for (int i = 0; i < repeat_times - 1; ++i) {
 		final_imm += tmp;
 		tmp <<= imm_width;
 	}
@@ -2926,6 +2946,8 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 		rm_idx = -1;
 		regs = OPCOUNT() - 1;
 	}
+
+	// mem_idx
 	rn_idx = regs;
 
 	// assert list_size % n == 0
@@ -2989,6 +3011,9 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 		}
 	}
 
+	// free last address inc op
+	rz_il_op_pure_free(addr);
+
 	// update Rn
 	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
 	if (wback) {
@@ -3002,12 +3027,178 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	bool use_rm = false;
+	ut32 regs; // number of regs in {list}
+
+	if (!ISMEM(rm_idx)) {
+		use_rm = true;
+		regs = OPCOUNT() - 2;
+	} else {
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+	rn_idx = regs;
+
+	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+	if (n != regs) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data0, *data1, *data2, *data3;
+	RzILOpEffect *eff;
+	RzILOpBitVector *addr = ARG(rn_idx);
+	ut32 vreg_idx = 0;
+	ut32 elem_size = VVEC_SIZE(insn);
+	unsigned char lane = NEON_LANE(0);
+	switch (n) {
+	case 1:
+		data0 = LOADW(elem_size, addr);
+		eff = write_reg_lane(REGID(vreg_idx), lane, elem_size, data0);
+		break;
+	case 2:
+		data0 = LOADW(elem_size, addr);
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data1 = LOADW(elem_size, addr);
+		eff = SEQ2(write_reg_lane(REGID(vreg_idx), lane, elem_size, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_size, data1));
+		break;
+	case 3:
+		data0 = LOADW(elem_size, addr);
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data1 = LOADW(elem_size, addr);
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data2 = LOADW(elem_size, addr);
+		eff = SEQ3(write_reg_lane(REGID(vreg_idx), lane, elem_size, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_size, data1),
+			write_reg_lane(REGID(vreg_idx + 2), lane, elem_size, data2));
+		break;
+	case 4:
+		data0 = LOADW(elem_size, addr);
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data1 = LOADW(elem_size, addr);
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data2 = LOADW(elem_size, addr);
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data3 = LOADW(elem_size, addr);
+		eff = SEQ4(write_reg_lane(REGID(vreg_idx), lane, elem_size, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_size, data1),
+			write_reg_lane(REGID(vreg_idx + 2), lane, elem_size, data2),
+			write_reg_lane(REGID(vreg_idx + 3), lane, elem_size, data3));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool wback = insn->detail->arm.writeback;
+	RzILOpEffect *wback_eff;
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, (elem_size / 8) * n);
+		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+	} else {
+		wback_eff = NOP();
+	}
+
+	return SEQ2(eff, wback_eff);
 }
 
 static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	bool use_rm = false;
+	ut32 regs; // number of regs in {list}
+
+	if (!ISMEM(rm_idx)) {
+		use_rm = true;
+		regs = OPCOUNT() - 2;
+	} else {
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+	rn_idx = regs;
+
+	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+	if (n != regs) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data0 = NULL, *data1 = NULL, *data2 = NULL, *data3 = NULL;
+	RzILOpEffect *eff = NULL;
+	RzILOpBitVector *addr = ARG(rn_idx);
+	ut32 elem_size = VVEC_SIZE(insn);
+	ut32 dreg_size = 64;
+	switch (n) {
+	case 1:
+		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		eff = write_reg(REGID(0), DUP(data0));
+		if (regs == 2) {
+			eff = SEQ2(eff, write_reg(REGID(1), data0));
+		}
+		break;
+	case 2:
+		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data1 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		eff = SEQ2(write_reg(REGID(0), data0),
+			write_reg(REGID(1), data1));
+		break;
+	case 3:
+		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data1 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data2 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		eff = SEQ3(write_reg(REGID(0), data0),
+			write_reg(REGID(1), data1),
+			write_reg(REGID(2), data2));
+		break;
+	case 4:
+		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data1 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data2 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		addr = ADD(DUP(addr), UN(8, elem_size));
+		data3 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		eff = SEQ4(write_reg(REGID(0), data0),
+			write_reg(REGID(1), data1),
+			write_reg(REGID(2), data2),
+			write_reg(REGID(3), data3));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool wback = insn->detail->arm.writeback;
+	RzILOpEffect *wback_eff;
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, (elem_size / 8) * n);
+		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+	} else {
+		wback_eff = NOP();
+	}
+
+	return SEQ2(eff, wback_eff);
 }
 
 static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2 || !ISREG(0)) {
+		return NULL;
+	}
+
+	// to single lane
+	if (NEON_LANE(0) != -1) {
+		return vldn_single_lane(insn, is_thumb);
+	}
+
+	// capstone cannot distinguish details of the following instructions
+	// vld3.8 {d0, d1, d2}, [r0] (f420040f)
+	// vld3.8 {d0[], d1[], d2[]}, [r0] (f4a00e0f)
+	bool all_lane = (insn->bytes[2] & 0x0C) == 0x0C;
+	return all_lane ? vldn_all_lane(insn, is_thumb) : vldn_multiple_elem(insn, is_thumb);
 }
 
 /**
