@@ -1297,7 +1297,7 @@ static inline char *sdb_build_var_data(Variable *var) {
 	return NULL;
 }
 
-static inline void sdb_save_dwarf_fcn_vars(Sdb *sdb, RzList /*<Variable *>*/ *vars, const char *kind) {
+static inline void sdb_save_dwarf_fcn_vars(Sdb *sdb, RzList /*<Variable *>*/ *vars, const char *prefix) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	RzListIter *iter;
 	Variable *var;
@@ -1306,11 +1306,9 @@ static inline void sdb_save_dwarf_fcn_vars(Sdb *sdb, RzList /*<Variable *>*/ *va
 		if (!val) {
 			continue;
 		}
-		char *fmt = rz_str_newf("%s.%s", kind, var->name);
-		char *key = rz_str_newf(fmt, var->name);
+		char *key = rz_str_newf("%s.%s", prefix, var->name);
 		sdb_set_owned(sdb, key, val, 0);
 		free(key);
-		free(fmt);
 
 		if (iter->n) {
 			rz_strbuf_appendf(sb, "%s,", var->name);
@@ -1318,7 +1316,7 @@ static inline void sdb_save_dwarf_fcn_vars(Sdb *sdb, RzList /*<Variable *>*/ *va
 			rz_strbuf_append(sb, var->name);
 		}
 	}
-	char *key = rz_str_newf("%ss", kind);
+	char *key = rz_str_newf("%ss", prefix);
 	sdb_set_owned(sdb, key, rz_strbuf_drain(sb), 0);
 	free(key);
 }
