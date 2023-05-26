@@ -2953,8 +2953,9 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	// assert list_size % n == 0
 	// assert they were all Dn
 	ut32 n_groups = regs / n;
-	ut32 elem_size = VVEC_SIZE(insn);
-	ut32 lanes = 64 / elem_size;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 lanes = 64 / elem_bits;
 
 	RzILOpEffect *wback_eff = NULL;
 	RzILOpEffect *eff = NULL;
@@ -2966,48 +2967,48 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 			ut32 vreg_idx = i * regs;
 			switch (n) {
 			case 1:
-				data0 = LOADW(elem_size, addr);
+				data0 = LOADW(elem_bits, addr);
 				eff = SEQ2(eff,
-					write_reg_lane(REGID(vreg_idx), j, elem_size, data0));
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0));
 				break;
 			case 2:
-				data0 = LOADW(elem_size, addr);
-				addr = ADD(DUP(addr), UN(8, elem_size));
-				data1 = LOADW(elem_size, addr);
+				data0 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				data1 = LOADW(elem_bits, addr);
 				eff = SEQ3(eff,
-					write_reg_lane(REGID(vreg_idx), j, elem_size, data0),
-					write_reg_lane(REGID(vreg_idx + 1), j, elem_size, data1));
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
+					write_reg_lane(REGID(vreg_idx + 1), j, elem_bits, data1));
 				break;
 			case 3:
-				data0 = LOADW(elem_size, addr);
-				addr = ADD(DUP(addr), UN(8, elem_size));
-				data1 = LOADW(elem_size, addr);
-				addr = ADD(DUP(addr), UN(8, elem_size));
-				data2 = LOADW(elem_size, addr);
+				data0 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				data1 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				data2 = LOADW(elem_bits, addr);
 				eff = SEQ4(eff,
-					write_reg_lane(REGID(vreg_idx), j, elem_size, data0),
-					write_reg_lane(REGID(vreg_idx + 1), j, elem_size, data1),
-					write_reg_lane(REGID(vreg_idx + 2), j, elem_size, data2));
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
+					write_reg_lane(REGID(vreg_idx + 1), j, elem_bits, data1),
+					write_reg_lane(REGID(vreg_idx + 2), j, elem_bits, data2));
 				break;
 			case 4:
-				data0 = LOADW(elem_size, addr);
-				addr = ADD(DUP(addr), UN(8, elem_size));
-				data1 = LOADW(elem_size, addr);
-				addr = ADD(DUP(addr), UN(8, elem_size));
-				data2 = LOADW(elem_size, addr);
-				addr = ADD(DUP(addr), UN(8, elem_size));
-				data3 = LOADW(elem_size, addr);
+				data0 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				data1 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				data2 = LOADW(elem_bits, addr);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				data3 = LOADW(elem_bits, addr);
 				eff = SEQ5(eff,
-					write_reg_lane(REGID(vreg_idx), j, elem_size, data0),
-					write_reg_lane(REGID(vreg_idx + 1), j, elem_size, data1),
-					write_reg_lane(REGID(vreg_idx + 2), j, elem_size, data2),
-					write_reg_lane(REGID(vreg_idx + 3), j, elem_size, data3));
+					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
+					write_reg_lane(REGID(vreg_idx + 1), j, elem_bits, data1),
+					write_reg_lane(REGID(vreg_idx + 2), j, elem_bits, data2),
+					write_reg_lane(REGID(vreg_idx + 3), j, elem_bits, data3));
 				break;
 			default:
 				rz_warn_if_reached();
 				return NULL;
 			}
-			addr = ADD(DUP(addr), UN(8, elem_size));
+			addr = ADD(DUP(addr), UN(8, elem_bytes));
 		}
 	}
 
@@ -3050,42 +3051,43 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpEffect *eff;
 	RzILOpBitVector *addr = ARG(rn_idx);
 	ut32 vreg_idx = 0;
-	ut32 elem_size = VVEC_SIZE(insn);
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
 	unsigned char lane = NEON_LANE(0);
 	switch (n) {
 	case 1:
-		data0 = LOADW(elem_size, addr);
-		eff = write_reg_lane(REGID(vreg_idx), lane, elem_size, data0);
+		data0 = LOADW(elem_bits, addr);
+		eff = write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0);
 		break;
 	case 2:
-		data0 = LOADW(elem_size, addr);
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data1 = LOADW(elem_size, addr);
-		eff = SEQ2(write_reg_lane(REGID(vreg_idx), lane, elem_size, data0),
-			write_reg_lane(REGID(vreg_idx + 1), lane, elem_size, data1));
+		data0 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data1 = LOADW(elem_bits, addr);
+		eff = SEQ2(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1));
 		break;
 	case 3:
-		data0 = LOADW(elem_size, addr);
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data1 = LOADW(elem_size, addr);
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data2 = LOADW(elem_size, addr);
-		eff = SEQ3(write_reg_lane(REGID(vreg_idx), lane, elem_size, data0),
-			write_reg_lane(REGID(vreg_idx + 1), lane, elem_size, data1),
-			write_reg_lane(REGID(vreg_idx + 2), lane, elem_size, data2));
+		data0 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data1 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data2 = LOADW(elem_bits, addr);
+		eff = SEQ3(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1),
+			write_reg_lane(REGID(vreg_idx + 2), lane, elem_bits, data2));
 		break;
 	case 4:
-		data0 = LOADW(elem_size, addr);
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data1 = LOADW(elem_size, addr);
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data2 = LOADW(elem_size, addr);
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data3 = LOADW(elem_size, addr);
-		eff = SEQ4(write_reg_lane(REGID(vreg_idx), lane, elem_size, data0),
-			write_reg_lane(REGID(vreg_idx + 1), lane, elem_size, data1),
-			write_reg_lane(REGID(vreg_idx + 2), lane, elem_size, data2),
-			write_reg_lane(REGID(vreg_idx + 3), lane, elem_size, data3));
+		data0 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data1 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data2 = LOADW(elem_bits, addr);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data3 = LOADW(elem_bits, addr);
+		eff = SEQ4(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
+			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1),
+			write_reg_lane(REGID(vreg_idx + 2), lane, elem_bits, data2),
+			write_reg_lane(REGID(vreg_idx + 3), lane, elem_bits, data3));
 		break;
 	default:
 		rz_warn_if_reached();
@@ -3095,7 +3097,7 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, (elem_size / 8) * n);
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
 		wback_eff = NOP();
@@ -3127,41 +3129,42 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *data0 = NULL, *data1 = NULL, *data2 = NULL, *data3 = NULL;
 	RzILOpEffect *eff = NULL;
 	RzILOpBitVector *addr = ARG(rn_idx);
-	ut32 elem_size = VVEC_SIZE(insn);
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
 	ut32 dreg_size = 64;
 	switch (n) {
 	case 1:
-		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = write_reg(REGID(0), DUP(data0));
 		if (regs == 2) {
 			eff = SEQ2(eff, write_reg(REGID(1), data0));
 		}
 		break;
 	case 2:
-		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data1 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = SEQ2(write_reg(REGID(0), data0),
 			write_reg(REGID(1), data1));
 		break;
 	case 3:
-		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data1 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data2 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data2 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = SEQ3(write_reg(REGID(0), data0),
 			write_reg(REGID(1), data1),
 			write_reg(REGID(2), data2));
 		break;
 	case 4:
-		data0 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data1 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data2 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
-		addr = ADD(DUP(addr), UN(8, elem_size));
-		data3 = replicated_val(elem_size, dreg_size, LOADW(elem_size, addr));
+		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data2 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		data3 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = SEQ4(write_reg(REGID(0), data0),
 			write_reg(REGID(1), data1),
 			write_reg(REGID(2), data2),
@@ -3175,7 +3178,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, (elem_size / 8) * n);
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
 		wback_eff = NOP();
@@ -3199,6 +3202,191 @@ static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
 	// vld3.8 {d0[], d1[], d2[]}, [r0] (f4a00e0f)
 	bool all_lane = (insn->bytes[2] & 0x0C) == 0x0C;
 	return all_lane ? vldn_all_lane(insn, is_thumb) : vldn_multiple_elem(insn, is_thumb);
+}
+
+static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	ut32 regs = 0;
+	bool wback = insn->detail->arm.writeback;
+	bool use_rm_as_wback_offset = false;
+	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+
+	// vldn {list}, [Rn], Rm
+	if (!ISMEM(rm_idx)) {
+		regs = OPCOUNT() - 2;
+		use_rm_as_wback_offset = true;
+	} else {
+		// vldn {list}, [Rn]
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+
+	// mem_idx
+	rn_idx = regs;
+
+	// assert list_size % n == 0
+	// assert they were all Dn
+	ut32 n_groups = regs / n;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	ut32 lanes = 64 / elem_bits;
+
+	RzILOpEffect *wback_eff = NULL;
+	RzILOpEffect *eff = NULL, *eff_ = NULL, *eff__ = NULL;
+	RzILOpBitVector *addr = ARG(rn_idx);
+
+	for (int i = 0; i < n_groups; ++i) {
+		for (int j = 0; j < lanes; ++j) {
+			RzILOpBitVector *data0, *data1, *data2, *data3;
+			ut32 vreg_idx = i * regs;
+			switch (n) {
+			case 1:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				break;
+			case 2:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				eff = SEQ2(eff, STOREW(addr, data1));
+				break;
+			case 3:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
+				data2 = read_reg_lane(REGID(vreg_idx + 2), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				eff_ = STOREW(addr, data1);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				eff = SEQ3(eff, eff_, STOREW(addr, data2));
+				break;
+			case 4:
+				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
+				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
+				data2 = read_reg_lane(REGID(vreg_idx + 2), j, elem_bits);
+				data3 = read_reg_lane(REGID(vreg_idx + 3), j, elem_bits);
+				eff = SEQ2(eff, STOREW(addr, data0));
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				eff_ = STOREW(addr, data1);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				eff__ = STOREW(addr, data2);
+				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				eff = SEQ4(eff, eff_, eff__, STOREW(addr, data3));
+				break;
+			default:
+				rz_warn_if_reached();
+				return NULL;
+			}
+			addr = ADD(DUP(addr), UN(8, elem_bytes));
+		}
+	}
+
+	// free last address inc op
+	rz_il_op_pure_free(addr);
+
+	// update Rn
+	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
+		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+	} else {
+		wback_eff = NOP();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+
+static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
+	ut32 rm_idx = OPCOUNT() - 1;
+	ut32 rn_idx;
+	bool use_rm = false;
+	ut32 regs; // number of regs in {list}
+
+	if (!ISMEM(rm_idx)) {
+		use_rm = true;
+		regs = OPCOUNT() - 2;
+	} else {
+		rm_idx = -1;
+		regs = OPCOUNT() - 1;
+	}
+	rn_idx = regs;
+
+	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+	if (n != regs) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data0, *data1, *data2, *data3;
+	RzILOpEffect *eff, *eff_, *eff__;
+	RzILOpBitVector *addr = ARG(rn_idx);
+	ut32 vreg_idx = 0;
+	ut32 elem_bits = VVEC_SIZE(insn);
+	ut32 elem_bytes = elem_bits / 8;
+	unsigned char lane = NEON_LANE(0);
+	switch (n) {
+	case 1:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		break;
+	case 2:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		eff = SEQ2(eff, STOREW(addr, data1));
+		break;
+	case 3:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
+		data2 = read_reg_lane(REGID(vreg_idx + 2), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		eff_ = STOREW(addr, data1);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		eff = SEQ3(eff, eff_, STOREW(addr, data2));
+		break;
+	case 4:
+		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
+		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
+		data2 = read_reg_lane(REGID(vreg_idx + 2), lane, elem_bits);
+		data3 = read_reg_lane(REGID(vreg_idx + 3), lane, elem_bits);
+		eff = STOREW(addr, data0);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		eff_ = STOREW(addr, data1);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		eff__ = STOREW(addr, data2);
+		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		eff = SEQ4(eff, eff_, eff__, STOREW(addr, data3));
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool wback = insn->detail->arm.writeback;
+	RzILOpEffect *wback_eff;
+	if (wback) {
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
+		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+	} else {
+		wback_eff = NOP();
+	}
+
+	return SEQ2(eff, wback_eff);
+}
+
+static RzILOpEffect *vstn(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2 || !ISREG(0)) {
+		return NULL;
+	}
+
+	if (NEON_LANE(0) != -1) {
+		return vstn_from_single_lane(insn, is_thumb);
+	}
+
+	return vstn_multiple_elem(insn, is_thumb);
 }
 
 /**
@@ -3535,6 +3723,16 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vec_cmp(insn, is_thumb);
 	case ARM_INS_VTST:
 		return vtst(insn, is_thumb);
+	case ARM_INS_VLD1:
+	case ARM_INS_VLD2:
+	case ARM_INS_VLD3:
+	case ARM_INS_VLD4:
+		return vldn(insn, is_thumb);
+	case ARM_INS_VST1:
+	case ARM_INS_VST2:
+	case ARM_INS_VST3:
+	case ARM_INS_VST4:
+		return vstn(insn, is_thumb);
 	default:
 		return NULL;
 	}
