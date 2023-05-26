@@ -418,7 +418,7 @@ a___  32 64      ppc.as      LGPL3   as PPC Assembler (use RZ_PPC_AS environment
 _dAe  32 64      ppc         BSD     Capstone PowerPC disassembler (by pancake)
 _dA_  32         propeller   LGPL3   propeller disassembly plugin
 _dA_  8 16       pyc         LGPL3   PYC disassemble plugin
-_dAe  32         rsp         LGPL3   Reality Signal Processor
+_dA_  32         rsp         LGPL3   Reality Signal Processor
 adAe  32         sh          LGPL3   SuperH-4 CPU (by DMaroo)
 _dA_  8 16       snes        LGPL3   SuperNES CPU
 _dA_  32 64      sparc       BSD     Capstone SPARC disassembler
