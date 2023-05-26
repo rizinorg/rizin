@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2012-2020 houndthe <cgkajm@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_strbuf.h"
 #include <rz_util.h>
 #include <rz_type.h>
 #include <sdb.h>

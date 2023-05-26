@@ -113,6 +113,7 @@ static inline RzAnalysisVar *fcn_var_get_or_new(RzAnalysisFunction *fcn,
 	RzAnalysisVar *existing = rz_analysis_function_get_var_byname(fcn, name);
 	if (existing && !storage_equals(&existing->storage, stor)) {
 		// var name already exists at a different kind+delta
+		RZ_LOG_WARN("var name %s already exists at a different kind+delta", name);
 		return NULL;
 	}
 	RzAnalysisVar *o = rz_analysis_function_get_var_at(fcn, stor);
@@ -126,7 +127,7 @@ static inline RzAnalysisVar *fcn_var_get_or_new(RzAnalysisFunction *fcn,
 		rz_vector_init(&o->accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
 		rz_vector_init(&o->constraints, sizeof(RzTypeConstraint), NULL, NULL);
 	} else {
-		free(o->name);
+		RZ_FREE(o->name);
 		if (o->type != typ) {
 			// only free if not assigning the own type to itself
 			rz_type_free(o->type);
@@ -135,6 +136,7 @@ static inline RzAnalysisVar *fcn_var_get_or_new(RzAnalysisFunction *fcn,
 	}
 	return o;
 }
+
 /**
  * Add or update a variable at the given storage location \p stor.
  * Both the variable's type and name are set according to the parameters given.
@@ -165,6 +167,14 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 	return var;
 }
 
+/**
+ * Add or update a variable \p var to the given function \p fcn.
+ *
+ * \param fcn the function which the variable will belong to
+ * \param var the variable to add or update
+ * \param size \p var's type size
+ * \return the created or updated variable, or NULL if the operation could not be completed
+ */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var,
 	int size) {
 	rz_return_val_if_fail(fcn && var && var->name, NULL);
