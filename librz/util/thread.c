@@ -131,7 +131,7 @@ RZ_API bool rz_th_set_affinity(RZ_NONNULL RzThread *th, int cpuid) {
 	CPU_ZERO(&c);
 	CPU_SET(cpuid, &c);
 
-	if (sched_setaffinity((pid_t)(ut64)th->tid, sizeof(c), &c) != 0) {
+	if (sched_setaffinity((pid_t)th->tid, sizeof(c), &c) != 0) {
 		RZ_LOG_ERROR("thread: Failed to set cpu affinity\n");
 		return false;
 	}
