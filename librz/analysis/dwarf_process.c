@@ -1616,7 +1616,7 @@ typedef struct {
 	char *func_sname;
 } FcnVariableCtx;
 
-static bool apply_fcn_variable(FcnVariableCtx *ctx, const char *var_name, char *var_data, VariableKind var_kind) {
+static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, char *var_data, VariableKind var_kind) {
 	char *extra = NULL;
 	char *kind = sdb_anext(var_data, &extra);
 	char *type = NULL;
@@ -1670,7 +1670,7 @@ beach:
 	return ret;
 }
 
-static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
+static void apply_debuginfo_variables(FcnVariableCtx *ctx, VariableKind kind) {
 	const char *fmt = kind == VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
 	const char *var_fmt = kind == VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
 
@@ -1678,7 +1678,7 @@ static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
 	char *vars = sdb_get(ctx->dwarf_sdb, var_names_key, NULL);
 	free(var_names_key);
 
-	if (kind == FORMAL_PARAMETER && RZ_STR_ISNOTEMPTY(vars) && strlen(vars) >= 1) {
+	if (ctx->fcn && kind == FORMAL_PARAMETER && RZ_STR_ISNOTEMPTY(vars)) {
 		rz_analysis_function_delete_arg_vars(ctx->fcn);
 	}
 
@@ -1689,7 +1689,7 @@ static void apply_fcn_variables(FcnVariableCtx *ctx, VariableKind kind) {
 		free(var_key);
 
 		if (RZ_STR_ISNOTEMPTY(var_data)) {
-			apply_fcn_variable(ctx, var_name, var_data, kind);
+			apply_debuginfo_variable(ctx, var_name, var_data, kind);
 		}
 		free(var_data);
 		sdb_aforeach_next(var_name);
@@ -1745,8 +1745,8 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			.func_sname = func_sname,
 			.fcn = fcn,
 		};
-		apply_fcn_variables(&ctx, FORMAL_PARAMETER);
-		apply_fcn_variables(&ctx, VARIABLE);
+		apply_debuginfo_variables(&ctx, FORMAL_PARAMETER);
+		apply_debuginfo_variables(&ctx, VARIABLE);
 	}
 	ls_free(sdb_list);
 }
