@@ -1144,6 +1144,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr
 			//   on entry to the current frame).
 			// TODO: The following is only an educated guess. There is actually more involved in calculating the
 			//       CFA correctly.
+			offset += ctx->analysis->bits / 8; // guessed return address size
 			kind = LOCATION_CFA;
 		} break;
 		default:
