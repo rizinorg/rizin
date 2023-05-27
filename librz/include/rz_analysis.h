@@ -271,6 +271,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_MEM = 0x20000000, // TODO must be moved to prefix?
 	RZ_ANALYSIS_OP_TYPE_REG = 0x10000000, // operand is a register
 	RZ_ANALYSIS_OP_TYPE_IND = 0x08000000, // operand is indirect
+	RZ_ANALYSIS_OP_TYPE_SIMD = 0x04000000, // SIMD
 	RZ_ANALYSIS_OP_TYPE_NULL = 0,
 	RZ_ANALYSIS_OP_TYPE_JMP = 1, /* mandatory jump */
 	RZ_ANALYSIS_OP_TYPE_UJMP = 2, /* unknown jump (register or so) */

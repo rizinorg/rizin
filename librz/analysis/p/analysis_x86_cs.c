@@ -742,6 +742,13 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				dst, width, src, width, dst);
 		}
 		break;
+	// comiss
+	case X86_INS_COMISS:
+	case X86_INS_UCOMISS:
+	case X86_INS_VCOMISS:
+	case X86_INS_VUCOMISS:
+		op->type = RZ_ANALYSIS_OP_TYPE_SIMD | RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
 	// mov
 	case X86_INS_MOVSS:
 	case X86_INS_MOV:
