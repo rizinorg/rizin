@@ -608,3 +608,56 @@ EXPECT=<<EOF
 \           0x00001173      ret
 EOF
 RUN
+
+NAME=Vars and Args from dwarf accessed from sp (x86)
+FILE=bins/elf/vars_args/example.x64
+CMDS=<<EOF
+aaa
+s dbg.foo
+pdf
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from dbg.main @ 0x11c0
+            ;-- foo:
+/ dbg.foo (int num);
+|           ; arg int num @ stack - 0x2c
+|           ; var short int minus_seven @ stack - 0x24
+|           ; var short int sub_short @ stack - 0x22
+|           ; var int int_one @ stack - 0x20
+|           ; var int mult_int @ stack - 0x1c
+|           ; var long int long_twenty @ stack - 0x18
+|           ; var long int add_long @ stack - 0x10
+|           0x00001139      push  rbp                                  ; int foo(int num);
+|           0x0000113a      mov   rbp, rsp
+|           0x0000113d      sub   rsp, 0x30
+|           0x00001141      mov   dword [num], edi                     ; arg1
+|           0x00001144      mov   dword [int_one], 1
+|           0x0000114b      mov   qword [long_twenty], 0x14
+|           0x00001153      mov   word [minus_seven], 0xfff9
+|           0x00001159      mov   edx, dword [int_one]
+|           0x0000115c      mov   eax, edx
+|           0x0000115e      add   eax, eax
+|           0x00001160      add   eax, edx
+|           0x00001162      add   eax, eax
+|           0x00001164      mov   dword [mult_int], eax
+|           0x00001167      mov   rax, qword [long_twenty]
+|           0x0000116b      add   rax, 7
+|           0x0000116f      mov   qword [add_long], rax
+|           0x00001173      movzx eax, word [minus_seven]
+|           0x00001177      sub   eax, 9
+|           0x0000117a      mov   word [sub_short], ax
+|           0x0000117e      movsx esi, word [sub_short]
+|           0x00001182      mov   rcx, qword [add_long]
+|           0x00001186      mov   edx, dword [mult_int]
+|           0x00001189      mov   eax, dword [num]
+|           0x0000118c      mov   r8d, esi
+|           0x0000118f      mov   esi, eax
+|           0x00001191      lea   rax, str.result__d__d__ld__ld        ; 0x2004 ; "result %d %d %ld %ld\n"
+|           0x00001198      mov   rdi, rax                             ; const char *format
+|           0x0000119b      mov   eax, 0
+|           0x000011a0      call  sym.imp.printf                       ; int printf(const char *format)
+|           0x000011a5      mov   eax, 0xa
+|           0x000011aa      leave
+\           0x000011ab      ret
+EOF
+RUN
