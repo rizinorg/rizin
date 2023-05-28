@@ -196,6 +196,25 @@ static ut32 arm_data_width(arm_vectordata_type vec_type) {
 	}
 }
 
+static RzFloatFormat dt2fmt(arm_vectordata_type type, bool choose_src) {
+	switch (type) {
+	case ARM_VECTORDATA_F16F64:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_64 : RZ_FLOAT_IEEE754_BIN_16;
+	case ARM_VECTORDATA_F64F16:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_16 : RZ_FLOAT_IEEE754_BIN_64;
+	case ARM_VECTORDATA_F32F16:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_16 : RZ_FLOAT_IEEE754_BIN_32;
+	case ARM_VECTORDATA_F16F32:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_32 : RZ_FLOAT_IEEE754_BIN_16;
+	case ARM_VECTORDATA_F64F32:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_32 : RZ_FLOAT_IEEE754_BIN_64;
+	case ARM_VECTORDATA_F32F64:
+		return choose_src ? RZ_FLOAT_IEEE754_BIN_64 : RZ_FLOAT_IEEE754_BIN_32;
+	default:
+		return RZ_FLOAT_UNK;
+	}
+}
+
 #define PC(addr, is_thumb)      (addr + (is_thumb ? 4 : 8))
 #define PCALIGN(addr, is_thumb) (PC(addr, is_thumb) & ~3ul)
 #define REG_VAL(id)             read_reg(PC(insn->address, is_thumb), id)
@@ -206,6 +225,8 @@ static ut32 arm_data_width(arm_vectordata_type vec_type) {
 #define NEON_LANE(n)            insn->detail->arm.operands[n].neon_lane
 #define VVEC_SIZE(insn)         insn->detail->arm.vector_size
 #define VVEC_DT(insn)           insn->detail->arm.vector_data
+#define FROM_FMT(dt)            dt2fmt(dt, true)
+#define TO_FMT(dt)              dt2fmt(dt, false)
 
 /**
  * IL to write the given capstone reg
@@ -3387,6 +3408,152 @@ static RzILOpEffect *vstn(cs_insn *insn, bool is_thumb) {
 	}
 
 	return vstn_multiple_elem(insn, is_thumb);
+}
+
+static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *success) {
+	RzFloatFormat from_fmt, to_fmt;
+	from_fmt = FROM_FMT(VVEC_DT(insn));
+	to_fmt = TO_FMT(VVEC_DT(insn));
+	if (from_fmt == RZ_FLOAT_UNK || to_fmt == RZ_FLOAT_UNK) {
+		*success = false;
+		return NULL;
+	}
+
+	// note that the ARM manual didn't specify rounding mode
+	// VFP operation for single and double
+	if (from_fmt == RZ_FLOAT_IEEE754_BIN_64 || to_fmt == RZ_FLOAT_IEEE754_BIN_64) {
+		return write_reg(REGID(0), F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, BV2F(from_fmt, REG_VAL(1)))));
+	}
+
+	// NEON vcvt for f16 and f32
+	// Qn have 4 f32, Dn have 4 f16
+	ut32 elem_n = 4;
+	ut32 from_elem_sz = rz_float_get_format_info(from_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
+	ut32 to_elem_sz = rz_float_get_format_info(to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
+
+	RzILOpEffect *eff = NULL;
+	for (int i = 0; i < elem_n; ++i) {
+		RzILOpFloat *from_val = BV2F(from_fmt, read_reg_lane(REGID(1), i, from_elem_sz));
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, to_elem_sz,
+				F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, from_val))));
+	}
+
+	return eff;
+}
+
+static inline ut32 cvt_isize(arm_vectordata_type type, bool *is_signed) {
+	switch (type) {
+	case ARM_VECTORDATA_S32F32:
+	case ARM_VECTORDATA_F32S32:
+	case ARM_VECTORDATA_F64S32:
+	case ARM_VECTORDATA_S32F64:
+		*is_signed = true;
+		return 32;
+	case ARM_VECTORDATA_U32F32:
+	case ARM_VECTORDATA_F32U32:
+	case ARM_VECTORDATA_U32F64:
+	case ARM_VECTORDATA_F64U32:
+		*is_signed = false;
+		return 32;
+	case ARM_VECTORDATA_F64S16:
+	case ARM_VECTORDATA_F32S16:
+	case ARM_VECTORDATA_S16F64:
+	case ARM_VECTORDATA_S16F32:
+		*is_signed = true;
+		return 16;
+	case ARM_VECTORDATA_U16F64:
+	case ARM_VECTORDATA_U16F32:
+	case ARM_VECTORDATA_F64U16:
+	case ARM_VECTORDATA_F32U16:
+		*is_signed = false;
+		return 16;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
+
+static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success) {
+	bool is_f2i = false;
+	bool is_signed = false;
+
+	RzFloatFormat from_fmt = FROM_FMT(VVEC_DT(insn));
+	RzFloatFormat to_fmt = TO_FMT(VVEC_DT(insn));
+	ut32 bv_sz;
+	if (from_fmt == RZ_FLOAT_UNK && to_fmt == RZ_FLOAT_UNK) {
+		return NULL;
+	}
+
+	is_f2i = from_fmt == RZ_FLOAT_UNK ? false : true;
+	bv_sz = cvt_isize(VVEC_DT(insn), &is_signed);
+	ut32 fl_sz = rz_float_get_format_info(is_f2i ? from_fmt : to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// vfp
+		// VCVT.F64.S32/U32 <Dd>, <Sm>
+		// VCVT.F32.S32/U32 <Sd>, <Sm>
+		RzILOpBitVector *from_val;
+		if (is_f2i) {
+			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt, REG_VAL(1)))
+					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt, REG_VAL(1)));
+		} else {
+			from_val = is_signed ? F2BV(SINT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       REG_VAL(1)))
+					     : F2BV(INT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       REG_VAL(1)));
+		}
+
+		return write_reg(REGID(0), from_val);
+	}
+
+	RzILOpEffect *eff = NULL;
+	for (int i = 0; i < REG_WIDTH(0) / bv_sz; ++i) {
+		RzILOpBitVector *from_val;
+		if (is_f2i) {
+			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt,
+							       read_reg_lane(REGID(1), i, fl_sz)))
+					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+						       BV2F(from_fmt,
+							       read_reg_lane(REGID(1), i, fl_sz)));
+		} else {
+			from_val = is_signed ? F2BV(SINT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       read_reg_lane(REGID(1), i, bv_sz)))
+					     : F2BV(INT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
+						       read_reg_lane(REGID(1), i, bv_sz)));
+		}
+		eff = SEQ2(eff, write_reg_lane(REGID(0), i, bv_sz, from_val));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vcvt(cs_insn *insn, bool is_thumb) {
+	if (VVEC_DT(insn) == ARM_VECTORDATA_INVALID || OPCOUNT() < 2) {
+		return NULL;
+	}
+
+	bool success = false;
+	RzILOpEffect *eff = NULL;
+	// vcvt between floats (advanced SIMD and VFP)
+	// F16 <-> F32 (NEON) , F32 <-> F64 (VFP)
+	eff = try_as_float_cvt(insn, is_thumb, &success);
+	if (success) {
+		return eff;
+	}
+
+	// vcvt between integer and float
+	eff = try_as_int_cvt(insn, is_thumb, &success);
+	if (success) {
+		return eff;
+	}
+
+	// vcvt between fix-point and float-point
+	// currently could not find a way to process fixed point value
+	return NULL;
 }
 
 /**
