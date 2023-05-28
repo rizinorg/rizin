@@ -661,3 +661,267 @@ EXPECT=<<EOF
 \           0x000011ab      ret
 EOF
 RUN
+
+NAME=Function arguments from DWARF (arm)
+FILE=bins/elf/float_ex1/float_ex1_arm
+CMDS=<<EOF
+aaa
+s sym.fn1
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- fn1:
+/ dbg.fn1 (int a, char *g, double q, struct Some *gg, some_t **out);
+|           ; var int16_t var_20h @ stack - 0x20
+|           ; arg some_t **out @ stack - 0x1e
+|           ; arg struct Some *gg @ stack - 0x1a
+|           ; arg double q @ stack - 0x16
+|           ; arg char *g @ stack - 0xe
+|           ; arg int a @ stack - 0xa
+|           0x000005e0      push  {r7, lr}
+|           0x000005e2      sub   sp, 0x18
+|           0x000005e4      add   r7, var_20h
+|           0x000005e6      str   r0, [r7, 0x14]
+|           0x000005e8      str   r1, [r7, 0x10]
+|           0x000005ea      vstr  d0, [r7, 8]
+|           0x000005ee      str   r2, [r7, 4]
+|           0x000005f0      str   r3, [r7]
+|           0x000005f2      ldr   r3, [r7, 4]
+|           0x000005f4      cmp   r3, 0
+|       ,=< 0x000005f6      beq   0x5fe
+|       |   0x000005f8      ldr   r3, [r7]
+|       |   0x000005fa      cmp   r3, 0
+|      ,==< 0x000005fc      bne   0x602
+|      |`-> 0x000005fe      movs  r3, 0
+|      |,=< 0x00000600      b     0x642
+|      `--> 0x00000602      movs  r0, 0x14
+|       |   0x00000604      blx   sym.imp.malloc
+|       |   0x00000608      mov   r3, r0
+|       |   0x0000060a      mov   r2, r3
+|       |   0x0000060c      ldr   r3, [r7]
+|       |   0x0000060e      str   r2, [r3]
+|       |   0x00000610      ldr   r3, [r7]
+|       |   0x00000612      ldr   r3, [r3]
+|       |   0x00000614      ldr   r2, [r7, 0x14]
+|       |   0x00000616      str   r2, [r3]
+|       |   0x00000618      ldr   r3, [r7]
+|       |   0x0000061a      ldr   r3, [r3]
+|       |   0x0000061c      adds  r3, 4
+|       |   0x0000061e      movs  r2, 5
+|       |   0x00000620      ldr   r1, [r7, 0x10]
+|       |   0x00000622      mov   r0, r3
+|       |   0x00000624      blx   sym.imp.strncpy
+|       |   0x00000628      ldr   r3, [r7]
+|       |   0x0000062a      ldr   r3, [r3]
+|       |   0x0000062c      vldr  d7, [r7, 8]
+|       |   0x00000630      vcvt.f32.f64 s15, d7
+|       |   0x00000634      vstr  s15, [r3, 0xc]
+|       |   0x00000638      ldr   r3, [r7]
+|       |   0x0000063a      ldr   r3, [r3]
+|       |   0x0000063c      ldr   r2, [r7, 4]
+|       |   0x0000063e      str   r2, [r3, 0x10]
+|       |   0x00000640      movs  r3, 1
+|       `-> 0x00000642      mov   r0, r3
+|           0x00000644      adds  r7, 0x18
+|           0x00000646      mov   sp, r7
+\           0x00000648      pop   {r7, pc}
+EOF
+RUN
+
+NAME=Function arguments from DWARF (arm_nodebug)
+FILE=bins/elf/float_ex1/float_ex1_arm_nodebug
+CMDS=<<EOF
+aaa
+s sym.fn1
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+/ sym.fn1 (int16_t arg1, int16_t arg2, int16_t arg3, int16_t arg4);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg3 @ r2
+|           ; arg int16_t arg4 @ r3
+|           ; var int16_t var_20h @ stack - 0x20
+|           0x000005e0      push  {r7, lr}
+|           0x000005e2      sub   sp, 0x18
+|           0x000005e4      add   r7, var_20h
+|           0x000005e6      str   r0, [r7, 0x14]
+|           0x000005e8      str   r1, [r7, 0x10]
+|           0x000005ea      vstr  d0, [r7, 8]
+|           0x000005ee      str   r2, [r7, 4]
+|           0x000005f0      str   r3, [r7]
+|           0x000005f2      ldr   r3, [r7, 4]
+|           0x000005f4      cmp   r3, 0
+|       ,=< 0x000005f6      beq   0x5fe
+|       |   0x000005f8      ldr   r3, [r7]
+|       |   0x000005fa      cmp   r3, 0
+|      ,==< 0x000005fc      bne   0x602
+|      |`-> 0x000005fe      movs  r3, 0
+|      |,=< 0x00000600      b     0x642
+|      `--> 0x00000602      movs  r0, 0x14
+|       |   0x00000604      blx   sym.imp.malloc
+|       |   0x00000608      mov   r3, r0
+|       |   0x0000060a      mov   r2, r3
+|       |   0x0000060c      ldr   r3, [r7]
+|       |   0x0000060e      str   r2, [r3]
+|       |   0x00000610      ldr   r3, [r7]
+|       |   0x00000612      ldr   r3, [r3]
+|       |   0x00000614      ldr   r2, [r7, 0x14]
+|       |   0x00000616      str   r2, [r3]
+|       |   0x00000618      ldr   r3, [r7]
+|       |   0x0000061a      ldr   r3, [r3]
+|       |   0x0000061c      adds  r3, 4
+|       |   0x0000061e      movs  r2, 5
+|       |   0x00000620      ldr   r1, [r7, 0x10]
+|       |   0x00000622      mov   r0, r3
+|       |   0x00000624      blx   sym.imp.strncpy
+|       |   0x00000628      ldr   r3, [r7]
+|       |   0x0000062a      ldr   r3, [r3]
+|       |   0x0000062c      vldr  d7, [r7, 8]
+|       |   0x00000630      vcvt.f32.f64 s15, d7
+|       |   0x00000634      vstr  s15, [r3, 0xc]
+|       |   0x00000638      ldr   r3, [r7]
+|       |   0x0000063a      ldr   r3, [r3]
+|       |   0x0000063c      ldr   r2, [r7, 4]
+|       |   0x0000063e      str   r2, [r3, 0x10]
+|       |   0x00000640      movs  r3, 1
+|       `-> 0x00000642      mov   r0, r3
+|           0x00000644      adds  r7, 0x18
+|           0x00000646      mov   sp, r7
+\           0x00000648      pop   {r7, pc}
+EOF
+RUN
+
+NAME=Function arguments from DWARF (arm_stripped)
+FILE=bins/elf/float_ex1/float_ex1_arm_stripped
+CMDS=<<EOF
+aaa
+s 0x5e0
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.000005e0 (int16_t arg1, int16_t arg2, int16_t arg3, int16_t arg4);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg3 @ r2
+|           ; arg int16_t arg4 @ r3
+|           ; var int16_t var_20h @ stack - 0x20
+|           0x000005e0      push  {r7, lr}
+|           0x000005e2      sub   sp, 0x18
+|           0x000005e4      add   r7, var_20h
+|           0x000005e6      str   r0, [r7, 0x14]
+|           0x000005e8      str   r1, [r7, 0x10]
+|           0x000005ea      vstr  d0, [r7, 8]
+|           0x000005ee      str   r2, [r7, 4]
+|           0x000005f0      str   r3, [r7]
+|           0x000005f2      ldr   r3, [r7, 4]
+|           0x000005f4      cmp   r3, 0
+|       ,=< 0x000005f6      beq   0x5fe
+|       |   0x000005f8      ldr   r3, [r7]
+|       |   0x000005fa      cmp   r3, 0
+|      ,==< 0x000005fc      bne   0x602
+|      |`-> 0x000005fe      movs  r3, 0
+|      |,=< 0x00000600      b     0x642
+|      `--> 0x00000602      movs  r0, 0x14
+|       |   0x00000604      blx   sym.imp.malloc
+|       |   0x00000608      mov   r3, r0
+|       |   0x0000060a      mov   r2, r3
+|       |   0x0000060c      ldr   r3, [r7]
+|       |   0x0000060e      str   r2, [r3]
+|       |   0x00000610      ldr   r3, [r7]
+|       |   0x00000612      ldr   r3, [r3]
+|       |   0x00000614      ldr   r2, [r7, 0x14]
+|       |   ;-- aav.0x00000616:
+|       |   0x00000616      str   r2, [r3]
+|       |   0x00000618      ldr   r3, [r7]
+|       |   0x0000061a      ldr   r3, [r3]
+|       |   0x0000061c      adds  r3, 4
+|       |   0x0000061e      movs  r2, 5
+|       |   0x00000620      ldr   r1, [r7, 0x10]
+|       |   0x00000622      mov   r0, r3
+|       |   0x00000624      blx   sym.imp.strncpy
+|       |   0x00000628      ldr   r3, [r7]
+|       |   0x0000062a      ldr   r3, [r3]
+|       |   0x0000062c      vldr  d7, [r7, 8]
+|       |   0x00000630      vcvt.f32.f64 s15, d7
+|       |   0x00000634      vstr  s15, [r3, 0xc]
+|       |   0x00000638      ldr   r3, [r7]
+|       |   0x0000063a      ldr   r3, [r3]
+|       |   0x0000063c      ldr   r2, [r7, 4]
+|       |   0x0000063e      str   r2, [r3, 0x10]
+|       |   0x00000640      movs  r3, 1
+|       `-> 0x00000642      mov   r0, r3
+|           0x00000644      adds  r7, 0x18
+|           0x00000646      mov   sp, r7
+\           0x00000648      pop   {r7, pc}
+EOF
+RUN
+
+NAME=Function arguments from DWARF (hightec)
+FILE=bins/elf/float_ex1/float_ex1_hightec
+CMDS=<<EOF
+aaa
+s sym.fn1
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- fn1:
+/ dbg.fn1 ();
+|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15
+|           0x8000041e      sub.a sp, 24
+|           0x80000420      st.w  [a14]-4, d4
+|           0x80000424      st.a  [a14]-8, a4
+|           0x80000428      st.d  [a14]-16, e6
+|           0x8000042c      st.a  [a14]-20, a5
+|           0x80000430      st.a  [a14]-24, a6
+|           0x80000434      ld.w  d15, [a14]-20                        ; float_ex1.c:16
+|           0x80000438      jz    d15, 0x80000440
+|           0x8000043a      ld.w  d15, [a14]-24
+|           0x8000043e      jnz   d15, 0x80000444
+|           0x80000440      mov   d15, 0                               ; float_ex1.c:17
+|           0x80000442      j     0x800004a8
+|           0x80000444      mov   d4, 20                               ; float_ex1.c:19
+|           0x80000448      call  dbg.malloc
+|           0x8000044c      mov.aa a15, a2
+|           0x8000044e      mov.d d2, a15
+|           0x80000450      ld.w  d15, [a14]-24
+|           0x80000454      mov.a a15, d15
+|           0x80000456      st.w  [a15]0, d2
+|           0x80000458      ld.w  d15, [a14]-24                        ; float_ex1.c:20
+|           0x8000045c      mov.a a15, d15
+|           0x8000045e      ld.w  d15, [a15]0
+|           0x80000460      ld.w  d2, [a14]-4
+|           0x80000464      mov.a a15, d15
+|           0x80000466      st.w  [a15]0, d2
+|           0x80000468      ld.w  d15, [a14]-24                        ; float_ex1.c:21
+|           0x8000046c      mov.a a15, d15
+|           0x8000046e      ld.w  d15, [a15]0
+|           0x80000470      add   d15, 4
+|           0x80000472      mov.a a4, d15
+|           0x80000474      ld.a  a5, [a14]-8
+|           0x80000478      mov   d4, 5
+|           0x8000047a      call  dbg.strncpy
+|           0x8000047e      ld.w  d15, [a14]-24                        ; float_ex1.c:22
+|           0x80000482      mov.a a15, d15
+|           0x80000484      ld.w  d15, [a15]0
+|           0x80000486      ld.d  e4, [a14]-16
+|           0x8000048a      call  dbg.__truncdfsf2
+|           0x8000048e      mov   d3, d2
+|           0x80000490      mov.a a15, d15
+|           0x80000492      st.w  [a15]12, d3
+|           0x80000494      ld.w  d15, [a14]-24                        ; float_ex1.c:23
+|           0x80000498      mov.a a15, d15
+|           0x8000049a      ld.w  d15, [a15]0
+|           0x8000049c      ld.w  d2, [a14]-20
+|           0x800004a0      mov   d3, d2
+|           0x800004a2      mov.a a15, d15
+|           0x800004a4      st.w  [a15]16, d3
+|           0x800004a6      mov   d15, 1                               ; float_ex1.c:24
+|           0x800004a8      mov   d2, d15                              ; float_ex1.c:25
+|           0x800004aa      ret   
+EOF
+RUN
