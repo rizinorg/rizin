@@ -283,7 +283,8 @@ static struct optype {
 	{ RZ_ANALYSIS_OP_TYPE_XOR, "xor" },
 	{ RZ_ANALYSIS_OP_TYPE_CASE, "case" },
 	{ RZ_ANALYSIS_OP_TYPE_CPL, "cpl" },
-	{ RZ_ANALYSIS_OP_TYPE_CRYPTO, "crypto" }
+	{ RZ_ANALYSIS_OP_TYPE_CRYPTO, "crypto" },
+	{ RZ_ANALYSIS_OP_TYPE_SIMD, "simd" }
 };
 
 /**
