@@ -572,6 +572,10 @@ static RzList /*<RzDyldBinImage *>*/ *create_cache_bins(RzDyldCache *cache) {
 							break;
 						}
 						ut16 dep_index = dep_array[k] & 0x7fff;
+						if (dep_index >= cache->hdr->imagesCount) {
+							RZ_LOG_ERROR("dyldcache: depList contents overflow\n");
+							break;
+						}
 						deps[dep_index]++;
 
 						char *dep_name = get_lib_name(cache->buf, &img[dep_index]);
