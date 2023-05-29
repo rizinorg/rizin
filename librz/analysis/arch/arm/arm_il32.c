@@ -2538,7 +2538,14 @@ static RzILOpEffect *tbb(cs_insn *insn, bool is_thumb) {
 
 static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILOpBitVector *v) {
 	ut32 reg_size = reg_bits(reg);
-	RzILOpBitVector *sft_val = SHIFTL0(UNSIGNED(reg_size, v), UN(8, vec_size * lane));
+	ut32 offset = vec_size * lane;
+
+	// up bound is reg_bits(<Qd>)
+	if (offset + vec_size > 128) {
+		return NULL;
+	}
+
+	RzILOpBitVector *sft_val = SHIFTL0(UNSIGNED(reg_size, v), UN(8, offset));
 	return write_reg(reg, sft_val);
 }
 
@@ -3074,6 +3081,12 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 vreg_idx = 0;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
+
+	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
+	if (n > 4 || elem_bytes > 4) {
+		return NULL;
+	}
+
 	unsigned char lane = NEON_LANE(0);
 	switch (n) {
 	case 1:
@@ -3152,6 +3165,11 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *addr = ARG(rn_idx);
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
+	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
+	if (n > 4 || elem_bytes > 4) {
+		return NULL;
+	}
+
 	ut32 dreg_size = 64;
 	switch (n) {
 	case 1:
@@ -3218,7 +3236,7 @@ static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
 		return vldn_single_lane(insn, is_thumb);
 	}
 
-	// capstone cannot distinguish details of the following instructions
+	// TODO: capstone cannot distinguish details of the following instructions
 	// vld3.8 {d0, d1, d2}, [r0] (f420040f)
 	// vld3.8 {d0[], d1[], d2[]}, [r0] (f4a00e0f)
 	bool all_lane = (insn->bytes[2] & 0x0C) == 0x0C;
@@ -3345,6 +3363,10 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 vreg_idx = 0;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
+	if (n > 4 || elem_bytes > 4) {
+		return NULL;
+	}
+
 	unsigned char lane = NEON_LANE(0);
 	switch (n) {
 	case 1:
