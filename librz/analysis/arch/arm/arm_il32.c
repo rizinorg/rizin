@@ -3578,6 +3578,27 @@ static RzILOpEffect *vcvt(cs_insn *insn, bool is_thumb) {
 	return NULL;
 }
 
+static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		return NULL;
+	}
+
+	ut32 elem_bits = VVEC_SIZE(insn);
+	RzILOpEffect *eff = NULL;
+
+	// 1. vdup <Vd> <Vn>[x], duplicate scalar
+	// 2. vdup <Vd> <Rn>, duplicate Rn bits to Vd
+	bool is_dup_lane = NEON_LANE(1) == -1;
+
+	for (int i = 0; i < reg_bits(REGID(0)) / elem_bits; ++i) {
+		RzILOpBitVector *scalar = is_dup_lane ? read_reg_lane(REGID(1), NEON_LANE(1), elem_bits) : UNSIGNED(elem_bits, REG_VAL(1));
+		eff = SEQ2(eff,
+			write_reg_lane(REGID(0), i, elem_bits, scalar));
+	}
+
+	return eff;
+}
+
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
@@ -3922,6 +3943,10 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VST3:
 	case ARM_INS_VST4:
 		return vstn(insn, is_thumb);
+	case ARM_INS_VCVT:
+		return vcvt(insn, is_thumb);
+	case ARM_INS_VDUP:
+		return vdup(insn, is_thumb);
 	default:
 		return NULL;
 	}
