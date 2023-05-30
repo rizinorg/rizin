@@ -688,6 +688,16 @@ static inline void rz_analysis_var_storage_init_stack(RzAnalysisVarStorage *stor
 }
 
 /**
+ * \brief Kind of a variable
+ */
+typedef enum rz_analysis_var_kind_t {
+	RZ_ANALYSIS_VAR_KIND_INVALID = 0, ///< Invalid or unspecified variable
+	RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER, ///< Variable is function formal parameter
+	RZ_ANALYSIS_VAR_KIND_VARIABLE, ///< Variable is local variable
+	RZ_ANALYSIS_VAR_KIND_UNSPECIFIED_PARAMETERS, ///< Variable is a parameter of a function with unspecified parameters
+} RzAnalysisVarKind;
+
+/**
  * A local variable or parameter as part of a function
  */
 typedef struct rz_analysis_var_t {
@@ -698,6 +708,7 @@ typedef struct rz_analysis_var_t {
 	RzVector /*<RzAnalysisVarAccess>*/ accesses; // ordered by offset, touch this only through API or expect uaf
 	char *comment;
 	RzVector /*<RzTypeConstraint>*/ constraints;
+	RzAnalysisVarKind kind;
 
 	// below members are just for caching, TODO: remove them and do it better
 	int argnum;
@@ -1636,6 +1647,7 @@ RZ_API RzList /*<RzAnalysisFunction *>*/ *rz_analysis_get_fcns(RzAnalysis *analy
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisVarStorage *stor, RZ_BORROW RZ_NULLABLE const RzType *type, int size, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var, int size);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_at(RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisVarStorage *stor);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_stack_var_at(RzAnalysisFunction *fcn, RzStackAddr stack_off);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_reg_var_at(RzAnalysisFunction *fcn, RZ_NONNULL const char *reg);

@@ -104,6 +104,38 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 	rz_pvector_free(cloned_vars);
 }
 
+static inline RzAnalysisVar *fcn_var_get_or_new(RzAnalysisFunction *fcn,
+	const char *name, RzAnalysisVarStorage *stor, const RzType *typ) {
+	if (!(fcn && stor && RZ_STR_ISNOTEMPTY(name))) {
+		return NULL;
+	}
+	RzAnalysisVar *existing = rz_analysis_function_get_var_byname(fcn, name);
+	if (existing && !storage_equals(&existing->storage, stor)) {
+		// var name already exists at a different kind+delta
+		RZ_LOG_WARN("var name %s already exists at a different kind+delta", name);
+		return NULL;
+	}
+	RzAnalysisVar *o = rz_analysis_function_get_var_at(fcn, stor);
+	if (!o) {
+		o = RZ_NEW0(RzAnalysisVar);
+		if (!o) {
+			return NULL;
+		}
+		rz_pvector_push(&fcn->vars, o);
+		o->fcn = fcn;
+		rz_vector_init(&o->accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
+		rz_vector_init(&o->constraints, sizeof(RzTypeConstraint), NULL, NULL);
+	} else {
+		RZ_FREE(o->name);
+		if (o->type != typ) {
+			// only free if not assigning the own type to itself
+			rz_type_free(o->type);
+			o->type = NULL;
+		}
+	}
+	return o;
+}
+
 /**
  * Add or update a variable at the given storage location \p stor.
  * Both the variable's type and name are set according to the parameters given.
@@ -115,31 +147,14 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
  * \param name a new name to assign to the variable
  * \return the created or updated variable, or NULL if the operation could not be completed
  */
-RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisVarStorage *stor, RZ_BORROW RZ_NULLABLE const RzType *type, int size, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn,
+	RZ_NONNULL RzAnalysisVarStorage *stor, RZ_BORROW RZ_NULLABLE const RzType *type, int size, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
-	RzAnalysisVar *existing = rz_analysis_function_get_var_byname(fcn, name);
-	if (existing && !storage_equals(&existing->storage, stor)) {
-		// var name already exists at a different kind+delta
+	RzAnalysisVar *var = fcn_var_get_or_new(fcn, name, stor, type);
+	if (!var) {
 		return NULL;
 	}
-	RzAnalysisVar *var = rz_analysis_function_get_var_at(fcn, stor);
-	if (!var) {
-		var = RZ_NEW0(RzAnalysisVar);
-		if (!var) {
-			return NULL;
-		}
-		rz_pvector_push(&fcn->vars, var);
-		var->fcn = fcn;
-		rz_vector_init(&var->accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
-		rz_vector_init(&var->constraints, sizeof(RzTypeConstraint), NULL, NULL);
-	} else {
-		free(var->name);
-		if (var->type != type) {
-			// only free if not assigning the own type to itself
-			rz_type_free(var->type);
-			var->type = NULL;
-		}
-	}
+
 	var->name = strdup(name);
 	var->storage = *stor;
 	storage_poolify(fcn->analysis, &var->storage);
@@ -149,6 +164,36 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 	}
 	rz_analysis_var_resolve_overlaps(var);
 	return var;
+}
+
+/**
+ * Add or update a variable \p var to the given function \p fcn.
+ *
+ * \param fcn the function which the variable will belong to
+ * \param var the variable to add or update
+ * \param size \p var's type size
+ * \return the created or updated variable, or NULL if the operation could not be completed
+ */
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var,
+	int size) {
+	rz_return_val_if_fail(fcn && var && var->name, NULL);
+	RzAnalysisVar *o = fcn_var_get_or_new(fcn, var->name, &var->storage, var->type);
+	if (!o) {
+		return NULL;
+	}
+
+	o->name = var->name;
+	var->name = NULL;
+
+	o->storage = var->storage;
+	o->kind = var->kind;
+	storage_poolify(fcn->analysis, &o->storage);
+	if (!o->type || o->type != var->type) {
+		// only clone if we don't already own this type (and didn't free it above)
+		o->type = var_type_clone_or_default_type(fcn->analysis, var->type, size);
+	}
+	rz_analysis_var_resolve_overlaps(o);
+	return o;
 }
 
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps) {
@@ -679,6 +724,9 @@ static bool stack_offset_is_arg(RzAnalysisFunction *fcn, st64 stack_off) {
 
 RZ_API bool rz_analysis_var_is_arg(RzAnalysisVar *var) {
 	rz_return_val_if_fail(var, false);
+	if (var->kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
+		return true;
+	}
 	switch (var->storage.type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG:
 		return true; // reg vars are always arguments for now
@@ -1357,20 +1405,31 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		free(vartype);
 	}
 
+	RzList *args = rz_list_new();
 	rz_list_foreach (cache->stackvars, iter, var) {
-		if (rz_analysis_var_is_arg(var)) {
-			if (!rz_list_empty(cache->regvars) && comma) {
-				rz_strbuf_append(buf, ", ");
-				comma = false;
-			}
-			char *vartype = rz_type_as_string(analysis->typedb, var->type);
-			tmp_len = strlen(vartype);
-			rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
-				tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-				var->name, iter->n ? ", " : "");
-			free(vartype);
+		if (!rz_analysis_var_is_arg(var)) {
+			continue;
+		}
+
+		if (var->kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
+			rz_list_prepend(args, var);
+		} else {
+			rz_list_append(args, var);
 		}
 	}
+	rz_list_foreach (args, iter, var) {
+		if (!rz_list_empty(cache->regvars) && comma) {
+			rz_strbuf_append(buf, ", ");
+			comma = false;
+		}
+		char *vartype = rz_type_as_string(analysis->typedb, var->type);
+		tmp_len = strlen(vartype);
+		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
+			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
+			var->name, iter->n ? ", " : "");
+		free(vartype);
+	}
+	rz_list_free(args);
 
 beach:
 	rz_strbuf_append(buf, ");");
