@@ -2,19 +2,7 @@
 // SPDX-FileCopyrightText: 2012-2018 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define D0 if (1)
-#define D1 if (1)
-
 #include <errno.h>
-
-#define DWARF_DUMP 0
-
-#if DWARF_DUMP
-#define DBGFD stdout
-#else
-#define DBGFD NULL
-#endif
-
 #include <rz_bin.h>
 #include <rz_bin_dwarf.h>
 #include <rz_core.h>
