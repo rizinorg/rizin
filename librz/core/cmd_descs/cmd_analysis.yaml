@@ -29,6 +29,10 @@ commands:
             summary: Analyze all function calls to imports
             cname: analyze_all_function_calls_to_imports
             args: []
+      - name: aaC
+        summary: Analysis classes from RzBin
+        cname: analysis_recover_all_classes_from_bin
+        args: []
       - name: aad
         summary: Analyze data references to code
         cname: analyze_all_data_references_to_code

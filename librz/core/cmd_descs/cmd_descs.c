@@ -2267,6 +2267,14 @@ static const RzCmdDescHelp analyze_all_function_calls_to_imports_help = {
 	.args = analyze_all_function_calls_to_imports_args,
 };
 
+static const RzCmdDescArg analysis_recover_all_classes_from_bin_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_recover_all_classes_from_bin_help = {
+	.summary = "Analysis classes from RzBin",
+	.args = analysis_recover_all_classes_from_bin_args,
+};
+
 static const RzCmdDescArg analyze_all_data_references_to_code_args[] = {
 	{ 0 },
 };
@@ -18549,6 +18557,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(aac_cd);
 	RzCmdDesc *analyze_all_function_calls_to_imports_cd = rz_cmd_desc_argv_new(core->rcmd, aac_cd, "aaci", rz_analyze_all_function_calls_to_imports_handler, &analyze_all_function_calls_to_imports_help);
 	rz_warn_if_fail(analyze_all_function_calls_to_imports_cd);
+
+	RzCmdDesc *analysis_recover_all_classes_from_bin_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaC", rz_analysis_recover_all_classes_from_bin_handler, &analysis_recover_all_classes_from_bin_help);
+	rz_warn_if_fail(analysis_recover_all_classes_from_bin_cd);
 
 	RzCmdDesc *analyze_all_data_references_to_code_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aad", rz_analyze_all_data_references_to_code_handler, &analyze_all_data_references_to_code_help);
 	rz_warn_if_fail(analyze_all_data_references_to_code_cd);

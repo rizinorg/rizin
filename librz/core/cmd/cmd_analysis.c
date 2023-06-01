@@ -1931,6 +1931,11 @@ RZ_IPI RzCmdStatus rz_analysis_print_rtti_all_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_analysis_recover_all_classes_from_bin_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_class_recover_from_rzbin(core->analysis);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_recover_rtti_all_handler(RzCore *core, int argc, const char **argv) {
 	rz_analysis_rtti_recover_all(core->analysis);
 	return RZ_CMD_STATUS_OK;
