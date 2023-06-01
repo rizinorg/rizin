@@ -44,12 +44,12 @@ RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b) {
 
 static char *getFunctionName(RzCore *core, ut64 addr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (bf && bf->o) {
-		RzBinSymbol *sym = ht_up_find(bf->o->addrzklassmethod, addr, NULL);
-		if (sym && sym->classname && sym->name) {
-			return rz_str_newf("method.%s.%s", sym->classname, sym->name);
-		}
+
+	RzBinSymbol *sym = bf && bf->o ? rz_bin_object_find_method_by_vaddr(bf->o, addr) : NULL;
+	if (sym && sym->classname && sym->name) {
+		return rz_str_newf("method.%s.%s", sym->classname, sym->name);
 	}
+
 	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
 	return (flag && flag->name) ? strdup(flag->name) : NULL;
 }
@@ -1588,21 +1588,6 @@ RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr) {
 		}
 	}
 	return true;
-}
-
-RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn) {
-	bool demangle = rz_config_get_i(core->config, "bin.demangle");
-	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
-	char *name = strdup(fcn->name ? fcn->name : "");
-	if (demangle) {
-		char *tmp = rz_bin_demangle(core->bin->cur, lang, name, fcn->addr, keep_lib);
-		if (tmp) {
-			free(name);
-			name = tmp;
-		}
-	}
-	return name;
 }
 
 /**

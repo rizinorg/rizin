@@ -1343,6 +1343,8 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBinDex
 		field->bind = RZ_BIN_BIND_WEAK_STR;
 		field->type = RZ_BIN_TYPE_FIELD_STR;
 		field->is_imported = true;
+		field->vaddr = UT64_MAX;
+		field->paddr = UT64_MAX;
 
 		if (!rz_list_append(symbols, field)) {
 			rz_bin_symbol_free(field);

@@ -398,7 +398,7 @@ RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, 
 	if (original_len < 7 || (strncmp(name, ".?AV", 4) != 0 && strncmp(name, ".?AU", 4) != 0) || strncmp(name + original_len - 2, "@@", 2) != 0) {
 		return NULL;
 	}
-	char *ret = context->analysis->binb.demangle(NULL, "msvc", name, 0, false);
+	char *ret = context->analysis->binb.demangle(NULL, "msvc", name);
 	if (ret && *ret) {
 		char *n = strchr(ret, ' ');
 		if (n && *(++n)) {

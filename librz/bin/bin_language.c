@@ -100,6 +100,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	}
 
 	bool is_macho = info->rclass ? strstr(info->rclass, "mach") : false;
+	bool is_dyldc = info->bclass ? strstr(info->bclass, "dyldcache") : false;
 	bool is_elf = info->rclass ? strstr(info->rclass, "elf") : false;
 	bool is_pe = info->rclass ? strstr(info->rclass, "pe") : false;
 	bool is_class = info->rclass ? strstr(info->rclass, "class") : false;
@@ -108,7 +109,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	bool is_cpp = false;
 	char *lib = NULL;
 
-	if (!is_macho && !is_elf && !is_pe && !is_class) {
+	if (!is_macho && !is_dyldc && !is_elf && !is_pe && !is_class) {
 		return RZ_BIN_LANGUAGE_UNKNOWN;
 	}
 

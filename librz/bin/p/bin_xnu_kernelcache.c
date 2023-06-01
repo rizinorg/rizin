@@ -1264,25 +1264,6 @@ static void symbols_from_mach0(RzList /*<RzBinSymbol *>*/ *ret, struct MACH0_(ob
 		}
 		sym->name = strdup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
-		if (sym->name[0] == '_') {
-			char *dn = rz_bin_demangle(bf, sym->name, sym->name, sym->vaddr, false);
-			if (dn) {
-				sym->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(sym->name[0])) {
-						sym->classname = strdup(sym->name);
-						sym->classname[p - sym->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						sym->classname = strdup(p + 1);
-						p = strchr(sym->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? "LOCAL" : "GLOBAL";
 		sym->type = "FUNC";
