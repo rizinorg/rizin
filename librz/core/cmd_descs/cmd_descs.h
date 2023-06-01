@@ -189,6 +189,8 @@ RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int 
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_handler(RzCore *core, int argc, const char **argv);
 // "aaci"
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_to_imports_handler(RzCore *core, int argc, const char **argv);
+// "aaC"
+RZ_IPI RzCmdStatus rz_analysis_recover_all_classes_from_bin_handler(RzCore *core, int argc, const char **argv);
 // "aad"
 RZ_IPI RzCmdStatus rz_analyze_all_data_references_to_code_handler(RzCore *core, int argc, const char **argv);
 // "aae"
