@@ -138,7 +138,7 @@ NAME=DEX Hello.dex method flags (r2 commands) (ic*)
 FILE=bins/dex/Hello.dex
 CMDS=ic*~main
 EXPECT=<<EOF
-"f method.public.static.Hello.void_main_String @ 0x1000001c0"
+f method.public.static.Hello.void_main_String @ 0x1000001c0
 EOF
 RUN
 
@@ -155,7 +155,7 @@ EXPECT=<<EOF
 0x100000508 0 World worldVar2
 0x1000002f4 20 World void <init>()
 0x100000318 68 World void foo(int)
-0x00000000 0 java.lang.System imp.out
+---------- 0 java.lang.System imp.out
 0x8000000000 2 java.io.PrintStream imp.void println(String)
 0x8000000002 2 java.lang.Integer imp.void <init>(int)
 0x8000000004 2 java.lang.Integer imp.String toString()
@@ -171,7 +171,6 @@ FILE=bins/dex/HelloWorld.dex
 CMDS=fl
 EXPECT=<<EOF
 0x00000000 1460 section.file
-0x00000000 0 sym.System.out
 0x000001e8 1 class.Hello
 0x00000208 1 class.World
 0x100000228 908 section.data
@@ -235,16 +234,16 @@ NAME=DEX HelloWorld.dex imports (ii command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind type  lib                     name                                       
----------------------------------------------------------------------------------------------
-0   0x00000000 WEAK FIELD java.lang.System        System.out
-1   ---------- WEAK FUNC  java.io.PrintStream     void java.io.PrintStream.println(String)
-2   ---------- WEAK FUNC  java.lang.Integer       void Integer.<init>(int)
-3   ---------- WEAK FUNC  java.lang.Integer       String Integer.toString()
-4   ---------- WEAK FUNC  java.lang.Object        void Object.<init>()
-5   ---------- WEAK FUNC  java.lang.StringBuilder void StringBuilder.<init>()
-6   ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder StringBuilder.append(String)
-7   ---------- WEAK FUNC  java.lang.StringBuilder String StringBuilder.toString()
+nth vaddr      bind type  lib                     name                         
+-------------------------------------------------------------------------------
+0   ---------- WEAK FIELD java.lang.System        out
+1   ---------- WEAK FUNC  java.io.PrintStream     void println(String)
+2   ---------- WEAK FUNC  java.lang.Integer       void <init>(int)
+3   ---------- WEAK FUNC  java.lang.Integer       String toString()
+4   ---------- WEAK FUNC  java.lang.Object        void <init>()
+5   ---------- WEAK FUNC  java.lang.StringBuilder void <init>()
+6   ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder append(String)
+7   ---------- WEAK FUNC  java.lang.StringBuilder String toString()
 EOF
 RUN
 
@@ -478,8 +477,8 @@ NAME=DEX radare2installer.dex classes (is getProper)
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ii~getProper
 EXPECT=<<EOF
-402 ---------- WEAK FUNC  java.lang.System                                 String System.getProperty(String)
-403 ---------- WEAK FUNC  java.lang.System                                 String System.getProperty(String, String)
+402 ---------- WEAK FUNC  java.lang.System                                 String getProperty(String)
+403 ---------- WEAK FUNC  java.lang.System                                 String getProperty(String, String)
 EOF
 RUN
 

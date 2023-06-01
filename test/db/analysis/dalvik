@@ -37,9 +37,9 @@ NAME=Dalvik HelloWorld func xref to super method
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=aaa; axt @ sym.android.app.Activity.void_onDestroy~invoke-super
 EXPECT=<<EOF
-method.public.org.radare.radare2installer.ConsoleActivity.void_onDestroy 0x100019e50 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
+method.public.org.radare.radare2installer.ConsoleActivity.void_onDestroy; void onDestroy() 0x100019e50 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
 method.public.org.radare.radare2installer.LaunchActivity.void_onDestroy 0x10001a256 [CALL] invoke-super {v1}, Landroid/app/Activity;->onDestroy()V
-method.public.org.radare.radare2installer.WebActivity.void_onDestroy 0x10001e574 [CALL] invoke-super {v2}, Landroid/app/Activity;->onDestroy()V
+method.public.org.radare.radare2installer.WebActivity.void_onDestroy; void onDestroy() 0x10001e574 [CALL] invoke-super {v2}, Landroid/app/Activity;->onDestroy()V
 EOF
 RUN
 

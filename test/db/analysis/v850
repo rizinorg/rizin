@@ -62,7 +62,7 @@ EXPECT=<<EOF
 0x0010565a    1 16           fcn.0010565a
 0x00105934    1 36           fcn.00105934
 0x00106300    1 20           sym._vfiprintf
-0x00106318    1 90           sym.___sbprintf_1
+0x00106318    1 90           sym.___sbprintf_0x106318
 0x001063ae    4 50           fcn.001063ae
 0x001063e0    5 90           sym.___assert_func
 0x0010643e    1 8            fcn.0010643e
@@ -279,7 +279,7 @@ EXPECT=<<EOF
 0x00113e56    1 16           fcn.00113e56
 0x00114130    1 36           fcn.00114130
 0x00114afc    1 20           sym._vfiprintf
-0x00114b14    1 90           sym.___sbprintf_1
+0x00114b14    1 90           sym.___sbprintf_0x114b14
 0x00114ba8   15 240  -> 198  sym.___swbuf_r
 0x00114ca0    1 18           sym.___swbuf
 0x00114cb6    5 58           sym.__wctomb_r
