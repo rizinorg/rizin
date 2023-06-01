@@ -159,7 +159,7 @@ Same project, different file
 0x080483fe   easy:
 0x080483fe                 29c4  sub esp, eax
 0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x01
-0x08048407           e810ffffff  call sym.imp.printf
+0x08048407           e810ffffff  call sym.imp.printf_0x804831c
 EOF
 RUN
 

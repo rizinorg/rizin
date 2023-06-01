@@ -44,9 +44,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=irj without any bin file should not print anything
+NAME=irj without any bin file should print an empty array
 FILE==
 CMDS=irj
 EXPECT=<<EOF
+[]
 EOF
 RUN

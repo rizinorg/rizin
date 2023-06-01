@@ -33,7 +33,7 @@ hdr.csum N/A
 guid     857bce1a017e34649909d58ee21cf8dc
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     c
 machine  arm
 maxopsz  4
 minopsz  4
@@ -197,7 +197,7 @@ hdr.csum N/A
 guid     857bce1a017e34649909d58ee21cf8dc
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     c
 machine  arm
 maxopsz  4
 minopsz  4
@@ -359,7 +359,7 @@ hdr.csum N/A
 guid     0051c062211e3a669af7d590307d245c
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     objc
 machine  arm
 maxopsz  4
 minopsz  4
@@ -389,7 +389,6 @@ address     min         max         name                          super
 0x18206a0a0 0x18003aa98 0x18003ab98 Protocol                      NSObject
 0x18206a140 0x18003e8dc 0x18003e8e4 __NSUnrecognizedTaggedPointer NSObject
 0x18206a0f0 0x18003cfc4 0x18003d788 NSObject                      NSObject
-0x00000000  0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
 ----------  0     Test        isa                   struct objc_class *
@@ -397,11 +396,11 @@ address     index class flags name                  type
 address     index class flags name                         
 -----------------------------------------------------------
 0x1800189f8 0     Test        init
-0x180018a58 1     Test        methodWithoutArgs
-0x180018ab0 2     Test        methodWithOneArg:
-0x180018b0c 3     Test        methodWithTwoArgs:secondArg:
-0x180018b90 4     Test        methodWithReturn
-0x180018a1c 5     Test  c     someStaticMethod
+0x180018a1c 1     Test  c     someStaticMethod
+0x180018a58 2     Test        methodWithoutArgs
+0x180018ab0 3     Test        methodWithOneArg:
+0x180018b0c 4     Test        methodWithTwoArgs:secondArg:
+0x180018b90 5     Test        methodWithReturn
 address index class flags name type 
 ------------------------------------
 address     index class                         flags name        
@@ -410,7 +409,7 @@ address     index class                         flags name
 0x18003e8e0 1     __NSUnrecognizedTaggedPointer       release
 0x18003e8e4 2     __NSUnrecognizedTaggedPointer       autorelease
 --
-0x182064028 0x0000000182068068   h....... @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist 6476431464 lib_libhello-1.0.dylib.17.__DATA.__objc_data _OBJC_CLASS_$_Test R 0x182068040
+0x182064028 0x0000000182068068   h....... @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist 6476431464 lib_libhello-1.0.dylib.17.__DATA.__objc_data class Test R 0x182068040
 EOF
 RUN
 
@@ -452,7 +451,7 @@ hdr.csum N/A
 guid     b3d4bd16c88a378c961fcfefb34344b9
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     objc
 machine  arm
 maxopsz  4
 minopsz  4
@@ -482,7 +481,6 @@ address     min         max         name                          super
 0x184079110 0x18003e244 0x18003e3b4 Protocol                      NSObject
 0x1840791b0 0x180042ac8 0x180042ad0 __NSUnrecognizedTaggedPointer NSObject
 0x184079160 0x180040eb8 0x180042ac4 NSObject                      NSObject
-0x00000000  0x180014f94 0x180014f98 std                           
 address     index class flags name                  type                
 ------------------------------------------------------------------------
 ----------  0     Test        isa                   struct objc_class *
@@ -490,105 +488,105 @@ address     index class flags name                  type
 address     index class flags name                         
 -----------------------------------------------------------
 0x180018a14 0     Test        init
-0x180018a78 1     Test        methodWithoutArgs
-0x180018ad4 2     Test        methodWithOneArg:
-0x180018b34 3     Test        methodWithTwoArgs:secondArg:
-0x180018bbc 4     Test        methodWithReturn
-0x180018a38 5     Test  c     someStaticMethod
+0x180018a38 1     Test  c     someStaticMethod
+0x180018a78 2     Test        methodWithoutArgs
+0x180018ad4 3     Test        methodWithOneArg:
+0x180018b34 4     Test        methodWithTwoArgs:secondArg:
+0x180018bbc 5     Test        methodWithReturn
 address     index class    flags name                                 type                
 ------------------------------------------------------------------------------------------
-----------  0     NSObject       isa                                  struct objc_class *
-0x18206d1c4 1     NSObject       NSObject::(ivar)isa                  #
-----------  2     NSObject       NSObject::(property)hash             
-----------  3     NSObject       NSObject::(property)superclass       
-----------  4     NSObject       NSObject::(property)description      
-----------  5     NSObject       NSObject::(property)debugDescription 
+0x18206d1c4 0     NSObject       NSObject::(ivar)isa                  #
+----------  1     NSObject       NSObject::(property)debugDescription 
+----------  2     NSObject       NSObject::(property)description      
+----------  3     NSObject       NSObject::(property)hash             
+----------  4     NSObject       NSObject::(property)superclass       
+----------  5     NSObject       isa                                  struct objc_class *
 address     index class    flags name                                   
 ------------------------------------------------------------------------
-0x18004144c 0     NSObject       init
-0x180042658 1     NSObject       retain
-0x180041adc 2     NSObject       release
-0x1800415d4 3     NSObject       autorelease
-0x18004233c 4     NSObject       _tryRetain
-0x180042280 5     NSObject       _isDeallocating
-0x180041450 6     NSObject       retainCount
-0x18004225c 7     NSObject       allowsWeakReference
-0x180042250 8     NSObject       retainWeakReference
-0x180042ac4 9     NSObject       self
-0x180042a74 10    NSObject       class
-0x180042974 11    NSObject       isKindOfClass:
-0x180042928 12    NSObject       respondsToSelector:
-0x180042894 13    NSObject       isEqual:
-0x1800428a0 14    NSObject       hash
-0x18004142c 15    NSObject       copy
-0x180042a20 16    NSObject       superclass
-0x180042670 17    NSObject       description
-0x180042664 18    NSObject       debugDescription
-0x1800427b4 19    NSObject       performSelector:
-0x180042754 20    NSObject       performSelector:withObject:
-0x1800426ec 21    NSObject       performSelector:withObject:withObject:
-0x180042884 22    NSObject       isProxy
-0x1800429ec 23    NSObject       isMemberOfClass:
-0x1800428a4 24    NSObject       conformsToProtocol:
-0x18004143c 25    NSObject       zone
-0x18004288c 26    NSObject       isFault
-0x180042848 27    NSObject       methodForSelector:
-0x180042804 28    NSObject       doesNotRecognizeSelector:
-0x1800426d4 29    NSObject       methodSignatureForSelector:
-0x180042680 30    NSObject       forwardInvocation:
-0x180042678 31    NSObject       forwardingTargetForSelector:
-0x180041444 32    NSObject       dealloc
-0x18004141c 33    NSObject       mutableCopy
-0x180041440 34    NSObject       finalize
-0x180040ed0 35    NSObject c     init
-0x180041418 36    NSObject c     initialize
-0x180040f10 37    NSObject c     retain
-0x180040eec 38    NSObject c     release
-0x180040ee8 39    NSObject c     autorelease
-0x180040f08 40    NSObject c     _tryRetain
-0x180040f00 41    NSObject c     _isDeallocating
-0x180040ee0 42    NSObject c     retainCount
-0x180040ef8 43    NSObject c     allowsWeakReference
-0x180040ef0 44    NSObject c     retainWeakReference
-0x180040f14 45    NSObject c     new
-0x180041414 46    NSObject c     self
-0x180041410 47    NSObject c     class
-0x180041370 48    NSObject c     isKindOfClass:
-0x180041284 49    NSObject c     respondsToSelector:
-0x180041160 50    NSObject c     resolveInstanceMethod:
-0x180041168 51    NSObject c     resolveClassMethod:
-0x180040ed8 52    NSObject c     alloc
-0x180040ed4 53    NSObject c     allocWithZone:
-0x1800411f8 54    NSObject c     isEqual:
-0x180041204 55    NSObject c     hash
-0x180040ec0 56    NSObject c     copyWithZone:
-0x180040eb8 57    NSObject c     mutableCopyWithZone:
-0x180040ec4 58    NSObject c     copy
-0x1800413d8 59    NSObject c     superclass
-0x180040f70 60    NSObject c     description
-0x180040f64 61    NSObject c     debugDescription
-0x1800410cc 62    NSObject c     performSelector:
-0x18004106c 63    NSObject c     performSelector:withObject:
-0x180041004 64    NSObject c     performSelector:withObject:withObject:
-0x1800411e8 65    NSObject c     isProxy
-0x1800413c4 66    NSObject c     isMemberOfClass:
-0x180041208 67    NSObject c     conformsToProtocol:
-0x180040ec8 68    NSObject c     zone
-0x180041320 69    NSObject c     isSubclassOfClass:
-0x1800412a4 70    NSObject c     isAncestorOfObject:
-0x180041294 71    NSObject c     instancesRespondToSelector:
-0x1800411f0 72    NSObject c     isFault
-0x1800411ac 73    NSObject c     instanceMethodForSelector:
-0x180041170 74    NSObject c     methodForSelector:
-0x18004111c 75    NSObject c     doesNotRecognizeSelector:
-0x180040fec 76    NSObject c     instanceMethodSignatureForSelector:
-0x180040fd4 77    NSObject c     methodSignatureForSelector:
-0x180040f80 78    NSObject c     forwardInvocation:
-0x180040f78 79    NSObject c     forwardingTargetForSelector:
-0x180040ecc 80    NSObject c     dealloc
-0x180040ebc 81    NSObject c     mutableCopy
+0x180040eb8 0     NSObject c     mutableCopyWithZone:
+0x180040ebc 1     NSObject c     mutableCopy
+0x180040ec0 2     NSObject c     copyWithZone:
+0x180040ec4 3     NSObject c     copy
+0x180040ec8 4     NSObject c     zone
+0x180040ecc 5     NSObject c     dealloc
+0x180040ed0 6     NSObject c     init
+0x180040ed4 7     NSObject c     allocWithZone:
+0x180040ed8 8     NSObject c     alloc
+0x180040ee0 9     NSObject c     retainCount
+0x180040ee8 10    NSObject c     autorelease
+0x180040eec 11    NSObject c     release
+0x180040ef0 12    NSObject c     retainWeakReference
+0x180040ef8 13    NSObject c     allowsWeakReference
+0x180040f00 14    NSObject c     _isDeallocating
+0x180040f08 15    NSObject c     _tryRetain
+0x180040f10 16    NSObject c     retain
+0x180040f14 17    NSObject c     new
+0x180040f64 18    NSObject c     debugDescription
+0x180040f70 19    NSObject c     description
+0x180040f78 20    NSObject c     forwardingTargetForSelector:
+0x180040f80 21    NSObject c     forwardInvocation:
+0x180040fd4 22    NSObject c     methodSignatureForSelector:
+0x180040fec 23    NSObject c     instanceMethodSignatureForSelector:
+0x180041004 24    NSObject c     performSelector:withObject:withObject:
+0x18004106c 25    NSObject c     performSelector:withObject:
+0x1800410cc 26    NSObject c     performSelector:
+0x18004111c 27    NSObject c     doesNotRecognizeSelector:
+0x180041160 28    NSObject c     resolveInstanceMethod:
+0x180041168 29    NSObject c     resolveClassMethod:
+0x180041170 30    NSObject c     methodForSelector:
+0x1800411ac 31    NSObject c     instanceMethodForSelector:
+0x1800411e8 32    NSObject c     isProxy
+0x1800411f0 33    NSObject c     isFault
+0x1800411f8 34    NSObject c     isEqual:
+0x180041204 35    NSObject c     hash
+0x180041208 36    NSObject c     conformsToProtocol:
+0x180041284 37    NSObject c     respondsToSelector:
+0x180041294 38    NSObject c     instancesRespondToSelector:
+0x1800412a4 39    NSObject c     isAncestorOfObject:
+0x180041320 40    NSObject c     isSubclassOfClass:
+0x180041370 41    NSObject c     isKindOfClass:
+0x1800413c4 42    NSObject c     isMemberOfClass:
+0x1800413d8 43    NSObject c     superclass
+0x180041410 44    NSObject c     class
+0x180041414 45    NSObject c     self
+0x180041418 46    NSObject c     initialize
+0x18004141c 47    NSObject       mutableCopy
+0x18004142c 48    NSObject       copy
+0x18004143c 49    NSObject       zone
+0x180041440 50    NSObject       finalize
+0x180041444 51    NSObject       dealloc
+0x18004144c 52    NSObject       init
+0x180041450 53    NSObject       retainCount
+0x1800415d4 54    NSObject       autorelease
+0x180041adc 55    NSObject       release
+0x180042250 56    NSObject       retainWeakReference
+0x18004225c 57    NSObject       allowsWeakReference
+0x180042280 58    NSObject       _isDeallocating
+0x18004233c 59    NSObject       _tryRetain
+0x180042658 60    NSObject       retain
+0x180042664 61    NSObject       debugDescription
+0x180042670 62    NSObject       description
+0x180042678 63    NSObject       forwardingTargetForSelector:
+0x180042680 64    NSObject       forwardInvocation:
+0x1800426d4 65    NSObject       methodSignatureForSelector:
+0x1800426ec 66    NSObject       performSelector:withObject:withObject:
+0x180042754 67    NSObject       performSelector:withObject:
+0x1800427b4 68    NSObject       performSelector:
+0x180042804 69    NSObject       doesNotRecognizeSelector:
+0x180042848 70    NSObject       methodForSelector:
+0x180042884 71    NSObject       isProxy
+0x18004288c 72    NSObject       isFault
+0x180042894 73    NSObject       isEqual:
+0x1800428a0 74    NSObject       hash
+0x1800428a4 75    NSObject       conformsToProtocol:
+0x180042928 76    NSObject       respondsToSelector:
+0x180042974 77    NSObject       isKindOfClass:
+0x1800429ec 78    NSObject       isMemberOfClass:
+0x180042a20 79    NSObject       superclass
+0x180042a74 80    NSObject       class
+0x180042ac4 81    NSObject       self
 --
-0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data _OBJC_CLASS_$_Test R 0x184078000
+0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data class Test R 0x184078000
 EOF
 RUN
 
@@ -636,7 +634,7 @@ hdr.csum N/A
 guid     c0a042e3c0db394caa455cd7e767643f
 intrp    N/A
 laddr    0x00000000
-lang     N/A
+lang     c++
 machine  arm
 maxopsz  4
 minopsz  4

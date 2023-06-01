@@ -623,6 +623,7 @@ fss-
 --
     0 * classes
    18 * registers
+    0 * relocs
     0 * sections
     0 * segments
     0 * symbols
