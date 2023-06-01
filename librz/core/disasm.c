@@ -167,7 +167,6 @@ typedef struct {
 	int adistrick;
 	bool asm_meta;
 	bool asm_xrefs_code;
-	int asm_demangle;
 	bool asm_instr;
 	bool show_offset;
 	bool show_offdec; // dupe for rz_print->flags
@@ -373,7 +372,6 @@ static void ds_print_debuginfo(RzDisasmState *ds);
 static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf);
 static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
-static void ds_print_demangled(RzDisasmState *ds);
 static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refaddr);
 static char *ds_sub_jumps(RzDisasmState *ds, char *str);
 static void ds_start_line_highlight(RzDisasmState *ds);
@@ -765,7 +763,6 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_trace = rz_config_get_b(core->config, "asm.trace");
 	ds->linesout = rz_config_get_i(core->config, "asm.lines.out");
 	ds->adistrick = rz_config_get_i(core->config, "asm.middle"); // TODO: find better name
-	ds->asm_demangle = rz_config_get_b(core->config, "asm.demangle");
 	ds->asm_describe = rz_config_get_b(core->config, "asm.describe");
 	ds->show_offset = rz_config_get_b(core->config, "asm.offset");
 	ds->show_offdec = rz_config_get_b(core->config, "asm.decoff");
@@ -1486,12 +1483,6 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 						continue;
 					}
 				}
-				if (ds->asm_demangle) {
-					f = rz_flag_get_by_spaces(core->flags, fun->addr, RZ_FLAGS_FS_SYMBOLS, NULL);
-					if (f && f->demangled && f->realname) {
-						realname = strdup(f->realname);
-					}
-				}
 				name = strdup(fun->name);
 				rz_list_append(addrs, rz_num_dup(xrefi->from));
 			} else {
@@ -1503,17 +1494,6 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 						if (next_f && f->offset == next_f->offset) {
 							rz_list_append(addrs, rz_num_dup(xrefi->from - f->offset));
 							continue;
-						}
-					}
-					if (ds->asm_demangle) {
-						RzFlagItem *f_sym = f;
-						if (!rz_str_startswith(f_sym->name, "sym.")) {
-							f_sym = rz_flag_get_by_spaces(core->flags, f->offset,
-								RZ_FLAGS_FS_SYMBOLS, NULL);
-						}
-						if (f_sym && f_sym->demangled && f_sym->realname) {
-							f = f_sym;
-							realname = strdup(f->realname);
 						}
 					}
 					name = strdup(f->name);
@@ -1918,25 +1898,13 @@ static void ds_show_functions(RzDisasmState *ds) {
 	if (!ds->show_functions) {
 		return;
 	}
-	bool demangle = rz_config_get_b(core->config, "bin.demangle");
-	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	bool fcnsig = ds->show_fcnsig;
-	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
 	const char *fcntype;
 	f = rz_analysis_get_function_at(core->analysis, ds->at);
 	if (!f) {
 		return;
 	}
-	if (demangle) {
-		fcn_name = rz_bin_demangle(core->bin->cur, lang, f->name, f->addr, keep_lib);
-		if (fcn_name) {
-			fcn_name_alloc = true;
-		} else {
-			fcn_name = f->name;
-		}
-	} else {
-		fcn_name = f->name;
-	}
+	fcn_name = f->name;
 
 	ds_begin_line(ds);
 	char *sign = rz_analysis_function_get_signature(f);
@@ -2315,7 +2283,6 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
-	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	bool docolon = true;
 	int nth = 0;
 	RzAnalysisBlock *switch_block = NULL;
@@ -2385,7 +2352,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			}
 		}
 
-		if (ds->asm_demangle && flag->realname) {
+		if (flag->realname) {
 			if (!strncmp(flag->name, "switch.", 7)) {
 				rz_cons_printf(FLAG_PREFIX "switch");
 			} else if (!strncmp(flag->name, "case.", 5)) {
@@ -2453,14 +2420,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				outline = false;
 				docolon = false;
 			} else {
-				const char *lang = rz_config_get(core->config, "bin.lang");
-				char *name = rz_bin_demangle(core->bin->cur, lang, flag->realname, flag->offset, keep_lib);
-				if (!name) {
-					const char *n = flag->realname ? flag->realname : flag->name;
-					if (n) {
-						name = strdup(n);
-					}
-				}
+				char *name = strdup(flag->realname ? flag->realname : flag->name);
 				if (name) {
 					rz_str_ansi_filter(name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
@@ -3545,7 +3505,7 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 			RZ_FLAGS_FS_CLASSES, RZ_FLAGS_FS_SYMBOLS, NULL);
 		if (flag && flag->name && ds->opstr && !strstr(ds->opstr, flag->name) && (rz_str_startswith(flag->name, "sym.") || rz_str_startswith(flag->name, "method.")) && (arch = rz_config_get(ds->core->config, "asm.arch")) && strcmp(arch, "dalvik")) {
 			RzFlagItem *flag_sym = flag;
-			if (ds->core->vmode && ds->asm_demangle && (rz_str_startswith(flag->name, "sym.") || (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL))) && flag_sym->demangled) {
+			if (ds->core->vmode && (rz_str_startswith(flag->name, "sym.") || (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL))) && flag_sym->demangled) {
 				return;
 			}
 			ds_begin_comment(ds);
@@ -3574,7 +3534,7 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 			ds_comment(ds, true, "; %s-0x%x", f->name, -delta);
 		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr, f->name))) {
 			RzFlagItem *flag_sym;
-			if (ds->core->vmode && ds->asm_demangle && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {
+			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {
 				return;
 			}
 			ds_begin_comment(ds);
@@ -4308,34 +4268,11 @@ static void ds_print_cmt_il(RzDisasmState *ds) {
 	rz_strbuf_fini(&sb);
 }
 
-static void ds_print_demangled(RzDisasmState *ds) {
-	if (!ds->show_comments || !ds->asm_demangle) {
-		return;
-	}
-	RzCore *core = ds->core;
-	RzFlagItem *f;
-	int optype = ds->analysis_op.type & 0xFFFF;
-	switch (optype) {
-	case RZ_ANALYSIS_OP_TYPE_JMP:
-	case RZ_ANALYSIS_OP_TYPE_UJMP:
-	case RZ_ANALYSIS_OP_TYPE_CALL:
-		f = rz_flag_get_by_spaces(core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL);
-		if (f && f->demangled && f->realname && ds->opstr && !strstr(ds->opstr, f->realname)) {
-			ds_begin_nl_comment(ds);
-			ds_comment(ds, true, "; %s", f->realname);
-		}
-	}
-}
-
 static void ds_print_relocs(RzDisasmState *ds) {
-	char *demname = NULL;
 	if (!ds->showrelocs || !ds->show_slow) {
 		return;
 	}
 	RzCore *core = ds->core;
-	const char *lang = rz_config_get(core->config, "bin.lang");
-	bool demangle = rz_config_get_b(core->config, "asm.demangle");
-	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	RzBinReloc *rel = rz_core_getreloc(core, ds->at, ds->analysis_op.size);
 	const char *rel_label = "RELOC";
 	if (!rel) {
@@ -4354,17 +4291,13 @@ static void ds_print_relocs(RzDisasmState *ds) {
 		int len = ds->cmtcol - cells;
 		rz_cons_memset(' ', len);
 		if (rel->import) {
-			if (demangle) {
-				demname = rz_bin_demangle(core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib);
-			}
-			rz_cons_printf("; %s %d %s", rel_label, rel->type, demname ? demname : rel->import->name);
+			RzBinImport *imp = rel->import;
+			rz_cons_printf("; %s %d %s", rel_label, rel->type, imp->dname ? imp->dname : imp->name);
 		} else if (rel->symbol) {
-			if (demangle) {
-				demname = rz_bin_demangle(core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
-			}
+			RzBinSymbol *sym = rel->symbol;
 			rz_cons_printf("; %s %d %s @ 0x%08" PFMT64x,
 				rel_label,
-				rel->type, demname ? demname : rel->symbol->name,
+				rel->type, sym->dname ? sym->dname : sym->name,
 				rel->symbol->vaddr);
 			if (rel->addend) {
 				if (rel->addend > 0) {
@@ -4376,7 +4309,6 @@ static void ds_print_relocs(RzDisasmState *ds) {
 		} else {
 			rz_cons_printf("; %s %d ", rel_label, rel->type);
 		}
-		free(demname);
 	}
 }
 
@@ -5132,7 +5064,7 @@ static bool set_jump_realname(RzDisasmState *ds, ut64 addr, const char **kw, con
 	if (!f) {
 		return false;
 	}
-	if (!ds->asm_demangle && !f->realnames) {
+	if (!f->realnames) {
 		// nothing to do, neither demangled nor regular realnames should be shown
 		return false;
 	}
@@ -5531,7 +5463,6 @@ toro:
 			ds_print_ptr(ds, len + 256, idx);
 			ds_print_sysregs(ds);
 			ds_print_fcn_name(ds);
-			ds_print_demangled(ds);
 			ds_print_color_reset(ds);
 			if (!ds->pseudo) {
 				RZ_FREE(ds->opstr);
@@ -5646,7 +5577,6 @@ toro:
 				ds_print_ptr(ds, len + 256, idx);
 				ds_print_sysregs(ds);
 				ds_print_fcn_name(ds);
-				ds_print_demangled(ds);
 				ds_print_color_reset(ds);
 				ds_print_comments_right(ds);
 				ds_print_esil_analysis(ds);

@@ -3509,7 +3509,7 @@ static void function_list_print(RzCore *core, RzList /*<RzAnalysisFunction *>*/ 
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (list, it, fcn) {
-		char *msg, *name = rz_core_analysis_fcn_name(core, fcn);
+		char *msg = NULL;
 		ut64 realsize = rz_analysis_function_realsize(fcn);
 		ut64 size = rz_analysis_function_linear_size(fcn);
 		if (realsize == size) {
@@ -3518,8 +3518,7 @@ static void function_list_print(RzCore *core, RzList /*<RzAnalysisFunction *>*/ 
 			msg = rz_str_newf("%-4" PFMT64u " -> %-4" PFMT64u, size, realsize);
 		}
 		rz_cons_printf("0x%08" PFMT64x " %4d %4s %s\n",
-			fcn->addr, rz_list_length(fcn->bbs), msg, name);
-		free(name);
+			fcn->addr, rz_list_length(fcn->bbs), msg, fcn->name);
 		free(msg);
 	}
 }
@@ -3564,10 +3563,9 @@ static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunctio
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (list, it, fcn) {
 		const char *defaultCC = rz_analysis_cc_default(core->analysis);
-		char *name = rz_core_analysis_fcn_name(core, fcn);
-		rz_cons_printf("\"f %s %" PFMT64u " @ 0x%08" PFMT64x "\"\n", name, rz_analysis_function_linear_size(fcn), fcn->addr);
+		rz_cons_printf("\"f %s %" PFMT64u " @ 0x%08" PFMT64x "\"\n", fcn->name, rz_analysis_function_linear_size(fcn), fcn->addr);
 		rz_cons_printf("\"af+ %s %c @ 0x%08" PFMT64x "\"\n",
-			name, // rz_analysis_fcn_size (fcn), name,
+			fcn->name, // rz_analysis_fcn_size (fcn), fcn->name,
 			function_type_to_char(fcn),
 			fcn->addr);
 		// FIXME: this command prints something annoying. Does it have important side-effects?
@@ -3588,7 +3586,6 @@ static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunctio
 		rz_list_free(xrefs);
 		/*Saving Function stack frame*/
 		rz_cons_printf("afS %d @ 0x%" PFMT64x "\n", fcn->maxstack, fcn->addr);
-		free(name);
 	}
 }
 
@@ -3596,11 +3593,9 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 	int ebbs = 0;
 	pj_o(state->d.pj);
 	pj_kn(state->d.pj, "offset", fcn->addr);
-	char *name = rz_core_analysis_fcn_name(core, fcn);
-	if (name) {
-		pj_ks(state->d.pj, "name", name);
+	if (fcn->name) {
+		pj_ks(state->d.pj, "name", fcn->name);
 	}
-	free(name);
 	pj_kn(state->d.pj, "size", rz_analysis_function_linear_size(fcn));
 	pj_kb(state->d.pj, "is-pure", rz_analysis_function_purity(fcn));
 	pj_kn(state->d.pj, "realsz", rz_analysis_function_realsize(fcn));
@@ -3866,9 +3861,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int arg
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, iter, fcn) {
 		RzInterval inter = { rz_analysis_function_min_addr(fcn), rz_analysis_function_linear_size(fcn) };
-		char *fcn_name = rz_core_analysis_fcn_name(core, fcn);
-		RzListInfo *info = rz_listinfo_new(fcn_name, inter, inter, -1, rz_strf(temp, "%d", fcn->bits));
-		free(fcn_name);
+		RzListInfo *info = rz_listinfo_new(fcn->name, inter, inter, -1, rz_strf(temp, "%d", fcn->bits));
 		if (!info) {
 			break;
 		}
@@ -3905,10 +3898,9 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 	RzListIter *iter;
 	RzAnalysisXRef *xrefi;
 	int ebbs = 0;
-	char *name = rz_core_analysis_fcn_name(core, fcn);
 
 	rz_cons_printf("offset: 0x%08" PFMT64x "\nname: %s\nsize: %" PFMT64u "\n",
-		fcn->addr, name, rz_analysis_function_linear_size(fcn));
+		fcn->addr, fcn->name, rz_analysis_function_linear_size(fcn));
 	rz_cons_printf("is-pure: %s\n", rz_str_bool(rz_analysis_function_purity(fcn)));
 	rz_cons_printf("realsz: %" PFMT64d "\n", rz_analysis_function_realsize(fcn));
 	rz_cons_printf("stackframe: %d\n", fcn->maxstack);
@@ -3974,7 +3966,6 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 	}
-	free(name);
 
 	// traced
 	if (core->dbg->trace->enabled) {
@@ -4928,29 +4919,15 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name, b
 		RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
 		if (methods && rz_vector_len(methods) > 0) {
 			RzTable *table = rz_table_new();
-			rz_table_set_columnsf(table, "dsxxs", "nth", "name", "addr", "vt_offset", "type");
+			rz_table_set_columnsf(table, "dXXss", "nth", "addr", "vt_offset", "type", "name");
 			rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 			char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
 			RzAnalysisMethod *meth;
 			int i = 1;
 			rz_vector_foreach(methods, meth) {
-				RzPVector *row_vec = rz_pvector_new(free);
-				if (!row_vec) {
-					RZ_LOG_ERROR("Failed to allocate memory.\n");
-					rz_table_free(table);
-					rz_vector_free(methods);
-					return;
-				}
-				rz_pvector_push(row_vec, rz_str_newf("%d", i++));
-				rz_pvector_push(row_vec, rz_str_new(meth->real_name));
-				rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->addr));
-				if (meth->vtable_offset >= 0) {
-					rz_pvector_push(row_vec, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
-				} else {
-					rz_pvector_push(row_vec, rz_str_new("-1"));
-				}
-				rz_pvector_push(row_vec, rz_str_new(method_type[meth->method_type]));
-				rz_table_add_row_vec(table, row_vec);
+				ut64 vtable = meth->vtable_offset >= 0 ? meth->vtable_offset : UT64_MAX;
+				rz_table_add_rowf(table, "dXXss", i, meth->addr, vtable, method_type[meth->method_type], meth->real_name);
+				i++;
 			}
 			char *s = rz_table_tostring(table);
 			rz_cons_printf("%s\n", s);

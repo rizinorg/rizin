@@ -48,7 +48,7 @@ RZ_API RzBinRelocTargetBuilder *rz_bin_reloc_target_builder_new(ut64 target_size
 	return builder;
 }
 
-RZ_API void rz_bin_reloc_target_builder_free(RzBinRelocTargetBuilder *builder) {
+RZ_API void rz_bin_reloc_target_builder_free(RZ_NULLABLE RzBinRelocTargetBuilder *builder) {
 	if (!builder) {
 		return;
 	}

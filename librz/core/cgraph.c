@@ -22,9 +22,7 @@ static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzG
 		return;
 	}
 
-	char *me = rz_core_analysis_fcn_name(core, fcn);
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
-	RZ_FREE(me);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
 	if (!curr_node) {
 		return;
 	}
@@ -77,9 +75,7 @@ static void core_graph_coderef(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
 		return;
 	}
 
-	char *me = rz_core_analysis_fcn_name(core, fcn);
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
-	RZ_FREE(me);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
 	if (!curr_node) {
 		return;
 	}
@@ -189,9 +185,7 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
 		return;
 	}
 
-	char *me = rz_core_analysis_fcn_name(core, fcn);
-	RzGraphNode *curr_node = rz_graph_add_node_info(graph, me, NULL, fcn->addr);
-	RZ_FREE(me);
+	RzGraphNode *curr_node = rz_graph_add_node_info(graph, fcn->name, NULL, fcn->addr);
 	if (!curr_node) {
 		return;
 	}

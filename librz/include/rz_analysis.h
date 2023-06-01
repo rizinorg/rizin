@@ -2109,7 +2109,7 @@ RZ_API SdbList *rz_analysis_class_get_all(RzAnalysis *analysis, bool sorted);
 RZ_API void rz_analysis_class_foreach(RzAnalysis *analysis, SdbForeachCallback cb, void *user);
 RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const char *old_name, const char *new_name);
 
-RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth);
+RZ_API void rz_analysis_class_method_fini(RZ_NULLABLE RzAnalysisMethod *meth);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, const char *class_name, const char *meth_name, RzAnalysisMethod *meth);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_get_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr, RzAnalysisMethod *method);
 RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnalysis *analysis, const char *class_name);

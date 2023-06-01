@@ -1352,11 +1352,9 @@ static void autocomplete_functions(RzCore *core, RzLineCompletion *completion, c
 	RzAnalysisFunction *fcn;
 	int n = strlen(str);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		char *name = rz_core_analysis_fcn_name(core, fcn);
-		if (!strncmp(name, str, n)) {
-			rz_line_completion_push(completion, name);
+		if (fcn->name && !strncmp(fcn->name, str, n)) {
+			rz_line_completion_push(completion, fcn->name);
 		}
-		free(name);
 	}
 }
 

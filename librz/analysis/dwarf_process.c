@@ -1458,7 +1458,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 		}
 	}
 	rz_warn_if_fail(ctx->lang);
-	char *new_name = ctx->analysis->binb.demangle(NULL, ctx->lang, fcn.name, fcn.addr, false);
+	char *new_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn.name);
 	fcn.name = new_name ? new_name : strdup(fcn.name);
 	char *ret_type_str = type_as_string(ctx->analysis->typedb, ret_type);
 	fcn.signature = rz_str_newf("%s %s(%s);", rz_str_get(ret_type_str), fcn.name, rz_strbuf_get(&args));

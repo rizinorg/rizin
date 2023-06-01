@@ -741,7 +741,7 @@ RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut
 }
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name) {
-	if (!name || !*name) {
+	if (RZ_STR_ISEMPTY(name)) {
 		return NULL;
 	}
 
@@ -749,10 +749,10 @@ RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *contex
 
 	if (name[0] != '_') {
 		char *to_demangle = rz_str_newf("_Z%s", name);
-		result = context->analysis->binb.demangle(NULL, "cxx", to_demangle, 0, false);
+		result = context->analysis->binb.demangle(NULL, "cxx", to_demangle);
 		free(to_demangle);
 	} else {
-		result = context->analysis->binb.demangle(NULL, "cxx", name, 0, false);
+		result = context->analysis->binb.demangle(NULL, "cxx", name);
 	}
 
 	return result;

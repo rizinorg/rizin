@@ -217,25 +217,6 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		ptr->name = strdup((char *)syms[i].name);
 		ptr->is_imported = syms[i].is_imported;
-		if (ptr->name[0] == '_' && !ptr->is_imported) {
-			char *dn = rz_bin_demangle(bf, ptr->name, ptr->name, ptr->vaddr, false);
-			if (dn) {
-				ptr->dname = dn;
-				char *p = strchr(dn, '.');
-				if (p) {
-					if (IS_UPPER(ptr->name[0])) {
-						ptr->classname = strdup(ptr->name);
-						ptr->classname[p - ptr->name] = 0;
-					} else if (IS_UPPER(p[1])) {
-						ptr->classname = strdup(p + 1);
-						p = strchr(ptr->classname, '.');
-						if (p) {
-							*p = 0;
-						}
-					}
-				}
-			}
-		}
 		ptr->forwarder = "NONE";
 		ptr->bind = (syms[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? RZ_BIN_BIND_LOCAL_STR : RZ_BIN_BIND_GLOBAL_STR;
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
