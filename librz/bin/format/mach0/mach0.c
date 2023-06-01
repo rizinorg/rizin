@@ -990,10 +990,9 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 	}
 	bin->thread.cmd = rz_read_ble32(&thc[0], bin->big_endian);
 	bin->thread.cmdsize = rz_read_ble32(&thc[4], bin->big_endian);
-	if (rz_buf_read_at(bin->b, off + sizeof(struct thread_command), tmp, 4) < 4) {
+	if (!rz_buf_read_ble32_at(bin->b, off + sizeof(struct thread_command), &flavor, bin->big_endian)) {
 		goto wrong_read;
 	}
-	flavor = rz_read_ble32(tmp, bin->big_endian);
 
 	if (off + sizeof(struct thread_command) + sizeof(flavor) > bin->size ||
 		off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(ut32) > bin->size) {
@@ -1020,7 +1019,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.x86_32, "16i", 1) == -1) {
-				bprintf("Error: read (thread state x86_32)\n");
+				RZ_LOG_ERROR("read thread state x86_32\n");
 				return false;
 			}
 			pc = bin->thread_state.x86_32.eip;
@@ -1034,7 +1033,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.x86_64, "32l", 1) == -1) {
-				bprintf("Error: read (thread state x86_64)\n");
+				RZ_LOG_ERROR("read thread state x86_64\n");
 				return false;
 			}
 			pc = bin->thread_state.x86_64.rip;
@@ -1042,7 +1041,6 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			arw_ptr = (ut8 *)&bin->thread_state.x86_64;
 			arw_sz = sizeof(struct x86_thread_state64);
 			break;
-			// default: bprintf ("Unknown type\n");
 		}
 		break;
 	case CPU_TYPE_POWERPC:
@@ -1053,7 +1051,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
-				bprintf("Error: read (thread state ppc_32)\n");
+				RZ_LOG_ERROR("read thread state ppc_32\n");
 				return false;
 			}
 			pc = bin->thread_state.ppc_32.srr0;
@@ -1066,7 +1064,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
 				    (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
-				bprintf("Error: read (thread state ppc_64)\n");
+				RZ_LOG_ERROR("read thread state ppc_64\n");
 				return false;
 			}
 			pc = bin->thread_state.ppc_64.srr0;
@@ -1081,7 +1079,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
 			    (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
-			bprintf("Error: read (thread state arm)\n");
+			RZ_LOG_ERROR("read thread state arm\n");
 			return false;
 		}
 		pc = bin->thread_state.arm_32.r15;
@@ -1094,17 +1092,17 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			return false;
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
-			    (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
-			bprintf("Error: read (thread state arm)\n");
+			    (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "33L2I" : "33l2i", 1) == -1) {
+			RZ_LOG_ERROR("read thread state arm64\n");
 			return false;
 		}
-		pc = rz_read_be64(&bin->thread_state.arm_64.pc);
+		pc = bin->thread_state.arm_64.pc;
 		pc_offset = ptr_thread + rz_offsetof(struct arm_thread_state64, pc);
 		arw_ptr = (ut8 *)&bin->thread_state.arm_64;
 		arw_sz = sizeof(struct arm_thread_state64);
 		break;
 	default:
-		bprintf("Error: read (unknown thread state structure)\n");
+		RZ_LOG_ERROR("unknown thread state structure\n");
 		return false;
 	}
 

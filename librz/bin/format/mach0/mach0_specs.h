@@ -187,6 +187,7 @@ struct arm_thread_state64 {
 	ut64 sp;
 	ut64 pc;
 	ut32 cpsr;
+	ut32 flags;
 };
 
 typedef struct {
