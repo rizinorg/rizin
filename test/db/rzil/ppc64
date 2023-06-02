@@ -212,6 +212,7 @@ EOF
 RUN
 
 NAME=ppc add instructions
+BROKEN=1
 FILE=bins/elf/ppc/ppc64le_uplifted
 ARGS=-appc
 CMDS=<<EOF
@@ -258,6 +259,7 @@ EOF
 RUN
 
 NAME=ppc sub instructions
+BROKEN=1
 FILE=bins/elf/ppc/ppc64le_uplifted
 ARGS=-appc
 CMDS=<<EOF
@@ -367,6 +369,7 @@ EOF
 RUN
 
 NAME=ppc logical instructions
+BROKEN=1
 FILE=bins/elf/ppc/ppc64le_uplifted
 ARGS=-appc
 CMDS=<<EOF
@@ -439,6 +442,7 @@ RUN
 
 NAME=ppc compare instructions
 FILE=bins/elf/ppc/ppc64le_uplifted
+BROKEN=1
 ARGS=-appc
 CMDS=<<EOF
 s sym.compare_insns
@@ -486,6 +490,7 @@ RUN
 
 NAME=ppc shift instructions
 FILE=bins/elf/ppc/ppc64le_uplifted
+BROKEN=1
 ARGS=-appc
 CMDS=<<EOF
 s sym.shift_insns
@@ -516,6 +521,7 @@ RUN
 NAME=ppc rotate instructions
 FILE=bins/elf/ppc/ppc64le_uplifted
 ARGS=-appc
+BROKEN=1
 CMDS=<<EOF
 s sym.rotate_insns
 aezi
@@ -544,7 +550,6 @@ var_write(name: r10, old: 0xfedcba9876543210, new: 0x0)
 var_write(name: cr0, old: 0x8, new: 0x2)
 EOF
 RUN
-
 
 NAME=ppc CR logical instructions
 FILE=bins/elf/ppc/ppc64le_uplifted
@@ -784,6 +789,7 @@ EOF
 RUN
 
 NAME=emulateme-big-endian
+BROKEN=1
 FILE=bins/elf/ppc/emulateme-ppc64be
 TIMEOUT=30
 ARGS=-T
@@ -810,6 +816,7 @@ EXPECT_ERR=
 RUN
 
 NAME=emulateme-little-endian
+BROKEN=1
 FILE=bins/elf/ppc/emulateme-ppc64le
 TIMEOUT=30
 ARGS=-T

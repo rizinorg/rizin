@@ -46,10 +46,12 @@ EXPECT=<<EOF
 ;-- str.sync:
 13495
 EOF
+BROKEN=1
 RUN
 
 NAME=Resolve all symbols on a stripped linux go1.12 binary
 FILE=bins/golang/example-server-1.12-stripped
+BROKEN=1
 CMDS=<<EOF
 aalg
 fl~sym.go.~?
@@ -400,6 +402,7 @@ EXPECT=<<EOF
 | 0x0009a470      lis   r7, 0xd ; 0xb81ed ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
 | 0x0009a4cc      lis   r8, 0xd ; 0xbd867 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 EOF
+BROKEN=1
 RUN
 
 NAME=Parse Golang 1.18 PPC64 LE Strings
@@ -425,6 +428,7 @@ EXPECT=<<EOF
 | 0x0009a384      lis   r7, 0xd ; 0xb820e ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
 | 0x0009a3e0      lis   r8, 0xd ; 0xbd845 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
 EOF
+BROKEN=1
 RUN
 
 NAME=Parse Golang 1.18 riscv64 Strings

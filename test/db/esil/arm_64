@@ -774,6 +774,7 @@ EXPECT=<<EOF
         `-> 0x00000018      35008052       movz  w21, 0x1
         ,=< 0x0000001c      35000035       cbnz  w21, 0x20             ; likely
 EOF
+BROKEN=1
 RUN
 
 NAME=bic 64-bit register

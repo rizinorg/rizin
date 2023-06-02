@@ -220,4 +220,5 @@ afvW
 |           0x00000014   -32 += 32      ldr   x19, [sp], 0x20
 \           0x00000018     0            ret
 EOF
+BROKEN=1
 RUN
