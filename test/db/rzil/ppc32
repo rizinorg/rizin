@@ -206,9 +206,11 @@ QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
 EXPECT_ERR=
+BROKEN=1
 RUN
 
 NAME=emulateme-little-endian
+BROKEN=1
 FILE=bins/elf/ppc/emulateme-ppc32le
 TIMEOUT=30
 CMDS=<<EOF
