@@ -1413,7 +1413,6 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	RzList *symbols = rz_bin_get_symbols(core->bin);
-	size_t count = 0;
 	RzListIter *iter;
 	RzBinSymbol *symbol;
 	rz_list_foreach (symbols, iter, symbol) {
@@ -1425,7 +1424,6 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
 		RzBinSymNames sn = { 0 };
-		count++;
 		rz_core_sym_name_init(&sn, symbol);
 
 		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {

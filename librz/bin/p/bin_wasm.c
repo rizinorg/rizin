@@ -141,11 +141,7 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		goto bad_alloc;
 	}
 
-	ut32 fcn_idx = 0,
-	     table_idx = 0,
-	     mem_idx = 0,
-	     global_idx = 0;
-
+	ut32 fcn_idx = 0;
 	ut32 i = 0;
 	RzBinWasmImportEntry *imp;
 	RzListIter *iter;
@@ -165,15 +161,12 @@ static RzList /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			break;
 		case RZ_BIN_WASM_EXTERNALKIND_Table:
 			ptr->type = "TABLE";
-			table_idx++;
 			break;
 		case RZ_BIN_WASM_EXTERNALKIND_Memory:
 			ptr->type = "MEMORY";
-			mem_idx++;
 			break;
 		case RZ_BIN_WASM_EXTERNALKIND_Global:
 			ptr->type = RZ_BIN_BIND_GLOBAL_STR;
-			global_idx++;
 			break;
 		}
 		ptr->size = 0;

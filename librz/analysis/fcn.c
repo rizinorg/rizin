@@ -563,7 +563,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool overlapped = false;
 	RzAnalysisOp op = { 0 };
 	int oplen, idx = 0;
-	int lea_cnt = 0;
 	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	bool varset = false;
 	struct {
@@ -947,7 +946,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					: op.dst && op.dst->reg
 					? strdup(op.dst->reg->name)
 					: NULL;
-				lea_cnt++;
 				rz_list_append(analysis->leaddrs, pair);
 			}
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
