@@ -45,6 +45,7 @@ analysis_plugins_list = [
 ]
 if capstone_dep.version().split('.')[0].to_int() > 4
   analysis_plugins_list += 'riscv_cs'
+  analysis_plugins_list += 'tricore_cs'
 endif
 
 if get_option('use_gpl')
@@ -233,6 +234,7 @@ rz_analysis_sources = [
 
 if capstone_dep.version().split('.')[0].to_int() > 4
   rz_analysis_sources += 'p/analysis_riscv_cs.c'
+  rz_analysis_sources += 'p/analysis_tricore_cs.c'
 endif
 
 if get_option('use_gpl')
