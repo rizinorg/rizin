@@ -885,7 +885,7 @@ EOF
 EXPECT=<<EOF
   ; CALL XREF from fcn.00000662 @ 0x696
   ; CALL XREF from fcn.00000662 @ +0x92
-/ fcn.000005a2 ();
+/ fcn.000005a2();
 | 0x000005a2      cpi   r24, 0x05
 | 0x000005a4      breq  0x5d4
 | ----------- true: 0x000005d4  false: 0x000005a6

@@ -453,7 +453,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_14h @ stack - 0x14
 |           ; var int64_t var_10h @ stack - 0x10
@@ -514,7 +514,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x10040
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_14h @ stack - 0x14
 |           ; var int64_t var_10h @ stack - 0x10

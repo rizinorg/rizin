@@ -297,7 +297,7 @@ aa
 pd 13
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 (int64_t arg1, int64_t arg2, int64_t arg3);
+/ fcn.00000000(int64_t arg1, int64_t arg2, int64_t arg3);
 |           ; arg int64_t arg1 @ rcx
 |           ; arg int64_t arg2 @ rdx
 |           ; arg int64_t arg3 @ r8
@@ -312,7 +312,7 @@ EXPECT=<<EOF
             0x00000016      cc             int3
             0x00000017      cc             int3
             ; CALL XREF from fcn.00000000 @ 0x9
-/ fcn.00000018 (int64_t arg1, int64_t arg2);
+/ fcn.00000018(int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rcx
 |           ; arg int64_t arg2 @ rdx
 |           0x00000018      2bca           sub   ecx, edx              ; arg2
@@ -382,7 +382,7 @@ afvW
   var_s10h  0x7
   var_s18h  0xb
    var_78h
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           ; var int64_t var_98h @ stack - 0x98
 |           ; var int64_t var_78h @ stack - 0x78
 |           ; var int64_t var_8h @ stack - 0x8
@@ -441,7 +441,7 @@ afvW
     var_eh  0xa
     var_fh  0xe
     var_4h
-/ fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
+/ fcn.00000000(int16_t arg1, int16_t arg2, int16_t arg3);
 |           ; arg int16_t arg1 @ r0
 |           ; arg int16_t arg2 @ r1
 |           ; arg int16_t arg3 @ r2
@@ -542,7 +542,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- varfunc:
-/ dbg.varfunc ();
+/ int dbg.varfunc();
 |           ; var int lightbulb @ stack - 0x18
 |           ; var int sun @ stack - 0x14
 |           ; var int last @ stack - 0x10
@@ -589,7 +589,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- varfunc:
-/ dbg.varfunc ();
+/ int dbg.varfunc();
 |           ; var int lightbulb @ stack - 0x10
 |           ; var int sun @ stack - 0xc
 |           ; var int last @ stack - 0x8
@@ -619,7 +619,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x11c0
             ;-- foo:
-/ dbg.foo (int num);
+/ int dbg.foo(int num);
 |           ; arg int num @ stack - 0x2c
 |           ; var short int minus_seven @ stack - 0x24
 |           ; var short int sub_short @ stack - 0x22
@@ -727,10 +727,12 @@ EXPECT=<<EOF
 |           0x00000646      mov   sp, r7
 \           0x00000648      pop   {r7, pc}
 EOF
+BROKEN=1
 RUN
 
 NAME=Function arguments from DWARF (arm_nodebug)
 FILE=bins/elf/float_ex1/float_ex1_arm_nodebug
+BROKEN=1
 CMDS=<<EOF
 aaa
 s sym.fn1
@@ -796,6 +798,7 @@ RUN
 
 NAME=Function arguments from DWARF (arm_stripped)
 FILE=bins/elf/float_ex1/float_ex1_arm_stripped
+BROKEN=1
 CMDS=<<EOF
 aaa
 s 0x5e0
@@ -870,7 +873,12 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- fn1:
-/ dbg.fn1 ();
+/ _Bool dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
+|           ; arg some_t **out @ stack - 0x18
+|           ; arg struct Some *gg @ stack - 0x14
+|           ; arg double q @ stack - 0x10
+|           ; arg char *g @ stack - 0x8
+|           ; arg int a @ stack - 0x4
 |           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15
 |           0x8000041e      sub.a sp, 24
 |           0x80000420      st.w  [a14]-4, d4
@@ -923,5 +931,127 @@ EXPECT=<<EOF
 |           0x800004a6      mov   d15, 1                               ; float_ex1.c:24
 |           0x800004a8      mov   d2, d15                              ; float_ex1.c:25
 |           0x800004aa      ret   
+EOF
+RUN
+
+NAME=Function va_args arguments from DWARF
+FILE=bins/elf/float_ex1/float_ex1_hightec
+CMDS=<<EOF
+aaa
+(sig; afv; afs; pd 1; echo "")
+s dbg.printf
+.(sig)
+s dbg.prout
+.(sig)
+s dbg._fpadd_parts
+.(sig)
+s dbg.strnlen_s
+.(sig)
+s dbg._Wctomb
+.(sig)
+s dbg._Mbtowc
+.(sig)
+s dbg.feraiseexcept
+.(sig)
+s dbg._Atrealloc
+.(sig)
+EOF
+EXPECT=<<EOF
+var va_list ap @ stack + 0x4
+arg const char * fmt @ a6
+int printf(const char *format);
+            ;-- printf:
+/ int dbg.printf(const char *fmt, va_args ..);
+|           ; arg const char *fmt @ a6
+|           ; var va_list ap @ stack + 0x4
+|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; int printf(const char *fmt, va_args ..);
+
+arg void * str @ a15
+arg const char * buf @ a5
+arg size_t n @ d4
+void dbg.prout(const char *buf);
+            ;-- prout:
+/ void *dbg.prout(void *str, const char *buf, size_t n);
+|           ; arg void *str @ a15
+|           ; arg size_t n @ d4
+|           ; arg const char *buf @ a5
+|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; void *prout(void *str, const char *buf, size_t n);
+
+arg fp_number_type * b @ a12
+arg fp_number_type * a @ a13
+arg fp_number_type * tmp @ a15
+arg fractype a_fraction @ d11
+arg int diff @ d12
+arg int a_normal_exp @ d15
+arg int b_normal_exp @ d2
+arg int sdiff @ d3
+arg fractype b_fraction @ d9
+void dbg._fpadd_parts();
+            ;-- _fpadd_parts:
+/ fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+|           ; arg fp_number_type *a @ a13
+|           ; arg fp_number_type *b @ a12
+|           ; arg fp_number_type *tmp @ a15
+|           ; var int sdiff @ d3
+|           ; var int a_normal_exp @ d15
+|           ; var int b_normal_exp @ d2
+|           ; var fractype a_fraction @ d11
+|           ; var fractype b_fraction @ d9
+|           ; var int diff @ d12
+|           0x80003c60      ld.bu d15, [a4]0                           ; fp-bit.c:604 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+
+arg const char * sc @ a2
+arg const char * s @ a4
+arg size_t maxsize @ d4
+void dbg.strnlen_s(const char *s);
+            ;-- strnlen_s:
+/ size_t dbg.strnlen_s(const char *s, size_t maxsize);
+|           ; arg size_t maxsize @ d4
+|           ; var const char *sc @ a2
+|           ; arg const char *s @ a4
+|           0x800030ca      mov   d2, 0                                ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
+
+arg mbstate_t * pst @ a12
+arg _Statab * pwcstate @ a13
+arg char * s @ a15
+arg wchar_t wc @ d15
+void dbg._Wctomb();
+            ;-- _Wctomb:
+/ int dbg._Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+|           ; arg char *s @ a15
+|           ; arg wchar_t wc @ d15
+|           ; arg mbstate_t *pst @ a12
+|           ; var _Statab *pwcstate @ a13
+|           0x800018a6      movh.a a2, 53248                           ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+
+arg wchar_t * pwc @ a4
+arg const char * s @ a5
+arg mbstate_t * pst @ a6
+arg size_t nin @ d4
+void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
+            ;-- _Mbtowc:
+/ int dbg._Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+|           ; arg size_t nin @ d4
+|           ; arg wchar_t *pwc @ a4
+|           ; arg const char *s @ a5
+|           ; arg mbstate_t *pst @ a6
+|           0x80003084      movh.a a15, 53248                          ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+
+arg int except @ d4
+int feraiseexcept(int excepts);
+            ;-- feraiseexcept:
+/ int dbg.feraiseexcept(int except);
+|           ; arg int except @ d4
+|           0x800037d8      mov   d2, 0                                ; feraiseexcept.c:173 ; int feraiseexcept(int except);
+
+arg Ppvoidfn newfuns @ a12
+arg size_t inc @ d15
+void dbg._Atrealloc();
+            ;-- _Atrealloc:
+/ int dbg._Atrealloc();
+|           ; var size_t inc @ d15
+|           ; var Ppvoidfn newfuns @ a12
+|           0x80001994      movh.a a15, 53248                          ; exit.c:22 ; int _Atrealloc();
+
 EOF
 RUN

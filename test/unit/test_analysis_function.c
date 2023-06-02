@@ -336,7 +336,7 @@ bool test_rz_analysis_function_set_type() {
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "postcard", 0x100, RZ_ANALYSIS_FCN_TYPE_NULL);
 	RzAnalysisVarStorage stor = { 0 };
 	stor.type = RZ_ANALYSIS_VAR_STORAGE_REG;
-	stor.reg = "edi";
+	stor.reg = "edx";
 	rz_analysis_function_set_var(f, &stor, NULL, 4, "oldarg0");
 	stor.type = RZ_ANALYSIS_VAR_STORAGE_REG;
 	stor.reg = "ecx";
@@ -353,7 +353,7 @@ bool test_rz_analysis_function_set_type() {
 	RzAnalysisVar *var = rz_pvector_at(&f->vars, 0);
 	mu_assert_streq(var->name, "oldarg0", "var name");
 	mu_assert_eq(var->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "var storage type");
-	mu_assert_streq(var->storage.reg, "edi", "var storage reg");
+	mu_assert_streq(var->storage.reg, "edx", "var storage reg");
 	mu_assert_eq(var->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type kind");
 	mu_assert_streq(var->type->identifier.name, "int32_t", "var type");
 	var = rz_pvector_at(&f->vars, 1);
@@ -386,7 +386,6 @@ bool test_rz_analysis_function_set_type() {
 	c->cc = rz_str_constpool_get(&analysis->constpool, "sectarian");
 
 	// Actual testing
-
 	rz_analysis_function_set_type(analysis, f, c);
 	rz_type_callable_free(c);
 	mu_assert_streq(f->cc, "sectarian", "cc");

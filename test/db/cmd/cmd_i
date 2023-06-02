@@ -412,7 +412,7 @@ NX       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
   ;-- sym.TestVariableSwitchUp.void_TestMultipleVariable:
-/ method.static.TestVariableSwitchUp.void_TestMultipleVariable ();
+/ method.static.TestVariableSwitchUp.void_TestMultipleVariable();
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic Ljava/lang/Integer;.valueOf(I)Ljava/lang/Integer;
 | 0x00000302      4b             astore_0

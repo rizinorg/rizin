@@ -341,7 +341,7 @@ ret
 0x100003da0    1 20           stub.objc_msgSend_methodWithReturn
 -- clean function rename
             ; CALL XREF from entry0 @ 0x100003d14
-/ stub.objc_msgSend_methodWithReturn ();
+/ stub.objc_msgSend_methodWithReturn();
 |           0x100003da0      adrp  x1, section.13.__DATA.__objc_const  ; 0x100008000
 |           0x100003da4      ldr   x1, [x1, 0xc8]                      ; [0x100003f3c:4]=0x6874656d ; "methodWithReturn"
 |           0x100003da8      adrp  x16, reloc.NSLog                    ; 0x100004000

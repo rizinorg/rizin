@@ -1132,7 +1132,7 @@ aat
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           0x00000000      48c7c0000100.  mov   rax, 0x100
 |           0x00000007      488b5008       mov   rdx, qword [rax + foo.c]
 |           0x0000000b      488b4804       mov   rcx, qword [rax + foo.b]
@@ -1631,7 +1631,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg1, uint64_t arg2);
+sym.funcarg(const char *arg1, uint64_t arg2);
 ; arg const char *arg1 @ rdi
 ; arg uint64_t arg2 @ rsi
 ; var uint64_t var_14h @ stack - 0x14
@@ -1652,7 +1652,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg_4h, unsigned long arg_8h);
+sym.funcarg(const char *arg_4h, unsigned long arg_8h);
 ; var int32_t var_8h @ stack - 0x8
 ; arg const char *arg_4h @ stack + 0x4
 ; arg unsigned long arg_8h @ stack + 0x8

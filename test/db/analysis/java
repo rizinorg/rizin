@@ -238,7 +238,7 @@ NX       false
   ;-- entry2:
   ;-- section.class.methods.simple_for_loop_multi_return.attr.0.code:
   ;-- sym.radare_test_cases.loops.byte_simple_for_loop_multi_return:
-/ method.static.radare_test_cases.loops.byte_simple_for_loop_multi_return ();
+/ method.static.radare_test_cases.loops.byte_simple_for_loop_multi_return();
 | 0x000001f1      iconst_0
 | 0x000001f2      istore_2
 | 0x000001f3      iconst_0
@@ -498,7 +498,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods.main.attr.0.code:
             ;-- sym.Test.void_main_String:
-/ method.public.static.Test.void_main_String ();
+/ method.public.static.Test.void_main_String();
 |           0x00000120      getstatic Ljava/lang/System;.out.Ljava/io/PrintStream; ; [03] -r-x section size 17 named class.methods.main.attr.0.code
 |           0x00000123      ldc   "See if you can decompile/disassemble me!"
 |           0x00000125      invokevirtual Ljava/io/PrintStream;.println(Ljava/lang/String;)V
@@ -1540,7 +1540,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x00000383      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x00000384      invokespecial Ljava/lang/Object;.<init>()V
 \           0x00000387      return
@@ -1555,7 +1555,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x00000383      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x00000384      invokespecial Ljava/lang/Object;.<init>()V
 \           0x00000387      return
@@ -1570,7 +1570,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
@@ -1585,7 +1585,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
@@ -1600,7 +1600,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
@@ -1615,7 +1615,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
@@ -1630,7 +1630,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
@@ -1645,7 +1645,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return
@@ -1660,7 +1660,7 @@ EXPECT=<<EOF
             ;-- entry0:
             ;-- section.class.methods._init_.attr.0.code:
             ;-- sym.Main.void__init:
-/ method.public.Main.void__init ();
+/ method.public.Main.void__init();
 |           0x000004a4      aload_0                                    ; [03] -r-x section size 29 named class.methods._init_.attr.0.code
 |           0x000004a5      invokespecial Ljava/lang/Object;.<init>()V
 \           0x000004a8      return

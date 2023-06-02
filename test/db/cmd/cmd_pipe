@@ -23,7 +23,7 @@ Disassembly of entry0:
             ;-- section..text:
             ;-- .text:
             ;-- _start():
-/ entry0 ();
+/ entry0();
 |           0x08049020      push  ebp                                  ; [09] -r-x section size 16 named .text
 |           0x08049021      mov   ebp, esp
 |           0x08049023      sub   esp, 8
@@ -70,7 +70,7 @@ Shared buffer size 0x360c
             ;-- section..text:
             ;-- .text:
             ;-- _start():
-/ entry0 ();
+/ entry0();
 |           0x08049020      push  ebp                                  ; [09] -r-x section size 16 named .text
 |           0x08049021      mov   ebp, esp
 |           0x08049023      sub   esp, 8
@@ -90,7 +90,7 @@ Shared buffer size 0x400
 0x00401000    1 58           entry0
 
             ;-- section.sect_0:
-/ entry0 ();
+/ entry0();
 |           0x00401000      push  0x401080                             ; LPOSVERSIONINFOA lpVersionInformation ; [00] -rwx section size 4096 named sect_0
 |           0x00401005      call  dword [sym.imp.kernel32.dll_GetVersionExA] ; 0x4011b4 ; BOOL GetVersionExA(LPOSVERSIONINFOA lpVersionInformation)
 |           0x0040100b      push  dword [0x401090]
@@ -122,7 +122,7 @@ Shared buffer size 0x10e8
             ;-- main:
             ;-- _main:
             ;-- func.100000f70:
-/ entry0 (int64_t arg1, int64_t arg2);
+/ entry0(int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; var int64_t var_18h @ stack - 0x18
