@@ -198,6 +198,10 @@ static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 
 static inline RzFloatFormat dt2fmt(arm_vectordata_type type) {
 	switch (type) {
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+		return RZ_FLOAT_IEEE754_BIN_16;
+#endif
 	case ARM_VECTORDATA_F32:
 		return RZ_FLOAT_IEEE754_BIN_32;
 	case ARM_VECTORDATA_F64:
@@ -3501,28 +3505,40 @@ static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *succes
 
 static inline ut32 cvt_isize(arm_vectordata_type type, bool *is_signed) {
 	switch (type) {
-	case ARM_VECTORDATA_S32F32:
 	case ARM_VECTORDATA_F32S32:
 	case ARM_VECTORDATA_F64S32:
+	case ARM_VECTORDATA_S32F32:
 	case ARM_VECTORDATA_S32F64:
 		*is_signed = true;
 		return 32;
-	case ARM_VECTORDATA_U32F32:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16U32:
+#endif
 	case ARM_VECTORDATA_F32U32:
-	case ARM_VECTORDATA_U32F64:
 	case ARM_VECTORDATA_F64U32:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_U32F16:
+#endif
+	case ARM_VECTORDATA_U32F32:
+	case ARM_VECTORDATA_U32F64:
 		*is_signed = false;
 		return 32;
-	case ARM_VECTORDATA_F64S16:
 	case ARM_VECTORDATA_F32S16:
-	case ARM_VECTORDATA_S16F64:
+	case ARM_VECTORDATA_F64S16:
 	case ARM_VECTORDATA_S16F32:
+	case ARM_VECTORDATA_S16F64:
 		*is_signed = true;
 		return 16;
-	case ARM_VECTORDATA_U16F64:
-	case ARM_VECTORDATA_U16F32:
-	case ARM_VECTORDATA_F64U16:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16U16:
+#endif
 	case ARM_VECTORDATA_F32U16:
+	case ARM_VECTORDATA_F64U16:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_U16F16:
+#endif
+	case ARM_VECTORDATA_U16F32:
+	case ARM_VECTORDATA_U16F64:
 		*is_signed = false;
 		return 16;
 	default:
@@ -4026,6 +4042,9 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_BLX:
 		return bl(insn, is_thumb);
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS:
+#endif
 	case ARM_INS_MOVW:
 	case ARM_INS_LSL:
 	case ARM_INS_LSR:
@@ -4286,6 +4305,11 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VLDMDB:
 	case ARM_INS_VPOP:
 		return ldm(insn, is_thumb);
+#if CS_API_MAJOR > 4
+	case ARM_INS_VMOVL:
+	case ARM_INS_VMOVN:
+	case ARM_INS_VMOVX:
+#endif
 #if CS_API_MAJOR > 3
 	case ARM_INS_VMOV:
 	case ARM_INS_VMVN:
@@ -4327,6 +4351,15 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VST4:
 		return vstn(insn, is_thumb);
 	case ARM_INS_VCVT:
+#if CS_API_MAJOR > 4
+	case ARM_INS_VCVTA:
+	case ARM_INS_VCVTB:
+	case ARM_INS_VCVTM:
+	case ARM_INS_VCVTN:
+	case ARM_INS_VCVTP:
+	case ARM_INS_VCVTR:
+	case ARM_INS_VCVTT:
+#endif
 		return vcvt(insn, is_thumb);
 #if CS_API_MAJOR > 3
 	case ARM_INS_VDUP:

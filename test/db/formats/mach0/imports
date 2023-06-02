@@ -42,8 +42,8 @@ vaddr       paddr      type   name
 0x1000080e0 0x0000000100008120    ....... @ section.15.__DATA.__objc_classrefs 4295000352 17.__DATA.__objc_data class Stub R 0x1000080f8
 0x1000080e8 ..[ null bytes ]..   00000000 reloc.NSString
             ;-- section.15.__DATA.__objc_classrefs:
-            0x1000080e0      invalid                                   ; [15] -rw- section size 16 named 15.__DATA.__objc_classrefs
-            0x1000080e4      invalid
+            0x1000080e0      udf   0x8120                              ; [15] -rw- section size 16 named 15.__DATA.__objc_classrefs
+            0x1000080e4      udf   1
             ;-- NSString:
             0x1000080e8      .qword 0x0000000000000000                 ; RELOC 64 NSString
 address     min         max         name super    

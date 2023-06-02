@@ -206,7 +206,26 @@ static bool parse(RzParse *p, const char *assembly, RzStrBuf *sb) {
 }
 
 static bool op_is_stack_addr_addition(RzAnalysisOp *op) {
-	return op->type == RZ_ANALYSIS_OP_TYPE_ADD && op->dst && op->dst->reg && op->dst->reg->name && rz_str_casecmp(op->dst->reg->name, "fp") && rz_str_casecmp(op->dst->reg->name, "sp");
+	if (!op || (op->type != RZ_ANALYSIS_OP_TYPE_ADD && op->type != RZ_ANALYSIS_OP_TYPE_SUB)) {
+		return false;
+	} else if (op->dst && op->dst->reg &&
+		RZ_STR_ISNOTEMPTY(op->dst->reg->name) &&
+		(!rz_str_casecmp(op->dst->reg->name, "fp") ||
+			!rz_str_casecmp(op->dst->reg->name, "sp"))) {
+		// we do not want additions/subtractions which modifies the stack
+		return false;
+	}
+	for (size_t j = 0; j < 3; j++) {
+		if (!op->src[j] || !op->src[j]->reg ||
+			RZ_STR_ISEMPTY(op->src[j]->reg->name)) {
+			continue;
+		}
+		const char *reg_name = op->src[j]->reg->name;
+		if (!rz_str_casecmp(reg_name, "fp") || !rz_str_casecmp(reg_name, "sp")) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFunction *f, char *tstr) {
@@ -226,7 +245,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 		re_str = "\\[([a-z][0-9a-z][0-9]?)\\s*(\\+|-)\\s*(-?(0x)?[0-9a-f]+)\\]";
 		group_idx_sign = 2;
 		group_idx_addend = 3;
-	} else if (op && op_is_stack_addr_addition(op)) {
+	} else if (op_is_stack_addr_addition(op)) {
 		// only in add instructions like "add r7, sp, 0x42" we want to match
 		// without brackets around the "sp, 0x42". That is because we want to
 		// avoid matching cases like the following:
@@ -236,12 +255,14 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 
 		// match e.g. "fp, -0x42"
 		// capturing "fp", "-0x42"
-		re_str = "([a-z][0-9a-z][0-9]?),\\s*(-?(0x)?[0-9a-f]+)";
+		re_str = "([a-z][0-9a-z][0-9]?),\\s+(-?(0x)?[0-9a-f]+)";
 		brackets = false;
-	} else {
+	} else if (strchr(tstr, '[')) {
 		// match e.g. "[fp, -0x42]"
 		// capturing "fp", "-0x42"
-		re_str = "\\[([a-z][0-9a-z][0-9]?),\\s*(-?(0x)?[0-9a-f]+)\\]";
+		re_str = "\\[([a-z][0-9a-z][0-9]?),\\s+(-?(0x)?[0-9a-f]+)\\]";
+	} else {
+		return tstr;
 	}
 
 	RzRegex var_re;
@@ -264,6 +285,10 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 	char *reg_str = rz_regex_match_extract(tstr, &match[1]);
 	if (!reg_str) {
 		return tstr;
+	}
+	if (!rz_str_casecmp(reg_str, "x29")) {
+		free(reg_str);
+		reg_str = strdup("fp");
 	}
 
 	rz_return_val_if_fail(match[group_idx_addend].rm_so >= 0, tstr);

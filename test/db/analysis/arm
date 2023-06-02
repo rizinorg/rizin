@@ -1199,7 +1199,7 @@ w hello @ 0x18
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000000      15008052       movz  w21, 0
+            0x00000000      15008052       mov   w21, 0
         ,=< 0x00000004      b5000034       cbz   w21, 0x18             ; likely
 EOF
 RUN

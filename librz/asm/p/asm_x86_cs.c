@@ -63,6 +63,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 	}
+	cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!op) {
 		return true;
 	}
@@ -81,14 +82,27 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		char *ptrstr;
 		op->size = insn->size;
-		char *buf_asm = sdb_fmt("%s%s%s",
+		char *buf_asm = rz_str_newf("%s%s%s",
 			insn->mnemonic, insn->op_str[0] ? " " : "",
 			insn->op_str);
 		ptrstr = strstr(buf_asm, "ptr ");
 		if (ptrstr) {
 			memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
 		}
+
+		if (a->bits == 16 && insn->id == X86_INS_JMP) {
+			// https://github.com/capstone-engine/capstone/issues/111
+			// according to the x86 manual: the upper two bytes of the EIP register are cleared.
+			ut64 jump = insn->detail->x86.operands[0].imm;
+			char find[128], repl[128];
+			rz_strf(find, "%" PFMT64x, jump);
+			jump &= UT16_MAX;
+			jump |= (UT64_16U & off);
+			rz_strf(repl, "%" PFMT64x, jump);
+			buf_asm = rz_str_replace(buf_asm, find, repl, 0);
+		}
 		rz_asm_op_set_asm(op, buf_asm);
+		free(buf_asm);
 	} else {
 		decompile_vm(a, op, buf, len);
 	}

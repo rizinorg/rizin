@@ -272,11 +272,13 @@ NAME=emulateme_vfp
 FILE=bins/elf/emulateme_vfp.arm32
 TIMEOUT=30
 CMDS=<<EOF
-s main
-e asm.bits=32
-aezi
 o malloc://0x1000 0x40000
 o malloc://0x10 0x50000
+# `o` resets the cpu for analysis.cpu
+s main
+e asm.bits=32
+e asm.cpu=v8
+aezi
 e io.cache=1
 ar sp=0x41000
 aezsu 0x10548 # after vsub
