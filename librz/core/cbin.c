@@ -1150,6 +1150,7 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 				// ordinal-1 because we enumerate starting at 0
 				char *symname = resolveModuleOrdinal(*db, module, ordinal - 1); // uses sdb_get
 				if (symname) {
+					free(reloc->import->name);
 					if (r->bin->prefix) {
 						reloc->import->name = rz_str_newf("%s.%s", r->bin->prefix, symname);
 						RZ_FREE(symname);

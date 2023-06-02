@@ -270,7 +270,7 @@ libdemangle_proj = subproject('libdemangle', default_options: libdemangle_option
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
 
 # handle blake3 algo
-blake3_proj = subproject('blake3', default_options: ['default_library=static'])
+blake3_proj = subproject('blake3', default_options: ['default_library=static', 'werror=false'])
 blake3_dep = blake3_proj.get_variable('blake3_dep')
 
 # handle openssl library
@@ -542,7 +542,7 @@ if get_option('use_zlib')
 
   zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
   if not zlib_dep.found()
-    zlib_proj = subproject('zlib', default_options: ['default_library=static'])
+    zlib_proj = subproject('zlib', default_options: ['default_library=static', 'werror=false'])
     zlib_dep = zlib_proj.get_variable('zlib_dep')
     meson.override_dependency('zlib', zlib_dep)
   endif

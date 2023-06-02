@@ -85,6 +85,7 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	RzBinObject *o = binfile->o;
 	RzBinInfo *info = o->info;
 	RzBinSymbol *sym;
+	RzBinImport *imp;
 	RzBinSection *section;
 	RzListIter *iter;
 
@@ -114,8 +115,8 @@ RZ_API RzBinLanguage rz_bin_language_detect(RzBinFile *binfile) {
 	}
 
 	if (is_macho || is_elf) {
-		rz_list_foreach (o->imports, iter, sym) {
-			const char *name = sym->name;
+		rz_list_foreach (o->imports, iter, imp) {
+			const char *name = imp->name;
 			if (!strcmp(name, "_NSConcreteGlobalBlock")) {
 				is_blocks = true;
 			} else if (!strncmp(name, "objc_", 5)) {

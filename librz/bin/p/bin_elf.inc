@@ -1257,7 +1257,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	return r
 #define ADD(T, A) \
 	r->type = RZ_BIN_RELOC_##T; \
-	r->addend += A; \
+	r->addend += (A); \
 	r->additive = rel->mode == DT_RELA; \
 	return r
 
@@ -1385,7 +1385,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 #undef SET
 #undef ADD
 
-	free(r);
+	rz_bin_reloc_free(r);
 	return NULL;
 }
 

@@ -52,8 +52,6 @@ static bool __fcn_exists(RzAnalysis *analysis, const char *name, ut64 addr) {
 	return false;
 }
 
-RZ_IPI void rz_analysis_var_free(RzAnalysisVar *av);
-
 static void inst_vars_kv_free(HtUPKv *kv) {
 	rz_pvector_free(kv->value);
 }
@@ -81,7 +79,7 @@ RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
-	rz_pvector_init(&fcn->vars, NULL);
+	rz_pvector_init(&fcn->vars, (RzPVectorFree)rz_analysis_var_free);
 	fcn->inst_vars = ht_up_new(NULL, inst_vars_kv_free, NULL);
 	fcn->labels = ht_up_new(NULL, labels_kv_free, NULL);
 	fcn->label_addrs = ht_pp_new(NULL, label_addrs_kv_free, NULL);
@@ -110,8 +108,7 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 		ht_pp_delete(analysis->ht_name_fun, fcn->name);
 	}
 
-	rz_analysis_function_delete_all_vars(fcn);
-
+	rz_pvector_fini(&fcn->vars);
 	ht_up_free(fcn->inst_vars);
 	ht_up_free(fcn->labels);
 	ht_pp_free(fcn->label_addrs);

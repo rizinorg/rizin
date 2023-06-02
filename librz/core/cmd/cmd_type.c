@@ -167,7 +167,9 @@ static void types_xrefs(RzCore *core, const char *typestr) {
 				break;
 			}
 		}
+		rz_list_free(uniq);
 	}
+	rz_type_free(type);
 }
 
 static void types_xrefs_summary(RzCore *core) {
@@ -187,6 +189,7 @@ static void types_xrefs_summary(RzCore *core) {
 			}
 			free(str);
 		}
+		rz_list_free(uniq);
 	}
 }
 
@@ -225,6 +228,7 @@ static void types_xrefs_graph(RzCore *core) {
 			rz_cons_printf("age %s %s\n", typestr, fcn->name);
 			free(typestr);
 		}
+		rz_list_free(uniq);
 	}
 }
 

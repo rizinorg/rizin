@@ -1669,6 +1669,10 @@ RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis 
 RZ_API bool rz_analysis_var_is_arg(RZ_NONNULL RzAnalysisVar *var);
 RZ_API size_t rz_analysis_var_local_count(RZ_NONNULL RzAnalysisFunction *fcn);
 RZ_API size_t rz_analysis_arg_count(RZ_NONNULL RzAnalysisFunction *fcn);
+RZ_API void rz_analysis_var_init(RZ_BORROW RzAnalysisVar *var);
+RZ_API void rz_analysis_var_fini(RZ_OWN RzAnalysisVar *var);
+RZ_API RZ_OWN RzAnalysisVar *rz_analysis_var_new();
+RZ_API void rz_analysis_var_free(RZ_OWN RzAnalysisVar *var);
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);
 RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps);

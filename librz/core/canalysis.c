@@ -4954,7 +4954,10 @@ RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_core_analysis_sigdb_list(RZ_NONNUL
 	const char *user_sigdb = rz_config_get(core->config, "flirt.sigdb.path");
 	analysis_sigdb_add(sigs, user_sigdb, with_details);
 
-	return rz_sign_sigdb_list(sigs);
+	RzList *lst = rz_sign_sigdb_list(sigs);
+	sigs->entries->opt.freefn = NULL;
+	rz_sign_sigdb_free(sigs);
+	return lst;
 }
 
 /**
@@ -5583,6 +5586,7 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	}
 	if (rz_file_exists(dbhomepath)) {
 		sdb_concat_by_path(cc, dbhomepath);
+		free(cc->path);
 		cc->path = strdup(dbhomepath);
 	}
 	// same as "tcc `arcc`"
