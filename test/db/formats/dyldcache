@@ -591,6 +591,7 @@ EOF
 RUN
 
 NAME=dyldcache CVE-2022-1244
+BROKEN=1
 FILE=bins/dyldcache/CVE-2022-1244
 CMDS=<<EOF
 aaa

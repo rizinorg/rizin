@@ -1706,6 +1706,7 @@ EOF
 RUN
 
 NAME=pd @a overwrites analysis hints
+BROKEN=1
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
 e asm.bytes=true

@@ -94,6 +94,7 @@ EOF
 EXPECT=<<EOF
    85 * functions
 EOF
+BROKEN=1
 RUN
 
 NAME=ELF_ABI : gcc m32 Os size

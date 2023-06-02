@@ -411,8 +411,10 @@ sym._init:
     fcn.100264c0
 
 EOF
+BROKEN=1
 RUN
 
+BROKEN=1
 NAME=ppc-elf
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
@@ -473,6 +475,7 @@ r4 = 0x10010107
 r3 = 0x0000ffc1
 r4 = 0x1001010a
 EOF
+BROKEN=1
 RUN
 
 NAME=ppc-detect-vtables

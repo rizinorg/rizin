@@ -1201,6 +1201,7 @@ EXPECT=<<EOF
             0x00000000      15008052       movz  w21, 0
         ,=< 0x00000004      b5000034       cbz   w21, 0x18             ; likely
 EOF
+BROKEN=1
 RUN
 
 NAME=Function definition

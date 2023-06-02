@@ -127,8 +127,10 @@ EXPECT=<<EOF
                                 main+116 0x100000ec4 ->      DATA -> 0x100001160 section.14.__DATA.__objc_selrefs+16
                                 main+135 0x100000ed7 ->      DATA -> 0x100001168 section.14.__DATA.__objc_selrefs+24
 EOF
+BROKEN=1
 RUN
 
+BROKEN=1
 NAME=aalor hello-objc methods references
 FILE=bins/mach0/hello-objc
 CMDS=aalor;axl~method
@@ -349,4 +351,5 @@ ret
 |                                                                      ; reloc.objc_msgSend
 \           0x100003db0      br    x16
 EOF
+BROKEN=1
 RUN

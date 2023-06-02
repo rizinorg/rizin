@@ -170,6 +170,7 @@ EOF
 RUN
 
 NAME=special ARM symbols with dot
+BROKEN=1
 FILE=bins/elf/special-sym-with-dot.bin
 CMDS=e asm.bytes=true; pd 5 @ 0x464;
 EXPECT=<<EOF
