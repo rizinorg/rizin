@@ -266,7 +266,6 @@ extern RzAsmPlugin rz_asm_plugin_spc700;
 extern RzAsmPlugin rz_asm_plugin_sysz;
 extern RzAsmPlugin rz_asm_plugin_tms320;
 extern RzAsmPlugin rz_asm_plugin_tms320c64x;
-extern RzAsmPlugin rz_asm_plugin_tricore;
 extern RzAsmPlugin rz_asm_plugin_v810;
 extern RzAsmPlugin rz_asm_plugin_v850;
 extern RzAsmPlugin rz_asm_plugin_vax;
