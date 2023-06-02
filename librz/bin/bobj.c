@@ -201,6 +201,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_list_free(o->sections);
 	rz_list_free(o->symbols);
 	rz_list_free(o->vfiles);
+	rz_list_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}

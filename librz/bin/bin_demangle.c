@@ -20,7 +20,7 @@
 	} while (0)
 
 static const char *get_mangled_name(const char *mangled) {
-	if (!strncmp(mangled, "__OBJC_$", strlen("__OBJC_$"))) {
+	if (!mangled || !strncmp(mangled, "__OBJC_$", strlen("__OBJC_$"))) {
 		// this is never a mangled name
 		return NULL;
 	}

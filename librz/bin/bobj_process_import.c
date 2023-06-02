@@ -49,6 +49,10 @@ RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemang
 	RzListIter *it;
 	RzBinImport *element;
 	rz_list_foreach (o->imports, it, element) {
+		if (!element->name) {
+			continue;
+		}
+
 		// demangle the import
 		if (!rz_bin_demangle_import(element, demangler) ||
 			!language_cb) {
