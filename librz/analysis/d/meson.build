@@ -13,6 +13,7 @@ sdb_files = [
   'cc-sparc-32',
   'cc-spc700-16',
   'cc-sysz-64',
+  'cc-tricore-32',
   'cc-x86-16',
   'cc-x86-32',
   'cc-x86-64',

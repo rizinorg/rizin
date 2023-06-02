@@ -722,14 +722,52 @@ static bool stack_offset_is_arg(RzAnalysisFunction *fcn, st64 stack_off) {
 	return stack_off >= shadow;
 }
 
-RZ_API bool rz_analysis_var_is_arg(RzAnalysisVar *var) {
-	rz_return_val_if_fail(var, false);
-	if (var->kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
-		return true;
+static bool reg_is_fcn_arg(RzAnalysisFunction *fcn, const char *regname) {
+	if (RZ_STR_ISEMPTY(fcn->cc) || RZ_STR_ISEMPTY(regname)) {
+		return false;
 	}
+	int n = rz_analysis_cc_max_arg(fcn->analysis, fcn->cc);
+	for (int i = 0; i < n; ++i) {
+		const char *x = rz_analysis_cc_arg(fcn->analysis, fcn->cc, i);
+		if (!x) {
+			continue;
+		}
+		if (strcmp(x, regname) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Check if a variable is a function argument
+ *
+ * \param var variable to check
+ * \return {return} true if the variable is a function argument
+ */
+RZ_API bool rz_analysis_var_is_arg(RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(var, false);
+	switch (var->kind) {
+	case RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER:
+	case RZ_ANALYSIS_VAR_KIND_UNSPECIFIED_PARAMETERS:
+		return true;
+	case RZ_ANALYSIS_VAR_KIND_VARIABLE:
+		return false;
+	case RZ_ANALYSIS_VAR_KIND_INVALID: {
+		/**
+		 * If we already have some function arguments from debug information,
+		 * then we don't consider the function arguments of the call convention anymore
+		 */
+		if (var->fcn->has_debuginfo) {
+			return false;
+		}
+		break;
+	}
+	}
+
 	switch (var->storage.type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG:
-		return true; // reg vars are always arguments for now
+		return reg_is_fcn_arg(var->fcn, var->storage.reg);
 	case RZ_ANALYSIS_VAR_STORAGE_STACK:
 		return stack_offset_is_arg(var->fcn, var->storage.stack_off);
 	default:
@@ -1314,15 +1352,48 @@ RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache) {
 	rz_list_free(cache->stackvars);
 }
 
+static char *sig_from_debuginfo(RzAnalysis *analysis, char *fcn_name, const char *fcn_name_pre, const char *fcn_name_post) {
+	if (!rz_str_startswith(fcn_name, "dbg."))
+		return NULL;
+
+	const char *real_fcn_name = fcn_name + 4;
+	char *key = RZ_STR_ISNOTEMPTY(real_fcn_name) ? rz_str_newf("fcn.%s.sig", real_fcn_name) : NULL;
+	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
+	char *sig = sdb && key ? sdb_get(sdb, key, 0) : NULL;
+	free(key);
+	if (!sig)
+		return NULL;
+
+	char *highlighted_fcn_name = rz_str_newf("%s%s%s",
+		fcn_name_pre ? fcn_name_pre : "",
+		fcn_name,
+		fcn_name_post ? fcn_name_post : "");
+	char *highlighted_sig = rz_str_replace(sig, real_fcn_name, highlighted_fcn_name, false);
+	free(highlighted_fcn_name);
+	return highlighted_sig;
+}
+
+/**
+ * \brief Returns a string representing the signature of the function \p fcn
+ *
+ * \param analysis The analysis context
+ * \param fcn The function to use to retrieve the signature
+ * \param fcn_name The name of the function to use to retrieve the signature
+ * \param reuse_cache The function variable cache to speed up the process
+ * \param fcn_name_pre The prefix to use to highlight the function name
+ * \param fcn_name_post The suffix to use to highlight the function name
+ * \return {return}
+ */
 RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
 	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post) {
-	RzAnalysisFcnVarsCache *cache = NULL;
-
+	fcn_name = !fcn_name ? fcn->name : fcn_name;
 	if (!fcn_name) {
-		fcn_name = fcn->name;
-		if (!fcn_name) {
-			return NULL;
-		}
+		return NULL;
+	}
+
+	char *sig = sig_from_debuginfo(analysis, fcn_name, fcn_name_pre, fcn_name_post);
+	if (RZ_STR_ISNOTEMPTY(sig)) {
+		return sig;
 	}
 
 	RzStrBuf *buf = rz_strbuf_new(NULL);
@@ -1332,13 +1403,13 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 
 	char *type_fcn_name = rz_analysis_function_name_guess(analysis->typedb, fcn_name);
 	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
-		RzType *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
-		if (fcn_type) {
-			char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
-			if (fcn_type_str) {
-				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-				rz_strbuf_appendf(buf, "%s%s", fcn_type_str, sp);
-				free(fcn_type_str);
+		RzType *ret_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
+		if (ret_type) {
+			char *ret_type_str = rz_type_as_string(analysis->typedb, ret_type);
+			if (ret_type_str) {
+				const char *sp = ret_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+				rz_strbuf_appendf(buf, "%s%s", ret_type_str, sp);
+				free(ret_type_str);
 			}
 		}
 	}
@@ -1350,8 +1421,9 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	if (fcn_name_post) {
 		rz_strbuf_append(buf, fcn_name_post);
 	}
-	rz_strbuf_append(buf, " (");
+	rz_strbuf_append(buf, "(");
 
+	RzAnalysisFcnVarsCache *cache = reuse_cache;
 	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
 		int i, argc = rz_type_func_args_count(analysis->typedb, type_fcn_name);
 		bool comma = true;
@@ -1376,7 +1448,6 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	}
 	RZ_FREE(type_fcn_name);
 
-	cache = reuse_cache;
 	if (!cache) {
 		cache = RZ_NEW0(RzAnalysisFcnVarsCache);
 		if (!cache) {
@@ -1434,7 +1505,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 beach:
 	rz_strbuf_append(buf, ");");
 	RZ_FREE(type_fcn_name);
-	if (!reuse_cache) {
+	if (!reuse_cache && cache) {
 		// !reuse_cache => we created our own cache
 		rz_analysis_fcn_vars_cache_fini(cache);
 		free(cache);
