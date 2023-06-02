@@ -7,11 +7,6 @@ RZ_API RzAnalysisValue *rz_analysis_value_new(void) { // macro for this ?
 	return RZ_NEW0(RzAnalysisValue);
 }
 
-RZ_API RzAnalysisValue *rz_analysis_value_new_from_string(const char *str) {
-	/* TODO */
-	return NULL;
-}
-
 RZ_API RzAnalysisValue *rz_analysis_value_copy(RzAnalysisValue *ov) {
 	rz_return_val_if_fail(ov, NULL);
 
@@ -23,18 +18,6 @@ RZ_API RzAnalysisValue *rz_analysis_value_copy(RzAnalysisValue *ov) {
 	memcpy(v, ov, sizeof(RzAnalysisValue));
 	// reference to reg and regdelta should be kept
 	return v;
-}
-
-// TODO: move into .h as #define free
-RZ_API void rz_analysis_value_free(RzAnalysisValue *value) {
-	free(value);
-#if 0
-	ut64 pval = (ut64)(size_t)value;
-	if (pval && pval != UT64_MAX) {
-		/* TODO: free RzRegItem objects? */
-		free (value);
-	}
-#endif
 }
 
 // mul*value+regbase+regidx+delta

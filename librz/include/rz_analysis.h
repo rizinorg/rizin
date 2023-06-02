@@ -1773,11 +1773,10 @@ RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *res
 /* value.c */
 RZ_API RzAnalysisValue *rz_analysis_value_new(void);
 RZ_API RzAnalysisValue *rz_analysis_value_copy(RzAnalysisValue *ov);
-RZ_API RzAnalysisValue *rz_analysis_value_new_from_string(const char *str);
 RZ_API char *rz_analysis_value_to_string(RzAnalysisValue *value);
 RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *analysis, RzAnalysisValue *val);
 RZ_API int rz_analysis_value_set_ut64(RzAnalysis *analysis, RzAnalysisValue *val, ut64 num);
-RZ_API void rz_analysis_value_free(RzAnalysisValue *value);
+#define rz_analysis_value_free free
 
 RZ_API RzAnalysisCond *rz_analysis_cond_new(void);
 RZ_API RzAnalysisCond *rz_analysis_cond_new_from_op(RzAnalysisOp *op);

@@ -92,7 +92,7 @@ CMDS=<<EOF
 fsl~functions
 EOF
 EXPECT=<<EOF
-   85 * functions
+   86 * functions
 EOF
 RUN
 

@@ -2866,6 +2866,12 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 				op->jump = (seg << a->seggrn) + off;
 			} else {
 				op->jump = INSOP(0).imm;
+				if (a->bits == 16) {
+					// https://github.com/capstone-engine/capstone/issues/111
+					// according to the x86 manual: the upper two bytes of the EIP register are cleared.
+					op->jump &= UT16_MAX;
+					op->jump |= (UT64_16U & addr);
+				}
 			}
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->cycles = CYCLE_JMP;
