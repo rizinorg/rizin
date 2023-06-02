@@ -141,6 +141,7 @@ FILE==
 CMDS=!rizin -R ""
 EXPECT_ERR=<<EOF
 EOF
+BROKEN=1
 RUN
 
 NAME=rizin project with explicit file

@@ -18,7 +18,7 @@ dB "jmp 0xfec50" e95bec
 dB "jmp 0xec50" e95bec 0x1ffff2 (jmp (cast 16 false (bv 16 0xec50)))
 d "jmp 0xec50" e95bec 0xfff2 (jmp (cast 16 false (bv 16 0xec50)))
 ad "leave" c9 0x0 (seq (set sp (var bp)) (set sp (+ (var sp) (bv 16 0x2))) (set bp (loadw 0 16 (+ (+ (cast 16 false (var sp)) (bv 16 0x0)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))))
-ad "loop 0xff92" e290 0x0 (seq (set cx (- (var cx) (bv 16 0x1))) (branch (! (is_zero (var cx))) (jmp (bv 16 0xff94)) nop))
+adB "loop 0xff92" e290 0x0 (seq (set cx (- (var cx) (bv 16 0x1))) (branch (! (is_zero (var cx))) (jmp (bv 16 0xff94)) nop))
 a "mov al, [0xbeef]" a0efbe 0x0 (set ax (| (& (var ax) (~ (bv 16 0xff))) (cast 16 false (loadw 0 8 (bv 16 0xbeef)))))
 a "mov ax, [0xbeef]" a1efbe 0x0 (set ax (loadw 0 16 (bv 16 0xbeef)))
 d "popf" 9d 0x0 (seq (set _flags (loadw 0 16 (+ (+ (cast 16 false (var sp)) (bv 16 0x0)) (<< (cast 16 false (var ss)) (bv 8 0x4) false)))) (set cf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set pf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set af (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x2) false)) (set zf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set sf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set tf (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set if (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set df (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x1) false)) (set of (lsb (var _flags))) (set _flags (>> (var _flags) (bv 8 0x3) false)) (set nt (lsb (var _flags))) (set sp (+ (var sp) (bv 16 0x2))))

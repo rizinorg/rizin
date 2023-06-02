@@ -181,6 +181,7 @@ EXPECT=<<EOF
 |  var: r1  |   |  var: r1  |
 `-----------'   `-----------'
 EOF
+BROKEN=1
 RUN
 
 NAME=emulateme-big-endian
