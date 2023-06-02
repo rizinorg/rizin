@@ -172,6 +172,7 @@ typedef struct rz_analysis_function_t {
 	bool is_pure;
 	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
+	bool has_debuginfo; ///< true if function has debug informations
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
 	int argnum; // number of arguments;
@@ -1665,7 +1666,7 @@ RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_
 // There could be multiple vars used in multiple functions. Use rz_analysis_get_functions_in()+rz_analysis_function_get_vars_used_at() instead.
 RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr);
 
-RZ_API bool rz_analysis_var_is_arg(RzAnalysisVar *var);
+RZ_API bool rz_analysis_var_is_arg(RZ_NONNULL RzAnalysisVar *var);
 RZ_API size_t rz_analysis_var_local_count(RZ_NONNULL RzAnalysisFunction *fcn);
 RZ_API size_t rz_analysis_arg_count(RZ_NONNULL RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, bool verbose);

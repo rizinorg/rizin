@@ -47,18 +47,11 @@ typedef struct dwarf_var_location_t {
 	const char *reg_name; /* string literal */
 } VariableLocation;
 
-typedef enum variable_kind_t {
-	INVALID = 0,
-	FORMAL_PARAMETER,
-	VARIABLE,
-	UNSPECIFIED_PARAMETERS,
-} VariableKind;
-
 typedef struct dwarf_variable_t {
 	VariableLocation *location;
 	char *name;
 	char *type;
-	VariableKind kind;
+	RzAnalysisVarKind kind;
 } Variable;
 
 static void variable_free(Variable *var) {
@@ -779,6 +772,8 @@ static RzType *parse_abstract_origin(Context *ctx, ut64 offset, const char **nam
 	return NULL;
 }
 
+/// DWARF Register Number Mapping
+
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
 static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
@@ -918,6 +913,69 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 	}
 }
 
+/// 4.5.1 DWARF Register Numbers https://www.infineon.com/dgdl/Infineon-TC2xx_EABI-UM-v02_09-EN.pdf?fileId=5546d46269bda8df0169ca1bfc7d24ab
+static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+	case 0: return "d0";
+	case 1: return "d1";
+	case 2: return "d2";
+	case 3: return "d3";
+	case 4: return "d4";
+	case 5: return "d5";
+	case 6: return "d6";
+	case 7: return "d7";
+	case 8: return "d8";
+	case 9: return "d9";
+	case 10: return "d10";
+	case 11: return "d11";
+	case 12: return "d12";
+	case 13: return "d13";
+	case 14: return "d14";
+	case 15: return "d15";
+	case 16: return "a0";
+	case 17: return "a1";
+	case 18: return "a2";
+	case 19: return "a3";
+	case 20: return "a4";
+	case 21: return "a5";
+	case 22: return "a6";
+	case 23: return "a7";
+	case 24: return "a8";
+	case 25: return "a9";
+	case 26: return "a10";
+	case 27: return "a11";
+	case 28: return "a12";
+	case 29: return "a13";
+	case 30:
+		*kind = LOCATION_SP;
+		return "a14";
+	case 31: return "a15";
+	case 32: return "e0";
+	case 33: return "e2";
+	case 34: return "e4";
+	case 35: return "e6";
+	case 36: return "e8";
+	case 37: return "e10";
+	case 38: return "e12";
+	case 39: return "e14";
+	case 40: return "psw";
+	case 41: return "pcxi";
+	case 42: return "pc";
+	case 43: return "pcx";
+	case 44: return "lcx";
+	case 45: return "isp";
+	case 46: return "icr";
+	case 47: return "pipn";
+	case 48: return "biv";
+	case 49: return "btv";
+	default:
+		rz_warn_if_reached();
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
+	}
+}
+
 /* returns string literal register name!
    TODO add more arches                 */
 static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, VariableLocationKind *kind, int bits) {
@@ -931,6 +989,8 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, Variab
 		if (bits == 64) {
 			return map_dwarf_reg_to_ppc64_reg(reg_num, kind);
 		}
+	} else if (!strcmp(arch, "tricore")) {
+		return map_dwarf_reg_to_tricore_reg(reg_num, kind);
 	}
 	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
@@ -1222,7 +1282,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 					}
 				}
 				if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
-					var->kind = FORMAL_PARAMETER;
+					var->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
 					/* arguments sometimes have only type, create generic argX */
 					if (type) {
 						if (!name) {
@@ -1231,7 +1291,11 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 							var->name = strdup(name);
 						}
 						char *type_str = type_as_string(ctx->analysis->typedb, type);
-						rz_strbuf_appendf(args, "%s %s,", rz_str_get(type_str), var->name);
+						size_t tmp_len = strlen(type_str);
+						rz_strbuf_appendf(args, "%s%s%s, ", type_str,
+							tmp_len && type_str[tmp_len - 1] == '*' ? "" : " ",
+							var->name);
+
 						var->type = type_str;
 						rz_list_append(variables, var);
 					} else {
@@ -1239,7 +1303,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 					}
 					argNumber++;
 				} else { /* DW_TAG_variable */
-					var->kind = VARIABLE;
+					var->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
 					if (name && type) {
 						var->name = strdup(name);
 						var->type = type_as_string(ctx->analysis->typedb, type);
@@ -1260,7 +1324,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 			}
 		}
 		if (args->len > 0) {
-			rz_strbuf_slice(args, 0, args->len - 1);
+			rz_strbuf_slice(args, 0, args->len - 2);
 		}
 	}
 	return 0;
@@ -1278,19 +1342,19 @@ static inline char *sdb_build_var_data(Variable *var) {
 		return rz_str_newf("%s,%" PFMT64d ",%s",
 			var->location->kind == LOCATION_CFA ? "c" : "b",
 			var->location->offset, var->type);
-	} break;
+	}
 	case LOCATION_SP: {
 		/* value = "type, storage, additional info based on storage (offset)" */
 		return rz_str_newf("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
-	} break;
+	}
 	case LOCATION_GLOBAL: {
 		/* value = "type, storage, additional info based on storage (address)" */
 		return rz_str_newf("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
-	} break;
+	}
 	case LOCATION_REGISTER: {
 		/* value = "type, storage, additional info based on storage (register name)" */
 		return rz_str_newf("%s,%s,%s", "r", var->location->reg_name, var->type);
-	} break;
+	}
 	default:
 		/* else location is unknown (optimized out), skip the var */
 		break;
@@ -1346,7 +1410,7 @@ sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/ *variables,
 	RzListIter *iter;
 	Variable *var;
 	rz_list_foreach (variables, iter, var) {
-		if (var->kind == FORMAL_PARAMETER) {
+		if (var->kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			rz_list_append(args, var);
 		} else {
 			rz_list_append(vars, var);
@@ -1461,7 +1525,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 	char *new_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn.name);
 	fcn.name = new_name ? new_name : strdup(fcn.name);
 	char *ret_type_str = type_as_string(ctx->analysis->typedb, ret_type);
-	fcn.signature = rz_str_newf("%s %s(%s);", rz_str_get(ret_type_str), fcn.name, rz_strbuf_get(&args));
+	size_t typelen = strlen(ret_type_str);
+	fcn.signature = rz_str_newf("%s%s%s(%s);", ret_type_str, typelen && ret_type_str[typelen - 1] == '*' ? "" : " ", fcn.name, rz_strbuf_get(&args));
 	free(ret_type_str);
 	sdb_save_dwarf_function(&fcn, variables, ctx->sdb);
 
@@ -1617,7 +1682,7 @@ typedef struct {
 	char *func_sname;
 } FcnVariableCtx;
 
-static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, char *var_data, VariableKind var_kind) {
+static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, char *var_data, RzAnalysisVarKind var_kind) {
 	char *extra = NULL;
 	char *kind = sdb_anext(var_data, &extra);
 	char *type = NULL;
@@ -1671,17 +1736,13 @@ beach:
 	return ret;
 }
 
-static void apply_debuginfo_variables(FcnVariableCtx *ctx, VariableKind kind) {
-	const char *fmt = kind == VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
-	const char *var_fmt = kind == VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
+static void apply_debuginfo_variables(FcnVariableCtx *ctx, RzAnalysisVarKind kind) {
+	const char *fmt = kind == RZ_ANALYSIS_VAR_KIND_VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
+	const char *var_fmt = kind == RZ_ANALYSIS_VAR_KIND_VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
 
 	char *var_names_key = rz_str_newf(fmt, ctx->func_sname);
 	char *vars = sdb_get(ctx->dwarf_sdb, var_names_key, NULL);
 	free(var_names_key);
-
-	if (ctx->fcn && kind == FORMAL_PARAMETER && RZ_STR_ISNOTEMPTY(vars)) {
-		rz_analysis_function_delete_arg_vars(ctx->fcn);
-	}
 
 	char *var_name;
 	sdb_aforeach(var_name, vars) {
@@ -1723,6 +1784,9 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 		/* if the function is analyzed so we can edit */
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, faddr);
 		if (fcn) {
+			rz_analysis_function_delete_arg_vars(fcn);
+			fcn->has_debuginfo = true;
+
 			/* prepend dwarf debug info stuff with dbg. */
 			char *real_name_key = rz_str_newf("fcn.%s.name", func_sname);
 			const char *real_name = sdb_const_get(dwarf_sdb, real_name_key, 0);
@@ -1746,8 +1810,8 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			.func_sname = func_sname,
 			.fcn = fcn,
 		};
-		apply_debuginfo_variables(&ctx, FORMAL_PARAMETER);
-		apply_debuginfo_variables(&ctx, VARIABLE);
+		apply_debuginfo_variables(&ctx, RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER);
+		apply_debuginfo_variables(&ctx, RZ_ANALYSIS_VAR_KIND_VARIABLE);
 	}
 	ls_free(sdb_list);
 }

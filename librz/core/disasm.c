@@ -262,7 +262,7 @@ typedef struct {
 	int esil_regstate_size;
 	bool esil_likely;
 
-	int l;
+	int nlines;
 	int middle;
 	int indent_level;
 	int indent_space;
@@ -937,7 +937,7 @@ static void ds_reflines_init(RzDisasmState *ds) {
 	if (ds->show_lines_bb || ds->vec || ds->pj) {
 		ds_reflines_fini(ds);
 		analysis->reflines = rz_analysis_reflines_get(analysis,
-			ds->addr, ds->buf, ds->len, ds->l,
+			ds->addr, ds->buf, ds->len, ds->nlines,
 			ds->linesout, ds->show_lines_call);
 	} else {
 		rz_list_free(analysis->reflines);
@@ -1781,32 +1781,45 @@ static void ds_pre_xrefs(RzDisasmState *ds, bool no_fcnlines) {
 	ds->line_col = tmp_col;
 }
 
-static void ds_show_functions_stack_argvar(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var) {
-	rz_return_if_fail(var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK);
-	st64 off = var->storage.stack_off;
-	char sign = off >= 0 ? '+' : '-';
+static void ds_show_function_var(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var) {
 	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
 	char *constr = rz_analysis_var_get_constraints_readable(var);
 	char *vartype = rz_type_as_string(ds->core->analysis->typedb, var->type);
-	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ stack %c 0x%" PFMT64x,
+	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ ",
 		COLOR_ARG(ds, func_var), pfx,
 		COLOR_ARG(ds, func_var_type), vartype,
 		rz_str_endswith(vartype, "*") ? "" : " ",
 		var->name, COLOR_ARG(ds, func_var_addr),
 		constr ? " { " : "",
 		constr ? constr : "",
-		constr ? "} " : "",
-		sign, RZ_ABS(off));
-	if (ds->show_varsum == -1) {
-		char *val = rz_core_analysis_var_display(ds->core, var, false);
-		if (val) {
-			rz_str_replace_char(val, '\n', '\0');
-			rz_cons_printf(" = %s", val);
-			free(val);
-		}
-	}
+		constr ? "} " : "");
 	free(vartype);
 	free(constr);
+
+	theme_print_color(func_var_addr);
+	switch (var->storage.type) {
+	case RZ_ANALYSIS_VAR_STORAGE_REG: {
+		rz_cons_print(var->storage.reg);
+		break;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
+		const RzStackAddr off = var->storage.stack_off;
+		const char sign = off >= 0 ? '+' : '-';
+		rz_cons_printf("stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
+		break;
+	}
+	}
+
+	if (ds->show_varsum != -1) {
+		return;
+	}
+	char *val = rz_core_analysis_var_display(ds->core, var, false);
+	if (!val) {
+		return;
+	}
+	rz_str_replace_char(val, '\n', '\0');
+	rz_cons_printf(" = %s", val);
+	free(val);
 }
 
 static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *list) {
@@ -1918,12 +1931,8 @@ static void ds_show_functions(RzDisasmState *ds) {
 	int o_varsum = ds->show_varsum;
 	if (ds->interactive && !o_varsum) {
 		int padding = 10;
-		int numvars = vars_cache.stackvars->length + vars_cache.regvars->length + padding;
-		if (numvars > ds->l) {
-			ds->show_varsum = 1;
-		} else {
-			ds->show_varsum = 0;
-		}
+		int numvars = vars_cache.stackvars->length + vars_cache.regvars->length;
+		ds->show_varsum = (numvars > padding) && ((numvars + padding) > ds->nlines);
 	}
 	// show function's realname in the signature if realnames are enabled
 	if (core->flags->realnames) {
@@ -2008,7 +2017,6 @@ static void ds_show_functions(RzDisasmState *ds) {
 			rz_list_foreach (all_vars, iter, var) {
 				ds_begin_line(ds);
 				int idx;
-				RzAnalysis *analysis = ds->core->analysis;
 				memset(spaces, ' ', sizeof(spaces));
 				idx = 12 - strlen(var->name);
 				if (idx < 0) {
@@ -2021,27 +2029,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 					ds_print_offset(ds);
 				}
 				rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
-				switch (var->storage.type) {
-				case RZ_ANALYSIS_VAR_STORAGE_STACK:
-					ds_show_functions_stack_argvar(ds, f, var);
-					break;
-				case RZ_ANALYSIS_VAR_STORAGE_REG: {
-					char *vartype = rz_type_as_string(analysis->typedb, var->type);
-					rz_cons_printf("%sarg %s%s%s%s %s@ %s", COLOR_ARG(ds, func_var),
-						COLOR_ARG(ds, func_var_type),
-						vartype, rz_str_endswith(vartype, "*") ? "" : " ",
-						var->name, COLOR_ARG(ds, func_var_addr), var->storage.reg);
-					if (ds->show_varsum == -1) {
-						char *val = rz_core_analysis_var_display(ds->core, var, false);
-						if (val) {
-							rz_str_replace_char(val, '\n', '\0');
-							rz_cons_printf(" %s", val);
-							free(val);
-						}
-					}
-					free(vartype);
-				} break;
-				}
+				ds_show_function_var(ds, f, var);
 				if (var->comment) {
 					rz_cons_printf("    %s; %s", COLOR(ds, comment), var->comment);
 				}
@@ -2055,23 +2043,22 @@ static void ds_show_functions(RzDisasmState *ds) {
 	if (fcn_name_alloc) {
 		free(fcn_name);
 	}
-	{
-		RzListIter *iter;
-		char *imp;
-		if (ds->fcn && ds->fcn->imports) {
-			rz_list_foreach (ds->fcn->imports, iter, imp) {
-				ds_print_pre(ds, true);
-				ds_print_lines_left(ds);
-				rz_cons_printf(".import %s", imp);
-				ds_newline(ds);
-			}
-		}
-		rz_list_foreach (ds->core->analysis->imports, iter, imp) {
+
+	RzListIter *iter;
+	char *imp;
+	if (ds->fcn && ds->fcn->imports) {
+		rz_list_foreach (ds->fcn->imports, iter, imp) {
 			ds_print_pre(ds, true);
 			ds_print_lines_left(ds);
-			rz_cons_printf(".globalimport %s", imp);
+			rz_cons_printf(".import %s", imp);
 			ds_newline(ds);
 		}
+	}
+	rz_list_foreach (ds->core->analysis->imports, iter, imp) {
+		ds_print_pre(ds, true);
+		ds_print_lines_left(ds);
+		rz_cons_printf(".globalimport %s", imp);
+		ds_newline(ds);
 	}
 }
 
@@ -4673,12 +4660,14 @@ static void mipsTweak(RzDisasmState *ds) {
 	}
 }
 
+typedef int (*MemWriteFn)(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len);
+
 // modifies analysis register state
 static void ds_print_esil_analysis(RzDisasmState *ds) {
 	RzCore *core = ds->core;
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *pc;
-	int (*hook_mem_write)(RzAnalysisEsil * esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	MemWriteFn hook_mem_write = NULL;
 	int i, nargs;
 	ut64 at = rz_core_pava(core, ds->at);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
@@ -5236,7 +5225,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	RzDisasmState *ds = ds_init(core);
 	ds->cbytes = options ? options->cbytes : 0;
 	ds->print = p;
-	ds->l = nlines;
+	ds->nlines = nlines;
 	ds->buf = buf;
 	ds->len = len;
 	ds->addr = addr;
@@ -5311,11 +5300,11 @@ toro:
 
 	ds_print_esil_analysis_init(ds);
 	inc = 0;
-	if (!ds->l) {
-		ds->l = core->blocksize;
+	if (!ds->nlines) {
+		ds->nlines = core->blocksize;
 	}
 	rz_cons_break_push(NULL, NULL);
-	for (idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, ds->index += inc, ds->lines++) {
+	for (idx = ret = 0; addrbytes * idx < len && ds->lines < ds->nlines; idx += inc, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = rz_core_pava(core, ds->at);
 		if (rz_cons_is_breaked()) {
@@ -5622,7 +5611,7 @@ toro:
 	rz_cons_break_pop();
 
 #if HASRETRY
-	if (!ds->cbytes && ds->lines < ds->l) {
+	if (!ds->cbytes && ds->lines < ds->nlines) {
 		ds->addr = ds->at + inc;
 	retry:
 		if (len < 4) {
@@ -5635,7 +5624,7 @@ toro:
 				goto toro;
 			}
 		}
-		if (ds->lines < ds->l) {
+		if (ds->lines < ds->nlines) {
 			// ds->addr += idx;
 			if (!rz_io_read_at(core->io, ds->addr, buf, len)) {
 				// ds->tries = -1;
@@ -5700,7 +5689,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	rz_reg_arena_push(core->analysis->reg);
 
 	ds = ds_init(core);
-	ds->l = nb_opcodes;
+	ds->nlines = nb_opcodes;
 	ds->len = nb_opcodes * 8;
 
 	if (!buf) {
