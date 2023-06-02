@@ -294,7 +294,7 @@ static bool sigdb_to_list(void *user, const void *k, const ut64 v) {
 RZ_API RZ_OWN RzList /*<RzSigDBEntry *>*/ *rz_sign_sigdb_list(RZ_NONNULL const RzSigDb *db) {
 	rz_return_val_if_fail(db, NULL);
 
-	RzList *res = rz_list_new();
+	RzList *res = rz_list_newf((RzListFree)rz_sign_sigdb_signature_free);
 	if (!res) {
 		return NULL;
 	}

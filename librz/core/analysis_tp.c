@@ -389,7 +389,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			if (rz_list_empty(types)) {
 				break;
 			}
-			const char *typestr = rz_str_new(rz_list_get_n(types, pos++));
+			const char *typestr = rz_list_get_n(types, pos++);
 			if (typestr) {
 				type = rz_type_parse_string_single(typedb->parser, typestr, NULL);
 			}

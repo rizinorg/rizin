@@ -44,10 +44,7 @@ static const char *__int_type_from_size(int size) {
 	}
 }
 
-static RZ_OWN RzType *var_type_clone_or_default_type(RzAnalysis *analysis, RZ_BORROW RZ_NULLABLE const RzType *type, int size) {
-	if (type) {
-		return rz_type_clone(type);
-	}
+static RZ_OWN RzType *var_type_default(RzAnalysis *analysis, int size) {
 	const char *typestr = __int_type_from_size(size);
 	if (!typestr) {
 		typestr = __int_type_from_size(analysis->bits);
@@ -90,6 +87,8 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 	ut64 varoff = var->storage.stack_off;
 	// delete variables which are overlaid by the variable type
 	RzPVector *cloned_vars = rz_pvector_clone(&var->fcn->vars);
+	cloned_vars->v.free = NULL;
+	cloned_vars->v.free_user = NULL;
 	void **it;
 	rz_pvector_foreach (cloned_vars, it) {
 		RzAnalysisVar *other = *it;
@@ -102,38 +101,6 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 		}
 	}
 	rz_pvector_free(cloned_vars);
-}
-
-static inline RzAnalysisVar *fcn_var_get_or_new(RzAnalysisFunction *fcn,
-	const char *name, RzAnalysisVarStorage *stor, const RzType *typ) {
-	if (!(fcn && stor && RZ_STR_ISNOTEMPTY(name))) {
-		return NULL;
-	}
-	RzAnalysisVar *existing = rz_analysis_function_get_var_byname(fcn, name);
-	if (existing && !storage_equals(&existing->storage, stor)) {
-		// var name already exists at a different kind+delta
-		RZ_LOG_WARN("var name %s already exists at a different kind+delta", name);
-		return NULL;
-	}
-	RzAnalysisVar *o = rz_analysis_function_get_var_at(fcn, stor);
-	if (!o) {
-		o = RZ_NEW0(RzAnalysisVar);
-		if (!o) {
-			return NULL;
-		}
-		rz_pvector_push(&fcn->vars, o);
-		o->fcn = fcn;
-		rz_vector_init(&o->accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
-		rz_vector_init(&o->constraints, sizeof(RzTypeConstraint), NULL, NULL);
-	} else {
-		RZ_FREE(o->name);
-		if (o->type != typ) {
-			// only free if not assigning the own type to itself
-			rz_type_free(o->type);
-			o->type = NULL;
-		}
-	}
-	return o;
 }
 
 /**
@@ -150,18 +117,35 @@ static inline RzAnalysisVar *fcn_var_get_or_new(RzAnalysisFunction *fcn,
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn,
 	RZ_NONNULL RzAnalysisVarStorage *stor, RZ_BORROW RZ_NULLABLE const RzType *type, int size, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
-	RzAnalysisVar *var = fcn_var_get_or_new(fcn, name, stor, type);
-	if (!var) {
+	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
+	if (var && !storage_equals(&var->storage, stor)) {
+		// var name already exists at a different kind+delta
+		RZ_LOG_WARN("var name %s already exists at a different kind+delta", name);
 		return NULL;
+	}
+	var = rz_analysis_function_get_var_at(fcn, stor);
+	if (!var) {
+		var = rz_analysis_var_new();
+		var->fcn = fcn;
+		rz_pvector_push(&fcn->vars, var);
+	} else {
+		RZ_FREE(var->name);
 	}
 
 	var->name = strdup(name);
 	var->storage = *stor;
 	storage_poolify(fcn->analysis, &var->storage);
-	if (!var->type || var->type != type) {
-		// only clone if we don't already own this type (and didn't free it above)
-		var->type = var_type_clone_or_default_type(fcn->analysis, type, size);
+	if (type) {
+		if (var->type != type) {
+			rz_type_free(var->type);
+			var->type = rz_type_clone(type);
+		}
+	} else {
+		if (!var->type) {
+			var->type = var_type_default(fcn->analysis, size);
+		}
 	}
+
 	rz_analysis_var_resolve_overlaps(var);
 	return var;
 }
@@ -177,58 +161,56 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var,
 	int size) {
 	rz_return_val_if_fail(fcn && var && var->name, NULL);
-	RzAnalysisVar *o = fcn_var_get_or_new(fcn, var->name, &var->storage, var->type);
-	if (!o) {
-		return NULL;
+	RzAnalysisVar *p_var = rz_analysis_function_set_var(fcn, &var->storage, var->type, size, var->name);
+	if (p_var) {
+		p_var->kind = var->kind;
 	}
-
-	o->name = var->name;
-	var->name = NULL;
-
-	o->storage = var->storage;
-	o->kind = var->kind;
-	storage_poolify(fcn->analysis, &o->storage);
-	if (!o->type || o->type != var->type) {
-		// only clone if we don't already own this type (and didn't free it above)
-		o->type = var_type_clone_or_default_type(fcn->analysis, var->type, size);
-	}
-	rz_analysis_var_resolve_overlaps(o);
-	return o;
+	return p_var;
 }
 
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps) {
-	// We do not free the old type here because the new type can contain
-	// the old one, for example it can wrap the old type as a pointer or an array
+	rz_return_if_fail(var && type);
+	rz_type_free(var->type);
 	var->type = type;
 	if (resolve_overlaps) {
 		rz_analysis_var_resolve_overlaps(var);
 	}
 }
 
-static void var_free(RzAnalysisVar *var) {
-	if (!var) {
-		return;
-	}
+RZ_API void rz_analysis_var_init(RZ_BORROW RzAnalysisVar *var) {
+	rz_return_if_fail(var);
+	memset(var, 0, sizeof(RzAnalysisVar));
+	rz_vector_init(&var->accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
+	rz_vector_init(&var->constraints, sizeof(RzTypeConstraint), NULL, NULL);
+}
+
+RZ_API void rz_analysis_var_fini(RZ_OWN RzAnalysisVar *var) {
+	rz_return_if_fail(var);
 	rz_analysis_var_clear_accesses(var);
 	rz_type_free(var->type);
 	rz_vector_fini(&var->constraints);
 	free(var->name);
 	free(var->comment);
+}
+
+RZ_API RZ_OWN RzAnalysisVar *rz_analysis_var_new() {
+	RzAnalysisVar *var = RZ_NEW(RzAnalysisVar);
+	rz_analysis_var_init(var);
+	return var;
+}
+
+RZ_API void rz_analysis_var_free(RZ_OWN RzAnalysisVar *var) {
+	if (!var) {
+		return;
+	}
+	rz_analysis_var_fini(var);
 	free(var);
 }
 
 RZ_API void rz_analysis_var_delete(RzAnalysisVar *var) {
-	rz_return_if_fail(var);
-	RzAnalysisFunction *fcn = var->fcn;
-	size_t i;
-	for (i = 0; i < rz_pvector_len(&fcn->vars); i++) {
-		RzAnalysisVar *v = rz_pvector_at(&fcn->vars, i);
-		if (v == var) {
-			rz_pvector_remove_at(&fcn->vars, i);
-			var_free(v);
-			return;
-		}
-	}
+	rz_return_if_fail(var && var->fcn);
+	rz_pvector_remove_data(&var->fcn->vars, var);
+	rz_analysis_var_free(var);
 }
 
 /**
@@ -241,7 +223,7 @@ RZ_API void rz_analysis_function_delete_vars_by_storage_type(RzAnalysisFunction 
 		RzAnalysisVar *var = rz_pvector_at(&fcn->vars, i);
 		if (var->storage.type == stor) {
 			rz_pvector_remove_at(&fcn->vars, i);
-			var_free(var);
+			rz_analysis_var_free(var);
 			continue;
 		}
 		i++;
@@ -258,7 +240,7 @@ RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn) {
 		RzAnalysisVar *var = rz_pvector_at(&fcn->vars, i);
 		if (rz_analysis_var_is_arg(var)) {
 			rz_pvector_remove_at(&fcn->vars, i);
-			var_free(var);
+			rz_analysis_var_free(var);
 			continue;
 		}
 		i++;
@@ -266,11 +248,7 @@ RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn) {
 }
 
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
-	void **it;
-	rz_pvector_foreach (&fcn->vars, it) {
-		var_free(*it);
-	}
-	rz_pvector_clear(&fcn->vars);
+	rz_pvector_fini(&fcn->vars);
 	fcn->argnum = 0;
 }
 
@@ -289,7 +267,7 @@ RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn) {
 RZ_API void rz_analysis_function_delete_var(RzAnalysisFunction *fcn, RzAnalysisVar *var) {
 	rz_return_if_fail(fcn && var);
 	rz_pvector_remove_data(&fcn->vars, var);
-	var_free(var);
+	rz_analysis_var_free(var);
 }
 
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFunction *fcn, const char *name) {

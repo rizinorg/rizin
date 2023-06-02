@@ -81,14 +81,12 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 			free(values);
 			goto error;
 		}
-		RzCallableArg *arg = RZ_NEW0(RzCallableArg);
+		RzCallableArg *arg = rz_type_callable_arg_new(typedb, argument_name, ttype);
 		if (!arg) {
 			free(values);
 			rz_type_free(ttype);
 			goto error;
 		}
-		arg->name = strdup(argument_name);
-		arg->type = ttype;
 		free(values);
 
 		void *element = rz_pvector_push(callable->args, arg); // returns null if no space available
@@ -228,7 +226,7 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	if (callable->ret) {
 		key = rz_str_newf("func.%s.ret", cname);
 		char *ret_type = rz_type_as_string(typedb, callable->ret);
-		sdb_set(sdb, key, ret_type, 0);
+		sdb_set_owned(sdb, key, ret_type, 0);
 		free(key);
 	}
 
@@ -236,6 +234,7 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	if (callable->noret) {
 		char *noreturn_key = rz_str_newf("func.%s.noreturn", cname);
 		sdb_bool_set(sdb, noreturn_key, true, 0);
+		free(noreturn_key);
 	}
 }
 
