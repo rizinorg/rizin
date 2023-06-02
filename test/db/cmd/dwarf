@@ -1397,7 +1397,7 @@ pd 1 @ main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           ; var int64_t var_ch @ stack - 0xc
 |           0x0040052d      55             push  rbp                   ; dwarftest.c:4
 EOF
@@ -1772,13 +1772,13 @@ EOF
 EXPECT=<<EOF
             ; CALL XREFS from dbg.$main @ 0x405237, 0x40542d, 0x405ba3, 0x406e29
             ;-- unit p$mozgkigyo palya(smallint,smallint):
-/ dbg.palya (SmallInt mag, SmallInt szel);
+/ void dbg.palya(SmallInt mag, SmallInt szel);
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var SmallInt i @ stack - 0x1c
 |           ; arg SmallInt szel @ stack - 0x18
 |           ; arg SmallInt mag @ stack - 0x10
-|           0x00401980      55             push  rbp                   ; void palya(SmallInt mag,SmallInt szel);
+|           0x00401980      55             push  rbp                   ; void palya(SmallInt mag, SmallInt szel);
 |           0x00401981      4889e5         mov   rbp, rsp
 |           0x00401984      488d6424d0     lea   rsp, [rsp - 0x30]
 |           0x00401989      48895dd8       mov   qword [var_30h], rbx

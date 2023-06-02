@@ -313,7 +313,7 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
-/ sym.owGetPageLength.constprop.0 (int64_t arg1);
+/ sym.owGetPageLength.constprop.0(int64_t arg1);
 |           ; arg int64_t arg1 @ rdi
 |           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 ; [01] -r-x section size 6641 named .text
 |           0x08000043      and   eax, 0x7f                            ; 127

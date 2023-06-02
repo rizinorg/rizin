@@ -24,7 +24,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ (loc) entry0 (int32_t arg_31h, int32_t arg_44h);
+/ (loc) entry0(int32_t arg_31h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne   0x648456
@@ -176,7 +176,7 @@ NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
-/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
+/ sym.fastcaslled(int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
 |           ; arg int32_t arg1 @ ecx
 |           ; arg int32_t arg2 @ edx
 |           ; var int32_t var_24h @ stack - 0x24
@@ -2812,7 +2812,7 @@ EXPECT=<<EOF
 0x00001180      31c0           xor   eax, eax
 0x00001182      eb06           jmp   loc.start
 | ----------- true: 0x0000118a
-int main (int argc, char **argv, char **envp);
+int main(int argc, char **argv, char **envp);
 0x00001184      31c0           xor   eax, eax
 0x00001186      75f8           jne   loc.start2
 | ----------- true: 0x00001180  false: 0x00001188
@@ -3832,7 +3832,7 @@ aa > /dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-┌ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+┌ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 │           ; var int32_t var_30h @ stack - 0x30
 │           ; var int32_t var_20h @ stack - 0x20
 │           ; arg int32_t arg_4h @ stack + 0x4
@@ -3895,7 +3895,7 @@ aa >/dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+/ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 |           ; var int32_t var_30h @ stack - 0x30
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; arg int32_t arg_4h @ stack + 0x4
@@ -3974,7 +3974,7 @@ afva
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
+/ fcn.00000000(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
 |           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
@@ -4127,7 +4127,7 @@ aaef
 pdf
 EOF
 EXPECT=<<EOF
-/ entry0 ();
+/ entry0();
 |           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
 |           0x08048056      xor   eax, eax
 |           0x08048058      inc   eax
@@ -4144,7 +4144,7 @@ aae
 pdf
 EOF
 EXPECT=<<EOF
-/ entry0 ();
+/ entry0();
 |           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
 |           0x08048056      xor   eax, eax
 |           0x08048058      inc   eax
@@ -4168,16 +4168,16 @@ echo
 afl
 EOF
 EXPECT=<<EOF
-.----------------.
-|                |
-|            .------------------.
-|            |  0x804805b       |
-|            | fcn.0804805b (); |
-|            | jmp entry0       |
-|            `------------------'
-|                v
-|                |
-|    .-----------'
+.-----------------.
+|                 |
+|             .-----------------.
+|             |  0x804805b      |
+|             | fcn.0804805b(); |
+|             | jmp entry0      |
+|             `-----------------'
+|                 v
+|                 |
+|    .------------'
 |    |
 |.-------------------------------------------.
 ||  0x8048054                                |
@@ -4208,7 +4208,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 |           ; var int32_t var_40h @ stack - 0x40
 |           ; var int32_t var_3ch @ stack - 0x3c
 |           ; var int32_t var_38h @ stack - 0x38
@@ -4254,7 +4254,7 @@ echo --- in jumptable
 pd 10 @ 0x08049410
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 |           0x080491ca     0            lea   ecx, [argv]
 |           0x080491ce     0            and   esp, 0xfffffff0
 |           0x080491d1     0 -= 4       push  dword [ecx - 4]

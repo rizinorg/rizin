@@ -278,7 +278,7 @@ EOF
 EXPECT=<<EOF
             ;-- section.module:
             ;-- <module>:
-/ entry0 ();
+/ entry0();
 |           0x0000001e      LOAD_CONSTCodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
 |           0x00000021      MAKE_FUNCTION
 |           0x00000024      STORE_NAME         hello_world

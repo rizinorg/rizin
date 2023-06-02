@@ -4,7 +4,7 @@ CMDS=aa ; Fs bins/other/sigs/libc-v7.sig ; pd 10 @ flirt.libc_start_main
 EXPECT=<<EOF
 Found 1 FLIRT signatures via bins/other/sigs/libc-v7.sig
             ; CALL XREF from entry0 @ 0x401384
-/ flirt.libc_start_main (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
+/ flirt.libc_start_main(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; arg int64_t arg3 @ rdx
@@ -403,7 +403,7 @@ pdf @ data.004011a5
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40105f
-/ data.004011a5 (int64_t arg1, int64_t arg2);
+/ data.004011a5(int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; var int64_t var_78h @ stack - 0x78
@@ -456,7 +456,7 @@ pdf @ data.004011a5
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40105f
-/ data.004011a5 (int64_t arg1, int64_t arg2);
+/ data.004011a5(int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           ; var int64_t var_78h @ stack - 0x78

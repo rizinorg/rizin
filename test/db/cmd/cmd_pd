@@ -697,14 +697,14 @@ e asm.lines.fcn=false
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
-fcn2.0x004017c0 ();
+fcn2.0x004017c0();
           0x004017c0      51             push  ecx
           0x004017c1      89e1           mov   ecx, esp
           0x004017c3      83c108         add   ecx, 8
@@ -728,14 +728,14 @@ e asm.fcn.size=true
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn2.0x004017c0 ();
+/ fcn2.0x004017c0();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
 |           0x004017c6      3d00100000     cmp   eax, 0x1000
 \       ,=< 0x004017cb      7210           jb    0x4017dd
 
-13: fcn2.0x004017c0 ();
+13: fcn2.0x004017c0();
           0x004017c0      51             push  ecx
           0x004017c1      89e1           mov   ecx, esp
           0x004017c3      83c108         add   ecx, 8
@@ -1299,7 +1299,7 @@ e asm.comments=false
 pdf
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 | 0x0000061a      pushq %rbp
 | 0x0000061b      movq  %rsp, %rbp
 | 0x0000061e      movl  $1, obj.sa
@@ -1391,7 +1391,7 @@ pdJ 1 @ 0x00400506
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push  rbp"}]
-[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
+[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ int main(int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
 EOF
 RUN
 
@@ -2183,7 +2183,7 @@ aa
 pdf
 EOF
 EXPECT=<<EOF
-/ entry0 (int64_t arg3);
+/ entry0(int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor   ebp, ebp
@@ -2299,7 +2299,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell (const char *s);
+sym.parell(const char *s);
 EOF
 RUN
 
@@ -2313,7 +2313,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell (const char *s);
+parell(const char *s);
 EOF
 RUN
 
@@ -2555,7 +2555,7 @@ e asm.sub.varonly=0
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2593,7 +2593,7 @@ EXPECT=<<EOF
 |           0x00000800      addiu sp, sp, 0x30
 |           0x00000804      jr    ra
 \           0x00000808      nop
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2631,7 +2631,7 @@ EXPECT=<<EOF
 |           0x00000800      addiu sp, sp, 0x30
 |           0x00000804      jr    ra
 \           0x00000808      nop
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2669,7 +2669,7 @@ EXPECT=<<EOF
 |           0x00000800      sp = var_4h + 0x4
 |           0x00000804      return
 \           0x00000808      
-/ sym.varfunc ();
+/ sym.varfunc();
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int32_t var_14h @ stack - 0x14
@@ -2720,7 +2720,7 @@ pdrj~{}
 EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x80483e7
-/ int main (int argc, char **argv, char **envp);
+/ int main(int argc, char **argv, char **envp);
 | ; var int32_t var_88h @ stack - 0x88
 | ; var int32_t var_7ch @ stack - 0x7c
 | 0x08048540      push  ebp

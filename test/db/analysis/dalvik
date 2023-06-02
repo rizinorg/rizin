@@ -218,7 +218,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000 ();
+/ fcn.00000000();
 \           0x00000000      return-void
 EOF
 RUN
