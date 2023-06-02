@@ -66,6 +66,10 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 	// rebase physical address
 	symbol->paddr += o->opts.loadaddr;
 
+	if (!symbol->name) {
+		return;
+	}
+
 	// add symbol to the 'import' map[name]symbol
 	if (symbol->is_imported && RZ_STR_ISNOTEMPTY(symbol->name)) {
 		if (!ht_pp_find(o->import_name_symbols, symbol->name, NULL)) {
