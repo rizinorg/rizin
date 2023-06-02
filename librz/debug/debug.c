@@ -1702,11 +1702,11 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	rz_debug_map_sync(dbg);
 	char *abspath = rz_sys_pid_to_path(pid);
 #if !__WINDOWS__
-	if (!abspath) {
+	if (!abspath && file) {
 		abspath = rz_file_abspath(file);
 	}
 #endif
-	if (!abspath) {
+	if (!abspath && file) {
 		abspath = strdup(file);
 	}
 	if (abspath) {
