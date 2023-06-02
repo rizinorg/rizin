@@ -1708,7 +1708,7 @@ static RzILOpEffect *movn(cs_insn *insn) {
 static RzILOpEffect *msr(cs_insn *insn) {
 	cs_arm64_op *op = &insn->detail->arm64.operands[0];
 #if CS_API_MAJOR > 4
-	if (op->type != ARM64_OP_SYS || op->sys != ARM64_SYSREG_NZCV) {
+	if (op->type != ARM64_OP_SYS || (ut64)op->sys != (ut64)ARM64_SYSREG_NZCV) {
 		return NULL;
 	}
 #else
@@ -1803,7 +1803,7 @@ static RzILOpEffect *mrs(cs_insn *insn) {
 	}
 	cs_arm64_op *op = &insn->detail->arm64.operands[1];
 #if CS_API_MAJOR > 4
-	if (op->type != ARM64_OP_SYS || op->sys != ARM64_SYSREG_NZCV) {
+	if (op->type != ARM64_OP_SYS || (ut64)op->sys != (ut64)ARM64_SYSREG_NZCV) {
 		return NULL;
 	}
 #else
