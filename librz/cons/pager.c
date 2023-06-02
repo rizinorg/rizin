@@ -137,7 +137,6 @@ RZ_IPI int *pager_splitlines(char *s, int *lines_count) {
 	int lines_size = 128;
 	int *lines = NULL;
 	int i, row = 0;
-	int sidx = 0;
 
 	if (lines_size * sizeof(int) < lines_size) {
 		return NULL;
@@ -164,7 +163,6 @@ RZ_IPI int *pager_splitlines(char *s, int *lines_count) {
 				s[i] = 0;
 				lines[row++] = i + 1;
 			}
-			sidx++;
 		}
 		*lines_count = row;
 	}

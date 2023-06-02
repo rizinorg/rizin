@@ -4268,7 +4268,6 @@ void __init_menu_color_settings_layout(void *_core, const char *parent) {
 
 void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 	RzCore *core = (RzCore *)_core;
-	int i = 0;
 	RzList *list = __sorted_list(core, menus_settings_disassembly, COUNT(menus_settings_disassembly));
 	char *pos;
 	RzListIter *iter;
@@ -4283,7 +4282,6 @@ void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 			rz_strbuf_append(rsb, rz_config_get(core->config, pos));
 			__add_menu(core, parent, rz_strbuf_get(rsb), __config_toggle_cb);
 		}
-		i++;
 	}
 	rz_list_free(list);
 	rz_strbuf_free(rsb);

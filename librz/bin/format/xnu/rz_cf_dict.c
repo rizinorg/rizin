@@ -68,7 +68,7 @@ static void rz_cf_value_free(RCFValue *value);
 RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RCFValueDict *result = NULL;
 	yxml_t x;
-	int i, depth = 0;
+	int i;
 	char *content = NULL;
 
 	void *xml_buf = malloc(XMLBUFSIZE);
@@ -164,8 +164,6 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 				RZ_LOG_ERROR("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
 				break;
 			}
-			depth++;
-
 			break;
 		}
 		case YXML_ELEMEND: {
@@ -255,7 +253,6 @@ RZ_API RCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut6
 				}
 			}
 
-			depth--;
 			content = NULL;
 			rz_cf_parse_state_free(state);
 			break;

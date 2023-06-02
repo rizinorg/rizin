@@ -105,7 +105,6 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 	// Valid this will be incremented. This is because the bit position doesn't
 	// matter, just the number of bits that are set, when determining how many
 	// rows and what the table structure is.
-	int matched_bits = 0;
 
 	for (int bit_check = 0; bit_check < 64; ++bit_check) {
 		if (!((tilde->Valid >> bit_check) & 0x1)) {
@@ -261,8 +260,6 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 		default:
 			break;
 		}
-
-		matched_bits++;
 	}
 
 	// Now walk again this time parsing out what we care about
@@ -278,11 +275,11 @@ static int read_image_metadata_tilde_header(RzBuffer *b, ut64 addr, Pe_image_clr
 	}
 
 #define READ_BUF_INDEX_SIZE(var, index_size) \
-	var = (index_size == 2) ? rz_read_le16(buf) : rz_read_le32(buf); \
-	buf += index_size;
+	var = ((index_size) == 2) ? rz_read_le16(buf) : rz_read_le32(buf); \
+	buf += (index_size);
 
 #define INDEX_SIZE_FROM_TAG(name, tag_size) \
-	ut32 name = (index_count > (0xFFFF >> tag_size)) ? 4 : 2;
+	ut32 name = (index_count > (0xFFFF >> (tag_size))) ? 4 : 2;
 
 		// Those tables which exist, but that we don't care about must be
 		// skipped.

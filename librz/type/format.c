@@ -2011,7 +2011,7 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 	/* get args */
 	args = get_args_offset(arg);
 	if (args) {
-		int l = 0, maxl = 0;
+		int maxl = 0;
 		argend = args;
 		tmp = *args;
 		while (tmp == ' ') {
@@ -2031,7 +2031,6 @@ static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzSt
 				maxl = len;
 			}
 		}
-		l++;
 		const char *ends = " "; // XXX trailing space warning
 		snprintf(namefmt, sizeof(namefmt), "%%%ds :%s",
 			((maxl + 1) * (1 + slide)) % STRUCTPTR, ends);

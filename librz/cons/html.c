@@ -34,7 +34,6 @@ static const char *gethtmlcolor(const char ptrch) {
 RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 	const char *str = ptr;
 	int esc = 0;
-	int len = 0;
 	bool inv = false;
 	char text_color[16] = { 0 };
 	char background_color[16] = { 0 };
@@ -206,7 +205,6 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 			}
 		}
-		len++;
 	}
 	rz_strbuf_append_n(res, str, ptr - str);
 	if (has_set) {

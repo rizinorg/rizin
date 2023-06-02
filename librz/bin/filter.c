@@ -5,19 +5,12 @@
 #include "i/private.h"
 
 static bool false_positive(const char *str) {
-	int i;
-	ut8 bo[0x100];
 	int up = 0;
 	int lo = 0;
 	int ot = 0;
-	int di = 0;
 	int ln = 0;
-	int sp = 0;
 	int nm = 0;
-	for (i = 0; i < 0x100; i++) {
-		bo[i] = 0;
-	}
-	for (i = 0; str[i]; i++) {
+	for (int i = 0; str[i]; i++) {
 		if (IS_DIGIT(str[i])) {
 			nm++;
 		} else if (str[i] >= 'a' && str[i] <= 'z') {
@@ -30,16 +23,7 @@ static bool false_positive(const char *str) {
 		if (str[i] == '\\') {
 			ot++;
 		}
-		if (str[i] == ' ') {
-			sp++;
-		}
-		bo[(ut8)str[i]] = 1;
 		ln++;
-	}
-	for (i = 0; i < 0x100; i++) {
-		if (bo[i]) {
-			di++;
-		}
 	}
 	if (ln > 2 && str[0] != '_') {
 		if (ln < 10) {

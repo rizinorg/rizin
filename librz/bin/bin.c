@@ -736,7 +736,6 @@ RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin) {
 RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf);
 
 RZ_API RzBin *rz_bin_new(void) {
-	int i;
 	RzBinXtrPlugin *static_xtr_plugin;
 	RzBin *bin = RZ_NEW0(RzBin);
 	if (!bin) {
@@ -773,12 +772,12 @@ RZ_API RzBin *rz_bin_new(void) {
 
 	/* bin parsers */
 	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
-	for (i = 0; i < RZ_ARRAY_SIZE(bin_static_plugins); i++) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_static_plugins); i++) {
 		rz_bin_plugin_add(bin, bin_static_plugins[i]);
 	}
 	/* extractors */
 	bin->binxtrs = rz_list_new();
-	for (i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); i++) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bin_xtr_static_plugins); i++) {
 		static_xtr_plugin = RZ_NEW0(RzBinXtrPlugin);
 		if (!static_xtr_plugin) {
 			goto trashbin_binxtrs;
