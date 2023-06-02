@@ -55,6 +55,7 @@ asm_plugins_list = [
 ]
 if capstone_dep.version().split('.')[0].to_int() > 4
   asm_plugins_list += 'riscv_cs'
+  asm_plugins_list += 'tricore'
 endif
 
 if get_option('use_gpl')
@@ -235,6 +236,7 @@ rz_asm_sources = [
 
 if capstone_dep.version().split('.')[0].to_int() > 4
   rz_asm_sources += 'p/asm_riscv_cs.c'
+  rz_asm_sources += 'p/asm_tricore_cs.c'
 endif
 
 if get_option('use_gpl')
