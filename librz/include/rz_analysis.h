@@ -2260,6 +2260,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_spc700;
 extern RzAnalysisPlugin rz_analysis_plugin_sysz;
 extern RzAnalysisPlugin rz_analysis_plugin_tms320;
 extern RzAnalysisPlugin rz_analysis_plugin_tms320c64x;
+extern RzAnalysisPlugin rz_analysis_plugin_tricore_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_v810;
 extern RzAnalysisPlugin rz_analysis_plugin_v850;
 extern RzAnalysisPlugin rz_analysis_plugin_vax;
