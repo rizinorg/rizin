@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2020-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2020-2021 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_SKYLINE_H
 #define RZ_SKYLINE_H
 
