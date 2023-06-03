@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1992-1994 Henry Spencer
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*	$OpenBSD: cname.h,v 1.5 2003/06/02 20:18:36 millert Exp $	*/
 
 /*-

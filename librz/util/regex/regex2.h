@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1992-1994 Henry Spencer
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*	$OpenBSD: regex2.h,v 1.7 2004/11/30 17:04:23 otto Exp $	*/
 
 /*-

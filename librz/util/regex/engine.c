@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1992-1994 Henry Spencer
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*	$OpenBSD: engine.c,v 1.15 2005/08/05 13:03:00 espie Exp $	*/
 
 /*-

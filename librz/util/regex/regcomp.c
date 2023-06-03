@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1992-1994 Henry Spencer
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*	$OpenBSD: regcomp.c,v 1.20 2010/11/21 00:02:30 tedu Exp $ */
 /*-
  * Copyright (c) 1992, 1993, 1994 Henry Spencer.

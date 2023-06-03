@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1992-1994 Henry Spencer
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*	$OpenBSD: regexec.c,v 1.11 2005/08/05 13:03:00 espie Exp $ */
 /*-
  * Copyright (c) 1992, 1993, 1994 Henry Spencer.
