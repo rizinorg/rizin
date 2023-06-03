@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2015-2023 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020-2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2012-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2017-2018 Fangrui Song <i@maskray.me>
+// SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_LIST_H
 #define RZ_LIST_H
 
