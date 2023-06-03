@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020-2021 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2017 javierptd <javierptd@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_HEAP_JEMALLOC_H
 #define RZ_HEAP_JEMALLOC_H
 
