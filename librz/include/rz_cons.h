@@ -1,3 +1,14 @@
+// SPDX-FileCopyrightText: 2020-2022 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2013-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2018-2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2019-2020 Khairul Azhar Kasmiran <kazarmy@gmail.com>
+// SPDX-FileCopyrightText: 2018-2020 Khairul Kasmiran <kazarmy@gmail.com>
+// SPDX-FileCopyrightText: 2015-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2018-2019 Vanellope <vane11opeschw33tz@gmail.com>
+// SPDX-FileCopyrightText: 2014-2015 jvoisin <julien.voisin@dustri.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_CONS_H
 #define RZ_CONS_H
 
