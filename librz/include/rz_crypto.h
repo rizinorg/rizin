@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2020-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2020-2023 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2012-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2017-2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_CRYPTO_H
 #define RZ_CRYPTO_H
 
