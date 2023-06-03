@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1986-1995 Ian F. Darwin
+// SPDX-License-Identifier: BSD-2-Clause
+
 /*	$OpenBSD: apprentice.c,v 1.29 2009/11/11 16:21:51 jsg Exp $ */
 /*
  * Copyright (c) Ian F. Darwin 1986-1995.

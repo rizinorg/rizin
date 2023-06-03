@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1986-1995 Ian F. Darwin
+// SPDX-License-Identifier: BSD-2-Clause
+
 /* $OpenBSD: funcs.c,v 1.7 2009/10/27 23:59:37 deraadt Exp $ */
 /*
  * Copyright (c) Christos Zoulas 2003.

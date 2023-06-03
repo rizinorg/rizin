@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2011-2017 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /*
  * Hand-made config.h file for OpenBSD, so we don't have to run
  * the dratted configure script every time we build this puppy,

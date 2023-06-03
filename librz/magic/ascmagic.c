@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1986-1995 Ian F. Darwin
+// SPDX-License-Identifier: BSD-2-Clause
+
 /*	$OpenBSD: ascmagic.c,v 1.11 2009/10/27 23:59:37 deraadt Exp $ */
 /*
  * Copyright (c) Ian F. Darwin 1986-1995.

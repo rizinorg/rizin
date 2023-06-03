@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1986-1995 Ian F. Darwin
+// SPDX-License-Identifier: BSD-2-Clause
+
 /*	$OpenBSD: tar.h,v 1.7 2009/04/24 18:54:34 chl Exp $ */
 /*
  * Copyright (c) Ian F. Darwin 1986-1995.
