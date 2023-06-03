@@ -1,3 +1,19 @@
+// SPDX-FileCopyrightText: 2020-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2019 pelijah
+// SPDX-FileCopyrightText: 2017 Álvaro Felipe Melchor <alvaro.felipe91@gmail.com>
+// SPDX-FileCopyrightText: 2017 Anton Kochkov <xvilka@gmail.com>
+// SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 zlowram <zlowram@gmail.com>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2016 Gerardo García Peña <killabytenow@gmail.com>
+// SPDX-FileCopyrightText: 2016 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-FileCopyrightText: 2016 Damien Zammit <damien@zamaudio.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_ENDIAN_H
 #define RZ_ENDIAN_H
 
