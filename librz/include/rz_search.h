@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2021-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2022 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2009-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2010 Nibble <nibble.ds@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_SEARCH_H
 #define RZ_SEARCH_H
 
