@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2021-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2012-2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_BIN_DWARF_H
 #define RZ_BIN_DWARF_H
 
