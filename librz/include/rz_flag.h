@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2012-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2018-2022 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2018-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_FLAGS_H
 #define RZ_FLAGS_H
 
