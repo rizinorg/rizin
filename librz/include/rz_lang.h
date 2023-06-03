@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2022 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2012-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2009-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2010 Nibble <nibble.ds@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_LANG_H
 #define RZ_LANG_H
 
