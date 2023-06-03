@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2018-2022 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2020-2021 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_VECTOR_H
 #define RZ_VECTOR_H
 
