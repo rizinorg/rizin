@@ -1,3 +1,17 @@
+// SPDX-FileCopyrightText: 2020-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2023 Heersin <teablearcher@gmail.com>
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2020-2022 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-FileCopyrightText: 2017-2018 Fangrui Song <i@maskray.me>
+// SPDX-FileCopyrightText: 2017 xarkes <antide.petit@gmail.com>
+// SPDX-FileCopyrightText: 2016-2017 SkUaTeR <skuater@hotmail.com>
+// SPDX-FileCopyrightText: 2015-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2010 Nibble <nibble.ds@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_TYPES_BASE_H
 #define RZ_TYPES_BASE_H
 
