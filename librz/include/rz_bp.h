@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2022-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2012-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2010 Nibble <nibble.ds@gmail.com>
+
 #ifndef RZ_BP_H
 #define RZ_BP_H
 
