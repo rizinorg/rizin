@@ -1,3 +1,14 @@
+// SPDX-FileCopyrightText: 2020-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2021 Pulak Malhotra <pulakmalhotra2000@gmail.com>
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020-2022 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2017 Simone Ferrini <sferrini@hotmail.it>
+// SPDX-FileCopyrightText: 2016 Álvaro Felipe Melchor <alvaro.felipe91@gmail.com>
+// SPDX-FileCopyrightText: 2016 n4x0r <kalianon2816@gmail.com>
+// SPDX-FileCopyrightText: 2016 javierprtd <javierprtd@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_HEAP_GLIBC_H
 #define RZ_HEAP_GLIBC_H
 
