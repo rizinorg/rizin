@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2023 Heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_IL_FLOAT_H
 #define RZ_IL_FLOAT_H
 
