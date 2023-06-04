@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2022-2023 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022-2023 Heersin <teablearcher@gmail.com>
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /**
  * \file rz_float.h
  * rizin's float representation based on bitvector
