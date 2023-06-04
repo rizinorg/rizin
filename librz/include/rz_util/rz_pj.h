@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021 Khairul Azhar Kasmiran <kazarmy@gmail.com>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 Liumeo <liumeo@pku.edu.cn>
+// SPDX-FileCopyrightText: 2020 Hex <grant@reconditorium.uk>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_PJ_H
 #define RZ_PJ_H
 
