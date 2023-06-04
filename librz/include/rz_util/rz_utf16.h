@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2017 Khairul Azhar Kasmiran <kazarmy@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_UTF16_H
 #define RZ_UTF16_H
 
