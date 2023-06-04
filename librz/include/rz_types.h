@@ -1,3 +1,13 @@
+// SPDX-FileCopyrightText: 2021-2022 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2018-2022 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2017-2019 Anton Kochkov <xvilka@gmail.com>
+// SPDX-FileCopyrightText: 2017 xarkes <antide.petit@gmail.com>
+// SPDX-FileCopyrightText: 2017 SkUaTeR <skuater@hotmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2010 Nibble <nibble.ds@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_TYPES_H
 #define RZ_TYPES_H
 
