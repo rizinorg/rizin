@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_STRPOOL_H
 #define RZ_STRPOOL_H
 
