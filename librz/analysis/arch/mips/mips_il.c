@@ -9,6 +9,7 @@ typedef RzILOpPure Pure;
 typedef RzILOpEffect Effect;
 typedef RzILOpBool Bool;
 typedef RzILOpBitVector BitVector;
+typedef RzILOpFloat Float;
 
 // TODO: Handle different releases
 
@@ -37,24 +38,26 @@ typedef RzILOpBitVector BitVector;
 /**
  * Lifter function prototype.
  *
- * \param insn
+ * \param analysis To inform about MIPS32 or MIPS64.
+ * \param insn Details about current instruction.
  * \param pc Position of current instruction insn
- * \param delay_slot Is this instruction in a delay slot
- * and will the next instruction be in the delay slot?
+ * \param fl_op Is this a floating point operation?
+ * \param fp64 Do we use all 64 bits of FPU registers?
  * \return Effect*
  * */
-typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32);
-#define IL_LIFTER(name)      static Effect *MipsLifter_##name(RzAnalysis *analysis, cs_insn *insn, ut32 pc)
+typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32, bool, bool);
+#define IL_LIFTER(name)      static Effect *MipsLifter_##name(RzAnalysis *analysis, cs_insn *insn, ut32 pc, bool float_op, bool fp64)
 #define IL_LIFTER_NAME(name) MipsLifter_##name
 
-// size of gprs in 32 bits
-#define GPRLEN 32
+// size of Registers
+#define GPRLEN   (analysis->bits)
+#define FPRLEN() (fp64 ? 64 : 32)
 
 // v  : value to be sign extended
 // vn : bitsize of v
 // n  : number of bits to sign extend to
-#define SIGN_EXTEND(v, nv, n) ((v & (1 << (nv - 1))) ? (v | ((st64)(1 << (n - nv)) - 1) << nv) : v)
-#define ZERO_EXTEND(v, nv, n) v & ~(((st64)(1 << (n - nv)) - 1) << nv)
+#define SIGN_EXTEND(v, nv, n) ((v & ((ut64)1 << (nv - 1))) ? (v | ((ut64)((ut64)1 << (n - nv)) - 1) << nv) : v)
+#define ZERO_EXTEND(v, nv, n) v & ~(((ut64)(1 << (n - nv)) - 1) << nv)
 
 // get instruction operand count
 #define OPND_COUNT() ((insn)->detail->mips.op_count)
@@ -75,7 +78,9 @@ typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32);
 #define OPND_IS_IMM(insn, idx) INSN_OPND_TYPE(insn, idx) == MIPS_OP_IMM
 #define IMM_OPND(idx)          ((insn)->detail->mips.operands[(idx)].imm)
 
-#define INSN_ID(insn) (insn)->id
+#define INSN_ID(insn)           (insn)->id
+#define INSN_GROUP(grpdx)       ((insn)->detail->groups[grpdx])
+#define INSN_GROUP_COUNT(gprdx) ((insn)->detail->groups_count)
 
 // register names to  map from enum to strings
 static char *cpu_reg_enum_to_name_map[] = {
@@ -150,23 +155,57 @@ static char *cpu_reg_enum_to_name_map[] = {
 	[MIPS_REG_F29] = "f29",
 	[MIPS_REG_F30] = "f30",
 	[MIPS_REG_F31] = "f31",
+
+	// FCC registers are removed in MISPr6
+	// but we don't need to care about that
+	// since MIPSr6 instructions will
+	// automatically not use these registers
+	[MIPS_REG_FCC0] = "FCC0",
+	[MIPS_REG_FCC1] = "FCC1",
+	[MIPS_REG_FCC2] = "FCC2",
+	[MIPS_REG_FCC3] = "FCC3",
+	[MIPS_REG_FCC4] = "FCC4",
+	[MIPS_REG_FCC5] = "FCC5",
+	[MIPS_REG_FCC6] = "FCC6",
+	[MIPS_REG_FCC7] = "FCC7",
+
+	// COP registers
+	[MIPS_REG_CC0] = "CC0",
+	[MIPS_REG_CC1] = "CC1",
+	[MIPS_REG_CC2] = "CC2",
+	[MIPS_REG_CC3] = "CC3",
+	[MIPS_REG_CC4] = "CC4",
+	[MIPS_REG_CC5] = "CC5",
+	[MIPS_REG_CC6] = "CC6",
+	[MIPS_REG_CC7] = "CC7",
 };
 
 // char*
-#define REG_PC()   REG_NAME(MIPS_REG_PC)
-#define REG_HI()   REG_NAME(MIPS_REG_HI)
-#define REG_LO()   REG_NAME(MIPS_REG_LO)
-#define REG_R(idx) REG_NAME(MIPS_REG_##idx)
+#define REG_PC()     REG_NAME(MIPS_REG_PC)
+#define REG_HI()     REG_NAME(MIPS_REG_HI)
+#define REG_LO()     REG_NAME(MIPS_REG_LO)
+#define REG_R(idx)   REG_NAME(MIPS_REG_##idx)
+#define REG_FCC(idx) REG_NAME(MIPS_REG_FCC##idx)
+#define REG_CC(idx)  REG_NAME(MIPS_REG_CC##idx)
 // Pure*
-#define IL_REG_PC()   VARG(REG_PC())
-#define IL_REG_HI()   VARG(REG_HI())
-#define IL_REG_LO()   VARG(REG_LO())
-#define IL_REG_R(idx) VARG(REG_R(idx))
+#define IL_REG_PC()     VARG(REG_PC())
+#define IL_REG_HI()     VARG(REG_HI())
+#define IL_REG_LO()     VARG(REG_LO())
+#define IL_REG_R(idx)   VARG(REG_R(idx))
+#define IL_REG_FCC(idx) VARG(REG_FCC(idx))
+#define IL_REG_CC(idx)  VARG(REG_CC(idx))
 
 // char*
 #define REG_F(idx) REG_NAME(MIPS_REG_F##idx)
 // Pure*
 #define IL_REG_F(idx) VARG(REG_F(idx))
+
+// difference between INSN and INSN.fmt operations (eg: ADD and ADD.fmt)
+// is in type of operands only. They both take same number of arguments
+// this macro will check if instruction needs to be a ".fmt" instruction
+// Use only in operations where first operand itself can be float
+// NOTE: I'm checking only first operand for
+#define IS_FLOAT_OPND(opndx) ((((insn)->detail->mips.operands[opndx].reg) >= MIPS_REG_F0) && (((insn)->detail->mips.operands[opndx].reg) <= MIPS_REG_F31))
 
 // returns Pure*
 #define REG_NAME(regenum)           cpu_reg_enum_to_name_map[regenum]
@@ -174,58 +213,29 @@ static char *cpu_reg_enum_to_name_map[] = {
 #define IL_MEM_OPND_BASE(opndidx)   VARG(MEM_OPND_BASE(opndidx))
 #define IL_MEM_OPND_OFFSET(opndidx) S32(SIGN_EXTEND(MEM_OPND_OFFSET(opndidx), 16, GPRLEN))
 
-// TODO: add status handlers
+// TODO: FIGURE OUT ROUNDING MODE
+#define RMODE RZ_FLOAT_RMODE_RNE
 
+// CAUSE REGISTER HANDLER MACROS
+// only the exception bits present here are used in whole code
+// ones not present will never be used
+#define REG_CAUSE_EXCEPTION()    "CAUSE_EXC"
+#define IL_REG_CAUSE_EXCEPTION() VARG(REG_CAUSE_EXCEPTION())
+#define IL_CAUSE_CLEAR()         SETG(REG_CAUSE_EXCEPTION(), U8(0));
+// list of managed exceptions
+#define IL_CAUSE_OVERFLOW()   SETG(REG_CAUSE_EXCEPTION(), U8(0x0C))
+#define IL_CAUSE_BREAKPOINT() SETG(REG_CAUSE_EXCEPTION(), U8(0x09))
+
+// TODO: REMOVE IF NOT NEEDED IN FUTURE
 // res must be a global variable
 // x and y must be local variable
 // returns Bool*
-#define IL_CHECK_OVERFLOW(x, y, res) IS_ZERO(AND(XOR(MSB(VARL(x)), MSB(VARG(res))), XOR(MSB(VARL(y)), MSB(VARG(res)))))
-#define IL_CHECK_CARRY(x, y, res)    IS_ZERO(OR(AND(MSB(VARL(x)), MSB(VARL(y))), AND(OR(MSB(VARL(x)), MSB(VARL(y))), INV(MSB(VARG(res))))))
+/* #define IL_CHECK_OVERFLOW(x, y, res) IS_ZERO(AND(XOR(MSB(x), MSB(res)), XOR(MSB(y), MSB(res)))) */
+/* #define IL_CHECK_CARRY(x, y, res)    IS_ZERO(OR(AND(MSB(x), MSB(y)), AND(OR(MSB(x), MSB(y)), INV(MSB(res))))) */
 
-// if second operands is an immediate value and only first and third are VARL compatible
-// returns Bool*
-#define IL_CHECK_OVERFLOWI(x, y, res) IS_ZERO(AND(XOR(MSB(VARL(x)), MSB(VARG(res))), XOR(MSB(y), MSB(VARG(res)))))
-#define IL_CHECK_CARRYI(x, y, res)    IS_ZERO(OR(AND(MSB(VARL(x)), MSB(y)), AND(OR(MSB(VARL(x)), MSB(y)), INV(MSB(VARG(res))))))
-
-// rd must be a global variable
-// rs and rt must be local variables
-// returns Effect*
-#define IL_ADD(rd, rs, rt)  SETG((rd), ADD(VARL(rs), VARL(rt)))
-#define IL_AND(rd, rs, rt)  SETG((rd), LOGAND(VARL(rs), VARL(rt)))
-#define IL_SDIV(rd, rs, rt) SETG(rd, SDIV(VARL(rs), VARL(rt)))
-#define IL_SMOD(rd, rs, rt) SETG(rd, SMOD(VARL(rs), VARL(rt)))
-#define IL_DIV(rd, rs, rt)  SETG(rd, DIV(VARL(rs), VARL(rt)))
-#define IL_MOD(rd, rs, rt)  SETG(rd, MOD(VARL(rs), VARL(rt)))
-// returns Bool*
-#define IL_EQ(rs, rt)  EQ(VARL(rs), VARL(rt))
-#define IL_NE(rs, rt)  INV(IL_EQ(rs, rt))
-#define IL_ULT(rs, rt) ULT(VARL(rs), VARL(rt))
-#define IL_ULE(rs, rt) ULE(VARL(rs), VARL(rt))
-#define IL_UGT(rs, rt) UGT(VARL(rs), VARL(rt))
-#define IL_UGE(rs, rt) UGE(VARL(rs), VARL(rt))
-#define IL_SLT(rs, rt) SLT(VARL(rs), VARL(rt))
-#define IL_SLE(rs, rt) SLE(VARL(rs), VARL(rt))
-#define IL_SGT(rs, rt) SGT(VARL(rs), VARL(rt))
-#define IL_SGE(rs, rt) SGE(VARL(rs), VARL(rt))
-
-// imm is an immediate
-// returns Effect*
-#define IL_ADDI(rd, rs, imm) SETG((rd), ADD(VARL(rs), imm))
-#define IL_ANDI(rd, rs, imm) SETG((rd), LOGAND(VARL(rs), imm))
-// returns Bool*
-#define IL_EQI(rs, imm)  EQ(VARL(rs), imm)
-#define IL_NEI(rs, imm)  INV(IL_EQI(rs, imm))
-#define IL_ULTI(rs, imm) ULT(VARL(rs), imm)
-#define IL_ULEI(rs, imm) ULE(VARL(rs), imm)
-#define IL_UGTI(rs, imm) UGT(VARL(rs), imm)
-#define IL_UGEI(rs, imm) UGE(VARL(rs), imm)
-#define IL_SLTI(rs, imm) SLT(VARL(rs), imm)
-#define IL_SLEI(rs, imm) SLE(VARL(rs), imm)
-#define IL_SGTI(rs, imm) SGT(VARL(rs), imm)
-#define IL_SGEI(rs, imm) SGE(VARL(rs), imm)
-
-// MISSING: ABS.fmt
-// MISSING: ADD.fmt
+// This is how MIPS ISA defines it [REG_BIT(n) == REG_BIT(n-1)]
+#define IL_BITN(x, n)            SHIFTR0(LOGAND(x, U64((ut64)1 << (n - 1))), U8(n - 1))
+#define IL_CHECK_OVERFLOW(r, sz) EQ(IL_BITN(r, sz), IL_BITN(r, sz - 1))
 
 IL_LIFTER(ABSQ_S) {
 	return NULL;
@@ -234,20 +244,36 @@ IL_LIFTER(ABSQ_S) {
 /**
  * Add word.
  * Format : ADD rd, rs, rt
+ *          ADD.S fd, fs, ft
+ *          ADD.d fd, fs, ft
+ *          ADD.ps is removed in release 6
  * Description: GPR[rd] <- GPR[rs] + GPR[rt]
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(ADD) {
+	// destination reg
 	char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
-	BitVector *sum = ADD(rs, rt);
-	Effect *set_rd = SETG(rd, sum);
-	// Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
-	Effect *update_status_op = NOP(); // TODO: set status flag
+	// add.fmt
+	// TODO: Verify if 32 bits or 64 bits FPRLEN makes any difference
+	// do we need to explicitly cast floats to 32 bit?
+	if (float_op) {
+		Float *fsum = FADD(RMODE, rs, rt);
 
-	return SEQ2(set_rd, update_status_op);
+		Effect *set_rd = SETG(rd, fsum);
+		return set_rd;
+	} else {
+		// sign extend to 32 or 64 bit based on (analyisis->bits)
+		BitVector *sum = SIGNED(GPRLEN, ADD(rs, rt));
+		// check 32 bit overflow
+		Bool *overflow = IL_CHECK_OVERFLOW(DUP(sum), 32);
+
+		Effect *set_rd = SETG(rd, sum);
+		Effect *add_op = BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rd);
+		return add_op;
+	}
 }
 
 /**
@@ -261,7 +287,7 @@ IL_LIFTER(ADDIUPC) {
 
 	st32 imm_val = (st32)IMM_OPND(1);
 	imm_val = SIGN_EXTEND(imm_val, 21, GPRLEN);
-	BitVector *imm = S32(imm_val);
+	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *sum = ADD(U32(pc), imm);
 	Effect *set_rs = SETG(rs, sum);
@@ -356,16 +382,18 @@ IL_LIFTER(ADDI) {
 	char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
+	// get imm
 	st32 imm_val = (st32)IMM_OPND(1);
-	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
-	BitVector *imm = S32(imm_val);
+	imm_val = SIGN_EXTEND(imm_val, 16, 32);
+	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *sum = ADD(rs, imm);
-	Effect *set_rt = SETG(rt, sum);
-	// Bool *overflow = IL_CHECK_OVERFLOWI("rs", imm, REG_OPND(0));
-	Effect *update_status_op = NOP(); // TODO: update status
+	Bool *overflow = IL_CHECK_OVERFLOW(DUP(sum), 32);
 
-	return SEQ2(set_rt, update_status_op);
+	Effect *set_rt = SETG(rt, sum);
+	Effect *add_op = BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rt);
+
+	return add_op;
 }
 
 /**
@@ -380,7 +408,7 @@ IL_LIFTER(ADDIU) {
 
 	st32 imm_val = (st32)IMM_OPND(1);
 	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
-	BitVector *imm = S32(imm_val);
+	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *sum = ADD(rs, imm);
 	Effect *set_rt = SETG(rt, sum);
@@ -388,18 +416,21 @@ IL_LIFTER(ADDIU) {
 }
 
 /**
- * Align.
+ * ALIGN.
+ * DALIGN
  * Concatenate two GPRs and extract a contiguous subset
  * at a byte position.
- * Format: ALIGN rd, rs, rt, bp
+ * Format: ALIGN rd, rs, rt, bp    -> WORD SIZED GPRS
+ *         DALIGN rd, rs, rt, bp   -> DWORD SIZED GPRS
  * Description: GPR[rd] <- (GPR[rt] << (8*bp)) or (GPR[rs] >> (GPRLEN - 8*bp))
- * Exceptions: None
+ * Exceptions: ALIGN : None
+ *             DALIGN : ReservedInstruction
  * */
 IL_LIFTER(ALIGN) {
 	char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
-	ut8 bp = 8 * IMM_OPND(3); // 8*bp is used everywhere
+	ut8 bp = 8 * IMM_OPND(3); // 8*bp is used everywhere, because 1 byte is 8 bits
 
 	BitVector *left = SHIFTL0(rt, U8(bp));
 	BitVector *right = SHIFTR0(rs, U8(GPRLEN - bp));
@@ -409,20 +440,20 @@ IL_LIFTER(ALIGN) {
 	return set_rd;
 }
 
-// MISSING: ALNV.PS
+// MISSING: ALNV.PS (Paired Single)
+// REMOVED IN MIPSR6
 
 /**
  * Aligned Add Upper Intermedate to PC.
  * Format: ALUIPC rs, immediate
  * Description: GPR[rs] <- ~0x0FFFF & (PC + sign_extend(immediate << 16))
  * Exceptions: None
- * NOTE: Check for sign extension
  * */
 IL_LIFTER(ALUIPC) {
 	char *rs = REG_OPND(0);
 
-	st32 imm = IMM_OPND(1) << 16;
-	BitVector *new_pc = U32(0xFFFF0000 & (pc + imm));
+	st64 imm = SIGN_EXTEND(IMM_OPND(1) << 16, 32, GPRLEN);
+	BitVector *new_pc = U32(~0xFFFF & (pc + imm));
 
 	Effect *set_rs = SETG(rs, new_pc);
 	return set_rs;
@@ -463,7 +494,7 @@ IL_LIFTER(ANDI) {
 
 	st32 imm_val = (st32)IMM_OPND(2);
 	imm_val = ZERO_EXTEND(imm_val, 16, GPRLEN);
-	BitVector *imm = S32(imm_val);
+	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *and = LOGAND(rs, imm);
 	Effect *set_rd = SETG(rd, and);
@@ -482,21 +513,21 @@ IL_LIFTER(ASUB_U) {
 
 /**
  * And Immediate to Upper bits
- * Format: AUI rd, rs, immediate
- * Description: GPR[rd] <- GPR[rs] and sign_extend(immediate << 16)
+ * Format: AUI rt, rs, immediate
+ * Description: GPR[rt] <- sign_extend.32(GPR[rs] + sign_extend(immediate << 16))
  * Exceptions: None
  * NOTE: Check sign extension
  * */
 IL_LIFTER(AUI) {
-	char *rd = REG_OPND(0);
+	char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	st32 imm_val = (st32)IMM_OPND(2) << 16;
-	BitVector *imm = S32(imm_val);
+	BitVector *imm = SN(GPRLEN, imm_val);
 
-	BitVector *sum = ADD(rs, imm);
-	Effect *set_rd = SETG(rd, sum);
-	return set_rd;
+	BitVector *sum = SIGNED(32, ADD(rs, imm));
+	Effect *set_rt = SETG(rt, sum);
+	return set_rt;
 }
 
 /**
@@ -508,8 +539,8 @@ IL_LIFTER(AUI) {
  * */
 IL_LIFTER(AUIPC) {
 	char *rs = REG_OPND(0);
-	st32 imm = (st32)IMM_OPND(1) << 16;
-	BitVector *new_pc = S32(pc + imm);
+	st64 imm = SIGN_EXTEND((st64)IMM_OPND(1) << 16, 32, GPRLEN);
+	BitVector *new_pc = SN(GPRLEN, pc + imm);
 
 	Effect *set_rs = SETG(rs, new_pc);
 	return set_rs;
@@ -542,9 +573,9 @@ IL_LIFTER(BADDU) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BAL) {
-	st32 offset = (st32)IMM_OPND(0) << 2;
+	st64 offset = (st64)IMM_OPND(0) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// store link in r31 and jump
 	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
@@ -560,9 +591,9 @@ IL_LIFTER(BAL) {
  * Exceptions: None
  * */
 IL_LIFTER(BALC) {
-	st32 offset = (st32)IMM_OPND(0) << 2;
-	offset = SIGN_EXTEND(offset, 28, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	st64 offset = (st64)IMM_OPND(0) << 2;
+	offset = SIGN_EXTEND(offset, 28, 32);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 	Effect *jump_op = JMP(jump_target);
@@ -595,9 +626,9 @@ IL_LIFTER(BBIT132) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BC) {
-	st32 offset = (st32)IMM_OPND(0) << 2;
+	st64 offset = (st64)IMM_OPND(0) << 2;
 	offset = SIGN_EXTEND(offset, 28, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	Effect *jump_op = JMP(jump_target);
 	return jump_op;
@@ -626,9 +657,9 @@ IL_LIFTER(BC1EQZ) {
 	Pure *ft = IL_REG_OPND(0);
 
 	// compute jump address
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// create branch condition
 	BitVector *ft_bv = F2BV(ft);
@@ -644,15 +675,30 @@ IL_LIFTER(BC1EQZ) {
  * Branch on FP False
  * Format: BC1F offset (cc = 0 implied)
  *         BC1F cc, offset
- * Description: if FPR[ft] & 1 == 0 then branch
+ * Description: if FPConditionCode(cc) == 0 then branch
  * Exceptions: CoprocessorUnusable, ReservedInstruction
  * */
 IL_LIFTER(BC1F) {
-	return NULL;
+	Pure *fccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_FCC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = IS_ZERO(fccr);
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
 
+/**
+ * Branch on FP False Likely
+ * Format: BC1F offset (cc = 0 implied)
+ *         BC1F cc, offset
+ * Description: if FPConditionCode(cc) == 0 then branch_likely
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC1FL) {
-	return NULL;
+	Pure *fccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_FCC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = IS_ZERO(fccr);
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
 
 /**
@@ -665,9 +711,9 @@ IL_LIFTER(BC1NEZ) {
 	Pure *ft = IL_REG_OPND(0);
 
 	// compute jump address
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// make condition for branch
 	BitVector *ft_bv = F2BV(ft);
@@ -680,30 +726,120 @@ IL_LIFTER(BC1NEZ) {
 	return branch_op;
 }
 
+/**
+ * Branch on FP True
+ * Format: BC1T offset (cc = 0 implied)
+ *         BC1T cc, offset
+ * Description: if FPConditionCode(cc) == 1 then branch
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC1T) {
-	return NULL;
+	Pure *fccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_FCC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = INV(IS_ZERO(fccr));
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
+
+/**
+ * Branch on FP True Likely
+ * Format: BC1TL offset (cc = 0 implied)
+ *         BC1TL cc, offset
+ * Description: if FPConditionCode(cc) == 1 then branch_likely
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC1TL) {
-	return NULL;
+	Pure *fccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_FCC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = INV(IS_ZERO(fccr));
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
+
+/**
+ * Branch on COP2 Condition Register Equal to Zero
+ * Format: BC2EQZ ct, offset
+ * Description: if COP2Condition[ct] == 0 then branch
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC2EQZ) {
-	return NULL;
+	Pure *ccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_CC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = IS_ZERO(ccr);
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + 4 + joff)), NOP());
 }
+
+/**
+ * Branch on COP2 False
+ * Format: BC2F cc, offset
+ * Description: if COP2Condition[cc] == 0 then branch
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC2F) {
-	return NULL;
+	Pure *ccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_CC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = IS_ZERO(ccr);
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
+
+/**
+ * Branch on COP2 False Likely
+ * Format: BC2FL cc, offset
+ * Description: if COP2Condition[cc] == 0 then branch_likely
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC2FL) {
-	return NULL;
+	Pure *ccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_CC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = IS_ZERO(ccr);
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
+
+/**
+ * Branch on COP2 Condition Register Not Equal to Zero
+ * Format: BC2EQZ ct, offset
+ * Description: if COP2Condition[ct] != 0 then branch
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC2NEZ) {
-	return NULL;
+	Pure *ccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_CC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = INV(IS_ZERO(ccr));
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + 4 + joff)), NOP());
 }
+
+/**
+ * Branch on COP2 True
+ * Format: BC2T cc, offset
+ * Description: if COP2Condition[cc] != 0 then branch
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC2T) {
-	return NULL;
+	Pure *ccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_CC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = INV(IS_ZERO(ccr));
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
+
+/**
+ * Branch on COP2 True Likely
+ * Format: BC2TL cc, offset
+ * Description: if COP2Condition[cc] != 0 then branch_likely
+ * Exceptions: CoprocessorUnusable, ReservedInstruction
+ * */
 IL_LIFTER(BC2TL) {
-	return NULL;
+	Pure *ccr = OPND_COUNT() == 2 ? IL_REG_OPND(0) : IL_REG_CC(0);
+	st64 joff = SIGN_EXTEND((st64)IMM_OPND(1) << 2, 18, GPRLEN);
+
+	Bool *cond = INV(IS_ZERO(ccr));
+	return BRANCH(cond, JMP(UN(GPRLEN, pc + joff)), NOP());
 }
+
 IL_LIFTER(BC3F) {
 	return NULL;
 }
@@ -733,9 +869,9 @@ IL_LIFTER(BEQ) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	Bool *cond = EQ(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -752,9 +888,9 @@ IL_LIFTER(BEQC) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	Bool *cond = EQ(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -771,9 +907,9 @@ IL_LIFTER(BEQL) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	Bool *cond = EQ(rs, rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -793,13 +929,12 @@ IL_LIFTER(BEQZ16) {
 IL_LIFTER(BEQZALC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
 
-	// signed-equal-to
 	Bool *cond = IS_ZERO(rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
@@ -819,9 +954,9 @@ IL_LIFTER(BGEC) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than
 	Bool *cond = SGE(rs, rt);
@@ -839,9 +974,9 @@ IL_LIFTER(BGEUC) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than
 	Bool *cond = UGE(rs, rt);
@@ -858,12 +993,12 @@ IL_LIFTER(BGEUC) {
 IL_LIFTER(BGEZ) {
 	Pure *rs = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-greater-than-equal-to
-	Bool *cond = SGE(rs, S32(0));
+	Bool *cond = SGE(rs, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -877,14 +1012,14 @@ IL_LIFTER(BGEZ) {
 IL_LIFTER(BGEZAL) {
 	Pure *rs = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
 
 	// signed-greater-than-equal-to
-	Bool *cond = SGE(rs, S32(0));
+	Bool *cond = SGE(rs, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -898,14 +1033,14 @@ IL_LIFTER(BGEZAL) {
 IL_LIFTER(BGEZALC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-greater-than-equal-to
-	Bool *cond = SGE(rt, S32(0));
+	Bool *cond = SGE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -920,14 +1055,14 @@ IL_LIFTER(BGEZALL) {
 	// NOTE: same as BGEZALC, difference is in delay-slot handling
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-greater-than-equal-to
-	Bool *cond = SGE(rt, S32(0));
+	Bool *cond = SGE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -945,12 +1080,12 @@ IL_LIFTER(BGEZALS) {
 IL_LIFTER(BGEZC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = SGE(rt, S32(0));
+	Bool *cond = SGE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -964,12 +1099,12 @@ IL_LIFTER(BGEZC) {
 IL_LIFTER(BGEZL) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = SGE(rt, S32(0));
+	Bool *cond = SGE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -983,12 +1118,12 @@ IL_LIFTER(BGEZL) {
 IL_LIFTER(BGTZ) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = SGE(rt, S32(0));
+	Bool *cond = SGE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1002,14 +1137,14 @@ IL_LIFTER(BGTZ) {
 IL_LIFTER(BGTZALC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-greater-than
-	Bool *cond = SGT(rt, S32(0));
+	Bool *cond = SGT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -1023,14 +1158,14 @@ IL_LIFTER(BGTZALC) {
 IL_LIFTER(BGTZC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-greater-than
-	Bool *cond = SGT(rt, S32(0));
+	Bool *cond = SGT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -1044,12 +1179,12 @@ IL_LIFTER(BGTZC) {
 IL_LIFTER(BGTZL) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-greater-than
-	Bool *cond = SGT(rt, S32(0));
+	Bool *cond = SGT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1080,6 +1215,7 @@ IL_LIFTER(BITSWAP) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
+	// TODO: Add support for 64 bit regs
 	Effect *swap0 = SETL("temp", LOGOR(SHIFTR0(LOGAND(DUP(rt), U32(0xAAAAAAAA)), U32(1)), SHIFTL0(LOGAND(rt, U32(0x55555555)), U32(1))));
 	Effect *swap1 = SETL("temp", LOGOR(SHIFTR0(LOGAND(VARL("temp"), U32(0xCCCCCCCC)), U32(2)), SHIFTL0(LOGAND(VARL("temp"), U32(0x33333333)), U32(2))));
 	Effect *swap2 = SETL("temp", LOGOR(SHIFTR0(LOGAND(VARL("temp"), U32(0xF0F0F0F0)), U32(4)), SHIFTL0(LOGAND(VARL("temp"), U32(0x0F0F0F0F)), U32(4))));
@@ -1099,12 +1235,12 @@ IL_LIFTER(BITSWAP) {
 IL_LIFTER(BLEZ) {
 	Pure *rs = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = SLE(rs, S32(0));
+	Bool *cond = SLE(rs, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1118,14 +1254,14 @@ IL_LIFTER(BLEZ) {
 IL_LIFTER(BLEZALC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-less-than-equal-to
-	Bool *cond = SLE(rt, S32(0));
+	Bool *cond = SLE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -1139,12 +1275,12 @@ IL_LIFTER(BLEZALC) {
 IL_LIFTER(BLEZC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = SLE(rt, S32(0));
+	Bool *cond = SLE(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1159,9 +1295,9 @@ IL_LIFTER(BLTC) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than
 	Bool *cond = SLT(rs, rt);
@@ -1178,12 +1314,12 @@ IL_LIFTER(BLTC) {
 IL_LIFTER(BLEZL) {
 	Pure *rs = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-less-than-equal-to
-	Bool *cond = SLE(rs, S32(0));
+	Bool *cond = SLE(rs, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1198,9 +1334,9 @@ IL_LIFTER(BLTUC) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than
 	Bool *cond = ULT(rs, rt);
@@ -1217,12 +1353,12 @@ IL_LIFTER(BLTUC) {
 IL_LIFTER(BLTZ) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-less-than
-	Bool *cond = SLT(rt, S32(0));
+	Bool *cond = SLT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1236,14 +1372,14 @@ IL_LIFTER(BLTZ) {
 IL_LIFTER(BLTZAL) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-less-than
-	Bool *cond = SLT(rt, S32(0));
+	Bool *cond = SLT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -1257,14 +1393,14 @@ IL_LIFTER(BLTZAL) {
 IL_LIFTER(BLTZALC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-less-than
-	Bool *cond = SLT(rt, S32(0));
+	Bool *cond = SLT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -1278,14 +1414,14 @@ IL_LIFTER(BLTZALC) {
 IL_LIFTER(BLTZALL) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	// signed-less-than
-	Bool *cond = SLT(rt, S32(0));
+	Bool *cond = SLT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return SEQ2(link_op, branch_op);
 }
@@ -1303,12 +1439,12 @@ IL_LIFTER(BLTZALS) {
 IL_LIFTER(BLTZC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	// signed-less-than
-	Bool *cond = SLT(rt, S32(0));
+	Bool *cond = SLT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1322,12 +1458,12 @@ IL_LIFTER(BLTZC) {
 IL_LIFTER(BLTZL) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// signed-less-than
-	Bool *cond = SLT(rt, S32(0));
+	Bool *cond = SLT(rt, SN(GPRLEN, 0));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
 	return branch_op;
 }
@@ -1355,9 +1491,9 @@ IL_LIFTER(BNE) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	Bool *cond = INV(EQ(rs, rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -1374,9 +1510,9 @@ IL_LIFTER(BNEC) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	Bool *cond = INV(EQ(rs, rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -1400,9 +1536,9 @@ IL_LIFTER(BNEL) {
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	st32 offset = (st32)IMM_OPND(2) << 2;
+	st64 offset = (st64)IMM_OPND(2) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
 	Bool *cond = INV(EQ(rs, rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -1422,11 +1558,11 @@ IL_LIFTER(BNEZ16) {
 IL_LIFTER(BNEZALC) {
 	Pure *rt = IL_REG_OPND(0);
 
-	st32 offset = (st32)IMM_OPND(1) << 2;
+	st64 offset = (st64)IMM_OPND(1) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32((pc + 4) + offset);
+	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	Bool *cond = INV(IS_ZERO(rt));
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -1436,21 +1572,86 @@ IL_LIFTER(BNEZALC) {
 IL_LIFTER(BNEZC) {
 	return NULL;
 }
+
+/**
+ * Branch on No overflow Compact
+ * Format: BNVC rs, rt, offset
+ * Description: Detect overflow for add (signed 32 bits) and branch if no overflow.
+ * Exceptions: None
+ * */
 IL_LIFTER(BNVC) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	st64 joff = SIGN_EXTEND(IMM_OPND(2) << 2, 18, GPRLEN);
+
+	// branch condition
+	Bool *cond;
+
+	// sum_overflow
+	Pure *tmp = ADD(rs, rt);
+	Bool *sum_overflow = INV(EQ(IL_BITN(tmp, 32), IL_BITN(tmp, 31)));
+	cond = sum_overflow;
+
+	// input_overflow
+	if (GPRLEN == 64) {
+		Bool *is_rs_hiword_zero = INV(IS_ZERO(SHIFTR0(DUP(rs), U8(32))));
+		Bool *is_rt_hiword_zero = INV(IS_ZERO(SHIFTR0(DUP(rt), U8(32))));
+		Bool *input_overflow = AND(is_rs_hiword_zero, is_rt_hiword_zero);
+		cond = OR(cond, input_overflow);
+	}
+
+	return BRANCH(INV(cond), JMP(U32((pc + 4) + joff)), NOP());
 }
+
 IL_LIFTER(BNZ) {
 	return NULL;
 }
+
+/**
+ * Branch On Overflow Compact
+ * Format: BOVC rs, rt, offset
+ * Description: Detect overflow for add (signed 32 bits) and branch if overflow.
+ * Exceptions: None
+ * */
 IL_LIFTER(BOVC) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	st64 joff = SIGN_EXTEND(IMM_OPND(2) << 2, 18, GPRLEN);
+
+	// branch condition
+	Bool *cond;
+
+	// sum_overflow
+	Pure *tmp = ADD(rs, rt);
+	Bool *sum_overflow = INV(EQ(IL_BITN(tmp, 32), IL_BITN(tmp, 31)));
+	cond = sum_overflow;
+
+	// input_overflow
+	if (GPRLEN == 64) {
+		Bool *is_rs_word = INV(IS_ZERO(SHIFTR0(DUP(rs), U8(32))));
+		Bool *is_rt_word = INV(IS_ZERO(SHIFTR0(DUP(rt), U8(32))));
+		Bool *input_overflow = AND(is_rs_word, is_rt_word);
+		cond = OR(cond, input_overflow);
+	}
+
+	return BRANCH(cond, JMP(U32((pc + 4) + joff)), NOP());
 }
+
 IL_LIFTER(BPOSGE32) {
 	return NULL;
 }
+
+/**
+ * BREAK
+ * Format: BREAK
+ * Description: SignalException(Breakpoint)
+ * Exceptions: Breakpoint Exception
+ * */
 IL_LIFTER(BREAK) {
-	return NULL;
+	// TODO: Does ILVM handle breakpoints?
+	return IL_CAUSE_BREAKPOINT();
 }
+
 IL_LIFTER(BREAK16) {
 	return NULL;
 }
@@ -1480,9 +1681,9 @@ IL_LIFTER(BEQZ) {
  * Exceptions: ReservedInstructionException
  * */
 IL_LIFTER(B) {
-	st32 offset = (st32)IMM_OPND(0) << 2;
+	st64 offset = (st64)IMM_OPND(0) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = U32(pc + offset);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	Effect *jump_op = JMP(jump_target);
 	return jump_op;
@@ -1500,9 +1701,19 @@ IL_LIFTER(BTNEZ) {
 IL_LIFTER(CACHE) {
 	return NULL;
 }
+
+/**
+ * CEIL
+ * Format:
+ * Description:
+ * Exceptions:
+ * */
 IL_LIFTER(CEIL) {
-	return NULL;
+	// CEIL requires fixed point format
+	// fixed point format is not supported by RzIL for now
+	return NOP();
 }
+
 IL_LIFTER(CEQI) {
 	return NULL;
 }
@@ -1548,7 +1759,7 @@ IL_LIFTER(CLO) {
 	Pure *rs = IL_REG_OPND(1);
 
 	Effect *reset_rd = SETG(rd, U32(0));
-	Effect *mask = SETL("mask", U32(0x80000000));
+	Effect *mask = SETL("mask", U32(1 << 31));
 
 	// keep running while (rs & mask != 0)
 	// since mask is starting at 1 << 31, it'll run max 32 times
@@ -1579,8 +1790,8 @@ IL_LIFTER(CLT_U) {
 
 /**
  * Count Leading Zeroes in word.
- * Format: CLO rd, rs
- * Description: GPR[rd] <- count_leading_ones(GPR[rs])
+ * Format: CLZ rd, rs
+ * Description: GPR[rd] <- count_leading_zeroes(GPR[rs])
  * Exceptions: None.
  * */
 IL_LIFTER(CLZ) {
@@ -1588,7 +1799,7 @@ IL_LIFTER(CLZ) {
 	Pure *rs = IL_REG_OPND(1);
 
 	Effect *reset_rd = SETG(rd, U32(0));
-	Effect *mask = SETL("mask", U32(0x80000000));
+	Effect *mask = SETL("mask", U32(1 << 31));
 
 	// keep running while (rs & mask != 0)
 	// since mask is starting at 1 << 31, it'll run max 32 times
@@ -1637,56 +1848,223 @@ IL_LIFTER(C) {
 IL_LIFTER(CMPI) {
 	return NULL;
 }
+
+/**
+ * Doubleword Add
+ * Format: DADD rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] + GPR[rt]
+ * Exceptions: IntegerOverflow, ReservedInstruction
+ * */
 IL_LIFTER(DADD) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *sum = ADD(rs, rt);
+	Bool *is_overflow = IL_CHECK_OVERFLOW(DUP(sum), 64);
+
+	return BRANCH(is_overflow, IL_CAUSE_OVERFLOW(), SETG(rd, sum));
 }
+
+/**
+ * Doubleword Add Immediate
+ * Format: DADD rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] + GPR[rt]
+ * Exceptions: IntegerOverflow, ReservedInstruction
+ * */
 IL_LIFTER(DADDI) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = S64(SIGN_EXTEND(IMM_OPND(2), 16, 64));
+
+	BitVector *sum = ADD(rs, imm);
+	Bool *is_overflow = IL_CHECK_OVERFLOW(DUP(sum), 64);
+
+	return BRANCH(is_overflow, IL_CAUSE_OVERFLOW(), SETG(rd, sum));
 }
+
+/**
+ * Doubleword Add Immediate Unsigned
+ * Format: DADDI rd, rs, imm
+ * Description: GPR[rd] <- GPR[rs] + sign_extend(imm)
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DADDIU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	BitVector *imm = S64(SIGN_EXTEND(IMM_OPND(2), 16, 64));
+
+	return SETG(rd, ADD(rs, imm));
 }
+
+/**
+ * Doubleword Add Unsigned
+ * Format: DADD rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] + GPR[rt]
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DADDU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	return SETG(rd, ADD(rs, rt));
 }
+
+/**
+ * Doubleword And Immediate to Higher bits
+ * Format: DAHI rt, rs, immediate
+ * Description: GPR[rt] <- GPR[rs] + sign_extend(immediate << 32)
+ * Exceptions: ReseredInstruction
+ * */
 IL_LIFTER(DAHI) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	st64 imm_val = (st64)IMM_OPND(2) << 32;
+	imm_val = SIGN_EXTEND(imm_val, 48, 64);
+	BitVector *imm = S64(imm_val);
+
+	BitVector *sum = ADD(rs, imm);
+	Effect *set_rt = SETG(rt, sum);
+	return set_rt;
 }
+
 IL_LIFTER(DALIGN) {
-	return NULL;
-}
-IL_LIFTER(DATI) {
-	return NULL;
-}
-IL_LIFTER(DAUI) {
-	return NULL;
-}
-IL_LIFTER(DBITSWAP) {
-	return NULL;
-}
-IL_LIFTER(DCLO) {
-	return NULL;
-}
-IL_LIFTER(DCLZ) {
 	return NULL;
 }
 
 /**
- * // NOTE: IN MIPS64
- * Doubleword Signed Divide
- * Format: DDIV rs, rt
- * Description: (LO, HI <- GPR[rs] / GPR[rt])
- *              Result is UNPREDICTABLE if GPR[rt] = 0
- * Exceptions: None
+ * Doubleword And Immediate to Top bits
+ * Format: DAUI rt, rs, immediate
+ * Description: GPR[rt] <- GPR[rs] + sign_extend(immediate << 16)
+ * Exceptions: ReservedInstruction
  * */
-IL_LIFTER(DDIV) {
+IL_LIFTER(DATI) {
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	st64 imm_val = (st64)IMM_OPND(2) << 48;
+	BitVector *imm = S64(imm_val);
+
+	BitVector *sum = ADD(rs, imm);
+	Effect *set_rt = SETG(rt, sum);
+	return set_rt;
+}
+
+/**
+ * Doubleword And Immediate to Upper bits
+ * Format: DAUI rt, rs, immediate
+ * Description: GPR[rt] <- GPR[rs] + sign_extend(immediate << 16)
+ * Exceptions: ReservedInstruction
+ * */
+IL_LIFTER(DAUI) {
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	st64 imm_val = (st64)IMM_OPND(2) << 16;
+	imm_val = SIGN_EXTEND(imm_val, 32, 64);
+	BitVector *imm = S64(imm_val);
+
+	BitVector *sum = ADD(rs, imm);
+	Effect *set_rt = SETG(rt, sum);
+	return set_rt;
+}
+
+IL_LIFTER(DBITSWAP) {
 	return NULL;
 }
 
-// NOTE: IN MIPS64
-IL_LIFTER(DDIVU) {
-	return NULL;
+/**
+ * Doubleword Count Leading Ones.
+ * Format: DCLO rd, rs
+ * Description: GPR[rd] <- count_leading_ones(GPR[rs])
+ * Exceptions: None.
+ * */
+IL_LIFTER(DCLO) {
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	Effect *reset_rd = SETG(rd, U64(0));
+	Effect *mask = SETL("mask", U32((ut64)1 << 63));
+
+	// keep running while (rs & mask != 0)
+	// since mask is starting at 1 << 63, it'll run max 64 times
+	Bool *loop_cond = INV(IS_ZERO(LOGAND(rs, VARL("mask"))));
+
+	// update mask and count
+	// each time loop runs means bit at index is flagged, so simply add 1 to cnt
+	Effect *mask_update = SETL("mask", SHIFTR0(VARL("mask"), U32(1)));
+	Effect *cnt_update = SETG(rd, ADD(VARG(rd), UN(GPRLEN, 1)));
+	Effect *loop_body = SEQ2(mask_update, cnt_update);
+
+	Effect *loop = REPEAT(loop_cond, loop_body);
+	return SEQ3(reset_rd, mask, loop);
 }
+
+/**
+ * Doubleword Count Leading Zeroes.
+ * Format: DCLZ rd, rs
+ * Description: GPR[rd] <- count_leading_zeroes(GPR[rs])
+ * Exceptions: None.
+ * */
+IL_LIFTER(DCLZ) {
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	Effect *reset_rd = SETG(rd, U64(0));
+	Effect *mask = SETL("mask", U64((ut64)1 << 63));
+
+	// keep running while (rs & mask != 0)
+	// since mask is starting at 1 << 31, it'll run max 32 times
+	Bool *loop_cond = IS_ZERO(LOGAND(rs, VARL("mask")));
+
+	// update mask and count
+	// each time loop runs means bit at index is flagged, so simply add 1 to cnt
+	Effect *mask_update = SETL("mask", SHIFTR0(VARL("mask"), U64(1)));
+	Effect *cnt_update = SETG(rd, ADD(VARG(rd), U64(1)));
+	Effect *loop_body = SEQ2(mask_update, cnt_update);
+
+	Effect *loop = REPEAT(loop_cond, loop_body);
+	return SEQ3(reset_rd, mask, loop);
+}
+
+/**
+ * Doubleword Divide Word (Signed)
+ * Format: DDIV rs, rt
+ * Description: (HI, LO) <- GPR[rs] / GPR[rt]
+ * Exceptions: None
+ * */
+IL_LIFTER(DDIV) {
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *quotient = SDIV(DUP(rs), DUP(rt));
+	BitVector *remainder = SMOD(rs, rt);
+
+	Effect *set_lo = SETG(REG_LO(), quotient);
+	Effect *set_hi = SETG(REG_HI(), remainder);
+	return SEQ2(set_lo, set_hi);
+}
+
+/**
+ * Doubleword Divide Word (Unsigned)
+ * Format: DDIVU rs, rt
+ * Description: (HI, LO) <- GPR[rs] / GPR[rt]
+ * Exceptions: None
+ * */
+IL_LIFTER(DDIVU) {
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *quotient = DIV(DUP(rs), DUP(rt));
+	BitVector *remainder = MOD(rs, rt);
+
+	Effect *set_lo = SETG(REG_LO(), quotient);
+	Effect *set_hi = SETG(REG_HI(), remainder);
+	return SEQ2(set_lo, set_hi);
+}
+
 IL_LIFTER(DERET) {
 	return NULL;
 }
@@ -1726,7 +2104,7 @@ IL_LIFTER(DIV) {
 		Pure *rt = IL_REG_OPND(1);
 
 		BitVector *quotient = SDIV(DUP(rs), DUP(rt));
-		BitVector *remainder = SDIV(rs, rt);
+		BitVector *remainder = SMOD(rs, rt);
 
 		Effect *set_lo = SETG(REG_LO(), quotient);
 		Effect *set_hi = SETG(REG_HI(), remainder);
@@ -1744,27 +2122,33 @@ IL_LIFTER(DIV) {
 
 /**
  * Divide Word (Unsigned)
- * Format: DIV rs, rt
- *         DIV rd, rs, rt
+ * Format: DIVU rs, rt
+ *         DIVU rd, rs, rt
  * Description: (HI, LO) <- GPR[rs] / GPR[rt]
  *              GPR[rd] <- (divide.usigned(GPR[rs], GPR[rt]))
  * Exceptions: None
  * */
 IL_LIFTER(DIVU) {
-	// NOTE: ISA devide opertions are suspicuous
+	// NOTE: ISA divide operations are suspicuous
 	if (OPND_COUNT() == 2) {
 		Pure *rs = IL_REG_OPND(0);
 		Pure *rt = IL_REG_OPND(1);
 
-		Effect *quotient_op = IL_DIV(REG_LO(), "rs", "rt");
-		Effect *remainder_op = IL_MOD(REG_HI(), "rs", "rt");
-		return SEQ4(rs, rt, quotient_op, remainder_op);
+		BitVector *quotient = DIV(DUP(rs), DUP(rt));
+		BitVector *remainder = MOD(rs, rt);
+
+		Effect *set_lo = SETG(REG_LO(), quotient);
+		Effect *set_hi = SETG(REG_HI(), remainder);
+		return SEQ2(set_lo, set_hi);
 	} else {
+		char *rd = REG_OPND(0);
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
 
-		Effect *quotient_op = IL_DIV(REG_OPND(0), "rs", "rt");
-		return SEQ3(rs, rt, quotient_op);
+		BitVector *quotient = DIV(rs, rt);
+
+		Effect *set_rd = SETG(rd, quotient);
+		return set_rd;
 	}
 }
 
@@ -1984,9 +2368,23 @@ IL_LIFTER(EXTS) {
 IL_LIFTER(EXTS32) {
 	return NULL;
 }
+
+/**
+ * ABS
+ * Format: ABS.S fd, fs
+ *         ABS.D fd, fs
+ *         ABS.PS is removed in MIPS6 release
+ * Description: FPR[fd] <- abs(FPR[fs])
+ * Exceptions: Coprocessor Unusable, Reserved Instruction
+ * */
 IL_LIFTER(ABS) {
-	return NULL;
+	char *fd = REG_OPND(0);
+	Pure *fs = IL_REG_OPND(1);
+
+	Float *fabs = FABS(fs);
+	return SETG(fd, fabs);
 }
+
 IL_LIFTER(FADD) {
 	return NULL;
 }
@@ -2243,7 +2641,7 @@ IL_LIFTER(INSVE) {
 IL_LIFTER(J) {
 	st32 instr_index = 0x3FFFFFFF & ((st32)IMM_OPND(0) << 2);
 	st32 new_pc = (pc & 0xC0000000) | instr_index;
-	BitVector *jump_target = S32(new_pc);
+	BitVector *jump_target = UN(GPRLEN, new_pc);
 
 	Effect *jmp_op = JMP(jump_target);
 	return jmp_op;
@@ -2258,9 +2656,9 @@ IL_LIFTER(J) {
 IL_LIFTER(JAL) {
 	st32 instr_index = 0x3FFFFFFF & ((st32)IMM_OPND(0) << 2);
 	st32 new_pc = (pc & 0xC0000000) | instr_index;
-	BitVector *jump_target = S32(new_pc);
+	BitVector *jump_target = UN(GPRLEN, new_pc);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
 	Effect *jmp_op = JMP(jump_target);
 
 	return SEQ2(link_op, jmp_op);
@@ -2290,7 +2688,7 @@ IL_LIFTER(JALR) {
 		rs = IL_REG_OPND(1);
 	}
 
-	Effect *link_op = SETG(rd, U32(pc + 8));
+	Effect *link_op = SETG(rd, UN(GPRLEN, pc + 8));
 	Pure *jump_target = rs;
 	Effect *jmp_op = JMP(jump_target);
 
@@ -2319,8 +2717,8 @@ IL_LIFTER(JALS) {
 IL_LIFTER(JALX) {
 	st32 target_instr = (st32)IMM_OPND(0) << 2;
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
-	BitVector *jump_target = U32((pc & 0xC0000000) | target_instr);
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
+	BitVector *jump_target = UN(GPRLEN, (pc & 0xC0000000) | target_instr);
 	Effect *jmp_op = JMP(jump_target);
 
 	return SEQ2(link_op, jmp_op);
@@ -2337,11 +2735,11 @@ IL_LIFTER(JALX) {
  * */
 IL_LIFTER(JIALC) {
 	Pure *rs = IL_REG_OPND(0);
-	st32 offset = (st32)IMM_OPND(1);
+	st64 offset = (st64)IMM_OPND(1);
 	offset = SIGN_EXTEND(offset, 16, GPRLEN);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
-	BitVector *jump_target = ADD(rs, S32(offset));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
+	BitVector *jump_target = ADD(rs, SN(GPRLEN, offset));
 	Effect *jmp_op = JMP(jump_target);
 
 	return SEQ3(rs, link_op, jmp_op);
@@ -2358,10 +2756,10 @@ IL_LIFTER(JIALC) {
  * */
 IL_LIFTER(JIC) {
 	Pure *rs = IL_REG_OPND(0);
-	st32 offset = (st32)IMM_OPND(1);
+	st64 offset = (st64)IMM_OPND(1);
 	offset = SIGN_EXTEND(offset, 16, GPRLEN);
 
-	BitVector *jump_target = ADD(rs, S32(offset));
+	BitVector *jump_target = ADD(rs, SN(GPRLEN, offset));
 	Effect *jmp_op = JMP(jump_target);
 
 	return jmp_op;
@@ -2591,7 +2989,7 @@ IL_LIFTER(LUI) {
 	char *rt = REG_OPND(0);
 	st32 imm = (st32)IMM_OPND(1);
 
-	Effect *set_rt = SETG(rt, S32(imm << 16));
+	Effect *set_rt = SETG(rt, SN(GPRLEN, imm << 16));
 	return set_rt;
 }
 
@@ -2690,7 +3088,7 @@ IL_LIFTER(LWM32) {
 IL_LIFTER(LWPC) {
 	char *rs = REG_OPND(0);
 	Pure *base = IL_REG_PC();
-	BitVector *offset = S32((st32)IMM_OPND(1) << 2);
+	BitVector *offset = SN(GPRLEN, (st64)IMM_OPND(1) << 2);
 
 	BitVector *memaddr = ADD(base, offset);
 	BitVector *word = LOADW(GPRLEN, memaddr);
@@ -3774,7 +4172,7 @@ IL_LIFTER(SLT) {
 IL_LIFTER(SLTI) {
 	char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
-	BitVector *imm = S32(SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
+	BitVector *imm = SN(GPRLEN, SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
 
 	// signed-less-than
 	Bool *slt = SLT(rs, imm);
@@ -3790,7 +4188,7 @@ IL_LIFTER(SLTI) {
 IL_LIFTER(SLTIU) {
 	char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
-	BitVector *imm = S32(SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
+	BitVector *imm = SN(GPRLEN, SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
 
 	Bool *ult = ULT(rs, imm);
 	return SETG(rt, UNSIGNED(GPRLEN, ult));
@@ -4957,7 +5355,8 @@ MipsILLifterFunction mips_lifters[] = {
 /**
  * Mips lifter dispatch function.
  *
- * \param cs_insn
+ * \param analysis To decide architecture.
+ * \param insn To get instruction details.
  * \param pc Instruction address of current instruction.
  * \return Valid RzILOpEffect* on success, NULL otherwise.
  **/
@@ -4968,9 +5367,28 @@ RZ_IPI Effect *mips32_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *in
 		return NULL;
 	}
 
+	// check if this is a FLOAT OP
+	// if first register is a float reg then it's a FLOAT OP
+	bool float_op = IS_FLOAT_OPND(0);
+
+	// check if this instruction uses all 64 bits of a FPR
+	// if MIPS_GRP_NOTFP64BIT is in groups then use only 32 bits
+	// if MIPS_GRP_FP64BIT is in groups then use all 64 bits
+	bool fp64 = false;
+	if (float_op) {
+		for (int i = 0; i < INSN_GROUP_COUNT(insn); i++) {
+			if (INSN_GROUP(i) == MIPS_GRP_FP64BIT) {
+				fp64 = true;
+				break;
+			}
+		}
+	}
+
+	// find uplifter function based on instruction id of instruction
+	// and execute uplifter to get Effect*
 	MipsILLifterFunction fn = mips_lifters[INSN_ID(insn)];
 	if (fn) {
-		Effect *op = fn(analysis, insn, pc);
+		Effect *op = fn(analysis, insn, pc, float_op, fp64);
 		return op;
 	}
 
