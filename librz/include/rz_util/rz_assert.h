@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2018-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2018 Aaron <mcd1992@users.noreply.github.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_ASSERT_H
 #define RZ_ASSERT_H
 
