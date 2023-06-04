@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2022 Khairul Azhar Kasmiran <kazarmy@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_VERSION_H
 #define RZ_VERSION_H
 
