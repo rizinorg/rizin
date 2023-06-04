@@ -1,3 +1,11 @@
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2019-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2017 Roi Martin <jroi.martin@gmail.com>
+// SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_SPACES_H
 #define RZ_SPACES_H
 
