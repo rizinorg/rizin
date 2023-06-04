@@ -1,3 +1,12 @@
+// SPDX-FileCopyrightText: 2021-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2021 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2018-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2018 Aaron <mcd1992@users.noreply.github.com>
+// SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_LOG_H
 #define RZ_LOG_H
 
