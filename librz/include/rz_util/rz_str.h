@@ -1,3 +1,21 @@
+// SPDX-FileCopyrightText: 2022 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021 Alexis Ehret <08a@riseup.net>
+// SPDX-FileCopyrightText: 2021 billow <billow.fun@gmail.com>
+// SPDX-FileCopyrightText: 2020-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2018-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2017-2021 Khairul Azhar Kasmiran <kazarmy@gmail.com>
+// SPDX-FileCopyrightText: 2017-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017 Jose Diaz <josediazplay@gmail.com>
+// SPDX-FileCopyrightText: 2017 SchumBlubBlub <6bx0lm+7siazd414punk@sharklasers.com>
+// SPDX-FileCopyrightText: 2017 davidpolverari <david.polverari@gmail.com>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2016 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_STR_H
 #define RZ_STR_H
 
