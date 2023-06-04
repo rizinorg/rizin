@@ -1,3 +1,12 @@
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2020-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2018 a1ext <a13x4nd3r.t@gmail.com>
+// SPDX-FileCopyrightText: 2017 Khairul Azhar Kasmiran <kazarmy@gmail.com>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_UTF8_H
 #define RZ_UTF8_H
 
@@ -8,7 +17,6 @@ typedef struct {
 	ut32 from, to;
 	const char *name;
 } RUtfBlock;
-// extern const RUtfBlock rz_utf_blocks[];
 
 typedef ut32 RzRune;
 RZ_API int rz_utf8_encode(ut8 *ptr, const RzRune ch);
