@@ -1,3 +1,13 @@
+// SPDX-FileCopyrightText: 2022 Peiwei Hu <jlu.hpw@foxmail.com>
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2020-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 karliss <karlis3p70l1ij@gmail.com>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2019-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2019 dodococo <deepakchethan@outlook.com>
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_UTIL_TABLE_H
 #define RZ_UTIL_TABLE_H
 
