@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021-2023 RizinOrg <info@rizin.re>
 // SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
