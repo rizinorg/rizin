@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2020-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2018 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-FileCopyrightText: 2018 xarkes <antide.petit@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_INTERVAL_H
 #define RZ_INTERVAL_H
 
