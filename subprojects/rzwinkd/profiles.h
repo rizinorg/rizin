@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2019-2022 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2018 scrapbird <brenton.smorris@gmail.com>
+// SPDX-FileCopyrightText: 2018 Francisco Lopes <francisco@oblita.com>
+// SPDX-FileCopyrightText: 2014 LemonBoy <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef PROFILES_H
 #define PROFILES_H
 
