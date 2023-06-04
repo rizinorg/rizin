@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017 SchumBlubBlub <6bx0lm+7siazd414punk@sharklasers.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_STR_UTIL_H
 #define RZ_STR_UTIL_H
 
