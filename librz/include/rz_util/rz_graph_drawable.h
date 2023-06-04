@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2020-2022 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022 billow <billow.fun@gmail.com>
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_GRAPH_DRAWABLE_H
 #define RZ_GRAPH_DRAWABLE_H
 
