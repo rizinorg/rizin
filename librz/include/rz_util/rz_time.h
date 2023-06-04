@@ -1,3 +1,13 @@
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022 billow <billow.fun@gmail.com>
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020-2022 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020 Liumeo <liumeo@pku.edu.cn>
+// SPDX-FileCopyrightText: 2020 Alexis Ehret <08a@riseup.net>
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_TIME_H
 #define RZ_TIME_H
 
