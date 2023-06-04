@@ -23,7 +23,6 @@ if get_option('enable_tests')
     'analysis_xrefs',
     'annotated_code',
     'base64',
-    'big',
     'bin_lines',
     'bin_mach0',
     'bitvector',

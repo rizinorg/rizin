@@ -105,13 +105,6 @@ if meson.is_cross_build()
   endif
 endif
 
-if sys_openssl.found()
-  rz_util_deps += [sys_openssl]
-  rz_util_sources += ['big-ssl.c']
-else
-  rz_util_sources += ['big.c']
-endif
-
 rz_util_includes = [platform_inc, include_directories('sdb/src', 'sdb')]
 
 rz_util = library('rz_util', rz_util_sources, libsdb_sources,

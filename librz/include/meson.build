@@ -65,7 +65,6 @@ rz_util_files = [
   'rz_util/rz_axml.h',
   'rz_util/rz_base64.h',
   'rz_util/rz_base91.h',
-  'rz_util/rz_big.h',
   'rz_util/rz_bitvector.h',
   'rz_util/rz_buf.h',
   'rz_util/rz_debruijn.h',
