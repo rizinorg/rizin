@@ -1,5 +1,9 @@
-#ifndef RZ_UTIL_PATH_H_
-#define RZ_UTIL_PATH_H_
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef RZ_UTIL_PATH_H
+#define RZ_UTIL_PATH_H
 
 #include <rz_types.h>
 
