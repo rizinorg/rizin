@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 Vane11ope <vane11opeschw33tz@gmail.com>
+// SPDX-FileCopyrightText: 2018-2020 vane11ope <vane11opeschw33tz@gmail.com>
+// SPDX-FileCopyrightText: 2018-2019 Vanellope <vane11opeschw33tz@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_PANELS_H
 #define RZ_PANELS_H
 
