@@ -155,7 +155,8 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
  */
 static RzILOpBitVector *read_reg_lane(arm_reg reg, ut32 lane, ut32 data_size) {
 	if (is_core_reg(reg)) {
-		return NULL;
+        rz_warn_if_reached();
+        return NULL;
 	}
 
 	ut32 shift_dist = lane * data_size;
@@ -383,7 +384,7 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm_op *op, 
  * Replicate given value to `dreg_width` length
  * Note the ownership of `val` will be transfered
  */
-static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RzILOpBitVector *val) {
+static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN RzILOpBitVector *val) {
 	ut32 repeat_times = dreg_width / val_width;
 	if (dreg_width % val_width != 0) {
 		return NULL;
@@ -432,6 +433,13 @@ static RzILOpBitVector *repeated_imm(ut32 imm_width, ut32 dreg_width, ut32 imm) 
 	return UN(dreg_width, final_imm);
 }
 
+/**
+ * Get immediate value operand
+ * \param insn instruction
+ * \param n operand number
+ * \param carry_out carryout value, NULL if ignore
+ * \return return immediate value as ut32
+ */
 static ut32 get_imm(cs_insn *insn, int n, RZ_NULLABLE RzILOpBool **carry_out) {
 	if (carry_out) {
 		*carry_out = NULL;
