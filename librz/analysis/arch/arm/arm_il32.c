@@ -155,8 +155,8 @@ static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
  */
 static RzILOpBitVector *read_reg_lane(arm_reg reg, ut32 lane, ut32 data_size) {
 	if (is_core_reg(reg)) {
-        rz_warn_if_reached();
-        return NULL;
+		rz_warn_if_reached();
+		return NULL;
 	}
 
 	ut32 shift_dist = lane * data_size;
@@ -3605,6 +3605,33 @@ static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 	}
 
 	return eff;
+}
+
+static RzILOpEffect *vext(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// vext.8 <Vm>, <Vn>, <Vd>, #imm
+	// vext.16, vext.32 are pseudo instruction of vext.8
+	// objdump disasm them to vext.8 <Vm>, <Vn>, <Vd>, #imm * x
+	// but capstone parse it as .16 and .32
+	ut32 vec_bits = VVEC_SIZE(insn);
+	ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
+
+	// (vec_bits * imm < reg_bits(Vd)) === True, else invalid in capstone
+	ut32 shift_dist = imm * vec_bits;
+	if (shift_dist >= reg_bits(REGID(0))) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// <Vm:Vn>(start_bits: start_bits+reg_bits(Vd))
+	return write_reg(REGID(0),
+		UNSIGNED(reg_bits(REGID(0)),
+			SHIFTR0(APPEND(REG_VAL(2), REG_VAL(1)),
+				UN(8, shift_dist))));
 }
 
 /**
