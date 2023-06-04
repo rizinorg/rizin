@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2019-2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2019 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2017-2019 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2017 Fangrui Song <i@maskray.me>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_RBTREE_H
 #define RZ_RBTREE_H
 
