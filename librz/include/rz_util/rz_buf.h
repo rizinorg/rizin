@@ -1,5 +1,17 @@
+// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022 GustavoLCR <gugulcr@gmail.com>
+// SPDX-FileCopyrightText: 2021 Alexis Ehret <08a@riseup.net>
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2019-2023 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2016 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_BUF_H
 #define RZ_BUF_H
+
 #include <rz_util/rz_mem.h>
 #include <rz_types.h>
 #include <rz_list.h>
