@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_PROTOBUF_H
 #define RZ_PROTOBUF_H
 
