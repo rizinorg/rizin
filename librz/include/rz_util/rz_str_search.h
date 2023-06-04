@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 Luca Borzacchiello <lucaborza@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_STR_SEARCH_H
 #define RZ_STR_SEARCH_H
 
