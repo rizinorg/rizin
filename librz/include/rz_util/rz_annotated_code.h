@@ -1,8 +1,13 @@
+// SPDX-FileCopyrightText: 2022 wingdeans <wingdeans@protonmail.com>
+// SPDX-FileCopyrightText: 2021 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 Nirmal Manoj C <nimmumanoj@gmail.com>
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ANNOTATEDCODE_H
 #define RZ_ANNOTATEDCODE_H
 
-// #include <rz_core.h>
 #include <rz_types.h>
 #include <rz_vector.h>
 
