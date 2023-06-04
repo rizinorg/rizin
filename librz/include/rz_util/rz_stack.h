@@ -1,3 +1,11 @@
+// SPDX-FileCopyrightText: 2020 Riccardo Schirone <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 Maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2016 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-FileCopyrightText: 2016 Álvaro Felipe Melchor <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_STACK_H
 #define RZ_STACK_H
 
