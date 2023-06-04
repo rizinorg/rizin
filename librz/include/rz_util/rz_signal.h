@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017 Polshakov Dmitry <polsha3@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_SIGNAL_H
 #define RZ_SIGNAL_H
 
