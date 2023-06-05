@@ -23,6 +23,9 @@ static inline void print_sdb(Sdb *sdb) {
 
 #define assert_sdb_eq(actual, expected, msg) mu_assert((msg), sdb_diff(expected, actual, diff_cb, NULL));
 
+#define assert_sdb_json_eq(actual, expected, msg) \
+	mu_assert((msg), sdb_diff_eq(expected, actual, rz_json_string_eq, diff_cb, NULL));
+
 #define assert_streq_null(actual, expected, message) \
 	do { \
 		mu_assert(message, (!(actual)) == (!(expected))); \

@@ -229,5 +229,7 @@ EXPECT=<<EOF
 QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: No DWARF register mapping function defined for ppc 32 bits
+EOF
 RUN

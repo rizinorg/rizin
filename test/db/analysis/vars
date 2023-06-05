@@ -542,7 +542,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- varfunc:
-/ int dbg.varfunc();
+/ int varfunc()
 |           ; var int lightbulb @ stack - 0x18
 |           ; var int sun @ stack - 0x14
 |           ; var int last @ stack - 0x10
@@ -589,7 +589,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- varfunc:
-/ int dbg.varfunc();
+/ int varfunc()
 |           ; var int lightbulb @ stack - 0x10
 |           ; var int sun @ stack - 0xc
 |           ; var int last @ stack - 0x8
@@ -619,15 +619,16 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x11c0
             ;-- foo:
-/ int dbg.foo(int num);
+/ int foo(int num)
+|           ; var int64_t arg1 @ rdi
 |           ; arg int num @ stack - 0x2c
-|           ; var short int minus_seven @ stack - 0x24
-|           ; var short int sub_short @ stack - 0x22
 |           ; var int int_one @ stack - 0x20
-|           ; var int mult_int @ stack - 0x1c
 |           ; var long int long_twenty @ stack - 0x18
+|           ; var short int minus_seven @ stack - 0x24
+|           ; var int mult_int @ stack - 0x1c
 |           ; var long int add_long @ stack - 0x10
-|           0x00001139      push  rbp                                  ; int foo(int num);
+|           ; var short int sub_short @ stack - 0x22
+|           0x00001139      push  rbp                                  ; int foo(int num)
 |           0x0000113a      mov   rbp, rsp
 |           0x0000113d      sub   rsp, 0x30
 |           0x00001141      mov   dword [num], edi                     ; arg1
@@ -863,76 +864,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Function arguments from DWARF (hightec)
-FILE=bins/elf/float_ex1/float_ex1_hightec
-CMDS=<<EOF
-aaa
-s sym.fn1
-e asm.comments=0
-pdf
-EOF
-EXPECT=<<EOF
-            ;-- fn1:
-/ _Bool dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
-|           ; arg some_t **out @ stack - 0x18
-|           ; arg struct Some *gg @ stack - 0x14
-|           ; arg double q @ stack - 0x10
-|           ; arg char *g @ stack - 0x8
-|           ; arg int a @ stack - 0x4
-|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15
-|           0x8000041e      sub.a sp, 24
-|           0x80000420      st.w  [a14]-4, d4
-|           0x80000424      st.a  [a14]-8, a4
-|           0x80000428      st.d  [a14]-16, e6
-|           0x8000042c      st.a  [a14]-20, a5
-|           0x80000430      st.a  [a14]-24, a6
-|           0x80000434      ld.w  d15, [a14]-20                        ; float_ex1.c:16
-|           0x80000438      jz    d15, 0x80000440
-|           0x8000043a      ld.w  d15, [a14]-24
-|           0x8000043e      jnz   d15, 0x80000444
-|           0x80000440      mov   d15, 0                               ; float_ex1.c:17
-|           0x80000442      j     0x800004a8
-|           0x80000444      mov   d4, 20                               ; float_ex1.c:19
-|           0x80000448      call  dbg.malloc
-|           0x8000044c      mov.aa a15, a2
-|           0x8000044e      mov.d d2, a15
-|           0x80000450      ld.w  d15, [a14]-24
-|           0x80000454      mov.a a15, d15
-|           0x80000456      st.w  [a15]0, d2
-|           0x80000458      ld.w  d15, [a14]-24                        ; float_ex1.c:20
-|           0x8000045c      mov.a a15, d15
-|           0x8000045e      ld.w  d15, [a15]0
-|           0x80000460      ld.w  d2, [a14]-4
-|           0x80000464      mov.a a15, d15
-|           0x80000466      st.w  [a15]0, d2
-|           0x80000468      ld.w  d15, [a14]-24                        ; float_ex1.c:21
-|           0x8000046c      mov.a a15, d15
-|           0x8000046e      ld.w  d15, [a15]0
-|           0x80000470      add   d15, 4
-|           0x80000472      mov.a a4, d15
-|           0x80000474      ld.a  a5, [a14]-8
-|           0x80000478      mov   d4, 5
-|           0x8000047a      call  dbg.strncpy
-|           0x8000047e      ld.w  d15, [a14]-24                        ; float_ex1.c:22
-|           0x80000482      mov.a a15, d15
-|           0x80000484      ld.w  d15, [a15]0
-|           0x80000486      ld.d  e4, [a14]-16
-|           0x8000048a      call  dbg.__truncdfsf2
-|           0x8000048e      mov   d3, d2
-|           0x80000490      mov.a a15, d15
-|           0x80000492      st.w  [a15]12, d3
-|           0x80000494      ld.w  d15, [a14]-24                        ; float_ex1.c:23
-|           0x80000498      mov.a a15, d15
-|           0x8000049a      ld.w  d15, [a15]0
-|           0x8000049c      ld.w  d2, [a14]-20
-|           0x800004a0      mov   d3, d2
-|           0x800004a2      mov.a a15, d15
-|           0x800004a4      st.w  [a15]16, d3
-|           0x800004a6      mov   d15, 1                               ; float_ex1.c:24
-|           0x800004a8      mov   d2, d15                              ; float_ex1.c:25
-|           0x800004aa      ret
-EOF
-
 NAME=Function va_args arguments from DWARF
 FILE=bins/elf/float_ex1/float_ex1_hightec
 CMDS=<<EOF
@@ -954,112 +885,154 @@ s dbg.feraiseexcept
 .(sig)
 s dbg._Atrealloc
 .(sig)
+s dbg.fn1
+.(sig)
 EOF
 EXPECT=<<EOF
 var va_list ap @ stack + 0x4
-arg const char *fmt @ a6
-int printf(const char *format);
+arg const char *fmt @ a4
+var int ans @ ...
+int printf(const char *fmt, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
             ;-- printf:
-/ int dbg.printf(const char *fmt, va_args ..);
-|           ; arg const char *fmt @ a6
+/ int printf(const char *fmt, ...)
+|           ; arg const char *fmt @ a4
+|           ; var int ans @ ...
 |           ; var va_list ap @ stack + 0x4
-|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, va_args ..);
+|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
 ---------
-arg void *str @ a15
-arg const char *buf @ a5
-arg size_t n @ d4
-void dbg.prout(const char *buf);
+arg void *str @ a4
+arg const char *buf @ a4
+var int32_t arg6 @ a5
+arg size_t n @ d5
+void * prout(void *str, const char *buf, size_t n);
             ;-- prout:
-/ void *dbg.prout(void *str, const char *buf, size_t n);
-|           ; arg void *str @ a15
-|           ; arg size_t n @ d4
-|           ; arg const char *buf @ a5
-|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void *prout(void *str, const char *buf, size_t n);
+/ void * prout(void *str, const char *buf, size_t n)
+|           ; var int32_t arg6 @ a5
+|           ; arg void *str @ a4
+|           ; arg const char *buf @ a4
+|           ; arg size_t n @ d5
+|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 ---------
-arg fp_number_type *b @ a12
-arg fp_number_type *a @ a13
-arg fp_number_type *tmp @ a15
-var fractype a_fraction @ d11
-var int diff @ d12
-var int a_normal_exp @ d15
+arg fp_number_type *b @ a2
+arg fp_number_type *a @ a4
+var int32_t arg6 @ a5
+arg fp_number_type *tmp @ a6
 var int b_normal_exp @ d2
-var intfrac tfraction @ d3
-var fractype b_fraction @ d9
-void dbg._fpadd_parts();
+var intfrac tfraction @ composite: [(.0, 32): d2, (.0, 32): d3]
+var fractype b_fraction @ composite: [(.0, 32): d8, (.0, 32): d9]
+var int a_normal_exp @ ...
+var fractype a_fraction @ ...
+fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
             ;-- _fpadd_parts:
-/ fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
-|           ; arg fp_number_type *a @ a13
-|           ; arg fp_number_type *b @ a12
-|           ; arg fp_number_type *tmp @ a15
-|           ; var intfrac tfraction @ d3
-|           ; var int a_normal_exp @ d15
+/ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
+|           ; var int32_t arg6 @ a5
+|           ; arg fp_number_type *a @ a4
+|           ; arg fp_number_type *b @ a2
+|           ; arg fp_number_type *tmp @ a6
+|           ; var intfrac tfraction @ composite: [(.0, 32): d2, (.0, 32): d3]
+|           ; var int a_normal_exp @ ...
 |           ; var int b_normal_exp @ d2
-|           ; var fractype a_fraction @ d11
-|           ; var fractype b_fraction @ d9
-|           ; var int diff @ d12
-|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+|           ; var fractype a_fraction @ ...
+|           ; var fractype b_fraction @ composite: [(.0, 32): d8, (.0, 32): d9]
+|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
 ---------
+arg const char *s @ a2
 var const char *sc @ a2
-arg const char *s @ a4
+var int32_t arg5 @ a4
 arg size_t maxsize @ d4
-void dbg.strnlen_s(const char *s);
+size_t strnlen_s(const char *s, size_t maxsize);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
             ;-- strnlen_s:
-/ size_t dbg.strnlen_s(const char *s, size_t maxsize);
+/ size_t strnlen_s(const char *s, size_t maxsize)
+|           ; var int32_t arg5 @ a4
+|           ; arg const char *s @ a2
 |           ; arg size_t maxsize @ d4
 |           ; var const char *sc @ a2
-|           ; arg const char *s @ a4
-|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
+|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize)
 ---------
-arg mbstate_t *pst @ a12
 var _Statab *pwcstate @ a13
-arg char *s @ a15
-arg wchar_t wc @ d15
-void dbg._Wctomb();
+arg char *s @ a4
+arg mbstate_t *pst @ a5
+arg wchar_t wc @ d4
+var _Statab *pmbstate @ ...
+int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
             ;-- _Wctomb:
-/ int dbg._Wctomb(char *s, wchar_t wc, mbstate_t *pst);
-|           ; arg char *s @ a15
-|           ; arg wchar_t wc @ d15
-|           ; arg mbstate_t *pst @ a12
+/ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
+|           ; arg char *s @ a4
+|           ; arg wchar_t wc @ d4
+|           ; arg mbstate_t *pst @ a5
+|           ; var _Statab *pmbstate @ ...
 |           ; var _Statab *pwcstate @ a13
-|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 ---------
-arg wchar_t *pwc @ a4
-arg const char *s @ a5
-arg mbstate_t *pst @ a6
-arg size_t nin @ d4
-void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
+arg mbstate_t *pst @ a12
+arg const char *s @ a13
+arg wchar_t *pwc @ a14
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
+arg size_t nin @ d15
+int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
             ;-- _Mbtowc:
-/ int dbg._Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
-|           ; arg size_t nin @ d4
-|           ; arg wchar_t *pwc @ a4
-|           ; arg const char *s @ a5
-|           ; arg mbstate_t *pst @ a6
-|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+/ int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
+|           ; arg wchar_t *pwc @ a14
+|           ; arg const char *s @ a13
+|           ; arg size_t nin @ d15
+|           ; arg mbstate_t *pst @ a12
+|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
 ---------
 arg int except @ d4
-int feraiseexcept(int excepts);
+int feraiseexcept(int except);
             ; CALL XREF from dbg._Feraise @ 0x8000343e
             ;-- feraiseexcept:
-/ int dbg.feraiseexcept(int except);
+/ int feraiseexcept(int except)
 |           ; arg int except @ d4
-|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except);
+|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except)
 ---------
-var Ppvoidfn newfuns @ a12
+var size_t size_arg @ a0
+var Ppvoidfn newfuns @ a2
 var size_t inc @ d15
-void dbg._Atrealloc();
+int _Atrealloc();
             ; CALL XREF from dbg.atexit @ 0x80001a4c
             ; CALL XREF from dbg._Atexit @ 0x800033b8
             ;-- _Atrealloc:
-/ int dbg._Atrealloc();
+/ int _Atrealloc()
+|           ; var size_t size_arg @ a0
 |           ; var size_t inc @ d15
-|           ; var Ppvoidfn newfuns @ a12
-|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc();
+|           ; var Ppvoidfn newfuns @ a2
+|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
+---------
+arg some_t **out @ stack - 0x18
+arg struct Some *gg @ stack - 0x14
+arg double q @ stack - 0x10
+arg char *g @ stack - 0x8
+arg int a @ stack - 0x4
+var size_t size_arg @ a0
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
+void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
+            ; CALL XREF from dbg.main @ 0x8000059e
+            ;-- fn1:
+/ _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
+|           ; var size_t size_arg @ a0
+|           ; arg int a @ stack - 0x4
+|           ; arg char *g @ stack - 0x8
+|           ; arg double q @ stack - 0x10
+|           ; arg struct Some *gg @ stack - 0x14
+|           ; arg some_t **out @ stack - 0x18
+|           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15 ; _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
 ---------
 EOF
 RUN
@@ -1073,8 +1046,8 @@ e asm.comments=0
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.fn1(size_t size, int32_t arg5, int32_t arg6, int32_t arg7);
-|           ; arg size_t size @ a0
+/ sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7);
+|           ; arg size_t nbytes @ a0
 |           ; arg int32_t arg5 @ a4
 |           ; arg int32_t arg6 @ a5
 |           ; arg int32_t arg7 @ a6
@@ -1150,109 +1123,125 @@ s dbg._Atrealloc
 EOF
 EXPECT=<<EOF
 var va_list ap @ stack + 0x4
-arg const char *fmt @ a6
-int printf(const char *format);
+arg const char *fmt @ a4
+var int ans @ ...
+int printf(const char *fmt, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
             ;-- printf:
-/ int dbg.printf(const char *fmt, va_args ..);
-|           ; arg const char *fmt @ a6
+/ int printf(const char *fmt, ...)
+|           ; arg const char *fmt @ a4
+|           ; var int ans @ ...
 |           ; var va_list ap @ stack + 0x4
-|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, va_args ..);
+|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
 
-arg void *str @ a15
-arg const char *buf @ a5
-arg size_t n @ d4
-void dbg.prout(const char *buf);
+arg void *str @ a4
+arg const char *buf @ a4
+var int32_t arg6 @ a5
+arg size_t n @ d5
+void * prout(void *str, const char *buf, size_t n);
             ;-- prout:
-/ void *dbg.prout(void *str, const char *buf, size_t n);
-|           ; arg void *str @ a15
-|           ; arg size_t n @ d4
-|           ; arg const char *buf @ a5
-|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void *prout(void *str, const char *buf, size_t n);
+/ void * prout(void *str, const char *buf, size_t n)
+|           ; var int32_t arg6 @ a5
+|           ; arg void *str @ a4
+|           ; arg const char *buf @ a4
+|           ; arg size_t n @ d5
+|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 
-arg fp_number_type *b @ a12
-arg fp_number_type *a @ a13
-arg fp_number_type *tmp @ a15
-var fractype a_fraction @ d11
-var int diff @ d12
-var int a_normal_exp @ d15
+arg fp_number_type *b @ a2
+arg fp_number_type *a @ a4
+var int32_t arg6 @ a5
+arg fp_number_type *tmp @ a6
 var int b_normal_exp @ d2
-var intfrac tfraction @ d3
-var fractype b_fraction @ d9
-void dbg._fpadd_parts();
+var intfrac tfraction @ composite: [(.0, 32): d2, (.0, 32): d3]
+var fractype b_fraction @ composite: [(.0, 32): d8, (.0, 32): d9]
+var int a_normal_exp @ ...
+var fractype a_fraction @ ...
+fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
             ;-- _fpadd_parts:
-/ fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
-|           ; arg fp_number_type *a @ a13
-|           ; arg fp_number_type *b @ a12
-|           ; arg fp_number_type *tmp @ a15
-|           ; var intfrac tfraction @ d3
-|           ; var int a_normal_exp @ d15
+/ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
+|           ; var int32_t arg6 @ a5
+|           ; arg fp_number_type *a @ a4
+|           ; arg fp_number_type *b @ a2
+|           ; arg fp_number_type *tmp @ a6
+|           ; var intfrac tfraction @ composite: [(.0, 32): d2, (.0, 32): d3]
+|           ; var int a_normal_exp @ ...
 |           ; var int b_normal_exp @ d2
-|           ; var fractype a_fraction @ d11
-|           ; var fractype b_fraction @ d9
-|           ; var int diff @ d12
-|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+|           ; var fractype a_fraction @ ...
+|           ; var fractype b_fraction @ composite: [(.0, 32): d8, (.0, 32): d9]
+|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
 
+arg const char *s @ a2
 var const char *sc @ a2
-arg const char *s @ a4
+var int32_t arg5 @ a4
 arg size_t maxsize @ d4
-void dbg.strnlen_s(const char *s);
+size_t strnlen_s(const char *s, size_t maxsize);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
             ;-- strnlen_s:
-/ size_t dbg.strnlen_s(const char *s, size_t maxsize);
+/ size_t strnlen_s(const char *s, size_t maxsize)
+|           ; var int32_t arg5 @ a4
+|           ; arg const char *s @ a2
 |           ; arg size_t maxsize @ d4
 |           ; var const char *sc @ a2
-|           ; arg const char *s @ a4
-|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
+|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize)
 
-arg mbstate_t *pst @ a12
 var _Statab *pwcstate @ a13
-arg char *s @ a15
-arg wchar_t wc @ d15
-void dbg._Wctomb();
+arg char *s @ a4
+arg mbstate_t *pst @ a5
+arg wchar_t wc @ d4
+var _Statab *pmbstate @ ...
+int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
             ;-- _Wctomb:
-/ int dbg._Wctomb(char *s, wchar_t wc, mbstate_t *pst);
-|           ; arg char *s @ a15
-|           ; arg wchar_t wc @ d15
-|           ; arg mbstate_t *pst @ a12
+/ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
+|           ; arg char *s @ a4
+|           ; arg wchar_t wc @ d4
+|           ; arg mbstate_t *pst @ a5
+|           ; var _Statab *pmbstate @ ...
 |           ; var _Statab *pwcstate @ a13
-|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 
-arg wchar_t *pwc @ a4
-arg const char *s @ a5
-arg mbstate_t *pst @ a6
-arg size_t nin @ d4
-void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
+arg mbstate_t *pst @ a12
+arg const char *s @ a13
+arg wchar_t *pwc @ a14
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
+arg size_t nin @ d15
+int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
             ;-- _Mbtowc:
-/ int dbg._Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
-|           ; arg size_t nin @ d4
-|           ; arg wchar_t *pwc @ a4
-|           ; arg const char *s @ a5
-|           ; arg mbstate_t *pst @ a6
-|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+/ int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
+|           ; arg wchar_t *pwc @ a14
+|           ; arg const char *s @ a13
+|           ; arg size_t nin @ d15
+|           ; arg mbstate_t *pst @ a12
+|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
 
 arg int except @ d4
-int feraiseexcept(int excepts);
+int feraiseexcept(int except);
             ; CALL XREF from dbg._Feraise @ 0x8000343e
             ;-- feraiseexcept:
-/ int dbg.feraiseexcept(int except);
+/ int feraiseexcept(int except)
 |           ; arg int except @ d4
-|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except);
+|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except)
 
-var Ppvoidfn newfuns @ a12
+var size_t size_arg @ a0
+var Ppvoidfn newfuns @ a2
 var size_t inc @ d15
-void dbg._Atrealloc();
+int _Atrealloc();
             ; CALL XREF from dbg.atexit @ 0x80001a4c
             ; CALL XREF from dbg._Atexit @ 0x800033b8
             ;-- _Atrealloc:
-/ int dbg._Atrealloc();
+/ int _Atrealloc()
+|           ; var size_t size_arg @ a0
 |           ; var size_t inc @ d15
-|           ; var Ppvoidfn newfuns @ a12
-|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc();
+|           ; var Ppvoidfn newfuns @ a2
+|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
 
 EOF
 RUN

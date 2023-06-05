@@ -7,38 +7,24 @@
 #include <rz_bin_dwarf.h>
 #include "../unit/minunit.h"
 
-#define check_abbrev_code(expected_code) \
-	mu_assert_eq(da->decls[i].code, expected_code, "Wrong abbrev code");
-
-#define check_abbrev_tag(expected_tag) \
-	mu_assert_eq(da->decls[i].tag, expected_tag, "Incorrect abbreviation tag")
-
-#define check_abbrev_count(expected_count) \
-	mu_assert_eq(da->decls[i].count, expected_count, "Incorrect abbreviation count")
-
-#define check_abbrev_children(expected_children) \
-	mu_assert_eq(da->decls[i].has_children, expected_children, "Incorrect children flag")
-
-#define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq(da->decls[i].defs[j].attr_name, expected_name, "Incorrect children flag");
-
-#define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq(da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
-
-static bool check_line_samples_eq(const RzBinSourceLineInfo *actual,
-	size_t samples_count_expect, const RzBinSourceLineSample *samples_expect) {
+static bool check_line_samples_eq(
+	const RzBinSourceLineInfo *actual,
+	size_t samples_count_expect,
+	const RzBinSourceLineSample *samples_expect) {
 	mu_assert_eq(actual->samples_count, samples_count_expect, "samples count");
 	if (samples_expect) {
 		mu_assert_notnull(actual->samples, "samples");
 		for (size_t i = 0; i < samples_count_expect; i++) {
-			mu_assert_eq(actual->samples[i].address, samples_expect[i].address, "sample addr");
-			mu_assert_eq(actual->samples[i].line, samples_expect[i].line, "sample line");
-			mu_assert_eq(actual->samples[i].column, samples_expect[i].column, "sample column");
-			if (samples_expect[i].file) {
-				mu_assert_notnull(actual->samples[i].file, "sample file");
-				mu_assert_streq(actual->samples[i].file, samples_expect[i].file, "sample file");
+			RzBinSourceLineSample *act = &actual->samples[i];
+			const RzBinSourceLineSample *exp = &samples_expect[i];
+			mu_assert_eq(act->address, exp->address, "sample addr");
+			mu_assert_eq(act->line, exp->line, "sample line");
+			mu_assert_eq(act->column, exp->column, "sample column");
+			if (exp->file) {
+				mu_assert_notnull(act->file, "sample file");
+				mu_assert_streq(act->file, exp->file, "sample file");
 			} else {
-				mu_assert_null(actual->samples[i].file, "sample file");
+				mu_assert_null(act->file, "sample file");
 			}
 		}
 	} else {
@@ -73,6 +59,24 @@ static void print_line_samples(size_t samples_count, const RzBinSourceLineSample
 		} \
 	} while (0);
 
+#define TEST_ABBREV_DECL(_index, _offset, _tag, _has_children, _attr_count) \
+	do { \
+		abbrev = rz_vector_index_ptr(&tbl->abbrevs, _index); \
+		mu_assert_notnull(abbrev, "abbrev"); \
+		mu_assert_eq(abbrev->offset, _offset, "abbrev offset"); \
+		mu_assert_eq(abbrev->tag, _tag, "abbrev tag"); \
+		mu_assert_eq(abbrev->has_children, _has_children, "abbrev has children"); \
+		mu_assert_eq(rz_vector_len(&abbrev->defs), _attr_count, "abbrev has children"); \
+	} while (0)
+
+#define TEST_ABBREV_ATTR(_index, _name, _form) \
+	do { \
+		def = rz_vector_index_ptr(&abbrev->defs, _index); \
+		mu_assert_notnull(def, "abbrev attr"); \
+		mu_assert_eq(def->name, _name, "abbrev attr name"); \
+		mu_assert_eq(def->form, _form, "abbrev attr form"); \
+	} while (0)
+
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
@@ -86,83 +90,41 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
-	// order matters
-	// I nest scopes to make it more readable, (hopefully)
-	int i = 0;
-	check_abbrev_tag(DW_TAG_compile_unit);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-		{
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_producer);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_language);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_comp_dir);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_low_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_high_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_stmt_list);
-			check_abbrev_attr_form(DW_FORM_data4);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(8);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_base_type);
-	{
-		check_abbrev_count(4);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_count(12);
-		check_abbrev_children(true);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(7);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_count(10);
-		check_abbrev_children(true);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(6);
-		check_abbrev_children(false);
-	}
-	i++;
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 7);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(5, DW_AT_high_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_stmt_list, DW_FORM_data4);
+
+	TEST_ABBREV_DECL(2, 0x26, DW_TAG_base_type, false, 3);
+	TEST_ABBREV_ATTR(0, DW_AT_byte_size, DW_FORM_data1);
+	TEST_ABBREV_ATTR(1, DW_AT_encoding, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_string);
+
+	TEST_ABBREV_DECL(6, 0x76, DW_TAG_variable, false, 5);
+	TEST_ABBREV_ATTR(0, DW_AT_name, DW_FORM_string);
+	TEST_ABBREV_ATTR(1, DW_AT_decl_file, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_decl_line, DW_FORM_data1);
+	TEST_ABBREV_ATTR(3, DW_AT_decl_column, DW_FORM_data1);
+	TEST_ABBREV_ATTR(4, DW_AT_type, DW_FORM_ref4);
+
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -179,7 +141,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -205,311 +167,51 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// this is probably ugly, but I didn't know how to
 	// tell core  what bin to open so I did it myself
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert("Incorrect number of abbreviation", da->count == 32);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
+	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
-	// order matters
-	// I nest scopes to make it more readable, (hopefully)
-	int i = 0;
-	check_abbrev_tag(DW_TAG_compile_unit);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(9);
-		{
-			/**
-			 *  Everything commented out is something that is missing from being printed by `id` Radare
-			 */
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_producer);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_language);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_comp_dir);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_ranges);
-			check_abbrev_attr_form(DW_FORM_data4);
-			j++;
-			check_abbrev_attr_name(DW_AT_low_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_entry_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_stmt_list);
-			check_abbrev_attr_form(DW_FORM_data4);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
+	mu_assert_notnull(tbl, "abbrev table");
+	mu_assert_eq(rz_vector_len(&tbl->abbrevs), 32, "abbrev decls count");
+	mu_assert_eq(tbl->offset, 0x0, "abbrev table offset");
 
-			// check_abbrev_attr_name (DW_AT value: 0);
-			// check_abbrev_attr_form (DW_AT value: 0);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_structure_type);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-		{
-			/**
-			 *  Everything commented out is something that is missing from being printed by `id` Radare
-			 */
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_byte_size);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_file);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_line);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_column);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_containing_type);
-			check_abbrev_attr_form(DW_FORM_ref4);
-			j++;
-			check_abbrev_attr_name(DW_AT_sibling);
-			check_abbrev_attr_form(DW_FORM_ref4);
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 8);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_ranges, DW_FORM_data4);
+	TEST_ABBREV_ATTR(5, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_entry_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(7, DW_AT_stmt_list, DW_FORM_data4);
 
-			// check_abbrev_attr_name (DW_AT value: 0);
-			// check_abbrev_attr_form (DW_AT value: 0);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_member);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(5);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(10);
-	}
-	i++;
-
-	// 8
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(12);
-		{
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_external);
-			check_abbrev_attr_form(DW_FORM_flag);
-			j++;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_file);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_line);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_column);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			// check_abbrev_attr_name (DW_AT_MIPS_linkage_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_virtuality);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_containing_type);
-			check_abbrev_attr_form(DW_FORM_ref4);
-			j++;
-			check_abbrev_attr_name(DW_AT_declaration);
-			check_abbrev_attr_form(DW_FORM_flag);
-			j++;
-			check_abbrev_attr_name(DW_AT_object_pointer);
-			check_abbrev_attr_form(DW_FORM_ref4);
-			j++;
-			check_abbrev_attr_name(DW_AT_sibling);
-			check_abbrev_attr_form(DW_FORM_ref4);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(13);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_const_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_pointer_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_reference_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subroutine_type);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_unspecified_parameters);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(1);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_base_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(4);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_pointer_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(4);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_structure_type);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_inheritance);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(10);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(13);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(12);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(7);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(7);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(5);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(5);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(4);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(9);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(9);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
+	TEST_ABBREV_DECL(8, 0x8d, DW_TAG_subprogram, true, 12);
+	TEST_ABBREV_ATTR(0, DW_AT_external, DW_FORM_flag);
+	TEST_ABBREV_ATTR(1, DW_AT_name, DW_FORM_string);
+	TEST_ABBREV_ATTR(2, DW_AT_decl_file, DW_FORM_data1);
+	TEST_ABBREV_ATTR(3, DW_AT_decl_line, DW_FORM_data1);
+	TEST_ABBREV_ATTR(4, DW_AT_decl_column, DW_FORM_data1);
+	TEST_ABBREV_ATTR(5, DW_AT_MIPS_linkage_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(6, DW_AT_type, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(7, DW_AT_virtuality, DW_FORM_data1);
+	TEST_ABBREV_ATTR(8, DW_AT_vtable_elem_location, DW_FORM_block1);
+	TEST_ABBREV_ATTR(9, DW_AT_containing_type, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(10, DW_AT_declaration, DW_FORM_flag);
+	TEST_ABBREV_ATTR(11, DW_AT_object_pointer, DW_FORM_ref4);
 
 	// rz_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
 
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -578,7 +280,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -594,25 +296,39 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
-	int i = 18;
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	check_abbrev_count(5);
-	check_abbrev_children(false);
-	check_abbrev_code(19);
-	i = 41;
-	check_abbrev_tag(DW_TAG_inheritance);
-	check_abbrev_count(3);
-	check_abbrev_children(false);
-	check_abbrev_code(18);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 8);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_ranges, DW_FORM_data4);
+	TEST_ABBREV_ATTR(5, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_entry_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(7, DW_AT_stmt_list, DW_FORM_data4);
+
+	TEST_ABBREV_DECL(17, 0x11d, DW_TAG_subprogram, true, 7);
+	TEST_ABBREV_ATTR(0, DW_AT_specification, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(1, DW_AT_object_pointer, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(2, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(3, DW_AT_high_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(4, DW_AT_frame_base, DW_FORM_block1);
+	TEST_ABBREV_ATTR(5, DW_AT_GNU_all_call_sites, DW_FORM_flag);
+	TEST_ABBREV_ATTR(6, DW_AT_sibling, DW_FORM_ref4);
+
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -685,11 +401,31 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
 }
+
+#define CHECK_LINEOP_FILE_ENTRY(index, dir, time, sz, path) \
+	{ \
+		RzBinDwarfFileEntry *f = rz_vector_index_ptr(&hdr->file_names, (index)); \
+		mu_assert_eq(f->size, (sz), "file name table"); \
+		mu_assert_eq(f->timestamp, (time), "file name time"); \
+		mu_assert_eq(f->directory_index, (dir), "file name dir"); \
+		mu_assert_streq(f->path_name, (path), "invalid_parameter_handler.c"); \
+	}
+
+#define CHECK_LINEOP_OPCODE(index, opc) \
+	{ \
+		RzBinDwarfLineOp *op = rz_vector_index_ptr(&lunit->ops, (index)); \
+		mu_assert_eq(op->opcode, (opc), "lineop opcode"); \
+	}
+#define CHECK_LINEOP_TYPE(index, t) \
+	{ \
+		RzBinDwarfLineOp *op = rz_vector_index_ptr(&lunit->ops, (index)); \
+		mu_assert_eq(op->type, (t), "lineop opcode"); \
+	}
 
 bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswell
 	RzBin *bin = rz_bin_new();
@@ -701,17 +437,67 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/hello_world_not_stripped.exe", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	// not ignoring null entries -> 755 abbrevs
-	mu_assert_eq(da->count, 731, "Incorrect number of abbreviation");
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 731, "Incorrect number of abbreviation");
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
-	mu_assert_eq(rz_list_length(li->units), 16, "line units count");
+	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
+	RzBinDwarfLineUnit *lunit = rz_list_tail(li->units)->data;
+	mu_assert_notnull(lunit, "line unit");
+
+	RzBinDwarfLineHeader *hdr = &lunit->header;
+	mu_assert_eq(hdr->unit_length, 704, "");
+	mu_assert_eq(hdr->version, 2, "");
+	mu_assert_eq(hdr->min_inst_len, 1, "");
+	mu_assert_eq(hdr->max_ops_per_inst, 1, "");
+	mu_assert_eq(hdr->default_is_stmt, 1, "");
+	mu_assert_eq(hdr->line_base, -5, "");
+	mu_assert_eq(hdr->line_range, 14, "");
+	mu_assert_eq(hdr->opcode_base, 13, "");
+
+	ut8 opc[] = { 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1 };
+	mu_assert_memeq(hdr->std_opcode_lengths, opc, hdr->opcode_base - 1, "opcodes");
+
+	char *dir = NULL;
+	dir = rz_pvector_at(&hdr->directories, 0);
+	mu_assert_streq(dir, "../misc", "Directory table");
+	dir = rz_pvector_at(&hdr->directories, 1);
+	mu_assert_streq(dir, "/usr/local/Cellar/mingw-w64/5.0.4_1/toolchain-i686/i686-w64-mingw32/include", "Directory table");
+	dir = rz_pvector_at(&hdr->directories, 2);
+	mu_assert_streq(dir, "/usr/local/Cellar/mingw-w64/5.0.4_1/toolchain-i686/i686-w64-mingw32/include/psdk_inc", "Directory table");
+
+	CHECK_LINEOP_FILE_ENTRY(0, 1, 0, 0, "invalid_parameter_handler.c");
+	CHECK_LINEOP_FILE_ENTRY(1, 2, 0, 0, "interlockedapi.h");
+	CHECK_LINEOP_FILE_ENTRY(2, 3, 0, 0, "intrin-impl.h");
+
+	CHECK_LINEOP_FILE_ENTRY(14, 2, 0, 0, "wtypesbase.h");
+	CHECK_LINEOP_FILE_ENTRY(15, 2, 0, 0, "unknwnbase.h");
+	CHECK_LINEOP_FILE_ENTRY(16, 2, 0, 0, "objidlbase.h");
+
+	CHECK_LINEOP_FILE_ENTRY(29, 2, 0, 0, "winsmcrd.h");
+	CHECK_LINEOP_FILE_ENTRY(30, 2, 0, 0, "winscard.h");
+	CHECK_LINEOP_FILE_ENTRY(31, 2, 0, 0, "commdlg.h");
+
+	CHECK_LINEOP_OPCODE(0, DW_LNS_set_column);
+	CHECK_LINEOP_OPCODE(1, DW_LNE_set_address);
+	CHECK_LINEOP_OPCODE(2, DW_LNS_advance_line);
+
+	CHECK_LINEOP_OPCODE(17, DW_LNS_copy);
+	CHECK_LINEOP_OPCODE(18, DW_LNS_set_column);
+	CHECK_LINEOP_TYPE(19, RZ_BIN_DWARF_LINE_OP_TYPE_SPEC);
+
+	CHECK_LINEOP_OPCODE(33, DW_LNS_copy);
+	CHECK_LINEOP_OPCODE(34, DW_LNS_advance_pc);
+	CHECK_LINEOP_OPCODE(35, DW_LNE_end_sequence);
+
 	mu_assert_notnull(li->lines, "line info");
 	const ut64 test_addresses[] = {
 		0x00401000,
@@ -745,7 +531,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_io_free(io);
 	rz_bin_free(bin);
 	mu_end;
@@ -761,26 +547,36 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_abbrev_from_file(bin->cur);
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	int i = 18;
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
 
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	check_abbrev_count(5);
-	check_abbrev_children(false);
-	check_abbrev_code(19);
-	i = 41;
-	check_abbrev_tag(DW_TAG_inheritance);
-	check_abbrev_count(4);
-	check_abbrev_children(false);
-	check_abbrev_code(18);
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 8);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_ranges, DW_FORM_data4);
+	TEST_ABBREV_ATTR(5, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_entry_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(7, DW_AT_stmt_list, DW_FORM_data4);
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	TEST_ABBREV_DECL(18, 0x131, DW_TAG_formal_parameter, false, 4);
+	TEST_ABBREV_ATTR(0, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_type, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(2, DW_AT_artificial, DW_FORM_flag);
+	TEST_ABBREV_ATTR(3, DW_AT_location, DW_FORM_block1);
+
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -853,7 +649,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -871,7 +667,9 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 
 	// TODO add abbrev checks
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -970,14 +768,18 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
+	RzBinDwarfDebugAbbrevs *da = rz_bin_dwarf_abbrev_from_file(bin->cur);
 	mu_assert_notnull(da, "abbrevs");
-	mu_assert_eq(da->count, 8, "abbrevs count");
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 8, "abbrevs count");
 
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
+	RzBinDwarfDebugStr *debug_str = rz_bin_dwarf_str_from_file(bin->cur);
+
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_info_from_file(bin->cur, da, debug_str);
 	mu_assert_notnull(info, "info");
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, info, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, info,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -997,8 +799,8 @@ bool test_dwarf4_multidir_comp_units(void) {
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_info_free(info);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -1014,7 +816,9 @@ bool test_big_endian_dwarf2(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_line_from_file(
+		bin->cur, NULL,
+		RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
 	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
 	mu_assert_notnull(li->lines, "line info");
@@ -1514,10 +1318,10 @@ bool test_dwarf3_aranges(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzList *aranges = rz_bin_dwarf_parse_aranges(bin->cur);
-	mu_assert_eq(rz_list_length(aranges), 2, "arange sets count");
+	RzBinDwarfARanges *aranges = rz_bin_dwarf_aranges_from_file(bin->cur);
+	mu_assert_eq(rz_list_length(aranges->list), 2, "arange sets count");
 
-	RzBinDwarfARangeSet *set = rz_list_get_n(aranges, 0);
+	RzBinDwarfARangeSet *set = rz_list_get_n(aranges->list, 0);
 	mu_assert_eq(set->unit_length, 60, "unit length");
 	mu_assert_eq(set->version, 2, "version");
 	mu_assert_eq(set->debug_info_offset, 0x0, "debug_info offset");
@@ -1531,7 +1335,7 @@ bool test_dwarf3_aranges(void) {
 	};
 	mu_assert_memeq((const ut8 *)set->aranges, (const ut8 *)&ref_0, sizeof(ref_0), "aranges contents");
 
-	set = rz_list_get_n(aranges, 1);
+	set = rz_list_get_n(aranges->list, 1);
 	mu_assert_eq(set->unit_length, 188, "unit length");
 	mu_assert_eq(set->version, 2, "version");
 	mu_assert_eq(set->debug_info_offset, 0x22e, "debug_info offset");
@@ -1553,7 +1357,137 @@ bool test_dwarf3_aranges(void) {
 	};
 	mu_assert_memeq((const ut8 *)set->aranges, (const ut8 *)&ref_1, sizeof(ref_1), "aranges contents");
 
-	rz_list_free(aranges);
+	rz_bin_dwarf_aranges_free(aranges);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_dwarf5_loclists(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/float_ex1/float_ex1_arm", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
+
+	RzBinDWARFOption parse_opts = {
+		.flags = RZ_BIN_DWARF_LOC | RZ_BIN_DWARF_INFO | RZ_BIN_DWARF_ABBREVS,
+	};
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf, &parse_opts);
+	mu_assert_notnull(dw->loc, ".debug_loclists");
+	mu_assert_eq(dw->loc->hdr.unit_length, 0x56, ".debug_loclists unit length");
+	mu_assert_eq(dw->loc->hdr.encoding.version, 5, ".debug_loclists version");
+	mu_assert_eq(dw->loc->hdr.encoding.address_size, 4, ".debug_loclists address size");
+	mu_assert_eq(dw->loc->hdr.encoding.is_64bit, false, ".debug_loclists is 64bit");
+	mu_assert_eq(dw->loc->hdr.segment_selector_size, 0, ".debug_loclists segment size");
+	mu_assert_eq(dw->loc->hdr.offset_entry_count, 0x0, ".debug_loclists offset entry count");
+
+	RzBinDwarfLocList *loclist = ht_up_find(dw->loc->loclist_by_offset, 0x00000012, NULL);
+	mu_assert_notnull(loclist, "loclist");
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 0);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4c0, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4de, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
+		mu_assert_eq(loc->register_number, 0, "piece reg");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 1);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4de, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4e1, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
+		mu_assert_eq(loc->register_number, 2, "piece reg");
+		mu_assert_eq(loc->offset, -4, "piece reg");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 2);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4e1, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4f8, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
+		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+	}
+
+	rz_bin_dwarf_free(dw);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_dwarf4_loclists(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
+
+	RzBinDWARFOption parse_opts = {
+		.flags = RZ_BIN_DWARF_LOC | RZ_BIN_DWARF_INFO | RZ_BIN_DWARF_ABBREVS,
+	};
+	RzBinDWARF *dw = rz_bin_dwarf_from_file(bf, &parse_opts);
+	mu_assert_notnull(dw->loc, ".debug_loc");
+
+	RzBinDwarfLocList *loclist = ht_up_find(dw->loc->loclist_by_offset, 0, NULL);
+	mu_assert_notnull(loclist, "loclist");
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 0);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x0, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
+		mu_assert_eq(loc->register_number, 4, "piece reg");
+		mu_assert_eq(loc->offset, 4, "piece reg offset");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 1);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4, "entry begin");
+		mu_assert_eq(entry->range->end, 0x10, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
+		mu_assert_eq(loc->register_number, 1, "piece reg");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 2);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x10, "entry begin");
+		mu_assert_eq(entry->range->end, 0x378, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
+		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+	}
+
+	rz_bin_dwarf_free(dw);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -1570,6 +1504,8 @@ bool all_tests() {
 	mu_run_test(test_dwarf4_multidir_comp_units);
 	mu_run_test(test_big_endian_dwarf2);
 	mu_run_test(test_dwarf3_aranges);
+	mu_run_test(test_dwarf5_loclists);
+	mu_run_test(test_dwarf4_loclists);
 	return tests_passed != tests_run;
 }
 
