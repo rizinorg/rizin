@@ -431,14 +431,19 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	// TODO: Save it properly instead of using the C representation
 	pj_ks(j, "type", vartype);
 	free(vartype);
-	switch (var->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_STACK:
-		pj_kN(j, "stack", var->storage.stack_off);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_REG:
-		pj_ks(j, "reg", var->storage.reg);
-		break;
+
+	if (var->kind != RZ_ANALYSIS_VAR_KIND_INVALID) {
+		pj_ks(j, "kind", rz_analysis_var_kind_as_string(var->kind));
 	}
+	rz_analysis_var_storage_dump_pj(j, var, &var->storage);
+
+	if (var->origin.kind != RZ_ANALYSIS_VAR_ORIGIN_NONE) {
+		pj_ks(j, "origin", rz_analysis_var_origin_kind_as_string(var->origin.kind));
+		if (var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
+			pj_kn(j, "dw_var", var->origin.dw_var->offset);
+		}
+	}
+
 	if (var->comment) {
 		pj_ks(j, "cmt", var->comment);
 	}
@@ -490,10 +495,14 @@ enum {
 	VAR_FIELD_REG,
 	VAR_FIELD_COMMENT,
 	VAR_FIELD_ACCS,
-	VAR_FIELD_CONSTRS
+	VAR_FIELD_CONSTRS,
+	VAR_FIELD_STORAGE,
+	VAR_FIELD_KIND,
+	VAR_FIELD_ORIGIN,
+	VAR_FIELD_DW_VAR,
 };
 
-RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
+RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_parser_new(void) {
 	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
@@ -502,24 +511,31 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
 	rz_key_parser_add(parser, "type", VAR_FIELD_TYPE);
 	rz_key_parser_add(parser, "stack", VAR_FIELD_STACK);
 	rz_key_parser_add(parser, "reg", VAR_FIELD_REG);
+	rz_key_parser_add(parser, "storage", VAR_FIELD_STORAGE);
 	rz_key_parser_add(parser, "cmt", VAR_FIELD_COMMENT);
 	rz_key_parser_add(parser, "accs", VAR_FIELD_ACCS);
 	rz_key_parser_add(parser, "constrs", VAR_FIELD_CONSTRS);
+	rz_key_parser_add(parser, "kind", VAR_FIELD_KIND);
+	rz_key_parser_add(parser, "origin", VAR_FIELD_ORIGIN);
+	rz_key_parser_add(parser, "dw_var", VAR_FIELD_DW_VAR);
 	return parser;
 }
 
-RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser) {
+RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalysisVarParser parser) {
 	rz_key_parser_free(parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json) {
+RZ_API RZ_OWN RzAnalysisVar *rz_serialize_analysis_var_load(
+	RZ_NONNULL RzSerializeAnalysisFunctionLoadCtx *ctx,
+	RZ_NONNULL RzAnalysisFunction *fcn,
+	RZ_NONNULL const RzJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
 	const char *name = NULL;
 	const char *type = NULL;
 	bool have_storage = false;
-	RzAnalysisVarStorage storage;
+	RzAnalysisVarStorage storage = { 0 };
 	const char *comment = NULL;
 	RzVector accesses;
 	rz_vector_init(&accesses, sizeof(RzAnalysisVarAccess), NULL, NULL);
@@ -527,8 +543,11 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	rz_vector_init(&constraints, sizeof(RzTypeConstraint), NULL, NULL);
 
 	RzAnalysisVar *ret = NULL;
+	RzAnalysisVarKind k = RZ_ANALYSIS_VAR_KIND_INVALID;
+	RzAnalysisVarOriginKind origin_kind = RZ_ANALYSIS_VAR_ORIGIN_NONE;
+	ut64 dw_var = UT64_MAX;
 
-	RZ_KEY_PARSER_JSON(parser, json, child, {
+	RZ_KEY_PARSER_JSON(ctx->var_parser, json, child, {
 		case VAR_FIELD_NAME:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -555,6 +574,15 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			}
 			storage.type = RZ_ANALYSIS_VAR_STORAGE_REG;
 			storage.reg = child->str_value;
+			have_storage = true;
+			break;
+		case VAR_FIELD_STORAGE:
+			if (child->type != RZ_JSON_OBJECT) {
+				break;
+			}
+			if (!rz_serialize_analysis_var_storage_load(ctx, child, &storage)) {
+				break;
+			}
 			have_storage = true;
 			break;
 		case VAR_FIELD_COMMENT:
@@ -640,6 +668,25 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			}
 			break;
 		}
+		case VAR_FIELD_KIND: {
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			k = rz_analysis_var_kind_from_string(child->str_value);
+			break;
+		}
+		case VAR_FIELD_ORIGIN:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			origin_kind = rz_analysis_var_origin_kind_from_string(child->str_value);
+			break;
+		case VAR_FIELD_DW_VAR:
+			if (child->type != RZ_JSON_INTEGER || origin_kind != RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
+				break;
+			}
+			dw_var = child->num.u_value;
+			break;
 		default:
 			break;
 	})
@@ -654,11 +701,30 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 		free(error_msg);
 		goto beach;
 	}
-	ret = rz_analysis_function_set_var(fcn, &storage, vartype, 0, name);
-	rz_type_free(vartype);
+
+	if (origin_kind == RZ_ANALYSIS_VAR_ORIGIN_NONE) {
+		ret = rz_analysis_function_set_var(fcn, &storage, vartype, 0, name);
+		rz_type_free(vartype);
+	} else {
+		ret = RZ_NEW0(RzAnalysisVar);
+		if (!ret) {
+			goto beach;
+		}
+		ret->name = strdup(name);
+		ret->type = vartype;
+		ret->fcn = fcn;
+		rz_mem_copy(&ret->storage, sizeof(RzAnalysisVarStorage), &storage, sizeof(RzAnalysisVarStorage));
+		ret->origin.kind = origin_kind;
+		if (origin_kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
+			ret->origin.dw_var = ht_up_find(ctx->analysis->debug_info->variable_by_offset, dw_var, NULL);
+		}
+		ret = rz_analysis_function_add_var(fcn, ret);
+	}
 	if (!ret) {
 		goto beach;
 	}
+
+	ret->kind = k;
 	if (comment) {
 		free(ret->comment);
 		ret->comment = strdup(comment);
@@ -678,8 +744,147 @@ beach:
 	return ret;
 }
 
-RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
-	rz_return_if_fail(db && anal);
+enum {
+	VAR_STORAGE_FIELD_TYPE,
+	VAR_STORAGE_FIELD_STACK,
+	VAR_STORAGE_FIELD_REG,
+	VAR_STORAGE_FIELD_COMPOSITE,
+	VAR_STORAGE_FIELD_EVAL_PENDING,
+};
+
+RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_storage_parser_new(void) {
+	RzKeyParser *parser = rz_key_parser_new();
+	if (!parser) {
+		return NULL;
+	}
+	rz_key_parser_add(parser, "type", VAR_STORAGE_FIELD_TYPE);
+	rz_key_parser_add(parser, "stack", VAR_STORAGE_FIELD_STACK);
+	rz_key_parser_add(parser, "reg", VAR_STORAGE_FIELD_REG);
+	rz_key_parser_add(parser, "composite", VAR_STORAGE_FIELD_COMPOSITE);
+	rz_key_parser_add(parser, "eval_pending", VAR_STORAGE_FIELD_EVAL_PENDING);
+	return parser;
+}
+
+enum {
+	VAR_STORAGE_PIECE_FIELD_OFFSET,
+	VAR_STORAGE_PIECE_FIELD_SIZE,
+	VAR_STORAGE_PIECE_FIELD_STORAGE,
+};
+
+RzKeyParser *rz_serialize_analysis_var_piece_parser_new() {
+	RzKeyParser *parser = rz_key_parser_new();
+	if (!parser) {
+		return NULL;
+	}
+	rz_key_parser_add(parser, "offset_in_bits", VAR_STORAGE_PIECE_FIELD_OFFSET);
+	rz_key_parser_add(parser, "size_in_bits", VAR_STORAGE_PIECE_FIELD_SIZE);
+	rz_key_parser_add(parser, "storage", VAR_STORAGE_PIECE_FIELD_STORAGE);
+	return parser;
+}
+
+static bool piece_load(
+	RZ_NONNULL RzSerializeAnalysisFunctionLoadCtx *ctx,
+	RZ_NONNULL const RzJson *json,
+	RzAnalysisVarStoragePiece *p) {
+	RZ_KEY_PARSER_JSON(ctx->piece_parser, json, child, {
+		case VAR_STORAGE_PIECE_FIELD_OFFSET:
+			if (child->type != RZ_JSON_INTEGER) {
+				return false;
+			}
+			p->offset_in_bits = child->num.u_value;
+			break;
+		case VAR_STORAGE_PIECE_FIELD_SIZE:
+			if (child->type != RZ_JSON_INTEGER) {
+				return false;
+			}
+			p->size_in_bits = child->num.u_value;
+			break;
+		case VAR_STORAGE_PIECE_FIELD_STORAGE:
+			if (child->type != RZ_JSON_OBJECT) {
+				return false;
+			}
+			p->storage = RZ_NEW0(RzAnalysisVarStorage);
+			if (!rz_serialize_analysis_var_storage_load(ctx, child, p->storage)) {
+				return false;
+			}
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+	});
+	return true;
+}
+
+/**
+ * \brief Load variable storage from a JSON object
+ * \param parser RzKeyParser to parse the storage JSON object
+ * \param json JSON object to parse
+ * \param storage Output variable storage
+ * \return true if the storage was successfully loaded, false otherwise
+ */
+RZ_API bool rz_serialize_analysis_var_storage_load(
+	RZ_NONNULL RzSerializeAnalysisFunctionLoadCtx *ctx,
+	RZ_NONNULL const RzJson *json,
+	RZ_NONNULL RZ_BORROW RZ_OUT RzAnalysisVarStorage *storage) {
+	RZ_KEY_PARSER_JSON(ctx->storage_parser, json, child, {
+		case VAR_STORAGE_FIELD_TYPE: {
+			if (child->type != RZ_JSON_STRING) {
+				return false;
+			}
+			const char *type = child->str_value;
+			if (!rz_analysis_var_storage_type_from_string(type, &storage->type)) {
+				return false;
+			}
+			break;
+		}
+		case VAR_STORAGE_FIELD_STACK:
+			if (child->type != RZ_JSON_INTEGER || storage->type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
+				return false;
+			}
+			storage->stack_off = child->num.s_value;
+			break;
+		case VAR_STORAGE_FIELD_REG:
+			if (child->type != RZ_JSON_STRING || !(storage->type == RZ_ANALYSIS_VAR_STORAGE_REG)) {
+				return false;
+			}
+			storage->reg = child->str_value;
+			break;
+		case VAR_STORAGE_FIELD_COMPOSITE:
+			if (child->type != RZ_JSON_ARRAY || storage->type != RZ_ANALYSIS_VAR_STORAGE_COMPOSITE) {
+				return false;
+			}
+			rz_analysis_var_storage_init_composite(storage);
+			RzJson *baby;
+			for (baby = child->children.first; baby; baby = baby->next) {
+				if (baby->type != RZ_JSON_OBJECT) {
+					RZ_LOG_WARN("Composite variable storage piece is not an object\n");
+					return false;
+				}
+				RzAnalysisVarStoragePiece p = { 0 };
+				if (!piece_load(ctx, baby, &p)) {
+					RZ_LOG_WARN("Failed to load composite variable storage piece\n");
+					rz_analysis_var_storage_piece_fini(&p);
+					return false;
+				}
+				rz_vector_push(storage->composite, &p);
+			}
+			break;
+		case VAR_STORAGE_FIELD_EVAL_PENDING:
+			if (child->type != RZ_JSON_INTEGER || storage->type != RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING) {
+				return false;
+			}
+			storage->dw_var_off = child->num.u_value;
+			break;
+		default:
+			RZ_LOG_WARN("Unimplemented field \"%s\" in variable storage\n", child->key);
+			break;
+	});
+	rz_analysis_var_storage_poolify(ctx->analysis, storage);
+	return json->type == RZ_JSON_OBJECT && storage->type <= RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING;
+}
+
+RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *a) {
+	rz_return_if_fail(db && a);
 
 	PJ *j = pj_new();
 	if (!j) {
@@ -688,8 +893,8 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 	RBIter it;
 	RzAnalysisVarGlobal *var;
 	char *vartype;
-	rz_rbtree_foreach (anal->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
-		vartype = rz_type_as_string(anal->typedb, var->type);
+	rz_rbtree_foreach (a->global_var_tree, it, var, RzAnalysisVarGlobal, rb) {
+		vartype = rz_type_as_string(a->typedb, var->type);
 		if (!vartype) {
 			RZ_LOG_ERROR("Global variable \"%s\" has undefined type\n", var->name);
 			pj_free(j);
@@ -727,7 +932,7 @@ enum {
 	GLOBAL_VAR_FIELD_CONSTRS
 };
 
-RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_new(void) {
+RZ_API RzSerializeAnalysisGlobalVarParser rz_serialize_analysis_global_var_parser_new(void) {
 	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
@@ -739,7 +944,7 @@ RZ_API RzSerializeAnalGlobalVarParser rz_serialize_analysis_global_var_parser_ne
 	return parser;
 }
 
-RZ_API void rz_serialize_analysis_global_var_parser_free(RzSerializeAnalGlobalVarParser parser) {
+RZ_API void rz_serialize_analysis_global_var_parser_free(RzSerializeAnalysisGlobalVarParser parser) {
 	rz_key_parser_free(parser);
 }
 
@@ -971,14 +1176,8 @@ enum {
 	FUNCTION_FIELD_LABELS
 };
 
-typedef struct {
-	RzAnalysis *analysis;
-	RzKeyParser *parser;
-	RzSerializeAnalVarParser var_parser;
-} FunctionLoadCtx;
-
 static bool function_load_cb(void *user, const char *k, const char *v) {
-	FunctionLoadCtx *ctx = user;
+	RzSerializeAnalysisFunctionLoadCtx *ctx = user;
 
 	char *json_str = strdup(v);
 	if (!json_str) {
@@ -1144,7 +1343,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 	if (vars_json) {
 		RzJson *baby;
 		for (baby = vars_json->children.first; baby; baby = baby->next) {
-			rz_serialize_analysis_var_load(function, ctx->var_parser, baby);
+			rz_serialize_analysis_var_load(ctx, function, baby);
 		}
 	}
 
@@ -1155,13 +1354,15 @@ beach:
 }
 
 RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	FunctionLoadCtx ctx = {
+	RzSerializeAnalysisFunctionLoadCtx ctx = {
 		.analysis = analysis,
 		.parser = rz_key_parser_new(),
-		.var_parser = rz_serialize_analysis_var_parser_new()
+		.var_parser = rz_serialize_analysis_var_parser_new(),
+		.storage_parser = rz_serialize_analysis_var_storage_parser_new(),
+		.piece_parser = rz_serialize_analysis_var_piece_parser_new(),
 	};
 	bool ret;
-	if (!ctx.parser || !ctx.var_parser) {
+	if (!(ctx.parser && ctx.var_parser && ctx.storage_parser)) {
 		RZ_SERIALIZE_ERR(res, "parser init failed");
 		ret = false;
 		goto beach;
@@ -1188,6 +1389,7 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 beach:
 	rz_key_parser_free(ctx.parser);
 	rz_serialize_analysis_var_parser_free(ctx.var_parser);
+	rz_key_parser_free(ctx.storage_parser);
 	return ret;
 }
 

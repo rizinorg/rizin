@@ -467,6 +467,12 @@ static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL
 			free(argstr);
 		}
 	}
+	if (callable->has_unspecified_parameters) {
+		if (rz_pvector_len(callable->args) >= 1) {
+			rz_strbuf_append(buf, ", ");
+		}
+		rz_strbuf_append(buf, "...");
+	}
 	rz_strbuf_append(buf, ")");
 	return true;
 }

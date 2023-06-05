@@ -118,6 +118,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
+	analysis->debug_info = rz_analysis_debug_info_new();
 	return analysis;
 }
 
@@ -168,6 +169,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_str_constpool_fini(&a->constpool);
 	ht_pp_free(a->ht_global_var);
 	rz_list_free(a->plugins);
+	rz_analysis_debug_info_free(a->debug_info);
 	free(a);
 	return NULL;
 }

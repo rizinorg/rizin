@@ -6,6 +6,4 @@
 
 #include <rz_analysis.h>
 
-RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var_dwarf(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var, int size);
-
 #endif // RZ_ANALYSIS_PRIVATE_H

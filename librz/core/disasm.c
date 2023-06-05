@@ -1689,6 +1689,8 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				reg_args++;
 				break;
+			default:
+				break;
 			}
 		} else {
 			switch (var->storage.type) {
@@ -1697,6 +1699,8 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 				break;
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				reg_vars++;
+				break;
+			default:
 				break;
 			}
 		}
@@ -1817,6 +1821,42 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	return iter_mov;
 }
 
+static void ds_show_fn_var_line(
+	RzDisasmState *ds, RzAnalysisFunction *f, RzAnalysisVar *var) {
+	ds_begin_line(ds);
+	ds_pre_xrefs(ds, false);
+	if (ds->show_flgoff) {
+		ds_print_offset(ds);
+	}
+	rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
+	ds_show_function_var(ds, f, var);
+	if (var->comment) {
+		rz_cons_printf("    %s; %s", COLOR(ds, comment), var->comment);
+	}
+	rz_cons_print(COLOR_RESET(ds));
+	ds_newline(ds);
+}
+
+static void ds_show_fn_vars_lines(
+	RzDisasmState *ds,
+	RzAnalysisFunction *f,
+	RzAnalysisFcnVarsCache *vars_cache) {
+	RzAnalysisVar *var;
+	RzListIter *iter;
+	rz_list_foreach (vars_cache->sorted_vars, iter, var) {
+		// fold same-typed variables
+		ut32 iter_mov = fold_variables(ds->core, ds, iter);
+		if (iter_mov > 0) {
+			int cnt = 0;
+			while (cnt++ < iter_mov - 1) {
+				iter = iter->n;
+			}
+			continue;
+		}
+		ds_show_fn_var_line(ds, f, var);
+	}
+}
+
 static void ds_show_functions(RzDisasmState *ds) {
 	RzAnalysisFunction *f;
 	RzCore *core = ds->core;
@@ -1842,7 +1882,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 	int o_varsum = ds->show_varsum;
 	if (ds->interactive && !o_varsum) {
 		int padding = 10;
-		int numvars = vars_cache.stackvars->length + vars_cache.regvars->length;
+		int numvars = rz_list_length(vars_cache.sorted_vars);
 		ds->show_varsum = (numvars > padding) && ((numvars + padding) > ds->nlines);
 	}
 	// show function's realname in the signature if realnames are enabled
@@ -1915,38 +1955,9 @@ static void ds_show_functions(RzDisasmState *ds) {
 
 	if (ds->show_vars) {
 		if (ds->show_varsum && ds->show_varsum != -1) { // show_varsum = 1 and 2
-			RzList *all_vars = vars_cache.stackvars;
-			rz_list_join(all_vars, vars_cache.regvars);
-			printVarSummary(ds, all_vars);
-		} else { // show_varum = 0 and -1
-			RzAnalysisVar *var;
-			RzListIter *iter;
-			RzList *all_vars = vars_cache.regvars;
-			rz_list_join(all_vars, vars_cache.stackvars);
-			rz_list_foreach (all_vars, iter, var) {
-				// fold same-typed variables
-				ut32 iter_mov = fold_variables(core, ds, iter);
-				if (iter_mov > 0) {
-					int cnt = 0;
-					while (cnt++ < iter_mov - 1) {
-						iter = iter->n;
-					}
-					continue;
-				}
-				ds_begin_line(ds);
-				ds_pre_xrefs(ds, false);
-
-				if (ds->show_flgoff) {
-					ds_print_offset(ds);
-				}
-				rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
-				ds_show_function_var(ds, f, var);
-				if (var->comment) {
-					rz_cons_printf("    %s; %s", COLOR(ds, comment), var->comment);
-				}
-				rz_cons_print(COLOR_RESET(ds));
-				ds_newline(ds);
-			}
+			printVarSummary(ds, vars_cache.sorted_vars);
+		} else {
+			ds_show_fn_vars_lines(ds, f, &vars_cache);
 		}
 	}
 	ds->show_varsum = o_varsum;

@@ -71,6 +71,6 @@ afvj
 EOF
 EXPECT=<<EOF
 {"name":"swift","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}
-{"stack":[{"name":"var_30h","arg":false,"type":"int64_t","storage":{"type":"stack","stack_off":-48}},{"name":"var_28h","arg":false,"type":"int64_t","storage":{"type":"stack","stack_off":-40}},{"name":"var_20h","arg":false,"type":"int64_t","storage":{"type":"stack","stack_off":-32}},{"name":"var_18h","arg":false,"type":"int64_t","storage":{"type":"stack","stack_off":-24}}],"reg":[{"name":"error","arg":false,"type":"int64_t","storage":{"type":"reg","reg":"r12"}},{"name":"self","arg":false,"type":"int64_t","storage":{"type":"reg","reg":"r13"}}]}
+{"stack":[{"name":"var_30h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-48}},{"name":"var_28h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-40}},{"name":"var_20h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-32}},{"name":"var_18h","arg":false,"type":"int64_t","storage":{"type":"stack","stack":-24}}],"reg":[{"name":"error","arg":false,"type":"int64_t","storage":{"type":"reg","reg":"r12"}},{"name":"self","arg":false,"type":"int64_t","storage":{"type":"reg","reg":"r13"}}]}
 EOF
 RUN
