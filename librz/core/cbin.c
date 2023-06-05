@@ -633,9 +633,9 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 	}
 	RzBinObject *o = binfile->o;
 	const RzBinSourceLineInfo *li = NULL;
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
-	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(binfile);
+	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_info_parse(binfile, da) : NULL;
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_loc_parse(binfile, core->analysis->bits / 8);
 	if (info) {
 		RzAnalysisDwarfContext ctx = {
 			.info = info,
@@ -647,13 +647,13 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		rz_bin_dwarf_loc_free(loc_table);
 	}
 	RzBinDwarfLineInfo *lines = rz_bin_dwarf_parse_line(binfile, info, RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
-	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_info_free(info);
 	if (lines) {
 		// move all produced rows line info out (TODO: bin loading should do that)
 		li = o->lines = lines->lines;
 		lines->lines = NULL;
 	}
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	if (!li) {
 		return false;
 	}
@@ -1700,8 +1700,8 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
 		return false;
 	}
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
-	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(binfile);
+	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_info_parse(binfile, da) : NULL;
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		if (da) {
 			rz_core_bin_dwarf_print_abbrev_section(da);
@@ -1710,7 +1710,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 			rz_core_bin_dwarf_print_debug_info(info);
 		}
 	}
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_loc_parse(binfile, core->analysis->bits / 8);
 	if (loc_table) {
 		if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 			rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
@@ -1718,7 +1718,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		rz_bin_dwarf_loc_free(loc_table);
 	}
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		RzList *aranges = rz_bin_dwarf_parse_aranges(binfile);
+		RzList *aranges = rz_bin_dwarf_aranges_parse(binfile);
 		if (aranges) {
 			rz_core_bin_dwarf_print_aranges(aranges);
 			rz_list_free(aranges);
@@ -1727,7 +1727,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	bool ret = false;
 	RzBinDwarfLineInfo *lines = rz_bin_dwarf_parse_line(binfile, info,
 		RZ_BIN_DWARF_LINE_INFO_MASK_LINES | (state->mode == RZ_OUTPUT_MODE_STANDARD ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
-	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_info_free(info);
 	if (lines) {
 		if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 			rz_core_bin_dwarf_print_line_units(lines->units);
@@ -1738,7 +1738,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 		}
 		rz_bin_dwarf_line_info_free(lines);
 	}
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	return ret;
 }
 

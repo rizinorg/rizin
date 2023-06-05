@@ -8,22 +8,22 @@
 #include "../unit/minunit.h"
 
 #define check_abbrev_code(expected_code) \
-	mu_assert_eq(da->decls[i].code, expected_code, "Wrong abbrev code");
+	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->code, expected_code, "Wrong abbrev code");
 
 #define check_abbrev_tag(expected_tag) \
-	mu_assert_eq(da->decls[i].tag, expected_tag, "Incorrect abbreviation tag")
+	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->tag, expected_tag, "Incorrect abbreviation tag")
 
 #define check_abbrev_count(expected_count) \
-	mu_assert_eq(da->decls[i].count, expected_count, "Incorrect abbreviation count")
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), expected_count, "Incorrect abbreviation count")
 
 #define check_abbrev_children(expected_children) \
-	mu_assert_eq(da->decls[i].has_children, expected_children, "Incorrect children flag")
+	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->has_children, expected_children, "Incorrect children flag")
 
 #define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq(da->decls[i].defs[j].attr_name, expected_name, "Incorrect children flag");
+	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->attr_name, expected_name, "Incorrect children flag");
 
 #define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq(da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
+	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->attr_form, expected_form, "Incorrect children flag");
 
 static bool check_line_samples_eq(const RzBinSourceLineInfo *actual,
 	size_t samples_count_expect, const RzBinSourceLineSample *samples_expect) {
@@ -90,8 +90,8 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_abbrev_parse(bin->cur);
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
@@ -179,7 +179,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -209,8 +209,8 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert("Incorrect number of abbreviation", da->count == 32);
+	da = rz_bin_dwarf_abbrev_parse(bin->cur);
+	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
@@ -578,7 +578,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -598,8 +598,8 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_abbrev_parse(bin->cur);
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 	int i = 18;
 
 	check_abbrev_tag(DW_TAG_formal_parameter);
@@ -685,7 +685,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -705,9 +705,9 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
+	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	// not ignoring null entries -> 755 abbrevs
-	mu_assert_eq(da->count, 731, "Incorrect number of abbreviation");
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 731, "Incorrect number of abbreviation");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
@@ -745,7 +745,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_io_free(io);
 	rz_bin_free(bin);
 	mu_end;
@@ -765,8 +765,8 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin->cur);
-	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_abbrev_parse(bin->cur);
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
 	int i = 18;
 
@@ -853,7 +853,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -970,11 +970,11 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_notnull(da, "abbrevs");
-	mu_assert_eq(da->count, 8, "abbrevs count");
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 8, "abbrevs count");
 
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_info_parse(bin->cur, da);
 	mu_assert_notnull(info, "info");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, info, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
@@ -997,8 +997,8 @@ bool test_dwarf4_multidir_comp_units(void) {
 	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
 	rz_bin_dwarf_line_info_free(li);
 
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_dwarf_info_free(info);
+	rz_bin_dwarf_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -1514,7 +1514,7 @@ bool test_dwarf3_aranges(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzList *aranges = rz_bin_dwarf_parse_aranges(bin->cur);
+	RzList *aranges = rz_bin_dwarf_aranges_parse(bin->cur);
 	mu_assert_eq(rz_list_length(aranges), 2, "arange sets count");
 
 	RzBinDwarfARangeSet *set = rz_list_get_n(aranges, 0);

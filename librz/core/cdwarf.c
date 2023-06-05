@@ -4,26 +4,30 @@
 #include <rz_core.h>
 
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da) {
-	size_t i, j;
 	if (!da) {
 		return;
 	}
-	for (i = 0; i < da->count; i++) {
-		rz_cons_printf("   %-4" PFMT64d " ", da->decls[i].code);
-		const char *tagname = rz_bin_dwarf_get_tag_name(da->decls[i].tag);
+	void **itdecl;
+	rz_pvector_foreach (&da->decls, itdecl) {
+		if (!itdecl) {
+			return;
+		}
+		RzBinDwarfAbbrevDecl *decl = (RzBinDwarfAbbrevDecl *)itdecl;
+		rz_cons_printf("   %-4" PFMT64d " ", decl->code);
+		const char *tagname = rz_bin_dwarf_get_tag_name(decl->tag);
 		if (tagname) {
 			rz_cons_printf("  %-25s ", tagname);
 		}
-		rz_cons_printf("[%s]", da->decls[i].has_children ? "has children" : "no children");
-		rz_cons_printf(" (0x%" PFMT64x ")\n", da->decls[i].offset);
+		rz_cons_printf("[%s]", decl->has_children ? "has children" : "no children");
+		rz_cons_printf(" (0x%" PFMT64x ")\n", decl->offset);
 
-		if (da->decls[i].defs) {
-			for (j = 0; j < da->decls[i].count; j++) {
-				const char *attr_name = rz_bin_dwarf_get_attr_name(da->decls[i].defs[j].attr_name);
-				const char *attr_form_name = rz_bin_dwarf_get_attr_form_name(da->decls[i].defs[j].attr_form);
-				if (attr_name && attr_form_name) {
-					rz_cons_printf("    %-30s %-30s\n", attr_name, attr_form_name);
-				}
+		void **itdef;
+		rz_pvector_foreach (&decl->defs, itdef) {
+			RzBinDwarfAttrDef *def = (RzBinDwarfAttrDef *)itdef;
+			const char *attr_name = rz_bin_dwarf_get_attr_name(def->attr_name);
+			const char *attr_form_name = rz_bin_dwarf_get_attr_form_name(def->attr_form);
+			if (attr_name && attr_form_name) {
+				rz_cons_printf("    %-30s %-30s\n", attr_name, attr_form_name);
 			}
 		}
 	}
