@@ -54,8 +54,8 @@ var int64_t var_30h @ stack - 0x30
 var int64_t var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_18h @ stack - 0x18
-arg int64_t error @ r12
-arg int64_t self @ r13
+var int64_t error @ r12
+var int64_t self @ r13
 EOF
 RUN
 

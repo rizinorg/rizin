@@ -984,7 +984,7 @@ var fractype a_fraction @ d11
 var int diff @ d12
 var int a_normal_exp @ d15
 var int b_normal_exp @ d2
-var int sdiff @ d3
+var intfrac tfraction @ d3
 var fractype b_fraction @ d9
 void dbg._fpadd_parts();
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
@@ -994,7 +994,7 @@ void dbg._fpadd_parts();
 |           ; arg fp_number_type *a @ a13
 |           ; arg fp_number_type *b @ a12
 |           ; arg fp_number_type *tmp @ a15
-|           ; var int sdiff @ d3
+|           ; var intfrac tfraction @ d3
 |           ; var int a_normal_exp @ d15
 |           ; var int b_normal_exp @ d2
 |           ; var fractype a_fraction @ d11
@@ -1176,7 +1176,7 @@ var fractype a_fraction @ d11
 var int diff @ d12
 var int a_normal_exp @ d15
 var int b_normal_exp @ d2
-var int sdiff @ d3
+var intfrac tfraction @ d3
 var fractype b_fraction @ d9
 void dbg._fpadd_parts();
             ;-- _fpadd_parts:
@@ -1184,7 +1184,7 @@ void dbg._fpadd_parts();
 |           ; arg fp_number_type *a @ a13
 |           ; arg fp_number_type *b @ a12
 |           ; arg fp_number_type *tmp @ a15
-|           ; var int sdiff @ d3
+|           ; var intfrac tfraction @ d3
 |           ; var int a_normal_exp @ d15
 |           ; var int b_normal_exp @ d2
 |           ; var fractype a_fraction @ d11

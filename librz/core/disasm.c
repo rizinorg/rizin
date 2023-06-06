@@ -1751,10 +1751,6 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 	ds_newline(ds);
 }
 
-static bool empty_signature(const char *s) {
-	return (s && !strncmp(s, "void ", 5) && strstr(s, "()"));
-}
-
 static void ds_show_functions(RzDisasmState *ds) {
 	RzAnalysisFunction *f;
 	RzCore *core = ds->core;
@@ -1773,10 +1769,6 @@ static void ds_show_functions(RzDisasmState *ds) {
 	fcn_name = f->name;
 
 	ds_begin_line(ds);
-	char *sign = rz_analysis_function_get_signature(f);
-	if (empty_signature(sign)) {
-		RZ_FREE(sign);
-	}
 
 	RzAnalysisFcnVarsCache vars_cache;
 	rz_analysis_fcn_vars_cache_init(core->analysis, &vars_cache, f);
@@ -1850,7 +1842,6 @@ static void ds_show_functions(RzDisasmState *ds) {
 		rz_cons_printf("%s", fcn_name);
 	}
 	ds_newline(ds);
-	RZ_FREE(sign);
 
 	if (ds->show_lines_fcn) {
 		ds->pre = DS_PRE_FCN_MIDDLE;

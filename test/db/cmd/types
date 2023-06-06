@@ -1478,7 +1478,7 @@ EXPECT=<<EOF
 var uint64_t var_80h @ stack - 0x80
 var uint64_t var_71h @ stack - 0x71
 var int64_t var_70h @ stack - 0x70
-var char * var_60h @ stack - 0x60
+var char *var_60h @ stack - 0x60
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
 var int64_t var_50h @ stack - 0x50
@@ -1488,7 +1488,7 @@ var int64_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
-arg char ** argv @ rsi
+arg char **argv @ rsi
 var uint64_t var_80h @ stack - 0x80
 var uint64_t var_71h @ stack - 0x71
 var char [20] var_70h @ stack - 0x70
@@ -1501,7 +1501,7 @@ var int64_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
-arg char ** argv @ rsi
+arg char **argv @ rsi
 var var_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
@@ -1516,8 +1516,8 @@ afv
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
-var char * dest @ stack - 0x18
-var const char * src @ stack - 0x10
+var char *dest @ stack - 0x18
+var const char *src @ stack - 0x10
 EOF
 RUN
 
@@ -1531,8 +1531,8 @@ afv
 EOF
 EXPECT=<<EOF
 var size_t size @ stack - 0x1c
-var char * ptr @ stack - 0x18
-var const char * src @ stack - 0x10
+var char *ptr @ stack - 0x18
+var const char *src @ stack - 0x10
 EOF
 RUN
 
@@ -1546,9 +1546,9 @@ afv
 EOF
 EXPECT=<<EOF
 var size_t var_24h @ stack - 0x24
-var const char * var_20h @ stack - 0x20
-var const char * s @ stack - 0x18
-var const char * var_10h @ stack - 0x10
+var const char *var_20h @ stack - 0x20
+var const char *s @ stack - 0x18
+var const char *var_10h @ stack - 0x10
 EOF
 RUN
 
@@ -1563,9 +1563,9 @@ EOF
 EXPECT=<<EOF
 var size_t var_28h @ stack - 0x28
 var size_t size @ stack - 0x24
-var const char * src @ stack - 0x20
-var const char * s2 @ stack - 0x18
-var char * dest @ stack - 0x10
+var const char *src @ stack - 0x20
+var const char *s2 @ stack - 0x18
+var char *dest @ stack - 0x10
 EOF
 RUN
 
@@ -1578,13 +1578,13 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var const char * src @ stack - 0x24
-var const char * s2 @ stack - 0x20
+var const char *src @ stack - 0x24
+var const char *s2 @ stack - 0x20
 var size_t var_1ch @ stack - 0x1c
 var size_t size @ stack - 0x18
-var char * dest @ stack - 0x14
+var char *dest @ stack - 0x14
 var int32_t var_10h @ stack - 0x10
-arg char ** argv @ stack + 0x4
+arg char **argv @ stack + 0x4
 EOF
 RUN
 
@@ -1613,9 +1613,9 @@ afvr
 EOF
 EXPECT=<<EOF
 arg size_t arg4 @ rcx
-arg const char * arg1 @ rdi
+arg const char *arg1 @ rdi
 arg int64_t arg3 @ rdx
-arg const char * arg2 @ rsi
+arg const char *arg2 @ rsi
 EOF
 RUN
 
@@ -1705,7 +1705,7 @@ s main
 afv~ptr
 EOF
 EXPECT=<<EOF
-var char ** ptr @ stack - 0x20
+var char **ptr @ stack - 0x20
 EOF
 RUN
 
@@ -1735,12 +1735,12 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var void * va_args @ stack - 0x3c
+var void *va_args @ stack - 0x3c
 var uint64_t var_34h @ stack - 0x34
-var FILE * stream @ stack - 0x30
-var const char * s @ stack - 0x28
-var const char * var_20h @ stack - 0x20
-var const char * var_18h @ stack - 0x18
+var FILE *stream @ stack - 0x30
+var const char *s @ stack - 0x28
+var const char *var_20h @ stack - 0x20
+var const char *var_18h @ stack - 0x18
 var int64_t canary @ stack - 0x10
 EOF
 RUN
@@ -1769,9 +1769,9 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_14e8h @ stack - 0x14e8
+var char **var_14e8h @ stack - 0x14e8
 var int var_14dch @ stack - 0x14dc
-var int * wstatus @ stack - 0x14d4
+var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
 var int64_t var_14c8h @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
@@ -1779,20 +1779,20 @@ var uint64_t pid @ stack - 0x14c0
 var uint64_t var_14bch @ stack - 0x14bc
 var uint64_t var_14b8h @ stack - 0x14b8
 var int64_t var_14b4h @ stack - 0x14b4
-var const char * var_14b0h @ stack - 0x14b0
-var const char * s @ stack - 0x14a8
+var const char *var_14b0h @ stack - 0x14b0
+var const char *s @ stack - 0x14a8
 var int64_t var_14a0h @ stack - 0x14a0
-var char * src @ stack - 0x1498
-var const char * v2 @ stack - 0x1490
-var const char * var_1488h @ stack - 0x1488
-var void * var_1480h @ stack - 0x1480
-var char * dest @ stack - 0x1478
-var void * var_1428h @ stack - 0x1428
-var const char * s1 @ stack - 0x1028
+var char *src @ stack - 0x1498
+var const char *v2 @ stack - 0x1490
+var const char *var_1488h @ stack - 0x1488
+var void *var_1480h @ stack - 0x1480
+var char *dest @ stack - 0x1478
+var void *var_1428h @ stack - 0x1428
+var const char *s1 @ stack - 0x1028
 var int64_t var_20h @ stack - 0x20
 arg int argc @ rdi
-arg char ** argv @ rsi
-var char * str @ stack - 0xb8
+arg char **argv @ rsi
+var char *str @ stack - 0xb8
 var int64_t var_ach @ stack - 0xac
 var int64_t var_a8h @ stack - 0xa8
 var uint64_t var_a4h @ stack - 0xa4
@@ -1810,19 +1810,19 @@ var int var_78h @ stack - 0x78
 var int var_74h @ stack - 0x74
 var int64_t var_70h @ stack - 0x70
 var int64_t var_6ch @ stack - 0x6c
-var char * var_68h @ stack - 0x68
-var char * var_60h @ stack - 0x60
-var char * var_58h @ stack - 0x58
-var char * var_50h @ stack - 0x50
+var char *var_68h @ stack - 0x68
+var char *var_60h @ stack - 0x60
+var char *var_58h @ stack - 0x58
+var char *var_50h @ stack - 0x50
 var uint64_t var_48h @ stack - 0x48
-var const char * s1 @ stack - 0x40
-var const char * s @ stack - 0x38
-var const char * var_30h @ stack - 0x30
-var const char * var_28h @ stack - 0x28
+var const char *s1 @ stack - 0x40
+var const char *s @ stack - 0x38
+var const char *var_30h @ stack - 0x30
+var const char *var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_10h @ stack - 0x10
 arg int64_t arg1 @ rdi
-arg char * arg2 @ rsi
+arg char *arg2 @ rsi
 EOF
 RUN
 
@@ -1836,27 +1836,27 @@ afv
 EOF
 EXPECT=<<EOF
 var int32_t var_1454h @ stack - 0x1454
-var void * var_1438h @ stack - 0x1438
-var const char * s1 @ stack - 0x1038
-var int * wstatus @ stack - 0x44
+var void *var_1438h @ stack - 0x1438
+var const char *s1 @ stack - 0x1038
+var int *wstatus @ stack - 0x44
 var int32_t var_40h @ stack - 0x40
-var const char * var_3ch @ stack - 0x3c
+var const char *var_3ch @ stack - 0x3c
 var int32_t var_38h @ stack - 0x38
 var int32_t var_34h @ stack - 0x34
 var int32_t var_30h @ stack - 0x30
 var pid_t pid @ stack - 0x2c
-var const char * v2 @ stack - 0x28
+var const char *v2 @ stack - 0x28
 var int32_t var_24h @ stack - 0x24
-var const char * src @ stack - 0x20
+var const char *src @ stack - 0x20
 var int32_t var_1ch @ stack - 0x1c
 var int32_t var_18h @ stack - 0x18
-var const char * s @ stack - 0x14
-var const char * var_10h @ stack - 0x10
+var const char *s @ stack - 0x14
+var const char *var_10h @ stack - 0x10
 var int32_t var_ch @ stack - 0xc
 var int32_t var_8h @ stack - 0x8
-var const char * option @ stack - 0x4
+var const char *option @ stack - 0x4
 arg int argc @ r0
-arg char ** argv @ r1
+arg char **argv @ r1
 EOF
 RUN
 
@@ -1873,9 +1873,9 @@ var int64_t var_2dh @ stack - 0x2d
 var int64_t var_2ch @ stack - 0x2c
 var unsigned int var_28h @ stack - 0x28
 var int64_t var_24h @ stack - 0x24
-var const char * var_20h @ stack - 0x20
+var const char *var_20h @ stack - 0x20
 var long int var_18h @ stack - 0x18
-var const char * var_10h @ stack - 0x10
+var const char *var_10h @ stack - 0x10
 EOF
 RUN
 
@@ -1888,14 +1888,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_30h @ stack - 0x30
-var char ** var_28h @ stack - 0x28
+var char **var_30h @ stack - 0x30
+var char **var_28h @ stack - 0x28
 var int var_1ch @ stack - 0x1c
-var void * var_18h @ stack - 0x18
+var void *var_18h @ stack - 0x18
 var int var_ch @ stack - 0xc
 arg int argc @ rdi
-arg char ** envp @ rdx
-arg char ** argv @ rsi
+arg char **envp @ rdx
+arg char **argv @ rsi
 EOF
 RUN
 
@@ -1929,7 +1929,7 @@ s main
 afv~var_28h
 EOF
 EXPECT=<<EOF
-var const char * var_28h @ stack - 0x28
+var const char *var_28h @ stack - 0x28
 EOF
 RUN
 
@@ -1941,7 +1941,7 @@ s sym.foo
 afv~var_28h
 EOF
 EXPECT=<<EOF
-var size_t * var_28h @ stack - 0x28
+var size_t *var_28h @ stack - 0x28
 EOF
 RUN
 
