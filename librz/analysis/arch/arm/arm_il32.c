@@ -3647,11 +3647,11 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	ut32 reg_bits = reg_bits(REGID(0));
+	ut32 reg_sz = REG_WIDTH(0);
 	ut32 vec_bits = VVEC_SIZE(insn);
-	ut32 tmp_bits = reg_bits * 2;
-	ut32 lanes = reg_bits / vec_bits;
-	if (reg_bits % vec_bits != 0) {
+	ut32 tmp_bits = reg_sz * 2;
+	ut32 lanes = reg_sz / vec_bits;
+	if (reg_sz % vec_bits != 0) {
 		rz_warn_if_reached();
 		return NULL;
 	}
@@ -3670,8 +3670,8 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 				UN(32, vec_bits * 2)));
 	}
 
-	return SEQ2(write_reg(REGID(0), UNSIGNED(reg_bits, DUP(interleaved_val))),
-		write_reg(REGID(1), UNSIGNED(reg_bits, SHIFTR0(interleaved_val, UN(8, vec_bits)))));
+	return SEQ2(write_reg(REGID(0), UNSIGNED(reg_sz, DUP(interleaved_val))),
+		write_reg(REGID(1), UNSIGNED(reg_sz, SHIFTR0(interleaved_val, UN(8, vec_bits)))));
 }
 
 /**
