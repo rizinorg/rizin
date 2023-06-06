@@ -6466,3 +6466,43 @@ finish:
 	rz_cons_break_pop();
 	RZ_FREE(debugger);
 }
+
+RZ_API char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return NULL;
+	}
+
+	bool color = rz_config_get_b(core->config, "scr.color");
+	bool color_arg = color && rz_config_get_b(core->config, "scr.color.args");
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
+
+	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
+	char *constr = rz_analysis_var_get_constraints_readable(var);
+	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+	rz_strbuf_appendf(sb, "%s%s %s%s%s%s %s%s%s%s@ ",
+		color_arg ? pal->func_var : "", pfx,
+		color_arg ? pal->func_var_type : "", vartype,
+		rz_str_endswith(vartype, "*") ? "" : " ",
+		var->name,
+		color_arg ? pal->func_var_addr : "",
+		constr ? " { " : "",
+		constr ? constr : "",
+		constr ? "} " : "");
+	free(vartype);
+	free(constr);
+
+	switch (var->storage.type) {
+	case RZ_ANALYSIS_VAR_STORAGE_REG: {
+		rz_strbuf_append(sb, var->storage.reg);
+		break;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
+		const RzStackAddr off = var->storage.stack_off;
+		const char sign = off >= 0 ? '+' : '-';
+		rz_strbuf_appendf(sb, "stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
+		break;
+	}
+	}
+	return rz_strbuf_drain(sb);
+}

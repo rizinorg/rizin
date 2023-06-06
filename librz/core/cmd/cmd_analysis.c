@@ -2506,7 +2506,7 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	}
 }
 
-static void core_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
+static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
 	RzAnalysisVar *var;
 	RzListIter *iter;
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
@@ -2524,7 +2524,7 @@ static void core_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_RIZIN: {
 			// we can't express all type info here :(
-			char *vartype = rz_type_as_string(analysis->typedb, var->type);
+			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 			switch (kind) {
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				rz_cons_printf("afvr %s %s %s @ 0x%" PFMT64x "\n",
@@ -2543,7 +2543,7 @@ static void core_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
-			char *vartype = rz_type_as_string(analysis->typedb, var->type);
+			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "name", var->name);
 			pj_kb(state->d.pj, "arg", rz_analysis_var_is_arg(var));
@@ -2568,24 +2568,13 @@ static void core_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction
 			free(vartype);
 			break;
 		}
-		default:
-			switch (kind) {
-			case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-				st64 delta = var->storage.stack_off;
-				char *vartype = rz_type_as_string(analysis->typedb, var->type);
-				char sign = delta < 0 ? '-' : '+';
-				rz_cons_printf("%s %s %s @ stack %c 0x%" PFMT64x "\n",
-					rz_analysis_var_is_arg(var) ? "arg" : "var",
-					vartype, var->name,
-					sign, RZ_ABS(delta));
-				free(vartype);
-			} break;
-			case RZ_ANALYSIS_VAR_STORAGE_REG: {
-				char *vartype = rz_type_as_string(analysis->typedb, var->type);
-				rz_cons_printf("arg %s %s @ %s\n", vartype, var->name, var->storage.reg);
-				free(vartype);
-			} break;
+		default: {
+			char *s = rz_core_analysis_var_to_string(core, var);
+			if (s) {
+				rz_cons_println(s);
+				free(s);
 			}
+		}
 		}
 	}
 fail:
@@ -2604,8 +2593,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	const char *bp = NULL;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN: {
 		bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
@@ -2624,9 +2613,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		pj_k(state->d.pj, "stack");
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 		pj_k(state->d.pj, "reg");
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 		pj_end(state->d.pj);
 		break;
 	default:
@@ -2873,7 +2862,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_vars_handler(RzCore *core, in
 }
 
 static RzCmdStatus analysis_function_vars_kind_list(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
-	core_analysis_var_list_show(core->analysis, fcn, kind, state);
+	core_analysis_var_list_show(core, fcn, kind, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3583,8 +3572,8 @@ static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunctio
 			rz_cons_printf("afc %s @ 0x%08" PFMT64x "\n", fcn->cc ? fcn->cc : defaultCC, fcn->addr);
 		}
 		/* show variables  and arguments */
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 		/* Show references */
 		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		xref_list_print_as_cmd(core, xrefs);
@@ -3692,9 +3681,9 @@ static void function_print_to_json(RzCore *core, RzAnalysisFunction *fcn, RzCmdS
 		pj_kn(state->d.pj, "nargs", rz_analysis_arg_count(fcn));
 
 		pj_k(state->d.pj, "stackvars");
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 		pj_k(state->d.pj, "regvars");
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
 	}
 	pj_end(state->d.pj);
 }
@@ -3968,8 +3957,8 @@ static void fcn_print_info(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutp
 		ut32 var_count = rz_analysis_var_local_count(fcn);
 
 		rz_cons_printf("locals: %u\nargs: %u\n", var_count, args_count);
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
-		core_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
 	}
 
 	// traced

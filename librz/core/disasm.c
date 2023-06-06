@@ -1657,32 +1657,10 @@ static void ds_pre_xrefs(RzDisasmState *ds, bool no_fcnlines) {
 }
 
 static void ds_show_function_var(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var) {
-	const char *pfx = rz_analysis_var_is_arg(var) ? "arg" : "var";
-	char *constr = rz_analysis_var_get_constraints_readable(var);
-	char *vartype = rz_type_as_string(ds->core->analysis->typedb, var->type);
-	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ ",
-		COLOR_ARG(ds, func_var), pfx,
-		COLOR_ARG(ds, func_var_type), vartype,
-		rz_str_endswith(vartype, "*") ? "" : " ",
-		var->name, COLOR_ARG(ds, func_var_addr),
-		constr ? " { " : "",
-		constr ? constr : "",
-		constr ? "} " : "");
-	free(vartype);
-	free(constr);
-
-	theme_print_color(func_var_addr);
-	switch (var->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_REG: {
-		rz_cons_print(var->storage.reg);
-		break;
-	}
-	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		const RzStackAddr off = var->storage.stack_off;
-		const char sign = off >= 0 ? '+' : '-';
-		rz_cons_printf("stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
-		break;
-	}
+	char *s = rz_core_analysis_var_to_string(ds->core, var);
+	if (s) {
+		rz_cons_print(s);
+		free(s);
 	}
 
 	if (ds->show_varsum != -1) {
