@@ -36,7 +36,7 @@ EXPECT=<<EOF
 {"arch":"bf","name":"bf","license":"LGPL3"}
 {"arch":"x86","name":"bochs","license":"LGPL3"}
 {"arch":"x86,arm","name":"dmp","license":"LGPL3"}
-{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2","name":"gdb","license":"LGPL3"}
+{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2,tricore","name":"gdb","license":"LGPL3"}
 {"arch":"any","name":"io","license":"MIT"}
 {"arch":"any","name":"null","license":"MIT"}
 {"arch":"any","name":"rap","license":"LGPL3"}

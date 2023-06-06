@@ -141,6 +141,7 @@ static const struct {
 	{ "rar", RZ_SYS_ARCH_RAR },
 	{ "lm32", RZ_SYS_ARCH_LM32 },
 	{ "v850", RZ_SYS_ARCH_V850 },
+	{ "tricore", RZ_SYS_ARCH_TRICORE },
 	{ NULL, 0 }
 };
 

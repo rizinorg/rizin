@@ -582,7 +582,7 @@ RzDebugPlugin rz_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2",
+	.arch = "x86,arm,sh,mips,avr,lm32,v850,ba2,tricore",
 	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.init = rz_debug_gdb_init,
 	.fini = rz_debug_gdb_fini,
