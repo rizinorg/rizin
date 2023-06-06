@@ -618,7 +618,7 @@ RZ_API int rz_str_char_count(const char *string, char ch) {
 	return count;
 }
 
-static const char *separator_get_first(const char *text) {
+static const char *skip_non_separator_chars(const char *text) {
 	for (; *text && !IS_SEPARATOR(*text); text++)
 		;
 	;
@@ -626,7 +626,7 @@ static const char *separator_get_first(const char *text) {
 	return text;
 }
 
-static const char *word_get_first(const char *text) {
+static const char *skip_separator_chars(const char *text) {
 	for (; *text && IS_SEPARATOR(*text); text++)
 		;
 	;
@@ -634,19 +634,19 @@ static const char *word_get_first(const char *text) {
 	return text;
 }
 
-RZ_API char *rz_str_word_get_first(const char *text) {
-	return strdup(word_get_first(text));
+RZ_API char *rz_str_skip_separator_chars(const char *text) {
+	return strdup(skip_separator_chars(text));
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
 // return, space). See rz_util.h for more details of the IS_SEPARATOR macro.
 RZ_API int rz_str_word_count(const char *string) {
 	int word;
-	const char *text = word_get_first(string);
+	const char *text = skip_separator_chars(string);
 
 	for (word = 0; *text; word++) {
-		text = separator_get_first(text);
-		text = word_get_first(text);
+		text = skip_non_separator_chars(text);
+		text = skip_separator_chars(text);
 	}
 
 	return word;
