@@ -387,6 +387,7 @@ static RzILOpBitVector *arg_mem(RzILOpBitVector *base_plus_disp, cs_arm_op *op, 
 static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN RzILOpBitVector *val) {
 	ut32 repeat_times = dreg_width / val_width;
 	if (dreg_width % val_width != 0) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
@@ -3632,6 +3633,45 @@ static RzILOpEffect *vext(cs_insn *insn, bool is_thumb) {
 		UNSIGNED(reg_bits(REGID(0)),
 			SHIFTR0(APPEND(REG_VAL(2), REG_VAL(1)),
 				UN(8, shift_dist))));
+}
+
+static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (REGID(0) == REGID(1)) {
+		// UNKNOWN behavior
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	ut32 reg_bits = reg_bits(REGID(0));
+	ut32 vec_bits = VVEC_SIZE(insn);
+	ut32 tmp_bits = reg_bits * 2;
+	ut32 lanes = reg_bits / vec_bits;
+	if (reg_bits % vec_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// Assume Vd: A7, A6, A5, A4, A3, A2, A1, A0
+	// Assume Vm: B7, B6, B5, B4, B3, B2, B1, B0
+	// After interleave:
+	// Vd: B3, A3, ... B1, A0
+	// Vm: B7, A7, ... B4, A4
+	RzILOpBitVector *interleaved_val = UN(tmp_bits, 0);
+	for (ut32 i = 0; i < lanes; ++i) {
+		RzILOpBitVector *d = read_reg_lane(REGID(0), i, vec_bits);
+		RzILOpBitVector *m = read_reg_lane(REGID(1), i, vec_bits);
+		interleaved_val = OR(interleaved_val,
+			SHIFTL0(OR(SHIFTL0(m, UN(8, vec_bits)), d),
+				UN(32, vec_bits * 2)));
+	}
+
+	return SEQ2(write_reg(REGID(0), UNSIGNED(reg_bits, DUP(interleaved_val))),
+		write_reg(REGID(1), UNSIGNED(reg_bits, SHIFTR0(interleaved_val, UN(8, vec_bits)))));
 }
 
 /**
