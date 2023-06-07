@@ -2859,7 +2859,7 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 
 	if (VVEC_DT(insn) == ARM_VECTORDATA_F32) {
 		ut32 vec_size = 32;
-		RzILOpEffect *eff = NULL;
+		RzILOpEffect *eff = EMPTY();
 		for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
 			RzILOpFloat *l_elem = BV2F(RZ_FLOAT_IEEE754_BIN_32,
 				read_reg_lane(REGID(1), i, vec_size));
@@ -2904,7 +2904,7 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 
 	// for integer number
 	ut32 vec_size = DT_WIDTH(insn);
-	RzILOpEffect *eff = NULL;
+	RzILOpEffect *eff = EMPTY();
 	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
 		RzILOpBitVector *l_elem = read_reg_lane(REGID(1), i, vec_size);
 		RzILOpBitVector *r_elem = ISIMM(2) ? UN(vec_size, 0) : read_reg_lane(REGID(2), i, vec_size);
@@ -2952,7 +2952,7 @@ static RzILOpEffect *vtst(cs_insn *insn, bool is_thumb) {
 	// for each lane:
 	// Vd = iszero((n and m)) ? zero : not(zero)
 	ut32 vec_size = VVEC_SIZE(insn);
-	RzILOpEffect *eff = NULL;
+	RzILOpEffect *eff = EMPTY();
 	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
 		RzILOpBitVector *n = read_reg_lane(REGID(1), i, vec_size);
 		RzILOpBitVector *m = read_reg_lane(REGID(2), i, vec_size);
@@ -2995,7 +2995,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 lanes = 64 / elem_bits;
 
 	RzILOpEffect *wback_eff = NULL;
-	RzILOpEffect *eff = NULL;
+	RzILOpEffect *eff = EMPTY();
 	RzILOpBitVector *addr = ARG(rn_idx);
 
 	for (int i = 0; i < n_groups; ++i) {
@@ -3058,7 +3058,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
-		wback_eff = NOP();
+		wback_eff = EMPTY();
 	}
 
 	return SEQ2(eff, wback_eff);
@@ -3143,7 +3143,7 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
-		wback_eff = NOP();
+		wback_eff = EMPTY();
 	}
 
 	return SEQ2(eff, wback_eff);
@@ -3185,7 +3185,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = write_reg(REGID(0), DUP(data0));
 		if (regs == 2) {
-			eff = SEQ2(eff, write_reg(REGID(1), data0));
+			eff = write_reg(REGID(1), data0);
 		}
 		break;
 	case 2:
@@ -3229,7 +3229,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
-		wback_eff = NOP();
+		wback_eff = EMPTY();
 	}
 
 	return SEQ2(eff, wback_eff);
@@ -3281,7 +3281,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 lanes = 64 / elem_bits;
 
 	RzILOpEffect *wback_eff = NULL;
-	RzILOpEffect *eff = NULL, *eff_ = NULL, *eff__ = NULL;
+	RzILOpEffect *eff = EMPTY(), *eff_ = NULL, *eff__ = NULL;
 	RzILOpBitVector *addr = ARG(rn_idx);
 
 	for (int i = 0; i < n_groups; ++i) {
@@ -3340,7 +3340,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
-		wback_eff = NOP();
+		wback_eff = EMPTY();
 	}
 
 	return SEQ2(eff, wback_eff);
@@ -3423,7 +3423,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
 		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
 	} else {
-		wback_eff = NOP();
+		wback_eff = EMPTY();
 	}
 
 	return SEQ2(eff, wback_eff);
@@ -3462,7 +3462,7 @@ static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *succes
 	ut32 from_elem_sz = rz_float_get_format_info(from_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 to_elem_sz = rz_float_get_format_info(to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
 
-	RzILOpEffect *eff = NULL;
+	RzILOpEffect *eff = EMPTY();
 	for (int i = 0; i < elem_n; ++i) {
 		RzILOpFloat *from_val = BV2F(from_fmt, read_reg_lane(REGID(1), i, from_elem_sz));
 		eff = SEQ2(eff,
@@ -3540,7 +3540,7 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 		return write_reg(REGID(0), from_val);
 	}
 
-	RzILOpEffect *eff = NULL;
+	RzILOpEffect *eff = EMPTY();
 	for (int i = 0; i < REG_WIDTH(0) / bv_sz; ++i) {
 		RzILOpBitVector *from_val;
 		if (is_f2i) {
@@ -3593,7 +3593,7 @@ static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 	}
 
 	ut32 elem_bits = VVEC_SIZE(insn);
-	RzILOpEffect *eff = NULL;
+	RzILOpEffect *eff = EMPTY();
 
 	// 1. vdup <Vd> <Vn>[x], duplicate scalar
 	// 2. vdup <Vd> <Rn>, duplicate Rn bits to Vd
@@ -3644,7 +3644,7 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 	if (REGID(0) == REGID(1)) {
 		// UNKNOWN behavior
 		rz_warn_if_reached();
-		return NULL;
+		return EMPTY();
 	}
 
 	ut32 reg_sz = REG_WIDTH(0);
@@ -3683,7 +3683,7 @@ static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
 	if (REGID(0) == REGID(1)) {
 		// UNKNOWN behavior
 		rz_warn_if_reached();
-		return NULL;
+		return EMPTY();
 	}
 
 	ut32 reg_sz = REG_WIDTH(0);
