@@ -634,6 +634,13 @@ static const char *skip_separator_chars(const char *text) {
 	return text;
 }
 
+/**
+ * \brief Skips over separator characters and moves to the first non-separator character in the string.
+ * \param text The string to process.
+ * \return A pointer to the first non-separator character in the string.
+ *
+ * This function iterates through the given string and skips over any separator characters until it reaches the first non-separator character.
+ */
 RZ_API char *rz_str_skip_separator_chars(const char *text) {
 	return strdup(skip_separator_chars(text));
 }
