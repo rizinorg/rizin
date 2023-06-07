@@ -3723,6 +3723,24 @@ static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
 		write_reg(REGID(1), deinterleave_m));
 }
 
+static RzILOpEffect *vswp(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (REGID(0) == REGID(1)) {
+		// UNKNOWN
+		rz_warn_if_reached();
+		return EMPTY();
+	}
+
+	RzILOpBitVector *d_val = REG_VAL(0);
+	RzILOpBitVector *m_val = REG_VAL(1);
+	return SEQ2(write_reg(REGID(0), m_val),
+		write_reg(REGID(1), d_val));
+}
+
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
@@ -4071,6 +4089,14 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vcvt(insn, is_thumb);
 	case ARM_INS_VDUP:
 		return vdup(insn, is_thumb);
+	case ARM_INS_VEXT:
+		return vext(insn, is_thumb);
+	case ARM_INS_VZIP:
+		return vzip(insn, is_thumb);
+	case ARM_INS_VUZP:
+		return vunzip(insn, is_thumb);
+	case ARM_INS_VSWP:
+		return vswp(insn, is_thumb);
 	default:
 		return NULL;
 	}
