@@ -627,9 +627,7 @@ static const char *skip_non_separator_chars(const char *text) {
 }
 
 static const char *skip_separator_chars(const char *text) {
-	for (; *text && IS_SEPARATOR(*text); text++)
-		;
-	;
+	for (; *text && IS_SEPARATOR(*text); text++);
 
 	return text;
 }
