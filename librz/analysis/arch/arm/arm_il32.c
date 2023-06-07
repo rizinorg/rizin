@@ -3674,6 +3674,55 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 		write_reg(REGID(1), UNSIGNED(reg_sz, SHIFTR0(interleaved_val, UN(8, vec_bits)))));
 }
 
+static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (REGID(0) == REGID(1)) {
+		// UNKNOWN behavior
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	ut32 reg_sz = REG_WIDTH(0);
+	ut32 vec_bits = VVEC_SIZE(insn);
+	ut32 lanes = reg_sz / vec_bits;
+	if (reg_sz % vec_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// Assume Vd: A7, A6, A5, A4, A3, A2, A1, A0
+	// Assume Vm: B7, B6, B5, B4, B3, B2, B1, B0
+	// After interleave:
+	// Vd: B6, B4, B2, B0, A6, A4, A2, A0 (even)
+	// Vm: B7, B5, B3, B1, A7, A5, A3, A1 (odd)
+	RzILOpBitVector *deinterleave_d = UN(reg_sz, 0);
+	RzILOpBitVector *deinterleave_m = UN(reg_sz, 0);
+	for (ut32 i = 0; i < lanes; ++i) {
+		RzILOpBitVector *d_lane = read_reg_lane(REGID(0), i, vec_bits);
+		RzILOpBitVector *m_lane = read_reg_lane(REGID(1), i, vec_bits);
+
+		// construct (Bn, 0, 0, 0, An)
+		ut32 lane_shift_dist = i / 2 * vec_bits;
+		d_lane = SHIFTL0(d_lane, UN(8, lane_shift_dist));
+		m_lane = SHIFTL0(SHIFTL0(m_lane, UN(8, lane_shift_dist)), UN(8, reg_sz / 2));
+
+		if (i % 2 == 0) {
+			// even
+			deinterleave_d = OR(deinterleave_d, OR(d_lane, m_lane));
+		} else {
+			// odd
+			deinterleave_m = OR(deinterleave_m, OR(d_lane, m_lane));
+		}
+	}
+
+	return SEQ2(write_reg(REGID(0), deinterleave_d),
+		write_reg(REGID(1), deinterleave_m));
+}
+
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
