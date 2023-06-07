@@ -619,9 +619,7 @@ RZ_API int rz_str_char_count(const char *string, char ch) {
 }
 
 static const char *skip_non_separator_chars(const char *text) {
-	for (; *text && !IS_SEPARATOR(*text); text++)
-		;
-	;
+	for (; *text && !IS_SEPARATOR(*text); text++);
 
 	return text;
 }
