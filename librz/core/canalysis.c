@@ -6468,11 +6468,10 @@ finish:
 }
 
 /**
- * \breif Get string representation of RzAnalysisVar.
+ * \brief Get string representation of RzAnalysisVar.
  *
- * @param core RzCore instance
- * @param var RzAnalysisVar to be converted to string
- * @return
+ * \param core RzCore instance
+ * \param var RzAnalysisVar to be converted to string
  */
 RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
