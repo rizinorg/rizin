@@ -1,3 +1,138 @@
+NAME=Printing il statements in various formats
+FILE=bins/prg/crackme.prg
+ARGS=-a 6502 -F prg
+CMDS=<<EOF
+s 0x84c
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x84c (seq (store 0 (append (bv 8 0x1) (var sp)) (bv 8 0x8)) (set sp (- (var sp) (bv 8 0x1))) (store 0 (append (bv 8 0x1) (var sp)) (bv 8 0x4e)) (set sp (- (var sp) (bv 8 0x1))) (jmp (bv 16 0x8bd)))
+0x84f (seq (store 0 (append (bv 8 0x1) (var sp)) (bv 8 0x8)) (set sp (- (var sp) (bv 8 0x1))) (store 0 (append (bv 8 0x1) (var sp)) (bv 8 0x51)) (set sp (- (var sp) (bv 8 0x1))) (jmp (bv 16 0x8cc)))
+0x852 (seq (set a (& (var a) (bv 8 0xff))) (set Z (is_zero (var a))) (set N (msb (var a))))
+0x854 (branch (var Z) (jmp (bv 16 0x85e)) nop)
+0x856 (seq (set a (bv 8 0xf3)) (set Z (is_zero (var a))) (set N (msb (var a))))
+-- pretty
+0x84c
+(seq
+  (store 0
+    (append
+      (bv 8 0x1)
+      (var sp))
+    (bv 8 0x8))
+  (set sp
+    (-
+      (var sp)
+      (bv 8 0x1)))
+  (store 0
+    (append
+      (bv 8 0x1)
+      (var sp))
+    (bv 8 0x4e))
+  (set sp
+    (-
+      (var sp)
+      (bv 8 0x1)))
+  (jmp
+    (bv 16 0x8bd)))
+0x84f
+(seq
+  (store 0
+    (append
+      (bv 8 0x1)
+      (var sp))
+    (bv 8 0x8))
+  (set sp
+    (-
+      (var sp)
+      (bv 8 0x1)))
+  (store 0
+    (append
+      (bv 8 0x1)
+      (var sp))
+    (bv 8 0x51))
+  (set sp
+    (-
+      (var sp)
+      (bv 8 0x1)))
+  (jmp
+    (bv 16 0x8cc)))
+0x852
+(seq
+  (set a
+    (&
+      (var a)
+      (bv 8 0xff)))
+  (set Z
+    (is_zero
+      (var a)))
+  (set N
+    (msb
+      (var a))))
+0x854
+(branch
+  (var Z)
+  (jmp
+    (bv 16 0x85e))
+  nop)
+0x856
+(seq
+  (set a
+    (bv 8 0xf3))
+  (set Z
+    (is_zero
+      (var a)))
+  (set N
+    (msb
+      (var a))))
+-- graph
+                                                                            .-----------------.
+                                                                            |  jsr            |
+                                                                            `-----------------'
+                                                                               v v v v v
+                                                                               | | | | |
+                                                                               | | | | '------------------------------------------------.
+                       .-------------------------------------------------------' | | '-------------------------------.                  |
+                       |                           .-----------------------------' '-----.                           |                  |
+                       |                           |                                     |                           |                  |
+                       |                           |                                     |                           |                  |
+                       |                           |                                     |                           |                  |
+                   .------------.              .-----------.                         .------------.              .-----------.      .----------.
+                   |  store: 0  |              |  set: sp  |                         |  store: 0  |              |  set: sp  |      |  jmp     |
+                   `------------'              `-----------'                         `------------'              `-----------'      `----------'
+                         v v                       v                                       v v                       v                  v
+                         | |                       |                                       | |                       |                  |
+              .----------' |                       |                                       | |                       |                  |
+              |            '-----.                 |                                       | |                       |                  |
+              |                  |                 |                             .---------' |                       |                  |
+              |                  |                 |                             |           '---.                   |                  |
+              |                  |                 |                             |               |                   |               .--'
+              |                  |                 |                             |               |                   |               |
+          .-----------.      .-------------.   .-----------.                 .-----------.   .--------------.    .-----------.   .----------------.
+          |  append   |      |  bv: 8 0x8  |   |  sub      |                 |  append   |   |  bv: 8 0x4e  |    |  sub      |   |  bv: 16 0x8bd  |
+          `-----------'      `-------------'   `-----------'                 `-----------'   `--------------'    `-----------'   `----------------'
+                v v                                  v v                           v v                                 v v
+                | |                                  | |                           | |                                 | |
+    .-----------' |                                  | |                           | |                                 | |
+    |             '---.                              | |                           | |                                 | |
+    |                 |               .--------------' |                           | |                                 | |
+    |                 |               |               .'                           | |                                 | |
+    |                 |               |               |                 .----------' |                                 | |
+    |                 |               |               |                 |            '----.                            | |
+    |                 |               |               |                 |                 |               .------------' |
+    |                 |               |               |                 |                 |               |              '.
+    |                 |               |               |                 |                 |               |               |
+.-------------.   .-----------.   .-----------.   .-------------.   .-------------.   .-----------.   .-----------.   .-------------.
+|  bv: 8 0x1  |   |  var: sp  |   |  var: sp  |   |  bv: 8 0x1  |   |  bv: 8 0x1  |   |  var: sp  |   |  var: sp  |   |  bv: 8 0x1  |
+`-------------'   `-----------'   `-----------'   `-------------'   `-------------'   `-----------'   `-----------'   `-------------'
+EOF
+RUN
+
 NAME=6502 addr imm
 FILE=malloc://0x10000
 ARGS=-a 6502

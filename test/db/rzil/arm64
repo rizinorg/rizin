@@ -1,3 +1,79 @@
+NAME=Printing il statements in various formats
+FILE=bins/elf/emulateme.arm64
+CMDS=<<EOF
+s sym.decrypt
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x804 (set sp (- (var sp) (bv 64 0x30)))
+0x808 (storew 0 (+ (var sp) (bv 64 0x8)) (var x0))
+0x80c (store 0 (+ (var sp) (bv 64 0x2f)) (cast 8 false (bv 32 0x0)))
+0x810 (storew 0 (+ (var sp) (bv 64 0x20)) (bv 64 0x0))
+0x814 (jmp (bv 64 0x888))
+-- pretty
+0x804
+(set sp
+  (-
+    (var sp)
+    (bv 64 0x30)))
+0x808
+(storew 0
+  (+
+    (var sp)
+    (bv 64 0x8))
+  (var x0))
+0x80c
+(store 0
+  (+
+    (var sp)
+    (bv 64 0x2f))
+  (cast 8
+    false
+    (bv 32 0x0)))
+0x810
+(storew 0
+  (+
+    (var sp)
+    (bv 64 0x20))
+  (bv 64 0x0))
+0x814
+(jmp
+  (bv 64 0x888))
+-- graph
+    .---------------------.
+    |  sub sp, sp, #0x30  |
+    `---------------------'
+        v
+        |
+        '----.
+             |
+         .-----------.
+         |  set: sp  |
+         `-----------'
+             v
+             |
+             |
+         .-----------.
+         |  sub      |
+         `-----------'
+               v v
+               | |
+    .----------' |
+    |            '--.
+    |               |
+.-----------.   .---------------.
+|  var: sp  |   |  bv: 64 0x30  |
+`-----------'   `---------------'
+EOF
+RUN
+
+
 NAME=arm64 cls
 FILE=malloc://0x100
 ARGS=-aarm -b64

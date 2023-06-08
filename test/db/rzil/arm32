@@ -1,3 +1,81 @@
+NAME=Printing il statements in various formats
+FILE=bins/elf/emulateme.arm32
+CMDS=<<EOF
+s sym.decrypt
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x10468 (seq (set sp (- (var sp) (bv 32 0x4))) (storew 0 (var sp) (var r11)))
+0x1046c (set r11 (+ (var sp) (bv 32 0x0)))
+0x10470 (set sp (- (var sp) (bv 32 0x1c)))
+0x10474 (storew 0 (- (var r11) (bv 32 0x18)) (var r0))
+0x10478 (set r3 (bv 32 0x0))
+-- pretty
+0x10468
+(seq
+  (set sp
+    (-
+      (var sp)
+      (bv 32 0x4)))
+  (storew 0
+    (var sp)
+    (var r11)))
+0x1046c
+(set r11
+  (+
+    (var sp)
+    (bv 32 0x0)))
+0x10470
+(set sp
+  (-
+    (var sp)
+    (bv 32 0x1c)))
+0x10474
+(storew 0
+  (-
+    (var r11)
+    (bv 32 0x18))
+  (var r0))
+0x10478
+(set r3
+  (bv 32 0x0))
+-- graph
+               .----------------------.
+               |  str fp, [sp, #-4]!  |
+               `----------------------'
+                     v v
+                     | |
+             .-------' |
+             |         '------------.
+             |                      |
+         .-----------.          .-------------.
+         |  set: sp  |          |  storew: 0  |
+         `-----------'          `-------------'
+             v                        v v
+             |                        | |
+             |               .--------' |
+             |               |          '----.
+             |               |               |
+         .-----------.   .-----------.   .------------.
+         |  sub      |   |  var: sp  |   |  var: r11  |
+         `-----------'   `-----------'   `------------'
+               v v
+               | |
+    .----------' |
+    |            '--.
+    |               |
+.-----------.   .--------------.
+|  var: sp  |   |  bv: 32 0x4  |
+`-----------'   `--------------'
+EOF
+RUN
+
 NAME=arm cmp
 FILE=malloc://0x100
 ARGS=-aarm -b32

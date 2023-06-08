@@ -1,3 +1,110 @@
+NAME=Printing il statements in various formats
+FILE=bins/elf/avr-sbrx-rjmp.elf
+CMDS=<<EOF
+echo -- oneline
+aoi 5
+echo -- pretty
+aoip 5
+echo -- graph
+agI
+EOF
+EXPECT=<<EOF
+-- oneline
+0x0 (seq (storew 0 (- (cast 32 false (var sp)) (bv 32 0x3)) (bv 32 0x2)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x2)))
+0x2 (seq (storew 0 (- (cast 32 false (var sp)) (bv 32 0x3)) (bv 32 0x4)) (set sp (- (var sp) (bv 16 0x4))) (jmp (bv 32 0x4)))
+0x4 (set r28 (cast 8 false (>> (var sp) (bv 32 0x8) false)))
+0x6 (set r29 (cast 8 false (var sp)))
+0x8 (set r24 (bv 8 0x1))
+-- pretty
+0x0
+(seq
+  (storew 0
+    (-
+      (cast 32
+        false
+        (var sp))
+      (bv 32 0x3))
+    (bv 32 0x2))
+  (set sp
+    (-
+      (var sp)
+      (bv 16 0x4)))
+  (jmp
+    (bv 32 0x2)))
+0x2
+(seq
+  (storew 0
+    (-
+      (cast 32
+        false
+        (var sp))
+      (bv 32 0x3))
+    (bv 32 0x4))
+  (set sp
+    (-
+      (var sp)
+      (bv 16 0x4)))
+  (jmp
+    (bv 32 0x4)))
+0x4
+(set r28
+  (cast 8
+    false
+    (>>
+      (var sp)
+      (bv 32 0x8)
+      false)))
+0x6
+(set r29
+  (cast 8
+    false
+    (var sp)))
+0x8
+(set r24
+  (bv 8 0x1))
+-- graph
+                                                  .-------------.
+                                                  |  rcall 0x2  |
+                                                  `-------------'
+                                                     v v v
+                                                     | | |
+                                                     | | '------------------.
+                              .----------------------' '--.                 |
+                              |                           |                 |
+                              |                           |                 |
+                          .-------------.             .-----------.     .----------.
+                          |  storew: 0  |             |  set: sp  |     |  jmp     |
+                          `-------------'             `-----------'     `----------'
+                                v v                       v                 v
+                                | |                       |                 |
+                      .---------' |                       |                 |
+                      |           '---.                   |                 |
+                      |               |                   |               .-'
+                      |               |                   |               |
+                  .-----------.   .--------------.    .-----------.   .--------------.
+                  |  sub      |   |  bv: 32 0x2  |    |  sub      |   |  bv: 32 0x2  |
+                  `-----------'   `--------------'    `-----------'   `--------------'
+                        v v                                 v v
+                        | |                                 | |
+           .------------' |                                 | |
+           |              '--.                              | |
+           |                 |                   .----------' |
+           |                 |                   |            '--.
+           |                 |                   |               |
+       .------------.    .--------------.    .-----------.   .--------------.
+       |  cast: 32  |    |  bv: 32 0x3  |    |  var: sp  |   |  bv: 16 0x4  |
+       `------------'    `--------------'    `-----------'   `--------------'
+             v v
+             | |
+    .--------' |
+    |          '----.
+    |               |
+.----------.    .-----------.
+|  false   |    |  var: sp  |
+`----------'    `-----------'
+EOF
+RUN
+
 NAME=fmul 1.5 * 1.25
 FILE=malloc://512
 CMDS=<<EOF
