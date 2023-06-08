@@ -625,6 +625,7 @@ static const char *skip_non_separator_chars(const char *text) {
 }
 
 static const char *skip_separator_chars(const char *text) {
+	rz_return_val_if_fail(text, NULL);
 	for (; *text && IS_SEPARATOR(*text); text++);
 
 	return text;
@@ -637,7 +638,8 @@ static const char *skip_separator_chars(const char *text) {
  *
  * This function iterates through the given string and skips over any separator characters until it reaches the first non-separator character.
  */
-RZ_API RZ_OWN char *rz_str_skip_separator_chars(const char *text) {
+RZ_API RZ_OWN char *rz_str_skip_separator_chars(RZ_NONNULL const char *text) {
+	rz_return_val_if_fail(text, NULL);
 	return strdup(skip_separator_chars(text));
 }
 
