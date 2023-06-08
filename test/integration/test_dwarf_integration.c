@@ -122,8 +122,8 @@ static bool test_parse_dwarf_types(void) {
 	// check_kv("union.unaligned.u2", "short unsigned int,0,0");
 	// check_kv("union.unaligned.s8", "long long int,0,0");
 
-	rz_bin_dwarf_debug_info_free(info);
-	rz_bin_dwarf_debug_abbrev_free(abbrevs);
+	rz_bin_dwarf_info_free(info);
+	rz_bin_dwarf_abbrev_free(abbrevs);
 	rz_analysis_free(analysis);
 	rz_bin_free(bin);
 	rz_io_free(io);

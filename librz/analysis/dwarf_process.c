@@ -1658,7 +1658,7 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysi
 			.analysis = analysis,
 			.all_dies = unit->dies,
 			.count = unit->count,
-			.die_map = info->lookup_table,
+			.die_map = info->die_tbl,
 			.sdb = dwarf_sdb,
 			.locations = ctx->loc,
 			.lang = NULL

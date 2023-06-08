@@ -686,7 +686,6 @@ typedef struct {
 	int end_sequence;
 } RzBinDwarfState;
 
-#define DWARF_INIT_LEN_64 0xffffffff
 typedef union {
 	ut32 offset32;
 	ut64 offset64;
@@ -710,8 +709,8 @@ typedef struct {
 } RzBinDwarfAddressRangeTable;
 
 typedef struct {
-	ut64 attr_name;
-	ut64 attr_form;
+	enum DW_AT attr_name;
+	enum DW_FORM attr_form;
 	st64 special; // Used for values coded directly into abbrev
 } RzBinDwarfAttrDef;
 
@@ -736,8 +735,8 @@ typedef enum {
 } RzBinDwarfAttrKind;
 
 typedef struct dwarf_attr_kind {
-	ut64 attr_name;
-	ut64 attr_form;
+	enum DW_AT attr_name;
+	enum DW_FORM attr_form;
 	RzBinDwarfAttrKind kind;
 	/* This is subideal, as dw_form_data can be anything
 	   we could lose information example: encoding signed
@@ -822,16 +821,16 @@ typedef struct {
 
 typedef struct {
 	ut64 code;
-	ut64 tag;
+	enum DW_TAG tag;
 	ut64 offset;
-	ut8 has_children;
-	RzPVector /*RzBinDwarfAttrDef**/ defs;
+	enum DW_CHILDREN has_children;
+	RzPVector /*<RzBinDwarfAttrDef *>*/ defs;
 } RzBinDwarfAbbrevDecl;
 
 typedef struct {
-	RzPVector /*RzBinDwarfAbbrevDecl**/ decls;
-	HtUP /*size_t,RzBinDwarfAbbrevDecl**/ *decl_tbl;
-	HtUU /*size_t,size_t*/ *decl_index_tbl;
+	RzPVector /*<RzBinDwarfAbbrevDecl *>*/ decls;
+	HtUP /*size_t,<RzBinDwarfAbbrevDecl *>*/ *decl_tbl;
+	HtUU /*<size_t,size_t>*/ *decl_index_tbl;
 } RzBinDwarfDebugAbbrev;
 
 #define DWARF_FALSE 0
@@ -854,7 +853,7 @@ typedef struct {
 
 typedef struct rz_bin_dwarf_line_file_entry_format_t {
 	ut64 content_type;
-	ut64 form;
+	enum DW_FORM form;
 } RzBinDwarfLineFileEntryFormat;
 
 typedef struct rz_bin_dwarf_line_file_entry_t {
@@ -888,7 +887,7 @@ typedef struct {
 	ut8 *std_opcode_lengths;
 
 	RzVector /*<RzBinDwarfLineFileEntryFormat>*/ directory_entry_formats;
-	RzVector /*?*/ directories;
+	RzPVector /*<char*>*/ directories;
 	RzVector /*<RzBinDwarfLineFileEntryFormat>*/ file_name_entry_formats;
 	RzVector /*<RzBinDwarfLineFileEntry>*/ file_names;
 } RzBinDwarfLineHeader;
@@ -896,14 +895,18 @@ typedef struct {
 typedef enum {
 	RZ_BIN_DWARF_LINE_OP_TYPE_SPEC, //< single byte op, no args
 	RZ_BIN_DWARF_LINE_OP_TYPE_STD, //< fixed-size op, 0 or more leb128 args (except DW_LNS_fixed_advance_pc)
-	RZ_BIN_DWARF_LINE_OP_TYPE_EXT //< variable-size op, arbitrary format of args
+	RZ_BIN_DWARF_LINE_OP_TYPE_EXT, //< variable-size op, arbitrary format of args
+	RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN, //< variable-size op, arbitrary format of args
 } RzBinDwarfLineOpType;
 
 #define RZ_BIN_DWARF_LINE_OP_STD_ARGS_MAX 1
 
 typedef struct {
 	RzBinDwarfLineOpType type;
-	ut8 opcode;
+	union {
+		enum DW_LNS opcode;
+		enum DW_LNE ext_opcode;
+	};
 	struct {
 		union {
 			ut64 advance_pc; //< DW_LNS_advance_pc
@@ -928,9 +931,7 @@ typedef struct {
  */
 typedef struct {
 	RzBinDwarfLineHeader header;
-
-	size_t ops_count;
-	RzBinDwarfLineOp *ops;
+	RzVector /*<RzBinDwarfLineOp>*/ ops;
 } RzBinDwarfLineUnit;
 
 /**
@@ -1006,7 +1007,7 @@ RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_decl_get(RZ_NONNULL const RzBinDwa
  * It is strictly associated with the RzBinDwarfLineHeader it has been created with in rz_bin_dwarf_line_header_new_file_cache()
  * and must be freed with the same header in rz_bin_dwarf_line_header_free_file_cache().
  */
-typedef char **RzBinDwarfLineFileCache;
+typedef RzPVector /*<char *>*/ RzBinDwarfLineFileCache;
 
 RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask);
 RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *header, ut64 file_index);
@@ -1014,10 +1015,8 @@ RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *
 RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode);
 RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode);
 RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs);
-RZ_API RzBinDwarfLineFileCache rz_bin_dwarf_line_header_new_file_cache(const RzBinDwarfLineHeader *hdr);
-RZ_API void rz_bin_dwarf_line_header_free_file_cache(const RzBinDwarfLineHeader *hdr, RzBinDwarfLineFileCache fnc);
 RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
-	RZ_NULLABLE struct rz_bin_source_line_info_builder_t *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache fnc);
+	RZ_NULLABLE struct rz_bin_source_line_info_builder_t *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc);
 RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li);
 

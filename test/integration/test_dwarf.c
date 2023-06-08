@@ -14,7 +14,7 @@
 	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->tag, expected_tag, "Incorrect abbreviation tag")
 
 #define check_abbrev_count(expected_count) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), expected_count, "Incorrect abbreviation count")
+	mu_assert_eq(rz_bin_dwarf_abbrev_decl_count(rz_bin_dwarf_abbrev_get(da, i)), expected_count, "Incorrect abbreviation count")
 
 #define check_abbrev_children(expected_children) \
 	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->has_children, expected_children, "Incorrect children flag")
@@ -99,7 +99,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_compile_unit);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(8);
+		check_abbrev_count(7);
 		{
 			int j = 0;
 			check_abbrev_attr_name(DW_AT_producer);
@@ -127,37 +127,37 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	i++;
 	check_abbrev_tag(DW_TAG_variable);
 	{
-		check_abbrev_count(8);
+		check_abbrev_count(7);
 		check_abbrev_children(false);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_base_type);
 	{
-		check_abbrev_count(4);
+		check_abbrev_count(3);
 		check_abbrev_children(false);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_count(12);
-		check_abbrev_children(true);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(7);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_count(10);
+		check_abbrev_count(11);
 		check_abbrev_children(true);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_variable);
 	{
 		check_abbrev_count(6);
+		check_abbrev_children(false);
+	}
+	i++;
+	check_abbrev_tag(DW_TAG_subprogram);
+	{
+		check_abbrev_count(9);
+		check_abbrev_children(true);
+	}
+	i++;
+	check_abbrev_tag(DW_TAG_variable);
+	{
+		check_abbrev_count(5);
 		check_abbrev_children(false);
 	}
 	i++;
@@ -218,7 +218,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_compile_unit);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(9);
+		check_abbrev_count(8);
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
@@ -256,7 +256,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_structure_type);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(8);
+		check_abbrev_count(7);
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
@@ -291,13 +291,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
+		check_abbrev_count(7);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_formal_parameter);
@@ -306,16 +300,22 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 		check_abbrev_count(2);
 	}
 	i++;
+	check_abbrev_tag(DW_TAG_formal_parameter);
+	{
+		check_abbrev_children(false);
+		check_abbrev_count(1);
+	}
+	i++;
 	check_abbrev_tag(DW_TAG_member);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(5);
+		check_abbrev_count(4);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(10);
+		check_abbrev_count(9);
 	}
 	i++;
 
@@ -323,7 +323,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(12);
+		check_abbrev_count(11);
 		{
 			int j = 0;
 			check_abbrev_attr_name(DW_AT_external);
@@ -364,79 +364,73 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(13);
+		check_abbrev_count(12);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_const_type);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(2);
+		check_abbrev_count(1);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_pointer_type);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(3);
+		check_abbrev_count(2);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_reference_type);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(3);
+		check_abbrev_count(2);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subroutine_type);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(3);
+		check_abbrev_count(2);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_unspecified_parameters);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(1);
+		check_abbrev_count(0);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_base_type);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(4);
+		check_abbrev_count(3);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_pointer_type);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(4);
+		check_abbrev_count(3);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_structure_type);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(8);
+		check_abbrev_count(7);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_inheritance);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(3);
+		check_abbrev_count(2);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(8);
+		check_abbrev_count(7);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(10);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(13);
+		check_abbrev_count(9);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
@@ -445,34 +439,28 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 		check_abbrev_count(12);
 	}
 	i++;
-	check_abbrev_tag(DW_TAG_variable);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children(false);
-		check_abbrev_count(7);
+		check_abbrev_children(true);
+		check_abbrev_count(11);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_variable);
 	{
 		check_abbrev_children(false);
-		check_abbrev_count(7);
+		check_abbrev_count(6);
+	}
+	i++;
+	check_abbrev_tag(DW_TAG_variable);
+	{
+		check_abbrev_children(false);
+		check_abbrev_count(6);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(5);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(5);
+		check_abbrev_count(7);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_formal_parameter);
@@ -484,7 +472,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(9);
+		check_abbrev_count(4);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_formal_parameter);
@@ -496,13 +484,25 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
-		check_abbrev_count(9);
+		check_abbrev_count(8);
+	}
+	i++;
+	check_abbrev_tag(DW_TAG_formal_parameter);
+	{
+		check_abbrev_children(false);
+		check_abbrev_count(2);
 	}
 	i++;
 	check_abbrev_tag(DW_TAG_subprogram);
 	{
 		check_abbrev_children(true);
 		check_abbrev_count(8);
+	}
+	i++;
+	check_abbrev_tag(DW_TAG_subprogram);
+	{
+		check_abbrev_children(true);
+		check_abbrev_count(7);
 	}
 
 	// rz_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
@@ -603,12 +603,12 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	int i = 18;
 
 	check_abbrev_tag(DW_TAG_formal_parameter);
-	check_abbrev_count(5);
+	check_abbrev_count(4);
 	check_abbrev_children(false);
 	check_abbrev_code(19);
 	i = 41;
 	check_abbrev_tag(DW_TAG_inheritance);
-	check_abbrev_count(3);
+	check_abbrev_count(2);
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
@@ -771,12 +771,13 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	int i = 18;
 
 	check_abbrev_tag(DW_TAG_formal_parameter);
-	check_abbrev_count(5);
+	check_abbrev_count(4);
 	check_abbrev_children(false);
 	check_abbrev_code(19);
+	check_abbrev_tag(DW_TAG_formal_parameter);
 	i = 41;
 	check_abbrev_tag(DW_TAG_inheritance);
-	check_abbrev_count(4);
+	check_abbrev_count(3);
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 

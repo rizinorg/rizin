@@ -117,7 +117,7 @@ RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val) {
 		rz_cons_printf("0x%" PFMT64d "", val->uconstant);
 		break;
 	default:
-		rz_cons_printf("Unknown attr value form %" PFMT64d "\n", val->attr_form);
+		rz_cons_printf("Unknown attr value form %" PFMT32d "\n", val->attr_form);
 		break;
 	};
 }
@@ -167,7 +167,7 @@ RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf) {
 				if (attr_name) {
 					rz_cons_printf("     %-25s : ", attr_name);
 				} else {
-					rz_cons_printf("     AT_UNKWN [0x%-3" PFMT64x "]\t : ", values[k].attr_name);
+					rz_cons_printf("     AT_UNKWN [0x%-3" PFMT32x "]\t : ", values[k].attr_name);
 				}
 				rz_core_bin_dwarf_print_attr_value(&values[k]);
 				rz_cons_printf("\n");
@@ -340,6 +340,9 @@ static void print_line_op(RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr, RZ_NU
 			rz_cons_printf(" to %" PFMT64u, regs->line);
 		}
 		break;
+	default:
+		rz_cons_printf("Unknown opcode type %u, opcode: %x", (unsigned int)op->type, op->opcode);
+		break;
 	}
 	rz_cons_print("\n");
 }
@@ -356,52 +359,53 @@ RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit *>*/
 		} else {
 			rz_cons_print("\n");
 		}
+		RzBinDwarfLineHeader *hdr = &unit->header;
 		rz_cons_print(" Header information:\n");
-		rz_cons_printf("  Length:                             %" PFMT64u "\n", unit->header.unit_length);
-		rz_cons_printf("  DWARF Version:                      %d\n", unit->header.version);
-		rz_cons_printf("  Header Length:                      %" PFMT64d "\n", unit->header.header_length);
-		rz_cons_printf("  Minimum Instruction Length:         %d\n", unit->header.min_inst_len);
-		rz_cons_printf("  Maximum Operations per Instruction: %d\n", unit->header.max_ops_per_inst);
-		rz_cons_printf("  Initial value of 'is_stmt':         %d\n", unit->header.default_is_stmt);
-		rz_cons_printf("  Line Base:                          %d\n", unit->header.line_base);
-		rz_cons_printf("  Line Range:                         %d\n", unit->header.line_range);
-		rz_cons_printf("  Opcode Base:                        %d\n\n", unit->header.opcode_base);
+		rz_cons_printf("  Length:                             %" PFMT64u "\n", hdr->unit_length);
+		rz_cons_printf("  DWARF Version:                      %d\n", hdr->version);
+		rz_cons_printf("  Header Length:                      %" PFMT64d "\n", hdr->header_length);
+		rz_cons_printf("  Minimum Instruction Length:         %d\n", hdr->min_inst_len);
+		rz_cons_printf("  Maximum Operations per Instruction: %d\n", hdr->max_ops_per_inst);
+		rz_cons_printf("  Initial value of 'is_stmt':         %d\n", hdr->default_is_stmt);
+		rz_cons_printf("  Line Base:                          %d\n", hdr->line_base);
+		rz_cons_printf("  Line Range:                         %d\n", hdr->line_range);
+		rz_cons_printf("  Opcode Base:                        %d\n\n", hdr->opcode_base);
 		rz_cons_print(" Opcodes:\n");
-		for (size_t i = 1; i < unit->header.opcode_base; i++) {
-			rz_cons_printf("  Opcode %zu has %d arg\n", i, unit->header.std_opcode_lengths[i - 1]);
+		for (size_t i = 1; i < hdr->opcode_base; i++) {
+			rz_cons_printf("  Opcode %zu has %d arg\n", i, hdr->std_opcode_lengths[i - 1]);
 		}
 		rz_cons_print("\n");
-		if (unit->header.include_dirs_count && unit->header.include_dirs) {
+		if (rz_pvector_len(&hdr->directories) > 0) {
 			rz_cons_printf(" The Directory Table:\n");
-			for (size_t i = 0; i < unit->header.include_dirs_count; i++) {
-				rz_cons_printf("  %u     %s\n", (unsigned int)i + 1, unit->header.include_dirs[i]);
+			for (size_t i = 0; i < rz_pvector_len(&hdr->directories); i++) {
+				rz_cons_printf("  %u     %s\n", (unsigned int)i + 1, (char *)rz_pvector_at(&hdr->directories, i));
 			}
 		}
-		if (unit->header.file_names_count && unit->header.file_names) {
+		if (rz_vector_len(&hdr->file_names)) {
 			rz_cons_print("\n");
 			rz_cons_print(" The File Name Table:\n");
 			rz_cons_print("  Entry Dir     Time      Size       Name\n");
-			for (size_t i = 0; i < unit->header.file_names_count; i++) {
-				RzBinDwarfLineFileEntry *f = &unit->header.file_names[i];
+			for (size_t i = 0; i < rz_vector_len(&hdr->file_names); i++) {
+				RzBinDwarfLineFileEntry *f = rz_vector_index_ptr(&hdr->file_names, i);
 				rz_cons_printf("  %u     %" PFMT32u "       %" PFMT32u "         %" PFMT32u "          %s\n",
 					(unsigned int)i + 1, f->id_idx, f->mod_time, f->file_len, f->name);
 			}
 			rz_cons_print("\n");
 		}
-		if (unit->ops_count && unit->ops) {
-			// also execute all ops simultaneously which gives us nice intermediate value printing
-			RzBinDwarfSMRegisters regs;
-			rz_bin_dwarf_line_header_reset_regs(&unit->header, &regs);
-			rz_cons_print(" Line Number Statements:\n");
-			for (size_t i = 0; i < unit->ops_count; i++) {
-				rz_bin_dwarf_line_op_run(&unit->header, &regs, &unit->ops[i], NULL, NULL, NULL);
-				rz_cons_print("  ");
-				RzBinDwarfLineOp *op = &unit->ops[i];
-				print_line_op(op, &unit->header, &regs);
-				if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->opcode == DW_LNE_end_sequence && i + 1 < unit->ops_count) {
-					// extra newline for nice sequence separation
-					rz_cons_print("\n");
-				}
+		// also execute all ops simultaneously which gives us nice intermediate value printing
+		RzBinDwarfSMRegisters regs;
+		rz_bin_dwarf_line_header_reset_regs(&unit->header, &regs);
+		rz_cons_print(" Line Number Statements:\n");
+		void *opsit;
+		size_t i;
+		rz_vector_enumerate(&unit->ops, opsit, i) {
+			RzBinDwarfLineOp *op = opsit;
+			rz_bin_dwarf_line_op_run(&unit->header, &regs, op, NULL, NULL, NULL);
+			rz_cons_print("  ");
+			print_line_op(op, &unit->header, &regs);
+			if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->ext_opcode == DW_LNE_end_sequence && i + 1 < rz_vector_len(&unit->ops)) {
+				// extra newline for nice sequence separation
+				rz_cons_print("\n");
 			}
 		}
 	}

@@ -14,6 +14,9 @@
 #define READ8(buf) \
 	(((buf) + 1 < buf_end) ? *((ut8 *)(buf)) : 0); \
 	(buf)++
+#define READI8(buf) \
+	(((buf) + 1 < buf_end) ? *((st8 *)(buf)) : 0); \
+	(buf)++
 #define READ16(buf) \
 	(((buf) + sizeof(ut16) < buf_end) ? rz_read_ble16(buf, big_endian) : 0); \
 	(buf) += sizeof(ut16)
@@ -405,12 +408,17 @@ RZ_API const char *rz_bin_dwarf_get_lang_name(ut64 lang) {
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
  */
 static inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
+	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
+	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
 	ut64 r = READ32(*buf);
-	if (r == DWARF_INIT_LEN_64) {
-		r = READ64(*buf);
-		*is_64bit = true;
-	} else {
+	if (r <= DWARF32_UNIT_LENGTH_MAX) {
 		*is_64bit = false;
+		return r;
+	} else if (r == DWARF64_UNIT_LENGTH_INI) {
+		*is_64bit = true;
+		return READ64(*buf);
+	} else {
+		RZ_LOG_ERROR("Invalid initial length: 0x%" PFMT64x "\n", r);
 	}
 	return r;
 }
@@ -453,28 +461,39 @@ static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **
 	return result;
 }
 
-static void line_header_fini(RzBinDwarfLineHeader *hdr) {
-	if (hdr) {
-		for (size_t i = 0; i < hdr->file_names_count; i++) {
-			free(hdr->file_names[i].name);
-		}
-
-		free(hdr->std_opcode_lengths);
-		free(hdr->file_names);
-
-		if (hdr->include_dirs) {
-			for (size_t i = 0; i < hdr->include_dirs_count; i++) {
-				free(hdr->include_dirs[i]);
-			}
-			free(hdr->include_dirs);
-		}
+void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfLineFileEntry *x, void *user) {
+	if (!x) {
+		return;
 	}
+	free(x->name);
+	free(x->include_dir);
 }
 
-// Parses source file header of DWARF version <= 4
+static void line_header_init(RzBinDwarfLineHeader *hdr) {
+	if (!hdr) {
+		return;
+	}
+	memset(hdr, 0, sizeof(*hdr));
+	rz_vector_init(&hdr->file_name_entry_formats, sizeof(RzBinDwarfLineFileEntryFormat), NULL, NULL);
+	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfLineFileEntry), (RzVectorFree)rz_bin_dwarf_line_file_entry_fini, NULL);
+	rz_vector_init(&hdr->directory_entry_formats, sizeof(RzBinDwarfLineFileEntryFormat), NULL, NULL);
+	rz_pvector_init(&hdr->directories, free);
+}
+
+static void line_header_fini(RzBinDwarfLineHeader *hdr) {
+	if (!hdr) {
+		return;
+	}
+	rz_vector_fini(&hdr->file_name_entry_formats);
+	rz_vector_fini(&hdr->file_names);
+	rz_vector_fini(&hdr->directory_entry_formats);
+	rz_pvector_fini(&hdr->directories);
+}
+
+/**
+ * 6.2.4 The Line Number Program Header: https://dwarfstd.org/doc/DWARF5.pdf#page=172
+ */
 static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end, RzBinDwarfLineHeader *hdr) {
-	RzPVector incdirs;
-	rz_pvector_init(&incdirs, free);
 	while (buf + 1 < buf_end) {
 		size_t maxlen = RZ_MIN((size_t)(buf_end - buf) - 1, 0xfff);
 		size_t len = rz_str_nlen((const char *)buf, maxlen);
@@ -484,20 +503,16 @@ static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const 
 			free(str);
 			break;
 		}
-		rz_pvector_push(&incdirs, str);
+		rz_pvector_push(&hdr->directories, str);
 		buf += len + 1;
 	}
-	hdr->include_dirs_count = rz_pvector_len(&incdirs);
-	hdr->include_dirs = (char **)rz_pvector_flush(&incdirs);
-	rz_pvector_fini(&incdirs);
 
-	RzVector file_names;
-	rz_vector_init(&file_names, sizeof(RzBinDwarfLineFileEntry), NULL, NULL);
+	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfLineFileEntry), NULL, NULL);
 	while (buf + 1 < buf_end) {
 		const char *filename = (const char *)buf;
 		size_t maxlen = RZ_MIN((size_t)(buf_end - buf - 1), 0xfff);
 		ut64 id_idx, mod_time, file_len;
-		size_t len = rz_str_nlen(filename, maxlen);
+		int len = rz_str_nlen(filename, maxlen);
 
 		if (!len) {
 			buf++;
@@ -523,16 +538,12 @@ static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const 
 			buf = NULL;
 			goto beach;
 		}
-		RzBinDwarfLineFileEntry *entry = rz_vector_push(&file_names, NULL);
+		RzBinDwarfLineFileEntry *entry = rz_vector_push(&hdr->file_names, NULL);
 		entry->name = rz_str_ndup(filename, len);
 		entry->id_idx = id_idx;
 		entry->mod_time = mod_time;
 		entry->file_len = file_len;
 	}
-	hdr->file_names_count = rz_vector_len(&file_names);
-	hdr->file_names = rz_vector_flush(&file_names);
-	rz_vector_fini(&file_names);
-
 beach:
 	return buf;
 }
@@ -540,12 +551,12 @@ beach:
 /**
  * \param info if not NULL, filenames can get resolved to absolute paths using the compilation unit dirs from it
  */
-RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *header, ut64 file_index) {
-	rz_return_val_if_fail(header, NULL);
-	if (file_index >= header->file_names_count) {
+RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *hdr, ut64 file_index) {
+	rz_return_val_if_fail(hdr, NULL);
+	if (file_index >= rz_vector_len(&hdr->file_names)) {
 		return NULL;
 	}
-	RzBinDwarfLineFileEntry *file = &header->file_names[file_index];
+	RzBinDwarfLineFileEntry *file = rz_vector_index_ptr(&hdr->file_names, file_index);
 	if (!file->name) {
 		return NULL;
 	}
@@ -559,11 +570,11 @@ RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBin
 	 * or backslashes anyway, we will simply use slashes always here.
 	 */
 
-	const char *comp_dir = info ? ht_up_find(info->line_info_offset_comp_dir, header->offset, NULL) : NULL;
+	const char *comp_dir = info ? ht_up_find(info->line_info_offset_comp_dir, hdr->offset, NULL) : NULL;
 	const char *include_dir = NULL;
 	char *own_str = NULL;
-	if (file->id_idx > 0 && file->id_idx - 1 < header->include_dirs_count) {
-		include_dir = header->include_dirs[file->id_idx - 1];
+	if (file->id_idx > 0 && file->id_idx - 1 < rz_pvector_len(&hdr->directories)) {
+		include_dir = rz_pvector_at(&hdr->directories, file->id_idx - 1);
 		if (include_dir && include_dir[0] != '/' && comp_dir) {
 			include_dir = own_str = rz_str_newf("%s/%s/", comp_dir, include_dir);
 		}
@@ -578,57 +589,49 @@ RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBin
 	return r;
 }
 
-RZ_API RzBinDwarfLineFileCache rz_bin_dwarf_line_header_new_file_cache(const RzBinDwarfLineHeader *hdr) {
-	return RZ_NEWS0(char *, hdr->file_names_count);
-}
-
-RZ_API void rz_bin_dwarf_line_header_free_file_cache(const RzBinDwarfLineHeader *hdr, RzBinDwarfLineFileCache fnc) {
-	if (!fnc) {
-		return;
-	}
-	for (size_t i = 0; i < hdr->file_names_count; i++) {
-		free(fnc[i]);
-	}
-	free(fnc);
-}
-
-static const char *get_full_file_path(const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *header,
-	RZ_NULLABLE RzBinDwarfLineFileCache cache, ut64 file_index) {
-	if (file_index >= header->file_names_count) {
+static const char *get_full_file_path(const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *hdr,
+	RZ_NULLABLE RzBinDwarfLineFileCache *cache, ut64 file_index) {
+	if (file_index >= rz_vector_len(&hdr->file_names)) {
 		return NULL;
 	}
 	if (!cache) {
-		return header->file_names[file_index].name;
+		return ((RzBinDwarfLineFileEntry *)rz_vector_index_ptr(&hdr->file_names, file_index))->name;
 	}
-	if (!cache[file_index]) {
-		cache[file_index] = rz_bin_dwarf_line_header_get_full_file_path(info, header, file_index);
+	char *path = rz_pvector_at(cache, file_index);
+	if (!path) {
+		path = rz_bin_dwarf_line_header_get_full_file_path(info, hdr, file_index);
+		rz_pvector_set(cache, file_index, path);
 	}
-	return cache[file_index];
+	return path;
 }
 
-RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *header, ut8 opcode) {
-	rz_return_val_if_fail(header, 0);
-	return opcode - header->opcode_base;
+RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+	rz_return_val_if_fail(hdr, 0);
+	return opcode - hdr->opcode_base;
 }
 
-RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode) {
-	rz_return_val_if_fail(header, 0);
-	if (!header->line_range) {
+RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+	rz_return_val_if_fail(hdr, 0);
+	if (!hdr->line_range) {
 		// to dodge division by zero
 		return 0;
 	}
-	ut8 adj_opcode = rz_bin_dwarf_line_header_get_adj_opcode(header, opcode);
-	return (adj_opcode / header->line_range) * header->min_inst_len;
+	ut8 adj_opcode = rz_bin_dwarf_line_header_get_adj_opcode(hdr, opcode);
+	int op_advance = adj_opcode / hdr->line_range;
+	if (hdr->max_ops_per_inst == 1) {
+		return op_advance * hdr->min_inst_len;
+	}
+	return hdr->min_inst_len * (op_advance / hdr->max_ops_per_inst);
 }
 
-RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode) {
-	rz_return_val_if_fail(header, 0);
-	if (!header->line_range) {
+RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+	rz_return_val_if_fail(hdr, 0);
+	if (!hdr->line_range) {
 		// to dodge division by zero
 		return 0;
 	}
-	ut8 adj_opcode = rz_bin_dwarf_line_header_get_adj_opcode(header, opcode);
-	return header->line_base + (adj_opcode % header->line_range);
+	ut8 adj_opcode = rz_bin_dwarf_line_header_get_adj_opcode(hdr, opcode);
+	return hdr->line_base + (adj_opcode % hdr->line_range);
 }
 
 static const ut8 *parse_line_header(
@@ -636,71 +639,78 @@ static const ut8 *parse_line_header(
 	RzBinDwarfLineHeader *hdr, ut64 offset_cur, bool big_endian) {
 	rz_return_val_if_fail(hdr && bf && buf && buf_end, NULL);
 
+	line_header_init(hdr);
 	hdr->offset = offset_cur;
 	hdr->is_64bit = false;
 	hdr->unit_length = dwarf_read_initial_length(&hdr->is_64bit, big_endian, &buf, buf_end);
-	hdr->version = READ16(buf);
 
+	hdr->version = READ16(buf);
+	if (hdr->version < 2 || hdr->version > 5) {
+		RZ_LOG_VERBOSE("DWARF line hdr version %d is not supported\n", hdr->version);
+		return NULL;
+	}
 	if (hdr->version == 5) {
 		hdr->address_size = READ8(buf);
 		hdr->segment_selector_size = READ8(buf);
+		if (hdr->segment_selector_size != 0) {
+			RZ_LOG_ERROR("DWARF line hdr segment selector size %d is not supported\n", hdr->segment_selector_size);
+			return NULL;
+		}
+	} else if (hdr->version < 5) {
+		// Dwarf < 5 needs this size to be supplied from outside
+		RzBinObject *o = bf->o;
+		hdr->address_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	}
 
 	hdr->header_length = dwarf_read_offset(hdr->is_64bit, big_endian, &buf, buf_end);
 
-	const ut8 *tmp_buf = buf; // So I can skip parsing DWARF 5 headers for now
-
-	if (buf_end - buf < 8) {
+	hdr->min_inst_len = READ8(buf);
+	if (hdr->min_inst_len == 0) {
+		RZ_LOG_VERBOSE("DWARF line hdr min inst len %d is not supported\n", hdr->min_inst_len);
 		return NULL;
 	}
-	hdr->min_inst_len = READ8(buf);
+
 	if (hdr->version >= 4) {
 		hdr->max_ops_per_inst = READ8(buf);
+	} else {
+		hdr->max_ops_per_inst = 1;
 	}
+	if (hdr->max_ops_per_inst == 0) {
+		RZ_LOG_VERBOSE("DWARF line hdr max ops per inst %d is not supported\n", hdr->max_ops_per_inst);
+		return NULL;
+	}
+
 	hdr->default_is_stmt = READ8(buf);
-	hdr->line_base = (st8)READ8(buf);
+	hdr->line_base = READI8(buf);
 	hdr->line_range = READ8(buf);
+	if (hdr->line_range == 0) {
+		RZ_LOG_ERROR("DWARF line hdr line range %d is not supported\n", hdr->line_range);
+		return NULL;
+	}
+
 	hdr->opcode_base = READ8(buf);
-
-	hdr->file_names = NULL;
-
+	assert(hdr->opcode_base != 0);
 	if (hdr->opcode_base > 1) {
+		assert(buf_end - buf >= hdr->opcode_base - 1);
 		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base - 1);
-		for (size_t i = 1; i < hdr->opcode_base; i++) {
-			if (buf + 2 > buf_end) {
-				hdr->opcode_base = i;
-				break;
-			}
-			hdr->std_opcode_lengths[i - 1] = READ8(buf);
-		}
+		memcpy(hdr->std_opcode_lengths, buf, hdr->opcode_base - 1);
+		buf += hdr->opcode_base - 1;
 	} else {
 		hdr->std_opcode_lengths = NULL;
 	}
-	// TODO finish parsing of source files out of DWARF 5 header
-	// for now we skip
-	if (hdr->version == 5) {
-		tmp_buf += hdr->header_length;
-		return tmp_buf;
-	}
 
-	if (hdr->version <= 4) {
-		buf = parse_line_header_source(bf, buf, buf_end, hdr);
-	} else {
-		buf = NULL;
-	}
-
-	return buf;
+	return parse_line_header_source(bf, buf, buf_end, hdr);
 }
 
 RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op) {
 	rz_return_if_fail(op);
-	if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->opcode == DW_LNE_define_file) {
+	if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->ext_opcode == DW_LNE_define_file) {
 		free(op->args.define_file.filename);
 	}
 }
 
 static const ut8 *parse_ext_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len,
-	bool big_endian, ut8 target_addr_size) {
+	bool big_endian) {
 	rz_return_val_if_fail(op && hdr && obuf, NULL);
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
@@ -712,37 +722,36 @@ static const ut8 *parse_ext_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHea
 		return NULL;
 	}
 
-	ut8 opcode = *buf++;
+	op->ext_opcode = *buf++;
 	op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT;
-	op->opcode = opcode;
 
-	switch (opcode) {
+	switch (op->ext_opcode) {
 	case DW_LNE_set_address: {
-		ut8 addr_size = hdr->address_size;
-		if (hdr->version < 5) { // address_size in header only starting with Dwarf 5
-			addr_size = target_addr_size;
-		}
-		op->args.set_address = dwarf_read_address(addr_size, big_endian, &buf, buf_end);
+		op->args.set_address = dwarf_read_address(hdr->address_size, big_endian, &buf, buf_end);
 		break;
 	}
 	case DW_LNE_define_file: {
-		size_t fn_len = rz_str_nlen((const char *)buf, buf_end - buf);
-		char *fn = malloc(fn_len + 1);
-		if (!fn) {
-			return NULL;
-		}
-		memcpy(fn, buf, fn_len);
-		fn[fn_len] = 0;
-		op->args.define_file.filename = fn;
-		buf += fn_len + 1;
-		if (buf + 1 < buf_end) {
-			buf = rz_uleb128(buf, buf_end - buf, &op->args.define_file.dir_index, NULL);
-		}
-		if (buf && buf + 1 < buf_end) {
-			buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
-		}
-		if (buf && buf + 1 < buf_end) {
-			buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
+		if (hdr->version <= 4) {
+			size_t fn_len = rz_str_nlen((const char *)buf, buf_end - buf);
+			char *fn = malloc(fn_len + 1);
+			if (!fn) {
+				return NULL;
+			}
+			memcpy(fn, buf, fn_len);
+			fn[fn_len] = 0;
+			op->args.define_file.filename = fn;
+			buf += fn_len + 1;
+			if (buf + 1 < buf_end) {
+				buf = rz_uleb128(buf, buf_end - buf, &op->args.define_file.dir_index, NULL);
+			}
+			if (buf && buf + 1 < buf_end) {
+				buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
+			}
+			if (buf && buf + 1 < buf_end) {
+				buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
+			}
+		} else {
+			op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN;
 		}
 		break;
 	}
@@ -767,7 +776,7 @@ static size_t std_opcode_args_count(const RzBinDwarfLineHeader *hdr, ut8 opcode)
 	return hdr->std_opcode_lengths[opcode - 1];
 }
 
-static const ut8 *parse_std_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len, ut8 opcode, bool big_endian) {
+static const ut8 *parse_std_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len, enum DW_LNS opcode, bool big_endian) {
 	rz_return_val_if_fail(op && hdr && obuf, NULL);
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
@@ -832,7 +841,7 @@ RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr,
 }
 
 static void store_line_sample(RzBinSourceLineInfoBuilder *bob, const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs,
-	RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache fnc) {
+	RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc) {
 	const char *file = NULL;
 	if (regs->file) {
 		file = get_full_file_path(info, hdr, fnc, regs->file - 1);
@@ -845,7 +854,7 @@ static void store_line_sample(RzBinSourceLineInfoBuilder *bob, const RzBinDwarfL
  * \param fnc if not null, filenames will be resolved to their full paths using this cache.
  */
 RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
-	RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache fnc) {
+	RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc) {
 	rz_return_val_if_fail(hdr && regs && op, false);
 	switch (op->type) {
 	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
@@ -894,7 +903,7 @@ RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarf
 		}
 		break;
 	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
-		switch (op->opcode) {
+		switch (op->ext_opcode) {
 		case DW_LNE_end_sequence:
 			regs->end_sequence = DWARF_TRUE;
 			if (bob) {
@@ -935,9 +944,8 @@ RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarf
 static size_t parse_opcodes(const ut8 *obuf,
 	size_t len, const RzBinDwarfLineHeader *hdr, RzVector /*<RzBinDwarfLineOp>*/ *ops_out,
 	RzBinDwarfSMRegisters *regs, RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info,
-	RZ_NULLABLE RzBinDwarfLineFileCache fnc, bool big_endian, ut8 target_addr_size) {
+	RZ_NULLABLE RzBinDwarfLineFileCache *fnc, bool big_endian) {
 	const ut8 *buf, *buf_end;
-	ut8 opcode;
 
 	if (!obuf || !len) {
 		return 0;
@@ -946,10 +954,10 @@ static size_t parse_opcodes(const ut8 *obuf,
 	buf_end = obuf + len;
 
 	while (buf < buf_end) {
-		opcode = *buf++;
+		ut8 opcode = *buf++;
 		RzBinDwarfLineOp op = { 0 };
 		if (!opcode) {
-			buf = parse_ext_opcode(&op, hdr, buf, (buf_end - buf), big_endian, target_addr_size);
+			buf = parse_ext_opcode(&op, hdr, buf, (buf_end - buf), big_endian);
 		} else if (opcode >= hdr->opcode_base) {
 			// special opcode without args, no further parsing needed
 			op.type = RZ_BIN_DWARF_LINE_OP_TYPE_SPEC;
@@ -980,12 +988,7 @@ static void line_unit_free(RzBinDwarfLineUnit *unit) {
 		return;
 	}
 	line_header_fini(&unit->header);
-	if (unit->ops) {
-		for (size_t i = 0; i < unit->ops_count; i++) {
-			rz_bin_dwarf_line_op_fini(&unit->ops[i]);
-		}
-		free(unit->ops);
-	}
+	rz_vector_fini(&unit->ops);
 	free(unit);
 }
 
@@ -999,10 +1002,6 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
 	ut64 buf_size;
-
-	// Dwarf < 5 needs this size to be supplied from outside
-	RzBinObject *o = binfile->o;
-	ut8 target_addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 
 	RzBinDwarfLineInfo *li = RZ_NEW0(RzBinDwarfLineInfo);
 	if (!li) {
@@ -1058,34 +1057,27 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 		}
 		size_t tmp_read = 0;
 
-		RzVector ops;
 		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) {
-			rz_vector_init(&ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
+			rz_vector_init(&unit->ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
 		}
 
-		RzBinDwarfLineFileCache fnc = NULL;
+		RzBinDwarfLineFileCache *fnc = NULL;
 		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_LINES) {
-			fnc = rz_bin_dwarf_line_header_new_file_cache(&unit->header);
+			fnc = rz_pvector_new_with_len(free, rz_vector_len(&unit->header.file_names));
 		}
 
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			// reads one whole sequence
 			tmp_read = parse_opcodes(buf, buf_size - bytes_read, &unit->header,
-				(mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) ? &ops : NULL, &regs,
+				(mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) ? &unit->ops : NULL, &regs,
 				(mask & RZ_BIN_DWARF_LINE_INFO_MASK_LINES) ? &bob : NULL,
-				info, fnc, big_endian, target_addr_size);
+				info, fnc, big_endian);
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
 		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
 
-		rz_bin_dwarf_line_header_free_file_cache(&unit->header, fnc);
-
-		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) {
-			unit->ops_count = rz_vector_len(&ops);
-			unit->ops = rz_vector_flush(&ops);
-			rz_vector_fini(&ops);
-		}
+		rz_pvector_free(fnc);
 
 		if (!tmp_read) {
 			line_unit_free(unit);
@@ -1700,7 +1692,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = rz_uleb128(buf, buf_end - buf, &value->address, NULL);
 		break;
 	default:
-		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
+		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", def->attr_form);
 		value->uconstant = 0;
 		return NULL;
 	}
@@ -1720,15 +1712,18 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
  */
 static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugInfo *info, RzBinDwarfAbbrevDecl *abbrev,
 	RzBinDwarfCompUnitHdr *hdr, RzBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, bool big_endian) {
-	size_t i;
+
 	const char *comp_dir = NULL;
 	ut64 line_info_offset = UT64_MAX;
+	void **it;
+	RzBinDwarfAttrValue *attribute = die->attr_values;
 
-	for (i = 0; i < rz_pvector_len(&abbrev->defs) && die->count < die->capacity; i++) {
-		RzBinDwarfAttrValue *attribute = &die->attr_values[i];
+	rz_pvector_foreach (&abbrev->defs, it) {
+		if (!(die->count < die->capacity && buf_end - buf > 1)) {
+			break;
+		}
+		RzBinDwarfAttrDef *def = *it;
 		memset(attribute, 0, sizeof(RzBinDwarfAttrValue));
-
-		RzBinDwarfAttrDef *def = rz_bin_dwarf_abbrev_decl_get(abbrev, i);
 		buf = parse_attr_value(buf, buf_end - buf, def, attribute, hdr, debug_str, debug_str_len, big_endian);
 
 		if (attribute->attr_name == DW_AT_comp_dir && (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string) && attribute->string.content) {
@@ -1741,6 +1736,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
 				line_info_offset = attribute->reference;
 			}
 		}
+		attribute++;
 		die->count++;
 	}
 
@@ -1756,6 +1752,14 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
 	}
 
 	return buf;
+}
+
+static RzBinDwarfAbbrevDecl *abbrev_get(const RzBinDwarfDebugAbbrev *abbrevs, ut64 idx) {
+	idx -= 1;
+	if (idx >= rz_bin_dwarf_abbrev_count(abbrevs)) {
+		return NULL;
+	}
+	return rz_bin_dwarf_abbrev_get(abbrevs, idx);
 }
 
 /**
@@ -1801,13 +1805,13 @@ static const ut8 *parse_comp_unit(RzBinDwarfDebugInfo *info, const ut8 *buf_star
 			continue;
 		}
 
-		ut64 abbr_idx = first_abbr_idx + abbr_code - 1;
-		if (abbr_idx > rz_bin_dwarf_abbrev_count(abbrevs)) {
-			return NULL;
+		RzBinDwarfAbbrevDecl *abbrev = abbrev_get(abbrevs, first_abbr_idx + abbr_code);
+		if (!abbrev) {
+			unit->count++;
+			continue;
 		}
-		RzBinDwarfAbbrevDecl *abbrev = rz_bin_dwarf_abbrev_get(abbrevs, abbr_idx);
 
-		if (init_die(die, abbr_code, rz_pvector_len(&abbrevs->decls))) {
+		if (init_die(die, abbr_code, rz_bin_dwarf_abbrev_decl_count(abbrev))) {
 			return NULL; // error
 		}
 		if (abbrev->code != 0) {
@@ -1818,7 +1822,6 @@ static const ut8 *parse_comp_unit(RzBinDwarfDebugInfo *info, const ut8 *buf_star
 				return NULL;
 			}
 		}
-
 		unit->count++;
 	}
 	return buf;
@@ -1835,13 +1838,8 @@ beach:
  * @return ut8* Advanced position in a buffer
  */
 static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RzBinDwarfCompUnitHdr *hdr, bool big_endian) {
-	// 32-bit vs 64-bit dwarf formats
-	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
-	hdr->length = READ32(buf);
-	if (hdr->length == (ut32)DWARF_INIT_LEN_64) { // then its 64bit
-		hdr->length = READ64(buf);
-		hdr->is_64bit = true;
-	}
+	hdr->length = dwarf_read_initial_length(&hdr->is_64bit, big_endian, &buf, buf_end);
+	assert(hdr->length <= buf_end - buf);
 	const ut8 *tmp = buf; // to calculate header size
 	hdr->version = READ16(buf);
 	if (hdr->version == 5) {
@@ -1997,7 +1995,9 @@ static RzBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 		decl->code = code;
 		try_u128(decl->tag, beach);
 		decl->has_children = READ8(buf);
-		assert(decl->has_children == DW_CHILDREN_yes || decl->has_children == DW_CHILDREN_no);
+		if (!(decl->has_children == DW_CHILDREN_yes || decl->has_children == DW_CHILDREN_no)) {
+			return NULL;
+		}
 
 		do {
 			ut64 name = 0;
