@@ -332,7 +332,7 @@ afv
 EOF
 EXPECT=<<EOF
 arg int64_t arg3 @ r8
-arg const char * s @ rcx
+arg const char *s @ rcx
 arg int64_t arg2 @ rdx
 EOF
 RUN
@@ -930,7 +930,186 @@ EXPECT=<<EOF
 |           0x800004a4      st.w  [a15]16, d3
 |           0x800004a6      mov   d15, 1                               ; float_ex1.c:24
 |           0x800004a8      mov   d2, d15                              ; float_ex1.c:25
-|           0x800004aa      ret   
+|           0x800004aa      ret
+EOF
+
+NAME=Function va_args arguments from DWARF
+FILE=bins/elf/float_ex1/float_ex1_hightec
+CMDS=<<EOF
+aaa
+(sig; afv; afs; pd 1; echo "---------")
+s dbg.printf
+.(sig)
+s dbg.prout
+.(sig)
+s dbg._fpadd_parts
+.(sig)
+s dbg.strnlen_s
+.(sig)
+s dbg._Wctomb
+.(sig)
+s dbg._Mbtowc
+.(sig)
+s dbg.feraiseexcept
+.(sig)
+s dbg._Atrealloc
+.(sig)
+EOF
+EXPECT=<<EOF
+var va_list ap @ stack + 0x4
+arg const char *fmt @ a6
+int printf(const char *format);
+            ;-- printf:
+/ int dbg.printf(const char *fmt, va_args ..);
+|           ; arg const char *fmt @ a6
+|           ; var va_list ap @ stack + 0x4
+|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; int printf(const char *fmt, va_args ..);
+---------
+arg void *str @ a15
+arg const char *buf @ a5
+arg size_t n @ d4
+void dbg.prout(const char *buf);
+            ;-- prout:
+/ void *dbg.prout(void *str, const char *buf, size_t n);
+|           ; arg void *str @ a15
+|           ; arg size_t n @ d4
+|           ; arg const char *buf @ a5
+|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; void *prout(void *str, const char *buf, size_t n);
+---------
+arg fp_number_type *b @ a12
+arg fp_number_type *a @ a13
+arg fp_number_type *tmp @ a15
+var fractype a_fraction @ d11
+var int diff @ d12
+var int a_normal_exp @ d15
+var int b_normal_exp @ d2
+var intfrac tfraction @ d3
+var fractype b_fraction @ d9
+void dbg._fpadd_parts();
+            ;-- _fpadd_parts:
+/ fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+|           ; arg fp_number_type *a @ a13
+|           ; arg fp_number_type *b @ a12
+|           ; arg fp_number_type *tmp @ a15
+|           ; var intfrac tfraction @ d3
+|           ; var int a_normal_exp @ d15
+|           ; var int b_normal_exp @ d2
+|           ; var fractype a_fraction @ d11
+|           ; var fractype b_fraction @ d9
+|           ; var int diff @ d12
+|           0x80003c60      ld.bu d15, [a4]0                           ; fp-bit.c:604 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+---------
+var const char *sc @ a2
+arg const char *s @ a4
+arg size_t maxsize @ d4
+void dbg.strnlen_s(const char *s);
+            ;-- strnlen_s:
+/ size_t dbg.strnlen_s(const char *s, size_t maxsize);
+|           ; arg size_t maxsize @ d4
+|           ; var const char *sc @ a2
+|           ; arg const char *s @ a4
+|           0x800030ca      mov   d2, 0                                ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
+---------
+arg mbstate_t *pst @ a12
+var _Statab *pwcstate @ a13
+arg char *s @ a15
+arg wchar_t wc @ d15
+void dbg._Wctomb();
+            ;-- _Wctomb:
+/ int dbg._Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+|           ; arg char *s @ a15
+|           ; arg wchar_t wc @ d15
+|           ; arg mbstate_t *pst @ a12
+|           ; var _Statab *pwcstate @ a13
+|           0x800018a6      movh.a a2, 53248                           ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+---------
+arg wchar_t *pwc @ a4
+arg const char *s @ a5
+arg mbstate_t *pst @ a6
+arg size_t nin @ d4
+void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
+            ;-- _Mbtowc:
+/ int dbg._Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+|           ; arg size_t nin @ d4
+|           ; arg wchar_t *pwc @ a4
+|           ; arg const char *s @ a5
+|           ; arg mbstate_t *pst @ a6
+|           0x80003084      movh.a a15, 53248                          ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+---------
+arg int except @ d4
+int feraiseexcept(int excepts);
+            ;-- feraiseexcept:
+/ int dbg.feraiseexcept(int except);
+|           ; arg int except @ d4
+|           0x800037d8      mov   d2, 0                                ; feraiseexcept.c:173 ; int feraiseexcept(int except);
+---------
+var Ppvoidfn newfuns @ a12
+var size_t inc @ d15
+void dbg._Atrealloc();
+            ;-- _Atrealloc:
+/ int dbg._Atrealloc();
+|           ; var size_t inc @ d15
+|           ; var Ppvoidfn newfuns @ a12
+|           0x80001994      movh.a a15, 53248                          ; exit.c:22 ; int _Atrealloc();
+---------
+EOF
+RUN
+
+NAME=Function arguments from DWARF (tricore-gcc)
+FILE=bins/elf/float_ex1/float_ex1_tricore_gcc
+CMDS=<<EOF
+aaa
+s sym.fn1
+e asm.comments=0
+pdf
+EOF
+EXPECT=<<EOF
+/ sym.fn1();
+|           0x800004ce      mov.aa a14, sp
+|           0x800004d0      sub.a sp, 24
+|           0x800004d2      st.w  [a14]-4, d4
+|           0x800004d6      st.a  [a14]-8, a4
+|           0x800004da      st.d  [a14]-16, e6
+|           0x800004de      st.a  [a14]-20, a5
+|           0x800004e2      st.a  [a14]-24, a6
+|           0x800004e6      ld.w  d15, [a14]-20
+|           0x800004ea      jz    d15, 0x800004f2
+|           0x800004ec      ld.w  d15, [a14]-24
+|           0x800004f0      jnz   d15, 0x800004f6
+|           0x800004f2      mov   d15, 0
+|           0x800004f4      j     0x8000054c
+|           0x800004f6      mov   d4, 20
+|           0x800004fa      call  dbg.malloc
+|           0x800004fe      mov.aa a15, a2
+|           0x80000500      mov.d d15, a15
+|           0x80000502      ld.a  a15, [a14]-24
+|           0x80000506      st.w  [a15]0, d15
+|           0x80000508      ld.a  a15, [a14]-24
+|           0x8000050c      ld.a  a15, [a15]0
+|           0x8000050e      ld.w  d15, [a14]-4
+|           0x80000512      st.w  [a15]0, d15
+|           0x80000514      ld.a  a15, [a14]-24
+|           0x80000518      nop   
+|           0x8000051a      ld.w  d15, [a15]0
+|           0x8000051c      mov.a a15, d15
+|           0x8000051e      add.a a15, 4
+|           0x80000520      mov   d4, 5
+|           0x80000522      ld.a  a5, [a14]-8
+|           0x80000526      mov.aa a4, a15
+|           0x80000528      call  dbg.strncpy
+|           0x8000052c      ld.a  a15, [a14]-24
+|           0x80000530      ld.a  a15, [a15]0
+|           0x80000532      ld.d  e4, [a14]-16
+|           0x80000536      call  dbg.__truncdfsf2
+|           0x8000053a      mov   d15, d2
+|           0x8000053c      st.w  [a15]12, d15
+|           0x8000053e      ld.a  a15, [a14]-24
+|           0x80000542      ld.a  a15, [a15]0
+|           0x80000544      ld.w  d15, [a14]-20
+|           0x80000548      st.w  [a15]16, d15
+|           0x8000054a      mov   d15, 1
+|           0x8000054c      mov   d2, d15
+|           0x8000054e      ret   
 EOF
 RUN
 
@@ -958,7 +1137,7 @@ s dbg._Atrealloc
 EOF
 EXPECT=<<EOF
 var va_list ap @ stack + 0x4
-arg const char * fmt @ a6
+arg const char *fmt @ a6
 int printf(const char *format);
             ;-- printf:
 / int dbg.printf(const char *fmt, va_args ..);
@@ -966,8 +1145,8 @@ int printf(const char *format);
 |           ; var va_list ap @ stack + 0x4
 |           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; int printf(const char *fmt, va_args ..);
 
-arg void * str @ a15
-arg const char * buf @ a5
+arg void *str @ a15
+arg const char *buf @ a5
 arg size_t n @ d4
 void dbg.prout(const char *buf);
             ;-- prout:
@@ -977,22 +1156,22 @@ void dbg.prout(const char *buf);
 |           ; arg const char *buf @ a5
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; void *prout(void *str, const char *buf, size_t n);
 
-arg fp_number_type * b @ a12
-arg fp_number_type * a @ a13
-arg fp_number_type * tmp @ a15
-arg fractype a_fraction @ d11
-arg int diff @ d12
-arg int a_normal_exp @ d15
-arg int b_normal_exp @ d2
-arg int sdiff @ d3
-arg fractype b_fraction @ d9
+arg fp_number_type *b @ a12
+arg fp_number_type *a @ a13
+arg fp_number_type *tmp @ a15
+var fractype a_fraction @ d11
+var int diff @ d12
+var int a_normal_exp @ d15
+var int b_normal_exp @ d2
+var intfrac tfraction @ d3
+var fractype b_fraction @ d9
 void dbg._fpadd_parts();
             ;-- _fpadd_parts:
 / fp_number_type *dbg._fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
 |           ; arg fp_number_type *a @ a13
 |           ; arg fp_number_type *b @ a12
 |           ; arg fp_number_type *tmp @ a15
-|           ; var int sdiff @ d3
+|           ; var intfrac tfraction @ d3
 |           ; var int a_normal_exp @ d15
 |           ; var int b_normal_exp @ d2
 |           ; var fractype a_fraction @ d11
@@ -1000,8 +1179,8 @@ void dbg._fpadd_parts();
 |           ; var int diff @ d12
 |           0x80003c60      ld.bu d15, [a4]0                           ; fp-bit.c:604 ; fp_number_type *_fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
 
-arg const char * sc @ a2
-arg const char * s @ a4
+var const char *sc @ a2
+arg const char *s @ a4
 arg size_t maxsize @ d4
 void dbg.strnlen_s(const char *s);
             ;-- strnlen_s:
@@ -1011,9 +1190,9 @@ void dbg.strnlen_s(const char *s);
 |           ; arg const char *s @ a4
 |           0x800030ca      mov   d2, 0                                ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize);
 
-arg mbstate_t * pst @ a12
-arg _Statab * pwcstate @ a13
-arg char * s @ a15
+arg mbstate_t *pst @ a12
+var _Statab *pwcstate @ a13
+arg char *s @ a15
 arg wchar_t wc @ d15
 void dbg._Wctomb();
             ;-- _Wctomb:
@@ -1024,9 +1203,9 @@ void dbg._Wctomb();
 |           ; var _Statab *pwcstate @ a13
 |           0x800018a6      movh.a a2, 53248                           ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
 
-arg wchar_t * pwc @ a4
-arg const char * s @ a5
-arg mbstate_t * pst @ a6
+arg wchar_t *pwc @ a4
+arg const char *s @ a5
+arg mbstate_t *pst @ a6
 arg size_t nin @ d4
 void dbg._Mbtowc(wchar_t *pwc, const char *s, mbstate_t *pst);
             ;-- _Mbtowc:
@@ -1044,8 +1223,8 @@ int feraiseexcept(int excepts);
 |           ; arg int except @ d4
 |           0x800037d8      mov   d2, 0                                ; feraiseexcept.c:173 ; int feraiseexcept(int except);
 
-arg Ppvoidfn newfuns @ a12
-arg size_t inc @ d15
+var Ppvoidfn newfuns @ a12
+var size_t inc @ d15
 void dbg._Atrealloc();
             ;-- _Atrealloc:
 / int dbg._Atrealloc();

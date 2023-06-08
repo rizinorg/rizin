@@ -120,7 +120,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
 	if (var && !storage_equals(&var->storage, stor)) {
 		// var name already exists at a different kind+delta
-		RZ_LOG_WARN("var name %s already exists at a different kind+delta", name);
+		RZ_LOG_WARN("var name %s already exists at a different kind+delta\n", name);
 		return NULL;
 	}
 	var = rz_analysis_function_get_var_at(fcn, stor);
@@ -151,21 +151,57 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 }
 
 /**
- * Add or update a variable \p var to the given function \p fcn.
+ * \brief Add or update a variable \p var to the given function \p fcn.
+ *
+ * For the variable information in DWARF, there may be some variables whose location information is the same
+ * but other information may be completely different.
+ * The current approach to this situation is to add all FORMAL_PARAMETER variables first, and then add the others
+ * but don't overwrite any already added variables from DWARF. This assumes that for all FORMAL_PARAMETER variables
+ * of a function, there is no overlap in their locations.
  *
  * \param fcn the function which the variable will belong to
  * \param var the variable to add or update
  * \param size \p var's type size
  * \return the created or updated variable, or NULL if the operation could not be completed
  */
-RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var,
+RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var_dwarf(RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var,
 	int size) {
 	rz_return_val_if_fail(fcn && var && var->name, NULL);
-	RzAnalysisVar *p_var = rz_analysis_function_set_var(fcn, &var->storage, var->type, size, var->name);
-	if (p_var) {
-		p_var->kind = var->kind;
+	RzAnalysisVar *old = NULL;
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *p = *it;
+		if (!strcmp(p->name, var->name) || storage_equals(&p->storage, &var->storage)) {
+			old = p;
+		}
 	}
-	return p_var;
+	if (old) {
+		if (old->kind != RZ_ANALYSIS_VAR_KIND_INVALID) {
+			return NULL;
+		}
+		rz_analysis_var_delete(old);
+	}
+
+	RzAnalysisVar *out = rz_analysis_var_new();
+	out->fcn = fcn;
+	rz_pvector_push(&fcn->vars, out);
+
+	out->name = var->name;
+	out->storage = var->storage;
+	out->kind = var->kind;
+	storage_poolify(fcn->analysis, &out->storage);
+	if (var->type) {
+		if (out->type != var->type) {
+			rz_type_free(out->type);
+			out->type = rz_type_clone(var->type);
+		}
+	} else {
+		if (!out->type) {
+			out->type = var_type_default(fcn->analysis, size);
+		}
+	}
+	rz_analysis_var_resolve_overlaps(out);
+	return out;
 }
 
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps) {

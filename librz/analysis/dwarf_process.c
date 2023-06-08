@@ -7,6 +7,7 @@
 #include <rz_analysis.h>
 #include <rz_bin_dwarf.h>
 #include <string.h>
+#include "analysis_private.h"
 
 typedef struct dwarf_parse_context_t {
 	const RzAnalysis *analysis;
@@ -1700,7 +1701,6 @@ static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, 
 		offset = strtol(extra, NULL, 10);
 	}
 
-	bool ret = false;
 	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
 		char *global_name = rz_str_newf("global_%s", var_name);
 		rz_flag_unset_off(ctx->flags, offset);
@@ -1712,9 +1712,6 @@ static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, 
 		}
 		RzAnalysisVar var;
 		memset(&var, 0, sizeof(RzAnalysisVar));
-		var.name = strdup(var_name);
-		var.type = ttype;
-		var.kind = (RzAnalysisVarKind)var_kind;
 		if (*kind == 'r') {
 			RzRegItem *i = rz_reg_get(ctx->analysis->reg, extra, -1);
 			if (!i) {
@@ -1728,12 +1725,16 @@ static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, 
 			}
 			rz_analysis_var_storage_init_stack(&var.storage, addr);
 		}
-		rz_analysis_function_add_var(ctx->fcn, &var, 4);
-		ret = true;
+		var.type = ttype;
+		var.kind = var_kind;
+		var.name = rz_str_new(var_name);
+		var.fcn = ctx->fcn;
+		rz_analysis_function_add_var_dwarf(ctx->fcn, &var, 4);
 	}
+	return true;
 beach:
 	rz_type_free(ttype);
-	return ret;
+	return false;
 }
 
 static void apply_debuginfo_variables(FcnVariableCtx *ctx, RzAnalysisVarKind kind) {
