@@ -1284,6 +1284,9 @@ RZ_API void rz_core_rtr_enable(RZ_NONNULL RzCore *core, const char *cmdremote);
 
 RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var);
 
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol);
+RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
+
 #endif
 
 #ifdef __cplusplus

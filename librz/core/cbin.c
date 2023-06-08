@@ -1877,7 +1877,7 @@ RZ_API bool rz_core_bin_entries_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 	return entries_initfini_print(core, bf, state, false);
 }
 
-static bool is_symbol_exported(RZ_NONNULL RzBinSymbol *s) {
+RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s) {
 	rz_return_val_if_fail(s, false);
 	/* workaround for some RzBinPlugins */
 	if (s->is_imported) {
@@ -1910,7 +1910,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 		if (!symbol->name) {
 			continue;
 		}
-		if (only_export && !is_symbol_exported(symbol)) {
+		if (only_export && !rz_core_sym_is_export(symbol)) {
 			continue;
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
