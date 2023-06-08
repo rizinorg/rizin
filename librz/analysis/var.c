@@ -151,7 +151,12 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 }
 
 /**
- * Add or update a variable \p var to the given function \p fcn. Will not update existing DWARF variables
+ * \brief Add or update a variable \p var to the given function \p fcn.
+ *
+ * For the variable information in DWARF, there may be some variables whose location information is the same
+ * but other information may be completely different..
+ * The current approach to this situation is to add all FORMAL_PARAMETER variables first, and then add the others. This
+ * assumes that for all FORMAL_PARAMETER variables of a function, there is no overlap in their locations.
  *
  * \param fcn the function which the variable will belong to
  * \param var the variable to add or update
