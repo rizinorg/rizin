@@ -472,6 +472,8 @@ RZ_IPI RzCmdStatus rz_analysis_graph_normal_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_analysis_graph_line_handler(RzCore *core, int argc, const char **argv);
 // "agx"
 RZ_IPI RzCmdStatus rz_analysis_graph_xrefs_handler(RzCore *core, int argc, const char **argv);
+// "agI"
+RZ_IPI RzCmdStatus rz_analysis_graph_il_handler(RzCore *core, int argc, const char **argv);
 // "agg"
 RZ_IPI RzCmdStatus rz_analysis_graph_custom_handler(RzCore *core, int argc, const char **argv);
 // "ag-"
@@ -714,6 +716,10 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_analyze_n_ins_size_handler(RzCore *core, int argc, const char **argv);
 // "aoe"
 RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const char **argv);
+// "aoi"
+RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const char **argv);
+// "aoip"
+RZ_IPI RzCmdStatus rz_analyze_n_ins_il_pretty_handler(RzCore *core, int argc, const char **argv);
 // "aod"
 RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char **argv);
 // "aoda"

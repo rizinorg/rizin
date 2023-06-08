@@ -4093,7 +4093,7 @@ static void ds_print_cmt_il(RzDisasmState *ds) {
 	}
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-	rz_il_op_effect_stringify(ds->analysis_op.il_op, &sb);
+	rz_il_op_effect_stringify(ds->analysis_op.il_op, &sb, false);
 	ds_begin_comment(ds);
 	ds_comment(ds, true, "; %s", rz_strbuf_get(&sb));
 	rz_strbuf_fini(&sb);

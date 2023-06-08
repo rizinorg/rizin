@@ -219,6 +219,7 @@ static const RzCmdDescArg analysis_graph_refs_global_args[2];
 static const RzCmdDescArg analysis_graph_normal_args[2];
 static const RzCmdDescArg analysis_graph_line_args[2];
 static const RzCmdDescArg analysis_graph_xrefs_args[2];
+static const RzCmdDescArg analysis_graph_il_args[2];
 static const RzCmdDescArg analysis_graph_custom_args[2];
 static const RzCmdDescArg analysis_graph_custom_node_add_args[3];
 static const RzCmdDescArg analysis_graph_custom_node_remove_args[2];
@@ -289,6 +290,8 @@ static const RzCmdDescArg analyze_bytes_args[2];
 static const RzCmdDescArg analyze_n_ins_args[2];
 static const RzCmdDescArg analyze_n_ins_size_args[2];
 static const RzCmdDescArg analyze_n_ins_esil_args[2];
+static const RzCmdDescArg analyze_n_ins_il_args[2];
+static const RzCmdDescArg analyze_n_ins_il_pretty_args[2];
 static const RzCmdDescArg analyze_opcode_args[2];
 static const RzCmdDescArg analyze_cycles_args[2];
 static const RzCmdDescArg convert_mne_args[2];
@@ -4141,6 +4144,21 @@ static const RzCmdDescHelp analysis_graph_xrefs_help = {
 	.args = analysis_graph_xrefs_args,
 };
 
+static const RzCmdDescArg analysis_graph_il_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.default_value = "ascii",
+		.choices.choices_cb = rz_analysis_graph_format_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_graph_il_help = {
+	.summary = "RzIL graph of the instruction at the current offset.",
+	.args = analysis_graph_il_args,
+};
+
 static const RzCmdDescArg analysis_graph_custom_args[] = {
 	{
 		.name = "format",
@@ -5959,6 +5977,37 @@ static const RzCmdDescArg analyze_n_ins_esil_args[] = {
 static const RzCmdDescHelp analyze_n_ins_esil_help = {
 	.summary = "Print the esil of next N instructions",
 	.args = analyze_n_ins_esil_args,
+};
+
+static const RzCmdDescHelp aoi_help = {
+	.summary = "Print the RzIL of next N instructions",
+};
+static const RzCmdDescArg analyze_n_ins_il_args[] = {
+	{
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_il_help = {
+	.summary = "Print the RzIL of next N instructions",
+	.args = analyze_n_ins_il_args,
+};
+
+static const RzCmdDescArg analyze_n_ins_il_pretty_args[] = {
+	{
+		.name = "n_instructions",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_n_ins_il_pretty_help = {
+	.summary = "Pretty print the RzIL of next N instructions",
+	.args = analyze_n_ins_il_pretty_args,
 };
 
 static const RzCmdDescArg analyze_opcode_args[] = {
@@ -18971,6 +19020,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_graph_xrefs_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agx", rz_analysis_graph_xrefs_handler, &analysis_graph_xrefs_help);
 	rz_warn_if_fail(analysis_graph_xrefs_cd);
 
+	RzCmdDesc *analysis_graph_il_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agI", rz_analysis_graph_il_handler, &analysis_graph_il_help);
+	rz_warn_if_fail(analysis_graph_il_cd);
+
 	RzCmdDesc *analysis_graph_custom_cd = rz_cmd_desc_argv_new(core->rcmd, ag_cd, "agg", rz_analysis_graph_custom_handler, &analysis_graph_custom_help);
 	rz_warn_if_fail(analysis_graph_custom_cd);
 
@@ -19318,6 +19370,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analyze_n_ins_esil_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aoe", rz_analyze_n_ins_esil_handler, &analyze_n_ins_esil_help);
 	rz_warn_if_fail(analyze_n_ins_esil_cd);
+
+	RzCmdDesc *aoi_cd = rz_cmd_desc_group_new(core->rcmd, ao_cd, "aoi", rz_analyze_n_ins_il_handler, &analyze_n_ins_il_help, &aoi_help);
+	rz_warn_if_fail(aoi_cd);
+	RzCmdDesc *analyze_n_ins_il_pretty_cd = rz_cmd_desc_argv_new(core->rcmd, aoi_cd, "aoip", rz_analyze_n_ins_il_pretty_handler, &analyze_n_ins_il_pretty_help);
+	rz_warn_if_fail(analyze_n_ins_il_pretty_cd);
 
 	RzCmdDesc *analyze_opcode_cd = rz_cmd_desc_argv_new(core->rcmd, ao_cd, "aod", rz_analyze_opcode_handler, &analyze_opcode_help);
 	rz_warn_if_fail(analyze_opcode_cd);

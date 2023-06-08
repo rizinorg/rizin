@@ -1114,6 +1114,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_CHOICES
             default_value: "ascii"
             choices_cb: rz_analysis_graph_format_choices
+      - name: agI
+        summary: RzIL graph of the instruction at the current offset.
+        cname: analysis_graph_il
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            default_value: "ascii"
+            choices_cb: rz_analysis_graph_format_choices
       - name: agg
         summary: Custom graph
         cname: analysis_graph_custom
@@ -2206,6 +2214,23 @@ commands:
           - name: n_instructions
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+      - name: aoi
+        summary: Print the RzIL of next N instructions
+        subcommands:
+          - name: aoi
+            summary: Print the RzIL of next N instructions
+            cname: analyze_n_ins_il
+            args:
+              - name: n_instructions
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: aoip
+            summary: Pretty print the RzIL of next N instructions
+            cname: analyze_n_ins_il_pretty
+            args:
+              - name: n_instructions
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
       - name: aod
         summary: Describe opcode for asm.arch
         cname: analyze_opcode
