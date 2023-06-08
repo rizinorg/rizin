@@ -458,6 +458,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCor
 	case RZ_CORE_GRAPH_TYPE_NORMAL:
 		graph = rz_core_graph_normal(core, addr);
 		break;
+	case RZ_CORE_GRAPH_TYPE_IL:
+		graph = rz_core_graph_il(core, addr);
+		break;
 	case RZ_CORE_GRAPH_TYPE_DIFF:
 	default:
 		rz_warn_if_reached();
@@ -573,8 +576,10 @@ RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, R
 	if (!g) {
 		return false;
 	}
+	bool is_il = type == RZ_CORE_GRAPH_TYPE_IL;
 	core->graph->is_callgraph = type == RZ_CORE_GRAPH_TYPE_FUNCALL;
-	rz_core_graph_print_graph(core, g, format, true);
+	core->graph->is_il = is_il;
+	rz_core_graph_print_graph(core, g, format, !is_il);
 	rz_graph_free(g);
 	return true;
 }
@@ -718,4 +723,30 @@ RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphT
 	rz_core_graph_write_graph(core, graph, path);
 	rz_graph_free(graph);
 	return true;
+}
+
+/**
+ * \brief Get the graph of the function references from \p addr (UT64_MAX for all).
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+
+	RzAnalysisOp op;
+	RzGraph *graph = NULL;
+	ut64 old_offset = core->offset;
+	RzAnalysisOpMask flags = RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL;
+	if (addr != old_offset) {
+		rz_core_seek(core, addr, true);
+	}
+
+	rz_analysis_op_init(&op);
+	if (rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, flags) > 0) {
+		graph = rz_il_op_effect_graph(op.il_op, op.mnemonic);
+	}
+	rz_analysis_op_fini(&op);
+
+	if (addr != old_offset) {
+		rz_core_seek(core, old_offset, true);
+	}
+	return graph;
 }

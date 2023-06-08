@@ -245,7 +245,7 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 	if (il_op) {
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
-		rz_il_op_effect_stringify(il_op, &sb);
+		rz_il_op_effect_stringify(il_op, &sb, false);
 		printf("%s\n", rz_strbuf_get(&sb));
 		fflush(stdout); // to appear before validation report
 		rz_strbuf_fini(&sb);

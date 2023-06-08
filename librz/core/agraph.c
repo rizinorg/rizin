@@ -2878,7 +2878,7 @@ static void agraph_print_edges(RzAGraph *g) {
 			}
 
 			style.dot_style = DOT_STYLE_NORMAL;
-			if (many || parent_many) {
+			if (many || parent_many || g->is_il) {
 				style.color = LINE_UNCJMP;
 			} else {
 				switch (out_nth) {
@@ -3394,6 +3394,7 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 	if (g->title && *g->title) {
 		g->can->sy++;
 	}
+
 	agraph_print_edges(g);
 	agraph_print_nodes(g);
 	if (g->title && *g->title) {
@@ -3538,6 +3539,7 @@ static HtPPOptions nodes_opt = {
 
 static void agraph_init(RzAGraph *g) {
 	g->is_callgraph = false;
+	g->is_il = false;
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->show_node_titles = true;
@@ -3676,7 +3678,7 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 	res->offset = UT64_MAX;
 	res->shortcut_w = 0;
 	res->gnode = rz_graph_add_node(g->graph, res);
-	if (RZ_STR_ISNOTEMPTY(res->title)) {
+	if (RZ_STR_ISNOTEMPTY(res->title) && !g->is_il) {
 		ht_pp_update(g->nodes, res->title, res);
 		char *s, *estr, *b;
 		size_t len;
@@ -4107,7 +4109,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	g->can = can;
 	g->movspeed = rz_config_get_i(core->config, "graph.scroll");
 	g->show_node_titles = rz_config_get_i(core->config, "graph.ntitles");
-	g->show_node_body = rz_config_get_i(core->config, "graph.body");
+	g->show_node_body = rz_config_get_b(core->config, "graph.body");
 	g->on_curnode_change = (RzANodeCallback)seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = rz_config_get_i(core->config, "graph.edges");
