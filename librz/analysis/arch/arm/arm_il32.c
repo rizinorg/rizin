@@ -169,7 +169,7 @@ static RzILOpBitVector *read_reg_lane(arm_reg reg, ut32 lane, ut32 data_size) {
  * note: Those data_type which contains 2 type (F16.F64, F32.F16)
  * is out of the scope of this function
  */
-static ut32 arm_data_width(arm_vectordata_type vec_type) {
+static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 	switch (vec_type) {
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_U32:
@@ -197,7 +197,18 @@ static ut32 arm_data_width(arm_vectordata_type vec_type) {
 	}
 }
 
-static RzFloatFormat dt2fmt(arm_vectordata_type type, bool choose_src) {
+static inline RzFloatFormat dt2fmt(arm_vectordata_type type) {
+	switch (type) {
+	case ARM_VECTORDATA_F32:
+		return RZ_FLOAT_IEEE754_BIN_32;
+	case ARM_VECTORDATA_F64:
+		return RZ_FLOAT_IEEE754_BIN_64;
+	default:
+		return RZ_FLOAT_UNK;
+	}
+}
+
+static inline RzFloatFormat cvtdt2fmt(arm_vectordata_type type, bool choose_src) {
 	switch (type) {
 	case ARM_VECTORDATA_F16F64:
 		return choose_src ? RZ_FLOAT_IEEE754_BIN_64 : RZ_FLOAT_IEEE754_BIN_16;
@@ -226,8 +237,8 @@ static RzFloatFormat dt2fmt(arm_vectordata_type type, bool choose_src) {
 #define NEON_LANE(n)            insn->detail->arm.operands[n].neon_lane
 #define VVEC_SIZE(insn)         insn->detail->arm.vector_size
 #define VVEC_DT(insn)           insn->detail->arm.vector_data
-#define FROM_FMT(dt)            dt2fmt(dt, true)
-#define TO_FMT(dt)              dt2fmt(dt, false)
+#define FROM_FMT(dt)            cvtdt2fmt(dt, true)
+#define TO_FMT(dt)              cvtdt2fmt(dt, false)
 
 /**
  * IL to write the given capstone reg
@@ -3739,6 +3750,100 @@ static RzILOpEffect *vswp(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *m_val = REG_VAL(1);
 	return SEQ2(write_reg(REGID(0), m_val),
 		write_reg(REGID(1), d_val));
+}
+
+static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// TODO: vaddhn, vaddl, vaddw
+	// determine format of float to interpret
+	arm_vectordata_type dt = VVEC_DT(insn);
+	RzFloatFormat fmt = dt2fmt(dt);
+	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// VFP
+		return write_reg(REGID(0),
+			F2BV(FADD(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG_VAL(1)),
+				BV2F(fmt, REG_VAL(2)))));
+	}
+
+	ut32 elem_bits = DT_WIDTH(insn);
+	ut32 lanes = reg_bits(REGID(0)) / elem_bits;
+	if (reg_bits(REGID(0)) % elem_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < lanes; ++i) {
+		RzILOpBitVector *a = read_reg_lane(REGID(1), i, elem_bits);
+		RzILOpBitVector *b = read_reg_lane(REGID(2), i, elem_bits);
+
+		RzILOpBitVector *sum = NULL;
+		if (is_float_vec) {
+			sum = F2BV(FADD(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG_VAL(1)),
+				BV2F(fmt, REG_VAL(2))));
+		} else {
+			sum = ADD(REG_VAL(1), REG_VAL(2));
+		}
+
+		eff = SEQ2(eff, write_reg_lane(REGID(0), i, elem_bits, sum));
+	}
+
+	return eff;
+}
+
+static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// TODO: vsubl, vsubw, vsubhn
+	// determine format of float to interpret
+	arm_vectordata_type dt = VVEC_DT(insn);
+	RzFloatFormat fmt = dt2fmt(dt);
+	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// VFP
+		return write_reg(REGID(0),
+			F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG_VAL(1)),
+				BV2F(fmt, REG_VAL(2)))));
+	}
+
+	ut32 elem_bits = DT_WIDTH(insn);
+	ut32 lanes = reg_bits(REGID(0)) / elem_bits;
+	if (reg_bits(REGID(0)) % elem_bits != 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpEffect *eff = EMPTY();
+	for (int i = 0; i < lanes; ++i) {
+		RzILOpBitVector *a = read_reg_lane(REGID(1), i, elem_bits);
+		RzILOpBitVector *b = read_reg_lane(REGID(2), i, elem_bits);
+
+		RzILOpBitVector *sum = NULL;
+		if (is_float_vec) {
+			sum = F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG_VAL(1)),
+				BV2F(fmt, REG_VAL(2))));
+		} else {
+			sum = SUB(REG_VAL(1), REG_VAL(2));
+		}
+
+		eff = SEQ2(eff, write_reg_lane(REGID(0), i, elem_bits, sum));
+	}
+
+	return eff;
 }
 
 /**
