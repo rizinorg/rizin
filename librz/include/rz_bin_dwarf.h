@@ -661,6 +661,19 @@ enum DW_UT {
 	DW_UT_hi_user = 0xff,
 };
 
+/// The encodings for the line number header entry formats.
+///
+/// See Section 7.22, Table 7.27.
+enum DW_LNCT {
+	DW_LNCT_path = 0x1,
+	DW_LNCT_directory_index = 0x2,
+	DW_LNCT_timestamp = 0x3,
+	DW_LNCT_size = 0x4,
+	DW_LNCT_MD5 = 0x5,
+	DW_LNCT_lo_user = 0x2000,
+	DW_LNCT_hi_user = 0x3fff,
+};
+
 typedef struct {
 	ut32 total_length;
 	ut16 version;
@@ -745,6 +758,7 @@ typedef struct dwarf_attr_kind {
 		ut64 address;
 		RzBinDwarfBlock block;
 		ut64 uconstant;
+		ut128 uconstant16;
 		st64 sconstant;
 		ut8 flag;
 		ut64 reference;
@@ -852,9 +866,9 @@ typedef struct {
 } RzBinDwarfSMRegisters;
 
 typedef struct rz_bin_dwarf_line_file_entry_format_t {
-	ut64 content_type;
+	enum DW_LNCT content_type;
 	enum DW_FORM form;
-} RzBinDwarfLineFileEntryFormat;
+} RzBinDwarfFileEntryFormat;
 
 typedef struct rz_bin_dwarf_line_file_entry_t {
 	char *include_dir;
