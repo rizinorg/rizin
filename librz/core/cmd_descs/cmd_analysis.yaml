@@ -1023,8 +1023,6 @@ commands:
             comment: "json formatted disassembly"
           - text: "sdb"
             comment: "SDB key-value"
-          - text: "tiny"
-            comment: "Tiny ascii art"
           - text: "interactive"
             comment: "Interactive ascii art"
     subcommands:

@@ -3965,7 +3965,6 @@ static const RzCmdDescDetailEntry ag_Formats_detail_entries[] = {
 	{ .text = "json", .arg_str = NULL, .comment = "json" },
 	{ .text = "json_disasm", .arg_str = NULL, .comment = "json formatted disassembly" },
 	{ .text = "sdb", .arg_str = NULL, .comment = "SDB key-value" },
-	{ .text = "tiny", .arg_str = NULL, .comment = "Tiny ascii art" },
 	{ .text = "interactive", .arg_str = NULL, .comment = "Interactive ascii art" },
 	{ 0 },
 };

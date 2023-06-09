@@ -69,7 +69,6 @@ agi d
 agi g
 agi j
 agi k
-agi t
 EOF
 EXPECT=<<EOF
 .--------------.
@@ -341,10 +340,6 @@ agraph.nodes.sym.imp.strlen.w=0x14
 agraph.nodes.sym.imp.strlen.x=0x69
 agraph.nodes.sym.imp.strlen.y=0x7f
 agraph.w=0x11d
-
-
-() ()   () ()()()() () () () ()  ()
-()      () ()()       () ()    ()
 EOF
 RUN
 
@@ -360,7 +355,6 @@ aga gml
 aga json
 aga json_disasm
 aga sdb
-aga tiny
 EOF
 EXPECT=<<EOF
 .----------.
@@ -402,7 +396,6 @@ agraph.nodes.entry0.w=0xc
 agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
 agraph.w=0xc
-()
 EOF
 RUN
 
@@ -418,7 +411,6 @@ agA gml
 agA json
 agA json_disasm
 agA sdb
-agA tiny
 EOF
 EXPECT=<<EOF
 .----------.    .----------------------------.    .--------------------------.    .-----------------------------.   .--------------------------.    .---------------.   .-----------------------.   .-------------.   .-----------------------.   .-----------.   .------------------.    .------------------.    .------------------.    .------------------.    .----------------.    .----------------.    .-------------.
@@ -707,8 +699,6 @@ agraph.nodes.sym.register_tm_clones.w=0x1c
 agraph.nodes.sym.register_tm_clones.x=0x32
 agraph.nodes.sym.register_tm_clones.y=0xb4
 agraph.w=0x19d
-()()  ()  ()  ()  () () ()() ()() () () () () () ()
-           ()               ()()
 EOF
 RUN
 
@@ -723,7 +713,6 @@ agc gml
 agc json
 agc json_disasm
 agc sdb
-agc tiny
 EOF
 EXPECT=<<EOF
         .----------.
@@ -787,8 +776,6 @@ agraph.nodes.reloc.__libc_start_main.w=0x1d
 agraph.nodes.reloc.__libc_start_main.x=0xb
 agraph.nodes.reloc.__libc_start_main.y=0x7
 agraph.w=0x1d
- ()
-()
 EOF
 RUN
 
@@ -803,7 +790,6 @@ agf gml
 agf json
 agf json_disasm
 agf sdb
-agf tiny
 EOF
 EXPECT=<<EOF
 .-----------------------------------------------------------------------.
@@ -890,7 +876,6 @@ agraph.nodes.0x6a0.w=0x49
 agraph.nodes.0x6a0.x=0
 agraph.nodes.0x6a0.y=0xb
 agraph.w=0x49
-()
 EOF
 RUN
 
@@ -905,7 +890,6 @@ agr gml
 agr json
 agr json_disasm
 agr sdb
-agr tiny
 EOF
 EXPECT=<<EOF
 .----------.
@@ -944,7 +928,6 @@ agraph.nodes.entry0.w=0xc
 agraph.nodes.entry0.x=0x13
 agraph.nodes.entry0.y=0
 agraph.w=0xc
-()
 EOF
 RUN
 
@@ -960,7 +943,6 @@ agx gml
 agx json
 agx json_disasm
 agx sdb
-agx tiny
 EOF
 EXPECT=<<EOF
 .--------------.    .--------------.
@@ -1043,10 +1025,6 @@ agraph.nodes.sym.imp.strlen.w=0x14
 agraph.nodes.sym.imp.strlen.x=0xf
 agraph.nodes.sym.imp.strlen.y=0x8
 agraph.w=0x24
-
-
-() ()
- ()
 EOF
 RUN
 
@@ -1062,7 +1040,6 @@ agl gml
 agl json
 agl json_disasm
 agl sdb
-agl tiny
 EOF
 EXPECT=<<EOF
      .-----------.
@@ -1159,9 +1136,6 @@ agraph.nodes.0x844.w=0xd
 agraph.nodes.0x844.x=0x13
 agraph.nodes.0x844.y=0x10
 agraph.w=0x12
- ()
-()
- ()
 EOF
 RUN
 
@@ -1177,7 +1151,6 @@ ags gml
 ags json
 ags json_disasm
 ags sdb
-ags tiny
 EOF
 EXPECT=<<EOF
      .-----------.
@@ -1274,8 +1247,5 @@ agraph.nodes.0x844.w=0xd
 agraph.nodes.0x844.x=0x13
 agraph.nodes.0x844.y=0x10
 agraph.w=0x12
- ()
-()
- ()
 EOF
 RUN
