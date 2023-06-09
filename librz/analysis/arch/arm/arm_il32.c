@@ -3846,6 +3846,29 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 	return eff;
 }
 
+static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 3) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	// determine format of float to interpret
+	arm_vectordata_type dt = VVEC_DT(insn);
+	RzFloatFormat fmt = dt2fmt(dt);
+	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
+
+	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+		// VFP fmul
+		return write_reg(REGID(0),
+			F2BV(FMUL(RZ_FLOAT_RMODE_RNE,
+				BV2F(fmt, REG_VAL(1)),
+				BV2F(fmt, REG_VAL(2)))));
+	}
+
+	// not implemented
+	return EMPTY();
+}
+
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
@@ -4202,6 +4225,12 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vunzip(insn, is_thumb);
 	case ARM_INS_VSWP:
 		return vswp(insn, is_thumb);
+	case ARM_INS_VADD:
+		return vadd(insn, is_thumb);
+	case ARM_INS_VSUB:
+		return vsub(insn, is_thumb);
+	case ARM_INS_VMUL:
+		return vmul(insn, is_thumb);
 	default:
 		return NULL;
 	}
