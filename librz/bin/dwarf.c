@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2012-2018 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_buf.h>
 #include <errno.h>
 #include <rz_bin.h>
 #include <rz_bin_dwarf.h>
@@ -474,9 +475,9 @@ static void line_header_init(RzBinDwarfLineHeader *hdr) {
 		return;
 	}
 	memset(hdr, 0, sizeof(*hdr));
-	rz_vector_init(&hdr->file_name_entry_formats, sizeof(RzBinDwarfLineFileEntryFormat), NULL, NULL);
+	rz_vector_init(&hdr->file_name_entry_formats, sizeof(RzBinDwarfFileEntryFormat), NULL, NULL);
 	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfLineFileEntry), (RzVectorFree)rz_bin_dwarf_line_file_entry_fini, NULL);
-	rz_vector_init(&hdr->directory_entry_formats, sizeof(RzBinDwarfLineFileEntryFormat), NULL, NULL);
+	rz_vector_init(&hdr->directory_entry_formats, sizeof(RzBinDwarfFileEntryFormat), NULL, NULL);
 	rz_pvector_init(&hdr->directories, free);
 }
 
@@ -490,21 +491,85 @@ static void line_header_fini(RzBinDwarfLineHeader *hdr) {
 	rz_pvector_fini(&hdr->directories);
 }
 
+#define RET_VAL_IF_FAIL(x, val) \
+	do { \
+		if (!(x)) { \
+			return (val); \
+		} \
+	} while (0)
+
+#define RET_FALSE_IF_FAIL(x) RET_VAL_IF_FAIL(x, false)
+#define RET_NULL_IF_FAIL(x)  RET_VAL_IF_FAIL(x, NULL)
+
+static bool file_entry_format_parse(RzBinDwarfLineHeader *hdr, RzBuffer *buffer) {
+	ut8 count = 0;
+	RET_FALSE_IF_FAIL(rz_buf_read8(buffer, &count));
+	rz_vector_reserve(&hdr->file_name_entry_formats, count);
+	ut32 path_count = 0;
+	for (ut8 i = 0; i < count; ++i) {
+		ut64 content_type = 0;
+		ut64 form = 0;
+		RET_FALSE_IF_FAIL(rz_buf_uleb128(buffer, (unsigned long long int *)&content_type));
+		RET_FALSE_IF_FAIL(rz_buf_uleb128(buffer, &form));
+		if (form > UT16_MAX) {
+			RZ_LOG_ERROR("invalid file entry format form %" PFMT64x "\n", form);
+			return false;
+		}
+
+		if (content_type == DW_LNCT_path) {
+			path_count += 1;
+		}
+
+		RzBinDwarfFileEntryFormat format = {
+			.content_type = RZ_MIN(UT16_MAX, content_type),
+			.form = form,
+		};
+		rz_vector_push(&hdr->file_name_entry_formats, &format);
+	}
+	if (path_count != 1) {
+		RZ_LOG_ERROR("Missing file entry format path");
+		return false;
+	}
+	return true;
+}
+
+static char *parse_directory_v5(RzBinDwarfLineHeader *hdr, RzBuffer *buffer) {
+	char *path_name = NULL;
+	void *it;
+	rz_vector_foreach(&hdr->file_name_entry_formats, it) {
+		RzBinDwarfFileEntryFormat *format = it;
+		//		parse_attr_value(buffer, format->form);
+		//		if (format->content_type == DW_LNCT_path) {
+		//			path_name = value;
+		//		}
+	}
+	return path_name;
+}
+
 /**
  * 6.2.4 The Line Number Program Header: https://dwarfstd.org/doc/DWARF5.pdf#page=172
  */
 static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end, RzBinDwarfLineHeader *hdr) {
-	while (buf + 1 < buf_end) {
-		size_t maxlen = RZ_MIN((size_t)(buf_end - buf) - 1, 0xfff);
-		size_t len = rz_str_nlen((const char *)buf, maxlen);
-		char *str = rz_str_ndup((const char *)buf, len);
-		if (len < 1 || len >= 0xfff || !str) {
-			buf += 1;
-			free(str);
-			break;
+	if (hdr->version <= 4) {
+		while (buf + 1 < buf_end) {
+			size_t maxlen = RZ_MIN((size_t)(buf_end - buf) - 1, 0xfff);
+			size_t len = rz_str_nlen((const char *)buf, maxlen);
+			char *str = rz_str_ndup((const char *)buf, len);
+			if (len < 1 || len >= 0xfff || !str) {
+				buf += 1;
+				free(str);
+				break;
+			}
+			rz_pvector_push(&hdr->directories, str);
+			buf += len + 1;
 		}
-		rz_pvector_push(&hdr->directories, str);
-		buf += len + 1;
+	} else {
+		RzBuffer *buffer = rz_buf_new_with_bytes(buf, buf_end - buf);
+		file_entry_format_parse(hdr, buffer);
+		ut64 count = 0;
+		RET_NULL_IF_FAIL(rz_buf_uleb128(buffer, &count));
+		for (ut64 i = 0; i < count; ++i) {
+		}
 	}
 
 	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfLineFileEntry), NULL, NULL);
@@ -1438,17 +1503,13 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RzBinDwarf
  * @param debug_str_len Length of the string section
  * @return const ut8* Updated buffer
  */
-static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
+static const ut8 *parse_attr_value(RzBuffer *buffer,
 	RzBinDwarfAttrDef *def, RzBinDwarfAttrValue *value,
 	const RzBinDwarfCompUnitHdr *hdr,
 	const ut8 *debug_str, size_t debug_str_len,
 	bool big_endian) {
 
-	const ut8 *buf = obuf;
-	const ut8 *buf_end = obuf + obuf_len;
-	size_t j;
-
-	rz_return_val_if_fail(def && value && hdr && obuf && obuf_len >= 1, NULL);
+	rz_return_val_if_fail(def && value && hdr && buffer, NULL);
 
 	value->attr_form = def->attr_form;
 	value->attr_name = def->attr_name;
@@ -1462,16 +1523,16 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_ADDRESS;
 		switch (hdr->address_size) {
 		case 1:
-			value->address = READ8(buf);
+			RET_FALSE_IF_FAIL(rz_buf_read8(buffer, (ut8 *)&value->address));
 			break;
 		case 2:
-			value->address = READ16(buf);
+			RET_FALSE_IF_FAIL(rz_buf_read_ble16(buffer, (ut16 *)&value->address, big_endian));
 			break;
 		case 4:
-			value->address = READ32(buf);
+			RET_FALSE_IF_FAIL(rz_buf_read_ble32(buffer, (ut32 *)&value->address, big_endian));
 			break;
 		case 8:
-			value->address = READ64(buf);
+			RET_FALSE_IF_FAIL(rz_buf_read_ble64(buffer, &value->address, big_endian));
 			break;
 		default:
 			RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
@@ -1501,11 +1562,11 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_sdata:
 		value->kind = DW_AT_KIND_CONSTANT;
-		buf = rz_leb128(buf, buf_end - buf, &value->sconstant);
+		RET_NULL_IF_FAIL(rz_buf_sleb128(buffer, &value->sconstant));
 		break;
 	case DW_FORM_udata:
 		value->kind = DW_AT_KIND_CONSTANT;
-		buf = rz_uleb128(buf, buf_end - buf, &value->uconstant, NULL);
+		RET_NULL_IF_FAIL(rz_buf_uleb128(buffer, &value->uconstant));
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
@@ -1717,14 +1778,15 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
 	ut64 line_info_offset = UT64_MAX;
 	void **it;
 	RzBinDwarfAttrValue *attribute = die->attr_values;
+	RzBuffer *buffer = rz_buf_new_with_bytes(buf, buf_end - buf);
 
 	rz_pvector_foreach (&abbrev->defs, it) {
-		if (!(die->count < die->capacity && buf_end - buf > 1)) {
+		if (!(die->count < die->capacity)) {
 			break;
 		}
 		RzBinDwarfAttrDef *def = *it;
 		memset(attribute, 0, sizeof(RzBinDwarfAttrValue));
-		buf = parse_attr_value(buf, buf_end - buf, def, attribute, hdr, debug_str, debug_str_len, big_endian);
+		buf = parse_attr_value(buffer, def, attribute, hdr, debug_str, debug_str_len, big_endian);
 
 		if (attribute->attr_name == DW_AT_comp_dir && (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string) && attribute->string.content) {
 			comp_dir = attribute->string.content;
@@ -1750,7 +1812,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfDebugI
 			}
 		}
 	}
-
+	rz_buf_free(buffer);
 	return buf;
 }
 
