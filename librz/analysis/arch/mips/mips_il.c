@@ -211,7 +211,7 @@ static char *cpu_reg_enum_to_name_map[] = {
 #define REG_NAME(regenum)           cpu_reg_enum_to_name_map[regenum]
 #define IL_REG_OPND(opndidx)        VARG(REG_OPND(opndidx))
 #define IL_MEM_OPND_BASE(opndidx)   VARG(MEM_OPND_BASE(opndidx))
-#define IL_MEM_OPND_OFFSET(opndidx) S32(SIGN_EXTEND(MEM_OPND_OFFSET(opndidx), 16, GPRLEN))
+#define IL_MEM_OPND_OFFSET(opndidx) SN(GPRLEN, SIGN_EXTEND(MEM_OPND_OFFSET(opndidx), 16, GPRLEN))
 
 // TODO: FIGURE OUT ROUNDING MODE
 #define RMODE RZ_FLOAT_RMODE_RNE
@@ -234,7 +234,7 @@ static char *cpu_reg_enum_to_name_map[] = {
 /* #define IL_CHECK_CARRY(x, y, res)    IS_ZERO(OR(AND(MSB(x), MSB(y)), AND(OR(MSB(x), MSB(y)), INV(MSB(res))))) */
 
 // This is how MIPS ISA defines it [REG_BIT(n) == REG_BIT(n-1)]
-#define IL_BITN(x, n)            SHIFTR0(LOGAND(x, U64((ut64)1 << (n - 1))), U8(n - 1))
+#define IL_BITN(x, n)            SHIFTR0(LOGAND(x, UN(GPRLEN, (ut64)1 << (n - 1))), UN(GPRLEN, n - 1))
 #define IL_CHECK_OVERFLOW(r, sz) EQ(IL_BITN(r, sz), IL_BITN(r, sz - 1))
 
 IL_LIFTER(ABSQ_S) {
@@ -261,18 +261,14 @@ IL_LIFTER(ADD) {
 	// do we need to explicitly cast floats to 32 bit?
 	if (float_op) {
 		Float *fsum = FADD(RMODE, rs, rt);
-
-		Effect *set_rd = SETG(rd, fsum);
-		return set_rd;
+		return SETG(rd, fsum);
 	} else {
 		// sign extend to 32 or 64 bit based on (analyisis->bits)
 		BitVector *sum = SIGNED(GPRLEN, ADD(rs, rt));
 		// check 32 bit overflow
 		Bool *overflow = IL_CHECK_OVERFLOW(DUP(sum), 32);
-
 		Effect *set_rd = SETG(rd, sum);
-		Effect *add_op = BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rd);
-		return add_op;
+		return BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rd);
 	}
 }
 
@@ -578,7 +574,7 @@ IL_LIFTER(BAL) {
 	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// store link in r31 and jump
-	Effect *link_op = SETG(REG_R(31), U32(pc + 8));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
 	Effect *jump_op = JMP(jump_target);
 
 	return SEQ2(link_op, jump_op);
@@ -595,7 +591,7 @@ IL_LIFTER(BALC) {
 	offset = SIGN_EXTEND(offset, 28, 32);
 	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 	Effect *jump_op = JMP(jump_target);
 
 	return SEQ2(link_op, jump_op);
@@ -663,7 +659,7 @@ IL_LIFTER(BC1EQZ) {
 
 	// create branch condition
 	BitVector *ft_bv = F2BV(ft);
-	BitVector *ft_bit0 = LOGAND(ft_bv, U32(1));
+	BitVector *ft_bit0 = fp64 ? LOGAND(ft_bv, U64(1)) : LOGAND(ft_bv, U32(1));
 	Bool *cond = IS_ZERO(ft_bit0);
 
 	// make branch
@@ -717,7 +713,7 @@ IL_LIFTER(BC1NEZ) {
 
 	// make condition for branch
 	BitVector *ft_bv = F2BV(ft);
-	BitVector *ft_bit0 = LOGAND(ft_bv, U32(1));
+	BitVector *ft_bit0 = fp64 ? LOGAND(ft_bv, U64(1)) : LOGAND(ft_bv, U32(1));
 	Bool *cond = INV(IS_ZERO(ft_bit0));
 
 	// branch on condn
@@ -933,7 +929,7 @@ IL_LIFTER(BEQZALC) {
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
 	BitVector *jump_target = UN(GPRLEN, (pc + 4) + offset);
 
-	Effect *link_op = SETG(REG_R(31), U32(pc + 4));
+	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
 
 	Bool *cond = IS_ZERO(rt);
 	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
@@ -2030,64 +2026,209 @@ IL_LIFTER(DCLZ) {
 }
 
 /**
- * Doubleword Divide Word (Signed)
+ * Doubleword Divide (Signed)
  * Format: DDIV rs, rt
+ *         DDIV rd, rs, rt
  * Description: (HI, LO) <- GPR[rs] / GPR[rt]
+ *              GPR[rd] <- (divide.signed(GPR[rs], GPR[rt]))
  * Exceptions: None
  * */
 IL_LIFTER(DDIV) {
-	Pure *rs = IL_REG_OPND(0);
-	Pure *rt = IL_REG_OPND(1);
+	if (OPND_COUNT() == 2) {
+		Pure *rs = IL_REG_OPND(0);
+		Pure *rt = IL_REG_OPND(1);
 
-	BitVector *quotient = SDIV(DUP(rs), DUP(rt));
-	BitVector *remainder = SMOD(rs, rt);
+		BitVector *quotient = SDIV(DUP(rs), DUP(rt));
+		BitVector *remainder = SMOD(rs, rt);
 
-	Effect *set_lo = SETG(REG_LO(), quotient);
-	Effect *set_hi = SETG(REG_HI(), remainder);
-	return SEQ2(set_lo, set_hi);
+		Effect *set_lo = SETG(REG_LO(), quotient);
+		Effect *set_hi = SETG(REG_HI(), remainder);
+		return SEQ2(set_lo, set_hi);
+	} else {
+		char *rd = REG_OPND(0);
+		Pure *rs = IL_REG_OPND(1);
+		Pure *rt = IL_REG_OPND(2);
+		if (float_op) {
+			return SETG(rd, FDIV(RMODE, rs, rt));
+		} else {
+			return SETG(rd, SDIV(rs, rt));
+		}
+	}
 }
 
 /**
- * Doubleword Divide Word (Unsigned)
+ * Doubleword Divide (Unsigned)
  * Format: DDIVU rs, rt
+ *         DDIVU rd, rs, rt
  * Description: (HI, LO) <- GPR[rs] / GPR[rt]
+ *              GPR[rd] <- (divide.usigned(GPR[rs], GPR[rt]))
  * Exceptions: None
  * */
 IL_LIFTER(DDIVU) {
-	Pure *rs = IL_REG_OPND(0);
-	Pure *rt = IL_REG_OPND(1);
+	// NOTE: ISA divide operations are suspicuous
+	if (OPND_COUNT() == 2) {
+		Pure *rs = IL_REG_OPND(0);
+		Pure *rt = IL_REG_OPND(1);
 
-	BitVector *quotient = DIV(DUP(rs), DUP(rt));
-	BitVector *remainder = MOD(rs, rt);
+		BitVector *quotient = DIV(DUP(rs), DUP(rt));
+		BitVector *remainder = MOD(rs, rt);
 
-	Effect *set_lo = SETG(REG_LO(), quotient);
-	Effect *set_hi = SETG(REG_HI(), remainder);
-	return SEQ2(set_lo, set_hi);
+		Effect *set_lo = SETG(REG_LO(), quotient);
+		Effect *set_hi = SETG(REG_HI(), remainder);
+		return SEQ2(set_lo, set_hi);
+	} else {
+		char *rd = REG_OPND(0);
+		Pure *rs = IL_REG_OPND(1);
+		Pure *rt = IL_REG_OPND(2);
+
+		BitVector *quotient = DIV(rs, rt);
+
+		Effect *set_rd = SETG(rd, quotient);
+		return set_rd;
+	}
 }
 
 IL_LIFTER(DERET) {
 	return NULL;
 }
+
+/**
+ * Doubleword Extract bit Field
+ * Format: DEXT rt, rs, pos, size
+ * Description: GPR[rt] <- ExtractField(GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DEXT) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
+	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1) << pos;
+	BitVector *bitfield = SHIFTR0(LOGAND(rs, U64(mask)), U8(pos));
+
+	return SETG(rt, bitfield);
 }
+
+/**
+ * Doubleword Extract bit Field Middle
+ * Format: DEXTM rt, rs, pos, size
+ * Description: GPR[rt] <- ExtractField(GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DEXTM) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
+	ut8 size = IMM_OPND(3) & 0x1F + 32; // max value = 64 (5 bits + 32 imm)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1) << pos;
+	BitVector *bitfield = SHIFTR0(LOGAND(rs, U64(mask)), U8(pos));
+
+	return SETG(rt, bitfield);
 }
+
+/**
+ * Doubleword Extract bit Field Upper
+ * Format: DEXTU rt, rs, pos, size
+ * Description: GPR[rt] <- ExtractField(GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DEXTU) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F + 32; // max value = 64 (5 bits + 32 imm)
+	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1) << pos;
+	BitVector *bitfield = SHIFTR0(LOGAND(rs, U64(mask)), U8(pos));
+
+	return SETG(rt, bitfield);
 }
+
 IL_LIFTER(DI) {
 	return NULL;
 }
+
+/**
+ * Doubleword Insert bit Field
+ * Format: DINS rt, rs, pos, size
+ * Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DINS) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
+	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1);
+
+	// invert mask and take logical and to remove bitfield
+	ut64 rt_mask = ~(mask << pos);
+	BitVector *rt_bitfield_removed = LOGAND(VARG(rt), U64(rt_mask));
+
+	// create new bitfield from rs and insert it into rt
+	BitVector *rs_as_bitfield = SHIFTL0(LOGAND(rs, U64(mask)), U8(pos));
+	BitVector *rt_inserted_rs = LOGOR(rt_bitfield_removed, rs_as_bitfield);
+
+	return SETG(rt, rt_inserted_rs);
 }
+
+/**
+ * Doubleword Insert bit Field Middle
+ * Format: DINSM rt, rs, pos, size
+ * Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DINSM) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
+	ut8 size = IMM_OPND(3) & 0x1F + 32; // max value = 64 (5 bits + 32 imm)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1);
+
+	// invert mask and take logical and to remove bitfield
+	ut64 rt_mask = ~(mask << pos);
+	BitVector *rt_bitfield_removed = LOGAND(VARG(rt), U64(rt_mask));
+
+	// create new bitfield from rs and insert it into rt
+	BitVector *rs_as_bitfield = SHIFTL0(LOGAND(rs, U64(mask)), U8(pos));
+	BitVector *rt_inserted_rs = LOGOR(rt_bitfield_removed, rs_as_bitfield);
+
+	return SETG(rt, rt_inserted_rs);
 }
+
+/**
+ * Doubleword Insert bit Field Upper
+ * Format: DINSM rt, rs, pos, size
+ * Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DINSU) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F + 32; // max value = 64 (5 bits + 32 imm)
+	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1);
+
+	// invert mask and take logical and to remove bitfield
+	ut64 rt_mask = ~(mask << pos);
+	BitVector *rt_bitfield_removed = LOGAND(VARG(rt), U64(rt_mask));
+
+	// create new bitfield from rs and insert it into rt
+	BitVector *rs_as_bitfield = SHIFTL0(LOGAND(rs, U64(mask)), U8(pos));
+	BitVector *rt_inserted_rs = LOGOR(rt_bitfield_removed, rs_as_bitfield);
+
+	return SETG(rt, rt_inserted_rs);
 }
 
 /**
@@ -2110,13 +2251,14 @@ IL_LIFTER(DIV) {
 		Effect *set_hi = SETG(REG_HI(), remainder);
 		return SEQ2(set_lo, set_hi);
 	} else {
+		char *rd = REG_OPND(0);
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
-
-		Pure *quotient = SDIV(rs, rt);
-
-		Effect *set_lo = SETG(REG_LO(), quotient);
-		return set_lo;
+		if (float_op) {
+			return SETG(rd, FDIV(RMODE, rs, rt));
+		} else {
+			return SETG(rd, SDIV(rs, rt));
+		}
 	}
 }
 
@@ -2170,12 +2312,37 @@ IL_LIFTER(DMFC1) {
 IL_LIFTER(DMFC2) {
 	return NULL;
 }
+
+/**
+ * Doubleword Modulo (Signed)
+ * Format: DMOD rd, rs, rt
+ * Description: GPR[rd] <- (modulo.signed(GPR[rs], GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DMOD) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *remainder = SMOD(rs, rt);
+	return SETG(rd, remainder);
 }
+
+/**
+ * Doubleword Modulo (Unigned)
+ * Format: DMODU rd, rs, rt
+ * Description: GPR[rd] <- (modulo.usigned(GPR[rs], GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DMODU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *remainder = MOD(rs, rt);
+	return SETG(rd, remainder);
 }
+
 IL_LIFTER(DMTC0) {
 	return NULL;
 }
@@ -2194,15 +2361,55 @@ IL_LIFTER(DMUHU) {
 IL_LIFTER(DMUL) {
 	return NULL;
 }
+
+/**
+ * Doubleword Multiply
+ * Format: DMULT rs, rt
+ * Description: (LO, HI) <- GPR[rs] x GPR[rt]
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DMULT) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	// extend to 128 bit values
+	BitVector *rs128 = SIGNED(128, rs);
+	BitVector *rt128 = SIGNED(128, rt);
+
+	// multiply two 128 bit values
+	BitVector *prod = MUL(rs128, rt128);
+	BitVector *prod_lo = CAST(64, IL_FALSE, DUP(prod));
+	BitVector *prod_hi = CAST(64, IL_FALSE, SHIFTR0(prod, U8(64)));
+
+	return SEQ2(SETG(REG_LO(), prod_lo), SETG(REG_LO(), prod_hi));
 }
+
+/**
+ * Doubleword Multiply Unsigned
+ * Format: DMULTU rs, rt
+ * Description: (LO, HI) <- GPR[rs] x GPR[rt]
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DMULTU) {
-	return NULL;
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	// extend to 128 bit values
+	BitVector *rs128 = UNSIGNED(128, rs);
+	BitVector *rt128 = UNSIGNED(128, rt);
+
+	// multiply two 128 bit values
+	BitVector *prod = MUL(rs128, rt128);
+	BitVector *prod_lo = CAST(64, IL_FALSE, DUP(prod));
+	BitVector *prod_hi = CAST(64, IL_FALSE, SHIFTR0(prod, U8(64)));
+
+	return SEQ2(SETG(REG_LO(), prod_lo), SETG(REG_LO(), prod_hi));
 }
+
 IL_LIFTER(DMULU) {
 	return NULL;
 }
+
 IL_LIFTER(DOTP_S) {
 	return NULL;
 }
@@ -2266,54 +2473,299 @@ IL_LIFTER(DPSX) {
 IL_LIFTER(DPS) {
 	return NULL;
 }
+
+/**
+ * Doubleword Rotate Right
+ * Format: ROTR rd, rt, sa
+ * Description: GPR[rd] < GPR[rt] x(right) sa
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DROTR) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = UN(5, IMM_OPND(2));
+
+	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(sa)));
+	BitVector *right = SHIFTR0(rt, sa);
+	BitVector *rotr = LOGOR(left, right);
+
+	return SETG(rd, rotr);
 }
+
+/**
+ * Doubleword Rotate Right Plus 32
+ * Format: DROTR32 rd, rt, sa
+ * Description: GPR[rd] < GPR[rt] x(right) sa
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DROTR32) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = UN(6, (IMM_OPND(2) & 0x1F) + 32);
+
+	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(sa)));
+	BitVector *right = SHIFTR0(rt, sa);
+	BitVector *rotr = LOGOR(left, right);
+
+	return SETG(rd, rotr);
 }
+
+/**
+ * Doubleword Rotate Right Variable
+ * Format: DROTRV rd, rt, rs
+ * Description: GPR[rd] < GPR[rt] x(right) sa
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(DROTRV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = CAST(6, IL_FALSE, IL_REG_OPND(2));
+
+	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(rs)));
+	BitVector *right = SHIFTR0(rt, rs);
+	BitVector *rotr = LOGOR(left, right);
+
+	return SETG(rd, rotr);
 }
+
+/**
+ * Doubleword Swap Bytes within Halfwords
+ * Format: DSBH rd, rt
+ * Description: GPR[rd] <- SwapBytesWithinHalfwords(GPR[rt])
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DSBH) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *byte0 = LOGAND(DUP(rt), U64(0xFF));
+	BitVector *byte1 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFUL << 8 * 1)), U8(8 * 1));
+	BitVector *byte2 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFUL << 8 * 2)), U8(8 * 2));
+	BitVector *byte3 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFUL << 8 * 3)), U8(8 * 3));
+	BitVector *byte4 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFUL << 8 * 4)), U8(8 * 4));
+	BitVector *byte5 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFUL << 8 * 5)), U8(8 * 5));
+	BitVector *byte6 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFUL << 8 * 6)), U8(8 * 6));
+	BitVector *byte7 = SHIFTR0(LOGAND(rt, U64(0xFFUL << 8 * 7)), U8(8 * 7));
+
+	// hword0 = byte0 | byte1 <-- swap here
+	BitVector *hword0 = LOGOR(SHIFTL0(byte0, U8(8)), byte1);
+	// hword1 = byte2 | byte3 <-- swap here
+	BitVector *hword1 = LOGOR(SHIFTL0(byte2, U8(8)), byte3);
+	// hword2 = byte4 | byte5 <-- swap here
+	BitVector *hword2 = LOGOR(SHIFTL0(byte4, U8(8)), byte5);
+	// hword3 = byte6 | byte7 <-- swap here
+	BitVector *hword3 = LOGOR(SHIFTL0(byte6, U8(8)), byte7);
+
+	// word0 = hword1 | hword0
+	BitVector *word0 = LOGOR(SHIFTL0(hword1, U8(16)), hword0);
+	// word1 = hword3 | hword2
+	BitVector *word1 = LOGOR(SHIFTL0(hword3, U8(16)), hword2);
+
+	// dword = word1 | word0
+	BitVector *dword = LOGOR(word1, word0);
+
+	return SETG(rd, dword);
 }
+
+/**
+ * Doubleword Swap Halfwords within Doublewords
+ * Format: DSHD rd, rt
+ * Description: GPR[rd] <- SwapHalfwordsWithinDoublewords(GPR[rt])
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DSHD) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+
+	BitVector *hword0 = LOGAND(DUP(rt), U64(0xFFFFUL));
+	BitVector *hword1 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFFFUL << 16 * 1)), U8(16 * 1));
+	BitVector *hword2 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFFFUL << 16 * 2)), U8(16 * 2));
+	BitVector *hword3 = SHIFTR0(LOGAND(DUP(rt), U64(0xFFFFUL << 16 * 3)), U8(16 * 3));
+
+	// word0 = hword0 | hword1 <-- swap here
+	BitVector *word0 = LOGOR(SHIFTL0(hword0, U8(16)), hword1);
+	// word1 = hword2 | hword3 <-- swap here
+	BitVector *word1 = LOGOR(SHIFTL0(hword2, U8(16)), hword3);
+
+	// dword = word0 | word1 <-- swap here
+	BitVector *dword = LOGOR(word0, word1);
+
+	return SETG(rd, dword);
 }
+
+/**
+ * Doubleword shift word Left Logical
+ * Format: DSLL rd, rt, sa
+ * Description: GPR[rd] <- GPR[rt] << sa
+ * Exceptions: None
+ * */
 IL_LIFTER(DSLL) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = UN(5, IMM_OPND(2));
+
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
+/**
+ * Doubleword shift word Left Logical (plus) 32
+ * Format: DSLL32 rd, rt, sa
+ * Description: GPR[rd] <- GPR[rt] << sa
+ * Exceptions: None
+ * */
 IL_LIFTER(DSLL32) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = UN(6, (IMM_OPND(2) & 0x1F) + 32);
+
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
+/**
+ * Doubleword Shift word Left Logical Variable
+ * Format: DSLLV rd, rt, rs
+ * Description: GPR[rd] <- GPR[rt] << GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(DSLLV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(2);
+
+	BitVector *sa = LOGAND(rs, UN(GPRLEN, 0x3F));
+	BitVector *shifted_rt = SHIFTL0(rt, sa);
+	Effect *set_rd = SETG(rd, shifted_rt);
+	return set_rd;
 }
+
+/**
+ * Doubleword Shift Right Arithmetic
+ * Format: DSRA rd, rt, sa
+ * Description: GPR[rd] <- (GPR[rt])^s || GPR[rs]
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DSRA) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	ut8 sa_val = IMM_OPND(2) & 0x1F;
+
+	BitVector *sa = UN(5, sa_val);
+	return SETG(rd, SHIFTRA(rt, sa));
 }
+
+/**
+ * Doubleword Shift Right Arithmetic (plus) 32
+ * Format: DSRA32 rd, rt, sa
+ * Description: GPR[rd] <- (GPR[rt])^s || GPR[rs]
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DSRA32) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	ut8 sa_val = (IMM_OPND(2) & 0x1F) + 32;
+
+	BitVector *sa = UN(6, sa_val);
+	return SETG(rd, SHIFTRA(rt, sa));
 }
+
+/**
+ * Shift word Right Arithmetic Variable
+ * Format: DSRAV rd, rt, rs
+ * Description: GPR[rd] <- (GPR[rt])^s || GPR[rs]
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DSRAV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(2);
+
+	BitVector *sa = LOGAND(rs, U64(0x3F));
+	return SETG(rd, SHIFTRA(rt, sa));
 }
+
+/**
+ * Doubleword Shift word Right Logical
+ * Format: SRL rd, rt, sa
+ * Description: GPR[rd] <- GPR[rt] >> sa
+ * Exceptions: None
+ * */
 IL_LIFTER(DSRL) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = UN(5, IMM_OPND(2));
+
+	BitVector *shifted_rt = SHIFTR0(rt, sa);
+	return SETG(rd, shifted_rt);
 }
+
+/**
+ * Doubleword Shift word Right Logical (plus) 32
+ * Format: DSRL32 rd, rt, sa
+ * Description: GPR[rd] <- GPR[rt] >> sa
+ * Exceptions: None
+ * */
 IL_LIFTER(DSRL32) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	BitVector *sa = UN(6, (IMM_OPND(2) & 0x1F) + 32);
+
+	BitVector *shifted_rt = SHIFTR0(rt, sa);
+	return SETG(rd, shifted_rt);
 }
+
+/**
+ * Doubleword Shift word Right Logical Variable
+ * Format: DSRLV rd, rt, rs
+ * Description: GPR[rd] <- GPR[rt] >> GPR[rs]
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(DSRLV) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rt = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(2);
+
+	BitVector *sa = LOGAND(rs, U64(0x3F));
+	BitVector *shifted_rt = SHIFTR0(rt, sa);
+	return SETG(rd, shifted_rt);
 }
+
+/**
+ * Doubleword Subtract
+ * Format: DSUB rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] - GPR[rt]
+ * Exceptions: IntegerOverflow
+ * */
 IL_LIFTER(DSUB) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *diff = SUB(rs, rt);
+	Effect *set_rd = SETG(rd, diff);
+	Bool *overflow = IL_CHECK_OVERFLOW(DUP(diff), 64);
+
+	return BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rd);
 }
+
+/**
+ * Doubleword Subtract Unsigned
+ * Format: DSUBU rd, rs, rt
+ * Description: GPR[rd] <- GPR[rs] - GPR[rt]
+ * Exceptions: None
+ * */
 IL_LIFTER(DSUBU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *diff = SUB(rs, rt);
+	return SETG(rd, diff);
 }
+
 IL_LIFTER(EHB) {
 	return NULL;
 }
@@ -2323,9 +2775,26 @@ IL_LIFTER(EI) {
 IL_LIFTER(ERET) {
 	return NULL;
 }
+
+/**
+ * Extract bit Field
+ * Format: EXT rt, rs, pos, size
+ * Description: GPR[rt] <- ExtractField(GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(EXT) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
+	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1) << pos;
+	BitVector *bitfield = SHIFTR0(LOGAND(rs, U32(mask)), U8(pos));
+
+	return SETG(rt, bitfield);
 }
+
 IL_LIFTER(EXTP) {
 	return NULL;
 }
@@ -2557,12 +3026,11 @@ IL_LIFTER(SUB) {
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
-	BitVector *sum = SUB(rs, rt);
-	Effect *set_rd = SETG(rd, sum);
-	// Bool *overflow = IL_CHECK_OVERFLOW("rs", "rt", REG_OPND(0));
-	Effect *update_status_op = NOP(); // TODO: set status flag
+	BitVector *diff = SUB(rs, rt);
+	Effect *set_rd = SETG(rd, diff);
+	Bool *overflow = IL_CHECK_OVERFLOW(DUP(diff), 32);
 
-	return SEQ2(set_rd, update_status_op);
+	return BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rd);
 }
 
 IL_LIFTER(FSUEQ) {
@@ -2619,9 +3087,33 @@ IL_LIFTER(ILVOD) {
 IL_LIFTER(ILVR) {
 	return NULL;
 }
+
+/**
+ * Insert bit Field
+ * Format: INS rt, rs, pos, size
+ * Description: GPR[rt] <- InsertField(GPR[rt], GPR[rs], msbd, lsb)
+ * Exceptions: Reserved Instruction
+ * */
 IL_LIFTER(INS) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
+	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
+
+	// create mask to take logical and and extract bit-field
+	ut64 mask = SIGN_EXTEND(1, 1, size - 1);
+
+	// invert mask and take logical and to remove bitfield
+	ut64 rt_mask = ~(mask << pos);
+	BitVector *rt_bitfield_removed = LOGAND(VARG(rt), U32(rt_mask));
+
+	// create new bitfield from rs and insert it into rt
+	BitVector *rs_as_bitfield = SHIFTL0(LOGAND(rs, U32(mask)), UN(5, pos));
+	BitVector *rt_inserted_rs = LOGOR(rt_bitfield_removed, rs_as_bitfield);
+
+	return SETG(rt, rt_inserted_rs);
 }
+
 IL_LIFTER(INSERT) {
 	return NULL;
 }
@@ -2639,12 +3131,13 @@ IL_LIFTER(INSVE) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(J) {
-	st32 instr_index = 0x3FFFFFFF & ((st32)IMM_OPND(0) << 2);
-	st32 new_pc = (pc & 0xC0000000) | instr_index;
+	ut64 instr_index = IMM_OPND(0) << 2; // 26 + 2 bits
+	ut64 pc_mask = ~SIGN_EXTEND(1, 1, 28); // lower 28 bits are 0
+	ut64 new_pc = (pc & pc_mask) | instr_index;
+
 	BitVector *jump_target = UN(GPRLEN, new_pc);
 
-	Effect *jmp_op = JMP(jump_target);
-	return jmp_op;
+	return JMP(jump_target);
 }
 
 /**
@@ -2654,13 +3147,14 @@ IL_LIFTER(J) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(JAL) {
-	st32 instr_index = 0x3FFFFFFF & ((st32)IMM_OPND(0) << 2);
-	st32 new_pc = (pc & 0xC0000000) | instr_index;
+	ut64 instr_index = IMM_OPND(0) << 2; // 26 + 2 bits
+	ut64 pc_mask = ~SIGN_EXTEND(1, 1, 28); // lower 28 bits are 0
+	ut64 new_pc = (pc & pc_mask) | instr_index;
+
 	BitVector *jump_target = UN(GPRLEN, new_pc);
 
 	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
 	Effect *jmp_op = JMP(jump_target);
-
 	return SEQ2(link_op, jmp_op);
 }
 
@@ -2688,10 +3182,10 @@ IL_LIFTER(JALR) {
 		rs = IL_REG_OPND(1);
 	}
 
-	Effect *link_op = SETG(rd, UN(GPRLEN, pc + 8));
 	Pure *jump_target = rs;
-	Effect *jmp_op = JMP(jump_target);
 
+	Effect *link_op = SETG(rd, UN(GPRLEN, pc + 8));
+	Effect *jmp_op = JMP(jump_target);
 	return SEQ2(link_op, jmp_op);
 }
 
@@ -2715,12 +3209,14 @@ IL_LIFTER(JALS) {
  * TODO: Handle "else" case
  * */
 IL_LIFTER(JALX) {
-	st32 target_instr = (st32)IMM_OPND(0) << 2;
+	ut64 instr_index = IMM_OPND(0) << 2;
+
+	ut64 pc_mask = ~SIGN_EXTEND(1, 1, 28); // lower 28 bits are 0
+	ut64 new_pc = (pc & pc_mask) | instr_index;
+	BitVector *jump_target = UN(GPRLEN, new_pc);
 
 	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
-	BitVector *jump_target = UN(GPRLEN, (pc & 0xC0000000) | target_instr);
 	Effect *jmp_op = JMP(jump_target);
-
 	return SEQ2(link_op, jmp_op);
 }
 
@@ -2734,15 +3230,14 @@ IL_LIFTER(JALX) {
  * TODO: Handle "else" case
  * */
 IL_LIFTER(JIALC) {
-	Pure *rs = IL_REG_OPND(0);
-	st64 offset = (st64)IMM_OPND(1);
-	offset = SIGN_EXTEND(offset, 16, GPRLEN);
+	Pure *rt = IL_REG_OPND(0);
+	st64 offset = SIGN_EXTEND(IMM_OPND(1), 16, GPRLEN);
 
 	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 4));
-	BitVector *jump_target = ADD(rs, SN(GPRLEN, offset));
+	BitVector *jump_target = ADD(rt, SN(GPRLEN, offset));
 	Effect *jmp_op = JMP(jump_target);
 
-	return SEQ3(rs, link_op, jmp_op);
+	return SEQ2(link_op, jmp_op);
 }
 
 /**
@@ -2756,13 +3251,10 @@ IL_LIFTER(JIALC) {
  * */
 IL_LIFTER(JIC) {
 	Pure *rs = IL_REG_OPND(0);
-	st64 offset = (st64)IMM_OPND(1);
-	offset = SIGN_EXTEND(offset, 16, GPRLEN);
+	st64 offset = SIGN_EXTEND(IMM_OPND(1), 16, GPRLEN);
 
 	BitVector *jump_target = ADD(rs, SN(GPRLEN, offset));
-	Effect *jmp_op = JMP(jump_target);
-
-	return jmp_op;
+	return JMP(jump_target);
 }
 
 /**
@@ -2776,9 +3268,7 @@ IL_LIFTER(JIC) {
  * */
 IL_LIFTER(JR) {
 	Pure *jump_target = IL_REG_OPND(0);
-	Effect *jmp_op = JMP(jump_target);
-
-	return jmp_op;
+	return JMP(jump_target);
 }
 
 IL_LIFTER(JR16) {
@@ -2809,8 +3299,7 @@ IL_LIFTER(LB) {
 	BitVector *byte = LOADW(8, memaddr);
 	BitVector *sign_extended_byte = SIGNED(GPRLEN, byte);
 
-	Effect *set_rt = SETG(rt, sign_extended_byte);
-	return set_rt;
+	return SETG(rt, sign_extended_byte);
 }
 
 // MISSING: LBE
@@ -2818,6 +3307,7 @@ IL_LIFTER(LB) {
 IL_LIFTER(LBU16) {
 	return NULL;
 }
+
 IL_LIFTER(LBUX) {
 	return NULL;
 }
@@ -2837,32 +3327,130 @@ IL_LIFTER(LBU) {
 	BitVector *byte = LOADW(8, memaddr);
 	BitVector *zero_extended_byte = UNSIGNED(GPRLEN, byte);
 
-	Effect *set_rt = SETG(rt, zero_extended_byte);
-	return set_rt;
+	return SETG(rt, zero_extended_byte);
 }
 
 // MISSING: LBUE
 
+/**
+ * Load Doubleword
+ * Format: LD rt, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LD) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *byte = LOADW(64, memaddr);
+
+	return SETG(rt, byte);
 }
 
+/**
+ * Load Doubleword To Floating Point
+ * Format: LDC1 ft, offset(base)
+ * Description: GPR[rt] <- memory[GPR[base] + offset]
+ * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
+ * */
 IL_LIFTER(LDC1) {
-	return NULL;
+	char *ft = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *byte = LOADW(64, memaddr); // <-- LOAD 64 bits
+
+	return SETG(ft, byte); // <-- UNINTERPRETED STORE
 }
 
+/**
+ * TODO: HOW CAN WE DIFFERENTIATE BETWEEN REGISTERS OF CP1 & CP2
+ * */
 IL_LIFTER(LDC2) {
 	return NULL;
 }
+
+/**
+ * TODO: HOW CAN WE DIFFERENTIATE BETWEEN REGISTERS OF CP1 & CP3
+ * */
 IL_LIFTER(LDC3) {
 	return NULL;
 }
 IL_LIFTER(LDI) {
 	return NULL;
 }
+
+/**
+ * Load Word Left
+ * Format: LWL rt, offset(base)
+ * Description: GPR[rt] <- GPR[rt] MERGE memory[GPR[base] + offset]
+ * Exceptions: None
+ * */
 IL_LIFTER(LDL) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *memaddr_low3bit = CAST(3, IL_FALSE, DUP(memaddr));
+	BitVector *aligned_memaddr = LOGAND(memaddr, U64(~0x7)); // last 3 bits set to 0
+	BitVector *dword = LOADW(64, aligned_memaddr);
+
+	Effect *b0, *b1, *b2, *b3, *b4, *b5, *b6, *b7;
+	if (analysis->big_endian) {
+		b7 = SETG(rt, LOGOR(LOGAND(dword, U64(0xFF00000000000000)), LOGAND(VARG(rt), U64(0x00FFFFFFFFFFFFFF))));
+
+		Bool *b6cond = EQ(DUP(memaddr_low3bit), UN(3, 6));
+		b6 = BRANCH(b6cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFF000000000000)), LOGAND(VARG(rt), U64(0x0000FFFFFFFFFFFF)))), b7);
+
+		Bool *b5cond = EQ(DUP(memaddr_low3bit), UN(3, 5));
+		b5 = BRANCH(b5cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFF0000000000)), LOGAND(VARG(rt), U64(0x000000FFFFFFFFFF)))), b6);
+
+		Bool *b4cond = EQ(DUP(memaddr_low3bit), UN(3, 4));
+		b4 = BRANCH(b4cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFF00000000)), LOGAND(VARG(rt), U64(0x00000000FFFFFFFF)))), b5);
+
+		Bool *b3cond = EQ(DUP(memaddr_low3bit), UN(3, 3));
+		b3 = BRANCH(b3cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFFFF000000)), LOGAND(VARG(rt), U64(0x0000000000FFFFFF)))), b4);
+
+		Bool *b2cond = EQ(DUP(memaddr_low3bit), UN(3, 2));
+		b2 = BRANCH(b2cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFFFFFF0000)), LOGAND(VARG(rt), U64(0x000000000000FFFF)))), b3);
+
+		Bool *b1cond = EQ(DUP(memaddr_low3bit), UN(3, 1));
+		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFFFFFFFF00)), LOGAND(VARG(rt), U64(0x00000000000000FF)))), b2);
+
+		Bool *b0cond = EQ(memaddr_low3bit, UN(3, 0));
+		b0 = BRANCH(b0cond, SETG(rt, dword), b1);
+	} else {
+		b7 = SETG(rt, dword);
+
+		Bool *b6cond = EQ(DUP(memaddr_low3bit), UN(3, 6));
+		b6 = BRANCH(b6cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFFFFFFFF00)), LOGAND(VARG(rt), U64(0x00000000000000FF)))), b7);
+
+		Bool *b5cond = EQ(DUP(memaddr_low3bit), UN(3, 5));
+		b5 = BRANCH(b5cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFFFFFF0000)), LOGAND(VARG(rt), U64(0x000000000000FFFF)))), b6);
+
+		Bool *b4cond = EQ(DUP(memaddr_low3bit), UN(3, 4));
+		b4 = BRANCH(b4cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFFFF000000)), LOGAND(VARG(rt), U64(0x0000000000FFFFFF)))), b5);
+
+		Bool *b3cond = EQ(DUP(memaddr_low3bit), UN(3, 3));
+		b3 = BRANCH(b3cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFFFF00000000)), LOGAND(VARG(rt), U64(0x00000000FFFFFFFF)))), b4);
+
+		Bool *b2cond = EQ(DUP(memaddr_low3bit), UN(3, 2));
+		b2 = BRANCH(b2cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFFFF0000000000)), LOGAND(VARG(rt), U64(0x000000FFFFFFFFFF)))), b3);
+
+		Bool *b1cond = EQ(DUP(memaddr_low3bit), UN(3, 1));
+		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFFFF000000000000)), LOGAND(VARG(rt), U64(0x0000FFFFFFFFFFFF)))), b2);
+
+		Bool *b0cond = EQ(memaddr_low3bit, UN(3, 0));
+		b0 = BRANCH(b0cond, SETG(rt, LOGOR(LOGAND(DUP(dword), U64(0xFF00000000000000)), LOGAND(VARG(rt), U64(0x00FFFFFFFFFFFFFF)))), b1);
+	}
+
+	return SEQ8(b0, b1, b2, b3, b4, b5, b6, b7);
 }
+
 IL_LIFTER(LDPC) {
 	return NULL;
 }
@@ -3041,7 +3629,7 @@ IL_LIFTER(LWL) {
 	BitVector *memaddr = ADD(base, offset);
 	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), U32(3));
 	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
-	BitVector *word = LOADW(GPRLEN, aligned_memaddr);
+	BitVector *word = LOADW(32, aligned_memaddr);
 
 	Effect *b0, *b1, *b2, *b3;
 	if (analysis->big_endian) {
@@ -3183,7 +3771,7 @@ IL_LIFTER(MADD) {
 
 	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
 	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
-	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U8(32)), lo64);
 
 	BitVector *diff = ADD(hi_lo, prod);
 
@@ -3222,7 +3810,7 @@ IL_LIFTER(MADDU) {
 
 	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
 	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
-	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U8(32)), lo64);
 
 	BitVector *diff = ADD(hi_lo, prod);
 
@@ -3333,7 +3921,7 @@ IL_LIFTER(MIN_U) {
 
 /**
  * Modulo Words (Signed)
- * Format: DIV rd, rs, rt
+ * Format: MOD rd, rs, rt
  * Description: GPR[rd] <- (modulo.signed(GPR[rs], GPR[rt]))
  * Exceptions: None
  * */
@@ -3343,8 +3931,7 @@ IL_LIFTER(MOD) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *remainder = SMOD(rs, rt);
-	Effect *set_rd = SETG(rd, remainder);
-	return set_rd;
+	return SETG(rd, remainder);
 }
 
 IL_LIFTER(MODSUB) {
@@ -3353,7 +3940,7 @@ IL_LIFTER(MODSUB) {
 
 /**
  * Modulo Words (Unigned)
- * Format: DIV rd, rs, rt
+ * Format: MOD rd, rs, rt
  * Description: GPR[rd] <- (modulo.usigned(GPR[rs], GPR[rt]))
  * Exceptions: None
  * */
@@ -3363,8 +3950,7 @@ IL_LIFTER(MODU) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *remainder = MOD(rs, rt);
-	Effect *set_rd = SETG(rd, remainder);
-	return set_rd;
+	return SETG(rd, remainder);
 }
 
 IL_LIFTER(MOD_S) {
@@ -3438,7 +4024,7 @@ IL_LIFTER(MSUB) {
 
 	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
 	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
-	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U8(32)), lo64);
 
 	BitVector *diff = SUB(hi_lo, prod);
 
@@ -3477,7 +4063,7 @@ IL_LIFTER(MSUBU) {
 
 	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
 	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
-	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U32(32)), lo64);
+	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U8(32)), lo64);
 
 	BitVector *diff = SUB(hi_lo, prod);
 
@@ -3883,7 +4469,7 @@ IL_LIFTER(RINT) {
 IL_LIFTER(ROTR) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	BitVector *sa = U8((ut8)IMM_OPND(2));
+	BitVector *sa = UN(5, IMM_OPND(2));
 
 	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(sa)));
 	BitVector *right = SHIFTR0(rt, sa);
@@ -3901,7 +4487,7 @@ IL_LIFTER(ROTR) {
 IL_LIFTER(ROTRV) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	Pure *rs = CAST(8, IL_FALSE, IL_REG_OPND(2));
+	Pure *rs = CAST(5, IL_FALSE, IL_REG_OPND(2));
 
 	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(rs)));
 	BitVector *right = SHIFTR0(rt, rs);
@@ -4116,11 +4702,10 @@ IL_LIFTER(SLD) {
 IL_LIFTER(SLL) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	BitVector *sa = U32((ut32)IMM_OPND(2));
+	BitVector *sa = UN(5, IMM_OPND(2));
 
 	BitVector *shifted_rt = SHIFTL0(rt, sa);
-	Effect *set_rd = SETG(rd, shifted_rt);
-	return set_rd;
+	return SETG(rd, shifted_rt);
 }
 
 IL_LIFTER(SLL16) {
@@ -4132,7 +4717,7 @@ IL_LIFTER(SLLI) {
 
 /**
  * Shift word Left Logical Variable
- * Format: SRLV rd, rt, rs
+ * Format: SLLV rd, rt, rs
  * Description: GPR[rd] <- GPR[rt] << GPR[rs]
  * Exceptions: None
  * */
@@ -4141,10 +4726,9 @@ IL_LIFTER(SLLV) {
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
-	BitVector *sa = LOGAND(rs, U32(0x0000001F));
+	BitVector *sa = LOGAND(rs, UN(GPRLEN, 0x1F));
 	BitVector *shifted_rt = SHIFTL0(rt, sa);
-	Effect *set_rd = SETG(rd, shifted_rt);
-	return set_rd;
+	return SETG(rd, shifted_rt);
 }
 
 /**
@@ -4224,20 +4808,17 @@ IL_LIFTER(SPLAT) {
 
 /**
  * Shift word Right Arithmetic
- * Format: SRAV rd, rt, rs
+ * Format: SRA rd, rt, sa
  * Description: GPR[rd] <- (GPR[rt])^s || GPR[rs]
  * Exceptions: None
  * */
 IL_LIFTER(SRA) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	BitVector *sa = U8((ut8)IMM_OPND(2));
+	ut8 sa_val = IMM_OPND(2) & 0x1F;
 
-	BitVector *shifted_rt = SHIFTL0(rt, sa);
-	BitVector *msbcopy = SHIFTL0(SUB(SHIFTL0(S32(1), sa), S32(1)), SUB(U32(GPRLEN), sa));
-
-	Effect *sra = BRANCH(IS_ZERO(MSB(rt)), SETG(rd, DUP(shifted_rt)), SETG(rd, LOGOR(msbcopy, shifted_rt)));
-	return sra;
+	BitVector *sa = UN(5, sa_val);
+	return SETG(rd, SHIFTRA(rt, sa));
 }
 
 IL_LIFTER(SRAI) {
@@ -4261,12 +4842,8 @@ IL_LIFTER(SRAV) {
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
-	BitVector *sa = LOGAND(rs, U32(0x0000001F));
-	BitVector *shifted_rt = SHIFTL0(rt, sa);
-
-	BitVector *msbcopy = SHIFTL0(SUB(SHIFTL0(S32(1), sa), S32(1)), SUB(U32(GPRLEN), sa));
-	Effect *srav = BRANCH(IS_ZERO(MSB(rt)), SETG(rd, DUP(shifted_rt)), SETG(rd, LOGOR(msbcopy, shifted_rt)));
-	return srav;
+	BitVector *sa = LOGAND(rs, U32(0x1F));
+	return SETG(rd, SHIFTRA(rt, sa));
 }
 
 /**
@@ -4278,11 +4855,10 @@ IL_LIFTER(SRAV) {
 IL_LIFTER(SRL) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	BitVector *sa = U32((ut32)IMM_OPND(2));
+	BitVector *sa = UN(5, IMM_OPND(2));
 
 	BitVector *shifted_rt = SHIFTR0(rt, sa);
-	Effect *set_rd = SETG(rd, shifted_rt);
-	return set_rd;
+	return SETG(rd, shifted_rt);
 }
 
 IL_LIFTER(SRL16) {
@@ -4309,10 +4885,9 @@ IL_LIFTER(SRLV) {
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
-	BitVector *sa = LOGAND(rs, U32(0x0000001F));
+	BitVector *sa = LOGAND(rs, U32(0x1F));
 	BitVector *shifted_rt = SHIFTR0(rt, sa);
-	Effect *set_rd = SETG(rd, shifted_rt);
-	return set_rd;
+	return SETG(rd, shifted_rt);
 }
 
 IL_LIFTER(SSNOP) {
@@ -4359,16 +4934,15 @@ IL_LIFTER(SUBUH_R) {
  * Subtract word Unsigned
  * Format: SUBU rd, rs, rt
  * Description: GPR[rd] <- GPR[rs] - GPR[rt]
- * Exceptions: IntegerOverflow
+ * Exceptions: None
  * */
 IL_LIFTER(SUBU) {
 	char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
-	BitVector *sum = SUB(rs, rt);
-	Effect *set_rd = SETG(rd, sum);
-	return set_rd;
+	BitVector *diff = SUB(rs, rt);
+	return SETG(rd, diff);
 }
 
 IL_LIFTER(SUBU_S) {
@@ -4426,8 +5000,8 @@ IL_LIFTER(SWL) {
 
 	// compute memory address, get lower two bytes and get aligned memory address
 	BitVector *memaddr = ADD(base, offset);
-	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), U32(3));
-	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
+	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), UN(GPRLEN, 3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, UN(GPRLEN, 0xFFFFFFFC));
 
 	// increasing size of upper bytes by index
 	BitVector *rt_hi1 = CAST(8, IL_FALSE, SHIFTR0(DUP(rt), U8(3 * 8)));
@@ -4493,8 +5067,8 @@ IL_LIFTER(SWR) {
 	Pure *base = IL_MEM_OPND_BASE(1);
 
 	BitVector *memaddr = ADD(base, offset);
-	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), U32(3));
-	BitVector *aligned_memaddr = LOGAND(memaddr, U32(0xFFFFFFFC));
+	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), UN(GPRLEN, 3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, UN(GPRLEN, 0xFFFFFFFC));
 
 	// increasing size of lower bytes by index
 	BitVector *rt_lo1 = CAST(8, IL_FALSE, DUP(rt));
@@ -4700,7 +5274,7 @@ IL_LIFTER(JALR_HB) {
 		rs = IL_REG_OPND(1);
 	}
 
-	Effect *link_op = SETG(rd, U32(pc + 8));
+	Effect *link_op = SETG(rd, UN(GPRLEN, pc + 8));
 	Pure *jump_target = rs;
 	Effect *jmp_op = JMP(jump_target);
 
@@ -4717,9 +5291,7 @@ IL_LIFTER(JALR_HB) {
  * */
 IL_LIFTER(JR_HB) {
 	Pure *jump_target = IL_REG_OPND(0);
-	Effect *jmp_op = JMP(jump_target);
-
-	return jmp_op;
+	return JMP(jump_target);
 }
 
 // clang-format off
