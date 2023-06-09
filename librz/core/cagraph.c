@@ -69,15 +69,6 @@ RZ_IPI void rz_core_agraph_print_ascii(RzCore *core) {
 	rz_agraph_print(core->graph);
 }
 
-RZ_IPI void rz_core_agraph_print_tiny(RzCore *core) {
-	core->graph->is_tiny = true;
-	int e = rz_config_get_i(core->config, "graph.edges");
-	rz_config_set_i(core->config, "graph.edges", 0);
-	rz_core_visual_graph(core, core->graph, NULL, false);
-	rz_config_set_i(core->config, "graph.edges", e);
-	core->graph->is_tiny = false;
-}
-
 RZ_IPI void rz_core_agraph_print_sdb(RzCore *core) {
 	Sdb *db = rz_agraph_get_sdb(core->graph);
 	char *o = sdb_querys(db, "null", 0, "*");
@@ -213,8 +204,6 @@ RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format) {
 	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
 		rz_core_agraph_print_ascii(core);
 		break;
-	case RZ_CORE_GRAPH_FORMAT_TINY:
-		rz_core_agraph_print_tiny(core);
 		break;
 	case RZ_CORE_GRAPH_FORMAT_SDB:
 		rz_core_agraph_print_sdb(core);

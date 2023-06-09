@@ -4547,7 +4547,7 @@ RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **
 
 RZ_IPI char **rz_analysis_graph_format_choices(RzCore *core) {
 	static const char *formats[] = {
-		"ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "tiny", "interactive", NULL
+		"ascii", "cmd", "dot", "gml", "json", "json_disasm", "sdb", "interactive", NULL
 	};
 	const ut8 sz = RZ_ARRAY_SIZE(formats);
 	char **res = malloc(sizeof(char *) * sz);

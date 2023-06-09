@@ -486,8 +486,6 @@ RZ_API RzCoreGraphFormat rz_core_graph_format_from_string(RZ_NULLABLE const char
 		return RZ_CORE_GRAPH_FORMAT_JSON;
 	} else if (strcmp(x, "sdb") == 0 || short_opt == 'k') {
 		return RZ_CORE_GRAPH_FORMAT_SDB;
-	} else if (strcmp(x, "tiny") == 0 || short_opt == 't') {
-		return RZ_CORE_GRAPH_FORMAT_TINY;
 	} else if (strcmp(x, "interactive") == 0 || short_opt == 'v') {
 		return RZ_CORE_GRAPH_FORMAT_VISUAL;
 	}
@@ -532,7 +530,6 @@ RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGrap
 	char *string = NULL;
 	switch (format) {
 	case RZ_CORE_GRAPH_FORMAT_ASCII_ART:
-	case RZ_CORE_GRAPH_FORMAT_TINY:
 	case RZ_CORE_GRAPH_FORMAT_VISUAL:
 	case RZ_CORE_GRAPH_FORMAT_SDB: {
 		rz_core_agraph_reset(core);
