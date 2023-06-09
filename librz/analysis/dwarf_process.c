@@ -1647,11 +1647,11 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * \param analysis
  * \param ctx
  */
-RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx) {
-	rz_return_if_fail(ctx && analysis);
+RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw) {
+	rz_return_if_fail(analysis);
 	Sdb *dwarf_sdb = sdb_ns(analysis->sdb, "dwarf", 1);
 	size_t i, j;
-	const RzBinDwarfDebugInfo *info = ctx->info;
+	const RzBinDwarfDebugInfo *info = dw->info;
 	for (i = 0; i < info->count; i++) {
 		RzBinDwarfCompUnit *unit = &info->comp_units[i];
 		Context dw_context = { // context per unit?
@@ -1660,7 +1660,7 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysi
 			.count = unit->count,
 			.die_map = info->die_tbl,
 			.sdb = dwarf_sdb,
-			.locations = ctx->loc,
+			.locations = dw->loc,
 			.lang = NULL
 		};
 		for (j = 0; j < unit->count; j++) {

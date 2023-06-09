@@ -12,7 +12,7 @@ RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *
 		if (!itdecl) {
 			return;
 		}
-		RzBinDwarfAbbrevDecl *decl = (RzBinDwarfAbbrevDecl *)itdecl;
+		RzBinDwarfAbbrevDecl *decl = *itdecl;
 		rz_cons_printf("   %-4" PFMT64d " ", decl->code);
 		const char *tagname = rz_bin_dwarf_get_tag_name(decl->tag);
 		if (tagname) {
@@ -23,7 +23,7 @@ RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *
 
 		void **itdef;
 		rz_pvector_foreach (&decl->defs, itdef) {
-			RzBinDwarfAttrDef *def = (RzBinDwarfAttrDef *)itdef;
+			RzBinDwarfAttrDef *def = *itdef;
 			const char *attr_name = rz_bin_dwarf_get_attr_name(def->attr_name);
 			const char *attr_form_name = rz_bin_dwarf_get_attr_form_name(def->attr_form);
 			if (attr_name && attr_form_name) {

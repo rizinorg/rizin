@@ -2165,6 +2165,7 @@ RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile) {
 		return NULL;
 	}
 	RzBinDwarfDebugAbbrev *abbrevs = parse_abbrev_raw(buf, len);
+	rz_pvector_shrink(&abbrevs->decls);
 	free(buf);
 	return abbrevs;
 }
@@ -2307,7 +2308,36 @@ static void ht_loc_list_free(HtUPKv *kv) {
 }
 
 RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table) {
-	rz_return_if_fail(loc_table);
+	if (!loc_table) {
+		return;
+	}
 	loc_table->opt.freefn = ht_loc_list_free;
 	ht_up_free(loc_table);
+}
+
+RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt) {
+	rz_return_val_if_fail(bf && opt, NULL);
+	RzBinDwarf *dw = RZ_NEW0(RzBinDwarf);
+	if (!dw) {
+		return NULL;
+	}
+
+	dw->abbrevs = rz_bin_dwarf_abbrev_parse(bf);
+	dw->info = dw->abbrevs ? rz_bin_dwarf_info_parse(bf, dw->abbrevs) : NULL;
+	dw->loc = rz_bin_dwarf_loc_parse(bf, opt->addr_size);
+	dw->lines = rz_bin_dwarf_parse_line(bf, dw->info, opt->line_mask);
+	dw->aranges = rz_bin_dwarf_aranges_parse(bf);
+	return dw;
+}
+
+RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw) {
+	if (!dw) {
+		return;
+	}
+	rz_bin_dwarf_abbrev_free(dw->abbrevs);
+	rz_bin_dwarf_info_free(dw->info);
+	rz_bin_dwarf_loc_free(dw->loc);
+	rz_bin_dwarf_line_info_free(dw->lines);
+	rz_list_free(dw->aranges);
+	free(dw);
 }

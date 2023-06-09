@@ -887,7 +887,7 @@ typedef struct {
 	ut8 *std_opcode_lengths;
 
 	RzVector /*<RzBinDwarfLineFileEntryFormat>*/ directory_entry_formats;
-	RzPVector /*<char*>*/ directories;
+	RzPVector /*<char *>*/ directories;
 	RzVector /*<RzBinDwarfLineFileEntryFormat>*/ file_name_entry_formats;
 	RzVector /*<RzBinDwarfLineFileEntry>*/ file_names;
 } RzBinDwarfLineHeader;
@@ -978,7 +978,8 @@ typedef struct rz_bin_dwarf_arange_set_t {
 	RzBinDwarfARange *aranges;
 } RzBinDwarfARangeSet;
 
-#define rz_bin_dwarf_line_new(o, a, f, l) o->address = a, o->file = strdup(f ? f : ""), o->line = l, o->column = 0, o
+typedef HtUP /*<offset, List *<RzBinDwarfLocList>*/ RzBinDwarfLocListTable;
+typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;
 
 RZ_API const char *rz_bin_dwarf_get_tag_name(ut64 tag);
 RZ_API const char *rz_bin_dwarf_get_attr_name(ut64 attr_code);
@@ -1019,6 +1020,22 @@ RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarf
 	RZ_NULLABLE struct rz_bin_source_line_info_builder_t *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc);
 RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li);
+
+typedef struct rz_core_bin_dwarf_t {
+	RzBinDwarfARangeSets *aranges;
+	RzBinDwarfLineInfo *lines;
+	RzBinDwarfLocListTable *loc;
+	RzBinDwarfDebugInfo *info;
+	RzBinDwarfDebugAbbrev *abbrevs;
+} RzBinDwarf;
+
+typedef struct {
+	ut8 addr_size;
+	RzBinDwarfLineInfoMask line_mask;
+} RzBinDwarfParseOptions;
+
+RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt);
+RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw);
 
 #ifdef __cplusplus
 }

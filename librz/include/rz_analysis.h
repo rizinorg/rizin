@@ -34,13 +34,6 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_analysis);
 
-/* dwarf processing context */
-typedef struct rz_analysis_dwarf_context {
-	const RzBinDwarfDebugInfo *info;
-	HtUP /*<offset, RzBinDwarfLocList*>*/ *loc;
-	// const RzBinDwarfCfa *cfa; TODO
-} RzAnalysisDwarfContext;
-
 // TODO: save memory2 : fingerprints must be pointers to a buffer
 // containing a dupped file in memory
 
@@ -2144,7 +2137,7 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb);
 
 /* DWARF */
-RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx);
+RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw);
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb);
 
 /* serialize */

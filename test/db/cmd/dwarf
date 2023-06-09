@@ -1085,7 +1085,7 @@ Raw dump of debug contents of section .debug_line:
   DWARF Version:                      3
   Header Length:                      45
   Minimum Instruction Length:         1
-  Maximum Operations per Instruction: 0
+  Maximum Operations per Instruction: 1
   Initial value of 'is_stmt':         1
   Line Base:                          -5
   Line Range:                         14
@@ -1154,7 +1154,7 @@ Raw dump of debug contents of section .debug_line:
   DWARF Version:                      3
   Header Length:                      43
   Minimum Instruction Length:         1
-  Maximum Operations per Instruction: 0
+  Maximum Operations per Instruction: 1
   Initial value of 'is_stmt':         1
   Line Base:                          -5
   Line Range:                         14
@@ -1956,7 +1956,7 @@ Raw dump of debug contents of section .debug_line:
   DWARF Version:                      3
   Header Length:                      29
   Minimum Instruction Length:         1
-  Maximum Operations per Instruction: 0
+  Maximum Operations per Instruction: 1
   Initial value of 'is_stmt':         1
   Line Base:                          -5
   Line Range:                         14
@@ -2820,7 +2820,7 @@ Raw dump of debug contents of section .debug_line:
   DWARF Version:                      3
   Header Length:                      31
   Minimum Instruction Length:         1
-  Maximum Operations per Instruction: 0
+  Maximum Operations per Instruction: 1
   Initial value of 'is_stmt':         1
   Line Base:                          -5
   Line Range:                         14
