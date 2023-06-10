@@ -635,6 +635,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 	RzBinDwarfParseOptions opt = {
 		.addr_size = core->analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
+		.flags = RZ_BIN_DWARF_PARSE_ALL,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(binfile, &opt);
 	if (!dw) {
@@ -1704,6 +1705,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	RzBinDwarfParseOptions dw_opt = {
 		.addr_size = core->analysis->bits / 8,
 		.line_mask = mask,
+		.flags = RZ_BIN_DWARF_PARSE_ALL,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(binfile, &dw_opt);
 	if (!dw) {

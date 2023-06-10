@@ -3,16 +3,16 @@
 
 #include <rz_core.h>
 
-RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da) {
+RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrevs *da) {
 	if (!da) {
 		return;
 	}
-	void **itdecl;
-	rz_pvector_foreach (&da->decls, itdecl) {
+	void *itdecl;
+	rz_vector_foreach(&da->decls, itdecl) {
 		if (!itdecl) {
 			return;
 		}
-		RzBinDwarfAbbrevDecl *decl = *itdecl;
+		RzBinDwarfAbbrevDecl *decl = itdecl;
 		rz_cons_printf("   %-4" PFMT64d " ", decl->code);
 		const char *tagname = rz_bin_dwarf_get_tag_name(decl->tag);
 		if (tagname) {
@@ -21,11 +21,11 @@ RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *
 		rz_cons_printf("[%s]", decl->has_children ? "has children" : "no children");
 		rz_cons_printf(" (0x%" PFMT64x ")\n", decl->offset);
 
-		void **itdef;
-		rz_pvector_foreach (&decl->defs, itdef) {
-			RzBinDwarfAttrDef *def = *itdef;
-			const char *attr_name = rz_bin_dwarf_get_attr_name(def->attr_name);
-			const char *attr_form_name = rz_bin_dwarf_get_attr_form_name(def->attr_form);
+		void *itdef;
+		rz_vector_foreach(&decl->defs, itdef) {
+			RzBinDwarfAttrDef *def = itdef;
+			const char *attr_name = rz_bin_dwarf_get_attr_name(def->name);
+			const char *attr_form_name = rz_bin_dwarf_get_attr_form_name(def->form);
 			if (attr_name && attr_form_name) {
 				rz_cons_printf("    %-30s %-30s\n", attr_name, attr_form_name);
 			}
@@ -33,11 +33,11 @@ RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *
 	}
 }
 
-RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val) {
+RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttr *val) {
 	size_t i;
 	rz_return_if_fail(val);
 
-	switch (val->attr_form) {
+	switch (val->form) {
 	case DW_FORM_block:
 	case DW_FORM_block1:
 	case DW_FORM_block2:
@@ -54,7 +54,7 @@ RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val) {
 	case DW_FORM_data8:
 	case DW_FORM_data16:
 		rz_cons_printf("%" PFMT64u "", val->uconstant);
-		if (val->attr_name == DW_AT_language) {
+		if (val->name == DW_AT_language) {
 			const char *lang_name = rz_bin_dwarf_get_lang_name(val->uconstant);
 			if (lang_name) {
 				rz_cons_printf("   (%s)", lang_name);
@@ -117,59 +117,57 @@ RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val) {
 		rz_cons_printf("0x%" PFMT64d "", val->uconstant);
 		break;
 	default:
-		rz_cons_printf("Unknown attr value form %" PFMT32d "\n", val->attr_form);
+		rz_cons_printf("Unknown attr value form %" PFMT32d "\n", val->form);
 		break;
 	};
 }
 
-RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf) {
-	size_t i, j, k;
-	RzBinDwarfDie *dies;
-	RzBinDwarfAttrValue *values;
-
-	rz_return_if_fail(inf);
-
-	for (i = 0; i < inf->count; i++) {
+RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *info) {
+	rz_return_if_fail(info);
+	void *it;
+	rz_vector_foreach(&info->units, it) {
+		RzBinDwarfCompUnit *unit = it;
 		rz_cons_print("\n");
-		rz_cons_printf("  Compilation Unit @ offset 0x%" PFMT64x ":\n", inf->comp_units[i].offset);
-		rz_cons_printf("   Length:        0x%" PFMT64x "\n", inf->comp_units[i].hdr.length);
-		rz_cons_printf("   Version:       %d\n", inf->comp_units[i].hdr.version);
-		rz_cons_printf("   Abbrev Offset: 0x%" PFMT64x "\n", inf->comp_units[i].hdr.abbrev_offset);
-		rz_cons_printf("   Pointer Size:  %d\n", inf->comp_units[i].hdr.address_size);
-		const char *unit_type_name = rz_bin_dwarf_get_unit_type_name(inf->comp_units[i].hdr.unit_type);
+		rz_cons_printf("  Compilation Unit @ offset 0x%" PFMT64x ":\n", unit->offset);
+		rz_cons_printf("   Length:        0x%" PFMT64x "\n", unit->hdr.length);
+		rz_cons_printf("   Version:       %d\n", unit->hdr.version);
+		rz_cons_printf("   Abbrev Offset: 0x%" PFMT64x "\n", unit->hdr.abbrev_offset);
+		rz_cons_printf("   Pointer Size:  %d\n", unit->hdr.address_size);
+		const char *unit_type_name = rz_bin_dwarf_get_unit_type_name(unit->hdr.unit_type);
 		if (unit_type_name) {
 			rz_cons_printf("   Unit Type:     %s\n", unit_type_name);
 		}
 		rz_cons_print("\n");
 
-		dies = inf->comp_units[i].dies;
+		void *it_die;
+		rz_vector_foreach(&unit->dies, it_die) {
+			RzBinDwarfDie *die = it_die;
+			rz_cons_printf("<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", die->offset, die->abbrev_code);
 
-		for (j = 0; j < inf->comp_units[i].count; j++) {
-			rz_cons_printf("<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset, dies[j].abbrev_code);
-
-			const char *tag_name = rz_bin_dwarf_get_tag_name(dies[j].tag);
+			const char *tag_name = rz_bin_dwarf_get_tag_name(die->tag);
 			if (tag_name) {
 				rz_cons_printf("(%s)\n", tag_name);
 			} else {
 				rz_cons_print("(Unknown abbrev tag)\n");
 			}
 
-			if (!dies[j].abbrev_code) {
+			if (!die->abbrev_code) {
 				continue;
 			}
-			values = dies[j].attr_values;
 
-			for (k = 0; k < dies[j].count; k++) {
-				if (!values[k].attr_name) {
+			void *it_attr;
+			rz_vector_foreach(&die->attrs, it_attr) {
+				RzBinDwarfAttr *attr = it_attr;
+				if (!attr->name) {
 					continue;
 				}
-				const char *attr_name = rz_bin_dwarf_get_attr_name(values[k].attr_name);
+				const char *attr_name = rz_bin_dwarf_get_attr_name(attr->name);
 				if (attr_name) {
 					rz_cons_printf("     %-25s : ", attr_name);
 				} else {
-					rz_cons_printf("     AT_UNKWN [0x%-3" PFMT32x "]\t : ", values[k].attr_name);
+					rz_cons_printf("     AT_UNKWN [0x%-3" PFMT32x "]\t : ", attr->name);
 				}
-				rz_core_bin_dwarf_print_attr_value(&values[k]);
+				rz_core_bin_dwarf_print_attr_value(attr);
 				rz_cons_printf("\n");
 			}
 		}

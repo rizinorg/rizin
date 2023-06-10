@@ -7,40 +7,61 @@
 #include "../unit/minunit.h"
 
 #define check_attr_string(attr_idx, expect_string) \
-	mu_assert_streq(cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_streq(attr->string.content, expect_string, "Wrong string attribute information")
 
 #define check_attr_name(attr_idx, expect_name) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].attr_name, expect_name, "Wrong attribute name")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->name, expect_name, "Wrong attribute name")
 
 #define check_attr_address(attr_idx, expect_addr) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].address, expect_addr, "Wrong attribute name")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->address, expect_addr, "Wrong attribute name")
 
 #define check_attr_form(attr_idx, expect_form) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].attr_form, expect_form, "Wrong attribute name")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->form, expect_form, "Wrong attribute name")
 
 #define check_attr_data(attr_idx, expect_data) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].uconstant, expect_data, "Wrong attribute data")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->uconstant, expect_data, "Wrong attribute data")
 
 #define check_attr_block_length(attr_idx, expect_len) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].block.length, expect_len, "Wrong attribute block length")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->block.length, expect_len, "Wrong attribute block length")
 
 #define check_attr_block_data(attr_idx, data_idx, expect_data) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].block.data[data_idx], expect_data, "Wrong attribute block data")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->block.data[data_idx], expect_data, "Wrong attribute block data")
 
 #define check_attr_reference(attr_idx, expect_ref) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].reference, expect_ref, "Wrong attribute reference")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->reference, expect_ref, "Wrong attribute reference")
 
 #define check_attr_flag(attr_idx, expect_flag) \
-	mu_assert_eq(cu.dies[i].attr_values[attr_idx].flag, expect_flag, "Wrong attribute flag")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
+	mu_assert_eq(attr->flag, expect_flag, "Wrong attribute flag")
 
 #define check_die_abbr_code(expect_code) \
-	mu_assert_eq(cu.dies[i].abbrev_code, expect_code, "Wrong abbrev code")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	mu_assert_eq(die->abbrev_code, expect_code, "Wrong abbrev code")
 
 #define check_die_length(len) \
-	mu_assert_eq(cu.dies[i].count, len, "Wrong DIE length information")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	mu_assert_eq(rz_vector_len(&die->attrs), len, "Wrong DIE length information")
 
 #define check_die_tag(tg) \
-	mu_assert_eq(cu.dies[i].tag, tg, "Wrong DIE tag")
+	die = rz_vector_index_ptr(&cu->dies, i); \
+	mu_assert_eq(die->tag, tg, "Wrong DIE tag")
 
 #define check_basic_unit_header(vers, len, is64bit, addr_size, abbr_offset) \
 	do { \
@@ -61,21 +82,27 @@ bool test_dwarf3_c(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(bin->cur);
-	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_info_parse(bin->cur, da);
-	mu_assert_eq(info->count, 1, "Incorrect number of info compilation units");
+	RzBinDwarfParseOptions parse_opt = {
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO,
+	};
+	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opt);
+
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(dw->abbrevs), 7, "Incorrect number of abbreviation");
+	mu_assert_eq(rz_vector_len(&dw->info->units), 1, "Incorrect number of info compilation units");
 
 	// check header
-	RzBinDwarfCompUnit cu = info->comp_units[0];
-	RzBinDwarfCompUnitHdr hdr = cu.hdr;
+	RzBinDwarfCompUnit *cu = rz_vector_head(&dw->info->units);
+	RzBinDwarfCompUnitHdr hdr = cu->hdr;
 
 	check_basic_unit_header(3, 0xa9, false, 8, 0x0);
 
-	mu_assert_eq(cu.count, 11, "Wrong attribute information");
-	mu_assert_eq(cu.offset, 0x0, "Wrong attribute information");
+	mu_assert_eq(rz_vector_len(&cu->dies), 11, "Wrong attribute information");
+	mu_assert_eq(cu->offset, 0x0, "Wrong attribute information");
+
 	// check some of the attributes
 	int i = 0;
+	RzBinDwarfDie *die;
+	RzBinDwarfAttr *attr;
 	check_die_abbr_code(1);
 
 	check_die_length(7);
@@ -108,8 +135,7 @@ bool test_dwarf3_c(void) {
 	i++;
 	check_die_abbr_code(0);
 
-	rz_bin_dwarf_info_free(info);
-	rz_bin_dwarf_abbrev_free(da);
+	rz_bin_dwarf_free(dw);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -125,22 +151,27 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(bin->cur);
-	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 37, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_info_parse(bin->cur, da);
-	mu_assert_notnull(info, "Failed parsing of debug_info");
-	mu_assert_eq(info->count, 2, "Incorrect number of info compilation units");
+	RzBinDwarfParseOptions parse_opt = {
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO,
+	};
+	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opt);
+
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(dw->abbrevs), 37, "Incorrect number of abbreviation");
+	mu_assert_notnull(dw->info, "Failed parsing of debug_info");
+	mu_assert_eq(rz_vector_len(&dw->info->units), 2, "Incorrect number of info compilation units");
 
 	// check header
-	RzBinDwarfCompUnit cu = info->comp_units[0];
-	RzBinDwarfCompUnitHdr hdr = cu.hdr;
+	RzBinDwarfCompUnit *cu = rz_vector_index_ptr(&dw->info->units, 0);
+	RzBinDwarfCompUnitHdr hdr = cu->hdr;
 	check_basic_unit_header(4, 0x2c0, false, 8, 0x0);
 
 	// check some of the attributes
-	mu_assert_eq(cu.count, 73, "Wrong attribute information");
-	mu_assert_eq(cu.offset, 0x0, "Wrong attribute information");
+	mu_assert_eq(rz_vector_len(&cu->dies), 73, "Wrong attribute information");
+	mu_assert_eq(cu->offset, 0x0, "Wrong attribute information");
 
 	int i = 0;
+	RzBinDwarfDie *die;
+	RzBinDwarfAttr *attr;
 	check_die_abbr_code(1);
 	check_die_length(7);
 	check_die_tag(DW_TAG_compile_unit);
@@ -207,22 +238,16 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	check_attr_reference(9, 0x6e);
 	i++;
 	check_die_abbr_code(7);
-	mu_assert_eq(cu.dies[i].abbrev_code, 7, "Wrong attribute information");
 	i++;
 	check_die_abbr_code(0);
-	mu_assert_eq(cu.dies[i].abbrev_code, 0, "Wrong attribute information");
 	i++;
 	check_die_abbr_code(0);
-	mu_assert_eq(cu.dies[i].abbrev_code, 0, "Wrong attribute information");
 	i++;
 	check_die_abbr_code(10);
-	mu_assert_eq(cu.dies[i].abbrev_code, 10, "Wrong attribute information");
 	i++;
 	check_die_abbr_code(11);
-	mu_assert_eq(cu.dies[i].abbrev_code, 11, "Wrong attribute information");
 	i++;
 	check_die_abbr_code(12);
-	mu_assert_eq(cu.dies[i].abbrev_code, 12, "Wrong attribute information");
 	i++;
 	check_die_abbr_code(13);
 	check_die_tag(DW_TAG_base_type);
@@ -263,13 +288,14 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	check_die_abbr_code(0);
 	i++;
 
-	cu = info->comp_units[1];
-	hdr = cu.hdr;
+	cu = rz_vector_index_ptr(&dw->info->units, 1);
+	;
+	hdr = cu->hdr;
 	check_basic_unit_header(4, 0x192, false, 8, 0xfd);
 
 	// check some of the attributes
-	mu_assert_eq(cu.count, 42, "Wrong attribute information");
-	mu_assert_eq(cu.offset, 0x2c4, "Wrong attribute information");
+	mu_assert_eq(rz_vector_len(&cu->dies), 42, "Wrong attribute information");
+	mu_assert_eq(cu->offset, 0x2c4, "Wrong attribute information");
 
 	i = 0;
 	check_die_abbr_code(1);
@@ -319,8 +345,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	i++;
 	check_die_abbr_code(0);
 
-	rz_bin_dwarf_info_free(info);
-	rz_bin_dwarf_abbrev_free(da);
+	rz_bin_dwarf_free(dw);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -336,18 +361,23 @@ bool test_dwarf2_big_endian(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(bin->cur);
-	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 108, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_info_parse(bin->cur, da);
-	mu_assert_notnull(info, "Failed parsing of debug_info");
-	mu_assert_eq(info->count, 1, "Incorrect number of info compilation units");
+	RzBinDwarfParseOptions parse_opt = {
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO,
+	};
+	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opt);
+
+	mu_assert_eq(rz_bin_dwarf_abbrev_count(dw->abbrevs), 108, "Incorrect number of abbreviation");
+	mu_assert_notnull(dw->info, "Failed parsing of debug_info");
+	mu_assert_eq(rz_vector_len(&dw->info->units), 1, "Incorrect number of info compilation units");
 
 	// check header
-	RzBinDwarfCompUnit cu = info->comp_units[0];
-	RzBinDwarfCompUnitHdr hdr = cu.hdr;
+	RzBinDwarfCompUnit *cu = rz_vector_index_ptr(&dw->info->units, 0);
+	RzBinDwarfCompUnitHdr hdr = cu->hdr;
 	check_basic_unit_header(2, 0x38b9, false, 8, 0x0);
 
 	int i = 0;
+	RzBinDwarfDie *die;
+	RzBinDwarfAttr *attr;
 	check_die_abbr_code(1);
 	check_die_length(7);
 	check_die_tag(DW_TAG_compile_unit);
@@ -417,8 +447,7 @@ bool test_dwarf2_big_endian(void) {
 	check_attr_name(3, DW_AT_high_pc);
 	check_attr_reference(3, 0x0000000010001ac8);
 
-	rz_bin_dwarf_info_free(info);
-	rz_bin_dwarf_abbrev_free(da);
+	rz_bin_dwarf_free(dw);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;

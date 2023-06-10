@@ -891,9 +891,9 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
 
 // bin_dwarf
-RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
-RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val);
-RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf);
+RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrevs *da);
+RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttr *val);
+RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *info);
 RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size);
 RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet *>*/ *aranges);
 RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit *>*/ *lines);

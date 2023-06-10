@@ -20,10 +20,10 @@
 	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->has_children, expected_children, "Incorrect children flag")
 
 #define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->attr_name, expected_name, "Incorrect children flag");
+	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->name, expected_name, "Incorrect children flag");
 
 #define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->attr_form, expected_form, "Incorrect children flag");
+	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->form, expected_form, "Incorrect children flag");
 
 static bool check_line_samples_eq(const RzBinSourceLineInfo *actual,
 	size_t samples_count_expect, const RzBinSourceLineSample *samples_expect) {
@@ -86,7 +86,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
@@ -205,7 +205,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// this is probably ugly, but I didn't know how to
 	// tell core  what bin to open so I did it myself
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
@@ -594,7 +594,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
@@ -701,7 +701,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/hello_world_not_stripped.exe", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
@@ -761,7 +761,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = NULL;
+	RzBinDwarfDebugAbbrevs *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
@@ -971,7 +971,7 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_abbrev_parse(bin->cur);
+	RzBinDwarfDebugAbbrevs *da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_notnull(da, "abbrevs");
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 8, "abbrevs count");
 
