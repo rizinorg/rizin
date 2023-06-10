@@ -577,6 +577,12 @@ enum DW_LANG {
 	DW_LANG_Fortran08 = 0x0023,
 	DW_LANG_lo_user = 0x8000,
 	DW_LANG_hi_user = 0xffff,
+
+	DW_LANG_Mips_Assembler = 0x8001,
+	DW_LANG_GOOGLE_RenderScript = 0x8e57,
+	DW_LANG_SUN_Assembler = 0x9001,
+	DW_LANG_ALTIUM_Assembler = 0x9101,
+	DW_LANG_BORLAND_Delphi = 0xb000,
 };
 
 enum DW_ID {
@@ -733,7 +739,7 @@ typedef struct {
 } RzBinDwarfBlock;
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
-typedef enum {
+typedef enum DW_AT_KIND {
 	DW_AT_KIND_ADDRESS,
 	DW_AT_KIND_BLOCK,
 	DW_AT_KIND_CONSTANT,
@@ -747,7 +753,7 @@ typedef enum {
 	DW_AT_KIND_STRING,
 } RzBinDwarfAttrKind;
 
-typedef struct dwarf_attr_kind {
+typedef struct dwarf_attr_t {
 	enum DW_AT name;
 	enum DW_FORM form;
 	RzBinDwarfAttrKind kind;
@@ -994,6 +1000,7 @@ RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code);
 RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code);
 RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type);
 RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang);
+RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN lang);
 
 RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile);
@@ -1002,7 +1009,7 @@ RZ_API HtUP /*<offset, RzBinDwarfLocList *>*/ *rz_bin_dwarf_loc_parse(RzBinFile 
 RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set);
 RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table);
 RZ_API void rz_bin_dwarf_info_free(RzBinDwarfDebugInfo *info);
-RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *da);
+RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs);
 RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da);
 RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t idx);
 RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_by_offet(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t offset);

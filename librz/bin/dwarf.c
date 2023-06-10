@@ -388,7 +388,12 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_Dylan] = "Dylan",
 	[DW_LANG_C_plus_plus_14] = "C++14",
 	[DW_LANG_Fortran03] = "Fortran03",
-	[DW_LANG_Fortran08] = "Fortran08"
+	[DW_LANG_Fortran08] = "Fortran08",
+	[DW_LANG_Mips_Assembler] = "DW_LANG_Mips_Assembler",
+	[DW_LANG_GOOGLE_RenderScript] = "DW_LANG_GOOGLE_RenderScript",
+	[DW_LANG_SUN_Assembler] = "DW_LANG_SUN_Assembler",
+	[DW_LANG_ALTIUM_Assembler] = "DW_LANG_ALTIUM_Assembler",
+	[DW_LANG_BORLAND_Delphi] = "DW_LANG_BORLAND_Delphi",
 };
 
 static const char *dwarf_unit_types[] = {
@@ -478,6 +483,18 @@ RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang) {
 		return NULL;
 	}
 	return dwarf_langs[lang];
+}
+
+static const char *dwarf_children[] = {
+	[DW_CHILDREN_yes] = "DW_CHILDREN_yes",
+	[DW_CHILDREN_no] = "DW_CHILDREN_no",
+};
+
+RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN lang) {
+	if (lang >= RZ_ARRAY_SIZE(dwarf_children)) {
+		return NULL;
+	}
+	return dwarf_children[lang];
 }
 
 /**
@@ -1416,61 +1433,55 @@ beach:
 	return false;
 }
 
-static void attr_def_free(RzBinDwarfAttrDef *def, void *user) {
-	if (!def) {
-		return;
-	}
-}
-
-static int abbrev_decl_init(RzBinDwarfAbbrevDecl *ad) {
-	if (!ad) {
+static int abbrev_decl_init(RzBinDwarfAbbrevDecl *abbrev) {
+	if (!abbrev) {
 		return -EINVAL;
 	}
-	rz_vector_init(&ad->defs, sizeof(RzBinDwarfAttrDef), (RzVectorFree)attr_def_free, NULL);
+	rz_vector_init(&abbrev->defs, sizeof(RzBinDwarfAttrDef), NULL, NULL);
 	return 0;
 }
 
-static void abbrev_decl_fini(RzBinDwarfAbbrevDecl *ad, void *user) {
-	if (!ad) {
+static void abbrev_decl_fini(RzBinDwarfAbbrevDecl *abbrevs, void *user) {
+	if (!abbrevs) {
 		return;
 	}
-	rz_vector_fini(&ad->defs);
+	rz_vector_fini(&abbrevs->defs);
 }
 
-static void debug_abbrev_fini(RzBinDwarfDebugAbbrevs *da) {
-	if (!da) {
+static void abbrev_fini(RzBinDwarfDebugAbbrevs *abbrevs) {
+	if (!abbrevs) {
 		return;
 	}
-	rz_vector_fini(&da->decls);
-	ht_up_free(da->decl_tbl);
-	ht_uu_free(da->decl_index_tbl);
+	rz_vector_fini(&abbrevs->decls);
+	ht_up_free(abbrevs->decl_tbl);
+	ht_uu_free(abbrevs->decl_index_tbl);
 }
 
-static int debug_abbrev_init(RzBinDwarfDebugAbbrevs *da) {
-	if (!da) {
+static int abbrev_init(RzBinDwarfDebugAbbrevs *abbrevs) {
+	if (!abbrevs) {
 		return -EINVAL;
 	}
-	rz_vector_init(&da->decls, sizeof(RzBinDwarfAbbrevDecl), (RzVectorFree)abbrev_decl_fini, NULL);
-	da->decl_tbl = ht_up_new(NULL, NULL, NULL);
-	if (!da->decl_tbl) {
+	rz_vector_init(&abbrevs->decls, sizeof(RzBinDwarfAbbrevDecl), (RzVectorFree)abbrev_decl_fini, NULL);
+	abbrevs->decl_tbl = ht_up_new(NULL, NULL, NULL);
+	if (!abbrevs->decl_tbl) {
 		goto beach;
 	}
-	da->decl_index_tbl = ht_uu_new0();
-	if (!da->decl_index_tbl) {
+	abbrevs->decl_index_tbl = ht_uu_new0();
+	if (!abbrevs->decl_index_tbl) {
 		goto beach;
 	}
 	return 0;
 beach:
-	debug_abbrev_fini(da);
+	abbrev_fini(abbrevs);
 	return -EINVAL;
 }
 
-RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *da) {
-	if (!da) {
+RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs) {
+	if (!abbrevs) {
 		return;
 	}
-	debug_abbrev_fini(da);
-	free(da);
+	abbrev_fini(abbrevs);
+	free(abbrevs);
 }
 
 RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li) {
@@ -1581,7 +1592,12 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttrDef *def, RzBinDwarfAttr 
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
 		value->string.content = buf_get_string(buffer);
-		RET_FALSE_IF_FAIL(value->string.content);
+#define CHECK_STRING \
+	if (!value->string.content) { \
+		RZ_LOG_ERROR("Failed to read string %s [%s]\n", rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form)); \
+		return false; \
+	}
+		CHECK_STRING;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1613,11 +1629,8 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttrDef *def, RzBinDwarfAttr 
 		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, hdr->is_64bit, big_endian));
 		if (str_buffer && value->string.offset < rz_buf_size(str_buffer)) {
 			value->string.content = rz_buf_get_string(str_buffer, value->string.offset);
-			if (!value->string.content) {
-				RZ_FREE(value->string.content);
-				return false;
-			}
 		}
+		CHECK_STRING;
 		break;
 		// offset in .debug_info
 	case DW_FORM_ref_addr:
@@ -1762,6 +1775,10 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttrDef *def, RzBinDwarfAttr 
 }
 
 static char *attr_to_string(RzBinDwarfAttr *attr) {
+	switch (attr->name) {
+	case DW_AT_language: return rz_str_new(rz_bin_dwarf_lang(attr->uconstant));
+	default: break;
+	}
 	switch (attr->kind) {
 	case DW_AT_KIND_ADDRESS: return rz_str_newf("0x%" PFMT64x, attr->address);
 	case DW_AT_KIND_BLOCK: return rz_str_newf("0x%" PFMT64x, attr->block.length);
@@ -1770,7 +1787,7 @@ static char *attr_to_string(RzBinDwarfAttr *attr) {
 	case DW_AT_KIND_FLAG: return rz_str_newf("true");
 	case DW_AT_KIND_REFERENCE:
 	case DW_AT_KIND_LOCLISTPTR: return rz_str_newf("ref: 0x%" PFMT64x, attr->reference);
-	case DW_AT_KIND_STRING: return rz_str_newf(".debug_str[0x%" PFMT64x "] = %s", attr->string.offset, attr->string.content);
+	case DW_AT_KIND_STRING: return attr->string.offset > 0 ? rz_str_newf(".debug_str[0x%" PFMT64x "] = \"%s\"", attr->string.offset, attr->string.content) : rz_str_newf("\"%s\"", attr->string.content);
 	case DW_AT_KIND_RANGELISTPTR:
 	case DW_AT_KIND_MACPTR:
 	case DW_AT_KIND_LINEPTR:
@@ -1784,7 +1801,7 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 	const char *comp_dir = NULL;
 	ut64 line_info_offset = UT64_MAX;
 
-	RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s [%" PFMT64d "]\n", die->offset, rz_bin_dwarf_tag(die->tag), die->abbrev_code);
+	RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s [%" PFMT64d "] %s\n", die->offset, rz_bin_dwarf_tag(die->tag), die->abbrev_code, rz_bin_dwarf_children(die->has_children));
 	void *it;
 	rz_vector_foreach(&abbrev->defs, it) {
 		RzBinDwarfAttrDef *def = it;
@@ -1875,7 +1892,6 @@ static bool comp_unit_die_parse(RzBuffer *buffer, RzBinDwarfCompUnit *unit, RzBi
 
 		ut64 attr_count = rz_bin_dwarf_abbrev_decl_count(abbrev);
 		if (attr_count) {
-			rz_vector_init(&die.attrs, sizeof(RzBinDwarfAttrDef), (RzVectorFree)attr_def_free, NULL);
 			rz_vector_reserve(&die.attrs, attr_count);
 		}
 		if (abbrev->code != 0) {
@@ -1934,22 +1950,29 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 		goto cleanup;
 	}
 
+	ut64 next_unit_offset = 0;
 	while (true) {
+		ut64 offset = rz_buf_tell(buffer);
+		if (offset != next_unit_offset) {
+			RZ_LOG_ERROR("offset: 0x%" PFMT64x " != next_unit_offset: 0x%" PFMT64x "\n", offset, next_unit_offset);
+			rz_buf_seek(buffer, (st64)next_unit_offset, SEEK_SET);
+		}
+
 		RzBinDwarfCompUnit unit = {
-			.offset = rz_buf_tell(buffer),
+			.offset = offset,
 			.hdr.unit_offset = unit.offset,
 		};
 		if (unit_init(&unit) < 0) {
 			goto cleanup;
 		}
-
 		if (!comp_unit_hdr_parse(buffer, &unit.hdr, big_endian)) {
 			break;
 		}
-
 		if (unit.hdr.length > rz_buf_size(buffer)) {
 			goto cleanup;
 		}
+
+		next_unit_offset = offset + unit.hdr.length;
 
 		RzBinDwarfAbbrevDecl *decl_head = rz_vector_head(&da->decls);
 		size_t count = rz_bin_dwarf_abbrev_count(da);
@@ -1981,7 +2004,7 @@ cleanup:
 }
 
 static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
-	debug_abbrev_init(abbrevs);
+	abbrev_init(abbrevs);
 	RzBinDwarfAbbrevDecl *p = NULL;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
@@ -2177,9 +2200,10 @@ RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile 
 
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
+	RzBinDwarfDebugAbbrevs *abbrevs = NULL;
 	RzBuffer *buf = get_section_buf(binfile, "debug_abbrev");
 	GOTO_IF_FAIL(buf, ok);
-	RzBinDwarfDebugAbbrevs *abbrevs = RZ_NEW0(RzBinDwarfDebugAbbrevs);
+	abbrevs = RZ_NEW0(RzBinDwarfDebugAbbrevs);
 	GOTO_IF_FAIL(abbrevs, err);
 	GOTO_IF_FAIL(abbrev_parse(buf, abbrevs), err);
 ok:
@@ -2350,15 +2374,15 @@ RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf,
 		RZ_LOG_DEBUG(".debug_abbrev\n");
 		dw->abbrevs = rz_bin_dwarf_abbrev_parse(bf);
 	}
-	if (opt->flags & RZ_BIN_DWARF_PARSE_INFO) {
+	if (opt->flags & RZ_BIN_DWARF_PARSE_INFO && dw->abbrevs) {
 		RZ_LOG_DEBUG(".debug_info\n");
-		dw->info = dw->abbrevs ? rz_bin_dwarf_info_parse(bf, dw->abbrevs) : NULL;
+		dw->info = rz_bin_dwarf_info_parse(bf, dw->abbrevs);
 	}
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LOC) {
 		RZ_LOG_DEBUG(".debug_loc\n");
 		dw->loc = rz_bin_dwarf_loc_parse(bf, opt->addr_size);
 	}
-	if (opt->flags & RZ_BIN_DWARF_PARSE_LINES) {
+	if (opt->flags & RZ_BIN_DWARF_PARSE_LINES && dw->info) {
 		RZ_LOG_DEBUG(".debug_line\n");
 		dw->lines = rz_bin_dwarf_parse_line(bf, dw->info, opt->line_mask);
 	}
