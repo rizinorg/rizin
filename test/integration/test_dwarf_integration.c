@@ -40,7 +40,9 @@ static bool test_parse_dwarf_types(void) {
 	RzBinDwarfParseOptions dw_opt = {
 		.addr_size = analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC,
 	};
+	//	rz_log_set_level(RZ_LOGLVL_DEBUG);
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 
 	mu_assert_notnull(dw->abbrevs, "Couldn't parse Abbreviations");
@@ -155,6 +157,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	RzBinDwarfParseOptions dw_opt = {
 		.addr_size = analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 	mu_assert_notnull(dw->abbrevs, "Couldn't parse Abbreviations");
@@ -212,6 +215,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	RzBinDwarfParseOptions dw_opt = {
 		.addr_size = analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 	mu_assert_notnull(dw->abbrevs, "Couldn't parse Abbreviations");
@@ -270,6 +274,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	RzBinDwarfParseOptions dw_opt = {
 		.addr_size = analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 

@@ -7,24 +7,6 @@
 #include <rz_bin_dwarf.h>
 #include "../unit/minunit.h"
 
-#define check_abbrev_code(expected_code) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->code, expected_code, "Wrong abbrev code");
-
-#define check_abbrev_tag(expected_tag) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->tag, expected_tag, "Incorrect abbreviation tag")
-
-#define check_abbrev_count(expected_count) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_decl_count(rz_bin_dwarf_abbrev_get(da, i)), expected_count, "Incorrect abbreviation count")
-
-#define check_abbrev_children(expected_children) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_get(da, i)->has_children, expected_children, "Incorrect children flag")
-
-#define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->name, expected_name, "Incorrect children flag");
-
-#define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq(rz_bin_dwarf_abbrev_decl_get(rz_bin_dwarf_abbrev_get(da, i), j)->form, expected_form, "Incorrect children flag");
-
 static bool check_line_samples_eq(const RzBinSourceLineInfo *actual,
 	size_t samples_count_expect, const RzBinSourceLineSample *samples_expect) {
 	mu_assert_eq(actual->samples_count, samples_count_expect, "samples count");
@@ -93,74 +75,33 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
-	// order matters
-	// I nest scopes to make it more readable, (hopefully)
-	int i = 0;
-	check_abbrev_tag(DW_TAG_compile_unit);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-		{
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_producer);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_language);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_comp_dir);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_low_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_high_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_stmt_list);
-			check_abbrev_attr_form(DW_FORM_data4);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(7);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_base_type);
-	{
-		check_abbrev_count(3);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_count(11);
-		check_abbrev_children(true);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(6);
-		check_abbrev_children(false);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_count(9);
-		check_abbrev_children(true);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_count(5);
-		check_abbrev_children(false);
-	}
-	i++;
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
+				   "    DW_AT_producer                 DW_FORM_strp\n"
+				   "    DW_AT_language                 DW_FORM_data1\n"
+				   "    DW_AT_name                     DW_FORM_strp\n"
+				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
+				   "    DW_AT_low_pc                   DW_FORM_addr\n"
+				   "    DW_AT_high_pc                  DW_FORM_addr\n"
+				   "    DW_AT_stmt_list                DW_FORM_data4\n",
+		"abbrev decl");
+
+	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 3));
+	mu_assert_streq_free(dump, "    3      DW_TAG_base_type          [no children] (0x26)\n"
+				   "    DW_AT_byte_size                DW_FORM_data1\n"
+				   "    DW_AT_encoding                 DW_FORM_data1\n"
+				   "    DW_AT_name                     DW_FORM_string\n",
+		"abbrev decl");
+
+	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 7));
+	mu_assert_streq_free(dump, "    7      DW_TAG_variable           [no children] (0x76)\n"
+				   "    DW_AT_name                     DW_FORM_string\n"
+				   "    DW_AT_decl_file                DW_FORM_data1\n"
+				   "    DW_AT_decl_line                DW_FORM_data1\n"
+				   "    DW_AT_decl_column              DW_FORM_data1\n"
+				   "    DW_AT_type                     DW_FORM_ref4\n",
+		"abbrev decl");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
@@ -212,298 +153,34 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
-	// order matters
-	// I nest scopes to make it more readable, (hopefully)
-	int i = 0;
-	check_abbrev_tag(DW_TAG_compile_unit);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-		{
-			/**
-			 *  Everything commented out is something that is missing from being printed by `id` Radare
-			 */
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_producer);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_language);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_comp_dir);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_ranges);
-			check_abbrev_attr_form(DW_FORM_data4);
-			j++;
-			check_abbrev_attr_name(DW_AT_low_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_entry_pc);
-			check_abbrev_attr_form(DW_FORM_addr);
-			j++;
-			check_abbrev_attr_name(DW_AT_stmt_list);
-			check_abbrev_attr_form(DW_FORM_data4);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
+				   "    DW_AT_producer                 DW_FORM_strp\n"
+				   "    DW_AT_language                 DW_FORM_data1\n"
+				   "    DW_AT_name                     DW_FORM_strp\n"
+				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
+				   "    DW_AT_ranges                   DW_FORM_data4\n"
+				   "    DW_AT_low_pc                   DW_FORM_addr\n"
+				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
+				   "    DW_AT_stmt_list                DW_FORM_data4\n",
+		"abbrev decl");
 
-			// check_abbrev_attr_name (DW_AT value: 0);
-			// check_abbrev_attr_form (DW_AT value: 0);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_structure_type);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-		{
-			/**
-			 *  Everything commented out is something that is missing from being printed by `id` Radare
-			 */
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_byte_size);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_file);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_line);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_column);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_containing_type);
-			check_abbrev_attr_form(DW_FORM_ref4);
-			j++;
-			check_abbrev_attr_name(DW_AT_sibling);
-			check_abbrev_attr_form(DW_FORM_ref4);
-
-			// check_abbrev_attr_name (DW_AT value: 0);
-			// check_abbrev_attr_form (DW_AT value: 0);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(1);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_member);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(4);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(9);
-	}
-	i++;
-
-	// 8
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(11);
-		{
-			int j = 0;
-			check_abbrev_attr_name(DW_AT_external);
-			check_abbrev_attr_form(DW_FORM_flag);
-			j++;
-			check_abbrev_attr_name(DW_AT_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_file);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_line);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_decl_column);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			// check_abbrev_attr_name (DW_AT_MIPS_linkage_name);
-			check_abbrev_attr_form(DW_FORM_strp);
-			j++;
-			check_abbrev_attr_name(DW_AT_virtuality);
-			check_abbrev_attr_form(DW_FORM_data1);
-			j++;
-			check_abbrev_attr_name(DW_AT_containing_type);
-			check_abbrev_attr_form(DW_FORM_ref4);
-			j++;
-			check_abbrev_attr_name(DW_AT_declaration);
-			check_abbrev_attr_form(DW_FORM_flag);
-			j++;
-			check_abbrev_attr_name(DW_AT_object_pointer);
-			check_abbrev_attr_form(DW_FORM_ref4);
-			j++;
-			check_abbrev_attr_name(DW_AT_sibling);
-			check_abbrev_attr_form(DW_FORM_ref4);
-		}
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(12);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_const_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(1);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_pointer_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_reference_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subroutine_type);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_unspecified_parameters);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(0);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_base_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_pointer_type);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_structure_type);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_inheritance);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(9);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(12);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(11);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(6);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_variable);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(6);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(4);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(4);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(3);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	{
-		check_abbrev_children(false);
-		check_abbrev_count(2);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(8);
-	}
-	i++;
-	check_abbrev_tag(DW_TAG_subprogram);
-	{
-		check_abbrev_children(true);
-		check_abbrev_count(7);
-	}
+	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 9));
+	mu_assert_streq_free(dump, "    9      DW_TAG_subprogram         [has children] (0x8d)\n"
+				   "    DW_AT_external                 DW_FORM_flag\n"
+				   "    DW_AT_name                     DW_FORM_string\n"
+				   "    DW_AT_decl_file                DW_FORM_data1\n"
+				   "    DW_AT_decl_line                DW_FORM_data1\n"
+				   "    DW_AT_decl_column              DW_FORM_data1\n"
+				   "    DW_AT_MIPS_linkage_name        DW_FORM_strp\n"
+				   "    DW_AT_type                     DW_FORM_ref4\n"
+				   "    DW_AT_virtuality               DW_FORM_data1\n"
+				   "    DW_AT_vtable_elem_location     DW_FORM_block1\n"
+				   "    DW_AT_containing_type          DW_FORM_ref4\n"
+				   "    DW_AT_declaration              DW_FORM_flag\n"
+				   "    DW_AT_object_pointer           DW_FORM_ref4\n",
+		"abbrev decl");
 
 	// rz_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
 
@@ -600,17 +277,30 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	// which prints out all the abbreviation
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
-	int i = 18;
 
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	check_abbrev_count(4);
-	check_abbrev_children(false);
-	check_abbrev_code(19);
-	i = 41;
-	check_abbrev_tag(DW_TAG_inheritance);
-	check_abbrev_count(2);
-	check_abbrev_children(false);
-	check_abbrev_code(18);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
+				   "    DW_AT_producer                 DW_FORM_strp\n"
+				   "    DW_AT_language                 DW_FORM_data1\n"
+				   "    DW_AT_name                     DW_FORM_strp\n"
+				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
+				   "    DW_AT_ranges                   DW_FORM_data4\n"
+				   "    DW_AT_low_pc                   DW_FORM_addr\n"
+				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
+				   "    DW_AT_stmt_list                DW_FORM_data4\n",
+		"abbrev decl");
+
+	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 18));
+	mu_assert_streq_free(dump, "    18     DW_TAG_subprogram         [has children] (0x11d)\n"
+				   "    DW_AT_specification            DW_FORM_ref4\n"
+				   "    DW_AT_object_pointer           DW_FORM_ref4\n"
+				   "    DW_AT_low_pc                   DW_FORM_addr\n"
+				   "    DW_AT_high_pc                  DW_FORM_addr\n"
+				   "    DW_AT_frame_base               DW_FORM_block1\n"
+				   "    DW_AT_GNU_all_call_sites       DW_FORM_flag\n"
+				   "    DW_AT_siblings                 DW_FORM_ref4\n",
+		"abbrev decl");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
@@ -768,18 +458,25 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	int i = 18;
-
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	check_abbrev_count(4);
-	check_abbrev_children(false);
-	check_abbrev_code(19);
-	check_abbrev_tag(DW_TAG_formal_parameter);
-	i = 41;
-	check_abbrev_tag(DW_TAG_inheritance);
-	check_abbrev_count(3);
-	check_abbrev_children(false);
-	check_abbrev_code(18);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
+				   "    DW_AT_producer                 DW_FORM_strp\n"
+				   "    DW_AT_language                 DW_FORM_data1\n"
+				   "    DW_AT_name                     DW_FORM_strp\n"
+				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
+				   "    DW_AT_ranges                   DW_FORM_data4\n"
+				   "    DW_AT_low_pc                   DW_FORM_addr\n"
+				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
+				   "    DW_AT_stmt_list                DW_FORM_data4\n",
+		"abbrev decl");
+	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 19));
+	mu_assert_streq_free(dump, "    19     DW_TAG_formal_parameter   [no children] (0x131)\n"
+				   "    DW_AT_name                     DW_FORM_strp\n"
+				   "    DW_AT_type                     DW_FORM_ref4\n"
+				   "    DW_AT_artificial               DW_FORM_flag\n"
+				   "    DW_AT_location                 DW_FORM_block1\n",
+		"abbrev decl");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");

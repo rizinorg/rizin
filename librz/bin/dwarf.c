@@ -98,8 +98,8 @@ static char *buf_get_string(RzBuffer *buffer) {
 #define U16_WARP1(out, warp, ...)    warp(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian), __VA_ARGS__)
 #define U32_WARP1(out, warp, ...)    warp(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian), __VA_ARGS__)
 #define U64_WARP1(out, warp, ...)    warp(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian), __VA_ARGS__)
-#define ULE128_WARP1(out, warp, ...) warp(rz_buf_uleb128(buffer, (ut64 *)&(out) > 0), __VA_ARGS__)
-#define SLE128_WARP1(out, warp, ...) warp(rz_buf_sleb128(buffer, (st64 *)&(out) > 0), __VA_ARGS__)
+#define ULE128_WARP1(out, warp, ...) warp(rz_buf_uleb128(buffer, (ut64 *)&(out)) > 0, __VA_ARGS__)
+#define SLE128_WARP1(out, warp, ...) warp(rz_buf_sleb128(buffer, (st64 *)&(out)) > 0, __VA_ARGS__)
 
 #define U8_OR_RET_NULL(out)     U8_WARP(out, RET_NULL_IF_FAIL)
 #define U16_OR_RET_NULL(out)    U16_WARP(out, RET_NULL_IF_FAIL)
@@ -118,12 +118,32 @@ static char *buf_get_string(RzBuffer *buffer) {
 #define SLE128_OR_RET_FALSE(out) SLE128_WARP(out, RET_FALSE_IF_FAIL)
 
 #define U8_OR_GOTO(out, label)     U8_WARP1(out, GOTO_IF_FAIL, label)
-#define U16_OR_GOTO(out, label)    U8_WARP1(out, GOTO_IF_FAIL, label)
-#define U32_OR_GOTO(out, label)    U8_WARP1(out, GOTO_IF_FAIL, label)
-#define U64_OR_GOTO(out, label)    U8_WARP1(out, GOTO_IF_FAIL, label)
+#define U16_OR_GOTO(out, label)    U16_WARP1(out, GOTO_IF_FAIL, label)
+#define U32_OR_GOTO(out, label)    U32_WARP1(out, GOTO_IF_FAIL, label)
+#define U64_OR_GOTO(out, label)    U64_WARP1(out, GOTO_IF_FAIL, label)
 #define UX_OR_GOTO(out, x, label)  UX_WRAP1(out, x, GOTO_IF_FAIL, label)
-#define ULE128_OR_GOTO(out, label) U8_WARP1(out, GOTO_IF_FAIL, label)
-#define SLE128_OR_GOTO(out, label) U8_WARP1(out, GOTO_IF_FAIL, label)
+#define ULE128_OR_GOTO(out, label) ULE128_WARP1(out, GOTO_IF_FAIL, label)
+#define SLE128_OR_GOTO(out, label) SLE128_WARP(out, GOTO_IF_FAIL, label)
+
+static const char *indent_tbl[] = {
+	"",
+	"\t",
+	"\t\t",
+	"\t\t\t",
+	"\t\t\t\t",
+	"\t\t\t\t\t",
+	"\t\t\t\t\t\t",
+};
+
+const char *indent_str(int indent) {
+	if (indent < 0) {
+		return "";
+	}
+	if (indent > RZ_ARRAY_SIZE(indent_tbl)) {
+		indent = 6;
+	}
+	return indent_tbl[indent];
+}
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_null_entry] = "DW_TAG_null_entry",
@@ -1392,13 +1412,6 @@ static void attr_fini(RzBinDwarfAttr *val) {
 	};
 }
 
-static void die_init(RzBinDwarfDie *die) {
-	if (!die) {
-		return;
-	}
-	rz_vector_init(&die->attrs, sizeof(RzBinDwarfAttr), (RzVectorFree)attr_fini, NULL);
-}
-
 static void die_fini(RzBinDwarfDie *die) {
 	if (!die) {
 		return;
@@ -1441,33 +1454,30 @@ static int abbrev_decl_init(RzBinDwarfAbbrevDecl *abbrev) {
 	return 0;
 }
 
-static void abbrev_decl_fini(RzBinDwarfAbbrevDecl *abbrevs, void *user) {
-	if (!abbrevs) {
+static void kv_abbrev_free(HtUPKv *kv) {
+	if (!kv) {
 		return;
 	}
-	rz_vector_fini(&abbrevs->defs);
+	RzVector *v = kv->value;
+	if (!v) {
+		return;
+	}
+	rz_vector_fini(v);
 }
 
 static void abbrev_fini(RzBinDwarfDebugAbbrevs *abbrevs) {
 	if (!abbrevs) {
 		return;
 	}
-	rz_vector_fini(&abbrevs->decls);
-	ht_up_free(abbrevs->decl_tbl);
-	ht_uu_free(abbrevs->decl_index_tbl);
+	ht_up_free(abbrevs->tbl);
 }
 
 static int abbrev_init(RzBinDwarfDebugAbbrevs *abbrevs) {
 	if (!abbrevs) {
 		return -EINVAL;
 	}
-	rz_vector_init(&abbrevs->decls, sizeof(RzBinDwarfAbbrevDecl), (RzVectorFree)abbrev_decl_fini, NULL);
-	abbrevs->decl_tbl = ht_up_new(NULL, NULL, NULL);
-	if (!abbrevs->decl_tbl) {
-		goto beach;
-	}
-	abbrevs->decl_index_tbl = ht_uu_new0();
-	if (!abbrevs->decl_index_tbl) {
+	abbrevs->tbl = ht_up_new(NULL, kv_abbrev_free, NULL);
+	if (!abbrevs->tbl) {
 		goto beach;
 	}
 	return 0;
@@ -1586,7 +1596,7 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttrDef *def, RzBinDwarfAttr 
 		SLE128_OR_RET_FALSE(value->sconstant);
 		break;
 	case DW_FORM_udata:
-		value->kind = DW_AT_KIND_CONSTANT;
+		value->kind = DW_AT_KIND_UCONSTANT;
 		ULE128_OR_RET_FALSE(value->uconstant);
 		break;
 	case DW_FORM_string:
@@ -1801,18 +1811,17 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 	const char *comp_dir = NULL;
 	ut64 line_info_offset = UT64_MAX;
 
-	RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s [%" PFMT64d "] %s\n", die->offset, rz_bin_dwarf_tag(die->tag), die->abbrev_code, rz_bin_dwarf_children(die->has_children));
-	void *it;
-	rz_vector_foreach(&abbrev->defs, it) {
-		RzBinDwarfAttrDef *def = it;
+	RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n", die->offset, indent_str(die->depth), rz_bin_dwarf_tag(die->tag), die->abbrev_code, rz_bin_dwarf_children(die->has_children));
+	RzBinDwarfAttrDef *def = NULL;
+	rz_vector_foreach(&abbrev->defs, def) {
 		RzBinDwarfAttr attr = { 0 };
 		if (!attr_parse(buffer, def, &attr, hdr, str_buffer, big_endian)) {
-			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed 0x%" PFMT64x "%s [%s]\n ", rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
+			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die: 0x%" PFMT64x " %s [%s]\n ", rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
 			continue;
 		}
 
 		char *data = attr_to_string(&attr);
-		RZ_LOG_DEBUG("0x%" PFMT64x ":\t\t%s [%s]\t(%s)\n", rz_buf_tell(buffer), rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form), rz_str_get(data));
+		RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s\t%s [%s] (%s)\n", rz_buf_tell(buffer), indent_str(die->depth), rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form), rz_str_get(data));
 		free(data);
 
 		enum DW_AT name = attr.name;
@@ -1844,38 +1853,38 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 	return true;
 }
 
-static RzBinDwarfAbbrevDecl *abbrev_get(const RzBinDwarfDebugAbbrevs *abbrevs, ut64 idx) {
-	idx -= 1;
-	if (idx >= rz_bin_dwarf_abbrev_count(abbrevs)) {
-		return NULL;
-	}
-	return rz_bin_dwarf_abbrev_get(abbrevs, idx);
+static inline ut64 get_next_unit_offset(RzBinDwarfCompUnit *unit) {
+	return unit->offset + unit->hdr.length + (unit->hdr.is_64bit ? 12 : 4);
 }
 
 /**
  * \brief Reads throught comp_unit buffer and parses all its DIEntries*
  */
-static bool comp_unit_die_parse(RzBuffer *buffer, RzBinDwarfCompUnit *unit, RzBinDwarfDebugInfo *info, const RzBinDwarfDebugAbbrevs *abbrevs,
-	size_t first_abbr_idx, RzBuffer *str_buffer, bool big_endian) {
-
-	size_t index = 0;
+static bool comp_unit_die_parse(RzBuffer *buffer, RzBinDwarfCompUnit *unit, RzBinDwarfDebugInfo *info, const RzBinDwarfAbbrevTable *tbl, RzBuffer *str_buffer, bool big_endian) {
 	st64 depth = 0;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
-		RzBinDwarfDie die = {
-			.offset = offset,
-			.unit_offset = unit->offset,
-			.index = index,
-		};
-		die_init(&die);
+		if (offset >= get_next_unit_offset(unit)) {
+			break;
+		}
 		// DIE starts with ULEB128 with the abbreviation code
 		// we wanna store this entry too, usually the last one is null_entry
 		// return the buffer to parse next compilation units
-		ULE128_OR_GOTO(die.abbrev_code, ok);
+		ut64 abbrev_code = 0;
+		if (rz_buf_uleb128(buffer, &abbrev_code) < 0) {
+			break;
+		}
 
+		RzBinDwarfDie die = {
+			.offset = offset,
+			.unit_offset = unit->offset,
+			.index = rz_vector_len(&unit->dies),
+			.depth = depth,
+			.abbrev_code = abbrev_code,
+		};
 		// there can be "null" entries that have abbr_code == 0
-		if (!die.abbrev_code) {
-			RZ_LOG_DEBUG("0x%" PFMT64x ":\tNULL\n", offset);
+		if (!abbrev_code) {
+			RZ_LOG_DEBUG("0x%" PFMT64x ":\t%sNULL\n", offset, indent_str(die.depth));
 			rz_vector_push(&unit->dies, &die);
 			depth--;
 			if (depth <= 0) {
@@ -1885,13 +1894,14 @@ static bool comp_unit_die_parse(RzBuffer *buffer, RzBinDwarfCompUnit *unit, RzBi
 			}
 		}
 
-		RzBinDwarfAbbrevDecl *abbrev = abbrev_get(abbrevs, first_abbr_idx + die.abbrev_code);
+		RzBinDwarfAbbrevDecl *abbrev = rz_bin_dwarf_abbrev_get(tbl, die.abbrev_code);
 		if (!abbrev) {
 			break;
 		}
 
 		ut64 attr_count = rz_bin_dwarf_abbrev_decl_count(abbrev);
 		if (attr_count) {
+			rz_vector_init(&die.attrs, sizeof(RzBinDwarfAttr), (RzVectorFree)attr_fini, NULL);
 			rz_vector_reserve(&die.attrs, attr_count);
 		}
 		if (abbrev->code != 0) {
@@ -1902,10 +1912,8 @@ static bool comp_unit_die_parse(RzBuffer *buffer, RzBinDwarfCompUnit *unit, RzBi
 			}
 			GOTO_IF_FAIL(die_attr_parse(buffer, &die, info, abbrev, &unit->hdr, str_buffer, big_endian), err);
 		}
-		index++;
 		rz_vector_push(&unit->dies, &die);
 	}
-ok:
 	return true;
 err:
 	return false;
@@ -1942,7 +1950,7 @@ static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bo
 /**
  * \brief Parses whole .debug_info section
  */
-static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDwarfDebugAbbrevs *da, RzBuffer *str_buffer, bool big_endian) {
+static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDwarfDebugAbbrevs *abbrevs, RzBuffer *str_buffer, bool big_endian) {
 	if (!info) {
 		return NULL;
 	}
@@ -1950,13 +1958,15 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 		goto cleanup;
 	}
 
-	ut64 next_unit_offset = 0;
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
-		if (offset != next_unit_offset) {
-			RZ_LOG_ERROR("offset: 0x%" PFMT64x " != next_unit_offset: 0x%" PFMT64x "\n", offset, next_unit_offset);
-			rz_buf_seek(buffer, (st64)next_unit_offset, SEEK_SET);
+		if (offset >= rz_buf_size(buffer)) {
+			break;
 		}
+		//		if (offset != next_unit_offset) {
+		//			RZ_LOG_ERROR("offset: 0x%" PFMT64x " != next_unit_offset: 0x%" PFMT64x "\n", offset, next_unit_offset);
+		//			rz_buf_seek(buffer, (st64)next_unit_offset, SEEK_SET);
+		//		}
 
 		RzBinDwarfCompUnit unit = {
 			.offset = offset,
@@ -1972,27 +1982,15 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 			goto cleanup;
 		}
 
-		next_unit_offset = offset + unit.hdr.length;
+		//		next_unit_offset = get_next_unit_offset(&unit);
 
-		RzBinDwarfAbbrevDecl *decl_head = rz_vector_head(&da->decls);
-		size_t count = rz_bin_dwarf_abbrev_count(da);
-		if (rz_bin_dwarf_abbrev_decl_count(decl_head) >= count) {
-			RZ_LOG_WARN("malformed dwarf have not enough buckets for decls.\n");
-		}
-
-		// find abbrev start for current comp unit
-		// we could also do naive, ((char *)da->decls) + abbrev_offset,
-		// but this is more bulletproof to invalid DWARF
-		RzBinDwarfAbbrevDecl *abbrev_start = rz_bin_dwarf_abbrev_by_offet(da, unit.hdr.abbrev_offset);
-		if (!abbrev_start) {
+		RzBinDwarfAbbrevTable *tbl = ht_up_find(abbrevs->tbl, unit.hdr.abbrev_offset, NULL);
+		if (!tbl) {
 			goto cleanup;
 		}
 
-		// They point to the same array object, so should be def. behaviour
-		size_t first_abbr_idx = rz_bin_dwarf_abbrev_index_by_offet(da, unit.hdr.abbrev_offset);
-
 		RZ_LOG_DEBUG("0x%" PFMT64x ":\tcompile unit length = 0x%" PFMT64x ", abbr_offset: 0x%" PFMT64x "\n", unit.offset, unit.hdr.length, unit.hdr.abbrev_offset);
-		comp_unit_die_parse(buffer, &unit, info, da, first_abbr_idx, str_buffer, big_endian);
+		comp_unit_die_parse(buffer, &unit, info, tbl, str_buffer, big_endian);
 
 		info->die_count += rz_vector_len(&unit.dies);
 		rz_vector_push(&info->units, &unit);
@@ -2003,24 +2001,37 @@ cleanup:
 	return false;
 }
 
+static RzBinDwarfAbbrevTable *abbrevtable_new(size_t offset) {
+	RzBinDwarfAbbrevTable *table = RZ_NEW0(RzBinDwarfAbbrevTable);
+	rz_vector_init(&table->abbrevs, sizeof(RzBinDwarfAbbrevDecl), NULL, NULL);
+	table->offset = offset;
+	return table;
+}
+
 static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 	abbrev_init(abbrevs);
-	RzBinDwarfAbbrevDecl *p = NULL;
+	RzBinDwarfAbbrevTable *tbl = abbrevtable_new(rz_buf_tell(buffer));
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
+		if (!tbl) {
+			tbl = abbrevtable_new(offset);
+		}
+
 		ut64 code = 0;
 		ULE128_OR_GOTO(code, ok);
 		if (code == 0) {
+			ht_up_update(abbrevs->tbl, tbl->offset, tbl);
+			tbl = NULL;
 			continue;
 		}
 
-		enum DW_TAG tag;
+		ut64 tag;
 		ULE128_OR_RET_FALSE(tag);
-		enum DW_CHILDREN has_children;
+		ut8 has_children;
 		U8_OR_RET_FALSE(has_children);
 		if (!(has_children == DW_CHILDREN_yes || has_children == DW_CHILDREN_no)) {
-			RZ_LOG_ERROR("invalid DW_CHILDREN value: %d\n", has_children);
-			return false;
+			RZ_LOG_ERROR("0x%" PFMT64x ":\tinvalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), has_children);
+			continue;
 		}
 
 		RzBinDwarfAbbrevDecl decl = {
@@ -2030,7 +2041,7 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 			.has_children = has_children,
 		};
 		abbrev_decl_init(&decl);
-		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64d "] %s, has_children: %d\n", offset, code, rz_bin_dwarf_tag(tag), has_children);
+		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", offset, code, rz_bin_dwarf_tag(tag), has_children);
 
 		do {
 			ut64 name = 0;
@@ -2041,6 +2052,7 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 				if (form == 0) {
 					goto abbrev_ok;
 				}
+				RZ_LOG_ERROR("invalid name and form %" PFMT64d " %" PFMT64d "\n", name, form);
 				goto err;
 			}
 
@@ -2068,11 +2080,11 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 			rz_vector_push(&decl.defs, &def);
 		} while (true);
 	abbrev_ok:
-		p = rz_vector_push(&abbrevs->decls, &decl);
-		ht_up_insert(abbrevs->decl_tbl, decl.offset, p);
-		ht_uu_insert(abbrevs->decl_index_tbl, decl.offset, rz_vector_len(&abbrevs->decls) - 1);
+		rz_vector_push(&tbl->abbrevs, &decl);
+		abbrevs->count++;
 	}
 ok:
+	ht_up_update(abbrevs->tbl, tbl->offset, tbl);
 	return abbrevs;
 err:
 	rz_bin_dwarf_abbrev_free(abbrevs);
@@ -2123,7 +2135,10 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		return NULL;
 	}
 	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
-	return rz_buf_new_slice(binfile->buf, section->paddr, len);
+	ut8 *buf = calloc(1, len);
+	rz_buf_read_at(binfile->buf, section->paddr, buf, len);
+	RzBuffer *buffer = rz_buf_new_with_pointers(buf, len, true);
+	return buffer;
 }
 
 /**
@@ -2137,9 +2152,10 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RzBinFile *binfile, RzBinDwa
 	rz_return_val_if_fail(binfile && abbrevs, NULL);
 	RzBuffer *debug_str_buf = get_section_buf(binfile, "debug_str");
 	RzBuffer *buf = get_section_buf(binfile, "debug_info");
+	RzBinDwarfDebugInfo *info = NULL;
 	GOTO_IF_FAIL(buf, cave_debug_str_buf);
 
-	RzBinDwarfDebugInfo *info = RZ_NEW0(RzBinDwarfDebugInfo);
+	info = RZ_NEW0(RzBinDwarfDebugInfo);
 	GOTO_IF_FAIL(comp_unit_parse(buf, info, abbrevs, debug_str_buf, binfile->o && binfile->o->info && binfile->o->info->big_endian), cave_buf);
 
 	info->die_tbl = ht_up_new_size(info->die_count, NULL, NULL, NULL);
@@ -2148,13 +2164,11 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RzBinFile *binfile, RzBinDwa
 	GOTO_IF_FAIL(info->unit_tbl, cave_info);
 
 	// build hashtable after whole parsing because of possible relocations
-	void *it;
-	rz_vector_foreach(&info->units, it) {
-		RzBinDwarfCompUnit *unit = it;
+	RzBinDwarfCompUnit *unit = NULL;
+	rz_vector_foreach(&info->units, unit) {
 		ht_up_insert(info->unit_tbl, unit->offset, unit);
-		void *it_die;
-		rz_vector_foreach(&unit->dies, it_die) {
-			RzBinDwarfDie *die = it_die;
+		RzBinDwarfDie *die = NULL;
+		rz_vector_foreach(&unit->dies, die) {
 			ht_up_insert(info->die_tbl, die->offset, die); // optimization for further processing
 		}
 	}
@@ -2429,22 +2443,12 @@ RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwa
 
 RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da) {
 	rz_return_val_if_fail(da, 0);
-	return rz_vector_len(&da->decls);
+	return da->count;
 }
 
-RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t idx) {
-	rz_return_val_if_fail(da, NULL);
-	return rz_vector_index_ptr(&da->decls, idx);
-}
-
-RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_by_offet(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t offset) {
-	rz_return_val_if_fail(da, NULL);
-	return ht_up_find(da->decl_tbl, offset, NULL);
-}
-
-RZ_API size_t rz_bin_dwarf_abbrev_index_by_offet(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t offset) {
-	rz_return_val_if_fail(da, 0);
-	return ht_uu_find(da->decl_index_tbl, offset, NULL);
+RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx) {
+	rz_return_val_if_fail(tbl, NULL);
+	return rz_vector_index_ptr(&tbl->abbrevs, idx - 1);
 }
 
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl) {

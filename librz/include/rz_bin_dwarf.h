@@ -743,6 +743,7 @@ typedef enum DW_AT_KIND {
 	DW_AT_KIND_ADDRESS,
 	DW_AT_KIND_BLOCK,
 	DW_AT_KIND_CONSTANT,
+	DW_AT_KIND_UCONSTANT,
 	DW_AT_KIND_EXPRLOC,
 	DW_AT_KIND_FLAG,
 	DW_AT_KIND_LINEPTR,
@@ -810,6 +811,7 @@ typedef struct {
 	RzVector /*<RzBinDwarfAttrValue>*/ attrs;
 	size_t unit_offset;
 	size_t index;
+	size_t depth;
 } RzBinDwarfDie;
 
 typedef struct rz_bin_dwarf_comp_unit_t {
@@ -842,9 +844,13 @@ typedef struct {
 } RzBinDwarfAbbrevDecl;
 
 typedef struct {
-	RzVector /*<RzBinDwarfAbbrevDecl>*/ decls;
-	HtUP /*<size_t,RzBinDwarfAbbrevDecl *>*/ *decl_tbl;
-	HtUU /*<size_t,size_t>*/ *decl_index_tbl;
+	RzVector /*<RzBinDwarfAbbrevDecl>*/ abbrevs;
+	size_t offset;
+} RzBinDwarfAbbrevTable;
+
+typedef struct {
+	HtUP /*<size_t,RzBinDwarfDebugAbbrevTable*>*/ *tbl;
+	size_t count;
 } RzBinDwarfDebugAbbrevs;
 
 #define DWARF_FALSE 0
@@ -1011,9 +1017,7 @@ RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_ta
 RZ_API void rz_bin_dwarf_info_free(RzBinDwarfDebugInfo *info);
 RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs);
 RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da);
-RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t idx);
-RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_by_offet(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t offset);
-RZ_API size_t rz_bin_dwarf_abbrev_index_by_offet(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da, size_t offset);
+RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx);
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl);
 RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_decl_get(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx);
 

@@ -236,7 +236,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-libdemangle_options = ['default_library=static']
+libdemangle_options = ['default_library=static', 'werror=false']
 if get_option('use_gpl')
   libdemangle_options += 'use_gpl=true'
 else
