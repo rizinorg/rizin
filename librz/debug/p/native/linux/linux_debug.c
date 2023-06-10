@@ -400,6 +400,16 @@ bool linux_set_options(RzDebug *dbg, int pid) {
 	// PTRACE_SETOPTIONS can fail because of the asynchronous nature of ptrace
 	// If the target is traced, the loop will always end with success
 	while (rz_debug_ptrace(dbg, PTRACE_SETOPTIONS, pid, 0, (rz_ptrace_data_t)(size_t)traceflags) == -1) {
+
+		if (errno == ESRCH) {
+			/* ESRCH 3 - No such process */
+			int status = 0;
+			if (waitpid(pid, &status, __WALL)) {
+				perror("waitpid");
+				return false;
+			}
+		}
+
 		void *bed = rz_cons_sleep_begin();
 		usleep(1000);
 		rz_cons_sleep_end(bed);
@@ -449,13 +459,22 @@ bool linux_select(RzDebug *dbg, int pid, int tid) {
 }
 
 bool linux_attach_new_process(RzDebug *dbg, int pid) {
+	eprintf("detach from process %d\n", dbg->pid);
 	linux_detach_all(dbg);
-	if (dbg->threads) {
-		rz_list_free(dbg->threads);
-		dbg->threads = NULL;
+
+	// free threads list.
+	rz_list_free(dbg->threads);
+	dbg->threads = NULL;
+
+	eprintf("attach to process %d\n", pid);
+	if (!linux_attach(dbg, pid)) {
+		return false;
 	}
 
-	if (!linux_attach(dbg, pid)) {
+	// wait for the process to spawn
+	int wstatus = 0;
+	if (waitpid(pid, &wstatus, __WALL)) {
+		perror("waitpid");
 		return false;
 	}
 
@@ -684,8 +703,7 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	// Attaching to a process that has already been started with PTRACE_TRACEME.
 	// sets errno to "Operation not permitted" which may be misleading.
 	// GETSIGINFO can be called multiple times and would fail without attachment.
-	if (rz_debug_ptrace(dbg, PTRACE_GETSIGINFO, ptid, NULL,
-		    (rz_ptrace_data_t)&sig) == -1) {
+	if (rz_debug_ptrace(dbg, PTRACE_GETSIGINFO, ptid, NULL, (rz_ptrace_data_t)&sig) == -1) {
 		if (rz_debug_ptrace(dbg, PTRACE_ATTACH, ptid, NULL, NULL) == -1) {
 			perror("ptrace (PT_ATTACH)");
 			return false;
@@ -724,6 +742,7 @@ int linux_attach(RzDebug *dbg, int pid) {
 		// So check if the requested thread is being traced already. If not, attach it
 		if (!rz_list_find(dbg->threads, &pid, &match_pid)) {
 			linux_attach_single_pid(dbg, pid);
+			dbg->tid = pid;
 		}
 	}
 	return pid;
@@ -929,6 +948,9 @@ RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<Rz
 				pid_info->pc = pc;
 			} else {
 				pid_info = rz_debug_pid_new(NULL, tid, uid, 's', pc);
+			}
+			if (!pid_info) {
+				continue;
 			}
 			rz_list_append(list, pid_info);
 			dbg->n_threads++;
