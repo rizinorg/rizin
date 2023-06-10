@@ -758,12 +758,12 @@ typedef struct dwarf_attr_kind {
 		ut64 address;
 		RzBinDwarfBlock block;
 		ut64 uconstant;
-		ut128 uconstant16;
+		ut128 uconstant128;
 		st64 sconstant;
 		ut8 flag;
 		ut64 reference;
 		struct {
-			const char *content;
+			char *content;
 			ut64 offset;
 		} string;
 	};
@@ -787,7 +787,7 @@ typedef struct {
 	// A 1 - byte size of an address on the target architecture.If the system uses
 	//  segmented addressing, this value represents the size of the offset portion of an address.
 	ut8 address_size;
-	ut8 unit_type; // DWARF 5 addition
+	enum DW_UT unit_type; // DWARF 5 addition
 	ut8 dwo_id; // DWARF 5 addition
 	ut64 type_sig; // DWARF 5 addition
 	ut64 type_offset; // DWARF 5 addition
@@ -798,9 +798,9 @@ typedef struct {
 
 typedef struct {
 	ut64 offset; // important for parsing types
-	ut64 tag;
+	enum DW_TAG tag;
 	ut64 abbrev_code;
-	bool has_children; // important for parsing types
+	enum DW_CHILDREN has_children; // important for parsing types
 	RzVector /*<RzBinDwarfAttrValue>*/ attrs;
 	size_t unit_offset;
 	size_t index;
@@ -989,11 +989,11 @@ typedef struct rz_bin_dwarf_arange_set_t {
 typedef HtUP /*<offset, List *<RzBinDwarfLocList>*/ RzBinDwarfLocListTable;
 typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;
 
-RZ_API const char *rz_bin_dwarf_get_tag_name(ut64 tag);
-RZ_API const char *rz_bin_dwarf_get_attr_name(ut64 attr_code);
-RZ_API const char *rz_bin_dwarf_get_attr_form_name(ut64 form_code);
-RZ_API const char *rz_bin_dwarf_get_unit_type_name(ut64 unit_type);
-RZ_API const char *rz_bin_dwarf_get_lang_name(ut64 lang);
+RZ_API const char *rz_bin_dwarf_tag(enum DW_TAG tag);
+RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code);
+RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code);
+RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type);
+RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang);
 
 RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile);
@@ -1011,7 +1011,7 @@ RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDe
 RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_decl_get(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx);
 
 RZ_API RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(const RzBinDwarfDie *die, enum DW_AT name);
-// RZ_API st32 rz_bin_dwarf_die_index_attr(const RzBinDwarfDie *die, enum DW_AT name);
+RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name);
 
 /**
  * \brief Opaque cache for fully resolved filenames during Dwarf Line Info Generation

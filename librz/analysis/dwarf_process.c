@@ -249,6 +249,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		case DW_TAG_enumeration_type:
 			ret->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 			break;
+		default: break;
 		}
 		break;
 	}

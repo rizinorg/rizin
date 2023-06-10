@@ -14,7 +14,7 @@ RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrevs 
 		}
 		RzBinDwarfAbbrevDecl *decl = itdecl;
 		rz_cons_printf("   %-4" PFMT64d " ", decl->code);
-		const char *tagname = rz_bin_dwarf_get_tag_name(decl->tag);
+		const char *tagname = rz_bin_dwarf_tag(decl->tag);
 		if (tagname) {
 			rz_cons_printf("  %-25s ", tagname);
 		}
@@ -24,8 +24,8 @@ RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrevs 
 		void *itdef;
 		rz_vector_foreach(&decl->defs, itdef) {
 			RzBinDwarfAttrDef *def = itdef;
-			const char *attr_name = rz_bin_dwarf_get_attr_name(def->name);
-			const char *attr_form_name = rz_bin_dwarf_get_attr_form_name(def->form);
+			const char *attr_name = rz_bin_dwarf_attr(def->name);
+			const char *attr_form_name = rz_bin_dwarf_form(def->form);
 			if (attr_name && attr_form_name) {
 				rz_cons_printf("    %-30s %-30s\n", attr_name, attr_form_name);
 			}
@@ -55,7 +55,7 @@ RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttr *val) {
 	case DW_FORM_data16:
 		rz_cons_printf("%" PFMT64u "", val->uconstant);
 		if (val->name == DW_AT_language) {
-			const char *lang_name = rz_bin_dwarf_get_lang_name(val->uconstant);
+			const char *lang_name = rz_bin_dwarf_lang(val->uconstant);
 			if (lang_name) {
 				rz_cons_printf("   (%s)", lang_name);
 			}
@@ -133,7 +133,7 @@ RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *info) 
 		rz_cons_printf("   Version:       %d\n", unit->hdr.version);
 		rz_cons_printf("   Abbrev Offset: 0x%" PFMT64x "\n", unit->hdr.abbrev_offset);
 		rz_cons_printf("   Pointer Size:  %d\n", unit->hdr.address_size);
-		const char *unit_type_name = rz_bin_dwarf_get_unit_type_name(unit->hdr.unit_type);
+		const char *unit_type_name = rz_bin_dwarf_unit_type(unit->hdr.unit_type);
 		if (unit_type_name) {
 			rz_cons_printf("   Unit Type:     %s\n", unit_type_name);
 		}
@@ -144,7 +144,7 @@ RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *info) 
 			RzBinDwarfDie *die = it_die;
 			rz_cons_printf("<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", die->offset, die->abbrev_code);
 
-			const char *tag_name = rz_bin_dwarf_get_tag_name(die->tag);
+			const char *tag_name = rz_bin_dwarf_tag(die->tag);
 			if (tag_name) {
 				rz_cons_printf("(%s)\n", tag_name);
 			} else {
@@ -161,7 +161,7 @@ RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *info) 
 				if (!attr->name) {
 					continue;
 				}
-				const char *attr_name = rz_bin_dwarf_get_attr_name(attr->name);
+				const char *attr_name = rz_bin_dwarf_attr(attr->name);
 				if (attr_name) {
 					rz_cons_printf("     %-25s : ", attr_name);
 				} else {
