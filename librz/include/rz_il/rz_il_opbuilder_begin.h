@@ -85,6 +85,7 @@
 #define FMOD(rmode, flx, fly)      rz_il_op_new_fdiv(rmode, flx, fly)
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
+#define FEQ(flx, fly)              NOT(OR(FORDER(x, y), FORDER(y, x)))
 
 #define IL_FALSE  rz_il_op_new_b0()
 #define IL_TRUE   rz_il_op_new_b1()
