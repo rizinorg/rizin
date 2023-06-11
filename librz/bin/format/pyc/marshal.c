@@ -866,7 +866,7 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool v15_to_22 = magic_int_within(pyc->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(pyc->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
-	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3424, &error); // v3.8.0a4 - latest
+	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3491, &error); // v3.8.0a4 - latest
 	if (error) {
 		free(ret);
 		free(cobj);
