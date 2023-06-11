@@ -3089,7 +3089,7 @@ IL_LIFTER(rcr) {
 	} \
 	RzILOpEffect *count = SETL("_cnt", x86_il_get_op(1)); \
 	RzILOpEffect *masked = SETL("_masked", LOGAND(VARL("_cnt_mask"), VARL("_cnt"))); \
-	RzILOpEffect *temp_count = SETL("_tmp_cnt", MOD(VARL("_masked"), UN(size, BITS_PER_BYTE * size)));
+	RzILOpEffect *temp_count = SETL("_tmp_cnt", MOD(VARL("_masked"), UN(cnt_size, BITS_PER_BYTE * size)));
 
 /**
  * ROL
