@@ -53,6 +53,10 @@ static RzBinInfo *info(RzBinFile *arch) {
 	if (!ret) {
 		return NULL;
 	}
+
+	unsigned vmajor, vminor;
+	parse_version_major_minor(ctx->version.version, &vmajor, &vminor);
+
 	ret->file = strdup(arch->file);
 	ret->type = rz_str_newf("Python %s byte-compiled file", ctx->version.version);
 	ret->bclass = strdup("Python byte-compiled file");
@@ -61,7 +65,7 @@ static RzBinInfo *info(RzBinFile *arch) {
 	ret->machine = rz_str_newf("Python %s VM (rev %s)", ctx->version.version,
 		ctx->version.revision);
 	ret->os = strdup("any");
-	ret->bits = version2double(ctx->version.version) < 3.6 ? 16 : 8;
+	ret->bits = (vmajor < 3 || (vmajor == 3 && vminor < 6)) ? 16 : 8;
 	ret->cpu = strdup(ctx->version.version); // pass version info in cpu, Asm plugin will get it
 	return ret;
 }
