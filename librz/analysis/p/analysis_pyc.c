@@ -103,7 +103,11 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 
 	if (op_obj->type & HASJABS) {
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = func_base + oparg;
+		op->jump = func_base;
+		if (ops->jump_use_instruction_offset)
+			op->jump += oparg * 2;
+		else
+			op->jump += oparg;
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -113,7 +117,11 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	}
 	if (op_obj->type & HASJREL) {
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = addr + oparg + ((is_python36) ? 2 : 3);
+		op->jump = addr + ((is_python36) ? 2 : 3);
+		if (ops->jump_use_instruction_offset)
+			op->jump += oparg * 2;
+		else
+			op->jump += oparg;
 		op->fail = addr + ((is_python36) ? 2 : 3);
 
 		if (op_obj->type & HASCONDITION) {
