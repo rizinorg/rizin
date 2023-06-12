@@ -46,8 +46,6 @@
 
 #define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
-static bool firstRun = true;
-
 typedef enum {
 	LEFT,
 	RIGHT,
@@ -4680,7 +4678,7 @@ void __panels_refresh(RzCore *core) {
 	}
 	RzStrBuf *title = rz_strbuf_new(" ");
 	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
-	if (firstRun) {
+	if (panels->first_run) {
 		rz_config_set_b(core->config, "scr.utf8", false);
 	}
 
@@ -4763,8 +4761,8 @@ void __panels_refresh(RzCore *core) {
 	rz_cons_canvas_write(can, rz_strbuf_get(title));
 	rz_strbuf_free(title);
 
-	if (firstRun) {
-		firstRun = false;
+	if (panels->first_run) {
+		panels->first_run = false;
 		rz_config_set_b(core->config, "scr.utf8", utf8);
 		RzPanel *cur = __get_cur_panel(core->panels);
 		cur->view->refresh = true;
@@ -5033,6 +5031,7 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->mht = ht_pp_new(NULL, (HtPPKvFreeFunc)__mht_free_kv, (HtPPCalcSizeV)strlen);
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
+	panels->first_run = true;
 
 	if (w < 140) {
 		panels->columnWidth = w / 3;
@@ -5551,7 +5550,7 @@ RzPanels *__panels_new(RzCore *core) {
 		return NULL;
 	}
 	int h, w = rz_cons_get_size(&h);
-	firstRun = true;
+	panels->first_run = true;
 	if (!__init(core, panels, w, h)) {
 		free(panels);
 		return NULL;

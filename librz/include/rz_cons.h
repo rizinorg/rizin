@@ -1280,6 +1280,7 @@ typedef struct rz_panels_t {
 	RzPanelsMode prevMode;
 	RzPanelsLayout layout;
 	char *name;
+	bool first_run;
 } RzPanels;
 
 typedef enum {
