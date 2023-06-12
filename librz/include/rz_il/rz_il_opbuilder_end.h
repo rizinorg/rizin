@@ -53,6 +53,7 @@
 #undef FMOD
 #undef FPOW
 #undef FMAD
+#undef FEQ
 
 #undef IL_FALSE
 #undef IL_TRUE

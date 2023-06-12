@@ -753,7 +753,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRM
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsucc(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpred(RZ_NONNULL RzILOpFloat *f);
-RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
