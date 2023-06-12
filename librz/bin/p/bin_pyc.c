@@ -141,6 +141,11 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 
+static RzList /*<RzBinString *>*/ *strings(RzBinFile *bf) {
+	// TODO: find a better way!
+	return rz_bin_file_strings(bf, bf->minstrlen, false);
+}
+
 RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
 	.desc = "Python byte-compiled file plugin",
@@ -152,6 +157,7 @@ RzBinPlugin rz_bin_plugin_pyc = {
 	.sections = &sections,
 	.baddr = &baddr,
 	.symbols = &symbols,
+	.strings = &strings,
 	.destroy = &destroy
 };
 

@@ -1151,6 +1151,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzList /
 	if (!section->name) {
 		goto fail;
 	}
+	section->has_strings = false;
 	section->paddr = cobj->start_offset;
 	section->vaddr = cobj->start_offset;
 	section->size = cobj->end_offset - cobj->start_offset;
