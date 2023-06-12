@@ -293,6 +293,9 @@ typedef struct rz_core_visual_t {
 	int current3format;
 	int current4format;
 	int current5format;
+	/* Panels */
+	RzPanelsRoot *panels_root;
+	RzPanels *panels;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();

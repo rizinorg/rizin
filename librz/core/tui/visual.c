@@ -450,6 +450,7 @@ RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const cha
 
 static int visual_help(RzCore *core) {
 	int ret = 0;
+	RzCoreVisual *visual = core->visual;
 	RzStrBuf *p, *q;
 repeat:
 	p = rz_strbuf_new(NULL);
@@ -467,7 +468,7 @@ repeat:
 		rz_strbuf_free(q);
 		return ret;
 	case '!':
-		rz_core_visual_panels_root(core, core->panels_root);
+		rz_core_visual_panels_root(core, visual->panels_root);
 		break;
 	case '?':
 		rz_core_visual_append_help(p, "Visual mode help", help_msg_visual);
@@ -2253,7 +2254,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_showcursor(core, false);
 		} break;
 		case '!':
-			rz_core_visual_panels_root(core, core->panels_root);
+			rz_core_visual_panels_root(core, visual->panels_root);
 			break;
 		case 'g':
 			rz_core_visual_showcursor(core, true);
