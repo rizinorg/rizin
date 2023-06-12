@@ -142,7 +142,6 @@ static const char *help_msg_p[] = {
 	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
 	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
-	"pz", "[?] [len]", "print zoom view (see pz? for help)",
 	NULL
 };
 
