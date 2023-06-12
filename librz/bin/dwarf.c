@@ -1924,7 +1924,7 @@ err:
  */
 static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bool big_endian) {
 	RET_FALSE_IF_FAIL(read_initial_length(buffer, &hdr->is_64bit, &hdr->length, big_endian));
-	assert(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
+	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
 	ut64 offset_start = rz_buf_tell(buffer);
 	U16_OR_RET_FALSE(hdr->version);
 
@@ -2031,7 +2031,7 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 		U8_OR_RET_FALSE(has_children);
 		if (!(has_children == DW_CHILDREN_yes || has_children == DW_CHILDREN_no)) {
 			RZ_LOG_ERROR("0x%" PFMT64x ":\tinvalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), has_children);
-			continue;
+			break;
 		}
 
 		RzBinDwarfAbbrevDecl decl = {
@@ -2135,10 +2135,7 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 		return NULL;
 	}
 	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
-	ut8 *buf = calloc(1, len);
-	rz_buf_read_at(binfile->buf, section->paddr, buf, len);
-	RzBuffer *buffer = rz_buf_new_with_pointers(buf, len, true);
-	return buffer;
+	return rz_buf_new_slice(binfile->buf, section->paddr, len);
 }
 
 /**

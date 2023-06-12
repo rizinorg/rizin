@@ -199,7 +199,7 @@ RZ_API char *rz_core_bin_dwarf_debug_info_dump(const RzBinDwarfDebugInfo *info) 
 				} else {
 					my_printf("     AT_UNKWN [0x%-3" PFMT32x "]\t : ", attr->name);
 				}
-				rz_core_bin_dwarf_attr_dump(attr);
+				my_print(rz_core_bin_dwarf_attr_dump(attr));
 				my_printf("\n");
 			}
 		}
