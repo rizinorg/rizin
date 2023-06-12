@@ -35,6 +35,8 @@
 
 #include <rz_il/rz_il_opcodes.h>
 
+#define DUP(op) rz_il_op_pure_dup(op)
+
 #define ITE(c, t, f) rz_il_op_new_ite(c, t, f)
 
 #define UN(l, val)       rz_il_op_new_bitv_from_ut64(l, val)
@@ -85,7 +87,8 @@
 #define FMOD(rmode, flx, fly)      rz_il_op_new_fdiv(rmode, flx, fly)
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
-#define FEQ(flx, fly)              NOT(OR(FORDER(x, y), FORDER(y, x)))
+#define FNEQ(flx, fly)             OR(FORDER(flx, fly), FORDER(DUP(flx), DUP(fly)))
+#define FEQ(flx, fly)              NOT(FNEQ(flx, fly))
 
 #define IL_FALSE  rz_il_op_new_b0()
 #define IL_TRUE   rz_il_op_new_b1()
@@ -97,7 +100,6 @@
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
 #define APPEND(high, low) rz_il_op_new_append(high, low)
-#define DUP(op)           rz_il_op_pure_dup(op)
 
 #define ADD(x, y)          rz_il_op_new_add(x, y)
 #define SUB(x, y)          rz_il_op_new_sub(x, y)

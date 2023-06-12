@@ -3,6 +3,7 @@
 #error rz_il_opbuilder_end.h included without rz_il_opbuilder_begin.h before
 #endif
 
+#undef DUP
 #undef ITE
 
 #undef UN
@@ -53,6 +54,7 @@
 #undef FMOD
 #undef FPOW
 #undef FMAD
+#undef FNEQ
 #undef FEQ
 
 #undef IL_FALSE
@@ -64,7 +66,6 @@
 #undef UNSIGNED
 #undef SIGNED
 #undef APPEND
-#undef DUP
 
 #undef ADD
 #undef SUB
