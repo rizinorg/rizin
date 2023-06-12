@@ -313,9 +313,9 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	return (li <= ti) && (ti <= ui);
 }
 
-void parse_version_major_minor(const char* version, unsigned* o_major, unsigned* o_minor) {
+void parse_version_major_minor(const char *version, unsigned *o_major, unsigned *o_minor) {
 	unsigned idx = 0, buf_idx = 0;
-	char buf[20] = {0};
+	char buf[20] = { 0 };
 
 	while (!('0' <= version[idx] && version[idx] <= '9'))
 		idx++;
