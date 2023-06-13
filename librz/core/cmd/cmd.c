@@ -848,6 +848,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 
 RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
+	RzCoreVisual *visual = core->visual;
 	if (core->vmode) {
 		return false;
 	}
@@ -858,7 +859,7 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	char *sp = strchr(input, ' ');
 	switch (input[0]) {
 	case ' ': // "v [name]"
-		if (core->panels) {
+		if (visual->panels) {
 			rz_load_panels_layout(core, input + 1);
 		}
 		rz_config_set(core->config, "scr.layout", input + 1);
@@ -879,7 +880,7 @@ RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 		////rz_sys_cmdf ("v%s", input);
 		return false;
 	case 0:
-		rz_core_visual_panels_root(core, core->panels_root);
+		rz_core_visual_panels_root(core, visual->panels_root);
 		return true;
 	default:
 		rz_core_cmd_help(core, help_msg_v);

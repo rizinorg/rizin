@@ -4058,6 +4058,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	RzAnalysisFunction *fcn = NULL;
 	const char *key_s;
 	RzConsCanvas *can, *o_can = NULL;
+	RzCoreVisual *visual = core->visual;
 	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
@@ -4486,7 +4487,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			get_bbupdate(g, core, fcn);
 			break;
 		case '!':
-			rz_core_visual_panels_root(core, core->panels_root);
+			rz_core_visual_panels_root(core, visual->panels_root);
 			break;
 		case '\'':
 			if (fcn) {
