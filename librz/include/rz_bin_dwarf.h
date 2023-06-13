@@ -876,11 +876,13 @@ typedef struct rz_bin_dwarf_line_file_entry_format_t {
 	enum DW_FORM form;
 } RzBinDwarfFileEntryFormat;
 
-typedef struct rz_bin_dwarf_line_file_entry_t {
-	char *include_dir;
-	char *name;
-	ut32 id_idx, mod_time, file_len;
-} RzBinDwarfLineFileEntry;
+typedef struct {
+	char *path_name;
+	ut64 directory_index;
+	ut64 timestamp;
+	ut64 size;
+	ut8 md5[16];
+} RzBinDwarfFileEntry;
 
 typedef struct {
 	ut64 offset; //< offset inside the debug_line section, for references from outside
@@ -906,10 +908,10 @@ typedef struct {
 	 */
 	ut8 *std_opcode_lengths;
 
-	RzVector /*<RzBinDwarfLineFileEntryFormat>*/ directory_entry_formats;
+	RzVector /*<RzBinDwarfFileEntryFormat>*/ directory_entry_formats;
 	RzPVector /*<char *>*/ directories;
-	RzVector /*<RzBinDwarfLineFileEntryFormat>*/ file_name_entry_formats;
-	RzVector /*<RzBinDwarfLineFileEntry>*/ file_names;
+	RzVector /*<RzBinDwarfFileEntryFormat>*/ file_name_entry_formats;
+	RzVector /*<RzBinDwarfFileEntry>*/ file_names;
 } RzBinDwarfLineHeader;
 
 typedef enum {
@@ -922,6 +924,7 @@ typedef enum {
 #define RZ_BIN_DWARF_LINE_OP_STD_ARGS_MAX 1
 
 typedef struct {
+	ut64 offset;
 	RzBinDwarfLineOpType type;
 	union {
 		enum DW_LNS opcode;
@@ -1006,7 +1009,9 @@ RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code);
 RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code);
 RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type);
 RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang);
-RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN lang);
+RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN children);
+RZ_API const char *rz_bin_dwarf_lns(enum DW_LNS lns);
+RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne);
 
 RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile);
@@ -1019,7 +1024,6 @@ RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs);
 RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da);
 RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx);
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl);
-RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_decl_get(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx);
 
 RZ_API RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(const RzBinDwarfDie *die, enum DW_AT name);
 RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name);

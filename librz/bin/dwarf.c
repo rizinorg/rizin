@@ -2,10 +2,8 @@
 // SPDX-FileCopyrightText: 2012-2018 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util/rz_buf.h>
 #include <errno.h>
 #include <rz_bin.h>
-#include <rz_bin_dwarf.h>
 #include <rz_core.h>
 
 #define RET_VAL_IF_FAIL(x, val) \
@@ -83,7 +81,12 @@ static char *buf_get_string(RzBuffer *buffer) {
 	RET_NULL_IF_FAIL(offset != -1);
 	char *x = rz_buf_get_string(buffer, offset);
 	RET_NULL_IF_FAIL(x);
-	rz_buf_seek(buffer, (st64)strlen(x) + 1, SEEK_CUR);
+	ut64 len = strlen(x) + 1;
+	rz_buf_seek(buffer, (st64)len, SEEK_CUR);
+	if (len <= 1) {
+		free(x);
+		return NULL;
+	}
 	return x;
 }
 
@@ -510,11 +513,66 @@ static const char *dwarf_children[] = {
 	[DW_CHILDREN_no] = "DW_CHILDREN_no",
 };
 
-RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN lang) {
-	if (lang >= RZ_ARRAY_SIZE(dwarf_children)) {
+RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN children) {
+	if (children >= RZ_ARRAY_SIZE(dwarf_children)) {
 		return NULL;
 	}
-	return dwarf_children[lang];
+	return dwarf_children[children];
+}
+
+static const char *dwarf_lns[] = {
+	[DW_LNS_copy] = "DW_LNS_copy",
+	[DW_LNS_advance_pc] = "DW_LNS_advance_pc",
+	[DW_LNS_advance_line] = "DW_LNS_advance_line",
+	[DW_LNS_set_file] = "DW_LNS_set_file",
+	[DW_LNS_set_column] = "DW_LNS_set_column",
+	[DW_LNS_negate_stmt] = "DW_LNS_negate_stmt",
+	[DW_LNS_set_basic_block] = "DW_LNS_set_basic_block",
+	[DW_LNS_const_add_pc] = "DW_LNS_const_add_pc",
+	[DW_LNS_fixed_advance_pc] = "DW_LNS_fixed_advance_pc",
+	[DW_LNS_set_prologue_end] = "DW_LNS_set_prologue_end",
+	[DW_LNS_set_epilogue_begin] = "DW_LNS_set_epilogue_begin",
+	[DW_LNS_set_isa] = "DW_LNS_set_isa",
+};
+
+RZ_API const char *rz_bin_dwarf_lns(enum DW_LNS lns) {
+	if (lns >= RZ_ARRAY_SIZE(dwarf_lns)) {
+		return NULL;
+	}
+	return dwarf_lns[lns];
+}
+
+static const char *dwarf_lne[] = {
+	[DW_LNE_end_sequence] = "DW_LNE_end_sequence",
+	[DW_LNE_set_address] = "DW_LNE_set_address",
+	[DW_LNE_define_file] = "DW_LNE_define_file",
+	[DW_LNE_set_discriminator] = "DW_LNE_set_discriminator",
+	[DW_LNE_lo_user] = "DW_LNE_lo_user",
+	[DW_LNE_hi_user] = "DW_LNE_hi_user",
+};
+
+RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne) {
+	if (lne >= RZ_ARRAY_SIZE(dwarf_lne)) {
+		return NULL;
+	}
+	return dwarf_lne[lne];
+}
+
+static const char *dwarf_lnct[] = {
+	[DW_LNCT_path] = "DW_LNCT_path",
+	[DW_LNCT_directory_index] = "DW_LNCT_directory_index",
+	[DW_LNCT_timestamp] = "DW_LNCT_timestamp",
+	[DW_LNCT_size] = "DW_LNCT_size",
+	[DW_LNCT_MD5] = "DW_LNCT_MD5",
+	[DW_LNCT_lo_user] = "DW_LNCT_lo_user",
+	[DW_LNCT_hi_user] = "DW_LNCT_hi_user",
+};
+
+RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
+	if (lnct >= RZ_ARRAY_SIZE(dwarf_lnct)) {
+		return NULL;
+	}
+	return dwarf_lnct[lnct];
 }
 
 /**
@@ -615,12 +673,309 @@ static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **
 	return result;
 }
 
-void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfLineFileEntry *x, void *user) {
+static bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
+	if (block->length == 0) {
+		return true;
+	}
+	block->data = calloc(sizeof(ut8), block->length);
+	RET_FALSE_IF_FAIL(block->data);
+	/* Maybe unroll this as an optimization in future? */
+	ut16 len = rz_buf_read(buffer, block->data, block->length);
+	if (len != block->length) {
+		RZ_FREE(block->data);
+		return false;
+	}
+	return true;
+}
+
+typedef enum {
+	DW_ATTR_TYPE_DEF,
+	DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
+} DwAttrType;
+
+typedef struct {
+	DwAttrType type;
+	union {
+		RzBinDwarfAttrDef *def;
+		RzBinDwarfFileEntryFormat *format;
+	};
+	union {
+		RzBinDwarfLineHeader *line_hdr;
+		RzBinDwarfCompUnitHdr *comp_unit_hdr;
+	};
+	RzBuffer *str_buffer;
+	bool big_endian;
+} DwAttrOption;
+
+/**
+ * This function is quite incomplete and requires lot of work
+ * With parsing various new FORM values
+ * \brief Parses attribute value based on its definition
+ *        and stores it into `value`
+ */
+static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
+	rz_return_val_if_fail(in && value && buffer, NULL);
+
+	enum DW_AT name = 0;
+	enum DW_FORM form = 0;
+	enum DW_LNCT lnct = 0;
+	ut8 address_size = 0;
+	bool is_64bit = false;
+	ut64 unit_offset = 0;
+	if (in->type == DW_ATTR_TYPE_DEF) {
+		name = in->def->name;
+		form = in->def->form;
+		address_size = in->comp_unit_hdr->address_size;
+		is_64bit = in->comp_unit_hdr->is_64bit;
+		unit_offset = in->comp_unit_hdr->unit_offset;
+	} else if (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT) {
+		lnct = in->format->content_type;
+		form = in->format->form;
+		address_size = in->line_hdr->address_size;
+		is_64bit = in->line_hdr->is_64bit;
+		unit_offset = in->line_hdr->offset;
+	}
+
+	bool big_endian = in->big_endian;
+	RzBuffer *str_buffer = in->str_buffer;
+
+	value->form = form;
+	value->name = name;
+	value->block.data = NULL;
+	value->string.content = NULL;
+	value->string.offset = 0;
+
+	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
+	switch (form) {
+	case DW_FORM_addr:
+		value->kind = DW_AT_KIND_ADDRESS;
+		UX_OR_RET_FALSE(value->address, address_size);
+		break;
+	case DW_FORM_data1:
+		value->kind = DW_AT_KIND_CONSTANT;
+		U8_OR_RET_FALSE(value->uconstant);
+		break;
+	case DW_FORM_data2:
+		value->kind = DW_AT_KIND_CONSTANT;
+		U16_OR_RET_FALSE(value->uconstant);
+		break;
+	case DW_FORM_data4:
+		value->kind = DW_AT_KIND_CONSTANT;
+		U32_OR_RET_FALSE(value->uconstant);
+		break;
+	case DW_FORM_data8:
+		value->kind = DW_AT_KIND_CONSTANT;
+		U64_OR_RET_FALSE(value->uconstant);
+		break;
+	case DW_FORM_data16: // TODO Fix this, right now I just read the data, but I need to make storage for it
+		value->kind = DW_AT_KIND_CONSTANT;
+		if (big_endian) {
+			U64_OR_RET_FALSE(value->uconstant128.High);
+			U64_OR_RET_FALSE(value->uconstant128.Low);
+		} else {
+			U64_OR_RET_FALSE(value->uconstant128.Low);
+			U64_OR_RET_FALSE(value->uconstant128.High);
+		}
+		break;
+	case DW_FORM_sdata:
+		value->kind = DW_AT_KIND_CONSTANT;
+		SLE128_OR_RET_FALSE(value->sconstant);
+		break;
+	case DW_FORM_udata:
+		value->kind = DW_AT_KIND_UCONSTANT;
+		ULE128_OR_RET_FALSE(value->uconstant);
+		break;
+	case DW_FORM_string:
+		value->kind = DW_AT_KIND_STRING;
+		value->string.content = buf_get_string(buffer);
+#define CHECK_STRING \
+	if (!value->string.content) { \
+		const char *tag_str = in->type == DW_ATTR_TYPE_DEF ? rz_bin_dwarf_attr(name) : (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT ? rz_bin_dwarf_lnct(lnct) : "unknown"); \
+		RZ_LOG_ERROR("Failed to read string %s [%s]\n", tag_str, rz_bin_dwarf_form(form)); \
+		return false; \
+	}
+		CHECK_STRING;
+		break;
+	case DW_FORM_block1:
+		value->kind = DW_AT_KIND_BLOCK;
+		U8_OR_RET_FALSE(value->block.length);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		break;
+	case DW_FORM_block2:
+		value->kind = DW_AT_KIND_BLOCK;
+		U16_OR_RET_FALSE(value->block.length);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		break;
+	case DW_FORM_block4:
+		value->kind = DW_AT_KIND_BLOCK;
+		U32_OR_RET_FALSE(value->block.length);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		break;
+	case DW_FORM_block: // variable length ULEB128
+		value->kind = DW_AT_KIND_BLOCK;
+		ULE128_OR_RET_NULL(value->block.length);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		break;
+	case DW_FORM_flag:
+		value->kind = DW_AT_KIND_FLAG;
+		U8_OR_RET_FALSE(value->flag);
+		break;
+		// offset in .debug_str
+	case DW_FORM_strp:
+		value->kind = DW_AT_KIND_STRING;
+		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
+		if (str_buffer && value->string.offset < rz_buf_size(str_buffer)) {
+			value->string.content = rz_buf_get_string(str_buffer, value->string.offset);
+		}
+		CHECK_STRING;
+		break;
+		// offset in .debug_info
+	case DW_FORM_ref_addr:
+		value->kind = DW_AT_KIND_REFERENCE;
+		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, is_64bit, big_endian));
+		break;
+		// This type of reference is an offset from the first byte of the compilation
+		// header for the compilation unit containing the reference
+	case DW_FORM_ref1:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U8_OR_RET_FALSE(value->reference);
+		value->reference += unit_offset;
+		break;
+	case DW_FORM_ref2:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U16_OR_RET_FALSE(value->reference);
+		value->reference += unit_offset;
+		break;
+	case DW_FORM_ref4:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U32_OR_RET_FALSE(value->reference);
+		value->reference += unit_offset;
+		break;
+	case DW_FORM_ref8:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U64_OR_RET_FALSE(value->reference);
+		value->reference += unit_offset;
+		break;
+	case DW_FORM_ref_udata:
+		value->kind = DW_AT_KIND_REFERENCE;
+		// uleb128 is enough to fit into ut64?
+		ULE128_OR_RET_FALSE(value->reference);
+		value->reference += unit_offset;
+		break;
+		// offset in a section other than .debug_info or .debug_str
+	case DW_FORM_sec_offset:
+		value->kind = DW_AT_KIND_REFERENCE;
+		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, is_64bit, big_endian));
+		break;
+	case DW_FORM_exprloc:
+		value->kind = DW_AT_KIND_BLOCK;
+		ULE128_OR_RET_FALSE(value->block.length);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
+		break;
+		// this means that the flag is present, nothing is read
+	case DW_FORM_flag_present:
+		value->kind = DW_AT_KIND_FLAG;
+		value->flag = true;
+		break;
+	case DW_FORM_ref_sig8:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U64_OR_RET_NULL(value->reference);
+		break;
+		// offset into .debug_line_str section, can't parse the section now, so we just skip
+	case DW_FORM_strx:
+		value->kind = DW_AT_KIND_STRING;
+		// value->string.offset = dwarf_read_offset (hdr->is_64bit, big_endian, &buf, buf_end);
+		// if (debug_str && value->string.offset < debug_str_len) {
+		// 	value->string.content =
+		// 		rz_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len - value->string.offset);
+		// } else {
+		// 	value->string.content = NULL; // Means malformed DWARF, should we print error message?
+		// }
+		break;
+	case DW_FORM_strx1:
+		value->kind = DW_AT_KIND_STRING;
+		U8_OR_RET_FALSE(value->string.offset);
+		break;
+	case DW_FORM_strx2:
+		value->kind = DW_AT_KIND_STRING;
+		U16_OR_RET_FALSE(value->string.offset);
+		break;
+	case DW_FORM_strx3: // TODO Add 3 byte int read
+		value->kind = DW_AT_KIND_STRING;
+		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
+		break;
+	case DW_FORM_strx4:
+		value->kind = DW_AT_KIND_STRING;
+		U32_OR_RET_FALSE(value->string.offset);
+		break;
+	case DW_FORM_implicit_const:
+		value->kind = DW_AT_KIND_CONSTANT;
+		value->uconstant = in->type == DW_ATTR_TYPE_DEF ? in->def->special : 0;
+		break;
+		/*  addrx* forms : The index is relative to the value of the
+			DW_AT_addr_base attribute of the associated compilation unit.
+		    index into an array of addresses in the .debug_addr section.*/
+	case DW_FORM_addrx:
+		value->kind = DW_AT_KIND_ADDRESS;
+		ULE128_OR_RET_FALSE(value->address);
+		break;
+	case DW_FORM_addrx1:
+		value->kind = DW_AT_KIND_ADDRESS;
+		U8_OR_RET_FALSE(value->address);
+		break;
+	case DW_FORM_addrx2:
+		value->kind = DW_AT_KIND_ADDRESS;
+		U16_OR_RET_FALSE(value->address);
+		break;
+	case DW_FORM_addrx3:
+		// I need to add 3byte endianess free read here TODO
+		value->kind = DW_AT_KIND_ADDRESS;
+		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
+		break;
+	case DW_FORM_addrx4:
+		value->kind = DW_AT_KIND_ADDRESS;
+		U32_OR_RET_FALSE(value->address);
+		break;
+	case DW_FORM_line_ptr: // offset in a section .debug_line_str
+	case DW_FORM_strp_sup: // offset in a section .debug_line_str
+		value->kind = DW_AT_KIND_STRING;
+		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
+		// if (debug_str && value->string.offset < debug_line_str_len) {
+		// 	value->string.content =
+		// 		rz_str_ndup
+		break;
+		// offset in the supplementary object file
+	case DW_FORM_ref_sup4:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U32_OR_RET_FALSE(value->reference);
+		break;
+	case DW_FORM_ref_sup8:
+		value->kind = DW_AT_KIND_REFERENCE;
+		U64_OR_RET_FALSE(value->reference);
+		break;
+		// An index into the .debug_loc
+	case DW_FORM_loclistx:
+		value->kind = DW_AT_KIND_LOCLISTPTR;
+		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, is_64bit, big_endian));
+		break;
+		// An index into the .debug_rnglists
+	case DW_FORM_rnglistx:
+		value->kind = DW_AT_KIND_ADDRESS;
+		ULE128_OR_RET_FALSE(value->address);
+		break;
+	default:
+		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", form);
+		value->uconstant = 0;
+		return false;
+	}
+	return true;
+}
+
+void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfFileEntry *x, void *user) {
 	if (!x) {
 		return;
 	}
-	free(x->name);
-	free(x->include_dir);
+	free(x->path_name);
 }
 
 static void line_header_init(RzBinDwarfLineHeader *hdr) {
@@ -629,7 +984,7 @@ static void line_header_init(RzBinDwarfLineHeader *hdr) {
 	}
 	memset(hdr, 0, sizeof(*hdr));
 	rz_vector_init(&hdr->file_name_entry_formats, sizeof(RzBinDwarfFileEntryFormat), NULL, NULL);
-	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfLineFileEntry), (RzVectorFree)rz_bin_dwarf_line_file_entry_fini, NULL);
+	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfFileEntry), (RzVectorFree)rz_bin_dwarf_line_file_entry_fini, NULL);
 	rz_vector_init(&hdr->directory_entry_formats, sizeof(RzBinDwarfFileEntryFormat), NULL, NULL);
 	rz_pvector_init(&hdr->directories, free);
 }
@@ -644,10 +999,10 @@ static void line_header_fini(RzBinDwarfLineHeader *hdr) {
 	rz_pvector_fini(&hdr->directories);
 }
 
-static bool file_entry_format_parse(RzBinDwarfLineHeader *hdr, RzBuffer *buffer) {
+static bool file_entry_format_parse(RzBuffer *buffer, RzVector /*<RzBinDwarfFileEntryFormat>*/ *out, RzBinDwarfLineHeader *hdr) {
 	ut8 count = 0;
 	RET_FALSE_IF_FAIL(rz_buf_read8(buffer, &count));
-	rz_vector_reserve(&hdr->file_name_entry_formats, count);
+	rz_vector_reserve(out, count);
 	ut32 path_count = 0;
 	for (ut8 i = 0; i < count; ++i) {
 		ut64 content_type = 0;
@@ -667,7 +1022,7 @@ static bool file_entry_format_parse(RzBinDwarfLineHeader *hdr, RzBuffer *buffer)
 			.content_type = RZ_MIN(UT16_MAX, content_type),
 			.form = form,
 		};
-		rz_vector_push(&hdr->file_name_entry_formats, &format);
+		rz_vector_push(out, &format);
 	}
 	if (path_count != 1) {
 		RZ_LOG_ERROR("Missing file entry format path");
@@ -676,85 +1031,133 @@ static bool file_entry_format_parse(RzBinDwarfLineHeader *hdr, RzBuffer *buffer)
 	return true;
 }
 
-// static char *parse_directory_v5(RzBinDwarfLineHeader *hdr, RzBuffer *buffer) {
-//	char *path_name = NULL;
-//	void *it;
-//	rz_vector_foreach(&hdr->file_name_entry_formats, it) {
-//		RzBinDwarfFileEntryFormat *format = it;
-//		//		parse_attr_value(buffer, format->form);
-//		//		if (format->content_type == DW_LNCT_path) {
-//		//			path_name = value;
-//		//		}
-//	}
-//	return path_name;
-// }
+static char *parse_directory_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
+	char *path_name = NULL;
+	RzBinDwarfFileEntryFormat *format = NULL;
+	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
+		RzBinDwarfAttr attr = { 0 };
+		DwAttrOption in = {
+			.type = DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
+			.format = format,
+			.line_hdr = hdr,
+			.big_endian = big_endian,
+		};
+		RET_NULL_IF_FAIL(attr_parse(buffer, &attr, &in));
+		if (format->content_type == DW_LNCT_path) {
+			path_name = attr.string.content;
+		}
+	}
+	return path_name;
+}
+
+static RzBinDwarfFileEntry *parse_file_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
+	char *path_name = NULL;
+	ut64 directory_index = 0;
+	ut64 timestamp = 0;
+	ut64 size = 0;
+	ut8 md5[16] = { 0 };
+
+	RzBinDwarfFileEntryFormat *format = NULL;
+	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
+		RzBinDwarfAttr attr = { 0 };
+		DwAttrOption in = {
+			.type = DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
+			.format = format,
+			.line_hdr = hdr,
+			.big_endian = big_endian,
+		};
+		RET_NULL_IF_FAIL(attr_parse(buffer, &attr, &in));
+		switch (format->content_type) {
+		case DW_LNCT_path:
+			assert(attr.kind == DW_AT_KIND_STRING);
+			path_name = attr.string.content;
+			break;
+		case DW_LNCT_directory_index:
+			if (attr.kind == DW_AT_KIND_UCONSTANT) {
+				directory_index = attr.uconstant;
+			}
+			break;
+		case DW_LNCT_timestamp:
+			if (attr.kind == DW_AT_KIND_UCONSTANT) {
+				timestamp = attr.uconstant;
+			}
+			break;
+		case DW_LNCT_size:
+			if (attr.kind == DW_AT_KIND_UCONSTANT) {
+				size = attr.uconstant;
+			}
+			break;
+		case DW_LNCT_MD5:
+			if (attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.data) {
+				memcpy(md5, attr.block.data, 16);
+			}
+			break;
+		default: break;
+		}
+	}
+
+	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
+	entry->path_name = path_name;
+	entry->directory_index = directory_index;
+	entry->timestamp = timestamp;
+	entry->size = size;
+	memcpy(entry->md5, md5, 16);
+	return entry;
+}
 
 /**
  * 6.2.4 The Line Number Program Header: https://dwarfstd.org/doc/DWARF5.pdf#page=172
  */
-static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end, RzBinDwarfLineHeader *hdr) {
-	if (hdr->version <= 4) {
-		while (buf + 1 < buf_end) {
-			size_t maxlen = RZ_MIN((size_t)(buf_end - buf) - 1, 0xfff);
-			size_t len = rz_str_nlen((const char *)buf, maxlen);
-			char *str = rz_str_ndup((const char *)buf, len);
-			if (len < 1 || len >= 0xfff || !str) {
-				buf += 1;
-				free(str);
-				break;
-			}
-			rz_pvector_push(&hdr->directories, str);
-			buf += len + 1;
-		}
-	} else {
-		RzBuffer *buffer = rz_buf_new_with_bytes(buf, buf_end - buf);
-		file_entry_format_parse(hdr, buffer);
-		ut64 count = 0;
-		RET_NULL_IF_FAIL(rz_buf_uleb128(buffer, &count));
-		rz_buf_free(buffer);
-		//		for (ut64 i = 0; i < count; ++i) {
-		//		}
+static bool parse_line_header_source_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
+	RET_FALSE_IF_FAIL(file_entry_format_parse(buffer, &hdr->directory_entry_formats, hdr));
+	ut64 count = 0;
+	ULE128_OR_RET_FALSE(count);
+	for (ut64 i = 0; i < count; ++i) {
+		rz_pvector_push(&hdr->directories, parse_directory_v5(buffer, hdr, big_endian));
 	}
 
-	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfLineFileEntry), NULL, NULL);
-	while (buf + 1 < buf_end) {
-		const char *filename = (const char *)buf;
-		size_t maxlen = RZ_MIN((size_t)(buf_end - buf - 1), 0xfff);
-		ut64 id_idx, mod_time, file_len;
-		int len = rz_str_nlen(filename, maxlen);
+	RET_FALSE_IF_FAIL(file_entry_format_parse(buffer, &hdr->file_name_entry_formats, hdr));
+	ULE128_OR_RET_FALSE(count);
+	for (ut64 i = 0; i < count; ++i) {
+		rz_vector_push(&hdr->file_names, parse_file_v5(buffer, hdr, big_endian));
+	}
+	return true;
+}
 
-		if (!len) {
-			buf++;
+static bool parse_line_header_source_v4(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
+	while (true) {
+		char *str = buf_get_string(buffer);
+		if (!str) {
 			break;
 		}
-		buf += len + 1;
-		if (buf >= buf_end) {
-			buf = NULL;
-			goto beach;
-		}
-		buf = rz_uleb128(buf, buf_end - buf, &id_idx, NULL);
-		if (buf >= buf_end) {
-			buf = NULL;
-			goto beach;
-		}
-		buf = rz_uleb128(buf, buf_end - buf, &mod_time, NULL);
-		if (buf >= buf_end) {
-			buf = NULL;
-			goto beach;
-		}
-		buf = rz_uleb128(buf, buf_end - buf, &file_len, NULL);
-		if (buf >= buf_end) {
-			buf = NULL;
-			goto beach;
-		}
-		RzBinDwarfLineFileEntry *entry = rz_vector_push(&hdr->file_names, NULL);
-		entry->name = rz_str_ndup(filename, len);
-		entry->id_idx = id_idx;
-		entry->mod_time = mod_time;
-		entry->file_len = file_len;
+		rz_pvector_push(&hdr->directories, str);
+	}
+
+	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfFileEntry), NULL, NULL);
+	while (true) {
+		char *filename = buf_get_string(buffer);
+		GOTO_IF_FAIL(filename, beach);
+
+		ut64 directory_index;
+		ULE128_OR_GOTO(directory_index, beach);
+
+		ut64 timestamp;
+		ULE128_OR_GOTO(timestamp, beach);
+
+		ut64 size;
+		ULE128_OR_GOTO(size, beach);
+
+		RzBinDwarfFileEntry entry = {
+			.path_name = filename,
+			.directory_index = directory_index,
+			.timestamp = timestamp,
+			.size = size,
+			.md5 = { 0 }
+		};
+		rz_vector_push(&hdr->file_names, &entry);
 	}
 beach:
-	return buf;
+	return true;
 }
 
 /**
@@ -765,8 +1168,8 @@ RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBin
 	if (file_index >= rz_vector_len(&hdr->file_names)) {
 		return NULL;
 	}
-	RzBinDwarfLineFileEntry *file = rz_vector_index_ptr(&hdr->file_names, file_index);
-	if (!file->name) {
+	RzBinDwarfFileEntry *file = rz_vector_index_ptr(&hdr->file_names, file_index);
+	if (!file->path_name) {
 		return NULL;
 	}
 
@@ -782,8 +1185,8 @@ RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBin
 	const char *comp_dir = info ? ht_up_find(info->line_info_offset_comp_dir, hdr->offset, NULL) : NULL;
 	const char *include_dir = NULL;
 	char *own_str = NULL;
-	if (file->id_idx > 0 && file->id_idx - 1 < rz_pvector_len(&hdr->directories)) {
-		include_dir = rz_pvector_at(&hdr->directories, file->id_idx - 1);
+	if (file->directory_index > 0 && file->directory_index - 1 < rz_pvector_len(&hdr->directories)) {
+		include_dir = rz_pvector_at(&hdr->directories, file->directory_index - 1);
 		if (include_dir && include_dir[0] != '/' && comp_dir) {
 			include_dir = own_str = rz_str_newf("%s/%s/", comp_dir, include_dir);
 		}
@@ -793,7 +1196,7 @@ RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBin
 	if (!include_dir) {
 		include_dir = "./";
 	}
-	char *r = rz_str_newf("%s/%s", include_dir, file->name);
+	char *r = rz_str_newf("%s/%s", include_dir, file->path_name);
 	free(own_str);
 	return r;
 }
@@ -804,7 +1207,7 @@ static const char *get_full_file_path(const RzBinDwarfDebugInfo *info, const RzB
 		return NULL;
 	}
 	if (!cache) {
-		return ((RzBinDwarfLineFileEntry *)rz_vector_index_ptr(&hdr->file_names, file_index))->name;
+		return ((RzBinDwarfFileEntry *)rz_vector_index_ptr(&hdr->file_names, file_index))->path_name;
 	}
 	char *path = rz_pvector_at(cache, file_index);
 	if (!path) {
@@ -843,44 +1246,43 @@ RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLi
 	return hdr->line_base + (adj_opcode % hdr->line_range);
 }
 
-static const ut8 *parse_line_header(
-	RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RzBinDwarfLineHeader *hdr, ut64 offset_cur, bool big_endian) {
-	rz_return_val_if_fail(hdr && bf && buf && buf_end, NULL);
+static bool parse_line_header(
+	RzBuffer *buffer, ut8 address_size,
+	RzBinDwarfLineHeader *hdr, bool big_endian) {
+	rz_return_val_if_fail(hdr && buffer, false);
 
 	line_header_init(hdr);
-	hdr->offset = offset_cur;
+	hdr->offset = rz_buf_tell(buffer);
 	hdr->is_64bit = false;
-	hdr->unit_length = dwarf_read_initial_length(&hdr->is_64bit, big_endian, &buf, buf_end);
+	RET_FALSE_IF_FAIL(read_initial_length(buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
 
-	hdr->version = READ16(buf);
+	U16_OR_RET_FALSE(hdr->version);
 	if (hdr->version < 2 || hdr->version > 5) {
 		RZ_LOG_VERBOSE("DWARF line hdr version %d is not supported\n", hdr->version);
-		return NULL;
+		return false;
 	}
 	if (hdr->version == 5) {
-		hdr->address_size = READ8(buf);
-		hdr->segment_selector_size = READ8(buf);
+		U8_OR_RET_FALSE(hdr->address_size);
+		U8_OR_RET_FALSE(hdr->segment_selector_size);
 		if (hdr->segment_selector_size != 0) {
 			RZ_LOG_ERROR("DWARF line hdr segment selector size %d is not supported\n", hdr->segment_selector_size);
-			return NULL;
+			return false;
 		}
 	} else if (hdr->version < 5) {
 		// Dwarf < 5 needs this size to be supplied from outside
-		RzBinObject *o = bf->o;
-		hdr->address_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
+		hdr->address_size = address_size;
 	}
 
-	hdr->header_length = dwarf_read_offset(hdr->is_64bit, big_endian, &buf, buf_end);
+	RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->header_length, hdr->is_64bit, big_endian));
 
-	hdr->min_inst_len = READ8(buf);
+	U8_OR_RET_FALSE(hdr->min_inst_len);
 	if (hdr->min_inst_len == 0) {
 		RZ_LOG_VERBOSE("DWARF line hdr min inst len %d is not supported\n", hdr->min_inst_len);
-		return NULL;
+		return false;
 	}
 
 	if (hdr->version >= 4) {
-		hdr->max_ops_per_inst = READ8(buf);
+		U8_OR_RET_FALSE(hdr->max_ops_per_inst);
 	} else {
 		hdr->max_ops_per_inst = 1;
 	}
@@ -889,26 +1291,33 @@ static const ut8 *parse_line_header(
 		return NULL;
 	}
 
-	hdr->default_is_stmt = READ8(buf);
-	hdr->line_base = READI8(buf);
-	hdr->line_range = READ8(buf);
+	U8_OR_RET_FALSE(hdr->default_is_stmt);
+	ut8 line_base;
+	U8_OR_RET_FALSE(line_base);
+	hdr->line_base = (st8)line_base;
+	U8_OR_RET_FALSE(hdr->line_range);
 	if (hdr->line_range == 0) {
 		RZ_LOG_ERROR("DWARF line hdr line range %d is not supported\n", hdr->line_range);
 		return NULL;
 	}
 
-	hdr->opcode_base = READ8(buf);
+	U8_OR_RET_FALSE(hdr->opcode_base);
 	assert(hdr->opcode_base != 0);
 	if (hdr->opcode_base > 1) {
-		assert(buf_end - buf >= hdr->opcode_base - 1);
 		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base - 1);
-		memcpy(hdr->std_opcode_lengths, buf, hdr->opcode_base - 1);
-		buf += hdr->opcode_base - 1;
+		RET_FALSE_IF_FAIL(hdr->std_opcode_lengths);
+		RET_FALSE_IF_FAIL(rz_buf_read(buffer, hdr->std_opcode_lengths, hdr->opcode_base - 1));
 	} else {
 		hdr->std_opcode_lengths = NULL;
 	}
 
-	return parse_line_header_source(bf, buf, buf_end, hdr);
+	if (hdr->version < 5) {
+		return parse_line_header_source_v4(buffer, hdr, big_endian);
+	} else if (hdr->version == 5) {
+		return parse_line_header_source_v5(buffer, hdr, big_endian);
+	}
+	RZ_LOG_ERROR("DWARF line hdr version %d is not supported\n", hdr->version);
+	return false;
 }
 
 RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op) {
@@ -918,61 +1327,47 @@ RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op) {
 	}
 }
 
-static const ut8 *parse_ext_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len,
-	bool big_endian) {
-	rz_return_val_if_fail(op && hdr && obuf, NULL);
-	const ut8 *buf = obuf;
-	const ut8 *buf_end = obuf + len;
-
+static bool parse_ext_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, bool big_endian) {
+	rz_return_val_if_fail(op && hdr && buffer, NULL);
 	ut64 op_len;
-	buf = rz_uleb128(buf, len, &op_len, NULL);
+	ULE128_OR_RET_FALSE(op_len);
 	// op_len must fit and be at least 1 (for the opcode byte)
-	if (!buf || buf >= buf_end || !op_len || buf_end - buf < op_len) {
-		return NULL;
-	}
+	RET_FALSE_IF_FAIL(op_len > 0);
 
-	op->ext_opcode = *buf++;
+	ut8 code;
+	U8_OR_RET_FALSE(code);
+	op->ext_opcode = code;
 	op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT;
 
 	switch (op->ext_opcode) {
 	case DW_LNE_set_address: {
-		op->args.set_address = dwarf_read_address(hdr->address_size, big_endian, &buf, buf_end);
+		UX_OR_RET_FALSE(op->args.set_address, hdr->address_size);
 		break;
 	}
 	case DW_LNE_define_file: {
 		if (hdr->version <= 4) {
-			size_t fn_len = rz_str_nlen((const char *)buf, buf_end - buf);
-			char *fn = malloc(fn_len + 1);
-			if (!fn) {
-				return NULL;
-			}
-			memcpy(fn, buf, fn_len);
-			fn[fn_len] = 0;
+			char *fn = buf_get_string(buffer);
+			RET_FALSE_IF_FAIL(fn);
 			op->args.define_file.filename = fn;
-			buf += fn_len + 1;
-			if (buf + 1 < buf_end) {
-				buf = rz_uleb128(buf, buf_end - buf, &op->args.define_file.dir_index, NULL);
-			}
-			if (buf && buf + 1 < buf_end) {
-				buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
-			}
-			if (buf && buf + 1 < buf_end) {
-				buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
-			}
+			ULE128_OR_RET_FALSE(op->args.define_file.dir_index);
+			ut64 x;
+			ULE128_OR_GOTO(x, ok);
+			ULE128_OR_GOTO(x, ok);
 		} else {
 			op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN;
 		}
 		break;
 	}
 	case DW_LNE_set_discriminator:
-		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_discriminator, NULL);
+		ULE128_OR_RET_FALSE(op->args.set_discriminator);
 		break;
 	case DW_LNE_end_sequence:
 	default:
-		buf += op_len - 1;
+		rz_buf_seek(buffer, (st64)(op_len - 1), RZ_IO_SEEK_CUR);
 		break;
 	}
-	return buf;
+ok:
+	return true;
 }
 
 /**
@@ -985,31 +1380,28 @@ static size_t std_opcode_args_count(const RzBinDwarfLineHeader *hdr, ut8 opcode)
 	return hdr->std_opcode_lengths[opcode - 1];
 }
 
-static const ut8 *parse_std_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len, enum DW_LNS opcode, bool big_endian) {
-	rz_return_val_if_fail(op && hdr && obuf, NULL);
-	const ut8 *buf = obuf;
-	const ut8 *buf_end = obuf + len;
-
+static bool parse_std_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, enum DW_LNS opcode, bool big_endian) {
+	rz_return_val_if_fail(op && hdr && buffer, false);
 	op->type = RZ_BIN_DWARF_LINE_OP_TYPE_STD;
 	op->opcode = opcode;
 	switch (opcode) {
 	case DW_LNS_advance_pc:
-		buf = rz_uleb128(buf, buf_end - buf, &op->args.advance_pc, NULL);
+		ULE128_OR_RET_FALSE(op->args.advance_pc);
 		break;
 	case DW_LNS_advance_line:
-		buf = rz_leb128(buf, buf_end - buf, &op->args.advance_line);
+		SLE128_OR_RET_FALSE(op->args.advance_line);
 		break;
 	case DW_LNS_set_file:
-		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_file, NULL);
+		ULE128_OR_RET_FALSE(op->args.set_file);
 		break;
 	case DW_LNS_set_column:
-		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_column, NULL);
+		ULE128_OR_RET_FALSE(op->args.set_column);
 		break;
 	case DW_LNS_fixed_advance_pc:
-		op->args.fixed_advance_pc = READ16(buf);
+		U16_OR_RET_FALSE(op->args.fixed_advance_pc);
 		break;
 	case DW_LNS_set_isa:
-		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_isa, NULL);
+		ULE128_OR_RET_FALSE(op->args.set_isa);
 		break;
 
 	// known opcodes that take no args
@@ -1025,14 +1417,12 @@ static const ut8 *parse_std_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHea
 	default: {
 		size_t args_count = std_opcode_args_count(hdr, opcode);
 		for (size_t i = 0; i < args_count; i++) {
-			buf = rz_uleb128(buf, buf_end - buf, &op->args.advance_pc, NULL);
-			if (!buf) {
-				break;
-			}
+			ULE128_OR_GOTO(op->args.advance_pc, ok);
 		}
 	}
 	}
-	return buf;
+ok:
+	return true;
 }
 
 RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs) {
@@ -1150,46 +1540,62 @@ RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarf
 	return true;
 }
 
-static size_t parse_opcodes(const ut8 *obuf,
-	size_t len, const RzBinDwarfLineHeader *hdr, RzVector /*<RzBinDwarfLineOp>*/ *ops_out,
+static char *line_op_str(RzBinDwarfLineOp *op, ut64 offset) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_strbuf_appendf(sb, "0x%" PFMT64x ":\t", offset);
+	switch (op->type) {
+	case RZ_BIN_DWARF_LINE_OP_TYPE_SPEC:
+		rz_strbuf_appendf(sb, "spec");
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
+		rz_strbuf_appendf(sb, "%s", rz_bin_dwarf_lns(op->opcode));
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
+		rz_strbuf_appendf(sb, "%s", rz_bin_dwarf_lne(op->ext_opcode));
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN:
+		rz_strbuf_appendf(sb, "unknown");
+		break;
+	}
+	return rz_strbuf_drain(sb);
+}
+
+static bool parse_opcodes(RzBuffer *buffer, const RzBinDwarfLineHeader *hdr, RzVector /*<RzBinDwarfLineOp>*/ *ops_out,
 	RzBinDwarfSMRegisters *regs, RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info,
 	RZ_NULLABLE RzBinDwarfLineFileCache *fnc, bool big_endian) {
-	const ut8 *buf, *buf_end;
-
-	if (!obuf || !len) {
-		return 0;
-	}
-	buf = obuf;
-	buf_end = obuf + len;
-
-	while (buf < buf_end) {
-		ut8 opcode = *buf++;
-		RzBinDwarfLineOp op = { 0 };
+	while (true) {
+		RzBinDwarfLineOp op = { .offset = rz_buf_tell(buffer), 0 };
+		if (rz_buf_tell(buffer) > hdr->offset + hdr->unit_length + 1) {
+			break;
+		}
+		ut8 opcode;
+		U8_OR_RET_FALSE(opcode);
 		if (!opcode) {
-			buf = parse_ext_opcode(&op, hdr, buf, (buf_end - buf), big_endian);
+			RET_FALSE_IF_FAIL(parse_ext_opcode(buffer, &op, hdr, big_endian));
 		} else if (opcode >= hdr->opcode_base) {
 			// special opcode without args, no further parsing needed
 			op.type = RZ_BIN_DWARF_LINE_OP_TYPE_SPEC;
 			op.opcode = opcode;
 		} else {
-			buf = parse_std_opcode(&op, hdr, buf, (buf_end - buf), opcode, big_endian);
-		}
-		if (!buf) {
-			break;
+			RET_FALSE_IF_FAIL(parse_std_opcode(buffer, &op, hdr, opcode, big_endian));
 		}
 		if (bob) {
-			rz_bin_dwarf_line_op_run(hdr, regs, &op, bob, info, fnc);
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_line_op_run(hdr, regs, &op, bob, info, fnc));
 		}
+
+		char *str = line_op_str(&op, op.offset);
+		if (str) {
+			RZ_LOG_DEBUG("%s\n", str);
+			free(str);
+		}
+
 		if (ops_out) {
 			rz_vector_push(ops_out, &op);
 		} else {
 			rz_bin_dwarf_line_op_fini(&op);
 		}
 	}
-	if (!buf) {
-		return 0;
-	}
-	return (size_t)(buf - obuf); // number of bytes we've moved by
+	return true; // number of bytes we've moved by
 }
 
 static void line_unit_free(RzBinDwarfLineUnit *unit) {
@@ -1201,17 +1607,9 @@ static void line_unit_free(RzBinDwarfLineUnit *unit) {
 	free(unit);
 }
 
-static RzBinDwarfLineInfo *parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
-	ut64 len, RzBinDwarfLineInfoMask mask, bool big_endian, RZ_NULLABLE RzBinDwarfDebugInfo *info) {
+static RzBinDwarfLineInfo *parse_line_raw(RzBuffer *buffer, ut8 address_size, RzBinDwarfLineInfoMask mask, bool big_endian, RZ_NULLABLE RzBinDwarfDebugInfo *info) {
 	// Dwarf 3 Standard 6.2 Line Number Information
-	rz_return_val_if_fail(binfile && obuf, NULL);
-
-	const ut8 *buf = obuf;
-	const ut8 *buf_start = buf;
-	const ut8 *buf_end = obuf + len;
-	const ut8 *tmpbuf = NULL;
-	ut64 buf_size;
-
+	rz_return_val_if_fail(buffer, NULL);
 	RzBinDwarfLineInfo *li = RZ_NEW0(RzBinDwarfLineInfo);
 	if (!li) {
 		return NULL;
@@ -1228,43 +1626,16 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 	}
 
 	// each iteration we read one header AKA comp. unit
-	while (buf <= buf_end) {
+	while (true) {
 		RzBinDwarfLineUnit *unit = RZ_NEW0(RzBinDwarfLineUnit);
 		if (!unit) {
 			break;
 		}
 
-		// How much did we read from the compilation unit
-		size_t bytes_read = 0;
-		// calculate how much we've read by parsing header
-		// because header unit_length includes itself
-		buf_size = buf_end - buf;
-
-		tmpbuf = buf;
-		buf = parse_line_header(binfile, buf, buf_end, &unit->header, buf - buf_start, big_endian);
-		if (!buf) {
-			line_unit_free(unit);
+		if (!parse_line_header(buffer, address_size, &unit->header, big_endian)) {
+			free(unit);
 			break;
 		}
-
-		bytes_read = buf - tmpbuf;
-
-		RzBinDwarfSMRegisters regs;
-		rz_bin_dwarf_line_header_reset_regs(&unit->header, &regs);
-
-		// If there is more bytes in the buffer than size of the header
-		// It means that there has to be another header/comp.unit
-		buf_size = RZ_MIN(buf_size, unit->header.unit_length + (unit->header.is_64bit * 8 + 4)); // length field + rest of the unit
-		if (buf_size <= bytes_read) {
-			// no info or truncated
-			line_unit_free(unit);
-			continue;
-		}
-		if (buf_size > (buf_end - buf) + bytes_read || buf > buf_end) {
-			line_unit_free(unit);
-			break;
-		}
-		size_t tmp_read = 0;
 
 		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) {
 			rz_vector_init(&unit->ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
@@ -1275,23 +1646,23 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 			fnc = rz_pvector_new_with_len(free, rz_vector_len(&unit->header.file_names));
 		}
 
+		RzBinDwarfSMRegisters regs;
+		rz_bin_dwarf_line_header_reset_regs(&unit->header, &regs);
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
+			if (rz_buf_tell(buffer) > unit->header.offset + unit->header.unit_length + 1) {
+				break;
+			}
 			// reads one whole sequence
-			tmp_read = parse_opcodes(buf, buf_size - bytes_read, &unit->header,
-				(mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) ? &unit->ops : NULL, &regs,
-				(mask & RZ_BIN_DWARF_LINE_INFO_MASK_LINES) ? &bob : NULL,
-				info, fnc, big_endian);
-			bytes_read += tmp_read;
-			buf += tmp_read; // Move in the buffer forward
-		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
+			if (!parse_opcodes(buffer, &unit->header,
+				    (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) ? &unit->ops : NULL, &regs,
+				    (mask & RZ_BIN_DWARF_LINE_INFO_MASK_LINES) ? &bob : NULL,
+				    info, fnc, big_endian)) {
+				break;
+			}
+		} while (true); // if nothing is read -> error, exit
 
 		rz_pvector_free(fnc);
-
-		if (!tmp_read) {
-			line_unit_free(unit);
-			break;
-		}
 		rz_list_push(li->units, unit);
 	}
 	if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_LINES) {
@@ -1514,276 +1885,6 @@ RZ_API void rz_bin_dwarf_info_free(RzBinDwarfDebugInfo *info) {
 	free(info);
 }
 
-static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RzBinDwarfBlock *block) {
-	block->data = calloc(sizeof(ut8), block->length);
-	if (!block->data) {
-		return NULL;
-	}
-	/* Maybe unroll this as an optimization in future? */
-	if (block->data) {
-		size_t j = 0;
-		for (j = 0; j < block->length; j++) {
-			block->data[j] = READ8(buf);
-		}
-	}
-	return buf;
-}
-
-static bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
-	if (block->length == 0) {
-		return true;
-	}
-	block->data = calloc(sizeof(ut8), block->length);
-	RET_FALSE_IF_FAIL(block->data);
-	/* Maybe unroll this as an optimization in future? */
-	ut16 len = rz_buf_read(buffer, block->data, block->length);
-	if (len != block->length) {
-		RZ_FREE(block->data);
-		return false;
-	}
-	return true;
-}
-
-/**
- * This function is quite incomplete and requires lot of work
- * With parsing various new FORM values
- * \brief Parses attribute value based on its definition
- *        and stores it into `value`
- */
-static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttrDef *def, RzBinDwarfAttr *value, const RzBinDwarfCompUnitHdr *hdr, RzBuffer *str_buffer, bool big_endian) {
-	rz_return_val_if_fail(def && value && hdr && buffer, NULL);
-
-	value->form = def->form;
-	value->name = def->name;
-	value->block.data = NULL;
-	value->string.content = NULL;
-	value->string.offset = 0;
-
-	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
-	switch (def->form) {
-	case DW_FORM_addr:
-		value->kind = DW_AT_KIND_ADDRESS;
-		UX_OR_RET_FALSE(value->address, hdr->address_size);
-		break;
-	case DW_FORM_data1:
-		value->kind = DW_AT_KIND_CONSTANT;
-		U8_OR_RET_FALSE(value->uconstant);
-		break;
-	case DW_FORM_data2:
-		value->kind = DW_AT_KIND_CONSTANT;
-		U16_OR_RET_FALSE(value->uconstant);
-		break;
-	case DW_FORM_data4:
-		value->kind = DW_AT_KIND_CONSTANT;
-		U32_OR_RET_FALSE(value->uconstant);
-		break;
-	case DW_FORM_data8:
-		value->kind = DW_AT_KIND_CONSTANT;
-		U64_OR_RET_FALSE(value->uconstant);
-		break;
-	case DW_FORM_data16: // TODO Fix this, right now I just read the data, but I need to make storage for it
-		value->kind = DW_AT_KIND_CONSTANT;
-		if (big_endian) {
-			U64_OR_RET_FALSE(value->uconstant128.High);
-			U64_OR_RET_FALSE(value->uconstant128.Low);
-		} else {
-			U64_OR_RET_FALSE(value->uconstant128.Low);
-			U64_OR_RET_FALSE(value->uconstant128.High);
-		}
-		break;
-	case DW_FORM_sdata:
-		value->kind = DW_AT_KIND_CONSTANT;
-		SLE128_OR_RET_FALSE(value->sconstant);
-		break;
-	case DW_FORM_udata:
-		value->kind = DW_AT_KIND_UCONSTANT;
-		ULE128_OR_RET_FALSE(value->uconstant);
-		break;
-	case DW_FORM_string:
-		value->kind = DW_AT_KIND_STRING;
-		value->string.content = buf_get_string(buffer);
-#define CHECK_STRING \
-	if (!value->string.content) { \
-		RZ_LOG_ERROR("Failed to read string %s [%s]\n", rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form)); \
-		return false; \
-	}
-		CHECK_STRING;
-		break;
-	case DW_FORM_block1:
-		value->kind = DW_AT_KIND_BLOCK;
-		U8_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
-		break;
-	case DW_FORM_block2:
-		value->kind = DW_AT_KIND_BLOCK;
-		U16_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
-		break;
-	case DW_FORM_block4:
-		value->kind = DW_AT_KIND_BLOCK;
-		U32_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
-		break;
-	case DW_FORM_block: // variable length ULEB128
-		value->kind = DW_AT_KIND_BLOCK;
-		ULE128_OR_RET_NULL(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
-		break;
-	case DW_FORM_flag:
-		value->kind = DW_AT_KIND_FLAG;
-		U8_OR_RET_FALSE(value->flag);
-		break;
-		// offset in .debug_str
-	case DW_FORM_strp:
-		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, hdr->is_64bit, big_endian));
-		if (str_buffer && value->string.offset < rz_buf_size(str_buffer)) {
-			value->string.content = rz_buf_get_string(str_buffer, value->string.offset);
-		}
-		CHECK_STRING;
-		break;
-		// offset in .debug_info
-	case DW_FORM_ref_addr:
-		value->kind = DW_AT_KIND_REFERENCE;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, hdr->is_64bit, big_endian));
-		break;
-		// This type of reference is an offset from the first byte of the compilation
-		// header for the compilation unit containing the reference
-	case DW_FORM_ref1:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U8_OR_RET_FALSE(value->reference);
-		value->reference += hdr->unit_offset;
-		break;
-	case DW_FORM_ref2:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U16_OR_RET_FALSE(value->reference);
-		value->reference += hdr->unit_offset;
-		break;
-	case DW_FORM_ref4:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U32_OR_RET_FALSE(value->reference);
-		value->reference += hdr->unit_offset;
-		break;
-	case DW_FORM_ref8:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U64_OR_RET_FALSE(value->reference);
-		value->reference += hdr->unit_offset;
-		break;
-	case DW_FORM_ref_udata:
-		value->kind = DW_AT_KIND_REFERENCE;
-		// uleb128 is enough to fit into ut64?
-		ULE128_OR_RET_FALSE(value->reference);
-		value->reference += hdr->unit_offset;
-		break;
-		// offset in a section other than .debug_info or .debug_str
-	case DW_FORM_sec_offset:
-		value->kind = DW_AT_KIND_REFERENCE;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, hdr->is_64bit, big_endian));
-		break;
-	case DW_FORM_exprloc:
-		value->kind = DW_AT_KIND_BLOCK;
-		ULE128_OR_RET_FALSE(value->block.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
-		break;
-		// this means that the flag is present, nothing is read
-	case DW_FORM_flag_present:
-		value->kind = DW_AT_KIND_FLAG;
-		value->flag = true;
-		break;
-	case DW_FORM_ref_sig8:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U64_OR_RET_NULL(value->reference);
-		break;
-		// offset into .debug_line_str section, can't parse the section now, so we just skip
-	case DW_FORM_strx:
-		value->kind = DW_AT_KIND_STRING;
-		// value->string.offset = dwarf_read_offset (hdr->is_64bit, big_endian, &buf, buf_end);
-		// if (debug_str && value->string.offset < debug_str_len) {
-		// 	value->string.content =
-		// 		rz_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len - value->string.offset);
-		// } else {
-		// 	value->string.content = NULL; // Means malformed DWARF, should we print error message?
-		// }
-		break;
-	case DW_FORM_strx1:
-		value->kind = DW_AT_KIND_STRING;
-		U8_OR_RET_FALSE(value->string.offset);
-		break;
-	case DW_FORM_strx2:
-		value->kind = DW_AT_KIND_STRING;
-		U16_OR_RET_FALSE(value->string.offset);
-		break;
-	case DW_FORM_strx3: // TODO Add 3 byte int read
-		value->kind = DW_AT_KIND_STRING;
-		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
-		break;
-	case DW_FORM_strx4:
-		value->kind = DW_AT_KIND_STRING;
-		U32_OR_RET_FALSE(value->string.offset);
-		break;
-	case DW_FORM_implicit_const:
-		value->kind = DW_AT_KIND_CONSTANT;
-		value->uconstant = def->special;
-		break;
-		/*  addrx* forms : The index is relative to the value of the
-			DW_AT_addr_base attribute of the associated compilation unit.
-		    index into an array of addresses in the .debug_addr section.*/
-	case DW_FORM_addrx:
-		value->kind = DW_AT_KIND_ADDRESS;
-		ULE128_OR_RET_FALSE(value->address);
-		break;
-	case DW_FORM_addrx1:
-		value->kind = DW_AT_KIND_ADDRESS;
-		U8_OR_RET_FALSE(value->address);
-		break;
-	case DW_FORM_addrx2:
-		value->kind = DW_AT_KIND_ADDRESS;
-		U16_OR_RET_FALSE(value->address);
-		break;
-	case DW_FORM_addrx3:
-		// I need to add 3byte endianess free read here TODO
-		value->kind = DW_AT_KIND_ADDRESS;
-		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
-		break;
-	case DW_FORM_addrx4:
-		value->kind = DW_AT_KIND_ADDRESS;
-		U32_OR_RET_FALSE(value->address);
-		break;
-	case DW_FORM_line_ptr: // offset in a section .debug_line_str
-	case DW_FORM_strp_sup: // offset in a section .debug_line_str
-		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, hdr->is_64bit, big_endian));
-		// if (debug_str && value->string.offset < debug_line_str_len) {
-		// 	value->string.content =
-		// 		rz_str_ndup
-		break;
-		// offset in the supplementary object file
-	case DW_FORM_ref_sup4:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U32_OR_RET_FALSE(value->reference);
-		break;
-	case DW_FORM_ref_sup8:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U64_OR_RET_FALSE(value->reference);
-		break;
-		// An index into the .debug_loc
-	case DW_FORM_loclistx:
-		value->kind = DW_AT_KIND_LOCLISTPTR;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, hdr->is_64bit, big_endian));
-		break;
-		// An index into the .debug_rnglists
-	case DW_FORM_rnglistx:
-		value->kind = DW_AT_KIND_ADDRESS;
-		ULE128_OR_RET_FALSE(value->address);
-		break;
-	default:
-		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", def->form);
-		value->uconstant = 0;
-		return false;
-	}
-	return true;
-}
-
 static char *attr_to_string(RzBinDwarfAttr *attr) {
 	switch (attr->name) {
 	case DW_AT_language: return rz_str_new(rz_bin_dwarf_lang(attr->uconstant));
@@ -1815,7 +1916,14 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 	RzBinDwarfAttrDef *def = NULL;
 	rz_vector_foreach(&abbrev->defs, def) {
 		RzBinDwarfAttr attr = { 0 };
-		if (!attr_parse(buffer, def, &attr, hdr, str_buffer, big_endian)) {
+		DwAttrOption opt = {
+			.type = DW_ATTR_TYPE_DEF,
+			.def = def,
+			.big_endian = big_endian,
+			.comp_unit_hdr = hdr,
+			.str_buffer = str_buffer,
+		};
+		if (!attr_parse(buffer, &attr, &opt)) {
 			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die: 0x%" PFMT64x " %s [%s]\n ", rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
 			continue;
 		}
@@ -2001,7 +2109,7 @@ cleanup:
 	return false;
 }
 
-static RzBinDwarfAbbrevTable *abbrevtable_new(size_t offset) {
+static RzBinDwarfAbbrevTable *abbrev_table_new(size_t offset) {
 	RzBinDwarfAbbrevTable *table = RZ_NEW0(RzBinDwarfAbbrevTable);
 	rz_vector_init(&table->abbrevs, sizeof(RzBinDwarfAbbrevDecl), NULL, NULL);
 	table->offset = offset;
@@ -2010,11 +2118,11 @@ static RzBinDwarfAbbrevTable *abbrevtable_new(size_t offset) {
 
 static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 	abbrev_init(abbrevs);
-	RzBinDwarfAbbrevTable *tbl = abbrevtable_new(rz_buf_tell(buffer));
+	RzBinDwarfAbbrevTable *tbl = abbrev_table_new(rz_buf_tell(buffer));
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (!tbl) {
-			tbl = abbrevtable_new(offset);
+			tbl = abbrev_table_new(offset);
 		}
 
 		ut64 code = 0;
@@ -2186,14 +2294,16 @@ cave_info:
  */
 RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask) {
 	rz_return_val_if_fail(binfile, NULL);
-	size_t len;
-	ut8 *buf = get_section_bytes(binfile, "debug_line", &len);
+	RzBuffer *buf = get_section_buf(binfile, "debug_line");
 	if (!buf) {
 		return NULL;
 	}
 	// Actually parse the section
-	RzBinDwarfLineInfo *r = parse_line_raw(binfile, buf, len, mask, binfile->o && binfile->o->info && binfile->o->info->big_endian, info);
-	free(buf);
+	RzBinInfo *binfo = binfile->o && binfile->o->info ? binfile->o->info : NULL;
+	ut8 address_size = binfo && binfo->bits ? binfo->bits / 8 : 4;
+	bool big_endian = binfo && binfo->big_endian;
+	RzBinDwarfLineInfo *r = parse_line_raw(buf, address_size, mask, big_endian, info);
+	rz_buf_free(buf);
 	return r;
 }
 
@@ -2280,11 +2390,9 @@ static void block_free(RzBinDwarfBlock *block) {
 	free(block);
 }
 
-static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, const ut8 *buf, size_t len, size_t addr_size,
+static HtUP *parse_loc_raw(RzBuffer *buffer, HtUP /*<offset, List *<LocListEntry>*/ *loc_table, size_t addr_size,
 	bool big_endian) {
 	/* GNU has their own extensions GNU locviews that we can't parse */
-	const ut8 *const buf_start = buf;
-	const ut8 *buf_end = buf + len;
 	/* for recognizing Base address entry */
 	ut64 max_offset = get_max_offset(addr_size);
 
@@ -2293,16 +2401,17 @@ static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, co
 
 	RzBinDwarfLocList *loc_list = NULL;
 	RzBinDwarfLocRange *range = NULL;
-	while (buf && buf < buf_end) {
-		ut64 start_addr = dwarf_read_address(addr_size, big_endian, &buf, buf_end);
-		ut64 end_addr = dwarf_read_address(addr_size, big_endian, &buf, buf_end);
+	while (true) {
+		ut64 start_addr, end_addr;
+		UX_OR_RET_FALSE(start_addr, addr_size);
+		UX_OR_RET_FALSE(end_addr, addr_size);
 
 		if (start_addr == 0 && end_addr == 0) { /* end of list entry: 0, 0 */
 			if (loc_list) {
 				if (!ht_up_insert(loc_table, loc_list->offset, loc_list)) {
 					loc_list_tree(loc_list);
 				}
-				list_offset = buf - buf_start;
+				list_offset = rz_buf_tell(buffer);
 				loc_list = NULL;
 			}
 			address_base = 0;
@@ -2317,8 +2426,8 @@ static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, co
 			}
 			/* TODO in future parse expressions to better structure in dwarf.c and not in dwarf_process.c */
 			RzBinDwarfBlock *block = RZ_NEW0(RzBinDwarfBlock);
-			block->length = READ16(buf);
-			buf = fill_block_data(buf, buf_end, block);
+			U16_OR_RET_FALSE(block->length);
+			buf_read_block(buffer, block);
 			range = create_loc_range(start_addr + address_base, end_addr + address_base, block);
 			if (!range) {
 				block_free(block);
@@ -2345,8 +2454,7 @@ static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, co
 RZ_API HtUP /*<offset, RzBinDwarfLocList *>*/ *rz_bin_dwarf_loc_parse(RzBinFile *binfile, int addr_size) {
 	rz_return_val_if_fail(binfile, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
-	size_t len = 0;
-	ut8 *buf = get_section_bytes(binfile, "debug_loc", &len);
+	RzBuffer *buf = get_section_buf(binfile, "debug_loc");
 	if (!buf) {
 		return NULL;
 	}
@@ -2355,7 +2463,7 @@ RZ_API HtUP /*<offset, RzBinDwarfLocList *>*/ *rz_bin_dwarf_loc_parse(RzBinFile 
 		free(buf);
 		return NULL;
 	}
-	loc_table = parse_loc_raw(loc_table, buf, len, addr_size, binfile->o && binfile->o->info && binfile->o->info->big_endian);
+	loc_table = parse_loc_raw(buf, loc_table, addr_size, binfile->o && binfile->o->info && binfile->o->info->big_endian);
 	free(buf);
 	return loc_table;
 }
@@ -2451,11 +2559,6 @@ RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarf
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl) {
 	rz_return_val_if_fail(decl, 0);
 	return rz_vector_len(&decl->defs);
-}
-
-RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_decl_get(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx) {
-	rz_return_val_if_fail(decl, NULL);
-	return rz_vector_index_ptr(&decl->defs, idx);
 }
 
 RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_get(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx) {

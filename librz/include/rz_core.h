@@ -897,6 +897,7 @@ RZ_API char *rz_core_bin_dwarf_attr_dump(const RzBinDwarfAttr *val);
 RZ_API char *rz_core_bin_dwarf_debug_info_dump(const RzBinDwarfDebugInfo *info);
 RZ_API char *rz_core_bin_dwarf_loc_dump(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size);
 RZ_API char *rz_core_bin_dwarf_aranges_dump(RzList /*<RzBinDwarfARangeSet *>*/ *aranges);
+RZ_API char *rz_core_bin_dwarf_line_unit_dump(RzBinDwarfLineUnit *unit);
 RZ_API char *rz_core_bin_dwarf_line_units_dump(RzList /*<RzBinDwarfLineUnit *>*/ *lines);
 
 RZ_API void rz_core_sysenv_begin(RzCore *core);
