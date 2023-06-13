@@ -424,7 +424,7 @@ static pyc_object *get_string_object(RzBuffer *buffer) {
 	return ret;
 }
 
-static pyc_object *get_unicode_object(RzBuffer *buffer) {
+static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
 	ut32 n = 0;
@@ -437,12 +437,33 @@ static pyc_object *get_unicode_object(RzBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
+	ut64 addr = rz_buf_tell(buffer);
 	ret = RZ_NEW0(pyc_object);
 	ret->type = TYPE_UNICODE;
 	ret->data = get_bytes(buffer, n);
 	if (!ret->data) {
 		RZ_FREE(ret);
 		return NULL;
+	}
+
+	if (n > 0) {
+		RzBinString *string = NULL;
+		string = RZ_NEW0(RzBinString);
+		if (!string) {
+			RZ_FREE(ret);
+			return NULL;
+		}
+		string->paddr = string->vaddr = addr;
+		string->size = n;
+		string->length = rz_utf8_strlen(ret->data);
+		string->ordinal = 0;
+		string->type = RZ_STRING_ENC_UTF8;
+		string->string = rz_str_new(ret->data);
+		RzListIter *ref_idx = rz_list_append(pyc->strings_cache, string);
+		if (!ref_idx) {
+			RZ_FREE(ret);
+			return NULL;
+		}
 	}
 	return ret;
 }
@@ -627,22 +648,43 @@ static pyc_object *get_set_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	return ret;
 }
 
-static pyc_object *get_ascii_object_generic(RzBuffer *buffer, ut32 size, bool interned) {
+static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, ut32 size, bool interned) {
 	pyc_object *ret = NULL;
 
 	ret = RZ_NEW0(pyc_object);
 	if (!ret) {
 		return NULL;
 	}
+
+	ut64 addr = rz_buf_tell(buffer);
 	ret->type = TYPE_ASCII;
 	ret->data = get_bytes(buffer, size);
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
+
+	if (size > 0) {
+		RzBinString *string = NULL;
+		string = RZ_NEW0(RzBinString);
+		if (!string) {
+			RZ_FREE(ret);
+			return NULL;
+		}
+		string->paddr = string->vaddr = addr;
+		string->length = string->size = size;
+		string->ordinal = 0;
+		string->type = RZ_STRING_ENC_8BIT;
+		string->string = rz_str_new(ret->data);
+		RzListIter *ref_idx = rz_list_append(pyc->strings_cache, string);
+		if (!ref_idx) {
+			RZ_FREE(ret);
+			return NULL;
+		}
+	}
 	return ret;
 }
 
-static pyc_object *get_ascii_object(RzBuffer *buffer) {
+static pyc_object *get_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
 	ut32 n = 0;
 
@@ -650,10 +692,10 @@ static pyc_object *get_ascii_object(RzBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic(buffer, n, true);
+	return get_ascii_object_generic(pyc, buffer, n, true);
 }
 
-static pyc_object *get_ascii_interned_object(RzBuffer *buffer) {
+static pyc_object *get_ascii_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
 	ut32 n;
 
@@ -661,10 +703,10 @@ static pyc_object *get_ascii_interned_object(RzBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic(buffer, n, true);
+	return get_ascii_object_generic(pyc, buffer, n, true);
 }
 
-static pyc_object *get_short_ascii_object(RzBuffer *buffer) {
+static pyc_object *get_short_ascii_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
 	ut8 n;
 
@@ -672,10 +714,10 @@ static pyc_object *get_short_ascii_object(RzBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic(buffer, n, false);
+	return get_ascii_object_generic(pyc, buffer, n, false);
 }
 
-static pyc_object *get_short_ascii_interned_object(RzBuffer *buffer) {
+static pyc_object *get_short_ascii_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
 	ut8 n;
 
@@ -683,7 +725,7 @@ static pyc_object *get_short_ascii_interned_object(RzBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	return get_ascii_object_generic(buffer, n, true);
+	return get_ascii_object_generic(pyc, buffer, n, true);
 }
 
 static pyc_object *get_ref_object(RzBinPycObj *pyc, RzBuffer *buffer) {
@@ -1051,16 +1093,16 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		ret = get_int_object(buffer);
 		break;
 	case TYPE_ASCII_INTERNED:
-		ret = get_ascii_interned_object(buffer);
+		ret = get_ascii_interned_object(pyc, buffer);
 		break;
 	case TYPE_SHORT_ASCII:
-		ret = get_short_ascii_object(buffer);
+		ret = get_short_ascii_object(pyc, buffer);
 		break;
 	case TYPE_ASCII:
-		ret = get_ascii_object(buffer);
+		ret = get_ascii_object(pyc, buffer);
 		break;
 	case TYPE_SHORT_ASCII_INTERNED:
-		ret = get_short_ascii_interned_object(buffer);
+		ret = get_short_ascii_interned_object(pyc, buffer);
 		break;
 	case TYPE_INT64:
 		ret = get_int64_object(buffer);
@@ -1090,7 +1132,7 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		ret = get_long_object(buffer);
 		break;
 	case TYPE_UNICODE:
-		ret = get_unicode_object(buffer);
+		ret = get_unicode_object(pyc, buffer);
 		break;
 	case TYPE_DICT:
 		ret = get_dict_object(pyc, buffer);
