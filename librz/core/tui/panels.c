@@ -53,6 +53,13 @@ typedef enum {
 	DOWN
 } Direction;
 
+typedef struct {
+	RzStrBuf *data;
+	RzPanelPos pos;
+	int idx;
+	int offset;
+} RModal;
+
 static const char *panels_dynamic[] = {
 	"Disassembly", "Stack", "Registers",
 	NULL
