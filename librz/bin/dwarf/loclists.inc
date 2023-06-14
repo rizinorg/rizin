@@ -62,6 +62,8 @@ bool RawLocListEntry_parse(RzBuffer *buffer, LocListsFormat format) {
 	return false;
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnreachableCode"
 static HtUP *parse_loc_raw(RzBuffer *buffer, HtUP /*<offset, List *<LocListEntry>*/ *loc_table, size_t addr_size,
 	bool big_endian) {
 	/* GNU has their own extensions GNU locviews that we can't parse */
@@ -74,7 +76,8 @@ static HtUP *parse_loc_raw(RzBuffer *buffer, HtUP /*<offset, List *<LocListEntry
 	RzBinDwarfLocList *loc_list = NULL;
 	RzBinDwarfLocRange *range = NULL;
 	while (true) {
-		ut64 start_addr, end_addr;
+		ut64 start_addr = 0;
+		ut64 end_addr = 0;
 		UX_OR_RET_FALSE(start_addr, addr_size);
 		UX_OR_RET_FALSE(end_addr, addr_size);
 
@@ -114,6 +117,7 @@ static HtUP *parse_loc_raw(RzBuffer *buffer, HtUP /*<offset, List *<LocListEntry
 	}
 	return loc_table;
 }
+#pragma clang diagnostic pop
 
 /**
  * @brief Parses out the .debug_loc section into a table that maps each list as

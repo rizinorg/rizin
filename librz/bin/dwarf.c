@@ -574,6 +574,11 @@ RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
 	return dwarf_lnct[lnct];
 }
 
+typedef struct {
+	ut8 address_size;
+	bool big_endian;
+} Encoding;
+
 /**
  * \brief Read an "initial length" value, as specified by dwarf.
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
@@ -703,7 +708,7 @@ typedef struct {
 		RzBinDwarfCompUnitHdr *comp_unit_hdr;
 	};
 	RzBuffer *str_buffer;
-	bool big_endian;
+	Encoding encoding;
 } DwAttrOption;
 
 /**
@@ -735,7 +740,7 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		unit_offset = in->line_hdr->offset;
 	}
 
-	bool big_endian = in->big_endian;
+	bool big_endian = in->encoding.big_endian;
 	RzBuffer *str_buffer = in->str_buffer;
 
 	value->form = form;

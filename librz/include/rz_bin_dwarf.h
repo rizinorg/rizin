@@ -10,12 +10,6 @@ extern "C" {
 
 struct rz_bin_source_line_info_builder_t;
 
-#define DW_EXTENDED_OPCODE 0
-#define LOP_EXTENDED       1
-#define LOP_DISCARD        2
-#define LOP_STANDARD       3
-#define LOP_SPECIAL        4
-
 enum DW_LNS {
 	DW_LNS_copy = 0x01,
 	DW_LNS_advance_pc = 0x02,
@@ -509,6 +503,20 @@ enum DW_ATE {
 	/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 	DW_ATE_lo_user = 0x80,
 	DW_ATE_hi_user = 0xff,
+};
+
+/// Range list entry encoding values.
+///
+/// See Section 7.25, Table 7.30.
+enum DW_RLE {
+	DW_RLE_end_of_list = 0x00,
+	DW_RLE_base_addressx = 0x01,
+	DW_RLE_startx_endx = 0x02,
+	DW_RLE_startx_length = 0x03,
+	DW_RLE_offset_pair = 0x04,
+	DW_RLE_base_address = 0x05,
+	DW_RLE_start_end = 0x06,
+	DW_RLE_start_length = 0x07,
 };
 
 /// The encodings of the constants used in location list entries.
@@ -1021,61 +1029,113 @@ typedef struct {
 	ut64 end;
 } RawRange;
 
+enum RangeListsFormat {
+	/// The bare range list format used before DWARF 5.
+	RangeListsFormat_Bare,
+	/// The DW_RLE encoded range list format used in DWARF 5.
+	RangeListsFormat_Rle,
+};
+
+/// A raw entry in .debug_rnglists
+typedef struct {
+	enum DW_RLE encoding;
+	union {
+		/// A range from DWARF version <= 4.
+		struct {
+			ut64 begin; /// Start of range. May be an address or an offset.
+			ut64 end; /// End of range. May be an address or an offset.
+		} address_or_offset_pair;
+		/// DW_RLE_base_address
+		struct {
+			ut64 addr; /// base address
+		} base_address;
+		/// DW_RLE_base_addressx
+		struct {
+			ut64 addr; /// base address
+		} base_addressx;
+		/// DW_RLE_startx_endx
+		struct {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+		} startx_endx;
+		/// DW_RLE_startx_length
+		struct {
+			ut64 begin; /// start of range
+			ut64 length; /// length of range
+		} startx_length;
+		/// DW_RLE_offset_pair
+		struct {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+		} offset_pair;
+		/// DW_RLE_start_end
+		struct {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+		} start_end;
+		/// DW_RLE_start_length
+		struct {
+			ut64 begin; /// Start of range.
+			ut64 length; /// Length of range.
+		} start_length;
+	};
+} RawRngListEntry;
+
 typedef enum {
 	/// The bare location list format used before DWARF 5.
-	Bare,
+	LocListsFormat_Bare,
 	/// The DW_LLE encoded range list format used in DWARF 5 and the non-standard GNU
 	/// split dwarf extension.
-	Lle,
+	LocListsFormat_Lle,
 } LocListsFormat;
 
 typedef struct {
 	enum DW_LLE encoding;
 	union {
 		/// A location from DWARF version <= 4.
-		struct AddressOrOffsetPair {
+		struct {
 			ut64 begin; /// Start of range. May be an address or an offset.
 			ut64 end; /// End of range. May be an address or an offset.
 			RzBinDwarfBlock data; /// expression
 		} address_or_offset_pair;
 		/// DW_LLE_base_address
-		struct BaseAddress {
+		struct {
 			ut64 addr; /// base address
 		} base_address;
 		/// DW_LLE_base_addressx
-		struct BaseAddressx {
+		struct {
 			ut64 addr; /// base address
 		} base_addressx;
 		/// DW_LLE_startx_endx
-		struct StartxEndx {
+		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression
 		} startx_endx;
 		/// DW_LLE_startx_length
-		struct StartxLength {
+		struct {
 			ut64 begin; /// start of range
 			ut64 length; /// length of range
 			RzBinDwarfBlock data; /// expression
 		} startx_length;
 		/// DW_LLE_offset_pair
-		struct OffsetPair {
+		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression
 		} offset_pair;
 		/// DW_LLE_default_location
-		struct DefaultLocation {
+		struct {
 			RzBinDwarfBlock data; /// expression
 		} default_location;
 		/// DW_LLE_start_end
-		struct StartEnd {
+		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression
 		} start_end;
 		/// DW_LLE_start_length
-		struct StartLength {
+		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression

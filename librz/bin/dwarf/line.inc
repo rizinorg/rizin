@@ -72,7 +72,10 @@ static char *parse_directory_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, boo
 			.type = DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
 			.format = format,
 			.line_hdr = hdr,
-			.big_endian = big_endian,
+			.encoding = {
+				.address_size = hdr->address_size,
+				.big_endian = big_endian,
+			},
 		};
 		RET_NULL_IF_FAIL(attr_parse(buffer, &attr, &in));
 		if (format->content_type == DW_LNCT_path) {
@@ -96,7 +99,10 @@ static RzBinDwarfFileEntry *parse_file_v5(RzBuffer *buffer, RzBinDwarfLineHeader
 			.type = DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
 			.format = format,
 			.line_hdr = hdr,
-			.big_endian = big_endian,
+			.encoding = {
+				.big_endian = big_endian,
+				.address_size = hdr->address_size,
+			},
 		};
 		RET_NULL_IF_FAIL(attr_parse(buffer, &attr, &in));
 		switch (format->content_type) {

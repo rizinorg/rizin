@@ -53,7 +53,10 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 		DwAttrOption opt = {
 			.type = DW_ATTR_TYPE_DEF,
 			.def = def,
-			.big_endian = big_endian,
+			.encoding = {
+				.big_endian = big_endian,
+				.address_size = hdr->address_size,
+			},
 			.comp_unit_hdr = hdr,
 			.str_buffer = str_buffer,
 		};
