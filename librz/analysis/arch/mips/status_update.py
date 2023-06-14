@@ -628,36 +628,45 @@ insn_list = [
     "MIPS_INS_JR_HB",
 ]
 
-"""
-Generate empty status file with all instructions marked as unlifted
-"""
+
 def generate_empty_status():
-    f = open("README.md", mode='w')
+    """
+    Generate empty status file with all instructions marked as unlifted
+    """
+
+    f = open("README.md", mode="w")
     f.write("# MIPS UPLIFTING STATUS\n\n")
 
     # generate columns
-    f.write("|               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |\n")
-    f.write("|--------------------------------|------------|------------|------------|------------|\n")
+    f.write(
+        "|               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |\n"
+        "|--------------------------------|------------|------------|------------|------------|\n"
+    )
 
     # print empty data
     for i in range(len(insn_list)):
-        f.write(f'| {insn_list[i]:>30} | {"[ ]":>10} | {"[ ]":>10} | {"[ ]":>10} | {"[ ]":>10} |\n')
+        f.write(
+            f'| {insn_list[i]:>30} | {"[ ]":>10} | {"[ ]":>10} | {"[ ]":>10} | {"[ ]":>10} |\n'
+        )
 
     f.close()
 
 
-"""
-Reads current README.md file and loads current uplifting status
-@return status dictionary
-{insn_name : [mips32_status, mips64_status, mmips32_status, mmips64_status]}
-"""
 def load_status():
-    f = open("README.md", mode='r')
-    rows = f.read().split('\n')[4:]
+    """
+    Reads current README.md file and loads current uplifting status
+    @return status dictionary
+    {insn_name : [mips32_status, mips64_status, mmips32_status, mmips64_status]}
+    """
+
+    f = open("README.md", mode="r")
+    rows = f.read().split("\n")[4:]
     f.close()
 
     if len(rows) < (len(insn_list)):
-        print("STATUS DATA CORRUPT, REFRESH TO NEW WITH `python update_status.py new` COMMAND")
+        print(
+            "STATUS DATA CORRUPT, REFRESH TO NEW WITH `python update_status.py new` COMMAND"
+        )
         sys.exit(1)
 
     status = {}
@@ -667,45 +676,57 @@ def load_status():
     # parse each row
     for i in range(len(insn_list)):
         # split into column entries
-        cols = rows[i].split('|')[1:]
+        cols = rows[i].split("|")[1:]
 
         # get column entries
-        insn_name      = cols[0].strip()
-        mips32_status  = cols[1].strip() != "[ ]"
-        mips64_status  = cols[2].strip() != "[ ]"
+        insn_name = cols[0].strip()
+        mips32_status = cols[1].strip() != "[ ]"
+        mips64_status = cols[2].strip() != "[ ]"
         mmips32_status = cols[3].strip() != "[ ]"
         mmips64_status = cols[4].strip() != "[ ]"
 
         # fill status hash table
-        status[insn_name] = [mips32_status, mips64_status, mmips32_status, mmips64_status]
+        status[insn_name] = [
+            mips32_status,
+            mips64_status,
+            mmips32_status,
+            mmips64_status,
+        ]
 
     return status
 
+
 def write_status(status):
-    f = open("README.md", mode='w')
+    f = open("README.md", mode="w")
     f.write("# MIPS UPLIFTING STATUS\n\n")
 
     # generate columns
-    f.write("|               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |\n")
-    f.write("|--------------------------------|------------|------------|------------|------------|\n")
+    f.write(
+        "|               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |\n"
+        "|--------------------------------|------------|------------|------------|------------|\n"
+    )
 
     # print empty data
     for i in range(len(insn_list)):
-        mips32_status  = "[x]" if status[insn_list[i]][0] == True else "[ ]"
-        mips64_status  = "[x]" if status[insn_list[i]][1] == True else "[ ]"
+        mips32_status = "[x]" if status[insn_list[i]][0] == True else "[ ]"
+        mips64_status = "[x]" if status[insn_list[i]][1] == True else "[ ]"
         mmips32_status = "[x]" if status[insn_list[i]][2] == True else "[ ]"
         mmips64_status = "[x]" if status[insn_list[i]][3] == True else "[ ]"
 
-        f.write(f'| {insn_list[i]:>30} | {mips32_status:>10} | {mips64_status:>10} | {mmips32_status:>10} | {mmips64_status:>10} |\n')
+        f.write(
+            f"| {insn_list[i]:>30} | {mips32_status:>10} | {mips64_status:>10} | {mmips32_status:>10} | {mmips64_status:>10} |\n"
+        )
 
     f.close()
 
-"""
-Update current status
-Architecture names that are not present will be marked as false
-@param args Contains arguments for update command
-"""
+
 def update_status(args):
+    """
+    Update current status
+    Architecture names that are not present will be marked as false
+    @param args Contains arguments for update command
+    """
+
     status = load_status()
 
     # process arguments
@@ -728,14 +749,17 @@ def update_status(args):
     status[insn_name] = new_insn_status
     write_status(status)
 
+
 # process cmd line args
-if(len(sys.argv) < 2):
+if len(sys.argv) < 2:
     print(sys.argv)
     print("USAGE : python status_update.py command")
-    print("COMMANDS : new                                    # generate new status file")
-    print("         : update <insn_name> <arch1> <arch2> ... # update status for current arch")
-    print("         : eg: update ADDI mips32 mmips64         # mips32 and mmps64 will be marked, others will be unmarked")
-else :
+    print(
+        "COMMANDS : new                                    # generate new status file\n"
+        "         : update <insn_name> <arch1> <arch2> ... # update status for current arch\n"
+        "         : eg: update ADDI mips32 mmips64         # mips32 and mmps64 will be marked, others will be unmarked\n"
+    )
+else:
     args = sys.argv[1:]
     if args[0] == "new":
         generate_empty_status()

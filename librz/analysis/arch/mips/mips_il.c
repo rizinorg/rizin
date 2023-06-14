@@ -2374,14 +2374,65 @@ IL_LIFTER(DMTC1) {
 IL_LIFTER(DMTC2) {
 	return NULL;
 }
+
+/**
+ * Multiply Signed Doubleword, High Word Signed
+ * Format: DMULU rd, rs, rt
+ * Description: GPR[rd] <- hi_dword(multiply.unsigned(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DMUH) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs128 = SIGNED(128, rs);
+	BitVector *rt128 = SIGNED(128, rt);
+	BitVector *prod = MUL(rs128, rt128);
+
+	BitVector *prod_hi = CAST(64, IL_FALSE, SHIFTR0(prod, U8(64)));
+
+	return SETG(rd, prod_hi);
 }
+
+/**
+ * Multiply Signed Doubleword, High Word Unsigned
+ * Format: DMUHU rd, rs, rt
+ * Description: GPR[rd] <- hi_dword(multiply.unsigned(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DMUHU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs128 = UNSIGNED(128, rs);
+	BitVector *rt128 = UNSIGNED(128, rt);
+	BitVector *prod = MUL(rs128, rt128);
+
+	BitVector *prod_hi = CAST(64, IL_FALSE, SHIFTR0(prod, U8(64)));
+
+	return SETG(rd, prod_hi);
 }
+
+/**
+ * Multiply Signed Doubleword, Low Doubleword
+ * Format: DMUL rd, rs, rt
+ * Description: GPR[rd] <- lo_dword(multiply.signed(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DMUL) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs128 = SIGNED(128, rs);
+	BitVector *rt128 = SIGNED(128, rt);
+	BitVector *prod = MUL(rs128, rt128);
+
+	BitVector *prod_lo = CAST(64, IL_FALSE, prod);
+
+	return SETG(rd, prod_lo);
 }
 
 /**
@@ -2428,8 +2479,24 @@ IL_LIFTER(DMULTU) {
 	return SEQ2(SETG(REG_LO(), prod_lo), SETG(REG_LO(), prod_hi));
 }
 
+/**
+ * Multiply Signed Doubleword, Low Doubleword Unsigned
+ * Format: DMULU rd, rs, rt
+ * Description: GPR[rd] <- lo_dword(multiply.unsigned(GPR[rs] x GPR[rt]))
+ * Exceptions: None
+ * */
 IL_LIFTER(DMULU) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *rt = IL_REG_OPND(2);
+
+	BitVector *rs128 = UNSIGNED(128, rs);
+	BitVector *rt128 = UNSIGNED(128, rt);
+	BitVector *prod = MUL(rs128, rt128);
+
+	BitVector *prod_lo = CAST(64, IL_FALSE, prod);
+
+	return SETG(rd, prod_lo);
 }
 
 IL_LIFTER(DOTP_S) {
@@ -2990,7 +3057,9 @@ IL_LIFTER(FMUL) {
 /**
  * Multiply Signed Word, Low Word
  * Format: MUL rd, rs, rt
- * Description: GPR[rd] <- lo_word(multiply.signed(GPR[rs] x GPR[rt]))
+ *         MUL.fmt fd, fs, ft
+ * Description: MUL: GPR[rd] <- lo_word(multiply.signed(GPR[rs] x GPR[rt]))
+ *              MUL.fmt: FPR[fd] <- FPR[fs] x FPR[ft]
  * Exceptions: None
  * */
 IL_LIFTER(MUL) {
@@ -2998,19 +3067,32 @@ IL_LIFTER(MUL) {
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
-	BitVector *rs64 = SIGNED(64, rs);
-	BitVector *rt64 = SIGNED(64, rt);
-	BitVector *prod = MUL(rs64, rt64);
+	if (float_op) {
+		return SETG(rd, FMUL(RMODE, rs, rt));
+	} else {
+		BitVector *rs64 = SIGNED(64, rs);
+		BitVector *rt64 = SIGNED(64, rt);
+		BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+		BitVector *prod_lo = SIGNED(GPRLEN, CAST(32, IL_FALSE, prod));
 
-	Effect *set_rd = SETG(rd, prod_lo);
-	return set_rd;
+		return SETG(rd, prod_lo);
+	}
 }
 
+/**
+ * floating point Negate
+ * Format: NEG fd, fs
+ * Description: FPR[fd] <- -FPR[fs]
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, Unimplemented Operation, Invalid Operation
+ * */
 IL_LIFTER(NEG) {
-	return NULL;
+	char *fd = REG_OPND(0);
+	Pure *fs = IL_REG_OPND(1);
+
+	return SETG(fd, FNEG(fs));
 }
+
 IL_LIFTER(FRCP) {
 	return NULL;
 }
@@ -3961,6 +4043,7 @@ IL_LIFTER(LWXC1) {
 IL_LIFTER(LWXS) {
 	return NULL;
 }
+
 IL_LIFTER(LI) {
 	return NULL;
 }
@@ -3968,24 +4051,25 @@ IL_LIFTER(LI) {
 /**
  * Multiply and Add signed word to HI, LO
  * Format: MADD rs, rt
- * Description: (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
+ *         MADD.fmt fd, fr, fs, ft
+ * Description: MADD : (HI, LO) <- (HI, LO) + GPR[rs] x GPR[rt]
+ *              MADD.fmt : fd = fs * ft + fr
  * Exceptions: None
  * */
 IL_LIFTER(MADD) {
-	char *hi = REG_HI();
-	char *lo = REG_LO();
-
 	if (float_op) {
 		char *fd = REG_OPND(0);
 		Pure *fr = IL_REG_OPND(1);
 		Pure *fs = IL_REG_OPND(2);
 		Pure *ft = IL_REG_OPND(3);
 
-		Float *mul = FMUL(RMODE, fs, ft);
-		Float *madd = FADD(RMODE, mul, fr);
+		// will do madd = fs * ft + fr
+		Float *madd = FMAD(RMODE, fs, ft, fr);
 
 		return SETG(fd, madd);
 	} else {
+		char *hi = REG_HI();
+		char *lo = REG_LO();
 		Pure *rs = IL_REG_OPND(0);
 		Pure *rt = IL_REG_OPND(1);
 
@@ -4025,8 +4109,7 @@ IL_LIFTER(MADDF) {
 	Pure *fs = IL_REG_OPND(1);
 	Pure *ft = IL_REG_OPND(2);
 
-	Float *mul = FMUL(RMODE, fs, ft);
-	Float *madd = FADD(RMODE, VARG(fd), mul);
+	Float *madd = FMAD(RMODE, fs, ft, VARG(fd));
 
 	return SETG(fd, madd);
 }
@@ -4209,13 +4292,28 @@ IL_LIFTER(MOVE) {
 IL_LIFTER(MOVEP) {
 	return NULL;
 }
+
+/**
+ * Move conditional floating point False
+ * Format: MOVF rd, rs, cc
+ *         MOVF.fmt fd, fs, cc
+ * Description: if FPConditionCode(cc) = 0 then FPR[rd] <- FPR[rs]
+ *              if FPConditionCode(cc) = 0 then FPR[fd] <- FPR[fs]
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, Unimplemented Operation
+ * */
 IL_LIFTER(MOVF) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *cc = IL_REG_OPND(2);
+
+	Bool *cond = IS_ZERO(cc);
+	return BRANCH(cond, SETG(rd, rs), NOP());
 }
 
 /**
  * Move conditional on Not zero
  * Format: MOVN rd, rs, rt
+ *         MOVN.fmt fd, fs, rt
  * Description: if GPR[rt] == 0 then GPR[rd] <- GPR[rs]
  * Exceptions: None
  * */
@@ -4229,13 +4327,27 @@ IL_LIFTER(MOVN) {
 	return movz;
 }
 
+/**
+ * Move conditional on floating point condition code True
+ * Format: MOVT rd, rs, cc
+ *         MOVT.fmt fd, fs, cc
+ * Description: if FPConditionCode[cc] == 0 then GPR[rd] <- GPR[rs]
+ * Exceptions: None
+ * */
 IL_LIFTER(MOVT) {
-	return NULL;
+	char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+	Pure *cc = IL_REG_OPND(2);
+
+	Bool *rt_is_zero = INV(IS_ZERO(cc));
+	Effect *movz = BRANCH(rt_is_zero, SETG(rd, rs), NOP());
+	return movz;
 }
 
 /**
  * Move conditional on Zero
  * Format: MOVZ rd, rs, rt
+ *         MOVZ.fmt fd, fs, rt
  * Description: if GPR[rt] == 0 then GPR[rd] <- GPR[rs]
  * Exceptions: None
  * */
@@ -4259,26 +4371,44 @@ IL_LIFTER(MSUB) {
 	char *hi = REG_HI();
 	char *lo = REG_LO();
 
-	Pure *rs = IL_REG_OPND(0);
-	Pure *rt = IL_REG_OPND(1);
+	if (float_op) {
+		char *fd = REG_OPND(0);
+		Pure *fr = IL_REG_OPND(1);
+		Pure *fs = IL_REG_OPND(2);
+		Pure *ft = IL_REG_OPND(3);
 
-	BitVector *rs64 = SIGNED(64, rs);
-	BitVector *rt64 = SIGNED(64, rt);
-	BitVector *prod = MUL(rs64, rt64);
+		// will do msub = fs * ft - fr
+		Float *mul = FMUL(RMODE, fs, ft);
+		Float *msub = FSUB(RMODE, mul, fr);
 
-	BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
-	BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
-	BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U8(32)), lo64);
+		return SETG(fd, msub);
+	} else {
+		Pure *rs = IL_REG_OPND(0);
+		Pure *rt = IL_REG_OPND(1);
 
-	BitVector *diff = SUB(hi_lo, prod);
+		// product can be a 64 bit value so sign extend it
+		BitVector *rs64 = SIGNED(64, rs);
+		BitVector *rt64 = SIGNED(64, rt);
+		BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *diff_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(diff), U32(32)));
-	BitVector *diff_lo = CAST(32, IL_FALSE, diff);
+		// cast hi and lo to 64 bits
+		// we need to take logical or of these two to form a 64 bit value
+		BitVector *hi64 = CAST(64, IL_FALSE, VARG(hi));
+		BitVector *lo64 = CAST(64, IL_FALSE, VARG(lo));
+		BitVector *hi_lo = LOGOR(SHIFTL0(hi64, U8(32)), lo64);
 
-	Effect *set_hi = SETG(hi, diff_hi);
-	Effect *set_lo = SETG(lo, diff_lo);
+		// sub product and hi_lo concatenated value
+		BitVector *diff = SUB(hi_lo, prod);
 
-	return SEQ2(set_hi, set_lo);
+		// cast back to 32 and sign extend to GPRLEN bits
+		BitVector *diff_hi = SIGNED(GPRLEN, CAST(32, IL_FALSE, SHIFTR0(DUP(diff), U32(32))));
+		BitVector *diff_lo = SIGNED(GPRLEN, CAST(32, IL_FALSE, diff));
+
+		Effect *set_hi = SETG(hi, diff_hi);
+		Effect *set_lo = SETG(lo, diff_lo);
+
+		return SEQ2(set_hi, set_lo);
+	}
 }
 
 /**
@@ -4286,6 +4416,8 @@ IL_LIFTER(MSUB) {
  * Format: MSUBF.fmt fd, fs, ft
  * Description: FPR[fd] <- FPR[fd] - (FPR[fs] x FPR[ft])
  * Exception: Coprocessor Unusable, Reserved Instruction
+ *
+ * TODO: can we use FMAD here?
  * */
 IL_LIFTER(MSUBF) {
 	char *fd = REG_OPND(0);
@@ -4362,14 +4494,10 @@ IL_LIFTER(MTHC1) {
  * Format: MTHI rs
  * Description: HI <- GPR[rs]
  * Exceptions: None
- *
- * NOTE: Take a look at restrictions during testing phase
  * */
 IL_LIFTER(MTHI) {
 	Pure *rs = IL_REG_OPND(0);
-
-	Effect *set_hi = SETG(REG_HI(), rs);
-	return set_hi;
+	return SETG(REG_HI(), rs);
 }
 
 IL_LIFTER(MTHLIP) {
@@ -4381,14 +4509,10 @@ IL_LIFTER(MTHLIP) {
  * Format: MTLO rs
  * Description: LO <- GPR[rs]
  * Exceptions: None
- *
- * NOTE: Take a look at restrictions during testing phase
  * */
 IL_LIFTER(MTLO) {
 	Pure *rs = IL_REG_OPND(0);
-
-	Effect *set_lo = SETG(REG_LO(), rs);
-	return set_lo;
+	return SETG(REG_LO(), rs);
 }
 
 IL_LIFTER(MTM0) {
@@ -4425,10 +4549,9 @@ IL_LIFTER(MUH) {
 	BitVector *rt64 = SIGNED(64, rt);
 	BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(prod, U32(32)));
+	BitVector *prod_hi = SIGNED(GPRLEN, CAST(32, IL_FALSE, SHIFTR0(prod, U8(32))));
 
-	Effect *set_rd = SETG(rd, prod_hi);
-	return set_rd;
+	return SETG(rd, prod_hi);
 }
 
 /**
@@ -4446,10 +4569,9 @@ IL_LIFTER(MUHU) {
 	BitVector *rt64 = UNSIGNED(64, rt);
 	BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(prod, U32(32)));
+	BitVector *prod_hi = UNSIGNED(GPRLEN, CAST(32, IL_FALSE, SHIFTR0(prod, U8(32))));
 
-	Effect *set_rd = SETG(rd, prod_hi);
-	return set_rd;
+	return SETG(rd, prod_hi);
 }
 
 IL_LIFTER(MULEQ_S) {
@@ -4491,8 +4613,8 @@ IL_LIFTER(MULT) {
 	BitVector *rt64 = SIGNED(64, rt);
 	BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(prod), U32(32)));
-	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+	BitVector *prod_hi = SIGNED(GPRLEN, CAST(32, IL_FALSE, SHIFTR0(DUP(prod), U8(32))));
+	BitVector *prod_lo = SIGNED(GPRLEN, CAST(32, IL_FALSE, prod));
 
 	Effect *set_hi = SETG(hi, prod_hi);
 	Effect *set_lo = SETG(lo, prod_lo);
@@ -4517,8 +4639,8 @@ IL_LIFTER(MULTU) {
 	BitVector *rt64 = UNSIGNED(64, rt);
 	BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *prod_hi = CAST(32, IL_FALSE, SHIFTR0(DUP(prod), U32(32)));
-	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+	BitVector *prod_hi = SIGNED(GPRLEN, CAST(32, IL_FALSE, SHIFTR0(DUP(prod), U8(32))));
+	BitVector *prod_lo = SIGNED(GPRLEN, CAST(32, IL_FALSE, prod));
 
 	Effect *set_hi = SETG(hi, prod_hi);
 	Effect *set_lo = SETG(lo, prod_lo);
@@ -4543,10 +4665,9 @@ IL_LIFTER(MULU) {
 	BitVector *rt64 = UNSIGNED(64, rt);
 	BitVector *prod = MUL(rs64, rt64);
 
-	BitVector *prod_lo = CAST(32, IL_FALSE, prod);
+	BitVector *prod_lo = SIGNED(GPRLEN, CAST(32, IL_FALSE, prod));
 
-	Effect *set_rd = SETG(rd, prod_lo);
-	return set_rd;
+	return SETG(rd, prod_lo);
 }
 
 IL_LIFTER(MULV) {
@@ -4564,15 +4685,46 @@ IL_LIFTER(NLOC) {
 IL_LIFTER(NLZC) {
 	return NULL;
 }
+
+/**
+ * Floating Point Negative Multiply Add
+ * Format: NMADD.fmt fd, fr, fs, ft
+ * Description : FPR[fd] <- -1 x MADD(fr, fs, ft)
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, Inexact, Unimplemented Operation, Invalid Operation, Overflow, Underflow
+ * */
 IL_LIFTER(NMADD) {
-	return NULL;
-}
-IL_LIFTER(NMSUB) {
-	return NULL;
+	char *fd = REG_OPND(0);
+	Pure *fr = IL_REG_OPND(1);
+	Pure *fs = IL_REG_OPND(2);
+	Pure *ft = IL_REG_OPND(3);
+
+	// will do madd = fs * ft + fr
+	Float *madd = FMAD(RMODE, fs, ft, fr);
+
+	return SETG(fd, FNEG(madd));
 }
 
 /**
- * NOR
+ * Floating Point Negative Multiply Subtract
+ * Format: NMSUB.fmt fd, fr, fs, ft
+ * Description : FPR[fd] <- -1 x MSUB(fr, fs, ft)
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, Inexact, Unimplemented Operation, Invalid Operation, Overflow, Underflow
+ * */
+IL_LIFTER(NMSUB) {
+	char *fd = REG_OPND(0);
+	Pure *fr = IL_REG_OPND(1);
+	Pure *fs = IL_REG_OPND(2);
+	Pure *ft = IL_REG_OPND(3);
+
+	// will do msub = fs * ft - fr
+	Float *mul = FMUL(RMODE, fs, ft);
+	Float *msub = FSUB(RMODE, mul, fr);
+
+	return SETG(fd, FNEG(msub));
+}
+
+/**
+ * Not Or (Logical NOR)
  * Format: NOR rd, rs, rt
  * Description: GPR[rd] <- GPR[rs] NOR GPR[rt]
  * Exceptions: None
@@ -4583,8 +4735,7 @@ IL_LIFTER(NOR) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *nor_rs_rt = LOGNOT(LOGOR(rs, rt));
-	Effect *set_rd = SETG(rd, nor_rs_rt);
-	return set_rd;
+	return SETG(rd, nor_rs_rt);
 }
 
 /**
@@ -4600,9 +4751,8 @@ IL_LIFTER(NORI) {
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = U32((ut32)IMM_OPND(2));
 
-	BitVector *or_rs_imm = LOGNOT(LOGOR(rs, imm));
-	Effect *set_rt = SETG(rt, or_rs_imm);
-	return set_rt;
+	BitVector *nor_rs_imm = LOGNOT(LOGOR(rs, imm));
+	return SETG(rt, nor_rs_imm);
 }
 
 IL_LIFTER(NOT16) {
@@ -4625,8 +4775,7 @@ IL_LIFTER(OR) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *or_rs_rt = LOGOR(rs, rt);
-	Effect *set_rd = SETG(rd, or_rs_rt);
-	return set_rd;
+	return SETG(rd, or_rs_rt);
 }
 
 IL_LIFTER(OR16) {
@@ -4645,16 +4794,21 @@ IL_LIFTER(ORI) {
 	BitVector *imm = U32((ut32)IMM_OPND(2));
 
 	BitVector *or_rs_imm = LOGOR(rs, imm);
-	Effect *set_rt = SETG(rt, or_rs_imm);
-	return set_rt;
+	return SETG(rt, or_rs_imm);
 }
 
 IL_LIFTER(PACKRL) {
 	return NULL;
 }
+
+/**
+ * Pause execution till LLbit is cleared.
+ * TODO: Verify that this needs to be NOP() in rzil
+ * */
 IL_LIFTER(PAUSE) {
-	return NULL;
+	return NOP();
 }
+
 IL_LIFTER(PCKEV) {
 	return NULL;
 }
@@ -4697,9 +4851,20 @@ IL_LIFTER(PRECR_SRA) {
 IL_LIFTER(PRECR_SRA_R) {
 	return NULL;
 }
+
+/**
+ * Prefetch instruction cache.
+ * RzIL doesn't have instruction cache
+ * TODO: Verify that this can be NOP()
+ * */
 IL_LIFTER(PREF) {
-	return NULL;
+	return NOP();
 }
+
+// MISSING PREFE
+// MISSING PREFEX
+// MISSING RECIP.fmt
+
 IL_LIFTER(PREPEND) {
 	return NULL;
 }
@@ -4718,8 +4883,18 @@ IL_LIFTER(REPLV) {
 IL_LIFTER(REPL) {
 	return NULL;
 }
+
+/**
+ * Round to Integer
+ * Format: RINT.fmt fd, fs
+ * Description: FPR[fd] <- round_int(FPR[fs])
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, Unimplemented Operation, Invalid Operation, Inexact, Overflow, Underflow
+ * */
 IL_LIFTER(RINT) {
-	return NULL;
+	char *fd = REG_OPND(0);
+	Pure *fs = IL_REG_OPND(1);
+
+	return SETG(fd, F2INT(GPRLEN, RMODE, fs));
 }
 
 /**
@@ -4731,11 +4906,12 @@ IL_LIFTER(RINT) {
 IL_LIFTER(ROTR) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	BitVector *sa = UN(5, IMM_OPND(2));
+	ut8 sa = IMM_OPND(2);
 
-	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(sa)));
-	BitVector *right = SHIFTR0(rt, sa);
-	BitVector *rotr = LOGOR(left, right);
+	BitVector *word = CAST(32, IL_FALSE, rt);
+	BitVector *left = SHIFTL0(DUP(word), U8(32 - sa));
+	BitVector *right = SHIFTR0(word, U8(sa));
+	BitVector *rotr = SIGNED(GPRLEN, LOGOR(left, right));
 
 	return SETG(rd, rotr);
 }
@@ -4749,11 +4925,12 @@ IL_LIFTER(ROTR) {
 IL_LIFTER(ROTRV) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	Pure *rs = CAST(5, IL_FALSE, IL_REG_OPND(2));
+	Pure *rs = CAST(6, IL_FALSE, IL_REG_OPND(2));
 
-	BitVector *left = SHIFTL0(DUP(rt), SUB(U8(GPRLEN), DUP(rs)));
-	BitVector *right = SHIFTR0(rt, rs);
-	BitVector *rotr = LOGOR(left, right);
+	BitVector *word = CAST(32, IL_FALSE, rt);
+	BitVector *left = SHIFTL0(DUP(word), SUB(UN(6, GPRLEN), DUP(rs)));
+	BitVector *right = SHIFTR0(word, rs);
+	BitVector *rotr = SIGNED(GPRLEN, LOGOR(left, right));
 
 	return SETG(rd, rotr);
 }
