@@ -511,6 +511,22 @@ enum DW_ATE {
 	DW_ATE_hi_user = 0xff,
 };
 
+/// The encodings of the constants used in location list entries.
+///
+/// See Section 7.7.3, Table 7.10.
+enum DW_LLE {
+	DW_LLE_end_of_list = 0x00,
+	DW_LLE_base_addressx = 0x01,
+	DW_LLE_startx_endx = 0x02,
+	DW_LLE_startx_length = 0x03,
+	DW_LLE_offset_pair = 0x04,
+	DW_LLE_default_location = 0x05,
+	DW_LLE_base_address = 0x06,
+	DW_LLE_start_end = 0x07,
+	DW_LLE_start_length = 0x08,
+	DW_LLE_GNU_view_pair = 0x09,
+};
+
 enum DW_DS {
 	DW_DS_unsigned = 0x01,
 	DW_DS_leading_overpunch = 0x02,
@@ -820,8 +836,6 @@ typedef struct rz_bin_dwarf_comp_unit_t {
 	RzVector /*<RzBinDwarfDie>*/ dies;
 } RzBinDwarfCompUnit;
 
-#define COMP_UNIT_CAPACITY  8
-#define DEBUG_INFO_CAPACITY 8
 typedef struct {
 	RzVector /*<RzBinDwarfCompUnit>*/ units;
 	HtUP /*<ut64, DwarfDie *>*/ *die_tbl;
@@ -921,8 +935,6 @@ typedef enum {
 	RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN, //< variable-size op, arbitrary format of args
 } RzBinDwarfLineOpType;
 
-#define RZ_BIN_DWARF_LINE_OP_STD_ARGS_MAX 1
-
 typedef struct {
 	ut64 offset;
 	RzBinDwarfLineOpType type;
@@ -1001,6 +1013,80 @@ typedef struct rz_bin_dwarf_arange_set_t {
 	RzBinDwarfARange *aranges;
 } RzBinDwarfARangeSet;
 
+/// A raw address range from the `.debug_ranges` section.
+typedef struct {
+	/// The beginning address of the range.
+	ut64 begin;
+	/// The first address past the end of the range.
+	ut64 end;
+} RawRange;
+
+typedef enum {
+	/// The bare location list format used before DWARF 5.
+	Bare,
+	/// The DW_LLE encoded range list format used in DWARF 5 and the non-standard GNU
+	/// split dwarf extension.
+	Lle,
+} LocListsFormat;
+
+typedef struct {
+	enum DW_LLE encoding;
+	union {
+		/// A location from DWARF version <= 4.
+		struct AddressOrOffsetPair {
+			ut64 begin; /// Start of range. May be an address or an offset.
+			ut64 end; /// End of range. May be an address or an offset.
+			RzBinDwarfBlock data; /// expression
+		} address_or_offset_pair;
+		/// DW_LLE_base_address
+		struct BaseAddress {
+			ut64 addr; /// base address
+		} base_address;
+		/// DW_LLE_base_addressx
+		struct BaseAddressx {
+			ut64 addr; /// base address
+		} base_addressx;
+		/// DW_LLE_startx_endx
+		struct StartxEndx {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+			RzBinDwarfBlock data; /// expression
+		} startx_endx;
+		/// DW_LLE_startx_length
+		struct StartxLength {
+			ut64 begin; /// start of range
+			ut64 length; /// length of range
+			RzBinDwarfBlock data; /// expression
+		} startx_length;
+		/// DW_LLE_offset_pair
+		struct OffsetPair {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+			RzBinDwarfBlock data; /// expression
+		} offset_pair;
+		/// DW_LLE_default_location
+		struct DefaultLocation {
+			RzBinDwarfBlock data; /// expression
+		} default_location;
+		/// DW_LLE_start_end
+		struct StartEnd {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+			RzBinDwarfBlock data; /// expression
+		} start_end;
+		/// DW_LLE_start_length
+		struct StartLength {
+			ut64 begin; /// Start of range.
+			ut64 end; /// End of range.
+			RzBinDwarfBlock data; /// expression
+		} start_length;
+	};
+} RawLocListEntry;
+
+typedef struct {
+
+} RzBinDwarfLocLists;
+
 typedef HtUP /*<offset, List *<RzBinDwarfLocList>*/ RzBinDwarfLocListTable;
 typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;
 
@@ -1053,6 +1139,7 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfLocListTable *loc;
 	RzBinDwarfDebugInfo *info;
 	RzBinDwarfDebugAbbrevs *abbrevs;
+	RzBinDwarfLocLists *loc_lists;
 } RzBinDwarf;
 
 typedef enum {
@@ -1061,6 +1148,7 @@ typedef enum {
 	RZ_BIN_DWARF_PARSE_LOC = 1 << 3,
 	RZ_BIN_DWARF_PARSE_LINES = (1 << 4) | RZ_BIN_DWARF_PARSE_INFO,
 	RZ_BIN_DWARF_PARSE_ARANGES = 1 << 5,
+	RZ_BIN_DWARF_PARSE_LOCLISTS = 1 << 6,
 	RZ_BIN_DWARF_PARSE_ALL = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_LINES | RZ_BIN_DWARF_PARSE_ARANGES,
 } RzBinDwarfParseFlags;
 
