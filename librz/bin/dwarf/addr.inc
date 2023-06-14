@@ -1,10 +1,30 @@
+// SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
-static bool DebugAddr_get_address(RzBinDwarfDebugAddr *self, ut64 address,
+static bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address,
 	ut8 address_size, bool big_endian, ut64 base, ut64 index) {
 	RzBuffer *buffer = rz_buf_new_with_buf(self->buffer);
 	RET_FALSE_IF_FAIL(buffer);
 	rz_buf_seek(buffer, (st64)base, RZ_BUF_CUR);
 	rz_buf_seek(buffer, (st64)(index * address_size), RZ_BUF_CUR);
-	UX_OR_RET_FALSE(address, address_size);
+	ut64 addr = 0;
+	UX_OR_RET_FALSE(addr, address_size);
+	*address = addr;
 	return true;
+}
+
+RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf) {
+	if (!bf) {
+		return NULL;
+	}
+
+	RzBuffer *buffer = get_section_buf(bf, ".debug_addr");
+	RET_NULL_IF_FAIL(buffer);
+	RzBinDwarfDebugAddr *self = RZ_NEW0(RzBinDwarfDebugAddr);
+	if (!self) {
+		rz_buf_free(buffer);
+		return NULL;
+	}
+	self->buffer = buffer;
+	return self;
 }

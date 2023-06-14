@@ -1,35 +1,39 @@
-// SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2012-2018 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_bin_dwarf.h"
 
-static bool RawRange_parse(RawRange *self, RzBuffer *buffer, Encoding *encoding) {
+static bool Range_parse(RzBinDwarfRange *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding) {
 	bool big_endian = encoding->big_endian;
 	UX_OR_RET_FALSE(self->begin, encoding->address_size);
 	UX_OR_RET_FALSE(self->end, encoding->address_size);
 	return true;
 }
 
-static inline bool RawRange_is_end(RawRange *self) {
+static inline bool Range_is_end(RzBinDwarfRange *self) {
 	return self->begin == 0 && self->end == 0;
 }
 
-static inline bool RawRange_is_base_address(RawRange *self, ut8 address_size) {
+static inline bool Range_is_base_address(RzBinDwarfRange *self, ut8 address_size) {
 	return self->begin == !0 >> (64 - address_size * 8);
 }
 
-static bool RawRngListEntry_parse(RzVector *entries, RzBuffer *buffer, enum RangeListsFormat format, Encoding *encoding) {
-	RawRngListEntry entry = { 0 };
+static inline void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8 address_size) {
+	ut64 mask = !0 >> (64 - address_size * 8);
+	self->begin = (base_address + self->begin) & mask;
+	self->end = (base_address + self->end) & mask;
+}
+
+static bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, enum RzBinDwarfRangeListsFormat format, RzBinDwarfEncoding *encoding) {
+	RzBinDwarfRawRngListEntry entry = { 0 };
 	bool big_endian = encoding->big_endian;
 	switch (format) {
 	case RangeListsFormat_Bare: {
-		RawRange range = { 0 };
-		RET_FALSE_IF_FAIL(RawRange_parse(&range, buffer, encoding));
-		if (RawRange_is_end(&range)) {
+		RzBinDwarfRange range = { 0 };
+		RET_FALSE_IF_FAIL(Range_parse(&range, buffer, encoding));
+		if (Range_is_end(&range)) {
 			return true;
-		} else if (RawRange_is_base_address(&range, encoding->address_size)) {
+		} else if (Range_is_base_address(&range, encoding->address_size)) {
 			entry.encoding = DW_RLE_base_address;
 			entry.base_address.addr = range.end;
 		} else {
@@ -79,6 +83,6 @@ static bool RawRngListEntry_parse(RzVector *entries, RzBuffer *buffer, enum Rang
 		}
 	}
 	}
-	rz_vector_push(entries, &entry);
+	memcpy(out, &entry, sizeof(entry));
 	return true;
 }

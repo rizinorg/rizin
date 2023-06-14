@@ -5,6 +5,12 @@
 
 #include <rz_bin_dwarf.h>
 
+#define OK_None \
+	do { \
+		*out = NULL; \
+		return true; \
+	} while (0)
+
 #define RET_VAL_IF_FAIL(x, val) \
 	do { \
 		if (!(x)) { \
@@ -573,20 +579,7 @@ RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
 
 static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
 
-typedef struct {
-	ut8 address_size;
-	bool big_endian;
-	ut16 version;
-	bool is_64bit;
-} Encoding;
-
-typedef struct {
-	Encoding encoding;
-	ut32 offset_entry_count;
-	ut8 segment_selector_size;
-} ListsHeader;
-
-static bool ListsHeader_parse(ListsHeader *self, RzBuffer *buffer, bool big_endian) {
+static bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, bool big_endian) {
 	bool is_64bit;
 	ut64 length;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
@@ -606,7 +599,7 @@ static bool ListsHeader_parse(ListsHeader *self, RzBuffer *buffer, bool big_endi
 	ut32 offset_entry_count;
 	U32_OR_RET_FALSE(offset_entry_count);
 
-	memset(self, 0, sizeof(ListsHeader));
+	memset(self, 0, sizeof(RzBinDwarfListsHeader));
 	self->encoding.big_endian = big_endian;
 	self->encoding.is_64bit = is_64bit;
 	self->encoding.version = version;
@@ -614,6 +607,29 @@ static bool ListsHeader_parse(ListsHeader *self, RzBuffer *buffer, bool big_endi
 	self->segment_selector_size = segment_selector_size;
 	self->offset_entry_count = offset_entry_count;
 	return true;
+}
+
+static RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
+	RzBinDwarfBlock *clone = RZ_NEW0(RzBinDwarfBlock);
+	if (!clone) {
+		return NULL;
+	}
+	*clone = *self;
+	clone->data = RZ_NEWS0(ut8, self->length);
+	if (!clone->data) {
+		free(clone);
+		return NULL;
+	}
+	memcpy(clone->data, self->data, self->length);
+	return clone;
+}
+
+static void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {
+	if (!self) {
+		return;
+	}
+	free(self->data);
+	free(self);
 }
 
 /**
@@ -745,7 +761,7 @@ typedef struct {
 		RzBinDwarfCompUnitHdr *comp_unit_hdr;
 	};
 	RzBuffer *str_buffer;
-	Encoding encoding;
+	RzBinDwarfEncoding encoding;
 } DwAttrOption;
 
 /**
@@ -1103,12 +1119,13 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	return rz_buf_new_slice(binfile->buf, section->paddr, len);
 }
 
-#include "./dwarf/line.inc"
-#include "./dwarf/aranges.inc"
-#include "./dwarf/abbrev.inc"
-#include "./dwarf/unit.inc"
-#include "./dwarf/rnglists.inc"
-#include "./dwarf/loclists.inc"
+#include "addr.inc"
+#include "line.inc"
+#include "aranges.inc"
+#include "abbrev.inc"
+#include "unit.inc"
+#include "rnglists.inc"
+#include "loclists.inc"
 
 RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt) {
 	rz_return_val_if_fail(bf && opt, NULL);
@@ -1117,6 +1134,7 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 		return NULL;
 	}
 
+	dw->addr = DebugAddr_parse(bf);
 	if (opt->flags & RZ_BIN_DWARF_PARSE_ABBREVS) {
 		RZ_LOG_DEBUG(".debug_abbrev\n");
 		dw->abbrevs = rz_bin_dwarf_abbrev_parse(bf);
@@ -1127,7 +1145,7 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 	}
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LOC) {
 		RZ_LOG_DEBUG(".debug_loc\n");
-		dw->loc = rz_bin_dwarf_loc_parse(bf, opt->addr_size);
+		dw->loc = bf_loclists_parse(bf, dw);
 	}
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LINES && dw->info) {
 		RZ_LOG_DEBUG(".debug_line\n");
@@ -1146,7 +1164,7 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw) {
 	}
 	rz_bin_dwarf_abbrev_free(dw->abbrevs);
 	rz_bin_dwarf_info_free(dw->info);
-	rz_bin_dwarf_loc_free(dw->loc);
+
 	rz_bin_dwarf_line_info_free(dw->lines);
 	rz_list_free(dw->aranges);
 	free(dw);
