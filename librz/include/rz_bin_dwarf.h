@@ -1149,6 +1149,11 @@ typedef struct {
 
 } RzBinDwarfLocLists;
 
+/// The raw contents of the `.debug_addr` section.
+typedef struct {
+	RzBuffer *buffer;
+} RzBinDwarfDebugAddr;
+
 typedef HtUP /*<offset, List *<RzBinDwarfLocList>*/ RzBinDwarfLocListTable;
 typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;
 
@@ -1202,6 +1207,7 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfDebugInfo *info;
 	RzBinDwarfDebugAbbrevs *abbrevs;
 	RzBinDwarfLocLists *loc_lists;
+	RzBinDwarfDebugAddr *addr;
 } RzBinDwarf;
 
 typedef enum {
