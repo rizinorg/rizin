@@ -20,7 +20,7 @@ static inline bool RawRange_is_base_address(RawRange *self, ut8 address_size) {
 	return self->begin == !0 >> (64 - address_size * 8);
 }
 
-static bool RawRngListEntry_parse(RzBuffer *buffer, RzVector *entries, enum RangeListsFormat format, Encoding *encoding) {
+static bool RawRngListEntry_parse(RzVector *entries, RzBuffer *buffer, enum RangeListsFormat format, Encoding *encoding) {
 	RawRngListEntry entry = { 0 };
 	bool big_endian = encoding->big_endian;
 	switch (format) {
@@ -33,7 +33,7 @@ static bool RawRngListEntry_parse(RzBuffer *buffer, RzVector *entries, enum Rang
 			entry.encoding = DW_RLE_base_address;
 			entry.base_address.addr = range.end;
 		} else {
-			entry.encoding = DW_RLE_end_of_list;
+			entry.is_address_or_offset_pair = true;
 			entry.address_or_offset_pair.begin = range.begin;
 			entry.address_or_offset_pair.end = range.end;
 		}

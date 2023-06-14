@@ -15,9 +15,6 @@
 #define READ8(buf) \
 	(((buf) + 1 < buf_end) ? *((ut8 *)(buf)) : 0); \
 	(buf)++
-#define READI8(buf) \
-	(((buf) + 1 < buf_end) ? *((st8 *)(buf)) : 0); \
-	(buf)++
 #define READ16(buf) \
 	(((buf) + sizeof(ut16) < buf_end) ? rz_read_ble16(buf, big_endian) : 0); \
 	(buf) += sizeof(ut16)
@@ -589,7 +586,7 @@ typedef struct {
 	ut8 segment_selector_size;
 } ListsHeader;
 
-bool ListsHeader_parse(ListsHeader *self, RzBuffer *buffer, bool big_endian) {
+static bool ListsHeader_parse(ListsHeader *self, RzBuffer *buffer, bool big_endian) {
 	bool is_64bit;
 	ut64 length;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
@@ -1110,8 +1107,8 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 #include "./dwarf/aranges.inc"
 #include "./dwarf/abbrev.inc"
 #include "./dwarf/unit.inc"
-#include "./dwarf/loclists.inc"
 #include "./dwarf/rnglists.inc"
+#include "./dwarf/loclists.inc"
 
 RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt) {
 	rz_return_val_if_fail(bf && opt, NULL);

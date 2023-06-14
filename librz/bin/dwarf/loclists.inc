@@ -57,11 +57,6 @@ static void block_free(RzBinDwarfBlock *block) {
 	free(block);
 }
 
-bool RawLocListEntry_parse(RzBuffer *buffer, LocListsFormat format) {
-
-	return false;
-}
-
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnreachableCode"
 static HtUP *parse_loc_raw(RzBuffer *buffer, HtUP /*<offset, List *<LocListEntry>*/ *loc_table, size_t addr_size,
@@ -156,4 +151,88 @@ RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_ta
 	}
 	loc_table->opt.freefn = ht_loc_list_free;
 	ht_up_free(loc_table);
+}
+
+static bool parse_data(RzBuffer *buffer, RzBinDwarfBlock *block, Encoding *encoding) {
+	bool big_endian = encoding->big_endian;
+	if (encoding->version >= 5) {
+		ULE128_OR_RET_FALSE(block->length);
+	} else {
+		U16_OR_RET_FALSE(block->length);
+	}
+	RET_FALSE_IF_FAIL(buf_read_block(buffer, block));
+	return true;
+}
+
+static bool RawLocListEntry_parse(RzVector *entries, RzBuffer *buffer, Encoding *encoding, LocListsFormat format) {
+	RawLocListEntry entry = { 0 };
+	bool big_endian = encoding->big_endian;
+	switch (format) {
+	case LocListsFormat_Bare: {
+		RawRange range = { 0 };
+		RET_FALSE_IF_FAIL(RawRange_parse(&range, buffer, encoding));
+		if (RawRange_is_end(&range)) {
+			return true;
+		} else if (RawRange_is_base_address(&range, encoding->address_size)) {
+			entry.encoding = DW_LLE_base_address;
+			entry.base_address.addr = range.end;
+		} else {
+			entry.is_address_or_offset_pair = true;
+			entry.address_or_offset_pair.begin = range.begin;
+			entry.address_or_offset_pair.end = range.end;
+			RET_FALSE_IF_FAIL(buf_read_block(buffer, &entry.address_or_offset_pair.data));
+		}
+		break;
+	}
+	case LocListsFormat_Lle: {
+		ut8 byte = 0;
+		U8_OR_RET_FALSE(byte);
+		entry.encoding = byte;
+		switch (entry.encoding) {
+		case DW_LLE_end_of_list: return true;
+		case DW_LLE_base_addressx:
+			ULE128_OR_RET_FALSE(entry.base_addressx.addr);
+			break;
+		case DW_LLE_startx_endx:
+			ULE128_OR_RET_FALSE(entry.startx_endx.begin);
+			ULE128_OR_RET_FALSE(entry.startx_endx.end);
+			RET_FALSE_IF_FAIL(parse_data(buffer, &entry.startx_endx.data, encoding));
+			break;
+		case DW_LLE_startx_length:
+			ULE128_OR_RET_FALSE(entry.startx_length.begin);
+			if (encoding->version >= 5) {
+				ULE128_OR_RET_FALSE(entry.startx_length.length);
+			} else {
+				U32_OR_RET_FALSE(entry.startx_length.length);
+			}
+			RET_FALSE_IF_FAIL(parse_data(buffer, &entry.startx_length.data, encoding));
+			break;
+		case DW_LLE_offset_pair:
+			ULE128_OR_RET_FALSE(entry.offset_pair.begin);
+			ULE128_OR_RET_FALSE(entry.offset_pair.end);
+			RET_FALSE_IF_FAIL(parse_data(buffer, &entry.offset_pair.data, encoding));
+			break;
+		case DW_LLE_default_location:
+			RET_FALSE_IF_FAIL(parse_data(buffer, &entry.default_location.data, encoding));
+			break;
+		case DW_LLE_base_address:
+			UX_OR_RET_FALSE(entry.base_address.addr, encoding->address_size);
+			break;
+		case DW_LLE_start_end:
+			UX_OR_RET_FALSE(entry.start_end.begin, encoding->address_size);
+			UX_OR_RET_FALSE(entry.start_end.end, encoding->address_size);
+			RET_FALSE_IF_FAIL(parse_data(buffer, &entry.start_end.data, encoding));
+			break;
+		case DW_LLE_start_length:
+			UX_OR_RET_FALSE(entry.start_length.begin, encoding->address_size);
+			ULE128_OR_RET_FALSE(entry.start_length.length);
+			RET_FALSE_IF_FAIL(parse_data(buffer, &entry.start_length.data, encoding));
+			break;
+		case DW_LLE_GNU_view_pair: break;
+		}
+		break;
+	}
+	}
+	rz_vector_push(entries, &entry);
+	return true;
 }

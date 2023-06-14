@@ -1039,6 +1039,7 @@ enum RangeListsFormat {
 /// A raw entry in .debug_rnglists
 typedef struct {
 	enum DW_RLE encoding;
+	bool is_address_or_offset_pair;
 	union {
 		/// A range from DWARF version <= 4.
 		struct {
@@ -1091,6 +1092,7 @@ typedef enum {
 
 typedef struct {
 	enum DW_LLE encoding;
+	bool is_address_or_offset_pair;
 	union {
 		/// A location from DWARF version <= 4.
 		struct {
@@ -1137,7 +1139,7 @@ typedef struct {
 		/// DW_LLE_start_length
 		struct {
 			ut64 begin; /// Start of range.
-			ut64 end; /// End of range.
+			ut64 length; /// Length of range.
 			RzBinDwarfBlock data; /// expression
 		} start_length;
 	};
