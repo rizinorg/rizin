@@ -3787,10 +3787,10 @@ static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *sum = NULL;
 		if (is_float_vec) {
 			sum = F2BV(FADD(RZ_FLOAT_RMODE_RNE,
-				BV2F(fmt, REG_VAL(1)),
-				BV2F(fmt, REG_VAL(2))));
+				BV2F(fmt, a),
+				BV2F(fmt, b)));
 		} else {
-			sum = ADD(REG_VAL(1), REG_VAL(2));
+			sum = ADD(a, b);
 		}
 
 		eff = SEQ2(eff, write_reg_lane(REGID(0), i, elem_bits, sum));
@@ -3834,10 +3834,10 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *sum = NULL;
 		if (is_float_vec) {
 			sum = F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
-				BV2F(fmt, REG_VAL(1)),
-				BV2F(fmt, REG_VAL(2))));
+				BV2F(fmt, a),
+				BV2F(fmt, b)));
 		} else {
-			sum = SUB(REG_VAL(1), REG_VAL(2));
+			sum = SUB(a, b);
 		}
 
 		eff = SEQ2(eff, write_reg_lane(REGID(0), i, elem_bits, sum));
@@ -3855,7 +3855,6 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 	// determine format of float to interpret
 	arm_vectordata_type dt = VVEC_DT(insn);
 	RzFloatFormat fmt = dt2fmt(dt);
-	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
 	if (insn->detail->groups[0] != ARM_GRP_NEON) {
 		// VFP fmul
