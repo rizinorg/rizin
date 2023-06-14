@@ -168,7 +168,7 @@ err:
  * \brief Reads all information about compilation unit header
  */
 static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bool big_endian) {
-	RET_FALSE_IF_FAIL(read_initial_length(buffer, &hdr->is_64bit, &hdr->length, big_endian));
+	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->is_64bit, &hdr->length, big_endian));
 	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
 	ut64 offset_start = rz_buf_tell(buffer);
 	U16_OR_RET_FALSE(hdr->version);

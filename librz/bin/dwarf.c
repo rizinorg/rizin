@@ -574,10 +574,50 @@ RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
 	return dwarf_lnct[lnct];
 }
 
+static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
+
 typedef struct {
 	ut8 address_size;
 	bool big_endian;
+	ut16 version;
+	bool is_64bit;
 } Encoding;
+
+typedef struct {
+	Encoding encoding;
+	ut32 offset_entry_count;
+	ut8 segment_selector_size;
+} ListsHeader;
+
+bool ListsHeader_parse(ListsHeader *self, RzBuffer *buffer, bool big_endian) {
+	bool is_64bit;
+	ut64 length;
+	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
+
+	ut16 version;
+	U16_OR_RET_FALSE(version);
+	if (version != 5) {
+		RZ_LOG_ERROR("Invalid version: %d", version);
+	}
+	ut8 address_size;
+	U8_OR_RET_FALSE(address_size);
+	ut8 segment_selector_size;
+	U8_OR_RET_FALSE(segment_selector_size);
+	if (segment_selector_size != 0) {
+		RZ_LOG_ERROR("Segment selector size not supported: %d", segment_selector_size);
+	}
+	ut32 offset_entry_count;
+	U32_OR_RET_FALSE(offset_entry_count);
+
+	memset(self, 0, sizeof(ListsHeader));
+	self->encoding.big_endian = big_endian;
+	self->encoding.is_64bit = is_64bit;
+	self->encoding.version = version;
+	self->encoding.address_size = address_size;
+	self->segment_selector_size = segment_selector_size;
+	self->offset_entry_count = offset_entry_count;
+	return true;
+}
 
 /**
  * \brief Read an "initial length" value, as specified by dwarf.
@@ -603,7 +643,7 @@ static inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_end
  * \brief Read an "initial length" value, as specified by dwarf.
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
  */
-static bool read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
+static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
 	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
 	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
 	ut32 x32;

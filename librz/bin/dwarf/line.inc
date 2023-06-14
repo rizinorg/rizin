@@ -292,7 +292,7 @@ static bool parse_line_header(
 	line_header_init(hdr);
 	hdr->offset = rz_buf_tell(buffer);
 	hdr->is_64bit = false;
-	RET_FALSE_IF_FAIL(read_initial_length(buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
+	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
 
 	U16_OR_RET_FALSE(hdr->version);
 	if (hdr->version < 2 || hdr->version > 5) {
