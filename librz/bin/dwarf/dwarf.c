@@ -1120,6 +1120,7 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 }
 
 #include "addr.inc"
+#include "op.inc"
 #include "line.inc"
 #include "aranges.inc"
 #include "abbrev.inc"

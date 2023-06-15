@@ -478,6 +478,32 @@ enum DW_OP {
 	DW_OP_bit_piece = 0x9d,
 	DW_OP_implicit_value = 0x9e,
 	DW_OP_stack_value = 0x9f,
+	DW_OP_implicit_pointer = 0xa0,
+	DW_OP_addrx = 0xa1,
+	DW_OP_constx = 0xa2,
+	DW_OP_entry_value = 0xa3,
+	DW_OP_const_type = 0xa4,
+	DW_OP_regval_type = 0xa5,
+	DW_OP_deref_type = 0xa6,
+	DW_OP_xderef_type = 0xa7,
+	DW_OP_convert = 0xa8,
+	DW_OP_reinterpret = 0xa9,
+
+	// GNU extensions
+	DW_OP_GNU_push_tls_address = 0xe0,
+	DW_OP_GNU_implicit_pointer = 0xf2,
+	DW_OP_GNU_entry_value = 0xf3,
+	DW_OP_GNU_const_type = 0xf4,
+	DW_OP_GNU_regval_type = 0xf5,
+	DW_OP_GNU_deref_type = 0xf6,
+	DW_OP_GNU_convert = 0xf7,
+	DW_OP_GNU_reinterpret = 0xf9,
+	DW_OP_GNU_parameter_ref = 0xfa,
+	DW_OP_GNU_addr_index = 0xfb,
+	DW_OP_GNU_const_index = 0xfc,
+
+	// Wasm extensions
+	DW_OP_WASM_location = 0xed,
 	/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
 	DW_OP_lo_user = 0xe0,
 	DW_OP_hi_user = 0xff,
