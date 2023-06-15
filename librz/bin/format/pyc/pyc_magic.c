@@ -312,21 +312,3 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 
 	return (li <= ti) && (ti <= ui);
 }
-
-void parse_version_major_minor(const char *version, ut32 *o_major, ut32 *o_minor) {
-	unsigned idx = 0, buf_idx = 0;
-	char buf[20] = { 0 };
-
-	while (!('0' <= version[idx] && version[idx] <= '9'))
-		idx++;
-	for (; version[idx] != '.'; idx++)
-		buf[buf_idx++] = version[idx];
-	sscanf(buf, "%u", o_major);
-
-	idx++;
-	buf_idx = 0;
-	memset(buf, 0, sizeof(buf));
-	for (; '0' <= version[idx] && version[idx] <= '9'; idx++)
-		buf[buf_idx++] = version[idx];
-	sscanf(buf, "%u", o_minor);
-}
