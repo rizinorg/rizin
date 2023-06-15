@@ -232,6 +232,11 @@ static char *cpu_reg_enum_to_name_map[] = {
 #define IL_CAUSE_RESERVED_INSTRUCTION() SETG(REG_CAUSE_EXCEPTION(), U8(0x0A))
 #define IL_CAUSE_TRAP()                 SETG(REG_CAUSE_EXCEPTION(), U8(0x0D))
 
+// macros to start/stop read/modify/write operations : LL, LLD, SC, SCD
+#define LLBIT                    "LLbit"
+#define IL_START_ATOMIC_RMW_OP() SETG(LLBIT, IL_TRUE)
+#define IL_STOP_ATOMIC_RMW_OP()  SETG(LLBIT, IL_FALSE)
+
 // TODO: REMOVE IF NOT NEEDED IN FUTURE
 // res must be a global variable
 // x and y must be local variable
@@ -3740,7 +3745,11 @@ IL_LIFTER(LL) {
 
 	BitVector *word = LOADW(32, vaddr);
 
-	return BRANCH(address_error_cond, SETG(rt, word), IL_CAUSE_ADDRESS_LOAD_ERROR());
+	// store word and start an atomic read/modify/write operation
+	Effect *ll_op = SEQ2(SETG(rt, word), IL_START_ATOMIC_RMW_OP());
+
+	// either write or cause an address load error
+	return BRANCH(address_error_cond, ll_op, IL_CAUSE_ADDRESS_LOAD_ERROR());
 }
 
 // MISSING: LLE
@@ -3764,9 +3773,13 @@ IL_LIFTER(LLD) {
 	BitVector *vaddr_low2bit = CAST(2, IL_FALSE, DUP(vaddr));
 	Bool *address_error_cond = INV(IS_ZERO(vaddr_low2bit));
 
-	BitVector *word = LOADW(64, vaddr);
+	BitVector *dword = LOADW(64, vaddr);
 
-	return BRANCH(address_error_cond, SETG(rt, word), IL_CAUSE_ADDRESS_LOAD_ERROR());
+	// store word and start an atomic read/modify/write operation
+	Effect *lld_op = SEQ2(SETG(rt, dword), IL_START_ATOMIC_RMW_OP());
+
+	// either write or cause an address error
+	return BRANCH(address_error_cond, lld_op, IL_CAUSE_ADDRESS_LOAD_ERROR());
 }
 
 /**
@@ -3836,7 +3849,7 @@ IL_LIFTER(LW) {
 	return SETG(rt, word);
 }
 
-// MISSING : LWE
+// MISSING: LWE
 
 IL_LIFTER(LW16) {
 	return NULL;
@@ -4861,9 +4874,9 @@ IL_LIFTER(PREF) {
 	return NOP();
 }
 
-// MISSING PREFE
-// MISSING PREFEX
-// MISSING RECIP.fmt
+// MISSING: PREFE
+// MISSING: PREFEX
+// MISSING: RECIP.fmt
 
 IL_LIFTER(PREPEND) {
 	return NULL;
@@ -4949,7 +4962,7 @@ IL_LIFTER(SAT_U) {
  * Store Byte
  * Format: SB rt, offset(base)
  * Description: memory[GPR[base] + offset] <- GPR[rt]
- * Exceptions:TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(SB) {
 	Pure *rt = IL_REG_OPND(0);
@@ -4957,8 +4970,7 @@ IL_LIFTER(SB) {
 	Pure *base = IL_MEM_OPND_BASE(1);
 
 	BitVector *memaddr = ADD(base, offset);
-	Effect *store_op = STOREW(memaddr, CAST(8, IL_FALSE, rt));
-	return store_op;
+	return STOREW(memaddr, CAST(8, IL_FALSE, rt));
 }
 
 // MISSING: SBE
@@ -4966,38 +4978,181 @@ IL_LIFTER(SB) {
 IL_LIFTER(SB16) {
 	return NULL;
 }
+
+/**
+ * Store Conditional Word
+ * Format: SC rt, offset(base)
+ * Description: IF atomic_update THEN (memory[GPR[base] + offset] <- GPR[rt], GPR[rt] <- 1) ELSE (GPR[rt] <- 0)
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Address Error, Watch
+ * TODO: Verify this
+ * */
 IL_LIFTER(SC) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *vaddr = ADD(base, offset);
+	BitVector *vaddr_low2bit = CAST(2, IL_FALSE, DUP(vaddr));
+	Bool *cond_store_address_error = INV(IS_ZERO(vaddr_low2bit));
+
+	// store and stop atomic rmw op
+	Effect *sc_op = SEQ3(STOREW(vaddr, CAST(32, IL_FALSE, VARG(rt))), IL_STOP_ATOMIC_RMW_OP(), SETG(rt, UN(GPRLEN, 1)));
+
+	return BRANCH(cond_store_address_error, sc_op, IL_CAUSE_ADDRESS_STORE_ERROR());
 }
+
+/**
+ * Store Conditional Doubleword
+ * Format: SCD rt, offset(base)
+ * Description: IF atomic_update THEN (memory[GPR[base] + offset] <- GPR[rt], GPR[rt] <- 1) ELSE (GPR[rt] <- 0)
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Address Error, Watch
+ * TODO: Verify this
+ * */
 IL_LIFTER(SCD) {
-	return NULL;
+	char *rt = REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *vaddr = ADD(base, offset);
+	BitVector *vaddr_low3bit = CAST(3, IL_FALSE, DUP(vaddr));
+	Bool *cond_store_address_error = INV(IS_ZERO(vaddr_low3bit));
+
+	// store and stop atomic rmw op
+	Effect *sc_op = SEQ3(STOREW(vaddr, SIGNED(64, VARG(rt))), IL_STOP_ATOMIC_RMW_OP(), SETG(rt, UN(GPRLEN, 1)));
+
+	return BRANCH(cond_store_address_error, sc_op, IL_CAUSE_ADDRESS_STORE_ERROR());
 }
+
+// MUSSING : SCDP
+// MUSSING : SCWP
+
+/**
+ * Store Doubleword
+ * Format: SD rt, offset(base)
+ * Description: memory[GPR[base] + offset] <- GPR[rt]
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SD) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *vaddr = ADD(base, offset);
+	return STOREW(vaddr, rt);
 }
+
+/**
+ * Software Debug BreakPoint
+ * */
 IL_LIFTER(SDBBP) {
-	return NULL;
+	return IL_CAUSE_BREAKPOINT();
 }
+
 IL_LIFTER(SDBBP16) {
 	return NULL;
 }
+
+/**
+ * Store Doubleword from floating point
+ * Format: SDC1 ft, offset(base)
+ * Description: memory[GPR[base] + offset] <- FPR[ft]
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, TLB Refill, TLB Invalid, TLB Modified, Address Error, Watch
+ * */
 IL_LIFTER(SDC1) {
-	return NULL;
+	Pure *ft = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *vaddr = ADD(base, offset);
+	return STOREW(vaddr, ft);
 }
+
 IL_LIFTER(SDC2) {
 	return NULL;
 }
 IL_LIFTER(SDC3) {
 	return NULL;
 }
+
+/**
+ * Store Doubleword Left
+ * Format: SDL rt, offset(base)
+ * Description: Store most significant part of word to an unaligned memory address
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * TODO:
+ * */
 IL_LIFTER(SDL) {
-	return NULL;
+	Pure *rt = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	// compute memory address, get lower two bytes and get aligned memory address
+	BitVector *memaddr = ADD(base, offset);
+	BitVector *memaddr_low2bit = LOGAND(DUP(memaddr), UN(GPRLEN, 3));
+	BitVector *aligned_memaddr = LOGAND(memaddr, UN(GPRLEN, (ut64)~0x3));
+
+	// increasing size of upper bytes by index
+	BitVector *rt_hi1 = CAST(8, IL_FALSE, SHIFTR0(DUP(rt), U8(3 * 8)));
+	BitVector *rt_hi2 = CAST(2 * 8, IL_FALSE, SHIFTR0(DUP(rt), U8(2 * 8)));
+	BitVector *rt_hi3 = CAST(3 * 8, IL_FALSE, SHIFTR0(DUP(rt), U8(8)));
+	BitVector *rt_hi4 = rt;
+
+	Effect *b0, *b1, *b2, *b3;
+	if (analysis->big_endian) {
+		// store higher byte to memory's lower byte
+		b3 = STOREW(aligned_memaddr, rt_hi1);
+
+		// store higher two bytes to memory's lower two bytes
+		Bool *b2cond = EQ(memaddr_low2bit, U32(2));
+		b2 = BRANCH(b2cond, STOREW(DUP(aligned_memaddr), rt_hi2), b3);
+
+		// store higher three bytes to memory's lower three bytes
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, STOREW(DUP(aligned_memaddr), rt_hi3), b2);
+
+		// store higher four (all) bytes to memory's lower four (all) bytes
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, STOREW(DUP(aligned_memaddr), rt_hi4), b1);
+	} else {
+		// store higher four (all) bytes to memory's lower four (all) bytes
+		b3 = STOREW(aligned_memaddr, rt_hi4);
+
+		// store higher three bytes to memory's lower three bytes
+		Bool *b2cond = EQ(memaddr_low2bit, U32(2));
+		b2 = BRANCH(b2cond, STOREW(DUP(aligned_memaddr), rt_hi3), b3);
+
+		// store higher two bytes to memory's lower two bytes
+		Bool *b1cond = EQ(DUP(memaddr_low2bit), U32(1));
+		b1 = BRANCH(b1cond, STOREW(DUP(aligned_memaddr), rt_hi2), b2);
+
+		// store higher byte to memory's lower byte
+		Bool *b0cond = EQ(DUP(memaddr_low2bit), U32(0));
+		b0 = BRANCH(b0cond, STOREW(DUP(aligned_memaddr), rt_hi1), b1);
+	}
+
+	return SEQ4(b0, b1, b2, b3);
 }
+
 IL_LIFTER(SDR) {
 	return NULL;
 }
+
+/**
+ * Store Doubleword Indexed from Floating Point
+ * Format: SDXC1 fs, index(base)
+ * Description: memory[GPR[base] + GPR[index]] <- FPR[fs]
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Coprocessor Unusable, Address Error, Reserved Instruction, Watch.
+ * */
 IL_LIFTER(SDXC1) {
-	return NULL;
+	Pure *fs = IL_REG_OPND(0);
+	Pure *index = IL_REG_OPND(1);
+	Pure *base = IL_REG_OPND(2);
+
+	BitVector *vaddr = ADD(base, index);
+	BitVector *vaddr_low3bit = CAST(3, IL_FALSE, DUP(vaddr));
+	Bool *cond_address_store_error = INV(IS_ZERO(vaddr_low3bit));
+
+	return BRANCH(cond_address_store_error, STOREW(vaddr, fs), IL_CAUSE_ADDRESS_STORE_ERROR());
 }
 
 /**
@@ -5010,8 +5165,7 @@ IL_LIFTER(SEB) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
-	Effect *seb_op = SETG(rd, (SIGNED(32, CAST(8, IL_FALSE, rt))));
-	return seb_op;
+	return SETG(rd, SIGNED(GPRLEN, CAST(8, IL_FALSE, rt)));
 }
 /**
  * Sign-Extend Halfword
@@ -5021,10 +5175,9 @@ IL_LIFTER(SEB) {
  * */
 IL_LIFTER(SEH) {
 	char *rd = REG_OPND(0);
-	Pure *rt = IL_REG_OPND(1);
 
-	Effect *seb_op = SETG(rd, (SIGNED(32, CAST(16, IL_FALSE, rt))));
-	return seb_op;
+	Pure *rt = IL_REG_OPND(1);
+	return SETG(rd, SIGNED(GPRLEN, CAST(16, IL_FALSE, rt)));
 }
 
 /**
@@ -5057,9 +5210,20 @@ IL_LIFTER(SELNEZ) {
 	return BRANCH(cond, SETG(rd, rs), NOP());
 }
 
+/**
+ * Select floating point values with FPR condition
+ * Format: SEL.fmt fd, fs, ft
+ * Description: FPR[fd] <- FPR[fd].bit0 ? FPR[ft] : FPR[fs]
+ * Exceptions: Coprocessor Unusable, Reserved Instruction
+ * */
 IL_LIFTER(SEL) {
-	return NULL;
+	char *fd = REG_OPND(0);
+	Pure *fs = IL_REG_OPND(1);
+	Pure *ft = IL_REG_OPND(2);
+
+	return BRANCH(IS_ZERO(CAST(1, IL_FALSE, F2BV(VARG(fd)))), SETG(fd, fs), SETG(fd, ft));
 }
+
 IL_LIFTER(SEQ) {
 	return NULL;
 }
@@ -5079,9 +5243,11 @@ IL_LIFTER(SH) {
 	Pure *base = IL_MEM_OPND_BASE(1);
 
 	BitVector *memaddr = ADD(base, offset);
-	Effect *store_op = STOREW(memaddr, CAST(16, IL_FALSE, rt));
-	return store_op;
+	return STOREW(memaddr, CAST(16, IL_FALSE, rt));
 }
+
+// MISSING: SHE
+// MISSING: SIGRIE
 
 IL_LIFTER(SH16) {
 	return NULL;
@@ -5144,7 +5310,7 @@ IL_LIFTER(SLL) {
 	BitVector *sa = UN(5, IMM_OPND(2));
 
 	BitVector *shifted_rt = SHIFTL0(rt, sa);
-	return SETG(rd, shifted_rt);
+	return SETG(rd, SIGNED(GPRLEN, shifted_rt));
 }
 
 IL_LIFTER(SLL16) {
@@ -5167,7 +5333,7 @@ IL_LIFTER(SLLV) {
 
 	BitVector *sa = LOGAND(rs, UN(GPRLEN, 0x1F));
 	BitVector *shifted_rt = SHIFTL0(rt, sa);
-	return SETG(rd, shifted_rt);
+	return SETG(rd, SIGNED(GPRLEN, shifted_rt));
 }
 
 /**
@@ -5183,7 +5349,7 @@ IL_LIFTER(SLT) {
 
 	// signed-less-than
 	Bool *slt = SLT(rs, rt);
-	return SETG(rd, UNSIGNED(GPRLEN, slt));
+	return SETG(rd, BOOL_TO_BV(slt, GPRLEN));
 }
 
 /**
@@ -5199,7 +5365,7 @@ IL_LIFTER(SLTI) {
 
 	// signed-less-than
 	Bool *slt = SLT(rs, imm);
-	return SETG(rt, UNSIGNED(GPRLEN, slt));
+	return SETG(rt, BOOL_TO_BV(slt, GPRLEN));
 }
 
 /**
@@ -5211,10 +5377,10 @@ IL_LIFTER(SLTI) {
 IL_LIFTER(SLTIU) {
 	char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
-	BitVector *imm = SN(GPRLEN, SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
+	BitVector *imm = UN(GPRLEN, SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
 
 	Bool *ult = ULT(rs, imm);
-	return SETG(rt, UNSIGNED(GPRLEN, ult));
+	return SETG(rt, BOOL_TO_BV(ult, GPRLEN));
 }
 
 /**
@@ -5229,7 +5395,7 @@ IL_LIFTER(SLTU) {
 	Pure *rt = IL_REG_OPND(2);
 
 	Bool *ult = ULT(rs, rt);
-	return SETG(rd, UNSIGNED(GPRLEN, ult));
+	return SETG(rd, BOOL_TO_BV(ult, GPRLEN));
 }
 
 IL_LIFTER(SNE) {
@@ -5254,9 +5420,8 @@ IL_LIFTER(SPLAT) {
 IL_LIFTER(SRA) {
 	char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
-	ut8 sa_val = IMM_OPND(2) & 0x1F;
+	BitVector *sa = UN(5, IMM_OPND(2));
 
-	BitVector *sa = UN(5, sa_val);
 	return SETG(rd, SHIFTRA(rt, sa));
 }
 
@@ -5281,7 +5446,7 @@ IL_LIFTER(SRAV) {
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
-	BitVector *sa = LOGAND(rs, U32(0x1F));
+	BitVector *sa = CAST(5, IL_FALSE, rs);
 	return SETG(rd, SHIFTRA(rt, sa));
 }
 
@@ -5324,14 +5489,18 @@ IL_LIFTER(SRLV) {
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
-	BitVector *sa = LOGAND(rs, U32(0x1F));
+	BitVector *sa = CAST(5, IL_FALSE, rs);
 	BitVector *shifted_rt = SHIFTR0(rt, sa);
 	return SETG(rd, shifted_rt);
 }
 
+/**
+ * Superscalar No Operation
+ * */
 IL_LIFTER(SSNOP) {
-	return NULL;
+	return NOP();
 }
+
 IL_LIFTER(ST) {
 	return NULL;
 }
@@ -5393,8 +5562,20 @@ IL_LIFTER(SUBVI) {
 IL_LIFTER(SUBV) {
 	return NULL;
 }
+
+/**
+ * Store Doubleword Indexed Unaligned from Floating Point
+ * Format: SUXC1 fs, index(base)
+ * Description: memory[(GPR[base] + GPR[index])_{(psize-1)..3}] <- FPR[fs]
+ * Exceptions: Coprocessor Unusable, Reserved Instruction, TLB Refill, TLB Invalid, TLB Modified, Watch
+ * */
 IL_LIFTER(SUXC1) {
-	return NULL;
+	Pure *fs = IL_REG_OPND(0);
+	Pure *index = IL_REG_OPND(1);
+	Pure *base = IL_REG_OPND(2);
+
+	BitVector *vaddr = LOGAND(ADD(index, base), UN(GPRLEN, ~0x3));
+	return STORE(vaddr, fs);
 }
 
 /**
@@ -5409,16 +5590,28 @@ IL_LIFTER(SW) {
 	Pure *base = IL_MEM_OPND_BASE(1);
 
 	BitVector *memaddr = ADD(base, offset);
-	Effect *store_op = STOREW(memaddr, rt);
-	return store_op;
+	return STOREW(memaddr, rt);
 }
 
 IL_LIFTER(SW16) {
 	return NULL;
 }
+
+/**
+ * Store Word from floating point
+ * Format: SWC1 ft, offset(base)
+ * Description: memory[GPR[base] + offset] <- GPR[ft]
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
+ * */
 IL_LIFTER(SWC1) {
-	return NULL;
+	Pure *ft = IL_REG_OPND(0);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+
+	BitVector *memaddr = ADD(base, offset);
+	return STOREW(memaddr, ft);
 }
+
 IL_LIFTER(SWC2) {
 	return NULL;
 }
@@ -5557,9 +5750,24 @@ IL_LIFTER(SWR) {
 	return SEQ4(b0, b1, b2, b3);
 }
 
+/**
+ * Store Word Indexed from Floating Point
+ * Format: SDXC1 fs, index(base)
+ * Description: memory[GPR[base] + GPR[index]] <- FPR[fs]
+ * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Coprocessor Unusable, Address Error, Reserved Instruction, Watch.
+ * */
 IL_LIFTER(SWXC1) {
-	return NULL;
+	Pure *fs = IL_REG_OPND(0);
+	Pure *index = IL_REG_OPND(1);
+	Pure *base = IL_REG_OPND(2);
+
+	BitVector *vaddr = ADD(base, index);
+	BitVector *vaddr_low2bit = CAST(2, IL_FALSE, DUP(vaddr));
+	Bool *cond_address_store_error = INV(IS_ZERO(vaddr_low2bit));
+
+	return BRANCH(cond_address_store_error, STOREW(vaddr, fs), IL_CAUSE_ADDRESS_STORE_ERROR());
 }
+
 IL_LIFTER(SYNC) {
 	return NULL;
 }
@@ -5654,8 +5862,7 @@ IL_LIFTER(XOR) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *xor_rs_rt = LOGXOR(rs, rt);
-	Effect *set_rd = SETG(rd, xor_rs_rt);
-	return set_rd;
+	return SETG(rd, xor_rs_rt);
 }
 
 IL_LIFTER(XOR16) {
@@ -5674,8 +5881,7 @@ IL_LIFTER(XORI) {
 	BitVector *imm = U32((ut32)IMM_OPND(2));
 
 	BitVector *xor_rs_imm = LOGXOR(rs, imm);
-	Effect *set_rt = SETG(rt, xor_rs_imm);
-	return set_rt;
+	return SETG(rt, xor_rs_imm);
 }
 
 /**
