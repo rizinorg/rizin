@@ -424,6 +424,27 @@ static pyc_object *get_string_object(RzBuffer *buffer) {
 	return ret;
 }
 
+static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, ut32 size, ut32 length, RzStrEnc type) {
+	if (size == 0) {
+		return true;
+	}
+
+	RzBinString *string = RZ_NEW0(RzBinString);
+	if (!string) {
+		return false;
+	}
+	string->paddr = string->vaddr = addr;
+	string->size = size;
+	string->length = length;
+	string->ordinal = 0;
+	string->type = type;
+	string->string = rz_str_new(data);
+	if (!rz_list_append(pyc->strings_cache, string)) {
+		return false;
+	}
+	return true;
+}
+
 static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
@@ -446,24 +467,9 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		return NULL;
 	}
 
-	if (n > 0) {
-		RzBinString *string = NULL;
-		string = RZ_NEW0(RzBinString);
-		if (!string) {
-			RZ_FREE(ret);
-			return NULL;
-		}
-		string->paddr = string->vaddr = addr;
-		string->size = n;
-		string->length = rz_utf8_strlen(ret->data);
-		string->ordinal = 0;
-		string->type = RZ_STRING_ENC_UTF8;
-		string->string = rz_str_new(ret->data);
-		RzListIter *ref_idx = rz_list_append(pyc->strings_cache, string);
-		if (!ref_idx) {
-			RZ_FREE(ret);
-			return NULL;
-		}
+	if (!add_string_to_cache(pyc, addr, ret->data, n, rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
+		RZ_FREE(ret);
+		return NULL;
 	}
 	return ret;
 }
@@ -663,23 +669,9 @@ static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, 
 		RZ_FREE(ret);
 	}
 
-	if (size > 0) {
-		RzBinString *string = NULL;
-		string = RZ_NEW0(RzBinString);
-		if (!string) {
-			RZ_FREE(ret);
-			return NULL;
-		}
-		string->paddr = string->vaddr = addr;
-		string->length = string->size = size;
-		string->ordinal = 0;
-		string->type = RZ_STRING_ENC_8BIT;
-		string->string = rz_str_new(ret->data);
-		RzListIter *ref_idx = rz_list_append(pyc->strings_cache, string);
-		if (!ref_idx) {
-			RZ_FREE(ret);
-			return NULL;
-		}
+	if (!add_string_to_cache(pyc, addr, ret->data, size, size, RZ_STRING_ENC_8BIT)) {
+		RZ_FREE(ret);
+		return NULL;
 	}
 	return ret;
 }

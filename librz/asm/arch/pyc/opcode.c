@@ -189,7 +189,7 @@ pyc_opcodes *new_pyc_opcodes() {
 	if (!ret) {
 		return NULL;
 	}
-	ret->jump_use_instruction_offset = 0;
+	ret->jump_use_instruction_offset = false;
 	ret->have_argument = 90;
 	ret->opcodes = malloc(sizeof(pyc_opcode_object) * 256);
 	if (!ret->opcodes) {

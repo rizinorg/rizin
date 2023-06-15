@@ -10,7 +10,7 @@ pyc_opcodes *opcode_310(void) {
 	}
 
 	ret->version_sig = (void *(*)())opcode_310;
-	ret->jump_use_instruction_offset = 1;
+	ret->jump_use_instruction_offset = true;
 
 	return ret;
 }
