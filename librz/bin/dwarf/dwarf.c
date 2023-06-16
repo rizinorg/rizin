@@ -736,7 +736,6 @@ static bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	}
 	block->data = calloc(sizeof(ut8), block->length);
 	RET_FALSE_IF_FAIL(block->data);
-	/* Maybe unroll this as an optimization in future? */
 	ut16 len = rz_buf_read(buffer, block->data, block->length);
 	if (len != block->length) {
 		RZ_FREE(block->data);
@@ -824,7 +823,7 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		value->kind = DW_AT_KIND_CONSTANT;
 		U64_OR_RET_FALSE(value->uconstant);
 		break;
-	case DW_FORM_data16: // TODO Fix this, right now I just read the data, but I need to make storage for it
+	case DW_FORM_data16:
 		value->kind = DW_AT_KIND_CONSTANT;
 		if (big_endian) {
 			U64_OR_RET_FALSE(value->uconstant128.High);
@@ -915,7 +914,6 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		break;
 	case DW_FORM_ref_udata:
 		value->kind = DW_AT_KIND_REFERENCE;
-		// uleb128 is enough to fit into ut64?
 		ULE128_OR_RET_FALSE(value->reference);
 		value->reference += unit_offset;
 		break;
@@ -941,13 +939,9 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// offset into .debug_line_str section, can't parse the section now, so we just skip
 	case DW_FORM_strx:
 		value->kind = DW_AT_KIND_STRING;
-		// value->string.offset = dwarf_read_offset (hdr->is_64bit, big_endian, &buf, buf_end);
-		// if (debug_str && value->string.offset < debug_str_len) {
-		// 	value->string.content =
-		// 		rz_str_ndup ((const char *)(debug_str + value->string.offset), debug_str_len - value->string.offset);
-		// } else {
-		// 	value->string.content = NULL; // Means malformed DWARF, should we print error message?
-		// }
+		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
+		// TODO: .debug_line_str
+		RZ_LOG_ERROR("TODO: .debug_line_str\n");
 		break;
 	case DW_FORM_strx1:
 		value->kind = DW_AT_KIND_STRING;
@@ -957,9 +951,11 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		value->kind = DW_AT_KIND_STRING;
 		U16_OR_RET_FALSE(value->string.offset);
 		break;
-	case DW_FORM_strx3: // TODO Add 3 byte int read
+	case DW_FORM_strx3:
 		value->kind = DW_AT_KIND_STRING;
+		// TODO: DW_FORM_strx3
 		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
+		RZ_LOG_ERROR("TODO: DW_FORM_strx3\n");
 		break;
 	case DW_FORM_strx4:
 		value->kind = DW_AT_KIND_STRING;
@@ -985,9 +981,10 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		U16_OR_RET_FALSE(value->address);
 		break;
 	case DW_FORM_addrx3:
-		// I need to add 3byte endianess free read here TODO
+		// TODO: .DW_FORM_addrx3
 		value->kind = DW_AT_KIND_ADDRESS;
 		rz_buf_seek(buffer, 3, RZ_BUF_CUR);
+		RZ_LOG_ERROR("TODO: DW_FORM_addrx3\n");
 		break;
 	case DW_FORM_addrx4:
 		value->kind = DW_AT_KIND_ADDRESS;
@@ -997,9 +994,8 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 	case DW_FORM_strp_sup: // offset in a section .debug_line_str
 		value->kind = DW_AT_KIND_STRING;
 		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
-		// if (debug_str && value->string.offset < debug_line_str_len) {
-		// 	value->string.content =
-		// 		rz_str_ndup
+		// TODO: .debug_line_str
+		RZ_LOG_ERROR("TODO: .debug_line_str\n");
 		break;
 		// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
@@ -1029,20 +1025,14 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 }
 
 static void attr_fini(RzBinDwarfAttr *val) {
-	// TODO adjust to new forms, now we're leaking
 	if (!val) {
 		return;
 	}
-	switch (val->form) {
-	case DW_FORM_strp:
-	case DW_FORM_string:
+	switch (val->kind) {
+	case DW_AT_KIND_STRING:
 		RZ_FREE(val->string.content);
 		break;
-	case DW_FORM_exprloc:
-	case DW_FORM_block:
-	case DW_FORM_block1:
-	case DW_FORM_block2:
-	case DW_FORM_block4:
+	case DW_AT_KIND_BLOCK:
 		RZ_FREE(val->block.data);
 		break;
 	default:
