@@ -891,14 +891,14 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
 
 // bin_dwarf
-RZ_API char *rz_core_bin_dwarf_abbrev_decl_dump(RzBinDwarfAbbrevDecl *decl);
-RZ_API char *rz_core_bin_dwarf_abbrevs_dump(const RzBinDwarfDebugAbbrevs *abbrevs);
-RZ_API char *rz_core_bin_dwarf_attr_dump(const RzBinDwarfAttr *val);
-RZ_API char *rz_core_bin_dwarf_debug_info_dump(const RzBinDwarfDebugInfo *info);
-RZ_API char *rz_core_bin_dwarf_loc_dump(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size);
-RZ_API char *rz_core_bin_dwarf_aranges_dump(RzList /*<RzBinDwarfARangeSet *>*/ *aranges);
-RZ_API char *rz_core_bin_dwarf_line_unit_dump(RzBinDwarfLineUnit *unit);
-RZ_API char *rz_core_bin_dwarf_line_units_dump(RzList /*<RzBinDwarfLineUnit *>*/ *lines);
+RZ_API char *rz_core_bin_dwarf_abbrev_decl_to_string(RzBinDwarfAbbrevDecl *decl);
+RZ_API char *rz_core_bin_dwarf_abbrevs_to_string(const RzBinDwarfDebugAbbrevs *abbrevs);
+RZ_API char *rz_core_bin_dwarf_attr_to_string(const RzBinDwarfAttr *val);
+RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *info);
+RZ_API char *rz_core_bin_dwarf_loc_to_string(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size);
+RZ_API char *rz_core_bin_dwarf_aranges_to_string(RzList /*<RzBinDwarfARangeSet *>*/ *aranges);
+RZ_API char *rz_core_bin_dwarf_line_unit_to_string(RzBinDwarfLineUnit *unit);
+RZ_API char *rz_core_bin_dwarf_line_units_to_string(RzList /*<RzBinDwarfLineUnit *>*/ *lines);
 
 RZ_API void rz_core_sysenv_begin(RzCore *core);
 RZ_API void rz_core_sysenv_end(RzCore *core);

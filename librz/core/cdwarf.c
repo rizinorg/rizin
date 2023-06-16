@@ -12,7 +12,7 @@
 	}
 #define my_print_get rz_strbuf_drain(sb)
 
-RZ_API char *rz_core_bin_dwarf_abbrev_decl_dump(RzBinDwarfAbbrevDecl *decl) {
+RZ_API char *rz_core_bin_dwarf_abbrev_decl_to_string(RzBinDwarfAbbrevDecl *decl) {
 	if (!decl) {
 		return NULL;
 	}
@@ -48,7 +48,7 @@ static bool abbrev_table_dump_cb(void *user, ut64 k, const void *v) {
 			return false;
 		}
 		RzBinDwarfAbbrevDecl *decl = itdecl;
-		char *decl_str = rz_core_bin_dwarf_abbrev_decl_dump(decl);
+		char *decl_str = rz_core_bin_dwarf_abbrev_decl_to_string(decl);
 		if (decl_str) {
 			my_print(decl_str);
 			free(decl_str);
@@ -57,7 +57,7 @@ static bool abbrev_table_dump_cb(void *user, ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API char *rz_core_bin_dwarf_abbrevs_dump(const RzBinDwarfDebugAbbrevs *abbrevs) {
+RZ_API char *rz_core_bin_dwarf_abbrevs_to_string(const RzBinDwarfDebugAbbrevs *abbrevs) {
 	if (!abbrevs) {
 		return NULL;
 	}
@@ -66,7 +66,7 @@ RZ_API char *rz_core_bin_dwarf_abbrevs_dump(const RzBinDwarfDebugAbbrevs *abbrev
 	return my_print_get;
 }
 
-RZ_API char *rz_core_bin_dwarf_attr_dump(const RzBinDwarfAttr *val) {
+RZ_API char *rz_core_bin_dwarf_attr_to_string(const RzBinDwarfAttr *val) {
 	size_t i;
 	rz_return_val_if_fail(val, NULL);
 	my_print_init;
@@ -156,7 +156,7 @@ RZ_API char *rz_core_bin_dwarf_attr_dump(const RzBinDwarfAttr *val) {
 	return my_print_get;
 }
 
-RZ_API char *rz_core_bin_dwarf_debug_info_dump(const RzBinDwarfDebugInfo *info) {
+RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *info) {
 	rz_return_val_if_fail(info, NULL);
 	my_print_init;
 	RzBinDwarfCompUnit *unit = NULL;
@@ -199,7 +199,7 @@ RZ_API char *rz_core_bin_dwarf_debug_info_dump(const RzBinDwarfDebugInfo *info) 
 				} else {
 					my_printf("     AT_UNKWN [0x%-3" PFMT32x "]\t : ", attr->name);
 				}
-				my_print(rz_core_bin_dwarf_attr_dump(attr));
+				my_print(rz_core_bin_dwarf_attr_to_string(attr));
 				my_printf("\n");
 			}
 		}
@@ -228,7 +228,7 @@ static bool sort_loclists(void *user, const ut64 key, const void *value) {
 	return true;
 }
 
-RZ_API char *rz_core_bin_dwarf_loc_dump(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size) {
+RZ_API char *rz_core_bin_dwarf_loc_to_string(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size) {
 	rz_return_val_if_fail(loc_table, NULL);
 	my_print_init;
 	my_print("\nContents of the .debug_loc section:\n");
@@ -256,7 +256,7 @@ RZ_API char *rz_core_bin_dwarf_loc_dump(HtUP /*<offset, RzBinDwarfLocList *>*/ *
 	return my_print_get;
 }
 
-RZ_API char *rz_core_bin_dwarf_aranges_dump(RzList /*<RzBinDwarfARangeSet *>*/ *aranges) {
+RZ_API char *rz_core_bin_dwarf_aranges_to_string(RzList /*<RzBinDwarfARangeSet *>*/ *aranges) {
 	rz_return_val_if_fail(aranges, NULL);
 	my_print_init;
 	my_print("\nContents of the .debug_aranges section:\n");
@@ -382,7 +382,7 @@ static void print_line_op(RzStrBuf *sb, RzBinDwarfLineOp *op, RzBinDwarfLineHead
 	my_print("\n");
 }
 
-RZ_API char *rz_core_bin_dwarf_line_unit_dump(RzBinDwarfLineUnit *unit) {
+RZ_API char *rz_core_bin_dwarf_line_unit_to_string(RzBinDwarfLineUnit *unit) {
 	if (!unit) {
 		return NULL;
 	}
@@ -439,7 +439,7 @@ RZ_API char *rz_core_bin_dwarf_line_unit_dump(RzBinDwarfLineUnit *unit) {
 	return my_print_get;
 }
 
-RZ_API char *rz_core_bin_dwarf_line_units_dump(RzList /*<RzBinDwarfLineUnit *>*/ *lines) {
+RZ_API char *rz_core_bin_dwarf_line_units_to_string(RzList /*<RzBinDwarfLineUnit *>*/ *lines) {
 	rz_return_val_if_fail(lines, NULL);
 	my_print_init;
 	my_print("Raw dump of debug contents of section .debug_line:\n\n");
@@ -452,7 +452,7 @@ RZ_API char *rz_core_bin_dwarf_line_units_dump(RzList /*<RzBinDwarfLineUnit *>*/
 		} else {
 			my_print("\n");
 		}
-		char *s = rz_core_bin_dwarf_line_unit_dump(unit);
+		char *s = rz_core_bin_dwarf_line_unit_to_string(unit);
 		if (s) {
 			my_print(s);
 			free(s);

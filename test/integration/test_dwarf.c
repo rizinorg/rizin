@@ -76,7 +76,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
 				   "    DW_AT_language                 DW_FORM_data1\n"
@@ -87,14 +87,14 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 				   "    DW_AT_stmt_list                DW_FORM_data4\n",
 		"abbrev decl");
 
-	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 3));
+	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 3));
 	mu_assert_streq_free(dump, "    3      DW_TAG_base_type          [no children] (0x26)\n"
 				   "    DW_AT_byte_size                DW_FORM_data1\n"
 				   "    DW_AT_encoding                 DW_FORM_data1\n"
 				   "    DW_AT_name                     DW_FORM_string\n",
 		"abbrev decl");
 
-	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 7));
+	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 7));
 	mu_assert_streq_free(dump, "    7      DW_TAG_variable           [no children] (0x76)\n"
 				   "    DW_AT_name                     DW_FORM_string\n"
 				   "    DW_AT_decl_file                DW_FORM_data1\n"
@@ -154,7 +154,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
 				   "    DW_AT_language                 DW_FORM_data1\n"
@@ -166,7 +166,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 				   "    DW_AT_stmt_list                DW_FORM_data4\n",
 		"abbrev decl");
 
-	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 9));
+	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 9));
 	mu_assert_streq_free(dump, "    9      DW_TAG_subprogram         [has children] (0x8d)\n"
 				   "    DW_AT_external                 DW_FORM_flag\n"
 				   "    DW_AT_name                     DW_FORM_string\n"
@@ -279,7 +279,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
 				   "    DW_AT_language                 DW_FORM_data1\n"
@@ -291,7 +291,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 				   "    DW_AT_stmt_list                DW_FORM_data4\n",
 		"abbrev decl");
 
-	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 18));
+	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 18));
 	mu_assert_streq_free(dump, "    18     DW_TAG_subprogram         [has children] (0x11d)\n"
 				   "    DW_AT_specification            DW_FORM_ref4\n"
 				   "    DW_AT_object_pointer           DW_FORM_ref4\n"
@@ -401,7 +401,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
-	char *dump = rz_core_bin_dwarf_line_unit_dump(rz_list_tail(li->units)->data);
+	char *dump = rz_core_bin_dwarf_line_unit_to_string(rz_list_tail(li->units)->data);
 	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
 	mu_assert_streq_free(dump,
 		" Header information[0x3154]\n"
@@ -564,7 +564,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 1));
+	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
 				   "    DW_AT_language                 DW_FORM_data1\n"
@@ -575,7 +575,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
 				   "    DW_AT_stmt_list                DW_FORM_data4\n",
 		"abbrev decl");
-	dump = rz_core_bin_dwarf_abbrev_decl_dump(rz_bin_dwarf_abbrev_get(tbl, 19));
+	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 19));
 	mu_assert_streq_free(dump, "    19     DW_TAG_formal_parameter   [no children] (0x131)\n"
 				   "    DW_AT_name                     DW_FORM_strp\n"
 				   "    DW_AT_type                     DW_FORM_ref4\n"

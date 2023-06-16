@@ -1718,19 +1718,19 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	} while (0)
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		if (dw->abbrevs) {
-			print_free(rz_core_bin_dwarf_abbrevs_dump(dw->abbrevs));
+			print_free(rz_core_bin_dwarf_abbrevs_to_string(dw->abbrevs));
 		}
 		if (dw->info) {
-			print_free(rz_core_bin_dwarf_debug_info_dump(dw->info));
+			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info));
 		}
 		if (dw->loc) {
-			print_free(rz_core_bin_dwarf_loc_dump(dw->loc, core->analysis->bits / 8));
+			print_free(rz_core_bin_dwarf_loc_to_string(dw->loc, core->analysis->bits / 8));
 		}
 		if (dw->aranges) {
-			print_free(rz_core_bin_dwarf_aranges_dump(dw->aranges));
+			print_free(rz_core_bin_dwarf_aranges_to_string(dw->aranges));
 		}
 		if (dw->lines) {
-			print_free(rz_core_bin_dwarf_line_units_dump(dw->lines->units));
+			print_free(rz_core_bin_dwarf_line_units_to_string(dw->lines->units));
 		}
 	}
 	if (dw->lines && dw->lines->lines) {
