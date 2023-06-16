@@ -201,7 +201,7 @@ typedef struct {
 	};
 } Operation;
 
-static bool Operation_parse(Operation *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding) {
+static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfEncoding *encoding) {
 	RET_FALSE_IF_FAIL(self && buffer && encoding);
 	ut8 opcode;
 	U8_OR_RET_FALSE(opcode);
@@ -718,5 +718,196 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, RzBinDwarfEncodin
 	case DW_OP_hi_user:
 		RZ_LOG_WARN("Unsupported opcode %d\n", opcode);
 		break;
+	}
+}
+
+typedef ut16 Register;
+typedef char *Error;
+
+typedef struct {
+	enum {
+		EVALUATION_STATE_START,
+		EVALUATION_STATE_READY,
+		EVALUATION_STATE_ERROR,
+		EVALUATION_STATE_COMPLETE,
+	} state;
+
+	union {
+		struct { // START
+			uint64_t *value; // nullable
+		} start;
+		Error error;
+	};
+} EvaluationState;
+
+typedef struct {
+	// Dummy struct for Value, define it appropriately
+} Value;
+
+typedef struct {
+	ut64 offset;
+} DebugInfoOffset;
+
+typedef struct {
+	enum {
+		EMPTY,
+		REGISTER,
+		ADDRESS,
+		VALUE,
+		BYTES,
+		IMPLICIT_POINTER,
+	} kind;
+
+	union {
+		struct { // REGISTER
+			Register register_number;
+		} reg;
+		struct { // ADDRESS
+			uint64_t address;
+		} address;
+		struct { // VALUE
+			Value value;
+		} value;
+		struct { // BYTES
+			RzBinDwarfBlock value;
+		} bytes;
+		struct { // IMPLICIT_POINTER
+			DebugInfoOffset value;
+			int64_t byte_offset;
+		} implicit_pointer;
+	} data;
+} Location;
+
+typedef struct operation_evaluation_result_t {
+	enum {
+		EVALUATION_RESULT_COMPLETE,
+		EVALUATION_RESULT_PIECE,
+	} kind;
+
+	union {
+		Location complete;
+	};
+} OperationEvaluationResult;
+
+typedef struct {
+	ut64 bit_offset;
+	Location location;
+} Piece;
+
+typedef ut64 StackValue;
+
+typedef struct {
+	const RzBuffer *bytecode;
+	const RzBinDwarfEncoding *encoding;
+	ut64 object_address;
+	ut32 max_iterations;
+	ut32 iteration;
+	EvaluationState state;
+
+	// Stack operations are done on word-sized values.  We do all
+	// operations on 64-bit values, and then mask the results
+	// appropriately when popping.
+	ut64 addr_mask;
+	// The stack.
+	RzVector /*<StackValue>*/ stack;
+
+	// The next operation to decode and evaluate.
+	RzBuffer *pc;
+
+	// If we see a DW_OP_call* operation, the previous PC and bytecode
+	// is stored here while evaluating the subroutine.
+	RzVector expression_stack;
+
+	RzVector /*Piece*/ result;
+} Evaluation;
+
+bool Evaluation_pop(Evaluation *self, StackValue **value) {
+	if (rz_vector_len(&self->stack) <= 0) {
+		*value = NULL;
+		return false;
+	}
+	*value = RZ_NEW0(StackValue);
+	rz_vector_pop(&self->stack, *value);
+	return true;
+}
+
+bool Evaluation_push(Evaluation *self, StackValue *value) {
+	rz_vector_push(&self->stack, value);
+	return true;
+}
+
+bool Evaluation_evaluate_one_operation(Evaluation *self) {
+	Operation *operation = RZ_NEW(Operation);
+	RET_FALSE_IF_FAIL(operation);
+	RET_FALSE_IF_FAIL(Operation_parse(operation, self->pc, self->encoding));
+
+	switch (operation->kind) {
+	case OPERATION_KIND_DEREF: {
+		StackValue *entry = NULL;
+		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
+		RET_FALSE_IF_FAIL(entry);
+		*entry &= self->addr_mask;
+		ut64 *addr_space = NULL;
+		if (operation->deref.space) {
+			StackValue *space = NULL;
+			RET_FALSE_IF_FAIL(Evaluation_pop(self, &space));
+			RET_FALSE_IF_FAIL(space);
+			*addr_space = *space & self->addr_mask;
+		}
+		// TODO: eval memory?
+		break;
+	}
+	case OPERATION_KIND_DROP: break;
+	case OPERATION_KIND_PICK: break;
+	case OPERATION_KIND_SWAP: break;
+	case OPERATION_KIND_ROT: break;
+	case OPERATION_KIND_ABS: break;
+	case OPERATION_KIND_AND: break;
+	case OPERATION_KIND_DIV: break;
+	case OPERATION_KIND_MINUS: break;
+	case OPERATION_KIND_MOD: break;
+	case OPERATION_KIND_MUL: break;
+	case OPERATION_KIND_NEG: break;
+	case OPERATION_KIND_NOT: break;
+	case OPERATION_KIND_OR: break;
+	case OPERATION_KIND_PLUS: break;
+	case OPERATION_KIND_PLUS_CONSTANT: break;
+	case OPERATION_KIND_SHL: break;
+	case OPERATION_KIND_SHR: break;
+	case OPERATION_KIND_SHRA: break;
+	case OPERATION_KIND_XOR: break;
+	case OPERATION_KIND_BRA: break;
+	case OPERATION_KIND_EQ: break;
+	case OPERATION_KIND_GE: break;
+	case OPERATION_KIND_GT: break;
+	case OPERATION_KIND_LE: break;
+	case OPERATION_KIND_LT: break;
+	case OPERATION_KIND_NE: break;
+	case OPERATION_KIND_SKIP: break;
+	case OPERATION_KIND_UNSIGNED_CONSTANT: break;
+	case OPERATION_KIND_SIGNED_CONSTANT: break;
+	case OPERATION_KIND_REGISTER: break;
+	case OPERATION_KIND_REGISTER_OFFSET: break;
+	case OPERATION_KIND_FRAME_OFFSET: break;
+	case OPERATION_KIND_NOP: break;
+	case OPERATION_KIND_PUSH_OBJECT_ADDRESS: break;
+	case OPERATION_KIND_CALL: break;
+	case OPERATION_KIND_TLS: break;
+	case OPERATION_KIND_CALL_FRAME_CFA: break;
+	case OPERATION_KIND_PIECE: break;
+	case OPERATION_KIND_IMPLICIT_VALUE: break;
+	case OPERATION_KIND_STACK_VALUE: break;
+	case OPERATION_KIND_IMPLICIT_POINTER: break;
+	case OPERATION_KIND_ENTRY_VALUE: break;
+	case OPERATION_KIND_PARAMETER_REF: break;
+	case OPERATION_KIND_ADDRESS: break;
+	case OPERATION_KIND_ADDRESS_INDEX: break;
+	case OPERATION_KIND_CONSTANT_INDEX: break;
+	case OPERATION_KIND_TYPED_LITERAL: break;
+	case OPERATION_KIND_CONVERT: break;
+	case OPERATION_KIND_REINTERPRET: break;
+	case OPERATION_KIND_WASM_LOCAL: break;
+	case OPERATION_KIND_WASM_GLOBAL: break;
+	case OPERATION_KIND_WASM_STACK: break;
 	}
 }
