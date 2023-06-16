@@ -680,12 +680,12 @@ static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut6
 }
 
 /**
- * @brief Reads 64/32 bit unsigned based on format
+ * \brief Reads 64/32 bit unsigned based on format
  *
- * @param is_64bit Format of the comp unit
- * @param buf Pointer to the buffer to read from, to update after read
- * @param buf_end To check the boundary /for READ macro/
- * @return ut64 Read value
+ * \param is_64bit Format of the comp unit
+ * \param buf Pointer to the buffer to read from, to update after read
+ * \param buf_end To check the boundary /for READ macro/
+ * \return ut64 Read value
  */
 static inline ut64 dwarf_read_offset(bool is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
 	ut64 result;

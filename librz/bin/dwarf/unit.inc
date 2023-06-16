@@ -258,11 +258,11 @@ RZ_API RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(const RzBinDwarfDie *die, enum 
 }
 
 /**
- * @brief Parses .debug_info section
+ * \brief Parses .debug_info section
  *
- * @param abbrevs Parsed abbreviations
- * @param bin
- * @return RzBinDwarfDebugInfo* Parsed information, NULL if error
+ * \param abbrevs Parsed abbreviations
+ * \param bin
+ * \return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
 RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RzBinFile *binfile, RzBinDwarfDebugAbbrevs *abbrevs) {
 	rz_return_val_if_fail(binfile && abbrevs, NULL);
