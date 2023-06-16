@@ -46,6 +46,7 @@ typedef struct {
 	ut8 extended_arg;
 	ut8 have_argument;
 	ut8 bits;
+	bool jump_use_instruction_offset;
 	void *(*version_sig)();
 	RzList /*<pyc_arg_fmt *>*/ *opcode_arg_fmt;
 	pyc_opcode_object *opcodes;
@@ -95,6 +96,7 @@ pyc_opcodes *opcode_36(void);
 pyc_opcodes *opcode_37(void);
 pyc_opcodes *opcode_38(void);
 pyc_opcodes *opcode_39(void);
+pyc_opcodes *opcode_310(void);
 
 pyc_opcodes *get_opcode_by_version(char *version);
 

@@ -79,6 +79,8 @@ typedef struct pyc_context {
 	/* used from marshall.c */
 	RzList /*<char *>*/ *interned_table;
 	RzList /*<RzBinSection *>*/ *sections_cache;
+	RzList /*<RzBinString *>*/ *strings_cache;
+	RzList /*<RzBinSymbol *>*/ *symbols_cache;
 	RzList /*<RzList<void *> *>*/ *shared;
 	RzList /*<pyc_object *>*/ *refs; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
 	ut32 magic_int;
