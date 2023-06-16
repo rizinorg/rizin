@@ -1360,6 +1360,10 @@ RZ_API st64 rz_buf_uleb128(RZ_NONNULL RzBuffer *buffer, RZ_NONNULL ut64 *value) 
 		used++;
 		slice = byte & 0x7f;
 		if ((shift >= 63 && slice != 0) || ((slice << shift) >> shift) != slice) {
+			if (shift == 63 && sum == 0x7fffffffffffffffUL && slice == 0x1UL) {
+				sum = 0xffffffffffffffffUL;
+				break;
+			}
 			// uleb128 too big for ut64
 			return -1;
 		}
