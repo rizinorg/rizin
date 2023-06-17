@@ -741,7 +741,7 @@ typedef struct {
 } EvaluationState;
 
 typedef struct {
-	// Dummy struct for Value, define it appropriately
+	st64 value;
 } Value;
 
 typedef struct {
@@ -1181,18 +1181,41 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		out->location = location;
 		break;
 	}
-	case OPERATION_KIND_STACK_VALUE: break;
-	case OPERATION_KIND_IMPLICIT_POINTER: break;
-	case OPERATION_KIND_ENTRY_VALUE: break;
-	case OPERATION_KIND_PARAMETER_REF: break;
-	case OPERATION_KIND_ADDRESS: break;
-	case OPERATION_KIND_ADDRESS_INDEX: break;
-	case OPERATION_KIND_CONSTANT_INDEX: break;
-	case OPERATION_KIND_TYPED_LITERAL: break;
-	case OPERATION_KIND_CONVERT: break;
-	case OPERATION_KIND_REINTERPRET: break;
-	case OPERATION_KIND_WASM_LOCAL: break;
-	case OPERATION_KIND_WASM_GLOBAL: break;
-	case OPERATION_KIND_WASM_STACK: break;
+	case OPERATION_KIND_STACK_VALUE: {
+		StackValue *v = NULL;
+		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
+		Location location = {
+			.kind = VALUE,
+			.value = { *v },
+		};
+		out->kind = Complete;
+		out->location = location;
+		break;
+	}
+	case OPERATION_KIND_IMPLICIT_POINTER: {
+		Location location = {
+			.kind = IMPLICIT_POINTER,
+			.implicit_pointer = {
+				.value = { operation->implicit_pointer.value },
+				.byte_offset = operation->implicit_pointer.byte_offset,
+			},
+		};
+		out->kind = Complete;
+		out->location = location;
+		break;
+	}
+	case OPERATION_KIND_ENTRY_VALUE: break; // TODO: entry value
+	case OPERATION_KIND_PARAMETER_REF: break; // TODO: parameter ref
+	case OPERATION_KIND_ADDRESS: break; // TODO: address
+	case OPERATION_KIND_ADDRESS_INDEX: break; // TODO: address index
+	case OPERATION_KIND_CONSTANT_INDEX: break; // TODO: constant index
+	case OPERATION_KIND_TYPED_LITERAL: break; // TODO: typed literal
+	case OPERATION_KIND_CONVERT: break; // TODO: convert
+	case OPERATION_KIND_REINTERPRET: break; // TODO: reinterpret
+	case OPERATION_KIND_WASM_LOCAL:
+	case OPERATION_KIND_WASM_GLOBAL:
+	case OPERATION_KIND_WASM_STACK:
+		RZ_LOG_ERROR("DWARF WASM operation not supported\n");
+		break;
 	}
 }
