@@ -2443,52 +2443,36 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 }
 
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize) {
-	RzAnalysisData *d;
-	ut64 dstaddr = 0LL;
+	RzAnalysisData *d = NULL;
 	ut8 *buf = core->block;
-	int len = core->blocksize;
+	ut32 old_len = core->blocksize;
+	ut64 old_offset = core->offset;
 	int word = wordsize ? wordsize : core->rasm->bits / 8;
-	char *str;
-	int i, j;
-
-	count = RZ_MIN(count, len);
-	buf = malloc(len + 1);
-	if (!buf) {
-		return false;
-	}
-	memset(buf, 0xff, len);
-	rz_io_read_at(core->io, addr, buf, len);
-	buf[len - 1] = 0;
-
+	char *str = NULL;
 	RzConsPrintablePalette *pal = rz_config_get_i(core->config, "scr.color") ? &rz_cons_singleton()->context->pal : NULL;
-	for (i = j = 0; j < count; j++) {
-		if (i >= len) {
-			rz_io_read_at(core->io, addr + i, buf, len);
-			buf[len] = 0;
-			addr += i;
-			i = 0;
-			continue;
-		}
-		/* rz_analysis_data requires null-terminated buffer according to coverity */
-		/* but it should not.. so this must be fixed in analysis/data.c instead of */
-		/* null terminating here */
-		d = rz_analysis_data(core->analysis, addr + i, buf + i, len - i, wordsize);
+
+	if (count > old_len) {
+		rz_core_block_size(core, count);
+	}
+	rz_core_seek(core, addr, true);
+
+	for (int i = 0, j = 0; j < count; j++) {
+		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize);
 		str = rz_analysis_data_to_string(d, pal);
 		rz_cons_println(str);
 
 		if (d) {
 			switch (d->type) {
-			case RZ_ANALYSIS_DATA_TYPE_POINTER:
+			case RZ_ANALYSIS_DATA_INFO_TYPE_POINTER:
 				rz_cons_printf("`- ");
-				dstaddr = rz_mem_get_num(buf + i, word);
 				if (depth > 0) {
-					rz_core_analysis_data(core, dstaddr, 1, depth - 1, wordsize);
+					ut64 pointer = rz_mem_get_num(buf + i, word);
+					rz_core_analysis_data(core, pointer, 1, depth - 1, wordsize);
 				}
 				i += word;
 				break;
-			case RZ_ANALYSIS_DATA_TYPE_STRING:
-				buf[len - 1] = 0;
-				i += strlen((const char *)buf + i) + 1;
+			case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
+				i += d->len;
 				break;
 			default:
 				i += (d->len > 3) ? d->len : word;
@@ -2500,7 +2484,11 @@ RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, 
 		free(str);
 		rz_analysis_data_free(d);
 	}
-	free(buf);
+
+	if (count > old_len) {
+		rz_core_block_size(core, old_len);
+	}
+	rz_core_seek(core, old_offset, true);
 	return true;
 }
 

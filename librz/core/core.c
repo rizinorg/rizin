@@ -1750,34 +1750,24 @@ static void update_sdb(RzCore *core) {
 }
 
 #define MINLEN 1
-static int is_string(const ut8 *buf, int size, int *len) {
-	int i;
-	if (size < 1) {
-		return 0;
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr) {
+	if (!buf || size < 1) {
+		return false;
 	}
-	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
-		*len = 1; // XXX: TODO: Measure wide string length
-		return 2; // is wide
+
+	RzUtilStrScanOptions opt = {
+		.buf_size = size,
+		.max_uni_blocks = 4,
+		.min_str_length = 4,
+		.prefer_big_endian = false,
+		.check_ascii_freq = false,
+	};
+
+	if (rz_scan_strings_single_raw(buf, size, &opt, RZ_STRING_ENC_GUESS, dstr) && (*dstr)->addr) {
+		rz_detected_string_free(*dstr);
+		*dstr = NULL;
 	}
-	for (i = 0; i < size; i++) {
-		if (!buf[i] && i > MINLEN) {
-			*len = i;
-			return 1;
-		}
-		if (buf[i] == 10 || buf[i] == 13 || buf[i] == 9) {
-			continue;
-		}
-		if (buf[i] < 32 || buf[i] > 127) {
-			// not ascii text
-			return 0;
-		}
-		if (!IS_PRINTABLE(buf[i])) {
-			*len = i;
-			return 0;
-		}
-	}
-	*len = i;
-	return 1;
+	return *dstr;
 }
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
@@ -2006,32 +1996,18 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		}
 	}
 	{
-		ut8 buf[128], widebuf[256];
+		ut8 buf[128];
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
-		int len, r;
 		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			buf[sizeof(buf) - 1] = 0;
-			switch (is_string(buf, sizeof(buf), &len)) {
-			case 1:
+			RzDetectedString *dstr = NULL;
+			if (get_string(buf, sizeof(buf), &dstr)) {
 				if (pj) {
-					pj_ks(pj, "string", (const char *)buf);
+					pj_ks(pj, "string", dstr->string);
 				} else {
-					rz_strbuf_appendf(s, "%s%s%s ", c, buf, cend);
+					rz_strbuf_appendf(s, "%s%s%s ", c, dstr->string, cend);
 				}
-				break;
-			case 2:
-				r = rz_utf8_encode_str((const RzRune *)buf, widebuf, sizeof(widebuf) - 1);
-				if (r == -1) {
-					RZ_LOG_ERROR("core: something was wrong with refs\n");
-				} else {
-					if (pj) {
-						pj_ks(pj, "string", (const char *)widebuf);
-					} else {
-						rz_strbuf_appendf(s, "%s%s%s ", c, widebuf, cend);
-					}
-				}
-				break;
+				rz_detected_string_free(dstr);
 			}
 		}
 	}

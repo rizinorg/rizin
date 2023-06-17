@@ -68,18 +68,17 @@ typedef struct rz_analysis_range_t {
 	RBNode rb;
 } RzAnalysisRange;
 
-enum {
-	RZ_ANALYSIS_DATA_TYPE_NULL = 0,
-	RZ_ANALYSIS_DATA_TYPE_UNKNOWN = 1,
-	RZ_ANALYSIS_DATA_TYPE_STRING = 2,
-	RZ_ANALYSIS_DATA_TYPE_WIDE_STRING = 3,
-	RZ_ANALYSIS_DATA_TYPE_POINTER = 4,
-	RZ_ANALYSIS_DATA_TYPE_NUMBER = 5,
-	RZ_ANALYSIS_DATA_TYPE_INVALID = 6,
-	RZ_ANALYSIS_DATA_TYPE_HEADER = 7,
-	RZ_ANALYSIS_DATA_TYPE_SEQUENCE = 8,
-	RZ_ANALYSIS_DATA_TYPE_PATTERN = 9,
-};
+typedef enum {
+	RZ_ANALYSIS_DATA_INFO_TYPE_NULL = 0,
+	RZ_ANALYSIS_DATA_INFO_TYPE_UNKNOWN = 1,
+	RZ_ANALYSIS_DATA_INFO_TYPE_STRING = 2,
+	RZ_ANALYSIS_DATA_INFO_TYPE_POINTER = 3,
+	RZ_ANALYSIS_DATA_INFO_TYPE_NUMBER = 4,
+	RZ_ANALYSIS_DATA_INFO_TYPE_INVALID = 5,
+	RZ_ANALYSIS_DATA_INFO_TYPE_HEADER = 6,
+	RZ_ANALYSIS_DATA_INFO_TYPE_SEQUENCE = 7,
+	RZ_ANALYSIS_DATA_INFO_TYPE_PATTERN = 8,
+} RzAnalysisDataInfoType;
 
 // used from core/analysis.c
 #define RZ_ANALYSIS_ADDR_TYPE_EXEC     1
@@ -1858,8 +1857,7 @@ typedef struct rz_analysis_data_t {
 
 RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int size, int wordsize);
 RZ_API const char *rz_analysis_data_kind(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int len);
-RZ_API RzAnalysisData *rz_analysis_data_new_string(ut64 addr, const char *p, int size, int wide);
-RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len);
+RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, RzAnalysisDataInfoType type, ut64 n, const ut8 *buf, int len);
 RZ_API void rz_analysis_data_free(RzAnalysisData *d);
 #include <rz_cons.h>
 RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalette *pal);
