@@ -3,15 +3,15 @@
 
 #include <rz_types.h>
 
-#define RZ_HASH_MD2_DIGEST_SIZE 0x10
-#define RZ_HASH_MD2_BLOCK_LENGTH 0x10
+#define RZ_HASH_MD2_DIGEST_SIZE     0x10
+#define RZ_HASH_MD2_BLOCK_LENGTH    0x10
 #define RZ_HASH_MD2_CHECKSUM_LENGTH 0x10
-#define RZ_HASH_MD2_STATE_LENGTH 0x10
+#define RZ_HASH_MD2_STATE_LENGTH    0x10
 
 typedef struct {
-    ut8 state[RZ_HASH_MD2_STATE_LENGTH];
+	ut8 state[RZ_HASH_MD2_STATE_LENGTH];
 	ut8 block[RZ_HASH_MD2_BLOCK_LENGTH];
-    ut8 checksum[RZ_HASH_MD2_CHECKSUM_LENGTH];
+	ut8 checksum[RZ_HASH_MD2_CHECKSUM_LENGTH];
 	ut64 index;
 } RzMD2;
 
