@@ -98,7 +98,7 @@ static RzBinInfo *info(RzBinFile *arch) {
 		return NULL;
 	}
 
-	bool error;
+	bool error = false;
 	bool is_before_py_36 = magic_int_within(ctx->version.magic, 0x9494, 0x0d16, &error);
 	if (error) {
 		return NULL;
