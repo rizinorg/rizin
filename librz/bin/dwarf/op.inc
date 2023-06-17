@@ -821,6 +821,7 @@ typedef struct {
 typedef struct {
 	enum {
 		Complete,
+		Incomplete,
 	} kind;
 	union {
 		StackValue stack_value;
@@ -1179,7 +1180,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		};
 		out->kind = Complete;
 		out->location = location;
-		break;
+		return true;
 	}
 	case OPERATION_KIND_STACK_VALUE: {
 		StackValue *v = NULL;
@@ -1190,7 +1191,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		};
 		out->kind = Complete;
 		out->location = location;
-		break;
+		return true;
 	}
 	case OPERATION_KIND_IMPLICIT_POINTER: {
 		Location location = {
@@ -1202,7 +1203,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		};
 		out->kind = Complete;
 		out->location = location;
-		break;
+		return true;
 	}
 	case OPERATION_KIND_ENTRY_VALUE: break; // TODO: entry value
 	case OPERATION_KIND_PARAMETER_REF: break; // TODO: parameter ref
@@ -1216,6 +1217,8 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 	case OPERATION_KIND_WASM_GLOBAL:
 	case OPERATION_KIND_WASM_STACK:
 		RZ_LOG_ERROR("DWARF WASM operation not supported\n");
-		break;
+		return false;
 	}
+	out->kind = Incomplete;
+	return true;
 }
