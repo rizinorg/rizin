@@ -1749,8 +1749,7 @@ static void update_sdb(RzCore *core) {
 	}
 }
 
-#define MINLEN 1
-static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr) {
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding) {
 	if (!buf || size < 1) {
 		return false;
 	}
@@ -1763,7 +1762,7 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr) {
 		.check_ascii_freq = false,
 	};
 
-	if (rz_scan_strings_single_raw(buf, size, &opt, RZ_STRING_ENC_GUESS, dstr) && (*dstr)->addr) {
+	if (rz_scan_strings_single_raw(buf, size, &opt, encoding, dstr) && (*dstr)->addr) {
 		rz_detected_string_free(*dstr);
 		*dstr = NULL;
 	}
@@ -1997,11 +1996,12 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	}
 	{
 		ut8 buf[128];
+		RzStrEnc encoding = rz_str_enc_string_as_type(core->bin->strenc);
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
 		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
 			RzDetectedString *dstr = NULL;
-			if (get_string(buf, sizeof(buf), &dstr)) {
+			if (get_string(buf, sizeof(buf), &dstr, encoding)) {
 				if (pj) {
 					pj_ks(pj, "string", dstr->string);
 				} else {

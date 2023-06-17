@@ -2458,28 +2458,30 @@ RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, 
 
 	for (int i = 0, j = 0; j < count; j++) {
 		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize);
-		str = rz_analysis_data_to_string(d, pal);
-		rz_cons_println(str);
-
-		if (d) {
-			switch (d->type) {
-			case RZ_ANALYSIS_DATA_INFO_TYPE_POINTER:
-				rz_cons_printf("`- ");
-				if (depth > 0) {
-					ut64 pointer = rz_mem_get_num(buf + i, word);
-					rz_core_analysis_data(core, pointer, 1, depth - 1, wordsize);
-				}
-				i += word;
-				break;
-			case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
-				i += d->len;
-				break;
-			default:
-				i += (d->len > 3) ? d->len : word;
-				break;
-			}
-		} else {
+		if (!d) {
 			i += word;
+			continue;
+		}
+
+		str = rz_analysis_data_to_string(d, pal);
+		if (RZ_STR_ISNOTEMPTY(str)) {
+			rz_cons_println(str);
+		}
+		switch (d->type) {
+		case RZ_ANALYSIS_DATA_INFO_TYPE_POINTER:
+			rz_cons_printf("`- ");
+			if (depth > 0) {
+				ut64 pointer = rz_mem_get_num(buf + i, word);
+				rz_core_analysis_data(core, pointer, 1, depth - 1, wordsize);
+			}
+			i += word;
+			break;
+		case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
+			i += d->len;
+			break;
+		default:
+			i += (d->len > 3) ? d->len : word;
+			break;
 		}
 		free(str);
 		rz_analysis_data_free(d);

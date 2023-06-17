@@ -4,8 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 
-#define MINLEN 1
-static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr) {
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding) {
 	if (!buf || size < 1) {
 		return false;
 	}
@@ -18,7 +17,7 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr) {
 		.check_ascii_freq = false,
 	};
 
-	if (rz_scan_strings_single_raw(buf, size, &opt, RZ_STRING_ENC_GUESS, dstr) && (*dstr)->addr) {
+	if (rz_scan_strings_single_raw(buf, size, &opt, encoding, dstr) && (*dstr)->addr) {
 		rz_detected_string_free(*dstr);
 		*dstr = NULL;
 	}
@@ -252,12 +251,26 @@ RZ_API void rz_analysis_data_free(RzAnalysisData *d) {
 	}
 }
 
-RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int size, int wordsize) {
+/**
+ * @brief      { function_description }
+ *
+ * @param      analysis  The analysis
+ * @param[in]  addr      The address
+ * @param[in]  buf       The buffer
+ * @param[in]  size      The size
+ * @param[in]  wordsize  The wordsize
+ *
+ * @return     { description_of_the_return_value }
+ */
+RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, int size, int wordsize) {
+	rz_return_val_if_fail(analysis && buf, NULL);
+
 	ut64 dst = 0;
 	RzDetectedString *dstr = NULL;
+	RzStrEnc encoding = analysis->binb.bin ? rz_str_enc_string_as_type(analysis->binb.bin->strenc) : RZ_STRING_ENC_GUESS;
 	int n = 0;
 	int bits = analysis->bits;
-	int word = wordsize ? wordsize : RZ_MIN(8, bits / 8);
+	int word = wordsize > 0 ? wordsize : RZ_MIN(8, bits / 8);
 
 	if (size < 4) {
 		return NULL;
@@ -303,7 +316,7 @@ RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const u
 			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_POINTER, dst, buf, word);
 		}
 	}
-	if (get_string(buf, size, &dstr)) {
+	if (get_string(buf, size, &dstr, encoding)) {
 		RzAnalysisData *ad = rz_analysis_data_new_string(addr, buf, dstr);
 		rz_detected_string_free(dstr);
 		return ad;
@@ -350,11 +363,7 @@ RZ_API const char *rz_analysis_data_kind(RzAnalysis *a, ut64 addr, const ut8 *bu
 			i += word;
 			break;
 		case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
-			if (data->len > 0) {
-				i += data->len;
-			} else {
-				i += word;
-			}
+			i += data->len;
 			str++;
 			break;
 		default:

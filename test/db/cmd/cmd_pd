@@ -1042,7 +1042,7 @@ EXPECT=<<EOF
             0x004016ac      mov   edi, 0x40224a                        ; 'J"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m \xa2\u20ac\U00010348 \e[0m\n"
             0x004016b6      mov   edi, str.e_e_b                       ; "_%e%e%b% "
             0x004016b6      mov   edi, str.e_e_b                       ; u"\u255f\u2565\u2565\u2562 is a wall with no embedded zeros\n"
-            0x004016c0      mov   edi, 0x40230c                        ; " %B%"
+            0x004016c0      mov   edi, 0x40230c
             0x004016c0      mov   edi, 0x40230c                        ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
             0x004016ca      mov   edi, 0x40235a                        ; 'Z#@' ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
             0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u2565\u256b\u2565\u"
