@@ -173,6 +173,7 @@ FILE==
 CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
+____hm md2            LGPL3      swedenspy
 ____hm md4            LGPL3      deroad
 ____hm md5            LGPL2      Alan DeKok
 ____hm sha1           LGPL3      deroad
@@ -568,6 +569,7 @@ NAME=rz-hash -c with all hash algorithms
 FILE==
 CMDS=!rz-hash -a all -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
+string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one

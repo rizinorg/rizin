@@ -129,6 +129,4 @@ static void md2_digest_block(RzMD2 *context) {
 	for (ut64 i = 0; i < checksum_size; i++) {
 		t = checksum[i] ^= PI_SUBST[block[i] ^ t];
 	}
-
-	memset(buf, 0, sizeof(buf));
 }
