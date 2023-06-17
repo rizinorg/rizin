@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 swedenspy <swedenspy@yahoo.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 

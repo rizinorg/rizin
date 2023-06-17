@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 swedenspy <swedenspy@yahoo.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_HASH_MD2_H
 #define RZ_HASH_MD2_H
 

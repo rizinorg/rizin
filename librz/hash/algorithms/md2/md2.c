@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 swedenspy <swedenspy@yahoo.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "md2.h"
 #include <rz_util.h>
 #include <rz_endian.h>
