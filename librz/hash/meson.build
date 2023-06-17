@@ -2,6 +2,7 @@ hash_plugins = {
   'conf_name': 'plugins_hash',
   'base_cname': 'rz_hash_plugin_',
   'list': [
+    'md2',
     'md4',
     'md5',
     'sha1',
@@ -82,6 +83,7 @@ rz_hash_sources = [
   'p/algo_adler32.c',
   'p/algo_fletcher.c',
   'p/algo_blake3.c',
+  'p/algo_md2.c',
   'p/algo_md4.c',
   'p/algo_md5.c',
   'p/algo_mod255.c',
@@ -112,6 +114,7 @@ if sys_openssl.found()
   dependencies += [sys_openssl]
 else
   rz_hash_sources += [
+    'algorithms/md2/md2.c',
     'algorithms/md4/md4.c',
     'algorithms/md5/md5.c',
     'algorithms/sha1/sha1.c',
