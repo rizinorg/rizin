@@ -342,7 +342,7 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
  * \return     The data kind.
  */
 RZ_API RzAnalysisDataKind rz_analysis_data_kind(RZ_NONNULL RzAnalysis *a, ut64 addr, RZ_NONNULL const ut8 *buf, size_t len) {
-	rz_return_val_if_fail(a && buf, RZ_ANALYSIS_DATA_INFO_TYPE_INVALID);
+	rz_return_val_if_fail(a && buf, RZ_ANALYSIS_DATA_KIND_UNKNOWN);
 
 	size_t inv = 0;
 	size_t unk = 0;
