@@ -74,8 +74,9 @@ typedef struct {
 		float f32;
 		double f64;
 	};
-} DwExprValue;
+} Value;
 
+void value_type(Value *ptr);
 // Assuming constants are defined elsewhere
 // and mask_bit_size is defined elsewhere
 uint32_t bit_size(ValueType type, uint64_t addr_mask) {
@@ -182,4 +183,307 @@ Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry) {
 	} else {
 		return none(); // Represents Option::None in Rust
 	}
+}
+
+Value *Value_parse(ValueType value_type, RzBuffer *buffer, bool big_endian) {
+	Value *value = (Value *)malloc(sizeof(Value));
+	if (!value) {
+		// handle allocation error
+		return NULL;
+	}
+
+	switch (value_type) {
+	case I8:
+		U8_OR_RET_NULL(value->i8);
+		value->i8 = (st8)value->i8;
+		break;
+	case U8:
+		U8_OR_RET_NULL(value->u8);
+		break;
+	case I16:
+		U16_OR_RET_NULL(value->u16);
+		value->i16 = (st16)value->u16;
+		break;
+	case U16:
+		U16_OR_RET_NULL(value->u16);
+		break;
+	case I32:
+		U32_OR_RET_NULL(value->u32);
+		value->i32 = (st32)value->u32;
+		break;
+	case U32:
+		U8_OR_RET_NULL(value->u32);
+		break;
+	case I64:
+		U8_OR_RET_NULL(value->u64);
+		value->i64 = (st64)value->u64;
+		break;
+	case U64:
+		U8_OR_RET_NULL(value->u64);
+		break;
+	case F32:
+		U8_OR_RET_NULL(value->u32);
+		value->f32 = (float)value->u32;
+		break;
+	case F64:
+		U8_OR_RET_NULL(value->u64);
+		value->f64 = (float)value->u64;
+		break;
+	default:
+		free(value);
+		return NULL;
+	}
+
+	return value;
+}
+
+ValueType Value_type(Value *ptr) {
+	if (ptr == NULL) {
+		return -1;
+	}
+	return ptr->type;
+}
+
+bool to_u64(Value value, uint64_t addr_mask, uint64_t *result) {
+	switch (Value_type(&value)) {
+	case ValueType_GENERIC:
+		*result = value.generic & addr_mask;
+		break;
+	case I8:
+		*result = (uint64_t)value.i8;
+		break;
+	case U8:
+		*result = value.u8;
+		break;
+	case I16:
+		*result = (uint64_t)value.i16;
+		break;
+	case U16:
+		*result = value.u16;
+		break;
+	case I32:
+		*result = (uint64_t)value.i32;
+		break;
+	case U32:
+		*result = value.u32;
+		break;
+	case I64:
+		*result = (uint64_t)value.i64;
+		break;
+	case U64:
+		*result = value.u64;
+		break;
+	default:
+		// Handle integral type required error
+		return false;
+	}
+	return true;
+}
+
+bool from_u64(ValueType value_type, uint64_t value, Value *result) {
+	switch (value_type) {
+	case ValueType_GENERIC:
+		result->generic = value;
+		break;
+	case I8:
+		result->i8 = (int8_t)value;
+		break;
+	case U8:
+		result->u8 = (uint8_t)value;
+		break;
+	case I16:
+		result->i16 = (int16_t)value;
+		break;
+	case U16:
+		result->u16 = (uint16_t)value;
+		break;
+	case I32:
+		result->i32 = (int32_t)value;
+		break;
+	case U32:
+		result->u32 = (uint32_t)value;
+		break;
+	case I64:
+		result->i64 = (int64_t)value;
+		break;
+	case U64:
+		result->u64 = value;
+		break;
+	case F32:
+		result->f32 = (float)value;
+		break;
+	case F64:
+		result->f64 = (double)value;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool from_f32(ValueType value_type, float value, Value *result) {
+	switch (value_type) {
+	case ValueType_GENERIC:
+		result->generic = (uint64_t)value;
+		break;
+	case I8:
+		result->i8 = (int8_t)value;
+		break;
+	case U8:
+		result->u8 = (uint8_t)value;
+		break;
+	case I16:
+		result->i16 = (int16_t)value;
+		break;
+	case U16:
+		result->u16 = (uint16_t)value;
+		break;
+	case I32:
+		result->i32 = (int32_t)value;
+		break;
+	case U32:
+		result->u32 = (uint32_t)value;
+		break;
+	case I64:
+		result->i64 = (int64_t)value;
+		break;
+	case U64:
+		result->u64 = (uint64_t)value;
+		break;
+	case F32:
+		result->f32 = value;
+		break;
+	case F64:
+		result->f64 = (double)value;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool from_f64(ValueType value_type, double value, Value *result) {
+	switch (value_type) {
+	case ValueType_GENERIC:
+		result->generic = (uint64_t)value;
+		break;
+	case I8:
+		result->i8 = (int8_t)value;
+		break;
+	case U8:
+		result->u8 = (uint8_t)value;
+		break;
+	case I16:
+		result->i16 = (int16_t)value;
+		break;
+	case U16:
+		result->u16 = (uint16_t)value;
+		break;
+	case I32:
+		result->i32 = (int32_t)value;
+		break;
+	case U32:
+		result->u32 = (uint32_t)value;
+		break;
+	case I64:
+		result->i64 = (int64_t)value;
+		break;
+	case U64:
+		result->u64 = (uint64_t)value;
+		break;
+	case F32:
+		result->f32 = (float)value;
+		break;
+	case F64:
+		result->f64 = value;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool convert(Value *self, ValueType value_type, uint64_t addr_mask, Value *result) {
+	switch (value_type) {
+	case F32:
+		return from_f32(value_type, self->f32, result);
+	case F64:
+		return from_f64(value_type, self->f64, result);
+	default:
+		return from_u64(value_type, self->u64 & addr_mask, result);
+	}
+}
+
+bool reinterpret(Value *self, ValueType value_type, uint64_t addr_mask, Value *result) {
+	uint64_t bits;
+
+	// Assuming that you have functions `value_type_bit_size` and `sign_extend` implemented elsewhere
+
+	if (bit_size(self->type, addr_mask) != bit_size(value_type, addr_mask)) {
+		return false;
+	}
+
+	// You need to define logic for copying bits from one type to another
+	// Similar to how it is done in Rust (e.g. u64::from(f32::to_bits(value)))
+
+	// After setting `bits`, create the value
+	return from_u64(value_type, bits, result);
+}
+
+bool abs_value(Value *self, uint64_t addr_mask, Value *result) {
+	switch (self->type) {
+	case ValueType_GENERIC:
+		result->generic = (uint64_t)llabs(sign_extend(self->generic, addr_mask));
+		break;
+	case I8:
+		result->i8 = abs(self->i8);
+		break;
+	case I16:
+		result->i16 = abs(self->i16);
+		break;
+	case I32:
+		result->i32 = abs(self->i32);
+		break;
+	case I64:
+		result->i64 = llabs(self->i64);
+		break;
+	case F32:
+		result->f32 = fabsf(self->f32);
+		break;
+	case F64:
+		result->f64 = fabs(self->f64);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool neg_value(Value *self, uint64_t addr_mask, Value *result) {
+	switch (self->type) {
+	case ValueType_GENERIC:
+		result->generic = (uint64_t)(-sign_extend(self->generic, addr_mask));
+		break;
+	case I8:
+		result->i8 = -self->i8;
+		break;
+	case I16:
+		result->i16 = -self->i16;
+		break;
+	case I32:
+		result->i32 = -self->i32;
+		break;
+	case I64:
+		result->i64 = -self->i64;
+		break;
+	case F32:
+		result->f32 = -self->f32;
+		break;
+	case F64:
+		result->f64 = -self->f64;
+		break;
+	default:
+		return false;
+	}
+	return true;
 }
