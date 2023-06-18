@@ -105,9 +105,6 @@ void rz_md2_fini(ut8 *hash, RzMD2 *context) {
 }
 
 static void md2_digest_block(RzMD2 *context) {
-	static int n_called = 0;
-	n_called += 1;
-
 	const ut8 *block = context->block;
 	ut8 *checksum = context->checksum;
 	ut8 *state = context->state;
