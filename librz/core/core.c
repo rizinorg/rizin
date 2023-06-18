@@ -1749,7 +1749,7 @@ static void update_sdb(RzCore *core) {
 	}
 }
 
-static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding) {
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding, bool big_endian) {
 	if (!buf || size < 1) {
 		return false;
 	}
@@ -1758,7 +1758,7 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 		.buf_size = size,
 		.max_uni_blocks = 4,
 		.min_str_length = 4,
-		.prefer_big_endian = false,
+		.prefer_big_endian = big_endian,
 		.check_ascii_freq = false,
 	};
 
@@ -1819,6 +1819,7 @@ static char *getvalue(ut64 value, int bits) {
 */
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth) {
 	const int bits = core->rasm->bits;
+	const bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	rz_return_val_if_fail(core, NULL);
 	RzStrBuf *s = rz_strbuf_new(NULL);
 	if (pj) {
@@ -1985,7 +1986,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 			} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 				ut8 buf[8];
 				if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-					ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
+					ut64 n = rz_read_ble(buf, big_endian, bits);
 					rz_strbuf_appendf(s, "0x%" PFMT64x " ", n);
 				}
 			}
@@ -1999,23 +2000,22 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		RzStrEnc encoding = rz_str_enc_string_as_type(core->bin->strenc);
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
-		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			RzDetectedString *dstr = NULL;
-			if (get_string(buf, sizeof(buf), &dstr, encoding)) {
-				if (pj) {
-					pj_ks(pj, "string", dstr->string);
-				} else {
-					rz_strbuf_appendf(s, "%s%s%s ", c, dstr->string, cend);
-				}
-				rz_detected_string_free(dstr);
+		RzDetectedString *dstr = NULL;
+		if (rz_io_read_at(core->io, value, buf, sizeof(buf)) &&
+			get_string(buf, sizeof(buf), &dstr, encoding, big_endian)) {
+			if (pj) {
+				pj_ks(pj, "string", dstr->string);
+			} else {
+				rz_strbuf_appendf(s, "%s%s%s ", c, dstr->string, cend);
 			}
+			rz_detected_string_free(dstr);
 		}
 	}
 	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
 		ut8 buf[8];
 		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
-			ut64 n = rz_read_ble(buf, core->print->big_endian, bits);
+			ut64 n = rz_read_ble(buf, big_endian, bits);
 			if (n != value) {
 				if (pj) {
 					pj_k(pj, "ref");

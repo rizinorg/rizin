@@ -4,7 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 
-static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding) {
+static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding, bool big_endian) {
 	if (!buf || size < 1) {
 		return false;
 	}
@@ -13,7 +13,7 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 		.buf_size = size,
 		.max_uni_blocks = 4,
 		.min_str_length = 4,
-		.prefer_big_endian = false,
+		.prefer_big_endian = big_endian,
 		.check_ascii_freq = false,
 	};
 
@@ -268,6 +268,7 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 
 	ut64 dst = 0;
 	RzDetectedString *dstr = NULL;
+	bool big_endian = analysis->big_endian;
 	RzStrEnc encoding = analysis->binb.bin ? rz_str_enc_string_as_type(analysis->binb.bin->strenc) : RZ_STRING_ENC_GUESS;
 	int n = 0;
 	int bits = analysis->bits;
@@ -316,7 +317,7 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 			return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_POINTER, dst, buf, word);
 		}
 	}
-	if (get_string(buf, size, &dstr, encoding)) {
+	if (get_string(buf, size, &dstr, encoding, big_endian)) {
 		RzAnalysisData *ad = rz_analysis_data_new_string(addr, buf, dstr);
 		rz_detected_string_free(dstr);
 		return ad;
