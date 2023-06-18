@@ -14,6 +14,7 @@
 const static int block_size = RZ_HASH_MD2_BLOCK_LENGTH;
 const static int checksum_size = RZ_HASH_MD2_CHECKSUM_LENGTH;
 const static int state_size = RZ_HASH_MD2_STATE_LENGTH;
+const static int digest_num_rounds = RZ_HASH_MD2_NUM_ROUNDS;
 
 static void md2_digest_block(RzMD2 *context);
 
@@ -69,8 +70,8 @@ bool rz_md2_update(RzMD2 *context, const ut8 *data, ut64 length) {
 	rz_return_val_if_fail(context && data, false);
 
 	// fill up and digest the current block-buffer if possible
-	ut8 data_index = 0;
-	const int remains_in_buffer = RZ_HASH_MD2_BLOCK_LENGTH - context->index;
+	ut64 data_index = 0;
+	int remains_in_buffer = block_size - context->index;
 	if (length >= remains_in_buffer) {
 		memcpy(&context->block[context->index], data, remains_in_buffer);
 		data_index = remains_in_buffer;
@@ -80,13 +81,13 @@ bool rz_md2_update(RzMD2 *context, const ut8 *data, ut64 length) {
 
 		// digest everything before last 16-byte block
 		for (; data_index + 16 < length; data_index += 16) {
-			memcpy(context->block, &data[data_index], RZ_HASH_MD2_BLOCK_LENGTH);
+			memcpy(context->block, &data[data_index], block_size);
 			md2_digest_block(context);
 		}
 	}
 
 	// buffer the last block
-	const int remains_in_data = length - data_index;
+	int remains_in_data = length - data_index;
 	memcpy(&context->block[context->index], &data[data_index], remains_in_data);
 	context->index += remains_in_data;
 
@@ -94,6 +95,8 @@ bool rz_md2_update(RzMD2 *context, const ut8 *data, ut64 length) {
 }
 
 void rz_md2_fini(ut8 *hash, RzMD2 *context) {
+	rz_return_if_fail(hash && context);
+
 	ut64 n_pad = block_size - context->index;
 	rz_md2_update(context, PADDING[n_pad], n_pad);
 	rz_md2_update(context, context->checksum, checksum_size);
@@ -102,6 +105,9 @@ void rz_md2_fini(ut8 *hash, RzMD2 *context) {
 }
 
 static void md2_digest_block(RzMD2 *context) {
+	static int n_called = 0;
+	n_called += 1;
+
 	const ut8 *block = context->block;
 	ut8 *checksum = context->checksum;
 	ut8 *state = context->state;
@@ -116,7 +122,7 @@ static void md2_digest_block(RzMD2 *context) {
 	}
 
 	ut64 t = 0;
-	for (ut64 j = 0; j < 18; ++j) {
+	for (ut64 j = 0; j < digest_num_rounds; ++j) {
 		for (ut64 k = 0; k < sizeof(buf); ++k) {
 			t = buf[k] ^= PI_SUBST[t];
 		}

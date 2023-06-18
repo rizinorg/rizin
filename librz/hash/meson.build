@@ -106,6 +106,7 @@ rz_hash_sources = [
   'algorithms/xor/xor.c',
   'algorithms/fletcher/fletcher.c',
   'algorithms/ssdeep/ssdeep.c',
+  'algorithms/md2/md2.c',
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]
@@ -114,7 +115,6 @@ if sys_openssl.found()
   dependencies += [sys_openssl]
 else
   rz_hash_sources += [
-    'algorithms/md2/md2.c',
     'algorithms/md4/md4.c',
     'algorithms/md5/md5.c',
     'algorithms/sha1/sha1.c',

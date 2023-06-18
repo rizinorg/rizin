@@ -10,6 +10,7 @@
 #define RZ_HASH_MD2_BLOCK_LENGTH    0x10
 #define RZ_HASH_MD2_CHECKSUM_LENGTH 0x10
 #define RZ_HASH_MD2_STATE_LENGTH    0x10
+#define RZ_HASH_MD2_NUM_ROUNDS 18
 
 typedef struct {
 	ut8 state[RZ_HASH_MD2_STATE_LENGTH];
