@@ -241,28 +241,29 @@ RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, RzAnalysisDataInfoType ty
 	return ad;
 }
 
-RZ_API void rz_analysis_data_free(RzAnalysisData *d) {
-	if (d) {
-		if (d->buf != (ut8 *)&(d->sbuf)) {
-			free(d->buf);
-		}
-		free(d->str);
-		free(d);
+RZ_API void rz_analysis_data_free(RZ_NULLABLE RzAnalysisData *d) {
+	if (!d) {
+		return;
 	}
+	if (d->buf != (ut8 *)&(d->sbuf)) {
+		free(d->buf);
+	}
+	free(d->str);
+	free(d);
 }
 
 /**
- * @brief      { function_description }
+ * \brief      Tries to detect the type of data in a give buffer.
  *
- * @param      analysis  The analysis
- * @param[in]  addr      The address
- * @param[in]  buf       The buffer
- * @param[in]  size      The size
- * @param[in]  wordsize  The wordsize
+ * \param      analysis  The RzAnalysis structure to use
+ * \param[in]  addr      The address at which the buffer is located
+ * \param[in]  buf       The buffer to analyze
+ * \param[in]  size      The size of the buffer (requires to be at least 4 bytes)
+ * \param[in]  wordsize  The word size (when 0 it will be set to arch bits/8)
  *
- * @return     { description_of_the_return_value }
+ * \return     On success a valid pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, int size, int wordsize) {
+RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, size_t size, int wordsize) {
 	rz_return_val_if_fail(analysis && buf, NULL);
 
 	ut64 dst = 0;
@@ -274,17 +275,16 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 
 	if (size < 4) {
 		return NULL;
-	}
-	if (size >= word && is_invalid(buf, word)) {
+	} else if (size >= word && is_invalid(buf, word)) {
 		return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_INVALID, -1, buf, word);
 	}
 	{
-		int len = RZ_MIN(size, 64);
+		size_t len = RZ_MIN(size, 64);
 		int is_pattern = 0;
 		int is_sequence = 0;
 		char ch = buf[0];
 		char ch2 = ch + 1;
-		for (int i = 1; i < len; i++) {
+		for (size_t i = 1; i < len; i++) {
 			if (ch2 == buf[i]) {
 				ch2++;
 				is_sequence++;

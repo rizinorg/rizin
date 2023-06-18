@@ -1855,10 +1855,10 @@ typedef struct rz_analysis_data_t {
 	ut8 sbuf[8];
 } RzAnalysisData;
 
-RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int size, int wordsize);
+RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, size_t size, int wordsize);
 RZ_API const char *rz_analysis_data_kind(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int len);
 RZ_API RzAnalysisData *rz_analysis_data_new(ut64 addr, RzAnalysisDataInfoType type, ut64 n, const ut8 *buf, int len);
-RZ_API void rz_analysis_data_free(RzAnalysisData *d);
+RZ_API void rz_analysis_data_free(RZ_NULLABLE RzAnalysisData *d);
 #include <rz_cons.h>
 RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalette *pal);
 

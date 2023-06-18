@@ -8,6 +8,7 @@ pd 4
 EOF
 EXPECT=<<EOF
 0x00000434  cc0b  number 3020 0xbcc
+0x0000043a  0000  (null)
             ; STRING XREFS from entry0 @ 0x40c, 0x410
             ;-- data.00000434:
             0x00000434      lsrs  r4, r1, 0xf

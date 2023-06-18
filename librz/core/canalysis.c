@@ -2442,7 +2442,18 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	return true;
 }
 
-RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize) {
+/**
+ * \brief      Tries to detect the type of data at a given address and prints its contents.
+ *
+ * \param  core      The RzCore structure to use
+ * \param  addr      The address to analyze
+ * \param  count     The number of bytes to analyze
+ * \param  depth     The max depth for analyzing pointers
+ * \param  wordsize  The word size (when 0, the word size will be set to arch bits/8)
+ */
+RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count, ut32 depth, ut32 wordsize) {
+	rz_return_if_fail(core);
+
 	RzAnalysisData *d = NULL;
 	ut8 *buf = core->block;
 	ut32 old_len = core->blocksize;
@@ -2456,7 +2467,7 @@ RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, 
 	}
 	rz_core_seek(core, addr, true);
 
-	for (int i = 0, j = 0; j < count; j++) {
+	for (ut32 i = 0, j = 0; j < count; j++) {
 		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize);
 		if (!d) {
 			i += word;
@@ -2491,7 +2502,6 @@ RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, 
 		rz_core_block_size(core, old_len);
 	}
 	rz_core_seek(core, old_offset, true);
-	return true;
 }
 
 struct block_flags_stat_t {
