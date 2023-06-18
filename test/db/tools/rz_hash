@@ -6,6 +6,14 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 entropy: 3.27819072
 EOF
 RUN
 
+NAME=rz-hash -a md2
+FILE==
+CMDS=!rz-hash -a md2 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 md2: 0ca15db3f70c318f4c73d06b5effacb6
+EOF
+RUN
+
 NAME=rz-hash -a md4
 FILE==
 CMDS=!rz-hash -a md4 bins/elf/analysis/hello-linux-x86_64
@@ -124,6 +132,22 @@ ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
 RUN
 
+NAME=rz-hash -a md2 -x "61646d696e"
+FILE==
+CMDS=!rz-hash -a md2 -x "61646d696e"
+EXPECT=<<EOF
+hexadecimal: 0x00000000-0x00000005 md2: 3e3e6b0e5c1c68644fc5ce3cf060211d
+EOF
+RUN
+
+NAME=rz-hash -a md2 -x "61646d696e" -s "admin"
+FILE==
+CMDS=!rz-hash -a md2 -x "61646d696e" -s "admin"
+EXPECT_ERR=<<EOF
+ERROR: rz-hash: error, invalid combination of arguments for '-s'
+EOF
+RUN
+
 NAME=rz-hash -a md4 -x "61646d696e"
 FILE==
 CMDS=!rz-hash -a md4 -x "61646d696e"
@@ -139,6 +163,7 @@ EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
 RUN
+
 
 NAME=rz-hash -a luhn -s "5105105105105100"
 FILE==
@@ -173,6 +198,7 @@ FILE==
 CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
+____hm md2            LGPL3      swedenspy
 ____hm md4            LGPL3      deroad
 ____hm md5            LGPL2      Alan DeKok
 ____hm sha1           LGPL3      deroad
@@ -411,6 +437,78 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-hash -qqa md2 -s hello1
+FILE==
+CMDS=!rz-hash -qqa md2 -s hello1
+EXPECT=<<EOF
+ceb5de925e079ebab8183bc2b83d8740
+EOF
+RUN
+
+NAME=rz-hash -qqa md2 -s hello\x31
+FILE==
+CMDS=!rz-hash -qqa md2 -s "hello\x31"
+EXPECT=<<EOF
+ceb5de925e079ebab8183bc2b83d8740
+EOF
+RUN
+
+NAME=rz-hash zero length hashes md2
+FILE==
+CMDS=!rz-hash -a md2 -s ""
+EXPECT=<<EOF
+hexadecimal: 0x00000000-0x00000000 md2: 8350e5a3e24c153df2275c9f80692773
+EOF
+RUN
+
+NAME=rz-hash zero-length-hexstring hashes md2
+FILE==
+CMDS=!rz-hash -a md2 -x ""
+EXPECT=<<EOF
+hexadecimal: 0x00000000-0x00000000 md2: 8350e5a3e24c153df2275c9f80692773
+EOF
+RUN
+
+NAME=rz-hash -c with correct expected hash
+FILE==
+CMDS=!rz-hash -a md2 -s "admin" -c 3e3e6b0e5c1c68644fc5ce3cf060211d
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 md2: computed hash matches the expected one
+EOF
+RUN
+
+NAME=rz-hash -c with incorrect expected hash
+FILE==
+CMDS=!rz-hash -a md2 -s "admin" -c 4e3e6b0e5c1c68644fc5ce3cf060211d
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
+EOF
+RUN
+
+NAME=rz-hash -c with correct expected hash and quiet
+FILE==
+CMDS=!rz-hash -qqa md2 -s "admin" -c 3e3e6b0e5c1c68644fc5ce3cf060211d
+EXPECT=true
+RUN
+
+NAME=rz-hash -c with missing nibble
+FILE==
+CMDS=!rz-hash -a md2 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
+EOF
+RUN
+
+NAME=rz-hash -c with incorrect md2 hash length
+FILE==
+CMDS=!rz-hash -a md2 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
+EOF
+RUN
+
 NAME=rz-hash -qqa md4 -s hello1
 FILE==
 CMDS=!rz-hash -qqa md4 -s hello1
@@ -568,6 +666,7 @@ NAME=rz-hash -c with all hash algorithms
 FILE==
 CMDS=!rz-hash -a all -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
+string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one

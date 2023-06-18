@@ -34,6 +34,7 @@ static hmac_data_t hmacs_to_test[] = {
 
 static hash_data_t hashes_to_test[] = {
 #define INDATA(x) .input = (ut8 *)(x), .input_size = (sizeof(x) - 1)
+	{ INDATA("password"), .algo = "md2", .expected = "f03881a88c6e39135f0ecc60efd609b9" },
 	{ INDATA("password"), .algo = "md4", .expected = "8a9d093f14f8701df17732b2bb182c74" },
 	{ INDATA("password"), .algo = "md5", .expected = "5f4dcc3b5aa765d61d8327deb882cf99" },
 	{ INDATA("password"), .algo = "sha1", .expected = "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },

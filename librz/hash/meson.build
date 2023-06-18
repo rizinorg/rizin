@@ -2,6 +2,7 @@ hash_plugins = {
   'conf_name': 'plugins_hash',
   'base_cname': 'rz_hash_plugin_',
   'list': [
+    'md2',
     'md4',
     'md5',
     'sha1',
@@ -82,6 +83,7 @@ rz_hash_sources = [
   'p/algo_adler32.c',
   'p/algo_fletcher.c',
   'p/algo_blake3.c',
+  'p/algo_md2.c',
   'p/algo_md4.c',
   'p/algo_md5.c',
   'p/algo_mod255.c',
@@ -104,6 +106,7 @@ rz_hash_sources = [
   'algorithms/xor/xor.c',
   'algorithms/fletcher/fletcher.c',
   'algorithms/ssdeep/ssdeep.c',
+  'algorithms/md2/md2.c',
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]
