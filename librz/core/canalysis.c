@@ -2442,66 +2442,66 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	return true;
 }
 
-RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize) {
-	RzAnalysisData *d;
-	ut64 dstaddr = 0LL;
+/**
+ * \brief      Tries to detect the type of data at a given address and prints its contents.
+ *
+ * \param  core      The RzCore structure to use
+ * \param  addr      The address to analyze
+ * \param  count     The number of bytes to analyze
+ * \param  depth     The max depth for analyzing pointers
+ * \param  wordsize  The word size (when 0, the word size will be set to arch bits/8)
+ */
+RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count, ut32 depth, ut32 wordsize) {
+	rz_return_if_fail(core);
+
+	RzAnalysisData *d = NULL;
 	ut8 *buf = core->block;
-	int len = core->blocksize;
+	ut32 old_len = core->blocksize;
+	ut64 old_offset = core->offset;
 	int word = wordsize ? wordsize : core->rasm->bits / 8;
-	char *str;
-	int i, j;
-
-	count = RZ_MIN(count, len);
-	buf = malloc(len + 1);
-	if (!buf) {
-		return false;
-	}
-	memset(buf, 0xff, len);
-	rz_io_read_at(core->io, addr, buf, len);
-	buf[len - 1] = 0;
-
+	char *str = NULL;
 	RzConsPrintablePalette *pal = rz_config_get_i(core->config, "scr.color") ? &rz_cons_singleton()->context->pal : NULL;
-	for (i = j = 0; j < count; j++) {
-		if (i >= len) {
-			rz_io_read_at(core->io, addr + i, buf, len);
-			buf[len] = 0;
-			addr += i;
-			i = 0;
+
+	if (count > old_len) {
+		rz_core_block_size(core, count);
+	}
+	rz_core_seek(core, addr, true);
+
+	for (ut32 i = 0, j = 0; j < count; j++) {
+		d = rz_analysis_data(core->analysis, addr + i, buf + i, count - i, wordsize);
+		if (!d) {
+			i += word;
 			continue;
 		}
-		/* rz_analysis_data requires null-terminated buffer according to coverity */
-		/* but it should not.. so this must be fixed in analysis/data.c instead of */
-		/* null terminating here */
-		d = rz_analysis_data(core->analysis, addr + i, buf + i, len - i, wordsize);
-		str = rz_analysis_data_to_string(d, pal);
-		rz_cons_println(str);
 
-		if (d) {
-			switch (d->type) {
-			case RZ_ANALYSIS_DATA_TYPE_POINTER:
-				rz_cons_printf("`- ");
-				dstaddr = rz_mem_get_num(buf + i, word);
-				if (depth > 0) {
-					rz_core_analysis_data(core, dstaddr, 1, depth - 1, wordsize);
-				}
-				i += word;
-				break;
-			case RZ_ANALYSIS_DATA_TYPE_STRING:
-				buf[len - 1] = 0;
-				i += strlen((const char *)buf + i) + 1;
-				break;
-			default:
-				i += (d->len > 3) ? d->len : word;
-				break;
+		str = rz_analysis_data_to_string(d, pal);
+		if (RZ_STR_ISNOTEMPTY(str)) {
+			rz_cons_println(str);
+		}
+		switch (d->type) {
+		case RZ_ANALYSIS_DATA_INFO_TYPE_POINTER:
+			rz_cons_printf("`- ");
+			if (depth > 0) {
+				ut64 pointer = rz_mem_get_num(buf + i, word);
+				rz_core_analysis_data(core, pointer, 1, depth - 1, wordsize);
 			}
-		} else {
 			i += word;
+			break;
+		case RZ_ANALYSIS_DATA_INFO_TYPE_STRING:
+			i += d->len;
+			break;
+		default:
+			i += (d->len > 3) ? d->len : word;
+			break;
 		}
 		free(str);
 		rz_analysis_data_free(d);
 	}
-	free(buf);
-	return true;
+
+	if (count > old_len) {
+		rz_core_block_size(core, old_len);
+	}
+	rz_core_seek(core, old_offset, true);
 }
 
 struct block_flags_stat_t {

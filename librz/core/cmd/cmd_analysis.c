@@ -6432,9 +6432,25 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc
 }
 
 RZ_IPI RzCmdStatus rz_analysis_data_kind_handler(RzCore *core, int argc, const char **argv) {
-	const char *kind = rz_analysis_data_kind(core->analysis,
+	RzAnalysisDataKind kind = rz_analysis_data_kind(core->analysis,
 		core->offset, core->block, core->blocksize);
-	rz_cons_println(kind);
+	switch (kind) {
+	case RZ_ANALYSIS_DATA_KIND_INVALID:
+		rz_cons_println("invalid");
+		break;
+	case RZ_ANALYSIS_DATA_KIND_CODE:
+		rz_cons_println("code");
+		break;
+	case RZ_ANALYSIS_DATA_KIND_STRING:
+		rz_cons_println("text");
+		break;
+	case RZ_ANALYSIS_DATA_KIND_DATA:
+		rz_cons_println("data");
+		break;
+	default:
+		rz_cons_println("unknown");
+		break;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

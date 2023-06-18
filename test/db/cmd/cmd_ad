@@ -8,10 +8,6 @@ pd 4
 EOF
 EXPECT=<<EOF
 0x00000434  cc0b  number 3020 0xbcc
-0x00000436  0100  pointer  0x00000001
-`- 0x00000001  454c  number 19525 0x4c45
-0x00000438  2000  pointer  0x00000020
-`- 0x00000020  481b  number 6984 0x1b48
 0x0000043a  0000  (null)
             ; STRING XREFS from entry0 @ 0x40c, 0x410
             ;-- data.00000434:
