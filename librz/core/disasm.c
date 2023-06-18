@@ -3869,7 +3869,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	if (refaddr == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p) > 0 || ((st64)refaddr) > 0) {
-		const char *kind;
+		RzAnalysisDataKind data_kind = RZ_ANALYSIS_DATA_KIND_UNKNOWN;
 		char *msg = calloc(sizeof(char), len);
 		if (((st64)p) > 0) {
 			f = rz_flag_get_i(core->flags, p);
@@ -3914,7 +3914,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 					ds_begin_nl_comment(ds);
 					ds_comment(ds, true, "; [0x%" PFMT64x ":%d]=%" PFMT64d, refaddr, refptr, n);
 				} else {
-					const char *kind, *flag = "";
+					const char *flag = "";
 					char *msg2 = NULL;
 					RzFlagItem *f2_ = rz_flag_get_i(core->flags, n);
 					if (f2_) {
@@ -3923,8 +3923,8 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 						msg2 = calloc(sizeof(char), len);
 						rz_io_read_at(core->io, n, (ut8 *)msg2, len - 1);
 						msg2[len - 1] = 0;
-						kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg2, len - 1);
-						if (kind && !strcmp(kind, "text")) {
+						data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg2, len - 1);
+						if (data_kind == RZ_ANALYSIS_DATA_KIND_STRING) {
 							rz_str_filter(msg2);
 							if (*msg2) {
 								char *lala = rz_str_newf("\"%s\"", msg2);
@@ -4030,32 +4030,24 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				ds_print_str(ds, msg, len, refaddr);
 				string_printed = true;
 			}
-			// XXX this should be refactored with along the above
-			kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg, len - 1);
-			if (kind) {
-				if (!strcmp(kind, "text")) {
-					if (!string_printed && print_msg) {
-						ds_print_str(ds, msg, len, refaddr);
-					}
-				} else if (!strcmp(kind, "invalid")) {
-					st32 n = (st32)refaddr;
-					ut64 p = ds->analysis_op.val;
-					if (p == UT64_MAX || p == UT32_MAX) {
-						p = ds->analysis_op.ptr;
-					}
-					/* avoid double ; -1 */
-					if (p != UT64_MAX && p != UT32_MAX) {
-						if (n > -0xfff && n < 0xfff) {
-							if (!aligned) {
-								ds_begin_comment(ds);
-							}
-							ds_comment(ds, true, "; %" PFMT64d, p);
-						}
-					}
-				} else {
-					// rz_cons_printf (" ; %s", kind);
+			data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg, len - 1);
+			if (data_kind == RZ_ANALYSIS_DATA_KIND_STRING && !string_printed && print_msg) {
+				ds_print_str(ds, msg, len, refaddr);
+			} else if (data_kind == RZ_ANALYSIS_DATA_KIND_INVALID) {
+				st32 n = (st32)refaddr;
+				ut64 p = ds->analysis_op.val;
+				if (p == UT64_MAX || p == UT32_MAX) {
+					p = ds->analysis_op.ptr;
 				}
-				// TODO: check for more data kinds
+				/* avoid double ; -1 */
+				if (p != UT64_MAX && p != UT32_MAX) {
+					if (n > -0xfff && n < 0xfff) {
+						if (!aligned) {
+							ds_begin_comment(ds);
+						}
+						ds_comment(ds, true, "; %" PFMT64d, p);
+					}
+				}
 			}
 		}
 		free(msg);

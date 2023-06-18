@@ -92,8 +92,8 @@ static bool is_bin(const ut8 *buf, int size) {
 // TODO: add is_flag, is comment?
 
 RZ_API char *rz_analysis_data_to_string(RzAnalysisData *d, RzConsPrintablePalette *pal) {
-	int i, len, mallocsz = 1024;
-	ut32 n32;
+	int i = 0, len = 0, mallocsz = 1024;
+	ut32 n32 = 0;
 
 	if (!d) {
 		return NULL;
@@ -330,19 +330,30 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 	return rz_analysis_data_new(addr, RZ_ANALYSIS_DATA_INFO_TYPE_UNKNOWN, dst, buf, RZ_MIN(word, size));
 }
 
-RZ_API const char *rz_analysis_data_kind(RzAnalysis *a, ut64 addr, const ut8 *buf, int len) {
-	int inv = 0;
-	int unk = 0;
-	int str = 0;
-	int num = 0;
-	int i, j;
-	RzAnalysisData *data;
-	int word = a->bits / 8;
-	for (i = j = 0; i < len; j++) {
+/**
+ * \brief      Describes the type of data hold by the given buffer
+ *
+ * \param      a     The RzAnalysis structure to use
+ * \param[in]  addr  The address at which the buffer is located
+ * \param[in]  buf   The buffer to analyze
+ * \param[in]  len   The length of the buffer
+ *
+ * \return     The data kind.
+ */
+RZ_API RzAnalysisDataKind rz_analysis_data_kind(RZ_NONNULL RzAnalysis *a, ut64 addr, RZ_NONNULL const ut8 *buf, size_t len) {
+	rz_return_val_if_fail(a && buf, RZ_ANALYSIS_DATA_INFO_TYPE_INVALID);
+
+	size_t inv = 0;
+	size_t unk = 0;
+	size_t str = 0;
+	size_t num = 0;
+	size_t j = 0;
+	size_t word = a->bits / 8;
+	for (size_t i = 0; i < len; j++) {
 		if (str && !buf[i]) {
 			str++;
 		}
-		data = rz_analysis_data(a, addr + i, buf + i, len - i, 0);
+		RzAnalysisData *data = rz_analysis_data(a, addr + i, buf + i, len - i, 0);
 		if (!data) {
 			i += word;
 			continue;
@@ -372,21 +383,15 @@ RZ_API const char *rz_analysis_data_kind(RzAnalysis *a, ut64 addr, const ut8 *bu
 		rz_analysis_data_free(data);
 	}
 	if (j < 1) {
-		return "unknown";
+		return RZ_ANALYSIS_DATA_KIND_UNKNOWN;
+	} else if ((inv * 100 / j) > 60) {
+		return RZ_ANALYSIS_DATA_KIND_INVALID;
+	} else if ((unk * 100 / j) > 60 || (num * 100 / j) > 60) {
+		return RZ_ANALYSIS_DATA_KIND_CODE;
+	} else if ((str * 100 / j) > 40) {
+		return RZ_ANALYSIS_DATA_KIND_STRING;
 	}
-	if ((inv * 100 / j) > 60) {
-		return "invalid";
-	}
-	if ((unk * 100 / j) > 60) {
-		return "code";
-	}
-	if ((num * 100 / j) > 60) {
-		return "code";
-	}
-	if ((str * 100 / j) > 40) {
-		return "text";
-	}
-	return "data";
+	return RZ_ANALYSIS_DATA_KIND_DATA;
 }
 
 RZ_API const char *rz_analysis_datatype_to_string(RzAnalysisDataType t) {
