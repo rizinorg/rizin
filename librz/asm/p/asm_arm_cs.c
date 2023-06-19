@@ -27,10 +27,9 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	for (i = 0; i < insn->detail->groups_count; i++) {
 		int id = insn->detail->groups[i];
 		switch (id) {
-		case ARM_GRP_ARM:
-		case ARM_GRP_THUMB:
-		case ARM_GRP_THUMB1ONLY:
-		case ARM_GRP_THUMB2:
+		case ARM_FEATURE_IsARM:
+		case ARM_FEATURE_IsThumb:
+		case ARM_FEATURE_IsThumb2:
 			continue;
 		default:
 			if (id < 128) {
@@ -46,41 +45,6 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 		}
 	}
 	return true;
-}
-
-static const char *cc_name(arm_cc cc) {
-	switch (cc) {
-	case ARM_CC_EQ: // Equal                      Equal
-		return "eq";
-	case ARM_CC_NE: // Not equal                  Not equal, or unordered
-		return "ne";
-	case ARM_CC_HS: // Carry set                  >, ==, or unordered
-		return "hs";
-	case ARM_CC_LO: // Carry clear                Less than
-		return "lo";
-	case ARM_CC_MI: // Minus, negative            Less than
-		return "mi";
-	case ARM_CC_PL: // Plus, positive or zero     >, ==, or unordered
-		return "pl";
-	case ARM_CC_VS: // Overflow                   Unordered
-		return "vs";
-	case ARM_CC_VC: // No overflow                Not unordered
-		return "vc";
-	case ARM_CC_HI: // Unsigned higher            Greater than, or unordered
-		return "hi";
-	case ARM_CC_LS: // Unsigned lower or same     Less than or equal
-		return "ls";
-	case ARM_CC_GE: // Greater than or equal      Greater than or equal
-		return "ge";
-	case ARM_CC_LT: // Less than                  Less than, or unordered
-		return "lt";
-	case ARM_CC_GT: // Greater than               Greater than
-		return "gt";
-	case ARM_CC_LE: // Less than or equal         <, ==, or unordered
-		return "le";
-	default:
-		return "";
-	}
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
@@ -162,7 +126,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		if (thumb && rz_arm_it_apply_cond(&ctx->it, insn)) {
 			char *tmpstr = rz_str_newf("%s%s",
 				cs_insn_name(ctx->cd, insn->id),
-				cc_name(insn->detail->arm.cc));
+				ARMCondCodeToString(insn->detail->arm.cc));
 			rz_str_cpy(insn->mnemonic, tmpstr);
 			free(tmpstr);
 		}

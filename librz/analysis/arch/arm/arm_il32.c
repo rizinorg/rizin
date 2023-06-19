@@ -283,37 +283,37 @@ static RzILOpEffect *write_reg(arm_reg reg, RZ_OWN RZ_NONNULL RzILOpBitVector *v
  * IL for arm condition
  * unconditional is returned as NULL (rather than true), for simpler code
  */
-static RZ_NULLABLE RzILOpBool *cond(arm_cc c) {
+static RZ_NULLABLE RzILOpBool *cond(ARMCC_CondCodes c) {
 	switch (c) {
-	case ARM_CC_EQ:
+	case ARMCC_EQ:
 		return VARG("zf");
-	case ARM_CC_NE:
+	case ARMCC_NE:
 		return INV(VARG("zf"));
-	case ARM_CC_HS:
+	case ARMCC_HS:
 		return VARG("cf");
-	case ARM_CC_LO:
+	case ARMCC_LO:
 		return INV(VARG("cf"));
-	case ARM_CC_MI:
+	case ARMCC_MI:
 		return VARG("nf");
-	case ARM_CC_PL:
+	case ARMCC_PL:
 		return INV(VARG("nf"));
-	case ARM_CC_VS:
+	case ARMCC_VS:
 		return VARG("vf");
-	case ARM_CC_VC:
+	case ARMCC_VC:
 		return INV(VARG("vf"));
-	case ARM_CC_HI:
+	case ARMCC_HI:
 		return AND(VARG("cf"), INV(VARG("zf")));
-	case ARM_CC_LS:
+	case ARMCC_LS:
 		return OR(INV(VARG("cf")), VARG("zf"));
-	case ARM_CC_GE:
+	case ARMCC_GE:
 		return INV(XOR(VARG("nf"), VARG("vf")));
-	case ARM_CC_LT:
+	case ARMCC_LT:
 		return XOR(VARG("nf"), VARG("vf"));
-	case ARM_CC_GT:
+	case ARMCC_GT:
 		return AND(INV(VARG("zf")), INV(XOR(VARG("nf"), VARG("vf"))));
-	case ARM_CC_LE:
+	case ARMCC_LE:
 		return OR(VARG("zf"), XOR(VARG("nf"), VARG("vf")));
-	case ARM_CC_AL:
+	case ARMCC_AL:
 	default:
 		return NULL;
 	}
@@ -806,7 +806,7 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	if (!addr) {
 		return NULL;
 	}
-	bool writeback = insn->detail->arm.writeback;
+	bool writeback = insn->detail->writeback;
 	if (ISIMM(mem_idx + 1)) {
 		// capstone incorrectly sets writeback to false for e.g. 0400b1e4 ldrt r0, [r1], 4
 		writeback = true;
@@ -895,7 +895,7 @@ static RzILOpEffect *str(cs_insn *insn, bool is_thumb) {
 	if (!addr) {
 		return NULL;
 	}
-	bool writeback = insn->detail->arm.writeback;
+	bool writeback = insn->detail->writeback;
 	if (ISIMM(mem_idx + 1)) {
 		// capstone incorrectly sets writeback to false for e.g. 04b0ade4 strt fp, [sp], 4
 		writeback = true;
@@ -1199,7 +1199,7 @@ static RzILOpEffect *stm(cs_insn *insn, bool is_thumb) {
 	size_t op_first;
 	arm_reg ptr_reg;
 	bool writeback;
-	if (insn->id == ARM_INS_PUSH || insn->id == ARM_INS_VPUSH) {
+	if (insn->id == ARM_INS_PUSH) {
 		op_first = 0;
 		ptr_reg = ARM_REG_SP;
 		writeback = true;
@@ -1209,7 +1209,7 @@ static RzILOpEffect *stm(cs_insn *insn, bool is_thumb) {
 		}
 		op_first = 1;
 		ptr_reg = REGID(0);
-		writeback = insn->detail->arm.writeback;
+		writeback = insn->detail->writeback;
 	}
 	size_t op_count = OPCOUNT() - op_first;
 	if (!op_count) {
@@ -1220,9 +1220,9 @@ static RzILOpEffect *stm(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	bool decrement = insn->id == ARM_INS_STMDA || insn->id == ARM_INS_STMDB || insn->id == ARM_INS_PUSH ||
-		insn->id == ARM_INS_VSTMDB || insn->id == ARM_INS_VPUSH;
+		insn->id == ARM_INS_VSTMDB;
 	bool before = insn->id == ARM_INS_STMDB || insn->id == ARM_INS_PUSH || insn->id == ARM_INS_VSTMDB ||
-		insn->id == ARM_INS_STMIB || insn->id == ARM_INS_VPUSH;
+		insn->id == ARM_INS_STMIB;
 	ut32 regsize = reg_bits(REGID(op_first)) / 8;
 	RzILOpEffect *eff = NULL;
 	// build up in reverse order so the result recurses in the second arg of seq (for tail-call optimization)
@@ -1260,7 +1260,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 	size_t op_first;
 	arm_reg ptr_reg;
 	bool writeback;
-	if (insn->id == ARM_INS_POP || insn->id == ARM_INS_VPOP) {
+	if (insn->id == ARM_INS_POP) {
 		op_first = 0;
 		ptr_reg = ARM_REG_SP;
 		writeback = true;
@@ -1270,7 +1270,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 		}
 		op_first = 1;
 		ptr_reg = REGID(0);
-		writeback = insn->detail->arm.writeback;
+		writeback = insn->detail->writeback;
 	}
 	size_t op_count = OPCOUNT() - op_first;
 	if (!op_count) {
@@ -1879,7 +1879,7 @@ static RzILOpEffect *rfe(cs_insn *insn, bool is_thumb) {
 	RzILOpEffect *wb = NULL;
 	bool wordhigher = insn->id == ARM_INS_RFEDA || insn->id == ARM_INS_RFEIB;
 	bool increment = insn->id == ARM_INS_RFEIA || insn->id == ARM_INS_RFEIB;
-	if (insn->detail->arm.writeback) {
+	if (insn->detail->writeback) {
 		wb = write_reg(REGID(0),
 			increment ? ADD(DUP(base), U32(8)) : SUB(DUP(base), U32(8)));
 		if (!wb) {
@@ -4312,11 +4312,9 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	// Advanced SIMD and Floating-point
 	case ARM_INS_VSTMIA:
 	case ARM_INS_VSTMDB:
-	case ARM_INS_VPUSH:
 		return stm(insn, is_thumb);
 	case ARM_INS_VLDMIA:
 	case ARM_INS_VLDMDB:
-	case ARM_INS_VPOP:
 		return ldm(insn, is_thumb);
 #if CS_API_MAJOR > 4
 	case ARM_INS_VMOVL:

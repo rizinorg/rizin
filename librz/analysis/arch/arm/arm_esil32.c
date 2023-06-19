@@ -66,65 +66,65 @@ RZ_IPI const char *rz_arm_cs_esil_prefix_cond(RzAnalysisOp *op, int cond_type) {
 	close_cond[1] = ",}";
 	int close_type = 0;
 	switch (cond_type) {
-	case ARM_CC_EQ:
+	case ARMCC_EQ:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,?{,");
 		break;
-	case ARM_CC_NE:
+	case ARMCC_NE:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,?{,");
 		break;
-	case ARM_CC_HS:
+	case ARMCC_HS:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,?{,");
 		break;
-	case ARM_CC_LO:
+	case ARMCC_LO:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,?{,");
 		break;
-	case ARM_CC_MI:
+	case ARMCC_MI:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,?{,");
 		break;
-	case ARM_CC_PL:
+	case ARMCC_PL:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,!,?{,");
 		break;
-	case ARM_CC_VS:
+	case ARMCC_VS:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,?{,");
 		break;
-	case ARM_CC_VC:
+	case ARMCC_VC:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "vf,!,?{,");
 		break;
-	case ARM_CC_HI:
+	case ARMCC_HI:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,zf,!,&,?{,");
 		break;
-	case ARM_CC_LS:
+	case ARMCC_LS:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "cf,!,zf,|,?{,");
 		break;
-	case ARM_CC_GE:
+	case ARMCC_GE:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,!,?{,");
 		break;
-	case ARM_CC_LT:
+	case ARMCC_LT:
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "nf,vf,^,?{,");
 		break;
-	case ARM_CC_GT:
+	case ARMCC_GT:
 		// zf == 0 && nf == vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
-	case ARM_CC_LE:
+	case ARMCC_LE:
 		// zf == 1 || nf != vf
 		close_type = 1;
 		rz_strbuf_setf(&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
-	case ARM_CC_AL:
+	case ARMCC_AL:
 		// always executed
 		break;
 	default:
@@ -391,7 +391,7 @@ PUSH { r4, r5, r6, r7, lr }
 			rz_strbuf_appendf(&op->esil, "%s,%s,%d,+,=[4],",
 				REG(i), ARG(0), (i + offset) * 4);
 		}
-		if (insn->detail->arm.writeback == true) { // writeback, reg should be incremented
+		if (insn->detail->writeback == true) { // writeback, reg should be incremented
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -406,7 +406,7 @@ PUSH { r4, r5, r6, r7, lr }
 			width += REGSIZE32(i);
 		}
 		// increment if writeback
-		if (insn->detail->arm.writeback) {
+		if (insn->detail->writeback) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,", width, ARG(0));
 		}
 		break;
@@ -430,7 +430,7 @@ PUSH { r4, r5, r6, r7, lr }
 			width += REGSIZE32(i);
 		}
 		// increment if writeback
-		if (insn->detail->arm.writeback) {
+		if (insn->detail->writeback) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,", width, ARG(0));
 		}
 		break;
@@ -489,7 +489,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[4],%s,=,", ARG(0), (i + offset) * 4, REG(i));
 		}
-		if (insn->detail->arm.writeback) {
+		if (insn->detail->writeback) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,+=,",
 				direction * (insn->detail->arm.op_count - 1) * 4, ARG(0));
 		}
@@ -552,7 +552,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				disp = disp >= 0 ? disp : -disp;
 				rz_strbuf_appendf(&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
 					REG(0), disp, MEMBASE(1), sign, str_ldr_bytes);
-				if (insn->detail->arm.writeback) {
+				if (insn->detail->writeback) {
 					rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 						disp, MEMBASE(1), sign, MEMBASE(1));
 				}
@@ -563,7 +563,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_LSL:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,<<,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) { // e.g. 'str r2, [r3, r1, lsl 4]!'
+						if (insn->detail->writeback) { // e.g. 'str r2, [r3, r1, lsl 4]!'
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,<<,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -571,7 +571,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_LSR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) {
+						if (insn->detail->writeback) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -579,7 +579,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_ASR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) {
+						if (insn->detail->writeback) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -587,7 +587,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					case ARM_SFT_ROR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,%d,%s,>>>,+,0xffffffff,&,=[%d]",
 							REG(0), MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), str_ldr_bytes);
-						if (insn->detail->arm.writeback) {
+						if (insn->detail->writeback) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,%s,>>>,+,%s,=",
 								MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						}
@@ -602,7 +602,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				} else { // No shift
 					rz_strbuf_appendf(&op->esil, "%s,%s,%s,+,0xffffffff,&,=[%d]",
 						REG(0), MEMINDEX(1), MEMBASE(1), str_ldr_bytes);
-					if (insn->detail->arm.writeback) {
+					if (insn->detail->writeback) {
 						rz_strbuf_appendf(&op->esil, ",%s,%s,+,%s,=",
 							MEMINDEX(1), MEMBASE(1), MEMBASE(1));
 					}
@@ -651,7 +651,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					disp = disp >= 0 ? disp : -disp;
 					rz_strbuf_appendf(&op->esil, "%s,%d,%s,%c,0xffffffff,&,=[4],%s,4,%d,+,%s,%c,0xffffffff,&,=[4]",
 						REG(0), disp, MEMBASE(2), sign, REG(1), disp, MEMBASE(2), sign);
-					if (insn->detail->arm.writeback) {
+					if (insn->detail->writeback) {
 						rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 							disp, MEMBASE(2), sign, MEMBASE(2));
 					}
@@ -659,10 +659,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
-						rz_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
-							REG(0), MEMBASE(2), REG(1), MEMBASE(2));
+						const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
+						rz_strbuf_appendf(&op->esil, "%s,%s,%s,%c,0xffffffff,&,=[4],%s,4,%s,+,%s,%c,0xffffffff,&,=[4]",
+							REG(0), MEMINDEX(2), MEMBASE(2), sign, REG(1), MEMINDEX(2), MEMBASE(2), sign);
 						if (insn->detail->arm.writeback) {
-							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c=",
 								MEMINDEX(2), MEMBASE(2), sign);
 						}
@@ -730,7 +730,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						MEMDISP(2), MEMBASE(2), REG(0), REG(1));
 				}
-				if (insn->detail->arm.writeback) {
+				if (insn->detail->writeback) {
 					if (ISPOSTINDEX32()) {
 						if (ISIMM(3)) {
 							rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
@@ -765,7 +765,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[1],%s,=",
 				MEMBASE(1), MEMDISP(1), REG(0));
 		}
-		if (insn->detail->arm.writeback) {
+		if (insn->detail->writeback) {
 			if (ISIMM(2)) {
 				rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
 					MEMBASE(1), IMM(2), MEMBASE(1));
@@ -858,7 +858,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMDISP(1), MEMBASE(1), mask, REG(0));
 				}
-				if (insn->detail->arm.writeback) {
+				if (insn->detail->writeback) {
 					if (ISIMM(2)) {
 						rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
 							MEMBASE(1), IMM(2), MEMBASE(1));
