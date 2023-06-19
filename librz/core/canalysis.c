@@ -65,6 +65,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 	RzBin *bin = core->bin;
 	ut8 buffer[512] = { 0 };
 	bool ret = false;
+	bool big_endian = core->analysis->big_endian;
 	RzDetectedString *detected = NULL;
 
 	RzList *strings = rz_list_newf((RzListFree)rz_detected_string_free);
@@ -82,7 +83,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 		.buf_size = sizeof(buffer),
 		.max_uni_blocks = 4,
 		.min_str_length = min_str_length,
-		.prefer_big_endian = false,
+		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->strseach_check_ascii_freq,
 	};
 

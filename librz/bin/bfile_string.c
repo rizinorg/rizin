@@ -25,6 +25,7 @@ typedef struct search_thread_data_t {
 	size_t min_length;
 	RzStrEnc encoding;
 	bool check_ascii_freq;
+	bool big_endian;
 	SharedData *shared;
 	RzAtomicBool *loop;
 } SearchThreadData;
@@ -83,7 +84,7 @@ static RzList /*<RzDetectedString *>*/ *string_scan_range(SearchThreadData *std,
 		.buf_size = UTIL_STR_SCAN_OPT_BUFFER_SIZE,
 		.max_uni_blocks = 4,
 		.min_str_length = std->min_length,
-		.prefer_big_endian = false,
+		.prefer_big_endian = std->big_endian,
 		.check_ascii_freq = std->check_ascii_freq,
 	};
 
@@ -111,7 +112,7 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 	RzDetectedString *detected = NULL;
 	ut64 paddr = 0, psize = 0;
 	bool loop = true;
-	RzBinFile *bf = std->shared->bf; // this data is always RO
+	const RzBinFile *bf = std->shared->bf; // this data is always RO
 
 	do {
 		itv = rz_th_queue_pop(std->intervals, false);
@@ -183,9 +184,15 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(shared->bf);
 	bool check_ascii_freq = false;
+	bool big_endian = false;
 
 	if (!min_length) {
 		min_length = plugin && plugin->minstrlen > 0 ? plugin->minstrlen : 4;
+	}
+
+	if (shared->bf->o) {
+		const RzBinInfo *binfo = rz_bin_object_get_info(shared->bf->o);
+		big_endian = binfo ? binfo->big_endian : false;
 	}
 
 	if (shared->bf->rbin) {
@@ -209,6 +216,7 @@ static bool create_string_search_thread(RzThreadPool *pool, size_t min_length, R
 	std->encoding = encoding;
 	std->intervals = intervals;
 	std->min_length = min_length;
+	std->big_endian = big_endian;
 	std->loop = rz_atomic_bool_new(true);
 
 	RzThread *thread = rz_th_new((RzThreadFunction)search_string_thread_runner, std);
