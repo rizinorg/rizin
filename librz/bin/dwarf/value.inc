@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+
 static inline int leading_zeros(uint64_t x) {
 #if HAS___BUILTIN_CLZLL
 	return __builtin_clzll(x);
@@ -76,9 +79,6 @@ typedef struct {
 	};
 } Value;
 
-void value_type(Value *ptr);
-// Assuming constants are defined elsewhere
-// and mask_bit_size is defined elsewhere
 uint32_t bit_size(ValueType type, uint64_t addr_mask) {
 	switch (type) {
 	case ValueType_GENERIC:
@@ -244,34 +244,34 @@ ValueType Value_type(Value *ptr) {
 	return ptr->type;
 }
 
-bool to_u64(Value value, uint64_t addr_mask, uint64_t *result) {
-	switch (Value_type(&value)) {
+bool Value_to_u64(Value *self, uint64_t addr_mask, uint64_t *result) {
+	switch (Value_type(self)) {
 	case ValueType_GENERIC:
-		*result = value.generic & addr_mask;
+		*result = self->generic & addr_mask;
 		break;
 	case I8:
-		*result = (uint64_t)value.i8;
+		*result = (uint64_t)self->i8;
 		break;
 	case U8:
-		*result = value.u8;
+		*result = self->u8;
 		break;
 	case I16:
-		*result = (uint64_t)value.i16;
+		*result = (uint64_t)self->i16;
 		break;
 	case U16:
-		*result = value.u16;
+		*result = self->u16;
 		break;
 	case I32:
-		*result = (uint64_t)value.i32;
+		*result = (uint64_t)self->i32;
 		break;
 	case U32:
-		*result = value.u32;
+		*result = self->u32;
 		break;
 	case I64:
-		*result = (uint64_t)value.i64;
+		*result = (uint64_t)self->i64;
 		break;
 	case U64:
-		*result = value.u64;
+		*result = self->u64;
 		break;
 	default:
 		// Handle integral type required error
@@ -280,7 +280,7 @@ bool to_u64(Value value, uint64_t addr_mask, uint64_t *result) {
 	return true;
 }
 
-bool from_u64(ValueType value_type, uint64_t value, Value *result) {
+bool Value_from_u64(ValueType value_type, uint64_t value, Value *result) {
 	switch (value_type) {
 	case ValueType_GENERIC:
 		result->generic = value;
@@ -321,7 +321,7 @@ bool from_u64(ValueType value_type, uint64_t value, Value *result) {
 	return true;
 }
 
-bool from_f32(ValueType value_type, float value, Value *result) {
+bool Value_from_f32(ValueType value_type, float value, Value *result) {
 	switch (value_type) {
 	case ValueType_GENERIC:
 		result->generic = (uint64_t)value;
@@ -362,7 +362,7 @@ bool from_f32(ValueType value_type, float value, Value *result) {
 	return true;
 }
 
-bool from_f64(ValueType value_type, double value, Value *result) {
+bool Value_from_f64(ValueType value_type, double value, Value *result) {
 	switch (value_type) {
 	case ValueType_GENERIC:
 		result->generic = (uint64_t)value;
@@ -403,34 +403,28 @@ bool from_f64(ValueType value_type, double value, Value *result) {
 	return true;
 }
 
-bool convert(Value *self, ValueType value_type, uint64_t addr_mask, Value *result) {
-	switch (value_type) {
+bool Value_convert(Value *self, uint64_t addr_mask, Value *result) {
+	switch (self->type) {
 	case F32:
-		return from_f32(value_type, self->f32, result);
+		return Value_from_f32(self->type, self->f32, result);
 	case F64:
-		return from_f64(value_type, self->f64, result);
+		return Value_from_f64(self->type, self->f64, result);
 	default:
-		return from_u64(value_type, self->u64 & addr_mask, result);
+		return Value_from_u64(self->type, self->u64 & addr_mask, result);
 	}
 }
 
-bool reinterpret(Value *self, ValueType value_type, uint64_t addr_mask, Value *result) {
-	uint64_t bits;
-
-	// Assuming that you have functions `value_type_bit_size` and `sign_extend` implemented elsewhere
-
+bool Value_reinterpret(Value *self, ValueType value_type, uint64_t addr_mask, Value *result) {
 	if (bit_size(self->type, addr_mask) != bit_size(value_type, addr_mask)) {
 		return false;
 	}
 
-	// You need to define logic for copying bits from one type to another
-	// Similar to how it is done in Rust (e.g. u64::from(f32::to_bits(value)))
-
-	// After setting `bits`, create the value
-	return from_u64(value_type, bits, result);
+	uint64_t bits;
+	RET_FALSE_IF_FAIL(Value_to_u64(self, addr_mask, &bits));
+	return Value_from_u64(value_type, bits, result);
 }
 
-bool abs_value(Value *self, uint64_t addr_mask, Value *result) {
+bool Value_abs(Value *self, uint64_t addr_mask, Value *result) {
 	switch (self->type) {
 	case ValueType_GENERIC:
 		result->generic = (uint64_t)llabs(sign_extend(self->generic, addr_mask));
@@ -459,7 +453,7 @@ bool abs_value(Value *self, uint64_t addr_mask, Value *result) {
 	return true;
 }
 
-bool neg_value(Value *self, uint64_t addr_mask, Value *result) {
+bool Value_neg(Value *self, uint64_t addr_mask, Value *result) {
 	switch (self->type) {
 	case ValueType_GENERIC:
 		result->generic = (uint64_t)(-sign_extend(self->generic, addr_mask));
@@ -487,3 +481,562 @@ bool neg_value(Value *self, uint64_t addr_mask, Value *result) {
 	}
 	return true;
 }
+
+bool Value_add(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	if (lhs->type != rhs->type) {
+		return false;
+	}
+
+	switch (lhs->type) {
+	case ValueType_GENERIC:
+		result->generic = (lhs->generic + rhs->generic) & addr_mask;
+		break;
+	case I8:
+		result->i8 = lhs->i8 + rhs->i8;
+		break;
+	case U8:
+		result->u8 = lhs->u8 + rhs->u8;
+		break;
+	case I16:
+		result->i16 = lhs->i16 + rhs->i16;
+		break;
+	case U16:
+		result->u16 = lhs->u16 + rhs->u16;
+		break;
+	case I32:
+		result->i32 = lhs->i32 + rhs->i32;
+		break;
+	case U32:
+		result->u32 = lhs->u32 + rhs->u32;
+		break;
+	case I64:
+		result->i64 = lhs->i64 + rhs->i64;
+		break;
+	case U64:
+		result->u64 = lhs->u64 + rhs->u64;
+		break;
+	case F32:
+		result->f32 = lhs->f32 + rhs->f32;
+		break;
+	case F64:
+		result->f64 = lhs->f64 + rhs->f64;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool Value_sub(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	if (lhs->type != rhs->type) {
+		return false;
+	}
+
+	switch (lhs->type) {
+	case ValueType_GENERIC:
+		result->generic = (lhs->generic - rhs->generic) & addr_mask;
+		break;
+	case I8:
+		result->i8 = lhs->i8 - rhs->i8;
+		break;
+	case U8:
+		result->u8 = lhs->u8 - rhs->u8;
+		break;
+	case I16:
+		result->i16 = lhs->i16 - rhs->i16;
+		break;
+	case U16:
+		result->u16 = lhs->u16 - rhs->u16;
+		break;
+	case I32:
+		result->i32 = lhs->i32 - rhs->i32;
+		break;
+	case U32:
+		result->u32 = lhs->u32 - rhs->u32;
+		break;
+	case I64:
+		result->i64 = lhs->i64 - rhs->i64;
+		break;
+	case U64:
+		result->u64 = lhs->u64 - rhs->u64;
+		break;
+	case F32:
+		result->f32 = lhs->f32 - rhs->f32;
+		break;
+	case F64:
+		result->f64 = lhs->f64 - rhs->f64;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool Value_mul(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	if (lhs->type != rhs->type) {
+		return false;
+	}
+
+	switch (lhs->type) {
+	case ValueType_GENERIC:
+		result->generic = (lhs->generic * rhs->generic) & addr_mask;
+		break;
+	case I8:
+		result->i8 = lhs->i8 * rhs->i8;
+		break;
+	case U8:
+		result->u8 = lhs->u8 * rhs->u8;
+		break;
+	case I16:
+		result->i16 = lhs->i16 * rhs->i16;
+		break;
+	case U16:
+		result->u16 = lhs->u16 * rhs->u16;
+		break;
+	case I32:
+		result->i32 = lhs->i32 * rhs->i32;
+		break;
+	case U32:
+		result->u32 = lhs->u32 * rhs->u32;
+		break;
+	case I64:
+		result->i64 = lhs->i64 * rhs->i64;
+		break;
+	case U64:
+		result->u64 = lhs->u64 * rhs->u64;
+		break;
+	case F32:
+		result->f32 = lhs->f32 * rhs->f32;
+		break;
+	case F64:
+		result->f64 = lhs->f64 * rhs->f64;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool Value_div(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	if (lhs->type != rhs->type) {
+		return false;
+	}
+
+	switch (lhs->type) {
+	case ValueType_GENERIC:
+		if (sign_extend(rhs->generic, addr_mask) == 0) {
+			return false;
+		}
+		result->generic = sign_extend(lhs->generic, addr_mask) / sign_extend(rhs->generic, addr_mask);
+		break;
+	case I8:
+		if (rhs->i8 == 0) {
+			return false;
+		}
+		result->i8 = lhs->i8 / rhs->i8;
+		break;
+	case U8:
+		if (rhs->u8 == 0) {
+			return false;
+		}
+		result->u8 = lhs->u8 / rhs->u8;
+		break;
+	case I16:
+		if (rhs->i16 == 0) {
+			return false;
+		}
+		result->i16 = lhs->i16 / rhs->i16;
+		break;
+	case U16:
+		if (rhs->u16 == 0) {
+			return false;
+		}
+		result->u16 = lhs->u16 / rhs->u16;
+		break;
+	case I32:
+		if (rhs->i32 == 0) {
+			return false;
+		}
+		result->i32 = lhs->i32 / rhs->i32;
+		break;
+	case U32:
+		if (rhs->u32 == 0) {
+			return false;
+		}
+		result->u32 = lhs->u32 / rhs->u32;
+		break;
+	case I64:
+		if (rhs->i64 == 0) {
+			return false;
+		}
+		result->i64 = lhs->i64 / rhs->i64;
+		break;
+	case U64:
+		if (rhs->u64 == 0) {
+			return false;
+		}
+		result->u64 = lhs->u64 / rhs->u64;
+		break;
+	case F32:
+		if (rhs->f32 == 0) {
+			return false;
+		}
+		result->f32 = lhs->f32 / rhs->f32;
+		break;
+	case F64:
+		if (rhs->f64 == 0) {
+			return false;
+		}
+		result->f64 = lhs->f64 / rhs->f64;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool Value_rem(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	if (lhs->type != rhs->type) {
+		return false;
+	}
+
+	switch (lhs->type) {
+	case ValueType_GENERIC:
+		if ((rhs->generic & addr_mask) == 0) {
+			return false;
+		}
+		result->generic = (lhs->generic & addr_mask) % (rhs->generic & addr_mask);
+		break;
+	case I8:
+		if (rhs->i8 == 0) {
+			return false;
+		}
+		result->i8 = lhs->i8 % rhs->i8;
+		break;
+	case U8:
+		if (rhs->u8 == 0) {
+			return false;
+		}
+		result->u8 = lhs->u8 % rhs->u8;
+		break;
+	case I16:
+		if (rhs->i16 == 0) {
+			return false;
+		}
+		result->i16 = lhs->i16 % rhs->i16;
+		break;
+	case U16:
+		if (rhs->u16 == 0) {
+			return false;
+		}
+		result->u16 = lhs->u16 % rhs->u16;
+		break;
+	case I32:
+		if (rhs->i32 == 0) {
+			return false;
+		}
+		result->i32 = lhs->i32 % rhs->i32;
+		break;
+	case U32:
+		if (rhs->u32 == 0) {
+			return false;
+		}
+		result->u32 = lhs->u32 % rhs->u32;
+		break;
+	case I64:
+		if (rhs->i64 == 0) {
+			return false;
+		}
+		result->i64 = lhs->i64 % rhs->i64;
+		break;
+	case U64:
+		if (rhs->u64 == 0) {
+			return false;
+		}
+		result->u64 = lhs->u64 % rhs->u64;
+		break;
+	case F32:
+	case F64:
+		return false;
+	default:
+		return false;
+	}
+	return true;
+}
+
+bool Value_not(Value *self, uint64_t addr_mask, Value *result) {
+	ValueType value_type = result->type;
+	uint64_t v;
+	if (!Value_to_u64(self, addr_mask, &v)) {
+		return false;
+	}
+	if (!Value_from_u64(value_type, ~v, result)) {
+		return false;
+	}
+	return true;
+}
+
+bool Value_and(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	ValueType lhs_type = lhs->type;
+	ValueType rhs_type = rhs->type;
+	if (lhs_type != rhs_type) {
+		return false;
+	}
+	uint64_t v1, v2;
+	if (!Value_to_u64(lhs, addr_mask, &v1) || !Value_to_u64(rhs, addr_mask, &v2)) {
+		return false;
+	}
+	if (!Value_from_u64(lhs_type, v1 & v2, result)) {
+		return false;
+	}
+	return true;
+}
+
+bool Value_or(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	ValueType lhs_type = lhs->type;
+	ValueType rhs_type = rhs->type;
+	if (lhs_type != rhs_type) {
+		return false;
+	}
+	uint64_t v1, v2;
+	if (!Value_to_u64(lhs, addr_mask, &v1) || !Value_to_u64(rhs, addr_mask, &v2)) {
+		return false;
+	}
+	if (!Value_from_u64(lhs_type, v1 | v2, result)) {
+		return false;
+	}
+	return true;
+}
+
+bool Value_xor(Value *lhs, Value *rhs, uint64_t addr_mask, Value *result) {
+	ValueType lhs_type = lhs->type;
+	ValueType rhs_type = rhs->type;
+	if (lhs_type != rhs_type) {
+		return false;
+	}
+	uint64_t v1, v2;
+	if (!Value_to_u64(lhs, addr_mask, &v1) || !Value_to_u64(rhs, addr_mask, &v2)) {
+		return false;
+	}
+	if (!Value_from_u64(lhs_type, v1 ^ v2, result)) {
+		return false;
+	}
+	return true;
+}
+
+bool shift_length(Value *self, uint64_t *result) {
+	uint64_t value = 0;
+	switch (self->type) {
+	case ValueType_GENERIC:
+		value = self->generic;
+		break;
+	case I8:
+		if (self->i8 >= 0) {
+			value = (uint64_t)self->i8;
+		} else {
+			return false;
+		}
+		break;
+	case U8:
+		value = (uint64_t)self->u8;
+		break;
+	case I16:
+		if (self->i16 >= 0) {
+			value = (uint64_t)self->i16;
+		} else {
+			return false;
+		}
+		break;
+	case U16:
+		value = (uint64_t)self->u16;
+		break;
+	case I32:
+		if (self->i32 >= 0) {
+			value = (uint64_t)self->i32;
+		} else {
+			return false;
+		}
+		break;
+	case U32:
+		value = (uint64_t)self->u32;
+		break;
+	case I64:
+		if (self->i64 >= 0) {
+			value = (uint64_t)self->i64;
+		} else {
+			return false;
+		}
+		break;
+	case U64:
+		value = self->u64;
+		break;
+	default:
+		return false;
+	}
+	*result = value;
+	return true;
+}
+
+bool Value_shl(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
+	uint64_t v2;
+	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
+
+	switch (self->type) {
+	case ValueType_GENERIC:
+		if (v2 >= mask_bit_size(addr_mask)) {
+			result->type = ValueType_GENERIC;
+			result->generic = 0;
+		} else {
+			result->type = ValueType_GENERIC;
+			result->generic = (self->generic & addr_mask) << v2;
+		}
+		break;
+	case I8:
+		result->type = I8;
+		result->i8 = (v2 >= 8) ? 0 : self->i8 << v2;
+		break;
+	case U8:
+		result->type = U8;
+		result->u8 = (v2 >= 8) ? 0 : self->u8 << v2;
+		break;
+	case I16:
+		result->type = I16;
+		result->i16 = (v2 >= 16) ? 0 : self->i16 << v2;
+		break;
+	case U16:
+		result->type = U16;
+		result->u16 = (v2 >= 16) ? 0 : self->u16 << v2;
+		break;
+	case I32:
+		result->type = I32;
+		result->i32 = (v2 >= 32) ? 0 : self->i32 << v2;
+		break;
+	case U32:
+		result->type = U32;
+		result->u32 = (v2 >= 32) ? 0 : self->u32 << v2;
+		break;
+	case I64:
+		result->type = I64;
+		result->i64 = (v2 >= 64) ? 0 : self->i64 << v2;
+		break;
+	case U64:
+		result->type = U64;
+		result->u64 = (v2 >= 64) ? 0 : self->u64 << v2;
+		break;
+	default:
+		return false; // error handling (integral type required)
+	}
+	return true;
+}
+
+bool Value_shr(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
+	uint64_t v2;
+	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
+
+	switch (self->type) {
+	case ValueType_GENERIC:
+		result->type = ValueType_GENERIC;
+		result->generic = v2 >= 64 ? 0 : (self->generic & addr_mask) >> v2;
+		break;
+	case U8:
+		result->type = U8;
+		result->u8 = v2 >= 8 ? 0 : self->u8 >> v2;
+		break;
+	case U16:
+		result->type = U16;
+		result->u16 = v2 >= 16 ? 0 : self->u16 >> v2;
+		break;
+	case U32:
+		result->type = U32;
+		result->u32 = v2 >= 32 ? 0 : self->u32 >> v2;
+		break;
+	case U64:
+		result->type = U64;
+		result->u64 = v2 >= 64 ? 0 : self->u64 >> v2;
+		break;
+	default:
+		break;
+	}
+	return result;
+}
+
+bool Value_shra(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
+	uint64_t v2;
+	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
+
+	switch (self->type) {
+	case ValueType_GENERIC: {
+		int64_t v1 = sign_extend(self->generic, addr_mask);
+		result->type = ValueType_GENERIC;
+		result->generic = v2 >= 64 ? (v1 < 0 ? ~0 : 0) : (v1 >> v2);
+	} break;
+	case I8:
+		result->type = I8;
+		result->i8 = v2 >= 8 ? (self->i8 < 0 ? ~0 : 0) : (self->i8 >> v2);
+		break;
+	case I16:
+		result->type = I16;
+		result->i16 = v2 >= 16 ? (self->i16 < 0 ? ~0 : 0) : (self->i16 >> v2);
+		break;
+	case I32:
+		result->type = I32;
+		result->i32 = v2 >= 32 ? (self->i32 < 0 ? ~0 : 0) : (self->i32 >> v2);
+		break;
+	case I64:
+		result->type = I64;
+		result->i64 = v2 >= 64 ? (self->i64 < 0 ? ~0 : 0) : (self->i64 >> v2);
+		break;
+	default:
+		break;
+	}
+	return result;
+}
+
+bool Value_eq(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
+	result->type = ValueType_GENERIC;
+	result->generic = 0; // false by default
+
+	if (self->type != rhs->type) {
+		return result;
+	}
+
+	switch (self->type) {
+	case ValueType_GENERIC:
+		result->generic = sign_extend(self->generic, addr_mask) ==
+			sign_extend(rhs->generic, addr_mask);
+		break;
+	case I8:
+		result->generic = self->i8 == rhs->i8;
+		break;
+	case U8:
+		result->generic = self->u8 == rhs->u8;
+		break;
+	case I16:
+		result->generic = self->i16 == rhs->i16;
+		break;
+	case U16:
+		result->generic = self->u16 == rhs->u16;
+		break;
+	case I32:
+		result->generic = self->i32 == rhs->i32;
+		break;
+	case U32:
+		result->generic = self->u32 == rhs->u32;
+		break;
+	case I64:
+		result->generic = self->i64 == rhs->i64;
+		break;
+	case U64:
+		result->generic = self->u64 == rhs->u64;
+		break;
+	case F32:
+		result->generic = self->f32 == rhs->f32;
+		break;
+	case F64:
+		result->generic = self->f64 == rhs->f64;
+		break;
+	}
+	return result;
+}
+
+#pragma clang diagnostic pop
