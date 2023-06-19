@@ -1109,7 +1109,9 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	return rz_buf_new_slice(binfile->buf, section->paddr, len);
 }
 
+#include "option.inc"
 #include "addr.inc"
+#include "value.inc"
 #include "op.inc"
 #include "line.inc"
 #include "aranges.inc"

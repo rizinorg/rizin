@@ -992,51 +992,64 @@ bool Value_shra(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
 	return result;
 }
 
-bool Value_eq(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
-	result->type = ValueType_GENERIC;
-	result->generic = 0; // false by default
-
-	if (self->type != rhs->type) {
-		return result;
+#define VALUE_IMPL_LOGICAL_OP(name, op) \
+	bool Value_##name(Value *self, Value *rhs, uint64_t addr_mask, Value *result) { \
+		result->type = ValueType_GENERIC; \
+		result->generic = 0; \
+		if (self->type != rhs->type) { \
+			return result; \
+		} \
+		switch (self->type) { \
+		case ValueType_GENERIC: \
+			result->generic = sign_extend(self->generic, addr_mask) op \
+				sign_extend(rhs->generic, addr_mask); \
+			break; \
+		case I8: \
+			result->generic = self->i8 op rhs->i8; \
+			break; \
+		case U8: \
+			result->generic = self->u8 op rhs->u8; \
+			break; \
+		case I16: \
+			result->generic = self->i16 op rhs->i16; \
+			break; \
+		case U16: \
+			result->generic = self->u16 op rhs->u16; \
+			break; \
+		case I32: \
+			result->generic = self->i32 op rhs->i32; \
+			break; \
+		case U32: \
+			result->generic = self->u32 op rhs->u32; \
+			break; \
+		case I64: \
+			result->generic = self->i64 op rhs->i64; \
+			break; \
+		case U64: \
+			result->generic = self->u64 op rhs->u64; \
+			break; \
+		case F32: \
+			result->generic = self->f32 op rhs->f32; \
+			break; \
+		case F64: \
+			result->generic = self->f64 op rhs->f64; \
+			break; \
+		} \
+		return result; \
 	}
 
-	switch (self->type) {
-	case ValueType_GENERIC:
-		result->generic = sign_extend(self->generic, addr_mask) ==
-			sign_extend(rhs->generic, addr_mask);
-		break;
-	case I8:
-		result->generic = self->i8 == rhs->i8;
-		break;
-	case U8:
-		result->generic = self->u8 == rhs->u8;
-		break;
-	case I16:
-		result->generic = self->i16 == rhs->i16;
-		break;
-	case U16:
-		result->generic = self->u16 == rhs->u16;
-		break;
-	case I32:
-		result->generic = self->i32 == rhs->i32;
-		break;
-	case U32:
-		result->generic = self->u32 == rhs->u32;
-		break;
-	case I64:
-		result->generic = self->i64 == rhs->i64;
-		break;
-	case U64:
-		result->generic = self->u64 == rhs->u64;
-		break;
-	case F32:
-		result->generic = self->f32 == rhs->f32;
-		break;
-	case F64:
-		result->generic = self->f64 == rhs->f64;
-		break;
+VALUE_IMPL_LOGICAL_OP(eq, ==);
+VALUE_IMPL_LOGICAL_OP(ge, >=);
+VALUE_IMPL_LOGICAL_OP(gt, >);
+VALUE_IMPL_LOGICAL_OP(le, <=);
+VALUE_IMPL_LOGICAL_OP(lt, <);
+VALUE_IMPL_LOGICAL_OP(ne, !=);
+
+void Value_free(Value *self) {
+	if (!self) {
+		return;
 	}
-	return result;
+	free(self);
 }
 
 #pragma clang diagnostic pop

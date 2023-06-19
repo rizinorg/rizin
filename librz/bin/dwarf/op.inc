@@ -741,10 +741,6 @@ typedef struct {
 } EvaluationState;
 
 typedef struct {
-	st64 value;
-} Value;
-
-typedef struct {
 	ut64 offset;
 } DebugInfoOffset;
 
@@ -791,8 +787,6 @@ typedef struct {
 	ut64 size_in_bits;
 } Piece;
 
-typedef st64 StackValue;
-
 typedef struct {
 	const RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
@@ -824,19 +818,19 @@ typedef struct {
 		Incomplete,
 	} kind;
 	union {
-		StackValue stack_value;
+		Value stack_value;
 		Piece piece;
 		Location location;
 	};
 } EvaluationResult;
 
-bool Evaluation_pop(Evaluation *self, StackValue **value) {
+bool Evaluation_pop(Evaluation *self, Value **value) {
 	if (rz_vector_len(&self->stack) <= 0) {
 		*value = NULL;
 		return false;
 	}
 	if (value) {
-		*value = RZ_NEW0(StackValue);
+		*value = RZ_NEW0(Value);
 		rz_vector_pop(&self->stack, *value);
 	} else {
 		rz_vector_pop(&self->stack, NULL);
@@ -844,7 +838,7 @@ bool Evaluation_pop(Evaluation *self, StackValue **value) {
 	return true;
 }
 
-bool Evaluation_push(Evaluation *self, StackValue *value) {
+bool Evaluation_push(Evaluation *self, Value *value) {
 	rz_vector_push(&self->stack, value);
 	return true;
 }
@@ -856,16 +850,21 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 
 	switch (operation->kind) {
 	case OPERATION_KIND_DEREF: {
-		StackValue *entry = NULL;
+		Value *entry = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
 		RET_FALSE_IF_FAIL(entry);
-		*entry &= self->addr_mask;
-		ut64 *addr_space = NULL;
+		ut64 addr = 0;
+		RET_FALSE_IF_FAIL(Value_to_u64(entry, self->addr_mask, &addr));
+		Option /*<ut64>*/ *addr_space = NULL;
 		if (operation->deref.space) {
-			StackValue *space = NULL;
+			Value *space = NULL;
 			RET_FALSE_IF_FAIL(Evaluation_pop(self, &space));
 			RET_FALSE_IF_FAIL(space);
-			*addr_space = *space & self->addr_mask;
+			ut64 addr_space_value = 0;
+			RET_FALSE_IF_FAIL(Value_to_u64(space, self->addr_mask, &addr_space_value));
+			addr_space = some(&addr_space_value);
+		} else {
+			addr_space = none();
 		}
 		// TODO: eval memory?
 		break;
@@ -879,14 +878,14 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 			RZ_LOG_WARN("Pick index %d out of range\n", operation->pick.index);
 			break;
 		}
-		StackValue *value = rz_vector_index_ptr(&self->stack, len - operation->pick.index - 1);
+		Value *value = rz_vector_index_ptr(&self->stack, len - operation->pick.index - 1);
 		RET_FALSE_IF_FAIL(value);
 		RET_FALSE_IF_FAIL(Evaluation_push(self, value));
 		break;
 	}
 	case OPERATION_KIND_SWAP: {
-		StackValue *top = NULL;
-		StackValue *second = NULL;
+		Value *top = NULL;
+		Value *second = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top));
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &second));
 		RET_FALSE_IF_FAIL(Evaluation_push(self, top));
@@ -894,9 +893,9 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		break;
 	}
 	case OPERATION_KIND_ROT: {
-		StackValue *top = NULL;
-		StackValue *second = NULL;
-		StackValue *third = NULL;
+		Value *top = NULL;
+		Value *second = NULL;
+		Value *third = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top));
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &second));
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &third));
@@ -905,231 +904,81 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		RET_FALSE_IF_FAIL(Evaluation_push(self, third));
 		break;
 	}
-	case OPERATION_KIND_ABS: {
-		StackValue *top = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top));
-		*top = llabs(*top);
-		*top &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, top));
-		break;
+#define BINARY_OP(fcn) \
+	{ \
+		Value *rhs = NULL; \
+		Value *lhs = NULL; \
+		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs)); \
+		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs)); \
+		Value result = { 0 }; \
+		fcn(lhs, rhs, self->addr_mask, &result); \
+		Value_free(lhs); \
+		Value_free(rhs); \
+		RET_FALSE_IF_FAIL(Evaluation_push(self, &result)); \
+		break; \
 	}
-	case OPERATION_KIND_AND: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs & *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
+#define UNITARY_OP(fcn) \
+	{ \
+		Value *top = NULL; \
+		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top)); \
+		Value result = { 0 }; \
+		RET_FALSE_IF_FAIL(fcn(top, self->addr_mask, &result)); \
+		Value_free(top); \
+		RET_FALSE_IF_FAIL(Evaluation_push(self, &result)); \
+		break; \
 	}
-	case OPERATION_KIND_DIV: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs / *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_MINUS: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs - *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_MOD: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs % *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_MUL: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs * *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_NEG: {
-		StackValue *v = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-		StackValue result = -*v;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_NOT: {
-		StackValue *v = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-		StackValue result = ~*v;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_OR: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs | *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_PLUS: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs + *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
+
+	case OPERATION_KIND_ABS: UNITARY_OP(Value_abs);
+	case OPERATION_KIND_AND: BINARY_OP(Value_and);
+	case OPERATION_KIND_DIV: BINARY_OP(Value_div);
+	case OPERATION_KIND_MINUS: BINARY_OP(Value_sub);
+	case OPERATION_KIND_MOD: BINARY_OP(Value_rem);
+	case OPERATION_KIND_MUL: BINARY_OP(Value_mul);
+	case OPERATION_KIND_NEG: UNITARY_OP(Value_neg);
+	case OPERATION_KIND_NOT: UNITARY_OP(Value_not);
+	case OPERATION_KIND_OR: BINARY_OP(Value_or);
+	case OPERATION_KIND_PLUS: BINARY_OP(Value_add);
 	case OPERATION_KIND_PLUS_CONSTANT: {
-		StackValue *v = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-		StackValue result = *v + operation->plus_constant.value;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_SHL: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
+		Value *lhs = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs << *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
+		Value rhs = { 0 };
+		RET_FALSE_IF_FAIL(Value_from_u64(lhs->type, operation->plus_constant.value, &rhs));
+		RET_FALSE_IF_FAIL(Value_add(lhs, &rhs, self->addr_mask, lhs));
+		RET_FALSE_IF_FAIL(Evaluation_push(self, lhs));
 		break;
 	}
-	case OPERATION_KIND_SHR: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs >> *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_SHRA: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs >> *rhs; // TODO: OPERATION_KIND_SHRA
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_XOR: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs ^ *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
+	case OPERATION_KIND_SHL: BINARY_OP(Value_shl);
+	case OPERATION_KIND_SHR: BINARY_OP(Value_shr);
+	case OPERATION_KIND_SHRA: BINARY_OP(Value_shra);
+	case OPERATION_KIND_XOR: BINARY_OP(Value_xor);
 	case OPERATION_KIND_BRA: {
-		StackValue *v = NULL;
+		Value *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-		ut64 entry = *v & self->addr_mask;
+		ut64 entry = 0;
+		RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &entry));
 		if (entry != 0) {
 			// TODO: compute pc
 			//			self->pc = entry;
 		}
 		break;
 	}
-	case OPERATION_KIND_EQ: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs == *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_GE: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs >= *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_GT: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs > *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_LE: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs <= *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_LT: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs < *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
-	case OPERATION_KIND_NE: {
-		StackValue *rhs = NULL;
-		StackValue *lhs = NULL;
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs));
-		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		StackValue result = *lhs != *rhs;
-		result &= self->addr_mask;
-		RET_FALSE_IF_FAIL(Evaluation_push(self, &result));
-		break;
-	}
+	case OPERATION_KIND_EQ: BINARY_OP(Value_eq);
+	case OPERATION_KIND_GE: BINARY_OP(Value_ge);
+	case OPERATION_KIND_GT: BINARY_OP(Value_gt);
+	case OPERATION_KIND_LE: BINARY_OP(Value_le);
+	case OPERATION_KIND_LT: BINARY_OP(Value_lt);
+	case OPERATION_KIND_NE: BINARY_OP(Value_ne);
 	case OPERATION_KIND_SKIP: {
 		// TODO: compute pc
 		break;
 	}
 	case OPERATION_KIND_UNSIGNED_CONSTANT: {
-		StackValue v = operation->unsigned_constant.value;
-		v &= self->addr_mask;
+		Value v = { .type = ValueType_GENERIC, .generic = operation->unsigned_constant.value };
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
 	case OPERATION_KIND_SIGNED_CONSTANT: {
-		StackValue v = operation->signed_constant.value;
-		v &= self->addr_mask;
+		Value v = { .type = ValueType_GENERIC, .generic = (ut64)operation->signed_constant.value };
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
@@ -1155,10 +1004,10 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		if (rz_vector_empty(&self->stack)) {
 			location.kind = EMPTY;
 		} else {
-			StackValue *v = NULL;
+			Value *v = NULL;
 			RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
+			RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &location.address));
 			location.kind = ADDRESS;
-			location.address = *v;
 		}
 		Piece piece = {
 			.location = location,
@@ -1183,12 +1032,13 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		return true;
 	}
 	case OPERATION_KIND_STACK_VALUE: {
-		StackValue *v = NULL;
+		Value *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
 		Location location = {
 			.kind = VALUE,
-			.value = { *v },
+			.value = *v,
 		};
+		Value_free(v);
 		out->kind = Complete;
 		out->location = location;
 		return true;
