@@ -1506,13 +1506,13 @@ static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 	bool update_f = false;
 	bool update_s = false;
 	switch (dst->reg) {
-	case ARM_SYSREG_APSR_NZCVQ:
+	case ARM_MCLASSSYSREG_APSR_NZCVQ:
 		update_f = true;
 		break;
-	case ARM_SYSREG_APSR_G:
+	case ARM_MCLASSSYSREG_APSR_G:
 		update_s = true;
 		break;
-	case ARM_SYSREG_APSR_NZCVQG:
+	case ARM_MCLASSSYSREG_APSR_NZCVQG:
 		update_f = true;
 		update_s = true;
 		break;
