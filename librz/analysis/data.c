@@ -44,7 +44,6 @@ static int is_invalid(const ut8 *buf, int size) {
 	return (!memcmp(buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size)) ? 1 : 0;
 }
 
-#define USE_IS_VALID_OFFSET 1
 static ut64 is_pointer(RzAnalysis *analysis, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
@@ -56,23 +55,8 @@ static ut64 is_pointer(RzAnalysis *analysis, const ut8 *buf, int size) {
 	if (!n) {
 		return 1; // null pointer
 	}
-#if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset(iob->io, n, 0);
 	return r ? n : 0LL;
-#else
-	// optimization to ignore very low and very high pointers
-	// this makes disasm 5x faster, but can result in some false positives
-	// we should compare with current offset, to avoid
-	// short/long references. and discard invalid ones
-	if (n < 0x1000)
-		return 0; // probably wrong
-	if (n > 0xffffffffffffLL)
-		return 0; // probably wrong
-
-	if (iob->read_at(iob->io, n, buf2, size) != size)
-		return 0;
-	return is_invalid(buf2, size) ? 0 : n;
-#endif
 }
 
 static bool is_bin(const ut8 *buf, int size) {
