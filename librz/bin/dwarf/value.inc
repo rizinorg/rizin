@@ -1,5 +1,5 @@
 static inline int leading_zeros(uint64_t x) {
-#if defined(__GNUC__) || defined(__clang__)
+#if HAS___BUILTIN_CLZLL
 	return __builtin_clzll(x);
 #else
 	int n = 0;
