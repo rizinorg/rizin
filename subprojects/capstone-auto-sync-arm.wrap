@@ -3,3 +3,4 @@ url = https://github.com/Rot127/capstone.git
 revision = auto-sync
 directory = capstone-auto-sync-arm
 depth = 1
+patch_directory = capstone-auto-sync-arm
