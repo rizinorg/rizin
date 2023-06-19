@@ -955,7 +955,7 @@ bool Value_shr(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
 		result->u64 = v2 >= 64 ? 0 : self->u64 >> v2;
 		break;
 	default:
-		break;
+		return false;
 	}
 	return result;
 }
@@ -987,7 +987,7 @@ bool Value_shra(Value *self, Value *rhs, uint64_t addr_mask, Value *result) {
 		result->i64 = v2 >= 64 ? (self->i64 < 0 ? ~0 : 0) : (self->i64 >> v2);
 		break;
 	default:
-		break;
+		return false;
 	}
 	return result;
 }
