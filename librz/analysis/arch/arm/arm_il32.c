@@ -3870,6 +3870,50 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 	return EMPTY();
 }
 
+static RzILOpEffect *vldr(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || !ISMEM(1)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpBitVector *addr;
+	size_t mem_idx = 1;
+	cs_arm_op *memop = &insn->detail->arm.operands[mem_idx];
+	if (memop->mem.base == ARM_REG_PC) {
+		// LDR (literal) is different in the sense that it aligns the pc value:
+		addr = arg_mem(U32(PCALIGN(insn->address, is_thumb) + MEMDISP(mem_idx)), memop, NULL);
+	} else {
+		addr = ARG(mem_idx);
+	}
+	if (!addr) {
+		return NULL;
+	}
+
+	RzILOpBitVector *data = LOADW(reg_bits(REGID(0)), addr);
+	return write_reg(REGID(0), data);
+}
+
+static RzILOpEffect *vstr(cs_insn *insn, bool is_thumb) {
+	if (!ISREG(0) || !ISMEM(1)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	size_t mem_idx = 1;
+	RzILOpBitVector *addr = ARG(mem_idx);
+	if (!addr) {
+		return NULL;
+	}
+
+	RzILOpBitVector *val = REG(0);
+	if (!val) {
+		rz_il_op_pure_free(addr);
+		return NULL;
+	}
+
+	return STOREW(addr, val)
+}
+
 /**
  * Lift an ARM instruction to RzIL, without considering its condition
  *
@@ -4232,6 +4276,10 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vsub(insn, is_thumb);
 	case ARM_INS_VMUL:
 		return vmul(insn, is_thumb);
+	case ARM_INS_VLDR:
+		return vldr(insn, is_thumb);
+	case ARM_INS_VSTR:
+		return vstr(insn, is_thumb);
 	default:
 		return NULL;
 	}
