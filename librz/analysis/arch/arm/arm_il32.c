@@ -2631,7 +2631,7 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 		if (!reg_val) {
 			return NULL;
 		}
-		RzILOpBitVector *rt1_val = UNSIGNED(32, reg_val);
+		RzILOpBitVector *rt1_val = UNSIGNED(32, DUP(reg_val));
 		RzILOpBitVector *rt2_val = UNSIGNED(32, SHIFTR0(UN(8, 32), reg_val));
 		return SEQ2(write_reg(REGID(0), rt1_val),
 			write_reg(REGID(1), rt2_val));
@@ -2777,7 +2777,7 @@ static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
 		ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
 		src_b = repeated_imm(DT_WIDTH(insn), REG_WIDTH(0), imm);
 	} else {
-		src_b = REG_VAL(OPCOUNT() - 1);
+		src_b = REG(OPCOUNT() - 1);
 	}
 
 	if (!src_a || !src_b) {
@@ -2823,9 +2823,9 @@ static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
 
 	// v<op> <Qd>, <Qn>, <Qm>
 	// v<op> <Dd>, <Dn>, <Dm>
-	RzILOpBitVector *d = REG_VAL(0);
-	RzILOpBitVector *n = REG_VAL(1);
-	RzILOpBitVector *m = REG_VAL(2);
+	RzILOpBitVector *d = REG(0);
+	RzILOpBitVector *n = REG(1);
+	RzILOpBitVector *m = REG(2);
 
 	if (!d || !n || !m) {
 		rz_il_op_pure_free(d);
@@ -3067,7 +3067,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
-		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3152,7 +3152,7 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpEffect *wback_eff;
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
-		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3238,7 +3238,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpEffect *wback_eff;
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
-		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3349,7 +3349,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
-		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3432,7 +3432,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpEffect *wback_eff;
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
-		wback_eff = write_reg(rn_idx, ADD(REG_VAL(rn_idx), new_offset));
+		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3464,7 +3464,8 @@ static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *succes
 	// note that the ARM manual didn't specify rounding mode
 	// VFP operation for single and double
 	if (from_fmt == RZ_FLOAT_IEEE754_BIN_64 || to_fmt == RZ_FLOAT_IEEE754_BIN_64) {
-		return write_reg(REGID(0), F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, BV2F(from_fmt, REG_VAL(1)))));
+		*success = true;
+		return write_reg(REGID(0), F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, BV2F(from_fmt, REG(1)))));
 	}
 
 	// NEON vcvt for f16 and f32
@@ -3481,6 +3482,7 @@ static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *succes
 				F2BV(FCONVERT(to_fmt, RZ_FLOAT_RMODE_RNE, from_val))));
 	}
 
+	*success = true;
 	return eff;
 }
 
@@ -3538,14 +3540,14 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 		RzILOpBitVector *from_val;
 		if (is_f2i) {
 			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
-						       BV2F(from_fmt, REG_VAL(1)))
+						       BV2F(from_fmt, REG(1)))
 					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
-						       BV2F(from_fmt, REG_VAL(1)));
+						       BV2F(from_fmt, REG(1)));
 		} else {
 			from_val = is_signed ? F2BV(SINT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
-						       REG_VAL(1)))
+						       REG(1)))
 					     : F2BV(INT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
-						       REG_VAL(1)));
+						       REG(1)));
 		}
 
 		return write_reg(REGID(0), from_val);
@@ -3611,7 +3613,7 @@ static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 	bool is_dup_lane = NEON_LANE(1) == -1;
 
 	for (int i = 0; i < reg_bits(REGID(0)) / elem_bits; ++i) {
-		RzILOpBitVector *scalar = is_dup_lane ? read_reg_lane(REGID(1), NEON_LANE(1), elem_bits) : UNSIGNED(elem_bits, REG_VAL(1));
+		RzILOpBitVector *scalar = is_dup_lane ? read_reg_lane(REGID(1), NEON_LANE(1), elem_bits) : UNSIGNED(elem_bits, REG(1));
 		eff = SEQ2(eff,
 			write_reg_lane(REGID(0), i, elem_bits, scalar));
 	}
@@ -3642,7 +3644,7 @@ static RzILOpEffect *vext(cs_insn *insn, bool is_thumb) {
 	// <Vm:Vn>(start_bits: start_bits+reg_bits(Vd))
 	return write_reg(REGID(0),
 		UNSIGNED(reg_bits(REGID(0)),
-			SHIFTR0(APPEND(REG_VAL(2), REG_VAL(1)),
+			SHIFTR0(APPEND(REG(2), REG(1)),
 				UN(8, shift_dist))));
 }
 
@@ -3746,8 +3748,8 @@ static RzILOpEffect *vswp(cs_insn *insn, bool is_thumb) {
 		return EMPTY();
 	}
 
-	RzILOpBitVector *d_val = REG_VAL(0);
-	RzILOpBitVector *m_val = REG_VAL(1);
+	RzILOpBitVector *d_val = REG(0);
+	RzILOpBitVector *m_val = REG(1);
 	return SEQ2(write_reg(REGID(0), m_val),
 		write_reg(REGID(1), d_val));
 }
@@ -3768,8 +3770,8 @@ static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
 		// VFP
 		return write_reg(REGID(0),
 			F2BV(FADD(RZ_FLOAT_RMODE_RNE,
-				BV2F(fmt, REG_VAL(1)),
-				BV2F(fmt, REG_VAL(2)))));
+				BV2F(fmt, REG(1)),
+				BV2F(fmt, REG(2)))));
 	}
 
 	ut32 elem_bits = DT_WIDTH(insn);
@@ -3815,8 +3817,8 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 		// VFP
 		return write_reg(REGID(0),
 			F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
-				BV2F(fmt, REG_VAL(1)),
-				BV2F(fmt, REG_VAL(2)))));
+				BV2F(fmt, REG(1)),
+				BV2F(fmt, REG(2)))));
 	}
 
 	ut32 elem_bits = DT_WIDTH(insn);
@@ -3860,8 +3862,8 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 		// VFP fmul
 		return write_reg(REGID(0),
 			F2BV(FMUL(RZ_FLOAT_RMODE_RNE,
-				BV2F(fmt, REG_VAL(1)),
-				BV2F(fmt, REG_VAL(2)))));
+				BV2F(fmt, REG(1)),
+				BV2F(fmt, REG(2)))));
 	}
 
 	// not implemented
