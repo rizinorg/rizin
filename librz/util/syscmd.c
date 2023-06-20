@@ -147,20 +147,15 @@ RZ_API RZ_OWN char *rz_syscmd_ls(RZ_NONNULL const char *input) {
 			eprintf("Usage: ls ([-e,-l,-j,-q]) ([path]) # long, json, quiet\n");
 		} else if ((!strncmp(input, "-e", 2))) {
 			printfmt = 'e';
-			path = rz_str_trim_head_ro(path + 1);
+			path = rz_str_trim_head_ro(input + 2);
 		} else if ((!strncmp(input, "-q", 2))) {
 			printfmt = 'q';
-			path = rz_str_trim_head_ro(path + 1);
+			path = rz_str_trim_head_ro(input + 2);
 		} else if ((!strncmp(input, "-l", 2)) || (!strncmp(input, "-j", 2))) {
-			// mode = 'l';
-			if (input[2]) {
-				printfmt = (input[2] == 'j') ? FMT_JSON : FMT_RAW;
-				path = rz_str_trim_head_ro(input + 2);
-				if (!*path) {
-					path = ".";
-				}
-			} else {
-				printfmt = FMT_RAW;
+			printfmt = (input[1] == 'j') ? FMT_JSON : FMT_RAW;
+			path = rz_str_trim_head_ro(input + 2);
+			if (!*path) {
+				path = ".";
 			}
 		} else {
 			path = input;
