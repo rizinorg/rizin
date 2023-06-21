@@ -1718,6 +1718,9 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in_bounds(RzAnalysis
 	return ret;
 }
 
+/**
+ * \brief Returns function if exists given the \p name
+ */
 RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const char *name) {
 	bool found = false;
 	RzAnalysisFunction *f = ht_pp_find(a->ht_name_fun, name, &found);
@@ -1760,6 +1763,9 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 	return true;
 }
 
+/**
+ * \brief Returns the amount of loops located in the \p fcn function
+ */
 RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
@@ -1775,13 +1781,19 @@ RZ_API int rz_analysis_function_loops(RzAnalysisFunction *fcn) {
 	return loops;
 }
 
-RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
-	/*
-	CC = E - N + 2P
-	E = the number of edges of the graph.
-	N = the number of nodes of the graph.
-	P = the number of connected components (exit nodes).
+/**
+ * \brief Returns cyclomatic complexity of the function
+ *
+ * It calculated using this formula:
+ *
+ * CC = E - N + 2P
+ * where
+ * E is the number of edges of the graph.
+ * N is the number of nodes of the graph.
+ * P is the number of connected components (exit nodes).
+ *
  */
+RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 	RzAnalysis *analysis = fcn->analysis;
 	int E = 0, N = 0, P = 0;
 	RzListIter *iter;
@@ -1874,6 +1886,12 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	return pj_drain(pj);
 }
 
+/**
+ * \brief Returns type signature (prototype) of the function
+ *
+ * If the type is presented in the type database it uses it,
+ * otherwise it tries to derive the type from the analysis data
+ */
 RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function) {
 	rz_return_val_if_fail(function, NULL);
 	RzAnalysis *a = function->analysis;
@@ -2099,6 +2117,9 @@ RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NU
 	return edges;
 }
 
+/**
+ * \brief Returns if the function pure - accesses any external resources or not
+ */
 RZ_API bool rz_analysis_function_purity(RzAnalysisFunction *fcn) {
 	if (fcn->has_changed) {
 		HtUP *ht = ht_up_new(NULL, NULL, NULL);
@@ -2190,6 +2211,11 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 	}
 }
 
+/**
+ *  \brief This function checks whether any operation in a given function may change BP
+ *
+ *  Excludes pattern like "mov bp, sp" and "pop sp, bp" for saving stack pointer value
+ */
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
 	__analysis_fcn_check_bp_use(fcn->analysis, fcn);
@@ -2473,6 +2499,11 @@ static int typecmp(const void *a, const void *b) {
 	return !rz_types_equal(t1, t2);
 }
 
+/**
+ * \brief Returns vector of all unique types used in a function
+ *
+ * Accounts for all types used in both arguments and variables, excluding return value type
+ */
 RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzList *type_used = rz_list_new();
 	void **it;
