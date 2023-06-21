@@ -2433,7 +2433,7 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
  * \brief Returns vector of all function arguments
  *
  * \param a RzAnalysis instance
- * \param f Function
+ * \param fcn Function
  */
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	if (!a || !fcn) {
@@ -2491,6 +2491,58 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnaly
 cleanup:
 	rz_pvector_free(tmp);
 	return args;
+}
+
+/**
+ * \brief Returns vector of all function variables without arguments
+ *
+ * \param a RzAnalysis instance
+ * \param fcn Function
+ */
+RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_vars(RZ_NONNULL RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(a && fcn, NULL);
+	RzAnalysisVar *var;
+	void **it;
+	RzPVector *vars = rz_pvector_new(NULL);
+	if (!vars) {
+		return NULL;
+	}
+	rz_pvector_foreach (&fcn->vars, it) {
+		var = *it;
+		if (!rz_analysis_var_is_arg(var)) {
+			rz_pvector_push(vars, var);
+		}
+	}
+	return vars;
+}
+
+/**
+ * \brief Gets the argument given its index
+ *
+ * \param analysis RzAnalysis instance
+ * \param f Function to update
+ */
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *f, size_t index) {
+	rz_return_val_if_fail(analysis && f, NULL);
+	int argnum = rz_analysis_function_get_arg_count(analysis, f);
+	if (argnum < 1) {
+		return NULL;
+	}
+	if (index >= argnum) {
+		RZ_LOG_VERBOSE("Function %s has less arguments (%d) than requested (%zu)\n",
+			f->name, argnum, index);
+	}
+	RzPVector *args = rz_analysis_function_args(analysis, f);
+	if (!args) {
+		RZ_LOG_VERBOSE("Function %s has no arguments\n", f->name);
+		return NULL;
+	}
+	if (rz_pvector_len(args) < index) {
+		RZ_LOG_VERBOSE("Function %s has less arguments (%zu) than requested (%zu)\n",
+			f->name, rz_pvector_len(args), index);
+		return NULL;
+	}
+	return rz_pvector_at(args, index);
 }
 
 static int typecmp(const void *a, const void *b) {
