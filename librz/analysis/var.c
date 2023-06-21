@@ -204,6 +204,17 @@ RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var_dwarf(RzAnalysisFun
 	return out;
 }
 
+/**
+ * \brief Updates the type of the variable
+ *
+ * Frees the old type of the variable and sets a new one.
+ * After that it checks if the size of the variable has changed
+ * and tries to resolve overlaps if \p resolve_overlaps is set
+ *
+ * \param var variable to check
+ * \param type new type of the variable
+ * \param resolve_overlaps resolves overlaps if set
+ */
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type, bool resolve_overlaps) {
 	rz_return_if_fail(var && type);
 	rz_type_free(var->type);
@@ -283,11 +294,17 @@ RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn) {
 	}
 }
 
+/**
+ * Delete all variables from \p fcn function - both arguments and local variables
+ */
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
 	rz_pvector_fini(&fcn->vars);
 	fcn->argnum = 0;
 }
 
+/**
+ * Delete all unused (without any read or write access) variables from \p fcn function
+ */
 RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn) {
 	void **v;
 	RzPVector *vars_clone = rz_pvector_clone(&fcn->vars);
@@ -300,12 +317,18 @@ RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn) {
 	rz_pvector_free(vars_clone);
 }
 
+/**
+ * Delete variable \p var from \p fcn
+ */
 RZ_API void rz_analysis_function_delete_var(RzAnalysisFunction *fcn, RzAnalysisVar *var) {
 	rz_return_if_fail(fcn && var);
 	rz_pvector_remove_data(&fcn->vars, var);
 	rz_analysis_var_free(var);
 }
 
+/**
+ * Search variable by \p name in \p fcn, return first match
+ */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFunction *fcn, const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 	void **it;
@@ -529,6 +552,10 @@ RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, boo
 	return true;
 }
 
+/**
+ * Returns the argument number if the variable \p is argument of some function
+ * and matches the calling convention
+ */
 RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var) {
 	rz_return_val_if_fail(var, -1);
 	RzAnalysis *analysis = var->fcn->analysis;
@@ -681,10 +708,16 @@ RZ_API RzAnalysisVarAccess *rz_analysis_var_get_access_at(RzAnalysisVar *var, ut
 	return NULL;
 }
 
+/**
+ * \brief Adds a type constraint \p constraint to a \p var variables
+ */
 RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint) {
 	rz_vector_push(&var->constraints, constraint);
 }
 
+/**
+ * \brief Get all type constraints of a \p var variable in the text form
+ */
 RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
 	size_t n = var->constraints.len;
 	if (!n) {
