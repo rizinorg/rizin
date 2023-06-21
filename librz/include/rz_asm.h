@@ -230,6 +230,7 @@ extern RzAsmPlugin rz_asm_plugin_cris_gnu;
 extern RzAsmPlugin rz_asm_plugin_dalvik;
 extern RzAsmPlugin rz_asm_plugin_dcpu16;
 extern RzAsmPlugin rz_asm_plugin_ebc;
+extern RzAsmPlugin rz_asm_plugin_evm;
 extern RzAsmPlugin rz_asm_plugin_gb;
 extern RzAsmPlugin rz_asm_plugin_h8300;
 extern RzAsmPlugin rz_asm_plugin_hexagon;
