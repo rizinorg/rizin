@@ -92,6 +92,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	cs_option(ctx->cd, CS_OPT_SYNTAX, (a->syntax == RZ_ASM_SYNTAX_REGNUM) ? CS_OPT_SYNTAX_NOREGNAME : CS_OPT_SYNTAX_DEFAULT);
+	cs_option(ctx->cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_CS_REG_ALIAS);
 	cs_option(ctx->cd, CS_OPT_DETAIL, (a->features && *a->features) ? CS_OPT_ON : CS_OPT_OFF);
 	cs_option(ctx->cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!buf) {
