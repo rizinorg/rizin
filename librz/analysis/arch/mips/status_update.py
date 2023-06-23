@@ -1,4 +1,5 @@
 import sys
+from pwn import *
 
 insn_list = [
     "MIPS_INS_ABSQ_S",
@@ -749,19 +750,53 @@ def update_status(args):
     status[insn_name] = new_insn_status
     write_status(status)
 
+def show_status():
+    status = load_status()
+
+    # count total number of uplifted instructions
+    mips32 = 0
+    mips64 = 0
+    mmips32 = 0
+    mmips64 = 0
+
+    for i in range(len(insn_list)):
+        s = status[insn_list[i]]
+
+        if s[0] == True:
+            mips32 += 1
+        if s[1] == True:
+            mips64 += 1
+        if s[2] == True:
+            mmips32 += 1
+        if s[3] == True:
+            mmips64 += 1
+
+    print(f"STATUS : MIPS32 = {mips32} | MIPS64 = {mips64} | mMIPS32 = {mmips32} | mMIPS64 = {mmips64}")
 
 # process cmd line args
-if len(sys.argv) < 2:
-    print(sys.argv)
+def show_help():
     print("USAGE : python status_update.py command")
     print(
-        "COMMANDS : new                                    # generate new status file\n"
-        "         : update <insn_name> <arch1> <arch2> ... # update status for current arch\n"
-        "         : eg: update ADDI mips32 mmips64         # mips32 and mmps64 will be marked, others will be unmarked\n"
+        "COMMANDS : help                                        # display this help\n"
+        "         : new                                         # generate new status file\n"
+        "         : update <insn_name> <arch1> <arch2> ...      # update status for current arch\n"
+        "         : show                                        # display total number of \n"
+        "                                                       # uplifted instructions per arch\n"
+        "EXAMPLES :\n"
+        "         : eg: update ADDI mips32 mmips64              # mips32 and mmps64 will be marked, others will be unmarked\n"
+        "         : eg: coverage mipsbins/bin/ls mips32 little  # Will load bin/ls elf file and calculate uplifting status"
     )
-else:
-    args = sys.argv[1:]
+
+
+args = sys.argv[1:]
+if(len(args) == 0):
+    show_help()
+else :
     if args[0] == "new":
         generate_empty_status()
     elif args[0] == "update":
         update_status(args[1:])
+    elif args[0] == "show":
+        show_status()
+    elif args[0] == "help":
+        show_help()

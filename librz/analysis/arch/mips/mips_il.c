@@ -56,7 +56,7 @@ typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32, bool, boo
 // v  : value to be sign extended
 // vn : bitsize of v
 // n  : number of bits to sign extend to
-#define SIGN_EXTEND(v, nv, n) ((v & ((ut64)1 << (nv - 1))) ? (v | ((ut64)((ut64)1 << (n - nv)) - 1) << nv) : v)
+#define SIGN_EXTEND(v, nv, n) (st64)((v & ((ut64)1 << (nv - 1))) ? (v | ((ut64)((ut64)1 << (n - nv)) - 1) << nv) : v)
 #define ZERO_EXTEND(v, nv, n) v & ~(((ut64)(1 << (n - nv)) - 1) << nv)
 
 // get instruction operand count
@@ -83,42 +83,41 @@ typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32, bool, boo
 #define INSN_GROUP_COUNT(gprdx) ((insn)->detail->groups_count)
 
 // register names to  map from enum to strings
-static char *cpu_reg_enum_to_name_map[] = {
+static const char *cpu_reg_enum_to_name_map[] = {
 	[MIPS_REG_PC] = "pc",
 
 	[MIPS_REG_0] = "zero",
-
-	[MIPS_REG_1] = "r1",
-	[MIPS_REG_2] = "r2",
-	[MIPS_REG_3] = "r3",
-	[MIPS_REG_4] = "r4",
-	[MIPS_REG_5] = "r5",
-	[MIPS_REG_6] = "r6",
-	[MIPS_REG_7] = "r7",
-	[MIPS_REG_8] = "r8",
-	[MIPS_REG_9] = "r9",
-	[MIPS_REG_10] = "r10",
-	[MIPS_REG_11] = "r11",
-	[MIPS_REG_12] = "r12",
-	[MIPS_REG_13] = "r13",
-	[MIPS_REG_14] = "r14",
-	[MIPS_REG_15] = "r15",
-	[MIPS_REG_16] = "r16",
-	[MIPS_REG_17] = "r17",
-	[MIPS_REG_18] = "r18",
-	[MIPS_REG_19] = "r19",
-	[MIPS_REG_20] = "r20",
-	[MIPS_REG_21] = "r21",
-	[MIPS_REG_22] = "r22",
-	[MIPS_REG_23] = "r23",
-	[MIPS_REG_24] = "r24",
-	[MIPS_REG_25] = "r25",
-	[MIPS_REG_26] = "r26",
-	[MIPS_REG_27] = "r27",
-	[MIPS_REG_28] = "r28",
-	[MIPS_REG_29] = "r29",
-	[MIPS_REG_30] = "r30",
-	[MIPS_REG_31] = "r31",
+	[MIPS_REG_1] = "at",
+	[MIPS_REG_2] = "v0",
+	[MIPS_REG_3] = "v1",
+	[MIPS_REG_4] = "a0",
+	[MIPS_REG_5] = "a1",
+	[MIPS_REG_6] = "a2",
+	[MIPS_REG_7] = "a3",
+	[MIPS_REG_8] = "t0",
+	[MIPS_REG_9] = "t1",
+	[MIPS_REG_10] = "t2",
+	[MIPS_REG_11] = "t3",
+	[MIPS_REG_12] = "t4",
+	[MIPS_REG_13] = "t5",
+	[MIPS_REG_14] = "t6",
+	[MIPS_REG_15] = "t7",
+	[MIPS_REG_16] = "s0",
+	[MIPS_REG_17] = "s1",
+	[MIPS_REG_18] = "s2",
+	[MIPS_REG_19] = "s3",
+	[MIPS_REG_20] = "s4",
+	[MIPS_REG_21] = "s5",
+	[MIPS_REG_22] = "s6",
+	[MIPS_REG_23] = "s7",
+	[MIPS_REG_24] = "t8",
+	[MIPS_REG_25] = "t9",
+	[MIPS_REG_26] = "k0",
+	[MIPS_REG_27] = "k1",
+	[MIPS_REG_28] = "gp",
+	[MIPS_REG_29] = "sp",
+	[MIPS_REG_30] = "fp",
+	[MIPS_REG_31] = "ra",
 
 	[MIPS_REG_HI] = "hi",
 	[MIPS_REG_LO] = "lo",
@@ -237,13 +236,6 @@ static char *cpu_reg_enum_to_name_map[] = {
 #define IL_START_ATOMIC_RMW_OP() SETG(LLBIT, IL_TRUE)
 #define IL_STOP_ATOMIC_RMW_OP()  SETG(LLBIT, IL_FALSE)
 
-// TODO: REMOVE IF NOT NEEDED IN FUTURE
-// res must be a global variable
-// x and y must be local variable
-// returns Bool*
-/* #define IL_CHECK_OVERFLOW(x, y, res) IS_ZERO(AND(XOR(MSB(x), MSB(res)), XOR(MSB(y), MSB(res)))) */
-/* #define IL_CHECK_CARRY(x, y, res)    IS_ZERO(OR(AND(MSB(x), MSB(y)), AND(OR(MSB(x), MSB(y)), INV(MSB(res))))) */
-
 // This is how MIPS ISA defines it [REG_BIT(n) == REG_BIT(n-1)]
 #define IL_BITN(x, n)            SHIFTR0(LOGAND(x, UN(GPRLEN, (ut64)1 << (n - 1))), UN(GPRLEN, n - 1))
 #define IL_CHECK_OVERFLOW(r, sz) EQ(IL_BITN(r, sz), IL_BITN(r, sz - 1))
@@ -263,7 +255,7 @@ IL_LIFTER(ABSQ_S) {
  * */
 IL_LIFTER(ADD) {
 	// destination reg
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -290,7 +282,7 @@ IL_LIFTER(ADD) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIUPC) {
-	char *rs = REG_OPND(0);
+	const char *rs = REG_OPND(0);
 
 	st32 imm_val = (st32)IMM_OPND(1);
 	imm_val = SIGN_EXTEND(imm_val, 21, GPRLEN);
@@ -354,7 +346,7 @@ IL_LIFTER(ADDUH_R) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -386,7 +378,7 @@ IL_LIFTER(ADD_A) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(ADDI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	// get imm
@@ -410,11 +402,10 @@ IL_LIFTER(ADDI) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
+	ut64 imm_val = SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN);
 
-	st32 imm_val = (st32)IMM_OPND(1);
-	imm_val = SIGN_EXTEND(imm_val, 16, GPRLEN);
 	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *sum = ADD(rs, imm);
@@ -434,7 +425,7 @@ IL_LIFTER(ADDIU) {
  *             DALIGN : ReservedInstruction
  * */
 IL_LIFTER(ALIGN) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 	ut8 bp = 8 * IMM_OPND(3); // 8*bp is used everywhere, because 1 byte is 8 bits
@@ -457,7 +448,7 @@ IL_LIFTER(ALIGN) {
  * Exceptions: None
  * */
 IL_LIFTER(ALUIPC) {
-	char *rs = REG_OPND(0);
+	const char *rs = REG_OPND(0);
 
 	st64 imm = SIGN_EXTEND(IMM_OPND(1) << 16, 32, GPRLEN);
 	BitVector *new_pc = U32(~0xFFFF & (pc + imm));
@@ -473,7 +464,7 @@ IL_LIFTER(ALUIPC) {
  * Exceptions: None
  * */
 IL_LIFTER(AND) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -496,7 +487,7 @@ IL_LIFTER(ANDI16) {
  * Exceptions: None
  * */
 IL_LIFTER(ANDI) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	st32 imm_val = (st32)IMM_OPND(2);
@@ -526,7 +517,7 @@ IL_LIFTER(ASUB_U) {
  * NOTE: Check sign extension
  * */
 IL_LIFTER(AUI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	st32 imm_val = (st32)IMM_OPND(2) << 16;
@@ -545,7 +536,7 @@ IL_LIFTER(AUI) {
  * NOTE: Check sign extension
  * */
 IL_LIFTER(AUIPC) {
-	char *rs = REG_OPND(0);
+	const char *rs = REG_OPND(0);
 	st64 imm = SIGN_EXTEND((st64)IMM_OPND(1) << 16, 32, GPRLEN);
 	BitVector *new_pc = SN(GPRLEN, pc + imm);
 
@@ -580,12 +571,13 @@ IL_LIFTER(BADDU) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BAL) {
-	st64 offset = (st64)IMM_OPND(0) << 2;
+	ut64 offset = IMM_OPND(0) << 2;
 	offset = SIGN_EXTEND(offset, 18, GPRLEN);
-	BitVector *jump_target = UN(GPRLEN, pc + offset);
 
 	// store link in r31 and jump
 	Effect *link_op = SETG(REG_R(31), UN(GPRLEN, pc + 8));
+
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
 	Effect *jump_op = JMP(jump_target);
 
 	return SEQ2(link_op, jump_op);
@@ -1219,7 +1211,7 @@ IL_LIFTER(BITREV) {
  * Exceptions: None
  * */
 IL_LIFTER(BITSWAP) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
 	// TODO: Add support for 64 bit regs
@@ -1762,7 +1754,7 @@ IL_LIFTER(CLE_U) {
  * Exceptions: None.
  * */
 IL_LIFTER(CLO) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	Effect *reset_rd = SETG(rd, U32(0));
@@ -1802,7 +1794,7 @@ IL_LIFTER(CLT_U) {
  * Exceptions: None.
  * */
 IL_LIFTER(CLZ) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	Effect *reset_rd = SETG(rd, U32(0));
@@ -1863,7 +1855,7 @@ IL_LIFTER(CMPI) {
  * Exceptions: IntegerOverflow, ReservedInstruction
  * */
 IL_LIFTER(DADD) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -1880,7 +1872,7 @@ IL_LIFTER(DADD) {
  * Exceptions: IntegerOverflow, ReservedInstruction
  * */
 IL_LIFTER(DADDI) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = S64(SIGN_EXTEND(IMM_OPND(2), 16, 64));
 
@@ -1897,7 +1889,7 @@ IL_LIFTER(DADDI) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DADDIU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = S64(SIGN_EXTEND(IMM_OPND(2), 16, 64));
 
@@ -1911,7 +1903,7 @@ IL_LIFTER(DADDIU) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DADDU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -1925,7 +1917,7 @@ IL_LIFTER(DADDU) {
  * Exceptions: ReseredInstruction
  * */
 IL_LIFTER(DAHI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	st64 imm_val = (st64)IMM_OPND(2) << 32;
@@ -1948,7 +1940,7 @@ IL_LIFTER(DALIGN) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DATI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	st64 imm_val = (st64)IMM_OPND(2) << 48;
@@ -1966,7 +1958,7 @@ IL_LIFTER(DATI) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DAUI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	st64 imm_val = (st64)IMM_OPND(2) << 16;
@@ -1989,7 +1981,7 @@ IL_LIFTER(DBITSWAP) {
  * Exceptions: None.
  * */
 IL_LIFTER(DCLO) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	Effect *reset_rd = SETG(rd, U64(0));
@@ -2016,7 +2008,7 @@ IL_LIFTER(DCLO) {
  * Exceptions: None.
  * */
 IL_LIFTER(DCLZ) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	Effect *reset_rd = SETG(rd, U64(0));
@@ -2056,7 +2048,7 @@ IL_LIFTER(DDIV) {
 		Effect *set_hi = SETG(REG_HI(), remainder);
 		return SEQ2(set_lo, set_hi);
 	} else {
-		char *rd = REG_OPND(0);
+		const char *rd = REG_OPND(0);
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
 		if (float_op) {
@@ -2088,7 +2080,7 @@ IL_LIFTER(DDIVU) {
 		Effect *set_hi = SETG(REG_HI(), remainder);
 		return SEQ2(set_lo, set_hi);
 	} else {
-		char *rd = REG_OPND(0);
+		const char *rd = REG_OPND(0);
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
 
@@ -2110,7 +2102,7 @@ IL_LIFTER(DERET) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DEXT) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
 	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
@@ -2129,7 +2121,7 @@ IL_LIFTER(DEXT) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DEXTM) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
 	ut8 size = (IMM_OPND(3) & 0x1F) + 32; // max value = 64 (5 bits + 32 imm)
@@ -2148,7 +2140,7 @@ IL_LIFTER(DEXTM) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DEXTU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = (IMM_OPND(2) & 0x1F) + 32; // max value = 64 (5 bits + 32 imm)
 	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
@@ -2171,7 +2163,7 @@ IL_LIFTER(DI) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DINS) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
 	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
@@ -2197,7 +2189,7 @@ IL_LIFTER(DINS) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DINSM) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
 	ut8 size = (IMM_OPND(3) & 0x1F) + 32; // max value = 64 (5 bits + 32 imm)
@@ -2223,7 +2215,7 @@ IL_LIFTER(DINSM) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DINSU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = (IMM_OPND(2) & 0x1F) + 32; // max value = 64 (5 bits + 32 imm)
 	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
@@ -2262,7 +2254,7 @@ IL_LIFTER(DIV) {
 		Effect *set_hi = SETG(REG_HI(), remainder);
 		return SEQ2(set_lo, set_hi);
 	} else {
-		char *rd = REG_OPND(0);
+		const char *rd = REG_OPND(0);
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
 		if (float_op) {
@@ -2294,7 +2286,7 @@ IL_LIFTER(DIVU) {
 		Effect *set_hi = SETG(REG_HI(), remainder);
 		return SEQ2(set_lo, set_hi);
 	} else {
-		char *rd = REG_OPND(0);
+		const char *rd = REG_OPND(0);
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
 
@@ -2319,7 +2311,7 @@ IL_LIFTER(DIV_U) {
  *             DLSA: ReservedInstruction if MIPS64 instruction set is not enabled
  * */
 IL_LIFTER(DLSA) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 	ut8 sa = (ut8)IMM_OPND(3);
@@ -2347,7 +2339,7 @@ IL_LIFTER(DMFC2) {
  * Exceptions: None
  * */
 IL_LIFTER(DMOD) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2362,7 +2354,7 @@ IL_LIFTER(DMOD) {
  * Exceptions: None
  * */
 IL_LIFTER(DMODU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2387,7 +2379,7 @@ IL_LIFTER(DMTC2) {
  * Exceptions: None
  * */
 IL_LIFTER(DMUH) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2407,7 +2399,7 @@ IL_LIFTER(DMUH) {
  * Exceptions: None
  * */
 IL_LIFTER(DMUHU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2427,7 +2419,7 @@ IL_LIFTER(DMUHU) {
  * Exceptions: None
  * */
 IL_LIFTER(DMUL) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2491,7 +2483,7 @@ IL_LIFTER(DMULTU) {
  * Exceptions: None
  * */
 IL_LIFTER(DMULU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2575,7 +2567,7 @@ IL_LIFTER(DPS) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DROTR) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(5, IMM_OPND(2));
 
@@ -2593,7 +2585,7 @@ IL_LIFTER(DROTR) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DROTR32) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(6, (IMM_OPND(2) & 0x1F) + 32);
 
@@ -2611,7 +2603,7 @@ IL_LIFTER(DROTR32) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(DROTRV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = CAST(6, IL_FALSE, IL_REG_OPND(2));
 
@@ -2629,7 +2621,7 @@ IL_LIFTER(DROTRV) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DSBH) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
 	BitVector *byte0 = LOGAND(DUP(rt), U64(0xFF));
@@ -2668,7 +2660,7 @@ IL_LIFTER(DSBH) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DSHD) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
 	BitVector *hword0 = LOGAND(DUP(rt), U64(0xFFFFUL));
@@ -2694,7 +2686,7 @@ IL_LIFTER(DSHD) {
  * Exceptions: None
  * */
 IL_LIFTER(DSLL) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(5, IMM_OPND(2));
 
@@ -2710,7 +2702,7 @@ IL_LIFTER(DSLL) {
  * Exceptions: None
  * */
 IL_LIFTER(DSLL32) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(6, (IMM_OPND(2) & 0x1F) + 32);
 
@@ -2726,7 +2718,7 @@ IL_LIFTER(DSLL32) {
  * Exceptions: None
  * */
 IL_LIFTER(DSLLV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
@@ -2743,7 +2735,7 @@ IL_LIFTER(DSLLV) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DSRA) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	ut8 sa_val = IMM_OPND(2) & 0x1F;
 
@@ -2758,7 +2750,7 @@ IL_LIFTER(DSRA) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DSRA32) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	ut8 sa_val = (IMM_OPND(2) & 0x1F) + 32;
 
@@ -2773,7 +2765,7 @@ IL_LIFTER(DSRA32) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DSRAV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
@@ -2788,7 +2780,7 @@ IL_LIFTER(DSRAV) {
  * Exceptions: None
  * */
 IL_LIFTER(DSRL) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(5, IMM_OPND(2));
 
@@ -2803,7 +2795,7 @@ IL_LIFTER(DSRL) {
  * Exceptions: None
  * */
 IL_LIFTER(DSRL32) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(6, (IMM_OPND(2) & 0x1F) + 32);
 
@@ -2818,7 +2810,7 @@ IL_LIFTER(DSRL32) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(DSRLV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
@@ -2834,7 +2826,7 @@ IL_LIFTER(DSRLV) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(DSUB) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2852,7 +2844,7 @@ IL_LIFTER(DSUB) {
  * Exceptions: None
  * */
 IL_LIFTER(DSUBU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -2877,7 +2869,7 @@ IL_LIFTER(ERET) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(EXT) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
 	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
@@ -2941,7 +2933,7 @@ IL_LIFTER(EXTS32) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction
  * */
 IL_LIFTER(ABS) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fs = IL_REG_OPND(1);
 
 	Float *fabs = FABS(fs);
@@ -3046,7 +3038,7 @@ IL_LIFTER(FMIN) {
  * just move.
  * */
 IL_LIFTER(MOV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
 	return SETG(rd, rs);
@@ -3068,7 +3060,7 @@ IL_LIFTER(FMUL) {
  * Exceptions: None
  * */
 IL_LIFTER(MUL) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -3092,7 +3084,7 @@ IL_LIFTER(MUL) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction, Unimplemented Operation, Invalid Operation
  * */
 IL_LIFTER(NEG) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fs = IL_REG_OPND(1);
 
 	return SETG(fd, FNEG(fs));
@@ -3142,7 +3134,7 @@ IL_LIFTER(FSUB) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(SUB) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -3215,7 +3207,7 @@ IL_LIFTER(ILVR) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(INS) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut8 pos = IMM_OPND(2) & 0x1F; // max value = 32 (5 bits)
 	ut8 size = IMM_OPND(3) & 0x1F; // max value = 32 (5 bits)
@@ -3292,7 +3284,7 @@ IL_LIFTER(JAL) {
  * TODO: Handle the "else" case in microMIPS uplifting phase!
  * */
 IL_LIFTER(JALR) {
-	char *rd = NULL;
+	const char *rd = NULL;
 	Pure *rs = NULL;
 	if (OPND_COUNT() == 1) {
 		rd = REG_R(31);
@@ -3411,7 +3403,7 @@ IL_LIFTER(JALRC) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LB) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3439,7 +3431,7 @@ IL_LIFTER(LBUX) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LBU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3459,7 +3451,7 @@ IL_LIFTER(LBU) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LD) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3476,7 +3468,7 @@ IL_LIFTER(LD) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LDC1) {
-	char *ft = REG_OPND(0);
+	const char *ft = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3510,7 +3502,7 @@ IL_LIFTER(LDI) {
  * Exceptions: None
  * */
 IL_LIFTER(LDL) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3578,7 +3570,7 @@ IL_LIFTER(LDL) {
  * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(LDPC) {
-	char *rs = REG_OPND(0);
+	const char *rs = REG_OPND(0);
 	BitVector *base = LOGAND(IL_REG_PC(), U64(~0x7)); // align to 8 byte memory boundary
 	st64 offset = SIGN_EXTEND(IMM_OPND(1) << 3, 21, 64);
 
@@ -3595,7 +3587,7 @@ IL_LIFTER(LDPC) {
  * Exceptions: None
  * */
 IL_LIFTER(LDR) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3663,7 +3655,7 @@ IL_LIFTER(LDR) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Reserved Instruction, Coprocessor Unusable, Watch
  * */
 IL_LIFTER(LDXC1) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *index = IL_REG_OPND(1);
 	Pure *base = IL_REG_OPND(2);
 
@@ -3683,7 +3675,7 @@ IL_LIFTER(LDXC1) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LH) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3710,7 +3702,7 @@ IL_LIFTER(LHX) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LHU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3734,7 +3726,7 @@ IL_LIFTER(LI16) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LL) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	// NOTE: size of offset relase 6 is different
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
@@ -3764,7 +3756,7 @@ IL_LIFTER(LL) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LLD) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	// NOTE: size of offset relase 6 is different
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
@@ -3790,7 +3782,7 @@ IL_LIFTER(LLD) {
  * NOTE: Sign extend here?
  * */
 IL_LIFTER(LSA) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 	ut8 sa = (ut8)IMM_OPND(3);
@@ -3808,7 +3800,7 @@ IL_LIFTER(LSA) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Reserved Instruction, Coprocessor Unusable, Watch
  * */
 IL_LIFTER(LUXC1) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *index = IL_REG_OPND(1);
 	Pure *base = IL_REG_OPND(2);
 
@@ -3825,7 +3817,7 @@ IL_LIFTER(LUXC1) {
  * Exceptions: None
  * */
 IL_LIFTER(LUI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	st32 imm = SIGN_EXTEND((st32)IMM_OPND(1) << 16, 32, GPRLEN);
 
 	return SETG(rt, SN(GPRLEN, imm));
@@ -3839,7 +3831,7 @@ IL_LIFTER(LUI) {
  * NOTE: Sign extend here?
  * */
 IL_LIFTER(LW) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3862,7 +3854,7 @@ IL_LIFTER(LW16) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Reserved Instruction, Coprocessor Unusable, Watch
  * */
 IL_LIFTER(LWC1) {
-	char *ft = REG_OPND(0);
+	const char *ft = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3886,7 +3878,7 @@ IL_LIFTER(LWC3) {
  * Exceptions: None
  * */
 IL_LIFTER(LWL) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -3937,7 +3929,7 @@ IL_LIFTER(LWM32) {
  * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(LWPC) {
-	char *rs = REG_OPND(0);
+	const char *rs = REG_OPND(0);
 	BitVector *base = LOGAND(IL_REG_PC(), U32(~0x3)); // align to 4 byte memory boundary
 	st64 offset = SIGN_EXTEND(IMM_OPND(1) << 2, 20, GPRLEN);
 
@@ -3958,7 +3950,7 @@ IL_LIFTER(LWP) {
  * Exceptions: None
  * */
 IL_LIFTER(LWR) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -4002,7 +3994,7 @@ IL_LIFTER(LWR) {
  * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(LWUPC) {
-	char *rs = REG_OPND(0);
+	const char *rs = REG_OPND(0);
 	BitVector *base = LOGAND(IL_REG_PC(), U32(~0x3)); // align to 4 byte memory boundary
 	st64 offset = SIGN_EXTEND(IMM_OPND(1) << 2, 20, GPRLEN);
 
@@ -4019,7 +4011,7 @@ IL_LIFTER(LWUPC) {
  * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(LWU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -4040,7 +4032,7 @@ IL_LIFTER(LWX) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Reserved Instruction, Coprocessor Unusable, Watch
  * */
 IL_LIFTER(LWXC1) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *index = IL_REG_OPND(1);
 	Pure *base = IL_REG_OPND(2);
 
@@ -4071,7 +4063,7 @@ IL_LIFTER(LI) {
  * */
 IL_LIFTER(MADD) {
 	if (float_op) {
-		char *fd = REG_OPND(0);
+		const char *fd = REG_OPND(0);
 		Pure *fr = IL_REG_OPND(1);
 		Pure *fs = IL_REG_OPND(2);
 		Pure *ft = IL_REG_OPND(3);
@@ -4081,8 +4073,8 @@ IL_LIFTER(MADD) {
 
 		return SETG(fd, madd);
 	} else {
-		char *hi = REG_HI();
-		char *lo = REG_LO();
+		const char *hi = REG_HI();
+		const char *lo = REG_LO();
 		Pure *rs = IL_REG_OPND(0);
 		Pure *rt = IL_REG_OPND(1);
 
@@ -4118,7 +4110,7 @@ IL_LIFTER(MADD) {
  * Exception: Coprocessor Unusable, Reserved Instruction
  * */
 IL_LIFTER(MADDF) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fs = IL_REG_OPND(1);
 	Pure *ft = IL_REG_OPND(2);
 
@@ -4138,8 +4130,8 @@ IL_LIFTER(MADDR_Q) {
  * Exceptions: None
  * */
 IL_LIFTER(MADDU) {
-	char *hi = REG_HI();
-	char *lo = REG_LO();
+	const char *hi = REG_HI();
+	const char *lo = REG_LO();
 
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
@@ -4218,7 +4210,7 @@ IL_LIFTER(MFHC1) {
  * Exceptions: None
  * */
 IL_LIFTER(MFHI) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *hi = VARG(REG_HI());
 
 	return SETG(rd, hi);
@@ -4231,7 +4223,7 @@ IL_LIFTER(MFHI) {
  * Exceptions: None
  * */
 IL_LIFTER(MFLO) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *lo = VARG(REG_LO());
 
 	return SETG(rd, lo);
@@ -4266,7 +4258,7 @@ IL_LIFTER(MIN_U) {
  * Exceptions: None
  * */
 IL_LIFTER(MOD) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4285,7 +4277,7 @@ IL_LIFTER(MODSUB) {
  * Exceptions: None
  * */
 IL_LIFTER(MODU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4299,9 +4291,20 @@ IL_LIFTER(MOD_S) {
 IL_LIFTER(MOD_U) {
 	return NULL;
 }
+
+/**
+ * Move (Pseudo Instruction)
+ * Format: MOVE rd, rs
+ * Operation: GPR[rd] <- GPR[rs]
+ * Exceptions:
+ * */
 IL_LIFTER(MOVE) {
-	return NULL;
+	const char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
+
+	return SETG(rd, rs);
 }
+
 IL_LIFTER(MOVEP) {
 	return NULL;
 }
@@ -4315,7 +4318,7 @@ IL_LIFTER(MOVEP) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction, Unimplemented Operation
  * */
 IL_LIFTER(MOVF) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *cc = IL_REG_OPND(2);
 
@@ -4331,7 +4334,7 @@ IL_LIFTER(MOVF) {
  * Exceptions: None
  * */
 IL_LIFTER(MOVN) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4348,7 +4351,7 @@ IL_LIFTER(MOVN) {
  * Exceptions: None
  * */
 IL_LIFTER(MOVT) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *cc = IL_REG_OPND(2);
 
@@ -4365,7 +4368,7 @@ IL_LIFTER(MOVT) {
  * Exceptions: None
  * */
 IL_LIFTER(MOVZ) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4381,11 +4384,11 @@ IL_LIFTER(MOVZ) {
  * Exceptions: None
  * */
 IL_LIFTER(MSUB) {
-	char *hi = REG_HI();
-	char *lo = REG_LO();
+	const char *hi = REG_HI();
+	const char *lo = REG_LO();
 
 	if (float_op) {
-		char *fd = REG_OPND(0);
+		const char *fd = REG_OPND(0);
 		Pure *fr = IL_REG_OPND(1);
 		Pure *fs = IL_REG_OPND(2);
 		Pure *ft = IL_REG_OPND(3);
@@ -4433,7 +4436,7 @@ IL_LIFTER(MSUB) {
  * TODO: can we use FMAD here?
  * */
 IL_LIFTER(MSUBF) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fs = IL_REG_OPND(1);
 	Pure *ft = IL_REG_OPND(2);
 
@@ -4454,8 +4457,8 @@ IL_LIFTER(MSUBR_Q) {
  * Exceptions: None
  * */
 IL_LIFTER(MSUBU) {
-	char *hi = REG_HI();
-	char *lo = REG_LO();
+	const char *hi = REG_HI();
+	const char *lo = REG_LO();
 
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
@@ -4554,7 +4557,7 @@ IL_LIFTER(MTP2) {
  * Exceptions: None
  * */
 IL_LIFTER(MUH) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4574,7 +4577,7 @@ IL_LIFTER(MUH) {
  * Exceptions: None
  * */
 IL_LIFTER(MUHU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4616,8 +4619,8 @@ IL_LIFTER(MULSA) {
  * Exceptions: None
  * */
 IL_LIFTER(MULT) {
-	char *hi = REG_HI();
-	char *lo = REG_LO();
+	const char *hi = REG_HI();
+	const char *lo = REG_LO();
 
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
@@ -4642,8 +4645,8 @@ IL_LIFTER(MULT) {
  * Exceptions: None
  * */
 IL_LIFTER(MULTU) {
-	char *hi = REG_HI();
-	char *lo = REG_LO();
+	const char *hi = REG_HI();
+	const char *lo = REG_LO();
 
 	Pure *rs = IL_REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
@@ -4670,7 +4673,7 @@ IL_LIFTER(MULTU) {
  * Exceptions: None
  * */
 IL_LIFTER(MULU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4706,7 +4709,7 @@ IL_LIFTER(NLZC) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction, Inexact, Unimplemented Operation, Invalid Operation, Overflow, Underflow
  * */
 IL_LIFTER(NMADD) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fr = IL_REG_OPND(1);
 	Pure *fs = IL_REG_OPND(2);
 	Pure *ft = IL_REG_OPND(3);
@@ -4724,7 +4727,7 @@ IL_LIFTER(NMADD) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction, Inexact, Unimplemented Operation, Invalid Operation, Overflow, Underflow
  * */
 IL_LIFTER(NMSUB) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fr = IL_REG_OPND(1);
 	Pure *fs = IL_REG_OPND(2);
 	Pure *ft = IL_REG_OPND(3);
@@ -4743,7 +4746,7 @@ IL_LIFTER(NMSUB) {
  * Exceptions: None
  * */
 IL_LIFTER(NOR) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4760,7 +4763,7 @@ IL_LIFTER(NOR) {
  * NOTE: Not in MIPS32 ISA
  * */
 IL_LIFTER(NORI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = U32((ut32)IMM_OPND(2));
 
@@ -4783,7 +4786,7 @@ IL_LIFTER(NOT) {
  * Exceptions: None
  * */
 IL_LIFTER(OR) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -4802,7 +4805,7 @@ IL_LIFTER(OR16) {
  * Exceptions: None
  * */
 IL_LIFTER(ORI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = U32((ut32)IMM_OPND(2));
 
@@ -4904,7 +4907,7 @@ IL_LIFTER(REPL) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction, Unimplemented Operation, Invalid Operation, Inexact, Overflow, Underflow
  * */
 IL_LIFTER(RINT) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fs = IL_REG_OPND(1);
 
 	return SETG(fd, F2INT(GPRLEN, RMODE, fs));
@@ -4917,7 +4920,7 @@ IL_LIFTER(RINT) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(ROTR) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	ut8 sa = IMM_OPND(2);
 
@@ -4936,7 +4939,7 @@ IL_LIFTER(ROTR) {
  * Exceptions: Reserved Instruction
  * */
 IL_LIFTER(ROTRV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = CAST(6, IL_FALSE, IL_REG_OPND(2));
 
@@ -4987,7 +4990,7 @@ IL_LIFTER(SB16) {
  * TODO: Verify this
  * */
 IL_LIFTER(SC) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -5009,7 +5012,7 @@ IL_LIFTER(SC) {
  * TODO: Verify this
  * */
 IL_LIFTER(SCD) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	Pure *base = IL_MEM_OPND_BASE(1);
 
@@ -5162,7 +5165,7 @@ IL_LIFTER(SDXC1) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(SEB) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 
 	return SETG(rd, SIGNED(GPRLEN, CAST(8, IL_FALSE, rt)));
@@ -5174,7 +5177,7 @@ IL_LIFTER(SEB) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(SEH) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 
 	Pure *rt = IL_REG_OPND(1);
 	return SETG(rd, SIGNED(GPRLEN, CAST(16, IL_FALSE, rt)));
@@ -5187,7 +5190,7 @@ IL_LIFTER(SEH) {
  * Exceptions: None.
  * */
 IL_LIFTER(SELEQZ) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -5202,7 +5205,7 @@ IL_LIFTER(SELEQZ) {
  * Exceptions: None.
  * */
 IL_LIFTER(SELNEZ) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -5217,7 +5220,7 @@ IL_LIFTER(SELNEZ) {
  * Exceptions: Coprocessor Unusable, Reserved Instruction
  * */
 IL_LIFTER(SEL) {
-	char *fd = REG_OPND(0);
+	const char *fd = REG_OPND(0);
 	Pure *fs = IL_REG_OPND(1);
 	Pure *ft = IL_REG_OPND(2);
 
@@ -5305,7 +5308,7 @@ IL_LIFTER(SLD) {
  * Exceptions: None
  * */
 IL_LIFTER(SLL) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(5, IMM_OPND(2));
 
@@ -5327,7 +5330,7 @@ IL_LIFTER(SLLI) {
  * Exceptions: None
  * */
 IL_LIFTER(SLLV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
@@ -5343,7 +5346,7 @@ IL_LIFTER(SLLV) {
  * Exceptions: None
  * */
 IL_LIFTER(SLT) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -5359,7 +5362,7 @@ IL_LIFTER(SLT) {
  * Exceptions: None
  * */
 IL_LIFTER(SLTI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = SN(GPRLEN, SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
 
@@ -5375,7 +5378,7 @@ IL_LIFTER(SLTI) {
  * Exceptions: None
  * */
 IL_LIFTER(SLTIU) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = UN(GPRLEN, SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN));
 
@@ -5390,7 +5393,7 @@ IL_LIFTER(SLTIU) {
  * Exceptions: None
  * */
 IL_LIFTER(SLTU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -5418,7 +5421,7 @@ IL_LIFTER(SPLAT) {
  * Exceptions: None
  * */
 IL_LIFTER(SRA) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(5, IMM_OPND(2));
 
@@ -5442,7 +5445,7 @@ IL_LIFTER(SRAR) {
  * Exceptions: None
  * */
 IL_LIFTER(SRAV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
@@ -5457,7 +5460,7 @@ IL_LIFTER(SRAV) {
  * Exceptions: None
  * */
 IL_LIFTER(SRL) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	BitVector *sa = UN(5, IMM_OPND(2));
 
@@ -5485,7 +5488,7 @@ IL_LIFTER(SRLR) {
  * Exceptions: None
  * */
 IL_LIFTER(SRLV) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rt = IL_REG_OPND(1);
 	Pure *rs = IL_REG_OPND(2);
 
@@ -5545,7 +5548,7 @@ IL_LIFTER(SUBUH_R) {
  * Exceptions: None
  * */
 IL_LIFTER(SUBU) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -5857,7 +5860,7 @@ IL_LIFTER(WSBH) {
  * Exceptions: None
  * */
 IL_LIFTER(XOR) {
-	char *rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
@@ -5876,7 +5879,7 @@ IL_LIFTER(XOR16) {
  * Exceptions: None
  * */
 IL_LIFTER(XORI) {
-	char *rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	BitVector *imm = U32((ut32)IMM_OPND(2));
 
@@ -5909,7 +5912,7 @@ IL_LIFTER(NEGU) {
  * TODO: Handle the "else" case in microMIPS uplifting phase!
  * */
 IL_LIFTER(JALR_HB) {
-	char *rd = NULL;
+	const char *rd = NULL;
 	Pure *rs = NULL;
 	if (OPND_COUNT() == 1) {
 		rd = REG_R(31);
@@ -6577,7 +6580,7 @@ MipsILLifterFunction mips_lifters[] = {
  * \param pc Instruction address of current instruction.
  * \return Valid RzILOpEffect* on success, NULL otherwise.
  **/
-RZ_IPI Effect *mips32_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn, ut32 pc) {
+RZ_IPI Effect *mips_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn, ut32 pc) {
 	rz_return_val_if_fail(analysis && insn, NULL);
 	if (INSN_ID(insn) >= MIPS_INS_ENDING) {
 		RZ_LOG_ERROR("RzIL MIPS : Invalid MIPS instruction.")
@@ -6613,6 +6616,34 @@ RZ_IPI Effect *mips32_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *in
 	return NULL;
 }
 
-RZ_IPI RzAnalysisILConfig *mips32_il_config() {
-	return NULL;
+// register names to  map from enum to strings
+static const char *mips_il_vm_reg_binding[] = {
+	"zero", "at", "v0", "v1",
+	"a0", "a1", "a2", "a3",
+	"t0", "t1", "t2", "t3",
+	"t4", "t5", "t6", "t7",
+	"s0", "s1", "s2", "s3",
+	"s4", "s5", "s6", "s7",
+	"t8", "t9", "k0", "k1",
+	"gp", "sp", "fp", "ra",
+
+	"pc", "hi", "lo", "t",
+
+	"f0", "f1", "f2", "f3",
+	"f4", "f5", "f6", "f7",
+	"f8", "f9", "f10", "f11",
+	"f12", "f13", "f14", "f15",
+	"f16", "f17", "f18", "f19",
+	"f20", "f21", "f22", "f23",
+	"f24", "f25", "f26", "f27",
+	"f28", "f29", "f30", "f31",
+
+	"FCC0", "FCC1", "FCC2", "FCC3", "FCC4", "FCC5", "FCC6", "FCC7",
+	"CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", NULL
+};
+
+RzAnalysisILConfig *mips_il_config(RZ_NONNULL RzAnalysis *analysis) {
+	RzAnalysisILConfig *r = rz_analysis_il_config_new(analysis->bits, analysis->big_endian, analysis->bits);
+	r->reg_bindings = mips_il_vm_reg_binding;
+	return r;
 }

@@ -7,7 +7,7 @@
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 
-RZ_IPI RzILOpEffect *mips32_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn, ut32 pc);
-RZ_IPI RzAnalysisILConfig *mips32_il_config();
+RZ_IPI RzILOpEffect *mips_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn, ut32 pc);
+RZ_IPI RzAnalysisILConfig *mips_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif // MIPS_IL_H

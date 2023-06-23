@@ -5,6 +5,7 @@
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
+#include "../arch/mips/mips_il.h"
 
 static ut64 t9_pre = UT64_MAX;
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
@@ -1078,6 +1079,10 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		SET_VAL(op, 2);
 		break;
 	}
+
+	// rzil integration
+	op->il_op = mips_il(analysis, insn, addr);
+
 beach:
 	set_opdir(op);
 	if (insn && mask & RZ_ANALYSIS_OP_MASK_OPEX) {
@@ -1148,7 +1153,57 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	pc	.32	128	0\n"
 			"gpr	hi	.32	132	0\n"
 			"gpr	lo	.32	136	0\n"
-			"gpr	t	.32	140	0\n";
+			"gpr	t	.32	140	0\n"
+			"fpu	f0	.32	144	0\n"
+			"fpu	f1	.32	148	0\n"
+			"fpu	f2	.32	152	0\n"
+			"fpu	f3	.32	156	0\n"
+			"fpu	f4	.32	160	0\n"
+			"fpu	f5	.32	164	0\n"
+			"fpu	f6	.32	168	0\n"
+			"fpu	f7	.32	172	0\n"
+			"fpu	f8	.32	176	0\n"
+			"fpu	f9	.32	180	0\n"
+			"fpu	f10	.32	184	0\n"
+			"fpu	f11	.32	188	0\n"
+			"fpu	f12	.32	192	0\n"
+			"fpu	f13	.32	196	0\n"
+			"fpu	f14	.32	200	0\n"
+			"fpu	f15	.32	204	0\n"
+			"fpu	f16	.32	208	0\n"
+			"fpu	f17	.32	212	0\n"
+			"fpu	f18	.32	216	0\n"
+			"fpu	f19	.32	220	0\n"
+			"fpu	f20	.32	224	0\n"
+			"fpu	f21	.32	228	0\n"
+			"fpu	f22	.32	232	0\n"
+			"fpu	f23	.32	236	0\n"
+			"fpu	f24	.32	240	0\n"
+			"fpu	f25	.32	244	0\n"
+			"fpu	f26	.32	248	0\n"
+			"fpu	f27	.32	252	0\n"
+			"fpu	f28	.32	256	0\n"
+			"fpu	f29	.32	260	0\n"
+			"fpu	f30	.32	264	0\n"
+			"fpu	f31	.32	268	0\n"
+
+			"flg    FCC0 .1 269.0 0\n"
+			"flg    FCC1 .1 269.1 0\n"
+			"flg    FCC2 .1 269.2 0\n"
+			"flg    FCC3 .1 269.3 0\n"
+			"flg    FCC4 .1 269.4 0\n"
+			"flg    FCC5 .1 269.5 0\n"
+			"flg    FCC6 .1 269.6 0\n"
+			"flg    FCC7 .1 269.7 0\n"
+
+			"flg    CC0  .1 270.0 0\n"
+			"flg    CC1  .1 270.1 0\n"
+			"flg    CC2  .1 270.2 0\n"
+			"flg    CC3  .1 270.3 0\n"
+			"flg    CC4  .1 270.4 0\n"
+			"flg    CC5  .1 270.5 0\n"
+			"flg    CC6  .1 270.6 0\n"
+			"flg    CC7  .1 270.7 0\n";
 		break;
 	case 64:
 		p =
@@ -1197,7 +1252,58 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	pc	.64	256	0\n"
 			"gpr	hi	.64	264	0\n"
 			"gpr	lo	.64	272	0\n"
-			"gpr	t	.64	280	0\n";
+			"gpr	t	.64	280	0\n"
+
+			"fpu	f0	.64	288	0\n"
+			"fpu	f1	.64	296	0\n"
+			"fpu	f2	.64	304	0\n"
+			"fpu	f3	.64	312	0\n"
+			"fpu	f4	.64	320	0\n"
+			"fpu	f5	.64	328	0\n"
+			"fpu	f6	.64	336	0\n"
+			"fpu	f7	.64	344	0\n"
+			"fpu	f8	.64	352	0\n"
+			"fpu	f9	.64	360	0\n"
+			"fpu	f10	.64	368	0\n"
+			"fpu	f11	.64	376	0\n"
+			"fpu	f12	.64	384	0\n"
+			"fpu	f13	.64	392	0\n"
+			"fpu	f14	.64	400	0\n"
+			"fpu	f15	.64	408	0\n"
+			"fpu	f16	.64	416	0\n"
+			"fpu	f17	.64	424	0\n"
+			"fpu	f18	.64	432	0\n"
+			"fpu	f19	.64	440	0\n"
+			"fpu	f20	.64	448	0\n"
+			"fpu	f21	.64	456	0\n"
+			"fpu	f22	.64	464	0\n"
+			"fpu	f23	.64	472	0\n"
+			"fpu	f24	.64	480	0\n"
+			"fpu	f25	.64	488	0\n"
+			"fpu	f26	.64	496	0\n"
+			"fpu	f27	.64	504	0\n"
+			"fpu	f28	.64	512	0\n"
+			"fpu	f29	.64	520	0\n"
+			"fpu	f30	.64	528	0\n"
+			"fpu	f31	.64	536	0\n"
+
+			"flg    FCC0 .1 544.0 0\n"
+			"flg    FCC1 .1 544.1 0\n"
+			"flg    FCC2 .1 544.2 0\n"
+			"flg    FCC3 .1 544.3 0\n"
+			"flg    FCC4 .1 544.4 0\n"
+			"flg    FCC5 .1 544.5 0\n"
+			"flg    FCC6 .1 544.6 0\n"
+			"flg    FCC7 .1 544.7 0\n"
+
+			"flg    CC0  .1 545.0 0\n"
+			"flg    CC1  .1 545.1 0\n"
+			"flg    CC2  .1 545.2 0\n"
+			"flg    CC3  .1 545.3 0\n"
+			"flg    CC4  .1 545.4 0\n"
+			"flg    CC5  .1 545.5 0\n"
+			"flg    CC6  .1 545.6 0\n"
+			"flg    CC7  .1 545.7 0\n";
 		break;
 	}
 	return p ? strdup(p) : NULL;
@@ -1238,6 +1344,7 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.preludes = analysis_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analyze_op,
+	.il_config = mips_il_config
 };
 
 #ifndef RZ_PLUGIN_INCORE
