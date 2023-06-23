@@ -806,7 +806,7 @@ static const RzCmdDescArg yank_paste_args[2];
 static const RzCmdDescArg yank_string_args[2];
 static const RzCmdDescArg cmd_shell_diff_args[3];
 static const RzCmdDescArg cmd_shell_env_args[3];
-static const RzCmdDescArg cmd_shell_ls_args[2];
+static const RzCmdDescArg cmd_shell_ls_args[6];
 static const RzCmdDescArg cmd_shell_rm_args[2];
 static const RzCmdDescArg cmd_shell_sleep_args[2];
 static const RzCmdDescArg cmd_shell_uniq_args[2];
@@ -18003,9 +18003,36 @@ static const RzCmdDescHelp cmd_shell_exit_help = {
 
 static const RzCmdDescArg cmd_shell_ls_args[] = {
 	{
-		.name = "arg",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.name = "e",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
+
+	},
+	{
+		.name = "q",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
+
+	},
+	{
+		.name = "l",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
+
+	},
+	{
+		.name = "j",
+		.type = RZ_CMD_ARG_TYPE_OPTION,
+		.flags = RZ_CMD_ARG_FLAG_OPTION,
+		.optional = true,
+
+	},
+	{
+		.name = "path",
+		.type = RZ_CMD_ARG_TYPE_FILE,
 		.optional = true,
 
 	},
@@ -18013,6 +18040,7 @@ static const RzCmdDescArg cmd_shell_ls_args[] = {
 };
 static const RzCmdDescHelp cmd_shell_ls_help = {
 	.summary = "List files and directories",
+	.args_str = " [-e -q -l -j] <dir/file>",
 	.args = cmd_shell_ls_args,
 };
 

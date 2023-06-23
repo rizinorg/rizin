@@ -78,10 +78,26 @@ commands:
   - name: ls
     cname: cmd_shell_ls
     summary: List files and directories
+    args_str: " [-e -q -l -j] <dir/file>"
     args:
-      - name: arg
-        type: RZ_CMD_ARG_TYPE_STRING
-        flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: e
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: q
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: l
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: j
+        type: RZ_CMD_ARG_TYPE_OPTION
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+      - name: path
+        type: RZ_CMD_ARG_TYPE_FILE
         optional: true
   - name: rm
     cname: cmd_shell_rm

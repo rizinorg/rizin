@@ -194,7 +194,6 @@ RZ_API void rz_sys_backtrace(void);
 #endif
 
 /* syscmd */
-RZ_API RZ_OWN char *rz_syscmd_ls(RZ_NONNULL const char *input);
 RZ_API RZ_OWN char *rz_syscmd_cat(RZ_NONNULL const char *file);
 RZ_API RZ_OWN char *rz_syscmd_mkdir(RZ_NONNULL const char *dir);
 RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file);
