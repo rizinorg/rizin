@@ -375,3 +375,15 @@ machine  arm64_32
 0x0000c088 ..[ null bytes ]..   00000000 
 EOF
 RUN
+
+NAME=mach-o platform recognition
+FILE=bins/mach0/hello-visionos-arm64
+CMDS=<<EOF
+i~^os
+i~^subsys
+EOF
+EXPECT=<<EOF
+os       darwin
+subsys   visionOS
+EOF
+RUN

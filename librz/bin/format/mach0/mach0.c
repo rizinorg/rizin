@@ -1431,44 +1431,6 @@ static const char *cmd_to_pf_definition(ut32 cmd) {
 	return NULL;
 }
 
-static const char *build_version_platform_to_string(ut32 platform) {
-	switch (platform) {
-	case 1:
-		return "macOS";
-	case 2:
-		return "iOS";
-	case 3:
-		return "tvOS";
-	case 4:
-		return "watchOS";
-	case 5:
-		return "bridgeOS";
-	case 6:
-		return "iOSmac";
-	case 7:
-		return "iOS Simulator";
-	case 8:
-		return "tvOS Simulator";
-	case 9:
-		return "watchOS Simulator";
-	default:
-		return "unknown";
-	}
-}
-
-static const char *build_version_tool_to_string(ut32 tool) {
-	switch (tool) {
-	case 1:
-		return "clang";
-	case 2:
-		return "swift";
-	case 3:
-		return "ld";
-	default:
-		return "unknown";
-	}
-}
-
 static bool read_dyld_chained_fixups_header(struct dyld_chained_fixups_header *header, RzBuffer *buf, ut64 base) {
 	ut64 offset = base;
 	return rz_buf_read_le32_offset(buf, &offset, &header->fixups_version) &&
@@ -1709,7 +1671,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 	bool is_first_thread = true;
 
 	bin->uuidn = 0;
-	bin->os = 0;
+	bin->platform = UT32_MAX;
 	bin->has_crypto = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
 		bprintf("Warning: chopping hdr.sizeofcmds\n");
@@ -1780,24 +1742,36 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 			break;
 		case LC_VERSION_MIN_MACOSX:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_macosx", 0);
-			bin->os = 1;
-			// set OS = osx
-			// bprintf ("[mach0] Requires OSX >= x\n");
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_MACOS;
+			}
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_iphoneos", 0);
-			bin->os = 2;
-			// set OS = ios
-			// bprintf ("[mach0] Requires iOS >= x\n");
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_IOS;
+			}
 			break;
 		case LC_VERSION_MIN_TVOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_tvos", 0);
-			bin->os = 4;
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_TVOS;
+			}
 			break;
 		case LC_VERSION_MIN_WATCHOS:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "version_min_watchos", 0);
-			bin->os = 3;
+			if (bin->platform == UT32_MAX) {
+				bin->platform = MACH0_PLATFORM_WATCHOS;
+			}
 			break;
+		case LC_BUILD_VERSION: {
+			ut32 platform;
+			if (!rz_buf_read_le32_at(bin->b, off + 8, &platform)) {
+				break;
+			}
+			bin->platform = platform;
+			break;
+		}
 		case LC_UUID:
 			sdb_set(bin->kv, sdb_fmt("mach0_cmd_%" PFMT64u ".cmd", i), "uuid", 0);
 			{
@@ -3123,228 +3097,23 @@ const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin) {
 	return bin ? bin->intrp : NULL;
 }
 
-const char *MACH0_(get_os)(struct MACH0_(obj_t) * bin) {
-	if (bin) {
-		switch (bin->os) {
-		case 1: return "macos";
-		case 2: return "ios";
-		case 3: return "watchos";
-		case 4: return "tvos";
-		}
-	}
-	return "darwin";
+const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin) {
+	rz_return_val_if_fail(bin, "unknown");
+	return rz_mach0_platform_to_string(bin->platform);
 }
 
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) * hdr) {
-	const char *archstr = "unknown";
-	switch (hdr->cputype) {
-	case CPU_TYPE_VAX:
-		archstr = "vax";
-		break;
-	case CPU_TYPE_MC680x0:
-		archstr = "mc680x0";
-		break;
-	case CPU_TYPE_I386:
-	case CPU_TYPE_X86_64:
-		archstr = "x86";
-		break;
-	case CPU_TYPE_MC88000:
-		archstr = "mc88000";
-		break;
-	case CPU_TYPE_MC98000:
-		archstr = "mc98000";
-		break;
-	case CPU_TYPE_HPPA:
-		archstr = "hppa";
-		break;
-	case CPU_TYPE_ARM:
-	case CPU_TYPE_ARM64:
-	case CPU_TYPE_ARM64_32:
-		archstr = "arm";
-		break;
-	case CPU_TYPE_SPARC:
-		archstr = "sparc";
-		break;
-	case CPU_TYPE_MIPS:
-		archstr = "mips";
-		break;
-	case CPU_TYPE_I860:
-		archstr = "i860";
-		break;
-	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:
-		archstr = "ppc";
-		break;
-	default:
-		eprintf("Unknown arch %d\n", hdr->cputype);
-		break;
-	}
-	return archstr;
+	rz_return_val_if_fail(hdr, "unknown");
+	return rz_mach0_cputype_to_string(hdr->cputype);
 }
 
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin) {
 	return bin ? MACH0_(get_cputype_from_hdr)(&bin->hdr) : "unknown";
 }
 
-static const char *cpusubtype_tostring(ut32 cputype, ut32 cpusubtype) {
-	switch (cputype) {
-	case CPU_TYPE_VAX:
-		switch (cpusubtype) {
-		case CPU_SUBTYPE_VAX_ALL: return "all";
-		case CPU_SUBTYPE_VAX780: return "vax780";
-		case CPU_SUBTYPE_VAX785: return "vax785";
-		case CPU_SUBTYPE_VAX750: return "vax750";
-		case CPU_SUBTYPE_VAX730: return "vax730";
-		case CPU_SUBTYPE_UVAXI: return "uvaxI";
-		case CPU_SUBTYPE_UVAXII: return "uvaxII";
-		case CPU_SUBTYPE_VAX8200: return "vax8200";
-		case CPU_SUBTYPE_VAX8500: return "vax8500";
-		case CPU_SUBTYPE_VAX8600: return "vax8600";
-		case CPU_SUBTYPE_VAX8650: return "vax8650";
-		case CPU_SUBTYPE_VAX8800: return "vax8800";
-		case CPU_SUBTYPE_UVAXIII: return "uvaxIII";
-		default: return "Unknown vax subtype";
-		}
-	case CPU_TYPE_MC680x0:
-		switch (cpusubtype) {
-		case CPU_SUBTYPE_MC68030: return "mc68030";
-		case CPU_SUBTYPE_MC68040: return "mc68040";
-		case CPU_SUBTYPE_MC68030_ONLY: return "mc68030 only";
-		default: return "Unknown mc680x0 subtype";
-		}
-	case CPU_TYPE_I386:
-		switch (cpusubtype) {
-		case CPU_SUBTYPE_386: return "386";
-		case CPU_SUBTYPE_486: return "486";
-		case CPU_SUBTYPE_486SX: return "486sx";
-		case CPU_SUBTYPE_PENT: return "Pentium";
-		case CPU_SUBTYPE_PENTPRO: return "Pentium Pro";
-		case CPU_SUBTYPE_PENTII_M3: return "Pentium 3 M3";
-		case CPU_SUBTYPE_PENTII_M5: return "Pentium 3 M5";
-		case CPU_SUBTYPE_CELERON: return "Celeron";
-		case CPU_SUBTYPE_CELERON_MOBILE: return "Celeron Mobile";
-		case CPU_SUBTYPE_PENTIUM_3: return "Pentium 3";
-		case CPU_SUBTYPE_PENTIUM_3_M: return "Pentium 3 M";
-		case CPU_SUBTYPE_PENTIUM_3_XEON: return "Pentium 3 Xeon";
-		case CPU_SUBTYPE_PENTIUM_M: return "Pentium Mobile";
-		case CPU_SUBTYPE_PENTIUM_4: return "Pentium 4";
-		case CPU_SUBTYPE_PENTIUM_4_M: return "Pentium 4 M";
-		case CPU_SUBTYPE_ITANIUM: return "Itanium";
-		case CPU_SUBTYPE_ITANIUM_2: return "Itanium 2";
-		case CPU_SUBTYPE_XEON: return "Xeon";
-		case CPU_SUBTYPE_XEON_MP: return "Xeon MP";
-		default: return "Unknown i386 subtype";
-		}
-	case CPU_TYPE_X86_64:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_X86_64_ALL: return "x86 64 all";
-		case CPU_SUBTYPE_X86_ARCH1: return "x86 arch 1";
-		default: return "Unknown x86 subtype";
-		}
-	case CPU_TYPE_MC88000:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_MC88000_ALL: return "all";
-		case CPU_SUBTYPE_MC88100: return "mc88100";
-		case CPU_SUBTYPE_MC88110: return "mc88110";
-		default: return "Unknown mc88000 subtype";
-		}
-	case CPU_TYPE_MC98000:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_MC98000_ALL: return "all";
-		case CPU_SUBTYPE_MC98601: return "mc98601";
-		default: return "Unknown mc98000 subtype";
-		}
-	case CPU_TYPE_HPPA:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_HPPA_7100: return "hppa7100";
-		case CPU_SUBTYPE_HPPA_7100LC: return "hppa7100LC";
-		default: return "Unknown hppa subtype";
-		}
-	case CPU_TYPE_ARM64:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_ARM64_ALL: return "all";
-		case CPU_SUBTYPE_ARM64_V8: return "arm64v8";
-		case CPU_SUBTYPE_ARM64E: return "arm64e";
-		default: return "Unknown arm64 subtype";
-		}
-	case CPU_TYPE_ARM64_32:
-		return "arm64_32";
-	case CPU_TYPE_ARM:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_ARM_ALL:
-			return "all";
-		case CPU_SUBTYPE_ARM_V4T:
-			return "v4t";
-		case CPU_SUBTYPE_ARM_V5:
-			return "v5";
-		case CPU_SUBTYPE_ARM_V6:
-			return "v6";
-		case CPU_SUBTYPE_ARM_XSCALE:
-			return "xscale";
-		case CPU_SUBTYPE_ARM_V7:
-			return "v7";
-		case CPU_SUBTYPE_ARM_V7F:
-			return "v7f";
-		case CPU_SUBTYPE_ARM_V7S:
-			return "v7s";
-		case CPU_SUBTYPE_ARM_V7K:
-			return "v7k";
-		case CPU_SUBTYPE_ARM_V7M:
-			return "v7m";
-		case CPU_SUBTYPE_ARM_V7EM:
-			return "v7em";
-		default:
-			eprintf("Unknown arm subtype %d\n", cpusubtype & 0xff);
-			return "unknown arm subtype";
-		}
-	case CPU_TYPE_SPARC:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_SPARC_ALL: return "all";
-		default: return "Unknown sparc subtype";
-		}
-	case CPU_TYPE_MIPS:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_MIPS_ALL: return "all";
-		case CPU_SUBTYPE_MIPS_R2300: return "r2300";
-		case CPU_SUBTYPE_MIPS_R2600: return "r2600";
-		case CPU_SUBTYPE_MIPS_R2800: return "r2800";
-		case CPU_SUBTYPE_MIPS_R2000a: return "r2000a";
-		case CPU_SUBTYPE_MIPS_R2000: return "r2000";
-		case CPU_SUBTYPE_MIPS_R3000a: return "r3000a";
-		case CPU_SUBTYPE_MIPS_R3000: return "r3000";
-		default: return "Unknown mips subtype";
-		}
-	case CPU_TYPE_I860:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_I860_ALL: return "all";
-		case CPU_SUBTYPE_I860_860: return "860";
-		default: return "Unknown i860 subtype";
-		}
-	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:
-		switch (cpusubtype & 0xff) {
-		case CPU_SUBTYPE_POWERPC_ALL: return "all";
-		case CPU_SUBTYPE_POWERPC_601: return "601";
-		case CPU_SUBTYPE_POWERPC_602: return "602";
-		case CPU_SUBTYPE_POWERPC_603: return "603";
-		case CPU_SUBTYPE_POWERPC_603e: return "603e";
-		case CPU_SUBTYPE_POWERPC_603ev: return "603ev";
-		case CPU_SUBTYPE_POWERPC_604: return "604";
-		case CPU_SUBTYPE_POWERPC_604e: return "604e";
-		case CPU_SUBTYPE_POWERPC_620: return "620";
-		case CPU_SUBTYPE_POWERPC_750: return "750";
-		case CPU_SUBTYPE_POWERPC_7400: return "7400";
-		case CPU_SUBTYPE_POWERPC_7450: return "7450";
-		case CPU_SUBTYPE_POWERPC_970: return "970";
-		default: return "Unknown ppc subtype";
-		}
-	}
-	return "Unknown cputype";
-}
-
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) * hdr) {
 	rz_return_val_if_fail(hdr, NULL);
-	return strdup(cpusubtype_tostring(hdr->cputype, hdr->cpusubtype));
+	return strdup(rz_mach0_cpusubtype_tostring(hdr->cputype, hdr->cpusubtype));
 }
 
 char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) * bin) {
@@ -3508,7 +3277,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 			if (!rz_buf_read_le32_at(buf, addr, &platform)) {
 				break;
 			}
-			cb_printf("0x%08" PFMT64x "  platform    %s\n", pvaddr, build_version_platform_to_string(platform));
+			cb_printf("0x%08" PFMT64x "  platform    %s\n", pvaddr, rz_mach0_platform_to_string(platform));
 
 			ut16 minos1;
 			if (!rz_buf_read_le16_at(buf, addr + 6, &minos1)) {
@@ -3552,7 +3321,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 				if (!rz_buf_read_le32_at(buf, addr + off, &tool)) {
 					break;
 				}
-				cb_printf("0x%08" PFMT64x "  tool        %s\n", pvaddr + off, build_version_tool_to_string(tool));
+				cb_printf("0x%08" PFMT64x "  tool        %s\n", pvaddr + off, rz_mach0_build_version_tool_to_string(tool));
 
 				off += 4;
 				if (off >= (lcSize - 8)) {

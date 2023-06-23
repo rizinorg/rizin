@@ -162,7 +162,7 @@ struct MACH0_(obj_t) {
 	bool big_endian;
 	const char *file;
 	RzBuffer *b;
-	int os;
+	ut32 platform; ///< MACH0_PLATFORM_*, or an unknown value from the bin, or UT32_MAX if not determined
 	Sdb *kv;
 	int has_crypto;
 	int has_canary;
@@ -215,7 +215,7 @@ bool MACH0_(is_big_endian)(struct MACH0_(obj_t) * bin);
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin);
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin);
-const char *MACH0_(get_os)(struct MACH0_(obj_t) * bin);
+const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin);
 char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) * bin);
 char *MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) * hdr);
