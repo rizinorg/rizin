@@ -21,6 +21,7 @@ typedef struct basefind_data_t {
 	ut64 start;
 	ut64 end;
 	BaseFindArray *array;
+	RzAtomicBool *loop;
 } BaseFindData;
 
 typedef struct basefind_thread_data_t {
@@ -187,7 +188,7 @@ static HtUU *basefind_create_pointer_map(RzCore *core, ut32 pointer_size) {
 }
 
 static bool basefind_pointer_map_iter(BaseFindData *bfd, const ut64 address, const ut64 hits) {
-	if (rz_cons_is_breaked()) {
+	if (!rz_atomic_bool_get(bfd->loop)) {
 		return false;
 	}
 	if (address < bfd->start || address >= bfd->end) {
@@ -221,6 +222,7 @@ static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 	ut64 base;
 
 	bfd.array = bftd->array;
+	bfd.loop = loop;
 	for (base = bftd->base_start; base < bftd->base_end; base += bftd->alignment) {
 		if (!rz_atomic_bool_get(loop)) {
 			break;
