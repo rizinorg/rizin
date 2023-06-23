@@ -253,7 +253,7 @@ static void *basefind_thread_runner(BaseFindThreadData *bftd) {
 			RZ_LOG_ERROR("basefind: cannot append new score to the scores list.\n");
 			break;
 		}
-		RZ_LOG_INFO("basefind: possible candidate at 0x%016" PFMT64x " with score of %u\n", base, bfd.score);
+		RZ_LOG_DEBUG("basefind: possible candidate at 0x%016" PFMT64x " with score of %u\n", base, bfd.score);
 		rz_th_lock_leave(bftd->lock);
 	}
 	bftd->current = base;
