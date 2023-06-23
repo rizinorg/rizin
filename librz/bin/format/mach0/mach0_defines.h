@@ -1694,4 +1694,24 @@ static inline void dyld_chained_ptr_32_bind_read(struct dyld_chained_ptr_32_bind
 
 #undef READ_BITS
 
+enum mach0_platform {
+	MACH0_PLATFORM_MACOS = 1,
+	MACH0_PLATFORM_IOS = 2,
+	MACH0_PLATFORM_TVOS = 3,
+	MACH0_PLATFORM_WATCHOS = 4,
+	MACH0_PLATFORM_BRIDGEOS = 5,
+	MACH0_PLATFORM_IOS_MAC = 6,
+	MACH0_PLATFORM_IOS_SIMULATOR = 7,
+	MACH0_PLATFORM_TVOS_SIMULATOR = 8,
+	MACH0_PLATFORM_WATCHOS_SIMULATOR = 9,
+	MACH0_PLATFORM_DRIVERKIT = 10,
+	MACH0_PLATFORM_VISIONOS = 11,
+	MACH0_PLATFORM_VISIONOS_SIMULATOR = 12
+};
+
+RZ_API RZ_NONNULL const char *rz_mach0_platform_to_string(ut32 platform);
+RZ_API RZ_NONNULL const char *rz_mach0_cputype_to_string(ut32 cputype);
+RZ_API RZ_NONNULL const char *rz_mach0_cpusubtype_tostring(ut32 cputype, ut32 cpusubtype);
+RZ_API RZ_NONNULL const char *rz_mach0_build_version_tool_to_string(ut32 tool);
+
 #endif

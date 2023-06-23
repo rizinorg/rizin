@@ -780,7 +780,7 @@ os       darwin
 cc       N/A
 pcalign  0
 rpath    N/A
-subsys   darwin
+subsys   macOS
 stripped false
 crypto   false
 havecode true

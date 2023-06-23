@@ -456,8 +456,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->intrp = rz_str_dup(NULL, MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = rz_str_dup(NULL, "");
 	ret->rclass = strdup("mach0");
-	ret->os = strdup(MACH0_(get_os)(bf->o->bin_obj));
-	ret->subsystem = strdup("darwin");
+	ret->os = strdup("darwin");
+	ret->subsystem = strdup(MACH0_(get_platform)(bf->o->bin_obj));
 	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
