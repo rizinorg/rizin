@@ -1398,8 +1398,12 @@ EXPECT=<<EOF
 arch     arm
 type     Kernel extension bundle file
 bintype  mach0
-vaddr paddr type name 
-----------------------
+vaddr      paddr      type   name 
+----------------------------------
+0x000080b4 0x000080b4 SET_64 
+0x000080bc 0x000080bc SET_64 
+0x0000c000 0x0000c000 SET_64 
+0x0000e008 0x0000e008 SET_64 
 --
  3 * r-x 0x0001e290 bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
  4 - r-x 0x0001e290 vfile://0/patched
@@ -1409,7 +1413,6 @@ vaddr paddr type name
  4 fd: 4 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
  5 fd: 3 +0x00010000 0x00010000 - 0x0001ffff r-- fmap.__LINKEDIT
 EOF
-BROKEN=1
 RUN
 
 NAME=FileDP relocs (arm32, patched)

@@ -1438,7 +1438,7 @@ struct dyld_chained_fixups_header {
 	ut32 imports_offset;
 	ut32 symbols_offset;
 	ut32 imports_count;
-	ut32 imports_format;
+	ut32 imports_format; ///< enum dyld_chained_import_format
 	ut32 symbols_format;
 };
 
@@ -1691,6 +1691,84 @@ static inline void dyld_chained_ptr_32_bind_read(struct dyld_chained_ptr_32_bind
 }
 
 // When adding more structs/readers here, also add tests to test/unit/test_bin_mach0.c!
+
+enum dyld_chained_import_format {
+	DYLD_CHAINED_IMPORT_THREADED = -1, ///< defined by rizin only, to indicate RzDyldChainedImportThreaded
+	DYLD_CHAINED_IMPORT_INVALID = 0, ///< 0/invalid defined by rizin
+	DYLD_CHAINED_IMPORT = 1,
+	DYLD_CHAINED_IMPORT_ADDEND = 2,
+	DYLD_CHAINED_IMPORT_ADDEND64 = 3
+};
+
+/**
+ * Not an actual data structure that occurs like this in binaries, but the reconstructed import
+ * when BIND_OPCODE_THREADED is used.
+ */
+typedef struct rz_dyld_chained_import_threaded {
+	char *sym_name;
+	int lib_ord;
+	st64 addend;
+} RzDyldChainedImportThreaded;
+
+struct dyld_chained_import {
+	ut32 lib_ordinal : 8,
+		weak_import : 1,
+		name_offset : 23;
+};
+
+static inline void dyld_chained_import_read(struct dyld_chained_import *dst, ut8 *data) {
+	ut32 raw_val = rz_read_le32(data);
+	READ_BITS(dst->lib_ordinal, 8);
+	READ_BITS(dst->weak_import, 1);
+	READ_BITS(dst->name_offset, 23);
+}
+
+struct dyld_chained_import_addend {
+	ut32 lib_ordinal : 8,
+		weak_import : 1,
+		name_offset : 23;
+	st32 addend;
+};
+
+static inline void dyld_chained_import_addend_read(struct dyld_chained_import_addend *dst, ut8 *data) {
+	ut32 raw_val = rz_read_le32(data);
+	READ_BITS(dst->lib_ordinal, 8);
+	READ_BITS(dst->weak_import, 1);
+	READ_BITS(dst->name_offset, 23);
+	dst->addend = rz_read_at_le32(data, 4);
+}
+
+struct dyld_chained_import_addend64 {
+	ut64 lib_ordinal : 16,
+		weak_import : 1,
+		reserved : 15,
+		name_offset : 32;
+	st64 addend;
+};
+
+static inline void dyld_chained_import_addend64_read(struct dyld_chained_import_addend64 *dst, ut8 *data) {
+	ut64 raw_val = rz_read_le64(data);
+	READ_BITS(dst->lib_ordinal, 16);
+	READ_BITS(dst->weak_import, 1);
+	READ_BITS(dst->reserved, 15);
+	READ_BITS(dst->name_offset, 32);
+	dst->addend = rz_read_at_le64(data, 8);
+}
+
+static inline size_t dyld_chained_import_format_size(enum dyld_chained_import_format format) {
+	switch (format) {
+	case DYLD_CHAINED_IMPORT_THREADED:
+		return sizeof(RzDyldChainedImportThreaded);
+	case DYLD_CHAINED_IMPORT:
+		return sizeof(struct dyld_chained_import);
+	case DYLD_CHAINED_IMPORT_ADDEND:
+		return sizeof(struct dyld_chained_import_addend);
+	case DYLD_CHAINED_IMPORT_ADDEND64:
+		return sizeof(struct dyld_chained_import_addend64);
+	default:
+		return 0;
+	}
+}
 
 #undef READ_BITS
 

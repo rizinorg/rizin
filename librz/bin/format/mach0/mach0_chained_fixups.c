@@ -41,6 +41,135 @@ static bool read_dyld_chained_starts_in_segment(struct rz_dyld_chained_starts_in
 		rz_buf_read_le16_offset(buf, &offset, &segment->page_count);
 }
 
+static void parse_chained_imports(RzBuffer *buf, ut32 offset, struct dyld_chained_fixups_header *header, struct mach0_chained_fixups_t *cf) {
+	// MachOAnalyzer::forEachChainedFixupTarget
+	if (header->imports_format != DYLD_CHAINED_IMPORT &&
+		header->imports_format != DYLD_CHAINED_IMPORT_ADDEND &&
+		header->imports_format != DYLD_CHAINED_IMPORT_ADDEND64) {
+		RZ_LOG_WARN("Unsupported Mach-O chained import format: %d\n", (int)header->imports_format);
+		return;
+	}
+	if (!header->imports_count) {
+		return;
+	}
+	cf->imports_format = header->imports_format;
+	size_t import_sz = dyld_chained_import_format_size(cf->imports_format);
+	rz_return_if_fail(import_sz);
+	rz_vector_init(&cf->imports, import_sz, NULL, NULL);
+	if (SZT_MUL_OVFCHK(header->imports_count, import_sz)) {
+		return;
+	}
+	size_t imports_buf_sz = (size_t)header->imports_count * import_sz;
+	ut8 *imports_buf = malloc(imports_buf_sz);
+	if (!imports_buf) {
+		return;
+	}
+	if (rz_buf_read_at(buf, offset + header->imports_offset, imports_buf, imports_buf_sz) < imports_buf_sz) {
+		free(imports_buf);
+		return;
+	}
+	rz_vector_reserve(&cf->imports, header->imports_count);
+	for (size_t i = 0; i < header->imports_count; i++) {
+		void *dst = rz_vector_push(&cf->imports, NULL);
+		if (!dst) {
+			break;
+		}
+		switch (cf->imports_format) {
+		case DYLD_CHAINED_IMPORT:
+			dyld_chained_import_read(dst, imports_buf + import_sz * i);
+			break;
+		case DYLD_CHAINED_IMPORT_ADDEND:
+			dyld_chained_import_addend_read(dst, imports_buf + import_sz * i);
+			break;
+		case DYLD_CHAINED_IMPORT_ADDEND64:
+			dyld_chained_import_addend64_read(dst, imports_buf + import_sz * i);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+	}
+	free(imports_buf);
+}
+
+/**
+ * Maximum chained import ordinal + 1
+ */
+RZ_API size_t MACH0_(chained_imports_count)(struct MACH0_(obj_t) * obj) {
+	return rz_vector_len(&obj->chained_fixups.imports);
+}
+
+/**
+ * Copy contents of a dyld_chained_import* of the binary into \p dst
+ * \param ordinal index of the import, given by chained pointers
+ * \return true if an import with the given ordinal was found and read successfully
+ */
+RZ_API bool MACH0_(get_chained_import)(struct MACH0_(obj_t) * obj, ut32 ordinal, struct MACH0_(chained_import_t) * dst) {
+	// MachOAnalyzer::forEachChainedFixupTarget
+	if (ordinal >= rz_vector_len(&obj->chained_fixups.imports)) {
+		return false;
+	}
+	void *raw = rz_vector_index_ptr(&obj->chained_fixups.imports, ordinal);
+	switch (obj->chained_fixups.imports_format) {
+	case DYLD_CHAINED_IMPORT_THREADED: {
+		RzDyldChainedImportThreaded *s = raw;
+		dst->lib_ordinal = s->lib_ord;
+		dst->weak_import = false;
+		dst->name_offset = 0;
+		dst->name = s->sym_name;
+		dst->addend = s->addend;
+		break;
+	}
+	case DYLD_CHAINED_IMPORT: {
+		struct dyld_chained_import *s = raw;
+		dst->lib_ordinal = s->lib_ordinal > 0xf0 ? (st8)s->lib_ordinal : s->lib_ordinal;
+		dst->weak_import = s->weak_import != 0;
+		dst->name_offset = s->name_offset;
+		dst->name = NULL;
+		dst->addend = 0;
+		break;
+	}
+	case DYLD_CHAINED_IMPORT_ADDEND: {
+		struct dyld_chained_import_addend *s = raw;
+		dst->lib_ordinal = s->lib_ordinal > 0xf0 ? (st8)s->lib_ordinal : s->lib_ordinal;
+		dst->weak_import = s->weak_import != 0;
+		dst->name_offset = s->name_offset;
+		dst->name = NULL;
+		dst->addend = s->addend;
+		break;
+	}
+	case DYLD_CHAINED_IMPORT_ADDEND64: {
+		struct dyld_chained_import_addend64 *s = raw;
+		dst->lib_ordinal = s->lib_ordinal > 0xfff0 ? (st8)s->lib_ordinal : s->lib_ordinal;
+		dst->weak_import = s->weak_import != 0;
+		dst->name_offset = s->name_offset;
+		dst->name = NULL;
+		dst->addend = s->addend;
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		return false;
+	}
+	return true;
+}
+
+RZ_API RZ_OWN char *MACH0_(chained_import_read_symbol_name)(struct MACH0_(obj_t) * obj, struct MACH0_(chained_import_t) * imp) {
+	if (imp->name) {
+		return strdup(imp->name);
+	}
+	return MACH0_(read_chained_symbol)(obj, imp->name_offset);
+}
+
+RZ_API RZ_OWN char *MACH0_(read_chained_symbol)(struct MACH0_(obj_t) * obj, ut32 name_offset) {
+	ut64 paddr = obj->chained_fixups.symbols_base_paddr;
+	if (paddr == UT64_MAX) {
+		return NULL;
+	}
+	paddr += name_offset;
+	return rz_buf_get_nstring(obj->b, paddr, RZ_BIN_MACH0_STRING_LENGTH);
+}
+
 RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size) {
 	struct dyld_chained_fixups_header header;
 	if (size < sizeof(header)) {
@@ -102,6 +231,16 @@ RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset
 		}
 		cursor += sizeof(ut32);
 	}
+
+	parse_chained_imports(bin->b, offset, &header, cf);
+
+	if (header.symbols_format == 0) {
+		// Only 0 is implemented in ld64 at the time of writing
+		cf->symbols_base_paddr = (ut64)offset + header.symbols_offset;
+	} else {
+		RZ_LOG_WARN("Unsupported Mach-O chained symbols format: %d\n", (int)header.symbols_format);
+		cf->symbols_base_paddr = UT64_MAX;
+	}
 	return true;
 }
 
@@ -111,10 +250,43 @@ typedef struct {
 	size_t cur_seg_idx;
 } ReconstructThreadedCtx;
 
+static void chained_import_threaded_fini(void *e, void *user) {
+	RzDyldChainedImportThreaded *imp = e;
+	free(imp->sym_name);
+}
+
 static void reconstruct_threaded_table_size(ut64 table_size, void *user) {
+	ReconstructThreadedCtx *ctx = user;
+	struct mach0_chained_fixups_t *cf = &ctx->bin->chained_fixups;
+	rz_vector_fini(&cf->imports);
+	cf->imports_format = DYLD_CHAINED_IMPORT_THREADED;
+	rz_vector_init(&cf->imports, sizeof(RzDyldChainedImportThreaded), chained_import_threaded_fini, NULL);
+	void *v = rz_vector_insert_range(&cf->imports, 0, NULL, table_size);
+	if (!v) {
+		return;
+	}
+	memset(v, 0, table_size * sizeof(RzDyldChainedImportThreaded));
 }
 
 static void reconstruct_threaded_bind(ut64 paddr, ut64 vaddr, st64 addend, ut8 rel_type, int lib_ord, int sym_ord, const char *sym_name, void *user) {
+	if (sym_ord < 0 || !sym_name) {
+		return;
+	}
+	ReconstructThreadedCtx *ctx = user;
+	struct mach0_chained_fixups_t *cf = &ctx->bin->chained_fixups;
+	if (cf->imports_format != DYLD_CHAINED_IMPORT_THREADED) {
+		RZ_LOG_ERROR("Missing BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB before bind");
+		return;
+	}
+	if (sym_ord >= rz_vector_len(&cf->imports)) {
+		RZ_LOG_ERROR("Imports overflow BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB value");
+		return;
+	}
+	RzDyldChainedImportThreaded *imp = rz_vector_index_ptr(&cf->imports, sym_ord);
+	free(imp->sym_name);
+	imp->sym_name = strdup(sym_name);
+	imp->lib_ord = lib_ord;
+	imp->addend = addend;
 }
 
 static void reconstruct_threaded_apply(int seg_idx, ut64 seg_off, void *user) {
@@ -158,6 +330,7 @@ RZ_IPI void MACH0_(reconstruct_chained_fixups_from_threaded)(struct MACH0_(obj_t
 	if (!cf->starts) {
 		return;
 	}
+	cf->symbols_base_paddr = UT64_MAX;
 	ReconstructThreadedCtx ctx = {
 		.bin = bin
 	};
@@ -225,11 +398,15 @@ RZ_API void MACH0_(chained_fixups_foreach)(struct MACH0_(obj_t) * obj, mach0_cha
 						struct dyld_chained_ptr_arm64e_auth_bind p;
 						dyld_chained_ptr_arm64e_auth_bind_read(&p, raw_ptr);
 						delta = p.next;
+						fixup.is_bind = true;
+						fixup.bind_ordinal = p.ordinal;
 					} else if (!is_auth && is_bind) {
 						struct dyld_chained_ptr_arm64e_bind p;
 						dyld_chained_ptr_arm64e_bind_read(&p, raw_ptr);
 						delta = p.next;
 						fixup.addend = p.addend;
+						fixup.is_bind = true;
+						fixup.bind_ordinal = p.ordinal;
 					} else if (is_auth && !is_bind) {
 						struct dyld_chained_ptr_arm64e_auth_rebase p;
 						dyld_chained_ptr_arm64e_auth_rebase_read(&p, raw_ptr);
@@ -268,6 +445,8 @@ RZ_API void MACH0_(chained_fixups_foreach)(struct MACH0_(obj_t) * obj, mach0_cha
 					if (bind.bind) {
 						delta = bind.next;
 						fixup.addend = bind.addend;
+						fixup.is_bind = true;
+						fixup.bind_ordinal = bind.ordinal;
 					} else {
 						struct dyld_chained_ptr_64_rebase p;
 						dyld_chained_ptr_64_rebase_read(&p, raw_ptr);
@@ -284,9 +463,18 @@ RZ_API void MACH0_(chained_fixups_foreach)(struct MACH0_(obj_t) * obj, mach0_cha
 					struct dyld_chained_ptr_arm64e_bind24 bind;
 					dyld_chained_ptr_arm64e_bind24_read(&bind, raw_ptr);
 					if (bind.bind) {
-						delta = bind.next;
-						if (!bind.auth) {
+						// void ClosureBuilder::addChainedFixupInfo(ImageWriter& writer, BuilderLoadedImage& forImage)
+						// bool MachOAnalyzerSet::wmo_findSymbolFrom
+						fixup.is_bind = true;
+						if (bind.auth) {
+							struct dyld_chained_ptr_arm64e_auth_bind24 p;
+							dyld_chained_ptr_arm64e_auth_bind24_read(&p, raw_ptr);
+							fixup.bind_ordinal = p.ordinal;
+							delta = p.next;
+						} else {
 							fixup.addend = bind.addend;
+							fixup.bind_ordinal = bind.ordinal;
+							delta = bind.next;
 						}
 					} else {
 						if (bind.auth) {
@@ -310,6 +498,8 @@ RZ_API void MACH0_(chained_fixups_foreach)(struct MACH0_(obj_t) * obj, mach0_cha
 					if (bind.bind) {
 						delta = bind.next;
 						fixup.addend = bind.addend;
+						fixup.is_bind = true;
+						fixup.bind_ordinal = bind.ordinal;
 					} else {
 						struct dyld_chained_ptr_32_rebase rebase;
 						dyld_chained_ptr_32_rebase_read(&rebase, raw_ptr);

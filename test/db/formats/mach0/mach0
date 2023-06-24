@@ -350,11 +350,11 @@ ic
 EOF
 EXPECT=<<EOF
 0x000000010000b672
-address     min         max         name                       super 
----------------------------------------------------------------------
-0x1000115c0 0x100007f40 0x100008318 Chained_iOS.ViewController 
-0x100011608 0x1000083c4 0x1000089c4 Chained_iOS.AppDelegate    
-0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  
+address     min         max         name                       super            
+--------------------------------------------------------------------------------
+0x1000115c0 0x100007f40 0x100008318 Chained_iOS.ViewController UIViewController
+0x100011608 0x1000083c4 0x1000089c4 Chained_iOS.AppDelegate    UIResponder
+0x100011668 0x100009194 0x100009940 Chained_iOS.SceneDelegate  UIResponder
 EOF
 RUN
 

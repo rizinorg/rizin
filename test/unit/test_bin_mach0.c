@@ -28,6 +28,12 @@ static ut64 rand_ut64() {
 	return r;
 }
 
+static void memset_rand(ut8 *dst, size_t size) {
+	for (size_t i = 0; i < size; i++) {
+		dst[i] = (ut8)rand();
+	}
+}
+
 #define TEST_READ_DEF(name, size) \
 	bool test_##name##_read() { \
 		RZ_STATIC_ASSERT(sizeof(struct name) == sizeof(ut##size)); \
@@ -64,6 +70,28 @@ TEST_READ_DEF(dyld_chained_ptr_arm64e_auth_bind24, 64)
 TEST_READ_DEF(dyld_chained_ptr_32_rebase, 32)
 TEST_READ_DEF(dyld_chained_ptr_32_bind, 32)
 
+#define TEST_READ_BUF_DEF(name) \
+	bool test_##name##_read() { \
+		for (int i = 0; i < SAMPLES; i++) { \
+			ut8 raw_val[sizeof(struct name)]; /* this is the value we want to parse */ \
+			memset_rand(raw_val, sizeof(raw_val)); \
+\
+			/* Parse with our endian-independent function */ \
+			struct name s; \
+			memset_rand((ut8 *)&s, sizeof(s)); /* init with garbage */ \
+			name##_read(&s, raw_val); \
+\
+			/* Compare our parsed value against a direct copy of the struct. */ \
+			/* This only works on little endian hosts! */ \
+			mu_assert_memeq((const ut8 *)&s, raw_val, sizeof(s), "read mismatch"); \
+		} \
+		mu_end; \
+	}
+
+TEST_READ_BUF_DEF(dyld_chained_import);
+TEST_READ_BUF_DEF(dyld_chained_import_addend);
+TEST_READ_BUF_DEF(dyld_chained_import_addend64);
+
 #endif
 
 bool all_tests() {
@@ -81,6 +109,9 @@ bool all_tests() {
 	mu_run_test(test_dyld_chained_ptr_arm64e_auth_bind24_read);
 	mu_run_test(test_dyld_chained_ptr_32_rebase_read);
 	mu_run_test(test_dyld_chained_ptr_32_bind_read);
+	mu_run_test(test_dyld_chained_import_read);
+	mu_run_test(test_dyld_chained_import_addend_read);
+	mu_run_test(test_dyld_chained_import_addend64_read);
 #endif
 	return tests_passed != tests_run;
 }

@@ -1156,9 +1156,7 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 	c.data = rz_read_ble(&sc[i], bigendian, 8 * sizeof(mach0_ut));
 
 	klass->addr = c.isa;
-	if (c.superclass) {
-		klass->super = get_class_name(c.superclass, bf, buf);
-	} else if (relocs) {
+	if (relocs) {
 		struct reloc_t reloc_at_class_addr;
 		reloc_at_class_addr.addr = p + sizeof(mach0_ut);
 		RzSkipListNode *found = rz_skiplist_find(relocs, &reloc_at_class_addr);
@@ -1171,6 +1169,8 @@ RZ_API void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzBinC
 				klass->super = strdup(target_class_name);
 			}
 		}
+	} else if (c.superclass) {
+		klass->super = get_class_name(c.superclass, bf, buf);
 	}
 	get_class_ro_t(RO_DATA_PTR(c.data), bf, buf, &is_meta_class, klass, oi);
 
