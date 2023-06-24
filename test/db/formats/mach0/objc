@@ -345,8 +345,7 @@ ret
 |           0x100003da0      adrp  x1, section.13.__DATA.__objc_const  ; 0x100008000
 |           0x100003da4      ldr   x1, [x1, 0xc8]                      ; [0x100003f3c:4]=0x6874656d ; "methodWithReturn"
 |           0x100003da8      adrp  x16, reloc.NSLog                    ; 0x100004000
-|           0x100003dac      ldr   x16, [x16, 0x20]                    ; [0x100004020:4]=4
-|                                                                      ; reloc.objc_msgSend
+|           0x100003dac      ldr   x16, [x16, 0x20]                    ; [0x100004020:4]=0x10028 ; u"(\x01\x01"
 \           0x100003db0      br    x16
 EOF
 RUN

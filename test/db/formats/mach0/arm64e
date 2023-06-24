@@ -139,15 +139,15 @@ vaddr       paddr      target      type   name
  5 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
 --
 __auth_got (auth, bind)
-0x100004000 0xc009000000000000
-0x100004008 0xc009000000000005
-0x100004010 0xc009000000000006
-0x100004018 0xc009000000000007
-0x100004020 0xc009000000000008
+0x100004000 0x0000000100010008 reloc.target.NSLog
+0x100004008 0x0000000100010010 reloc.target.objc_alloc_init
+0x100004010 0x0000000100010018 reloc.target.objc_autoreleasePoolPop
+0x100004018 0x0000000100010020 reloc.target.objc_autoreleasePoolPush
+0x100004020 0x0000000100010028 reloc.target.objc_msgSend
 --
 cstring (!auth, !bind)
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x100004028  0100 0000 e16a 15c0 c807 0000 0000 0000  .....j..........
+0x100004028  3000 0100 0100 0000 c807 0000 0000 0000  0...............
 0x100004038  643e 0000 0100 0000                      d>......
 --
 local fcn ptr (auth, !bind)
@@ -157,7 +157,7 @@ local fcn ptr (auth, !bind)
 --
 global (!auth, bind)
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x100008108  0400 0000 0000 1040                      .......@
+0x100008108  4000 0100 0100 0000                      @.......
 EOF
 RUN
 
@@ -218,7 +218,7 @@ vaddr       paddr      target      type   name
 0x100008140 0x00008140 0x00000000  SET_64 
 0x100008158 0x00008158 0x00000000  SET_64 
 0x100008160 0x00008160 0x00000000  SET_64 
-0500000000002080
+3000010001000000
 643e000001000000
 0x100004038 0x0000000100003e64   d>...... 4294983268 3.__TEXT.__cstring str.static_method_called,section.3.__TEXT.__cstring R X 'invalid' static method called
 address     min         max         name super    
@@ -296,7 +296,7 @@ vaddr       paddr      target      type   name
 0x100008140 0x00008140 0x00000000  SET_64 
 0x100008158 0x00008158 0x00000000  SET_64 
 0x100008160 0x00008160 0x00000000  SET_64 
-04000000000009c0
+2800010001000000
 083e000001000000
 033f000001000000
 address     min         max         name super    

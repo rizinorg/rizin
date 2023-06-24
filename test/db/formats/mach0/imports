@@ -99,11 +99,11 @@ vaddr       paddr      target      type   name
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
 0x100008120 0x00008120 0x00000000  SET_64 
 0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
-0x1000080c8 0x8020000000000005   ...... . @ reloc.NSString
+0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
             ;-- section.13.__DATA.__objc_classrefs:
             0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
-            0x1000080c8      .qword 0x8020000000000005                 ; RELOC 64 NSString
+            0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
 address     min         max         name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject
@@ -158,11 +158,11 @@ vaddr       paddr      target      type   name
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
 0x100008120 0x00008120 0x00000000  SET_64 
 0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
-0x1000080c8 0x4010000000000000   .......@ @ reloc.NSString
+0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
             ;-- section.13.__DATA.__objc_classrefs:
             0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
-            0x1000080c8      .qword 0x4010000000000000                 ; RELOC 64 NSString
+            0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
 address     min         max         name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject
@@ -217,11 +217,11 @@ vaddr       paddr      target      type   name
 0x100008110 0x00008110 0x100010040 SET_64 _objc_empty_cache
 0x100008120 0x00008120 0x00000000  SET_64 
 0x1000080c0 0x0000000100008100   ........ @ section.13.__DATA.__objc_classrefs 4295000320 15.__DATA.__objc_data class Stub R 0x1000080d8
-0x1000080c8 0x4010000000000005   .......@ @ reloc.NSString
+0x1000080c8 0x0000000100010030   0....... @ reloc.NSString 4295032880 NSString R 0x0
             ;-- section.13.__DATA.__objc_classrefs:
             0x1000080c0      .qword 0x0000000100008100 ; sym.class_Stub; RELOC 64  ; [13] -rw- section size 16 named 13.__DATA.__objc_classrefs
             ;-- NSString:
-            0x1000080c8      .qword 0x4010000000000005                 ; RELOC 64 NSString
+            0x1000080c8      .qword 0x0000000100010030 ; reloc.target.NSString; RELOC 64 NSString
 address     min         max         name super    
 --------------------------------------------------
 0x1000080d8 0x1000080d8 0x1000080d8 Stub NSObject

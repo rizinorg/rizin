@@ -88,6 +88,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		reloc->type = a_info.r_type; // enum RelocationInfoType
 		reloc->external = a_info.r_extern;
 		reloc->pc_relative = a_info.r_pcrel;
+		reloc->chained = false;
 		reloc->size = 1 << a_info.r_length; // macho/reloc.h says: 0=byte, 1=word, 2=long, 3=quad
 		rz_str_ncpy(reloc->name, sym_name, sizeof(reloc->name) - 1);
 		rz_skiplist_insert(relocs, reloc);
@@ -165,6 +166,7 @@ static void fixups_as_relocs_cb(struct mach0_chained_fixup_t *fixup, void *user)
 	reloc->type = fixup->size == 4 ? RZ_BIN_RELOC_32 : RZ_BIN_RELOC_64;
 	reloc->ord = fixup->is_bind ? fixup->bind_ordinal : -1;
 	reloc->external = fixup->is_bind;
+	reloc->chained = true;
 	reloc->size = fixup->size;
 
 	if (fixup->is_bind) {
@@ -570,7 +572,7 @@ RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj) {
 	return patchable_relocs && rz_pvector_len(patchable_relocs);
 }
 
-static ut64 reloc_target_size(struct MACH0_(obj_t) * obj) {
+RZ_API ut64 MACH0_(reloc_target_size)(struct MACH0_(obj_t) * obj) {
 	int bits = MACH0_(get_bits_from_hdr)(&obj->hdr);
 	if (bits) {
 		return 8;
@@ -584,7 +586,7 @@ RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj) {
 	if (!patchable_relocs) {
 		return 0;
 	}
-	return rz_pvector_len(patchable_relocs) * reloc_target_size(obj);
+	return rz_pvector_len(patchable_relocs) * MACH0_(reloc_target_size)(obj);
 }
 
 /// base vaddr where to map the artificial reloc target vfile
@@ -593,7 +595,7 @@ RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) *
 		return obj->reloc_targets_map_base;
 	}
 	RzList *maps = MACH0_(get_maps_unpatched)(bf);
-	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, reloc_target_size(obj));
+	obj->reloc_targets_map_base = rz_bin_relocs_patch_find_targets_map_base(maps, MACH0_(reloc_target_size)(obj));
 	rz_list_free(maps);
 	obj->reloc_targets_map_base_calculated = true;
 	return obj->reloc_targets_map_base;
@@ -603,31 +605,33 @@ static bool _patch_reloc(struct MACH0_(obj_t) * bin, struct reloc_t *reloc, ut64
 	ut64 pc = reloc->addr;
 	ut64 ins_len = 0;
 
-	switch (bin->hdr.cputype) {
-	case CPU_TYPE_X86_64: {
-		switch (reloc->type) {
-		case X86_64_RELOC_UNSIGNED:
+	if (!reloc->chained) {
+		switch (bin->hdr.cputype) {
+		case CPU_TYPE_X86_64: {
+			switch (reloc->type) {
+			case X86_64_RELOC_UNSIGNED:
+				break;
+			case X86_64_RELOC_BRANCH:
+				pc -= 1;
+				ins_len = 5;
+				break;
+			default:
+				RZ_LOG_ERROR("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
+				return false;
+			}
 			break;
-		case X86_64_RELOC_BRANCH:
-			pc -= 1;
-			ins_len = 5;
+		}
+		case CPU_TYPE_ARM64:
+		case CPU_TYPE_ARM64_32:
+			pc = reloc->addr & ~3;
+			ins_len = 4;
+			break;
+		case CPU_TYPE_ARM:
 			break;
 		default:
-			RZ_LOG_ERROR("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
+			RZ_LOG_ERROR("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
 			return false;
 		}
-		break;
-	}
-	case CPU_TYPE_ARM64:
-	case CPU_TYPE_ARM64_32:
-		pc = reloc->addr & ~3;
-		ins_len = 4;
-		break;
-	case CPU_TYPE_ARM:
-		break;
-	default:
-		RZ_LOG_ERROR("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
-		return false;
 	}
 
 	ut64 val = symbol_at;
@@ -663,7 +667,7 @@ RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
 	}
 
 	if (needs_reloc_patch) {
-		ut64 cdsz = reloc_target_size(obj);
+		ut64 cdsz = MACH0_(reloc_target_size)(obj);
 		ut64 size = MACH0_(reloc_targets_vfile_size)(obj);
 		if (!size) {
 			return;
@@ -684,8 +688,9 @@ RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj) {
 	}
 
 	if (needs_chained_patch) {
-		MACH0_(patch_chained_fixups)
-		(obj, obj->buf_patched);
+		// clang-format off
+		MACH0_(patch_chained_fixups)(obj, obj->buf_patched);
+		// clang-format on
 	}
 
 	// from now on, all writes should propagate through to the actual file
