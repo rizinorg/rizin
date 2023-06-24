@@ -222,8 +222,8 @@ RZ_API RzBuffer *rz_xnu_kernelcache_new_patched_buf(RzXNUKernelCacheObj *obj) {
 		return NULL;
 	}
 
-	if (obj->mach0->chained_fixups.starts) {
-		MACH0_(rebase_buffer)
+	if (MACH0_(has_chained_fixups)(obj->mach0)) {
+		MACH0_(patch_chained_fixups)
 		(obj->mach0, r);
 	} else if (obj->rebase_info) {
 		rebase_buffer(obj, r);

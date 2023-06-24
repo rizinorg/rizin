@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -373,16 +374,15 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	}
 	ret->free = free;
 
-	RzSkipList *relocs;
-	if (!(relocs = MACH0_(get_relocs)(bf->o->bin_obj))) {
+	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);
+	if (!relocs) {
 		return ret;
 	}
-
 	RzSkipListNode *it;
 	struct reloc_t *reloc;
 	rz_skiplist_foreach (relocs, it, reloc) {
-		RzBinReloc *ptr = NULL;
-		if (!(ptr = RZ_NEW0(RzBinReloc))) {
+		RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
+		if (!ptr) {
 			break;
 		}
 		ptr->type = reloc->type;
@@ -405,7 +405,6 @@ static RzList /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 		ptr->target_vaddr = reloc->target;
 		rz_list_append(ret, ptr);
 	}
-
 	return ret;
 }
 

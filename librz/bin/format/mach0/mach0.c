@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -1431,239 +1432,6 @@ static const char *cmd_to_pf_definition(ut32 cmd) {
 	return NULL;
 }
 
-static bool read_dyld_chained_fixups_header(struct dyld_chained_fixups_header *header, RzBuffer *buf, ut64 base) {
-	ut64 offset = base;
-	return rz_buf_read_le32_offset(buf, &offset, &header->fixups_version) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->starts_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->imports_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->symbols_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->imports_count) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->imports_format) &&
-		rz_buf_read_le32_offset(buf, &offset, &header->symbols_format);
-}
-
-static bool read_dyld_chained_starts_in_segment(struct rz_dyld_chained_starts_in_segment *segment, RzBuffer *buf, ut64 base) {
-	ut64 offset = base;
-	return rz_buf_read_le32_offset(buf, &offset, &segment->size) &&
-		rz_buf_read_le16_offset(buf, &offset, &segment->page_size) &&
-		rz_buf_read_le16_offset(buf, &offset, &segment->pointer_format) &&
-		rz_buf_read_le64_offset(buf, &offset, &segment->segment_offset) &&
-		rz_buf_read_le32_offset(buf, &offset, &segment->max_valid_pointer) &&
-		rz_buf_read_le16_offset(buf, &offset, &segment->page_count);
-}
-
-static bool parse_chained_fixups(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size) {
-	struct dyld_chained_fixups_header header;
-	if (size < sizeof(header)) {
-		return false;
-	}
-	if (!read_dyld_chained_fixups_header(&header, bin->b, offset)) {
-		return false;
-	}
-	if (header.fixups_version > 0) {
-		eprintf("Unsupported fixups version: %u\n", header.fixups_version);
-		return false;
-	}
-	ut64 starts_at = offset + header.starts_offset;
-	if (header.starts_offset > size) {
-		return false;
-	}
-	if (!rz_buf_read_le32_at(bin->b, starts_at, &bin->chained_fixups.starts_count)) {
-		return false;
-	}
-	struct mach0_chained_fixups_t *cf = &bin->chained_fixups;
-
-	// chained starts
-	cf->starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, cf->starts_count);
-	if (!cf->starts) {
-		return false;
-	}
-	ut64 cursor = starts_at + sizeof(ut32);
-	for (size_t i = 0; i < cf->starts_count; i++) {
-		ut32 seg_off;
-		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off) || !seg_off) {
-			cursor += sizeof(ut32);
-			continue;
-		}
-		if (i >= bin->nsegs) {
-			break;
-		}
-		struct rz_dyld_chained_starts_in_segment *cur_seg = RZ_NEW0(struct rz_dyld_chained_starts_in_segment);
-		if (!cur_seg) {
-			return false;
-		}
-		cf->starts[i] = cur_seg;
-		if (!read_dyld_chained_starts_in_segment(cur_seg, bin->b, starts_at + seg_off)) {
-			return false;
-		}
-		if (cur_seg->page_count > 0) {
-			ut16 *page_start = RZ_NEWS0(ut16, cur_seg->page_count);
-			if (!page_start) {
-				cur_seg->page_count = 0;
-				return false;
-			}
-			ut64 offset_page = starts_at + seg_off + 22;
-			for (size_t j = 0; j < cur_seg->page_count; ++j) {
-				if (!rz_buf_read_le16_offset(bin->b, &offset_page, &page_start[j])) {
-					free(page_start);
-					return false;
-				}
-			}
-			cur_seg->page_start = page_start;
-		}
-		cursor += sizeof(ut32);
-	}
-	/* TODO: handle also imports, symbols and multiple starts (32-bit only) */
-	return true;
-}
-
-static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * bin) {
-	if (!bin->dyld_info) {
-		return false;
-	}
-	if (!bin->nsegs) {
-		return false;
-	}
-	struct mach0_chained_fixups_t *cf = &bin->chained_fixups;
-	cf->starts_count = bin->nsegs;
-	cf->starts = RZ_NEWS0(struct rz_dyld_chained_starts_in_segment *, cf->starts_count);
-	if (!cf->starts) {
-		return false;
-	}
-	size_t wordsize = get_word_size(bin);
-	ut8 *p = NULL;
-	size_t j, count, skip, bind_size;
-	int seg_idx = 0;
-	ut64 seg_off = 0;
-	bind_size = bin->dyld_info->bind_size;
-	if (!bind_size || bind_size < 1) {
-		return false;
-	}
-	if (bin->dyld_info->bind_off > bin->size) {
-		return false;
-	}
-	if (bin->dyld_info->bind_off + bind_size > bin->size) {
-		return false;
-	}
-	ut8 *opcodes = calloc(1, bind_size + 1);
-	if (!opcodes) {
-		return false;
-	}
-	if (rz_buf_read_at(bin->b, bin->dyld_info->bind_off, opcodes, bind_size) != bind_size) {
-		bprintf("Error: read (dyld_info bind) at 0x%08" PFMT64x "\n", (ut64)(size_t)bin->dyld_info->bind_off);
-		RZ_FREE(opcodes);
-		return false;
-	}
-	struct rz_dyld_chained_starts_in_segment *cur_seg = NULL;
-	size_t cur_seg_idx = 0;
-	ut8 *end;
-	bool done = false;
-	for (p = opcodes, end = opcodes + bind_size; !done && p < end;) {
-		ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
-		p++;
-		switch (op) {
-		case BIND_OPCODE_DONE:
-			done = true;
-			break;
-		case BIND_OPCODE_THREADED: {
-			switch (imm) {
-			case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-				read_uleb128(&p, end);
-				break;
-			}
-			case BIND_SUBOPCODE_THREADED_APPLY: {
-				const size_t ps = 0x1000;
-				if (!cur_seg || cur_seg_idx != seg_idx) {
-					cur_seg_idx = seg_idx;
-					cur_seg = cf->starts[seg_idx];
-					if (!cur_seg) {
-						cur_seg = RZ_NEW0(struct rz_dyld_chained_starts_in_segment);
-						if (!cur_seg) {
-							break;
-						}
-						cf->starts[seg_idx] = cur_seg;
-						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
-						cur_seg->page_size = ps;
-						cur_seg->page_count = ((bin->segs[seg_idx].vmsize + (ps - 1)) & ~(ps - 1)) / ps;
-						if (cur_seg->page_count > 0) {
-							cur_seg->page_start = RZ_NEWS0(ut16, cur_seg->page_count);
-							if (!cur_seg->page_start) {
-								cur_seg->page_count = 0;
-								break;
-							}
-							memset(cur_seg->page_start, 0xff, sizeof(ut16) * cur_seg->page_count);
-						}
-					}
-				}
-				if (cur_seg) {
-					ut32 page_index = (ut32)(seg_off / ps);
-					if (page_index < cur_seg->page_count) {
-						cur_seg->page_start[page_index] = seg_off & 0xfff;
-					}
-				}
-				break;
-			}
-			default:
-				bprintf("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
-			}
-			break;
-		}
-		case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
-		case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
-		case BIND_OPCODE_SET_TYPE_IMM:
-			break;
-		case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-			read_uleb128(&p, end);
-			break;
-		case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
-			while (*p++ && p < end) {
-				/* empty loop */
-			}
-			break;
-		case BIND_OPCODE_SET_ADDEND_SLEB:
-			rz_sleb128((const ut8 **)&p, end);
-			break;
-		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-			seg_idx = imm;
-			if (seg_idx >= bin->nsegs) {
-				bprintf("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-					" has unexistent segment %d\n",
-					seg_idx);
-				RZ_FREE(opcodes);
-				return false;
-			} else {
-				seg_off = read_uleb128(&p, end);
-			}
-			break;
-		case BIND_OPCODE_ADD_ADDR_ULEB:
-			seg_off += read_uleb128(&p, end);
-			break;
-		case BIND_OPCODE_DO_BIND:
-			break;
-		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-			seg_off += read_uleb128(&p, end) + wordsize;
-			break;
-		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-			seg_off += (ut64)imm * (ut64)wordsize + wordsize;
-			break;
-		case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-			count = read_uleb128(&p, end);
-			skip = read_uleb128(&p, end);
-			for (j = 0; j < count; j++) {
-				seg_off += skip + wordsize;
-			}
-			break;
-		default:
-			bprintf("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
-			RZ_FREE(opcodes);
-			return false;
-		}
-	}
-	RZ_FREE(opcodes);
-
-	return true;
-}
-
 static bool read_load_command(struct load_command *lc, RzBuffer *buf, ut64 base, bool big_endian) {
 	ut64 offset = base;
 	return rz_buf_read_ble32_offset(buf, &offset, &lc->cmd, big_endian) &&
@@ -2029,7 +1797,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				if (bin->options.verbose) {
 					eprintf("chained fixups at 0x%x size %d\n", dataoff, datasize);
 				}
-				has_chained_fixups = parse_chained_fixups(bin, dataoff, datasize);
+				has_chained_fixups = MACH0_(parse_chained_fixups)(bin, dataoff, datasize);
 			}
 		} break;
 		}
@@ -2037,7 +1805,9 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 
 	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
 		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-		reconstruct_chained_fixup(bin);
+		// clang-format off
+		MACH0_(reconstruct_chained_fixups_from_threaded)(bin);
+		// clang-format on
 	}
 	return true;
 }

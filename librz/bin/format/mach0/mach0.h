@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -115,12 +116,24 @@ struct MACH0_(opts_t) {
 };
 
 /**
- * Info parsed from struct dyld_chained_fixups_header and descendants
+ * Info parsed from struct dyld_chained_fixups_header and descendants, or synthesized from BIND_OPCODE_THREADED
  */
 struct mach0_chained_fixups_t {
 	struct rz_dyld_chained_starts_in_segment **starts;
 	ut32 starts_count;
 };
+
+/**
+ * Info about a single chained fixup
+ */
+struct mach0_chained_fixup_t {
+	ut64 paddr;
+	ut32 size; ///< bytes
+	ut64 result; ///< value to write
+	ut64 addend;
+};
+
+typedef void (*mach0_chained_fixup_foreach_cb)(struct mach0_chained_fixup_t *fixup, void *user);
 
 struct MACH0_(obj_t) {
 	struct MACH0_(opts_t) options;
@@ -186,7 +199,7 @@ struct MACH0_(obj_t) {
 	ut64 main_addr;
 
 	RzList /*<RzBinSection *>*/ *sections_cache;
-	RzSkipList *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
+	RzSkipList /* struct reloc_t * */ *relocs; ///< lazily loaded, use only MACH0_(get_relocs)() to access this
 	bool relocs_parsed; ///< whether relocs have already been parsed and relocs is filled (or NULL on error)
 	bool reloc_targets_map_base_calculated;
 	bool relocs_patched;
@@ -212,7 +225,7 @@ RzList /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin);
-RZ_BORROW RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
+RZ_BORROW RzSkipList /* struct reloc_t * */ *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin);
 struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) * bin);
@@ -238,13 +251,25 @@ RZ_API RZ_OWN char *MACH0_(get_name)(struct MACH0_(obj_t) * mo, ut32 stridx, boo
 RZ_API ut64 MACH0_(paddr_to_vaddr)(struct MACH0_(obj_t) * bin, ut64 offset);
 RZ_API ut64 MACH0_(vaddr_to_paddr)(struct MACH0_(obj_t) * bin, ut64 addr);
 
-RZ_API void MACH0_(rebase_buffer)(struct MACH0_(obj_t) * obj, RzBuffer *dst);
-RZ_API bool MACH0_(needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj);
-RZ_API bool MACH0_(segment_needs_rebasing_and_stripping)(struct MACH0_(obj_t) * obj, size_t seg_index);
+RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size);
+RZ_IPI void MACH0_(reconstruct_chained_fixups_from_threaded)(struct MACH0_(obj_t) * bin);
+RZ_API bool MACH0_(has_chained_fixups)(struct MACH0_(obj_t) * obj);
+RZ_API bool MACH0_(segment_has_chained_fixups)(struct MACH0_(obj_t) * obj, size_t seg_index);
+RZ_API void MACH0_(patch_chained_fixups)(struct MACH0_(obj_t) * obj, RzBuffer *dst);
+RZ_API void MACH0_(chained_fixups_foreach)(struct MACH0_(obj_t) * obj, mach0_chained_fixup_foreach_cb cb, void *user);
 
 RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
 RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
+
+typedef void (*BindOpcodesThreadedTableSizeCb)(ut64 table_size, void *user);
+typedef void (*BindOpcodesBindCb)(ut64 paddr, ut64 vaddr, st64 addend, ut8 rel_type, int lib_ord, int sym_ord, const char *sym_name, void *user);
+typedef void (*BindOpcodesThreadedApplyCb)(int seg_idx, ut64 seg_off, void *user);
+RZ_API void MACH0_(bind_opcodes_foreach)(struct MACH0_(obj_t) * bin,
+	RZ_NONNULL BindOpcodesThreadedTableSizeCb threaded_table_size_cb,
+	RZ_NULLABLE BindOpcodesBindCb do_bind_cb,
+	RZ_NONNULL BindOpcodesThreadedApplyCb threaded_apply_cb,
+	void *user);
 
 #endif

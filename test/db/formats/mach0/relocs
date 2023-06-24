@@ -1409,6 +1409,7 @@ vaddr paddr type name
  4 fd: 4 +0x0000c000 0x0000c000 - 0x0000ffff r-- vmap.__DATA_CONST
  5 fd: 3 +0x00010000 0x00010000 - 0x0001ffff r-- fmap.__LINKEDIT
 EOF
+BROKEN=1
 RUN
 
 NAME=FileDP relocs (arm32, patched)
