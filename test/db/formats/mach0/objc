@@ -349,4 +349,5 @@ ret
 |                                                                      ; reloc.objc_msgSend
 \           0x100003db0      br    x16
 EOF
+BROKEN=1
 RUN

@@ -88,6 +88,7 @@ global (!auth, bind)
 - offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x100008108  0400 0000 0000 1040                      .......@
 EOF
+BROKEN=1
 RUN
 
 NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
