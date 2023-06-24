@@ -1840,7 +1840,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	free(mo->symtab);
 	free(mo->symstr);
 	free(mo->indirectsyms);
-	free(mo->imports_by_ord);
+	rz_pvector_fini(&mo->imports_by_ord);
 	if (mo->imports_by_name) {
 		ht_pp_free(mo->imports_by_name);
 	}
@@ -1862,6 +1862,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 		}
 		free(cf->starts);
 	}
+	rz_vector_fini(&cf->imports);
 	rz_pvector_free(mo->patchable_relocs);
 	rz_skiplist_free(mo->relocs);
 	rz_hash_free(mo->hash);
@@ -1887,6 +1888,7 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * op
 		bin->kv = sdb_new(NULL, "bin.mach0", 0);
 		bin->hash = rz_hash_new();
 		bin->size = rz_buf_size(bin->b);
+		rz_pvector_init(&bin->imports_by_ord, NULL);
 		if (options) {
 			bin->options = *options;
 		}
@@ -2694,54 +2696,63 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 	return symbols;
 }
 
-struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) * bin) {
-	rz_return_val_if_fail(bin, NULL);
-
-	int i, j, idx, stridx;
-	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
-		return NULL;
+static void imports_foreach_undefsym(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user) {
+	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms || bin->dysymtab.nundefsym > 0xfffff) {
+		return;
 	}
-
-	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
-		return NULL;
-	}
-
-	struct import_t *imports = calloc(bin->dysymtab.nundefsym + 1, sizeof(struct import_t));
-	if (!imports) {
-		return NULL;
-	}
-	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
-		idx = bin->dysymtab.iundefsym + i;
+	for (int i = 0; i < bin->dysymtab.nundefsym; i++) {
+		int idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
 			bprintf("WARNING: Imports index out of bounds. Ignoring relocs\n");
-			free(imports);
-			return NULL;
+			return;
 		}
-		stridx = bin->symtab[idx].n_strx;
+		int stridx = bin->symtab[idx].n_strx;
 		char *imp_name = MACH0_(get_name)(bin, stridx, false);
-		if (imp_name) {
-			rz_str_ncpy(imports[j].name, imp_name, RZ_BIN_MACH0_STRING_LENGTH);
-			free(imp_name);
-		} else {
-			// imports[j].name[0] = 0;
+		if (!imp_name) {
 			continue;
 		}
-		imports[j].ord = i;
-		imports[j++].last = 0;
+		cb(imp_name, i, user);
 	}
-	imports[j].last = 1;
+}
 
-	if (!bin->imports_by_ord_size) {
-		if (j > 0) {
-			bin->imports_by_ord_size = j;
-			bin->imports_by_ord = (RzBinImport **)calloc(j, sizeof(RzBinImport *));
-		} else {
-			bin->imports_by_ord_size = 0;
-			bin->imports_by_ord = NULL;
+static void imports_foreach_chained(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user) {
+	size_t ci_count = MACH0_(chained_imports_count)(bin);
+	for (size_t i = 0; i < ci_count; i++) {
+		struct MACH0_(chained_import_t) import;
+		if (!MACH0_(get_chained_import)(bin, i, &import)) {
+			continue;
 		}
+		char *name = MACH0_(chained_import_read_symbol_name)(bin, &import);
+		if (!name) {
+			continue;
+		}
+		cb(name, i, user);
 	}
+}
 
-	return imports;
+/**
+ * Iterate over all available imports
+ * Important: the name string passed to \p cb is not freed automatically and should either be moved
+ *            or freed by \p cb itself.
+ */
+void MACH0_(imports_foreach)(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb cb, void *user) {
+	rz_return_if_fail(bin && cb);
+	if (MACH0_(has_chained_fixups)(bin)) {
+		imports_foreach_chained(bin, cb, user);
+	} else {
+		imports_foreach_undefsym(bin, cb, user);
+	}
+}
+
+/**
+ * Upper bound for the number of items MACH0_(imports_foreach)() will emit
+ */
+size_t MACH0_(imports_count)(struct MACH0_(obj_t) * bin) {
+	if (MACH0_(has_chained_fixups)(bin)) {
+		return MACH0_(chained_imports_count)(bin) + bin->dysymtab.nundefsym;
+	} else {
+		return bin->dysymtab.nundefsym;
+	}
 }
 
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * bin) {

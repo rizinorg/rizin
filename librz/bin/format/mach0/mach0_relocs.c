@@ -163,9 +163,21 @@ static void fixups_as_relocs_cb(struct mach0_chained_fixup_t *fixup, void *user)
 	reloc->addr = ctx->obj->baddr + fixup->paddr;
 	reloc->addend = fixup->addend;
 	reloc->type = fixup->size == 4 ? RZ_BIN_RELOC_32 : RZ_BIN_RELOC_64;
-	reloc->ord = -1;
-	reloc->external = false;
+	reloc->ord = fixup->is_bind ? fixup->bind_ordinal : -1;
+	reloc->external = fixup->is_bind;
 	reloc->size = fixup->size;
+
+	if (fixup->is_bind) {
+		struct MACH0_(chained_import_t) import;
+		if (MACH0_(get_chained_import)(ctx->obj, fixup->bind_ordinal, &import)) {
+			char *name = MACH0_(chained_import_read_symbol_name)(ctx->obj, &import);
+			if (name) {
+				strncpy(reloc->name, name, sizeof(reloc->name) - 1);
+				free(name);
+			}
+		}
+	}
+
 	rz_skiplist_insert(ctx->dst, reloc);
 }
 

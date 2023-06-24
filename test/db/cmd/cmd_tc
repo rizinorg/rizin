@@ -291,6 +291,7 @@ CMDS=ic*
 EXPECT=<<EOF
 fs classes
 f class.public.Employee @ 0x1000079a8
+f super.public.Employee.NSObject @ 0x10000c1e8
 f field.Employee.Employee::_property_firstName @ 0xffffffffffffffff
 f field.Employee.Employee::_property_shortWord @ 0xffffffffffffffff
 f field.Employee.Employee::_property_username @ 0xffffffffffffffff
