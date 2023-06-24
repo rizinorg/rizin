@@ -68,8 +68,9 @@ struct reloc_t {
 	int ord;
 	int last;
 	char name[256];
-	bool external;
-	bool pc_relative;
+	bool external : 1,
+		pc_relative : 1,
+		chained : 1;
 	ut8 size;
 	ut64 target;
 };
@@ -278,6 +279,7 @@ RZ_API RZ_OWN char *MACH0_(chained_import_read_symbol_name)(struct MACH0_(obj_t)
 RZ_API RZ_OWN char *MACH0_(read_chained_symbol)(struct MACH0_(obj_t) * obj, ut32 name_offset);
 
 RZ_API bool MACH0_(needs_reloc_patching)(struct MACH0_(obj_t) * obj);
+RZ_API ut64 MACH0_(reloc_target_size)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_vfile_size)(struct MACH0_(obj_t) * obj);
 RZ_API ut64 MACH0_(reloc_targets_map_base)(RzBinFile *bf, struct MACH0_(obj_t) * obj);
 RZ_API void MACH0_(patch_relocs)(RzBinFile *bf, struct MACH0_(obj_t) * obj);

@@ -546,6 +546,10 @@ RZ_API bool MACH0_(segment_has_chained_fixups)(struct MACH0_(obj_t) * obj, size_
 
 static void fixups_patch_cb(struct mach0_chained_fixup_t *fixup, void *user) {
 	RzBuffer *dst = user;
+	if (fixup->is_bind) {
+		// patching bind relocs is handled in MACH0_(patch_relocs)() before already
+		return;
+	}
 	switch (fixup->size) {
 	case 4:
 		rz_buf_write_le32_at(dst, fixup->paddr, fixup->result);
@@ -559,7 +563,11 @@ static void fixups_patch_cb(struct mach0_chained_fixup_t *fixup, void *user) {
 	}
 }
 
+/**
+ * Patch all non-bind chained fixups into \p dst
+ */
 RZ_API void MACH0_(patch_chained_fixups)(struct MACH0_(obj_t) * obj, RzBuffer *dst) {
-	MACH0_(chained_fixups_foreach)
-	(obj, fixups_patch_cb, dst);
+	// clang-format off
+	MACH0_(chained_fixups_foreach)(obj, fixups_patch_cb, dst);
+	// clang-format on
 }
