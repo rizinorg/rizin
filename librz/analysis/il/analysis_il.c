@@ -260,7 +260,7 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis
 		RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
 		if (ilop) {
-			bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1));
+			bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1), op.delay);
 			if (!succ) {
 				res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
 			}

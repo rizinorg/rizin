@@ -3887,7 +3887,7 @@ IL_LIFTER(LWL) {
 	BitVector *aligned_memaddr = LOGAND(memaddr, UN(GPRLEN, ~0x3)); // lower two bits flagged as 0
 	BitVector *word = SIGNED(GPRLEN, (LOADW(32, aligned_memaddr))); // load 32 bit data
 
-	Effect *b0, *b1, *b2, *b3;
+	Effect *b0 = NULL, *b1 = NULL, *b2 = NULL, *b3 = NULL;
 	if (analysis->big_endian) {
 		b3 = SETG(rt, LOGOR(LOGAND(word, UN(GPRLEN, 0xFF000000)), LOGAND(VARG(rt), UN(GPRLEN, 0x00FFFFFF))));
 
@@ -3912,7 +3912,7 @@ IL_LIFTER(LWL) {
 		b0 = BRANCH(b0cond, SETG(rt, LOGOR(LOGAND(DUP(word), UN(GPRLEN, 0xFF000000)), LOGAND(VARG(rt), UN(GPRLEN, 0x00FFFFFF)))), b1);
 	}
 
-	return SEQ4(b0, b1, b2, b3);
+	return b0;
 }
 
 IL_LIFTER(LWM16) {
@@ -3959,7 +3959,7 @@ IL_LIFTER(LWR) {
 	BitVector *aligned_memaddr = LOGAND(memaddr, UN(GPRLEN, ~0x3)); // lower two bits of memaddr flagged to 0
 	BitVector *word = SIGNED(GPRLEN, LOADW(32, aligned_memaddr));
 
-	Effect *b0, *b1, *b2, *b3;
+	Effect *b0 = NULL, *b1 = NULL, *b2 = NULL, *b3 = NULL;
 	if (analysis->big_endian) {
 		b3 = SETG(rt, word);
 
@@ -3984,7 +3984,7 @@ IL_LIFTER(LWR) {
 		b0 = BRANCH(b0cond, SETG(rt, DUP(word)), b1);
 	}
 
-	return SEQ4(b0, b1, b2, b3);
+	return b0;
 }
 
 /**
@@ -5644,7 +5644,7 @@ IL_LIFTER(SWL) {
 	BitVector *rt_hi3 = CAST(3 * 8, IL_FALSE, SHIFTR0(DUP(rt), U8(8)));
 	BitVector *rt_hi4 = rt;
 
-	Effect *b0, *b1, *b2, *b3;
+	Effect *b0 = NULL, *b1 = NULL, *b2 = NULL, *b3 = NULL;
 	if (analysis->big_endian) {
 		// store higher byte to memory's lower byte
 		b3 = STOREW(aligned_memaddr, rt_hi1);
@@ -5677,7 +5677,7 @@ IL_LIFTER(SWL) {
 		b0 = BRANCH(b0cond, STOREW(DUP(aligned_memaddr), rt_hi1), b1);
 	}
 
-	return SEQ4(b0, b1, b2, b3);
+	return b0;
 }
 
 IL_LIFTER(SWM16) {
@@ -5711,7 +5711,7 @@ IL_LIFTER(SWR) {
 	BitVector *rt_lo3 = CAST(3 * 8, IL_FALSE, DUP(rt));
 	BitVector *rt_lo4 = rt;
 
-	Effect *b0, *b1, *b2, *b3;
+	Effect *b0 = NULL, *b1 = NULL, *b2 = NULL, *b3 = NULL;
 	if (analysis->big_endian) {
 		// lower four bytes from register get stored in higher four bytes of memory, so basically a simple store
 		b3 = STOREW(aligned_memaddr, rt_lo4);
@@ -5750,7 +5750,7 @@ IL_LIFTER(SWR) {
 		b0 = BRANCH(b0cond, STOREW(aligned_memaddr, rt_lo4), b1);
 	}
 
-	return SEQ4(b0, b1, b2, b3);
+	return b0;
 }
 
 /**
@@ -6639,7 +6639,9 @@ static const char *mips_il_vm_reg_binding[] = {
 	"f28", "f29", "f30", "f31",
 
 	"FCC0", "FCC1", "FCC2", "FCC3", "FCC4", "FCC5", "FCC6", "FCC7",
-	"CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7", NULL
+	"CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7",
+	"CAUSE_EXC", "LLbit",
+	NULL
 };
 
 RzAnalysisILConfig *mips_il_config(RZ_NONNULL RzAnalysis *analysis) {

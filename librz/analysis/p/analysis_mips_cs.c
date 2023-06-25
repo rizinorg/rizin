@@ -1187,23 +1187,26 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu	f30	.32	264	0\n"
 			"fpu	f31	.32	268	0\n"
 
-			"flg    FCC0 .1 269.0 0\n"
-			"flg    FCC1 .1 269.1 0\n"
-			"flg    FCC2 .1 269.2 0\n"
-			"flg    FCC3 .1 269.3 0\n"
-			"flg    FCC4 .1 269.4 0\n"
-			"flg    FCC5 .1 269.5 0\n"
-			"flg    FCC6 .1 269.6 0\n"
-			"flg    FCC7 .1 269.7 0\n"
+			"flg    FCC0 .1 269 0\n"
+			"flg    FCC1 .1 270 0\n"
+			"flg    FCC2 .1 271 0\n"
+			"flg    FCC3 .1 272 0\n"
+			"flg    FCC4 .1 273 0\n"
+			"flg    FCC5 .1 274 0\n"
+			"flg    FCC6 .1 275 0\n"
+			"flg    FCC7 .1 276 0\n"
 
-			"flg    CC0  .1 270.0 0\n"
-			"flg    CC1  .1 270.1 0\n"
-			"flg    CC2  .1 270.2 0\n"
-			"flg    CC3  .1 270.3 0\n"
-			"flg    CC4  .1 270.4 0\n"
-			"flg    CC5  .1 270.5 0\n"
-			"flg    CC6  .1 270.6 0\n"
-			"flg    CC7  .1 270.7 0\n";
+			"flg    CC0  .1 277 0\n"
+			"flg    CC1  .1 278 0\n"
+			"flg    CC2  .1 279 0\n"
+			"flg    CC3  .1 280 0\n"
+			"flg    CC4  .1 281 0\n"
+			"flg    CC5  .1 282 0\n"
+			"flg    CC6  .1 283 0\n"
+			"flg    CC7  .1 284 0\n"
+
+			"flg    CAUSE_EXC .8 285  0\n"
+			"flg    LLbit     .1 286  0\n";
 		break;
 	case 64:
 		p =
@@ -1287,23 +1290,26 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu	f30	.64	528	0\n"
 			"fpu	f31	.64	536	0\n"
 
-			"flg    FCC0 .1 544.0 0\n"
-			"flg    FCC1 .1 544.1 0\n"
-			"flg    FCC2 .1 544.2 0\n"
-			"flg    FCC3 .1 544.3 0\n"
-			"flg    FCC4 .1 544.4 0\n"
-			"flg    FCC5 .1 544.5 0\n"
-			"flg    FCC6 .1 544.6 0\n"
-			"flg    FCC7 .1 544.7 0\n"
+			"flg    FCC0 .1 537 0\n"
+			"flg    FCC1 .1 538 0\n"
+			"flg    FCC2 .1 539 0\n"
+			"flg    FCC3 .1 540 0\n"
+			"flg    FCC4 .1 541 0\n"
+			"flg    FCC5 .1 542 0\n"
+			"flg    FCC6 .1 543 0\n"
+			"flg    FCC7 .1 544 0\n"
 
-			"flg    CC0  .1 545.0 0\n"
-			"flg    CC1  .1 545.1 0\n"
-			"flg    CC2  .1 545.2 0\n"
-			"flg    CC3  .1 545.3 0\n"
-			"flg    CC4  .1 545.4 0\n"
-			"flg    CC5  .1 545.5 0\n"
-			"flg    CC6  .1 545.6 0\n"
-			"flg    CC7  .1 545.7 0\n";
+			"flg    CC0  .1 545 0\n"
+			"flg    CC1  .1 545 0\n"
+			"flg    CC2  .1 547 0\n"
+			"flg    CC3  .1 548 0\n"
+			"flg    CC4  .1 549 0\n"
+			"flg    CC5  .1 550 0\n"
+			"flg    CC6  .1 551 0\n"
+			"flg    CC7  .1 552 0\n"
+
+			"flg    CAUSE_EXC .8 553   0\n"
+			"flg    LLbit     .1 554   0\n";
 		break;
 	}
 	return p ? strdup(p) : NULL;
