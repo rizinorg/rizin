@@ -305,7 +305,7 @@ jobs:
             export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           fi
           cd test
-          rz-test -LF bins/fuzzed @fuzz
+          rz-test -V -j1 -LF bins/fuzzed @fuzz
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
@@ -484,7 +484,7 @@ jobs:
           ASAN: true
           ASAN_OPTIONS: detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1
       - name: Run fuzz tests
-        run: rz-test -LF bins/fuzzed @fuzz
+        run: rz-test -V -j1 -LF bins/fuzzed @fuzz
         working-directory: rizin/test
         env:
           ASAN: true
