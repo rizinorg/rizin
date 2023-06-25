@@ -94,9 +94,9 @@ static int defaultCycles(RzAnalysisOp *op) {
 }
 
 RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	rz_analysis_op_init(op);
 	rz_return_val_if_fail(analysis && op && len > 0, -1);
 
+	rz_analysis_op_init(op);
 	int ret = RZ_MIN(2, len);
 	if (len > 0 && analysis->cur && analysis->cur->op) {
 		// use core binding to set asm.bits correctly based on the addr
