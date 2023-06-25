@@ -730,7 +730,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	}
 }
 
-static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	vle_t *instr = NULL;
 	vle_handle handle = { 0 };
 	op->size = 2;
@@ -914,7 +914,7 @@ static char *shrink(char *op) {
 	return op;
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1, obits = -1;
 	int n, ret;
@@ -929,7 +929,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		if (!a->big_endian) {
 			return -1;
 		}
-		ret = analop_vle(a, op, addr, buf, len, mask);
+		ret = analyze_op_vle(a, op, addr, buf, len, mask);
 		if (ret >= 0) {
 			return op->size;
 		}
@@ -1656,7 +1656,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 	.bits = 32 | 64,
 	.archinfo = archinfo,
 	.preludes = analysis_preludes,
-	.op = &analop,
+	.op = &analyze_op,
 	.get_reg_profile = &get_reg_profile,
 	.il_config = il_config,
 };

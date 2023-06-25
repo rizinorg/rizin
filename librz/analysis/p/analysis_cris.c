@@ -4,7 +4,7 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int opsize = -1;
 	op->type = -1;
 	opsize = 2;
@@ -283,7 +283,7 @@ RzAnalysisPlugin rz_analysis_plugin_cris = {
 	.arch = "cris",
 	.get_reg_profile = get_reg_profile,
 	.bits = 32,
-	.op = &analop,
+	.op = &analyze_op,
 };
 
 #ifndef RZ_PLUGIN_INCORE

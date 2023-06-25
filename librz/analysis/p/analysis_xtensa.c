@@ -1794,7 +1794,7 @@ static void esil_extract_unsigned(xtensa_isa isa, xtensa_opcode opcode,
 		reg_dst);
 }
 
-static void analop_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+static void analyze_op_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
 	size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	switch (opcode) {
 	case 26: /* add.n */
@@ -1997,7 +1997,7 @@ static int xtensa_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		}
 
 		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			analop_esil(isa, opcode, format, i, slot_buffer, op);
+			analyze_op_esil(isa, opcode, format, i, slot_buffer, op);
 		}
 	}
 

@@ -1846,7 +1846,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=data ref with no analop.ptr (#9610)
+NAME=data ref with no RzAnalysisOp.ptr (#9610)
 FILE=bins/firmware/main.bin
 CMDS=<<EOF
 e asm.bytes=true

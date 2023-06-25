@@ -100,7 +100,7 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -406,7 +406,7 @@ RzAnalysisPlugin rz_analysis_plugin_sparc_cs = {
 	.arch = "sparc",
 	.bits = 32 | 64,
 	.archinfo = archinfo,
-	.op = &analop,
+	.op = &analyze_op,
 	.get_reg_profile = &get_reg_profile,
 };
 

@@ -155,16 +155,16 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 			ut8 buf[VTABLE_BUFF_SIZE];
 			context->analysis->iob.read_at(context->analysis->iob.io, xref->from, buf, sizeof(buf));
 
-			RzAnalysisOp analop = { 0 };
-			rz_analysis_op(context->analysis, &analop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+			RzAnalysisOp aop = { 0 };
+			rz_analysis_op(context->analysis, &aop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 
-			if (analop.type == RZ_ANALYSIS_OP_TYPE_MOV || analop.type == RZ_ANALYSIS_OP_TYPE_LEA) {
+			if (aop.type == RZ_ANALYSIS_OP_TYPE_MOV || aop.type == RZ_ANALYSIS_OP_TYPE_LEA) {
 				rz_list_free(xrefs);
-				rz_analysis_op_fini(&analop);
+				rz_analysis_op_fini(&aop);
 				return true;
 			}
 
-			rz_analysis_op_fini(&analop);
+			rz_analysis_op_fini(&aop);
 		}
 	}
 	rz_list_free(xrefs);

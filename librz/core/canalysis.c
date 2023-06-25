@@ -3349,7 +3349,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		.shadow_store = fcn && fcn->cc ? rz_analysis_cc_shadow_store(core->analysis, fcn->cc) : 0
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
-	// this is necessary for the hook to read the id of analop
+	// this is necessary for the hook to read the id of RzAnalysisOp
 	ESIL->user = &ctx;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;

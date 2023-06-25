@@ -60,7 +60,7 @@ static int m680xmode(const char *str) {
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
 	static int omode = -1;
@@ -536,7 +536,7 @@ RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
 	.arch = "m680x",
 	.get_reg_profile = &get_reg_profile,
 	.bits = 16 | 32,
-	.op = &analop,
+	.op = &analyze_op,
 };
 #else
 RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {
