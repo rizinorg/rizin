@@ -596,7 +596,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = 1;
 		}
-		// TODO: group analop-dependant vars after a char, so i can filter
+		// TODO: group aop-dependant vars after a char, so i can filter
 		rz_analysis_op(core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		rz_analysis_op_fini(&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_analysis_op_is_eob()

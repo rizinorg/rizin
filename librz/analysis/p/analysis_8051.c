@@ -442,7 +442,7 @@ static void exi_rn(RzAnalysisOp *op, ut8 reg, const char *operation) {
 		alu_op(rn, aluop, flags); \
 		break;
 
-static void analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
+static void analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	rz_strbuf_init(&op->esil);
 	rz_strbuf_set(&op->esil, "");
 
@@ -1231,7 +1231,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		ut8 copy[3] = { 0, 0, 0 };
 		memcpy(copy, buf, len >= 3 ? 3 : len);
-		analop_esil(analysis, op, addr, copy);
+		analyze_op_esil(analysis, op, addr, copy);
 	}
 
 	if ((mask & RZ_ANALYSIS_OP_MASK_IL) && (analysis && buf && len > 0)) {

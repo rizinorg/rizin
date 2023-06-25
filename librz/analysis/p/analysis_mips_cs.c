@@ -200,7 +200,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x] != 0) ? str[x] : arg(handle, insn, str[x], x)
 
-static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = { { 0 } };
 	int i;
 
@@ -719,7 +719,7 @@ static void set_opdir(RzAnalysisOp *op) {
 	}
 }
 
-static int analop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int n = 0, opsize = -1;
 	csh hndl = 0;
 	cs_insn *insn = NULL;
@@ -1084,7 +1084,7 @@ beach:
 		opex(&op->opex, hndl, insn);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		if (analop_esil(analysis, op, addr, buf, len, &hndl, insn) != 0) {
+		if (analyze_op_esil(analysis, op, addr, buf, len, &hndl, insn) != 0) {
 			rz_strbuf_fini(&op->esil);
 		}
 	}
@@ -1237,7 +1237,7 @@ RzAnalysisPlugin rz_analysis_plugin_mips_cs = {
 	.archinfo = archinfo,
 	.preludes = analysis_preludes,
 	.bits = 16 | 32 | 64,
-	.op = &analop,
+	.op = &analyze_op,
 };
 
 #ifndef RZ_PLUGIN_INCORE

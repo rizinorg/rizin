@@ -79,7 +79,7 @@ int tms320_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf,
 
 	if (analysis->cpu && rz_str_casecmp(analysis->cpu, "c64x") == 0) {
 #ifdef CAPSTONE_TMS320C64X_H
-		return tms320c64x_analop(analysis, op, addr, buf, len, mask);
+		return tms320c64x_analyze_op(analysis, op, addr, buf, len, mask);
 #else
 		return -1;
 #endif

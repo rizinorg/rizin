@@ -55,7 +55,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	csh handle;
 	cs_insn *insn;
 	int mode = CS_MODE_BIG_ENDIAN;
@@ -208,7 +208,7 @@ RzAnalysisPlugin rz_analysis_plugin_sysz = {
 	.license = "BSD",
 	.arch = "sysz",
 	.bits = 32 | 64,
-	.op = &analop,
+	.op = &analyze_op,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
 };

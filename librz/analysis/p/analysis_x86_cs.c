@@ -3157,7 +3157,7 @@ static inline int select_mode(RzAnalysis *a) {
 	}
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	X86CSContext *ctx = (X86CSContext *)a->plugin_data;
 
 	int mode = select_mode(a);
@@ -3784,7 +3784,7 @@ RzAnalysisPlugin rz_analysis_plugin_x86_cs = {
 	.license = "BSD",
 	.arch = "x86",
 	.bits = 16 | 32 | 64,
-	.op = &analop,
+	.op = &analyze_op,
 	.preludes = analysis_preludes,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,

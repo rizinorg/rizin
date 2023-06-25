@@ -54,7 +54,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = 0;
 	cs_insn *insn;
@@ -133,7 +133,7 @@ RzAnalysisPlugin rz_analysis_plugin_xcore_cs = {
 	.esil = false,
 	.arch = "xcore",
 	.bits = 32,
-	.op = &analop,
+	.op = &analyze_op,
 	//.set_reg_profile = &set_reg_profile,
 };
 

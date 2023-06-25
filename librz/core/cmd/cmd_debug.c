@@ -487,7 +487,7 @@ static bool step_line(RzCore *core, int times) {
 }
 
 static void cmd_debug_backtrace(RzCore *core, ut64 len) {
-	RzAnalysisOp analop;
+	RzAnalysisOp aop;
 	ut64 addr;
 	if (!len) {
 		rz_bp_traptrace_list(core->dbg->bp);
@@ -515,8 +515,8 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			rz_io_read_at(core->io, addr, buf, 32); // XXX longer opcodes?
-			rz_analysis_op(core->analysis, &analop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
-		} while (rz_bp_traptrace_at(core->dbg->bp, addr, analop.size));
+			rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+		} while (rz_bp_traptrace_at(core->dbg->bp, addr, aop.size));
 		rz_bp_traptrace_enable(core->dbg->bp, false);
 	}
 }

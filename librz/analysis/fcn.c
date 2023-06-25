@@ -1376,14 +1376,14 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail, sp);
 					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump, sp);
 					if (overlapped) {
-						goto analopfinish;
+						goto analyzeopfinish;
 					}
 				}
 				if (rz_analysis_noreturn_at(analysis, op.jump) || op.eob) {
-					goto analopfinish;
+					goto analyzeopfinish;
 				}
 			} else {
-			analopfinish:
+			analyzeopfinish:
 				if (op.type == RZ_ANALYSIS_OP_TYPE_RJMP) {
 					gotoBeach(RZ_ANALYSIS_RET_NOP);
 				} else {
