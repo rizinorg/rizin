@@ -241,7 +241,7 @@ static const char *cpu_reg_enum_to_name_map[] = {
 #define IL_CHECK_OVERFLOW(r, sz) EQ(IL_BITN(r, sz), IL_BITN(r, sz - 1))
 
 IL_LIFTER(ABSQ_S) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -294,49 +294,49 @@ IL_LIFTER(ADDIUPC) {
 }
 
 IL_LIFTER(ADDIUR1SP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDIUR2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDIUS5) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDIUSP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDQH) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDQH_R) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDSC) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDS_A) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDS_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDS_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDU16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDUH) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDUH_R) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -356,19 +356,19 @@ IL_LIFTER(ADDU) {
 }
 
 IL_LIFTER(ADDU_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDVI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADDWC) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ADD_A) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -474,10 +474,10 @@ IL_LIFTER(AND) {
 }
 
 IL_LIFTER(AND16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ANDI16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -500,13 +500,13 @@ IL_LIFTER(ANDI) {
 }
 
 IL_LIFTER(APPEND) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ASUB_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ASUB_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -545,22 +545,22 @@ IL_LIFTER(AUIPC) {
 }
 
 IL_LIFTER(AVER_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(AVER_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(AVE_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(AVE_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(B16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BADDU) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -601,21 +601,21 @@ IL_LIFTER(BALC) {
 }
 
 IL_LIFTER(BALIGN) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(BBIT0) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(BBIT032) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BBIT1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BBIT132) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -634,16 +634,16 @@ IL_LIFTER(BC) {
 }
 
 IL_LIFTER(BC0F) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BC0FL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BC0T) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BC0TL) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -840,22 +840,22 @@ IL_LIFTER(BC2TL) {
 }
 
 IL_LIFTER(BC3F) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BC3FL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BC3T) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BC3TL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BCLRI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BCLR) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -916,7 +916,7 @@ IL_LIFTER(BEQL) {
 }
 
 IL_LIFTER(BEQZ16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -940,7 +940,7 @@ IL_LIFTER(BEQZALC) {
 }
 
 IL_LIFTER(BEQZC) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1067,7 +1067,7 @@ IL_LIFTER(BGEZALL) {
 }
 
 IL_LIFTER(BGEZALS) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1189,19 +1189,19 @@ IL_LIFTER(BGTZL) {
 }
 
 IL_LIFTER(BINSLI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BINSL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BINSRI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BINSR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BITREV) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1426,7 +1426,7 @@ IL_LIFTER(BLTZALL) {
 }
 
 IL_LIFTER(BLTZALS) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1468,16 +1468,16 @@ IL_LIFTER(BLTZL) {
 }
 
 IL_LIFTER(BMNZI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BMNZ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BMZI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BMZ) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1519,10 +1519,10 @@ IL_LIFTER(BNEC) {
 }
 
 IL_LIFTER(BNEGI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BNEG) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1545,7 +1545,7 @@ IL_LIFTER(BNEL) {
 }
 
 IL_LIFTER(BNEZ16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1569,7 +1569,7 @@ IL_LIFTER(BNEZALC) {
 }
 
 IL_LIFTER(BNEZC) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1603,7 +1603,7 @@ IL_LIFTER(BNVC) {
 }
 
 IL_LIFTER(BNZ) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1637,7 +1637,7 @@ IL_LIFTER(BOVC) {
 }
 
 IL_LIFTER(BPOSGE32) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1652,25 +1652,25 @@ IL_LIFTER(BREAK) {
 }
 
 IL_LIFTER(BREAK16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BSELI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BSEL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BSETI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BSET) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BZ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BEQZ) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1689,16 +1689,16 @@ IL_LIFTER(B) {
 }
 
 IL_LIFTER(BNEZ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BTEQZ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(BTNEZ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CACHE) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1714,37 +1714,37 @@ IL_LIFTER(CEIL) {
 }
 
 IL_LIFTER(CEQI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CFC1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CFCMSA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CINS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CINS32) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLASS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLEI_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLEI_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLE_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLE_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1775,16 +1775,16 @@ IL_LIFTER(CLO) {
 }
 
 IL_LIFTER(CLTI_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLTI_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLT_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CLT_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1815,37 +1815,37 @@ IL_LIFTER(CLZ) {
 }
 
 IL_LIFTER(CMPGDU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CMPGU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CMPU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CMP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(COPY_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(COPY_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CTC1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CTCMSA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CVT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(C) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(CMPI) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1930,7 +1930,7 @@ IL_LIFTER(DAHI) {
 }
 
 IL_LIFTER(DALIGN) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -1971,7 +1971,7 @@ IL_LIFTER(DAUI) {
 }
 
 IL_LIFTER(DBITSWAP) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2092,7 +2092,7 @@ IL_LIFTER(DDIVU) {
 }
 
 IL_LIFTER(DERET) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2153,7 +2153,7 @@ IL_LIFTER(DEXTU) {
 }
 
 IL_LIFTER(DI) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2297,10 +2297,10 @@ IL_LIFTER(DIVU) {
 }
 
 IL_LIFTER(DIV_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DIV_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2323,13 +2323,13 @@ IL_LIFTER(DLSA) {
 }
 
 IL_LIFTER(DMFC0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DMFC1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DMFC2) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2363,13 +2363,13 @@ IL_LIFTER(DMODU) {
 }
 
 IL_LIFTER(DMTC0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DMTC1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DMTC2) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2497,67 +2497,67 @@ IL_LIFTER(DMULU) {
 }
 
 IL_LIFTER(DOTP_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DOTP_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPADD_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPADD_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPAQX_SA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPAQX_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPAQ_SA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPAQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPAU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPAX) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPOP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSQX_SA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSQX_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSQ_SA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSUB_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSUB_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPSX) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(DPS) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2853,13 +2853,13 @@ IL_LIFTER(DSUBU) {
 }
 
 IL_LIFTER(EHB) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ERET) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2882,46 +2882,46 @@ IL_LIFTER(EXT) {
 }
 
 IL_LIFTER(EXTP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTPDP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTPDPV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTPV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTRV_RS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTRV_R) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTRV_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTRV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTR_RS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTR_R) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTR_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(EXTS32) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -2941,94 +2941,94 @@ IL_LIFTER(ABS) {
 }
 
 IL_LIFTER(FADD) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCAF) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCLASS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCLE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCLT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCNE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCOR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCUEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCULE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCULT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCUNE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FCUN) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FDIV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FEXDO) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FEXP2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FEXUPL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FEXUPR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FFINT_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FFINT_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FFQL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FFQR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FILL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FLOG2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FLOOR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FMADD) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FMAX_A) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FMAX) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FMIN_A) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FMIN) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3045,10 +3045,10 @@ IL_LIFTER(MOV) {
 }
 
 IL_LIFTER(FMSUB) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FMUL) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3091,40 +3091,40 @@ IL_LIFTER(NEG) {
 }
 
 IL_LIFTER(FRCP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FRINT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FRSQRT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSAF) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSLE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSLT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSNE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSOR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSQRT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SQRT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSUB) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3146,58 +3146,58 @@ IL_LIFTER(SUB) {
 }
 
 IL_LIFTER(FSUEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSULE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSULT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSUNE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FSUN) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FTINT_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FTINT_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FTQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FTRUNC_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(FTRUNC_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(HADD_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(HADD_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(HSUB_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(HSUB_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ILVEV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ILVL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ILVOD) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(ILVR) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3227,13 +3227,13 @@ IL_LIFTER(INS) {
 }
 
 IL_LIFTER(INSERT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(INSV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(INSVE) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3302,13 +3302,13 @@ IL_LIFTER(JALR) {
 }
 
 IL_LIFTER(JALRS16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(JALRS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(JALS) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3384,16 +3384,16 @@ IL_LIFTER(JR) {
 }
 
 IL_LIFTER(JR16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(JRADDIUSP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(JRC) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(JALRC) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3417,11 +3417,11 @@ IL_LIFTER(LB) {
 // MISSING: LBE
 
 IL_LIFTER(LBU16) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(LBUX) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3482,17 +3482,17 @@ IL_LIFTER(LDC1) {
  * TODO: HOW CAN WE DIFFERENTIATE BETWEEN REGISTERS OF CP1 & CP2
  * */
 IL_LIFTER(LDC2) {
-	return NULL;
+	return NOP();
 }
 
 /**
  * TODO: HOW CAN WE DIFFERENTIATE BETWEEN REGISTERS OF CP1 & CP3
  * */
 IL_LIFTER(LDC3) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(LDI) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3689,10 +3689,10 @@ IL_LIFTER(LH) {
 // MISSING: LHE
 
 IL_LIFTER(LHU16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(LHX) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3716,7 +3716,7 @@ IL_LIFTER(LHU) {
 // MISSING: LHUE
 
 IL_LIFTER(LI16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3844,7 +3844,7 @@ IL_LIFTER(LW) {
 // MISSING: LWE
 
 IL_LIFTER(LW16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3865,10 +3865,10 @@ IL_LIFTER(LWC1) {
 }
 
 IL_LIFTER(LWC2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(LWC3) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3916,10 +3916,10 @@ IL_LIFTER(LWL) {
 }
 
 IL_LIFTER(LWM16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(LWM32) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -3940,7 +3940,7 @@ IL_LIFTER(LWPC) {
 }
 
 IL_LIFTER(LWP) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4022,7 +4022,7 @@ IL_LIFTER(LWU) {
 }
 
 IL_LIFTER(LWX) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4046,11 +4046,11 @@ IL_LIFTER(LWXC1) {
 }
 
 IL_LIFTER(LWXS) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(LI) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4120,7 +4120,7 @@ IL_LIFTER(MADDF) {
 }
 
 IL_LIFTER(MADDR_Q) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4156,51 +4156,51 @@ IL_LIFTER(MADDU) {
 }
 
 IL_LIFTER(MADDV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MADD_Q) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAQ_SA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAXA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAXI_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAXI_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAX_A) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(MAX) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(MAX_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MAX_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MFC0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MFC1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MFC2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MFHC1) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4230,25 +4230,25 @@ IL_LIFTER(MFLO) {
 }
 
 IL_LIFTER(MINA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MINI_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MINI_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MIN_A) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MIN) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MIN_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MIN_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4267,7 +4267,7 @@ IL_LIFTER(MOD) {
 }
 
 IL_LIFTER(MODSUB) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4286,10 +4286,10 @@ IL_LIFTER(MODU) {
 }
 
 IL_LIFTER(MOD_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MOD_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4306,7 +4306,7 @@ IL_LIFTER(MOVE) {
 }
 
 IL_LIFTER(MOVEP) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4447,7 +4447,7 @@ IL_LIFTER(MSUBF) {
 }
 
 IL_LIFTER(MSUBR_Q) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4487,22 +4487,22 @@ IL_LIFTER(MSUBU) {
 }
 
 IL_LIFTER(MSUBV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MSUB_Q) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTC0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTC1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTC2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTHC1) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4517,7 +4517,7 @@ IL_LIFTER(MTHI) {
 }
 
 IL_LIFTER(MTHLIP) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4532,22 +4532,22 @@ IL_LIFTER(MTLO) {
 }
 
 IL_LIFTER(MTM0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTM1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTM2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTP0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTP1) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MTP2) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4591,25 +4591,25 @@ IL_LIFTER(MUHU) {
 }
 
 IL_LIFTER(MULEQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MULEU_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MULQ_RS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MULQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MULR_Q) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MULSAQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MULSA) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4687,19 +4687,19 @@ IL_LIFTER(MULU) {
 }
 
 IL_LIFTER(MULV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MUL_Q) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(MUL_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(NLOC) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(NLZC) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4772,11 +4772,11 @@ IL_LIFTER(NORI) {
 }
 
 IL_LIFTER(NOT16) {
-	return NULL;
+	return NOP();
 }
 
 IL_LIFTER(NOT) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4795,7 +4795,7 @@ IL_LIFTER(OR) {
 }
 
 IL_LIFTER(OR16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4814,7 +4814,7 @@ IL_LIFTER(ORI) {
 }
 
 IL_LIFTER(PACKRL) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4826,46 +4826,46 @@ IL_LIFTER(PAUSE) {
 }
 
 IL_LIFTER(PCKEV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PCKOD) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PCNT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PICK) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(POP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECEQU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECEU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECRQU_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECRQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECRQ_RS) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECR_SRA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(PRECR_SRA_R) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4882,22 +4882,22 @@ IL_LIFTER(PREF) {
 // MISSING: RECIP.fmt
 
 IL_LIFTER(PREPEND) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(RADDU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(RDDSP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(RDHWR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(REPLV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(REPL) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4952,13 +4952,13 @@ IL_LIFTER(ROTRV) {
 }
 
 IL_LIFTER(ROUND) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SAT_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SAT_U) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -4979,7 +4979,7 @@ IL_LIFTER(SB) {
 // MISSING: SBE
 
 IL_LIFTER(SB16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5052,7 +5052,7 @@ IL_LIFTER(SDBBP) {
 }
 
 IL_LIFTER(SDBBP16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5071,10 +5071,10 @@ IL_LIFTER(SDC1) {
 }
 
 IL_LIFTER(SDC2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SDC3) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5137,7 +5137,7 @@ IL_LIFTER(SDL) {
 }
 
 IL_LIFTER(SDR) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5228,10 +5228,10 @@ IL_LIFTER(SEL) {
 }
 
 IL_LIFTER(SEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SEQI) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5253,52 +5253,52 @@ IL_LIFTER(SH) {
 // MISSING: SIGRIE
 
 IL_LIFTER(SH16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHF) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHILO) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHILOV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHLLV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHLLV_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHLL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHLL_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHRAV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHRAV_R) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHRA) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHRA_R) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHRLV) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SHRL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SLDI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SLD) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5317,10 +5317,10 @@ IL_LIFTER(SLL) {
 }
 
 IL_LIFTER(SLL16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SLLI) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5402,16 +5402,16 @@ IL_LIFTER(SLTU) {
 }
 
 IL_LIFTER(SNE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SNEI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SPLATI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SPLAT) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5429,13 +5429,13 @@ IL_LIFTER(SRA) {
 }
 
 IL_LIFTER(SRAI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SRARI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SRAR) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5469,16 +5469,16 @@ IL_LIFTER(SRL) {
 }
 
 IL_LIFTER(SRL16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SRLI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SRLRI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SRLR) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5505,40 +5505,40 @@ IL_LIFTER(SSNOP) {
 }
 
 IL_LIFTER(ST) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBQH) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBQH_R) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBQ_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBSUS_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBSUU_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBS_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBS_U) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBU16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBUH) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBUH_R) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5557,13 +5557,13 @@ IL_LIFTER(SUBU) {
 }
 
 IL_LIFTER(SUBU_S) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBVI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SUBV) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5597,7 +5597,7 @@ IL_LIFTER(SW) {
 }
 
 IL_LIFTER(SW16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5616,10 +5616,10 @@ IL_LIFTER(SWC1) {
 }
 
 IL_LIFTER(SWC2) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SWC3) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5681,13 +5681,13 @@ IL_LIFTER(SWL) {
 }
 
 IL_LIFTER(SWM16) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SWM32) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SWP) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5772,85 +5772,85 @@ IL_LIFTER(SWXC1) {
 }
 
 IL_LIFTER(SYNC) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SYNCI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(SYSCALL) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TEQ) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TEQI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TGE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TGEI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TGEIU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TGEU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLBP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLBR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLBWI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLBWR) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLTI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLTIU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TLTU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TNE) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TNEI) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(TRUNC) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(V3MULU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(VMM0) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(VMULU) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(VSHF) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(WAIT) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(WRDSP) {
-	return NULL;
+	return NOP();
 }
 IL_LIFTER(WSBH) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5869,7 +5869,7 @@ IL_LIFTER(XOR) {
 }
 
 IL_LIFTER(XOR16) {
-	return NULL;
+	return NOP();
 }
 
 /**
@@ -5898,7 +5898,7 @@ IL_LIFTER(NOP) {
 }
 
 IL_LIFTER(NEGU) {
-	return NULL;
+	return NOP();
 }
 
 /**
