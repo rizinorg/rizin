@@ -18,6 +18,7 @@
 #define HASMEMINDEX(x)   (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
 #define MEMDISP(x)       insn->detail->arm.operands[x].mem.disp
+#define MEMDISP_BV(x)    (HASMEMINDEX(x) ? REG_VAL(insn->detail->arm.operands[x].mem.index) : U32(MEMDISP(x)))
 #define ISIMM(x)         (insn->detail->arm.operands[x].type == ARM_OP_IMM || insn->detail->arm.operands[x].type == ARM_OP_FP)
 #define ISREG(x)         (insn->detail->arm.operands[x].type == ARM_OP_REG)
 #define ISMEM(x)         (insn->detail->arm.operands[x].type == ARM_OP_MEM)
