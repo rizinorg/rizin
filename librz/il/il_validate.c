@@ -602,7 +602,7 @@ VALIDATOR_PURE(fconvert) {
 	VALIDATOR_DESCEND(args->f, &sort);
 	VALIDATOR_ASSERT(sort.type == RZ_IL_TYPE_PURE_FLOAT, "operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	*sort_out = sort;
+	*sort_out = rz_il_sort_pure_float(args->format);
 	return true;
 }
 
