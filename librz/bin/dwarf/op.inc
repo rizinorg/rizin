@@ -842,6 +842,10 @@ bool Evaluation_push(Evaluation *self, Value *value) {
 	return true;
 }
 
+bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
+	return rz_buf_seek(pc, offset, RZ_BUF_CUR) >= 0;
+}
+
 bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, EvaluationResult *out) {
 	Operation *operation = RZ_NEW(Operation);
 	RET_FALSE_IF_FAIL(operation);
@@ -956,8 +960,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		ut64 entry = 0;
 		RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &entry));
 		if (entry != 0) {
-			// TODO: compute pc
-			//			self->pc = entry;
+			RET_FALSE_IF_FAIL(compute_pc(self->pc, self->bytecode, operation->bra.target));
 		}
 		break;
 	}
@@ -968,7 +971,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 	case OPERATION_KIND_LT: BINARY_OP(Value_lt);
 	case OPERATION_KIND_NE: BINARY_OP(Value_ne);
 	case OPERATION_KIND_SKIP: {
-		// TODO: compute pc
+		RET_FALSE_IF_FAIL(compute_pc(self->pc, self->bytecode, operation->skip.target));
 		break;
 	}
 	case OPERATION_KIND_UNSIGNED_CONSTANT: {
