@@ -436,6 +436,9 @@ RZ_IPI void rz_core_analysis_il_reinit(RzCore *core) {
 		// initialize the program counter with the current offset
 		rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, core->offset);
 		rz_core_reg_update_flags(core);
+
+		// sync back to il vm
+		rz_analysis_il_vm_sync_from_reg(core->analysis->il_vm, core->analysis->reg);
 	}
 }
 
@@ -483,6 +486,7 @@ RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 
 	}
 	if (val) {
 		rz_il_vm_set_global_var(vm->vm, var_name, val);
+		rz_analysis_il_vm_sync_to_reg(vm, core->analysis->reg);
 	}
 	return true;
 }
