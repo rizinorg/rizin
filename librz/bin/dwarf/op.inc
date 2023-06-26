@@ -57,6 +57,9 @@ typedef enum {
 	OPERATION_KIND_WASM_STACK
 } OperationKind;
 
+typedef ut64 UnitOffset;
+typedef ut64 DebugInfoOffset;
+
 /// DWARF expression evaluation is done in two parts: first the raw
 /// bytes of the next part of the expression are decoded; and then the
 /// decoded operation is evaluated.  This approach lets other
@@ -68,7 +71,7 @@ typedef struct {
 	/// Dereference the topmost value of the stack.
 	union {
 		struct {
-			ut64 base_type; /// The DIE of the base type or 0 to indicate the generic type
+			UnitOffset base_type; /// The DIE of the base type or 0 to indicate the generic type
 			ut8 size; /// The size of the data to dereference.
 			bool space; /// True if the dereference operation takes an address space argument from the stack; false otherwise.
 		} deref; /// DW_OP_deref DW_OP_xderef
@@ -214,7 +217,7 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	case DW_OP_deref:
 		self->kind = OPERATION_KIND_DEREF;
-		self->deref.base_type = 0; // TODO: generic_type
+		self->deref.base_type = 0;
 		self->deref.size = encoding->address_size;
 		self->deref.space = false;
 		break;
@@ -296,7 +299,7 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	case DW_OP_xderef:
 		self->kind = OPERATION_KIND_DEREF;
-		self->deref.base_type = 0; // TODO: generic_type
+		self->deref.base_type = 0;
 		self->deref.size = encoding->address_size;
 		break;
 	case DW_OP_abs:
@@ -516,7 +519,7 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		ut64 size;
 		U8_OR_RET_FALSE(size);
 		self->kind = OPERATION_KIND_DEREF;
-		self->deref.base_type = 0; // TODO: generic type
+		self->deref.base_type = 0;
 		self->deref.size = size;
 		self->deref.space = false;
 		break;
@@ -525,7 +528,7 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		ut64 size;
 		U8_OR_RET_FALSE(size);
 		self->kind = OPERATION_KIND_DEREF;
-		self->deref.base_type = 0; // TODO: generic type
+		self->deref.base_type = 0;
 		self->deref.size = size;
 		self->deref.space = true;
 		break;
@@ -739,10 +742,6 @@ typedef struct {
 		Error error;
 	};
 } EvaluationState;
-
-typedef struct {
-	ut64 offset;
-} DebugInfoOffset;
 
 typedef struct {
 	enum {
@@ -1023,7 +1022,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		Location location = {
 			.kind = IMPLICIT_POINTER,
 			.implicit_pointer = {
-				.value = { operation->implicit_pointer.value },
+				.value = operation->implicit_pointer.value,
 				.byte_offset = operation->implicit_pointer.byte_offset,
 			}
 		};
@@ -1047,7 +1046,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		Location location = {
 			.kind = IMPLICIT_POINTER,
 			.implicit_pointer = {
-				.value = { operation->implicit_pointer.value },
+				.value = operation->implicit_pointer.value,
 				.byte_offset = operation->implicit_pointer.byte_offset,
 			},
 		};
