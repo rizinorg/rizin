@@ -846,15 +846,33 @@ bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
 	return rz_buf_seek(pc, offset, RZ_BUF_CUR) >= 0;
 }
 
-ValueType ValueType_from_name(const char *name) {
+ValueType ValueType_from_name(const char *name, ut8 byte_size) {
 	if (strcmp(name, "int") == 0) {
-		return I32;
+		switch (byte_size) {
+		case 1: return I8;
+		case 2: return I16;
+		case 4: return I32;
+		case 8: return I64;
+		default: break;
+		}
 	}
 	if (strcmp(name, "unsigned") == 0) {
-		return U32;
+		switch (byte_size) {
+		case 1: return U8;
+		case 2: return U16;
+		case 4: return U32;
+		case 8: return U64;
+		default: break;
+		}
 	}
 	if (strcmp(name, "size_t") == 0) {
-		return U64;
+		switch (byte_size) {
+		case 1: return U8;
+		case 2: return U16;
+		case 4: return U32;
+		case 8: return U64;
+		default: break;
+		}
 	}
 	if (strcmp(name, "int8_t") == 0) {
 		return I8;
@@ -898,7 +916,6 @@ ValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
 		case DW_AT_name:
 			name = attr->string.content;
 			break;
-		case DW_AT_encoding: break;
 		case DW_AT_byte_size:
 			byte_size = attr->uconstant;
 			break;
@@ -906,7 +923,7 @@ ValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
 		}
 	}
 	if (RZ_STR_ISNOTEMPTY(name)) {
-		value_type = ValueType_from_name(name);
+		value_type = ValueType_from_name(name, byte_size);
 		if (value_type != ValueType_GENERIC) {
 			return value_type;
 		}
