@@ -123,7 +123,7 @@ typedef struct {
 			/// The offset to add.
 			st64 offset;
 			/// The DIE of the base type or 0 to indicate the generic type
-			st64 base_type;
+			UnitOffset base_type;
 		} register_offset;
 		/// Compute the frame base (using `DW_AT_frame_base`), add the
 		/// given offset, and then push the resulting sum on the stack.
@@ -846,7 +846,7 @@ bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
 	return rz_buf_seek(pc, offset, RZ_BUF_CUR) >= 0;
 }
 
-bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, EvaluationResult *out) {
+bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, OperationEvaluationResult *out) {
 	Operation *operation = RZ_NEW(Operation);
 	RET_FALSE_IF_FAIL(operation);
 	RET_FALSE_IF_FAIL(Operation_parse(operation, self->pc, self->encoding));
@@ -985,11 +985,27 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		break;
 	}
 	case OPERATION_KIND_REGISTER: {
-		// TODO: register
+		Location location = {
+			.kind = REGISTER,
+			.register_number = operation->reg.register_number,
+		};
+		out->kind = Complete;
+		out->complete = location;
 		break;
 	}
 	case OPERATION_KIND_REGISTER_OFFSET: {
 		// TODO: register
+		RzBinDwarfDie *die = ht_up_find(dw->info->die_tbl, operation->register_offset.base_type, NULL);
+		RET_FALSE_IF_FAIL(die);
+		// TODO: base type from die?
+		if (operation->register_offset.base_type == 0) {
+			Value offset;
+			RET_FALSE_IF_FAIL(Value_from_u64(ValueType_GENERIC, operation->register_offset.offset, &offset));
+			Value value;
+			RET_FALSE_IF_FAIL(Value_from_u64(ValueType_GENERIC, operation->register_offset.register_number, &value));
+			RET_FALSE_IF_FAIL(Value_add(&value, &offset, self->addr_mask, &value));
+			RET_FALSE_IF_FAIL(Evaluation_push(self, &value));
+		}
 		break;
 	}
 	case OPERATION_KIND_FRAME_OFFSET: {
@@ -1030,7 +1046,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 			}
 		};
 		out->kind = Complete;
-		out->location = location;
+		out->complete = location;
 		return true;
 	}
 	case OPERATION_KIND_STACK_VALUE: {
@@ -1042,7 +1058,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 		};
 		Value_free(v);
 		out->kind = Complete;
-		out->location = location;
+		out->complete = location;
 		return true;
 	}
 	case OPERATION_KIND_IMPLICIT_POINTER: {
@@ -1054,7 +1070,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Evaluat
 			},
 		};
 		out->kind = Complete;
-		out->location = location;
+		out->complete = location;
 		return true;
 	}
 	case OPERATION_KIND_ENTRY_VALUE: break; // TODO: entry value
