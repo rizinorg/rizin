@@ -474,7 +474,7 @@ RZ_IPI ut16 sh_assembler(RZ_NONNULL const char *buffer, ut64 pc, RZ_NULLABLE boo
 
 bye:
 	if (success) {
-		success = false;
+		*success = false;
 	}
 	rz_list_free(tokens);
 	free(mnem);
