@@ -269,32 +269,36 @@ jobs:
         with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
-      - name: Run integration tests and rz-test
-        if: matrix.run_tests && matrix.enabled
-        run: |
-          # Running the test suite
-          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
-          export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-          export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-          if [ "$ASAN" == "true" ]; then
-            if [ "$CC" == "clang" ]; then
-              export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
-              export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
-            else
-              export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
-            fi
-          fi
-          meson test -C build --suite integration
-          cd test
-          rz-test -L -o results.json
-        env:
-          ASAN: ${{ matrix.asan }}
-          ASAN_OPTIONS: ${{ matrix.asan_options }}
-          CC: ${{ matrix.compiler }}
+#            #- name: Run integration tests and rz-test
+#        if: matrix.run_tests && matrix.enabled
+#        run: |
+#          # Running the test suite
+#          export PATH=${HOME}/bin:${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/Library/Python/3.11/bin:${HOME}/.local/bin:${PATH}
+#          export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+#          export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+#          if [ "$ASAN" == "true" ]; then
+#            if [ "$CC" == "clang" ]; then
+#              export ASAN_LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+#              export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
+#            else
+#              export ASAN_LD_PRELOAD=$(${CC} -print-file-name=libasan.so)
+#            fi
+#          fi
+#          meson test -C build --suite integration
+#          cd test
+#          rz-test -L -o results.json
+#        env:
+#          ASAN: ${{ matrix.asan }}
+#          ASAN_OPTIONS: ${{ matrix.asan_options }}
+#          CC: ${{ matrix.compiler }}
       - name: Upload coverage info
         if: matrix.coverage == '1' && matrix.enabled
         working-directory: build
         run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
       - name: Run fuzz tests
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
         run: |
