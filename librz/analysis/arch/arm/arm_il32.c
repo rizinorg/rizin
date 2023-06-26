@@ -405,7 +405,7 @@ static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN R
 	RzILOpBitVector *ext_val = UNSIGNED(dreg_width, val);
 	RzILOpBitVector *rep_val = ext_val;
 	for (int i = 0; i < repeat_times - 1; ++i) {
-		rep_val = OR(rep_val, SHIFTL0(DUP(ext_val), UN(8, val_width * i)));
+		rep_val = LOGOR(rep_val, SHIFTL0(DUP(ext_val), UN(8, val_width * i)));
 	}
 
 	return rep_val;
@@ -2632,7 +2632,7 @@ static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 			return NULL;
 		}
 		RzILOpBitVector *rt1_val = UNSIGNED(32, DUP(reg_val));
-		RzILOpBitVector *rt2_val = UNSIGNED(32, SHIFTR0(UN(8, 32), reg_val));
+		RzILOpBitVector *rt2_val = UNSIGNED(32, SHIFTR0(reg_val, UN(8, 32)));
 		return SEQ2(write_reg(REGID(0), rt1_val),
 			write_reg(REGID(1), rt2_val));
 	}
@@ -3678,8 +3678,8 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 	for (ut32 i = 0; i < lanes; ++i) {
 		RzILOpBitVector *d = read_reg_lane(REGID(0), i, vec_bits);
 		RzILOpBitVector *m = read_reg_lane(REGID(1), i, vec_bits);
-		interleaved_val = OR(interleaved_val,
-			SHIFTL0(OR(SHIFTL0(m, UN(8, vec_bits)), d),
+		interleaved_val = LOGOR(interleaved_val,
+			SHIFTL0(LOGOR(SHIFTL0(m, UN(8, vec_bits)), d),
 				UN(32, vec_bits * 2)));
 	}
 
@@ -3725,10 +3725,10 @@ static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
 
 		if (i % 2 == 0) {
 			// even
-			deinterleave_d = OR(deinterleave_d, OR(d_lane, m_lane));
+			deinterleave_d = LOGOR(deinterleave_d, LOGOR(d_lane, m_lane));
 		} else {
 			// odd
-			deinterleave_m = OR(deinterleave_m, OR(d_lane, m_lane));
+			deinterleave_m = LOGOR(deinterleave_m, LOGOR(d_lane, m_lane));
 		}
 	}
 
@@ -3911,7 +3911,58 @@ static RzILOpEffect *vstr(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	return STOREW(addr, val)
+	return STOREW(addr, val);
+}
+
+static RzILOpEffect *vcmp(cs_insn *insn, bool is_thumb) {
+	// VFP only
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzILOpFloat *l = NULL;
+	RzILOpFloat *r = NULL;
+	RzFloatFormat fmt = dt2fmt(VVEC_DT(insn));
+	if (ISIMM(1)) {
+		ut64 imm = get_imm(insn, 1, NULL);
+		if (imm != 0) {
+			// only #0 is allowed in vcmp
+			rz_warn_if_reached();
+			return NULL;
+		}
+
+		r = fmt == RZ_FLOAT_IEEE754_BIN_32 ? F32(0) : F64(0);
+	} else {
+		r = BV2F(fmt, REG(1));
+	}
+	l = BV2F(fmt, REG(0));
+
+	// only NZCV flag will change, ignore carry and overflow for float
+	RzILOpBool *is_neg = FORDER(DUP(l), DUP(r));
+	RzILOpBool *is_zero = FEQ(l, r);
+	RzILOpBitVector *res = LOGOR(
+		SHIFTL0(BOOL_TO_BV(is_neg, 32), UN(8, 31)),
+		SHIFTL0(BOOL_TO_BV(is_zero, 32), UN(8, 30)));
+
+	return SETG("fpscr", res);
+}
+
+static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
+	// implement vabs for VFP now.
+	if (OPCOUNT() < 2) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	if (insn->detail->groups[0] == ARM_GRP_NEON) {
+		// not implement
+		return NULL;
+	}
+
+	RzFloatFormat fmt = dt2fmt(VVEC_DT(insn));
+	RzILOpFloat *abs_val = FABS(BV2F(fmt, REG(1)));
+	return write_reg(REGID(0), F2BV(abs_val));
 }
 
 /**
@@ -4280,6 +4331,10 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return vldr(insn, is_thumb);
 	case ARM_INS_VSTR:
 		return vstr(insn, is_thumb);
+	case ARM_INS_VABS:
+		return vabs(insn, is_thumb);
+	case ARM_INS_VCMP:
+		return vcmp(insn, is_thumb);
 	default:
 		return NULL;
 	}
