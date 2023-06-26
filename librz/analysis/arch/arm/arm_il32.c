@@ -807,10 +807,7 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	bool writeback = insn->detail->writeback;
-	if (ISIMM(mem_idx + 1)) {
-		// capstone incorrectly sets writeback to false for e.g. 0400b1e4 ldrt r0, [r1], 4
-		writeback = true;
-	}
+
 	RzILOpEffect *writeback_eff = NULL;
 	bool writeback_post = false;
 	if (writeback) {
@@ -896,10 +893,6 @@ static RzILOpEffect *str(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	bool writeback = insn->detail->writeback;
-	if (ISIMM(mem_idx + 1)) {
-		// capstone incorrectly sets writeback to false for e.g. 04b0ade4 strt fp, [sp], 4
-		writeback = true;
-	}
 	RzILOpEffect *writeback_eff = NULL;
 	bool writeback_post = false;
 	if (writeback) {
