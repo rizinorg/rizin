@@ -846,6 +846,81 @@ bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
 	return rz_buf_seek(pc, offset, RZ_BUF_CUR) >= 0;
 }
 
+ValueType ValueType_from_name(const char *name) {
+	if (strcmp(name, "int") == 0) {
+		return I32;
+	}
+	if (strcmp(name, "unsigned") == 0) {
+		return U32;
+	}
+	if (strcmp(name, "size_t") == 0) {
+		return U64;
+	}
+	if (strcmp(name, "int8_t") == 0) {
+		return I8;
+	}
+	if (strcmp(name, "int16_t") == 0) {
+		return I16;
+	}
+	if (strcmp(name, "int32_t") == 0) {
+		return I32;
+	}
+	if (strcmp(name, "int64_t") == 0) {
+		return I64;
+	}
+	if (strcmp(name, "uint8_t") == 0) {
+		return U8;
+	}
+	if (strcmp(name, "uint16_t") == 0) {
+		return U16;
+	}
+	if (strcmp(name, "uint32_t") == 0) {
+		return U32;
+	}
+	if (strcmp(name, "uint64_t") == 0) {
+		return U64;
+	}
+	return ValueType_GENERIC;
+}
+
+ValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
+	RzBinDwarfDie *die = ht_up_find(dw->info->die_tbl, offset, NULL);
+	if (!die) {
+		return ValueType_GENERIC;
+	}
+	assert(die->tag == DW_TAG_base_type);
+	RzBinDwarfAttr *attr;
+	ValueType value_type = ValueType_GENERIC;
+	ut8 byte_size = 0;
+	const char *name = NULL;
+	rz_vector_foreach(&die->attrs, attr) {
+		switch (attr->name) {
+		case DW_AT_name:
+			name = attr->string.content;
+			break;
+		case DW_AT_encoding: break;
+		case DW_AT_byte_size:
+			byte_size = attr->uconstant;
+			break;
+		default: break;
+		}
+	}
+	if (RZ_STR_ISNOTEMPTY(name)) {
+		value_type = ValueType_from_name(name);
+		if (value_type != ValueType_GENERIC) {
+			return value_type;
+		}
+	}
+	switch (byte_size) {
+	case 1: value_type = U8; break;
+	case 2: value_type = U16; break;
+	case 4: value_type = U32; break;
+	case 8: value_type = U64; break;
+	default: break;
+	}
+	return value_type;
+}
+
 bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, OperationEvaluationResult *out) {
 	Operation *operation = RZ_NEW(Operation);
 	RET_FALSE_IF_FAIL(operation);
@@ -994,18 +1069,13 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Operati
 		break;
 	}
 	case OPERATION_KIND_REGISTER_OFFSET: {
-		// TODO: register
-		RzBinDwarfDie *die = ht_up_find(dw->info->die_tbl, operation->register_offset.base_type, NULL);
-		RET_FALSE_IF_FAIL(die);
-		// TODO: base type from die?
-		if (operation->register_offset.base_type == 0) {
-			Value offset;
-			RET_FALSE_IF_FAIL(Value_from_u64(ValueType_GENERIC, operation->register_offset.offset, &offset));
-			Value value;
-			RET_FALSE_IF_FAIL(Value_from_u64(ValueType_GENERIC, operation->register_offset.register_number, &value));
-			RET_FALSE_IF_FAIL(Value_add(&value, &offset, self->addr_mask, &value));
-			RET_FALSE_IF_FAIL(Evaluation_push(self, &value));
-		}
+		ValueType value_type = operation->register_offset.base_type != 0 ? ValueType_from_die(dw, operation->register_offset.base_type) : ValueType_GENERIC;
+		Value offset;
+		RET_FALSE_IF_FAIL(Value_from_u64(value_type, operation->register_offset.offset, &offset));
+		Value value;
+		RET_FALSE_IF_FAIL(Value_from_u64(value_type, operation->register_offset.register_number, &value));
+		RET_FALSE_IF_FAIL(Value_add(&value, &offset, self->addr_mask, &value));
+		RET_FALSE_IF_FAIL(Evaluation_push(self, &value));
 		break;
 	}
 	case OPERATION_KIND_FRAME_OFFSET: {
