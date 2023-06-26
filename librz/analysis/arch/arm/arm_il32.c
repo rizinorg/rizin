@@ -812,13 +812,10 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	bool writeback_post = false;
 	if (writeback) {
 		arm_reg base = insn->detail->arm.operands[mem_idx].mem.base;
-		if (ISIMM(mem_idx + 1)) {
-			// "ldr r0, [r1], 4" is treated as an extra operand after the mem
-			addr = insn->detail->arm.operands[mem_idx + 1].subtracted
-				? SUB(addr, ARG(mem_idx + 1))
-				: ADD(addr, ARG(mem_idx + 1));
-			writeback_post = true;
-		}
+		addr = insn->detail->arm.operands[mem_idx].subtracted
+			? SUB(addr, ARG(mem_idx))
+			: ADD(addr, ARG(mem_idx));
+		writeback_post = true;
 		writeback_eff = write_reg(base, addr);
 		if (!writeback_eff) {
 			// 'ldrb r0, [pc, 0x104]!' (0401ffe5) for example is unpredictable. write_reg will return NULL for pc.
@@ -897,13 +894,10 @@ static RzILOpEffect *str(cs_insn *insn, bool is_thumb) {
 	bool writeback_post = false;
 	if (writeback) {
 		arm_reg base = insn->detail->arm.operands[mem_idx].mem.base;
-		if (ISIMM(mem_idx + 1)) {
-			// "str r0, [r1], 4" is treated as an extra operand after the mem
-			addr = insn->detail->arm.operands[mem_idx + 1].subtracted
-				? SUB(addr, ARG(mem_idx + 1))
-				: ADD(addr, ARG(mem_idx + 1));
-			writeback_post = true;
-		}
+		addr = insn->detail->arm.operands[mem_idx].subtracted
+			? SUB(addr, ARG(mem_idx))
+			: ADD(addr, ARG(mem_idx));
+		writeback_post = true;
 		writeback_eff = write_reg(base, addr);
 		if (!writeback_eff) {
 			return NULL;
