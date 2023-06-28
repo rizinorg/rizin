@@ -248,6 +248,7 @@ typedef struct {
 	struct MACH0_(obj_t) * bin;
 	struct rz_dyld_chained_starts_in_segment *cur_seg;
 	size_t cur_seg_idx;
+	bool found_threaded;
 } ReconstructThreadedCtx;
 
 static void chained_import_threaded_fini(void *e, void *user) {
@@ -257,6 +258,7 @@ static void chained_import_threaded_fini(void *e, void *user) {
 
 static void reconstruct_threaded_table_size(ut64 table_size, void *user) {
 	ReconstructThreadedCtx *ctx = user;
+	ctx->found_threaded = true;
 	struct mach0_chained_fixups_t *cf = &ctx->bin->chained_fixups;
 	rz_vector_fini(&cf->imports);
 	cf->imports_format = DYLD_CHAINED_IMPORT_THREADED;
@@ -337,6 +339,12 @@ RZ_IPI void MACH0_(reconstruct_chained_fixups_from_threaded)(struct MACH0_(obj_t
 	// clang-format off
 	MACH0_(bind_opcodes_foreach)(bin, reconstruct_threaded_table_size, reconstruct_threaded_bind, reconstruct_threaded_apply, &ctx);
 	// clang-format on
+	if (!ctx.found_threaded) {
+		// found no BIND_OPCODE_THREADED to reconstruct chained relocs from,
+		// so allow MACH0_(has_chained_fixups)() to still be false
+		RZ_FREE(cf->starts);
+		cf->starts_count = 0;
+	}
 }
 
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)

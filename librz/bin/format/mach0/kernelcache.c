@@ -223,8 +223,9 @@ RZ_API RzBuffer *rz_xnu_kernelcache_new_patched_buf(RzXNUKernelCacheObj *obj) {
 	}
 
 	if (MACH0_(has_chained_fixups)(obj->mach0)) {
-		MACH0_(patch_chained_fixups)
-		(obj->mach0, r);
+		// clang-format off
+		MACH0_(patch_chained_fixups)(obj->mach0, r);
+		// clang-format on
 	} else if (obj->rebase_info) {
 		rebase_buffer(obj, r);
 	}
