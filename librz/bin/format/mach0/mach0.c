@@ -2749,8 +2749,12 @@ void MACH0_(imports_foreach)(struct MACH0_(obj_t) * bin, mach0_import_foreach_cb
  */
 size_t MACH0_(imports_count)(struct MACH0_(obj_t) * bin) {
 	if (MACH0_(has_chained_fixups)(bin)) {
-		return MACH0_(chained_imports_count)(bin) + bin->dysymtab.nundefsym;
+		return MACH0_(chained_imports_count)(bin);
 	} else {
+		if (bin->dysymtab.nundefsym > bin->nsymtab) {
+			RZ_LOG_ERROR("Invalid nundefsym value in LC_DYSYMTAB");
+			return 0;
+		}
 		return bin->dysymtab.nundefsym;
 	}
 }
