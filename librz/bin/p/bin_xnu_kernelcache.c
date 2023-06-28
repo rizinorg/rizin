@@ -1362,7 +1362,6 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	}
 	rz_syscall_setup(syscall, "arm", 64, NULL, "ios");
 	if (!syscall->db) {
-		rz_syscall_free(syscall);
 		goto beach;
 	}
 
@@ -1417,11 +1416,9 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 
 beach:
 	rz_syscall_free(syscall);
-	if (syscalls) {
-		rz_list_free(syscalls);
-	}
-	RZ_FREE(data_const);
-	RZ_FREE(sections);
+	rz_list_free(syscalls);
+	free(data_const);
+	free(sections);
 	return NULL;
 }
 
