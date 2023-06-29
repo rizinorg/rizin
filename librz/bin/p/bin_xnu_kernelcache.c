@@ -1284,6 +1284,10 @@ typedef struct _r_sysent {
 	ut16 sy_arg_bytes;
 } RSysEnt;
 
+/**
+ * Search for the struct sysent sysent[] array of xnu and assign names to all syscall
+ * handlers referenced by it.
+ */
 static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr) {
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections)(obj->mach0))) {
@@ -1294,8 +1298,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	RzSyscall *syscall = NULL;
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
-	int i = 0;
-	for (; !sections[i].last; i++) {
+	for (int i = 0; !sections[i].last; i++) {
 		if (strstr(sections[i].name, "__DATA_CONST.__const")) {
 			data_const_offset = sections[i].offset;
 			data_const_size = sections[i].size;
@@ -1318,7 +1321,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
-	while (cursor < end) {
+	while (cursor + sizeof(ut64) <= end) {
 		ut64 test = rz_read_le64(cursor);
 		if (test == enosys_addr) {
 			break;
@@ -1336,6 +1339,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 		ut64 x = rz_read_le64(cursor + 8);
 		ut64 y = rz_read_le64(cursor + 16);
 
+		// rewind by sizeof(struct sysent) until finding something that is definitely not a struct sysent
 		if (IS_KERNEL_ADDR(addr) &&
 			(x == 0 || IS_KERNEL_ADDR(x)) &&
 			(y != 0 && !IS_KERNEL_ADDR(y))) {
@@ -1381,7 +1385,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	sym->type = "OBJECT";
 	rz_list_append(syscalls, sym);
 
-	i = 1;
+	int i = 1;
 	cursor += 24;
 	int num_syscalls = sdb_count(syscall->db);
 	while (cursor < end && i < num_syscalls) {
@@ -1495,7 +1499,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
-	while (cursor < end) {
+	while (cursor + sizeof(ut64) * 2 <= end) {
 		ut64 subs_p = K_PPTR(rz_read_le64(cursor));
 		if (subs_p < text_exec_vaddr || subs_p >= text_exec_vaddr + text_exec_size) {
 			cursor += 8;
@@ -1509,12 +1513,16 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 			continue;
 		}
 
+		ut8 *array_cursor = cursor + K_MIG_SUBSYSTEM_SIZE;
+		ut8 *end_array = array_cursor + n_routines * K_MIG_ROUTINE_SIZE;
+		if (end_array > end) {
+			cursor += 16;
+			continue;
+		}
 		ut64 *routines = (ut64 *)malloc(n_routines * sizeof(ut64));
 		if (!routines) {
 			goto beach;
 		}
-		ut8 *array_cursor = cursor + K_MIG_SUBSYSTEM_SIZE;
-		ut8 *end_array = array_cursor + n_routines * K_MIG_ROUTINE_SIZE;
 		bool is_consistent = true;
 		int idx = 0;
 		while (array_cursor < end_array) {
