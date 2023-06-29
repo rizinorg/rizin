@@ -527,10 +527,10 @@ static RzILOpBitVector *arg(cs_insn *insn, bool is_thumb, int n, RZ_NULLABLE RzI
 	case ARM_OP_MEM: {
 		RzILOpBitVector *addr = MEMBASE(n);
 		int disp = MEMDISP(n);
-		if (disp > 0) {
+		if (disp != 0 && !op->subtracted) {
 			addr = ADD(addr, U32(disp));
-		} else if (disp < 0) {
-			addr = SUB(addr, U32(-disp));
+		} else if (disp != 0 && op->subtracted) {
+			addr = SUB(addr, U32(disp));
 		}
 		return arg_mem(addr, &insn->detail->arm.operands[n], carry_out);
 	}
