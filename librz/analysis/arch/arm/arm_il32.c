@@ -812,9 +812,6 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	bool writeback_post = false;
 	if (writeback) {
 		arm_reg base = insn->detail->arm.operands[mem_idx].mem.base;
-		addr = insn->detail->arm.operands[mem_idx].subtracted
-			? SUB(addr, MEMDISP_BV(mem_idx))
-			: ADD(addr, MEMDISP_BV(mem_idx));
 		writeback_post = true;
 		writeback_eff = write_reg(base, addr);
 		if (!writeback_eff) {
@@ -894,9 +891,6 @@ static RzILOpEffect *str(cs_insn *insn, bool is_thumb) {
 	bool writeback_post = false;
 	if (writeback) {
 		arm_reg base = insn->detail->arm.operands[mem_idx].mem.base;
-		addr = insn->detail->arm.operands[mem_idx].subtracted
-			? SUB(addr, ARG(mem_idx))
-			: ADD(addr, ARG(mem_idx));
 		writeback_post = true;
 		writeback_eff = write_reg(base, addr);
 		if (!writeback_eff) {
