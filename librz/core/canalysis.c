@@ -4712,6 +4712,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			return false;
 		}
 	}
+
 	if (is_apple) {
 		notify = "Recover all Objective-C selector stub names";
 		rz_core_notify_begin(core, "%s", notify);
@@ -4722,6 +4723,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			return false;
 		}
 	}
+
 	rz_core_task_yield(&core->tasks);
 	if (!cfg_debug) {
 		if (dh_orig && strcmp(dh_orig, "esil")) {
@@ -4747,7 +4749,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (is_unknown_file(core)) {
+	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		notify = "find and analyze function preludes";
 		rz_core_notify_begin(core, "%s", notify);
 		(void)rz_core_search_preludes(core, false); // "aap"
