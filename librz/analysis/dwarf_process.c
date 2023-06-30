@@ -20,7 +20,8 @@ typedef struct dwarf_parse_context_t {
 typedef struct dwarf_function_t {
 	ut64 addr;
 	const char *name;
-	const char *signature;
+	const char *link_name;
+	const char *demangle_name;
 	bool is_external;
 	bool is_method;
 	bool is_virtual;
@@ -49,8 +50,9 @@ typedef struct dwarf_var_location_t {
 
 typedef struct dwarf_variable_t {
 	RzBinDwarfLocation *location;
-	char *name;
-	char *type;
+	const char *name;
+	const char *link_name;
+	RzType *type;
 	RzAnalysisVarKind kind;
 } Variable;
 
@@ -1021,197 +1023,79 @@ static RZ_DEPRECATE char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL cons
 		RZ_TYPE_PRINT_ZERO_VLA | RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ANONYMOUS | RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE, 0);
 }
 
-static st32 parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzStrBuf *args, RzList /*<Variable *>*/ *variables) {
-	if (!die->has_children) {
-		return 0;
-	}
-
+static bool parse_var(Context *ctx, RzBinDwarfDie *die, Variable *v) {
 	RzPVector *children = die_children(die, ctx->dw);
 	if (!children) {
-		return 0;
+		return false;
 	}
-
-	bool get_linkage_name = prefer_linkage_name(ctx->lang);
-	bool has_linkage_name = false;
-	int argNumber = 1;
-
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
-		const char *name = NULL;
-		if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
-			Variable *var = RZ_NEW0(Variable);
-			RzType *type = NULL;
-			const RzBinDwarfAttr *val;
-			rz_vector_foreach(&child_die->attrs, val) {
-				switch (val->name) {
-				case DW_AT_name:
-					if ((!get_linkage_name || !has_linkage_name) && val->kind == DW_AT_KIND_STRING) {
-						name = val->string.content;
-					}
-					break;
-				case DW_AT_linkage_name:
-				case DW_AT_MIPS_linkage_name:
-					if (val->kind == DW_AT_KIND_STRING) {
-						name = val->string.content;
-					}
-					has_linkage_name = true;
-					break;
-				case DW_AT_type:
-					rz_type_free(type);
-					type = parse_type_outer(ctx, val->reference, NULL);
-					break;
-				// abstract origin is supposed to have omitted information
-				case DW_AT_abstract_origin:
-					rz_type_free(type);
-					type = parse_abstract_origin(ctx, val->reference, &name);
-					break;
-				case DW_AT_location:
-					var->location = parse_dwarf_location(ctx, val, die);
-					break;
-				default:
-					break;
-				}
+		switch (child_die->tag) {
+		case DW_TAG_formal_parameter:
+			v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
+			break;
+		case DW_TAG_variable:
+			v->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
+			break;
+		case DW_TAG_unspecified_parameters:
+			// TODO: DW_TAG_unspecified_parameters
+			break;
+		default:
+			RZ_LOG_DEBUG("Unsupported variable tag %s\n", rz_bin_dwarf_tag(child_die->tag));
+			break;
+		}
+
+		const RzBinDwarfAttr *val;
+		rz_vector_foreach(&child_die->attrs, val) {
+			switch (val->name) {
+			case DW_AT_name:
+				v->name = rz_bin_dwarf_attr_value_get_string_content(val);
+				break;
+			case DW_AT_linkage_name:
+			case DW_AT_MIPS_linkage_name:
+				v->link_name = rz_bin_dwarf_attr_value_get_string_content(val);
+				break;
+			case DW_AT_type:
+				rz_type_free(v->type);
+				v->type = parse_type_outer(ctx, val->reference, NULL);
+				break;
+			// abstract origin is supposed to have omitted information
+			case DW_AT_abstract_origin:
+				rz_type_free(v->type);
+				v->type = parse_abstract_origin(ctx, val->reference, &v->name);
+				break;
+			case DW_AT_location:
+				v->location = parse_dwarf_location(ctx, val, die);
+				break;
+			default:
+				break;
 			}
-			if (child_die->tag == DW_TAG_formal_parameter && child_die->depth == die->depth + 1) {
-				var->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
-				/* arguments sometimes have only type, create generic argX */
-				if (type) {
-					if (!name) {
-						var->name = rz_str_newf("arg%d", argNumber);
-					} else {
-						var->name = strdup(name);
-					}
-					char *type_str = type_as_string(ctx->analysis->typedb, type);
-					size_t tmp_len = strlen(type_str);
-					rz_strbuf_appendf(args, "%s%s%s, ", type_str,
-						tmp_len && type_str[tmp_len - 1] == '*' ? "" : " ",
-						var->name);
-
-					var->type = type_str;
-					rz_list_append(variables, var);
-				} else {
-					variable_free(var);
-				}
-				argNumber++;
-			} else if (child_die->tag == DW_TAG_variable) { /* DW_TAG_variable */
-				var->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
-				if (name && type) {
-					var->name = strdup(name);
-					var->type = type_as_string(ctx->analysis->typedb, type);
-					rz_list_append(variables, var);
-				} else {
-					variable_free(var);
-				}
-			}
-			rz_type_free(type);
-		} else if (child_die->tag == DW_TAG_unspecified_parameters) {
-			rz_strbuf_appendf(args, "va_args ...,");
 		}
 	}
-	if (args->len > 0) {
-		rz_strbuf_slice(args, 0, args->len - 2);
-	}
-	return 0;
+	return true;
 }
 
-static inline char *sdb_build_var_data(Variable *var) {
-	if (!var->location) {
-		/* NULL location probably means optimized out, maybe put a comment there */
-		return NULL;
+static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCallable *callable, RzVector /*<Variable *>*/ *variables) {
+	if (!die->has_children) {
+		return false;
 	}
-	switch (var->location->kind) {
-	case LOCATION_BP:
-	case LOCATION_CFA: {
-		/* value = "type, storage, additional info based on storage (offset)" */
-		return rz_str_newf("%s,%" PFMT64d ",%s",
-			var->location->kind == LOCATION_CFA ? "c" : "b",
-			var->location->offset, var->type);
+	RzPVector *children = die_children(die, ctx->dw);
+	if (!children) {
+		return false;
 	}
-	case LOCATION_SP: {
-		/* value = "type, storage, additional info based on storage (offset)" */
-		return rz_str_newf("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
-	}
-	case LOCATION_GLOBAL: {
-		/* value = "type, storage, additional info based on storage (address)" */
-		return rz_str_newf("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
-	}
-	case LOCATION_REGISTER: {
-		/* value = "type, storage, additional info based on storage (register name)" */
-		return rz_str_newf("%s,%s,%s", "r", var->location->reg_name, var->type);
-	}
-	default:
-		/* else location is unknown (optimized out), skip the var */
-		break;
-	}
-	return NULL;
-}
-
-static inline void sdb_save_dwarf_fcn_vars(Sdb *sdb, RzList /*<Variable *>*/ *vars, const char *prefix) {
-	RzStrBuf *sb = rz_strbuf_new(NULL);
-	RzListIter *iter;
-	Variable *var;
-	rz_list_foreach (vars, iter, var) {
-		char *val = sdb_build_var_data(var);
-		if (!val) {
-			continue;
+	void **it;
+	rz_pvector_foreach (children, it) {
+		RzBinDwarfDie *child_die = *it;
+		Variable v = { 0 };
+		parse_var(ctx, child_die, &v);
+		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
+			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.name, v.type);
+			rz_type_callable_arg_add(callable, arg);
 		}
-		char *key = rz_str_newf("%s.%s", prefix, var->name);
-		sdb_set_owned(sdb, key, val, 0);
-		free(key);
-
-		if (iter->n) {
-			rz_strbuf_appendf(sb, "%s,", var->name);
-		} else {
-			rz_strbuf_append(sb, var->name);
-		}
+		rz_vector_push(variables, &v);
 	}
-	char *key = rz_str_newf("%ss", prefix);
-	sdb_set_owned(sdb, key, rz_strbuf_drain(sb), 0);
-	free(key);
-}
-
-static void
-sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/ *variables, Sdb *sdb) {
-	char *sname = rz_str_sanitize_sdb_key(dwarf_fcn->name);
-	sdb_set(sdb, sname, "fcn", 0);
-
-	char *addr_key = rz_str_newf("fcn.%s.addr", sname);
-	char *addr_val = rz_str_newf("0x%" PFMT64x "", dwarf_fcn->addr);
-	sdb_set_owned(sdb, addr_key, addr_val, 0);
-	free(addr_key);
-
-	/* so we can have name without sanitization */
-	char *name_key = rz_str_newf("fcn.%s.name", sname);
-	sdb_set(sdb, name_key, dwarf_fcn->name, 0);
-	free(name_key);
-
-	char *signature_key = rz_str_newf("fcn.%s.sig", sname);
-	sdb_set(sdb, signature_key, dwarf_fcn->signature, 0);
-	free(signature_key);
-
-	RzList *args = rz_list_new();
-	RzList *vars = rz_list_new();
-	RzListIter *iter;
-	Variable *var;
-	rz_list_foreach (variables, iter, var) {
-		if (var->kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
-			rz_list_append(args, var);
-		} else {
-			rz_list_append(vars, var);
-		}
-	}
-
-	char *prefix = rz_str_newf("fcn.%s.arg", sname);
-	sdb_save_dwarf_fcn_vars(sdb, args, prefix);
-	rz_list_free(args);
-	free(prefix);
-	prefix = rz_str_newf("fcn.%s.var", sname);
-	sdb_save_dwarf_fcn_vars(sdb, vars, prefix);
-	rz_list_free(vars);
-	free(prefix);
-
-	free(sname);
+	return 1;
 }
 
 /**
@@ -1223,25 +1107,19 @@ sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable *>*/ *variables,
  */
 static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	Function fcn = { 0 };
-	bool has_linkage_name = false;
-	bool get_linkage_name = prefer_linkage_name(ctx->lang);
 	RzType *ret_type = NULL;
 	if (rz_bin_dwarf_die_get_attr(die, DW_AT_declaration)) {
 		return; /* just declaration skip */
 	}
-	/* For rust binaries prefer regular name not linkage TODO */
 	RzBinDwarfAttr *val;
 	rz_vector_foreach(&die->attrs, val) {
 		switch (val->name) {
 		case DW_AT_name:
-			if (!get_linkage_name || !has_linkage_name) {
-				fcn.name = val->kind == DW_AT_KIND_STRING ? val->string.content : fcn.name;
-			}
+			fcn.name = rz_bin_dwarf_attr_value_get_string_content(val);
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			fcn.name = val->kind == DW_AT_KIND_STRING ? val->string.content : fcn.name;
-			has_linkage_name = true;
+			fcn.link_name = rz_bin_dwarf_attr_value_get_string_content(val);
 			break;
 		case DW_AT_low_pc:
 		case DW_AT_entry_pc:
@@ -1251,7 +1129,7 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 		{
 			RzBinDwarfDie *spec_die = ht_up_find(ctx->dw->info->die_tbl, val->reference, NULL);
 			if (spec_die) {
-				fcn.name = get_specification_die_name(spec_die, get_linkage_name); /* I assume that if specification has a name, this DIE hasn't */
+				fcn.name = get_specification_die_name(spec_die, fcn.link_name != NULL); /* I assume that if specification has a name, this DIE hasn't */
 				rz_type_free(ret_type);
 				ret_type = get_spec_die_type(ctx, spec_die);
 			}
@@ -1291,38 +1169,19 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	if (!fcn.name || !fcn.addr) { /* we need a name, faddr */
 		goto cleanup;
 	}
-	RzStrBuf args;
-	rz_strbuf_init(&args);
-	/* TODO do the same for arguments in future so we can use their location */
-	RzList /*<Variable*>*/ *variables = rz_list_new();
-	parse_function_args_and_vars(ctx, die, &args, variables);
 
-	if (!ret_type) { /* DW_AT_type is omitted in case of `void` ret type */
-		ret_type = rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
-		if (!ret_type) {
-			rz_list_free(variables);
-			goto cleanup;
-		}
+	if (fcn.link_name) {
+		fcn.demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn.link_name);
 	}
-	rz_warn_if_fail(ctx->lang);
-	char *new_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn.name);
-	fcn.name = new_name ? new_name : strdup(fcn.name);
-	char *ret_type_str = type_as_string(ctx->analysis->typedb, ret_type);
-	size_t typelen = strlen(ret_type_str);
-	fcn.signature = rz_str_newf("%s%s%s(%s);", ret_type_str, typelen && ret_type_str[typelen - 1] == '*' ? "" : " ", fcn.name, rz_strbuf_get(&args));
-	free(ret_type_str);
-	sdb_save_dwarf_function(&fcn, variables, ctx->sdb);
 
-	free((char *)fcn.signature);
-	free((char *)fcn.name);
-
-	RzListIter *iter;
-	Variable *var;
-	rz_list_foreach (variables, iter, var) {
-		variable_free(var);
-	}
-	rz_list_free(variables);
-	rz_strbuf_fini(&args);
+	const char *name = prefer_linkage_name(ctx->lang) ? fcn.demangle_name : fcn.name;
+	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, name, ret_type);
+	RzVector /*<Variable*>*/ *variables = rz_vector_new(sizeof(Variable), NULL, NULL);
+	// TODO: save dwarf variables
+	parse_function_args_and_vars(ctx, die, callable, variables);
+	RzType *type = rz_type_callable(callable);
+	ht_pp_update(ctx->analysis->typedb->callables, name, type);
+	return;
 cleanup:
 	rz_type_free(ret_type);
 }

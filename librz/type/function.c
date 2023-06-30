@@ -135,6 +135,7 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
 		return NULL;
 	}
 	callable->ret = type;
+	callable->noret = type == NULL;
 	return callable;
 }
 
