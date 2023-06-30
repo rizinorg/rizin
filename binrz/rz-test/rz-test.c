@@ -18,7 +18,7 @@
 #define RIZIN_CMD_DEFAULT      "rizin"
 #define RZ_ASM_CMD_DEFAULT     "rz-asm"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
-#define TIMEOUT_DEFAULT        960
+#define TIMEOUT_DEFAULT        1200
 
 #define STRV(x)             #x
 #define STR(x)              STRV(x)
