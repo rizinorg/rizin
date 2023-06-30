@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2023 Siguza <siguza@siguza.net>
 // SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -18,10 +20,20 @@ typedef enum {
 	RZ_CF_STATE_IN_KEY,
 	RZ_CF_STATE_IN_SCALAR,
 	RZ_CF_STATE_IN_IGNORE,
+	RZ_CF_STATE_IN_ATTR_ID,
+	RZ_CF_STATE_IN_ATTR_IDREF
 } RzCFParsePhase;
 
-typedef struct _RzCFParseState {
+typedef enum {
+	RZ_CF_ID_STATE_NONE,
+	RZ_CF_ID_STATE_SET,
+	RZ_CF_ID_STATE_REF,
+} RzCFIDState;
+
+typedef struct rz_cf_parse_state {
 	RzCFParsePhase phase;
+	RzCFIDState idstate;
+	ut32 id;
 	char *key;
 	RzCFValueType value_type;
 	RzCFValueDict *dict;
@@ -63,9 +75,11 @@ static RzCFValueBool *rz_cf_value_bool_new(bool value);
 static void rz_cf_value_bool_free(RzCFValueBool *bool_value);
 static void rz_cf_value_bool_print(RzCFValueBool *bool_value);
 
+static RzCFValue *rz_cf_value_clone(RzCFValue *value);
 static void rz_cf_value_free(RzCFValue *value);
 
 RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
+	RzList *idlist = NULL;
 	RzCFValueDict *result = NULL;
 	yxml_t x;
 	int i;
@@ -81,6 +95,13 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 	RzList *stack = rz_list_newf((RzListFree)&rz_cf_parse_state_free);
 	if (!stack) {
 		goto beach;
+	}
+
+	if (options & RZ_CF_OPTION_SUPPORT_IDREF) {
+		idlist = rz_list_new();
+		if (!idlist) {
+			goto beach;
+		}
 	}
 
 	rz_list_push(stack, rz_cf_parse_state_new(RZ_CF_STATE_ROOT));
@@ -195,42 +216,80 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 			if (state->phase != RZ_CF_STATE_IN_KEY) {
 				RzCFValue *value = NULL;
 
-				switch (state->phase) {
-				case RZ_CF_STATE_IN_DICT:
-					value = (RzCFValue *)state->dict;
-					break;
-				case RZ_CF_STATE_IN_ARRAY:
-					value = (RzCFValue *)state->array;
-					break;
-				case RZ_CF_STATE_IN_SCALAR:
-					if (!content && state->value_type != RZ_CF_FALSE && state->value_type != RZ_CF_TRUE) {
-						value = (RzCFValue *)rz_cf_value_null_new();
-					} else {
-						switch (state->value_type) {
-						case RZ_CF_STRING:
-							value = (RzCFValue *)rz_cf_value_string_new(content);
-							break;
-						case RZ_CF_INTEGER:
-							value = (RzCFValue *)rz_cf_value_integer_new(content);
-							RZ_FREE(content);
-							break;
-						case RZ_CF_DATA:
-							value = (RzCFValue *)rz_cf_value_data_new(content);
-							RZ_FREE(content);
-							break;
-						case RZ_CF_TRUE:
-							value = (RzCFValue *)rz_cf_value_bool_new(true);
-							break;
-						case RZ_CF_FALSE:
-							value = (RzCFValue *)rz_cf_value_bool_new(false);
-							break;
-						default:
-							break;
+				if (idlist && state->idstate == RZ_CF_ID_STATE_REF) {
+					value = rz_list_get_n(idlist, (int)state->id);
+					if (!value) {
+						RZ_LOG_ERROR("Missing value for IDREF %" PFMT32u, state->id);
+						goto beach;
+					}
+					if (state->phase == RZ_CF_STATE_IN_DICT) {
+						if (rz_list_length(state->dict->pairs) != 0) {
+							RZ_LOG_ERROR("Dict with IDREF already has elements");
+							goto beach;
+						}
+						rz_cf_value_dict_free(state->dict);
+						state->dict = NULL;
+					} else if (state->phase == RZ_CF_STATE_IN_ARRAY) {
+						if (rz_list_length(state->dict->pairs) != 0) {
+							RZ_LOG_ERROR("Array with IDREF already has elements");
+							goto beach;
+						}
+						rz_cf_value_array_free(state->array);
+						state->array = NULL;
+					} else if (state->phase == RZ_CF_STATE_IN_SCALAR && content) {
+						RZ_LOG_ERROR("Element with IDREF already has content");
+						goto beach;
+					}
+					value = rz_cf_value_clone(value);
+					if (!value) {
+						goto beach;
+					}
+				} else {
+					switch (state->phase) {
+					case RZ_CF_STATE_IN_DICT:
+						value = (RzCFValue *)state->dict;
+						break;
+					case RZ_CF_STATE_IN_ARRAY:
+						value = (RzCFValue *)state->array;
+						break;
+					case RZ_CF_STATE_IN_SCALAR:
+						if (!content && state->value_type != RZ_CF_FALSE && state->value_type != RZ_CF_TRUE) {
+							value = (RzCFValue *)rz_cf_value_null_new();
+						} else {
+							switch (state->value_type) {
+							case RZ_CF_STRING:
+								value = (RzCFValue *)rz_cf_value_string_new(content);
+								break;
+							case RZ_CF_INTEGER:
+								value = (RzCFValue *)rz_cf_value_integer_new(content);
+								RZ_FREE(content);
+								break;
+							case RZ_CF_DATA:
+								value = (RzCFValue *)rz_cf_value_data_new(content);
+								RZ_FREE(content);
+								break;
+							case RZ_CF_TRUE:
+								value = (RzCFValue *)rz_cf_value_bool_new(true);
+								break;
+							case RZ_CF_FALSE:
+								value = (RzCFValue *)rz_cf_value_bool_new(false);
+								break;
+							default:
+								break;
+							}
+						}
+						break;
+					default:
+						break;
+					}
+
+					if (idlist && state->idstate == RZ_CF_ID_STATE_SET) {
+						if (value) {
+							rz_list_insert(idlist, state->id, value);
+						} else {
+							RZ_LOG_WARN("Missing value for ID %" PFMT32u, state->id);
 						}
 					}
-					break;
-				default:
-					break;
 				}
 
 				if (next_state->phase == RZ_CF_STATE_IN_DICT) {
@@ -269,6 +328,58 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 			}
 			break;
 		}
+		case YXML_ATTRSTART: {
+			if (idlist) {
+				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				if (state->phase != RZ_CF_STATE_IN_DICT && state->phase != RZ_CF_STATE_IN_ARRAY && state->phase != RZ_CF_STATE_IN_SCALAR) {
+					break;
+				}
+				RzCFParsePhase next_phase;
+				if (!strcmp(x.attr, "ID")) {
+					next_phase = RZ_CF_STATE_IN_ATTR_ID;
+				} else if (!strcmp(x.attr, "IDREF")) {
+					next_phase = RZ_CF_STATE_IN_ATTR_IDREF;
+				} else {
+					break;
+				}
+				if (state->idstate != RZ_CF_ID_STATE_NONE) {
+					RZ_LOG_ERROR("Cannot have ID and IDREF on the same element");
+					goto beach;
+				}
+				RzCFParseState *next_state = rz_cf_parse_state_new(next_phase);
+				if (!next_state) {
+					goto beach;
+				}
+				rz_list_push(stack, next_state);
+			}
+			break;
+		}
+		case YXML_ATTRVAL: {
+			if (idlist) {
+				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				if (state->phase != RZ_CF_STATE_IN_ATTR_ID && state->phase != RZ_CF_STATE_IN_ATTR_IDREF) {
+					break;
+				}
+				content = rz_str_append(content, x.data);
+			}
+			break;
+		}
+		case YXML_ATTREND: {
+			if (idlist) {
+				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				if (state->phase != RZ_CF_STATE_IN_ATTR_ID && state->phase != RZ_CF_STATE_IN_ATTR_IDREF) {
+					break;
+				}
+				rz_list_pop(stack);
+				RzCFParseState *next_state = (RzCFParseState *)rz_list_last(stack);
+				next_state->id = (ut32)rz_num_get(NULL, content);
+				next_state->idstate = state->phase == RZ_CF_STATE_IN_ATTR_ID ? RZ_CF_ID_STATE_SET : RZ_CF_ID_STATE_REF;
+				RZ_FREE(content);
+				content = NULL;
+				rz_cf_parse_state_free(state);
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -285,9 +396,9 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 
 beach:
 	RZ_FREE(xml_buf);
-	if (stack) {
-		rz_list_free(stack);
-	}
+	rz_list_free(stack);
+	rz_list_free(idlist);
+	free(content);
 
 	return result;
 }
@@ -574,6 +685,110 @@ static void rz_cf_value_bool_print(RzCFValueBool *bool_value) {
 		printf("false");
 	}
 }
+
+static RzCFValue *rz_cf_value_clone(RzCFValue *value) {
+	if (!value) {
+		return NULL;
+	}
+
+	RzCFValue *copy = NULL;
+
+	switch (value->type) {
+	case RZ_CF_DICT: {
+		RzCFValueDict *dict = rz_cf_value_dict_new();
+		if (dict) {
+			copy = (RzCFValue *)dict;
+			RzListIter *iter;
+			RzCFKeyValue *item;
+			rz_list_foreach (((RzCFValueDict *)value)->pairs, iter, item) {
+				char *key = rz_str_new(item->key);
+				if (key) {
+					RzCFValue *clone = rz_cf_value_clone(item->value);
+					if (clone) {
+						RzCFKeyValue *pair = rz_cf_key_value_new(key, clone);
+						if (pair) {
+							rz_cf_value_dict_add(dict, pair);
+						}
+						rz_cf_value_free(clone);
+					}
+					RZ_FREE(key);
+				}
+				rz_cf_value_dict_free(dict);
+				copy = NULL;
+				break;
+			}
+		}
+		break;
+	}
+	case RZ_CF_ARRAY: {
+		RzCFValueArray *array = rz_cf_value_array_new();
+		if (array) {
+			copy = (RzCFValue *)array;
+			RzListIter *iter;
+			RzCFValue *item;
+			rz_list_foreach (((RzCFValueArray *)value)->values, iter, item) {
+				RzCFValue *clone = rz_cf_value_clone(item);
+				if (clone) {
+					rz_cf_value_array_add(array, clone);
+					continue;
+				}
+				rz_cf_value_array_free(array);
+				copy = NULL;
+				break;
+			}
+		}
+		break;
+	}
+	case RZ_CF_STRING: {
+		RzCFValueString *string = RZ_NEW0(RzCFValueString);
+		if (string) {
+			string->value = rz_str_new(((RzCFValueString *)value)->value);
+			if (string->value) {
+				copy = (RzCFValue *)string;
+			} else {
+				RZ_FREE(string);
+			}
+		}
+		break;
+	}
+	case RZ_CF_INTEGER: {
+		RzCFValueInteger *integer = RZ_NEW0(RzCFValueInteger);
+		if (integer) {
+			integer->value = ((RzCFValueInteger *)value)->value;
+			copy = (RzCFValue *)integer;
+		}
+		break;
+	}
+	case RZ_CF_DATA: {
+		RzCFValueData *data = RZ_NEW0(RzCFValueData);
+		if (data) {
+			data->value = rz_buf_new_with_buf(((RzCFValueData *)value)->value);
+			if (data->value) {
+				copy = (RzCFValue *)data;
+			} else {
+				RZ_FREE(data);
+			}
+		}
+		break;
+	}
+	case RZ_CF_NULL:
+		copy = (RzCFValue *)(RZ_NEW0(RzCFValueNULL));
+		break;
+	case RZ_CF_TRUE:
+	case RZ_CF_FALSE:
+		copy = (RzCFValue *)(RZ_NEW0(RzCFValueBool));
+		break;
+	default:
+		break;
+	}
+
+	if (copy) {
+		copy->type = value->type;
+	}
+
+	return copy;
+}
+
 static void rz_cf_value_free(RzCFValue *value) {
 	if (!value) {
 		return;
