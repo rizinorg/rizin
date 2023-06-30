@@ -2209,14 +2209,6 @@ RZ_IPI RzCmdStatus rz_type_function_del_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_type_function_del_all_handler(RzCore *core, int argc, const char **argv);
 // "tfc"
 RZ_IPI RzCmdStatus rz_type_function_cc_handler(RzCore *core, int argc, const char **argv);
-// "tl"
-RZ_IPI RzCmdStatus rz_type_link_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-// "tls"
-RZ_IPI RzCmdStatus rz_type_link_show_handler(RzCore *core, int argc, const char **argv);
-// "tl-"
-RZ_IPI RzCmdStatus rz_type_link_del_handler(RzCore *core, int argc, const char **argv);
-// "tl-*"
-RZ_IPI RzCmdStatus rz_type_link_del_all_handler(RzCore *core, int argc, const char **argv);
 // "tn"
 RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "tn-"

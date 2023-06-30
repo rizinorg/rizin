@@ -1963,8 +1963,8 @@ RZ_IPI RzCmdStatus rz_analysis_print_global_variable_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_analysis_global_variable_add_handler(RzCore *core, int argc, const char **argv) {
 	const char *var_name = argv[1];
-	ut64 addr = rz_num_math(core->num, argv[2]);
-	const char *type = argv[3];
+	const char *type = argv[2];
+	ut64 addr = core->offset;
 
 	char *errmsg = NULL;
 	RzType *typ = rz_type_parse_string_single(core->analysis->typedb->parser, type, &errmsg);
@@ -6213,7 +6213,7 @@ RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int 
 			RZ_LOG_ERROR("Cannot find function '%s'\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_core_link_stroff(core, fcn);
+		rz_core_global_vars_propagate_types(core, fcn);
 		return RZ_CMD_STATUS_OK;
 	} else if (rz_list_empty(core->analysis->fcns)) {
 		RZ_LOG_ERROR("Couldn't find any functions\n");
@@ -6225,7 +6225,7 @@ RZ_IPI RzCmdStatus rz_analyze_function_linked_offsets_handler(RzCore *core, int 
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		rz_core_link_stroff(core, fcn);
+		rz_core_global_vars_propagate_types(core, fcn);
 	}
 	return RZ_CMD_STATUS_OK;
 }

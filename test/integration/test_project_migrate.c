@@ -600,11 +600,10 @@ static bool test_load_v2_typelink() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 2, "prj/v2-typelink-callables.rzdb");
 
-	mu_assert_true(rz_analysis_type_link_exists(core->analysis, 0x80484b0), "has typelink");
-	RzType *typelink = rz_analysis_type_link_at(core->analysis, 0x80484b0);
-	mu_assert_notnull(typelink, "has typelink");
-	mu_assert_eq(RZ_TYPE_KIND_POINTER, typelink->kind, "typelink is a pointer");
-	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, typelink->pointer.type, "char"), "typelink is char *");
+	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x80484b0);
+	mu_assert_notnull(gv, "typelink converted to a global var");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, gv->type->kind, "typelink is a pointer");
+	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, gv->type->pointer.type, "char"), "typelink is char *");
 
 	rz_core_free(core);
 	mu_end;
@@ -656,9 +655,9 @@ static bool test_load_v3_typelink() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 3, "prj/v3-typelink.rzdb");
 
-	RzType *tl = rz_analysis_type_link_at(core->analysis, 0x08048660);
-	mu_assert_notnull(tl, "typelink still exists");
-	mu_assert_streq_free(rz_type_as_string(core->analysis->typedb, tl), "uint32_t", "typelink");
+	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x08048660);
+	mu_assert_notnull(gv, "typelink converted to a global var");
+	mu_assert_streq_free(rz_type_as_string(core->analysis->typedb, gv->type), "uint32_t", "typelink");
 
 	rz_core_free(core);
 	mu_end;
