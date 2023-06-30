@@ -4862,11 +4862,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	rz_core_task_yield(&core->tasks);
 
 	// Apply DWARF function information
-	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
-	if (dwarf_sdb) {
+	{
 		notify = "Integrate dwarf function information.";
 		rz_core_notify_begin(core, "%s", notify);
-		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
+		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags);
 		rz_core_notify_done(core, "%s", notify);
 	}
 

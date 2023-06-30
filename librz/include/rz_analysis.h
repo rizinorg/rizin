@@ -446,6 +446,11 @@ typedef struct rz_analysis_hint_cb_t {
 
 typedef struct rz_analysis_il_vm_t RzAnalysisILVM;
 
+typedef struct {
+	RzVector *functions;
+	HtUP *function_variables_by_address;
+} RzAnalysisDebugInfo;
+
 typedef struct rz_analysis_t {
 	char *cpu; // analysis.cpu
 	char *os; // asm.os
@@ -515,6 +520,7 @@ typedef struct rz_analysis_t {
 	HtPP *ht_global_var; // global variables
 	RBTree global_var_tree; // global variables by address. must not overlap
 	RzHash *hash;
+	RzAnalysisDebugInfo *debug_info;
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
@@ -645,7 +651,9 @@ typedef struct rz_analysis_var_access_t {
 
 typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_REG,
-	RZ_ANALYSIS_VAR_STORAGE_STACK
+	RZ_ANALYSIS_VAR_STORAGE_STACK,
+	RZ_ANALYSIS_VAR_STORAGE_CFA,
+	RZ_ANALYSIS_VAR_STORAGE_EMPTY,
 } RzAnalysisVarStorageType;
 
 /**
@@ -2138,7 +2146,7 @@ RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb);
 
 /* DWARF */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw);
-RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb);
+RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags);
 
 /* serialize */
 RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op);

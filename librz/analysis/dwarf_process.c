@@ -12,7 +12,6 @@
 
 typedef struct dwarf_parse_context_t {
 	const RzAnalysis *analysis;
-	Sdb *sdb;
 	char *lang; // for demangling
 	RzBinDwarf *dw;
 } Context;
@@ -985,7 +984,6 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, Variab
 	return "unsupported_reg";
 }
 
-/* TODO move a lot of the parsing here into dwarf.c and do only processing here */
 static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
 	if (attr->kind != DW_AT_KIND_BLOCK && attr->kind != DW_AT_KIND_LOCLISTPTR && attr->kind != DW_AT_KIND_REFERENCE && attr->kind != DW_AT_KIND_CONSTANT) {
@@ -998,9 +996,7 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 		if (!entry) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			return NULL;
 		}
-		/* Very rough and sloppy, refactor this hacked up stuff */
 		block = entry->data;
-		// range->expression... etc
 	} else {
 		block = &attr->block;
 	}
@@ -1012,15 +1008,6 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	rz_vector_pop(loc, piece);
 
 	return piece->location;
-}
-
-/**
- * Helper to temporarily serialize types into strings for legacy SDB storage.
- * Usages should be removed long-term.
- */
-static RZ_DEPRECATE char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
-	return rz_type_as_pretty_string(typedb, type, NULL,
-		RZ_TYPE_PRINT_ZERO_VLA | RZ_TYPE_PRINT_NO_END_SEMICOLON | RZ_TYPE_PRINT_ANONYMOUS | RZ_TYPE_PRINT_ALLOW_NON_EXISTENT_BASE_TYPE, 0);
 }
 
 static bool parse_var(Context *ctx, RzBinDwarfDie *die, Variable *v) {
@@ -1177,10 +1164,10 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	const char *name = prefer_linkage_name(ctx->lang) ? fcn.demangle_name : fcn.name;
 	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, name, ret_type);
 	RzVector /*<Variable*>*/ *variables = rz_vector_new(sizeof(Variable), NULL, NULL);
-	// TODO: save dwarf variables
 	parse_function_args_and_vars(ctx, die, callable, variables);
 	RzType *type = rz_type_callable(callable);
 	ht_pp_update(ctx->analysis->typedb->callables, name, type);
+	ht_up_update(ctx->analysis->debug_info->function_variables_by_address, fcn.addr, variables);
 	return;
 cleanup:
 	rz_type_free(ret_type);
@@ -1284,10 +1271,8 @@ static void parse_type_entry(Context *ctx, RzBinDwarfDie *die) {
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw) {
 	rz_return_if_fail(analysis);
-	Sdb *dwarf_sdb = sdb_ns(analysis->sdb, "dwarf", 1);
 	Context dw_context = {
 		.analysis = analysis,
-		.sdb = dwarf_sdb,
 		.lang = NULL,
 		.dw = dw,
 	};
@@ -1300,95 +1285,27 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 	}
 }
 
-bool filter_sdb_function_names(void *user, const char *k, const char *v) {
-	(void)user;
-	(void)k;
-	return !strcmp(v, "fcn");
-}
-
-typedef struct {
-	RzAnalysis *analysis;
-	RzAnalysisFunction *fcn;
-	RzFlag *flags;
-	Sdb *dwarf_sdb;
-	char *func_sname;
-} FcnVariableCtx;
-
-static bool apply_debuginfo_variable(FcnVariableCtx *ctx, const char *var_name, char *var_data, RzAnalysisVarKind var_kind) {
-	char *extra = NULL;
-	char *kind = sdb_anext(var_data, &extra);
-	char *type = NULL;
-	extra = sdb_anext(extra, &type);
-	if (!extra) {
-		return false;
-	}
-	RzType *ttype = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
-	if (!ttype) {
-		return false;
-	}
-
-	st64 offset = 0;
-	if (*kind != 'r') {
-		offset = strtol(extra, NULL, 10);
-	}
-
-	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
-		char *global_name = rz_str_newf("global_%s", var_name);
-		rz_flag_unset_off(ctx->flags, offset);
-		rz_flag_set_next(ctx->flags, global_name, offset, 4);
-		free(global_name);
-	} else {
-		if (!ctx->fcn) {
-			goto beach;
-		}
-		RzAnalysisVar var;
-		memset(&var, 0, sizeof(RzAnalysisVar));
-		if (*kind == 'r') {
-			RzRegItem *i = rz_reg_get(ctx->analysis->reg, extra, -1);
-			if (!i) {
-				goto beach;
-			}
-			rz_analysis_var_storage_init_reg(&var.storage, extra);
-		} else { /* kind == 'b' || kind == 's' || kind == 'c' (stack variables) */
-			RzStackAddr addr = offset;
-			if (*kind == 'b') {
-				addr -= ctx->fcn->bp_off;
-			}
-			rz_analysis_var_storage_init_stack(&var.storage, addr);
-		}
-		var.type = ttype;
-		var.kind = var_kind;
-		var.name = rz_str_new(var_name);
-		var.fcn = ctx->fcn;
-		rz_analysis_function_add_var_dwarf(ctx->fcn, &var, 4);
+static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarStorage *storage) {
+	switch (loc->kind) {
+	case RzBinDwarfLocationKind_EMPTY:
+		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
+		break;
+	case RzBinDwarfLocationKind_REGISTER:
+		storage->type = RZ_ANALYSIS_VAR_STORAGE_REG;
+		storage->reg = get_dwarf_reg_name(a->cpu, loc->register_number, NULL, a->bits);
+		break;
+	case RzBinDwarfLocationKind_ADDRESS:
+		storage->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+		storage->stack_off = (RzStackAddr)loc->address;
+		break;
+	case RzBinDwarfLocationKind_VALUE:
+	case RzBinDwarfLocationKind_BYTES:
+	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
+		// TODO loc2storage
+		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
+		break;
 	}
 	return true;
-beach:
-	rz_type_free(ttype);
-	return false;
-}
-
-static void apply_debuginfo_variables(FcnVariableCtx *ctx, RzAnalysisVarKind kind) {
-	const char *fmt = kind == RZ_ANALYSIS_VAR_KIND_VARIABLE ? "fcn.%s.vars" : "fcn.%s.args";
-	const char *var_fmt = kind == RZ_ANALYSIS_VAR_KIND_VARIABLE ? "fcn.%s.var.%s" : "fcn.%s.arg.%s";
-
-	char *var_names_key = rz_str_newf(fmt, ctx->func_sname);
-	char *vars = sdb_get(ctx->dwarf_sdb, var_names_key, NULL);
-	free(var_names_key);
-
-	char *var_name;
-	sdb_aforeach(var_name, vars) {
-		char *var_key = rz_str_newf(var_fmt, ctx->func_sname, var_name);
-		char *var_data = sdb_get(ctx->dwarf_sdb, var_key, NULL);
-		free(var_key);
-
-		if (RZ_STR_ISNOTEMPTY(var_data)) {
-			apply_debuginfo_variable(ctx, var_name, var_data, kind);
-		}
-		free(var_data);
-		sdb_aforeach_next(var_name);
-	}
-	free(vars);
 }
 
 /**
@@ -1398,52 +1315,27 @@ static void apply_debuginfo_variables(FcnVariableCtx *ctx, RzAnalysisVarKind kin
  * \param analysis
  * \param dwarf_sdb
  */
-RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb) {
-	rz_return_if_fail(analysis && dwarf_sdb);
-
-	/* get all entries with value == func */
-	SdbList *sdb_list = sdb_foreach_list_filter(dwarf_sdb, filter_sdb_function_names, false);
-	SdbListIter *it;
-	SdbKv *kv;
-	/* iterate all function entries */
-	ls_foreach (sdb_list, it, kv) {
-		char *func_sname = kv->base.key;
-
-		char *addr_key = rz_str_newf("fcn.%s.addr", func_sname);
-		ut64 faddr = sdb_num_get(dwarf_sdb, addr_key, 0);
-		free(addr_key);
-
-		/* if the function is analyzed so we can edit */
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, faddr);
-		if (fcn) {
-			rz_analysis_function_delete_arg_vars(fcn);
-			fcn->has_debuginfo = true;
-
-			/* prepend dwarf debug info stuff with dbg. */
-			char *real_name_key = rz_str_newf("fcn.%s.name", func_sname);
-			const char *real_name = sdb_const_get(dwarf_sdb, real_name_key, 0);
-			free(real_name_key);
-
-			char *dwf_name = rz_str_newf("dbg.%s", real_name);
-			rz_analysis_function_rename(fcn, dwf_name);
-			free(dwf_name);
-
-			char *sig_key = rz_str_newf("fcn.%s.sig", func_sname);
-			const char *fcnstr = sdb_const_get(dwarf_sdb, sig_key, 0);
-			free(sig_key);
-			/* Apply signature as a comment at a function address */
-			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
-		}
-
-		FcnVariableCtx ctx = {
-			.analysis = analysis,
-			.flags = flags,
-			.dwarf_sdb = dwarf_sdb,
-			.func_sname = func_sname,
-			.fcn = fcn,
+RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
+	rz_return_if_fail(analysis && analysis->debug_info);
+	Function *fn;
+	rz_vector_foreach(analysis->debug_info->functions, fn) {
+		/* Apply signature as a comment at a function address */
+		RzType *type = ht_pp_find(analysis->typedb->callables, fn->name, NULL);
+		char *sig = rz_type_as_string(analysis->typedb, type);
+		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
+		/* Apply variables */
+		RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->addr);
+		RzVector *variables = ht_up_find(analysis->debug_info->function_variables_by_address, fn->addr, NULL);
+		Variable *v;
+		rz_vector_foreach(variables, v) {
+			RzAnalysisVar av = {
+				.type = v->type,
+				.name = rz_str_new(v->name),
+				.kind = v->kind,
+				.fcn = afn,
+			};
+			loc2storage(analysis, v->location, &av.storage);
+			rz_analysis_function_add_var_dwarf(afn, &av, 4);
 		};
-		apply_debuginfo_variables(&ctx, RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER);
-		apply_debuginfo_variables(&ctx, RZ_ANALYSIS_VAR_KIND_VARIABLE);
 	}
-	ls_free(sdb_list);
 }
