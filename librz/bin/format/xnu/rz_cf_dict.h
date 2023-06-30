@@ -4,8 +4,9 @@
 #ifndef RZ_CF_DICT_H
 #define RZ_CF_DICT_H
 
-#define RZ_CF_OPTION_NONE        0
-#define RZ_CF_OPTION_SKIP_NSDATA 1
+#define RZ_CF_OPTION_NONE          0
+#define RZ_CF_OPTION_SKIP_NSDATA   1
+#define RZ_CF_OPTION_SUPPORT_IDREF 2
 
 typedef enum {
 	RZ_CF_INVALID,

@@ -157,7 +157,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) 
 	RzCFValueDict *prelink_info = NULL;
 	if (main_mach0->hdr.filetype != MH_FILESET && prelink_range->range.size) {
 		prelink_info = rz_cf_value_dict_parse(fbuf, prelink_range->range.offset,
-			prelink_range->range.size, RZ_CF_OPTION_SKIP_NSDATA);
+			prelink_range->range.size, RZ_CF_OPTION_SKIP_NSDATA | RZ_CF_OPTION_SUPPORT_IDREF);
 		if (!prelink_info) {
 			RZ_FREE(prelink_range);
 			RZ_FREE(obj);
