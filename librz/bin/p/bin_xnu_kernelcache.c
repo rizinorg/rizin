@@ -154,7 +154,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) 
 		goto beach;
 	}
 
-	RCFValueDict *prelink_info = NULL;
+	RzCFValueDict *prelink_info = NULL;
 	if (main_mach0->hdr.filetype != MH_FILESET && prelink_range->range.size) {
 		prelink_info = rz_cf_value_dict_parse(fbuf, prelink_range->range.offset,
 			prelink_range->range.size, RZ_CF_OPTION_SKIP_NSDATA);
@@ -282,12 +282,12 @@ static RPrelinkRange *get_prelink_info_range_from_mach0(struct MACH0_(obj_t) * m
 }
 
 static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
-	RCFValueArray *kext_array = NULL;
+	RzCFValueArray *kext_array = NULL;
 	RzListIter *iter;
-	RCFKeyValue *item;
+	RzCFKeyValue *item;
 	rz_list_foreach (obj->prelink_info->pairs, iter, item) {
 		if (!strcmp(item->key, "_PrelinkInfoDictionary")) {
-			kext_array = (RCFValueArray *)item->value;
+			kext_array = (RzCFValueArray *)item->value;
 			break;
 		}
 	}
@@ -303,7 +303,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 
 	bool is_sorted = true;
 	RKext *prev_kext = NULL;
-	RCFValueDict *kext_item;
+	RzCFValueDict *kext_item;
 	rz_list_foreach (kext_array->values, iter, kext_item) {
 		RKext *kext = RZ_NEW0(RKext);
 		if (!kext) {
@@ -318,7 +318,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 				if (item->value->type != RZ_CF_STRING) {
 					break;
 				}
-				RCFValueString *type = (RCFValueString *)item->value;
+				RzCFValueString *type = (RzCFValueString *)item->value;
 				if (strcmp(type->value, "KEXT")) {
 					break;
 				}
@@ -328,7 +328,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "_PrelinkExecutableLoadAddr")) {
 				if (item->value->type == RZ_CF_INTEGER) {
 					kext_incomplete--;
-					kext->vaddr = ((RCFValueInteger *)item->value)->value;
+					kext->vaddr = ((RzCFValueInteger *)item->value)->value;
 					kext->range.offset = kext->vaddr - obj->pa2va_exec;
 				}
 			}
@@ -336,7 +336,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "_PrelinkExecutableSize")) {
 				kext_incomplete--;
 				if (item->value->type == RZ_CF_INTEGER) {
-					kext->range.size = ((RCFValueInteger *)item->value)->value;
+					kext->range.size = ((RzCFValueInteger *)item->value)->value;
 				} else {
 					kext->range.size = 0;
 				}
@@ -345,7 +345,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "_PrelinkKmodInfo")) {
 				if (item->value->type == RZ_CF_INTEGER) {
 					kext_incomplete--;
-					kext->mod_info = ((RCFValueInteger *)item->value)->value;
+					kext->mod_info = ((RzCFValueInteger *)item->value)->value;
 					kext->mod_info -= obj->pa2va_data;
 				}
 			}
@@ -353,7 +353,7 @@ static RzList /*<RKext *>*/ *filter_kexts(RzXNUKernelCacheObj *obj) {
 			if (!strcmp(item->key, "CFBundleIdentifier")) {
 				if (item->value->type == RZ_CF_STRING) {
 					kext_incomplete--;
-					kext->name = ((RCFValueString *)item->value)->value;
+					kext->name = ((RzCFValueString *)item->value)->value;
 				}
 			}
 		}
