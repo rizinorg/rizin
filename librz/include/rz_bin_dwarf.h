@@ -1337,7 +1337,7 @@ typedef struct {
 	ut64 size_in_bits;
 } RzBinDwarfPiece;
 
-RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn);
+RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn);
 
 #ifdef __cplusplus
 }

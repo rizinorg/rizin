@@ -966,7 +966,7 @@ static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num, VariableLocationKi
 
 /* returns string literal register name!
    TODO add more arches                 */
-static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, VariableLocationKind *kind, int bits) {
+static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, VariableLocationKind *kind, int bits) {
 	if (!strcmp(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg(reg_num, kind);
@@ -1165,8 +1165,9 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, name, ret_type);
 	RzVector /*<Variable*>*/ *variables = rz_vector_new(sizeof(Variable), NULL, NULL);
 	parse_function_args_and_vars(ctx, die, callable, variables);
-	RzType *type = rz_type_callable(callable);
-	ht_pp_update(ctx->analysis->typedb->callables, name, type);
+	if (!rz_type_func_save(ctx->analysis->typedb, callable)) {
+		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", name);
+	};
 	ht_up_update(ctx->analysis->debug_info->function_variables_by_address, fcn.addr, variables);
 	return;
 cleanup:
@@ -1290,14 +1291,15 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 	case RzBinDwarfLocationKind_EMPTY:
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
 		break;
-	case RzBinDwarfLocationKind_REGISTER:
-		storage->type = RZ_ANALYSIS_VAR_STORAGE_REG;
-		storage->reg = get_dwarf_reg_name(a->cpu, loc->register_number, NULL, a->bits);
+	case RzBinDwarfLocationKind_REGISTER: {
+		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_number, NULL, a->bits);
+		rz_analysis_var_storage_init_reg(storage, reg_name);
 		break;
-	case RzBinDwarfLocationKind_ADDRESS:
-		storage->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
-		storage->stack_off = (RzStackAddr)loc->address;
+	}
+	case RzBinDwarfLocationKind_ADDRESS: {
+		rz_analysis_var_storage_init_stack(storage, (RzStackAddr)loc->address);
 		break;
+	}
 	case RzBinDwarfLocationKind_VALUE:
 	case RzBinDwarfLocationKind_BYTES:
 	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
@@ -1320,8 +1322,8 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 	Function *fn;
 	rz_vector_foreach(analysis->debug_info->functions, fn) {
 		/* Apply signature as a comment at a function address */
-		RzType *type = ht_pp_find(analysis->typedb->callables, fn->name, NULL);
-		char *sig = rz_type_as_string(analysis->typedb, type);
+		RzCallable *callable = rz_type_func_get(analysis->typedb, fn->name);
+		char *sig = rz_type_callable_as_string(analysis->typedb, callable);
 		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
 		/* Apply variables */
 		RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->addr);

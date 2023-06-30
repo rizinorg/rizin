@@ -1274,7 +1274,7 @@ static inline ut64 addrmask_from_size(uint8_t size) {
 				      : (1ULL << (size * 8)) - 1);
 }
 
-RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn) {
+RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn) {
 	ut64 addr_mask = addrmask_from_size(dw->encoding.address_size);
 	Evaluation *eval = Evaluation_new(expr, addr_mask, &dw->encoding);
 	if (!Evaluation_evaluate(eval, dw, fn)) {

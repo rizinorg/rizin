@@ -961,7 +961,7 @@ bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask,
 }
 
 #define VALUE_IMPL_LOGICAL_OP(name, op) \
-	bool Value_##name(Value *self, Value *rhs, uint64_t addr_mask, Value *result) { \
+	bool Value_##name(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) { \
 		result->type = ValueType_GENERIC; \
 		result->generic = 0; \
 		if (self->type != rhs->type) { \

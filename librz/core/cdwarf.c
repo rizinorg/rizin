@@ -207,49 +207,18 @@ RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *i
 	return my_print_get;
 }
 
-static int offset_comp(const void *a, const void *b) {
-	const RzBinDwarfLocList *f = a;
-	const RzBinDwarfLocList *s = b;
-	ut64 first = f->offset;
-	ut64 second = s->offset;
-	if (first < second) {
-		return -1;
-	}
-	if (first > second) {
-		return 1;
-	}
-	return 0;
-}
-
-static bool sort_loclists(void *user, const ut64 key, const void *value) {
-	RzBinDwarfLocList *loc_list = (RzBinDwarfLocList *)value;
-	RzList *sort_list = user;
-	rz_list_add_sorted(sort_list, loc_list, offset_comp);
-	return true;
-}
-
-RZ_API char *rz_core_bin_dwarf_loc_to_string(HtUP /*<offset, RzBinDwarfLocList *>*/ *loc_table, int addr_size) {
-	rz_return_val_if_fail(loc_table, NULL);
+RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarfLocLists *locs, int addr_size) {
+	rz_return_val_if_fail(locs, NULL);
 	my_print_init;
 	my_print("\nContents of the .debug_loc section:\n");
 	RzList /*<RzBinDwarfLocList *>*/ *sort_list = rz_list_new();
-	/* sort the table contents by offset and print sorted
-	   a bit ugly, but I wanted to decouple the parsing and printing */
-	ht_up_foreach(loc_table, sort_loclists, sort_list);
-	RzListIter *i;
-	RzBinDwarfLocList *loc_list;
-	rz_list_foreach (sort_list, i, loc_list) {
-		RzListIter *j;
-		RzBinDwarfLocRange *range;
-		ut64 base_offset = loc_list->offset;
-		rz_list_foreach (loc_list->list, j, range) {
-			my_printf("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
-			base_offset += addr_size * 2;
-			if (range->expression) {
-				base_offset += 2 + range->expression->length; /* 2 bytes for expr length */
-			}
-		}
-		my_printf("0x%" PFMT64x " <End of list>\n", base_offset);
+	RzBinDwarfLocationListEntry *loc;
+	rz_vector_foreach(&locs->entries, loc) {
+		ut64 base_offset = loc->range->begin;
+		my_printf("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x, base_offset, loc->range->begin, loc->range->end);
+		char *data = rz_hex_bin2strdup(loc->data->data, loc->data->length);
+		my_print(data);
+		free(data);
 	}
 	my_print("\n");
 	rz_list_free(sort_list);
