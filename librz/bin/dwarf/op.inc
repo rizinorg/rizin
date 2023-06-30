@@ -736,9 +736,7 @@ typedef struct {
 	} state;
 
 	union {
-		struct { // START
-			uint64_t *value; // nullable
-		} start;
+		Value *start; // nullable
 		Error error;
 	};
 } EvaluationState;
@@ -771,6 +769,7 @@ typedef struct operation_evaluation_result_t {
 	enum {
 		EVALUATION_RESULT_COMPLETE,
 		EVALUATION_RESULT_PIECE,
+		PIECE,
 	} kind;
 
 	union {
@@ -781,7 +780,7 @@ typedef struct operation_evaluation_result_t {
 typedef struct {
 	bool has_bit_offset;
 	ut64 bit_offset;
-	Location location;
+	Location *location;
 	bool has_size_in_bits;
 	ut64 size_in_bits;
 } Piece;
@@ -1140,14 +1139,14 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	case OPERATION_KIND_TLS: break; // TODO: tls
 	case OPERATION_KIND_CALL_FRAME_CFA: break; // TODO: cfa
 	case OPERATION_KIND_PIECE: {
-		Location location = { 0 };
+		Location *location = RZ_NEW0(Location);
 		if (rz_vector_empty(&self->stack)) {
-			location.kind = EMPTY;
+			location->kind = EMPTY;
 		} else {
 			Value *v = NULL;
 			RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-			RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &location.address));
-			location.kind = ADDRESS;
+			RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &location->address));
+			location->kind = ADDRESS;
 		}
 		Piece piece = {
 			.location = location,
@@ -1198,4 +1197,104 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	}
 	out->kind = Incomplete;
 	return true;
+}
+
+typedef struct {
+	RzBuffer *pc;
+	RzBuffer *bytecode;
+} ExprStackItem;
+
+bool Evaluation_end_of_expression(Evaluation *self) {
+	if (rz_buf_tell(self->pc) >= rz_buf_size(self->pc)) {
+		if (rz_vector_empty(&self->expression_stack)) {
+			return true;
+		}
+		ExprStackItem *item = NULL;
+		rz_vector_pop(&self->expression_stack, item);
+		RET_FALSE_IF_FAIL(item);
+		self->pc = item->pc;
+		self->bytecode = item->bytecode;
+	}
+	return false;
+}
+
+bool Evaluation_evaluate(Evaluation *self, RzBinDwarf *dw, RzBinDwarfDie *fn) {
+	if (self->state.state == EVALUATION_STATE_START) {
+		if (self->state.start) {
+			Evaluation_push(self, self->state.start);
+		}
+		self->state.state = EVALUATION_STATE_READY;
+	} else if (self->state.state == EVALUATION_STATE_ERROR) {
+		return false;
+	} else if (self->state.state == EVALUATION_STATE_COMPLETE) {
+		return true;
+	}
+	while (!Evaluation_end_of_expression(self)) {
+		self->iteration += 1;
+		if (self->max_iterations != UT32_MAX) {
+			if (self->iteration > self->max_iterations) {
+				return false;
+			}
+		}
+
+		OperationEvaluationResult op_result = { 0 };
+		RET_FALSE_IF_FAIL(Evaluation_evaluate_one_operation(self, &op_result, dw, fn));
+
+		switch (op_result.kind) {
+		case PIECE:
+			break;
+		case Incomplete:
+			if (Evaluation_end_of_expression(self) && !rz_vector_empty(&self->result)) {
+				return false;
+			}
+			break;
+		case Complete:
+			if (Evaluation_end_of_expression(self)) {
+				if (!rz_vector_empty(&self->result)) {
+					return false;
+				}
+				Piece piece = {
+					.location = op_result.complete,
+					.has_size_in_bits = false,
+					.has_bit_offset = false,
+				};
+				RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
+			} else {
+				Operation operation = { 0 };
+				RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
+				if (operation.kind == OPERATION_KIND_PIECE) {
+					Piece piece = {
+						.location = op_result.complete,
+						.has_size_in_bits = true,
+						.size_in_bits = operation.piece.size_in_bits,
+						.has_bit_offset = false,
+						.bit_offset = operation.piece.bit_offset,
+					};
+					RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
+				} else {
+					//					int64_t value = self->bytecode->len - self->pc->len - 1;
+					return false;
+				}
+			}
+			break;
+		};
+	}
+
+	if (rz_vector_empty(&self->result)) {
+		Value *entry = NULL;
+		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
+		uint64_t addr;
+		RET_FALSE_IF_FAIL(Value_to_u64(entry, self->addr_mask, &addr));
+		Piece piece = {
+			.has_size_in_bits = true,
+			.has_bit_offset = false,
+		};
+		piece.location = RZ_NEW0(Location);
+		piece.location->kind = ADDRESS;
+		piece.location->address = addr;
+		RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
+	}
+
+	self->state.state = Complete;
+	return false;
 }
