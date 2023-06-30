@@ -59,8 +59,11 @@ typedef enum {
 	F32,
 	I64,
 	U64,
-	F64
+	F64,
+	ValueType_LOCATION,
 } ValueType;
+
+struct dw_location_t;
 
 typedef struct {
 	ValueType type;
@@ -76,6 +79,7 @@ typedef struct {
 		st64 i64;
 		float f32;
 		double f64;
+		struct dw_location_t *location;
 	};
 } Value;
 

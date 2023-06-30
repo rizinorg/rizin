@@ -743,7 +743,7 @@ typedef struct {
 	};
 } EvaluationState;
 
-typedef struct {
+typedef struct dw_location_t {
 	enum {
 		EMPTY,
 		REGISTER,
@@ -774,7 +774,7 @@ typedef struct operation_evaluation_result_t {
 	} kind;
 
 	union {
-		Location complete;
+		Location *complete;
 	};
 } OperationEvaluationResult;
 
@@ -787,7 +787,7 @@ typedef struct {
 } Piece;
 
 typedef struct {
-	const RzBuffer *bytecode;
+	RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
 	ut64 object_address;
 	ut32 max_iterations;
@@ -938,7 +938,30 @@ ValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
 	return value_type;
 }
 
-bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, OperationEvaluationResult *out) {
+Evaluation *Evaluation_new(RzBuffer *byte_code, ut64 addr_mask, const RzBinDwarfEncoding *encoding) {
+	Evaluation *self = RZ_NEW0(Evaluation);
+	RET_NULL_IF_FAIL(self);
+	self->addr_mask = addr_mask;
+	self->bytecode = byte_code;
+	self->encoding = encoding;
+	self->pc = rz_buf_new_with_buf(byte_code);
+	rz_vector_init(&self->stack, 0, NULL, NULL);
+	rz_vector_init(&self->expression_stack, 0, NULL, NULL);
+	return self;
+}
+
+void Evaluation_free(Evaluation *self) {
+	if (!self) {
+		return;
+	}
+	rz_buf_free(self->pc);
+	rz_buf_free(self->bytecode);
+	rz_vector_fini(&self->stack);
+	rz_vector_fini(&self->expression_stack);
+	free(self);
+}
+
+bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResult *out, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 	Operation *operation = RZ_NEW(Operation);
 	RET_FALSE_IF_FAIL(operation);
 	RET_FALSE_IF_FAIL(Operation_parse(operation, self->pc, self->encoding));
@@ -1077,12 +1100,10 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Operati
 		break;
 	}
 	case OPERATION_KIND_REGISTER: {
-		Location location = {
-			.kind = REGISTER,
-			.register_number = operation->reg.register_number,
-		};
 		out->kind = Complete;
-		out->complete = location;
+		out->complete = RZ_NEW0(Location);
+		out->complete->kind = REGISTER;
+		out->complete->register_number = operation->reg.register_number;
 		break;
 	}
 	case OPERATION_KIND_REGISTER_OFFSET: {
@@ -1096,7 +1117,21 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Operati
 		break;
 	}
 	case OPERATION_KIND_FRAME_OFFSET: {
-		// TODO: frame base
+		RzBinDwarfAttr *fb = rz_bin_dwarf_die_get_attr(fn, DW_AT_frame_base);
+		RET_FALSE_IF_FAIL(fb);
+		RzBuffer *fb_buf = rz_buf_new_with_bytes(fb->block.data, fb->block.length);
+		Evaluation *fb_eval = Evaluation_new(fb_buf, self->addr_mask, self->encoding);
+		OperationEvaluationResult fb_result = { 0 };
+		RET_FALSE_IF_FAIL(Evaluation_evaluate_one_operation(fb_eval, &fb_result, dw, fn));
+		rz_buf_free(fb_buf);
+		Evaluation_free(fb_eval);
+		RET_FALSE_IF_FAIL(fb_result.kind == Complete && fb_result.complete);
+		Value v = {
+			.type = ValueType_LOCATION,
+			.location = fb_result.complete,
+		};
+		Evaluation_push(self, &v);
+		// TODO: frame base loclist
 		break;
 	}
 	case OPERATION_KIND_NOP: break;
@@ -1125,39 +1160,26 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, RzBinDwarf *dw, Operati
 		break;
 	}
 	case OPERATION_KIND_IMPLICIT_VALUE: {
-		Location location = {
-			.kind = IMPLICIT_POINTER,
-			.implicit_pointer = {
-				.value = operation->implicit_pointer.value,
-				.byte_offset = operation->implicit_pointer.byte_offset,
-			}
-		};
 		out->kind = Complete;
-		out->complete = location;
+		out->complete->kind = IMPLICIT_POINTER;
+		out->complete->implicit_pointer.value = operation->implicit_pointer.value;
+		out->complete->implicit_pointer.byte_offset = operation->implicit_pointer.byte_offset;
 		return true;
 	}
 	case OPERATION_KIND_STACK_VALUE: {
 		Value *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-		Location location = {
-			.kind = VALUE,
-			.value = *v,
-		};
-		Value_free(v);
 		out->kind = Complete;
-		out->complete = location;
+		out->complete->kind = VALUE;
+		out->complete->value = *v;
+		Value_free(v);
 		return true;
 	}
 	case OPERATION_KIND_IMPLICIT_POINTER: {
-		Location location = {
-			.kind = IMPLICIT_POINTER,
-			.implicit_pointer = {
-				.value = operation->implicit_pointer.value,
-				.byte_offset = operation->implicit_pointer.byte_offset,
-			},
-		};
 		out->kind = Complete;
-		out->complete = location;
+		out->complete->kind = IMPLICIT_POINTER;
+		out->complete->implicit_pointer.value = operation->implicit_pointer.value;
+		out->complete->implicit_pointer.byte_offset = operation->implicit_pointer.byte_offset;
 		return true;
 	}
 	case OPERATION_KIND_ENTRY_VALUE: break; // TODO: entry value
