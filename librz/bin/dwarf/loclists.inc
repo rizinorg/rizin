@@ -213,6 +213,7 @@ static bool LocLists_parse(RzBinDwarfLocLists *self, RzBuffer *buffer, RzBinDwar
 		}
 		rz_vector_push(&self->raw_entries, &raw_entry);
 		rz_vector_push(&self->entries, entry);
+		ht_up_update(self->entry_by_offset, entry->range->begin, entry);
 		RzBinDwarfLocationListEntry_free(entry);
 	}
 	return true;
@@ -224,6 +225,7 @@ void RzBinDwarfLocLists_free(RzBinDwarfLocLists *self) {
 	}
 	rz_vector_free(&self->raw_entries);
 	rz_vector_free(&self->entries);
+	ht_up_free(self->entry_by_offset);
 	free(self);
 }
 
@@ -238,6 +240,7 @@ static RzBinDwarfLocLists *bf_loclists_parse(RzBinFile *bf, RzBinDwarf *dw) {
 	self->debug_addr = dw->addr;
 	rz_vector_init(&self->raw_entries, sizeof(RzBinDwarfRawLocListEntry), NULL, NULL);
 	rz_vector_init(&self->entries, sizeof(RzBinDwarfLocationListEntry), NULL, NULL);
+	self->entry_by_offset = ht_up_new(NULL, NULL, NULL);
 	GOTO_IF_FAIL(LocLists_parse(self, buffer, format), err);
 	return self;
 err:

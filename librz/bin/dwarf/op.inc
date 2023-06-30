@@ -57,9 +57,6 @@ typedef enum {
 	OPERATION_KIND_WASM_STACK
 } OperationKind;
 
-typedef ut64 UnitOffset;
-typedef ut64 DebugInfoOffset;
-
 /// DWARF expression evaluation is done in two parts: first the raw
 /// bytes of the next part of the expression are decoded; and then the
 /// decoded operation is evaluated.  This approach lets other
@@ -736,54 +733,22 @@ typedef struct {
 	} state;
 
 	union {
-		Value *start; // nullable
+		RzBinDwarfValue *start; // nullable
 		Error error;
 	};
 } EvaluationState;
 
-typedef struct dw_location_t {
-	enum {
-		EMPTY,
-		REGISTER,
-		ADDRESS,
-		VALUE,
-		BYTES,
-		IMPLICIT_POINTER,
-	} kind;
-
-	union {
-		Register register_number;
-		uint64_t address;
-		Value value;
-		struct { // BYTES
-			RzBinDwarfBlock value;
-		} bytes;
-		struct { // IMPLICIT_POINTER
-			DebugInfoOffset value;
-			int64_t byte_offset;
-		} implicit_pointer;
-	};
-} Location;
-
 typedef struct operation_evaluation_result_t {
 	enum {
-		EVALUATION_RESULT_COMPLETE,
-		EVALUATION_RESULT_PIECE,
-		PIECE,
+		OperationEvaluationResult_COMPLETE,
+		OperationEvaluationResult_INCOMPLETE,
+		OperationEvaluationResult_PIECE,
 	} kind;
 
 	union {
-		Location *complete;
+		RzBinDwarfLocation *complete;
 	};
 } OperationEvaluationResult;
-
-typedef struct {
-	bool has_bit_offset;
-	ut64 bit_offset;
-	Location *location;
-	bool has_size_in_bits;
-	ut64 size_in_bits;
-} Piece;
 
 typedef struct {
 	RzBuffer *bytecode;
@@ -812,23 +777,24 @@ typedef struct {
 
 typedef struct {
 	enum {
-		Complete,
-		Incomplete,
+		EvaluationResultComplete,
+		EvaluationResultIncomplete,
+		EvaluationResultErr
 	} kind;
 	union {
-		Value stack_value;
-		Piece piece;
-		Location location;
+		RzBinDwarfValue stack_value;
+		RzBinDwarfPiece piece;
+		RzBinDwarfLocation location;
 	};
 } EvaluationResult;
 
-bool Evaluation_pop(Evaluation *self, Value **value) {
+bool Evaluation_pop(Evaluation *self, RzBinDwarfValue **value) {
 	if (rz_vector_len(&self->stack) <= 0) {
 		*value = NULL;
 		return false;
 	}
 	if (value) {
-		*value = RZ_NEW0(Value);
+		*value = RZ_NEW0(RzBinDwarfValue);
 		rz_vector_pop(&self->stack, *value);
 	} else {
 		rz_vector_pop(&self->stack, NULL);
@@ -836,7 +802,7 @@ bool Evaluation_pop(Evaluation *self, Value **value) {
 	return true;
 }
 
-bool Evaluation_push(Evaluation *self, Value *value) {
+bool Evaluation_push(Evaluation *self, RzBinDwarfValue *value) {
 	rz_vector_push(&self->stack, value);
 	return true;
 }
@@ -967,14 +933,14 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 
 	switch (operation->kind) {
 	case OPERATION_KIND_DEREF: {
-		Value *entry = NULL;
+		RzBinDwarfValue *entry = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
 		RET_FALSE_IF_FAIL(entry);
 		ut64 addr = 0;
 		RET_FALSE_IF_FAIL(Value_to_u64(entry, self->addr_mask, &addr));
 		Option /*<ut64>*/ *addr_space = NULL;
 		if (operation->deref.space) {
-			Value *space = NULL;
+			RzBinDwarfValue *space = NULL;
 			RET_FALSE_IF_FAIL(Evaluation_pop(self, &space));
 			RET_FALSE_IF_FAIL(space);
 			ut64 addr_space_value = 0;
@@ -995,14 +961,14 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 			RZ_LOG_WARN("Pick index %d out of range\n", operation->pick.index);
 			break;
 		}
-		Value *value = rz_vector_index_ptr(&self->stack, len - operation->pick.index - 1);
+		RzBinDwarfValue *value = rz_vector_index_ptr(&self->stack, len - operation->pick.index - 1);
 		RET_FALSE_IF_FAIL(value);
 		RET_FALSE_IF_FAIL(Evaluation_push(self, value));
 		break;
 	}
 	case OPERATION_KIND_SWAP: {
-		Value *top = NULL;
-		Value *second = NULL;
+		RzBinDwarfValue *top = NULL;
+		RzBinDwarfValue *second = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top));
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &second));
 		RET_FALSE_IF_FAIL(Evaluation_push(self, top));
@@ -1010,9 +976,9 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		break;
 	}
 	case OPERATION_KIND_ROT: {
-		Value *top = NULL;
-		Value *second = NULL;
-		Value *third = NULL;
+		RzBinDwarfValue *top = NULL;
+		RzBinDwarfValue *second = NULL;
+		RzBinDwarfValue *third = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top));
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &second));
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &third));
@@ -1023,11 +989,11 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	}
 #define BINARY_OP(fcn) \
 	{ \
-		Value *rhs = NULL; \
-		Value *lhs = NULL; \
+		RzBinDwarfValue *rhs = NULL; \
+		RzBinDwarfValue *lhs = NULL; \
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs)); \
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs)); \
-		Value result = { 0 }; \
+		RzBinDwarfValue result = { 0 }; \
 		fcn(lhs, rhs, self->addr_mask, &result); \
 		Value_free(lhs); \
 		Value_free(rhs); \
@@ -1036,9 +1002,9 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	}
 #define UNITARY_OP(fcn) \
 	{ \
-		Value *top = NULL; \
+		RzBinDwarfValue *top = NULL; \
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top)); \
-		Value result = { 0 }; \
+		RzBinDwarfValue result = { 0 }; \
 		RET_FALSE_IF_FAIL(fcn(top, self->addr_mask, &result)); \
 		Value_free(top); \
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &result)); \
@@ -1056,9 +1022,9 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	case OPERATION_KIND_OR: BINARY_OP(Value_or);
 	case OPERATION_KIND_PLUS: BINARY_OP(Value_add);
 	case OPERATION_KIND_PLUS_CONSTANT: {
-		Value *lhs = NULL;
+		RzBinDwarfValue *lhs = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
-		Value rhs = { 0 };
+		RzBinDwarfValue rhs = { 0 };
 		RET_FALSE_IF_FAIL(Value_from_u64(lhs->type, operation->plus_constant.value, &rhs));
 		RET_FALSE_IF_FAIL(Value_add(lhs, &rhs, self->addr_mask, lhs));
 		RET_FALSE_IF_FAIL(Evaluation_push(self, lhs));
@@ -1069,7 +1035,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	case OPERATION_KIND_SHRA: BINARY_OP(Value_shra);
 	case OPERATION_KIND_XOR: BINARY_OP(Value_xor);
 	case OPERATION_KIND_BRA: {
-		Value *v = NULL;
+		RzBinDwarfValue *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
 		ut64 entry = 0;
 		RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &entry));
@@ -1089,27 +1055,27 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		break;
 	}
 	case OPERATION_KIND_UNSIGNED_CONSTANT: {
-		Value v = { .type = ValueType_GENERIC, .generic = operation->unsigned_constant.value };
+		RzBinDwarfValue v = { .type = ValueType_GENERIC, .generic = operation->unsigned_constant.value };
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
 	case OPERATION_KIND_SIGNED_CONSTANT: {
-		Value v = { .type = ValueType_GENERIC, .generic = (ut64)operation->signed_constant.value };
+		RzBinDwarfValue v = { .type = ValueType_GENERIC, .generic = (ut64)operation->signed_constant.value };
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
 	case OPERATION_KIND_REGISTER: {
-		out->kind = Complete;
-		out->complete = RZ_NEW0(Location);
-		out->complete->kind = REGISTER;
+		out->kind = OperationEvaluationResult_COMPLETE;
+		out->complete = RZ_NEW0(RzBinDwarfLocation);
+		out->complete->kind = RzBinDwarfLocationKind_REGISTER;
 		out->complete->register_number = operation->reg.register_number;
 		break;
 	}
 	case OPERATION_KIND_REGISTER_OFFSET: {
 		ValueType value_type = operation->register_offset.base_type != 0 ? ValueType_from_die(dw, operation->register_offset.base_type) : ValueType_GENERIC;
-		Value offset;
+		RzBinDwarfValue offset;
 		RET_FALSE_IF_FAIL(Value_from_u64(value_type, operation->register_offset.offset, &offset));
-		Value value;
+		RzBinDwarfValue value;
 		RET_FALSE_IF_FAIL(Value_from_u64(value_type, operation->register_offset.register_number, &value));
 		RET_FALSE_IF_FAIL(Value_add(&value, &offset, self->addr_mask, &value));
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &value));
@@ -1124,8 +1090,8 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		RET_FALSE_IF_FAIL(Evaluation_evaluate_one_operation(fb_eval, &fb_result, dw, fn));
 		rz_buf_free(fb_buf);
 		Evaluation_free(fb_eval);
-		RET_FALSE_IF_FAIL(fb_result.kind == Complete && fb_result.complete);
-		Value v = {
+		RET_FALSE_IF_FAIL(fb_result.kind == OperationEvaluationResult_COMPLETE && fb_result.complete);
+		RzBinDwarfValue v = {
 			.type = ValueType_LOCATION,
 			.location = fb_result.complete,
 		};
@@ -1139,16 +1105,16 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	case OPERATION_KIND_TLS: break; // TODO: tls
 	case OPERATION_KIND_CALL_FRAME_CFA: break; // TODO: cfa
 	case OPERATION_KIND_PIECE: {
-		Location *location = RZ_NEW0(Location);
+		RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
 		if (rz_vector_empty(&self->stack)) {
-			location->kind = EMPTY;
+			location->kind = RzBinDwarfLocationKind_EMPTY;
 		} else {
-			Value *v = NULL;
+			RzBinDwarfValue *v = NULL;
 			RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
 			RET_FALSE_IF_FAIL(Value_to_u64(v, self->addr_mask, &location->address));
-			location->kind = ADDRESS;
+			location->kind = RzBinDwarfLocationKind_ADDRESS;
 		}
-		Piece piece = {
+		RzBinDwarfPiece piece = {
 			.location = location,
 			.has_bit_offset = operation->piece.has_bit_offset,
 			.bit_offset = operation->piece.bit_offset,
@@ -1159,24 +1125,24 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		break;
 	}
 	case OPERATION_KIND_IMPLICIT_VALUE: {
-		out->kind = Complete;
-		out->complete->kind = IMPLICIT_POINTER;
+		out->kind = OperationEvaluationResult_COMPLETE;
+		out->complete->kind = RzBinDwarfLocationKind_IMPLICIT_POINTER;
 		out->complete->implicit_pointer.value = operation->implicit_pointer.value;
 		out->complete->implicit_pointer.byte_offset = operation->implicit_pointer.byte_offset;
 		return true;
 	}
 	case OPERATION_KIND_STACK_VALUE: {
-		Value *v = NULL;
+		RzBinDwarfValue *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
-		out->kind = Complete;
-		out->complete->kind = VALUE;
+		out->kind = OperationEvaluationResult_COMPLETE;
+		out->complete->kind = RzBinDwarfLocationKind_VALUE;
 		out->complete->value = *v;
 		Value_free(v);
 		return true;
 	}
 	case OPERATION_KIND_IMPLICIT_POINTER: {
-		out->kind = Complete;
-		out->complete->kind = IMPLICIT_POINTER;
+		out->kind = OperationEvaluationResult_COMPLETE;
+		out->complete->kind = RzBinDwarfLocationKind_IMPLICIT_POINTER;
 		out->complete->implicit_pointer.value = operation->implicit_pointer.value;
 		out->complete->implicit_pointer.byte_offset = operation->implicit_pointer.byte_offset;
 		return true;
@@ -1195,7 +1161,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		RZ_LOG_ERROR("DWARF WASM operation not supported\n");
 		return false;
 	}
-	out->kind = Incomplete;
+	out->kind = EvaluationResultIncomplete;
 	return true;
 }
 
@@ -1233,27 +1199,29 @@ bool Evaluation_evaluate(Evaluation *self, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 		self->iteration += 1;
 		if (self->max_iterations != UT32_MAX) {
 			if (self->iteration > self->max_iterations) {
+				self->state.state = EVALUATION_STATE_ERROR;
 				return false;
 			}
 		}
-
 		OperationEvaluationResult op_result = { 0 };
 		RET_FALSE_IF_FAIL(Evaluation_evaluate_one_operation(self, &op_result, dw, fn));
 
 		switch (op_result.kind) {
-		case PIECE:
+		case OperationEvaluationResult_PIECE:
 			break;
-		case Incomplete:
+		case OperationEvaluationResult_INCOMPLETE:
 			if (Evaluation_end_of_expression(self) && !rz_vector_empty(&self->result)) {
+				self->state.state = EVALUATION_STATE_ERROR;
 				return false;
 			}
 			break;
-		case Complete:
+		case OperationEvaluationResult_COMPLETE:
 			if (Evaluation_end_of_expression(self)) {
 				if (!rz_vector_empty(&self->result)) {
+					self->state.state = EVALUATION_STATE_ERROR;
 					return false;
 				}
-				Piece piece = {
+				RzBinDwarfPiece piece = {
 					.location = op_result.complete,
 					.has_size_in_bits = false,
 					.has_bit_offset = false,
@@ -1263,7 +1231,7 @@ bool Evaluation_evaluate(Evaluation *self, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 				Operation operation = { 0 };
 				RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
 				if (operation.kind == OPERATION_KIND_PIECE) {
-					Piece piece = {
+					RzBinDwarfPiece piece = {
 						.location = op_result.complete,
 						.has_size_in_bits = true,
 						.size_in_bits = operation.piece.size_in_bits,
@@ -1272,7 +1240,8 @@ bool Evaluation_evaluate(Evaluation *self, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 					};
 					RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
 				} else {
-					//					int64_t value = self->bytecode->len - self->pc->len - 1;
+					// int64_t value = self->bytecode->len - self->pc->len - 1;
+					self->state.state = EVALUATION_STATE_ERROR;
 					return false;
 				}
 			}
@@ -1281,20 +1250,40 @@ bool Evaluation_evaluate(Evaluation *self, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 	}
 
 	if (rz_vector_empty(&self->result)) {
-		Value *entry = NULL;
+		RzBinDwarfValue *entry = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
 		uint64_t addr;
 		RET_FALSE_IF_FAIL(Value_to_u64(entry, self->addr_mask, &addr));
-		Piece piece = {
-			.has_size_in_bits = true,
+		RzBinDwarfPiece piece = {
+			.has_size_in_bits = false,
 			.has_bit_offset = false,
 		};
-		piece.location = RZ_NEW0(Location);
-		piece.location->kind = ADDRESS;
+		piece.location = RZ_NEW0(RzBinDwarfLocation);
+		piece.location->kind = RzBinDwarfLocationKind_ADDRESS;
 		piece.location->address = addr;
 		RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
 	}
 
-	self->state.state = Complete;
-	return false;
+	self->state.state = EVALUATION_STATE_COMPLETE;
+	return true;
+}
+
+static inline ut64 addrmask_from_size(uint8_t size) {
+	return size == 0 ? 0xffffffffffffffffULL
+			 : (size == 8 ? 0xffffffffffffffffULL
+				      : (1ULL << (size * 8)) - 1);
+}
+
+RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn) {
+	ut64 addr_mask = addrmask_from_size(dw->encoding.address_size);
+	Evaluation *eval = Evaluation_new(expr, addr_mask, &dw->encoding);
+	if (!Evaluation_evaluate(eval, dw, fn)) {
+		return NULL;
+	}
+	RzVector *result = NULL;
+	if (eval->state.state == EVALUATION_STATE_COMPLETE) {
+		result = rz_vector_clone(&eval->result);
+	}
+	Evaluation_free(eval);
+	return result;
 }

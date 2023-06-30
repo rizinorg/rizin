@@ -38,6 +38,7 @@ typedef enum dwarf_location_kind {
 	LOCATION_REGISTER = 4,
 	LOCATION_CFA = 5
 } VariableLocationKind;
+
 typedef struct dwarf_var_location_t {
 	VariableLocationKind kind;
 	ut64 address;
@@ -47,7 +48,7 @@ typedef struct dwarf_var_location_t {
 } VariableLocation;
 
 typedef struct dwarf_variable_t {
-	VariableLocation *location;
+	RzBinDwarfLocation *location;
 	char *name;
 	char *type;
 	RzAnalysisVarKind kind;
@@ -982,233 +983,33 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, Variab
 	return "unsupported_reg";
 }
 
-static RzBinDwarfLocRange *find_largest_loc_range(RzList /*<RzBinDwarfLocRange *>*/ *loc_list) {
-	RzBinDwarfLocRange *largest = NULL;
-	ut64 max_range_size = 0;
-	RzListIter *iter;
-	RzBinDwarfLocRange *range;
-	rz_list_foreach (loc_list, iter, range) {
-		ut64 diff = range->end - range->start;
-		if (diff > max_range_size) {
-			max_range_size = diff;
-			largest = range;
-		}
-	}
-	return largest;
-}
-
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
-static VariableLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *loc, const RzBinDwarfAttr *frame_base) {
-	/* reg5 - val is in register 5
-	fbreg <leb> - offset from frame base
-	regx <leb> - contents is in register X
-	addr <addr> - contents is in at addr
-	bregXX <leb> - contents is at offset from specified register
-	- we now support 3 options: SP, BP and register based arguments */
-
+static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
-	if (loc->kind != DW_AT_KIND_BLOCK && loc->kind != DW_AT_KIND_LOCLISTPTR && loc->kind != DW_AT_KIND_REFERENCE && loc->kind != DW_AT_KIND_CONSTANT) {
+	if (attr->kind != DW_AT_KIND_BLOCK && attr->kind != DW_AT_KIND_LOCLISTPTR && attr->kind != DW_AT_KIND_REFERENCE && attr->kind != DW_AT_KIND_CONSTANT) {
 		return NULL;
 	}
-	RzBinDwarfBlock block;
-	if (loc->kind == DW_AT_KIND_LOCLISTPTR || loc->kind == DW_AT_KIND_REFERENCE || loc->kind == DW_AT_KIND_CONSTANT) {
-		ut64 offset = loc->reference;
-		RzBinDwarfLocList *range_list = ht_up_find(ctx->dw->loc, offset, NULL);
-		if (!range_list) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			return NULL;
-		}
-		/* use the largest range as a variable */
-		RzBinDwarfLocRange *range = find_largest_loc_range(range_list->list);
-		if (!range) {
+	const RzBinDwarfBlock *block;
+	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_CONSTANT) {
+		ut64 offset = attr->reference;
+		RzBinDwarfLocationListEntry *entry = ht_up_find(ctx->dw->loc->entry_by_offset, offset, NULL);
+		if (!entry) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			return NULL;
 		}
 		/* Very rough and sloppy, refactor this hacked up stuff */
-		block = *range->expression;
+		block = entry->data;
 		// range->expression... etc
 	} else {
-		block = loc->block;
+		block = &attr->block;
 	}
-	VariableLocationKind kind = LOCATION_UNKNOWN;
-	st64 offset = 0;
-	ut64 address = 0;
-	ut64 reg_num = -1;
-	const char *reg_name = NULL; /* literal */
-	size_t i;
-	for (i = 0; i < block.length; i++) {
-		switch (block.data[i]) {
-		case DW_OP_fbreg: {
-			/* TODO sometimes CFA is referenced, but we don't parse that yet
-		   just an offset involving framebase of a function*/
-			if (i == block.length - 1) {
-				return NULL;
-			}
-			const ut8 *dump = &block.data[++i];
-			offset = rz_sleb128(&dump, &block.data[loc->block.length]);
-			if (frame_base) {
-				/* recursive parsing, but frame_base should be only one, but someone
-				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
-				VariableLocation *location = parse_dwarf_location(ctx, frame_base, NULL);
-				if (location) {
-					location->offset += offset;
-					return location;
-				}
-				return NULL;
-			} else {
-				/* Might happen if frame_base has a frame_base reference? I don't think it can tho */
-				return NULL;
-			}
-		} break;
-		case DW_OP_reg0:
-		case DW_OP_reg1:
-		case DW_OP_reg2:
-		case DW_OP_reg3:
-		case DW_OP_reg4:
-		case DW_OP_reg5:
-		case DW_OP_reg6:
-		case DW_OP_reg7:
-		case DW_OP_reg8:
-		case DW_OP_reg9:
-		case DW_OP_reg10:
-		case DW_OP_reg11:
-		case DW_OP_reg12:
-		case DW_OP_reg13:
-		case DW_OP_reg14:
-		case DW_OP_reg15:
-		case DW_OP_reg16:
-		case DW_OP_reg17:
-		case DW_OP_reg18:
-		case DW_OP_reg19:
-		case DW_OP_reg20:
-		case DW_OP_reg21:
-		case DW_OP_reg22:
-		case DW_OP_reg23:
-		case DW_OP_reg24:
-		case DW_OP_reg25:
-		case DW_OP_reg26:
-		case DW_OP_reg27:
-		case DW_OP_reg28:
-		case DW_OP_reg29:
-		case DW_OP_reg30:
-		case DW_OP_reg31: {
-			/* Will mostly be used for SP based arguments */
-			/* TODO I need to find binaries that uses this so I can test it out*/
-			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
-			reg_name = get_dwarf_reg_name(ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
-		} break;
-		case DW_OP_breg0:
-		case DW_OP_breg1:
-		case DW_OP_breg2:
-		case DW_OP_breg3:
-		case DW_OP_breg4:
-		case DW_OP_breg5:
-		case DW_OP_breg6:
-		case DW_OP_breg7:
-		case DW_OP_breg8:
-		case DW_OP_breg9:
-		case DW_OP_breg10:
-		case DW_OP_breg11:
-		case DW_OP_breg12:
-		case DW_OP_breg13:
-		case DW_OP_breg14:
-		case DW_OP_breg15:
-		case DW_OP_breg16:
-		case DW_OP_breg17:
-		case DW_OP_breg18:
-		case DW_OP_breg19:
-		case DW_OP_breg20:
-		case DW_OP_breg21:
-		case DW_OP_breg22:
-		case DW_OP_breg23:
-		case DW_OP_breg24:
-		case DW_OP_breg25:
-		case DW_OP_breg26:
-		case DW_OP_breg27:
-		case DW_OP_breg28:
-		case DW_OP_breg29:
-		case DW_OP_breg30:
-		case DW_OP_breg31: {
-			if (i == block.length - 1) {
-				return NULL;
-			}
-			/* The single operand of the DW_OP_bregn operations provides
-			signed LEB128 offset from the specified register.  */
-			reg_num = block.data[i] - DW_OP_breg0; // get the reg number
-			const ut8 *buffer = &block.data[++i];
-			offset = rz_sleb128(&buffer, &block.data[block.length]);
-			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
-			i += buffer - &block.data[0];
-			reg_name = get_dwarf_reg_name(ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
-		} break;
-		case DW_OP_bregx: {
-			if (i == block.length - 1) {
-				return NULL;
-			}
-			/* 2 operands, reg_number, offset*/
-			/* I need to find binaries that uses this so I can test it out*/
-			const ut8 *buffer = &block.data[++i];
-			const ut8 *buf_end = &block.data[block.length];
-			buffer = rz_uleb128(buffer, buf_end - buffer, &reg_num, NULL);
-			if (buffer == buf_end) {
-				return NULL;
-			}
-			offset = rz_sleb128(&buffer, buf_end);
-			reg_name = get_dwarf_reg_name(ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
-		} break;
-		case DW_OP_addr: {
-			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
-			size is the size of an address on the target machine.  */
-			const int addr_size = ctx->analysis->bits / 8;
-			const ut8 *dump = &block.data[++i];
-			/* malformed, not enough bytes to represent address */
-			if (block.length - i < addr_size) {
-				return NULL;
-			}
-			switch (addr_size) {
-			case 1:
-				address = rz_read_ble8(dump);
-				break;
-			case 2:
-				address = rz_read_ble16(dump, ctx->analysis->big_endian);
-				break;
-			case 4:
-				address = rz_read_ble32(dump, ctx->analysis->big_endian);
-				break;
-			case 8:
-				address = rz_read_ble64(dump, ctx->analysis->big_endian);
-				break;
-			default:
-				rz_warn_if_reached(); /* weird addr_size */
-				return NULL;
-			}
-			kind = LOCATION_GLOBAL; // address
-		} break;
-		case DW_OP_call_frame_cfa: {
-			// From the DWARF specs:
-			//   The call frame is identified by an address on the stack. We refer to this address as the Canonical
-			//   Frame Address or CFA. Typically, the CFA is defined to be the value of the stack
-			//   pointer at the call site in the previous frame (which may be different from its value
-			//   on entry to the current frame).
-			// TODO: The following is only an educated guess. There is actually more involved in calculating the
-			//       CFA correctly.
-			offset += ctx->analysis->bits / 8; // guessed return address size
-			kind = LOCATION_CFA;
-		} break;
-		default:
-			break;
-		}
-	}
-	if (kind == LOCATION_UNKNOWN) {
-		return NULL;
-	}
-	VariableLocation *location = RZ_NEW0(VariableLocation);
-	if (location) {
-		location->reg_name = reg_name;
-		location->reg_num = reg_num;
-		location->kind = kind;
-		location->offset = offset;
-		location->address = address;
-	}
-	return location;
+
+	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
+	RzVector *loc = rz_bin_dwarf_evaluate(ctx->dw, expr, fn);
+
+	RzBinDwarfPiece *piece;
+	rz_vector_pop(loc, piece);
+
+	return piece->location;
 }
 
 /**
@@ -1266,7 +1067,7 @@ static st32 parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzStr
 					type = parse_abstract_origin(ctx, val->reference, &name);
 					break;
 				case DW_AT_location:
-					var->location = parse_dwarf_location(ctx, val, rz_bin_dwarf_die_get_attr(die, DW_AT_frame_base));
+					var->location = parse_dwarf_location(ctx, val, die);
 					break;
 				default:
 					break;

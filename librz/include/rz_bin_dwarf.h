@@ -1189,6 +1189,7 @@ typedef struct {
 	RzBinDwarfEncoding encoding;
 	RzVector /*<LocationListEntry>*/ entries;
 	RzVector /*<RawLocListEntry>*/ raw_entries;
+	HtUP /*<ut64, RawLocListEntry>*/ *entry_by_offset;
 } RzBinDwarfLocLists;
 
 typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;
@@ -1262,6 +1263,81 @@ typedef struct {
 
 RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt);
 RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw);
+
+// Assuming ValueType is an enum defined elsewhere
+typedef enum {
+	ValueType_GENERIC,
+	I8,
+	U8,
+	I16,
+	U16,
+	I32,
+	U32,
+	F32,
+	I64,
+	U64,
+	F64,
+	ValueType_LOCATION,
+} ValueType;
+
+struct dw_location_t;
+
+typedef struct {
+	ValueType type;
+	union {
+		ut64 generic;
+		ut8 u8;
+		st8 i8;
+		ut16 u16;
+		st16 i16;
+		ut32 u32;
+		st32 i32;
+		ut64 u64;
+		st64 i64;
+		float f32;
+		double f64;
+		struct dw_location_t *location;
+	};
+} RzBinDwarfValue;
+
+typedef ut64 UnitOffset;
+typedef ut64 DebugInfoOffset;
+
+typedef enum {
+	RzBinDwarfLocationKind_EMPTY,
+	RzBinDwarfLocationKind_REGISTER,
+	RzBinDwarfLocationKind_ADDRESS,
+	RzBinDwarfLocationKind_VALUE,
+	RzBinDwarfLocationKind_BYTES,
+	RzBinDwarfLocationKind_IMPLICIT_POINTER,
+} RzBinDwarfLocationKind;
+
+typedef struct dw_location_t {
+	RzBinDwarfLocationKind kind;
+
+	union {
+		ut64 register_number;
+		uint64_t address;
+		RzBinDwarfValue value;
+		struct { // BYTES
+			RzBinDwarfBlock value;
+		} bytes;
+		struct { // IMPLICIT_POINTER
+			DebugInfoOffset value;
+			int64_t byte_offset;
+		} implicit_pointer;
+	};
+} RzBinDwarfLocation;
+
+typedef struct {
+	bool has_bit_offset;
+	ut64 bit_offset;
+	RzBinDwarfLocation *location;
+	bool has_size_in_bits;
+	ut64 size_in_bits;
+} RzBinDwarfPiece;
+
+RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn);
 
 #ifdef __cplusplus
 }
