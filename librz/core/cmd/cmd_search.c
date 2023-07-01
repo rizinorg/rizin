@@ -335,6 +335,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	ut8 *keyword = NULL;
 	const char *prelude = rz_config_get(core->config, "analysis.prelude");
 	const char *where = rz_config_get(core->config, "analysis.in");
+	ut64 limit = rz_config_get_i(core->config, "analysis.prelude.limit");
 
 	RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, where, "search");
 	RzList *arch_preludes = NULL;
@@ -368,6 +369,12 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		}
 		from = p->itv.addr;
 		to = rz_itv_end(p->itv);
+		if ((to - from) >= limit) {
+			RZ_LOG_WARN("aap: search interval (from 0x%" PFMT64x
+				    " to 0x%" PFMT64x ") exeeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
+				from, to, limit);
+			continue;
+		}
 		if (keyword && keyword_length > 0) {
 			ret = rz_core_search_prelude(core, from, to, keyword, keyword_length, NULL, 0);
 		} else {

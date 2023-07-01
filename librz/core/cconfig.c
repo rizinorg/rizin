@@ -2936,6 +2936,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	update_analysis_arch_options(core, n);
 	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_analysis_cpu, "Specify the analysis.cpu to use");
 	SETPREF("analysis.prelude", "", "Specify an hexpair to find preludes in code");
+	SETI("analysis.prelude.limit", 1024 * 1024 * 20, "Maximum size of the range to scan for preludes");
 	SETCB("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
 	SETCB("analysis.jmp.indir", "false", &cb_analysis_ijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI("analysis.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
