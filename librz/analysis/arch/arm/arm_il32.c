@@ -809,10 +809,9 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	bool writeback = insn->detail->writeback;
 
 	RzILOpEffect *writeback_eff = NULL;
-	bool writeback_post = false;
+	bool writeback_post = insn->detail->arm.post_index;
 	if (writeback) {
 		arm_reg base = insn->detail->arm.operands[mem_idx].mem.base;
-		writeback_post = true;
 		writeback_eff = write_reg(base, addr);
 		if (!writeback_eff) {
 			// 'ldrb r0, [pc, 0x104]!' (0401ffe5) for example is unpredictable. write_reg will return NULL for pc.
@@ -888,10 +887,9 @@ static RzILOpEffect *str(cs_insn *insn, bool is_thumb) {
 	}
 	bool writeback = insn->detail->writeback;
 	RzILOpEffect *writeback_eff = NULL;
-	bool writeback_post = false;
+	bool writeback_post = insn->detail->arm.post_index;
 	if (writeback) {
 		arm_reg base = insn->detail->arm.operands[mem_idx].mem.base;
-		writeback_post = true;
 		writeback_eff = write_reg(base, addr);
 		if (!writeback_eff) {
 			return NULL;
