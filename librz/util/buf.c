@@ -1137,11 +1137,10 @@ RZ_API st64 rz_buf_read_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL RZ_OUT 
 		return -1;
 	}
 
-	if (rz_buf_seek(b, addr, RZ_BUF_SET) < 0) {
-		return -1;
+	st64 result = -1;
+	if (rz_buf_seek(b, addr, RZ_BUF_SET) >= 0) {
+		result = rz_buf_read(b, buf, len);
 	}
-
-	st64 result = rz_buf_read(b, buf, len);
 
 	if (rz_buf_seek(b, tmp, RZ_BUF_SET) < 0) {
 		return -1;

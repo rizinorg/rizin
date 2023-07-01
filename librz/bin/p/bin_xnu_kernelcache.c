@@ -1635,6 +1635,10 @@ static void symbols_from_stubs(RzList /*<RzBinSymbol *>*/ *ret, HtPP *kernel_sym
 		ut64 target_addr = UT64_MAX;
 
 		while (!found && level-- > 0) {
+			if (addr_in_got < obj->pa2va_exec) {
+				// invalid addr
+				break;
+			}
 			ut64 offset_in_got = addr_in_got - obj->pa2va_exec;
 			ut64 addr;
 			if (rz_buf_read_at(obj->cache_buf, offset_in_got, (ut8 *)&addr, 8) < 8) {
