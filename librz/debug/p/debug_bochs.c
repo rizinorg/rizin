@@ -515,7 +515,7 @@ static RzList /*<RzDebugMap *>*/ *bochs_map_get(RzDebug *dbg) {
 	return list;
 }
 
-static int bochs_step(RzDebug *dbg) {
+static bool bochs_step(RzDebug *dbg) {
 	if (!bochs_is_io(dbg)) {
 		rz_warn_if_reached();
 		return false;

@@ -43,11 +43,6 @@ static int rz_debug_qnx_select(RzDebug *dbg, int pid, int tid) {
 	return qnxr_select(desc, pid, tid);
 }
 
-static RzList /*<void *>*/ *rz_debug_qnx_tids(RzDebug *dbg, int pid) {
-	eprintf("%s: TODO: Threads\n", __func__);
-	return NULL;
-}
-
 static RzList /*<RzDebugPid *>*/ *rz_debug_qnx_pids(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
@@ -160,7 +155,7 @@ static int rz_debug_qnx_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int rz_debug_qnx_step(RzDebug *dbg) {
+static bool rz_debug_qnx_step(RzDebug *dbg) {
 	qnxr_step(desc, -1);
 	return true;
 }
@@ -351,7 +346,6 @@ RzDebugPlugin rz_debug_plugin_qnx = {
 	.attach = &rz_debug_qnx_attach,
 	.detach = &rz_debug_qnx_detach,
 	.pids = &rz_debug_qnx_pids,
-	.tids = &rz_debug_qnx_tids,
 	.select = &rz_debug_qnx_select,
 	.stop = &rz_debug_qnx_stop,
 	.canstep = 1,
