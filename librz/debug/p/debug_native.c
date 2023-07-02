@@ -422,6 +422,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 }
 // FIXME: Should WAIT_ON_ALL_CHILDREN be a compilation flag instead of runtime debug config?
 #elif __linux__ && !defined(WAIT_ON_ALL_CHILDREN) // __WINDOWS__
+#warning WAIT_ON_ALL_CHILDREN was NOT defined
 static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 
@@ -435,6 +436,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 #else // if __WINDOWS__ & elif __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
+#warning WAIT_ON_ALL_CHILDREN was defined
 static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 
