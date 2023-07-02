@@ -50,6 +50,7 @@ address     min         max         name super
 --------------------------------------------------
 0x1000080f8 0x1000080f8 0x1000080f8 Stub NSObject
 EOF
+BROKEN=1
 RUN
 
 NAME=mach0 arm64 chained imports

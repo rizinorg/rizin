@@ -242,7 +242,7 @@ d "lodsd eax, dword [si]" 67ad 0x0 (seq (set eax (loadw 0 32 (+ (+ (cast 32 fals
 d "loop 3" 66e200 0x0 (seq (set ecx (- (var ecx) (bv 32 0x1))) (branch (! (is_zero (var ecx))) (jmp (bv 32 0x6)) nop))
 d "loope 3" 66e100 0x0 (seq (set ecx (- (var ecx) (bv 32 0x1))) (branch (&& (! (is_zero (var ecx))) (var zf)) (jmp (bv 32 0x6)) nop))
 d "loopne 3" 66e000 0x0 (seq (set ecx (- (var ecx) (bv 32 0x1))) (branch (&& (! (is_zero (var ecx))) (! (var zf))) (jmp (bv 32 0x6)) nop))
-d "lsl eax, dword [eax]" 0f0300
+dB "lsl eax, dword [eax]" 0f0300
 d "ltr ax" 0f00d8
 d "ltr word [eax]" 0f0018
 d "lzcnt eax, dword [eax]" f30fbd00

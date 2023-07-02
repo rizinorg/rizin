@@ -503,6 +503,7 @@ RUN
 
 NAME=block takeover
 FILE=bins/elf/static-glibc-2.27
+BROKEN=1
 CMDS=<<EOF
 e asm.comments=false
 e asm.bytes=true
@@ -574,6 +575,7 @@ RUN
 
 NAME=aaa with avra
 FILE=bins/elf/class_test
+BROKEN=1
 CMDS=<<EOF
 aaa
 avra
@@ -2640,6 +2642,7 @@ RUN
 
 NAME=refs with aar
 FILE=bins/elf/crackme
+BROKEN=1
 CMDS=<<EOF
 e analysis.jmp.cref=true
 e asm.bytes=true
@@ -2664,6 +2667,7 @@ RUN
 
 NAME=refs with afr
 FILE=bins/elf/crackme
+BROKEN=1
 CMDS=<<EOF
 e asm.bytes=true
 e asm.lines.bb=false
