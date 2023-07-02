@@ -1178,7 +1178,7 @@ static RzILOpEffect *stm(cs_insn *insn, bool is_thumb) {
 	size_t op_first;
 	arm_reg ptr_reg;
 	bool writeback;
-	if (insn->id == ARM_INS_PUSH) {
+	if (insn->id == ARM_INS_PUSH || insn->id == ARM_INS_VPUSH) {
 		op_first = 0;
 		ptr_reg = ARM_REG_SP;
 		writeback = true;
@@ -1199,9 +1199,9 @@ static RzILOpEffect *stm(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	bool decrement = insn->id == ARM_INS_STMDA || insn->id == ARM_INS_STMDB || insn->id == ARM_INS_PUSH ||
-		insn->id == ARM_INS_VSTMDB;
+		insn->id == ARM_INS_VSTMDB || insn->id == ARM_INS_VPUSH;
 	bool before = insn->id == ARM_INS_STMDB || insn->id == ARM_INS_PUSH || insn->id == ARM_INS_VSTMDB ||
-		insn->id == ARM_INS_STMIB;
+		insn->id == ARM_INS_STMIB || insn->id == ARM_INS_VPUSH;
 	ut32 regsize = reg_bits(REGID(op_first)) / 8;
 	RzILOpEffect *eff = NULL;
 	// build up in reverse order so the result recurses in the second arg of seq (for tail-call optimization)
@@ -1239,7 +1239,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 	size_t op_first;
 	arm_reg ptr_reg;
 	bool writeback;
-	if (insn->id == ARM_INS_POP) {
+	if (insn->id == ARM_INS_POP || insn->id == ARM_INS_VPOP) {
 		op_first = 0;
 		ptr_reg = ARM_REG_SP;
 		writeback = true;
@@ -4130,9 +4130,11 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_STMDA:
 	case ARM_INS_STMDB:
 	case ARM_INS_PUSH:
+	case ARM_INS_VPUSH:
 	case ARM_INS_STMIB:
 		return stm(insn, is_thumb);
 	case ARM_INS_POP:
+	case ARM_INS_VPOP:
 	case ARM_INS_LDM:
 	case ARM_INS_LDMDA:
 	case ARM_INS_LDMDB:
