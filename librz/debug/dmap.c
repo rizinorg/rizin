@@ -4,23 +4,20 @@
 #include <rz_debug.h>
 #include <rz_list.h>
 
-RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
-	RzDebugMap *map;
+RZ_API RZ_OWN RzDebugMap *rz_debug_map_new(RZ_NULLABLE char *name, ut64 begin, ut64 end, int perm, int user) {
 	/* range could be 0k on OpenBSD, it's a honeypot */
-	if (!name || addr > addr_end) {
-		eprintf("rz_debug_map_new: error (\
-			%" PFMT64x ">%" PFMT64x ")\n",
-			addr, addr_end);
+	if (begin > end) {
+		RZ_LOG_ERROR("debug: begin address 0x%" PFMT64x " is greater than end address 0x%" PFMT64x "\n", begin, end);
 		return NULL;
 	}
-	map = RZ_NEW0(RzDebugMap);
+	RzDebugMap *map = RZ_NEW0(RzDebugMap);
 	if (!map) {
 		return NULL;
 	}
-	map->name = strdup(name);
-	map->addr = addr;
-	map->addr_end = addr_end;
-	map->size = addr_end - addr;
+	map->name = strdup(name ? name : "");
+	map->addr = begin;
+	map->addr_end = end;
+	map->size = end - begin;
 	map->perm = perm;
 	map->user = user;
 	return map;
@@ -74,7 +71,10 @@ RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr) {
 	return ret;
 }
 
-RZ_API void rz_debug_map_free(RzDebugMap *map) {
+RZ_API void rz_debug_map_free(RZ_NULLABLE RzDebugMap *map) {
+	if (!map) {
+		return;
+	}
 	free(map->name);
 	free(map->file);
 	free(map);

@@ -28,7 +28,7 @@ static bool brainfuck_is_valid_io(RzDebug *dbg) {
 	return false;
 }
 
-static int brainfuck_step_over(RzDebug *dbg) {
+static bool brainfuck_step_over(RzDebug *dbg) {
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
 	int op, oop = 0;
 	for (;;) {
@@ -45,7 +45,7 @@ static int brainfuck_step_over(RzDebug *dbg) {
 	return true;
 }
 
-static int brainfuck_step(RzDebug *dbg) {
+static bool brainfuck_step(RzDebug *dbg) {
 	RzIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_step(o->bfvm, 0);
 	return true;

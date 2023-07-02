@@ -4,7 +4,7 @@
 #include <rz_cons.h>
 #include <rz_debug.h>
 
-static int __rap_step(RzDebug *dbg) {
+static bool __rap_step(RzDebug *dbg) {
 	rz_io_system(dbg->iob.io, "ds");
 	return true;
 }

@@ -361,22 +361,19 @@ typedef struct rz_debug_plugin_t {
 	ut32 bits;
 	const char *arch;
 	int canstep;
-	int keepio;
 	bool (*init)(RzDebug *dbg, void **user);
 	void (*fini)(RzDebug *debug, void *user);
 	/* life */
 	RzDebugInfo *(*info)(RzDebug *dbg, const char *arg);
-	int (*startv)(int argc, char **argv);
 	int (*attach)(RzDebug *dbg, int pid);
 	int (*detach)(RzDebug *dbg, int pid);
 	int (*select)(RzDebug *dbg, int pid, int tid);
 	RzList /*<RzDebugPid *>*/ *(*threads)(RzDebug *dbg, int pid);
 	RzList /*<RzDebugPid *>*/ *(*pids)(RzDebug *dbg, int pid);
-	RzList /*<void *>*/ *(*tids)(RzDebug *dbg, int pid);
 	/* flow */
 	int (*stop)(RzDebug *dbg);
-	int (*step)(RzDebug *dbg);
-	int (*step_over)(RzDebug *dbg);
+	bool (*step)(RzDebug *dbg);
+	bool (*step_over)(RzDebug *dbg);
 	int (*cont)(RzDebug *dbg, int pid, int tid, int sig);
 	RzDebugReasonType (*wait)(RzDebug *dbg, int pid);
 	bool (*gcore)(RzDebug *dbg, char *path, RzBuffer *dest);
@@ -500,8 +497,8 @@ RZ_API RzDebugMap *rz_debug_map_alloc(RzDebug *dbg, ut64 addr, int size, bool th
 RZ_API int rz_debug_map_dealloc(RzDebug *dbg, RzDebugMap *map);
 RZ_API RzList /*<RzDebugMap *>*/ *rz_debug_map_list_new(void);
 RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr);
-RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user);
-RZ_API void rz_debug_map_free(RzDebugMap *map);
+RZ_API RZ_OWN RzDebugMap *rz_debug_map_new(RZ_NULLABLE char *name, ut64 begin, ut64 end, int perm, int user);
+RZ_API void rz_debug_map_free(RZ_NULLABLE RzDebugMap *map);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
 RZ_API RZ_BORROW RzList /*<RzDebugMap *>*/ *rz_debug_map_list(RzDebug *dbg, bool user_map);
 

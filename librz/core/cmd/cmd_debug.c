@@ -2787,16 +2787,16 @@ RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **ar
 			if (rdi->usr) {
 				rz_cons_printf("usr=%s\n", rdi->usr);
 			}
-			if (rdi->exe && *rdi->exe) {
+			if (RZ_STR_ISNOTEMPTY(rdi->exe)) {
 				rz_cons_printf("exe=%s\n", rdi->exe);
 			}
-			if (rdi->cmdline && *rdi->cmdline) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cmdline)) {
 				rz_cons_printf("cmdline=%s\n", rdi->cmdline);
 			}
-			if (rdi->cwd && *rdi->cwd) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cwd)) {
 				rz_cons_printf("cwd=%s\n", rdi->cwd);
 			}
-			if (rdi->kernel_stack && *rdi->kernel_stack) {
+			if (RZ_STR_ISNOTEMPTY(rdi->kernel_stack)) {
 				rz_cons_printf("kernel_stack=\n%s\n", rdi->kernel_stack);
 			}
 		}
@@ -2830,21 +2830,24 @@ RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **ar
 			pj_ks(pj, "inbp", rz_str_bool(core->dbg->reason.bp_addr));
 			pj_kn(pj, "baddr", rz_debug_get_baddr(core->dbg, NULL));
 			pj_kn(pj, "stopaddr", core->dbg->stopaddr);
-			pj_kn(pj, "pid", rdi->pid);
-			pj_kn(pj, "tid", rdi->tid);
-			pj_kn(pj, "uid", rdi->uid);
-			pj_kn(pj, "gid", rdi->gid);
-			if (rdi->usr) {
+			pj_kN(pj, "pid", rdi->pid);
+			pj_kN(pj, "tid", rdi->tid);
+			pj_kN(pj, "uid", rdi->uid);
+			pj_kN(pj, "gid", rdi->gid);
+			if (RZ_STR_ISNOTEMPTY(rdi->usr)) {
 				pj_ks(pj, "usr", rdi->usr);
 			}
-			if (rdi->exe) {
+			if (RZ_STR_ISNOTEMPTY(rdi->exe)) {
 				pj_ks(pj, "exe", rdi->exe);
 			}
-			if (rdi->cmdline) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cmdline)) {
 				pj_ks(pj, "cmdline", rdi->cmdline);
 			}
-			if (rdi->cwd) {
+			if (RZ_STR_ISNOTEMPTY(rdi->cwd)) {
 				pj_ks(pj, "cwd", rdi->cwd);
+			}
+			if (RZ_STR_ISNOTEMPTY(rdi->kernel_stack)) {
+				pj_ks(pj, "kernel_stack", rdi->kernel_stack);
 			}
 		}
 		pj_kn(pj, "stopreason", stop);

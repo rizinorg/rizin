@@ -7,12 +7,12 @@
 #define IO_MAPS_PERM_SZ 32
 #define IO_MAPS_NAME_SZ 512
 
-static int __io_step(RzDebug *dbg) {
+static bool __io_step(RzDebug *dbg) {
 	free(dbg->iob.system(dbg->iob.io, "ds"));
 	return true;
 }
 
-static int __io_step_over(RzDebug *dbg) {
+static bool __io_step_over(RzDebug *dbg) {
 	free(dbg->iob.system(dbg->iob.io, "dso"));
 	return true;
 }
