@@ -568,12 +568,6 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RzList /*<void *>*/ *rz_debug_native_tids(RzDebug *dbg, int pid) {
-	printf("TODO: Threads: \n");
-	// T
-	return NULL;
-}
-
 static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
 	RzList *list = rz_list_new();
 	if (!list) {
@@ -1670,7 +1664,6 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.select = &rz_debug_native_select,
 #endif
 	.pids = &rz_debug_native_pids,
-	.tids = &rz_debug_native_tids,
 	.threads = &rz_debug_native_threads,
 	.wait = &rz_debug_native_wait,
 	.kill = &rz_debug_native_kill,

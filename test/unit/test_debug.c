@@ -292,7 +292,7 @@ RzDebugReasonType dbg_mock_multibits_wait(RzDebug *dbg, int pid) {
 	return r;
 }
 
-int dbg_mock_multibits_step(RzDebug *dbg) {
+bool dbg_mock_multibits_step(RzDebug *dbg) {
 	mock_isa_multibits_step(dbg->plugin_data, dbg->iob.io);
 	return true;
 }
