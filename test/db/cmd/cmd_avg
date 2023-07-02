@@ -1,9 +1,9 @@
 NAME=avga # add global variable
 FILE==
 CMDS=<<EOF
-avga foo 0x100 int
+avga foo int @ 0x100
 avg
-avga bar 0x1000 char
+avga bar char @ 0x1000
 avg
 EOF
 EXPECT=<<EOF
@@ -16,8 +16,8 @@ RUN
 NAME=avgj # output in json mode
 FILE==
 CMDS=<<EOF
-avga foo 0x100 int
-avga bar 0x1000 char
+avga foo int @ 0x100
+avga bar char @ 0x1000
 avgj
 EOF
 EXPECT=<<EOF
@@ -28,12 +28,12 @@ RUN
 NAME=avgd # delete global variable
 FILE==
 CMDS=<<EOF
-avga foo 0x100 int
-avga bar 0x1000 char
+avga foo int @ 0x100
+avga bar char @ 0x1000
 avg
 avgd 0x100
 avg
-avga foofoo 0x100 int
+avga foofoo int @ 0x100
 avg
 avgd 0x102
 avg
@@ -51,7 +51,7 @@ RUN
 NAME=avgn # rename global variable
 FILE==
 CMDS=<<EOF
-avga foo 0x100 int
+avga foo int @ 0x100
 avg
 avgn foo bar
 avg
@@ -65,7 +65,7 @@ RUN
 NAME=avgt # retype global variable
 FILE==
 CMDS=<<EOF
-avga foo 0x100 int
+avga foo int @ 0x100
 avg
 avgt foo char
 avg

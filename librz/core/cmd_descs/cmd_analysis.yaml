@@ -1537,8 +1537,6 @@ commands:
             args:
               - name: var_name
                 type: RZ_CMD_ARG_TYPE_STRING
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
               - name: type
                 type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: avgd

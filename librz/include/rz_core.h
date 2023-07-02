@@ -492,7 +492,7 @@ RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr);
 
 RZ_API void rz_core_analysis_type_init(RzCore *core);
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth);
-RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn);
+RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API bool rz_core_analysis_objc_refs(RzCore *core, bool auto_analysis);
 RZ_API void rz_core_analysis_objc_stubs(RzCore *core);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);

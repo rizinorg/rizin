@@ -473,34 +473,6 @@ RZ_IPI RzCmdStatus rz_type_function_cc_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_link_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	const char *name = argc > 1 ? argv[1] : NULL;
-	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
-	if (name) {
-		rz_core_types_link(core, name, addr);
-	} else {
-		rz_core_types_link_print_all(core, mode);
-	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_show_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = rz_num_math(core->num, argv[1]);
-	rz_core_types_link_show(core, addr);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_del_handler(RzCore *core, int argc, const char **argv) {
-	ut64 addr = rz_num_math(core->num, argv[1]);
-	rz_analysis_type_unlink(core->analysis, addr);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_link_del_all_handler(RzCore *core, int argc, const char **argv) {
-	rz_analysis_type_unlink_all(core->analysis);
-	return RZ_CMD_STATUS_OK;
-}
-
 RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *name = argc > 1 ? argv[1] : NULL;
 	if (name) {

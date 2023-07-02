@@ -5188,15 +5188,15 @@ toro:
 		// f = rz_analysis_get_fcn_in (core->analysis, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn(ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ds_show_comments_right(ds);
-		// TRY adding here
-		RzType *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
-		if (link_type) {
-			char *fmt = rz_type_as_format_pair(core->analysis->typedb, link_type);
-			const char *typename = rz_type_identifier(link_type);
+		RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, ds->addr + idx);
+		if (gv) {
+			char *fmt = rz_type_as_format_pair(core->analysis->typedb, gv->type);
+			const char *typename = rz_type_identifier(gv->type);
 			if (fmt && typename) {
-				rz_cons_printf("(%s)\n", typename);
+				rz_cons_printf("(%s %s)\n", typename, gv->name);
+				// TODO: Use the API directly here
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
-				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, link_type);
+				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, gv->type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
@@ -5204,7 +5204,6 @@ toro:
 				rz_analysis_op_fini(&ds->analysis_op);
 				continue;
 			}
-			free(link_type);
 		} else {
 			if (idx >= 0) {
 				ret = ds_disassemble(ds, buf + addrbytes * idx, len - addrbytes * idx);

@@ -621,7 +621,7 @@ RZ_IPI void rz_core_types_union_print_format_all(RzCore *core) {
 	rz_list_free(unionlist);
 }
 
-// Type links
+// Global variable types
 
 static void set_retval(RzCore *core, ut64 at) {
 	RzAnalysis *analysis = core->analysis;
@@ -656,11 +656,11 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
-		// possible member offset and the type linked to the laddr
+		// possible member offset and the global variable at the laddr
 		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
 		if (paths && rz_list_length(paths)) {
-			RzTypePathTuple *link = rz_list_get_top(paths);
-			rz_analysis_hint_set_offset(core->analysis, at, link->path->path);
+			RzTypePathTuple *match = rz_list_get_top(paths);
+			rz_analysis_hint_set_offset(core->analysis, at, match->path->path);
 		}
 		rz_list_free(paths);
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
@@ -669,7 +669,7 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	free(cmt);
 }
 
-struct TLAnalysisContext {
+struct GVTAnalysisContext {
 	RzAnalysisOp *aop;
 	RzAnalysisVar *var;
 	ut64 src_addr;
@@ -679,47 +679,41 @@ struct TLAnalysisContext {
 };
 
 // TODO: Handle multiple matches for every address and resolve conflicts between them
-static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *ctx, int ret, bool *resolved) {
-	// At first we check if there are links to the corresponding addresses
-	RzList *slinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr);
-	RzList *dlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
-	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
-	// TODO: Handle register based arg for struct offset propgation
-	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
-		RzTypePathTuple *vlink = rz_list_get_top(vlinks);
-		// FIXME: For now we only propagate simple type identifiers,
-		// no pointers or arrays
-		if (vlink->root->kind == RZ_TYPE_KIND_IDENTIFIER) {
-			if (!vlink->root->identifier.name) {
-				rz_warn_if_reached();
-				return;
+static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisContext *ctx, int ret, bool *resolved) {
+	// At first we check if there are globals containing corresponding addresses
+	RzList *stpaths = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr);
+	RzList *dtpaths = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
+	RzList *vtpaths = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
+
+	// TODO: Handle register based arg for types offset/path propagation
+	if (vtpaths && rz_list_length(vtpaths) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+		RzTypePathTuple *vtpath = rz_list_get_top(vtpaths);
+		// if a var addr matches with compound type, change its type and name
+		// var int local_e0h --> var struct foo
+		if (!*resolved) {
+			*resolved = true;
+			rz_analysis_var_set_type(ctx->var, vtpath->root, true);
+			const char *tname = rz_type_identifier(vtpath->root);
+			if (tname) {
+				rz_analysis_var_rename(ctx->var, tname, false);
 			}
-			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->root->identifier.name);
-			if (varbtype) {
-				// if a var addr matches with struct , change it's type and name
-				// var int local_e0h --> var struct foo
-				// if (strcmp(var->name, vlink) && !*resolved) {
-				if (!*resolved) {
-					*resolved = true;
-					rz_analysis_var_set_type(ctx->var, vlink->root, true);
-					rz_analysis_var_rename(ctx->var, vlink->root->identifier.name, false);
-					vlink->root = NULL;
-				}
-			}
+			vtpath->root = NULL;
 		}
-	} else if (slinks && rz_list_length(slinks)) {
-		RzTypePathTuple *slink = rz_list_get_top(slinks);
-		set_offset_hint(core, ctx->aop, slink, ctx->src_addr, at - ret, ctx->src_imm);
-	} else if (dlinks && rz_list_length(dlinks)) {
-		RzTypePathTuple *dlink = rz_list_get_top(dlinks);
-		set_offset_hint(core, ctx->aop, dlink, ctx->dst_addr, at - ret, ctx->dst_imm);
+	} else if (stpaths && rz_list_length(stpaths)) {
+		RzTypePathTuple *stpath = rz_list_get_top(stpaths);
+		set_offset_hint(core, ctx->aop, stpath, ctx->src_addr, at - ret, ctx->src_imm);
+	} else if (dtpaths && rz_list_length(dtpaths)) {
+		RzTypePathTuple *dtpath = rz_list_get_top(dtpaths);
+		set_offset_hint(core, ctx->aop, dtpath, ctx->dst_addr, at - ret, ctx->dst_imm);
 	}
-	rz_list_free(slinks);
-	rz_list_free(dlinks);
-	rz_list_free(vlinks);
+	rz_list_free(stpaths);
+	rz_list_free(dtpaths);
+	rz_list_free(vtpaths);
 }
 
-RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
+/* \brief Propagate types based on the ESIL emulation and global variables referenced for a given function
+ */
+RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_return_if_fail(core && core->analysis && fcn);
 	RzAnalysisBlock *bb;
 	RzListIter *it;
@@ -848,7 +842,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 				rz_analysis_op_fini(&aop);
 				continue;
 			}
-			struct TLAnalysisContext ctx = {
+			struct GVTAnalysisContext ctx = {
 				.aop = &aop,
 				.var = var,
 				.src_addr = src_addr,
@@ -856,7 +850,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 				.src_imm = src_imm,
 				.dst_imm = dst_imm
 			};
-			resolve_type_links(core, at, &ctx, ret, &resolved);
+			resolve_global_var_types(core, at, &ctx, ret, &resolved);
 			if (rz_analysis_op_nonlinear(aop.type)) {
 				rz_reg_set_value(esil->analysis->reg, pc, at);
 				set_retval(core, at - ret);
@@ -879,110 +873,6 @@ beach:
 	rz_core_reg_update_flags(core);
 	rz_cons_break_pop();
 	free(buf);
-}
-
-RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(type);
-	char *typestr = rz_type_as_string(core->analysis->typedb, type);
-	if (!typestr) {
-		return;
-	}
-	switch (mode) {
-	case RZ_OUTPUT_MODE_JSON: {
-		rz_return_if_fail(pj);
-		pj_o(pj);
-		char *saddr = rz_str_newf("0x%08" PFMT64x, addr);
-		pj_ks(pj, saddr, typestr);
-		pj_end(pj);
-		free(saddr);
-		break;
-	}
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("0x%08" PFMT64x " = %s\n", addr, typestr);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("tl \"%s\" 0x%" PFMT64x "\n", typestr, addr);
-		break;
-	case RZ_OUTPUT_MODE_LONG: {
-		char *fmt = rz_type_as_format(core->analysis->typedb, type);
-		if (!fmt) {
-			RZ_LOG_ERROR("core: can't fint type %s", typestr);
-		}
-		rz_cons_printf("(%s)\n", typestr);
-		rz_core_cmdf(core, "pf %s @ 0x%" PFMT64x "\n", fmt, addr);
-		free(fmt);
-		break;
-	}
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-	free(typestr);
-}
-
-struct coremodepj {
-	RzCore *core;
-	RzOutputMode mode;
-	PJ *pj;
-};
-
-static bool typelink_print_cb(void *user, ut64 k, const void *v) {
-	rz_return_val_if_fail(user && v, false);
-	struct coremodepj *c = user;
-	rz_core_types_link_print(c->core, (RzType *)v, k, c->mode, c->pj);
-	return true;
-}
-
-RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
-	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_a(pj);
-	}
-	struct coremodepj c = { core, mode, pj };
-	ht_up_foreach(core->analysis->type_links, typelink_print_cb, &c);
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	}
-}
-
-/**
- * \brief Link an address \p addr to the type referenced by \p typestr
- *
- * NOTE: This is likely going to be deprecated with the use of global variables.
- *
- * \param core RzCore reference
- * \param typestr Name of the type that should be defined at \p addr
- * \param addr Address where the type should be used
- */
-RZ_API void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
-	char *error_msg = NULL;
-	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
-	if (!type || error_msg) {
-		if (error_msg) {
-			rz_str_trim_tail(error_msg);
-			RZ_LOG_ERROR("core: %s\n", error_msg);
-		}
-		free(error_msg);
-		return;
-	}
-	rz_analysis_type_set_link(core->analysis, type, addr);
-	RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
-	if (rz_list_length(fcns) > 1) {
-		RZ_LOG_ERROR("core: multiple functions found at 0x%08" PFMT64x ".\n", addr);
-	} else if (rz_list_length(fcns) == 1) {
-		RzAnalysisFunction *fcn = rz_list_first(fcns);
-		rz_core_link_stroff(core, fcn);
-	}
-	rz_list_free(fcns);
-}
-
-RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr) {
-	RzType *link = rz_analysis_type_link_at(core->analysis, addr);
-	if (link) {
-		rz_core_types_link_print(core, link, addr, RZ_OUTPUT_MODE_LONG, NULL);
-	}
 }
 
 // Everything

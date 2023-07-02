@@ -241,7 +241,7 @@ static const RzCmdDescArg analysis_reg_profile_open_args[2];
 static const RzCmdDescArg analysis_reg_profile_gdb_args[2];
 static const RzCmdDescArg global_imports_args[2];
 static const RzCmdDescArg analysis_print_global_variable_args[2];
-static const RzCmdDescArg analysis_global_variable_add_args[4];
+static const RzCmdDescArg analysis_global_variable_add_args[3];
 static const RzCmdDescArg analysis_global_variable_delete_byaddr_args[2];
 static const RzCmdDescArg analysis_global_variable_delete_byname_args[2];
 static const RzCmdDescArg analysis_global_variable_rename_args[3];
@@ -715,9 +715,6 @@ static const RzCmdDescArg type_enum_find_args[2];
 static const RzCmdDescArg type_list_function_args[2];
 static const RzCmdDescArg type_function_del_args[2];
 static const RzCmdDescArg type_function_cc_args[3];
-static const RzCmdDescArg type_link_args[3];
-static const RzCmdDescArg type_link_show_args[2];
-static const RzCmdDescArg type_link_del_args[2];
 static const RzCmdDescArg type_list_noreturn_args[2];
 static const RzCmdDescArg type_noreturn_del_args[2];
 static const RzCmdDescArg type_open_file_args[2];
@@ -4753,11 +4750,6 @@ static const RzCmdDescArg analysis_global_variable_add_args[] = {
 	{
 		.name = "var_name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
 
 	},
 	{
@@ -15982,66 +15974,6 @@ static const RzCmdDescHelp type_function_cc_help = {
 	.args = type_function_cc_args,
 };
 
-static const RzCmdDescHelp tl_help = {
-	.summary = "Manage type links to the address",
-};
-static const RzCmdDescArg type_link_args[] = {
-	{
-		.name = "typename",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = true,
-
-	},
-	{
-		.name = "address",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp type_link_help = {
-	.summary = "List all type links / Add a type link",
-	.args = type_link_args,
-};
-
-static const RzCmdDescArg type_link_show_args[] = {
-	{
-		.name = "address",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp type_link_show_help = {
-	.summary = "Show the type link",
-	.args = type_link_show_args,
-};
-
-static const RzCmdDescArg type_link_del_args[] = {
-	{
-		.name = "address",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp type_link_del_help = {
-	.summary = "Remove the type link",
-	.args = type_link_del_args,
-};
-
-static const RzCmdDescArg type_link_del_all_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp type_link_del_all_help = {
-	.summary = "Remove all type links",
-	.args = type_link_del_all_args,
-};
-
 static const RzCmdDescHelp tn_help = {
 	.summary = "Manage noreturn function attributes and marks",
 };
@@ -21612,17 +21544,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_function_cc_cd = rz_cmd_desc_argv_new(core->rcmd, tf_cd, "tfc", rz_type_function_cc_handler, &type_function_cc_help);
 	rz_warn_if_fail(type_function_cc_cd);
-
-	RzCmdDesc *tl_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_link_handler, &type_link_help, &tl_help);
-	rz_warn_if_fail(tl_cd);
-	RzCmdDesc *type_link_show_cd = rz_cmd_desc_argv_new(core->rcmd, tl_cd, "tls", rz_type_link_show_handler, &type_link_show_help);
-	rz_warn_if_fail(type_link_show_cd);
-
-	RzCmdDesc *type_link_del_cd = rz_cmd_desc_argv_new(core->rcmd, tl_cd, "tl-", rz_type_link_del_handler, &type_link_del_help);
-	rz_warn_if_fail(type_link_del_cd);
-
-	RzCmdDesc *type_link_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tl_cd, "tl-*", rz_type_link_del_all_handler, &type_link_del_all_help);
-	rz_warn_if_fail(type_link_del_all_cd);
 
 	RzCmdDesc *tn_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_noreturn_handler, &type_list_noreturn_help, &tn_help);
 	rz_warn_if_fail(tn_cd);

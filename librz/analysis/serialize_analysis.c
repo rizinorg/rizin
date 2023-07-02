@@ -1918,14 +1918,6 @@ RZ_API bool rz_serialize_analysis_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	return rz_serialize_callables_load(db, analysis->typedb, res);
 }
 
-RZ_API void rz_serialize_analysis_typelinks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	rz_serialize_typelinks_save(db, analysis);
-}
-
-RZ_API bool rz_serialize_analysis_typelinks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	return rz_serialize_typelinks_load(db, analysis, res);
-}
-
 RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
 	RzListIter *it;
 	const char *imp;
@@ -1962,7 +1954,6 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_classes_save(sdb_ns(db, "classes", true), analysis);
 	rz_serialize_analysis_types_save(sdb_ns(db, "types", true), analysis);
 	rz_serialize_analysis_callables_save(sdb_ns(db, "callables", true), analysis);
-	rz_serialize_analysis_typelinks_save(sdb_ns(db, "typelinks", true), analysis);
 	rz_serialize_analysis_imports_save(sdb_ns(db, "imports", true), analysis);
 	rz_serialize_analysis_cc_save(sdb_ns(db, "cc", true), analysis);
 	rz_serialize_analysis_global_var_save(sdb_ns(db, "vars", true), analysis);
@@ -1982,7 +1973,6 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("classes", rz_serialize_analysis_classes_load(subdb, analysis, res));
 	SUB("types", rz_serialize_analysis_types_load(subdb, analysis, res));
 	SUB("callables", rz_serialize_analysis_callables_load(subdb, analysis, res));
-	SUB("typelinks", rz_serialize_analysis_typelinks_load(subdb, analysis, res));
 
 	// All bbs have ref=1 now
 	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, res));
