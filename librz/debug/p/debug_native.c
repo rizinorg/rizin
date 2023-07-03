@@ -120,7 +120,7 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "native/reg.c" // x86 specific
 
 #endif
-static int rz_debug_native_step(RzDebug *dbg) {
+static bool rz_debug_native_step(RzDebug *dbg) {
 #if __APPLE__
 	return xnu_step(dbg);
 #elif __WINDOWS__
@@ -134,16 +134,13 @@ static int rz_debug_native_step(RzDebug *dbg) {
 	return true;
 #elif __linux__
 	return linux_step(dbg);
+#else
+	return false;
 #endif
-	return 0;
 }
 
 // return thread id
 static int rz_debug_native_attach(RzDebug *dbg, int pid) {
-#if 0
-	if (!dbg || pid == dbg->pid)
-		return dbg->tid;
-#endif
 #if __APPLE__
 	return xnu_attach(dbg, pid);
 #elif __WINDOWS__
