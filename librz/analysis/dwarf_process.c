@@ -1341,3 +1341,22 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 		};
 	}
 }
+
+RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
+	RzAnalysisDebugInfo *debug_info = RZ_NEW0(RzAnalysisDebugInfo);
+	if (!debug_info) {
+		return NULL;
+	}
+	debug_info->functions = rz_vector_new(sizeof(Function), NULL, NULL);
+	debug_info->function_variables_by_address = ht_up_new(NULL, NULL, NULL);
+	return debug_info;
+}
+
+RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
+	if (!debuginfo) {
+		return;
+	}
+	rz_vector_free(debuginfo->functions);
+	ht_up_free(debuginfo->function_variables_by_address);
+	free(debuginfo);
+}

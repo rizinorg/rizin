@@ -2147,6 +2147,8 @@ RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb);
 /* DWARF */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw);
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags);
+RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new();
+RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo);
 
 /* serialize */
 RZ_API void rz_serialize_analysis_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op);

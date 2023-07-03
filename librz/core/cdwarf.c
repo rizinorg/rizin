@@ -207,7 +207,7 @@ RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *i
 	return my_print_get;
 }
 
-RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarfLocLists *locs, int addr_size) {
+RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarfLocListTable *locs, int addr_size) {
 	rz_return_val_if_fail(locs, NULL);
 	my_print_init;
 	my_print("\nContents of the .debug_loc section:\n");

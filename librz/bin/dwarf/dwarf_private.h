@@ -24,7 +24,7 @@ typedef struct {
 	RzBinDwarfEncoding encoding;
 } DwAttrOption;
 
-RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, bool big_endian);
+RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian);
 
 RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
@@ -125,8 +125,6 @@ RZ_IPI void Value_free(RzBinDwarfValue *self);
 
 #include "op.h"
 
-/// loclists
-
-RZ_IPI RzBinDwarfLocLists *bf_loclists_parse(RzBinFile *bf, RzBinDwarf *dw);
+// loclists
 
 #endif

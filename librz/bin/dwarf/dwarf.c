@@ -455,7 +455,7 @@ RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
 
 RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
 
-RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, bool big_endian) {
+RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian) {
 	bool is_64bit;
 	ut64 length;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
@@ -475,13 +475,28 @@ RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, boo
 	ut32 offset_entry_count;
 	U32_OR_RET_FALSE(offset_entry_count);
 
-	memset(self, 0, sizeof(RzBinDwarfListsHeader));
-	self->encoding.big_endian = big_endian;
-	self->encoding.is_64bit = is_64bit;
-	self->encoding.version = version;
-	self->encoding.address_size = address_size;
-	self->segment_selector_size = segment_selector_size;
-	self->offset_entry_count = offset_entry_count;
+	memset(hdr, 0, sizeof(RzBinDwarfListsHeader));
+	hdr->encoding.big_endian = big_endian;
+	hdr->encoding.is_64bit = is_64bit;
+	hdr->encoding.version = version;
+	hdr->encoding.address_size = address_size;
+	hdr->unit_length = length;
+	hdr->segment_selector_size = segment_selector_size;
+	hdr->offset_entry_count = offset_entry_count;
+
+	if (hdr->offset_entry_count > 0) {
+		ut64 byte_size = sizeof(ut64) * hdr->offset_entry_count;
+		hdr->location_offsets = malloc(byte_size);
+		for (ut32 i = 0; i < hdr->offset_entry_count; ++i) {
+			if (is_64bit) {
+				rz_buf_read_ble64(buffer, &hdr->location_offsets[i], big_endian);
+			} else {
+				ut32 out;
+				rz_buf_read_ble32(buffer, &out, big_endian);
+				hdr->location_offsets[i] = (ut64)out;
+			}
+		}
+	}
 	return true;
 }
 
@@ -491,6 +506,9 @@ RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 		return NULL;
 	}
 	*clone = *self;
+	if (self->data == NULL) {
+		return clone;
+	}
 	clone->data = RZ_NEWS0(ut8, self->length);
 	if (!clone->data) {
 		free(clone);
@@ -972,7 +990,7 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 	if (!dw) {
 		return NULL;
 	}
-
+	dw->encoding.big_endian = opt->big_endian;
 	dw->addr = DebugAddr_parse(bf);
 	if (opt->flags & RZ_BIN_DWARF_PARSE_ABBREVS) {
 		RZ_LOG_DEBUG(".debug_abbrev\n");
@@ -981,10 +999,14 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 	if (opt->flags & RZ_BIN_DWARF_PARSE_INFO && dw->abbrevs) {
 		RZ_LOG_DEBUG(".debug_info\n");
 		dw->info = rz_bin_dwarf_info_parse(bf, dw->abbrevs);
+		RzBinDwarfCompUnit *unit = rz_vector_head(&dw->info->units);
+		dw->encoding.is_64bit = unit->hdr.is_64bit;
+		dw->encoding.version = unit->hdr.version;
+		dw->encoding.address_size = unit->hdr.address_size;
 	}
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LOC) {
-		RZ_LOG_DEBUG(".debug_loc\n");
-		dw->loc = bf_loclists_parse(bf, dw);
+		RZ_LOG_DEBUG(dw->encoding.version == 5 ? ".debug.loclists\n" : ".debug_loc\n");
+		dw->loc = rz_bin_dwarf_loclist_table_parse_all(bf, dw);
 	}
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LINES && dw->info) {
 		RZ_LOG_DEBUG(".debug_line\n");

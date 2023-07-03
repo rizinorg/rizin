@@ -1045,8 +1045,10 @@ typedef struct {
 
 typedef struct {
 	RzBinDwarfEncoding encoding;
+	ut64 unit_length;
 	ut32 offset_entry_count;
 	ut8 segment_selector_size;
+	ut64 *location_offsets;
 } RzBinDwarfListsHeader;
 
 /// A raw address range from the `.debug_ranges` section.
@@ -1184,13 +1186,16 @@ typedef struct {
 } RzBinDwarfLocationListEntry;
 
 typedef struct {
+	RzBuffer *debug_loc;
+	RzBuffer *debug_loclists;
 	ut64 base_address;
 	const RzBinDwarfDebugAddr *debug_addr;
+	RzBinDwarfListsHeader hdr;
 	RzBinDwarfEncoding encoding;
 	RzVector /*<LocationListEntry>*/ entries;
 	RzVector /*<RawLocListEntry>*/ raw_entries;
 	HtUP /*<ut64, RawLocListEntry>*/ *entry_by_offset;
-} RzBinDwarfLocLists;
+} RzBinDwarfLocListTable;
 
 typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;
 
@@ -1241,7 +1246,7 @@ typedef struct rz_core_bin_dwarf_t {
 
 	RzBinDwarfARangeSets *aranges;
 	RzBinDwarfLineInfo *lines;
-	RzBinDwarfLocLists *loc;
+	RzBinDwarfLocListTable *loc;
 	RzBinDwarfDebugInfo *info;
 	RzBinDwarfDebugAbbrevs *abbrevs;
 	RzBinDwarfDebugAddr *addr;
@@ -1250,7 +1255,7 @@ typedef struct rz_core_bin_dwarf_t {
 typedef enum {
 	RZ_BIN_DWARF_PARSE_ABBREVS = 1 << 1,
 	RZ_BIN_DWARF_PARSE_INFO = (1 << 2) | RZ_BIN_DWARF_PARSE_ABBREVS,
-	RZ_BIN_DWARF_PARSE_LOC = 1 << 3,
+	RZ_BIN_DWARF_PARSE_LOC = 1 << 3 | RZ_BIN_DWARF_PARSE_INFO,
 	RZ_BIN_DWARF_PARSE_LINES = (1 << 4) | RZ_BIN_DWARF_PARSE_INFO,
 	RZ_BIN_DWARF_PARSE_ARANGES = 1 << 5,
 	RZ_BIN_DWARF_PARSE_ALL = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_LINES | RZ_BIN_DWARF_PARSE_ARANGES,
@@ -1258,6 +1263,7 @@ typedef enum {
 
 typedef struct {
 	ut8 addr_size;
+	bool big_endian;
 	RzBinDwarfLineInfoMask line_mask;
 	RzBinDwarfParseFlags flags;
 } RzBinDwarfParseOptions;
@@ -1339,6 +1345,11 @@ typedef struct {
 } RzBinDwarfPiece;
 
 RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn);
+
+/// loclists
+RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
+RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *bf, RzBinDwarf *dw);
+RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw);
 
 #ifdef __cplusplus
 }

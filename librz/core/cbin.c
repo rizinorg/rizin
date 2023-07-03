@@ -633,6 +633,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 	}
 
 	RzBinDwarfParseOptions opt = {
+		.big_endian = core->analysis->big_endian,
 		.addr_size = core->analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
 		.flags = RZ_BIN_DWARF_PARSE_ALL,

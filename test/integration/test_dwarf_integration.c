@@ -38,6 +38,7 @@ static bool test_parse_dwarf_types(void) {
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 32);
 	RzBinDwarfParseOptions dw_opt = {
+		.big_endian = analysis->big_endian,
 		.addr_size = analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
 		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC,

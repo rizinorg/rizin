@@ -211,10 +211,6 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 		if (offset >= rz_buf_size(buffer)) {
 			break;
 		}
-		//		if (offset != next_unit_offset) {
-		//			RZ_LOG_ERROR("offset: 0x%" PFMT64x " != next_unit_offset: 0x%" PFMT64x "\n", offset, next_unit_offset);
-		//			rz_buf_seek(buffer, (st64)next_unit_offset, SEEK_SET);
-		//		}
 
 		RzBinDwarfCompUnit unit = {
 			.offset = offset,
