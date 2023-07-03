@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin_dwarf.h>
+#include "dwarf_private.h"
 
 static inline ut64 get_max_offset(size_t addr_size) {
 	switch (addr_size) {
@@ -229,7 +230,7 @@ void RzBinDwarfLocLists_free(RzBinDwarfLocLists *self) {
 	free(self);
 }
 
-static RzBinDwarfLocLists *bf_loclists_parse(RzBinFile *bf, RzBinDwarf *dw) {
+RZ_IPI RzBinDwarfLocLists *bf_loclists_parse(RzBinFile *bf, RzBinDwarf *dw) {
 	RET_NULL_IF_FAIL(bf && dw);
 	RzBuffer *buffer = dw->encoding.version <= 4 ? get_section_buf(bf, ".debug_loc")
 						     : get_section_buf(bf, ".debug_loclists");

@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address,
+#include <rz_bin_dwarf.h>
+#include "dwarf_private.h"
+
+RZ_IPI bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address,
 	ut8 address_size, bool big_endian, ut64 base, ut64 index) {
 	RzBuffer *buffer = rz_buf_new_with_buf(self->buffer);
 	RET_FALSE_IF_FAIL(buffer);
@@ -13,7 +16,7 @@ static bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address
 	return true;
 }
 
-RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf) {
+RZ_API RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}

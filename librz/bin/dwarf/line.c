@@ -3,6 +3,9 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_bin_dwarf.h>
+#include "dwarf_private.h"
+
 void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfFileEntry *x, void *user) {
 	if (!x) {
 		return;

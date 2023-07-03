@@ -260,6 +260,16 @@ rz_bin_sources = [
   'pdb/stream_pe.c',
   'pdb/tpi.c',
 
+  'dwarf/abbrev.c',
+  'dwarf/addr.c',
+  'dwarf/aranges.c',
+  'dwarf/line.c',
+  'dwarf/loclists.c',
+  'dwarf/op.c',
+  'dwarf/option.c',
+  'dwarf/rnglists.c',
+  'dwarf/unit.c',
+  'dwarf/value.c',
   'dwarf/dwarf.c',
 ]
 

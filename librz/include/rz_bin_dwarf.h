@@ -1202,6 +1202,7 @@ RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang);
 RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN children);
 RZ_API const char *rz_bin_dwarf_lns(enum DW_LNS lns);
 RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne);
+RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct);
 
 RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile);

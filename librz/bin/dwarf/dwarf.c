@@ -4,131 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin_dwarf.h>
-
-#define OK_None \
-	do { \
-		*out = NULL; \
-		return true; \
-	} while (0)
-
-#define RET_VAL_IF_FAIL(x, val) \
-	do { \
-		if (!(x)) { \
-			return (val); \
-		} \
-	} while (0)
-
-#define READ8(buf) \
-	(((buf) + 1 < buf_end) ? *((ut8 *)(buf)) : 0); \
-	(buf)++
-#define READ16(buf) \
-	(((buf) + sizeof(ut16) < buf_end) ? rz_read_ble16(buf, big_endian) : 0); \
-	(buf) += sizeof(ut16)
-#define READ32(buf) \
-	(((buf) + sizeof(ut32) < buf_end) ? rz_read_ble32(buf, big_endian) : 0); \
-	(buf) += sizeof(ut32)
-#define READ64(buf) \
-	(((buf) + sizeof(ut64) < buf_end) ? rz_read_ble64(buf, big_endian) : 0); \
-	(buf) += sizeof(ut64)
-
-#define RET_FALSE_IF_FAIL(x) RET_VAL_IF_FAIL(x, false)
-#define RET_NULL_IF_FAIL(x)  RET_VAL_IF_FAIL(x, NULL)
-#define GOTO_IF_FAIL(x, label) \
-	do { \
-		if (!(x)) { \
-			goto label; \
-		} \
-	} while (0)
-
-#define UX_WRAP(out, x, wrap) \
-	switch ((x)) { \
-	case 1: \
-		wrap(rz_buf_read8(buffer, (ut8 *)&(out))); \
-		break; \
-	case 2: \
-		wrap(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian)); \
-		break; \
-	case 4: \
-		wrap(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian)); \
-		break; \
-	case 8: \
-		wrap(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian)); \
-		break; \
-	default: \
-		RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(x)); \
-		return false; \
-	}
-
-#define UX_WRAP1(out, x, wrap, ...) \
-	switch ((x)) { \
-	case 1: \
-		wrap(rz_buf_read8(buffer, (ut8 *)&(out)), __VA_ARGS__); \
-		break; \
-	case 2: \
-		wrap(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian), __VA_ARGS__); \
-		break; \
-	case 4: \
-		wrap(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian), __VA_ARGS__); \
-		break; \
-	case 8: \
-		wrap(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian), __VA_ARGS__); \
-		break; \
-	default: \
-		RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(x)); \
-		return false; \
-	}
-
-static char *buf_get_string(RzBuffer *buffer) {
-	st64 offset = (st64)rz_buf_tell(buffer);
-	RET_NULL_IF_FAIL(offset != -1);
-	char *x = rz_buf_get_string(buffer, offset);
-	RET_NULL_IF_FAIL(x);
-	ut64 len = strlen(x) + 1;
-	rz_buf_seek(buffer, (st64)len, SEEK_CUR);
-	if (len <= 1) {
-		free(x);
-		return NULL;
-	}
-	return x;
-}
-
-#define U8_WARP(out, warp)     warp(rz_buf_read8(buffer, (ut8 *)&(out)))
-#define U16_WARP(out, warp)    warp(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian))
-#define U32_WARP(out, warp)    warp(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian))
-#define U64_WARP(out, warp)    warp(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian))
-#define ULE128_WARP(out, warp) warp(rz_buf_uleb128(buffer, (ut64 *)&(out)) > 0)
-#define SLE128_WARP(out, warp) warp(rz_buf_sleb128(buffer, (st64 *)&(out)) > 0)
-
-#define U8_WARP1(out, warp, ...)     warp(rz_buf_read8(buffer, (ut8 *)&(out)), __VA_ARGS__)
-#define U16_WARP1(out, warp, ...)    warp(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian), __VA_ARGS__)
-#define U32_WARP1(out, warp, ...)    warp(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian), __VA_ARGS__)
-#define U64_WARP1(out, warp, ...)    warp(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian), __VA_ARGS__)
-#define ULE128_WARP1(out, warp, ...) warp(rz_buf_uleb128(buffer, (ut64 *)&(out)) > 0, __VA_ARGS__)
-#define SLE128_WARP1(out, warp, ...) warp(rz_buf_sleb128(buffer, (st64 *)&(out)) > 0, __VA_ARGS__)
-
-#define U8_OR_RET_NULL(out)     U8_WARP(out, RET_NULL_IF_FAIL)
-#define U16_OR_RET_NULL(out)    U16_WARP(out, RET_NULL_IF_FAIL)
-#define U32_OR_RET_NULL(out)    U32_WARP(out, RET_NULL_IF_FAIL)
-#define U64_OR_RET_NULL(out)    U64_WARP(out, RET_NULL_IF_FAIL)
-#define UX_OR_RET_NULL(out, x)  UX_WRAP(out, x, RET_NULL_IF_FAIL)
-#define ULE128_OR_RET_NULL(out) ULE128_WARP(out, RET_NULL_IF_FAIL)
-#define SLE128_OR_RET_NULL(out) SLE128_WARP(out, RET_NULL_IF_FAIL)
-
-#define U8_OR_RET_FALSE(out)     U8_WARP(out, RET_FALSE_IF_FAIL)
-#define U16_OR_RET_FALSE(out)    U16_WARP(out, RET_FALSE_IF_FAIL)
-#define U32_OR_RET_FALSE(out)    U32_WARP(out, RET_FALSE_IF_FAIL)
-#define U64_OR_RET_FALSE(out)    U64_WARP(out, RET_FALSE_IF_FAIL)
-#define UX_OR_RET_FALSE(out, x)  UX_WRAP(out, x, RET_FALSE_IF_FAIL)
-#define ULE128_OR_RET_FALSE(out) ULE128_WARP(out, RET_FALSE_IF_FAIL)
-#define SLE128_OR_RET_FALSE(out) SLE128_WARP(out, RET_FALSE_IF_FAIL)
-
-#define U8_OR_GOTO(out, label)     U8_WARP1(out, GOTO_IF_FAIL, label)
-#define U16_OR_GOTO(out, label)    U16_WARP1(out, GOTO_IF_FAIL, label)
-#define U32_OR_GOTO(out, label)    U32_WARP1(out, GOTO_IF_FAIL, label)
-#define U64_OR_GOTO(out, label)    U64_WARP1(out, GOTO_IF_FAIL, label)
-#define UX_OR_GOTO(out, x, label)  UX_WRAP1(out, x, GOTO_IF_FAIL, label)
-#define ULE128_OR_GOTO(out, label) ULE128_WARP1(out, GOTO_IF_FAIL, label)
-#define SLE128_OR_GOTO(out, label) SLE128_WARP(out, GOTO_IF_FAIL, label)
+#include "dwarf_private.h"
 
 static const char *indent_tbl[] = {
 	"",
@@ -140,7 +16,7 @@ static const char *indent_tbl[] = {
 	"\t\t\t\t\t\t",
 };
 
-const char *indent_str(int indent) {
+RZ_IPI const char *indent_str(int indent) {
 	if (indent < 0) {
 		return "";
 	}
@@ -577,9 +453,9 @@ RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
 	return dwarf_lnct[lnct];
 }
 
-static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
+RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
 
-static bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, bool big_endian) {
+RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, bool big_endian) {
 	bool is_64bit;
 	ut64 length;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
@@ -609,7 +485,7 @@ static bool ListsHeader_parse(RzBinDwarfListsHeader *self, RzBuffer *buffer, boo
 	return true;
 }
 
-static RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
+RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 	RzBinDwarfBlock *clone = RZ_NEW0(RzBinDwarfBlock);
 	if (!clone) {
 		return NULL;
@@ -624,7 +500,7 @@ static RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 	return clone;
 }
 
-static void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {
+RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {
 	if (!self) {
 		return;
 	}
@@ -636,7 +512,7 @@ static void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {
  * \brief Read an "initial length" value, as specified by dwarf.
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
  */
-static inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
+RZ_IPI inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
 	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
 	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
 	ut64 r = READ32(*buf);
@@ -656,7 +532,7 @@ static inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_end
  * \brief Read an "initial length" value, as specified by dwarf.
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
  */
-static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
+RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
 	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
 	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
 	ut32 x32;
@@ -687,7 +563,7 @@ static bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut6
  * \param buf_end To check the boundary /for READ macro/
  * \return ut64 Read value
  */
-static inline ut64 dwarf_read_offset(bool is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
+RZ_IPI inline ut64 dwarf_read_offset(bool is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
 	ut64 result;
 	if (is_64bit) {
 		result = READ64(*buf);
@@ -697,7 +573,7 @@ static inline ut64 dwarf_read_offset(bool is_64bit, bool big_endian, const ut8 *
 	return result;
 }
 
-static inline bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
+RZ_IPI inline bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
 	if (is_64bit) {
 		ut64 result;
 		U64_OR_RET_FALSE(result);
@@ -710,7 +586,7 @@ static inline bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool 
 	return true;
 }
 
-static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
+RZ_IPI inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
 	ut64 result;
 	switch (size) {
 	case 2:
@@ -730,7 +606,7 @@ static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **
 	return result;
 }
 
-static bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
+RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	if (block->length == 0) {
 		return true;
 	}
@@ -744,32 +620,13 @@ static bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	return true;
 }
 
-typedef enum {
-	DW_ATTR_TYPE_DEF,
-	DW_ATTR_TYPE_FILE_ENTRY_FORMAT,
-} DwAttrType;
-
-typedef struct {
-	DwAttrType type;
-	union {
-		RzBinDwarfAttrDef *def;
-		RzBinDwarfFileEntryFormat *format;
-	};
-	union {
-		RzBinDwarfLineHeader *line_hdr;
-		RzBinDwarfCompUnitHdr *comp_unit_hdr;
-	};
-	RzBuffer *str_buffer;
-	RzBinDwarfEncoding encoding;
-} DwAttrOption;
-
 /**
  * This function is quite incomplete and requires lot of work
  * With parsing various new FORM values
  * \brief Parses attribute value based on its definition
  *        and stores it into `value`
  */
-static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
+RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
 	rz_return_val_if_fail(in && value && buffer, NULL);
 
 	enum DW_AT name = 0;
@@ -1024,7 +881,7 @@ static bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 	return true;
 }
 
-static void attr_fini(RzBinDwarfAttr *val) {
+RZ_IPI void attr_fini(RzBinDwarfAttr *val) {
 	if (!val) {
 		return;
 	}
@@ -1040,7 +897,7 @@ static void attr_fini(RzBinDwarfAttr *val) {
 	};
 }
 
-static char *attr_to_string(RzBinDwarfAttr *attr) {
+RZ_IPI char *attr_to_string(RzBinDwarfAttr *attr) {
 	switch (attr->name) {
 	case DW_AT_language: return rz_str_new(rz_bin_dwarf_lang(attr->uconstant));
 	default: break;
@@ -1062,7 +919,7 @@ static char *attr_to_string(RzBinDwarfAttr *attr) {
 	}
 }
 
-static RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
+RZ_IPI RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
 	rz_return_val_if_fail(binfile && sn, NULL);
 	RzListIter *iter;
 	RzBinSection *section = NULL;
@@ -1081,7 +938,7 @@ static RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
 	return NULL;
 }
 
-static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t *len) {
+RZ_IPI ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t *len) {
 	rz_return_val_if_fail(binfile && sect_name && len, NULL);
 	RzBinSection *section = getsection(binfile, sect_name);
 	if (!section) {
@@ -1096,7 +953,7 @@ static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t 
 	return buf;
 }
 
-static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
+RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	rz_return_val_if_fail(binfile && sect_name, NULL);
 	RzBinSection *section = getsection(binfile, sect_name);
 	if (!section) {
@@ -1108,17 +965,6 @@ static RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	ut64 len = RZ_MIN(section->size, binfile->size - section->paddr);
 	return rz_buf_new_slice(binfile->buf, section->paddr, len);
 }
-
-#include "option.inc"
-#include "addr.inc"
-#include "value.inc"
-#include "op.inc"
-#include "line.inc"
-#include "aranges.inc"
-#include "abbrev.inc"
-#include "unit.inc"
-#include "rnglists.inc"
-#include "loclists.inc"
 
 RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt) {
 	rz_return_val_if_fail(bf && opt, NULL);
