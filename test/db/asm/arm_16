@@ -87,13 +87,13 @@ ad "adr r6, 0x360" d8a6 0x0 (set r6 (bv 32 0x364))
 d "adr r6, 0x360" d8a6 0x1000 (set r6 (bv 32 0x1364))
 d "adr r6, 0x360" d8a6 0x1002 (set r6 (bv 32 0x1364))
 d "adr r6, 0x360" d8a6 0x1004 (set r6 (bv 32 0x1368))
-d "subw r8, pc, 0xec7" aff6c768 0x1000 (set r8 (bv 32 0x13d))
+d "adr.w r8, -0xec7" aff6c768 0x1000 (set r8 (bv 32 0x13d))
 a "adr r8, -0xec7" aff6c768
-d "subw r2, pc, 0x10" aff21002 0x1000 (set r2 (bv 32 0xff4))
+d "adr.w r2, -0x10" aff21002 0x1000 (set r2 (bv 32 0xff4))
 a "adr.w r2, -0x10" aff21002
-d "addw r8, pc, 0xa23" 0ff62328 0x1000 (set r8 (bv 32 0x1a27))
+d "adr.w r8, 0xa23" 0ff62328 0x1000 (set r8 (bv 32 0x1a27))
 a "adr r8, 0xa23" 0ff62328
-d "addw r3, pc, 0x24" 0ff22403 0x1000 (set r3 (bv 32 0x1028))
+d "adr.w r3, 0x24" 0ff22403 0x1000 (set r3 (bv 32 0x1028))
 a "adr.w r3, 0x24" 0ff22403
 d "adds r6, r2, 5" 561d 0x0 (seq (set a (var r2)) (set b (bv 32 0x5)) (set r6 (+ (var r2) (bv 32 0x5))) (set cf (msb (+ (cast 33 false (var a)) (cast 33 false (var b))))) (set vf (&& (! (^^ (msb (var a)) (msb (var b)))) (^^ (msb (var a)) (msb (var r6))))) (set zf (is_zero (var r6))) (set nf (msb (var r6))))
 a "add r6, r2, 5" 561d
@@ -1144,5 +1144,5 @@ ad "wfi.w" aff30380
 ad "yield" 10bf
 ad "yield.w" aff30180
 d "add r1, pc" 7944 0x3ffd70ca (set r1 (+ (var r1) (bv 32 0x3ffd70ce)))
-d "subw r5, pc, 0x27" aff22705 0x1000 (set r5 (bv 32 0xfdd))
+d "adr.w r5, -0x27" aff22705 0x1000 (set r5 (bv 32 0xfdd))
 d "addw ip, ip, 0x604" 0cf2046c 0x0 (set r12 (+ (var r12) (bv 32 0x604)))
