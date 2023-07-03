@@ -142,8 +142,8 @@ d "andeq r0, r0, 1" 01000002
 d "andeq r3, r5, 0x80000000" 02310502
 d "andne r3, r3, r2" 02300310
 d "andne ip, ip, r7" 07c00c10
-d "asreq r0, ip, 0x1f" cc0fa001
-d "asrne r0, r4, 0x1f" c40fa011
+d "asreq r0, ip, 31" cc0fa001
+d "asrne r0, r4, 31" c40fa011
 d "beq 8" 0000000a 0x0 (branch (var zf) (jmp (bv 32 0x8)) nop)
 d "biceq r3, r3, 7" 0730c303
 d "blne 0x1900" 3E06001B
@@ -182,7 +182,7 @@ d "ldrdne r2, r3, [r3, ip]" dc208311
 d "ldreq r0, [fp, -0xb4]" b4001b05
 d "ldrheq r0, [r3, r0]" b0009301
 d "lslne r1, r1, 2" 0111a011
-d "lsreq r0, r0, 0x10" 2008a001
+d "lsreq r0, r0, 16" 2008a001
 d "lsrne r0, r0, 9" a004a011
 d "mlaeq r7, r5, r7, r0" 95072700
 d "mlane r3, r1, r3, r2" 91232310
@@ -464,7 +464,7 @@ d "ror r2, r7, r3" 7723a0e1 0x0 (set r2 (| (>> (var r7) (cast 5 false (var r3)) 
 d "rors r2, r7, r3" 7723b0e1 0x0 (seq (set cf_tmp (ite (is_zero (cast 5 false (var r3))) (var cf) (msb (<< (var r7) (~- (cast 5 false (var r3))) false)))) (set r2 (| (>> (var r7) (cast 5 false (var r3)) false) (<< (var r7) (~- (cast 5 false (var r3))) false))) (set cf (var cf_tmp)) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 d "rrx r2, r3" 6320a0e1 0x0 (set r2 (>> (var r3) (bv 5 0x1) (var cf)))
 d "rrxs r2, r3" 6320b0e1 0x0 (seq (set cf_tmp (lsb (var r3))) (set r2 (>> (var r3) (bv 5 0x1) (var cf))) (set cf (var cf_tmp)) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
-d "lsr r1, r3, 32" a31fa0e1 0x0 (set r1 (>> (var r3) (bv 5 0x1f) false))
+d "lsr r1, r3, 31" a31fa0e1 0x0 (set r1 (>> (var r3) (bv 5 0x1f) false))
 d "mvn r1, 0x90000000" 0912e0e3 0x0 (set r1 (~ (bv 32 0x90000000)))
 d "mvns r1, 0x90000000" 0912f0e3 0x0 (seq (set cf_tmp true) (set r1 (~ (bv 32 0x90000000))) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
 ad "tst r1, r2" 020011e1 0x0 (seq (set zf (is_zero (& (var r1) (var r2)))) (set nf (msb (& (var r1) (var r2)))))
