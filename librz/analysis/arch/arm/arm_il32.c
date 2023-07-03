@@ -799,7 +799,8 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	cs_arm_op *memop = &insn->detail->arm.operands[mem_idx];
 	if (memop->mem.base == ARM_REG_PC) {
 		// LDR (literal) is different in the sense that it aligns the pc value:
-		addr = arg_mem(U32(PCALIGN(insn->address, is_thumb) + MEMDISP(mem_idx)), memop, NULL);
+		int32_t mem_disp = memop->subtracted ? -MEMDISP(mem_idx) : MEMDISP(mem_idx);
+		addr = arg_mem(U32(PCALIGN(insn->address, is_thumb) + mem_disp), memop, NULL);
 	} else {
 		addr = ARG(mem_idx);
 	}
