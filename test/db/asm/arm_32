@@ -196,7 +196,7 @@ d "orreq r6, r6, r2, lsr 1" a2608601
 d "orreq r3, r3, -0x80000000" 02318303
 d "orrne r0, r0, r1, lsl ip" 110c8011
 d "orrne r1, r1, r3" 03108111
-d "popeq {pc}" 04f09d04
+d "ldreq pc, [sp], 4" 04f09d04
 d "popeq {r4, pc}" 1080bd08
 d "popeq {r4, r5, pc}" 3080bd08
 d "popeq {r3, r4, r5, pc}" 3880bd08
@@ -338,16 +338,16 @@ d "ldr r0, [r1, r4, ror 5]" e40291e7 0x0 (set r0 (loadw 0 32 (+ (var r1) (| (>> 
 d "ldr r0, [r1, r4, rrx]" 640091e7 0x0 (set r0 (loadw 0 32 (+ (var r1) (>> (var r4) (bv 5 0x1) (var cf)))))
 d "ldrb r2, [r3]" 0020d3e5 0x0 (set r2 (cast 32 false (load 0 (var r3))))
 d "ldrsb r2, [r3]" d020d3e1 0x0 (set r2 (cast 32 (msb (load 0 (var r3))) (load 0 (var r3))))
-d "ldrsbt r2, [r3], 0" d020f3e0 0x0 (seq (set r2 (cast 32 (msb (load 0 (var r3))) (load 0 (var r3)))) (set r3 (+ (var r3) (bv 32 0x0))))
+d "ldrsbt r2, [r3], 0" d020f3e0 0x0 (seq (set r2 (cast 32 (msb (load 0 (var r3))) (load 0 (var r3)))) (set r3 (var r3)))
 d "ldrh r0, [r1]" b000d1e1 0x0 (set r0 (cast 32 false (loadw 0 16 (var r1))))
 d "ldrsh r4, [r2]" f040d2e1 0x0 (set r4 (cast 32 (msb (loadw 0 16 (var r2))) (loadw 0 16 (var r2))))
-d "ldrsht r4, [r2], 0" f040f2e0 0x0 (seq (set r4 (cast 32 (msb (loadw 0 16 (var r2))) (loadw 0 16 (var r2)))) (set r2 (+ (var r2) (bv 32 0x0))))
+d "ldrsht r4, [r2], 0" f040f2e0 0x0 (seq (set r4 (cast 32 (msb (loadw 0 16 (var r2))) (loadw 0 16 (var r2)))) (set r2 (var r2)))
 d "ldr r6, [pc, 0x48]" 48609fe5 0x10660 (set r6 (loadw 0 32 (bv 32 0x106b0)))
 d "ldr r2, [pc, -0x10]" 10201fe5 0x1000 (set r2 (loadw 0 32 (bv 32 0xff8)))
 d "ldr sb, [pc, r3]" 03909fe7 0x1000 (set r9 (loadw 0 32 (+ (bv 32 0x1008) (var r3))))
 d "ldr r2, [fp, -0x10]!" 10203be5 0x0 (seq (set r11 (- (var r11) (bv 32 0x10))) (set r2 (loadw 0 32 (var r11))))
 d "ldr r0, [r1], 4" 040091e4 0x0 (seq (set r0 (loadw 0 32 (var r1))) (set r1 (+ (var r1) (bv 32 0x4))))
-d "ldrt r0, [r1], 0" 0000b1e4 0x0 (seq (set r0 (loadw 0 32 (var r1))) (set r1 (+ (var r1) (bv 32 0x0))))
+d "ldrt r0, [r1], 0" 0000b1e4 0x0 (seq (set r0 (loadw 0 32 (var r1))) (set r1 (var r1)))
 d "ldrt r0, [r1], 4" 0400b1e4 0x0 (seq (set r0 (loadw 0 32 (var r1))) (set r1 (+ (var r1) (bv 32 0x4))))
 d "ldrbt r0, [r1], 4" 0400f1e4 0x0 (seq (set r0 (cast 32 false (load 0 (var r1)))) (set r1 (+ (var r1) (bv 32 0x4))))
 d "ldrht r0, [r1], 4" b400f1e0 0x0 (seq (set r0 (cast 32 false (loadw 0 16 (var r1)))) (set r1 (+ (var r1) (bv 32 0x4))))
@@ -439,7 +439,7 @@ d "stmib r0, {r1, r3, r4}" 1a0080e9 0x0 (seq (storew 0 (+ (var r0) (bv 32 0x4)) 
 d "stmib r0!, {r1, r3, r4}" 1a00a0e9 0x0 (seq (storew 0 (+ (var r0) (bv 32 0x4)) (var r1)) (storew 0 (+ (var r0) (bv 32 0x8)) (var r3)) (storew 0 (+ (var r0) (bv 32 0xc)) (var r4)) (set r0 (+ (var r0) (bv 32 0xc))))
 d "stmdb r0, {r1, r3, r4}" 1a0000e9 0x0 (seq (storew 0 (- (var r0) (bv 32 0xc)) (var r1)) (storew 0 (- (var r0) (bv 32 0x8)) (var r3)) (storew 0 (- (var r0) (bv 32 0x4)) (var r4)))
 d "stmdb r0!, {r1, r3, r4}" 1a0020e9 0x0 (seq (storew 0 (- (var r0) (bv 32 0xc)) (var r1)) (storew 0 (- (var r0) (bv 32 0x8)) (var r3)) (storew 0 (- (var r0) (bv 32 0x4)) (var r4)) (set r0 (- (var r0) (bv 32 0xc))))
-d "pop {fp}" 04b09de4 0x0 (seq (set base (var sp)) (set r11 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set sp (+ (var base) (bv 32 0x4))))
+d "ldr fp, [sp], 4" 04b09de4 0x0 (seq (set r11 (loadw 0 32 (var sp))) (set sp (+ (var sp) (bv 32 0x4))))
 d "pop {r3, pc}" 0880bde8 0x0 (seq (set base (var sp)) (set r3 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set tgt (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set sp (+ (var base) (bv 32 0x8))) (jmp (var tgt)))
 d "ldm r0, {r1, r3, r4}" 1a0090e8 0x0 (seq (set base (var r0)) (set r1 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set r3 (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set r4 (loadw 0 32 (+ (var base) (bv 32 0x8)))))
 d "ldm r0!, {r1, r3, r4}" 1a00b0e8 0x0 (seq (set base (var r0)) (set r1 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set r3 (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set r4 (loadw 0 32 (+ (var base) (bv 32 0x8)))) (set r0 (+ (var base) (bv 32 0xc))))
