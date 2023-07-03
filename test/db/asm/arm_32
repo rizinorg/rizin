@@ -139,7 +139,7 @@ d "sbc r6, r6, 0xc" 0c60c6e2 0x0 (set r6 (- (- (var r6) (bv 32 0xc)) (ite (var c
 d "sbc r6, r7, r5" 0560c7e0 0x0 (set r6 (- (- (var r7) (var r5)) (ite (var cf) (bv 32 0x0) (bv 32 0x1))))
 d "sbcs r6, r7, r5" 0560d7e0 0x0 (seq (set a (var r7)) (set b (var r5)) (set r6 (- (- (var r7) (var r5)) (ite (var cf) (bv 32 0x0) (bv 32 0x1)))) (set cf (msb (+ (+ (cast 33 false (var a)) (cast 33 false (~ (var b)))) (ite (var cf) (bv 33 0x1) (bv 33 0x0))))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var r6))))) (set zf (is_zero (var r6))) (set nf (msb (var r6))))
 d "andeq r0, r0, 1" 01000002
-d "andeq r3, r5, 0x80000000" 02310502
+d "andeq r3, r5, -0x80000000" 02310502
 d "andne r3, r3, r2" 02300310
 d "andne ip, ip, r7" 07c00c10
 d "asreq r0, ip, 31" cc0fa001
@@ -190,10 +190,10 @@ d "moveq r0, sl" 0a00a001
 d "movne r0, sb" 0900a011
 d "mulne r3, r3, r0" 93000310
 d "mvneq r0, 0x15" 1500e003
-d "mvneq r0, 0x80000000" 0201e003
+d "mvneq r0, -0x80000000" 0201e003
 d "orreq r5, r5, r3" 03508501
 d "orreq r6, r6, r2, lsr 1" a2608601
-d "orreq r3, r3, 0x80000000" 02318303
+d "orreq r3, r3, -0x80000000" 02318303
 d "orrne r0, r0, r1, lsl ip" 110c8011
 d "orrne r1, r1, r3" 03108111
 d "popeq {pc}" 04f09d04
@@ -235,7 +235,7 @@ d "movs r1, 0, 2" 0011b0e3 0x0 (seq (set cf_tmp false) (set r1 (bv 32 0x0)) (set
 d "movs r1, 1, 30" 011fb0e3 0x0 (seq (set cf_tmp false) (set r1 (bv 32 0x4)) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
 d "movs r1, 4" 0410b0e3 0x0 (seq (set r1 (bv 32 0x4)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
 d "movs r1, 0x40000000" 0111b0e3 0x0 (seq (set cf_tmp false) (set r1 (bv 32 0x40000000)) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
-d "movs r1, 0x80000000" 0211b0e3 0x0 (seq (set cf_tmp true) (set r1 (bv 32 0x80000000)) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
+d "movs r1, -0x80000000" 0211b0e3 0x0 (seq (set cf_tmp true) (set r1 (bv 32 0x80000000)) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
 ad "movs r0, 0x2a" 2a00b0e3 0x0 (seq (set r0 (bv 32 0x2a)) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
 ad "mov pc, 0x2a" 2af0a0e3 0x0 (jmp (bv 32 0x2a))
 ad "movs pc, 0x2a" 2af0b0e3
@@ -392,10 +392,10 @@ d "eor r4, r3, 3" 034023e2 0x0 (set r4 (^ (var r3) (bv 32 0x3)))
 d "eors r4, r3, 3" 034033e2 0x0 (seq (set r4 (^ (var r3) (bv 32 0x3))) (set zf (is_zero (var r4))) (set nf (msb (var r4))))
 d "eors r4, r3, 0x30000" 034833e2 0x0 (seq (set r4 (^ (var r3) (bv 32 0x30000))) (set cf false) (set zf (is_zero (var r4))) (set nf (msb (var r4))))
 d "eors r3, r3, 0x30000" 033833e2 0x0 (seq (set r3 (^ (var r3) (bv 32 0x30000))) (set cf false) (set zf (is_zero (var r3))) (set nf (msb (var r3))))
-d "eors r3, r3, 0x80000000" 023133e2 0x0 (seq (set r3 (^ (var r3) (bv 32 0x80000000))) (set cf true) (set zf (is_zero (var r3))) (set nf (msb (var r3))))
+d "eors r3, r3, -0x80000000" 023133e2 0x0 (seq (set r3 (^ (var r3) (bv 32 0x80000000))) (set cf true) (set zf (is_zero (var r3))) (set nf (msb (var r3))))
 d "and r0, r1, r2" 020001e0 0x0 (set r0 (& (var r1) (var r2)))
-d "ands r0, r1, 0x80000000" 020111e2 0x0 (seq (set r0 (& (var r1) (bv 32 0x80000000))) (set cf true) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
-d "ands r0, r0, 0x80000000" 020110e2 0x0 (seq (set r0 (& (var r0) (bv 32 0x80000000))) (set cf true) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
+d "ands r0, r1, -0x80000000" 020111e2 0x0 (seq (set r0 (& (var r1) (bv 32 0x80000000))) (set cf true) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
+d "ands r0, r0, -0x80000000" 020110e2 0x0 (seq (set r0 (& (var r0) (bv 32 0x80000000))) (set cf true) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
 d "ands r0, r1, 0x42" 420011e2 0x0 (seq (set r0 (& (var r1) (bv 32 0x42))) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
 d "orr r0, r1, 0x42" 420081e3 0x0 (set r0 (| (var r1) (bv 32 0x42)))
 d "orrs r0, r1, 0x42" 420091e3 0x0 (seq (set r0 (| (var r1) (bv 32 0x42))) (set zf (is_zero (var r0))) (set nf (msb (var r0))))
@@ -465,13 +465,13 @@ d "rors r2, r7, r3" 7723b0e1 0x0 (seq (set cf_tmp (ite (is_zero (cast 5 false (v
 d "rrx r2, r3" 6320a0e1 0x0 (set r2 (>> (var r3) (bv 5 0x1) (var cf)))
 d "rrxs r2, r3" 6320b0e1 0x0 (seq (set cf_tmp (lsb (var r3))) (set r2 (>> (var r3) (bv 5 0x1) (var cf))) (set cf (var cf_tmp)) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 d "lsr r1, r3, 31" a31fa0e1 0x0 (set r1 (>> (var r3) (bv 5 0x1f) false))
-d "mvn r1, 0x90000000" 0912e0e3 0x0 (set r1 (~ (bv 32 0x90000000)))
-d "mvns r1, 0x90000000" 0912f0e3 0x0 (seq (set cf_tmp true) (set r1 (~ (bv 32 0x90000000))) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
+d "mvn r1, -0x70000000" 0912e0e3 0x0 (set r1 (~ (bv 32 0x90000000)))
+d "mvns r1, -0x70000000" 0912f0e3 0x0 (seq (set cf_tmp true) (set r1 (~ (bv 32 0x90000000))) (set cf (var cf_tmp)) (set zf (is_zero (var r1))) (set nf (msb (var r1))))
 ad "tst r1, r2" 020011e1 0x0 (seq (set zf (is_zero (& (var r1) (var r2)))) (set nf (msb (& (var r1) (var r2)))))
 ad "tst ip, r3" 03001ce1 0x0 (seq (set zf (is_zero (& (var r12) (var r3)))) (set nf (msb (& (var r12) (var r3)))))
 d "tst r0, r1, ror 16" 610810e1 0x0 (seq (set cf (ite (is_zero (bv 5 0x10)) (var cf) (msb (<< (var r1) (~- (bv 5 0x10)) false)))) (set zf (is_zero (& (var r0) (| (>> (var r1) (bv 5 0x10) false) (<< (var r1) (~- (bv 5 0x10)) false))))) (set nf (msb (& (var r0) (| (>> (var r1) (bv 5 0x10) false) (<< (var r1) (~- (bv 5 0x10)) false))))))
 d "teq r1, r2" 020031e1 0x0 (seq (set zf (is_zero (| (var r1) (var r2)))) (set nf (msb (| (var r1) (var r2)))))
-d "teq r1, 0x80000000" 020131e3 0x0 (seq (set cf true) (set zf (is_zero (| (var r1) (bv 32 0x80000000)))) (set nf (msb (| (var r1) (bv 32 0x80000000)))))
+d "teq r1, -0x80000000" 020131e3 0x0 (seq (set cf true) (set zf (is_zero (| (var r1) (bv 32 0x80000000)))) (set nf (msb (| (var r1) (bv 32 0x80000000)))))
 ad "clz r3, r2" 123f6fe1 0x0 (seq (set v (var r2)) (set i (bv 32 0x20)) (repeat (! (is_zero (var v))) (seq (set v (>> (var v) (bv 5 0x1) false)) (set i (- (var i) (bv 32 0x1))))) (set r3 (var i)))
 ad "svc 0" 000000ef 0x0 (goto svc)
 ad "bfc r3, 3, 5" 9f31c7e7 0x0 (set r3 (& (var r3) (bv 32 0xffffff07)))

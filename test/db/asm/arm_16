@@ -21,7 +21,7 @@ a "sub ip, 0x33" acf1330c
 a "sub r8, 0xf9" a8f1f908
 ad "adc r0, r1, 0x7b" 41f17b00 0x0 (set r0 (+ (+ (var r1) (bv 32 0x7b)) (ite (var cf) (bv 32 0x1) (bv 32 0x0))))
 ad "adc r0, r1, 0xaf00af" 41f1af10
-ad "adc r0, r1, -0x47ff4800" 41f1b820 # -0xb800b800
+ad "adc r0, r1, 0xb800b800" 41f1b820
 ad "adc r0, r1, 0x26262626" 41f12630
 ad "adc r0, r1, 0x8f0000" 41f50f00
 ad "adc r0, r1, 0x1360000" 41f19b70
@@ -99,7 +99,7 @@ d "adds r6, r2, 5" 561d 0x0 (seq (set a (var r2)) (set b (bv 32 0x5)) (set r6 (+
 a "add r6, r2, 5" 561d
 d "adds r7, 0xc3" c337
 a "add r7, 0xc3" c337
-d "add.w sb, ip, -0x4dff4e00" 0cf1b229 # 0xb200b200
+d "add.w sb, ip, 0xb200b200" 0cf1b229
 a "add r9, r12, -0x4dff4e00" 0cf1b229 # 0xb200b200
 ad "add.w r1, r3, 0x2c" 03f12c01
 d "adds.w sb, r2, 0x250000" 12f51419
@@ -237,7 +237,7 @@ d "cmn.w r1, r3, asr 30" 11eba37f 0x0 (seq (set a (var r1)) (set b (>> (var r3) 
 a "cmn r1, r3, asr 30" 11eba37f
 ad "cmn.w r2, r5" 12eb050f
 ad "cmp r3, 0x73" 732b 0x0 (seq (set a (var r3)) (set b (bv 32 0x73)) (set res (- (var a) (var b))) (set cf (ule (var b) (var a))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var res))))) (set zf (is_zero (var res))) (set nf (msb (var res))))
-d "cmp.w r8, -0x54545455" b8f1ab3f 0x0 (seq (set a (var r8)) (set b (bv 32 0xabababab)) (set res (- (var a) (var b))) (set cf (ule (var b) (var a))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var res))))) (set zf (is_zero (var res))) (set nf (msb (var res))))
+d "cmp.w r8, 0xabababab" b8f1ab3f 0x0 (seq (set a (var r8)) (set b (bv 32 0xabababab)) (set res (- (var a) (var b))) (set cf (ule (var b) (var a))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var res))))) (set zf (is_zero (var res))) (set nf (msb (var res))))
 a "cmp r8, -0x54545455" b8f1ab3f # 0xabababab
 ad "cmp.w r6, 0x23" b6f1230f
 ad "cmp r3, r4" a342
@@ -455,7 +455,7 @@ d "mls r6, sl, r2, r5" 0afb1256
 a "mls r6, r10, r2, r5" 0afb1256
 d "movs r6, 0x26" 2626 0x0 (seq (set r6 (bv 32 0x26)) (set zf (is_zero (var r6))) (set nf (msb (var r6))))
 a "mov r6, 0x26" 2626
-d "mov.w r7, -0x4dff4e00" 4ff0b227 # 0xb200b200
+d "mov.w r7, 0xb200b200" 4ff0b227
 a "mov r7, 0xb200b200" 4ff0b227
 d "movs.w fp, 0x130000" 5ff4981b
 a "movs r11, 0x00130000" 5ff4981b
@@ -510,7 +510,7 @@ a "mvn r10, r3, lsr 17" 6fea534a
 ad "mvn.w r1, r2" 6fea0201
 ad "nop" 00bf
 ad "nop.w" aff30080
-d "orn r6, sl, -0x54545455" 6af0ab36 # 0xabababab
+d "orn r6, sl, 0xabababab" 6af0ab36
 a "orn r6, r10, 0xabababab" 6af0ab36
 d "orns r2, r3, 0x12800" 73f49432 0x0 (seq (set r2 (| (var r3) (~ (bv 32 0x12800)))) (set cf false) (set zf (is_zero (var r2))) (set nf (msb (var r2))))
 a "orns r2, r3, 0x00012800" 73f49432
@@ -665,7 +665,7 @@ d "rsbs r6, r6, 0" 7642
 a "rsb r6, 0" 7642
 d "rsb.w sb, r2, 0x16" c2f11609
 a "rsb r9, r2, 0x16" c2f11609
-d "rsbs.w r7, sb, -0x54ff5500" d9f1ab27 # 0xab00ab00
+d "rsbs.w r7, sb, 0xab00ab00" d9f1ab27
 a "rsbs r7, r9, 0xab00ab00" d9f1ab27
 ad "rsb.w r2, r3, 0" c3f10002
 ad "rsbs.w r3, r5, 0" d5f10003
@@ -691,7 +691,7 @@ d "sbc r7, r2, 0xf30000" 62f57307
 a "sbc r7, r2, 0x00f30000" 62f57307
 d "sbc r1, r1, 0xfb" 61f1fb01
 a "sbc r1, 0xfb" 61f1fb01
-d "sbcs r2, r5, -0x54ff5500" 75f1ab22 # 0xab00ab00
+d "sbcs r2, r5, 0xab00ab00" 75f1ab22
 a "sbcs r2, r5, 0xab00ab00" 75f1ab22
 d "sbcs r2, r5" aa41
 a "sbc r2, r5" aa41
