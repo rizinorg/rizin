@@ -55,7 +55,7 @@ static void check_connection(RzDebug *dbg) {
 	}
 }
 
-static int rz_debug_gdb_step(RzDebug *dbg) {
+static bool rz_debug_gdb_step(RzDebug *dbg) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	check_connection(dbg);
 	if (!ctx->desc) {
