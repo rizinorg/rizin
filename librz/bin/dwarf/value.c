@@ -50,23 +50,23 @@ static inline uint32_t mask_bit_size(uint64_t addr_mask) {
 	return 64 - leading_zeros(addr_mask);
 }
 
-uint32_t bit_size(ValueType type, uint64_t addr_mask) {
+uint32_t bit_size(RzBinDwarfValueType type, uint64_t addr_mask) {
 	switch (type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		return mask_bit_size(addr_mask);
-	case I8:
-	case U8:
+	case RzBinDwarfValueType_I8:
+	case RzBinDwarfValueType_U8:
 		return 8;
-	case I16:
-	case U16:
+	case RzBinDwarfValueType_I16:
+	case RzBinDwarfValueType_U16:
 		return 16;
-	case I32:
-	case U32:
-	case F32:
+	case RzBinDwarfValueType_I32:
+	case RzBinDwarfValueType_U32:
+	case RzBinDwarfValueType_F32:
 		return 32;
-	case I64:
-	case U64:
-	case F64:
+	case RzBinDwarfValueType_I64:
+	case RzBinDwarfValueType_U64:
+	case RzBinDwarfValueType_F64:
 		return 64;
 	default:
 		return 0; // Undefined ValueType
@@ -78,24 +78,24 @@ RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, ui
 	switch (encoding) {
 	case DW_ATE_signed:
 		switch (byte_size) {
-		case 1: value_type = I8; break;
-		case 2: value_type = I16; break;
-		case 4: value_type = I32; break;
-		case 8: value_type = I64; break;
+		case 1: value_type = RzBinDwarfValueType_I8; break;
+		case 2: value_type = RzBinDwarfValueType_I16; break;
+		case 4: value_type = RzBinDwarfValueType_I32; break;
+		case 8: value_type = RzBinDwarfValueType_I64; break;
 		}
 		break;
 	case DW_ATE_unsigned:
 		switch (byte_size) {
-		case 1: value_type = U8; break;
-		case 2: value_type = U16; break;
-		case 4: value_type = U32; break;
-		case 8: value_type = U64; break;
+		case 1: value_type = RzBinDwarfValueType_U8; break;
+		case 2: value_type = RzBinDwarfValueType_U16; break;
+		case 4: value_type = RzBinDwarfValueType_U32; break;
+		case 8: value_type = RzBinDwarfValueType_U64; break;
 		}
 		break;
 	case DW_ATE_float:
 		switch (byte_size) {
-		case 4: value_type = F32; break;
-		case 8: value_type = F64; break;
+		case 4: value_type = RzBinDwarfValueType_F32; break;
+		case 8: value_type = RzBinDwarfValueType_F64; break;
 		}
 		break;
 	case DW_ATE_address: break;
@@ -156,47 +156,48 @@ RZ_IPI Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry) {
 	}
 }
 
-RZ_IPI RzBinDwarfValue *Value_parse(ValueType value_type, RzBuffer *buffer, bool big_endian) {
+RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian) {
 	RzBinDwarfValue *value = (RzBinDwarfValue *)malloc(sizeof(RzBinDwarfValue));
 	if (!value) {
 		// handle allocation error
 		return NULL;
 	}
 
+	value->type = value_type;
 	switch (value_type) {
-	case I8:
+	case RzBinDwarfValueType_I8:
 		U8_OR_RET_NULL(value->i8);
 		value->i8 = (st8)value->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		U8_OR_RET_NULL(value->u8);
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		U16_OR_RET_NULL(value->u16);
 		value->i16 = (st16)value->u16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		U16_OR_RET_NULL(value->u16);
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		U32_OR_RET_NULL(value->u32);
 		value->i32 = (st32)value->u32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		U8_OR_RET_NULL(value->u32);
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		U8_OR_RET_NULL(value->u64);
 		value->i64 = (st64)value->u64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		U8_OR_RET_NULL(value->u64);
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		U8_OR_RET_NULL(value->u32);
 		value->f32 = (float)value->u32;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		U8_OR_RET_NULL(value->u64);
 		value->f64 = (float)value->u64;
 		break;
@@ -208,7 +209,7 @@ RZ_IPI RzBinDwarfValue *Value_parse(ValueType value_type, RzBuffer *buffer, bool
 	return value;
 }
 
-RZ_IPI ValueType Value_type(RzBinDwarfValue *ptr) {
+RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr) {
 	if (ptr == NULL) {
 		return -1;
 	}
@@ -217,31 +218,31 @@ RZ_IPI ValueType Value_type(RzBinDwarfValue *ptr) {
 
 RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, uint64_t addr_mask, uint64_t *result) {
 	switch (Value_type(self)) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		*result = self->generic & addr_mask;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		*result = (uint64_t)self->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		*result = self->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		*result = (uint64_t)self->i16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		*result = self->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		*result = (uint64_t)self->i32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		*result = self->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		*result = (uint64_t)self->i64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		*result = self->u64;
 		break;
 	default:
@@ -251,39 +252,40 @@ RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, uint64_t addr_mask, uint64_t *re
 	return true;
 }
 
-RZ_IPI bool Value_from_u64(ValueType value_type, uint64_t value, RzBinDwarfValue *result) {
+RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, uint64_t value, RzBinDwarfValue *result) {
+	result->type = value_type;
 	switch (value_type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = value;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = (int8_t)value;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		result->u8 = (uint8_t)value;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = (int16_t)value;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		result->u16 = (uint16_t)value;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = (int32_t)value;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		result->u32 = (uint32_t)value;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = (int64_t)value;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		result->u64 = value;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = (float)value;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = (double)value;
 		break;
 	default:
@@ -292,39 +294,40 @@ RZ_IPI bool Value_from_u64(ValueType value_type, uint64_t value, RzBinDwarfValue
 	return true;
 }
 
-RZ_IPI bool Value_from_f32(ValueType value_type, float value, RzBinDwarfValue *result) {
+RZ_IPI bool Value_from_f32(RzBinDwarfValueType value_type, float value, RzBinDwarfValue *result) {
+	result->type = value_type;
 	switch (value_type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (uint64_t)value;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = (int8_t)value;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		result->u8 = (uint8_t)value;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = (int16_t)value;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		result->u16 = (uint16_t)value;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = (int32_t)value;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		result->u32 = (uint32_t)value;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = (int64_t)value;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		result->u64 = (uint64_t)value;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = value;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = (double)value;
 		break;
 	default:
@@ -333,39 +336,40 @@ RZ_IPI bool Value_from_f32(ValueType value_type, float value, RzBinDwarfValue *r
 	return true;
 }
 
-RZ_IPI bool Value_from_f64(ValueType value_type, double value, RzBinDwarfValue *result) {
+RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDwarfValue *result) {
+	result->type = value_type;
 	switch (value_type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (uint64_t)value;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = (int8_t)value;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		result->u8 = (uint8_t)value;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = (int16_t)value;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		result->u16 = (uint16_t)value;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = (int32_t)value;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		result->u32 = (uint32_t)value;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = (int64_t)value;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		result->u64 = (uint64_t)value;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = (float)value;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = value;
 		break;
 	default:
@@ -376,16 +380,16 @@ RZ_IPI bool Value_from_f64(ValueType value_type, double value, RzBinDwarfValue *
 
 RZ_IPI bool Value_convert(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
-	case F32:
+	case RzBinDwarfValueType_F32:
 		return Value_from_f32(self->type, self->f32, result);
-	case F64:
+	case RzBinDwarfValueType_F64:
 		return Value_from_f64(self->type, self->f64, result);
 	default:
 		return Value_from_u64(self->type, self->u64 & addr_mask, result);
 	}
 }
 
-RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, ValueType value_type, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, RzBinDwarfValueType value_type, uint64_t addr_mask, RzBinDwarfValue *result) {
 	if (bit_size(self->type, addr_mask) != bit_size(value_type, addr_mask)) {
 		return false;
 	}
@@ -397,25 +401,25 @@ RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, ValueType value_type, uint6
 
 RZ_IPI bool Value_abs(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (uint64_t)llabs(sign_extend(self->generic, addr_mask));
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = abs(self->i8);
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = abs(self->i16);
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = abs(self->i32);
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = llabs(self->i64);
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = fabsf(self->f32);
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = fabs(self->f64);
 		break;
 	default:
@@ -426,25 +430,25 @@ RZ_IPI bool Value_abs(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue
 
 RZ_IPI bool Value_neg(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (uint64_t)(-sign_extend(self->generic, addr_mask));
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = -self->i8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = -self->i16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = -self->i32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = -self->i64;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = -self->f32;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = -self->f64;
 		break;
 	default:
@@ -459,37 +463,37 @@ RZ_IPI bool Value_add(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	}
 
 	switch (lhs->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (lhs->generic + rhs->generic) & addr_mask;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = lhs->i8 + rhs->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		result->u8 = lhs->u8 + rhs->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = lhs->i16 + rhs->i16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		result->u16 = lhs->u16 + rhs->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = lhs->i32 + rhs->i32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		result->u32 = lhs->u32 + rhs->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = lhs->i64 + rhs->i64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		result->u64 = lhs->u64 + rhs->u64;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = lhs->f32 + rhs->f32;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = lhs->f64 + rhs->f64;
 		break;
 	default:
@@ -504,37 +508,37 @@ RZ_IPI bool Value_sub(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	}
 
 	switch (lhs->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (lhs->generic - rhs->generic) & addr_mask;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = lhs->i8 - rhs->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		result->u8 = lhs->u8 - rhs->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = lhs->i16 - rhs->i16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		result->u16 = lhs->u16 - rhs->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = lhs->i32 - rhs->i32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		result->u32 = lhs->u32 - rhs->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = lhs->i64 - rhs->i64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		result->u64 = lhs->u64 - rhs->u64;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = lhs->f32 - rhs->f32;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = lhs->f64 - rhs->f64;
 		break;
 	default:
@@ -549,37 +553,37 @@ RZ_IPI bool Value_mul(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	}
 
 	switch (lhs->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		result->generic = (lhs->generic * rhs->generic) & addr_mask;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		result->i8 = lhs->i8 * rhs->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		result->u8 = lhs->u8 * rhs->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		result->i16 = lhs->i16 * rhs->i16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		result->u16 = lhs->u16 * rhs->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		result->i32 = lhs->i32 * rhs->i32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		result->u32 = lhs->u32 * rhs->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		result->i64 = lhs->i64 * rhs->i64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		result->u64 = lhs->u64 * rhs->u64;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		result->f32 = lhs->f32 * rhs->f32;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		result->f64 = lhs->f64 * rhs->f64;
 		break;
 	default:
@@ -594,67 +598,67 @@ RZ_IPI bool Value_div(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	}
 
 	switch (lhs->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		if (sign_extend(rhs->generic, addr_mask) == 0) {
 			return false;
 		}
 		result->generic = sign_extend(lhs->generic, addr_mask) / sign_extend(rhs->generic, addr_mask);
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		if (rhs->i8 == 0) {
 			return false;
 		}
 		result->i8 = lhs->i8 / rhs->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		if (rhs->u8 == 0) {
 			return false;
 		}
 		result->u8 = lhs->u8 / rhs->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		if (rhs->i16 == 0) {
 			return false;
 		}
 		result->i16 = lhs->i16 / rhs->i16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		if (rhs->u16 == 0) {
 			return false;
 		}
 		result->u16 = lhs->u16 / rhs->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		if (rhs->i32 == 0) {
 			return false;
 		}
 		result->i32 = lhs->i32 / rhs->i32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		if (rhs->u32 == 0) {
 			return false;
 		}
 		result->u32 = lhs->u32 / rhs->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		if (rhs->i64 == 0) {
 			return false;
 		}
 		result->i64 = lhs->i64 / rhs->i64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		if (rhs->u64 == 0) {
 			return false;
 		}
 		result->u64 = lhs->u64 / rhs->u64;
 		break;
-	case F32:
+	case RzBinDwarfValueType_F32:
 		if (rhs->f32 == 0) {
 			return false;
 		}
 		result->f32 = lhs->f32 / rhs->f32;
 		break;
-	case F64:
+	case RzBinDwarfValueType_F64:
 		if (rhs->f64 == 0) {
 			return false;
 		}
@@ -672,62 +676,62 @@ RZ_IPI bool Value_rem(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	}
 
 	switch (lhs->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		if ((rhs->generic & addr_mask) == 0) {
 			return false;
 		}
 		result->generic = (lhs->generic & addr_mask) % (rhs->generic & addr_mask);
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		if (rhs->i8 == 0) {
 			return false;
 		}
 		result->i8 = lhs->i8 % rhs->i8;
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		if (rhs->u8 == 0) {
 			return false;
 		}
 		result->u8 = lhs->u8 % rhs->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		if (rhs->i16 == 0) {
 			return false;
 		}
 		result->i16 = lhs->i16 % rhs->i16;
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		if (rhs->u16 == 0) {
 			return false;
 		}
 		result->u16 = lhs->u16 % rhs->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		if (rhs->i32 == 0) {
 			return false;
 		}
 		result->i32 = lhs->i32 % rhs->i32;
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		if (rhs->u32 == 0) {
 			return false;
 		}
 		result->u32 = lhs->u32 % rhs->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		if (rhs->i64 == 0) {
 			return false;
 		}
 		result->i64 = lhs->i64 % rhs->i64;
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		if (rhs->u64 == 0) {
 			return false;
 		}
 		result->u64 = lhs->u64 % rhs->u64;
 		break;
-	case F32:
-	case F64:
+	case RzBinDwarfValueType_F32:
+	case RzBinDwarfValueType_F64:
 		return false;
 	default:
 		return false;
@@ -736,7 +740,7 @@ RZ_IPI bool Value_rem(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 }
 
 RZ_IPI bool Value_not(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
-	ValueType value_type = result->type;
+	RzBinDwarfValueType value_type = result->type;
 	uint64_t v;
 	if (!Value_to_u64(self, addr_mask, &v)) {
 		return false;
@@ -748,8 +752,8 @@ RZ_IPI bool Value_not(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue
 }
 
 RZ_IPI bool Value_and(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
-	ValueType lhs_type = lhs->type;
-	ValueType rhs_type = rhs->type;
+	RzBinDwarfValueType lhs_type = lhs->type;
+	RzBinDwarfValueType rhs_type = rhs->type;
 	if (lhs_type != rhs_type) {
 		return false;
 	}
@@ -764,8 +768,8 @@ RZ_IPI bool Value_and(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 }
 
 RZ_IPI bool Value_or(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
-	ValueType lhs_type = lhs->type;
-	ValueType rhs_type = rhs->type;
+	RzBinDwarfValueType lhs_type = lhs->type;
+	RzBinDwarfValueType rhs_type = rhs->type;
 	if (lhs_type != rhs_type) {
 		return false;
 	}
@@ -780,8 +784,8 @@ RZ_IPI bool Value_or(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_m
 }
 
 RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
-	ValueType lhs_type = lhs->type;
-	ValueType rhs_type = rhs->type;
+	RzBinDwarfValueType lhs_type = lhs->type;
+	RzBinDwarfValueType rhs_type = rhs->type;
 	if (lhs_type != rhs_type) {
 		return false;
 	}
@@ -798,47 +802,47 @@ RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 RZ_IPI bool shift_length(RzBinDwarfValue *self, uint64_t *result) {
 	uint64_t value = 0;
 	switch (self->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		value = self->generic;
 		break;
-	case I8:
+	case RzBinDwarfValueType_I8:
 		if (self->i8 >= 0) {
 			value = (uint64_t)self->i8;
 		} else {
 			return false;
 		}
 		break;
-	case U8:
+	case RzBinDwarfValueType_U8:
 		value = (uint64_t)self->u8;
 		break;
-	case I16:
+	case RzBinDwarfValueType_I16:
 		if (self->i16 >= 0) {
 			value = (uint64_t)self->i16;
 		} else {
 			return false;
 		}
 		break;
-	case U16:
+	case RzBinDwarfValueType_U16:
 		value = (uint64_t)self->u16;
 		break;
-	case I32:
+	case RzBinDwarfValueType_I32:
 		if (self->i32 >= 0) {
 			value = (uint64_t)self->i32;
 		} else {
 			return false;
 		}
 		break;
-	case U32:
+	case RzBinDwarfValueType_U32:
 		value = (uint64_t)self->u32;
 		break;
-	case I64:
+	case RzBinDwarfValueType_I64:
 		if (self->i64 >= 0) {
 			value = (uint64_t)self->i64;
 		} else {
 			return false;
 		}
 		break;
-	case U64:
+	case RzBinDwarfValueType_U64:
 		value = self->u64;
 		break;
 	default:
@@ -853,45 +857,45 @@ RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr
 	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
 
 	switch (self->type) {
-	case ValueType_GENERIC:
+	case RzBinDwarfValueType_GENERIC:
 		if (v2 >= mask_bit_size(addr_mask)) {
-			result->type = ValueType_GENERIC;
+			result->type = RzBinDwarfValueType_GENERIC;
 			result->generic = 0;
 		} else {
-			result->type = ValueType_GENERIC;
+			result->type = RzBinDwarfValueType_GENERIC;
 			result->generic = (self->generic & addr_mask) << v2;
 		}
 		break;
-	case I8:
-		result->type = I8;
+	case RzBinDwarfValueType_I8:
+		result->type = RzBinDwarfValueType_I8;
 		result->i8 = (v2 >= 8) ? 0 : self->i8 << v2;
 		break;
-	case U8:
-		result->type = U8;
+	case RzBinDwarfValueType_U8:
+		result->type = RzBinDwarfValueType_U8;
 		result->u8 = (v2 >= 8) ? 0 : self->u8 << v2;
 		break;
-	case I16:
-		result->type = I16;
+	case RzBinDwarfValueType_I16:
+		result->type = RzBinDwarfValueType_I16;
 		result->i16 = (v2 >= 16) ? 0 : self->i16 << v2;
 		break;
-	case U16:
-		result->type = U16;
+	case RzBinDwarfValueType_U16:
+		result->type = RzBinDwarfValueType_U16;
 		result->u16 = (v2 >= 16) ? 0 : self->u16 << v2;
 		break;
-	case I32:
-		result->type = I32;
+	case RzBinDwarfValueType_I32:
+		result->type = RzBinDwarfValueType_I32;
 		result->i32 = (v2 >= 32) ? 0 : self->i32 << v2;
 		break;
-	case U32:
-		result->type = U32;
+	case RzBinDwarfValueType_U32:
+		result->type = RzBinDwarfValueType_U32;
 		result->u32 = (v2 >= 32) ? 0 : self->u32 << v2;
 		break;
-	case I64:
-		result->type = I64;
+	case RzBinDwarfValueType_I64:
+		result->type = RzBinDwarfValueType_I64;
 		result->i64 = (v2 >= 64) ? 0 : self->i64 << v2;
 		break;
-	case U64:
-		result->type = U64;
+	case RzBinDwarfValueType_U64:
+		result->type = RzBinDwarfValueType_U64;
 		result->u64 = (v2 >= 64) ? 0 : self->u64 << v2;
 		break;
 	default:
@@ -905,24 +909,24 @@ RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr
 	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
 
 	switch (self->type) {
-	case ValueType_GENERIC:
-		result->type = ValueType_GENERIC;
+	case RzBinDwarfValueType_GENERIC:
+		result->type = RzBinDwarfValueType_GENERIC;
 		result->generic = v2 >= 64 ? 0 : (self->generic & addr_mask) >> v2;
 		break;
-	case U8:
-		result->type = U8;
+	case RzBinDwarfValueType_U8:
+		result->type = RzBinDwarfValueType_U8;
 		result->u8 = v2 >= 8 ? 0 : self->u8 >> v2;
 		break;
-	case U16:
-		result->type = U16;
+	case RzBinDwarfValueType_U16:
+		result->type = RzBinDwarfValueType_U16;
 		result->u16 = v2 >= 16 ? 0 : self->u16 >> v2;
 		break;
-	case U32:
-		result->type = U32;
+	case RzBinDwarfValueType_U32:
+		result->type = RzBinDwarfValueType_U32;
 		result->u32 = v2 >= 32 ? 0 : self->u32 >> v2;
 		break;
-	case U64:
-		result->type = U64;
+	case RzBinDwarfValueType_U64:
+		result->type = RzBinDwarfValueType_U64;
 		result->u64 = v2 >= 64 ? 0 : self->u64 >> v2;
 		break;
 	default:
@@ -936,25 +940,25 @@ RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t add
 	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
 
 	switch (self->type) {
-	case ValueType_GENERIC: {
+	case RzBinDwarfValueType_GENERIC: {
 		int64_t v1 = sign_extend(self->generic, addr_mask);
-		result->type = ValueType_GENERIC;
+		result->type = RzBinDwarfValueType_GENERIC;
 		result->generic = v2 >= 64 ? (v1 < 0 ? ~0 : 0) : (v1 >> v2);
 	} break;
-	case I8:
-		result->type = I8;
+	case RzBinDwarfValueType_I8:
+		result->type = RzBinDwarfValueType_I8;
 		result->i8 = v2 >= 8 ? (self->i8 < 0 ? ~0 : 0) : (self->i8 >> v2);
 		break;
-	case I16:
-		result->type = I16;
+	case RzBinDwarfValueType_I16:
+		result->type = RzBinDwarfValueType_I16;
 		result->i16 = v2 >= 16 ? (self->i16 < 0 ? ~0 : 0) : (self->i16 >> v2);
 		break;
-	case I32:
-		result->type = I32;
+	case RzBinDwarfValueType_I32:
+		result->type = RzBinDwarfValueType_I32;
 		result->i32 = v2 >= 32 ? (self->i32 < 0 ? ~0 : 0) : (self->i32 >> v2);
 		break;
-	case I64:
-		result->type = I64;
+	case RzBinDwarfValueType_I64:
+		result->type = RzBinDwarfValueType_I64;
 		result->i64 = v2 >= 64 ? (self->i64 < 0 ? ~0 : 0) : (self->i64 >> v2);
 		break;
 	default:
@@ -965,44 +969,44 @@ RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t add
 
 #define VALUE_IMPL_LOGICAL_OP(name, op) \
 	RZ_IPI bool Value_##name(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) { \
-		result->type = ValueType_GENERIC; \
+		result->type = RzBinDwarfValueType_GENERIC; \
 		result->generic = 0; \
 		if (self->type != rhs->type) { \
 			return result; \
 		} \
 		switch (self->type) { \
-		case ValueType_GENERIC: \
+		case RzBinDwarfValueType_GENERIC: \
 			result->generic = sign_extend(self->generic, addr_mask) op \
 				sign_extend(rhs->generic, addr_mask); \
 			break; \
-		case I8: \
+		case RzBinDwarfValueType_I8: \
 			result->generic = self->i8 op rhs->i8; \
 			break; \
-		case U8: \
+		case RzBinDwarfValueType_U8: \
 			result->generic = self->u8 op rhs->u8; \
 			break; \
-		case I16: \
+		case RzBinDwarfValueType_I16: \
 			result->generic = self->i16 op rhs->i16; \
 			break; \
-		case U16: \
+		case RzBinDwarfValueType_U16: \
 			result->generic = self->u16 op rhs->u16; \
 			break; \
-		case I32: \
+		case RzBinDwarfValueType_I32: \
 			result->generic = self->i32 op rhs->i32; \
 			break; \
-		case U32: \
+		case RzBinDwarfValueType_U32: \
 			result->generic = self->u32 op rhs->u32; \
 			break; \
-		case I64: \
+		case RzBinDwarfValueType_I64: \
 			result->generic = self->i64 op rhs->i64; \
 			break; \
-		case U64: \
+		case RzBinDwarfValueType_U64: \
 			result->generic = self->u64 op rhs->u64; \
 			break; \
-		case F32: \
+		case RzBinDwarfValueType_F32: \
 			result->generic = self->f32 op rhs->f32; \
 			break; \
-		case F64: \
+		case RzBinDwarfValueType_F64: \
 			result->generic = self->f64 op rhs->f64; \
 			break; \
 		} \

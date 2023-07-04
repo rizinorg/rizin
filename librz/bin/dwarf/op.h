@@ -477,7 +477,7 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_breg29:
 	case DW_OP_breg30:
 	case DW_OP_breg31:
-		SLE128_OR_RET_FALSE(self->register_offset.register_number);
+		SLE128_OR_RET_FALSE(self->register_offset.offset);
 		self->kind = OPERATION_KIND_REGISTER_OFFSET;
 		self->register_offset.register_number = (ut16)opcode - DW_OP_breg0;
 		break;
@@ -721,6 +721,7 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		RZ_LOG_WARN("Unsupported opcode %d\n", opcode);
 		break;
 	}
+	return true;
 }
 
 typedef ut16 Register;

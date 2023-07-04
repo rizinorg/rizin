@@ -1273,24 +1273,24 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw);
 
 // Assuming ValueType is an enum defined elsewhere
 typedef enum {
-	ValueType_GENERIC,
-	I8,
-	U8,
-	I16,
-	U16,
-	I32,
-	U32,
-	F32,
-	I64,
-	U64,
-	F64,
-	ValueType_LOCATION,
-} ValueType;
+	RzBinDwarfValueType_GENERIC,
+	RzBinDwarfValueType_I8,
+	RzBinDwarfValueType_U8,
+	RzBinDwarfValueType_I16,
+	RzBinDwarfValueType_U16,
+	RzBinDwarfValueType_I32,
+	RzBinDwarfValueType_U32,
+	RzBinDwarfValueType_F32,
+	RzBinDwarfValueType_I64,
+	RzBinDwarfValueType_U64,
+	RzBinDwarfValueType_F64,
+	RzBinDwarfValueType_LOCATION,
+} RzBinDwarfValueType;
 
 struct dw_location_t;
 
 typedef struct {
-	ValueType type;
+	RzBinDwarfValueType type;
 	union {
 		ut64 generic;
 		ut8 u8;

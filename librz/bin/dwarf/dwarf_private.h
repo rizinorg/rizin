@@ -82,15 +82,15 @@ RZ_IPI bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buff
 
 RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, uint64_t byte_size);
 RZ_IPI Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry);
-RZ_IPI RzBinDwarfValue *Value_parse(ValueType value_type, RzBuffer *buffer, bool big_endian);
-RZ_IPI ValueType Value_type(RzBinDwarfValue *ptr);
+RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian);
+RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr);
 RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, uint64_t addr_mask, uint64_t *result);
-RZ_IPI bool Value_from_u64(ValueType value_type, uint64_t value, RzBinDwarfValue *result);
-RZ_IPI bool Value_from_f32(ValueType value_type, float value, RzBinDwarfValue *result);
-RZ_IPI bool Value_from_f64(ValueType value_type, double value, RzBinDwarfValue *result);
+RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, uint64_t value, RzBinDwarfValue *result);
+RZ_IPI bool Value_from_f32(RzBinDwarfValueType value_type, float value, RzBinDwarfValue *result);
+RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDwarfValue *result);
 
 RZ_IPI bool Value_convert(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result);
-RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, ValueType value_type, uint64_t addr_mask, RzBinDwarfValue *result);
+RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, RzBinDwarfValueType value_type, uint64_t addr_mask, RzBinDwarfValue *result);
 
 RZ_IPI bool Value_abs(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result);
 RZ_IPI bool Value_neg(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result);

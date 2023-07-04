@@ -27,69 +27,69 @@ bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
 	return rz_buf_seek(pc, offset, RZ_BUF_CUR) >= 0;
 }
 
-ValueType ValueType_from_name(const char *name, ut8 byte_size) {
+RzBinDwarfValueType ValueType_from_name(const char *name, ut8 byte_size) {
 	if (strcmp(name, "int") == 0) {
 		switch (byte_size) {
-		case 1: return I8;
-		case 2: return I16;
-		case 4: return I32;
-		case 8: return I64;
+		case 1: return RzBinDwarfValueType_I8;
+		case 2: return RzBinDwarfValueType_I16;
+		case 4: return RzBinDwarfValueType_I32;
+		case 8: return RzBinDwarfValueType_I64;
 		default: break;
 		}
 	}
 	if (strcmp(name, "unsigned") == 0) {
 		switch (byte_size) {
-		case 1: return U8;
-		case 2: return U16;
-		case 4: return U32;
-		case 8: return U64;
+		case 1: return RzBinDwarfValueType_U8;
+		case 2: return RzBinDwarfValueType_U16;
+		case 4: return RzBinDwarfValueType_U32;
+		case 8: return RzBinDwarfValueType_U64;
 		default: break;
 		}
 	}
 	if (strcmp(name, "size_t") == 0) {
 		switch (byte_size) {
-		case 1: return U8;
-		case 2: return U16;
-		case 4: return U32;
-		case 8: return U64;
+		case 1: return RzBinDwarfValueType_U8;
+		case 2: return RzBinDwarfValueType_U16;
+		case 4: return RzBinDwarfValueType_U32;
+		case 8: return RzBinDwarfValueType_U64;
 		default: break;
 		}
 	}
 	if (strcmp(name, "int8_t") == 0) {
-		return I8;
+		return RzBinDwarfValueType_I8;
 	}
 	if (strcmp(name, "int16_t") == 0) {
-		return I16;
+		return RzBinDwarfValueType_I16;
 	}
 	if (strcmp(name, "int32_t") == 0) {
-		return I32;
+		return RzBinDwarfValueType_I32;
 	}
 	if (strcmp(name, "int64_t") == 0) {
-		return I64;
+		return RzBinDwarfValueType_I64;
 	}
 	if (strcmp(name, "uint8_t") == 0) {
-		return U8;
+		return RzBinDwarfValueType_U8;
 	}
 	if (strcmp(name, "uint16_t") == 0) {
-		return U16;
+		return RzBinDwarfValueType_U16;
 	}
 	if (strcmp(name, "uint32_t") == 0) {
-		return U32;
+		return RzBinDwarfValueType_U32;
 	}
 	if (strcmp(name, "uint64_t") == 0) {
-		return U64;
+		return RzBinDwarfValueType_U64;
 	}
-	return ValueType_GENERIC;
+	return RzBinDwarfValueType_GENERIC;
 }
 
-ValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
+RzBinDwarfValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
 	RzBinDwarfDie *die = ht_up_find(dw->info->die_tbl, offset, NULL);
 	if (!die) {
-		return ValueType_GENERIC;
+		return RzBinDwarfValueType_GENERIC;
 	}
 	assert(die->tag == DW_TAG_base_type);
 	RzBinDwarfAttr *attr;
-	ValueType value_type = ValueType_GENERIC;
+	RzBinDwarfValueType value_type = RzBinDwarfValueType_GENERIC;
 	ut8 byte_size = 0;
 	const char *name = NULL;
 	rz_vector_foreach(&die->attrs, attr) {
@@ -105,15 +105,15 @@ ValueType ValueType_from_die(RzBinDwarf *dw, UnitOffset offset) {
 	}
 	if (RZ_STR_ISNOTEMPTY(name)) {
 		value_type = ValueType_from_name(name, byte_size);
-		if (value_type != ValueType_GENERIC) {
+		if (value_type != RzBinDwarfValueType_GENERIC) {
 			return value_type;
 		}
 	}
 	switch (byte_size) {
-	case 1: value_type = U8; break;
-	case 2: value_type = U16; break;
-	case 4: value_type = U32; break;
-	case 8: value_type = U64; break;
+	case 1: value_type = RzBinDwarfValueType_U8; break;
+	case 2: value_type = RzBinDwarfValueType_U16; break;
+	case 4: value_type = RzBinDwarfValueType_U32; break;
+	case 8: value_type = RzBinDwarfValueType_U64; break;
 	default: break;
 	}
 	return value_type;
@@ -271,12 +271,12 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		break;
 	}
 	case OPERATION_KIND_UNSIGNED_CONSTANT: {
-		RzBinDwarfValue v = { .type = ValueType_GENERIC, .generic = operation->unsigned_constant.value };
+		RzBinDwarfValue v = { .type = RzBinDwarfValueType_GENERIC, .generic = operation->unsigned_constant.value };
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
 	case OPERATION_KIND_SIGNED_CONSTANT: {
-		RzBinDwarfValue v = { .type = ValueType_GENERIC, .generic = (ut64)operation->signed_constant.value };
+		RzBinDwarfValue v = { .type = RzBinDwarfValueType_GENERIC, .generic = (ut64)operation->signed_constant.value };
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &v));
 		break;
 	}
@@ -288,7 +288,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		break;
 	}
 	case OPERATION_KIND_REGISTER_OFFSET: {
-		ValueType value_type = operation->register_offset.base_type != 0 ? ValueType_from_die(dw, operation->register_offset.base_type) : ValueType_GENERIC;
+		RzBinDwarfValueType value_type = operation->register_offset.base_type != 0 ? ValueType_from_die(dw, operation->register_offset.base_type) : RzBinDwarfValueType_GENERIC;
 		RzBinDwarfValue offset;
 		RET_FALSE_IF_FAIL(Value_from_u64(value_type, operation->register_offset.offset, &offset));
 		RzBinDwarfValue value;
@@ -308,7 +308,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		Evaluation_free(fb_eval);
 		RET_FALSE_IF_FAIL(fb_result.kind == OperationEvaluationResult_COMPLETE && fb_result.complete);
 		RzBinDwarfValue v = {
-			.type = ValueType_LOCATION,
+			.type = RzBinDwarfValueType_LOCATION,
 			.location = fb_result.complete,
 		};
 		Evaluation_push(self, &v);
@@ -413,7 +413,7 @@ bool Evaluation_evaluate(Evaluation *self, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 	}
 	while (!Evaluation_end_of_expression(self)) {
 		self->iteration += 1;
-		if (self->max_iterations != UT32_MAX) {
+		if (self->max_iterations != UT32_MAX && self->max_iterations) {
 			if (self->iteration > self->max_iterations) {
 				self->state.state = EVALUATION_STATE_ERROR;
 				return false;
