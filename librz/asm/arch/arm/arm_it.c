@@ -52,7 +52,7 @@ RZ_API void rz_arm_it_update_block(RzArmITContext *ctx, cs_insn *insn) {
 			cond.cond = insn->detail->arm.cc;
 			break;
 		case 0x65: //'e'
-			cond.cond = (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1;
+			cond.cond = ARMCC_getOppositeCondition(insn->detail->arm.cc);
 			break;
 		default:
 			break;
