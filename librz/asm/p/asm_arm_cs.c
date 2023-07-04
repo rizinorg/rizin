@@ -119,7 +119,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
-		if (insn->id == ARM_INS_IT) {
+		if (insn->id == ARM_INS_IT || insn->id == ARM_INS_VPT) {
 			rz_arm_it_update_block(&ctx->it, insn);
 		} else {
 			rz_arm_it_update_nonblock(&ctx->it, insn);
