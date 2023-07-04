@@ -3538,7 +3538,7 @@ reread:
 			RZ_LOG_ERROR("core: Invalid keyword\n");
 			break;
 		}
-		// fallthrough
+		break;
 	case 'i': // "/i"
 		if (input[param_offset - 1] != ' ') {
 			RZ_LOG_ERROR("core: Missing ' ' after /i\n");
@@ -3555,16 +3555,6 @@ reread:
 	case ' ': // "/ " search string
 		inp = strdup(input + 1 + ignorecase + (param.outmode == RZ_MODE_JSON ? 1 : 0));
 		len = rz_str_unescape(inp);
-#if 0
-		if (!json) {
-			eprintf ("Searching %d byte(s) from 0x%08"PFMT64x " to 0x%08"PFMT64x ": ",
-					len, search_itv.addr, rz_itv_end (search_itv));
-			for (i = 0; i < len; i++) {
-				eprintf ("%02x ", (ut8) inp[i]);
-			}
-			eprintf ("\n");
-		}
-#endif
 		rz_search_reset(core->search, RZ_SEARCH_KEYWORD);
 		rz_search_set_distance(core->search, (int)rz_config_get_i(core->config, "search.distance"));
 		{
