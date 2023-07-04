@@ -133,7 +133,7 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 			OK_None;
 		}
 		range = RZ_NEW0(RzBinDwarfRange);
-		range->end = raw->address_or_offset_pair.begin;
+		range->begin = raw->address_or_offset_pair.begin;
 		range->end = raw->address_or_offset_pair.end;
 		Range_add_base_address(range, self->base_address, self->encoding.address_size);
 		data = RzBinDwarfBlock_clone(&raw->address_or_offset_pair.data);
@@ -164,7 +164,7 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 				OK_None;
 			}
 			range = RZ_NEW0(RzBinDwarfRange);
-			range->end = raw->address_or_offset_pair.begin;
+			range->begin = raw->address_or_offset_pair.begin;
 			range->end = raw->address_or_offset_pair.end;
 			Range_add_base_address(range, self->base_address, self->encoding.address_size);
 			data = RzBinDwarfBlock_clone(&raw->address_or_offset_pair.data);
@@ -216,7 +216,6 @@ static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer,
 		rz_vector_push(&self->raw_entries, &raw_entry);
 		rz_vector_push(&self->entries, entry);
 		ht_up_update(self->entry_by_offset, entry->range->begin, entry);
-		RzBinDwarfLocationListEntry_free(entry);
 	}
 	return true;
 }

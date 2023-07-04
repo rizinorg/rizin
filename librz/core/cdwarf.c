@@ -214,10 +214,9 @@ RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarfLocListTable *locs, int a
 	RzList /*<RzBinDwarfLocList *>*/ *sort_list = rz_list_new();
 	RzBinDwarfLocationListEntry *loc;
 	rz_vector_foreach(&locs->entries, loc) {
-		ut64 base_offset = loc->range->begin;
-		my_printf("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x, base_offset, loc->range->begin, loc->range->end);
+		my_printf("0x%" PFMT64x " 0x%" PFMT64x, loc->range->begin, loc->range->end);
 		char *data = rz_hex_bin2strdup(loc->data->data, loc->data->length);
-		my_print(data);
+		my_printf(" %s\n", rz_str_get_null(data));
 		free(data);
 	}
 	my_print("\n");

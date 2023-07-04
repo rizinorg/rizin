@@ -501,11 +501,10 @@ RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool
 }
 
 RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
-	RzBinDwarfBlock *clone = RZ_NEW0(RzBinDwarfBlock);
+	RzBinDwarfBlock *clone = rz_new_copy(sizeof(RzBinDwarfBlock), self);
 	if (!clone) {
 		return NULL;
 	}
-	*clone = *self;
 	if (self->data == NULL) {
 		return clone;
 	}
