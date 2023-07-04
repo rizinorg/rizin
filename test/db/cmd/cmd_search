@@ -1161,3 +1161,22 @@ rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
 EOF
 RUN
+
+
+NAME=search wide string
+FILE==
+CMDS=<<EOF
+ww Hello World this is Rizin
+/w World
+/w world
+/wi world
+/wj World
+/wji world
+EOF
+EXPECT=<<EOF
+0x0000000c hit0_0 57006f0072006c006400
+0x0000000c hit2_0 57006f0072006c006400
+[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
+[{"offset":12,"type":"hexpair","data":"57006f0072006c006400"}]
+EOF
+RUN
