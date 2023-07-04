@@ -209,6 +209,13 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 	return value;
 }
 
+RZ_IPI RzBinDwarfValue *Value_from_location(RzBinDwarfLocation *loc) {
+	RzBinDwarfValue *v = RZ_NEW0(RzBinDwarfValue);
+	v->type = RzBinDwarfValueType_LOCATION;
+	v->location = loc;
+	return v;
+}
+
 RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr) {
 	if (ptr == NULL) {
 		return -1;

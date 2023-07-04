@@ -1004,10 +1004,11 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
 	RzVector *loc = rz_bin_dwarf_evaluate(ctx->dw, expr, fn);
 
-	RzBinDwarfPiece *piece;
-	rz_vector_pop(loc, piece);
+	RzBinDwarfPiece piece = { 0 };
+	rz_vector_pop(loc, &piece);
+	rz_vector_free(loc);
 
-	return piece->location;
+	return piece.location;
 }
 
 static bool parse_var(Context *ctx, RzBinDwarfDie *die, Variable *v) {
@@ -1160,8 +1161,8 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	if (fcn.link_name) {
 		fcn.demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn.link_name);
 	}
-
-	const char *name = prefer_linkage_name(ctx->lang) ? fcn.demangle_name : fcn.name;
+#define get_name(x) prefer_linkage_name(ctx->lang) && (x).demangle_name ? (x).demangle_name : (x).name
+	const char *name = get_name(fcn);
 	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, name, ret_type);
 	RzVector /*<Variable*>*/ *variables = rz_vector_new(sizeof(Variable), NULL, NULL);
 	parse_function_args_and_vars(ctx, die, callable, variables);

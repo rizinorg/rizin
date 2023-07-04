@@ -1313,6 +1313,7 @@ typedef ut64 DebugInfoOffset;
 typedef enum {
 	RzBinDwarfLocationKind_EMPTY,
 	RzBinDwarfLocationKind_REGISTER,
+	RzBinDwarfLocationKind_REGISTER_OFFSET,
 	RzBinDwarfLocationKind_ADDRESS,
 	RzBinDwarfLocationKind_VALUE,
 	RzBinDwarfLocationKind_BYTES,
@@ -1324,6 +1325,10 @@ typedef struct dw_location_t {
 
 	union {
 		ut64 register_number;
+		struct {
+			ut64 register_number;
+			st64 offset;
+		} register_offset;
 		uint64_t address;
 		RzBinDwarfValue value;
 		struct { // BYTES

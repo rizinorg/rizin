@@ -754,6 +754,11 @@ typedef struct operation_evaluation_result_t {
 } OperationEvaluationResult;
 
 typedef struct {
+	RzBuffer *pc;
+	RzBuffer *bytecode;
+} ExprStackItem;
+
+typedef struct {
 	RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
 	ut64 object_address;

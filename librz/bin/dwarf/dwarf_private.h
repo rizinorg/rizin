@@ -125,6 +125,5 @@ RZ_IPI void Value_free(RzBinDwarfValue *self);
 
 #include "op.h"
 
-// loclists
 
 #endif
