@@ -21,6 +21,7 @@ typedef struct dwarf_function_t {
 	const char *name;
 	const char *link_name;
 	const char *demangle_name;
+	const char *prefer_name;
 	bool is_external;
 	bool is_method;
 	bool is_virtual;
@@ -51,12 +52,12 @@ typedef struct dwarf_variable_t {
 	RzBinDwarfLocation *location;
 	const char *name;
 	const char *link_name;
+	const char *prefer_name;
 	RzType *type;
 	RzAnalysisVarKind kind;
 } Variable;
 
 static void variable_free(Variable *var) {
-	free(var->name);
 	free(var->location);
 	free(var->type);
 	free(var);
@@ -167,7 +168,7 @@ static RzType *parse_type(Context *ctx, ut64 offset, RZ_NULLABLE ut64 *size, RZ_
  *
  * \param allow_void whether to return a void type instead of NULL if there is no type defined
  */
-static RzType *parse_type_in_die(Context *ctx, RzBinDwarfDie *die, bool allow_void, RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
+static RzType *parse_type_from_AT_type(Context *ctx, RzBinDwarfDie *die, bool allow_void, RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_type);
 	if (!attr) {
 		if (allow_void) {
@@ -208,7 +209,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 	case DW_TAG_pointer_type:
 	case DW_TAG_reference_type: // C++ references are just pointers to us
 	case DW_TAG_rvalue_reference_type: {
-		RzType *pointee = parse_type_in_die(ctx, die, true, size, visited);
+		RzType *pointee = parse_type_from_AT_type(ctx, die, true, size, visited);
 		if (!pointee) {
 			goto end;
 		}
@@ -252,7 +253,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		break;
 	}
 	case DW_TAG_subroutine_type: {
-		RzType *return_type = parse_type_in_die(ctx, die, true, size, visited);
+		RzType *return_type = parse_type_from_AT_type(ctx, die, true, size, visited);
 		if (!return_type) {
 			goto end;
 		}
@@ -271,7 +272,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		break;
 	}
 	case DW_TAG_array_type: {
-		RzType *subtype = parse_type_in_die(ctx, die, false, size, visited);
+		RzType *subtype = parse_type_from_AT_type(ctx, die, false, size, visited);
 		if (!subtype) {
 			goto end;
 		}
@@ -283,7 +284,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		break;
 	}
 	case DW_TAG_const_type: {
-		ret = parse_type_in_die(ctx, die, false, size, visited);
+		ret = parse_type_from_AT_type(ctx, die, true, size, visited);
 		if (ret) {
 			switch (ret->kind) {
 			case RZ_TYPE_KIND_IDENTIFIER:
@@ -302,7 +303,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 	case DW_TAG_volatile_type:
 	case DW_TAG_restrict_type:
 		// volatile and restrict attributes not supported in RzType
-		ret = parse_type_in_die(ctx, die, false, size, visited);
+		ret = parse_type_from_AT_type(ctx, die, false, size, visited);
 		break;
 	default:
 		break;
@@ -1003,6 +1004,9 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 
 	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
 	RzVector *loc = rz_bin_dwarf_evaluate(ctx->dw, expr, fn);
+	if (!loc) {
+		return NULL;
+	}
 
 	RzBinDwarfPiece piece = { 0 };
 	rz_vector_pop(loc, &piece);
@@ -1011,55 +1015,56 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	return piece.location;
 }
 
-static bool parse_var(Context *ctx, RzBinDwarfDie *die, Variable *v) {
-	RzPVector *children = die_children(die, ctx->dw);
-	if (!children) {
-		return false;
+static inline const char *var_name(Variable *v, char *lang) {
+	return prefer_linkage_name(lang) ? (v->link_name ? v->link_name : v->name) : v->name;
+}
+
+static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, Variable *v) {
+	switch (var_die->tag) {
+	case DW_TAG_formal_parameter:
+		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
+		break;
+	case DW_TAG_variable:
+		v->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
+		break;
+	case DW_TAG_unspecified_parameters:
+		// TODO: DW_TAG_unspecified_parameters
+		break;
+	default:
+		RZ_LOG_DEBUG("Unsupported variable tag %s\n", rz_bin_dwarf_tag(var_die->tag));
+		break;
 	}
-	void **it;
-	rz_pvector_foreach (children, it) {
-		RzBinDwarfDie *child_die = *it;
-		switch (child_die->tag) {
-		case DW_TAG_formal_parameter:
-			v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
+
+	const RzBinDwarfAttr *val;
+	rz_vector_foreach(&var_die->attrs, val) {
+		switch (val->name) {
+		case DW_AT_name:
+			v->name = rz_bin_dwarf_attr_value_get_string_content(val);
 			break;
-		case DW_TAG_variable:
-			v->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
+		case DW_AT_linkage_name:
+		case DW_AT_MIPS_linkage_name:
+			v->link_name = rz_bin_dwarf_attr_value_get_string_content(val);
 			break;
-		case DW_TAG_unspecified_parameters:
-			// TODO: DW_TAG_unspecified_parameters
+		case DW_AT_type:
+			rz_type_free(v->type);
+			v->type = parse_type_outer(ctx, val->reference, NULL);
+			break;
+		// abstract origin is supposed to have omitted information
+		case DW_AT_abstract_origin:
+			rz_type_free(v->type);
+			v->type = parse_abstract_origin(ctx, val->reference, &v->name);
+			break;
+		case DW_AT_location:
+			v->location = parse_dwarf_location(ctx, val, var_die);
 			break;
 		default:
-			RZ_LOG_DEBUG("Unsupported variable tag %s\n", rz_bin_dwarf_tag(child_die->tag));
 			break;
 		}
+	}
 
-		const RzBinDwarfAttr *val;
-		rz_vector_foreach(&child_die->attrs, val) {
-			switch (val->name) {
-			case DW_AT_name:
-				v->name = rz_bin_dwarf_attr_value_get_string_content(val);
-				break;
-			case DW_AT_linkage_name:
-			case DW_AT_MIPS_linkage_name:
-				v->link_name = rz_bin_dwarf_attr_value_get_string_content(val);
-				break;
-			case DW_AT_type:
-				rz_type_free(v->type);
-				v->type = parse_type_outer(ctx, val->reference, NULL);
-				break;
-			// abstract origin is supposed to have omitted information
-			case DW_AT_abstract_origin:
-				rz_type_free(v->type);
-				v->type = parse_abstract_origin(ctx, val->reference, &v->name);
-				break;
-			case DW_AT_location:
-				v->location = parse_dwarf_location(ctx, val, die);
-				break;
-			default:
-				break;
-			}
-		}
+	v->prefer_name = var_name(v, ctx->lang);
+	if (!v->type) {
+		;
 	}
 	return true;
 }
@@ -1075,15 +1080,22 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
+		if (child_die->depth != die->depth + 1) {
+			continue;
+		}
 		Variable v = { 0 };
 		parse_var(ctx, child_die, &v);
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
-			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.name, v.type);
+			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", v.type);
 			rz_type_callable_arg_add(callable, arg);
 		}
 		rz_vector_push(variables, &v);
 	}
 	return 1;
+}
+
+static inline const char *fcn_name(Function *f, char *lang) {
+	return prefer_linkage_name(lang) ? (f->demangle_name ? f->demangle_name : (f->link_name ? f->link_name : f->name)) : f->name;
 }
 
 /**
@@ -1161,13 +1173,12 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	if (fcn.link_name) {
 		fcn.demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn.link_name);
 	}
-#define get_name(x) prefer_linkage_name(ctx->lang) && (x).demangle_name ? (x).demangle_name : (x).name
-	const char *name = get_name(fcn);
-	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, name, ret_type);
+	fcn.prefer_name = fcn_name(&fcn, ctx->lang);
+	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn.prefer_name, ret_type);
 	RzVector /*<Variable*>*/ *variables = rz_vector_new(sizeof(Variable), NULL, NULL);
 	parse_function_args_and_vars(ctx, die, callable, variables);
 	if (!rz_type_func_save(ctx->analysis->typedb, callable)) {
-		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", name);
+		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", fcn.prefer_name);
 	};
 	ht_up_update(ctx->analysis->debug_info->function_variables_by_address, fcn.addr, variables);
 	return;
@@ -1333,7 +1344,7 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 		rz_vector_foreach(variables, v) {
 			RzAnalysisVar av = {
 				.type = v->type,
-				.name = rz_str_new(v->name),
+				.name = rz_str_new(v->prefer_name),
 				.kind = v->kind,
 				.fcn = afn,
 			};

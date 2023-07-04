@@ -525,7 +525,7 @@ RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzB
 		return NULL;
 	}
 	RzVector *result = NULL;
-	if (eval->state.state == EVALUATION_STATE_COMPLETE) {
+	if (eval->state.state == EVALUATION_STATE_COMPLETE && !rz_vector_empty(&eval->result)) {
 		result = rz_vector_clone(&eval->result);
 	}
 	Evaluation_free(eval);
