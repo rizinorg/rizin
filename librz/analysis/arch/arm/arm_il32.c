@@ -527,10 +527,10 @@ static RzILOpBitVector *arg(cs_insn *insn, bool is_thumb, int n, RZ_NULLABLE RzI
 	case ARM_OP_MEM: {
 		RzILOpBitVector *addr = MEMBASE(n);
 		int disp = MEMDISP(n);
-		if (disp != 0 && !op->subtracted) {
+		if (disp > 0) {
 			addr = ADD(addr, U32(disp));
-		} else if (disp != 0 && op->subtracted) {
-			addr = SUB(addr, U32(disp));
+		} else if (disp < 0) {
+			addr = SUB(addr, U32(-disp));
 		}
 		return arg_mem(addr, &insn->detail->arm.operands[n], carry_out);
 	}
@@ -799,8 +799,7 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 	cs_arm_op *memop = &insn->detail->arm.operands[mem_idx];
 	if (memop->mem.base == ARM_REG_PC) {
 		// LDR (literal) is different in the sense that it aligns the pc value:
-		int32_t mem_disp = memop->subtracted ? -MEMDISP(mem_idx) : MEMDISP(mem_idx);
-		addr = arg_mem(U32(PCALIGN(insn->address, is_thumb) + mem_disp), memop, NULL);
+		addr = arg_mem(U32(PCALIGN(insn->address, is_thumb) + MEMDISP(mem_idx)), memop, NULL);
 	} else {
 		addr = ARG(mem_idx);
 	}
