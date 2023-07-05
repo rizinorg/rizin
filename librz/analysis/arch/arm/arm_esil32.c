@@ -545,7 +545,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		default:
 			str_ldr_bytes = 4;
 		}
-		if (OPCOUNT() == 2) {
+		if (!ISPOSTINDEX()) {
 			if (ISMEM(1) && !HASMEMINDEX(1)) {
 				int disp = MEMDISP(1);
 				char sign = disp >= 0 ? '+' : '-';
@@ -609,28 +609,28 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				}
 			}
 		}
-		if (OPCOUNT() == 3) { // e.g. 'str r2, [r3], 4
-			if (ISIMM(2) && str_ldr_bytes != 8) { // e.g. 'str r2, [r3], 4
+		if (ISPOSTINDEX()) { // e.g. 'str r2, [r3], 4
+			if (!HASMEMINDEX(1)) { // e.g. 'str r2, [r3], 4
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
 					REG(0), MEMBASE(1), str_ldr_bytes, IMM(2), MEMBASE(1));
-			} else if (str_ldr_bytes != 8) {
+			} else { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
 					switch (SHIFTTYPE(2)) {
 					case ARM_SFT_LSL:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,<<,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_LSR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_ASR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_ROR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), REG(2), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_RRX:
 						// TODO
@@ -641,7 +641,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					}
 				} else { // No shift
 					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%s,+=",
-						REG(0), MEMBASE(1), str_ldr_bytes, REG(2), MEMBASE(1));
+						REG(0), MEMBASE(1), str_ldr_bytes, MEMINDEX(1), MEMBASE(1));
 				}
 			}
 			if (ISREG(1) && str_ldr_bytes == 8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
