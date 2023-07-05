@@ -138,11 +138,19 @@ static const char *arg(RzAnalysis *a, csh *handle, cs_insn *insn, char *buf, int
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
 		if (ISSHIFTED(n)) {
-			sprintf(buf, "%u,%s,%s",
-				LSHIFT2(n),
-				rz_str_get_null(cs_reg_name(*handle,
-					insn->detail->arm.operands[n].reg)),
-				DECODE_SHIFT(n));
+			if (SHIFTTYPEREG(n)) {
+				sprintf(buf, "%s,%s,%s",
+					cs_reg_name(*handle, LSHIFT2(n)),
+					rz_str_get_null(cs_reg_name(*handle,
+						insn->detail->arm.operands[n].reg)),
+					DECODE_SHIFT(n));
+			} else {
+				sprintf(buf, "%u,%s,%s",
+					LSHIFT2(n),
+					rz_str_get_null(cs_reg_name(*handle,
+						insn->detail->arm.operands[n].reg)),
+					DECODE_SHIFT(n));
+			}
 		} else {
 			sprintf(buf, "%s",
 				rz_str_get_null(cs_reg_name(*handle,
