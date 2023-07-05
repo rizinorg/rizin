@@ -13,6 +13,7 @@ typedef union arm_cs_itcond_t {
 	struct {
 		ut32 cond; ///< arm_cc
 		ut8 off; ///< offset of this instruction from the it, for back-referencing to the ArmCSITBlock
+		ut8 vpt; ///< >0 if it is a VCC condition. 0 otherwise.
 	};
 	ut64 packed; ///< for putting into HtUU
 } ArmCSITCond;
@@ -32,7 +33,8 @@ RZ_API void rz_arm_it_context_fini(RzArmITContext *ctx) {
  * \p insn must be ARM_INS_IT
  */
 RZ_API void rz_arm_it_update_block(RzArmITContext *ctx, cs_insn *insn) {
-	rz_return_if_fail(ctx && insn && insn->id == ARM_INS_IT);
+	rz_return_if_fail(ctx && insn && (insn->id == ARM_INS_IT || insn->id == ARM_INS_VPT));
+	bool is_vpt = insn->id == ARM_INS_VPT;
 	bool found;
 	ht_uu_find(ctx->ht_itblock, insn->address, &found);
 	if (found) {
@@ -49,14 +51,21 @@ RZ_API void rz_arm_it_update_block(RzArmITContext *ctx, cs_insn *insn) {
 		cond.off = block.off[i - 1] = 2 * i;
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
-			cond.cond = insn->detail->arm.cc;
+			cond.cond = is_vpt ? insn->detail->arm.vcc : insn->detail->arm.cc;
 			break;
 		case 0x65: //'e'
-			cond.cond = ARMCC_getOppositeCondition(insn->detail->arm.cc);
+			if (is_vpt) {
+				cond.cond = insn->detail->arm.vcc;
+			} else if (insn->detail->arm.cc == ARMCC_AL) {
+				cond.cond = ARMCC_AL;
+			} else {
+				cond.cond = ARMCC_getOppositeCondition(insn->detail->arm.cc);
+			}
 			break;
 		default:
 			break;
 		}
+		cond.vpt = is_vpt ? 1 : 0;
 		RZ_STATIC_ASSERT(sizeof(cond) == sizeof(cond.packed));
 		ht_uu_update(ctx->ht_itcond, insn->address + cond.off, cond.packed);
 	}
@@ -91,7 +100,11 @@ RZ_API bool rz_arm_it_apply_cond(RzArmITContext *ctx, cs_insn *insn) {
 	if (!found) {
 		return false;
 	}
-	insn->detail->arm.cc = cond.cond;
+	if (cond.vpt) {
+		insn->detail->arm.vcc = cond.cond;
+	} else {
+		insn->detail->arm.cc = cond.cond;
+	}
 	insn->detail->arm.update_flags = 0;
 
 	// Readjust if we detected that the previous assumption of all-2-byte instructions in
