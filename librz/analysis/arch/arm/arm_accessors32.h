@@ -31,12 +31,12 @@
 #define LSHIFT(x)  0
 #define LSHIFT2(x) 0
 #endif
-#define OPCOUNT()       insn->detail->arm.op_count
-#define ISSHIFTED(x)    (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
-#define SHIFTTYPE(x)    insn->detail->arm.operands[x].shift.type
+#define OPCOUNT()     insn->detail->arm.op_count
+#define ISSHIFTED(x)  (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
+#define SHIFTTYPE(x)  insn->detail->arm.operands[x].shift.type
 #define SHIFTTYPEREG(x) (SHIFTTYPE(x) == ARM_SFT_ASR_REG || SHIFTTYPE(x) == ARM_SFT_LSL_REG || \
-	SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG || \
-	SHIFTTYPE(x) == ARM_SFT_RRX_REG)
+                         SHIFTTYPE(x) == ARM_SFT_LSR_REG || SHIFTTYPE(x) == ARM_SFT_ROR_REG || \
+                         SHIFTTYPE(x) == ARM_SFT_RRX_REG)
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
 #define ISPOSTINDEX()   insn->detail->arm.post_index
