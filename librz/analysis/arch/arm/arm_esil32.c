@@ -749,7 +749,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				MEMINDEX(1), MEMBASE(1), REG(0));
 		} else {
 			rz_strbuf_appendf(&op->esil, "%s,%d,+,[1],%s,=",
-				MEMBASE(1), MEMDISP(1), REG(0));
+				MEMBASE(1), ISPOSTINDEX() ? 0 : MEMDISP(1), REG(0));
 		}
 		if (insn->detail->writeback) {
 			rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
