@@ -224,6 +224,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 			rz_type_free(return_type);
 			goto end;
 		}
+		callable->ret = return_type;
 		ret = rz_type_callable(callable);
 		if (!ret) {
 			rz_type_callable_free(callable);
@@ -484,13 +485,14 @@ static void parse_structure_type(Context *ctx, RzBinDwarfDie *die) {
 				}
 				void *element = rz_vector_push(&base_type->struct_data.members, &member);
 				if (!element) {
+					rz_type_free(result->type);
 					goto err;
 				}
 			}
 		}
 	}
 	rz_pvector_free(children);
-	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
+	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
 	return;
 err:
 	rz_pvector_free(children);
@@ -549,8 +551,9 @@ static void parse_enum_type(Context *ctx, RzBinDwarfDie *die) {
 				}
 			}
 		}
+		rz_pvector_free(children);
 	}
-	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
+	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
 	return;
 
 err:
@@ -600,7 +603,7 @@ static void parse_typedef(Context *ctx, RzBinDwarfDie *die) {
 	}
 	base_type->name = name;
 	base_type->type = type;
-	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
+	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
 	return;
 
 cleanup:
@@ -639,7 +642,7 @@ static void parse_atomic_type(Context *ctx, RzBinDwarfDie *die) {
 	}
 	base_type->name = name;
 	base_type->size = size;
-	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
+	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
 }
 
 static void apply_specification(Context *ctx, const RzBinDwarfDie *die, RzAnalysisDwarfFunction *fn) {
@@ -1021,9 +1024,6 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzAnalysisDwarfVaria
 	}
 
 	v->prefer_name = var_name(v, ctx->lang);
-	if (!v->type) {
-		;
-	}
 	return true;
 }
 
@@ -1044,7 +1044,7 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 		RzAnalysisDwarfVariable v = { 0 };
 		parse_var(ctx, child_die, &v);
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
-			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", v.type);
+			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
 		rz_vector_push(&fn->variables, &v);
@@ -1069,6 +1069,13 @@ void fcn_free(RzAnalysisDwarfFunction *f) {
 	free(f);
 }
 
+void var_fini(RzAnalysisDwarfVariable *v) {
+	if (!v) {
+		return;
+	}
+	rz_type_free(v->type);
+}
+
 /**
  * \brief Parse function,it's arguments, variables and
  *        save the information into the Sdb
@@ -1078,10 +1085,10 @@ void fcn_free(RzAnalysisDwarfFunction *f) {
  */
 static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	RzAnalysisDwarfFunction *fcn = RZ_NEW0(RzAnalysisDwarfFunction);
-	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), NULL, NULL);
+	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)var_fini, NULL);
 
 	if (rz_bin_dwarf_die_get_attr(die, DW_AT_declaration)) {
-		return; /* just declaration skip */
+		goto cleanup; /* just declaration skip */
 	}
 	RzBinDwarfAttr *val;
 	rz_vector_foreach(&die->attrs, val) {
@@ -1152,7 +1159,9 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
 		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", fcn->prefer_name);
 	};
-	ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn);
+	if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
+		fcn_free(fcn);
+	}
 	return;
 cleanup:
 	fcn_free(fcn);

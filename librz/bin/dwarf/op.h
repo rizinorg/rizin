@@ -749,7 +749,7 @@ typedef struct operation_evaluation_result_t {
 	} kind;
 
 	union {
-		RzBinDwarfLocation *complete;
+		RzBinDwarfLocation complete;
 	};
 } OperationEvaluationResult;
 

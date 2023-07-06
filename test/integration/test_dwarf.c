@@ -75,7 +75,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
 	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
@@ -153,7 +153,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
 	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
@@ -278,7 +278,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
 	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"
@@ -563,7 +563,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	da = rz_bin_dwarf_abbrev_parse(bin->cur);
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
-	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl, 0x0, NULL);
+	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
 	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
 	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
 				   "    DW_AT_producer                 DW_FORM_strp\n"

@@ -62,7 +62,7 @@ RZ_API char *rz_core_bin_dwarf_abbrevs_to_string(const RzBinDwarfDebugAbbrevs *a
 		return NULL;
 	}
 	my_print_init;
-	ht_up_foreach(abbrevs->tbl, abbrev_table_dump_cb, sb);
+	ht_up_foreach(abbrevs->tbl_by_offset, abbrev_table_dump_cb, sb);
 	return my_print_get;
 }
 

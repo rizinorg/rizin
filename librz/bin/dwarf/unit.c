@@ -228,7 +228,7 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 
 		//		next_unit_offset = get_next_unit_offset(&unit);
 
-		RzBinDwarfAbbrevTable *tbl = ht_up_find(abbrevs->tbl, unit.hdr.abbrev_offset, NULL);
+		RzBinDwarfAbbrevTable *tbl = ht_up_find(abbrevs->tbl_by_offset, unit.hdr.abbrev_offset, NULL);
 		if (!tbl) {
 			goto cleanup;
 		}
@@ -289,9 +289,9 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RzBinFile *binfile, RzBinDwa
 	}
 
 cave_buf:
-	free(buf);
+	rz_buf_free(buf);
 cave_debug_str_buf:
-	free(debug_str_buf);
+	rz_buf_free(debug_str_buf);
 	return info;
 cave_info:
 	rz_bin_dwarf_info_free(info);

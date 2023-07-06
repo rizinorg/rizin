@@ -219,7 +219,7 @@ static bool test_dwarf_function_parsing_go(void) {
 
 	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
 	check_fn(0x491980, "main.main", "void main.main()");
-	check_fn(0x491d90, "main.tree.iterInorder", "void main.tree.iterInorder(struct main.tree t, func(int) visit)");
+	check_fn(0x491d90, "main.tree.iterInorder", "void main.tree.iterInorder(main.tree t, func(int) visit)");
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	   don't check variable information and add it in the future */

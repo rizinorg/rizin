@@ -32,6 +32,7 @@ static void RzBinDwarfLineHeader_fini(RzBinDwarfLineHeader *hdr) {
 	rz_vector_fini(&hdr->file_names);
 	rz_vector_fini(&hdr->directory_entry_formats);
 	rz_pvector_fini(&hdr->directories);
+	free(hdr->std_opcode_lengths);
 }
 
 static bool file_entry_format_parse(RzBuffer *buffer, RzVector /*<RzBinDwarfFileEntryFormat>*/ *out, RzBinDwarfLineHeader *hdr) {
@@ -173,8 +174,6 @@ static bool parse_line_header_source_v4(RzBuffer *buffer, RzBinDwarfLineHeader *
 		}
 		rz_pvector_push(&hdr->directories, str);
 	}
-
-	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfFileEntry), NULL, NULL);
 	while (true) {
 		char *filename = buf_get_string(buffer);
 		GOTO_IF_FAIL(filename, err);
@@ -290,7 +289,7 @@ RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLi
 	return hdr->line_base + (adj_opcode % hdr->line_range);
 }
 
-static bool parse_line_header(
+static bool RzBinDwarfLineHeader_parse(
 	RzBuffer *buffer, ut8 address_size,
 	RzBinDwarfLineHeader *hdr, bool big_endian) {
 	rz_return_val_if_fail(hdr && buffer, false);
@@ -676,7 +675,7 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBuffer *buffer, ut8 address_size, Rz
 			break;
 		}
 
-		if (!parse_line_header(buffer, address_size, &unit->header, big_endian)) {
+		if (!RzBinDwarfLineHeader_parse(buffer, address_size, &unit->header, big_endian)) {
 			RzBinDwarfLineUnit_free(unit);
 			break;
 		}

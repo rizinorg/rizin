@@ -897,7 +897,7 @@ typedef struct {
 } RzBinDwarfAbbrevTable;
 
 typedef struct {
-	HtUP /*<size_t,RzBinDwarfDebugAbbrevTable*>*/ *tbl;
+	HtUP /*<size_t,RzBinDwarfDebugAbbrevTable*>*/ *tbl_by_offset;
 	size_t count;
 } RzBinDwarfDebugAbbrevs;
 

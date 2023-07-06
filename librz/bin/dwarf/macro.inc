@@ -121,4 +121,4 @@ static char *buf_get_string(RzBuffer *buffer) {
 #define U64_OR_GOTO(out, label)    U64_WARP1(out, GOTO_IF_FAIL, label)
 #define UX_OR_GOTO(out, x, label)  UX_WRAP1(out, x, GOTO_IF_FAIL, label)
 #define ULE128_OR_GOTO(out, label) ULE128_WARP1(out, GOTO_IF_FAIL, label)
-#define SLE128_OR_GOTO(out, label) SLE128_WARP(out, GOTO_IF_FAIL, label)
+#define SLE128_OR_GOTO(out, label) SLE128_WARP1(out, GOTO_IF_FAIL, label)

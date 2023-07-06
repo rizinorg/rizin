@@ -6,7 +6,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-static int abbrev_decl_init(RzBinDwarfAbbrevDecl *abbrev) {
+static int RzBinDwarfAbbrevDecl_init(RzBinDwarfAbbrevDecl *abbrev) {
 	if (!abbrev) {
 		return -EINVAL;
 	}
@@ -14,7 +14,7 @@ static int abbrev_decl_init(RzBinDwarfAbbrevDecl *abbrev) {
 	return 0;
 }
 
-static int abbrev_decl_fini(RzBinDwarfAbbrevDecl *abbrev) {
+static int RzBinDwarfAbbrevDecl_fini(RzBinDwarfAbbrevDecl *abbrev) {
 	if (!abbrev) {
 		return -EINVAL;
 	}
@@ -22,54 +22,7 @@ static int abbrev_decl_fini(RzBinDwarfAbbrevDecl *abbrev) {
 	return 0;
 }
 
-static void kv_abbrev_free(HtUPKv *kv) {
-	if (!kv) {
-		return;
-	}
-	RzVector *v = kv->value;
-	if (!v) {
-		return;
-	}
-	rz_vector_fini(v);
-}
-
-static void abbrev_fini(RzBinDwarfDebugAbbrevs *abbrevs) {
-	if (!abbrevs) {
-		return;
-	}
-	ht_up_free(abbrevs->tbl);
-}
-
-static int abbrev_init(RzBinDwarfDebugAbbrevs *abbrevs) {
-	if (!abbrevs) {
-		return -EINVAL;
-	}
-	abbrevs->tbl = ht_up_new(NULL, kv_abbrev_free, NULL);
-	if (!abbrevs->tbl) {
-		goto beach;
-	}
-	return 0;
-beach:
-	abbrev_fini(abbrevs);
-	return -EINVAL;
-}
-
-RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs) {
-	if (!abbrevs) {
-		return;
-	}
-	abbrev_fini(abbrevs);
-	free(abbrevs);
-}
-
-static RzBinDwarfAbbrevTable *abbrev_table_new(size_t offset) {
-	RzBinDwarfAbbrevTable *table = RZ_NEW0(RzBinDwarfAbbrevTable);
-	rz_vector_init(&table->abbrevs, sizeof(RzBinDwarfAbbrevDecl), (RzVectorFree)abbrev_decl_fini, NULL);
-	table->offset = offset;
-	return table;
-}
-
-static void abbrev_table_free(RzBinDwarfAbbrevTable *table) {
+static void RzBinDwarfAbbrevTable_free(RzBinDwarfAbbrevTable *table) {
 	if (!table) {
 		return;
 	}
@@ -77,37 +30,73 @@ static void abbrev_table_free(RzBinDwarfAbbrevTable *table) {
 	free(table);
 }
 
-static void htup_abbrev_table_free(HtUPKv *kv) {
+static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
 	if (!kv) {
 		return;
 	}
-	abbrev_table_free(kv->value);
+	RzBinDwarfAbbrevTable_free(kv->value);
 }
 
-static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
-	abbrev_init(abbrevs);
-	RzBinDwarfAbbrevTable *tbl = abbrev_table_new(rz_buf_tell(buffer));
+static void RzBinDwarfDebugAbbrevs_fini(RzBinDwarfDebugAbbrevs *abbrevs) {
+	if (!abbrevs) {
+		return;
+	}
+	ht_up_free(abbrevs->tbl_by_offset);
+}
+
+static bool RzBinDwarfDebugAbbrevs_init(RzBinDwarfDebugAbbrevs *abbrevs) {
+	if (!abbrevs) {
+		return false;
+	}
+	abbrevs->tbl_by_offset = ht_up_new(NULL, htup_RzBinDwarfAbbrevTable_free, NULL);
+	if (!abbrevs->tbl_by_offset) {
+		goto beach;
+	}
+	return true;
+beach:
+	RzBinDwarfDebugAbbrevs_fini(abbrevs);
+	return false;
+}
+
+RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs) {
+	if (!abbrevs) {
+		return;
+	}
+	RzBinDwarfDebugAbbrevs_fini(abbrevs);
+	free(abbrevs);
+}
+
+static RzBinDwarfAbbrevTable *RzBinDwarfAbbrevTable_new(size_t offset) {
+	RzBinDwarfAbbrevTable *table = RZ_NEW0(RzBinDwarfAbbrevTable);
+	rz_vector_init(&table->abbrevs, sizeof(RzBinDwarfAbbrevDecl), (RzVectorFree)RzBinDwarfAbbrevDecl_fini, NULL);
+	table->offset = offset;
+	return table;
+}
+
+static bool RzBinDwarfDebugAbbrevs_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
+	RET_FALSE_IF_FAIL(RzBinDwarfDebugAbbrevs_init(abbrevs));
+	RzBinDwarfAbbrevTable *tbl = RzBinDwarfAbbrevTable_new(rz_buf_tell(buffer));
 	while (true) {
 		ut64 offset = rz_buf_tell(buffer);
 		if (!tbl) {
-			tbl = abbrev_table_new(offset);
+			tbl = RzBinDwarfAbbrevTable_new(offset);
 		}
 
 		ut64 code = 0;
 		ULE128_OR_GOTO(code, ok);
 		if (code == 0) {
-			ht_up_update(abbrevs->tbl, tbl->offset, tbl);
+			ht_up_update(abbrevs->tbl_by_offset, tbl->offset, tbl);
 			tbl = NULL;
 			continue;
 		}
 
 		ut64 tag;
-		ULE128_OR_RET_FALSE(tag);
+		ULE128_OR_GOTO(tag, err);
 		ut8 has_children;
-		U8_OR_RET_FALSE(has_children);
+		U8_OR_GOTO(has_children, err);
 		if (!(has_children == DW_CHILDREN_yes || has_children == DW_CHILDREN_no)) {
 			RZ_LOG_ERROR("0x%" PFMT64x ":\tinvalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), has_children);
-			break;
+			goto err;
 		}
 
 		RzBinDwarfAbbrevDecl decl = {
@@ -116,15 +105,15 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 			.tag = tag,
 			.has_children = has_children,
 		};
-		abbrev_decl_init(&decl);
+		RzBinDwarfAbbrevDecl_init(&decl);
 		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", offset, code, rz_bin_dwarf_tag(tag), has_children);
 
 		do {
 			ut64 name = 0;
-			ULE128_OR_RET_FALSE(name);
+			ULE128_OR_GOTO(name, err);
 			if (name == 0) {
 				st64 form = 0;
-				ULE128_OR_RET_FALSE(form);
+				ULE128_OR_GOTO(form, err);
 				if (form == 0) {
 					goto abbrev_ok;
 				}
@@ -133,7 +122,7 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 			}
 
 			ut64 form = 0;
-			ULE128_OR_RET_FALSE(form);
+			ULE128_OR_GOTO(form, err);
 
 			/**
 			 * http://www.dwarfstd.org/doc/DWARF5.pdf#page=225
@@ -145,7 +134,7 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 			 */
 			st64 special = 0;
 			if (form == DW_FORM_implicit_const) {
-				SLE128_OR_RET_FALSE(special);
+				SLE128_OR_GOTO(special, err);
 			}
 			RzBinDwarfAttrDef def = {
 				.name = name,
@@ -160,7 +149,7 @@ static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
 		abbrevs->count++;
 	}
 ok:
-	ht_up_update(abbrevs->tbl, tbl->offset, tbl);
+	ht_up_update(abbrevs->tbl_by_offset, tbl->offset, tbl);
 	return abbrevs;
 err:
 	rz_bin_dwarf_abbrev_free(abbrevs);
@@ -174,9 +163,9 @@ RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile) {
 	GOTO_IF_FAIL(buf, ok);
 	abbrevs = RZ_NEW0(RzBinDwarfDebugAbbrevs);
 	GOTO_IF_FAIL(abbrevs, err);
-	abbrevs->tbl = ht_up_new(NULL, htup_abbrev_table_free, NULL);
-	GOTO_IF_FAIL(abbrevs->tbl, err);
-	GOTO_IF_FAIL(abbrev_parse(buf, abbrevs), err);
+	abbrevs->tbl_by_offset = ht_up_new(NULL, htup_RzBinDwarfAbbrevTable_free, NULL);
+	GOTO_IF_FAIL(abbrevs->tbl_by_offset, err);
+	GOTO_IF_FAIL(RzBinDwarfDebugAbbrevs_parse(buf, abbrevs), err);
 ok:
 	rz_buf_free(buf);
 	return abbrevs;

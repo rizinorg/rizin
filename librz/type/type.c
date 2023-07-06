@@ -1280,6 +1280,7 @@ RZ_API void rz_type_free(RZ_NULLABLE RzType *type) {
 		rz_type_free(type->array.type);
 		break;
 	case RZ_TYPE_KIND_CALLABLE:
+		rz_type_callable_free(type->callable);
 		break;
 	}
 	free(type);
