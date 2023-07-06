@@ -13,7 +13,7 @@ void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfFileEntry *x, void *user) {
 	free(x->path_name);
 }
 
-static void line_header_init(RzBinDwarfLineHeader *hdr) {
+static void RzBinDwarfLineHeader_init(RzBinDwarfLineHeader *hdr) {
 	if (!hdr) {
 		return;
 	}
@@ -24,7 +24,7 @@ static void line_header_init(RzBinDwarfLineHeader *hdr) {
 	rz_pvector_init(&hdr->directories, free);
 }
 
-static void line_header_fini(RzBinDwarfLineHeader *hdr) {
+static void RzBinDwarfLineHeader_fini(RzBinDwarfLineHeader *hdr) {
 	if (!hdr) {
 		return;
 	}
@@ -177,16 +177,16 @@ static bool parse_line_header_source_v4(RzBuffer *buffer, RzBinDwarfLineHeader *
 	rz_vector_init(&hdr->file_names, sizeof(RzBinDwarfFileEntry), NULL, NULL);
 	while (true) {
 		char *filename = buf_get_string(buffer);
-		GOTO_IF_FAIL(filename, beach);
+		GOTO_IF_FAIL(filename, err);
 
 		ut64 directory_index;
-		ULE128_OR_GOTO(directory_index, beach);
+		ULE128_OR_GOTO(directory_index, err);
 
 		ut64 timestamp;
-		ULE128_OR_GOTO(timestamp, beach);
+		ULE128_OR_GOTO(timestamp, err);
 
 		ut64 size;
-		ULE128_OR_GOTO(size, beach);
+		ULE128_OR_GOTO(size, err);
 
 		RzBinDwarfFileEntry entry = {
 			.path_name = filename,
@@ -196,8 +196,11 @@ static bool parse_line_header_source_v4(RzBuffer *buffer, RzBinDwarfLineHeader *
 			.md5 = { 0 }
 		};
 		rz_vector_push(&hdr->file_names, &entry);
+		continue;
+	err:
+		free(filename);
+		break;
 	}
-beach:
 	return true;
 }
 
@@ -292,7 +295,7 @@ static bool parse_line_header(
 	RzBinDwarfLineHeader *hdr, bool big_endian) {
 	rz_return_val_if_fail(hdr && buffer, false);
 
-	line_header_init(hdr);
+	RzBinDwarfLineHeader_init(hdr);
 	hdr->offset = rz_buf_tell(buffer);
 	hdr->is_64bit = false;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
@@ -639,11 +642,11 @@ static bool parse_opcodes(RzBuffer *buffer, const RzBinDwarfLineHeader *hdr, RzV
 	return true; // number of bytes we've moved by
 }
 
-static void line_unit_free(RzBinDwarfLineUnit *unit) {
+static void RzBinDwarfLineUnit_free(RzBinDwarfLineUnit *unit) {
 	if (!unit) {
 		return;
 	}
-	line_header_fini(&unit->header);
+	RzBinDwarfLineHeader_fini(&unit->header);
 	rz_vector_fini(&unit->ops);
 	free(unit);
 }
@@ -655,7 +658,7 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBuffer *buffer, ut8 address_size, Rz
 	if (!li) {
 		return NULL;
 	}
-	li->units = rz_list_newf((RzListFree)line_unit_free);
+	li->units = rz_list_newf((RzListFree)RzBinDwarfLineUnit_free);
 	if (!li->units) {
 		free(li);
 		return NULL;
@@ -674,7 +677,7 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBuffer *buffer, ut8 address_size, Rz
 		}
 
 		if (!parse_line_header(buffer, address_size, &unit->header, big_endian)) {
-			free(unit);
+			RzBinDwarfLineUnit_free(unit);
 			break;
 		}
 

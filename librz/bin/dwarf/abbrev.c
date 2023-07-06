@@ -14,6 +14,14 @@ static int abbrev_decl_init(RzBinDwarfAbbrevDecl *abbrev) {
 	return 0;
 }
 
+static int abbrev_decl_fini(RzBinDwarfAbbrevDecl *abbrev) {
+	if (!abbrev) {
+		return -EINVAL;
+	}
+	rz_vector_fini(&abbrev->defs);
+	return 0;
+}
+
 static void kv_abbrev_free(HtUPKv *kv) {
 	if (!kv) {
 		return;
@@ -56,9 +64,24 @@ RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs) {
 
 static RzBinDwarfAbbrevTable *abbrev_table_new(size_t offset) {
 	RzBinDwarfAbbrevTable *table = RZ_NEW0(RzBinDwarfAbbrevTable);
-	rz_vector_init(&table->abbrevs, sizeof(RzBinDwarfAbbrevDecl), NULL, NULL);
+	rz_vector_init(&table->abbrevs, sizeof(RzBinDwarfAbbrevDecl), (RzVectorFree)abbrev_decl_fini, NULL);
 	table->offset = offset;
 	return table;
+}
+
+static void abbrev_table_free(RzBinDwarfAbbrevTable *table) {
+	if (!table) {
+		return;
+	}
+	rz_vector_fini(&table->abbrevs);
+	free(table);
+}
+
+static void htup_abbrev_table_free(HtUPKv *kv) {
+	if (!kv) {
+		return;
+	}
+	abbrev_table_free(kv->value);
 }
 
 static bool abbrev_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrevs *abbrevs) {
@@ -151,6 +174,8 @@ RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile) {
 	GOTO_IF_FAIL(buf, ok);
 	abbrevs = RZ_NEW0(RzBinDwarfDebugAbbrevs);
 	GOTO_IF_FAIL(abbrevs, err);
+	abbrevs->tbl = ht_up_new(NULL, htup_abbrev_table_free, NULL);
+	GOTO_IF_FAIL(abbrevs->tbl, err);
 	GOTO_IF_FAIL(abbrev_parse(buf, abbrevs), err);
 ok:
 	rz_buf_free(buf);

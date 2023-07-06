@@ -764,7 +764,7 @@ typedef struct dwarf_function_t {
 	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
 	ut64 vtable_addr; // location description
 	ut64 call_conv; // normal || program || nocall
-	const RzType *ret_type;
+	RzType *ret_type;
 	RzVector /*<RzAnalysisDwarfVariable*>*/ variables;
 } RzAnalysisDwarfFunction;
 

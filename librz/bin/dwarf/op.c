@@ -519,15 +519,16 @@ static inline ut64 addrmask_from_size(uint8_t size) {
 }
 
 RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn) {
+	RzVector *result = NULL;
 	ut64 addr_mask = addrmask_from_size(dw->encoding.address_size);
 	Evaluation *eval = Evaluation_new(expr, addr_mask, &dw->encoding);
 	if (!Evaluation_evaluate(eval, dw, fn)) {
-		return NULL;
+		goto beach;
 	}
-	RzVector *result = NULL;
 	if (eval->state.state == EVALUATION_STATE_COMPLETE && !rz_vector_empty(&eval->result)) {
 		result = rz_vector_clone(&eval->result);
 	}
+beach:
 	Evaluation_free(eval);
 	return result;
 }

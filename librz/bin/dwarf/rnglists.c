@@ -16,11 +16,11 @@ RZ_IPI bool Range_is_end(RzBinDwarfRange *self) {
 }
 
 RZ_IPI bool Range_is_base_address(RzBinDwarfRange *self, ut8 address_size) {
-	return self->begin == (~0 >> (64 - address_size * 8));
+	return self->begin == (~0ULL >> (64 - address_size * 8));
 }
 
 RZ_IPI void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8 address_size) {
-	ut64 mask = ~0 >> (64 - address_size * 8);
+	ut64 mask = address_size == 0 ? ~0ULL : (~0ULL >> (64 - address_size * 8));
 	self->begin = (base_address + self->begin) & mask;
 	self->end = (base_address + self->end) & mask;
 }

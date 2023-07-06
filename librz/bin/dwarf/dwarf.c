@@ -20,7 +20,7 @@ RZ_IPI const char *indent_str(int indent) {
 	if (indent < 0) {
 		return "";
 	}
-	if (indent > RZ_ARRAY_SIZE(indent_tbl)) {
+	if (indent >= RZ_ARRAY_SIZE(indent_tbl)) {
 		indent = 6;
 	}
 	return indent_tbl[indent];
@@ -515,6 +515,13 @@ RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 	}
 	memcpy(clone->data, self->data, self->length);
 	return clone;
+}
+
+RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self) {
+	if (!self) {
+		return;
+	}
+	free(self->data);
 }
 
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {

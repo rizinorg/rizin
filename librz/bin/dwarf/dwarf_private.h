@@ -27,6 +27,7 @@ typedef struct {
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian);
 
 RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self);
+RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 RZ_IPI ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end);
 
@@ -124,6 +125,5 @@ RZ_IPI void Value_free(RzBinDwarfValue *self);
 /// op
 
 #include "op.h"
-
 
 #endif

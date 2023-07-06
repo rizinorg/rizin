@@ -1049,11 +1049,12 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 		}
 		rz_vector_push(&fn->variables, &v);
 	}
-	return 1;
+	rz_pvector_free(children);
+	return true;
 }
 
-static inline char *fcn_name(RzAnalysisDwarfFunction *f, char *lang) {
-	return rz_str_new(prefer_linkage_name(lang) ? (f->demangle_name ? (const char *)(f->demangle_name) : (f->link_name ? f->link_name : f->name)) : f->name);
+static inline const char *fcn_name(RzAnalysisDwarfFunction *f, char *lang) {
+	return prefer_linkage_name(lang) ? (f->demangle_name ? (const char *)(f->demangle_name) : (f->link_name ? f->link_name : f->name)) : f->name;
 }
 
 void fcn_free(RzAnalysisDwarfFunction *f) {
@@ -1064,6 +1065,7 @@ void fcn_free(RzAnalysisDwarfFunction *f) {
 	free(f->demangle_name);
 	free(f->link_name);
 	rz_vector_fini(&f->variables);
+	rz_type_free(f->ret_type);
 	free(f);
 }
 
@@ -1145,7 +1147,7 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 		goto cleanup;
 	}
 
-	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, (RzType *)fcn->ret_type);
+	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type ? rz_type_clone(fcn->ret_type) : NULL);
 	parse_function_args_and_vars(ctx, die, callable, fcn);
 	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
 		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", fcn->prefer_name);
@@ -1154,7 +1156,6 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	return;
 cleanup:
 	fcn_free(fcn);
-	rz_type_free((RzType *)fcn->ret_type);
 }
 
 /**
@@ -1328,12 +1329,19 @@ rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
 	ht_up_foreach(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
 }
 
+void htup_fcn_free(HtUPKv *kv) {
+	if (!kv) {
+		return;
+	}
+	fcn_free(kv->value);
+}
+
 RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	RzAnalysisDebugInfo *debug_info = RZ_NEW0(RzAnalysisDebugInfo);
 	if (!debug_info) {
 		return NULL;
 	}
-	debug_info->function_by_addr = ht_up_new(NULL, NULL, NULL);
+	debug_info->function_by_addr = ht_up_new(NULL, htup_fcn_free, NULL);
 	return debug_info;
 }
 
