@@ -232,6 +232,7 @@ RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, Rz
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *bf, RzBinDwarf *dw) {
 	RET_NULL_IF_FAIL(bf && dw);
 	RzBinDwarfLocListTable *self = rz_bin_dwarf_loclists_new(bf, dw);
+	RET_NULL_IF_FAIL(self);
 	RzBuffer *buffer = dw->encoding.version == 5 ? self->debug_loclists : self->debug_loc;
 	buffer = rz_buf_new_with_buf(buffer);
 	if (dw->encoding.version == 5) {
@@ -250,12 +251,19 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *b
 	return self;
 }
 
+void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
+
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw) {
 	RET_NULL_IF_FAIL(bf && dw);
 	RzBinDwarfLocListTable *self = RZ_NEW0(RzBinDwarfLocListTable);
 	self->debug_addr = dw->addr;
 	self->debug_loc = get_section_buf(bf, ".debug_loc");
 	self->debug_loclists = get_section_buf(bf, ".debug_loclists");
+	if (!(self->debug_loc || self->debug_loclists)) {
+		RZ_LOG_ERROR("No .debug_loc and .debug_loclists section found\n");
+		RzBinDwarfLocLists_free(self);
+		return NULL;
+	}
 	rz_vector_init(&self->raw_entries, sizeof(RzBinDwarfRawLocListEntry), NULL, NULL);
 	rz_vector_init(&self->entries, sizeof(RzBinDwarfLocationListEntry), NULL, NULL);
 	self->entry_by_offset = ht_up_new(NULL, NULL, NULL);
@@ -266,8 +274,8 @@ void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self) {
 	if (!self) {
 		return;
 	}
-	rz_vector_free(&self->raw_entries);
-	rz_vector_free(&self->entries);
+	rz_vector_fini(&self->raw_entries);
+	rz_vector_fini(&self->entries);
 	ht_up_free(self->entry_by_offset);
 	rz_buf_free(self->debug_loc);
 	rz_buf_free(self->debug_loclists);

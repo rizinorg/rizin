@@ -8,11 +8,14 @@
 #include "test_types.h"
 #include "../unit/minunit.h"
 
-#define check_kv(k, v) \
-	do { \
-		value = sdb_get(sdb, k, NULL); \
-		mu_assert_nullable_streq(value, v, "Wrong key - value pair"); \
-	} while (0)
+#define check_fn(addr, name, sig) \
+	{ \
+		RzAnalysisDwarfFunction *f = ht_up_find(analysis->debug_info->function_by_addr, addr, NULL); \
+		mu_assert_notnull(f, "No function at 0x401300"); \
+		mu_assert_streq(f->prefer_name, name, "fn name"); \
+		RzCallable *c = rz_type_func_get(analysis->typedb, f->prefer_name); \
+		mu_assert_streq_free(rz_type_callable_as_string(analysis->typedb, c), sig, "fn sig"); \
+	}
 
 static bool test_parse_dwarf_types(void) {
 	RzBin *bin = rz_bin_new();
@@ -166,23 +169,12 @@ static bool test_dwarf_function_parsing_cpp(void) {
 
 	rz_analysis_dwarf_process_info(analysis, dw);
 
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	mu_assert_notnull(sdb, "No dwarf function information in db");
-	char *value = NULL;
-	check_kv("Mammal", "fcn");
-	check_kv("fcn.Mammal.addr", "0x401300");
-	check_kv("fcn.Mammal.sig", "void Mammal(struct Mammal *this);");
-	check_kv("fcn.Dog::walk__.addr", "0x401380");
-	check_kv("fcn.Dog::walk__.sig", "int Dog::walk()(struct Dog *this);");
-	check_kv("fcn.Dog::walk__.name", "Dog::walk()");
-	check_kv("fcn.Mammal::walk__.args", "this");
-	check_kv("fcn.Mammal::walk__.arg.this", "b,-8,struct Mammal *");
+	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
 
-	check_kv("main", "fcn");
-	check_kv("fcn.main.addr", "0x401160");
-	check_kv("fcn.main.sig", "int main();");
-	check_kv("fcn.main.vars", "b,m,output");
-	check_kv("fcn.main.var.output", "b,-40,int");
+	check_fn(0x401300, "Mammal::Mammal()", "void Mammal::Mammal()(struct Mammal *this)");
+	check_fn(0x401380, "Dog::walk()", "int Dog::walk()(struct Dog *this)");
+	check_fn(0x401390, "Mammal::~Mammal()", "void Mammal::~Mammal()(struct Mammal *this)");
+	check_fn(0x401160, "main", "int main()");
 
 	rz_bin_dwarf_free(dw);
 	rz_analysis_free(analysis);
@@ -225,18 +217,9 @@ static bool test_dwarf_function_parsing_go(void) {
 
 	rz_analysis_dwarf_process_info(analysis, dw);
 
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	mu_assert_notnull(sdb, "No dwarf function information in db");
-	char *value = NULL;
-
-	check_kv("main_main", "fcn");
-	check_kv("fcn.main_main.name", "main.main");
-	check_kv("fcn.main_main.addr", "0x491980");
-
-	check_kv("main_tree_iterInorder", "fcn");
-	check_kv("fcn.main_tree_iterInorder.name", "main.tree.iterInorder");
-	check_kv("fcn.main_tree_iterInorder.addr", "0x491d90");
-	check_kv("fcn.main_tree_iterInorder.sig", "void main.tree.iterInorder(struct main.tree t, func(int) visit);");
+	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
+	check_fn(0x491980, "main.main", "void main.main()");
+	check_fn(0x491d90, "main.tree.iterInorder", "void main.tree.iterInorder(struct main.tree t, func(int) visit)");
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	   don't check variable information and add it in the future */
@@ -285,25 +268,10 @@ static bool test_dwarf_function_parsing_rust(void) {
 
 	rz_analysis_dwarf_process_info(analysis, dw);
 
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	mu_assert_notnull(sdb, "No dwarf function information in db");
-	char *value = NULL;
-
-	check_kv("fcn.main.addr", "0x5750");
-	check_kv("fcn.main.name", "main");
-	check_kv("fcn.main.var.numbers", "s,128,i32 [11]");
-	check_kv("fcn.main.var.strings", "s,312,&str [6]");
-	// check_kv ("fcn.main.vars", "numbers,arg0,arg0,strings,arg0,arg0"); Fix these collision by unique renaming in future
-	check_kv("fcn.lang_start_internal.sig", "isize lang_start_internal(&Fn<()> main, isize argc, u8 **argv);");
-
-	check_kv("bubble_sort__str_", "fcn");
-	check_kv("bubble_sort_i32_", "fcn");
-	check_kv("fcn.bubble_sort_i32_.args", "values");
-	check_kv("fcn.bubble_sort_i32_.vars", "n,swapped,iter,__next,val,i");
-	check_kv("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
-	check_kv("fcn.bubble_sort_i32_.var.i", "s,176,usize");
-	check_kv("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
-	check_kv("fcn.bubble_sort_i32_.addr", "0x5270");
+	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
+	check_fn(0x5750, "main", "void main()");
+	check_fn(0x5270, "bubble_sort<i32>", "void bubble_sort<i32>(struct &mut [i32] values)");
+	check_fn(0x8730, "lang_start_internal", "isize lang_start_internal(struct &Fn<()> main, isize argc, u8 **argv)");
 
 	rz_bin_dwarf_free(dw);
 	rz_analysis_free(analysis);

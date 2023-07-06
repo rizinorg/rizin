@@ -447,8 +447,7 @@ typedef struct rz_analysis_hint_cb_t {
 typedef struct rz_analysis_il_vm_t RzAnalysisILVM;
 
 typedef struct {
-	RzVector *functions;
-	HtUP *function_variables_by_address;
+	HtUP *function_by_addr;
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {
@@ -725,6 +724,49 @@ typedef struct rz_analysis_var_global_t {
 	RzVector /*<RzTypeConstraint>*/ constraints;
 	RZ_BORROW RzAnalysis *analysis; ///< analysis pertaining to this global variable
 } RzAnalysisVarGlobal;
+
+typedef enum dwarf_location_kind {
+	LOCATION_UNKNOWN = 0,
+	LOCATION_GLOBAL = 1,
+	LOCATION_BP = 2,
+	LOCATION_SP = 3,
+	LOCATION_REGISTER = 4,
+	LOCATION_CFA = 5
+} RzAnalysisDwarfVariableLocationKind;
+
+typedef struct dwarf_var_location_t {
+	RzAnalysisDwarfVariableLocationKind kind;
+	ut64 address;
+	ut64 reg_num;
+	st64 offset;
+	const char *reg_name; /* string literal */
+} RzAnalysisDwarfVariableLocation;
+
+typedef struct dwarf_variable_t {
+	RzBinDwarfLocation *location;
+	const char *name;
+	const char *link_name;
+	const char *prefer_name;
+	RzType *type;
+	RzAnalysisVarKind kind;
+} RzAnalysisDwarfVariable;
+
+typedef struct dwarf_function_t {
+	ut64 addr;
+	char *name;
+	char *link_name;
+	char *demangle_name;
+	const char *prefer_name;
+	bool is_external;
+	bool is_method;
+	bool is_virtual;
+	bool is_trampoline; // intermediary in making call to another func
+	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
+	ut64 vtable_addr; // location description
+	ut64 call_conv; // normal || program || nocall
+	const RzType *ret_type;
+	RzVector /*<RzAnalysisDwarfVariable*>*/ variables;
+} RzAnalysisDwarfFunction;
 
 typedef enum {
 	RZ_ANALYSIS_ACC_UNKNOWN = 0,
