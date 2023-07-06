@@ -995,6 +995,22 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_CMN:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=,31,$c,cf,:=,31,$o,vf,:=");
 			break;
+		case ARM_INS_MOV:
+			switch (SHIFTTYPE(1)) {
+			default:
+				break;
+			case ARM_SFT_LSL:
+			case ARM_SFT_LSL_REG:
+				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,32,-,%s,>>,cf,:=,}", ARG(1), ARG(1), ARG(0));
+				break;
+			case ARM_SFT_LSR:
+			case ARM_SFT_LSR_REG:
+			case ARM_SFT_ASR:
+			case ARM_SFT_ASR_REG:
+				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,}", ARG(1), ARG(0), ARG(1));
+				break;
+			}
+			// fallthrough
 		default:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=");
 		}
