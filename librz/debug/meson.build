@@ -56,6 +56,11 @@ rz_debug_sources = [
   #'old/p/native/darwin.c',
   #'old/p/native/drx.c',
   #'old/p/native/maps/darwin.c',
+
+  # New debugger code.
+  'debugger.c',
+  'p/debugger_native.c',
+  'p/debugger_null.c',
 ]
 
 rz_debug_deps = [
