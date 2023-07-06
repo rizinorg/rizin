@@ -612,7 +612,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		if (ISPOSTINDEX()) { // e.g. 'str r2, [r3], 4
 			if (!HASMEMINDEX(1)) { // e.g. 'str r2, [r3], 4
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
-					REG(0), MEMBASE(1), str_ldr_bytes, IMM(2), MEMBASE(1));
+					REG(0), MEMBASE(1), str_ldr_bytes, MEMDISP(1), MEMBASE(1));
 			} else { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
 					switch (SHIFTTYPE(2)) {
