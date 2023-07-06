@@ -610,10 +610,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			}
 		}
 		if (ISPOSTINDEX()) { // e.g. 'str r2, [r3], 4
-			if (!HASMEMINDEX(1)) { // e.g. 'str r2, [r3], 4
+			if (!HASMEMINDEX(1) && (str_ldr_bytes != 8)) { // e.g. 'str r2, [r3], 4
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
 					REG(0), MEMBASE(1), str_ldr_bytes, MEMDISP(1), MEMBASE(1));
-			} else { // e.g. 'str r2, [r3], r1
+			} else if (str_ldr_bytes != 8) { // e.g. 'str r2, [r3], r1
 				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
 					switch (SHIFTTYPE(2)) {
 					case ARM_SFT_LSL:
@@ -643,8 +643,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%s,+=",
 						REG(0), MEMBASE(1), str_ldr_bytes, MEMINDEX(1), MEMBASE(1));
 				}
-			}
-			if (ISREG(1) && str_ldr_bytes == 8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
+			} else if (ISREG(1) && str_ldr_bytes == 8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
 				if (!HASMEMINDEX(2)) {
 					int disp = MEMDISP(2);
 					char sign = disp >= 0 ? '+' : '-';
@@ -659,10 +658,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
-						const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
-						rz_strbuf_appendf(&op->esil, "%s,%s,%s,%c,0xffffffff,&,=[4],%s,4,%s,+,%s,%c,0xffffffff,&,=[4]",
-							REG(0), MEMINDEX(2), MEMBASE(2), sign, REG(1), MEMINDEX(2), MEMBASE(2), sign);
-						if (insn->detail->arm.writeback) {
+						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+							REG(0), MEMBASE(2), REG(1), MEMBASE(2));
+						if (insn->detail->writeback) {
+							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c=",
 								MEMINDEX(2), MEMBASE(2), sign);
 						}
