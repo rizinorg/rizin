@@ -200,6 +200,7 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	struct rz_bin_pe_section_t *sections = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	ut64 ba = baddr(bf);
+	int n_nonzero = 0;
 	int i;
 	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
@@ -224,9 +225,12 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		if ((ptr->perm & RZ_PERM_R) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
 			ptr->is_data = true;
 		}
+		if (ptr->size != 0) {
+			n_nonzero++;
+		}
 		rz_list_append(ret, ptr);
 	}
-	if (rz_list_length(ret) == 1 && ptr->perm & RZ_PERM_R) {
+	if (n_nonzero == 1 && ptr && ptr->perm & RZ_PERM_R) {
 		// if there is only one section, then we expect to have data in here also.
 		ptr->is_data = true;
 	}

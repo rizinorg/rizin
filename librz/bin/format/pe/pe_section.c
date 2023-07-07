@@ -243,28 +243,19 @@ void PE_(write_image_section_header)(RzBuffer *b, ut64 addr, PE_(image_section_h
 struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin) {
 	struct rz_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) * shdr;
-	int i, j, section_count = 0;
+	int i, j;
 	char sec_name[PE_IMAGE_SIZEOF_SHORT_NAME + 1];
 
 	if (!bin || !bin->nt_headers) {
 		return NULL;
 	}
 	shdr = bin->section_header;
-	for (i = 0; i < bin->num_sections; i++) {
-		// just allocate the needed
-		if (shdr[i].SizeOfRawData || shdr[i].Misc.VirtualSize) {
-			section_count++;
-		}
-	}
-	sections = calloc(section_count + 1, sizeof(struct rz_bin_pe_section_t));
+	sections = calloc(bin->num_sections + 1, sizeof(struct rz_bin_pe_section_t));
 	if (!sections) {
 		rz_sys_perror("malloc (sections)");
 		return NULL;
 	}
 	for (i = 0, j = 0; i < bin->num_sections; i++) {
-		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) {
-			continue;
-		}
 		if (shdr[i].Name[0] == '\0') {
 			char *new_name = rz_str_newf("sect_%d", j);
 			strncpy((char *)sections[j].name, new_name, RZ_ARRAY_SIZE(sections[j].name) - 1);
@@ -329,7 +320,6 @@ struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin) {
 		j++;
 	}
 	sections[j].last = 1;
-	bin->num_sections = section_count;
 	return sections;
 }
 
