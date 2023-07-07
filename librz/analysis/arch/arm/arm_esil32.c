@@ -659,11 +659,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					if (ISSHIFTED(2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
-						r_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+						rz_strbuf_appendf(&op->esil, "%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
 							REG(0), MEMBASE(2), REG(1), MEMBASE(2));
 						if (insn->detail->arm.writeback) {
 							const char sign = ISMEMINDEXSUB(2) ? '-' : '+';
-							r_strbuf_appendf(&op->esil, ",%s,%s,%c=",
+							rz_strbuf_appendf(&op->esil, ",%s,%s,%c=",
 								MEMINDEX(2), MEMBASE(2), sign);
 						}
 					}
