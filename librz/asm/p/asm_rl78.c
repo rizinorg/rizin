@@ -1,0 +1,45 @@
+// SPDX-FileCopyrightText: 2023 Bastian Engel <bastian.engel00@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include <rz_types.h>
+#include <rz_util.h>
+#include <rz_lib.h>
+#include <rz_asm.h>
+#include "../arch/rl78/rl78.h"
+#include "../arch/rl78/instr.h"
+
+static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+        return 0x69;
+}
+
+static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+        const ut8 b[] = "\x07";
+        struct rl78_instr instr;
+        rl78_dis(&instr, b, sizeof(b));
+
+        char c[64];
+        rl78_instr_to_string(c, sizeof(c), &instr);
+        printf("%s\n", c);
+
+        exit(0);
+}
+
+RzAsmPlugin rz_asm_plugin_rl78 = {
+        .name = "rl78",
+        .arch = "rl78",
+        .desc = "Renesas RL78 disassembler",
+        .author = "Bastian Engel",
+        .license = "LGPL3",
+        .bits = 32,
+        .endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
+        .assemble = &assemble,
+        .disassemble = &disassemble
+};
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+        .type = RZ_LIB_TYPE_ASM,
+        .data = &rz_asm_plugin_rl78,
+        .version = RZ_VERSION
+};
+#endif
