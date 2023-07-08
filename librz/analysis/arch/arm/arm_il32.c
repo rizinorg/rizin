@@ -190,7 +190,6 @@ static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_S64:
 		return 64;
 	case ARM_VECTORDATA_INVALID:
-		return 0;
 	default:
 		rz_warn_if_reached();
 		return 0;
