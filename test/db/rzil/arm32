@@ -290,6 +290,7 @@ ar d16
 aezsu 0x1058c # before printf
 ar r2
 ar r3
+pxq 16 @ sp
 EOF
 EXPECT=<<EOF
 d7 = 0x370637bd40acccbc
@@ -298,6 +299,7 @@ d7 = 0x40accd1740acccbc
 d16 = 0x401599a2e0000000
 r2 = 0xa0000000
 r3 = 0x40159999
+0x00040fd0  0x3ee0c6f7a0000000  0x401599a2e0000000   .......>.......@
 EOF
 EXPECT_ERR=
 RUN
