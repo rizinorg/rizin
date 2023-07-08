@@ -534,7 +534,9 @@ RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzB
 		goto beach;
 	}
 	if (eval->state.state == EVALUATION_STATE_COMPLETE && !rz_vector_empty(&eval->result)) {
+		rz_vector_shrink(&eval->result);
 		result = rz_vector_clone(&eval->result);
+		eval->result.free = NULL;
 	}
 beach:
 	Evaluation_free(eval);

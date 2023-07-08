@@ -1362,6 +1362,81 @@ bool test_dwarf3_aranges(void) {
 	mu_end;
 }
 
+bool test_dwarf5_loclists(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/float_ex1/float_ex1_arm", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
+
+	RzBinDwarfParseOptions parse_opts = {
+		.flags = RZ_BIN_DWARF_PARSE_LOC,
+	};
+	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opts);
+	mu_assert_notnull(dw->loc, ".debug_loclists");
+	mu_assert_eq(dw->loc->hdr.unit_length, 0x56, ".debug_loclists unit length");
+	mu_assert_eq(dw->loc->hdr.encoding.version, 5, ".debug_loclists version");
+	mu_assert_eq(dw->loc->hdr.encoding.address_size, 4, ".debug_loclists address size");
+	mu_assert_eq(dw->loc->hdr.encoding.is_64bit, false, ".debug_loclists is 64bit");
+	mu_assert_eq(dw->loc->hdr.segment_selector_size, 0, ".debug_loclists segment size");
+	mu_assert_eq(dw->loc->hdr.offset_entry_count, 0x0, ".debug_loclists offset entry count");
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_vector_index_ptr(&dw->loc->entries, 0);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4c0, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4de, "entry end");
+		RzBuffer *buf = rz_buf_new_with_pointers(entry->data->data, entry->data->length, false);
+		RzVector *res = rz_bin_dwarf_evaluate(dw, buf, NULL);
+		mu_assert_eq(rz_vector_len(res), 1, "expr result len");
+		RzBinDwarfPiece *piece = rz_vector_index_ptr(res, 0);
+		mu_assert_eq(piece->location->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
+		mu_assert_eq(piece->location->register_number, 0, "piece reg");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_vector_index_ptr(&dw->loc->entries, 1);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4de, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4e1, "entry end");
+		RzBuffer *buf = rz_buf_new_with_pointers(entry->data->data, entry->data->length, false);
+		RzVector *res = rz_bin_dwarf_evaluate(dw, buf, NULL);
+		mu_assert_eq(rz_vector_len(res), 1, "expr result len");
+		RzBinDwarfPiece *piece = rz_vector_index_ptr(res, 0);
+		mu_assert_eq(piece->location->kind, RzBinDwarfLocationKind_VALUE, "piece kind");
+		mu_assert_eq(piece->location->value.type, RzBinDwarfValueType_LOCATION, "piece value type");
+		mu_assert_eq(piece->location->value.location->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece loc kind");
+		mu_assert_eq(piece->location->value.location->register_offset.register_number, 2, "piece loc reg off register");
+		mu_assert_eq(piece->location->value.location->register_offset.offset, -4, "piece loc reg off register");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_vector_index_ptr(&dw->loc->entries, 2);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4e1, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4f8, "entry end");
+
+		// TODO: entry value
+		//		RzBuffer *buf = rz_buf_new_with_pointers(entry->data->data, entry->data->length, false);
+		//		RzVector *res = rz_bin_dwarf_evaluate(dw, buf, NULL);
+		//		mu_assert_eq(rz_vector_len(res), 1, "expr result len");
+		//		RzBinDwarfPiece *piece = rz_vector_index_ptr(res, 0);
+		//		mu_assert_eq(piece->location->kind, RzBinDwarfLocationKind_VALUE, "piece kind");
+		//		mu_assert_eq(piece->location->value.type, RzBinDwarfValueType_LOCATION, "piece value type");
+		//		mu_assert_eq(piece->location->value.location->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece loc kind");
+		//		mu_assert_eq(piece->location->value.location->register_offset.register_number, 2, "piece loc reg off register");
+		//		mu_assert_eq(piece->location->value.location->register_offset.offset, -4, "piece loc reg off register");
+	}
+
+	rz_bin_dwarf_free(dw);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	srand(time(0));
 	mu_run_test(test_dwarf3_c_basic);
@@ -1373,6 +1448,7 @@ bool all_tests() {
 	mu_run_test(test_dwarf4_multidir_comp_units);
 	mu_run_test(test_big_endian_dwarf2);
 	mu_run_test(test_dwarf3_aranges);
+	mu_run_test(test_dwarf5_loclists);
 	return tests_passed != tests_run;
 }
 

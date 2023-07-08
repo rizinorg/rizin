@@ -249,17 +249,21 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *b
 	buffer = rz_buf_new_with_buf(buffer);
 	if (dw->encoding.version == 5) {
 		RET_FALSE_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, dw->encoding.big_endian));
-		// TODO: ut64 hdr_offset = rz_buf_tell(buffer);
+	}
+
+	RzBinDwarfLocListsFormat format = dw->encoding.version <= 4 ? LOCLISTSFORMAT_BARE : LOCLISTSFORMAT_LLE;
+	if (self->hdr.offset_entry_count > 0) {
 		for (ut32 i = 0; i < self->hdr.offset_entry_count; ++i) {
 			ut64 offset = self->hdr.location_offsets[i];
 			rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
-			loclist_parse(self, buffer, LOCLISTSFORMAT_LLE, &dw->encoding);
+			loclist_parse(self, buffer, format, &dw->encoding);
 		}
 	} else {
 		while (rz_buf_tell(buffer) < rz_buf_size(buffer)) {
-			loclist_parse(self, buffer, LOCLISTSFORMAT_BARE, &dw->encoding);
+			loclist_parse(self, buffer, format, &dw->encoding);
 		}
 	}
+
 	rz_buf_free(buffer);
 	return self;
 }
