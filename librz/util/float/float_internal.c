@@ -7,6 +7,23 @@
  * \file : Internal function for float
  * \brief : Should be included directly in float.c
  */
+static inline ut32 rz_float_info_bin16(RzFloatInfo which_info) {
+	switch (which_info) {
+	case RZ_FLOAT_INFO_BASE:
+		return 2;
+	case RZ_FLOAT_INFO_EXP_LEN:
+		return 5;
+	case RZ_FLOAT_INFO_MAN_LEN:
+		return 10;
+	case RZ_FLOAT_INFO_TOTAL_LEN:
+		return 16;
+	case RZ_FLOAT_INFO_BIAS:
+		return 15;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+}
 
 static inline ut32 rz_float_info_bin32(RzFloatInfo which_info) {
 	switch (which_info) {
@@ -456,7 +473,7 @@ static RZ_OWN RzFloat *round_float_bv_new(bool sign, st32 exp, RzBitVector *sig,
 		return NULL;
 	}
 	ret->s = pack_float_bv(sign, exp_bv, rounded_sig, new_format);
-	ret->r = format;
+	ret->r = new_format;
 
 	rz_bv_free(exp_bv);
 	rz_bv_free(rounded_sig);

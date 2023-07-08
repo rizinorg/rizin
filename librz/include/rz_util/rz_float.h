@@ -42,6 +42,7 @@ typedef enum rz_float_format_enum {
 	RZ_FLOAT_IEEE754_BIN_64, ///< IEEE-754 binary64 format (double)
 	RZ_FLOAT_IEEE754_BIN_80, ///< IEEE-754 binary80 format
 	RZ_FLOAT_IEEE754_BIN_128, ///< IEEE-754 binary128 format
+	RZ_FLOAT_IEEE754_BIN_16, ///< half precision
 
 	/// 2. IEEE decimal representations, use decimal digits to represent float precisely
 	/// the standard doesn't give an encoding to store decimal digits in binary.
