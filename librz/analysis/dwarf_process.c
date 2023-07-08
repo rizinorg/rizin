@@ -120,22 +120,22 @@ static ut64 parse_array_count(Context *ctx, RzBinDwarfDie *die) {
 	return 0;
 }
 
-static RzType *parse_type(Context *ctx, ut64 offset, RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited);
+static RzType *parse_type_from_offset(Context *ctx, ut64 offset, RZ_NULLABLE ut64 *size);
 
 /**
  * Parse the die's DW_AT_type type or return a void type or NULL if \p type_idx == -1
  *
  * \param allow_void whether to return a void type instead of NULL if there is no type defined
  */
-static RzType *parse_type_from_AT_type(Context *ctx, RzBinDwarfDie *die, bool allow_void, RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
+static RzType *parse_type_from_die(Context *ctx, RzBinDwarfDie *die, bool allow_void, RZ_NULLABLE ut64 *size) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_type);
 	if (!attr) {
-		if (allow_void) {
-			return rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
+		if (!allow_void) {
+			return NULL;
 		}
-		return NULL;
+		return rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
 	}
-	return parse_type(ctx, attr->reference, size, visited);
+	return parse_type_from_offset(ctx, attr->reference, size);
 }
 
 /**
@@ -144,20 +144,20 @@ static RzType *parse_type_from_AT_type(Context *ctx, RzBinDwarfDie *die, bool al
  * \param ctx
  * \param offset offset of the type entry
  * \param size_out ptr to size of a type to fill up (can be NULL if unwanted)
- * \param set of visited die offsets, to prevent infinite recursion
  * \return the parsed RzType or NULL on failure
  */
-static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
-	rz_return_val_if_fail(visited, NULL);
-	if (set_u_contains(visited, offset)) {
-		return NULL;
+static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *size) {
+	RzType *type = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
+	if (type) {
+		type->ref++;
+		return type;
 	}
+
 	RzBinDwarfDie *die = ht_up_find(ctx->dw->info->die_tbl, offset, NULL);
 	if (!die) {
 		return NULL;
 	}
 
-	set_u_add(visited, offset);
 	RzType *ret = NULL;
 	// get size of first type DIE that has size
 	if (size && *size == 0) {
@@ -168,7 +168,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 	case DW_TAG_pointer_type:
 	case DW_TAG_reference_type: // C++ references are just pointers to us
 	case DW_TAG_rvalue_reference_type: {
-		RzType *pointee = parse_type_from_AT_type(ctx, die, true, size, visited);
+		RzType *pointee = parse_type_from_die(ctx, die, true, size);
 		if (!pointee) {
 			goto end;
 		}
@@ -197,6 +197,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		}
 		ret->kind = RZ_TYPE_KIND_IDENTIFIER;
 		ret->identifier.name = name;
+		ret->ref = 1;
 		switch (die->tag) {
 		case DW_TAG_structure_type:
 			ret->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
@@ -212,7 +213,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		break;
 	}
 	case DW_TAG_subroutine_type: {
-		RzType *return_type = parse_type_from_AT_type(ctx, die, true, size, visited);
+		RzType *return_type = parse_type_from_die(ctx, die, true, size);
 		if (!return_type) {
 			goto end;
 		}
@@ -232,7 +233,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		break;
 	}
 	case DW_TAG_array_type: {
-		RzType *subtype = parse_type_from_AT_type(ctx, die, false, size, visited);
+		RzType *subtype = parse_type_from_die(ctx, die, false, size);
 		if (!subtype) {
 			goto end;
 		}
@@ -244,7 +245,7 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 		break;
 	}
 	case DW_TAG_const_type: {
-		ret = parse_type_from_AT_type(ctx, die, true, size, visited);
+		ret = parse_type_from_die(ctx, die, true, size);
 		if (ret) {
 			switch (ret->kind) {
 			case RZ_TYPE_KIND_IDENTIFIER:
@@ -263,28 +264,13 @@ static RzType *parse_type(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *siz
 	case DW_TAG_volatile_type:
 	case DW_TAG_restrict_type:
 		// volatile and restrict attributes not supported in RzType
-		ret = parse_type_from_AT_type(ctx, die, false, size, visited);
+		ret = parse_type_from_die(ctx, die, false, size);
 		break;
 	default:
 		break;
 	}
 end:
-	set_u_delete(visited, offset);
 	return ret;
-}
-
-/**
- * \brief Convenience function for calling parse_type with an empty visited set
- * See documentation of parse_type
- */
-static RzType *parse_type_outer(Context *ctx, const ut64 offset, ut64 *size) {
-	SetU *visited = set_u_new();
-	if (!visited) {
-		return NULL;
-	}
-	RzType *r = parse_type(ctx, offset, size, visited);
-	set_u_free(visited);
-	return r;
 }
 
 /**
@@ -314,7 +300,7 @@ static RzTypeStructMember *parse_struct_member(Context *ctx, RzBinDwarfDie *die,
 			break;
 		case DW_AT_type:
 			rz_type_free(type);
-			type = parse_type_outer(ctx, attr->reference, &size);
+			type = parse_type_from_offset(ctx, attr->reference, &size);
 			break;
 		case DW_AT_data_member_location:
 			/*
@@ -492,7 +478,7 @@ static void parse_structure_type(Context *ctx, RzBinDwarfDie *die) {
 		}
 	}
 	rz_pvector_free(children);
-	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
+	ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, base_type);
 	return;
 err:
 	rz_pvector_free(children);
@@ -520,7 +506,7 @@ static void parse_enum_type(Context *ctx, RzBinDwarfDie *die) {
 
 	RzBinDwarfAttr *type_attr = rz_bin_dwarf_die_get_attr(die, DW_AT_type);
 	if (type_attr) {
-		base_type->type = parse_type_outer(ctx, type_attr->reference, &base_type->size);
+		base_type->type = parse_type_from_offset(ctx, type_attr->reference, &base_type->size);
 		if (!base_type->type) {
 			rz_type_base_type_free(base_type);
 			return;
@@ -553,7 +539,7 @@ static void parse_enum_type(Context *ctx, RzBinDwarfDie *die) {
 		}
 		rz_pvector_free(children);
 	}
-	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
+	ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, base_type);
 	return;
 
 err:
@@ -585,7 +571,7 @@ static void parse_typedef(Context *ctx, RzBinDwarfDie *die) {
 			break;
 		case DW_AT_type:
 			rz_type_free(type);
-			type = parse_type_outer(ctx, value->reference, &size);
+			type = parse_type_from_offset(ctx, value->reference, &size);
 			if (!type) {
 				goto cleanup;
 			}
@@ -603,7 +589,7 @@ static void parse_typedef(Context *ctx, RzBinDwarfDie *die) {
 	}
 	base_type->name = name;
 	base_type->type = type;
-	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
+	ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, base_type);
 	return;
 
 cleanup:
@@ -642,7 +628,7 @@ static void parse_atomic_type(Context *ctx, RzBinDwarfDie *die) {
 	}
 	base_type->name = name;
 	base_type->size = size;
-	rz_type_db_update_base_type(ctx->analysis->typedb, base_type);
+	ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, base_type);
 }
 
 static void apply_specification(Context *ctx, const RzBinDwarfDie *die, RzAnalysisDwarfFunction *fn) {
@@ -667,7 +653,7 @@ static void apply_specification(Context *ctx, const RzBinDwarfDie *die, RzAnalys
 				break;
 			}
 			ut64 size = 0;
-			fn->ret_type = parse_type_outer(ctx, attr->reference, &size);
+			fn->ret_type = parse_type_from_offset(ctx, attr->reference, &size);
 			break;
 		}
 		default:
@@ -714,7 +700,7 @@ static RzType *parse_abstract_origin(Context *ctx, ut64 offset, const char **nam
 			}
 			break;
 		case DW_AT_type:
-			return parse_type_outer(ctx, val->reference, &size);
+			return parse_type_from_offset(ctx, val->reference, &size);
 		default:
 			break;
 		}
@@ -1008,7 +994,7 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzAnalysisDwarfVaria
 			break;
 		case DW_AT_type:
 			rz_type_free(v->type);
-			v->type = parse_type_outer(ctx, val->reference, NULL);
+			v->type = parse_type_from_offset(ctx, val->reference, NULL);
 			break;
 		// abstract origin is supposed to have omitted information
 		case DW_AT_abstract_origin:
@@ -1085,8 +1071,10 @@ void var_fini(RzAnalysisDwarfVariable *v) {
  */
 static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	RzAnalysisDwarfFunction *fcn = RZ_NEW0(RzAnalysisDwarfFunction);
+	if (!fcn) {
+		return;
+	}
 	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)var_fini, NULL);
-
 	if (rz_bin_dwarf_die_get_attr(die, DW_AT_declaration)) {
 		goto cleanup; /* just declaration skip */
 	}
@@ -1115,8 +1103,8 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 			break;
 		}
 		case DW_AT_type:
-			rz_type_free((RzType *)fcn->ret_type);
-			fcn->ret_type = parse_type_outer(ctx, val->reference, NULL);
+			rz_type_free(fcn->ret_type);
+			fcn->ret_type = parse_type_from_offset(ctx, val->reference, NULL);
 			break;
 		case DW_AT_virtuality:
 			fcn->is_method = true; /* method specific attr */
@@ -1154,13 +1142,16 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 		goto cleanup;
 	}
 
-	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type ? rz_type_clone(fcn->ret_type) : NULL);
+	if (fcn->ret_type) {
+		fcn->ret_type->ref++;
+	}
+	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type);
 	parse_function_args_and_vars(ctx, die, callable, fcn);
 	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
 		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", fcn->prefer_name);
 	};
 	if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
-		fcn_free(fcn);
+		goto cleanup;
 	}
 	return;
 cleanup:
@@ -1230,6 +1221,10 @@ static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
  */
 static void parse_type_entry(Context *ctx, RzBinDwarfDie *die) {
 	rz_return_if_fail(ctx && die);
+	if (ht_up_find(ctx->analysis->debug_info->base_type_by_offset, die->offset, NULL)) {
+		return;
+	}
+
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
@@ -1256,6 +1251,21 @@ static void parse_type_entry(Context *ctx, RzBinDwarfDie *die) {
 	}
 }
 
+static void htup_type_free(HtUPKv *kv) {
+	rz_type_free(kv->value);
+}
+
+static void htup_base_type_free(HtUPKv *kv) {
+	rz_type_base_type_free(kv->value);
+}
+
+static bool htup_typedb_base_type_update(void *user, const ut64 key, const void *value) {
+	RzTypeDB *db = user;
+	const RzBaseType *base_type = value;
+	rz_type_db_update_base_type(db, (RzBaseType *)base_type);
+	return true;
+}
+
 /**
  * \brief Parses type and function information out of DWARF entries
  *        and stores them to the sdb for further use
@@ -1277,6 +1287,8 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 			parse_type_entry(&dw_context, die);
 		}
 	}
+	ht_up_foreach(analysis->debug_info->base_type_by_offset, htup_typedb_base_type_update, analysis->typedb);
+	analysis->debug_info->base_type_by_offset->opt.freefn = NULL;
 }
 
 static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarStorage *storage) {
@@ -1289,6 +1301,9 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 		rz_analysis_var_storage_init_reg(storage, reg_name);
 		break;
 	}
+	case RzBinDwarfLocationKind_REGISTER_OFFSET:
+		// TODO: register offset
+		break;
 	case RzBinDwarfLocationKind_ADDRESS: {
 		rz_analysis_var_storage_init_stack(storage, (RzStackAddr)loc->address);
 		break;
@@ -1298,7 +1313,6 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
 		// TODO loc2storage
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
-		break;
 	}
 	return true;
 }
@@ -1351,6 +1365,8 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 		return NULL;
 	}
 	debug_info->function_by_addr = ht_up_new(NULL, htup_fcn_free, NULL);
+	debug_info->type_by_offset = ht_up_new(NULL, htup_type_free, NULL);
+	debug_info->base_type_by_offset = ht_up_new(NULL, htup_base_type_free, NULL);
 	return debug_info;
 }
 
@@ -1359,5 +1375,7 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 		return;
 	}
 	ht_up_free(debuginfo->function_by_addr);
+	ht_up_free(debuginfo->type_by_offset);
+	ht_up_free(debuginfo->base_type_by_offset);
 	free(debuginfo);
 }

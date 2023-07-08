@@ -57,6 +57,7 @@ static bool test_parse_dwarf_types(void) {
 
 	// Check the enum presence and validity
 	RzBaseType *cairo = rz_type_db_get_base_type(analysis->typedb, "_cairo_status");
+	mu_assert_notnull(cairo, "Couldn't find _cairo_status");
 	mu_assert_eq(cairo->kind, RZ_BASE_TYPE_KIND_ENUM, "_cairo_status is enum");
 	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_SUCCESS", 0), "CAIRO_STATUS_SUCCESS = 0x0");
 	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_INVALID_PATH_DATA", 0x9), "CAIRO_STATUS_INVALID_PATH_DATA = 0x9");
