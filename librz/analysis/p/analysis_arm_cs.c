@@ -2196,7 +2196,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu	q13	.128	276	0\n"
 			"fpu	q14	.128	292	0\n"
 			"fpu	q15	.128	308	0\n"
-			"flg    fpscr .32   312 0\n";
+			"flg    fpscr .32   324 0\n";
 	}
 	return strdup(p);
 }
