@@ -6,9 +6,13 @@
 
 #include "operand.h"
 
+#include <rz_types.h>
+
 extern const char *RL78_STRINGS_OPERATIONS[];
 
-enum rl78_operation {
+enum rl78_operation : ut8 {
+        RL78_OPERATION_NONE,
+
         RL78_OPERATION_ADD,
         RL78_OPERATION_ADDC,
         RL78_OPERATION_ADDW,
@@ -82,13 +86,20 @@ enum rl78_operation {
         RL78_OPERATION_SKNH,
         RL78_OPERATION_SKNZ,
         RL78_OPERATION_SKZ,
+        RL78_OPERATION_STOP,
+        RL78_OPERATION_SUB,
+        RL78_OPERATION_SUBC,
+        RL78_OPERATION_SUBW,
+        RL78_OPERATION_XCH,
+        RL78_OPERATION_XCHW,
+        RL78_OPERATION_XOR,
 
         _RL78_OPERATION_COUNT
 };
 
 struct rl78_instr {
-        struct rl78_operand dst;
-        struct rl78_operand src;
+        struct rl78_operand op0;
+        struct rl78_operand op1;
 
         enum rl78_operation operation;
 };

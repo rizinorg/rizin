@@ -1,11 +1,26 @@
+// SPDX-FileCopyrightText: 2023 Bastian Engel <bastian.engel00@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RL78_H
 #define RL78_H
 
 #include "instr.h"
 
 #include <rz_util.h>
+#include <rz_types.h>
 
-int rl78_asm(const char *str, unsigned char *buf, int buf_len);
-int rl78_dis(struct rl78_instr *instr, const unsigned char *buf, int buf_len);
+#include <stddef.h>
+#include <stdbool.h>
+
+/**
+ * \brief Disassemble a byte sequence into an rl78_instr
+ * \param instr Resulting instruction
+ * \param byte_read Number of bytes disassembled
+ * \param buf Byte buffer
+ * \param buf_len Length of the buffer
+ * \return false if byte sequence does not represent a valid instruction
+ */
+bool rl78_dis(struct rl78_instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
+              const ut8 *buf, size_t buf_len);
 
 #endif

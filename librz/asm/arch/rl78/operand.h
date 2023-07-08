@@ -7,9 +7,11 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include <rz_types.h>
+
 extern const char *RL78_STRINGS_SYMBOLS[];
 
-enum rl78_symbols {
+enum rl78_symbols : ut8 {
         // 8-bit general-purpose registers
         RL78_GPR_X, RL78_GPR_A, RL78_GPR_C, RL78_GPR_B,
         RL78_GPR_E, RL78_GPR_D, RL78_GPR_L, RL78_GPR_H,
@@ -31,12 +33,19 @@ enum rl78_symbols {
         RL78_CR_PSW, // program status word
         RL78_CR_SP, // stack pointer
 
+        // register banks
+        RL78_RB_RB0,
+        RL78_RB_RB1,
+        RL78_RB_RB2,
+        RL78_RB_RB3,
+
         _RL78_SYMBOL_COUNT
 };
 
-enum rl78_operand_type {
+enum rl78_operand_type : ut8 {
         RL78_OPERAND_TYPE_NONE, // used for instructions with less than 2 operands
-        RL78_OPERAND_TYPE_IMMEDIATE,
+        RL78_OPERAND_TYPE_IMMEDIATE_8, // #byte
+        RL78_OPERAND_TYPE_IMMEDIATE_16, // #word
         RL78_OPERAND_TYPE_SYMBOL, // A, X, BC
         RL78_OPERAND_TYPE_ABSOLUTE_ADDR_16, // !...
         RL78_OPERAND_TYPE_ABSOLUTE_ADDR_20, // !!...
@@ -50,8 +59,8 @@ enum rl78_operand_type {
 };
 
 struct rl78_operand {
-        int v0; // contains label enum if applicable or immediate data
-        int v1; // contains additional data like the offset for based addressing
+        ut16 v0; // contains label enum if applicable or immediate data
+        ut16 v1; // contains additional data like the offset for based addressing
         bool extension_addressing; // whether ES is used as 4 bit address extension
         enum rl78_operand_type type;
 };
@@ -60,7 +69,7 @@ struct rl78_operand {
  * \brief Convert an RL78 operand to a string
  * \param dst A caller-supplied character buffer to print into
  * \param n Size of dst
- * \param operand The RL78 operand to be printed
+ * \param operand RL78 operand to be printed
  * \return false if operand->type is out of range or equal to RL78_OPERAND_TYPE_NONE
  */
 bool rl78_operand_to_string(char *dst, size_t n,

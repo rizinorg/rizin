@@ -13,12 +13,15 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-        const ut8 b[] = "\x07";
+        ut8 b[] = "\xca\x50\x69";
         struct rl78_instr instr;
-        rl78_dis(&instr, b, sizeof(b));
-
         char c[64];
+
+        printf("%ld\n", sizeof(struct rl78_instr));
+        size_t bytes_read;
+        rl78_dis(&instr, &bytes_read, b, sizeof(b));
         rl78_instr_to_string(c, sizeof(c), &instr);
+
         printf("%s\n", c);
 
         exit(0);

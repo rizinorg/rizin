@@ -29,7 +29,11 @@ const char *RL78_STRINGS_SYMBOLS[] = {
         [RL78_SFR_SPL]  = "spl",
         [RL78_CR_PC]    = "pc",
         [RL78_CR_PSW]   = "psw",
-        [RL78_CR_SP]    = "sp"
+        [RL78_CR_SP]    = "sp",
+        [RL78_RB_RB0]   = "rb0",
+        [RL78_RB_RB1]   = "rb1",
+        [RL78_RB_RB2]   = "rb2",
+        [RL78_RB_RB3]   = "rb3",
 };
 
 static bool symbol_invalid(int symbol)
@@ -45,8 +49,14 @@ bool rl78_operand_to_string(char *dst, size_t n,
                 return false;
         }
 
+        const char *prefix = "";
+        if (operand->extension_addressing) {
+                prefix = "ES:";
+        }
+
         switch (operand->type) {
-                case RL78_OPERAND_TYPE_IMMEDIATE:
+                case RL78_OPERAND_TYPE_IMMEDIATE_8:
+                case RL78_OPERAND_TYPE_IMMEDIATE_16:
                         snprintf(dst, n, "#0x%" PFMT32x, operand->v0);
                         break;
                 case RL78_OPERAND_TYPE_SYMBOL:
@@ -70,45 +80,29 @@ bool rl78_operand_to_string(char *dst, size_t n,
                         break;
                 case RL78_OPERAND_TYPE_INDIRECT_ADDR:
                         if (symbol_invalid(operand->v0)) {
-                                return false;
+                                // assume address (TODO find better solution)
+                                snprintf(dst, n, "%s[0x%" PFMT32x "]", prefix, operand->v0);
+                        } else {
+                                snprintf(dst, n, "%s[%s]", prefix, RL78_STRINGS_SYMBOLS[operand->v0]);
                         }
 
-                        if (operand->extension_addressing) {
-                                snprintf(dst, n, "ES:[%s]", RL78_STRINGS_SYMBOLS[operand->v0]);
-                        }
-                        else {
-                                snprintf(dst, n, "[%s]", RL78_STRINGS_SYMBOLS[operand->v0]);
-                        }
                         break;
                 case RL78_OPERAND_TYPE_BASED_ADDR:
-                        if (symbol_invalid(operand->v0)) {
+                        if (symbol_invalid(operand->v0)) { // TODO same here
                                 return false;
                         }
 
-                        if (operand->extension_addressing) {
-                                snprintf(dst, n, "ES:[%s+0x%" PFMT32x "]",
-                                         RL78_STRINGS_SYMBOLS[operand->v0], operand->v1);
-                        }
-                        else {
-                                snprintf(dst, n, "[%s+0x%" PFMT32x "]",
-                                         RL78_STRINGS_SYMBOLS[operand->v0], operand->v1);
-                        }
+                        snprintf(dst, n, "%s[%s+0x%" PFMT32x "]", prefix,
+                                 RL78_STRINGS_SYMBOLS[operand->v0], operand->v1);
                         break;
                 case RL78_OPERAND_TYPE_BASED_INDEX_ADDR:
                         if (symbol_invalid(operand->v0) || symbol_invalid(operand->v1)) {
-                                return false;
+                                return false; // TODO same here
                         }
 
-                        if (operand->extension_addressing) {
-                                snprintf(dst, n, "ES:[%s+%s]",
-                                         RL78_STRINGS_SYMBOLS[operand->v0],
-                                         RL78_STRINGS_SYMBOLS[operand->v1]);
-                        }
-                        else {
-                                snprintf(dst, n, "[%s+%s]",
-                                         RL78_STRINGS_SYMBOLS[operand->v0],
-                                         RL78_STRINGS_SYMBOLS[operand->v1]);
-                        }
+                        snprintf(dst, n, "%s[%s+%s]", prefix,
+                                 RL78_STRINGS_SYMBOLS[operand->v0],
+                                 RL78_STRINGS_SYMBOLS[operand->v1]);
                         break;
                 default:
                         rz_warn_if_reached();

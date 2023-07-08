@@ -78,7 +78,14 @@ const char *RL78_STRINGS_OPERATIONS[] = {
         [RL78_OPERATION_SKNC]   = "sknc",
         [RL78_OPERATION_SKNH]   = "sknh",
         [RL78_OPERATION_SKNZ]   = "sknz",
-        [RL78_OPERATION_SKZ]     = "skz"
+        [RL78_OPERATION_SKZ]    = "skz",
+        [RL78_OPERATION_STOP]   = "stop",
+        [RL78_OPERATION_SUB]    = "sub",
+        [RL78_OPERATION_SUBC]   = "subc",
+        [RL78_OPERATION_SUBW]   = "subw",
+        [RL78_OPERATION_XCH]    = "xch",
+        [RL78_OPERATION_XCHW]   = "xchw",
+        [RL78_OPERATION_XOR]    = "xor"
 
 };
 
@@ -90,21 +97,21 @@ bool rl78_instr_to_string(char *dst, size_t n, const struct rl78_instr *instr)
 
         // 16 characters suffice for each operand
         char buf_dst[16], buf_src[16];
-        bool has_dst = instr->dst.type != RL78_OPERAND_TYPE_NONE;
-        bool has_src = instr->src.type != RL78_OPERAND_TYPE_NONE;
+        bool has_op0 = instr->op0.type != RL78_OPERAND_TYPE_NONE;
+        bool has_op1 = instr->op1.type != RL78_OPERAND_TYPE_NONE;
 
-        if (has_dst && !rl78_operand_to_string(buf_dst, sizeof(buf_dst), &instr->dst)) {
+        if (has_op0 && !rl78_operand_to_string(buf_dst, sizeof(buf_dst), &instr->op0)) {
                 return false;
         }
 
-        if (has_src && !rl78_operand_to_string(buf_src, sizeof(buf_src), &instr->src)) {
+        if (has_op1 && !rl78_operand_to_string(buf_src, sizeof(buf_src), &instr->op1)) {
                 return false;
         }
 
-        if (has_dst && has_src) {
+        if (has_op0 && has_op1) {
                 snprintf(dst, n, "%s %s, %s",
                          RL78_STRINGS_OPERATIONS[instr->operation], buf_dst, buf_src);
-        } else if (has_dst) {
+        } else if (has_op0) {
                 snprintf(dst, n, "%s %s",
                          RL78_STRINGS_OPERATIONS[instr->operation], buf_dst);
         } else {
