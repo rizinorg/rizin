@@ -21,6 +21,7 @@ RZ_API RZ_OWN RzType *rz_type_identifier_of_base_type(const RzTypeDB *typedb, RZ
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.name = strdup(btype->name);
 	type->identifier.is_const = is_const;
+	type->ref = 1;
 	switch (btype->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT:
 		type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
@@ -73,6 +74,7 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_base_type(const RzTypeDB *typedb, RZ_NO
 	type->kind = RZ_TYPE_KIND_POINTER;
 	type->pointer.type = t;
 	type->pointer.is_const = is_const;
+	type->ref = 1;
 	return type;
 }
 
@@ -108,6 +110,7 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_type(const RzTypeDB *typedb, RZ_NONNULL
 	newtype->kind = RZ_TYPE_KIND_POINTER;
 	newtype->pointer.type = type;
 	newtype->pointer.is_const = is_const;
+	newtype->ref = 1;
 	return newtype;
 }
 
@@ -131,6 +134,7 @@ RZ_API RZ_OWN RzType *rz_type_array_of_base_type(const RzTypeDB *typedb, RZ_NONN
 	type->kind = RZ_TYPE_KIND_ARRAY;
 	type->array.type = t;
 	type->array.count = count;
+	type->ref = 1;
 	return type;
 }
 
@@ -165,6 +169,7 @@ RZ_API RZ_OWN RzType *rz_type_array_of_type(const RzTypeDB *typedb, RZ_NONNULL R
 	newtype->kind = RZ_TYPE_KIND_ARRAY;
 	newtype->array.type = type;
 	newtype->array.count = count;
+	type->ref = 1;
 	return newtype;
 }
 
@@ -181,6 +186,7 @@ RZ_API RZ_OWN RzType *rz_type_callable(RZ_NONNULL RZ_OWN RzCallable *callable) {
 	}
 	newtype->kind = RZ_TYPE_KIND_CALLABLE;
 	newtype->callable = callable;
+	newtype->ref = 1;
 	return newtype;
 }
 

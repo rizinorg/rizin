@@ -153,6 +153,7 @@ typedef struct rz_callable_at {
 
 struct rz_type_t {
 	RzTypeKind kind;
+	ut32 ref; // reference counter
 	union {
 		struct {
 			RzTypeIdentifierKind kind;

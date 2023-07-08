@@ -1179,6 +1179,7 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 	if (!newtype) {
 		return NULL;
 	}
+	newtype->ref = 1;
 	switch (type->kind) {
 	case RZ_TYPE_KIND_IDENTIFIER:
 		newtype->kind = type->kind;
@@ -1269,6 +1270,10 @@ RZ_API void rz_type_free(RZ_NULLABLE RzType *type) {
 	if (!type) {
 		return;
 	}
+	if (type->ref > 1) {
+		type->ref--;
+		return;
+	}
 	switch (type->kind) {
 	case RZ_TYPE_KIND_IDENTIFIER:
 		free(type->identifier.name);
@@ -1280,7 +1285,6 @@ RZ_API void rz_type_free(RZ_NULLABLE RzType *type) {
 		rz_type_free(type->array.type);
 		break;
 	case RZ_TYPE_KIND_CALLABLE:
-		rz_type_callable_free(type->callable);
 		break;
 	}
 	free(type);
