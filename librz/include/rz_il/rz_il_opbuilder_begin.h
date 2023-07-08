@@ -97,8 +97,6 @@
 #define XOR(x, y) rz_il_op_new_bool_xor(x, y)
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
-#define FNEQ(flx, fly) OR(FORDER(flx, fly), FORDER(DUP(flx), DUP(fly)))
-#define FEQ(flx, fly)  INV(FNEQ(flx, fly))
 
 #define FNEQ(flx, fly) OR(FORDER(flx, fly), FORDER(DUP(flx), DUP(fly)))
 #define FEQ(flx, fly)  INV(FNEQ(flx, fly))
