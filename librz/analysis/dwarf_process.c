@@ -998,6 +998,9 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_di
 			break;
 		case DW_AT_location:
 			v->location = parse_dwarf_location(ctx, val, fn_die);
+			if (!v->location) {
+				RZ_LOG_ERROR("Failed to parse location\n");
+			}
 			break;
 		default:
 			break;

@@ -4,6 +4,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
+void Operation_dump(Operation *ptr, RzStrBuf *buf);
 RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfEncoding *encoding) {
 	RET_FALSE_IF_FAIL(self && buffer && encoding);
 	ut8 opcode;
@@ -1149,4 +1150,78 @@ RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RzBinDwarf *dw, cons
 beach:
 	rz_bin_dwarf_evaluation_free(eval);
 	return NULL;
+}
+
+void Operation_dump(Operation *op, RzStrBuf *buf) {
+	rz_strbuf_append(buf, rz_bin_dwarf_op(op->opcode));
+	switch (op->kind) {
+	case OPERATION_KIND_DEREF:
+		rz_strbuf_appendf(buf, " base_type: 0x%" PFMT64x ", size: %d, space: %d", op->deref.base_type, op->deref.size, op->deref.space);
+		break;
+	case OPERATION_KIND_DROP: break;
+	case OPERATION_KIND_PICK:
+		rz_strbuf_appendf(buf, " 0x%x", op->pick.index);
+		break;
+	case OPERATION_KIND_SWAP: break;
+	case OPERATION_KIND_ROT: break;
+	case OPERATION_KIND_ABS: break;
+	case OPERATION_KIND_AND: break;
+	case OPERATION_KIND_DIV: break;
+	case OPERATION_KIND_MINUS: break;
+	case OPERATION_KIND_MOD: break;
+	case OPERATION_KIND_MUL: break;
+	case OPERATION_KIND_NEG: break;
+	case OPERATION_KIND_NOT: break;
+	case OPERATION_KIND_OR: break;
+	case OPERATION_KIND_PLUS: break;
+	case OPERATION_KIND_PLUS_CONSTANT:
+		rz_strbuf_appendf(buf, " %" PFMT64d, op->plus_constant.value);
+		break;
+	case OPERATION_KIND_SHL: break;
+	case OPERATION_KIND_SHR: break;
+	case OPERATION_KIND_SHRA: break;
+	case OPERATION_KIND_XOR: break;
+	case OPERATION_KIND_BRA: break;
+	case OPERATION_KIND_EQ: break;
+	case OPERATION_KIND_GE: break;
+	case OPERATION_KIND_GT: break;
+	case OPERATION_KIND_LE: break;
+	case OPERATION_KIND_LT: break;
+	case OPERATION_KIND_NE: break;
+	case OPERATION_KIND_SKIP: break;
+	case OPERATION_KIND_UNSIGNED_CONSTANT: break;
+	case OPERATION_KIND_SIGNED_CONSTANT: break;
+	case OPERATION_KIND_REGISTER: break;
+	case OPERATION_KIND_REGISTER_OFFSET: break;
+	case OPERATION_KIND_FRAME_OFFSET: break;
+	case OPERATION_KIND_NOP: break;
+	case OPERATION_KIND_PUSH_OBJECT_ADDRESS: break;
+	case OPERATION_KIND_CALL: break;
+	case OPERATION_KIND_TLS: break;
+	case OPERATION_KIND_CALL_FRAME_CFA: break;
+	case OPERATION_KIND_PIECE: break;
+	case OPERATION_KIND_IMPLICIT_VALUE: break;
+	case OPERATION_KIND_STACK_VALUE: break;
+	case OPERATION_KIND_IMPLICIT_POINTER: break;
+	case OPERATION_KIND_ENTRY_VALUE: break;
+	case OPERATION_KIND_PARAMETER_REF: break;
+	case OPERATION_KIND_ADDRESS: break;
+	case OPERATION_KIND_ADDRESS_INDEX: break;
+	case OPERATION_KIND_CONSTANT_INDEX: break;
+	case OPERATION_KIND_TYPED_LITERAL: break;
+	case OPERATION_KIND_CONVERT: break;
+	case OPERATION_KIND_REINTERPRET: break;
+	case OPERATION_KIND_WASM_LOCAL: break;
+	case OPERATION_KIND_WASM_GLOBAL: break;
+	case OPERATION_KIND_WASM_STACK: break;
+	}
+	rz_strbuf_append(buf, "\n");
+}
+
+void rz_bin_dwarf_expression_dump(RzBinDwarf *dw, RzBinDwarfBlock *block, RzStrBuf *str_buf) {
+	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
+	Operation op = { 0 };
+	while (Operation_parse(&op, expr, &dw->encoding)) {
+		Operation_dump(&op, str_buf);
+	}
 }
