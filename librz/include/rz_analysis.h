@@ -787,23 +787,6 @@ typedef struct rz_analysis_var_global_t {
 	RZ_BORROW RzAnalysis *analysis; ///< analysis pertaining to this global variable
 } RzAnalysisVarGlobal;
 
-typedef enum dwarf_location_kind {
-	LOCATION_UNKNOWN = 0,
-	LOCATION_GLOBAL = 1,
-	LOCATION_BP = 2,
-	LOCATION_SP = 3,
-	LOCATION_REGISTER = 4,
-	LOCATION_CFA = 5
-} RzAnalysisDwarfVariableLocationKind;
-
-typedef struct dwarf_var_location_t {
-	RzAnalysisDwarfVariableLocationKind kind;
-	ut64 address;
-	ut64 reg_num;
-	st64 offset;
-	const char *reg_name; /* string literal */
-} RzAnalysisDwarfVariableLocation;
-
 typedef struct dwarf_variable_t {
 	RzBinDwarfLocation *location;
 	const char *name;
