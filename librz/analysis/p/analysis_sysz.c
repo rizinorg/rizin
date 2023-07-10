@@ -7,10 +7,6 @@
 #include <capstone/systemz.h>
 // instruction set: http://www.tachyonsoft.com/inst390m.htm
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define INSOP(n) insn->detail->sysz.operands[n]
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
