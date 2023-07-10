@@ -1390,21 +1390,11 @@ static char *sig_from_debuginfo(RzAnalysis *analysis, char *fcn_name, const char
 	if (!rz_str_startswith(fcn_name, "dbg."))
 		return NULL;
 
-	const char *real_fcn_name = fcn_name + 4;
-	char *key = RZ_STR_ISNOTEMPTY(real_fcn_name) ? rz_str_newf("fcn.%s.sig", real_fcn_name) : NULL;
-	Sdb *sdb = sdb_ns(analysis->sdb, "dwarf", 0);
-	char *sig = sdb && key ? sdb_get(sdb, key, 0) : NULL;
-	free(key);
-	if (!sig)
+	RzCallable *callable = rz_type_func_get(analysis->typedb, fcn_name + 4);
+	if (!callable) {
 		return NULL;
-
-	char *highlighted_fcn_name = rz_str_newf("%s%s%s",
-		fcn_name_pre ? fcn_name_pre : "",
-		fcn_name,
-		fcn_name_post ? fcn_name_post : "");
-	char *highlighted_sig = rz_str_replace(sig, real_fcn_name, highlighted_fcn_name, false);
-	free(highlighted_fcn_name);
-	return highlighted_sig;
+	}
+	return rz_type_callable_as_string(analysis->typedb, callable);
 }
 
 /**
