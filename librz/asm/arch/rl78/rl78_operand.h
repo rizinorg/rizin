@@ -4,14 +4,10 @@
 #ifndef RL78_OPERAND_H
 #define RL78_OPERAND_H
 
-#include <stddef.h>
-#include <stdbool.h>
-
+#include <rz_util.h>
 #include <rz_types.h>
 
-extern const char *RL78_STRINGS_SYMBOLS[];
-
-enum rl78_symbols : ut8 {
+typedef enum : ut8 {
         // 8-bit general-purpose registers
         RL78_GPR_X, RL78_GPR_A, RL78_GPR_C, RL78_GPR_B,
         RL78_GPR_E, RL78_GPR_D, RL78_GPR_L, RL78_GPR_H,
@@ -39,14 +35,19 @@ enum rl78_symbols : ut8 {
         RL78_RB_RB2,
         RL78_RB_RB3,
 
-        _RL78_SYMBOL_COUNT
-};
+        // program status word bits and flags
+        RL78_PSW_CY, // carry
+        RL78_PSW_AC, // auxiliary carry
+        RL78_PSW_Z, // zero
 
-enum rl78_operand_type : ut8 {
+        _RL78_SYMBOL_COUNT
+} RL78Symbol;
+
+typedef enum : ut8 {
         RL78_OPERAND_TYPE_NONE, // used for instructions with less than 2 operands
         RL78_OPERAND_TYPE_IMMEDIATE_8, // #byte
         RL78_OPERAND_TYPE_IMMEDIATE_16, // #word
-        RL78_OPERAND_TYPE_SYMBOL, // A, X, BC
+        RL78_OPERAND_TYPE_SYMBOL, // A, X, BC as well as saddr/saddrp
         RL78_OPERAND_TYPE_ABSOLUTE_ADDR_16, // !...
         RL78_OPERAND_TYPE_ABSOLUTE_ADDR_20, // !!...
         RL78_OPERAND_TYPE_RELATIVE_ADDR_8, // $...
@@ -56,23 +57,23 @@ enum rl78_operand_type : ut8 {
         RL78_OPERAND_TYPE_BASED_INDEX_ADDR, // [HL+C]
 
         _RL78_OPERAND_TYPE_COUNT
-};
+} RL78OperandType;
 
-struct rl78_operand {
+typedef struct {
         ut16 v0; // contains label enum if applicable or immediate data
         ut16 v1; // contains additional data like the offset for based addressing
         bool extension_addressing; // whether ES is used as 4 bit address extension
-        enum rl78_operand_type type;
-};
+        bool is_bit; // whether the operand represents a single bit (index of bit stored in v1)
+        RL78OperandType type;
+} RL78Operand;
 
 /**
  * \brief Convert an RL78 operand to a string
  * \param dst A caller-supplied character buffer to print into
  * \param n Size of dst
  * \param operand RL78 operand to be printed
- * \return false if operand->type is out of range or equal to RL78_OPERAND_TYPE_NONE
+ * \return false If operand->type is out of range or equal to RL78_OPERAND_TYPE_NONE
  */
-bool rl78_operand_to_string(char *dst, size_t n,
-                            const struct rl78_operand *operand);
+bool rl78_operand_to_string(RzStrBuf RZ_OUT *dst, const RL78Operand RZ_BORROW *operand);
 
 #endif

@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2023 Bastian Engel <bastian.engel00@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "instr.h"
+#include "rl78_instr.h"
 
-#include <stdio.h>
+#include <rz_util.h>
+#include <rz_types.h>
 
-const char *RL78_STRINGS_OPERATIONS[] = {
+static const char *RL78_STRINGS_OPERATIONS[] = {
         [RL78_OPERATION_ADD]    = "add",
         [RL78_OPERATION_ADDC]   = "addc",
         [RL78_OPERATION_ADDW]   = "addw",
@@ -85,37 +86,36 @@ const char *RL78_STRINGS_OPERATIONS[] = {
         [RL78_OPERATION_SUBW]   = "subw",
         [RL78_OPERATION_XCH]    = "xch",
         [RL78_OPERATION_XCHW]   = "xchw",
-        [RL78_OPERATION_XOR]    = "xor"
-
+        [RL78_OPERATION_XOR]    = "xor",
+        [RL78_OPERATION_XOR1]   = "xor1",
 };
 
-bool rl78_instr_to_string(char *dst, size_t n, const struct rl78_instr *instr)
+bool rl78_instr_to_string(RzStrBuf RZ_OUT *dst, const RL78Instr RZ_BORROW *instr)
 {
-        if (instr->operation < 0 || instr->operation >= _RL78_OPERATION_COUNT) {
-                return false;
-        }
+        rz_return_val_if_fail(instr->operation > 0 &&
+                              instr->operation < _RL78_OPERATION_COUNT, false);
 
         // 16 characters suffice for each operand
-        char buf_dst[16], buf_src[16];
+        RzStrBuf buf_op0, buf_op1;
         bool has_op0 = instr->op0.type != RL78_OPERAND_TYPE_NONE;
         bool has_op1 = instr->op1.type != RL78_OPERAND_TYPE_NONE;
 
-        if (has_op0 && !rl78_operand_to_string(buf_dst, sizeof(buf_dst), &instr->op0)) {
-                return false;
-        }
+        rz_return_val_if_fail(!has_op0 || rl78_operand_to_string(&buf_op0, &instr->op0),
+                              false);
 
-        if (has_op1 && !rl78_operand_to_string(buf_src, sizeof(buf_src), &instr->op1)) {
-                return false;
-        }
+        rz_return_val_if_fail(!has_op1 || rl78_operand_to_string(&buf_op1, &instr->op1),
+                              false);
 
         if (has_op0 && has_op1) {
-                snprintf(dst, n, "%s %s, %s",
-                         RL78_STRINGS_OPERATIONS[instr->operation], buf_dst, buf_src);
+                rz_strf(dst->buf, "%s %s, %s",
+                         RL78_STRINGS_OPERATIONS[instr->operation],
+                         buf_op0.buf, buf_op1.buf);
         } else if (has_op0) {
-                snprintf(dst, n, "%s %s",
-                         RL78_STRINGS_OPERATIONS[instr->operation], buf_dst);
+                rz_strf(dst->buf, "%s %s",
+                         RL78_STRINGS_OPERATIONS[instr->operation],
+                         buf_op0.buf);
         } else {
-                snprintf(dst, n, "%s",
+                rz_strf(dst->buf, "%s",
                          RL78_STRINGS_OPERATIONS[instr->operation]);
         }
 

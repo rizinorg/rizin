@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rl78.h"
+#include "rl78_maps.h"
 
-#include "maps.h"
+static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_byte_p,
+                          const ut8 RZ_BORROW *buf, size_t buf_len);
 
-static bool parse_operand(struct rl78_operand *operand, size_t *p,
-                          const ut8 *buf, size_t buf_len);
+static inline bool optype_es_applies(RL78OperandType type);
 
-static bool optype_es_applies(enum rl78_operand_type type);
-
-bool rl78_dis(struct rl78_instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
+bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
               const ut8 *buf, size_t buf_len)
 {
         if (buf_len == 0) {
@@ -18,49 +17,55 @@ bool rl78_dis(struct rl78_instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
                 return false;
         }
 
-        // points to the next byte to be processed
-        size_t p = 0;
-        int byte = buf[p++];
+        size_t next_byte_p = 0;
+        int byte = buf[next_byte_p++];
 
         bool extension_addressing = false;
         if (byte == 0x11) {
                 extension_addressing = true;
-                if (p >= buf_len) {
-                        *bytes_read = p;
+                if (next_byte_p >= buf_len) {
+                        *bytes_read = next_byte_p;
                         return false;
                 }
 
-                byte = buf[p++];
+                byte = buf[next_byte_p++];
         }
 
+        int map;
         switch (byte) {
                 case 0x31:
                         // 4th map
-                        *instr = rl78_instr_maps[3 * 256 + byte];
+                        map = 3;
+                        next_byte_p++;
                         break;
                 case 0x61:
                         // 2nd map
-                        *instr = rl78_instr_maps[1 * 256 + byte];
+                        map = 1;
+                        next_byte_p++;
                         break;
                 case 0x71:
                         // 3rd map
-                        *instr = rl78_instr_maps[2 * 256 + byte];
+                        map = 2;
+                        next_byte_p++;
                         break;
 
                 default:
-                        *instr = rl78_instr_maps[0 * 256 + byte];
+                        // default (first) map
+                        map = 0;
 
         }
+
+        *instr = rl78_instr_maps[map * 256 + byte];
 
         // an empty slot was indexed
         if (instr->operation == RL78_OPERATION_NONE) {
-                *bytes_read = p;
+                *bytes_read = next_byte_p;
                 return false;
         }
 
-        if (!parse_operand(&instr->op0, &p, buf, buf_len) ||
-            !parse_operand(&instr->op1, &p, buf, buf_len)) {
-                *bytes_read = p;
+        if (!parse_operand(&instr->op0, &next_byte_p, buf, buf_len) ||
+            !parse_operand(&instr->op1, &next_byte_p, buf, buf_len)) {
+                *bytes_read = next_byte_p;
                 return false;
         }
 
@@ -72,12 +77,12 @@ bool rl78_dis(struct rl78_instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
                 }
         }
 
-        *bytes_read = p;
+        *bytes_read = next_byte_p;
         return true;
 }
 
-static bool parse_operand(struct rl78_operand *operand, size_t *p,
-                          const ut8 *buf, size_t buf_len)
+static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_byte_p,
+                          const ut8 RZ_BORROW *buf, size_t buf_len)
 {
         // already has value
         if (operand->v0 != 0) {
@@ -89,20 +94,20 @@ static bool parse_operand(struct rl78_operand *operand, size_t *p,
                 case RL78_OPERAND_TYPE_IMMEDIATE_8:
                 case RL78_OPERAND_TYPE_RELATIVE_ADDR_8:
                 case RL78_OPERAND_TYPE_SYMBOL: // TODO put short direct addressing into own type
-                        if (*p == buf_len) {
+                        if (*next_byte_p == buf_len) {
                                 return false;
                         }
 
-                        operand->v0 = buf[(*p)++];
+                        operand->v0 = buf[(*next_byte_p)++];
                         break;
 
                 // write to v1 since v0 already has base register
                 case RL78_OPERAND_TYPE_BASED_ADDR:
-                        if (*p == buf_len) {
+                        if (*next_byte_p == buf_len) {
                                 return false;
                         }
 
-                        operand->v1 = buf[(*p)++];
+                        operand->v1 = buf[(*next_byte_p)++];
                         break;
 
                 // word-sized operands
@@ -110,17 +115,19 @@ static bool parse_operand(struct rl78_operand *operand, size_t *p,
                 case RL78_OPERAND_TYPE_ABSOLUTE_ADDR_16:
                 case RL78_OPERAND_TYPE_ABSOLUTE_ADDR_20:
                 case RL78_OPERAND_TYPE_RELATIVE_ADDR_16:
-                        if (*p == buf_len) {
+                        if (*next_byte_p == buf_len) {
                                 return false;
                         }
 
-                        int byte_l = buf[(*p)++];
+                        int byte_l = buf[*next_byte_p];
+                        (*next_byte_p)++;
 
-                        if (*p == buf_len) {
+                        if (*next_byte_p == buf_len) {
                                 return false;
                         }
 
-                        int byte_h = buf[(*p)++];
+                        int byte_h = buf[*next_byte_p];
+                        (*next_byte_p)++;
                         operand->v0 = byte_l | (byte_h << 8);
                         break;
 
@@ -133,7 +140,7 @@ static bool parse_operand(struct rl78_operand *operand, size_t *p,
         return true;
 }
 
-static bool optype_es_applies(enum rl78_operand_type type)
+static inline bool optype_es_applies(RL78OperandType type)
 {
         return type == RL78_OPERAND_TYPE_ABSOLUTE_ADDR_16 ||
                 type == RL78_OPERAND_TYPE_INDIRECT_ADDR ||

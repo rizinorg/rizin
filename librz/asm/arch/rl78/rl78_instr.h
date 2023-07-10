@@ -4,13 +4,12 @@
 #ifndef RL78_INSTR_H
 #define RL78_INSTR_H
 
-#include "operand.h"
+#include "rl78_operand.h"
 
+#include <rz_util.h>
 #include <rz_types.h>
 
-extern const char *RL78_STRINGS_OPERATIONS[];
-
-enum rl78_operation : ut8 {
+typedef enum : ut8 {
         RL78_OPERATION_NONE,
 
         RL78_OPERATION_ADD,
@@ -93,24 +92,25 @@ enum rl78_operation : ut8 {
         RL78_OPERATION_XCH,
         RL78_OPERATION_XCHW,
         RL78_OPERATION_XOR,
+        RL78_OPERATION_XOR1,
 
         _RL78_OPERATION_COUNT
-};
+} RL78Operation;
 
-struct rl78_instr {
-        struct rl78_operand op0;
-        struct rl78_operand op1;
+typedef struct {
+        RL78Operand op0;
+        RL78Operand op1;
 
-        enum rl78_operation operation;
-};
+        RL78Operation operation;
+} RL78Instr;
 
 /**
  * \brief Convert an RL78 instruction to a string
- * \param dst A caller-supplied character buffer to print into
+ * \param dst Caller-supplied character buffer to print into
  * \param n Size of dst
- * \param operand The RL78 instruction to be printed
- * \return false on failure
+ * \param operand RL78 instruction to be printed
+ * \return false On failure
  */
-bool rl78_instr_to_string(char *dst, size_t n, const struct rl78_instr *instr);
+bool rl78_instr_to_string(RzStrBuf RZ_OUT *dst, const RL78Instr RZ_BORROW *instr);
 
 #endif

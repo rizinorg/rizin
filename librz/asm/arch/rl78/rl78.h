@@ -4,13 +4,10 @@
 #ifndef RL78_H
 #define RL78_H
 
-#include "instr.h"
+#include "rl78_instr.h"
 
 #include <rz_util.h>
 #include <rz_types.h>
-
-#include <stddef.h>
-#include <stdbool.h>
 
 /**
  * \brief Disassemble a byte sequence into an rl78_instr
@@ -20,7 +17,7 @@
  * \param buf_len Length of the buffer
  * \return false if byte sequence does not represent a valid instruction
  */
-bool rl78_dis(struct rl78_instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
+bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
               const ut8 *buf, size_t buf_len);
 
 #endif
