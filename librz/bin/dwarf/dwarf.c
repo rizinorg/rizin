@@ -884,23 +884,23 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		UX_OR_RET_FALSE(value->address, address_size);
 		break;
 	case DW_FORM_data1:
-		value->kind = DW_AT_KIND_CONSTANT;
+		value->kind = DW_AT_KIND_UCONSTANT;
 		U8_OR_RET_FALSE(value->uconstant);
 		break;
 	case DW_FORM_data2:
-		value->kind = DW_AT_KIND_CONSTANT;
+		value->kind = DW_AT_KIND_UCONSTANT;
 		U16_OR_RET_FALSE(value->uconstant);
 		break;
 	case DW_FORM_data4:
-		value->kind = DW_AT_KIND_CONSTANT;
+		value->kind = DW_AT_KIND_UCONSTANT;
 		U32_OR_RET_FALSE(value->uconstant);
 		break;
 	case DW_FORM_data8:
-		value->kind = DW_AT_KIND_CONSTANT;
+		value->kind = DW_AT_KIND_UCONSTANT;
 		U64_OR_RET_FALSE(value->uconstant);
 		break;
 	case DW_FORM_data16:
-		value->kind = DW_AT_KIND_CONSTANT;
+		value->kind = DW_AT_KIND_UCONSTANT;
 		if (big_endian) {
 			U64_OR_RET_FALSE(value->uconstant128.High);
 			U64_OR_RET_FALSE(value->uconstant128.Low);

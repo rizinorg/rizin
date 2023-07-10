@@ -588,7 +588,7 @@ static char *line_op_str(RzBinDwarfLineOp *op, ut64 offset) {
 	rz_strbuf_appendf(sb, "0x%" PFMT64x ":\t", offset);
 	switch (op->type) {
 	case RZ_BIN_DWARF_LINE_OP_TYPE_SPEC:
-		rz_strbuf_appendf(sb, "spec");
+		rz_strbuf_appendf(sb, "type spec");
 		break;
 	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
 		rz_strbuf_appendf(sb, "%s", rz_bin_dwarf_lns(op->opcode));

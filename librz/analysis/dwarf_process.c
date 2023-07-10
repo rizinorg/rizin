@@ -941,19 +941,22 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, RzAna
 
 static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
-	if (attr->kind != DW_AT_KIND_BLOCK && attr->kind != DW_AT_KIND_LOCLISTPTR && attr->kind != DW_AT_KIND_REFERENCE && attr->kind != DW_AT_KIND_CONSTANT) {
-		return NULL;
-	}
 	const RzBinDwarfBlock *block;
-	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_CONSTANT) {
+	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
 		ut64 offset = attr->reference;
 		RzBinDwarfLocationListEntry *entry = ht_up_find(ctx->dw->loc->entry_by_offset, offset, NULL);
 		if (!entry) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
+			RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
+				offset, rz_bin_dwarf_attr(attr->name));
 			return NULL;
 		}
 		block = entry->expression;
-	} else {
+	} else if (attr->kind == DW_AT_KIND_BLOCK) {
 		block = &attr->block;
+	}
+	if (block == NULL) {
+		RZ_LOG_ERROR("Failed to find location form: %s\n", rz_bin_dwarf_attr(attr->name));
+		return NULL;
 	}
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(ctx->dw, block, fn);
 	if (!loc) {
@@ -1138,7 +1141,6 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 		case DW_AT_ranges:
 		case DW_AT_high_pc:
 		default:
-			RZ_LOG_DEBUG("parse fcn %s ignore %s\n", rz_str_get(fcn->name), rz_bin_dwarf_attr(val->name));
 			break;
 		}
 	}
@@ -1179,7 +1181,7 @@ static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
 	if (!val) {
 		return lang;
 	}
-	rz_warn_if_fail(val->kind == DW_AT_KIND_CONSTANT);
+	rz_warn_if_fail(val->kind == DW_AT_KIND_UCONSTANT);
 
 	switch (val->uconstant) {
 	case DW_LANG_Java:
