@@ -689,10 +689,16 @@ RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self) {
 
 bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEvaluationResult *out, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 	Operation operation = { 0 };
+	ut64 offset = rz_buf_tell(self->pc);
 	RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
 
 	switch (operation.kind) {
 	case OPERATION_KIND_DEREF: {
+		if (self->defer > 0) {
+			rz_buf_seek(self->pc, (st64)offset, SEEK_SET);
+			out->kind = OperationEvaluationResult_WAITING_RESOLVE;
+			return true;
+		}
 		RzBinDwarfValue *entry = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
 		RET_FALSE_IF_FAIL(entry);
@@ -714,7 +720,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		out->waiting._2.requires_memory.has_space = has_addr_space;
 		out->waiting._2.requires_memory.space = addr_space;
 		out->waiting._2.requires_memory.base_type = operation.deref.base_type;
-		break;
+		return true;
 	}
 	case OPERATION_KIND_DROP:
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, NULL));
@@ -849,6 +855,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		value.location = RZ_NEW0(RzBinDwarfLocation);
 		memcpy(value.location, &location, sizeof(RzBinDwarfLocation));
 		RET_FALSE_IF_FAIL(Evaluation_push(self, &value));
+		self->defer |= RzBinDwarfEvaluationDefer_REGISTER;
 		break;
 	}
 	case OPERATION_KIND_FRAME_OFFSET: {
@@ -863,6 +870,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 			v.location->kind = RzBinDwarfLocationKind_FB_OFFSET;
 			v.location->fb_offset = (st64)fb_attr->uconstant;
 			Evaluation_push(self, &v);
+			self->defer |= RzBinDwarfEvaluationDefer_FRAME_BASE;
 			break;
 		}
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(dw, &fb_attr->block, fn);
@@ -873,6 +881,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 				.location = loc,
 			};
 			Evaluation_push(self, &v);
+			self->defer |= RzBinDwarfEvaluationDefer_CFA;
 		} else {
 			RzStrBuf sb = { 0 };
 			rz_strbuf_init(&sb);
@@ -907,6 +916,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		};
 		memcpy(v.location, &loc, sizeof(RzBinDwarfLocation));
 		Evaluation_push(self, &v);
+		self->defer |= RzBinDwarfEvaluationDefer_CFA;
 		break;
 	}
 	case OPERATION_KIND_PIECE: {
@@ -1033,6 +1043,11 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDw
 			self->state.kind = EVALUATION_STATE_WAITING;
 			self->state.waiting = op_result.waiting._1;
 			memcpy(out, &op_result.waiting._2, sizeof(RzBinDwarfEvaluationResult));
+			return true;
+		}
+		case OperationEvaluationResult_WAITING_RESOLVE: {
+			self->state.kind = EVALUATION_STATE_WAITING_RESOLVE;
+			out->kind = EvaluationResult_REQUIRES_RESOLVE;
 			return true;
 		}
 		case OperationEvaluationResult_COMPLETE: {

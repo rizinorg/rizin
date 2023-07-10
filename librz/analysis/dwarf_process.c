@@ -718,8 +718,7 @@ static RzType *parse_abstract_origin(Context *ctx, ut64 offset, const char **nam
 /// DWARF Register Number Mapping
 
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
-static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, RzAnalysisDwarfVariableLocationKind *kind) {
-	*kind = LOCATION_REGISTER;
+static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num) {
 	switch (reg_num) {
 	case 0: return "rax";
 	case 1: return "rdx";
@@ -728,10 +727,8 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, RzAnalysisDwarfVari
 	case 4: return "rsi";
 	case 5: return "rdi";
 	case 6:
-		*kind = LOCATION_BP;
 		return "rbp";
 	case 7:
-		*kind = LOCATION_SP;
 		return "rsp";
 	case 8: return "r8";
 	case 9: return "r9";
@@ -750,14 +747,12 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, RzAnalysisDwarfVari
 	case 23: return "xmm6";
 	case 24: return "xmm7";
 	default:
-		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
 }
 
 /* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
-static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, RzAnalysisDwarfVariableLocationKind *kind) {
-	*kind = LOCATION_REGISTER;
+static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num) {
 	switch (reg_num) {
 	case 0:
 	case 8:
@@ -766,10 +761,8 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, RzAnalysisDwarfVariabl
 	case 2: return "ecx";
 	case 3: return "ebx";
 	case 4:
-		*kind = LOCATION_SP;
 		return "esp";
 	case 5:
-		*kind = LOCATION_BP;
 		return "ebp";
 	case 6: return "esi";
 	case 7: return "edi";
@@ -806,18 +799,15 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, RzAnalysisDwarfVariabl
 	case 45: return "gs";
 	default:
 		rz_warn_if_reached();
-		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
 }
 
 /* https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#DW-REG */
-static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, RzAnalysisDwarfVariableLocationKind *kind) {
-	*kind = LOCATION_REGISTER;
+static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num) {
 	switch (reg_num) {
 	case 0: return "r0";
 	case 1:
-		*kind = LOCATION_SP;
 		return "r1";
 	case 2: return "r2";
 	case 3: return "r3";
@@ -851,14 +841,12 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, RzAnalysisDwarfVaria
 	case 31: return "r31";
 	default:
 		rz_warn_if_reached();
-		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
 }
 
 /// 4.5.1 DWARF Register Numbers https://www.infineon.com/dgdl/Infineon-TC2xx_EABI-UM-v02_09-EN.pdf?fileId=5546d46269bda8df0169ca1bfc7d24ab
-static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num, RzAnalysisDwarfVariableLocationKind *kind) {
-	*kind = LOCATION_REGISTER;
+static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num) {
 	switch (reg_num) {
 	case 0: return "d0";
 	case 1: return "d1";
@@ -891,7 +879,6 @@ static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num, RzAnalysisDwarfVar
 	case 28: return "a12";
 	case 29: return "a13";
 	case 30:
-		*kind = LOCATION_SP;
 		return "a14";
 	case 31: return "a15";
 	case 32: return "e0";
@@ -914,39 +901,49 @@ static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num, RzAnalysisDwarfVar
 	case 49: return "btv";
 	default:
 		rz_warn_if_reached();
-		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
 }
 
 /* returns string literal register name!
    TODO add more arches                 */
-static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, RzAnalysisDwarfVariableLocationKind *kind, int bits) {
+static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, int bits) {
 	if (!strcmp(arch, "x86")) {
 		if (bits == 64) {
-			return map_dwarf_reg_to_x86_64_reg(reg_num, kind);
+			return map_dwarf_reg_to_x86_64_reg(reg_num);
 		} else {
-			return map_dwarf_reg_to_x86_reg(reg_num, kind);
+			return map_dwarf_reg_to_x86_reg(reg_num);
 		}
 	} else if (!strcmp(arch, "ppc")) {
 		if (bits == 64) {
-			return map_dwarf_reg_to_ppc64_reg(reg_num, kind);
+			return map_dwarf_reg_to_ppc64_reg(reg_num);
 		}
 	} else if (!strcmp(arch, "tricore")) {
-		return map_dwarf_reg_to_tricore_reg(reg_num, kind);
+		return map_dwarf_reg_to_tricore_reg(reg_num);
 	}
-	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
 }
 
 RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, const RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
-	rz_pvector_init(&location->loclist, NULL);
+	location->kind = RzBinDwarfLocationKind_LOCLIST;
+	rz_pvector_init(&location->loclist, NULL); // TODO: free
 	RzBinDwarfLocationListEntry *entry;
 	rz_vector_foreach(&loclist->entries, entry) {
 		RzBinDwarfLocListEntry *loc_entry = RZ_NEW0(RzBinDwarfLocListEntry);
 		memcpy(&loc_entry->range, entry->range, sizeof(RzBinDwarfRange));
 		loc_entry->location = rz_bin_dwarf_location_from_block(ctx->dw, entry->expression, fn);
+		if (!loc_entry->location) {
+			RzStrBuf sb = { 0 };
+			rz_strbuf_init(&sb);
+			rz_bin_dwarf_expression_dump(ctx->dw, entry->expression, &sb);
+			RZ_LOG_ERROR("Failed to parse location list entry (0x%" PFMT64x ", 0x%" PFMT64x "): %s\n ", entry->range->begin, entry->range->end, rz_strbuf_drain_nofree(&sb))
+
+			free(loc_entry);
+			rz_pvector_fini(&location->loclist);
+			free(location);
+			return NULL;
+		}
 		rz_pvector_push(&location->loclist, loc_entry);
 	}
 	return location;
@@ -954,7 +951,7 @@ RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, const RzBinDwarfLocL
 
 static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
-	const RzBinDwarfBlock *block;
+	const RzBinDwarfBlock *block = NULL;
 	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
 		ut64 offset = attr->reference;
 		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
@@ -972,7 +969,7 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 		block = &attr->block;
 	}
 	if (block == NULL) {
-		RZ_LOG_ERROR("Failed to find location form: %s\n", rz_bin_dwarf_attr(attr->name));
+		RZ_LOG_ERROR("Failed to find location %s\n", rz_bin_dwarf_form(attr->form));
 		return NULL;
 	}
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(ctx->dw, block, fn);
@@ -1008,11 +1005,11 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_di
 	rz_vector_foreach(&var_die->attrs, val) {
 		switch (val->name) {
 		case DW_AT_name:
-			v->name = rz_bin_dwarf_attr_value_get_string_content(val);
+			v->name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(val));
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			v->link_name = rz_bin_dwarf_attr_value_get_string_content(val);
+			v->link_name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(val));
 			break;
 		case DW_AT_type:
 			rz_type_free(v->type);
@@ -1324,12 +1321,12 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
 		break;
 	case RzBinDwarfLocationKind_REGISTER: {
-		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_number, NULL, a->bits);
+		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_number, a->bits);
 		rz_analysis_var_storage_init_reg(storage, reg_name);
 		break;
 	}
 	case RzBinDwarfLocationKind_REGISTER_OFFSET: {
-		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_offset.register_number, NULL, a->bits);
+		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_offset.register_number, a->bits);
 		rz_analysis_var_storage_init_reg_offset(storage, reg_name, loc->register_offset.offset);
 		break;
 	}
@@ -1349,6 +1346,32 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 	case RzBinDwarfLocationKind_EVALUATION_WAITING:
 		rz_analysis_var_storage_init_dwarf_eval_waiting(storage, loc->eval_waiting.eval, loc->eval_waiting.result);
 		break;
+	case RzBinDwarfLocationKind_CFA_OFFSET:
+		rz_analysis_var_storage_init_cfa_offset(storage, loc->cfa_offset);
+		break;
+	case RzBinDwarfLocationKind_FB_OFFSET:
+		rz_analysis_var_storage_init_fb_offset(storage, loc->fb_offset);
+		break;
+	case RzBinDwarfLocationKind_LOCLIST: {
+		RzPVector *list = rz_pvector_new(NULL);
+		void **it;
+		rz_pvector_foreach (&loc->loclist, it) {
+			RzBinDwarfLocListEntry *entry = *it;
+			RzAnalysisVarStorage *stor = RZ_NEW0(RzAnalysisVarStorage);
+			if (!loc2storage(a, entry->location, stor)) {
+				free(stor);
+				return false;
+			}
+
+			RzAnalysisVarStorageListEntry *list_entry = RZ_NEW0(RzAnalysisVarStorageListEntry);
+			list_entry->begin = entry->range.begin;
+			list_entry->end = entry->range.end;
+			list_entry->storage = stor;
+			rz_pvector_push(list, list_entry);
+		}
+		rz_analysis_var_storage_init_list(storage, list);
+		break;
+	}
 	}
 	return true;
 }

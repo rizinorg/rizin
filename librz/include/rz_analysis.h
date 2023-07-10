@@ -650,6 +650,14 @@ typedef struct rz_analysis_var_access_t {
 	ut8 type; ///< RzAnalysisVarAccessType bits
 } RzAnalysisVarAccess;
 
+struct rz_analysis_var_storage_t;
+
+typedef struct {
+	ut64 begin;
+	ut64 end;
+	struct rz_analysis_var_storage_t *storage;
+} RzAnalysisVarStorageListEntry;
+
 typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_REG,
 	RZ_ANALYSIS_VAR_STORAGE_STACK,
@@ -657,6 +665,7 @@ typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET,
 	RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET,
 	RZ_ANALYSIS_VAR_STORAGE_COMPOSE,
+	RZ_ANALYSIS_VAR_STORAGE_LIST,
 	RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING,
 	RZ_ANALYSIS_VAR_STORAGE_EMPTY,
 } RzAnalysisVarStorageType;
@@ -692,6 +701,7 @@ typedef struct rz_analysis_var_storage_t {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} dwarf_eval_waiting;
+		RzPVector * /*RzAnalysisVarStorageListEntry*/ list;
 	};
 } RzAnalysisVarStorage;
 
@@ -730,6 +740,11 @@ static inline void rz_analysis_var_storage_init_dwarf_eval_waiting(RzAnalysisVar
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING;
 	stor->dwarf_eval_waiting.eval = eval;
 	stor->dwarf_eval_waiting.result = result;
+}
+
+static inline void rz_analysis_var_storage_init_list(RzAnalysisVarStorage *stor, RzPVector * /*RzAnalysisVarStorageListEntry*/ list) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_LIST;
+	stor->list = list;
 }
 
 /**

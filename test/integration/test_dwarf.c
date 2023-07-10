@@ -1430,6 +1430,68 @@ bool test_dwarf5_loclists(void) {
 	mu_end;
 }
 
+bool test_dwarf4_loclists(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false);
+	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
+
+	RzBinDwarfParseOptions parse_opts = {
+		.flags = RZ_BIN_DWARF_PARSE_LOC,
+	};
+	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opts);
+	mu_assert_notnull(dw->loc, ".debug_loc");
+
+	RzBinDwarfLocList *loclist = ht_up_find(dw->loc->loclist_by_offset, 0, NULL);
+	mu_assert_notnull(loclist, "loclist");
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_vector_index_ptr(&loclist->entries, 0);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x0, "entry begin");
+		mu_assert_eq(entry->range->end, 0x4, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(dw, entry->expression, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
+		mu_assert_eq(loc->register_offset.register_number, 4, "piece reg");
+		mu_assert_eq(loc->register_offset.offset, 4, "piece reg offset");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_vector_index_ptr(&loclist->entries, 1);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x4, "entry begin");
+		mu_assert_eq(entry->range->end, 0x10, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(dw, entry->expression, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
+		mu_assert_eq(loc->register_number, 1, "piece reg");
+	}
+
+	{
+		RzBinDwarfLocationListEntry *entry = rz_vector_index_ptr(&loclist->entries, 2);
+		mu_assert_notnull(entry, "entry");
+		mu_assert_eq(entry->range->begin, 0x10, "entry begin");
+		mu_assert_eq(entry->range->end, 0x378, "entry end");
+
+		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(dw, entry->expression, NULL);
+		mu_assert_notnull(loc, "location");
+		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_EVALUATION_WAITING, "piece kind");
+		mu_assert("eval waiting", loc->eval_waiting.eval && loc->eval_waiting.result);
+	}
+
+	rz_bin_dwarf_free(dw);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	srand(time(0));
 	mu_run_test(test_dwarf3_c_basic);
@@ -1442,6 +1504,7 @@ bool all_tests() {
 	mu_run_test(test_big_endian_dwarf2);
 	mu_run_test(test_dwarf3_aranges);
 	mu_run_test(test_dwarf5_loclists);
+	mu_run_test(test_dwarf4_loclists);
 	return tests_passed != tests_run;
 }
 

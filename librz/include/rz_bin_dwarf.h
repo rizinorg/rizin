@@ -1337,6 +1337,7 @@ typedef struct {
 		EVALUATION_STATE_ERROR,
 		EVALUATION_STATE_COMPLETE,
 		EVALUATION_STATE_WAITING,
+		EVALUATION_STATE_WAITING_RESOLVE,
 	} kind;
 
 	union {
@@ -1346,6 +1347,12 @@ typedef struct {
 	};
 } RzBinDwarfEvaluationState;
 
+typedef enum {
+	RzBinDwarfEvaluationDefer_REGISTER = 0x1,
+	RzBinDwarfEvaluationDefer_FRAME_BASE = 0x1 << 1,
+	RzBinDwarfEvaluationDefer_CFA = 0x1 << 2,
+} RzBinDwarfEvaluationDefer;
+
 typedef struct {
 	RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
@@ -1353,6 +1360,7 @@ typedef struct {
 	ut32 max_iterations;
 	ut32 iteration;
 	RzBinDwarfEvaluationState state;
+	RzBinDwarfEvaluationDefer defer;
 
 	// Stack operations are done on word-sized values.  We do all
 	// operations on 64-bit values, and then mask the results
@@ -1378,6 +1386,7 @@ typedef struct {
 		EvaluationResult_ERR,
 		EvaluationResult_REQUIRES_MEMORY,
 		EvaluationResult_REQUIRES_ENTRY_VALUE,
+		EvaluationResult_REQUIRES_RESOLVE,
 	} kind;
 	union {
 		RzBinDwarfValue stack_value;

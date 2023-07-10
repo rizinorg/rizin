@@ -214,6 +214,7 @@ typedef struct operation_evaluation_result_t {
 		OperationEvaluationResult_INCOMPLETE,
 		OperationEvaluationResult_PIECE,
 		OperationEvaluationResult_WAITING,
+		OperationEvaluationResult_WAITING_RESOLVE,
 	} kind;
 
 	union {
