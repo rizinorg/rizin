@@ -1031,6 +1031,7 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 	if (!self) {
 		return;
 	}
+	RzBinDwarfLocation_free(self->location);
 	free(self);
 }
 

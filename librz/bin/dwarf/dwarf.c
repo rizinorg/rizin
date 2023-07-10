@@ -641,8 +641,6 @@ RZ_API const char *rz_bin_dwarf_op(enum DW_OP op) {
 	return dwarf_op[op];
 }
 
-RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
-
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian) {
 	bool is_64bit;
 	ut64 length;

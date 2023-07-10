@@ -653,7 +653,11 @@ typedef struct rz_analysis_var_access_t {
 typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_REG,
 	RZ_ANALYSIS_VAR_STORAGE_STACK,
-	RZ_ANALYSIS_VAR_STORAGE_CFA,
+	RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET,
+	RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET,
+	RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET,
+	RZ_ANALYSIS_VAR_STORAGE_COMPOSE,
+	RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING,
 	RZ_ANALYSIS_VAR_STORAGE_EMPTY,
 } RzAnalysisVarStorageType;
 
@@ -675,6 +679,19 @@ typedef struct rz_analysis_var_storage_t {
 		 * respective RzAnalysis.constpool.
 		 */
 		const char *reg;
+
+		struct {
+			const char *reg;
+			st64 offset;
+		} reg_offset;
+
+		st64 cfa_offset;
+		st64 fb_offset;
+		RzVector * /*RzBinDwarfPiece*/ compose;
+		struct {
+			RzBinDwarfEvaluation *eval;
+			RzBinDwarfEvaluationResult *result;
+		} dwarf_eval_waiting;
 	};
 } RzAnalysisVarStorage;
 
@@ -686,6 +703,33 @@ static inline void rz_analysis_var_storage_init_reg(RzAnalysisVarStorage *stor, 
 static inline void rz_analysis_var_storage_init_stack(RzAnalysisVarStorage *stor, RzStackAddr stack_off) {
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_STACK;
 	stor->stack_off = stack_off;
+}
+
+static inline void rz_analysis_var_storage_init_reg_offset(RzAnalysisVarStorage *stor, RZ_NONNULL const char *reg, st64 offset) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET;
+	stor->reg_offset.reg = reg;
+	stor->reg_offset.offset = offset;
+}
+
+static inline void rz_analysis_var_storage_init_cfa_offset(RzAnalysisVarStorage *stor, st64 offset) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET;
+	stor->cfa_offset = offset;
+}
+
+static inline void rz_analysis_var_storage_init_fb_offset(RzAnalysisVarStorage *stor, st64 offset) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET;
+	stor->fb_offset = offset;
+}
+
+static inline void rz_analysis_var_storage_init_compose(RzAnalysisVarStorage *stor, RzVector *compose) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_COMPOSE;
+	stor->compose = compose;
+}
+
+static inline void rz_analysis_var_storage_init_dwarf_eval_waiting(RzAnalysisVarStorage *stor, RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING;
+	stor->dwarf_eval_waiting.eval = eval;
+	stor->dwarf_eval_waiting.result = result;
 }
 
 /**

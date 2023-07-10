@@ -727,27 +727,6 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 typedef ut16 Register;
 typedef char *Error;
 
-typedef enum {
-	EvaluationStateWaiting_MEMORY,
-	EvaluationStateWaiting_ENTRY_VALUE,
-} EvaluationStateWaiting;
-
-typedef struct {
-	enum {
-		EVALUATION_STATE_START,
-		EVALUATION_STATE_READY,
-		EVALUATION_STATE_ERROR,
-		EVALUATION_STATE_COMPLETE,
-		EVALUATION_STATE_WAITING,
-	} kind;
-
-	union {
-		RzBinDwarfValue *start; // nullable
-		Error error;
-		EvaluationStateWaiting waiting;
-	};
-} EvaluationState;
-
 typedef struct operation_evaluation_result_t {
 	enum {
 		OperationEvaluationResult_COMPLETE,
@@ -759,7 +738,7 @@ typedef struct operation_evaluation_result_t {
 	union {
 		RzBinDwarfLocation complete;
 		struct {
-			EvaluationStateWaiting _1;
+			RzBinDwarfEvaluationStateWaiting _1;
 			RzBinDwarfEvaluationResult _2;
 		} waiting;
 	};
@@ -768,31 +747,6 @@ typedef struct operation_evaluation_result_t {
 typedef struct {
 	RzBuffer *pc;
 	RzBuffer *bytecode;
-} ExprStackItem;
-
-typedef struct {
-	RzBuffer *bytecode;
-	const RzBinDwarfEncoding *encoding;
-	ut64 object_address;
-	ut32 max_iterations;
-	ut32 iteration;
-	EvaluationState state;
-
-	// Stack operations are done on word-sized values.  We do all
-	// operations on 64-bit values, and then mask the results
-	// appropriately when popping.
-	ut64 addr_mask;
-	// The stack.
-	RzVector /*<StackValue>*/ stack;
-
-	// The next operation to decode and evaluate.
-	RzBuffer *pc;
-
-	// If we see a DW_OP_call* operation, the previous PC and bytecode
-	// is stored here while evaluating the subroutine.
-	RzVector expression_stack;
-
-	RzVector /*Piece*/ result;
-} Evaluation;
+} RzBinDwarfExprStackItem;
 
 #endif // RIZIN_OP_H

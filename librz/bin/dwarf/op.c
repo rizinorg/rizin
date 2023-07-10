@@ -4,7 +4,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-bool Evaluation_pop(Evaluation *self, RzBinDwarfValue **value) {
+bool Evaluation_pop(RzBinDwarfEvaluation *self, RzBinDwarfValue **value) {
 	if (rz_vector_len(&self->stack) <= 0) {
 		*value = NULL;
 		return false;
@@ -18,7 +18,7 @@ bool Evaluation_pop(Evaluation *self, RzBinDwarfValue **value) {
 	return true;
 }
 
-bool Evaluation_push(Evaluation *self, RzBinDwarfValue *value) {
+bool Evaluation_push(RzBinDwarfEvaluation *self, RzBinDwarfValue *value) {
 	rz_vector_push(&self->stack, value);
 	return true;
 }
@@ -126,21 +126,36 @@ void RzBinDwarfPiece_fini(RzBinDwarfPiece *x) {
 	RzBinDwarfLocation_free(x->location);
 }
 
-Evaluation *Evaluation_new(RzBuffer *byte_code, ut64 addr_mask, const RzBinDwarfEncoding *encoding) {
-	Evaluation *self = RZ_NEW0(Evaluation);
+static inline ut64
+addrmask_from_size(uint8_t size) {
+	return size == 0 ? 0xffffffffffffffffULL
+			 : (size == 8 ? 0xffffffffffffffffULL
+				      : (1ULL << (size * 8)) - 1);
+}
+
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, ut64 address_size, const RzBinDwarfEncoding *encoding) {
+	RzBinDwarfEvaluation *self = RZ_NEW0(RzBinDwarfEvaluation);
 	RET_NULL_IF_FAIL(self);
+	ut64 addr_mask = addrmask_from_size(address_size);
 	self->addr_mask = addr_mask;
 	self->bytecode = byte_code;
 	self->encoding = encoding;
 	self->pc = rz_buf_new_with_buf(byte_code);
 	// TODO: add free fn
 	rz_vector_init(&self->stack, sizeof(RzBinDwarfValue), NULL, NULL);
-	rz_vector_init(&self->expression_stack, sizeof(ExprStackItem), NULL, NULL);
+	rz_vector_init(&self->expression_stack, sizeof(RzBinDwarfExprStackItem), NULL, NULL);
 	rz_vector_init(&self->result, sizeof(RzBinDwarfPiece), (RzVectorFree)RzBinDwarfPiece_fini, NULL);
 	return self;
 }
 
-void Evaluation_free(Evaluation *self) {
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, ut64 address_size, const RzBinDwarfEncoding *encoding) {
+	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
+	RzBinDwarfEvaluation *self = rz_bin_dwarf_evaluation_new(expr, address_size, encoding);
+	RET_NULL_IF_FAIL(self);
+	return self;
+}
+
+RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self) {
 	if (!self) {
 		return;
 	}
@@ -152,7 +167,7 @@ void Evaluation_free(Evaluation *self) {
 	free(self);
 }
 
-bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResult *out, RzBinDwarf *dw, RzBinDwarfDie *fn) {
+bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEvaluationResult *out, RzBinDwarf *dw, RzBinDwarfDie *fn) {
 	Operation operation = { 0 };
 	RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
 
@@ -320,11 +335,11 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		RzBinDwarfAttr *fb = rz_bin_dwarf_die_get_attr(fn, DW_AT_frame_base);
 		RET_FALSE_IF_FAIL(fb);
 		RzBuffer *fb_buf = rz_buf_new_with_bytes(fb->block.data, fb->block.length);
-		Evaluation *fb_eval = Evaluation_new(fb_buf, self->addr_mask, self->encoding);
+		RzBinDwarfEvaluation *fb_eval = rz_bin_dwarf_evaluation_new(fb_buf, self->addr_mask, self->encoding);
 		OperationEvaluationResult fb_result = { 0 };
 		RET_FALSE_IF_FAIL(Evaluation_evaluate_one_operation(fb_eval, &fb_result, dw, fn));
 		rz_buf_free(fb_buf);
-		Evaluation_free(fb_eval);
+		rz_bin_dwarf_evaluation_free(fb_eval);
 		RET_FALSE_IF_FAIL(fb_result.kind == OperationEvaluationResult_COMPLETE);
 		RzBinDwarfValue v = {
 			.type = RzBinDwarfValueType_LOCATION,
@@ -372,8 +387,13 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		RzBinDwarfValue *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
 		out->kind = OperationEvaluationResult_COMPLETE;
-		out->complete.kind = RzBinDwarfLocationKind_VALUE;
-		out->complete.value = *v;
+		if (v->type == RzBinDwarfValueType_LOCATION) {
+			memcpy(&out->complete, v->location, sizeof(RzBinDwarfLocation));
+			return true;
+		} else {
+			out->complete.kind = RzBinDwarfLocationKind_VALUE;
+			out->complete.value = *v;
+		}
 		Value_free(v);
 		return true;
 	}
@@ -388,7 +408,7 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 		out->kind = OperationEvaluationResult_WAITING;
 		out->waiting._1 = EvaluationStateWaiting_ENTRY_VALUE;
 		out->waiting._2.requires_entry_value.expression = RzBinDwarfBlock_clone(&operation.entry_value.expression);
-		break;
+		return true;
 	}
 	case OPERATION_KIND_TYPED_LITERAL: break; // TODO: typed literal
 	case OPERATION_KIND_CONVERT: break; // TODO: convert
@@ -408,12 +428,12 @@ bool Evaluation_evaluate_one_operation(Evaluation *self, OperationEvaluationResu
 	return true;
 }
 
-bool Evaluation_end_of_expression(Evaluation *self) {
+bool Evaluation_end_of_expression(RzBinDwarfEvaluation *self) {
 	if (rz_buf_tell(self->pc) >= rz_buf_size(self->pc)) {
 		if (rz_vector_empty(&self->expression_stack)) {
 			return true;
 		}
-		ExprStackItem *item = NULL;
+		RzBinDwarfExprStackItem *item = NULL;
 		rz_vector_pop(&self->expression_stack, item);
 		RET_FALSE_IF_FAIL(item);
 		self->pc = item->pc;
@@ -422,7 +442,7 @@ bool Evaluation_end_of_expression(Evaluation *self) {
 	return false;
 }
 
-bool Evaluation_evaluate(Evaluation *self, RzBinDwarfEvaluationResult *out, RzBinDwarf *dw, const RzBinDwarfDie *fn) {
+RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out, RzBinDwarf *dw, const RzBinDwarfDie *fn) {
 	if (self->state.kind == EVALUATION_STATE_START) {
 		if (self->state.start) {
 			Evaluation_push(self, self->state.start);
@@ -530,7 +550,7 @@ bool Evaluation_evaluate(Evaluation *self, RzBinDwarfEvaluationResult *out, RzBi
 	return true;
 }
 
-RzVector * /*Piece*/ Evaluation_result(Evaluation *self) {
+RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self) {
 	if (self->state.kind == EVALUATION_STATE_COMPLETE) {
 		return &self->result;
 	}
@@ -538,23 +558,52 @@ RzVector * /*Piece*/ Evaluation_result(Evaluation *self) {
 	return NULL;
 }
 
-static inline ut64
-addrmask_from_size(uint8_t size) {
-	return size == 0 ? 0xffffffffffffffffULL
-			 : (size == 8 ? 0xffffffffffffffffULL
-				      : (1ULL << (size * 8)) - 1);
-}
-
 RZ_API bool rz_bin_dwarf_evaluate_block(RzBinDwarf *dw, RzBinDwarfEvaluationResult *out, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn) {
-	ut64 addr_mask = addrmask_from_size(dw->encoding.address_size);
 	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
-	Evaluation *eval = Evaluation_new(expr, addr_mask, &dw->encoding);
-	if (!Evaluation_evaluate(eval, out, dw, fn)) {
+	RzBinDwarfEvaluation *eval = rz_bin_dwarf_evaluation_new(expr, dw->encoding.address_size, &dw->encoding);
+	if (!rz_bin_dwarf_evaluation_evaluate(eval, out, dw, fn)) {
 		goto beach;
 	}
-	Evaluation_free(eval);
+	rz_bin_dwarf_evaluation_free(eval);
 	return true;
 beach:
-	Evaluation_free(eval);
+	rz_bin_dwarf_evaluation_free(eval);
 	return false;
+}
+
+RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result) {
+	if (eval->state.kind == EVALUATION_STATE_COMPLETE && result->kind == EvaluationResult_COMPLETE) {
+		RzVector *pieces = rz_bin_dwarf_evaluation_result(eval);
+		if (!pieces || rz_vector_empty(pieces)) {
+			return NULL; // TODO: or empty location?
+		}
+		if (rz_vector_len(pieces) == 1) {
+			RzBinDwarfPiece *piece = rz_vector_index_ptr(pieces, 0);
+			return piece->location;
+		}
+		RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
+		loc->kind = RzBinDwarfLocationKind_COMPOSITE;
+		loc->compose = rz_vector_clone(pieces);
+		rz_bin_dwarf_evaluation_free(eval);
+		return loc;
+	}
+
+	RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
+	loc->kind = RzBinDwarfLocationKind_EVALUATION_WAITING;
+	loc->eval_waiting.eval = eval;
+	loc->eval_waiting.result = result;
+	return loc;
+}
+
+RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RzBinDwarf *dw, const RzBinDwarfBlock *block, const RzBinDwarfDie *die) {
+	RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
+	RzBinDwarfEvaluation *eval = rz_bin_dwarf_evaluation_new_from_block(block, dw->encoding.address_size, &dw->encoding);
+	if (!rz_bin_dwarf_evaluation_evaluate(eval, result, dw, die)) {
+		goto beach;
+	}
+
+	return RzBinDwarfEvaluationResult_to_loc(eval, result);
+beach:
+	rz_bin_dwarf_evaluation_free(eval);
+	return NULL;
 }

@@ -932,10 +932,6 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, RzAna
 	return "unsupported_reg";
 }
 
-RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluationResult *self) {
-	return NULL;
-}
-
 static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
 	if (attr->kind != DW_AT_KIND_BLOCK && attr->kind != DW_AT_KIND_LOCLISTPTR && attr->kind != DW_AT_KIND_REFERENCE && attr->kind != DW_AT_KIND_CONSTANT) {
@@ -948,17 +944,11 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 		if (!entry) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			return NULL;
 		}
-		block = entry->data;
+		block = entry->expression;
 	} else {
 		block = &attr->block;
 	}
-
-	RzBinDwarfEvaluationResult result = { 0 };
-	if (!rz_bin_dwarf_evaluate_block(ctx->dw, &result, block, fn)) {
-		return NULL;
-	}
-
-	return RzBinDwarfEvaluationResult_to_loc(&result);
+	return rz_bin_dwarf_location_from_block(ctx->dw, block, fn);
 }
 
 static inline const char *var_name(RzAnalysisDwarfVariable *v, char *lang) {
@@ -1300,9 +1290,11 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 		rz_analysis_var_storage_init_reg(storage, reg_name);
 		break;
 	}
-	case RzBinDwarfLocationKind_REGISTER_OFFSET:
-		// TODO: register offset
+	case RzBinDwarfLocationKind_REGISTER_OFFSET: {
+		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_offset.register_number, NULL, a->bits);
+		rz_analysis_var_storage_init_reg_offset(storage, reg_name, loc->register_offset.offset);
 		break;
+	}
 	case RzBinDwarfLocationKind_ADDRESS: {
 		rz_analysis_var_storage_init_stack(storage, (RzStackAddr)loc->address);
 		break;
@@ -1312,6 +1304,13 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
 		// TODO loc2storage
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
+		break;
+	case RzBinDwarfLocationKind_COMPOSITE:
+		rz_analysis_var_storage_init_compose(storage, loc->compose);
+		break;
+	case RzBinDwarfLocationKind_EVALUATION_WAITING:
+		rz_analysis_var_storage_init_dwarf_eval_waiting(storage, loc->eval_waiting.eval, loc->eval_waiting.result);
+		break;
 	}
 	return true;
 }

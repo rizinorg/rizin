@@ -1182,7 +1182,7 @@ typedef struct {
 
 typedef struct {
 	RzBinDwarfRange *range;
-	RzBinDwarfBlock *data;
+	RzBinDwarfBlock *expression;
 } RzBinDwarfLocationListEntry;
 
 typedef struct {
@@ -1311,6 +1311,87 @@ typedef struct {
 typedef ut64 UnitOffset;
 typedef ut64 DebugInfoOffset;
 
+struct dw_location_t;
+
+typedef struct {
+	bool has_bit_offset;
+	ut64 bit_offset;
+	struct dw_location_t *location;
+	bool has_size_in_bits;
+	ut64 size_in_bits;
+} RzBinDwarfPiece;
+
+typedef enum {
+	EvaluationStateWaiting_MEMORY,
+	EvaluationStateWaiting_ENTRY_VALUE,
+} RzBinDwarfEvaluationStateWaiting;
+
+typedef struct {
+	enum {
+		EVALUATION_STATE_START,
+		EVALUATION_STATE_READY,
+		EVALUATION_STATE_ERROR,
+		EVALUATION_STATE_COMPLETE,
+		EVALUATION_STATE_WAITING,
+	} kind;
+
+	union {
+		RzBinDwarfValue *start; // nullable
+		//		Error error;
+		RzBinDwarfEvaluationStateWaiting waiting;
+	};
+} RzBinDwarfEvaluationState;
+
+typedef struct {
+	RzBuffer *bytecode;
+	const RzBinDwarfEncoding *encoding;
+	ut64 object_address;
+	ut32 max_iterations;
+	ut32 iteration;
+	RzBinDwarfEvaluationState state;
+
+	// Stack operations are done on word-sized values.  We do all
+	// operations on 64-bit values, and then mask the results
+	// appropriately when popping.
+	ut64 addr_mask;
+	// The stack.
+	RzVector /*<StackValue>*/ stack;
+
+	// The next operation to decode and evaluate.
+	RzBuffer *pc;
+
+	// If we see a DW_OP_call* operation, the previous PC and bytecode
+	// is stored here while evaluating the subroutine.
+	RzVector expression_stack;
+
+	RzVector /*Piece*/ result;
+} RzBinDwarfEvaluation;
+
+typedef struct {
+	enum {
+		EvaluationResult_COMPLETE,
+		EvaluationResult_INCOMPLETE,
+		EvaluationResult_ERR,
+		EvaluationResult_REQUIRES_MEMORY,
+		EvaluationResult_REQUIRES_ENTRY_VALUE,
+	} kind;
+	union {
+		RzBinDwarfValue stack_value;
+		RzBinDwarfPiece piece;
+		struct dw_location_t *location;
+		struct {
+			ut64 address;
+			ut8 size;
+			bool has_space : 1;
+			ut64 space : 63;
+			UnitOffset base_type;
+		} requires_memory;
+		struct {
+			RzBinDwarfBlock *expression;
+		} requires_entry_value;
+	};
+} RzBinDwarfEvaluationResult;
+
 typedef enum {
 	RzBinDwarfLocationKind_EMPTY,
 	RzBinDwarfLocationKind_REGISTER,
@@ -1319,6 +1400,8 @@ typedef enum {
 	RzBinDwarfLocationKind_VALUE,
 	RzBinDwarfLocationKind_BYTES,
 	RzBinDwarfLocationKind_IMPLICIT_POINTER,
+	RzBinDwarfLocationKind_COMPOSITE,
+	RzBinDwarfLocationKind_EVALUATION_WAITING,
 } RzBinDwarfLocationKind;
 
 typedef struct dw_location_t {
@@ -1339,43 +1422,21 @@ typedef struct dw_location_t {
 			DebugInfoOffset value;
 			int64_t byte_offset;
 		} implicit_pointer;
+		struct {
+			RzBinDwarfEvaluation *eval;
+			RzBinDwarfEvaluationResult *result;
+		} eval_waiting;
+		RzVector /*Piece*/ *compose;
 	};
 } RzBinDwarfLocation;
 
-typedef struct {
-	bool has_bit_offset;
-	ut64 bit_offset;
-	RzBinDwarfLocation *location;
-	bool has_size_in_bits;
-	ut64 size_in_bits;
-} RzBinDwarfPiece;
-
-typedef struct {
-	enum {
-		EvaluationResult_COMPLETE,
-		EvaluationResult_INCOMPLETE,
-		EvaluationResult_ERR,
-		EvaluationResult_REQUIRES_MEMORY,
-		EvaluationResult_REQUIRES_ENTRY_VALUE,
-	} kind;
-	union {
-		RzBinDwarfValue stack_value;
-		RzBinDwarfPiece piece;
-		RzBinDwarfLocation location;
-		struct {
-			ut64 address;
-			ut8 size;
-			bool has_space : 1;
-			ut64 space : 63;
-			UnitOffset base_type;
-		} requires_memory;
-		struct {
-			RzBinDwarfBlock *expression;
-		} requires_entry_value;
-	};
-} RzBinDwarfEvaluationResult;
-
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, ut64 address_size, const RzBinDwarfEncoding *encoding);
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, ut64 address_size, const RzBinDwarfEncoding *encoding);
+RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self);
+RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out, RzBinDwarf *dw, const RzBinDwarfDie *fn);
+RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self);
 RZ_API bool rz_bin_dwarf_evaluate_block(RzBinDwarf *dw, RzBinDwarfEvaluationResult *out, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn);
+RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RzBinDwarf *dw, const RzBinDwarfBlock *block, const RzBinDwarfDie *die);
 
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);

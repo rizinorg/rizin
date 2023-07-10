@@ -33,7 +33,7 @@ void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self, void *u
 		return;
 	}
 	free(self->range);
-	RzBinDwarfBlock_free(self->data);
+	RzBinDwarfBlock_free(self->expression);
 }
 
 static inline bool parse_data(RzBuffer *buffer, RzBinDwarfBlock *block, RzBinDwarfEncoding *encoding) {
@@ -125,7 +125,7 @@ void RzBinDwarfLocationListEntry_free(RzBinDwarfLocationListEntry *self) {
 		return;
 	}
 	free(self->range);
-	RzBinDwarfBlock_free(self->data);
+	RzBinDwarfBlock_free(self->expression);
 	free(self);
 }
 
@@ -207,7 +207,7 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 	}
 	*out = RZ_NEW0(RzBinDwarfLocationListEntry);
 	(*out)->range = range;
-	(*out)->data = data;
+	(*out)->expression = data;
 	return true;
 }
 
