@@ -1292,7 +1292,7 @@ typedef enum {
 	RzBinDwarfValueType_LOCATION,
 } RzBinDwarfValueType;
 
-struct dw_location_t;
+struct rz_bin_dwarf_location_t;
 
 typedef struct {
 	RzBinDwarfValueType type;
@@ -1308,19 +1308,19 @@ typedef struct {
 		st64 i64;
 		float f32;
 		double f64;
-		struct dw_location_t *location;
+		struct rz_bin_dwarf_location_t *location;
 	};
 } RzBinDwarfValue;
 
 typedef ut64 UnitOffset;
 typedef ut64 DebugInfoOffset;
 
-struct dw_location_t;
+struct rz_bin_dwarf_location_t;
 
 typedef struct {
 	bool has_bit_offset;
 	ut64 bit_offset;
-	struct dw_location_t *location;
+	struct rz_bin_dwarf_location_t *location;
 	bool has_size_in_bits;
 	ut64 size_in_bits;
 } RzBinDwarfPiece;
@@ -1382,7 +1382,7 @@ typedef struct {
 	union {
 		RzBinDwarfValue stack_value;
 		RzBinDwarfPiece piece;
-		struct dw_location_t *location;
+		struct rz_bin_dwarf_location_t *location;
 		struct {
 			ut64 address;
 			ut8 size;
@@ -1408,9 +1408,10 @@ typedef enum {
 	RzBinDwarfLocationKind_EVALUATION_WAITING,
 	RzBinDwarfLocationKind_CFA_OFFSET,
 	RzBinDwarfLocationKind_FB_OFFSET,
+	RzBinDwarfLocationKind_LOCLIST,
 } RzBinDwarfLocationKind;
 
-typedef struct dw_location_t {
+typedef struct rz_bin_dwarf_location_t {
 	RzBinDwarfLocationKind kind;
 
 	union {
@@ -1435,8 +1436,14 @@ typedef struct dw_location_t {
 		RzVector /*Piece*/ *compose;
 		st64 cfa_offset;
 		st64 fb_offset;
+		RzPVector loclist;
 	};
 } RzBinDwarfLocation;
+
+typedef struct {
+	RzBinDwarfRange range;
+	RzBinDwarfLocation *location;
+} RzBinDwarfLocListEntry;
 
 RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, ut64 address_size, const RzBinDwarfEncoding *encoding);
 RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, ut64 address_size, const RzBinDwarfEncoding *encoding);

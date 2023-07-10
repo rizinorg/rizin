@@ -939,6 +939,19 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, RzAna
 	return "unsupported_reg";
 }
 
+RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, const RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
+	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
+	rz_pvector_init(&location->loclist, NULL);
+	RzBinDwarfLocationListEntry *entry;
+	rz_vector_foreach(&loclist->entries, entry) {
+		RzBinDwarfLocListEntry *loc_entry = RZ_NEW0(RzBinDwarfLocListEntry);
+		memcpy(&loc_entry->range, entry->range, sizeof(RzBinDwarfRange));
+		loc_entry->location = rz_bin_dwarf_location_from_block(ctx->dw, entry->expression, fn);
+		rz_pvector_push(&location->loclist, loc_entry);
+	}
+	return location;
+}
+
 static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
 	const RzBinDwarfBlock *block;
@@ -950,7 +963,11 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 				offset, rz_bin_dwarf_attr(attr->name));
 			return NULL;
 		}
-
+		if (rz_vector_len(&loclist->entries) >= 1) {
+			return parse_dwarf_location_list(ctx, loclist, fn);
+		} else if (rz_vector_len(&loclist->entries) == 1 && rz_vector_head(&loclist->entries)) {
+			block = rz_vector_head(&loclist->entries);
+		}
 	} else if (attr->kind == DW_AT_KIND_BLOCK) {
 		block = &attr->block;
 	}
