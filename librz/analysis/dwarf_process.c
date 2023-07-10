@@ -955,7 +955,14 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	} else {
 		block = &attr->block;
 	}
-	return rz_bin_dwarf_location_from_block(ctx->dw, block, fn);
+	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(ctx->dw, block, fn);
+	if (!loc) {
+		RzStrBuf sb = { 0 };
+		rz_strbuf_init(&sb);
+		rz_bin_dwarf_expression_dump(ctx->dw, block, &sb);
+		RZ_LOG_ERROR("Failed to parse location: %s\n", rz_strbuf_drain_nofree(&sb));
+	}
+	return loc;
 }
 
 static inline const char *var_name(RzAnalysisDwarfVariable *v, char *lang) {
@@ -998,9 +1005,6 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_di
 			break;
 		case DW_AT_location:
 			v->location = parse_dwarf_location(ctx, val, fn_die);
-			if (!v->location) {
-				RZ_LOG_ERROR("Failed to parse location\n");
-			}
 			break;
 		default:
 			break;

@@ -630,8 +630,8 @@ static const char *dwarf_op[] = {
 	[DW_OP_GNU_addr_index] = "DW_OP_GNU_addr_index",
 	[DW_OP_GNU_const_index] = "DW_OP_GNU_const_index",
 	[DW_OP_WASM_location] = "DW_OP_WASM_location",
-	[DW_OP_lo_user] = "DW_OP_lo_user",
-	[DW_OP_hi_user] = "DW_OP_hi_user",
+	//	[DW_OP_lo_user] = "DW_OP_lo_user",
+	//	[DW_OP_hi_user] = "DW_OP_hi_user",
 };
 
 RZ_API const char *rz_bin_dwarf_op(enum DW_OP op) {
@@ -701,6 +701,15 @@ RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 	}
 	memcpy(clone->data, self->data, self->length);
 	return clone;
+}
+
+RZ_IPI void RzBinDwarfBlock_dump(RzBinDwarfBlock *self, RzStrBuf *sb) {
+	rz_strbuf_appendf(sb, " %" PFMT64u, self->length);
+	char *data = rz_hex_bin2strdup(self->data, (int)self->length);
+	if (data) {
+		rz_strbuf_appendf(sb, " %s", data);
+		free(data);
+	}
 }
 
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self) {

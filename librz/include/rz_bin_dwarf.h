@@ -505,8 +505,8 @@ enum DW_OP {
 	// Wasm extensions
 	DW_OP_WASM_location = 0xed,
 	/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
-	DW_OP_lo_user = 0xe0,
-	DW_OP_hi_user = 0xff,
+	//	DW_OP_lo_user = 0xe0,
+	//	DW_OP_hi_user = 0xff,
 };
 
 enum DW_ATE {
@@ -1403,6 +1403,7 @@ typedef enum {
 	RzBinDwarfLocationKind_COMPOSITE,
 	RzBinDwarfLocationKind_EVALUATION_WAITING,
 	RzBinDwarfLocationKind_CFA_OFFSET,
+	RzBinDwarfLocationKind_FB_OFFSET,
 } RzBinDwarfLocationKind;
 
 typedef struct dw_location_t {
@@ -1429,6 +1430,7 @@ typedef struct dw_location_t {
 		} eval_waiting;
 		RzVector /*Piece*/ *compose;
 		st64 cfa_offset;
+		st64 fb_offset;
 	};
 } RzBinDwarfLocation;
 
@@ -1439,6 +1441,7 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDw
 RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self);
 RZ_API bool rz_bin_dwarf_evaluate_block(RzBinDwarf *dw, RzBinDwarfEvaluationResult *out, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn);
 RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RzBinDwarf *dw, const RzBinDwarfBlock *block, const RzBinDwarfDie *die);
+RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf);
 
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
