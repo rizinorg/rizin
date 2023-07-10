@@ -1208,6 +1208,7 @@ RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN children);
 RZ_API const char *rz_bin_dwarf_lns(enum DW_LNS lns);
 RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne);
 RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct);
+RZ_API const char *rz_bin_dwarf_op(enum DW_OP op);
 
 RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile);
@@ -1349,7 +1350,32 @@ typedef struct {
 	ut64 size_in_bits;
 } RzBinDwarfPiece;
 
-RZ_API RzVector *rz_bin_dwarf_evaluate(RzBinDwarf *dw, RzBuffer *expr, const RzBinDwarfDie *fn);
+typedef struct {
+	enum {
+		EvaluationResult_COMPLETE,
+		EvaluationResult_INCOMPLETE,
+		EvaluationResult_ERR,
+		EvaluationResult_REQUIRES_MEMORY,
+		EvaluationResult_REQUIRES_ENTRY_VALUE,
+	} kind;
+	union {
+		RzBinDwarfValue stack_value;
+		RzBinDwarfPiece piece;
+		RzBinDwarfLocation location;
+		struct {
+			ut64 address;
+			ut8 size;
+			bool has_space : 1;
+			ut64 space : 63;
+			UnitOffset base_type;
+		} requires_memory;
+		struct {
+			RzBinDwarfBlock *expression;
+		} requires_entry_value;
+	};
+} RzBinDwarfEvaluationResult;
+
+RZ_API bool rz_bin_dwarf_evaluate_block(RzBinDwarf *dw, RzBinDwarfEvaluationResult *out, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn);
 
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);

@@ -1390,7 +1390,7 @@ bool test_dwarf5_loclists(void) {
 		mu_assert_eq(entry->range->begin, 0x4c0, "entry begin");
 		mu_assert_eq(entry->range->end, 0x4de, "entry end");
 		RzBuffer *buf = rz_buf_new_with_pointers(entry->data->data, entry->data->length, false);
-		RzVector *res = rz_bin_dwarf_evaluate(dw, buf, NULL);
+		RzVector *res = rz_bin_dwarf_evaluate_block(dw, buf, NULL);
 		mu_assert_eq(rz_vector_len(res), 1, "expr result len");
 		RzBinDwarfPiece *piece = rz_vector_index_ptr(res, 0);
 		mu_assert_eq(piece->location->kind, RzBinDwarfLocationKind_REGISTER, "piece kind");
@@ -1403,7 +1403,7 @@ bool test_dwarf5_loclists(void) {
 		mu_assert_eq(entry->range->begin, 0x4de, "entry begin");
 		mu_assert_eq(entry->range->end, 0x4e1, "entry end");
 		RzBuffer *buf = rz_buf_new_with_pointers(entry->data->data, entry->data->length, false);
-		RzVector *res = rz_bin_dwarf_evaluate(dw, buf, NULL);
+		RzVector *res = rz_bin_dwarf_evaluate_block(dw, buf, NULL);
 		mu_assert_eq(rz_vector_len(res), 1, "expr result len");
 		RzBinDwarfPiece *piece = rz_vector_index_ptr(res, 0);
 		mu_assert_eq(piece->location->kind, RzBinDwarfLocationKind_VALUE, "piece kind");

@@ -727,17 +727,24 @@ static bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 typedef ut16 Register;
 typedef char *Error;
 
+typedef enum {
+	EvaluationStateWaiting_MEMORY,
+	EvaluationStateWaiting_ENTRY_VALUE,
+} EvaluationStateWaiting;
+
 typedef struct {
 	enum {
 		EVALUATION_STATE_START,
 		EVALUATION_STATE_READY,
 		EVALUATION_STATE_ERROR,
 		EVALUATION_STATE_COMPLETE,
-	} state;
+		EVALUATION_STATE_WAITING,
+	} kind;
 
 	union {
 		RzBinDwarfValue *start; // nullable
 		Error error;
+		EvaluationStateWaiting waiting;
 	};
 } EvaluationState;
 
@@ -746,10 +753,15 @@ typedef struct operation_evaluation_result_t {
 		OperationEvaluationResult_COMPLETE,
 		OperationEvaluationResult_INCOMPLETE,
 		OperationEvaluationResult_PIECE,
+		OperationEvaluationResult_WAITING,
 	} kind;
 
 	union {
 		RzBinDwarfLocation complete;
+		struct {
+			EvaluationStateWaiting _1;
+			RzBinDwarfEvaluationResult _2;
+		} waiting;
 	};
 } OperationEvaluationResult;
 
@@ -782,18 +794,5 @@ typedef struct {
 
 	RzVector /*Piece*/ result;
 } Evaluation;
-
-typedef struct {
-	enum {
-		EvaluationResultComplete,
-		EvaluationResultIncomplete,
-		EvaluationResultErr
-	} kind;
-	union {
-		RzBinDwarfValue stack_value;
-		RzBinDwarfPiece piece;
-		RzBinDwarfLocation location;
-	};
-} EvaluationResult;
 
 #endif // RIZIN_OP_H

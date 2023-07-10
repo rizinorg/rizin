@@ -932,6 +932,10 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, RzAna
 	return "unsupported_reg";
 }
 
+RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluationResult *self) {
+	return NULL;
+}
+
 static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
 	if (attr->kind != DW_AT_KIND_BLOCK && attr->kind != DW_AT_KIND_LOCLISTPTR && attr->kind != DW_AT_KIND_REFERENCE && attr->kind != DW_AT_KIND_CONSTANT) {
@@ -949,17 +953,12 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 		block = &attr->block;
 	}
 
-	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
-	RzVector *loc = rz_bin_dwarf_evaluate(ctx->dw, expr, fn);
-	if (!loc) {
+	RzBinDwarfEvaluationResult result = { 0 };
+	if (!rz_bin_dwarf_evaluate_block(ctx->dw, &result, block, fn)) {
 		return NULL;
 	}
 
-	RzBinDwarfPiece piece = { 0 };
-	rz_vector_pop(loc, &piece);
-	rz_vector_free(loc);
-
-	return piece.location;
+	return RzBinDwarfEvaluationResult_to_loc(&result);
 }
 
 static inline const char *var_name(RzAnalysisDwarfVariable *v, char *lang) {

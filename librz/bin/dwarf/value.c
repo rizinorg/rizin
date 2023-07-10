@@ -4,7 +4,7 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
-static inline int leading_zeros(uint64_t x) {
+static inline int leading_zeros(ut64 x) {
 #if HAS___BUILTIN_CLZLL
 	return __builtin_clzll(x);
 #else
@@ -40,17 +40,17 @@ static inline int leading_zeros(uint64_t x) {
 #endif
 }
 
-static inline int64_t sign_extend(uint64_t value, uint64_t mask) {
+static inline int64_t sign_extend(ut64 value, ut64 mask) {
 	int64_t masked_value = (int64_t)(value & mask);
 	int64_t sign = (int64_t)((mask >> 1) + 1);
 	return (masked_value ^ sign) - sign;
 }
 
-static inline uint32_t mask_bit_size(uint64_t addr_mask) {
+static inline uint32_t mask_bit_size(ut64 addr_mask) {
 	return 64 - leading_zeros(addr_mask);
 }
 
-uint32_t bit_size(RzBinDwarfValueType type, uint64_t addr_mask) {
+uint32_t bit_size(RzBinDwarfValueType type, ut64 addr_mask) {
 	switch (type) {
 	case RzBinDwarfValueType_GENERIC:
 		return mask_bit_size(addr_mask);
@@ -73,7 +73,7 @@ uint32_t bit_size(RzBinDwarfValueType type, uint64_t addr_mask) {
 	}
 }
 
-RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, uint64_t byte_size) {
+RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, ut64 byte_size) {
 	st16 value_type = -1;
 	switch (encoding) {
 	case DW_ATE_signed:
@@ -126,7 +126,7 @@ RZ_IPI Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry) {
 	}
 
 	enum DW_ATE encoding = -1;
-	uint64_t byte_size = 0;
+	ut64 byte_size = 0;
 	int endianity = DW_END_default;
 
 	RzBinDwarfAttr *attr; // Assuming Attribute is defined elsewhere
@@ -223,31 +223,31 @@ RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr) {
 	return ptr->type;
 }
 
-RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, uint64_t addr_mask, uint64_t *result) {
+RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, ut64 addr_mask, ut64 *result) {
 	switch (Value_type(self)) {
 	case RzBinDwarfValueType_GENERIC:
 		*result = self->generic & addr_mask;
 		break;
 	case RzBinDwarfValueType_I8:
-		*result = (uint64_t)self->i8;
+		*result = (ut64)self->i8;
 		break;
 	case RzBinDwarfValueType_U8:
 		*result = self->u8;
 		break;
 	case RzBinDwarfValueType_I16:
-		*result = (uint64_t)self->i16;
+		*result = (ut64)self->i16;
 		break;
 	case RzBinDwarfValueType_U16:
 		*result = self->u16;
 		break;
 	case RzBinDwarfValueType_I32:
-		*result = (uint64_t)self->i32;
+		*result = (ut64)self->i32;
 		break;
 	case RzBinDwarfValueType_U32:
 		*result = self->u32;
 		break;
 	case RzBinDwarfValueType_I64:
-		*result = (uint64_t)self->i64;
+		*result = (ut64)self->i64;
 		break;
 	case RzBinDwarfValueType_U64:
 		*result = self->u64;
@@ -259,7 +259,7 @@ RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, uint64_t addr_mask, uint64_t *re
 	return true;
 }
 
-RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, uint64_t value, RzBinDwarfValue *result) {
+RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, ut64 value, RzBinDwarfValue *result) {
 	result->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_GENERIC:
@@ -305,7 +305,7 @@ RZ_IPI bool Value_from_f32(RzBinDwarfValueType value_type, float value, RzBinDwa
 	result->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_GENERIC:
-		result->generic = (uint64_t)value;
+		result->generic = (ut64)value;
 		break;
 	case RzBinDwarfValueType_I8:
 		result->i8 = (int8_t)value;
@@ -329,7 +329,7 @@ RZ_IPI bool Value_from_f32(RzBinDwarfValueType value_type, float value, RzBinDwa
 		result->i64 = (int64_t)value;
 		break;
 	case RzBinDwarfValueType_U64:
-		result->u64 = (uint64_t)value;
+		result->u64 = (ut64)value;
 		break;
 	case RzBinDwarfValueType_F32:
 		result->f32 = value;
@@ -347,7 +347,7 @@ RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDw
 	result->type = value_type;
 	switch (value_type) {
 	case RzBinDwarfValueType_GENERIC:
-		result->generic = (uint64_t)value;
+		result->generic = (ut64)value;
 		break;
 	case RzBinDwarfValueType_I8:
 		result->i8 = (int8_t)value;
@@ -371,7 +371,7 @@ RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDw
 		result->i64 = (int64_t)value;
 		break;
 	case RzBinDwarfValueType_U64:
-		result->u64 = (uint64_t)value;
+		result->u64 = (ut64)value;
 		break;
 	case RzBinDwarfValueType_F32:
 		result->f32 = (float)value;
@@ -385,7 +385,7 @@ RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDw
 	return true;
 }
 
-RZ_IPI bool Value_convert(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_convert(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
 	case RzBinDwarfValueType_F32:
 		return Value_from_f32(self->type, self->f32, result);
@@ -396,20 +396,20 @@ RZ_IPI bool Value_convert(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfV
 	}
 }
 
-RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, RzBinDwarfValueType value_type, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, RzBinDwarfValueType value_type, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (bit_size(self->type, addr_mask) != bit_size(value_type, addr_mask)) {
 		return false;
 	}
 
-	uint64_t bits;
+	ut64 bits;
 	RET_FALSE_IF_FAIL(Value_to_u64(self, addr_mask, &bits));
 	return Value_from_u64(value_type, bits, result);
 }
 
-RZ_IPI bool Value_abs(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_abs(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
-		result->generic = (uint64_t)llabs(sign_extend(self->generic, addr_mask));
+		result->generic = (ut64)llabs(sign_extend(self->generic, addr_mask));
 		break;
 	case RzBinDwarfValueType_I8:
 		result->i8 = abs(self->i8);
@@ -435,10 +435,10 @@ RZ_IPI bool Value_abs(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue
 	return true;
 }
 
-RZ_IPI bool Value_neg(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_neg(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
-		result->generic = (uint64_t)(-sign_extend(self->generic, addr_mask));
+		result->generic = (ut64)(-sign_extend(self->generic, addr_mask));
 		break;
 	case RzBinDwarfValueType_I8:
 		result->i8 = -self->i8;
@@ -464,7 +464,7 @@ RZ_IPI bool Value_neg(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue
 	return true;
 }
 
-RZ_IPI bool Value_add(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_add(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (lhs->type != rhs->type) {
 		return false;
 	}
@@ -509,7 +509,7 @@ RZ_IPI bool Value_add(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool Value_sub(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_sub(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (lhs->type != rhs->type) {
 		return false;
 	}
@@ -554,7 +554,7 @@ RZ_IPI bool Value_sub(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool Value_mul(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_mul(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (lhs->type != rhs->type) {
 		return false;
 	}
@@ -599,7 +599,7 @@ RZ_IPI bool Value_mul(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool Value_div(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_div(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (lhs->type != rhs->type) {
 		return false;
 	}
@@ -677,7 +677,7 @@ RZ_IPI bool Value_div(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool Value_rem(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_rem(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (lhs->type != rhs->type) {
 		return false;
 	}
@@ -746,9 +746,9 @@ RZ_IPI bool Value_rem(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool Value_not(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_not(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result) {
 	RzBinDwarfValueType value_type = result->type;
-	uint64_t v;
+	ut64 v;
 	if (!Value_to_u64(self, addr_mask, &v)) {
 		return false;
 	}
@@ -758,13 +758,13 @@ RZ_IPI bool Value_not(RzBinDwarfValue *self, uint64_t addr_mask, RzBinDwarfValue
 	return true;
 }
 
-RZ_IPI bool Value_and(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_and(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	RzBinDwarfValueType lhs_type = lhs->type;
 	RzBinDwarfValueType rhs_type = rhs->type;
 	if (lhs_type != rhs_type) {
 		return false;
 	}
-	uint64_t v1, v2;
+	ut64 v1, v2;
 	if (!Value_to_u64(lhs, addr_mask, &v1) || !Value_to_u64(rhs, addr_mask, &v2)) {
 		return false;
 	}
@@ -774,13 +774,13 @@ RZ_IPI bool Value_and(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool Value_or(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_or(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	RzBinDwarfValueType lhs_type = lhs->type;
 	RzBinDwarfValueType rhs_type = rhs->type;
 	if (lhs_type != rhs_type) {
 		return false;
 	}
-	uint64_t v1, v2;
+	ut64 v1, v2;
 	if (!Value_to_u64(lhs, addr_mask, &v1) || !Value_to_u64(rhs, addr_mask, &v2)) {
 		return false;
 	}
@@ -790,13 +790,13 @@ RZ_IPI bool Value_or(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_m
 	return true;
 }
 
-RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	RzBinDwarfValueType lhs_type = lhs->type;
 	RzBinDwarfValueType rhs_type = rhs->type;
 	if (lhs_type != rhs_type) {
 		return false;
 	}
-	uint64_t v1, v2;
+	ut64 v1, v2;
 	if (!Value_to_u64(lhs, addr_mask, &v1) || !Value_to_u64(rhs, addr_mask, &v2)) {
 		return false;
 	}
@@ -806,45 +806,45 @@ RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, uint64_t addr_
 	return true;
 }
 
-RZ_IPI bool shift_length(RzBinDwarfValue *self, uint64_t *result) {
-	uint64_t value = 0;
+RZ_IPI bool shift_length(RzBinDwarfValue *self, ut64 *result) {
+	ut64 value = 0;
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
 		value = self->generic;
 		break;
 	case RzBinDwarfValueType_I8:
 		if (self->i8 >= 0) {
-			value = (uint64_t)self->i8;
+			value = (ut64)self->i8;
 		} else {
 			return false;
 		}
 		break;
 	case RzBinDwarfValueType_U8:
-		value = (uint64_t)self->u8;
+		value = (ut64)self->u8;
 		break;
 	case RzBinDwarfValueType_I16:
 		if (self->i16 >= 0) {
-			value = (uint64_t)self->i16;
+			value = (ut64)self->i16;
 		} else {
 			return false;
 		}
 		break;
 	case RzBinDwarfValueType_U16:
-		value = (uint64_t)self->u16;
+		value = (ut64)self->u16;
 		break;
 	case RzBinDwarfValueType_I32:
 		if (self->i32 >= 0) {
-			value = (uint64_t)self->i32;
+			value = (ut64)self->i32;
 		} else {
 			return false;
 		}
 		break;
 	case RzBinDwarfValueType_U32:
-		value = (uint64_t)self->u32;
+		value = (ut64)self->u32;
 		break;
 	case RzBinDwarfValueType_I64:
 		if (self->i64 >= 0) {
-			value = (uint64_t)self->i64;
+			value = (ut64)self->i64;
 		} else {
 			return false;
 		}
@@ -859,8 +859,8 @@ RZ_IPI bool shift_length(RzBinDwarfValue *self, uint64_t *result) {
 	return true;
 }
 
-RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
-	uint64_t v2;
+RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
+	ut64 v2;
 	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
 
 	switch (self->type) {
@@ -911,8 +911,8 @@ RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr
 	return true;
 }
 
-RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
-	uint64_t v2;
+RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
+	ut64 v2;
 	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
 
 	switch (self->type) {
@@ -942,8 +942,8 @@ RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr
 	return result;
 }
 
-RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) {
-	uint64_t v2;
+RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
+	ut64 v2;
 	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
 
 	switch (self->type) {
@@ -975,7 +975,7 @@ RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t add
 }
 
 #define VALUE_IMPL_LOGICAL_OP(name, op) \
-	RZ_IPI bool Value_##name(RzBinDwarfValue *self, RzBinDwarfValue *rhs, uint64_t addr_mask, RzBinDwarfValue *result) { \
+	RZ_IPI bool Value_##name(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) { \
 		result->type = RzBinDwarfValueType_GENERIC; \
 		result->generic = 0; \
 		if (self->type != rhs->type) { \
