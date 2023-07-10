@@ -1345,7 +1345,7 @@ typedef struct {
 typedef struct {
 	RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
-	ut64 object_address;
+	ut64 *object_address;
 	ut32 max_iterations;
 	ut32 iteration;
 	RzBinDwarfEvaluationState state;
@@ -1402,6 +1402,7 @@ typedef enum {
 	RzBinDwarfLocationKind_IMPLICIT_POINTER,
 	RzBinDwarfLocationKind_COMPOSITE,
 	RzBinDwarfLocationKind_EVALUATION_WAITING,
+	RzBinDwarfLocationKind_CFA_OFFSET,
 } RzBinDwarfLocationKind;
 
 typedef struct dw_location_t {
@@ -1427,6 +1428,7 @@ typedef struct dw_location_t {
 			RzBinDwarfEvaluationResult *result;
 		} eval_waiting;
 		RzVector /*Piece*/ *compose;
+		st64 cfa_offset;
 	};
 } RzBinDwarfLocation;
 
