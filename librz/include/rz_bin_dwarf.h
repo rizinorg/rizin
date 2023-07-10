@@ -1186,15 +1186,19 @@ typedef struct {
 } RzBinDwarfLocationListEntry;
 
 typedef struct {
+	ut64 offset;
+	RzVector /*<RzBinDwarfLocationListEntry>*/ entries;
+	RzVector /*<RzBinDwarfLocationListEntry>*/ raw_entries;
+} RzBinDwarfLocList;
+
+typedef struct {
 	RzBuffer *debug_loc;
 	RzBuffer *debug_loclists;
 	ut64 base_address;
 	const RzBinDwarfDebugAddr *debug_addr;
 	RzBinDwarfListsHeader hdr;
 	RzBinDwarfEncoding encoding;
-	RzVector /*<LocationListEntry>*/ entries;
-	RzVector /*<RawLocListEntry>*/ raw_entries;
-	HtUP /*<ut64, RawLocListEntry>*/ *entry_by_offset;
+	HtUP /*<ut64, RzBinDwarfLocList>*/ *loclist_by_offset;
 } RzBinDwarfLocListTable;
 
 typedef RzList /*<RzBinDwarfARangeSet *>*/ RzBinDwarfARangeSets;

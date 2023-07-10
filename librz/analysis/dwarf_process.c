@@ -944,13 +944,13 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	const RzBinDwarfBlock *block;
 	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
 		ut64 offset = attr->reference;
-		RzBinDwarfLocationListEntry *entry = ht_up_find(ctx->dw->loc->entry_by_offset, offset, NULL);
-		if (!entry) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
+		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
+		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
 				offset, rz_bin_dwarf_attr(attr->name));
 			return NULL;
 		}
-		block = entry->expression;
+
 	} else if (attr->kind == DW_AT_KIND_BLOCK) {
 		block = &attr->block;
 	}

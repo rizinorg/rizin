@@ -211,25 +211,51 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 	return true;
 }
 
+void loclist_free(RzBinDwarfLocList *self) {
+	if (!self) {
+		return;
+	}
+	rz_vector_fini(&self->raw_entries);
+	rz_vector_fini(&self->entries);
+	free(self);
+}
+
 static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer, RzBinDwarfLocListsFormat format, RzBinDwarfEncoding *encoding) {
+	RzBinDwarfLocList *loclist = RZ_NEW0(RzBinDwarfLocList);
+	loclist->offset = rz_buf_tell(buffer);
+	rz_vector_init(&loclist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawLocListEntry_fini, NULL);
+	rz_vector_init(&loclist->entries, sizeof(RzBinDwarfLocationListEntry), (RzVectorFree)RzBinDwarfLocationListEntry_fini, NULL);
+
 	while (true) {
 		RzBinDwarfRawLocListEntry raw_entry = { 0 };
 		RzBinDwarfLocationListEntry *entry = NULL;
 		GOTO_IF_FAIL(RawLocListEntry_parse(&raw_entry, buffer, encoding, format), err);
-		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &entry), err);
-		if (!entry) {
+		rz_vector_push(&loclist->raw_entries, &raw_entry);
+		if (raw_entry.encoding == DW_LLE_end_of_list) {
 			break;
 		}
-		rz_vector_push(&self->raw_entries, &raw_entry);
-		rz_vector_push(&self->entries, entry);
-		ht_up_update(self->entry_by_offset, entry->range->begin, entry);
+
+		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &entry), err);
+		if (!entry) {
+			continue;
+		}
+		rz_vector_push(&loclist->entries, entry);
 		continue;
 	err:
 		RzBinDwarfRawLocListEntry_fini(&raw_entry, NULL);
 		RzBinDwarfLocationListEntry_free(entry);
-		break;
+		loclist_free(loclist);
+		return false;
 	}
+	ht_up_update(self->loclist_by_offset, loclist->offset, loclist);
 	return true;
+}
+
+void HTUP_RzBinDwarfLocList_free(HtUPKv *kv) {
+	if (!kv) {
+		return;
+	}
+	loclist_free(kv->value);
 }
 
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset) {
@@ -268,8 +294,6 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *b
 	return self;
 }
 
-void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
-
 void HTUP_RzBinDwarfLocationListEntry_free(HtUPKv *kv) {
 	if (!kv) {
 		return;
@@ -288,9 +312,7 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwa
 		RzBinDwarfLocLists_free(self);
 		return NULL;
 	}
-	rz_vector_init(&self->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawLocListEntry_fini, NULL);
-	rz_vector_init(&self->entries, sizeof(RzBinDwarfLocationListEntry), (RzVectorFree)RzBinDwarfLocationListEntry_fini, NULL);
-	self->entry_by_offset = ht_up_new(NULL, HTUP_RzBinDwarfLocationListEntry_free, NULL);
+	self->loclist_by_offset = ht_up_new(NULL, HTUP_RzBinDwarfLocList_free, NULL);
 	return self;
 }
 
@@ -298,9 +320,7 @@ RZ_IPI void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self) {
 	if (!self) {
 		return;
 	}
-	rz_vector_fini(&self->raw_entries);
-	rz_vector_fini(&self->entries);
-	ht_up_free(self->entry_by_offset);
+	ht_up_free(self->loclist_by_offset);
 	rz_buf_free(self->debug_loc);
 	rz_buf_free(self->debug_loclists);
 	free(self);
