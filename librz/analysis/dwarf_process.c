@@ -419,11 +419,18 @@ cleanup:
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 static void parse_structure_type(Context *ctx, RzBinDwarfDie *die) {
 	RzBaseTypeKind kind;
-	if (die->tag == DW_TAG_union_type) {
+	switch (die->tag) {
+	case DW_TAG_union_type:
 		kind = RZ_BASE_TYPE_KIND_UNION;
-	} else {
+		break;
+	case DW_TAG_class_type:
+	case DW_TAG_structure_type:
 		kind = RZ_BASE_TYPE_KIND_STRUCT;
+		break;
+	default:
+		return;
 	}
+
 	RzPVector *children = NULL;
 	RzBaseType *base_type = rz_type_base_type_new(kind);
 	if (!base_type) {
@@ -955,7 +962,7 @@ static inline const char *var_name(RzAnalysisDwarfVariable *v, char *lang) {
 	return prefer_linkage_name(lang) ? (v->link_name ? v->link_name : v->name) : v->name;
 }
 
-static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzAnalysisDwarfVariable *v) {
+static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_die, RzAnalysisDwarfVariable *v) {
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
 		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
@@ -967,8 +974,7 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzAnalysisDwarfVaria
 		// TODO: DW_TAG_unspecified_parameters
 		break;
 	default:
-		RZ_LOG_DEBUG("Unsupported variable tag %s\n", rz_bin_dwarf_tag(var_die->tag));
-		break;
+		return false;
 	}
 
 	const RzBinDwarfAttr *val;
@@ -991,7 +997,7 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzAnalysisDwarfVaria
 			v->type = parse_abstract_origin(ctx, val->reference, &v->name);
 			break;
 		case DW_AT_location:
-			v->location = parse_dwarf_location(ctx, val, var_die);
+			v->location = parse_dwarf_location(ctx, val, fn_die);
 			break;
 		default:
 			break;
@@ -1017,7 +1023,13 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
-		parse_var(ctx, child_die, &v);
+		if (!parse_var(ctx, child_die, die, &v)) {
+			continue;
+		}
+		if (!(v.prefer_name && v.location && v.type)) {
+			RZ_LOG_ERROR("Failed to parse %s variable 0x%" PFMT64x "\n", fn->prefer_name, child_die->offset);
+			continue;
+		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
@@ -1324,6 +1336,13 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
 	/* Apply variables */
 	RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->addr);
+	if (!afn) {
+		return true;
+	}
+	char *dwf_name = rz_str_newf("dbg.%s", fn->prefer_name);
+	rz_analysis_function_rename((RzAnalysisFunction *)afn, dwf_name);
+	free(dwf_name);
+
 	RzAnalysisDwarfVariable *v;
 	rz_vector_foreach(&fn->variables, v) {
 		RzAnalysisVar av = {
@@ -1335,6 +1354,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 		loc2storage(analysis, v->location, &av.storage);
 		rz_analysis_function_add_var_dwarf(afn, &av, 4);
 	};
+	return true;
 }
 
 /**
