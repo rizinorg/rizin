@@ -28,10 +28,6 @@ call = 4
 #define HAVE_CSGRP_PRIVILEGE 0
 #endif
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define opexprintf(op, fmt, ...) rz_strbuf_setf(&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n)                 insn->detail->x86.operands[n]
 #define INSOPS                   insn->detail->x86.op_count

@@ -6,10 +6,6 @@
 #include <capstone/capstone.h>
 #include <capstone/xcore.h>
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define INSOP(n) insn->detail->xcore.operands[n]
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {

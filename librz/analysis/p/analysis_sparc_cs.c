@@ -6,10 +6,6 @@
 #include <capstone/capstone.h>
 #include <capstone/sparc.h>
 
-#if CS_API_MAJOR < 2
-#error Old Capstone not supported
-#endif
-
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC    insn->detail->sparc.cc
 
