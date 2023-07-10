@@ -6534,6 +6534,28 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 		rz_strbuf_appendf(sb, "stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
 		break;
 	}
+	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
+		rz_strbuf_append(sb, "empty");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
+		rz_strbuf_appendf(sb, "%s%+" PFMT64d, var->storage.reg_offset.reg, var->storage.reg_offset.offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+		rz_strbuf_appendf(sb, "CFA%+" PFMT64d, var->storage.cfa_offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		rz_strbuf_appendf(sb, "FB%+" PFMT64d, var->storage.fb_offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+		rz_strbuf_append(sb, "Compose");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_LIST:
+		rz_strbuf_append(sb, "loclist");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
+		rz_strbuf_append(sb, "waiting");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_END: break;
 	}
 	return rz_strbuf_drain(sb);
 }

@@ -1854,11 +1854,9 @@ static void ds_show_functions(RzDisasmState *ds) {
 			printVarSummary(ds, all_vars);
 		} else {
 			char spaces[32];
-			RzAnalysisVar *var;
-			RzListIter *iter;
-			RzList *all_vars = vars_cache.regvars;
-			rz_list_join(all_vars, vars_cache.stackvars);
-			rz_list_foreach (all_vars, iter, var) {
+			void **it;
+			rz_pvector_foreach (&f->vars, it) {
+				RzAnalysisVar *var = *it;
 				ds_begin_line(ds);
 				int idx;
 				memset(spaces, ' ', sizeof(spaces));

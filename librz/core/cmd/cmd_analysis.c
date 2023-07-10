@@ -2584,38 +2584,37 @@ fail:
 	rz_list_free(list);
 }
 
+static const char *var_storage_strings[] = {
+	[RZ_ANALYSIS_VAR_STORAGE_EMPTY] = "empty",
+	[RZ_ANALYSIS_VAR_STORAGE_REG] = "reg",
+	[RZ_ANALYSIS_VAR_STORAGE_STACK] = "stack",
+	[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
+	[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA offset",
+	[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "Frame Base offset",
+	[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "Compose",
+	[RZ_ANALYSIS_VAR_STORAGE_LIST] = "loclist",
+	[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
+};
+
 RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	const char *bp = NULL;
 	switch (state->mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
 	case RZ_OUTPUT_MODE_STANDARD:
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
-		rz_cons_printf("f-fcnvar*\n");
-		void **it;
-		rz_pvector_foreach (&fcn->vars, it) {
-			RzAnalysisVar *var = *it;
-			if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
-				continue;
-			}
-			rz_cons_printf("f fcnvar.%s @ %s%s%" PFMT64d "\n", var->name, bp,
-				var->storage.stack_off >= 0 ? "+" : "", var->storage.stack_off);
+		for (int i = RZ_ANALYSIS_VAR_STORAGE_EMPTY; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
+			core_analysis_var_list_show(core, fcn, i, state);
 		}
 		break;
-	}
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
-		pj_k(state->d.pj, "stack");
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		pj_k(state->d.pj, "reg");
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
+		for (int i = RZ_ANALYSIS_VAR_STORAGE_EMPTY; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
+			pj_k(state->d.pj, var_storage_strings[i]);
+			core_analysis_var_list_show(core, fcn, i, state);
+		};
 		pj_end(state->d.pj);
 		break;
 	default:
