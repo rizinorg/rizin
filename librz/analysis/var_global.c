@@ -9,7 +9,6 @@
  *
  * \param name variable name
  * \param addr variable address
- * \param comment variable comment
  * \return RzAnalysisVarGlobal *
  */
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr) {
@@ -25,7 +24,7 @@ RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const c
 	return glob;
 }
 
-int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+static int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 ia = *(ut64 *)incoming;
 	ut64 ta = container_of(in_tree, const RzAnalysisVarGlobal, rb)->addr;
 	if (ia < ta) {
@@ -36,6 +35,15 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
 	return 0;
 }
 
+static void global_var_set_type(RzAnalysisVarGlobal *glob, RzType *type) {
+	glob->type = type;
+
+	RzFlagItem *flag = rz_analysis_var_global_get_flag_item(glob);
+	if (flag) {
+		flag->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
+	}
+}
+
 /**
  * \brief Add the global variable into hashtable
  *
@@ -43,7 +51,7 @@ int global_var_node_cmp(const void *incoming, const RBNode *in_tree, void *user)
  * \param global_var Global variable instance
  * \return true if succeed
  */
-RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var) {
+RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var) {
 	rz_return_val_if_fail(analysis && global_var, false);
 
 	RzAnalysisVarGlobal *existing_glob = NULL;
@@ -66,6 +74,33 @@ RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL R
 	rz_flag_space_push(global_var->analysis->flb.f, "globals");
 	rz_flag_set(global_var->analysis->flb.f, global_var->name, global_var->addr, rz_type_db_get_bitsize(global_var->analysis->typedb, global_var->type) / 8);
 	rz_flag_space_pop(global_var->analysis->flb.f);
+
+	return true;
+}
+
+/**
+ * \brief Create the global variable and add into hashtable
+ *
+ * \param analysis RzAnalysis
+ * \param name Global variable name
+ * \param type Global variable type
+ * \param addr Global variable address
+ * \return true if succeed
+ */
+RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr) {
+	rz_return_val_if_fail(analysis && name && type, false);
+
+	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new(name, addr);
+	if (!glob) {
+		return false;
+	}
+
+	global_var_set_type(glob, type);
+
+	if (!rz_analysis_var_global_add(analysis, glob)) {
+		rz_analysis_var_global_free(glob);
+		return false;
+	}
 
 	return true;
 }
@@ -302,12 +337,8 @@ RZ_API bool rz_analysis_var_global_rename(RzAnalysis *analysis, RZ_NONNULL const
 RZ_API void rz_analysis_var_global_set_type(RzAnalysisVarGlobal *glob, RZ_NONNULL RZ_BORROW RzType *type) {
 	rz_return_if_fail(glob && type);
 	rz_type_free(glob->type);
-	glob->type = type;
 
-	RzFlagItem *flag = rz_analysis_var_global_get_flag_item(glob);
-	if (flag) {
-		flag->size = rz_type_db_get_bitsize(glob->analysis->typedb, glob->type) / 8;
-	}
+	global_var_set_type(glob, type);
 }
 
 /**
