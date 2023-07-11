@@ -22,6 +22,18 @@ static bool storage_equals(RzAnalysisVarStorage *a, RzAnalysisVarStorage *b) {
 	default:
 		rz_warn_if_reached();
 		return false;
+	case RZ_ANALYSIS_VAR_STORAGE_EMPTY: return false;
+	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
+		return b->type == RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET && !strcmp(a->reg_offset.reg, b->reg_offset.reg) && a->reg_offset.offset == b->reg_offset.offset;
+	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+		return b->type == RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET && a->cfa_offset == b->cfa_offset;
+	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		return b->type == RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET && a->fb_offset == b->fb_offset;
+	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
+		return b->type == RZ_ANALYSIS_VAR_STORAGE_LOCLIST && a->loclist == b->loclist;
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
+		return false;
 	}
 }
 

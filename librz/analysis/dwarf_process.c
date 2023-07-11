@@ -924,9 +924,13 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, int b
 	return "unsupported_reg";
 }
 
-RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, const RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
+RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
 	location->kind = RzBinDwarfLocationKind_LOCLIST;
+	if (loclist->has_location) {
+		location->loclist = loclist;
+		return location;
+	}
 
 	RzBinDwarfLocationListEntry *entry;
 	rz_vector_foreach(&loclist->entries, entry) {
@@ -940,6 +944,7 @@ RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, const RzBinDwarfLocL
 			return NULL;
 		}
 	}
+	loclist->has_location = true;
 	location->loclist = loclist;
 	return location;
 }
@@ -1399,7 +1404,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	rz_vector_foreach(&fn->variables, v) {
 		RzAnalysisVar av = {
 			.type = v->type,
-			.name = rz_str_new(v->prefer_name),
+			.name = strdup(v->prefer_name ? v->prefer_name : ""),
 			.kind = v->kind,
 			.fcn = afn,
 		};

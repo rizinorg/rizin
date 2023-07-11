@@ -1186,6 +1186,7 @@ typedef struct {
 
 typedef struct {
 	ut64 offset;
+	bool has_location;
 	RzVector /*<RzBinDwarfLocationListEntry>*/ entries;
 	RzVector /*<RzBinDwarfLocationListEntry>*/ raw_entries;
 } RzBinDwarfLocList;
