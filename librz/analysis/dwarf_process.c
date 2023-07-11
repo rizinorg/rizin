@@ -999,7 +999,7 @@ static inline const char *var_name(RzAnalysisDwarfVariable *v, char *lang) {
 	return prefer_linkage_name(lang) ? (v->link_name ? v->link_name : v->name) : v->name;
 }
 
-static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_die, RzAnalysisDwarfVariable *v) {
+static bool parse_function_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_die, RzAnalysisDwarfFunction *f, RzAnalysisDwarfVariable *v) {
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
 		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
@@ -1008,8 +1008,8 @@ static bool parse_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_di
 		v->kind = RZ_ANALYSIS_VAR_KIND_VARIABLE;
 		break;
 	case DW_TAG_unspecified_parameters:
-		// TODO: DW_TAG_unspecified_parameters
-		break;
+		f->has_unspecified_parameters = true;
+		return false;
 	default:
 		return false;
 	}
@@ -1066,7 +1066,7 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
-		if (!parse_var(ctx, child_die, die, &v)) {
+		if (!parse_function_var(ctx, child_die, die, fn, &v)) {
 			continue;
 		}
 		if (!(v.location && v.type)) {
@@ -1190,6 +1190,7 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	}
 	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type);
 	parse_function_args_and_vars(ctx, die, callable, fcn);
+	// TODO: RzCallable add support for DW_TAG_unspecified_parameters
 	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
 		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", fcn->prefer_name);
 	};

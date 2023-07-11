@@ -802,15 +802,16 @@ typedef struct dwarf_function_t {
 	char *link_name;
 	char *demangle_name;
 	const char *prefer_name;
-	bool is_external;
-	bool is_method;
-	bool is_virtual;
-	bool is_trampoline; // intermediary in making call to another func
-	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
 	ut64 vtable_addr; // location description
 	ut64 call_conv; // normal || program || nocall
 	RzType *ret_type;
 	RzVector /*<RzAnalysisDwarfVariable*>*/ variables;
+	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
+	bool has_unspecified_parameters : 1;
+	bool is_external : 1;
+	bool is_method : 1;
+	bool is_virtual : 1;
+	bool is_trampoline : 1; // intermediary in making call to another func
 } RzAnalysisDwarfFunction;
 
 typedef enum {
