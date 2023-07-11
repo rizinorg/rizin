@@ -1373,7 +1373,7 @@ bool test_dwarf5_loclists(void) {
 	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfParseOptions parse_opts = {
-		.flags = RZ_BIN_DWARF_PARSE_LOC,
+		.flags = RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_ABBREVS,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opts);
 	mu_assert_notnull(dw->loc, ".debug_loclists");
@@ -1441,7 +1441,7 @@ bool test_dwarf4_loclists(void) {
 	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfParseOptions parse_opts = {
-		.flags = RZ_BIN_DWARF_PARSE_LOC,
+		.flags = RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_ABBREVS,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &parse_opts);
 	mu_assert_notnull(dw->loc, ".debug_loc");

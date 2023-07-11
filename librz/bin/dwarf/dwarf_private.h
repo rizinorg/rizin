@@ -109,9 +109,4 @@ RZ_IPI void Value_free(RzBinDwarfValue *self);
 
 #include "op.h"
 
-/// loclists
-
-RZ_IPI void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
-RZ_IPI void RzBinDwarfLocation_free(RzBinDwarfLocation *self);
-
 #endif

@@ -162,7 +162,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	RzBinDwarfParseOptions dw_opt = {
 		.addr_size = analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
-		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC,
+		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO,
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 	mu_assert_notnull(dw->abbrevs, "Couldn't parse Abbreviations");

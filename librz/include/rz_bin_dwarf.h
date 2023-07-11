@@ -1271,9 +1271,9 @@ typedef struct rz_core_bin_dwarf_t {
 
 typedef enum {
 	RZ_BIN_DWARF_PARSE_ABBREVS = 1 << 1,
-	RZ_BIN_DWARF_PARSE_INFO = (1 << 2) | RZ_BIN_DWARF_PARSE_ABBREVS,
-	RZ_BIN_DWARF_PARSE_LOC = 1 << 3 | RZ_BIN_DWARF_PARSE_INFO,
-	RZ_BIN_DWARF_PARSE_LINES = (1 << 4) | RZ_BIN_DWARF_PARSE_INFO,
+	RZ_BIN_DWARF_PARSE_INFO = 1 << 2,
+	RZ_BIN_DWARF_PARSE_LOC = 1 << 3,
+	RZ_BIN_DWARF_PARSE_LINES = 1 << 4,
 	RZ_BIN_DWARF_PARSE_ARANGES = 1 << 5,
 	RZ_BIN_DWARF_PARSE_ALL = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_LINES | RZ_BIN_DWARF_PARSE_ARANGES,
 } RzBinDwarfParseFlags;
@@ -1472,8 +1472,10 @@ RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfB
 RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block);
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
-RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *bf, RzBinDwarf *dw);
+RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding);
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw);
+RZ_API void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
+RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self);
 
 #ifdef __cplusplus
 }

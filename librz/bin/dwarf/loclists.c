@@ -259,26 +259,28 @@ RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, Rz
 	return true;
 }
 
-RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *bf, RzBinDwarf *dw) {
-	RET_NULL_IF_FAIL(bf && dw);
-	RzBinDwarfLocListTable *self = rz_bin_dwarf_loclists_new(bf, dw);
+RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding) {
 	RET_NULL_IF_FAIL(self);
-	RzBuffer *buffer = dw->encoding.version == 5 ? self->debug_loclists : self->debug_loc;
-	buffer = rz_buf_new_with_buf(buffer);
-	if (dw->encoding.version == 5) {
-		RET_FALSE_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, dw->encoding.big_endian));
+	RzBuffer *buffer = self->debug_loc;
+	RzBinDwarfLocListsFormat format = LOCLISTSFORMAT_BARE;
+	if (encoding->version == 5) {
+		buffer = self->debug_loclists;
+		format = LOCLISTSFORMAT_LLE;
+		buffer = rz_buf_new_with_buf(buffer);
+		RET_FALSE_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, encoding->big_endian));
+	} else {
+		buffer = rz_buf_new_with_buf(buffer);
 	}
 
-	RzBinDwarfLocListsFormat format = dw->encoding.version <= 4 ? LOCLISTSFORMAT_BARE : LOCLISTSFORMAT_LLE;
 	if (self->hdr.offset_entry_count > 0) {
 		for (ut32 i = 0; i < self->hdr.offset_entry_count; ++i) {
 			ut64 offset = self->hdr.location_offsets[i];
 			rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
-			loclist_parse(self, buffer, format, &dw->encoding);
+			loclist_parse(self, buffer, format, encoding);
 		}
 	} else {
 		while (rz_buf_tell(buffer) < rz_buf_size(buffer)) {
-			loclist_parse(self, buffer, format, &dw->encoding);
+			loclist_parse(self, buffer, format, encoding);
 		}
 	}
 
@@ -308,7 +310,7 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwa
 	return self;
 }
 
-RZ_IPI void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self) {
+RZ_API void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self) {
 	if (!self) {
 		return;
 	}
@@ -318,7 +320,7 @@ RZ_IPI void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self) {
 	free(self);
 }
 
-RZ_IPI void RzBinDwarfLocation_free(RzBinDwarfLocation *self) {
+RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self) {
 	if (!self) {
 		return;
 	}
