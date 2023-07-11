@@ -73,8 +73,8 @@ uint32_t bit_size(RzBinDwarfValueType type, ut64 addr_mask) {
 	}
 }
 
-RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, ut64 byte_size) {
-	st16 value_type = -1;
+RZ_IPI bool ValueType_from_encoding(enum DW_ATE encoding, ut64 byte_size, RzBinDwarfValueType *out) {
+	RzBinDwarfValueType value_type = -1;
 	switch (encoding) {
 	case DW_ATE_signed:
 		switch (byte_size) {
@@ -115,14 +115,15 @@ RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, ut
 	case DW_ATE_hi_user: break;
 	}
 	if (value_type == -1) {
-		return none();
+		return false;
 	}
-	return some(&value_type);
+	*out = value_type;
+	return true;
 }
 
-RZ_IPI Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry) {
+RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out) {
 	if (entry->tag != DW_TAG_base_type) {
-		return none(); // Represents Option::None in Rust
+		return false; // Represents Option::None in Rust
 	}
 
 	enum DW_ATE encoding = -1;
@@ -146,14 +147,13 @@ RZ_IPI Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry) {
 	}
 
 	if (endianity != DW_END_default) {
-		return none(); // Represents Option::None in Rust
+		return false;
 	}
 
-	if (encoding != -1 && byte_size != 0) {
-		return ValueType_from_encoding(encoding, byte_size);
-	} else {
-		return none(); // Represents Option::None in Rust
+	if (encoding == -1 || byte_size == 0) {
+		return false;
 	}
+	return ValueType_from_encoding(encoding, byte_size, out);
 }
 
 RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian) {

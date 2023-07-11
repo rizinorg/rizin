@@ -266,7 +266,6 @@ rz_bin_sources = [
   'dwarf/line.c',
   'dwarf/loclists.c',
   'dwarf/op.c',
-  'dwarf/option.c',
   'dwarf/rnglists.c',
   'dwarf/unit.c',
   'dwarf/value.c',

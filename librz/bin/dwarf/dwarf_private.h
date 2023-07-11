@@ -53,24 +53,6 @@ RZ_IPI bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address
 	ut8 address_size, bool big_endian, ut64 base, ut64 index);
 RZ_API RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf);
 
-/// option
-
-typedef void (*OptionFree)(void *);
-
-typedef struct {
-	int valid; // A flag to indicate if the value is present (1) or not (0)
-	void *data; // The actual value (as a void pointer)
-	size_t size; // Size of the data pointed to by value
-	OptionFree free;
-} Option;
-
-typedef Option *(*OptionAction)(void *);
-RZ_IPI Option *Option_new(void *data, size_t size, OptionFree free_func);
-#define some(x) Option_new(x, sizeof(*x), (OptionFree)free)
-RZ_IPI Option *none();
-RZ_IPI void Option_free(Option *opt);
-RZ_IPI Option *Option_map(Option *option, OptionAction action);
-
 /// range
 
 RZ_IPI bool Range_parse(RzBinDwarfRange *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding);
@@ -82,8 +64,8 @@ RZ_IPI bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buff
 
 /// value
 
-RZ_IPI Option * /*<ValueType>*/ ValueType_from_encoding(enum DW_ATE encoding, ut64 byte_size);
-RZ_IPI Option * /*<ValueType>*/ ValueType_from_entry(RzBinDwarfDie *entry);
+RZ_IPI bool ValueType_from_encoding(enum DW_ATE encoding, ut64 byte_size, RzBinDwarfValueType *out);
+RZ_IPI bool ValueType_from_entry(RzBinDwarfDie *entry, RzBinDwarfValueType *out);
 RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *buffer, bool big_endian);
 RZ_IPI RzBinDwarfValueType Value_type(RzBinDwarfValue *ptr);
 RZ_IPI bool Value_to_u64(RzBinDwarfValue *self, ut64 addr_mask, ut64 *result);
