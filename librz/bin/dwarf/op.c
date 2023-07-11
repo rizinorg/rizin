@@ -692,13 +692,16 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	ut64 offset = rz_buf_tell(self->pc);
 	RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
 
+#define CHECK_DEFER \
+	if (self->defer > 0) { \
+		rz_buf_seek(self->pc, (st64)offset, SEEK_SET); \
+		out->kind = OperationEvaluationResult_WAITING_RESOLVE; \
+		return true; \
+	}
+
 	switch (operation.kind) {
 	case OPERATION_KIND_DEREF: {
-		if (self->defer > 0) {
-			rz_buf_seek(self->pc, (st64)offset, SEEK_SET);
-			out->kind = OperationEvaluationResult_WAITING_RESOLVE;
-			return true;
-		}
+		CHECK_DEFER;
 		RzBinDwarfValue *entry = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &entry));
 		RET_FALSE_IF_FAIL(entry);
@@ -759,6 +762,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	}
 #define BINARY_OP(fcn) \
 	{ \
+		CHECK_DEFER; \
 		RzBinDwarfValue *rhs = NULL; \
 		RzBinDwarfValue *lhs = NULL; \
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &rhs)); \
@@ -772,6 +776,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	}
 #define UNITARY_OP(fcn) \
 	{ \
+		CHECK_DEFER; \
 		RzBinDwarfValue *top = NULL; \
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &top)); \
 		RzBinDwarfValue result = { 0 }; \
@@ -792,6 +797,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	case OPERATION_KIND_OR: BINARY_OP(Value_or);
 	case OPERATION_KIND_PLUS: BINARY_OP(Value_add);
 	case OPERATION_KIND_PLUS_CONSTANT: {
+		CHECK_DEFER;
 		RzBinDwarfValue *lhs = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &lhs));
 		RzBinDwarfValue rhs = { 0 };
@@ -805,6 +811,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	case OPERATION_KIND_SHRA: BINARY_OP(Value_shra);
 	case OPERATION_KIND_XOR: BINARY_OP(Value_xor);
 	case OPERATION_KIND_BRA: {
+		CHECK_DEFER;
 		RzBinDwarfValue *v = NULL;
 		RET_FALSE_IF_FAIL(Evaluation_pop(self, &v));
 		ut64 entry = 0;
