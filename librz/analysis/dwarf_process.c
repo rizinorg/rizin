@@ -1232,61 +1232,6 @@ cleanup:
 }
 
 /**
- * \brief Get's language from comp unit for demangling
- *
- * \param die
- * \return char* string literal language represantation for demangling BinDemangle
- */
-static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
-	rz_return_val_if_fail(die, NULL);
-	char *lang = "cxx"; // default fallback
-	const RzBinDwarfAttr *val = rz_bin_dwarf_die_get_attr(die, DW_AT_language);
-	if (!val) {
-		return lang;
-	}
-	rz_warn_if_fail(val->kind == DW_AT_KIND_UCONSTANT);
-
-	switch (val->uconstant) {
-	case DW_LANG_Java:
-		return "java";
-	case DW_LANG_ObjC:
-	/* subideal, TODO research if dwarf gives me enough info to properly separate C++ and ObjC mangling */
-	case DW_LANG_ObjC_plus_plus:
-		return "objc";
-	case DW_LANG_D:
-		return "dlang";
-	case DW_LANG_Rust:
-		return "rust";
-	case DW_LANG_C_plus_plus:
-	case DW_LANG_C_plus_plus_14:
-	/* no demangling available */
-	case DW_LANG_Ada83:
-	case DW_LANG_Cobol74:
-	case DW_LANG_Cobol85:
-	case DW_LANG_Fortran77:
-	case DW_LANG_Fortran90:
-	case DW_LANG_Pascal83:
-	case DW_LANG_Modula2:
-	case DW_LANG_Ada95:
-	case DW_LANG_Fortran95:
-	case DW_LANG_PLI:
-	case DW_LANG_Python:
-	case DW_LANG_Swift:
-	case DW_LANG_Julia:
-	case DW_LANG_Dylan:
-	case DW_LANG_Fortran03:
-	case DW_LANG_Fortran08:
-	case DW_LANG_UPC:
-	case DW_LANG_C:
-	case DW_LANG_C89:
-	case DW_LANG_C99:
-	case DW_LANG_C11:
-	default:
-		return lang;
-	}
-}
-
-/**
  * \brief Delegates DIE to it's proper parsing method
  *
  * \param ctx

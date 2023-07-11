@@ -26,6 +26,9 @@ static void unit_fini(RzBinDwarfCompUnit *unit, void *user) {
 		return;
 	}
 	rz_vector_fini(&unit->dies);
+	free(unit->comp_dir);
+	free(unit->producer);
+	free(unit->name);
 }
 
 static void ht_kv_value_free(HtUPKv *kv) {
