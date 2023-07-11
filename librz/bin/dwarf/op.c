@@ -692,6 +692,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	ut64 offset = rz_buf_tell(self->pc);
 	RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
 
+	/// need to resolve all delayed value in stack
 #define CHECK_DEFER \
 	if (self->defer > 0) { \
 		rz_buf_seek(self->pc, (st64)offset, SEEK_SET); \
