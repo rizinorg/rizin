@@ -857,8 +857,8 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 	if (in->type == DW_ATTR_TYPE_DEF) {
 		name = in->def->name;
 		form = in->def->form;
-		address_size = in->comp_unit_hdr->address_size;
-		is_64bit = in->comp_unit_hdr->is_64bit;
+		address_size = in->comp_unit_hdr->encoding.address_size;
+		is_64bit = in->comp_unit_hdr->encoding.is_64bit;
 		unit_offset = in->comp_unit_hdr->unit_offset;
 	} else if (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT) {
 		lnct = in->format->content_type;
@@ -1201,9 +1201,7 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 		RZ_LOG_DEBUG(".debug_info\n");
 		dw->info = rz_bin_dwarf_info_parse(bf, dw->abbrevs);
 		RzBinDwarfCompUnit *unit = rz_vector_head(&dw->info->units);
-		dw->encoding.is_64bit = unit->hdr.is_64bit;
-		dw->encoding.version = unit->hdr.version;
-		dw->encoding.address_size = unit->hdr.address_size;
+		dw->encoding = unit->hdr.encoding;
 	}
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LOC) {
 		RZ_LOG_DEBUG(dw->encoding.version == 5 ? ".debug.loclists\n" : ".debug_loc\n");

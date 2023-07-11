@@ -835,22 +835,25 @@ static inline const char *rz_bin_dwarf_attr_value_get_string_content(const RzBin
 }
 
 typedef struct {
+	ut8 address_size;
+	bool big_endian;
+	ut16 version;
+	bool is_64bit;
+} RzBinDwarfEncoding;
+
+typedef struct {
 	// A 4-byte (or 8 byte for 64bit dwarf) unsigned length of the .debug_info contribution
 	// for that compilation unit, not including the length field itself.
 	ut64 length;
-	ut16 version;
 	// A 4-byte unsigned offset into the .debug_abbrev section.
 	ut64 abbrev_offset;
-	// A 1 - byte size of an address on the target architecture.If the system uses
-	//  segmented addressing, this value represents the size of the offset portion of an address.
-	ut8 address_size;
 	enum DW_UT unit_type; // DWARF 5 addition
 	ut8 dwo_id; // DWARF 5 addition
 	ut64 type_sig; // DWARF 5 addition
 	ut64 type_offset; // DWARF 5 addition
 	ut64 header_size; // excluding length field
 	ut64 unit_offset;
-	bool is_64bit;
+	RzBinDwarfEncoding encoding;
 } RzBinDwarfCompUnitHdr;
 
 typedef struct {
@@ -1035,13 +1038,6 @@ typedef struct rz_bin_dwarf_arange_set_t {
 	size_t aranges_count;
 	RzBinDwarfARange *aranges;
 } RzBinDwarfARangeSet;
-
-typedef struct {
-	ut8 address_size;
-	bool big_endian;
-	ut16 version;
-	bool is_64bit;
-} RzBinDwarfEncoding;
 
 typedef struct {
 	RzBinDwarfEncoding encoding;

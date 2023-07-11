@@ -65,10 +65,10 @@
 
 #define check_basic_unit_header(vers, len, is64bit, addr_size, abbr_offset) \
 	do { \
-		mu_assert_eq(hdr.version, vers, "Wrong header version information"); \
+		mu_assert_eq(hdr.encoding.version, vers, "Wrong header version information"); \
 		mu_assert_eq(hdr.length, len, "Wrong header length information"); \
-		mu_assert_eq(hdr.is_64bit, is64bit, "Wrong header is_64bit information"); \
-		mu_assert_eq(hdr.address_size, addr_size, "Wrong header address_size information"); \
+		mu_assert_eq(hdr.encoding.is_64bit, is64bit, "Wrong header is_64bit information"); \
+		mu_assert_eq(hdr.encoding.address_size, addr_size, "Wrong header address_size information"); \
 		mu_assert_eq(hdr.abbrev_offset, abbr_offset, "Wrong header abbrev_offset information"); \
 	} while (0)
 

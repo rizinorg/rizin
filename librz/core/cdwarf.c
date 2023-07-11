@@ -164,9 +164,9 @@ RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *i
 		my_print("\n");
 		my_printf("  Compilation Unit @ offset 0x%" PFMT64x ":\n", unit->offset);
 		my_printf("   Length:        0x%" PFMT64x "\n", unit->hdr.length);
-		my_printf("   Version:       %d\n", unit->hdr.version);
+		my_printf("   Version:       %d\n", unit->hdr.encoding.version);
 		my_printf("   Abbrev Offset: 0x%" PFMT64x "\n", unit->hdr.abbrev_offset);
-		my_printf("   Pointer Size:  %d\n", unit->hdr.address_size);
+		my_printf("   Pointer Size:  %d\n", unit->hdr.encoding.address_size);
 		const char *unit_type_name = rz_bin_dwarf_unit_type(unit->hdr.unit_type);
 		if (unit_type_name) {
 			my_printf("   Unit Type:     %s\n", unit_type_name);

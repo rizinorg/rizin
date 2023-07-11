@@ -954,19 +954,24 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	const RzBinDwarfBlock *block = NULL;
 	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
 		ut64 offset = attr->reference;
-		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
-		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &ctx->dw->encoding, offset)) {
-			err:
-				RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
-					offset, rz_bin_dwarf_form(attr->form));
-				return NULL;
-			}
-			loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
-			if (!loclist) {
-				goto err;
-			}
+		RzBinDwarfLocList *loclist = NULL;
+		//		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
+		//		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
+		RzBinDwarfCompUnit *unit = ht_up_find(ctx->dw->info->unit_tbl, fn->unit_offset, NULL);
+		if (!unit) {
+			goto err;
 		}
+		if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &unit->hdr.encoding, offset)) {
+		err:
+			RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
+				offset, rz_bin_dwarf_form(attr->form));
+			return NULL;
+		}
+		loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
+		if (!loclist) {
+			goto err;
+		}
+		//		}
 		if (rz_vector_len(&loclist->entries) >= 1) {
 			return parse_dwarf_location_list(ctx, loclist, fn);
 		} else if (rz_vector_len(&loclist->entries) == 1 && rz_vector_head(&loclist->entries)) {

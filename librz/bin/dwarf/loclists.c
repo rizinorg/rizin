@@ -197,7 +197,7 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 	}
 
 	if (range && range->begin > range->end) {
-		RZ_LOG_ERROR("Invalid Address Range\n");
+		RZ_LOG_WARN("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
 		free(range);
 		RzBinDwarfBlock_free(data);
 		return false;
@@ -309,7 +309,7 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwa
 	self->debug_loc = get_section_buf(bf, ".debug_loc");
 	self->debug_loclists = get_section_buf(bf, ".debug_loclists");
 	if (!(self->debug_loc || self->debug_loclists)) {
-		RZ_LOG_ERROR("No .debug_loc and .debug_loclists section found\n");
+		RZ_LOG_DEBUG("No .debug_loc and .debug_loclists section found\n");
 		RzBinDwarfLocLists_free(self);
 		return NULL;
 	}

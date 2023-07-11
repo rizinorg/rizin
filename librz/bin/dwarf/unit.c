@@ -58,7 +58,7 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 			.def = def,
 			.encoding = {
 				.big_endian = big_endian,
-				.address_size = hdr->address_size,
+				.address_size = hdr->encoding.address_size,
 			},
 			.comp_unit_hdr = hdr,
 			.str_buffer = str_buffer,
@@ -102,7 +102,7 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 }
 
 static inline ut64 get_next_unit_offset(RzBinDwarfCompUnit *unit) {
-	return unit->offset + unit->hdr.length + (unit->hdr.is_64bit ? 12 : 4);
+	return unit->offset + unit->hdr.length + (unit->hdr.encoding.is_64bit ? 12 : 4);
 }
 
 /**
@@ -171,25 +171,25 @@ err:
  * \brief Reads all information about compilation unit header
  */
 static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bool big_endian) {
-	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->is_64bit, &hdr->length, big_endian));
+	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->encoding.is_64bit, &hdr->length, big_endian));
 	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
 	ut64 offset_start = rz_buf_tell(buffer);
-	U16_OR_RET_FALSE(hdr->version);
+	U16_OR_RET_FALSE(hdr->encoding.version);
 
-	if (hdr->version == 5) {
+	if (hdr->encoding.version == 5) {
 		U8_OR_RET_FALSE(hdr->unit_type);
-		U8_OR_RET_FALSE(hdr->address_size);
-		RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->abbrev_offset, hdr->is_64bit, big_endian));
+		U8_OR_RET_FALSE(hdr->encoding.address_size);
+		RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->abbrev_offset, hdr->encoding.is_64bit, big_endian));
 
 		if (hdr->unit_type == DW_UT_skeleton || hdr->unit_type == DW_UT_split_compile) {
 			U8_OR_RET_FALSE(hdr->dwo_id);
 		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
 			U64_OR_RET_FALSE(hdr->type_sig);
-			RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->type_offset, hdr->is_64bit, big_endian));
+			RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->type_offset, hdr->encoding.is_64bit, big_endian));
 		}
 	} else {
-		RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->abbrev_offset, hdr->is_64bit, big_endian));
-		U8_OR_RET_FALSE(hdr->address_size);
+		RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->abbrev_offset, hdr->encoding.is_64bit, big_endian));
+		U8_OR_RET_FALSE(hdr->encoding.address_size);
 	}
 	hdr->header_size = rz_buf_tell(buffer) - offset_start; // header size excluding length field
 	return true;
