@@ -1340,6 +1340,8 @@ typedef struct {
 typedef enum {
 	EvaluationStateWaiting_MEMORY,
 	EvaluationStateWaiting_ENTRY_VALUE,
+	EvaluationStateWaiting_RelocatedAddress,
+	EvaluationStateWaiting_IndexedAddress,
 } RzBinDwarfEvaluationStateWaiting;
 
 typedef struct {
@@ -1414,6 +1416,11 @@ typedef struct {
 		struct {
 			RzBinDwarfBlock *expression;
 		} requires_entry_value;
+		ut64 requires_relocated_address;
+		struct {
+			ut64 index;
+			bool relocate;
+		} requires_indexed_address;
 	};
 } RzBinDwarfEvaluationResult;
 

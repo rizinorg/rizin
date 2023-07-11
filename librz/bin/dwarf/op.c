@@ -994,16 +994,35 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		out->waiting._2.requires_entry_value.expression = RzBinDwarfBlock_clone(&operation.entry_value.expression);
 		return true;
 	}
-	case OPERATION_KIND_TYPED_LITERAL: break; // TODO: typed literal
-	case OPERATION_KIND_CONVERT: break; // TODO: convert
-	case OPERATION_KIND_REINTERPRET: break; // TODO: reinterpret
+	case OPERATION_KIND_ADDRESS: {
+		out->kind = OperationEvaluationResult_WAITING;
+		out->waiting._1 = EvaluationStateWaiting_RelocatedAddress;
+		out->waiting._2.requires_relocated_address = operation.address.address;
+		return true;
+	}
+	case OPERATION_KIND_ADDRESS_INDEX: {
+		out->kind = OperationEvaluationResult_WAITING;
+		out->waiting._1 = EvaluationStateWaiting_IndexedAddress;
+		out->waiting._2.requires_indexed_address.index = operation.address_index.index;
+		out->waiting._2.requires_indexed_address.relocate = true;
+		return true;
+	}
+	case OPERATION_KIND_CONSTANT_INDEX: {
+		out->kind = OperationEvaluationResult_WAITING;
+		out->waiting._1 = EvaluationStateWaiting_IndexedAddress;
+		out->waiting._2.requires_indexed_address.index = operation.constant_index.index;
+		out->waiting._2.requires_indexed_address.relocate = false;
+		return true;
+	}
 
-	case OPERATION_KIND_CALL: break; // TODO: call
-	case OPERATION_KIND_TLS: break; // TODO: tls
+	case OPERATION_KIND_TYPED_LITERAL: // TODO: typed literal
+	case OPERATION_KIND_CONVERT: // TODO: convert
+	case OPERATION_KIND_REINTERPRET: // TODO: reinterpret
+
+	case OPERATION_KIND_CALL: // TODO: call
+	case OPERATION_KIND_TLS: // TODO: tls
 	case OPERATION_KIND_PARAMETER_REF: // TODO: parameter ref
-	case OPERATION_KIND_ADDRESS: // TODO: address
-	case OPERATION_KIND_ADDRESS_INDEX: // TODO: address index
-	case OPERATION_KIND_CONSTANT_INDEX: // TODO: constant index
+
 	case OPERATION_KIND_WASM_LOCAL:
 	case OPERATION_KIND_WASM_GLOBAL:
 	case OPERATION_KIND_WASM_STACK: {
