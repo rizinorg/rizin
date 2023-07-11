@@ -807,6 +807,7 @@ typedef struct dwarf_function_t {
 	RzType *ret_type;
 	RzVector /*<RzAnalysisDwarfVariable*>*/ variables;
 	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
+
 	bool has_unspecified_parameters : 1;
 	bool is_external : 1;
 	bool is_method : 1;

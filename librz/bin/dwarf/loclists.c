@@ -6,19 +6,10 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-static inline ut64 get_max_offset(size_t addr_size) {
-	switch (addr_size) {
-	case 2:
-		return UT16_MAX;
-	case 4:
-		return UT32_MAX;
-	case 8:
-		return UT64_MAX;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-	return 0;
+static bool get_offset(RzBuffer *debug_loclists, RzBinDwarfEncoding *unit_encoding, ut64 base, ut64 index, ut64 *out) {
+	rz_buf_seek(debug_loclists, (st64)base, SEEK_SET);
+	rz_buf_seek(debug_loclists, (st64)index * (unit_encoding->is_64bit ? 8 : 4), SEEK_CUR);
+	return read_offset(debug_loclists, out, unit_encoding->is_64bit, unit_encoding->big_endian);
 }
 
 void RzBinDwarfRawLocListEntry_fini(RzBinDwarfRawLocListEntry *self, void *user) {

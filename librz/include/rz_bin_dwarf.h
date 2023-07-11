@@ -871,6 +871,17 @@ typedef struct rz_bin_dwarf_comp_unit_t {
 	ut64 offset;
 	RzBinDwarfCompUnitHdr hdr;
 	RzVector /*<RzBinDwarfDie>*/ dies;
+	char *name;
+	char *comp_dir;
+	char *producer;
+	enum DW_LANG language;
+	ut64 low_pc;
+	ut64 high_pc;
+	ut64 stmt_list;
+	ut64 str_offsets_base;
+	ut64 addr_base;
+	ut64 loclists_base;
+	ut64 rnglists_base;
 } RzBinDwarfCompUnit;
 
 typedef struct {

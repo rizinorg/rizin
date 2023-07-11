@@ -195,6 +195,49 @@ static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bo
 	return true;
 }
 
+static void comp_unit_apply(RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
+	RzBinDwarfAttr *attr = NULL;
+	rz_vector_foreach(&die->attrs, attr) {
+		switch (attr->name) {
+		case DW_AT_name:
+			unit->name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			break;
+		case DW_AT_comp_dir:
+			unit->comp_dir = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			break;
+		case DW_AT_producer:
+			unit->producer = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			break;
+		case DW_AT_language:
+			unit->language = attr->uconstant;
+			break;
+		case DW_AT_low_pc:
+			unit->low_pc = attr->address;
+			break;
+		case DW_AT_high_pc:
+			unit->high_pc = attr->address;
+			break;
+		case DW_AT_stmt_list:
+			unit->stmt_list = attr->uconstant;
+			break;
+		case DW_AT_str_offsets_base:
+			unit->str_offsets_base = attr->uconstant;
+			break;
+		case DW_AT_addr_base:
+			unit->addr_base = attr->uconstant;
+			break;
+		case DW_AT_loclists_base:
+			unit->loclists_base = attr->uconstant;
+			break;
+		case DW_AT_rnglists_base:
+			unit->rnglists_base = attr->uconstant;
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 /**
  * \brief Parses whole .debug_info section
  */
@@ -226,8 +269,6 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 			goto cleanup;
 		}
 
-		//		next_unit_offset = get_next_unit_offset(&unit);
-
 		RzBinDwarfAbbrevTable *tbl = ht_up_find(abbrevs->tbl_by_offset, unit.hdr.abbrev_offset, NULL);
 		if (!tbl) {
 			goto cleanup;
@@ -236,7 +277,15 @@ static bool comp_unit_parse(RzBuffer *buffer, RzBinDwarfDebugInfo *info, RzBinDw
 		RZ_LOG_DEBUG("0x%" PFMT64x ":\tcompile unit length = 0x%" PFMT64x ", abbr_offset: 0x%" PFMT64x "\n", unit.offset, unit.hdr.length, unit.hdr.abbrev_offset);
 		comp_unit_die_parse(buffer, &unit, info, tbl, str_buffer, big_endian);
 
-		info->die_count += rz_vector_len(&unit.dies);
+		ut64 unit_die_count = rz_vector_len(&unit.dies);
+		if (unit_die_count > 0) {
+			info->die_count += unit_die_count;
+			RzBinDwarfDie *die = rz_vector_head(&unit.dies);
+			if (die->tag == DW_TAG_compile_unit) {
+				comp_unit_apply(&unit, die);
+			}
+		}
+
 		rz_vector_push(&info->units, &unit);
 	}
 
