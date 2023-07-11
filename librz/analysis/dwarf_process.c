@@ -956,9 +956,16 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 		ut64 offset = attr->reference;
 		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
-			RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
-				offset, rz_bin_dwarf_form(attr->form));
-			return NULL;
+			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &ctx->dw->encoding, offset)) {
+			err:
+				RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
+					offset, rz_bin_dwarf_form(attr->form));
+				return NULL;
+			}
+			loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
+			if (!loclist) {
+				goto err;
+			}
 		}
 		if (rz_vector_len(&loclist->entries) >= 1) {
 			return parse_dwarf_location_list(ctx, loclist, fn);
@@ -975,7 +982,9 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(ctx->dw, block, fn);
 	if (!loc) {
 		char *expr_str = rz_bin_dwarf_expression_to_string(ctx->dw, block);
-		RZ_LOG_ERROR("Failed to parse location: %s\n", rz_str_get_null(expr_str));
+		if (RZ_STR_ISNOTEMPTY(expr_str)) {
+			RZ_LOG_ERROR("Failed to parse location: %s\n", expr_str);
+		}
 		free(expr_str);
 	}
 	return loc;
@@ -1055,7 +1064,7 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 		if (!parse_var(ctx, child_die, die, &v)) {
 			continue;
 		}
-		if (!(v.prefer_name && v.location && v.type)) {
+		if (!(v.location && v.type)) {
 			RZ_LOG_ERROR("Failed to parse %s variable 0x%" PFMT64x "\n", fn->prefer_name, child_die->offset);
 			continue;
 		}

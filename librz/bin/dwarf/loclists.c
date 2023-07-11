@@ -263,7 +263,7 @@ RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, Rz
 	RzBuffer *buffer = encoding->version == 5 ? self->debug_loclists : self->debug_loc;
 	RzBinDwarfLocListsFormat format = encoding->version <= 4 ? LOCLISTSFORMAT_BARE : LOCLISTSFORMAT_LLE;
 	buffer = rz_buf_new_with_buf(buffer);
-	rz_buf_seek(buffer, (st64)offset, RZ_BUF_CUR);
+	rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
 	RET_FALSE_IF_FAIL(loclist_parse(self, buffer, format, encoding));
 	return true;
 }
