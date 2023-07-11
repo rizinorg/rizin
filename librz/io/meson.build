@@ -7,7 +7,6 @@ io_plugins_list = [
   'default',
   'dmp',
   'gdb',
-  'gprobe',
   'gzip',
   'http',
   'ihex',
@@ -17,7 +16,6 @@ io_plugins_list = [
   'null',
   'procpid',
   'ptrace',
-  'rzk',
   'rzpipe',
   'rzweb',
   'rap',
@@ -67,7 +65,6 @@ rz_io_sources = [
   'p/io_dmp.c',
   'p/io_default.c',
   'p/io_gdb.c',
-  'p/io_gprobe.c',
   'p/io_gzip.c',
   'p/io_http.c',
   'p/io_ihex.c',
@@ -76,7 +73,6 @@ rz_io_sources = [
   'p/io_null.c',
   'p/io_procpid.c',
   'p/io_ptrace.c',
-  'p/io_rzk.c',
   'p/io_rzpipe.c',
   'p/io_rzweb.c',
   'p/io_rap.c',
@@ -92,7 +88,6 @@ rz_io_sources = [
 
 if host_machine.system() == 'windows'
   rz_io_sources += [
-    'p/io_rzk_windows.c',
     'p/io_windbg.c',
     'p/io_w32.c',
     'p/io_w32dbg.c',
@@ -121,14 +116,6 @@ endif
 
 if host_machine.system() == 'windows'
   rz_io_deps += dependency('rzw32dbg_wrap')
-endif
-
-if host_machine.system() == 'linux' or host_machine.system() == 'android'
-  rz_io_sources += [
-    'p/io_rzk_linux.c',
-  ]
-  ## only for shm_open
-  # rz_io_deps += meson.get_compiler('c').find_library('rt')
 endif
 
 if use_ptrace_wrap
