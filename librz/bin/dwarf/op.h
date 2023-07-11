@@ -153,7 +153,7 @@ typedef struct {
 
 		struct { /// For IMPLICIT_POINTER
 			ut64 value;
-			int64_t byte_offset;
+			ut64 byte_offset;
 		} implicit_pointer;
 
 		struct { /// For PARAMETER_REF
@@ -161,7 +161,7 @@ typedef struct {
 		} parameter_ref;
 
 		struct { /// For ADDRESS
-			uint64_t address;
+			ut64 address;
 		} address;
 
 		struct { /// For ADDRESS_INDEX

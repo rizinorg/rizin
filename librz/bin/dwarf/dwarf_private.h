@@ -73,7 +73,7 @@ RZ_IPI bool Value_from_u64(RzBinDwarfValueType value_type, ut64 value, RzBinDwar
 RZ_IPI bool Value_from_f32(RzBinDwarfValueType value_type, float value, RzBinDwarfValue *result);
 RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDwarfValue *result);
 
-RZ_IPI bool Value_convert(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result);
+RZ_IPI bool Value_convert(RzBinDwarfValue *self, RzBinDwarfValueType typ, ut64 addr_mask, RzBinDwarfValue *result);
 RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, RzBinDwarfValueType value_type, ut64 addr_mask, RzBinDwarfValue *result);
 
 RZ_IPI bool Value_abs(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result);

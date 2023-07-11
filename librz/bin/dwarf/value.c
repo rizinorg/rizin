@@ -184,14 +184,21 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 		value->i32 = (st32)value->u32;
 		break;
 	case RzBinDwarfValueType_U32:
-		U8_OR_RET_NULL(value->u32);
+		U32_OR_RET_NULL(value->u32);
 		break;
 	case RzBinDwarfValueType_I64:
-		U8_OR_RET_NULL(value->u64);
+		U64_OR_RET_NULL(value->u64);
 		value->i64 = (st64)value->u64;
 		break;
 	case RzBinDwarfValueType_U64:
-		U8_OR_RET_NULL(value->u64);
+		U64_OR_RET_NULL(value->u64);
+		break;
+	case RzBinDwarfValueType_I128:
+		U128_OR_RET_NULL(value->u128);
+		value->i128 = (__int128_t)value->u128;
+		break;
+	case RzBinDwarfValueType_U128:
+		U128_OR_RET_NULL(value->u128);
 		break;
 	case RzBinDwarfValueType_F32:
 		U8_OR_RET_NULL(value->u32);
@@ -385,14 +392,17 @@ RZ_IPI bool Value_from_f64(RzBinDwarfValueType value_type, double value, RzBinDw
 	return true;
 }
 
-RZ_IPI bool Value_convert(RzBinDwarfValue *self, ut64 addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_convert(RzBinDwarfValue *self, RzBinDwarfValueType typ, ut64 addr_mask, RzBinDwarfValue *result) {
 	switch (self->type) {
 	case RzBinDwarfValueType_F32:
-		return Value_from_f32(self->type, self->f32, result);
+		return Value_from_f32(typ, self->f32, result);
 	case RzBinDwarfValueType_F64:
-		return Value_from_f64(self->type, self->f64, result);
-	default:
-		return Value_from_u64(self->type, self->u64 & addr_mask, result);
+		return Value_from_f64(typ, self->f64, result);
+	default: {
+		ut64 temp;
+		Value_to_u64(self, addr_mask, &temp);
+		return Value_from_u64(typ, temp, result);
+	}
 	}
 }
 

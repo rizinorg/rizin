@@ -1301,6 +1301,8 @@ typedef enum {
 	RzBinDwarfValueType_I64,
 	RzBinDwarfValueType_U64,
 	RzBinDwarfValueType_F64,
+	RzBinDwarfValueType_I128,
+	RzBinDwarfValueType_U128,
 	RzBinDwarfValueType_LOCATION,
 } RzBinDwarfValueType;
 
@@ -1320,6 +1322,8 @@ typedef struct {
 		st64 i64;
 		float f32;
 		double f64;
+		__uint128_t u128;
+		__int128_t i128;
 		struct rz_bin_dwarf_location_t *location;
 	};
 } RzBinDwarfValue;
@@ -1368,13 +1372,15 @@ typedef enum {
 } RzBinDwarfEvaluationDefer;
 
 typedef struct {
+	RzBinDwarf *dw;
+	RzBinDwarfCompUnit *unit;
+	RzBinDwarfDie *die;
 	RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
 	ut64 *object_address;
 	ut32 max_iterations;
 	ut32 iteration;
 	RzBinDwarfEvaluationState state;
-	RzBinDwarfEvaluationDefer defer;
 
 	// Stack operations are done on word-sized values.  We do all
 	// operations on 64-bit values, and then mask the results
@@ -1468,13 +1474,12 @@ typedef struct rz_bin_dwarf_location_t {
 	};
 } RzBinDwarfLocation;
 
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, ut64 address_size, const RzBinDwarfEncoding *encoding);
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, ut64 address_size, const RzBinDwarfEncoding *encoding);
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, RzBinDwarf *dw, RzBinDwarfCompUnit *unit, RzBinDwarfDie *die);
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, RzBinDwarf *dw, RzBinDwarfCompUnit *unit, RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self);
-RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out, RzBinDwarf *dw, const RzBinDwarfDie *fn);
+RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out);
 RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self);
-RZ_API bool rz_bin_dwarf_evaluate_block(RzBinDwarf *dw, RzBinDwarfEvaluationResult *out, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn);
-RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RzBinDwarf *dw, const RzBinDwarfBlock *block, const RzBinDwarfDie *die);
+RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf);
 RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block);
 /// loclists
