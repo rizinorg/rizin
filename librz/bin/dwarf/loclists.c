@@ -229,20 +229,21 @@ static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer,
 	while (true) {
 		RzBinDwarfRawLocListEntry raw_entry = { 0 };
 		RzBinDwarfLocationListEntry *entry = NULL;
-		GOTO_IF_FAIL(RawLocListEntry_parse(&raw_entry, buffer, encoding, format), err);
+		GOTO_IF_FAIL(RawLocListEntry_parse(&raw_entry, buffer, encoding, format), err1);
 		rz_vector_push(&loclist->raw_entries, &raw_entry);
 		if (raw_entry.encoding == DW_LLE_end_of_list && !raw_entry.is_address_or_offset_pair) {
 			break;
 		}
 
-		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &entry), err);
+		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &entry), err2);
 		if (!entry) {
 			continue;
 		}
 		rz_vector_push(&loclist->entries, entry);
 		continue;
-	err:
+	err1:
 		RzBinDwarfRawLocListEntry_fini(&raw_entry, NULL);
+	err2:
 		RzBinDwarfLocationListEntry_free(entry);
 		loclist_free(loclist);
 		return false;

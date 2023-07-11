@@ -1462,7 +1462,7 @@ RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation 
 RZ_API bool rz_bin_dwarf_evaluate_block(RzBinDwarf *dw, RzBinDwarfEvaluationResult *out, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn);
 RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RzBinDwarf *dw, const RzBinDwarfBlock *block, const RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf);
-
+RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block);
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinFile *bf, RzBinDwarf *dw);

@@ -6492,6 +6492,11 @@ finish:
 	RZ_FREE(debugger);
 }
 
+static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
+	const char sign = x >= 0 ? '+' : '-';
+	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
+}
+
 /**
  * \brief Get string representation of RzAnalysisVar.
  *
@@ -6529,22 +6534,24 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		const RzStackAddr off = var->storage.stack_off;
-		const char sign = off >= 0 ? '+' : '-';
-		rz_strbuf_appendf(sb, "stack %c 0x%" PFMT64x, sign, RZ_ABS(off));
+		rz_strbuf_append(sb, "stack");
+		strbuf_append_sign_hex(sb, var->storage.stack_off);
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 		rz_strbuf_append(sb, "empty");
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
-		rz_strbuf_appendf(sb, "%s%+" PFMT64d, var->storage.reg_offset.reg, var->storage.reg_offset.offset);
+		rz_strbuf_appendf(sb, "%s", var->storage.reg_offset.reg);
+		strbuf_append_sign_hex(sb, var->storage.reg_offset.offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-		rz_strbuf_appendf(sb, "CFA%+" PFMT64d, var->storage.cfa_offset);
+		rz_strbuf_appendf(sb, "CFA");
+		strbuf_append_sign_hex(sb, var->storage.cfa_offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
-		rz_strbuf_appendf(sb, "FB%+" PFMT64d, var->storage.fb_offset);
+		rz_strbuf_append(sb, "FB");
+		strbuf_append_sign_hex(sb, var->storage.fb_offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 		rz_strbuf_append(sb, "Compose");
