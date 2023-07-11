@@ -287,6 +287,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_regx: {
 		ut64 value;
 		ULE128_OR_RET_FALSE(value);
+		self->kind = OPERATION_KIND_REGISTER;
 		self->reg.register_number = (ut16)value;
 		break;
 	}
@@ -737,7 +738,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		}
 		RzBinDwarfValue *value = rz_vector_index_ptr(&self->stack, len - operation.pick.index - 1);
 		RET_FALSE_IF_FAIL(value);
-		RET_FALSE_IF_FAIL(Evaluation_push(self, value));
+		RET_FALSE_IF_FAIL(Evaluation_push(self, Value_clone(value)));
 		break;
 	}
 	case OPERATION_KIND_SWAP: {

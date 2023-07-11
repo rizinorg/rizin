@@ -1483,6 +1483,7 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLo
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw);
 RZ_API void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
 RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self);
+RZ_API RzBinDwarfLocation *RzBinDwarfLocation_clone(RzBinDwarfLocation *self);
 
 #ifdef __cplusplus
 }

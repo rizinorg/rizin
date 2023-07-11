@@ -332,3 +332,9 @@ RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self) {
 	}
 	free(self);
 }
+
+RZ_API RzBinDwarfLocation *RzBinDwarfLocation_clone(RzBinDwarfLocation *self) {
+	RzBinDwarfLocation *loc = RZ_NEWCOPY(RzBinDwarfLocation, self);
+	assert(loc->kind != RzBinDwarfLocationKind_EVALUATION_WAITING);
+	return loc;
+}

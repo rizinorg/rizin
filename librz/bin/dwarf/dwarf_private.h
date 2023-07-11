@@ -104,6 +104,7 @@ RZ_IPI bool Value_lt(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask
 RZ_IPI bool Value_ne(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result);
 
 RZ_IPI void Value_free(RzBinDwarfValue *self);
+RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
 
 /// op
 

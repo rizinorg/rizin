@@ -1037,4 +1037,14 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 	free(self);
 }
 
+RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
+	rz_warn_if_fail(self);
+	RzBinDwarfValue *val = RZ_NEW0(RzBinDwarfValue);
+	memcpy(val, self, sizeof(RzBinDwarfValue));
+	if (val->type == RzBinDwarfValueType_LOCATION) {
+		val->location = RzBinDwarfLocation_clone(self->location);
+	}
+	return val;
+}
+
 #pragma clang diagnostic pop
