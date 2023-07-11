@@ -6556,7 +6556,7 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 		rz_strbuf_append(sb, "Compose");
 		break;
-	case RZ_ANALYSIS_VAR_STORAGE_LIST:
+	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
 		rz_strbuf_append(sb, "loclist");
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:

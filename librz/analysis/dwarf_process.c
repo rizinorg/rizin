@@ -927,25 +927,20 @@ static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, int b
 RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, const RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
 	location->kind = RzBinDwarfLocationKind_LOCLIST;
-	rz_pvector_init(&location->loclist, NULL); // TODO: free
+
 	RzBinDwarfLocationListEntry *entry;
 	rz_vector_foreach(&loclist->entries, entry) {
-		RzBinDwarfLocListEntry *loc_entry = RZ_NEW0(RzBinDwarfLocListEntry);
-		memcpy(&loc_entry->range, entry->range, sizeof(RzBinDwarfRange));
-		loc_entry->location = rz_bin_dwarf_location_from_block(ctx->dw, entry->expression, fn);
-		if (!loc_entry->location) {
+		entry->location = rz_bin_dwarf_location_from_block(ctx->dw, entry->expression, fn);
+		if (!entry->location) {
 			char *expr_str = rz_bin_dwarf_expression_to_string(ctx->dw, entry->expression);
 			RZ_LOG_ERROR("Failed to parse fn: 0x%" PFMT64x " location list entry (0x%" PFMT64x ", 0x%" PFMT64x "): %s\n ",
 				fn->offset, entry->range->begin, entry->range->end, rz_str_get_null(expr_str))
 			free(expr_str);
 
-			free(loc_entry);
-			rz_pvector_fini(&location->loclist);
-			free(location);
 			return NULL;
 		}
-		rz_pvector_push(&location->loclist, loc_entry);
 	}
+	location->loclist = loclist;
 	return location;
 }
 
@@ -1372,23 +1367,7 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 		rz_analysis_var_storage_init_fb_offset(storage, loc->fb_offset);
 		break;
 	case RzBinDwarfLocationKind_LOCLIST: {
-		RzPVector *list = rz_pvector_new(NULL);
-		void **it;
-		rz_pvector_foreach (&loc->loclist, it) {
-			RzBinDwarfLocListEntry *entry = *it;
-			RzAnalysisVarStorage *stor = RZ_NEW0(RzAnalysisVarStorage);
-			if (!loc2storage(a, entry->location, stor)) {
-				free(stor);
-				return false;
-			}
-
-			RzAnalysisVarStorageListEntry *list_entry = RZ_NEW0(RzAnalysisVarStorageListEntry);
-			list_entry->begin = entry->range.begin;
-			list_entry->end = entry->range.end;
-			list_entry->storage = stor;
-			rz_pvector_push(list, list_entry);
-		}
-		rz_analysis_var_storage_init_list(storage, list);
+		rz_analysis_var_storage_init_loclist(storage, loc->loclist);
 		break;
 	}
 	}

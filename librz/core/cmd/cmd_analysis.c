@@ -2592,7 +2592,7 @@ static const char *var_storage_strings[] = {
 	[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA offset",
 	[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "Frame Base offset",
 	[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "Compose",
-	[RZ_ANALYSIS_VAR_STORAGE_LIST] = "loclist",
+	[RZ_ANALYSIS_VAR_STORAGE_LOCLIST] = "loclist",
 	[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
 };
 

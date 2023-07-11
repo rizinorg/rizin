@@ -666,7 +666,7 @@ typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET,
 	RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET,
 	RZ_ANALYSIS_VAR_STORAGE_COMPOSE,
-	RZ_ANALYSIS_VAR_STORAGE_LIST,
+	RZ_ANALYSIS_VAR_STORAGE_LOCLIST,
 	RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING,
 	RZ_ANALYSIS_VAR_STORAGE_END
 } RzAnalysisVarStorageType;
@@ -702,7 +702,7 @@ typedef struct rz_analysis_var_storage_t {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} dwarf_eval_waiting;
-		RzPVector * /*RzAnalysisVarStorageListEntry*/ list;
+		const RzBinDwarfLocList *loclist;
 	};
 } RzAnalysisVarStorage;
 
@@ -743,9 +743,9 @@ static inline void rz_analysis_var_storage_init_dwarf_eval_waiting(RzAnalysisVar
 	stor->dwarf_eval_waiting.result = result;
 }
 
-static inline void rz_analysis_var_storage_init_list(RzAnalysisVarStorage *stor, RzPVector * /*RzAnalysisVarStorageListEntry*/ list) {
-	stor->type = RZ_ANALYSIS_VAR_STORAGE_LIST;
-	stor->list = list;
+static inline void rz_analysis_var_storage_init_loclist(RzAnalysisVarStorage *stor, const RzBinDwarfLocList *loclist) {
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_LOCLIST;
+	stor->loclist = loclist;
 }
 
 /**

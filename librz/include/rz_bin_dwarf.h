@@ -1176,9 +1176,12 @@ typedef struct {
 	};
 } RzBinDwarfRawLocListEntry;
 
+struct rz_bin_dwarf_location_t;
+
 typedef struct {
 	RzBinDwarfRange *range;
 	RzBinDwarfBlock *expression;
+	struct rz_bin_dwarf_location_t *location;
 } RzBinDwarfLocationListEntry;
 
 typedef struct {
@@ -1441,14 +1444,9 @@ typedef struct rz_bin_dwarf_location_t {
 		RzVector /*Piece*/ *compose;
 		st64 cfa_offset;
 		st64 fb_offset;
-		RzPVector loclist;
+		const RzBinDwarfLocList *loclist;
 	};
 } RzBinDwarfLocation;
-
-typedef struct {
-	RzBinDwarfRange range;
-	RzBinDwarfLocation *location;
-} RzBinDwarfLocListEntry;
 
 RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, ut64 address_size, const RzBinDwarfEncoding *encoding);
 RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, ut64 address_size, const RzBinDwarfEncoding *encoding);
