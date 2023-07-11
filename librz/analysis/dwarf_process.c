@@ -676,7 +676,7 @@ static bool prefer_linkage_name(enum DW_LANG lang) {
 	case DW_LANG_C89: break;
 	case DW_LANG_C: break;
 	case DW_LANG_Ada83: return false;
-	case DW_LANG_C_plus_plus: return false;
+	case DW_LANG_C_plus_plus: break;
 	case DW_LANG_Cobol74: break;
 	case DW_LANG_Cobol85: break;
 	case DW_LANG_Fortran77: break;
@@ -694,11 +694,11 @@ static bool prefer_linkage_name(enum DW_LANG lang) {
 	case DW_LANG_D: break;
 	case DW_LANG_Python: break;
 	case DW_LANG_Rust: return false;
-	case DW_LANG_C11: return false;
+	case DW_LANG_C11: break;
 	case DW_LANG_Swift: break;
 	case DW_LANG_Julia: break;
 	case DW_LANG_Dylan: break;
-	case DW_LANG_C_plus_plus_14: return false;
+	case DW_LANG_C_plus_plus_14: break;
 	case DW_LANG_Fortran03: break;
 	case DW_LANG_Fortran08: break;
 	case DW_LANG_Mips_Assembler: break;
