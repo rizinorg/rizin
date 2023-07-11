@@ -132,6 +132,23 @@ bool test_rz_analysis_global_var() {
 	glob = rz_analysis_var_global_get_byname(analysis, "bar");
 	mu_assert_null(glob, "get deleted global var");
 
+	// create global
+	typ = rz_type_parse_string_single(parser, "int", &errmsg);
+	mu_assert_notnull(typ, "parsed type");
+	mu_assert_true(rz_analysis_var_global_create(analysis, "crab", typ, 0x125418),
+			"create global var");
+
+	glob = rz_analysis_var_global_get_byname(analysis, "crab");
+	mu_assert_notnull(glob, "create a global variable");
+	mu_assert_streq(glob->name, "crab", "global var name");
+	mu_assert_eq(glob->addr, 0x125418, "global var address");
+	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
+
+	flag = rz_analysis_var_global_get_flag_item(glob);
+	mu_assert_notnull(flag, "global var flag_item");
+	mu_assert_eq(flag->offset, glob->addr, "flag item addr");
+	mu_assert_streq(flag->name, "crab", "flag item name");
+
 	rz_type_parser_free(parser);
 	rz_core_free(core);
 	mu_end;

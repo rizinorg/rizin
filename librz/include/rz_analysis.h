@@ -1708,7 +1708,8 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 
 // Global vars
 RZ_API RZ_OWN RzAnalysisVarGlobal *rz_analysis_var_global_new(RZ_NONNULL const char *name, ut64 addr);
-RZ_API RZ_OWN bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
+RZ_API bool rz_analysis_var_global_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *global_var);
+RZ_API bool rz_analysis_var_global_create(RzAnalysis *analysis, RZ_NONNULL const char *name, RZ_NONNULL RZ_BORROW RzType *type, ut64 addr);
 RZ_API void rz_analysis_var_global_free(RzAnalysisVarGlobal *glob);
 RZ_API RZ_NULLABLE RzFlagItem *rz_analysis_var_global_get_flag_item(RzAnalysisVarGlobal *glob);
 RZ_API bool rz_analysis_var_global_delete(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisVarGlobal *glob);
