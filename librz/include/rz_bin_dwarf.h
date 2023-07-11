@@ -1219,6 +1219,7 @@ RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code);
 RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code);
 RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type);
 RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang);
+RZ_API const char *rz_bin_dwarf_lang_for_demangle(enum DW_LANG lang);
 RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN children);
 RZ_API const char *rz_bin_dwarf_lns(enum DW_LNS lns);
 RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne);

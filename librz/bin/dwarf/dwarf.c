@@ -290,11 +290,47 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_C_plus_plus_14] = "C++14",
 	[DW_LANG_Fortran03] = "Fortran03",
 	[DW_LANG_Fortran08] = "Fortran08",
-	[DW_LANG_Mips_Assembler] = "DW_LANG_Mips_Assembler",
-	[DW_LANG_GOOGLE_RenderScript] = "DW_LANG_GOOGLE_RenderScript",
-	[DW_LANG_SUN_Assembler] = "DW_LANG_SUN_Assembler",
-	[DW_LANG_ALTIUM_Assembler] = "DW_LANG_ALTIUM_Assembler",
-	[DW_LANG_BORLAND_Delphi] = "DW_LANG_BORLAND_Delphi",
+	[DW_LANG_Mips_Assembler] = "Mips_Assembler",
+	[DW_LANG_GOOGLE_RenderScript] = "GOOGLE_RenderScript",
+	[DW_LANG_SUN_Assembler] = "SUN_Assembler",
+	[DW_LANG_ALTIUM_Assembler] = "ALTIUM_Assembler",
+	[DW_LANG_BORLAND_Delphi] = "BORLAND_Delphi",
+};
+
+static const char *dwarf_langs_for_demangle[] = {
+	[DW_LANG_C89] = "c",
+	[DW_LANG_C] = "c",
+	[DW_LANG_Ada83] = "ada",
+	[DW_LANG_C_plus_plus] = "cxx",
+	[DW_LANG_Cobol74] = "cobol",
+	[DW_LANG_Cobol85] = "cobol",
+	[DW_LANG_Fortran77] = "fortran",
+	[DW_LANG_Fortran90] = "fortran",
+	[DW_LANG_Pascal83] = "pascal",
+	[DW_LANG_Modula2] = "modula2",
+	[DW_LANG_Java] = "java",
+	[DW_LANG_C99] = "c",
+	[DW_LANG_Ada95] = "ada",
+	[DW_LANG_Fortran95] = "fortran",
+	[DW_LANG_PLI] = "PLI",
+	[DW_LANG_ObjC] = "ObjC",
+	[DW_LANG_ObjC_plus_plus] = "ObjC_plus_plus",
+	[DW_LANG_UPC] = "UPC",
+	[DW_LANG_D] = "dlang",
+	[DW_LANG_Python] = "python",
+	[DW_LANG_Rust] = "rust",
+	[DW_LANG_C11] = "cxx",
+	[DW_LANG_Swift] = "swift",
+	[DW_LANG_Julia] = "julia",
+	[DW_LANG_Dylan] = "Dylan",
+	[DW_LANG_C_plus_plus_14] = "cxx",
+	[DW_LANG_Fortran03] = "fortran",
+	[DW_LANG_Fortran08] = "fortran",
+	[DW_LANG_Mips_Assembler] = "Mips_Assembler",
+	[DW_LANG_GOOGLE_RenderScript] = "GOOGLE_RenderScript",
+	[DW_LANG_SUN_Assembler] = "SUN_Assembler",
+	[DW_LANG_ALTIUM_Assembler] = "ALTIUM_Assembler",
+	[DW_LANG_BORLAND_Delphi] = "BORLAND_Delphi",
 };
 
 static const char *dwarf_unit_types[] = {
@@ -384,6 +420,13 @@ RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang) {
 		return NULL;
 	}
 	return dwarf_langs[lang];
+}
+
+RZ_API const char *rz_bin_dwarf_lang_for_demangle(enum DW_LANG lang) {
+	if (lang >= RZ_ARRAY_SIZE(dwarf_langs_for_demangle)) {
+		return NULL;
+	}
+	return dwarf_langs_for_demangle[lang];
 }
 
 static const char *dwarf_children[] = {

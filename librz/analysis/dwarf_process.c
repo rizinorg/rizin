@@ -12,7 +12,7 @@
 
 typedef struct dwarf_parse_context_t {
 	const RzAnalysis *analysis;
-	char *lang; // for demangling
+	RzBinDwarfCompUnit *unit;
 	RzBinDwarf *dw;
 } Context;
 
@@ -671,14 +671,43 @@ static void apply_specification(Context *ctx, const RzBinDwarfDie *die, RzAnalys
 
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
-static bool prefer_linkage_name(char *lang) {
-	if (!lang) {
-		return false;
-	}
-	if (!strcmp(lang, "rust")) {
-		return false;
-	} else if (!strcmp(lang, "ada")) {
-		return false;
+static bool prefer_linkage_name(enum DW_LANG lang) {
+	switch (lang) {
+	case DW_LANG_C89: break;
+	case DW_LANG_C: break;
+	case DW_LANG_Ada83: return false;
+	case DW_LANG_C_plus_plus: return false;
+	case DW_LANG_Cobol74: break;
+	case DW_LANG_Cobol85: break;
+	case DW_LANG_Fortran77: break;
+	case DW_LANG_Fortran90: break;
+	case DW_LANG_Pascal83: break;
+	case DW_LANG_Modula2: break;
+	case DW_LANG_Java: break;
+	case DW_LANG_C99: break;
+	case DW_LANG_Ada95: break;
+	case DW_LANG_Fortran95: break;
+	case DW_LANG_PLI: break;
+	case DW_LANG_ObjC: break;
+	case DW_LANG_ObjC_plus_plus: break;
+	case DW_LANG_UPC: break;
+	case DW_LANG_D: break;
+	case DW_LANG_Python: break;
+	case DW_LANG_Rust: return false;
+	case DW_LANG_C11: return false;
+	case DW_LANG_Swift: break;
+	case DW_LANG_Julia: break;
+	case DW_LANG_Dylan: break;
+	case DW_LANG_C_plus_plus_14: return false;
+	case DW_LANG_Fortran03: break;
+	case DW_LANG_Fortran08: break;
+	case DW_LANG_Mips_Assembler: break;
+	case DW_LANG_GOOGLE_RenderScript: break;
+	case DW_LANG_SUN_Assembler: break;
+	case DW_LANG_ALTIUM_Assembler: break;
+	case DW_LANG_BORLAND_Delphi: break;
+	default:
+		return true;
 	}
 	return true;
 }
@@ -690,7 +719,7 @@ static RzType *parse_abstract_origin(Context *ctx, ut64 offset, const char **nam
 	}
 	ut64 size = 0;
 	bool has_linkage_name = false;
-	bool get_linkage_name = prefer_linkage_name(ctx->lang);
+	bool get_linkage_name = prefer_linkage_name(ctx->unit->language);
 	const RzBinDwarfAttr *val;
 	rz_vector_foreach(&die->attrs, val) {
 		switch (val->name) {
@@ -995,7 +1024,7 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	return loc;
 }
 
-static inline const char *var_name(RzAnalysisDwarfVariable *v, char *lang) {
+static inline const char *var_name(RzAnalysisDwarfVariable *v, enum DW_LANG lang) {
 	return prefer_linkage_name(lang) ? (v->link_name ? v->link_name : v->name) : v->name;
 }
 
@@ -1047,7 +1076,7 @@ static bool parse_function_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 		v->location = RZ_NEW0(RzBinDwarfLocation);
 		v->location->kind = RzBinDwarfLocationKind_EMPTY;
 	}
-	v->prefer_name = var_name(v, ctx->lang);
+	v->prefer_name = var_name(v, ctx->unit->language);
 	return true;
 }
 
@@ -1083,7 +1112,7 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 	return true;
 }
 
-static inline const char *fcn_name(RzAnalysisDwarfFunction *f, char *lang) {
+static inline const char *fcn_name(RzAnalysisDwarfFunction *f, enum DW_LANG lang) {
 	return prefer_linkage_name(lang) ? (f->demangle_name ? (const char *)(f->demangle_name) : (f->link_name ? f->link_name : f->name)) : f->name;
 }
 
@@ -1178,9 +1207,9 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 		}
 	}
 	if (fcn->link_name) {
-		fcn->demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, ctx->lang, fcn->link_name);
+		fcn->demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, rz_bin_dwarf_lang_for_demangle(ctx->unit->language), fcn->link_name);
 	}
-	fcn->prefer_name = fcn_name(fcn, ctx->lang);
+	fcn->prefer_name = fcn_name(fcn, ctx->unit->language);
 	if (!fcn->prefer_name || !fcn->addr) { /* we need a name, faddr */
 		goto cleanup;
 	}
@@ -1287,9 +1316,6 @@ static void parse_type_entry(Context *ctx, RzBinDwarfDie *die) {
 	case DW_TAG_subprogram:
 		parse_function(ctx, die);
 		break;
-	case DW_TAG_compile_unit:
-		/* used for name demangling */
-		ctx->lang = parse_comp_unit_lang(die);
 	default:
 		break;
 	}
@@ -1321,16 +1347,18 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 	rz_return_if_fail(analysis);
 	Context dw_context = {
 		.analysis = analysis,
-		.lang = NULL,
 		.dw = dw,
+		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
 	rz_vector_foreach(&dw->info->units, unit) {
+		dw_context.unit = unit;
 		RzBinDwarfDie *die;
 		rz_vector_foreach(&unit->dies, die) {
 			parse_type_entry(&dw_context, die);
 		}
 	}
+
 	ht_up_foreach(analysis->debug_info->base_type_by_offset, htup_typedb_base_type_update, analysis->typedb);
 	analysis->debug_info->base_type_by_offset->opt.freefn = NULL;
 }
