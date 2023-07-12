@@ -1421,11 +1421,11 @@ af
 afv
 EOF
 EXPECT=<<EOF
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
 var int64_t var_1ch @ stack - 0x1c
 var int64_t var_18h @ stack - 0x18
 var int64_t var_10h @ stack - 0x10
-arg int64_t arg1 @ rdi
-arg int64_t arg2 @ rsi
 EOF
 RUN
 
@@ -4288,6 +4288,11 @@ afv
 EOF
 EXPECT=<<EOF
 void fcn.00010270(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5);
+arg int64_t arg5 @ r8
+arg int64_t arg4 @ rcx
+arg int64_t arg1 @ rdi
+arg int64_t arg3 @ rdx
+arg int64_t arg2 @ rsi
 var int64_t var_c8h @ stack - 0xc8
 var int64_t var_c7h @ stack - 0xc7
 var int64_t var_c0h @ stack - 0xc0
@@ -4303,12 +4308,12 @@ var int64_t var_7ch @ stack - 0x7c
 var int64_t var_7ah @ stack - 0x7a
 var int64_t var_78h @ stack - 0x78
 var int64_t var_40h @ stack - 0x40
+void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
 arg int64_t arg5 @ r8
 arg int64_t arg4 @ rcx
 arg int64_t arg1 @ rdi
-arg int64_t arg3 @ rdx
+arg const char **s @ rdx
 arg int64_t arg2 @ rsi
-void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
 var const char *s2 @ stack - 0xc8
 var void *s1 @ stack - 0xc0
 var uint64_t var_b8h @ stack - 0xb8
@@ -4321,11 +4326,6 @@ var int64_t var_88h @ stack - 0x88
 var const char **var_80h @ stack - 0x80
 var int64_t var_78h @ stack - 0x78
 var int64_t var_40h @ stack - 0x40
-arg int64_t arg5 @ r8
-arg int64_t arg4 @ rcx
-arg int64_t arg1 @ rdi
-arg const char **s @ rdx
-arg int64_t arg2 @ rsi
 EOF
 RUN
 

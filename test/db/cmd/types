@@ -1550,6 +1550,8 @@ ar bp=0x98
 afvd var_70h
 EOF
 EXPECT=<<EOF
+arg int argc @ rdi
+arg char **argv @ rsi
 var uint64_t var_80h @ stack - 0x80
 var uint64_t var_71h @ stack - 0x71
 var int64_t var_70h @ stack - 0x70
@@ -1575,8 +1577,6 @@ var int64_t var_42h @ stack - 0x42
 var int64_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
-arg int argc @ rdi
-arg char **argv @ rsi
 var var_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
 EOF
 RUN
@@ -1844,6 +1844,8 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
+arg int argc @ rdi
+arg char **argv @ rsi
 var char **var_14e8h @ stack - 0x14e8
 var int var_14dch @ stack - 0x14dc
 var int *wstatus @ stack - 0x14d4
@@ -1865,8 +1867,8 @@ var char *dest @ stack - 0x1478
 var void *var_1428h @ stack - 0x1428
 var const char *s1 @ stack - 0x1028
 var int64_t var_20h @ stack - 0x20
-arg int argc @ rdi
-arg char **argv @ rsi
+arg int64_t arg1 @ rdi
+arg char *arg2 @ rsi
 var char *str @ stack - 0xb8
 var int64_t var_ach @ stack - 0xac
 var int64_t var_a8h @ stack - 0xa8
@@ -1896,8 +1898,6 @@ var const char *var_30h @ stack - 0x30
 var const char *var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_10h @ stack - 0x10
-arg int64_t arg1 @ rdi
-arg char *arg2 @ rsi
 EOF
 RUN
 
@@ -1910,6 +1910,8 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
+arg int argc @ r0
+arg char **argv @ r1
 var int32_t var_1454h @ stack - 0x1454
 var void *var_1438h @ stack - 0x1438
 var const char *s1 @ stack - 0x1038
@@ -1930,8 +1932,6 @@ var const char *var_10h @ stack - 0x10
 var int32_t var_ch @ stack - 0xc
 var int32_t var_8h @ stack - 0x8
 var const char *option @ stack - 0x4
-arg int argc @ r0
-arg char **argv @ r1
 EOF
 RUN
 
@@ -1963,14 +1963,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
+arg int argc @ rdi
+arg char **envp @ rdx
+arg char **argv @ rsi
 var char **var_30h @ stack - 0x30
 var char **var_28h @ stack - 0x28
 var int var_1ch @ stack - 0x1c
 var void *var_18h @ stack - 0x18
 var int var_ch @ stack - 0xc
-arg int argc @ rdi
-arg char **envp @ rdx
-arg char **argv @ rsi
 EOF
 RUN
 
@@ -2116,14 +2116,14 @@ afi~name,convention
 EOF
 EXPECT=<<EOF
 int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3);
+arg int sarg0 @ ecx
+arg int sarg1 @ edx
 var int32_t var_24h @ stack - 0x24
 var int32_t var_20h @ stack - 0x20
 var int32_t var_14h @ stack - 0x14
 var int32_t var_10h @ stack - 0x10
 arg int sarg2 @ stack + 0x4
 arg int sarg3 @ stack + 0x8
-arg int sarg0 @ ecx
-arg int sarg1 @ edx
 name: fastcalled
 call-convention: fastcall
 EOF
