@@ -1770,6 +1770,9 @@ RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var);
 RZ_API void rz_analysis_var_add_constraint(RzAnalysisVar *var, RZ_BORROW RzTypeConstraint *constraint);
 RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var);
 
+RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b);
+RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b);
+
 // Get the access to var at exactly addr if there is one
 RZ_API RzAnalysisVarAccess *rz_analysis_var_get_access_at(RzAnalysisVar *var, ut64 addr);
 

@@ -2492,18 +2492,7 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	if (!a || !b) {
 		return 0;
 	}
-	if (a->storage.type != b->storage.type) {
-		return a->storage.type - b->storage.type;
-	}
-	switch (a->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_STACK:
-		return a->storage.stack_off - b->storage.stack_off;
-	case RZ_ANALYSIS_VAR_STORAGE_REG:
-		return strcmp(a->storage.reg, b->storage.reg);
-	default:
-		rz_warn_if_reached();
-		return 0;
-	}
+	return rz_analysis_var_storage_cmp(&a->storage, &b->storage);
 }
 
 static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {

@@ -11,30 +11,41 @@
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
-static bool storage_equals(RzAnalysisVarStorage *a, RzAnalysisVarStorage *b) {
+RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b) {
+	rz_return_val_if_fail(a && b, 0);
+	if (a->type != b->type) {
+		return (int)a->type - (int)b->type;
+	}
 	switch (a->type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG:
 		// Hint: this strcmp could be optimized to pointer comparison if we add the requirement that a->reg and b->reg
 		// must come from the RzAnalysis.contpool.
-		return b->type == RZ_ANALYSIS_VAR_STORAGE_REG && !strcmp(a->reg, b->reg);
+		return strcmp(a->reg, b->reg);
 	case RZ_ANALYSIS_VAR_STORAGE_STACK:
-		return b->type == RZ_ANALYSIS_VAR_STORAGE_STACK && a->stack_off == b->stack_off;
+		return a->stack_off - b->stack_off;
+	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET: {
+		int cmp1 = strcmp(a->reg_offset.reg, b->reg_offset.reg);
+		return cmp1 == 0 ? (int)a->reg_offset.offset - (int)b->reg_offset.offset : cmp1;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+		return a->cfa_offset - b->cfa_offset;
+	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		return a->fb_offset - b->fb_offset;
+	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
+		return a->loclist - b->loclist;
+	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
+		return 1;
 	default:
 		rz_warn_if_reached();
 		return false;
-	case RZ_ANALYSIS_VAR_STORAGE_EMPTY: return false;
-	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
-		return b->type == RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET && !strcmp(a->reg_offset.reg, b->reg_offset.reg) && a->reg_offset.offset == b->reg_offset.offset;
-	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-		return b->type == RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET && a->cfa_offset == b->cfa_offset;
-	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
-		return b->type == RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET && a->fb_offset == b->fb_offset;
-	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
-		return b->type == RZ_ANALYSIS_VAR_STORAGE_LOCLIST && a->loclist == b->loclist;
-	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
-	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-		return false;
 	}
+}
+
+RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b) {
+	rz_return_val_if_fail(a && b, 0);
+	return rz_analysis_var_storage_cmp(a, b) == 0;
 }
 
 /**
@@ -130,7 +141,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction 
 	RZ_NONNULL RzAnalysisVarStorage *stor, RZ_BORROW RZ_NULLABLE const RzType *type, int size, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
-	if (var && !storage_equals(&var->storage, stor)) {
+	if (var && !rz_analysis_var_storage_equals(&var->storage, stor)) {
 		// var name already exists at a different kind+delta
 		RZ_LOG_WARN("var name %s already exists at a different kind+delta\n", name);
 		return NULL;
@@ -183,7 +194,7 @@ RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var_dwarf(RzAnalysisFun
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *p = *it;
-		if (!strcmp(p->name, var->name) || storage_equals(&p->storage, &var->storage)) {
+		if (!strcmp(p->name, var->name) || rz_analysis_var_storage_equals(&p->storage, &var->storage)) {
 			old = p;
 		}
 	}
@@ -361,7 +372,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_at(RzAnalysisFuncti
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
-		if (storage_equals(&var->storage, stor)) {
+		if (rz_analysis_var_storage_equals(&var->storage, stor)) {
 			return var;
 		}
 	}
