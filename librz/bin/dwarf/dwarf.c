@@ -89,7 +89,68 @@ static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_type_unit] = "DW_TAG_type_unit",
 	[DW_TAG_rvalue_reference_type] = "DW_TAG_rvalue_reference_type",
 	[DW_TAG_template_alias] = "DW_TAG_template_alias",
-	[DW_TAG_LAST] = "DW_TAG_LAST",
+	// DWARF 5.
+	[DW_TAG_coarray_type] = "DW_TAG_coarray_type",
+	[DW_TAG_generic_subrange] = "DW_TAG_generic_subrange",
+	[DW_TAG_dynamic_type] = "DW_TAG_dynamic_type",
+	[DW_TAG_atomic_type] = "DW_TAG_atomic_type",
+	[DW_TAG_call_site] = "DW_TAG_call_site",
+	[DW_TAG_call_site_parameter] = "DW_TAG_call_site_parameter",
+	[DW_TAG_skeleton_unit] = "DW_TAG_skeleton_unit",
+	[DW_TAG_immutable_type] = "DW_TAG_immutable_type",
+
+	/* 	DW_TAG_lo_user = 0x4080,
+		DW_TAG_hi_user = 0xffff, */
+	// SGI/MIPS extensions.
+	[DW_TAG_MIPS_loop] = "DW_TAG_MIPS_loop",
+	// HP extensions.
+	[DW_TAG_HP_array_descriptor] = "DW_TAG_HP_array_descriptor",
+	[DW_TAG_HP_Bliss_field] = "DW_TAG_HP_Bliss_field",
+	[DW_TAG_HP_Bliss_field_set] = "DW_TAG_HP_Bliss_field_set",
+	// GNU extensions.
+	[DW_TAG_format_label] = "DW_TAG_format_label",
+	[DW_TAG_function_template] = "DW_TAG_function_template",
+	[DW_TAG_class_template] = "DW_TAG_class_template",
+	[DW_TAG_GNU_BINCL] = "DW_TAG_GNU_BINCL",
+	[DW_TAG_GNU_EINCL] = "DW_TAG_GNU_EINCL",
+	[DW_TAG_GNU_template_template_param] = "DW_TAG_GNU_template_template_param",
+	[DW_TAG_GNU_template_parameter_pack] = "DW_TAG_GNU_template_parameter_pack",
+	[DW_TAG_GNU_formal_parameter_pack] = "DW_TAG_GNU_formal_parameter_pack",
+	[DW_TAG_GNU_call_site] = "DW_TAG_GNU_call_site",
+	[DW_TAG_GNU_call_site_parameter] = "DW_TAG_GNU_call_site_parameter",
+	[DW_TAG_APPLE_property] = "DW_TAG_APPLE_property",
+	// SUN extensions.
+	[DW_TAG_SUN_function_template] = "DW_TAG_SUN_function_template",
+	[DW_TAG_SUN_class_template] = "DW_TAG_SUN_class_template",
+	[DW_TAG_SUN_struct_template] = "DW_TAG_SUN_struct_template",
+	[DW_TAG_SUN_union_template] = "DW_TAG_SUN_union_template",
+	[DW_TAG_SUN_indirect_inheritance] = "DW_TAG_SUN_indirect_inheritance",
+	[DW_TAG_SUN_codeflags] = "DW_TAG_SUN_codeflags",
+	[DW_TAG_SUN_memop_info] = "DW_TAG_SUN_memop_info",
+	[DW_TAG_SUN_omp_child_func] = "DW_TAG_SUN_omp_child_func",
+	[DW_TAG_SUN_rtti_descriptor] = "DW_TAG_SUN_rtti_descriptor",
+	[DW_TAG_SUN_dtor_info] = "DW_TAG_SUN_dtor_info",
+	[DW_TAG_SUN_dtor] = "DW_TAG_SUN_dtor",
+	[DW_TAG_SUN_f90_interface] = "DW_TAG_SUN_f90_interface",
+	[DW_TAG_SUN_fortran_vax_structure] = "DW_TAG_SUN_fortran_vax_structure",
+	// ALTIUM extensions.
+	[DW_TAG_ALTIUM_circ_type] = "DW_TAG_ALTIUM_circ_type",
+	[DW_TAG_ALTIUM_mwa_circ_type] = "DW_TAG_ALTIUM_mwa_circ_type",
+	[DW_TAG_ALTIUM_rev_carry_type] = "DW_TAG_ALTIUM_rev_carry_type",
+	[DW_TAG_ALTIUM_rom] = "DW_TAG_ALTIUM_rom",
+	// Extensions for UPC.
+	[DW_TAG_upc_shared_type] = "DW_TAG_upc_shared_type",
+	[DW_TAG_upc_strict_type] = "DW_TAG_upc_strict_type",
+	[DW_TAG_upc_relaxed_type] = "DW_TAG_upc_relaxed_type",
+	// PGI (STMicroelectronics) extensions.
+	[DW_TAG_PGI_kanji_type] = "DW_TAG_PGI_kanji_type",
+	[DW_TAG_PGI_interface_block] = "DW_TAG_PGI_interface_block",
+	// Borland extensions.
+	[DW_TAG_BORLAND_property] = "DW_TAG_BORLAND_property",
+	[DW_TAG_BORLAND_Delphi_string] = "DW_TAG_BORLAND_Delphi_string",
+	[DW_TAG_BORLAND_Delphi_dynamic_array] = "DW_TAG_BORLAND_Delphi_dynamic_array",
+	[DW_TAG_BORLAND_Delphi_set] = "DW_TAG_BORLAND_Delphi_set",
+	[DW_TAG_BORLAND_Delphi_variant] = "DW_TAG_BORLAND_Delphi_variant",
 };
 
 static const char *dwarf_attr_encodings[] = {
@@ -345,7 +406,7 @@ static const char *dwarf_unit_types[] = {
 };
 
 RZ_API const char *rz_bin_dwarf_tag(enum DW_TAG tag) {
-	if (tag >= DW_TAG_LAST) {
+	if (tag >= RZ_ARRAY_SIZE(dwarf_tag_name_encodings)) {
 		return NULL;
 	}
 	return dwarf_tag_name_encodings[tag];

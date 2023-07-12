@@ -95,7 +95,7 @@ static bool RzBinDwarfDebugAbbrevs_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrev
 		ut8 has_children;
 		U8_OR_GOTO(has_children, err);
 		if (!(has_children == DW_CHILDREN_yes || has_children == DW_CHILDREN_no)) {
-			RZ_LOG_ERROR("0x%" PFMT64x ":\tinvalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), has_children);
+			RZ_LOG_ERROR(".debug_abbrevs parse error: 0x%" PFMT64x "\t[%s] invalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), rz_bin_dwarf_tag(tag), has_children);
 			goto err;
 		}
 
@@ -152,8 +152,8 @@ ok:
 	ht_up_update(abbrevs->tbl_by_offset, tbl->offset, tbl);
 	return abbrevs;
 err:
-	rz_bin_dwarf_abbrev_free(abbrevs);
-	return NULL;
+	RzBinDwarfAbbrevTable_free(tbl);
+	return false;
 }
 
 RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile) {
