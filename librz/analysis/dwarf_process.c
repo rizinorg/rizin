@@ -1042,7 +1042,7 @@ static inline const char *var_name(RzAnalysisDwarfVariable *v, enum DW_LANG lang
 	return prefer_linkage_name(lang) ? (v->link_name ? v->link_name : v->name) : v->name;
 }
 
-static bool parse_function_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_die, RzAnalysisDwarfFunction *f, RzAnalysisDwarfVariable *v) {
+static bool parse_function_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_die, RzAnalysisDwarfFunction *f, RzAnalysisDwarfVariable *v, RzCallable *callable) {
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
 		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
@@ -1052,7 +1052,8 @@ static bool parse_function_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 		break;
 	case DW_TAG_unspecified_parameters:
 		f->has_unspecified_parameters = true;
-		return false;
+		callable->has_unspecified_parameters = true;
+		return true;
 	default:
 		return false;
 	}
@@ -1109,7 +1110,7 @@ static bool parse_function_args_and_vars(Context *ctx, RzBinDwarfDie *die, RzCal
 			continue;
 		}
 		RzAnalysisDwarfVariable v = { 0 };
-		if (!parse_function_var(ctx, child_die, die, fn, &v)) {
+		if (!parse_function_var(ctx, child_die, die, fn, &v, callable)) {
 			continue;
 		}
 		if (!(v.location && v.type)) {

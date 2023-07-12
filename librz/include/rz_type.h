@@ -148,7 +148,8 @@ typedef struct rz_callable_at {
 	RZ_NULLABLE RzType *ret; /// optional for the time being
 	RzPVector /*<RzCallableArg *>*/ *args;
 	RZ_NULLABLE const char *cc; // optional
-	bool noret; // Does not return
+	bool noret : 1; // Does not return
+	bool has_unspecified_parameters : 1;
 } RzCallable;
 
 struct rz_type_t {
