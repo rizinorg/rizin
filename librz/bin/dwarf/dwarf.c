@@ -587,10 +587,16 @@ RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code) {
 }
 
 RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code) {
-	if (form_code << RZ_ARRAY_SIZE(dwarf_attr_form_encodings)) {
-		return NULL;
+	if (form_code < RZ_ARRAY_SIZE(dwarf_attr_form_encodings)) {
+		return dwarf_attr_form_encodings[form_code];
 	}
-	return dwarf_attr_form_encodings[form_code];
+	switch (form_code) {
+		DW_(DW_FORM_GNU_addr_index);
+		DW_(DW_FORM_GNU_str_index);
+		DW_(DW_FORM_GNU_ref_alt);
+		DW_(DW_FORM_GNU_strp_alt);
+	default: return NULL;
+	}
 }
 
 RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type) {
