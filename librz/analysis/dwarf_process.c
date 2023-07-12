@@ -1370,15 +1370,17 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 static bool dwarf_integrate_function(void *user, const ut64 k, const void *value) {
 	RzAnalysis *analysis = user;
 	const RzAnalysisDwarfFunction *fn = value;
+	RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->addr);
+	if (!afn) {
+		return true;
+	}
+
+	afn->has_debuginfo = true;
 	/* Apply signature as a comment at a function address */
 	RzCallable *callable = rz_type_func_get(analysis->typedb, fn->name);
 	char *sig = rz_type_callable_as_string(analysis->typedb, callable);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
 
-	RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->addr);
-	if (!afn) {
-		return true;
-	}
 	char *dwf_name = rz_str_newf("dbg.%s", fn->prefer_name);
 	rz_analysis_function_rename((RzAnalysisFunction *)afn, dwf_name);
 	free(dwf_name);
