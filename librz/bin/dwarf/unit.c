@@ -75,30 +75,35 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 		RZ_LOG_DEBUG("0x%" PFMT64x ":\t%s\t%s [%s] (%s)\n", rz_buf_tell(buffer), indent_str(die->depth), rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form), rz_str_get(data));
 		free(data);
 
-		enum DW_AT name = attr.name;
-		enum DW_FORM form = attr.form;
-		RzBinDwarfAttrKind kind = attr.kind;
-		if (name == DW_AT_comp_dir && (form == DW_FORM_strp || form == DW_FORM_string) && attr.string.content) {
-			comp_dir = attr.string.content;
-		}
-		if (name == DW_AT_stmt_list) {
-			if (kind == DW_AT_KIND_CONSTANT) {
+		switch (attr.name) {
+		case DW_AT_comp_dir:
+			if (attr.kind == DW_AT_KIND_STRING) {
+				comp_dir = attr.string.content;
+			}
+			break;
+		case DW_AT_stmt_list:
+			if (attr.kind == DW_AT_KIND_UCONSTANT) {
 				line_info_offset = attr.uconstant;
-			} else if (kind == DW_AT_KIND_REFERENCE) {
+			} else if (attr.kind == DW_AT_KIND_REFERENCE) {
 				line_info_offset = attr.reference;
 			}
+			break;
+		default:
+			break;
 		}
+
 		rz_vector_push(&die->attrs, &attr);
 	}
 
 	// If this is a compilation unit dir attribute, we want to cache it so the line info parsing
 	// which will need this info can quickly look it up.
 	if (comp_dir && line_info_offset != UT64_MAX) {
-		char *name = strdup(comp_dir);
-		if (name) {
-			if (!ht_up_insert(info->line_info_offset_comp_dir, line_info_offset, name)) {
-				free(name);
-			}
+		char *name = rz_str_new(comp_dir);
+		if (!name) {
+			return true;
+		}
+		if (!ht_up_insert(info->line_info_offset_comp_dir, line_info_offset, name)) {
+			free(name);
 		}
 	}
 	return true;
