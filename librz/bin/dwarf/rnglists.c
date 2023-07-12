@@ -25,11 +25,11 @@ RZ_IPI void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8
 	self->end = (base_address + self->end) & mask;
 }
 
-RZ_IPI bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, enum RzBinDwarfRangeListsFormat format, RzBinDwarfEncoding *encoding) {
+RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
 	RzBinDwarfRawRngListEntry entry = { 0 };
 	bool big_endian = encoding->big_endian;
 	switch (format) {
-	case RangeListsFormat_Bare: {
+	case RzBinDwarfRngListsFormat_Bare: {
 		RzBinDwarfRange range = { 0 };
 		RET_FALSE_IF_FAIL(Range_parse(&range, buffer, encoding));
 		if (Range_is_end(&range)) {
@@ -44,7 +44,7 @@ RZ_IPI bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buff
 		}
 		break;
 	}
-	case RangeListsFormat_Rle: {
+	case RzBinDwarfRngListsFormat_Rle: {
 		ut8 byte;
 		U8_OR_RET_FALSE(byte);
 		entry.encoding = byte;
@@ -86,4 +86,190 @@ RZ_IPI bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buff
 	}
 	memcpy(out, &entry, sizeof(entry));
 	return true;
+}
+
+void RzBinDwarfRawRngListEntry_fini(RzBinDwarfRawRngListEntry *self) {}
+
+void RzBinDwarfLocList_free(RzBinDwarfLocList *self) {
+	rz_vector_fini(&self->raw_entries);
+	rz_vector_fini(&self->entries);
+	free(self);
+}
+
+void HTUP_RzBinDwarfRngList_free(HtUPKv *kv) {
+	RzBinDwarfLocList_free(kv->value);
+}
+
+void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self) {
+	if (!self) {
+		return;
+	}
+	rz_buf_free(self->debug_ranges);
+	rz_buf_free(self->debug_rnglists);
+	ht_up_free(self->rnglist_by_offset);
+	free(self);
+}
+
+bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, RzBinDwarfRange **out) {
+	ut64 mask = self->encoding.address_size == 0 ? ~0ULL : (~0ULL >> (64 - self->encoding.address_size * 8));
+	ut64 tombstone = self->encoding.version <= 4 ? mask - 1
+						     : mask;
+	RzBinDwarfRange *range = NULL;
+	if (raw->is_address_or_offset_pair) {
+		if (self->base_address == tombstone) {
+			OK_None;
+		}
+		range = RZ_NEW0(RzBinDwarfRange);
+		range->begin = raw->address_or_offset_pair.begin;
+		range->end = raw->address_or_offset_pair.end;
+		Range_add_base_address(range, self->base_address, self->encoding.address_size);
+	} else {
+		switch (raw->encoding) {
+		case DW_RLE_end_of_list: break;
+		case DW_RLE_base_address:
+			self->base_address = raw->base_address.addr;
+			OK_None;
+		case DW_RLE_base_addressx:
+			RET_FALSE_IF_FAIL(self->debug_addr);
+			RET_FALSE_IF_FAIL(DebugAddr_get_address(self->debug_addr, &self->base_address,
+				self->encoding.address_size, self->encoding.big_endian,
+				self->base_address, raw->base_addressx.addr));
+			OK_None;
+		case DW_RLE_startx_endx:
+			range = RZ_NEW0(RzBinDwarfRange);
+			range->begin = raw->startx_endx.begin;
+			range->end = raw->startx_endx.end;
+			break;
+		case DW_RLE_startx_length:
+			range = RZ_NEW0(RzBinDwarfRange);
+			range->begin = raw->startx_length.begin;
+			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
+			break;
+		case DW_RLE_offset_pair:
+			if (self->base_address == tombstone) {
+				OK_None;
+			}
+			range = RZ_NEW0(RzBinDwarfRange);
+			range->begin = raw->address_or_offset_pair.begin;
+			range->end = raw->address_or_offset_pair.end;
+			Range_add_base_address(range, self->base_address, self->encoding.address_size);
+			break;
+		case DW_RLE_start_end:
+			range = RZ_NEW0(RzBinDwarfRange);
+			range->begin = raw->startx_endx.begin;
+			range->end = raw->startx_endx.end;
+			break;
+		case DW_RLE_start_length:
+			range = RZ_NEW0(RzBinDwarfRange);
+			range->begin = raw->startx_length.begin;
+			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
+			break;
+		}
+	}
+
+	if (!range) {
+		return false;
+	}
+	if (range->begin == tombstone) {
+		free(range);
+		OK_None;
+	}
+	if (range->begin > range->end) {
+		RZ_LOG_WARN("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
+		free(range);
+		return false;
+	}
+
+	*out = range;
+	return true;
+}
+
+static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
+	RzBinDwarfLocList *rnglist = RZ_NEW0(RzBinDwarfLocList);
+	rnglist->offset = rz_buf_tell(buffer);
+	rz_vector_init(&rnglist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawRngListEntry_fini, NULL);
+	rz_vector_init(&rnglist->entries, sizeof(RzBinDwarfLocationListEntry), (RzVectorFree)RzBinDwarfRawRngListEntry_fini, NULL);
+
+	while (true) {
+		RzBinDwarfRawRngListEntry raw_entry = { 0 };
+		RzBinDwarfRange *range = NULL;
+		GOTO_IF_FAIL(RzBinDwarfRawRngListEntry_parse(&raw_entry, buffer, encoding, format), err1);
+		rz_vector_push(&rnglist->raw_entries, &raw_entry);
+		if (raw_entry.encoding == DW_LLE_end_of_list && !raw_entry.is_address_or_offset_pair) {
+			break;
+		}
+		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &range), err2);
+		rz_vector_push(&rnglist->entries, range);
+		free(range);
+		continue;
+	err1:
+		RzBinDwarfRawRngListEntry_fini(&raw_entry);
+	err2:
+		RzBinDwarfLocList_free(rnglist);
+		return false;
+	}
+	ht_up_update(self->rnglist_by_offset, rnglist->offset, rnglist);
+	return true;
+}
+
+RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RzBinFile *bf, RzBinDwarf *dw) {
+	RET_NULL_IF_FAIL(bf && dw);
+	RzBinDwarfRngListTable *self = RZ_NEW0(RzBinDwarfRngListTable);
+	self->debug_addr = dw->addr;
+	self->debug_ranges = get_section_buf(bf, ".debug_ranges");
+	self->debug_rnglists = get_section_buf(bf, ".debug_rnglists");
+	if (!(self->debug_ranges || self->debug_rnglists)) {
+		RZ_LOG_DEBUG("No .debug_loc and .debug_loclists section found\n");
+		RzBinDwarfRngListTable_free(self);
+		return NULL;
+	}
+	self->rnglist_by_offset = ht_up_new(NULL, HTUP_RzBinDwarfRngList_free, NULL);
+	return self;
+}
+
+RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding, ut64 offset) {
+	RET_NULL_IF_FAIL(self);
+	RzBuffer *buffer = self->debug_ranges;
+	RzBinDwarfRngListsFormat format = RzBinDwarfRngListsFormat_Bare;
+	if (encoding->version == 5) {
+		buffer = self->debug_rnglists;
+		format = RzBinDwarfRngListsFormat_Rle;
+		buffer = rz_buf_new_with_buf(buffer);
+		RET_FALSE_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, encoding->big_endian));
+	} else {
+		buffer = rz_buf_new_with_buf(buffer);
+	}
+
+	rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
+	RET_FALSE_IF_FAIL(rnglist_parse(self, buffer, encoding, format));
+	return true;
+}
+
+RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding) {
+	RET_NULL_IF_FAIL(self);
+	RzBuffer *buffer = self->debug_ranges;
+	RzBinDwarfRngListsFormat format = RzBinDwarfRngListsFormat_Bare;
+	if (encoding->version == 5) {
+		buffer = self->debug_rnglists;
+		format = RzBinDwarfRngListsFormat_Rle;
+		buffer = rz_buf_new_with_buf(buffer);
+		RET_FALSE_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, encoding->big_endian));
+	} else {
+		buffer = rz_buf_new_with_buf(buffer);
+	}
+
+	if (self->hdr.offset_entry_count > 0) {
+		for (ut32 i = 0; i < self->hdr.offset_entry_count; ++i) {
+			ut64 offset = self->hdr.location_offsets[i];
+			rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
+			rnglist_parse(self, buffer, encoding, format);
+		}
+	} else {
+		while (rz_buf_tell(buffer) < rz_buf_size(buffer)) {
+			rnglist_parse(self, buffer, encoding, format);
+		}
+	}
+
+	rz_buf_free(buffer);
+	return self;
 }

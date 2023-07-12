@@ -1297,6 +1297,11 @@ typedef struct {
 	ut64 *location_offsets;
 } RzBinDwarfListsHeader;
 
+/// The raw contents of the `.debug_addr` section.
+typedef struct {
+	RzBuffer *buffer;
+} RzBinDwarfDebugAddr;
+
 /// A raw address range from the `.debug_ranges` section.
 typedef struct {
 	/// The beginning address of the range.
@@ -1305,12 +1310,12 @@ typedef struct {
 	ut64 end;
 } RzBinDwarfRange;
 
-enum RzBinDwarfRangeListsFormat {
+typedef enum {
 	/// The bare range list format used before DWARF 5.
-	RangeListsFormat_Bare,
+	RzBinDwarfRngListsFormat_Bare,
 	/// The DW_RLE encoded range list format used in DWARF 5.
-	RangeListsFormat_Rle,
-};
+	RzBinDwarfRngListsFormat_Rle,
+} RzBinDwarfRngListsFormat;
 
 /// A raw entry in .debug_rnglists
 typedef struct {
@@ -1358,17 +1363,27 @@ typedef struct {
 	};
 } RzBinDwarfRawRngListEntry;
 
-/// The raw contents of the `.debug_addr` section.
 typedef struct {
-	RzBuffer *buffer;
-} RzBinDwarfDebugAddr;
+	ut64 offset;
+	RzVector /*<RzBinDwarfRawRngListEntry>*/ raw_entries;
+} RzBinDwarfRngList;
+
+typedef struct {
+	RzBuffer *debug_ranges;
+	RzBuffer *debug_rnglists;
+	ut64 base_address;
+	const RzBinDwarfDebugAddr *debug_addr;
+	RzBinDwarfListsHeader hdr;
+	RzBinDwarfEncoding encoding;
+	HtUP /*<ut64, RzBinDwarfLocList>*/ *rnglist_by_offset;
+} RzBinDwarfRngListTable;
 
 typedef enum {
 	/// The bare location list format used before DWARF 5.
-	LOCLISTSFORMAT_BARE,
+	RzBinDwarfLocListsFormat_BARE,
 	/// The DW_LLE encoded range list format used in DWARF 5 and the non-standard GNU
 	/// split dwarf extension.
-	LOCLISTSFORMAT_LLE,
+	RzBinDwarfLocListsFormat_LLE,
 } RzBinDwarfLocListsFormat;
 
 typedef struct {
@@ -1503,6 +1518,7 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfARangeSets *aranges;
 	RzBinDwarfLineInfo *lines;
 	RzBinDwarfLocListTable *loc;
+	RzBinDwarfRngListTable *rnglists;
 	RzBinDwarfDebugInfo *info;
 	RzBinDwarfDebugAbbrevs *abbrevs;
 	RzBinDwarfDebugAddr *addr;
@@ -1514,7 +1530,8 @@ typedef enum {
 	RZ_BIN_DWARF_PARSE_LOC = 1 << 3,
 	RZ_BIN_DWARF_PARSE_LINES = 1 << 4,
 	RZ_BIN_DWARF_PARSE_ARANGES = 1 << 5,
-	RZ_BIN_DWARF_PARSE_ALL = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_LINES | RZ_BIN_DWARF_PARSE_ARANGES,
+	RZ_BIN_DWARF_PARSE_RNGLISTS = 1 << 6,
+	RZ_BIN_DWARF_PARSE_ALL = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LOC | RZ_BIN_DWARF_PARSE_LINES | RZ_BIN_DWARF_PARSE_ARANGES | RZ_BIN_DWARF_PARSE_RNGLISTS,
 } RzBinDwarfParseFlags;
 
 typedef struct {
@@ -1726,6 +1743,11 @@ RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, Rz
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding);
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw);
 RZ_API void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
+/// rnglists
+RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RzBinFile *bf, RzBinDwarf *dw);
+RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
+RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding);
+
 RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self);
 RZ_API RzBinDwarfLocation *RzBinDwarfLocation_clone(RzBinDwarfLocation *self);
 

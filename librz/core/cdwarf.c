@@ -150,7 +150,7 @@ RZ_API char *rz_core_bin_dwarf_attr_to_string(const RzBinDwarfAttr *val) {
 		my_printf("0x%" PFMT64d "", val->uconstant);
 		break;
 	default:
-		my_printf("Unknown attr value form %" PFMT32d "\n", val->form);
+		my_printf("Unknown attr value form %s\n", rz_bin_dwarf_form(val->form));
 		break;
 	};
 	return my_print_get;

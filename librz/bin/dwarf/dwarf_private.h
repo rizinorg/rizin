@@ -60,7 +60,7 @@ RZ_IPI inline bool Range_is_end(RzBinDwarfRange *self);
 RZ_IPI inline bool Range_is_base_address(RzBinDwarfRange *self, ut8 address_size);
 RZ_IPI inline void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8 address_size);
 
-RZ_IPI bool RawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, enum RzBinDwarfRangeListsFormat format, RzBinDwarfEncoding *encoding);
+RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format);
 
 /// value
 

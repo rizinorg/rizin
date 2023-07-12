@@ -636,7 +636,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		.big_endian = core->analysis->big_endian,
 		.addr_size = core->analysis->bits / 8,
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
-		.flags = RZ_BIN_DWARF_PARSE_INFO | RZ_BIN_DWARF_PARSE_LINES | RZ_BIN_DWARF_PARSE_ARANGES | RZ_BIN_DWARF_PARSE_ABBREVS,
+		.flags = RZ_BIN_DWARF_PARSE_ALL - RZ_BIN_DWARF_PARSE_LOC
 	};
 	RzBinDwarf *dw = rz_bin_dwarf_parse(binfile, &opt);
 	if (!dw) {

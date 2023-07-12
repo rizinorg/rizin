@@ -1447,9 +1447,15 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 
 	dw->loc = rz_bin_dwarf_loclists_new(bf, dw);
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LOC && dw->loc && dw->info) {
-		RZ_LOG_DEBUG(dw->encoding.version == 5 ? ".debug.loclists\n" : ".debug_loc\n");
+		RZ_LOG_DEBUG(dw->encoding.version == 5 ? ".debug_loclists\n" : ".debug_loc\n");
 		rz_bin_dwarf_loclist_table_parse_all(dw->loc, &dw->encoding);
 	}
+	dw->rnglists = rz_bin_dwarf_rnglists_new(bf, dw);
+	if (opt->flags & RZ_BIN_DWARF_PARSE_RNGLISTS && dw->loc && dw->info) {
+		RZ_LOG_DEBUG(dw->encoding.version == 5 ? ".debug_rnglists\n" : ".debug_ranges\n");
+		rz_bin_dwarf_rnglist_table_parse_all(dw->rnglists, &dw->encoding);
+	}
+
 	if (opt->flags & RZ_BIN_DWARF_PARSE_LINES && dw->info) {
 		RZ_LOG_DEBUG(".debug_line\n");
 		dw->lines = rz_bin_dwarf_parse_line(bf, dw->info, opt->line_mask);
