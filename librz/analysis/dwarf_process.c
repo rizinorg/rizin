@@ -120,14 +120,15 @@ static ut64 parse_array_count(Context *ctx, RzBinDwarfDie *die) {
 	return 0;
 }
 
-static RzType *parse_type_from_offset(Context *ctx, ut64 offset, RZ_NULLABLE ut64 *size);
+static RzType *parse_type_from_offset_internal(Context *ctx, ut64 offset,
+	RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited);
 
 /**
  * Parse the die's DW_AT_type type or return a void type or NULL if \p type_idx == -1
  *
  * \param allow_void whether to return a void type instead of NULL if there is no type defined
  */
-static RzType *parse_type_from_die(Context *ctx, RzBinDwarfDie *die, bool allow_void, RZ_NULLABLE ut64 *size) {
+static RzType *parse_type_from_die_internal(Context *ctx, RzBinDwarfDie *die, bool allow_void, RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_type);
 	if (!attr) {
 		if (!allow_void) {
@@ -135,7 +136,7 @@ static RzType *parse_type_from_die(Context *ctx, RzBinDwarfDie *die, bool allow_
 		}
 		return rz_type_identifier_of_base_type_str(ctx->analysis->typedb, "void");
 	}
-	return parse_type_from_offset(ctx, attr->reference, size);
+	return parse_type_from_offset_internal(ctx, attr->reference, size, visited);
 }
 
 /**
@@ -143,10 +144,15 @@ static RzType *parse_type_from_die(Context *ctx, RzBinDwarfDie *die, bool allow_
  *
  * \param ctx
  * \param offset offset of the type entry
- * \param size_out ptr to size of a type to fill up (can be NULL if unwanted)
+ * \param size ptr to size of a type to fill up (can be NULL if unwanted)
  * \return the parsed RzType or NULL on failure
  */
-static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLABLE ut64 *size) {
+static RzType *parse_type_from_offset_internal(Context *ctx, ut64 offset,
+	RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
+	if (set_u_contains(visited, offset)) {
+		return NULL;
+	}
+	set_u_add(visited, offset);
 	RzType *type = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
 	if (type) {
 		type->ref++;
@@ -168,7 +174,7 @@ static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLAB
 	case DW_TAG_pointer_type:
 	case DW_TAG_reference_type: // C++ references are just pointers to us
 	case DW_TAG_rvalue_reference_type: {
-		RzType *pointee = parse_type_from_die(ctx, die, true, size);
+		RzType *pointee = parse_type_from_die_internal(ctx, die, true, size, visited);
 		if (!pointee) {
 			goto end;
 		}
@@ -213,7 +219,7 @@ static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLAB
 		break;
 	}
 	case DW_TAG_subroutine_type: {
-		RzType *return_type = parse_type_from_die(ctx, die, true, size);
+		RzType *return_type = parse_type_from_die_internal(ctx, die, true, size, visited);
 		if (!return_type) {
 			goto end;
 		}
@@ -233,7 +239,7 @@ static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLAB
 		break;
 	}
 	case DW_TAG_array_type: {
-		RzType *subtype = parse_type_from_die(ctx, die, false, size);
+		RzType *subtype = parse_type_from_die_internal(ctx, die, false, size, visited);
 		if (!subtype) {
 			goto end;
 		}
@@ -245,7 +251,7 @@ static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLAB
 		break;
 	}
 	case DW_TAG_const_type: {
-		ret = parse_type_from_die(ctx, die, true, size);
+		ret = parse_type_from_die_internal(ctx, die, true, size, visited);
 		if (ret) {
 			switch (ret->kind) {
 			case RZ_TYPE_KIND_IDENTIFIER:
@@ -264,13 +270,24 @@ static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, RZ_NULLAB
 	case DW_TAG_volatile_type:
 	case DW_TAG_restrict_type:
 		// volatile and restrict attributes not supported in RzType
-		ret = parse_type_from_die(ctx, die, false, size);
+		ret = parse_type_from_die_internal(ctx, die, false, size, visited);
 		break;
 	default:
 		break;
 	}
 end:
+	set_u_delete(visited, offset);
 	return ret;
+}
+
+static RzType *parse_type_from_offset(Context *ctx, const ut64 offset, ut64 *size) {
+	SetU *visited = set_u_new();
+	if (!visited) {
+		return NULL;
+	}
+	RzType *type = parse_type_from_offset_internal(ctx, offset, size, visited);
+	set_u_free(visited);
+	return type;
 }
 
 /**

@@ -181,21 +181,25 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 		case DW_LLE_GNU_view_pair: break;
 		}
 	}
-	if (range && range->begin == tombstone) {
+
+	if (!range) {
+		return false;
+	}
+	if (range->begin == tombstone) {
 		free(range);
 		RzBinDwarfBlock_free(data);
 		OK_None;
 	}
-
-	if (range && range->begin > range->end) {
+	if (range->begin > range->end) {
 		RZ_LOG_WARN("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
 		free(range);
 		RzBinDwarfBlock_free(data);
 		return false;
 	}
-	if (!range) {
+	if (!data) {
 		return false;
 	}
+
 	*out = RZ_NEW0(RzBinDwarfLocationListEntry);
 	(*out)->range = range;
 	(*out)->expression = data;
