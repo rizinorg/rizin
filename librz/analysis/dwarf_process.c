@@ -1324,6 +1324,47 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 	analysis->debug_info->base_type_by_offset->opt.freefn = NULL;
 }
 
+static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwarfVariable *dw_var, RzAnalysisVar *var) {
+	if (dw_var->location->kind != RzBinDwarfLocationKind_REGISTER_OFFSET) {
+		return false;
+	}
+	ut16 reg = dw_var->location->register_offset.register_number;
+	st64 off = dw_var->location->register_offset.offset;
+	if (!strcmp(a->cpu, "x86")) {
+		if (a->bits == 64) {
+			if (reg == 6) {
+				rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
+				return true;
+			}
+			if (reg == 7) {
+				rz_analysis_var_storage_init_stack(&var->storage, off);
+				return true;
+			}
+
+		} else {
+			if (reg == 4) {
+				rz_analysis_var_storage_init_stack(&var->storage, off);
+				return true;
+			}
+			if (reg == 5) {
+				rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
+				return true;
+			}
+		}
+	} else if (!strcmp(a->cpu, "ppc")) {
+		if (reg == 1) {
+			rz_analysis_var_storage_init_stack(&var->storage, off);
+			return true;
+		}
+	} else if (!strcmp(a->cpu, "tricore")) {
+		if (reg == 30) {
+			rz_analysis_var_storage_init_stack(&var->storage, off);
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwarfVariable *dw_var, RzAnalysisVar *var) {
 	var->type = dw_var->type;
 	var->name = strdup(dw_var->prefer_name ? dw_var->prefer_name : "");
@@ -1342,13 +1383,17 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 		break;
 	}
 	case RzBinDwarfLocationKind_REGISTER_OFFSET: {
+		// Convert some register offset to stack offset
+		if (fixup_regoff_to_stackoff(a, f, dw_var, var)) {
+			break;
+		}
 		const char *reg_name = get_dwarf_reg_name(a->cpu, loc->register_offset.register_number, a->bits);
 		rz_analysis_var_storage_init_reg_offset(storage, reg_name, loc->register_offset.offset);
 		break;
 	}
 	case RzBinDwarfLocationKind_ADDRESS: {
 		rz_analysis_var_global_create(a, dw_var->prefer_name, dw_var->type, loc->address);
-		variable_fini(dw_var);
+		rz_analysis_var_fini(var);
 		return false;
 	}
 	case RzBinDwarfLocationKind_VALUE:
@@ -1364,7 +1409,7 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 		rz_analysis_var_storage_init_dwarf_eval_waiting(storage, loc->eval_waiting.eval, loc->eval_waiting.result);
 		break;
 	case RzBinDwarfLocationKind_CFA_OFFSET:
-		// // TODO: The following is only an educated guess. There is actually more involved in calculating the
+		// TODO: The following is only an educated guess. There is actually more involved in calculating the
 		//       CFA correctly.
 		rz_analysis_var_storage_init_stack(storage, loc->cfa_offset + a->bits / 8);
 		break;
