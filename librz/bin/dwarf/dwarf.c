@@ -316,11 +316,6 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_Fortran18] = "Fortran18",
 	[DW_LANG_Ada2005] = "Ada2005",
 	[DW_LANG_Ada2012] = "Ada2012",
-	[DW_LANG_Mips_Assembler] = "Mips_Assembler",
-	[DW_LANG_GOOGLE_RenderScript] = "GOOGLE_RenderScript",
-	[DW_LANG_SUN_Assembler] = "SUN_Assembler",
-	[DW_LANG_ALTIUM_Assembler] = "ALTIUM_Assembler",
-	[DW_LANG_BORLAND_Delphi] = "BORLAND_Delphi",
 };
 
 static const char *dwarf_langs_for_demangle[] = {
@@ -363,11 +358,6 @@ static const char *dwarf_langs_for_demangle[] = {
 	[DW_LANG_Fortran18] = "fortran",
 	[DW_LANG_Ada2005] = "ada",
 	[DW_LANG_Ada2012] = "ada",
-	[DW_LANG_Mips_Assembler] = "Mips_Assembler",
-	[DW_LANG_GOOGLE_RenderScript] = "GOOGLE_RenderScript",
-	[DW_LANG_SUN_Assembler] = "SUN_Assembler",
-	[DW_LANG_ALTIUM_Assembler] = "ALTIUM_Assembler",
-	[DW_LANG_BORLAND_Delphi] = "BORLAND_Delphi",
 };
 
 static const char *dwarf_unit_types[] = {
@@ -603,17 +593,24 @@ RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type) {
 }
 
 RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang) {
-	if (lang >= RZ_ARRAY_SIZE(dwarf_langs)) {
-		return NULL;
+	if (lang <= RZ_ARRAY_SIZE(dwarf_langs)) {
+		return dwarf_langs[lang];
 	}
-	return dwarf_langs[lang];
+
+	switch (lang) {
+		DW_(DW_LANG_Mips_Assembler);
+		DW_(DW_LANG_GOOGLE_RenderScript);
+		DW_(DW_LANG_SUN_Assembler);
+		DW_(DW_LANG_ALTIUM_Assembler);
+		DW_(DW_LANG_BORLAND_Delphi);
+	default: return NULL;
+	}
 }
 
 RZ_API const char *rz_bin_dwarf_lang_for_demangle(enum DW_LANG lang) {
-	if (lang >= RZ_ARRAY_SIZE(dwarf_langs_for_demangle)) {
-		return NULL;
-	}
-	return dwarf_langs_for_demangle[lang];
+	if (!(lang >= RZ_ARRAY_SIZE(dwarf_langs_for_demangle)))
+		return dwarf_langs_for_demangle[lang];
+	return NULL;
 }
 
 static const char *dwarf_children[] = {
