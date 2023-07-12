@@ -848,6 +848,8 @@ enum DW_LANG {
 	DW_LANG_Fortran08 = 0x0023,
 	DW_LANG_RenderScript = 0x0024,
 	DW_LANG_BLISS = 0x0025,
+
+	// Since Version 5
 	DW_LANG_Kotlin = 0x0026,
 	DW_LANG_Zig = 0x0027,
 	DW_LANG_Crystal = 0x0028,
@@ -857,6 +859,11 @@ enum DW_LANG {
 	DW_LANG_Fortran18 = 0x002d,
 	DW_LANG_Ada2005 = 0x002e,
 	DW_LANG_Ada2012 = 0x002f,
+	DW_LANG_HIP = 0x0030,
+	DW_LANG_Assembly = 0x0031,
+	DW_LANG_C_sharp = 0x0032,
+	DW_LANG_Mojo = 0x0033,
+
 	DW_LANG_lo_user = 0x8000,
 	DW_LANG_hi_user = 0xffff,
 

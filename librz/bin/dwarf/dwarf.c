@@ -316,6 +316,10 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_Fortran18] = "Fortran18",
 	[DW_LANG_Ada2005] = "Ada2005",
 	[DW_LANG_Ada2012] = "Ada2012",
+	[DW_LANG_HIP] = "HIP",
+	[DW_LANG_Assembly] = "Assembly",
+	[DW_LANG_C_sharp] = "C_sharp",
+	[DW_LANG_Mojo] = "Mojo",
 };
 
 static const char *dwarf_langs_for_demangle[] = {
@@ -358,6 +362,10 @@ static const char *dwarf_langs_for_demangle[] = {
 	[DW_LANG_Fortran18] = "fortran",
 	[DW_LANG_Ada2005] = "ada",
 	[DW_LANG_Ada2012] = "ada",
+	[DW_LANG_HIP] = "HIP",
+	[DW_LANG_Assembly] = "assembly",
+	[DW_LANG_C_sharp] = "csharp",
+	[DW_LANG_Mojo] = "mojo",
 };
 
 static const char *dwarf_unit_types[] = {
