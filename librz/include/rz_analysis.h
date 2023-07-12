@@ -789,8 +789,8 @@ typedef struct rz_analysis_var_global_t {
 
 typedef struct dwarf_variable_t {
 	RzBinDwarfLocation *location;
-	const char *name;
-	const char *link_name;
+	char *name;
+	char *link_name;
 	const char *prefer_name;
 	RzType *type;
 	RzAnalysisVarKind kind;

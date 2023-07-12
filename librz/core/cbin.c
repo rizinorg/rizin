@@ -1704,6 +1704,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	RzBinDwarfLineInfoMask mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES;
 	mask |= (state->mode == RZ_OUTPUT_MODE_STANDARD ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0);
 	RzBinDwarfParseOptions dw_opt = {
+		.big_endian = core->analysis->big_endian,
 		.addr_size = core->analysis->bits / 8,
 		.line_mask = mask,
 		.flags = RZ_BIN_DWARF_PARSE_ALL,

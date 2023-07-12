@@ -16,10 +16,11 @@ typedef struct dwarf_parse_context_t {
 	RzBinDwarf *dw;
 } Context;
 
-static void variable_free(RzAnalysisDwarfVariable *var) {
-	free(var->location);
-	free(var->type);
-	free(var);
+static void variable_fini(RzAnalysisDwarfVariable *var) {
+	RzBinDwarfLocation_free(var->location);
+	var->location = NULL;
+	RZ_FREE(var->name);
+	RZ_FREE(var->link_name);
 }
 
 static inline char *create_type_name_from_offset(ut64 offset) {
@@ -1323,7 +1324,14 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 	analysis->debug_info->base_type_by_offset->opt.freefn = NULL;
 }
 
-static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarStorage *storage) {
+static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwarfVariable *dw_var, RzAnalysisVar *var) {
+	var->type = dw_var->type;
+	var->name = strdup(dw_var->prefer_name ? dw_var->prefer_name : "");
+	var->kind = dw_var->kind;
+	var->fcn = f;
+
+	RzBinDwarfLocation *loc = dw_var->location;
+	RzAnalysisVarStorage *storage = &var->storage;
 	switch (loc->kind) {
 	case RzBinDwarfLocationKind_EMPTY:
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
@@ -1339,8 +1347,9 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 		break;
 	}
 	case RzBinDwarfLocationKind_ADDRESS: {
-		rz_analysis_var_storage_init_stack(storage, (RzStackAddr)loc->address);
-		break;
+		rz_analysis_var_global_create(a, dw_var->prefer_name, dw_var->type, loc->address);
+		variable_fini(dw_var);
+		return false;
 	}
 	case RzBinDwarfLocationKind_VALUE:
 	case RzBinDwarfLocationKind_BYTES:
@@ -1355,7 +1364,9 @@ static bool loc2storage(RzAnalysis *a, RzBinDwarfLocation *loc, RzAnalysisVarSto
 		rz_analysis_var_storage_init_dwarf_eval_waiting(storage, loc->eval_waiting.eval, loc->eval_waiting.result);
 		break;
 	case RzBinDwarfLocationKind_CFA_OFFSET:
-		rz_analysis_var_storage_init_cfa_offset(storage, loc->cfa_offset);
+		// // TODO: The following is only an educated guess. There is actually more involved in calculating the
+		//       CFA correctly.
+		rz_analysis_var_storage_init_stack(storage, loc->cfa_offset + a->bits / 8);
 		break;
 	case RzBinDwarfLocationKind_FB_OFFSET:
 		rz_analysis_var_storage_init_fb_offset(storage, loc->fb_offset);
@@ -1392,13 +1403,10 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 
 	RzAnalysisDwarfVariable *v;
 	rz_vector_foreach(&fn->variables, v) {
-		RzAnalysisVar av = {
-			.type = v->type,
-			.name = strdup(v->prefer_name ? v->prefer_name : ""),
-			.kind = v->kind,
-			.fcn = afn,
-		};
-		loc2storage(analysis, v->location, &av.storage);
+		RzAnalysisVar av = { 0 };
+		if (!dw_var_to_rz_var(analysis, afn, v, &av)) {
+			continue;
+		}
 		rz_analysis_function_add_var_dwarf(afn, &av, 4);
 	};
 
@@ -1407,11 +1415,9 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 }
 
 /**
- * \brief Use parsed DWARF function info from Sdb in the function analysis
- *  XXX right now we only save parsed name and variables, we can't use signature now
- *  XXX refactor to be more readable
+ * \brief Use parsed DWARF function info in the function analysis
  * \param analysis
- * \param dwarf_sdb
+ * \param flags
  */
 RZ_API void
 rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
