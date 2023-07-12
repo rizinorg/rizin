@@ -1234,9 +1234,9 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	}
 	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type);
 	parse_function_args_and_vars(ctx, die, callable, fcn);
-	// TODO: RzCallable add support for DW_TAG_unspecified_parameters
+	RZ_LOG_DEBUG("DWARF Saving function %s\n", fcn->prefer_name);
 	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
-		RZ_LOG_ERROR("[typedb] Failed to save function %s\n", fcn->prefer_name);
+		RZ_LOG_ERROR("DWARF Failed to save function %s\n", fcn->prefer_name);
 	};
 	if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
 		goto cleanup;
@@ -1376,9 +1376,8 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 		return true;
 	}
 
-	afn->has_debuginfo = true;
 	/* Apply signature as a comment at a function address */
-	RzCallable *callable = rz_type_func_get(analysis->typedb, fn->name);
+	RzCallable *callable = rz_type_func_get(analysis->typedb, fn->prefer_name);
 	char *sig = rz_type_callable_as_string(analysis->typedb, callable);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
 
@@ -1402,6 +1401,8 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 		loc2storage(analysis, v->location, &av.storage);
 		rz_analysis_function_add_var_dwarf(afn, &av, 4);
 	};
+
+	afn->has_debuginfo = true;
 	return true;
 }
 
