@@ -529,12 +529,12 @@ EXPECT=<<EOF
 |           0x0001016c      2324f4fe       sw    a5, -24(s0)
 |           ; CODE XREFS from main @ 0x101c8, 0x101d8
 |      ..-> 0x00010170      b7170200       lui   a5, 0x21
-|      ::   0x00010174      1385874f       addi  a0, a5, 1272          ; const char *format
+|      ::   0x00010174      1385874f       addi  a0, a5, 1272          ; const char *fmt
 |      ::   0x00010178      ef00c01f       jal   ra, dbg.printf
 |      ::   0x0001017c      930784fe       addi  a5, s0, -24
 |      ::   0x00010180      93850700       mv    a1, a5
 |      ::   0x00010184      b7170200       lui   a5, 0x21
-|      ::   0x00010188      13850751       addi  a0, a5, 1296          ; const char *format
+|      ::   0x00010188      13850751       addi  a0, a5, 1296          ; const char *fmt
 |      ::   0x0001018c      ef00402f       jal   ra, dbg.scanf
 |      ::   0x00010190      032784fe       lw    a4, -24(s0)
 |      ::   0x00010194      8327c4fe       lw    a5, -20(s0)

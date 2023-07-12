@@ -1080,7 +1080,7 @@ Contents of the .debug_aranges section:
 
 Raw dump of debug contents of section .debug_line:
 
- Header information:
+ Header information[0x0]
   Length:                             125
   DWARF Version:                      3
   Header Length:                      45
@@ -1149,7 +1149,7 @@ Raw dump of debug contents of section .debug_line:
   Advance PC by 2 to 0x123b
   Extended opcode 1: End of Sequence
 
- Header information:
+ Header information[0x81]
   Length:                             361
   DWARF Version:                      3
   Header Length:                      43
@@ -1397,7 +1397,7 @@ pd 1 @ main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
-/ int main(int argc, char **argv, char **envp);
+/ int main();
 |           ; var int64_t var_ch @ stack - 0xc
 |           0x0040052d      55             push  rbp                   ; dwarftest.c:4
 EOF
@@ -1951,7 +1951,7 @@ Contents of the .debug_aranges section:
 
 Raw dump of debug contents of section .debug_line:
 
- Header information:
+ Header information[0x0]
   Length:                             70
   DWARF Version:                      3
   Header Length:                      29
@@ -2815,7 +2815,7 @@ Contents of the .debug_aranges section:
 
 Raw dump of debug contents of section .debug_line:
 
- Header information:
+ Header information[0x0]
   Length:                             400
   DWARF Version:                      3
   Header Length:                      31
