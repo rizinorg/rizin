@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_DWARF_PRIVATE_H
 #define RZ_DWARF_PRIVATE_H
 

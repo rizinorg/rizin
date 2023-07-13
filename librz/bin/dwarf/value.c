@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
