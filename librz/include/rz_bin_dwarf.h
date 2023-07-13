@@ -1366,6 +1366,7 @@ typedef struct {
 typedef struct {
 	ut64 offset;
 	RzVector /*<RzBinDwarfRawRngListEntry>*/ raw_entries;
+	RzVector /*<RzBinDwarfRange>*/ entries;
 } RzBinDwarfRngList;
 
 typedef struct {
@@ -1736,7 +1737,7 @@ RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self);
 RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out);
 RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self);
 RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
-RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf);
+RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf, const char *sep, const char *indent);
 RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block);
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);

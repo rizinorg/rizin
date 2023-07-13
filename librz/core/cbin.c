@@ -1726,10 +1726,13 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 			print_free(rz_core_bin_dwarf_debug_info_to_string(dw->info));
 		}
 		if (dw->loc) {
-			print_free(rz_core_bin_dwarf_loc_to_string(dw->loc, core->analysis->bits / 8));
+			print_free(rz_core_bin_dwarf_loc_to_string(dw, dw->loc, core->analysis->bits / 8));
 		}
 		if (dw->aranges) {
 			print_free(rz_core_bin_dwarf_aranges_to_string(dw->aranges));
+		}
+		if (dw->rnglists) {
+			print_free(rz_core_bin_dwarf_rnglists_to_string(dw->rnglists));
 		}
 		if (dw->lines) {
 			print_free(rz_core_bin_dwarf_line_units_to_string(dw->lines->units));

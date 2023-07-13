@@ -25,6 +25,14 @@ RZ_IPI void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8
 	self->end = (base_address + self->end) & mask;
 }
 
+RZ_IPI void Range_free(RzBinDwarfRange *self) {
+	free(self);
+}
+
+static void rz_vector_range_free(void *e, void *u) {
+	Range_free(e);
+}
+
 RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
 	RzBinDwarfRawRngListEntry entry = { 0 };
 	bool big_endian = encoding->big_endian;
@@ -90,14 +98,14 @@ RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBu
 
 void RzBinDwarfRawRngListEntry_fini(RzBinDwarfRawRngListEntry *self) {}
 
-void RzBinDwarfLocList_free(RzBinDwarfLocList *self) {
+void RzBinDwarfRngList_free(RzBinDwarfRngList *self) {
 	rz_vector_fini(&self->raw_entries);
 	rz_vector_fini(&self->entries);
 	free(self);
 }
 
 void HTUP_RzBinDwarfRngList_free(HtUPKv *kv) {
-	RzBinDwarfLocList_free(kv->value);
+	RzBinDwarfRngList_free(kv->value);
 }
 
 void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self) {
@@ -185,10 +193,10 @@ bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, R
 }
 
 static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
-	RzBinDwarfLocList *rnglist = RZ_NEW0(RzBinDwarfLocList);
+	RzBinDwarfRngList *rnglist = RZ_NEW0(RzBinDwarfRngList);
 	rnglist->offset = rz_buf_tell(buffer);
 	rz_vector_init(&rnglist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawRngListEntry_fini, NULL);
-	rz_vector_init(&rnglist->entries, sizeof(RzBinDwarfLocationListEntry), (RzVectorFree)RzBinDwarfRawRngListEntry_fini, NULL);
+	rz_vector_init(&rnglist->entries, sizeof(RzBinDwarfRange), rz_vector_range_free, NULL);
 
 	while (true) {
 		RzBinDwarfRawRngListEntry raw_entry = { 0 };
@@ -205,7 +213,7 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 	err1:
 		RzBinDwarfRawRngListEntry_fini(&raw_entry);
 	err2:
-		RzBinDwarfLocList_free(rnglist);
+		RzBinDwarfRngList_free(rnglist);
 		return false;
 	}
 	ht_up_update(self->rnglist_by_offset, rnglist->offset, rnglist);

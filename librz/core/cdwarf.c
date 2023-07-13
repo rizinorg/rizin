@@ -207,20 +207,39 @@ RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *i
 	return my_print_get;
 }
 
-RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarfLocListTable *locs, int addr_size) {
-	rz_return_val_if_fail(locs, NULL);
+typedef struct {
+	RzBinDwarf *dw;
+	RzStrBuf *sb;
+} DumpContex;
+
+bool htup_loclists_cb(void *u, ut64 k, const void *v) {
+	const RzBinDwarfLocList *loclist = v;
+	DumpContex *ctx = u;
+	if (!(loclist && ctx && ctx->sb && ctx->dw)) {
+		return false;
+	}
+	RzStrBuf *sb = ctx->sb;
+
+	my_printf("0x%" PFMT64x "\n", loclist->offset);
+	RzBinDwarfLocationListEntry *entry;
+	rz_vector_foreach(&loclist->entries, entry) {
+		my_printf("\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
+		rz_bin_dwarf_expression_dump(ctx->dw, entry->expression, ctx->sb, ",\t", "");
+		my_print("]\n");
+	}
+	return true;
+}
+
+RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarf *dw, RzBinDwarfLocListTable *loclists, int addr_size) {
+	rz_return_val_if_fail(loclists && loclists->loclist_by_offset, NULL);
 	my_print_init;
 	my_print("\nContents of the .debug_loc section:\n");
-	//	RzList /*<RzBinDwarfLocList *>*/ *sort_list = rz_list_new();
-	//	RzBinDwarfLocationListEntry *loc;
-	//	rz_vector_foreach(&locs->entries, loc) {
-	//		my_printf("0x%" PFMT64x " 0x%" PFMT64x, loc->range->begin, loc->range->end);
-	//		char *data = rz_hex_bin2strdup(loc->expression->data, loc->expression->length);
-	//		my_printf(" %s\n", rz_str_get_null(data));
-	//		free(data);
-	//	}
+	DumpContex ctx = {
+		.dw = dw,
+		.sb = sb,
+	};
+	ht_up_foreach(loclists->loclist_by_offset, htup_loclists_cb, &ctx);
 	my_print("\n");
-	//	rz_list_free(sort_list);
 	return my_print_get;
 }
 
@@ -426,6 +445,30 @@ RZ_API char *rz_core_bin_dwarf_line_units_to_string(RzList /*<RzBinDwarfLineUnit
 			free(s);
 		}
 	}
+	my_print("\n");
+	return my_print_get;
+}
+
+bool htup_rnglists_cb(void *u, ut64 k, const void *v) {
+	const RzBinDwarfRngList *rnglist = v;
+	RzStrBuf *sb = u;
+	if (!(rnglist && sb)) {
+		return false;
+	}
+
+	my_printf("0x%" PFMT64x "\n", rnglist->offset);
+	RzBinDwarfRange *range;
+	rz_vector_foreach(&rnglist->entries, range) {
+		my_printf("\t(0x%" PFMT64x ", 0x%" PFMT64x ")\n", range->begin, range->end);
+	}
+	return true;
+}
+
+RZ_API char *rz_core_bin_dwarf_rnglists_to_string(RzBinDwarfRngListTable *rnglists) {
+	rz_warn_if_fail(rnglists && rnglists->rnglist_by_offset);
+	my_print_init;
+	my_print("\nContents of the .debug_ranges section:\n");
+	ht_up_foreach(rnglists->rnglist_by_offset, htup_rnglists_cb, sb);
 	my_print("\n");
 	return my_print_get;
 }

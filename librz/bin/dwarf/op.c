@@ -528,6 +528,19 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	return true;
 }
 
+void Operation_fini(Operation *self) {
+	if (!self) {
+		return;
+	}
+	if (self->kind == OPERATION_KIND_IMPLICIT_VALUE) {
+		RzBinDwarfBlock_fini(&self->implicit_value.data);
+	} else if (self->kind == OPERATION_KIND_ENTRY_VALUE) {
+		RzBinDwarfBlock_fini(&self->entry_value.expression);
+	} else if (self->kind == OPERATION_KIND_TYPED_LITERAL) {
+		RzBinDwarfBlock_fini(&self->typed_literal.value);
+	}
+}
+
 bool Evaluation_pop(RzBinDwarfEvaluation *self, RzBinDwarfValue **value) {
 	if (rz_vector_len(&self->stack) <= 0) {
 		*value = NULL;
@@ -916,7 +929,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(&fb_attr->block, self->dw, self->unit, self->die);
 		if (!loc) {
 			char *expr_str = rz_bin_dwarf_expression_to_string(self->dw, &fb_attr->block);
-			RZ_LOG_ERROR("Failed eval frame base: %s\n", rz_str_get_null(expr_str));
+			RZ_LOG_ERROR("Failed eval frame base: [%s]\n", rz_str_get_null(expr_str));
 			free(expr_str);
 			return false;
 		}
@@ -1380,20 +1393,42 @@ void Operation_dump(Operation *op, RzStrBuf *buf) {
 		rz_strbuf_appendf(buf, " 0x%" PFMT32x, op->wasm_stack.index);
 		break;
 	}
-	rz_strbuf_append(buf, "\n");
 }
 
-RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf) {
-	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
+static void vec_Operation_free(void *e, void *u) {
+	Operation_fini(e);
+}
+
+static RzVector *rz_bin_dwarf_expression_parse(RzBuffer *expr, const RzBinDwarfEncoding *encoding) {
+	RzVector *exprs = rz_vector_new(sizeof(Operation), vec_Operation_free, NULL);
 	Operation op = { 0 };
-	while (Operation_parse(&op, expr, &dw->encoding)) {
-		Operation_dump(&op, str_buf);
+	while (Operation_parse(&op, expr, encoding)) {
+		rz_vector_push(exprs, &op);
 	}
+	return exprs;
+}
+
+RZ_API void
+rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf, const char *sep, const char *indent) {
+	RzBuffer *buffer = rz_buf_new_with_bytes(block->data, block->length);
+	RzVector *exprs = rz_bin_dwarf_expression_parse(buffer, &dw->encoding);
+
+	Operation *op = NULL;
+	ut32 i;
+	ut32 end = rz_vector_len(exprs) - 1;
+	rz_vector_enumerate(exprs, op, i) {
+		rz_strbuf_append(str_buf, indent);
+		Operation_dump(op, str_buf);
+		if (i < end) {
+			rz_strbuf_append(str_buf, sep);
+		}
+	}
+	rz_vector_free(exprs);
 }
 
 RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block) {
 	RzStrBuf sb = { 0 };
 	rz_strbuf_init(&sb);
-	rz_bin_dwarf_expression_dump(dw, block, &sb);
+	rz_bin_dwarf_expression_dump(dw, block, &sb, ",\t", "");
 	return rz_strbuf_drain_nofree(&sb);
 }
