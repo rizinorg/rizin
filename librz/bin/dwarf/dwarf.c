@@ -964,26 +964,6 @@ RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {
  * \brief Read an "initial length" value, as specified by dwarf.
  * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
  */
-RZ_IPI inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
-	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
-	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
-	ut64 r = READ32(*buf);
-	if (r <= DWARF32_UNIT_LENGTH_MAX) {
-		*is_64bit = false;
-		return r;
-	} else if (r == DWARF64_UNIT_LENGTH_INI) {
-		*is_64bit = true;
-		return READ64(*buf);
-	} else {
-		RZ_LOG_ERROR("Invalid initial length: 0x%" PFMT64x "\n", r);
-	}
-	return r;
-}
-
-/**
- * \brief Read an "initial length" value, as specified by dwarf.
- * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
- */
 RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian) {
 	static const ut64 DWARF32_UNIT_LENGTH_MAX = 0xfffffff0;
 	static const ut64 DWARF64_UNIT_LENGTH_INI = 0xffffffff;
@@ -1011,21 +991,9 @@ RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut6
  * \brief Reads 64/32 bit unsigned based on format
  *
  * \param is_64bit Format of the comp unit
- * \param buf Pointer to the buffer to read from, to update after read
- * \param buf_end To check the boundary /for READ macro/
  * \return ut64 Read value
  */
-RZ_IPI inline ut64 dwarf_read_offset(bool is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
-	ut64 result;
-	if (is_64bit) {
-		result = READ64(*buf);
-	} else {
-		result = READ32(*buf);
-	}
-	return result;
-}
-
-RZ_IPI inline bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
+RZ_IPI inline bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
 	if (is_64bit) {
 		ut64 result;
 		U64_OR_RET_FALSE(result);
@@ -1036,26 +1004,6 @@ RZ_IPI inline bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool 
 		*out = result;
 	}
 	return true;
-}
-
-RZ_IPI inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
-	ut64 result;
-	switch (size) {
-	case 2:
-		result = READ16(*buf);
-		break;
-	case 4:
-		result = READ32(*buf);
-		break;
-	case 8:
-		result = READ64(*buf);
-		break;
-	default:
-		result = 0;
-		*buf += size;
-		RZ_LOG_WARN("Weird dwarf address size: %zu.", size);
-	}
-	return result;
 }
 
 RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
@@ -1188,7 +1136,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// offset in .debug_str
 	case DW_FORM_strp:
 		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->string.offset, is_64bit, big_endian));
 		if (str_buffer && value->string.offset < rz_buf_size(str_buffer)) {
 			value->string.content = rz_buf_get_string(str_buffer, value->string.offset);
 		}
@@ -1197,7 +1145,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// offset in .debug_info
 	case DW_FORM_ref_addr:
 		value->kind = DW_AT_KIND_REFERENCE;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->reference, is_64bit, big_endian));
 		break;
 		// This type of reference is an offset from the first byte of the compilation
 		// header for the compilation unit containing the reference
@@ -1229,7 +1177,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// offset in a section other than .debug_info or .debug_str
 	case DW_FORM_sec_offset:
 		value->kind = DW_AT_KIND_REFERENCE;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->reference, is_64bit, big_endian));
 		break;
 	case DW_FORM_exprloc:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1248,7 +1196,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// offset into .debug_line_str section, can't parse the section now, so we just skip
 	case DW_FORM_strx:
 		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->string.offset, is_64bit, big_endian));
 		// TODO: .debug_line_str
 		RZ_LOG_ERROR("TODO: .debug_line_str\n");
 		break;
@@ -1302,7 +1250,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
 	case DW_FORM_strp_sup: // offset in a section .debug_line_str
 		value->kind = DW_AT_KIND_STRING;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->string.offset, is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->string.offset, is_64bit, big_endian));
 		// TODO: .debug_line_str
 		RZ_LOG_ERROR("TODO: .debug_line_str\n");
 		break;
@@ -1318,7 +1266,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// An index into the .debug_loc
 	case DW_FORM_loclistx:
 		value->kind = DW_AT_KIND_LOCLISTPTR;
-		RET_FALSE_IF_FAIL(read_offset(buffer, &value->reference, is_64bit, big_endian));
+		RET_FALSE_IF_FAIL(buf_read_offset(buffer, &value->reference, is_64bit, big_endian));
 		break;
 		// An index into the .debug_rnglists
 	case DW_FORM_rnglistx:
@@ -1371,7 +1319,7 @@ RZ_IPI char *attr_to_string(RzBinDwarfAttr *attr) {
 	}
 }
 
-RZ_IPI RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
+RZ_IPI RzBinSection *get_section(RzBinFile *binfile, const char *sn) {
 	rz_return_val_if_fail(binfile && sn, NULL);
 	RzListIter *iter;
 	RzBinSection *section = NULL;
@@ -1390,24 +1338,9 @@ RZ_IPI RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
 	return NULL;
 }
 
-RZ_IPI ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t *len) {
-	rz_return_val_if_fail(binfile && sect_name && len, NULL);
-	RzBinSection *section = getsection(binfile, sect_name);
-	if (!section) {
-		return NULL;
-	}
-	if (section->paddr >= binfile->size) {
-		return NULL;
-	}
-	*len = RZ_MIN(section->size, binfile->size - section->paddr);
-	ut8 *buf = calloc(1, *len);
-	rz_buf_read_at(binfile->buf, section->paddr, buf, *len);
-	return buf;
-}
-
 RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	rz_return_val_if_fail(binfile && sect_name, NULL);
-	RzBinSection *section = getsection(binfile, sect_name);
+	RzBinSection *section = get_section(binfile, sect_name);
 	if (!section) {
 		return NULL;
 	}

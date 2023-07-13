@@ -33,12 +33,9 @@ RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_dump(RzBinDwarfBlock *self, RzStrBuf *sb);
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
-RZ_IPI ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end);
 
 RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
-RZ_IPI ut64 dwarf_read_offset(bool is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end);
-RZ_IPI bool read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian);
-RZ_IPI ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **buf, const ut8 *buf_end);
+RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian);
 RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block);
 RZ_IPI const char *indent_str(int indent);
 
@@ -46,8 +43,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 RZ_IPI void attr_fini(RzBinDwarfAttr *val);
 RZ_IPI char *attr_to_string(RzBinDwarfAttr *attr);
 
-RZ_IPI RzBinSection *getsection(RzBinFile *binfile, const char *sn);
-RZ_IPI ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t *len);
+RZ_IPI RzBinSection *get_section(RzBinFile *binfile, const char *sn);
 RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name);
 
 /// addr

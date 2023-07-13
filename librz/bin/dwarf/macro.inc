@@ -16,19 +16,6 @@
 		} \
 	} while (0)
 
-#define READ8(buf) \
-	(((buf) + 1 < buf_end) ? *((ut8 *)(buf)) : 0); \
-	(buf)++
-#define READ16(buf) \
-	(((buf) + sizeof(ut16) < buf_end) ? rz_read_ble16(buf, big_endian) : 0); \
-	(buf) += sizeof(ut16)
-#define READ32(buf) \
-	(((buf) + sizeof(ut32) < buf_end) ? rz_read_ble32(buf, big_endian) : 0); \
-	(buf) += sizeof(ut32)
-#define READ64(buf) \
-	(((buf) + sizeof(ut64) < buf_end) ? rz_read_ble64(buf, big_endian) : 0); \
-	(buf) += sizeof(ut64)
-
 #define RET_FALSE_IF_FAIL(x) RET_VAL_IF_FAIL(x, false)
 #define RET_NULL_IF_FAIL(x)  RET_VAL_IF_FAIL(x, NULL)
 #define GOTO_IF_FAIL(x, label) \

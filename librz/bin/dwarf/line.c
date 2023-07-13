@@ -316,7 +316,7 @@ static bool RzBinDwarfLineHeader_parse(
 		hdr->address_size = address_size;
 	}
 
-	RET_FALSE_IF_FAIL(read_offset(buffer, &hdr->header_length, hdr->is_64bit, big_endian));
+	RET_FALSE_IF_FAIL(buf_read_offset(buffer, &hdr->header_length, hdr->is_64bit, big_endian));
 
 	U8_OR_RET_FALSE(hdr->min_inst_len);
 	if (hdr->min_inst_len == 0) {

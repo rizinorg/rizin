@@ -397,7 +397,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		if (encoding->version == 2) {
 			UX_OR_RET_FALSE(value, encoding->address_size);
 		} else {
-			read_offset(buffer, &value, encoding->address_size, encoding->big_endian);
+			buf_read_offset(buffer, &value, encoding->address_size, encoding->big_endian);
 		}
 		st64 byte_offset;
 		SLE128_OR_RET_FALSE(byte_offset);

@@ -14,92 +14,83 @@ RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set) {
 	free(set);
 }
 
-static RzList /*<RzBinDwarfARangeSet *>*/ *parse_aranges_raw(const ut8 *obuf, size_t obuf_sz, bool big_endian) {
-	rz_return_val_if_fail(obuf, NULL);
-	const ut8 *buf = obuf;
-	const ut8 *buf_end = buf + obuf_sz;
-
-	RzList *r = rz_list_newf((RzListFree)rz_bin_dwarf_arange_set_free);
-	if (!r) {
-		return NULL;
-	}
-
+static bool parse_aranges_raw(RzBuffer *buffer, bool big_endian, RzList /*<RzBinDwarfARangeSet *>*/ *aranges) {
+	rz_return_val_if_fail(buffer && aranges, NULL);
 	// DWARF 3 Standard Section 6.1.2 Lookup by Address
 	// also useful to grep for display_debug_aranges in binutils
-	while (buf < buf_end) {
-		const ut8 *start = buf;
+	while (true) {
+		ut64 offset = rz_buf_tell(buffer);
+		ut64 unit_length = 0;
 		bool is_64bit;
-		ut64 unit_length = dwarf_read_initial_length(&is_64bit, big_endian, &buf, buf_end);
+		GOTO_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &unit_length, big_endian), ok);
 		// Sanity check: length must be at least the minimal size of the remaining header fields
 		// and at maximum the remaining buffer size.
 		size_t header_rest_size = 2 + (is_64bit ? 8 : 4) + 1 + 1;
-		if (unit_length < header_rest_size || unit_length > buf_end - buf) {
+		if (unit_length < header_rest_size || unit_length > rz_buf_size(buffer) - rz_buf_tell(buffer)) {
 			break;
 		}
-		const ut8 *next_set_buf = buf + unit_length;
+		ut64 next_set_off = rz_buf_tell(buffer) + unit_length;
 		RzBinDwarfARangeSet *set = RZ_NEW(RzBinDwarfARangeSet);
 		if (!set) {
 			break;
 		}
 		set->unit_length = unit_length;
 		set->is_64bit = is_64bit;
-		set->version = READ16(buf);
-		set->debug_info_offset = dwarf_read_offset(set->is_64bit, big_endian, &buf, buf_end);
-		set->address_size = READ8(buf);
-		set->segment_size = READ8(buf);
+
+		U16_OR_GOTO(set->version, err);
+		GOTO_IF_FAIL(buf_read_offset(buffer, &set->debug_info_offset, is_64bit, big_endian), err);
+		U8_OR_GOTO(set->address_size, err);
+		U8_OR_GOTO(set->segment_size, err);
+
 		unit_length -= header_rest_size;
-		if (!set->address_size) {
-			free(set);
-			break;
-		}
+		GOTO_IF_FAIL(set->address_size > 0, err);
 
 		// align to 2*addr_size
-		size_t off = buf - start;
+		size_t off = rz_buf_tell(buffer) - offset;
 		size_t pad = rz_num_align_delta(off, 2 * set->address_size);
-		if (pad > unit_length || pad > buf_end - buf) {
-			free(set);
-			break;
-		}
-		buf += pad;
+		GOTO_IF_FAIL(pad <= unit_length && pad <= rz_buf_size(buffer) - rz_buf_tell(buffer), err);
+		rz_buf_seek(buffer, (st64)pad, RZ_BUF_CUR);
 		unit_length -= pad;
 
 		size_t arange_size = 2 * set->address_size;
 		set->aranges_count = unit_length / arange_size;
-		if (!set->aranges_count) {
-			free(set);
-			break;
-		}
+		GOTO_IF_FAIL(set->aranges_count > 0, err);
+
 		set->aranges = RZ_NEWS0(RzBinDwarfARange, set->aranges_count);
-		if (!set->aranges) {
-			free(set);
-			break;
-		}
-		size_t i;
-		for (i = 0; i < set->aranges_count; i++) {
-			set->aranges[i].addr = dwarf_read_address(set->address_size, big_endian, &buf, buf_end);
-			set->aranges[i].length = dwarf_read_address(set->address_size, big_endian, &buf, buf_end);
-			if (!set->aranges[i].addr && !set->aranges[i].length) {
+		GOTO_IF_FAIL(set->aranges, err);
+
+		size_t i = 0;
+		for (; i < set->aranges_count; i++) {
+			RzBinDwarfARange *range = set->aranges + i;
+			UX_OR_RET_FALSE(range->addr, set->address_size);
+			UX_OR_RET_FALSE(range->length, set->address_size);
+			if (!range->addr && !range->length) {
 				// last entry has two 0s
 				i++; // so i will be the total count of read entries
 				break;
 			}
 		}
 		set->aranges_count = i;
-		buf = next_set_buf;
-		rz_list_push(r, set);
+		rz_buf_seek(buffer, (st64)next_set_off, RZ_BUF_SET);
+		rz_list_push(aranges, set);
+		continue;
+	err:
+		free(set->aranges);
+		free(set);
+		break;
 	}
-
-	return r;
+ok:
+	return aranges;
 }
 
 RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
-	size_t len;
-	ut8 *buf = get_section_bytes(binfile, "debug_aranges", &len);
-	if (!buf) {
-		return NULL;
-	}
-	RzList *r = parse_aranges_raw(buf, len, binfile->o && binfile->o->info && binfile->o->info->big_endian);
-	free(buf);
-	return r;
+	RzBuffer *buffer = get_section_buf(binfile, "debug_aranges");
+	RET_NULL_IF_FAIL(buffer);
+	bool big_endian = binfile->o && binfile->o->info && binfile->o->info->big_endian;
+	RzList *aranges = rz_list_newf((RzListFree)rz_bin_dwarf_arange_set_free);
+	RET_NULL_IF_FAIL(aranges);
+	RET_NULL_IF_FAIL(parse_aranges_raw(buffer, big_endian, aranges));
+	rz_buf_free(buffer);
+	return aranges;
 }
