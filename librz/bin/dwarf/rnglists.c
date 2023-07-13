@@ -26,6 +26,9 @@ RZ_IPI void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8
 }
 
 RZ_IPI void Range_free(RzBinDwarfRange *self) {
+	if (!self) {
+		return;
+	}
 	free(self);
 }
 
@@ -212,9 +215,10 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 		continue;
 	err1:
 		RzBinDwarfRawRngListEntry_fini(&raw_entry);
-	err2:
 		RzBinDwarfRngList_free(rnglist);
 		return false;
+	err2:
+		Range_free(range);
 	}
 	ht_up_update(self->rnglist_by_offset, rnglist->offset, rnglist);
 	return true;

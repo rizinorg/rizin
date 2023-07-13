@@ -71,7 +71,7 @@
 		return false; \
 	}
 
-static char *buf_get_string(RzBuffer *buffer) {
+static inline char *buf_get_string(RzBuffer *buffer) {
 	st64 offset = (st64)rz_buf_tell(buffer);
 	RET_NULL_IF_FAIL(offset != -1);
 	char *x = rz_buf_get_string(buffer, offset);

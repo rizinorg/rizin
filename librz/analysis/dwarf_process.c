@@ -889,10 +889,13 @@ RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, RzBinDwarfLocList *l
 
 	RzBinDwarfLocationListEntry *entry;
 	rz_vector_foreach(&loclist->entries, entry) {
+		if (!(entry->expression && entry->expression->data)) {
+			continue;
+		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
 			char *expr_str = rz_bin_dwarf_expression_to_string(ctx->dw, entry->expression);
-			RZ_LOG_ERROR("Failed to parse fn: 0x%" PFMT64x " location list entry (0x%" PFMT64x ", 0x%" PFMT64x "): [%s]\n ",
+			RZ_LOG_ERROR("Failed to parse fn: 0x%" PFMT64x " location list entry (0x%" PFMT64x ", 0x%" PFMT64x "):\t[%s]\n ",
 				fn->offset, entry->range->begin, entry->range->end, rz_str_get_null(expr_str))
 			free(expr_str);
 
@@ -932,8 +935,12 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	} else if (attr->kind == DW_AT_KIND_BLOCK) {
 		block = &attr->block;
 	}
-	if (block == NULL) {
+	if (!block) {
 		RZ_LOG_ERROR("Failed to find location %s\n", rz_bin_dwarf_form(attr->form));
+		return NULL;
+	}
+	if (!block->data) {
+		// EMPTY Location?
 		return NULL;
 	}
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);

@@ -1629,9 +1629,9 @@ typedef enum {
 } RzBinDwarfEvaluationDefer;
 
 typedef struct {
-	RzBinDwarf *dw;
-	RzBinDwarfCompUnit *unit;
-	RzBinDwarfDie *die;
+	const RzBinDwarf *dw;
+	const RzBinDwarfCompUnit *unit;
+	const RzBinDwarfDie *die;
 	RzBuffer *bytecode;
 	const RzBinDwarfEncoding *encoding;
 	ut64 *object_address;
@@ -1731,8 +1731,8 @@ typedef struct rz_bin_dwarf_location_t {
 	};
 } RzBinDwarfLocation;
 
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, RzBinDwarf *dw, RzBinDwarfCompUnit *unit, RzBinDwarfDie *die);
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, RzBinDwarf *dw, RzBinDwarfCompUnit *unit, RzBinDwarfDie *die);
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self);
 RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out);
 RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self);
@@ -1741,9 +1741,9 @@ RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfB
 RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block);
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
-RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding);
+RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding);
 RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw);
-RZ_API void RzBinDwarfLocLists_free(RzBinDwarfLocListTable *self);
+RZ_API void rz_bin_dwarf_loclists_free(RzBinDwarfLocListTable *self);
 /// rnglists
 RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RzBinFile *bf, RzBinDwarf *dw);
 RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);

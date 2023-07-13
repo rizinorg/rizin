@@ -681,7 +681,7 @@ addrmask_from_size(uint8_t size) {
 				      : (1ULL << (size * 8)) - 1);
 }
 
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, RzBinDwarf *dw, RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die) {
 	rz_return_val_if_fail(byte_code && dw, NULL);
 	RzBinDwarfEvaluation *self = RZ_NEW0(RzBinDwarfEvaluation);
 	RET_NULL_IF_FAIL(self);
@@ -701,9 +701,10 @@ RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, Rz
 	return self;
 }
 
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, RzBinDwarf *dw, RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
+RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die) {
 	rz_return_val_if_fail(block && dw, NULL);
 	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
+	RET_NULL_IF_FAIL(expr);
 	RzBinDwarfEvaluation *self = rz_bin_dwarf_evaluation_new(expr, dw, unit, die);
 	RET_NULL_IF_FAIL(self);
 	return self;
@@ -1273,8 +1274,11 @@ RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluation *eval
 }
 
 RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die) {
+	rz_return_val_if_fail(block && dw, NULL);
 	RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
+	RET_NULL_IF_FAIL(result);
 	RzBinDwarfEvaluation *eval = rz_bin_dwarf_evaluation_new_from_block(block, dw, unit, die);
+	RET_NULL_IF_FAIL(eval);
 	if (!rz_bin_dwarf_evaluation_evaluate(eval, result)) {
 		goto beach;
 	}
