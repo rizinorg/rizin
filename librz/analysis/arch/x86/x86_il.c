@@ -909,6 +909,7 @@ static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc,
 #if CS_API_MAJOR <= 3
 	case X86_OP_FP:
 		RZ_LOG_WARN("RzIL: x86: Floating point instructions not implemented yet\n");
+		return NULL;
 #endif
 	default:
 		return NULL;
