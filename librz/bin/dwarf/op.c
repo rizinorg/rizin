@@ -729,21 +729,25 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	/// need to resolve delayed value in stack
 #define CHECK_DEFER \
 	do { \
-		RzBinDwarfValue *val = rz_vector_tail(&self->stack); \
-		if (val->type == RzBinDwarfValueType_LOCATION) { \
-			rz_buf_seek(self->pc, offset, RZ_BUF_SET); \
-			out->kind = OperationEvaluationResult_WAITING_RESOLVE; \
-			return true; \
+		if (rz_vector_len(&self->stack) >= 1) { \
+			RzBinDwarfValue *val = rz_vector_tail(&self->stack); \
+			if (val->type == RzBinDwarfValueType_LOCATION) { \
+				rz_buf_seek(self->pc, offset, RZ_BUF_SET); \
+				out->kind = OperationEvaluationResult_WAITING_RESOLVE; \
+				return true; \
+			} \
 		} \
 	} while (0)
 #define CHECK_DEFER2 \
 	do { \
-		RzBinDwarfValue *a = rz_vector_tail(&self->stack); \
-		RzBinDwarfValue *b = rz_vector_index_ptr(&self->stack, rz_vector_len(&self->stack) - 2); \
-		if (a->type == RzBinDwarfValueType_LOCATION || b->type == RzBinDwarfValueType_LOCATION) { \
-			rz_buf_seek(self->pc, offset, RZ_BUF_SET); \
-			out->kind = OperationEvaluationResult_WAITING_RESOLVE; \
-			return true; \
+		if (rz_vector_len(&self->stack) >= 2) { \
+			RzBinDwarfValue *a = rz_vector_tail(&self->stack); \
+			RzBinDwarfValue *b = rz_vector_index_ptr(&self->stack, rz_vector_len(&self->stack) - 2); \
+			if (a->type == RzBinDwarfValueType_LOCATION || b->type == RzBinDwarfValueType_LOCATION) { \
+				rz_buf_seek(self->pc, offset, RZ_BUF_SET); \
+				out->kind = OperationEvaluationResult_WAITING_RESOLVE; \
+				return true; \
+			} \
 		} \
 	} while (0)
 
