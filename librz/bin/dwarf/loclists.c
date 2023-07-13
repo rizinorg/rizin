@@ -19,12 +19,13 @@ void RzBinDwarfRawLocListEntry_fini(RzBinDwarfRawLocListEntry *self, void *user)
 	RzBinDwarfBlock_fini(&self->address_or_offset_pair.data);
 }
 
-void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self, void *user) {
+void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self) {
 	if (!self) {
 		return;
 	}
 	free(self->range);
 	RzBinDwarfBlock_fini(self->expression);
+	RzBinDwarfLocation_free(self->location);
 }
 
 static inline bool parse_data(RzBuffer *buffer, RzBinDwarfBlock *block, RzBinDwarfEncoding *encoding) {
@@ -209,7 +210,7 @@ void loclist_free(RzBinDwarfLocList *self) {
 		return;
 	}
 	rz_vector_fini(&self->raw_entries);
-	rz_vector_fini(&self->entries);
+	rz_pvector_fini(&self->entries);
 	free(self);
 }
 
@@ -217,8 +218,7 @@ static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer,
 	RzBinDwarfLocList *loclist = RZ_NEW0(RzBinDwarfLocList);
 	loclist->offset = rz_buf_tell(buffer);
 	rz_vector_init(&loclist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawLocListEntry_fini, NULL);
-	rz_vector_init(&loclist->entries, sizeof(RzBinDwarfLocationListEntry), (RzVectorFree)RzBinDwarfLocationListEntry_fini, NULL);
-
+	rz_pvector_init(&loclist->entries, (RzPVectorFree)RzBinDwarfLocationListEntry_fini);
 	while (true) {
 		RzBinDwarfRawLocListEntry raw_entry = { 0 };
 		RzBinDwarfLocationListEntry *entry = NULL;
@@ -232,8 +232,7 @@ static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer,
 		if (!entry) {
 			continue;
 		}
-		rz_vector_push(&loclist->entries, entry);
-		RzBinDwarfLocationListEntry_free(entry);
+		rz_pvector_push(&loclist->entries, entry);
 		continue;
 	err1:
 		RzBinDwarfRawLocListEntry_fini(&raw_entry, NULL);

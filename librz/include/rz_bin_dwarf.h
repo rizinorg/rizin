@@ -1366,7 +1366,7 @@ typedef struct {
 typedef struct {
 	ut64 offset;
 	RzVector /*<RzBinDwarfRawRngListEntry>*/ raw_entries;
-	RzVector /*<RzBinDwarfRange>*/ entries;
+	RzPVector /*<RzBinDwarfRange*>*/ entries;
 } RzBinDwarfRngList;
 
 typedef struct {
@@ -1453,8 +1453,8 @@ typedef struct {
 typedef struct {
 	ut64 offset;
 	bool has_location;
-	RzVector /*<RzBinDwarfLocationListEntry>*/ entries;
-	RzVector /*<RzBinDwarfLocationListEntry>*/ raw_entries;
+	RzPVector /*<RzBinDwarfLocationListEntry*>*/ entries;
+	RzVector /*<RzBinDwarfRawLocListEntry>*/ raw_entries;
 } RzBinDwarfLocList;
 
 typedef struct {

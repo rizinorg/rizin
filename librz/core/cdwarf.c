@@ -221,8 +221,9 @@ bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 	RzStrBuf *sb = ctx->sb;
 
 	my_printf("0x%" PFMT64x "\n", loclist->offset);
-	RzBinDwarfLocationListEntry *entry;
-	rz_vector_foreach(&loclist->entries, entry) {
+	void **it;
+	rz_pvector_foreach (&loclist->entries, it) {
+		RzBinDwarfLocationListEntry *entry = *it;
 		my_printf("\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
 		rz_bin_dwarf_expression_dump(ctx->dw, entry->expression, ctx->sb, ",\t", "");
 		my_print("]\n");
@@ -457,8 +458,9 @@ bool htup_rnglists_cb(void *u, ut64 k, const void *v) {
 	}
 
 	my_printf("0x%" PFMT64x "\n", rnglist->offset);
-	RzBinDwarfRange *range;
-	rz_vector_foreach(&rnglist->entries, range) {
+	void **it;
+	rz_pvector_foreach (&rnglist->entries, it) {
+		RzBinDwarfRange *range = *it;
 		my_printf("\t(0x%" PFMT64x ", 0x%" PFMT64x ")\n", range->begin, range->end);
 	}
 	return true;

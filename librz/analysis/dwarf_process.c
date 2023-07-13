@@ -887,8 +887,9 @@ RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, RzBinDwarfLocList *l
 		return location;
 	}
 
-	RzBinDwarfLocationListEntry *entry;
-	rz_vector_foreach(&loclist->entries, entry) {
+	void **it;
+	rz_pvector_foreach (&loclist->entries, it) {
+		RzBinDwarfLocationListEntry *entry = *it;
 		if (!(entry->expression && entry->expression->data)) {
 			continue;
 		}
@@ -925,7 +926,7 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 				goto err;
 			}
 		}
-		if (rz_vector_len(&loclist->entries) >= 1) {
+		if (rz_pvector_len(&loclist->entries) >= 1) {
 			return parse_dwarf_location_list(ctx, loclist, fn);
 		} else {
 			RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);

@@ -32,7 +32,7 @@ RZ_IPI void Range_free(RzBinDwarfRange *self) {
 	free(self);
 }
 
-static void rz_vector_range_free(void *e, void *u) {
+static void rz_vector_range_free(void *e) {
 	Range_free(e);
 }
 
@@ -103,7 +103,7 @@ void RzBinDwarfRawRngListEntry_fini(RzBinDwarfRawRngListEntry *self) {}
 
 void RzBinDwarfRngList_free(RzBinDwarfRngList *self) {
 	rz_vector_fini(&self->raw_entries);
-	rz_vector_fini(&self->entries);
+	rz_pvector_fini(&self->entries);
 	free(self);
 }
 
@@ -199,7 +199,7 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 	RzBinDwarfRngList *rnglist = RZ_NEW0(RzBinDwarfRngList);
 	rnglist->offset = rz_buf_tell(buffer);
 	rz_vector_init(&rnglist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawRngListEntry_fini, NULL);
-	rz_vector_init(&rnglist->entries, sizeof(RzBinDwarfRange), rz_vector_range_free, NULL);
+	rz_pvector_init(&rnglist->entries, rz_vector_range_free);
 
 	while (true) {
 		RzBinDwarfRawRngListEntry raw_entry = { 0 };
@@ -210,8 +210,10 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 			break;
 		}
 		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &range), err2);
-		rz_vector_push(&rnglist->entries, range);
-		free(range);
+		if (!range) {
+			continue;
+		}
+		rz_pvector_push(&rnglist->entries, range);
 		continue;
 	err1:
 		RzBinDwarfRawRngListEntry_fini(&raw_entry);
