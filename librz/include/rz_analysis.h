@@ -448,7 +448,6 @@ typedef struct rz_analysis_il_vm_t RzAnalysisILVM;
 
 typedef struct {
 	HtUP *function_by_addr;
-	HtUP *base_type_by_offset;
 	HtUP *type_by_offset;
 } RzAnalysisDebugInfo;
 

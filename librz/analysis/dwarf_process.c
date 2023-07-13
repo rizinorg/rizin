@@ -1182,10 +1182,6 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 		ctx.unit = unit;
 		RzBinDwarfDie *die;
 		rz_vector_foreach(&unit->dies, die) {
-			if (ht_up_find(ctx.analysis->debug_info->base_type_by_offset, die->offset, NULL)) {
-				continue;
-			}
-
 			switch (die->tag) {
 			case DW_TAG_structure_type:
 			case DW_TAG_union_type:
@@ -1197,7 +1193,7 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 				if (!base_type) {
 					continue;
 				}
-				ht_up_insert(ctx.analysis->debug_info->base_type_by_offset, die->offset, base_type);
+				rz_type_db_update_base_type(analysis->typedb, base_type);
 				break;
 			}
 			case DW_TAG_subprogram:
@@ -1208,9 +1204,6 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 			}
 		}
 	}
-
-	ht_up_foreach(analysis->debug_info->base_type_by_offset, htup_typedb_base_type_update, analysis->typedb);
-	analysis->debug_info->base_type_by_offset->opt.freefn = NULL;
 }
 
 static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwarfVariable *dw_var, RzAnalysisVar *var) {
@@ -1373,7 +1366,6 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	}
 	debug_info->function_by_addr = ht_up_new(NULL, htup_function_free, NULL);
 	debug_info->type_by_offset = ht_up_new(NULL, htup_type_free, NULL);
-	debug_info->base_type_by_offset = ht_up_new(NULL, htup_base_type_free, NULL);
 	return debug_info;
 }
 
@@ -1383,6 +1375,5 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	}
 	ht_up_free(debuginfo->function_by_addr);
 	ht_up_free(debuginfo->type_by_offset);
-	ht_up_free(debuginfo->base_type_by_offset);
 	free(debuginfo);
 }
