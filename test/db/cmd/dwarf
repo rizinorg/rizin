@@ -1115,42 +1115,42 @@ Raw dump of debug contents of section .debug_line:
   2     0       0         0          mammal.h
 
  Line Number Statements:
-  Set column to 3
-  Extended opcode 2: set Address to 0x118a
-  Special opcode 7: advance Address by 0 to 0x118a and Line by 2 to 3
-  Set column to 19
-  Special opcode 173: advance Address by 12 to 0x1196 and Line by 0 to 3
-  Set column to 22
-  Special opcode 201: advance Address by 14 to 0x11a4 and Line by 0 to 3
-  Set column to 3
-  Special opcode 61: advance Address by 4 to 0x11a8 and Line by 0 to 3
-  Set column to 22
-  Special opcode 229: advance Address by 16 to 0x11b8 and Line by 0 to 3
-  Advance PC by constant 17 to 0x11c9
-  Special opcode 216: advance Address by 15 to 0x11d8 and Line by 1 to 4
-  Set column to 31
-  Special opcode 173: advance Address by 12 to 0x11e4 and Line by 0 to 4
-  Set column to 34
-  Special opcode 75: advance Address by 5 to 0x11e9 and Line by 0 to 4
-  Set column to 12
-  Special opcode 39: advance Address by 2 to 0x11eb and Line by 6 to 10
-  Special opcode 173: advance Address by 12 to 0x11f7 and Line by 0 to 10
-  Set column to 23
-  Special opcode 217: advance Address by 15 to 0x1206 and Line by 2 to 12
-  Set column to 1
-  Special opcode 174: advance Address by 12 to 0x1212 and Line by 1 to 13
-  Advance PC by 22 to 0x1228
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x118a
+  Special opcode	20
+  DW_LNS_set_column	19
+  Special opcode	186
+  DW_LNS_set_column	22
+  Special opcode	214
+  DW_LNS_set_column	3
+  Special opcode	74
+  DW_LNS_set_column	22
+  Special opcode	242
+  DW_LNS_const_add_pc
+  Special opcode	229
+  DW_LNS_set_column	31
+  Special opcode	186
+  DW_LNS_set_column	34
+  Special opcode	88
+  DW_LNS_set_column	12
+  Special opcode	52
+  Special opcode	186
+  DW_LNS_set_column	23
+  Special opcode	230
+  DW_LNS_set_column	1
+  Special opcode	187
+  DW_LNS_advance_pc	22
+  DW_LNE_end_sequence
 
-  Set column to 6
-  Extended opcode 2: set Address to 0x1228
-  Special opcode 11: advance Address by 0 to 0x1228 and Line by 6 to 7
-  Set column to 26
-  Special opcode 173: advance Address by 12 to 0x1234 and Line by 0 to 7
-  Set column to 28
-  Special opcode 75: advance Address by 5 to 0x1239 and Line by 0 to 7
-  Advance PC by 2 to 0x123b
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	6
+  DW_LNE_set_address	0x1228
+  Special opcode	24
+  DW_LNS_set_column	26
+  Special opcode	186
+  DW_LNS_set_column	28
+  Special opcode	88
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
  Header information[0x81]
   Length:                             361
@@ -1184,143 +1184,143 @@ Raw dump of debug contents of section .debug_line:
   2     0       0         0          main.cpp
 
  Line Number Statements:
-  Set column to 3
-  Extended opcode 2: set Address to 0x12c6
-  Special opcode 6: advance Address by 0 to 0x12c6 and Line by 1 to 2
-  Set column to 12
-  Special opcode 173: advance Address by 12 to 0x12d2 and Line by 0 to 2
-  Set column to 15
-  Special opcode 201: advance Address by 14 to 0x12e0 and Line by 0 to 2
-  Advance PC by 3 to 0x12e3
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x12c6
+  Special opcode	19
+  DW_LNS_set_column	12
+  Special opcode	186
+  DW_LNS_set_column	15
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 3
-  Extended opcode 2: set Address to 0x12e4
-  Special opcode 8: advance Address by 0 to 0x12e4 and Line by 3 to 4
-  Set column to 9
-  Special opcode 229: advance Address by 16 to 0x12f4 and Line by 0 to 4
-  Set column to 12
-  Advance PC by constant 17 to 0x1305
-  Special opcode 131: advance Address by 9 to 0x130e and Line by 0 to 4
-  Advance PC by 3 to 0x1311
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x12e4
+  Special opcode	21
+  DW_LNS_set_column	9
+  Special opcode	242
+  DW_LNS_set_column	12
+  DW_LNS_const_add_pc
+  Special opcode	144
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 11
-  Extended opcode 2: set Address to 0x1312
-  Special opcode 9: advance Address by 0 to 0x1312 and Line by 4 to 5
-  Set column to 18
-  Special opcode 229: advance Address by 16 to 0x1322 and Line by 0 to 5
-  Set column to 19
-  Advance PC by constant 17 to 0x1333
-  Special opcode 131: advance Address by 9 to 0x133c and Line by 0 to 5
-  Advance PC by 3 to 0x133f
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x1312
+  Special opcode	22
+  DW_LNS_set_column	18
+  Special opcode	242
+  DW_LNS_set_column	19
+  DW_LNS_const_add_pc
+  Special opcode	144
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 11
-  Extended opcode 2: set Address to 0x1340
-  Special opcode 9: advance Address by 0 to 0x1340 and Line by 4 to 5
-  Set column to 19
-  Special opcode 229: advance Address by 16 to 0x1350 and Line by 0 to 5
-  Advance PC by 31 to 0x136f
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x1340
+  Special opcode	22
+  DW_LNS_set_column	19
+  Special opcode	242
+  DW_LNS_advance_pc	31
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 15
-  Extended opcode 2: set Address to 0x1370
-  Special opcode 10: advance Address by 0 to 0x1370 and Line by 5 to 6
-  Set column to 31
-  Special opcode 173: advance Address by 12 to 0x137c and Line by 0 to 6
-  Set column to 34
-  Special opcode 75: advance Address by 5 to 0x1381 and Line by 0 to 6
-  Advance PC by 2 to 0x1383
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	15
+  DW_LNE_set_address	0x1370
+  Special opcode	23
+  DW_LNS_set_column	31
+  Special opcode	186
+  DW_LNS_set_column	34
+  Special opcode	88
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 3
-  Extended opcode 2: set Address to 0x1384
-  Advance line by 9, to 10
-  Copy
-  Set column to 10
-  Special opcode 173: advance Address by 12 to 0x1390 and Line by 0 to 10
-  Set column to 13
-  Special opcode 201: advance Address by 14 to 0x139e and Line by 0 to 10
-  Advance PC by 3 to 0x13a1
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x1384
+  DW_LNS_advance_line	9
+  DW_LNS_copy
+  DW_LNS_set_column	10
+  Special opcode	186
+  DW_LNS_set_column	13
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 11
-  Extended opcode 2: set Address to 0x13a2
-  Advance line by 10, to 11
-  Copy
-  Set column to 19
-  Special opcode 173: advance Address by 12 to 0x13ae and Line by 0 to 11
-  Set column to 20
-  Special opcode 201: advance Address by 14 to 0x13bc and Line by 0 to 11
-  Advance PC by 3 to 0x13bf
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x13a2
+  DW_LNS_advance_line	10
+  DW_LNS_copy
+  DW_LNS_set_column	19
+  Special opcode	186
+  DW_LNS_set_column	20
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 11
-  Extended opcode 2: set Address to 0x13c0
-  Advance line by 10, to 11
-  Copy
-  Set column to 20
-  Special opcode 229: advance Address by 16 to 0x13d0 and Line by 0 to 11
-  Advance PC by 31 to 0x13ef
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x13c0
+  DW_LNS_advance_line	10
+  DW_LNS_copy
+  DW_LNS_set_column	20
+  Special opcode	242
+  DW_LNS_advance_pc	31
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 15
-  Extended opcode 2: set Address to 0x13f0
-  Advance line by 11, to 12
-  Copy
-  Set column to 30
-  Special opcode 173: advance Address by 12 to 0x13fc and Line by 0 to 12
-  Set column to 33
-  Special opcode 75: advance Address by 5 to 0x1401 and Line by 0 to 12
-  Advance PC by 2 to 0x1403
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	15
+  DW_LNE_set_address	0x13f0
+  DW_LNS_advance_line	11
+  DW_LNS_copy
+  DW_LNS_set_column	30
+  Special opcode	186
+  DW_LNS_set_column	33
+  Special opcode	88
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
-  Set file to 2
-  Set column to 12
-  Extended opcode 2: set Address to 0x123b
-  Advance line by 14, to 15
-  Copy
-  Set column to 16
-  Special opcode 190: advance Address by 13 to 0x1248 and Line by 3 to 18
-  Set column to 5
-  Advance PC by constant 17 to 0x1259
-  Special opcode 61: advance Address by 4 to 0x125d and Line by 0 to 18
-  Set column to 15
-  Special opcode 62: advance Address by 4 to 0x1261 and Line by 1 to 19
-  Set column to 5
-  Advance PC by constant 17 to 0x1272
-  Special opcode 61: advance Address by 4 to 0x1276 and Line by 0 to 19
-  Set column to 7
-  Special opcode 62: advance Address by 4 to 0x127a and Line by 1 to 20
-  Set column to 20
-  Special opcode 104: advance Address by 7 to 0x1281 and Line by 1 to 21
-  Set column to 19
-  Special opcode 201: advance Address by 14 to 0x128f and Line by 0 to 21
-  Set column to 10
-  Special opcode 131: advance Address by 9 to 0x1298 and Line by 0 to 21
-  Set column to 21
-  Special opcode 48: advance Address by 3 to 0x129b and Line by 1 to 22
-  Set column to 20
-  Special opcode 201: advance Address by 14 to 0x12a9 and Line by 0 to 22
-  Set column to 10
-  Special opcode 131: advance Address by 9 to 0x12b2 and Line by 0 to 22
-  Set column to 23
-  Special opcode 48: advance Address by 3 to 0x12b5 and Line by 1 to 23
-  Set column to 24
-  Special opcode 75: advance Address by 5 to 0x12ba and Line by 0 to 23
-  Set column to 1
-  Special opcode 76: advance Address by 5 to 0x12bf and Line by 1 to 24
-  Advance PC by 7 to 0x12c6
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_file	2
+  DW_LNS_set_column	12
+  DW_LNE_set_address	0x123b
+  DW_LNS_advance_line	14
+  DW_LNS_copy
+  DW_LNS_set_column	16
+  Special opcode	203
+  DW_LNS_set_column	5
+  DW_LNS_const_add_pc
+  Special opcode	74
+  DW_LNS_set_column	15
+  Special opcode	75
+  DW_LNS_set_column	5
+  DW_LNS_const_add_pc
+  Special opcode	74
+  DW_LNS_set_column	7
+  Special opcode	75
+  DW_LNS_set_column	20
+  Special opcode	117
+  DW_LNS_set_column	19
+  Special opcode	214
+  DW_LNS_set_column	10
+  Special opcode	144
+  DW_LNS_set_column	21
+  Special opcode	61
+  DW_LNS_set_column	20
+  Special opcode	214
+  DW_LNS_set_column	10
+  Special opcode	144
+  DW_LNS_set_column	23
+  Special opcode	61
+  DW_LNS_set_column	24
+  Special opcode	88
+  DW_LNS_set_column	1
+  Special opcode	89
+  DW_LNS_advance_pc	7
+  DW_LNE_end_sequence
 
 0x0000118a	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
 0x00001196	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
@@ -1983,22 +1983,22 @@ Raw dump of debug contents of section .debug_line:
   1     0       0         0          main.c
 
  Line Number Statements:
-  Set column to 1
-  Extended opcode 2: set Address to 0x1129
-  Special opcode 7: advance Address by 0 to 0x1129 and Line by 2 to 3
-  Special opcode 120: advance Address by 8 to 0x1131 and Line by 3 to 6
-  Set column to 12
-  Special opcode 48: advance Address by 3 to 0x1134 and Line by 1 to 7
-  Set column to 2
-  Special opcode 174: advance Address by 12 to 0x1140 and Line by 1 to 8
-  Set column to 6
-  Special opcode 146: advance Address by 10 to 0x114a and Line by 1 to 9
-  Set column to 9
-  Special opcode 104: advance Address by 7 to 0x1151 and Line by 1 to 10
-  Set column to 1
-  Special opcode 48: advance Address by 3 to 0x1154 and Line by 1 to 11
-  Advance PC by 2 to 0x1156
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	1
+  DW_LNE_set_address	0x1129
+  Special opcode	20
+  Special opcode	133
+  DW_LNS_set_column	12
+  Special opcode	61
+  DW_LNS_set_column	2
+  Special opcode	187
+  DW_LNS_set_column	6
+  Special opcode	159
+  DW_LNS_set_column	9
+  Special opcode	117
+  DW_LNS_set_column	1
+  Special opcode	61
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
 0x00001129	/home/hound/r2test/dwarf/c/main.c	3
 0x00001131	/home/hound/r2test/dwarf/c/main.c	6
@@ -2850,160 +2850,160 @@ Raw dump of debug contents of section .debug_line:
   1     0       0         0          main.cpp
 
  Line Number Statements:
-  Set column to 3
-  Extended opcode 2: set Address to 0x11ee
-  Special opcode 6: advance Address by 0 to 0x11ee and Line by 1 to 2
-  Set column to 12
-  Special opcode 173: advance Address by 12 to 0x11fa and Line by 0 to 2
-  Set column to 15
-  Special opcode 201: advance Address by 14 to 0x1208 and Line by 0 to 2
-  Advance PC by 3 to 0x120b
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x11ee
+  Special opcode	19
+  DW_LNS_set_column	12
+  Special opcode	186
+  DW_LNS_set_column	15
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set column to 11
-  Extended opcode 2: set Address to 0x120c
-  Special opcode 7: advance Address by 0 to 0x120c and Line by 2 to 3
-  Set column to 21
-  Special opcode 173: advance Address by 12 to 0x1218 and Line by 0 to 3
-  Set column to 22
-  Special opcode 201: advance Address by 14 to 0x1226 and Line by 0 to 3
-  Advance PC by 3 to 0x1229
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x120c
+  Special opcode	20
+  DW_LNS_set_column	21
+  Special opcode	186
+  DW_LNS_set_column	22
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set column to 11
-  Extended opcode 2: set Address to 0x122a
-  Special opcode 7: advance Address by 0 to 0x122a and Line by 2 to 3
-  Set column to 22
-  Special opcode 229: advance Address by 16 to 0x123a and Line by 0 to 3
-  Advance PC by 31 to 0x1259
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x122a
+  Special opcode	20
+  DW_LNS_set_column	22
+  Special opcode	242
+  DW_LNS_advance_pc	31
+  DW_LNE_end_sequence
 
-  Set column to 15
-  Extended opcode 2: set Address to 0x125a
-  Special opcode 8: advance Address by 0 to 0x125a and Line by 3 to 4
-  Set column to 31
-  Special opcode 173: advance Address by 12 to 0x1266 and Line by 0 to 4
-  Set column to 34
-  Special opcode 75: advance Address by 5 to 0x126b and Line by 0 to 4
-  Advance PC by 2 to 0x126d
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	15
+  DW_LNE_set_address	0x125a
+  Special opcode	21
+  DW_LNS_set_column	31
+  Special opcode	186
+  DW_LNS_set_column	34
+  Special opcode	88
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
-  Set column to 3
-  Extended opcode 2: set Address to 0x126e
-  Special opcode 12: advance Address by 0 to 0x126e and Line by 7 to 8
-  Set column to 9
-  Special opcode 229: advance Address by 16 to 0x127e and Line by 0 to 8
-  Set column to 12
-  Advance PC by constant 17 to 0x128f
-  Special opcode 131: advance Address by 9 to 0x1298 and Line by 0 to 8
-  Advance PC by 3 to 0x129b
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x126e
+  Special opcode	25
+  DW_LNS_set_column	9
+  Special opcode	242
+  DW_LNS_set_column	12
+  DW_LNS_const_add_pc
+  Special opcode	144
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set column to 11
-  Extended opcode 2: set Address to 0x129c
-  Special opcode 13: advance Address by 0 to 0x129c and Line by 8 to 9
-  Set column to 18
-  Special opcode 229: advance Address by 16 to 0x12ac and Line by 0 to 9
-  Set column to 19
-  Advance PC by constant 17 to 0x12bd
-  Special opcode 131: advance Address by 9 to 0x12c6 and Line by 0 to 9
-  Advance PC by 3 to 0x12c9
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x129c
+  Special opcode	26
+  DW_LNS_set_column	18
+  Special opcode	242
+  DW_LNS_set_column	19
+  DW_LNS_const_add_pc
+  Special opcode	144
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set column to 11
-  Extended opcode 2: set Address to 0x12ca
-  Special opcode 13: advance Address by 0 to 0x12ca and Line by 8 to 9
-  Set column to 19
-  Special opcode 229: advance Address by 16 to 0x12da and Line by 0 to 9
-  Advance PC by 31 to 0x12f9
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x12ca
+  Special opcode	26
+  DW_LNS_set_column	19
+  Special opcode	242
+  DW_LNS_advance_pc	31
+  DW_LNE_end_sequence
 
-  Set column to 15
-  Extended opcode 2: set Address to 0x12fa
-  Advance line by 9, to 10
-  Copy
-  Set column to 31
-  Special opcode 173: advance Address by 12 to 0x1306 and Line by 0 to 10
-  Set column to 34
-  Special opcode 75: advance Address by 5 to 0x130b and Line by 0 to 10
-  Advance PC by 2 to 0x130d
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	15
+  DW_LNE_set_address	0x12fa
+  DW_LNS_advance_line	9
+  DW_LNS_copy
+  DW_LNS_set_column	31
+  Special opcode	186
+  DW_LNS_set_column	34
+  Special opcode	88
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
-  Set column to 3
-  Extended opcode 2: set Address to 0x130e
-  Advance line by 13, to 14
-  Copy
-  Set column to 10
-  Special opcode 173: advance Address by 12 to 0x131a and Line by 0 to 14
-  Set column to 13
-  Special opcode 201: advance Address by 14 to 0x1328 and Line by 0 to 14
-  Advance PC by 3 to 0x132b
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	3
+  DW_LNE_set_address	0x130e
+  DW_LNS_advance_line	13
+  DW_LNS_copy
+  DW_LNS_set_column	10
+  Special opcode	186
+  DW_LNS_set_column	13
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set column to 11
-  Extended opcode 2: set Address to 0x132c
-  Advance line by 14, to 15
-  Copy
-  Set column to 19
-  Special opcode 173: advance Address by 12 to 0x1338 and Line by 0 to 15
-  Set column to 20
-  Special opcode 201: advance Address by 14 to 0x1346 and Line by 0 to 15
-  Advance PC by 3 to 0x1349
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x132c
+  DW_LNS_advance_line	14
+  DW_LNS_copy
+  DW_LNS_set_column	19
+  Special opcode	186
+  DW_LNS_set_column	20
+  Special opcode	214
+  DW_LNS_advance_pc	3
+  DW_LNE_end_sequence
 
-  Set column to 11
-  Extended opcode 2: set Address to 0x134a
-  Advance line by 14, to 15
-  Copy
-  Set column to 20
-  Special opcode 229: advance Address by 16 to 0x135a and Line by 0 to 15
-  Advance PC by 31 to 0x1379
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	11
+  DW_LNE_set_address	0x134a
+  DW_LNS_advance_line	14
+  DW_LNS_copy
+  DW_LNS_set_column	20
+  Special opcode	242
+  DW_LNS_advance_pc	31
+  DW_LNE_end_sequence
 
-  Set column to 15
-  Extended opcode 2: set Address to 0x137a
-  Advance line by 15, to 16
-  Copy
-  Set column to 30
-  Special opcode 173: advance Address by 12 to 0x1386 and Line by 0 to 16
-  Set column to 33
-  Special opcode 75: advance Address by 5 to 0x138b and Line by 0 to 16
-  Advance PC by 2 to 0x138d
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	15
+  DW_LNE_set_address	0x137a
+  DW_LNS_advance_line	15
+  DW_LNS_copy
+  DW_LNS_set_column	30
+  Special opcode	186
+  DW_LNS_set_column	33
+  Special opcode	88
+  DW_LNS_advance_pc	2
+  DW_LNE_end_sequence
 
-  Set column to 12
-  Extended opcode 2: set Address to 0x1169
-  Advance line by 18, to 19
-  Copy
-  Set column to 16
-  Special opcode 190: advance Address by 13 to 0x1176 and Line by 3 to 22
-  Set column to 5
-  Advance PC by constant 17 to 0x1187
-  Special opcode 61: advance Address by 4 to 0x118b and Line by 0 to 22
-  Set column to 15
-  Special opcode 62: advance Address by 4 to 0x118f and Line by 1 to 23
-  Set column to 5
-  Advance PC by constant 17 to 0x11a0
-  Special opcode 61: advance Address by 4 to 0x11a4 and Line by 0 to 23
-  Set column to 7
-  Special opcode 62: advance Address by 4 to 0x11a8 and Line by 1 to 24
-  Set column to 20
-  Special opcode 104: advance Address by 7 to 0x11af and Line by 1 to 25
-  Set column to 19
-  Special opcode 201: advance Address by 14 to 0x11bd and Line by 0 to 25
-  Set column to 10
-  Special opcode 131: advance Address by 9 to 0x11c6 and Line by 0 to 25
-  Set column to 21
-  Special opcode 48: advance Address by 3 to 0x11c9 and Line by 1 to 26
-  Set column to 20
-  Special opcode 201: advance Address by 14 to 0x11d7 and Line by 0 to 26
-  Set column to 10
-  Special opcode 131: advance Address by 9 to 0x11e0 and Line by 0 to 26
-  Special opcode 48: advance Address by 3 to 0x11e3 and Line by 1 to 27
-  Set column to 1
-  Special opcode 48: advance Address by 3 to 0x11e6 and Line by 1 to 28
-  Advance PC by 7 to 0x11ed
-  Extended opcode 1: End of Sequence
+  DW_LNS_set_column	12
+  DW_LNE_set_address	0x1169
+  DW_LNS_advance_line	18
+  DW_LNS_copy
+  DW_LNS_set_column	16
+  Special opcode	203
+  DW_LNS_set_column	5
+  DW_LNS_const_add_pc
+  Special opcode	74
+  DW_LNS_set_column	15
+  Special opcode	75
+  DW_LNS_set_column	5
+  DW_LNS_const_add_pc
+  Special opcode	74
+  DW_LNS_set_column	7
+  Special opcode	75
+  DW_LNS_set_column	20
+  Special opcode	117
+  DW_LNS_set_column	19
+  Special opcode	214
+  DW_LNS_set_column	10
+  Special opcode	144
+  DW_LNS_set_column	21
+  Special opcode	61
+  DW_LNS_set_column	20
+  Special opcode	214
+  DW_LNS_set_column	10
+  Special opcode	144
+  Special opcode	61
+  DW_LNS_set_column	1
+  Special opcode	61
+  DW_LNS_advance_pc	7
+  DW_LNE_end_sequence
 
 0x00001169	/home/hound/r2test/dwarf/cpp/main.cpp	19
 0x00001176	/home/hound/r2test/dwarf/cpp/main.cpp	22
