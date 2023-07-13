@@ -726,8 +726,8 @@ enum DW_OP {
 	// Wasm extensions
 	DW_OP_WASM_location = 0xed,
 	/* <_lo_user ; _hi_user> Interval is reserved for vendor extensions */
-	//	DW_OP_lo_user = 0xe0,
-	//	DW_OP_hi_user = 0xff,
+	DW_OP_lo_user = 0xe0,
+	DW_OP_hi_user = 0xff,
 };
 
 enum DW_ATE {

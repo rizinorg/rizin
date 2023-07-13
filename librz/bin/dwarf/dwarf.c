@@ -375,8 +375,6 @@ static const char *dwarf_unit_types[] = {
 	[DW_UT_skeleton] = "DW_UT_skeleton",
 	[DW_UT_split_compile] = "DW_UT_split_compile",
 	[DW_UT_split_type] = "DW_UT_split_type",
-	[DW_UT_lo_user] = "DW_UT_lo_user",
-	[DW_UT_hi_user] = "DW_UT_hi_user",
 };
 
 RZ_API const char *rz_bin_dwarf_tag(enum DW_TAG tag) {
@@ -666,8 +664,6 @@ static const char *dwarf_lne[] = {
 	[DW_LNE_set_address] = "DW_LNE_set_address",
 	[DW_LNE_define_file] = "DW_LNE_define_file",
 	[DW_LNE_set_discriminator] = "DW_LNE_set_discriminator",
-	[DW_LNE_lo_user] = "DW_LNE_lo_user",
-	[DW_LNE_hi_user] = "DW_LNE_hi_user",
 };
 
 RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne) {
@@ -683,8 +679,6 @@ static const char *dwarf_lnct[] = {
 	[DW_LNCT_timestamp] = "DW_LNCT_timestamp",
 	[DW_LNCT_size] = "DW_LNCT_size",
 	[DW_LNCT_MD5] = "DW_LNCT_MD5",
-	[DW_LNCT_lo_user] = "DW_LNCT_lo_user",
-	[DW_LNCT_hi_user] = "DW_LNCT_hi_user",
 };
 
 RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
@@ -871,8 +865,6 @@ static const char *dwarf_op[] = {
 	[DW_OP_GNU_addr_index] = "DW_OP_GNU_addr_index",
 	[DW_OP_GNU_const_index] = "DW_OP_GNU_const_index",
 	[DW_OP_WASM_location] = "DW_OP_WASM_location",
-	//	[DW_OP_lo_user] = "DW_OP_lo_user",
-	//	[DW_OP_hi_user] = "DW_OP_hi_user",
 };
 
 RZ_API const char *rz_bin_dwarf_op(enum DW_OP op) {
