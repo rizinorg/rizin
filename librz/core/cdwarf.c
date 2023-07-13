@@ -271,97 +271,60 @@ RZ_API char *rz_core_bin_dwarf_aranges_to_string(RzList /*<RzBinDwarfARangeSet *
 /**
  * \param regs optional, the state after op has been executed. If not null, some meaningful results from this context will be shown.
  */
-static void print_line_op(RzStrBuf *sb, RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr, RZ_NULLABLE RzBinDwarfSMRegisters *regs) {
+static void print_line_op(RzStrBuf *sb, RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr) {
 	switch (op->type) {
 	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
+		my_print(rz_bin_dwarf_lns(op->opcode));
 		switch (op->opcode) {
-		case DW_LNS_copy:
-			my_print("Copy");
-			break;
 		case DW_LNS_advance_pc:
-			my_printf("Advance PC by %" PFMT64u, op->args.advance_pc * hdr->min_inst_len);
-			if (regs) {
-				my_printf(" to 0x%" PFMT64x, regs->address);
-			}
+			my_printf("\t%" PFMT64u, op->args.advance_pc);
 			break;
 		case DW_LNS_advance_line:
-			my_printf("Advance line by %" PFMT64d, op->args.advance_line);
-			if (regs) {
-				my_printf(", to %" PFMT64d, regs->line);
-			}
+			my_printf("\t%" PFMT64u, op->args.advance_line);
 			break;
 		case DW_LNS_set_file:
-			my_printf("Set file to %" PFMT64d, op->args.set_file);
+			my_printf("\t%" PFMT64u, op->args.set_file);
 			break;
 		case DW_LNS_set_column:
-			my_printf("Set column to %" PFMT64d, op->args.set_column);
-			break;
-		case DW_LNS_negate_stmt:
-			if (regs) {
-				my_printf("Set is_stmt to %u", (unsigned int)regs->is_stmt);
-			} else {
-				my_print("Negate is_stmt");
-			}
-			break;
-		case DW_LNS_set_basic_block:
-			my_print("set_basic_block");
-			break;
-		case DW_LNS_const_add_pc:
-			my_printf("Advance PC by constant %" PFMT64u, rz_bin_dwarf_line_header_get_spec_op_advance_pc(hdr, 255));
-			if (regs) {
-				my_printf(" to 0x%" PFMT64x, regs->address);
-			}
+			my_printf("\t%" PFMT64u, op->args.set_column);
 			break;
 		case DW_LNS_fixed_advance_pc:
-			my_printf("Fixed advance pc by %" PFMT64u, op->args.fixed_advance_pc);
-			my_printf(" to %" PFMT64d, regs->address);
-			break;
-		case DW_LNS_set_prologue_end:
-			my_print("set_prologue_end");
-			break;
-		case DW_LNS_set_epilogue_begin:
-			my_print("set_epilogue_begin");
+			my_printf("\t%" PFMT64u, op->args.fixed_advance_pc);
 			break;
 		case DW_LNS_set_isa:
-			my_printf("set_isa to %" PFMT64u, op->args.set_isa);
+			my_printf("\t%" PFMT64u, op->args.set_isa);
 			break;
+		case DW_LNS_copy:
+		case DW_LNS_negate_stmt:
+		case DW_LNS_set_basic_block:
+		case DW_LNS_const_add_pc:
+		case DW_LNS_set_prologue_end:
+		case DW_LNS_set_epilogue_begin:
 		default:
-			my_printf("Unknown Standard Opcode %u", (unsigned int)op->opcode);
 			break;
 		}
 		break;
 	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
-		my_printf("Extended opcode %u: ", (unsigned int)op->opcode);
+		my_print(rz_bin_dwarf_lne(op->ext_opcode));
 		switch (op->opcode) {
-		case DW_LNE_end_sequence:
-			my_print("End of Sequence");
-			break;
 		case DW_LNE_set_address:
-			my_printf("set Address to 0x%" PFMT64x, op->args.set_address);
+			my_printf("\t0x%" PFMT64x, op->args.set_address);
 			break;
 		case DW_LNE_define_file:
-			my_printf("define_file \"%s\", dir_index %" PFMT64u ", ",
+			my_printf("\tfilename \"%s\", dir_index %" PFMT64u ", ",
 				op->args.define_file.filename,
 				op->args.define_file.dir_index);
 			break;
 		case DW_LNE_set_discriminator:
-			my_printf("set Discriminator to %" PFMT64u "\n", op->args.set_discriminator);
+			my_printf("\t%" PFMT64u "\n", op->args.set_discriminator);
 			break;
+		case DW_LNE_end_sequence:
 		default:
-			my_printf("Unknown");
 			break;
 		}
 		break;
 	case RZ_BIN_DWARF_LINE_OP_TYPE_SPEC:
-		my_printf("Special opcode %u: ", (unsigned int)rz_bin_dwarf_line_header_get_adj_opcode(hdr, op->opcode));
-		my_printf("advance Address by %" PFMT64u, rz_bin_dwarf_line_header_get_spec_op_advance_pc(hdr, op->opcode));
-		if (regs) {
-			my_printf(" to 0x%" PFMT64x, regs->address);
-		}
-		my_printf(" and Line by %" PFMT64d, rz_bin_dwarf_line_header_get_spec_op_advance_line(hdr, op->opcode));
-		if (regs) {
-			my_printf(" to %" PFMT64u, regs->line);
-		}
+		my_printf("Special opcode\t%u", op->opcode);
 		break;
 	default:
 		my_printf("Unknown opcode type %u, opcode: %x", (unsigned int)op->type, op->opcode);
@@ -408,17 +371,13 @@ RZ_API char *rz_core_bin_dwarf_line_unit_to_string(RzBinDwarfLineUnit *unit) {
 		}
 		my_print("\n");
 	}
-	// also execute all ops simultaneously which gives us nice intermediate value printing
-	RzBinDwarfSMRegisters regs;
-	rz_bin_dwarf_line_header_reset_regs(&unit->header, &regs);
 	my_print(" Line Number Statements:\n");
 	void *opsit;
 	size_t i;
 	rz_vector_enumerate(&unit->ops, opsit, i) {
 		RzBinDwarfLineOp *op = opsit;
-		rz_bin_dwarf_line_op_run(&unit->header, &regs, op, NULL, NULL, NULL);
 		my_print("  ");
-		print_line_op(sb, op, &unit->header, &regs);
+		print_line_op(sb, op, &unit->header);
 		if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->ext_opcode == DW_LNE_end_sequence && i + 1 < rz_vector_len(&unit->ops)) {
 			// extra newline for nice sequence separation
 			my_print("\n");
