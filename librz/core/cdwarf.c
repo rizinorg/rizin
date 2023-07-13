@@ -233,7 +233,7 @@ bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 RZ_API char *rz_core_bin_dwarf_loc_to_string(RzBinDwarf *dw, RzBinDwarfLocListTable *loclists, int addr_size) {
 	rz_return_val_if_fail(loclists && loclists->loclist_by_offset, NULL);
 	my_print_init;
-	my_print("\nContents of the .debug_loc section:\n");
+	my_printf("\nContents of the .debug_%s section:\n", loclists->debug_loc ? "loc" : "loclists");
 	DumpContex ctx = {
 		.dw = dw,
 		.sb = sb,
@@ -467,7 +467,7 @@ bool htup_rnglists_cb(void *u, ut64 k, const void *v) {
 RZ_API char *rz_core_bin_dwarf_rnglists_to_string(RzBinDwarfRngListTable *rnglists) {
 	rz_warn_if_fail(rnglists && rnglists->rnglist_by_offset);
 	my_print_init;
-	my_print("\nContents of the .debug_ranges section:\n");
+	my_printf("\nContents of the .debug_%s section:\n", rnglists->debug_ranges ? "ranges" : "rnglists");
 	ht_up_foreach(rnglists->rnglist_by_offset, htup_rnglists_cb, sb);
 	my_print("\n");
 	return my_print_get;
