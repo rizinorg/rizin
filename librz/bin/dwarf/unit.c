@@ -208,13 +208,13 @@ static void comp_unit_apply(RzBinDwarfCompUnit *unit, RzBinDwarfDie *die) {
 	rz_vector_foreach(&die->attrs, attr) {
 		switch (attr->name) {
 		case DW_AT_name:
-			unit->name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			unit->name = rz_str_new(rz_bin_dwarf_attr_get_string(attr));
 			break;
 		case DW_AT_comp_dir:
-			unit->comp_dir = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			unit->comp_dir = rz_str_new(rz_bin_dwarf_attr_get_string(attr));
 			break;
 		case DW_AT_producer:
-			unit->producer = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			unit->producer = rz_str_new(rz_bin_dwarf_attr_get_string(attr));
 			break;
 		case DW_AT_language:
 			unit->language = attr->uconstant;
@@ -302,7 +302,7 @@ cleanup:
 	return false;
 }
 
-RZ_API RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(const RzBinDwarfDie *die, enum DW_AT name) {
+RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, enum DW_AT name) {
 	rz_return_val_if_fail(die, NULL);
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach(&die->attrs, attr) {
@@ -320,7 +320,7 @@ RZ_API RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(const RzBinDwarfDie *die, enum 
  * \param bin
  * \return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
-RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RzBinFile *binfile, RzBinDwarfDebugAbbrevs *abbrevs) {
+RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile, RZ_BORROW RZ_NONNULL RzBinDwarfDebugAbbrevs *abbrevs) {
 	rz_return_val_if_fail(binfile && abbrevs, NULL);
 	RzBuffer *debug_str_buf = get_section_buf(binfile, "debug_str");
 	RzBuffer *buf = get_section_buf(binfile, "debug_info");

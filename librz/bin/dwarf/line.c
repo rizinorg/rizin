@@ -206,7 +206,7 @@ static bool parse_line_header_source_v4(RzBuffer *buffer, RzBinDwarfLineHeader *
 /**
  * \param info if not NULL, filenames can get resolved to absolute paths using the compilation unit dirs from it
  */
-RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *hdr, ut64 file_index) {
+RZ_IPI char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *hdr, ut64 file_index) {
 	rz_return_val_if_fail(hdr, NULL);
 	if (file_index >= rz_vector_len(&hdr->file_names)) {
 		return NULL;
@@ -260,12 +260,12 @@ static const char *get_full_file_path(const RzBinDwarfDebugInfo *info, const RzB
 	return path;
 }
 
-RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+RZ_IPI ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
 	rz_return_val_if_fail(hdr, 0);
 	return opcode - hdr->opcode_base;
 }
 
-RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+RZ_IPI ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
 	rz_return_val_if_fail(hdr, 0);
 	if (!hdr->line_range) {
 		// to dodge division by zero
@@ -279,7 +279,7 @@ RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLine
 	return hdr->min_inst_len * (op_advance / hdr->max_ops_per_inst);
 }
 
-RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+RZ_IPI st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
 	rz_return_val_if_fail(hdr, 0);
 	if (!hdr->line_range) {
 		// to dodge division by zero
@@ -363,7 +363,7 @@ static bool RzBinDwarfLineHeader_parse(
 	return false;
 }
 
-RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op) {
+RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op) {
 	rz_return_if_fail(op);
 	if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->ext_opcode == DW_LNE_define_file) {
 		free(op->args.define_file.filename);
@@ -468,7 +468,7 @@ ok:
 	return true;
 }
 
-RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs) {
+RZ_IPI void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs) {
 	rz_return_if_fail(hdr && regs);
 	regs->address = 0;
 	regs->file = 1;
@@ -495,7 +495,7 @@ static void store_line_sample(RzBinSourceLineInfoBuilder *bob, const RzBinDwarfL
  * \brief Execute a single line op on regs and optionally store the resulting line info in bob
  * \param fnc if not null, filenames will be resolved to their full paths using this cache.
  */
-RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
+RZ_IPI bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
 	RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc) {
 	rz_return_val_if_fail(hdr && regs && op, false);
 	switch (op->type) {
@@ -714,7 +714,7 @@ static RzBinDwarfLineInfo *parse_line_raw(RzBuffer *buffer, ut8 address_size, Rz
 	return li;
 }
 
-RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li) {
+RZ_API void rz_bin_dwarf_line_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfLineInfo *li) {
 	if (!li) {
 		return;
 	}
@@ -723,7 +723,7 @@ RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li) {
 	free(li);
 }
 
-RZ_API void rz_bin_dwarf_info_free(RzBinDwarfDebugInfo *info) {
+RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugInfo *info) {
 	if (!info) {
 		return;
 	}
@@ -737,7 +737,7 @@ RZ_API void rz_bin_dwarf_info_free(RzBinDwarfDebugInfo *info) {
 /**
  * \param info if not NULL, filenames can get resolved to absolute paths using the compilation unit dirs from it
  */
-RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask) {
+RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RZ_BORROW RZ_NONNULL RzBinFile *binfile, RZ_BORROW RZ_NONNULL RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask) {
 	rz_return_val_if_fail(binfile, NULL);
 	RzBuffer *buf = get_section_buf(binfile, "debug_line");
 	if (!buf) {

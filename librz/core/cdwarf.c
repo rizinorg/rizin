@@ -225,7 +225,7 @@ bool htup_loclists_cb(void *u, ut64 k, const void *v) {
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocationListEntry *entry = *it;
 		my_printf("\t(0x%" PFMT64x ", 0x%" PFMT64x ")\t[", entry->range->begin, entry->range->end);
-		rz_bin_dwarf_expression_dump(ctx->dw, entry->expression, ctx->sb, ",\t", "");
+		rz_bin_dwarf_expression_dump(&ctx->dw->encoding, entry->expression, ctx->sb, ",\t", "");
 		my_print("]\n");
 	}
 	return true;

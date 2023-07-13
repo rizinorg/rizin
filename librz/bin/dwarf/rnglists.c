@@ -226,7 +226,7 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 	return true;
 }
 
-RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RzBinFile *bf, RzBinDwarf *dw) {
+RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinDwarf *dw) {
 	RET_NULL_IF_FAIL(bf && dw);
 	RzBinDwarfRngListTable *self = RZ_NEW0(RzBinDwarfRngListTable);
 	self->debug_addr = dw->addr;
@@ -241,7 +241,7 @@ RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RzBinFile *bf, RzBinDwa
 	return self;
 }
 
-RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding, ut64 offset) {
+RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset) {
 	RET_NULL_IF_FAIL(self);
 	RzBuffer *buffer = self->debug_ranges;
 	RzBinDwarfRngListsFormat format = RzBinDwarfRngListsFormat_Bare;
@@ -259,7 +259,7 @@ RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RzBinDwarfRngListTable *self, Rz
 	return true;
 }
 
-RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding) {
+RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding) {
 	RET_NULL_IF_FAIL(self);
 	RzBuffer *buffer = self->debug_ranges;
 	RzBinDwarfRngListsFormat format = RzBinDwarfRngListsFormat_Bare;

@@ -1068,7 +1068,7 @@ typedef struct dwarf_attr_t {
 /**
  * \brief Safely get the string content from an RzBinDwarfAttrValue if it has one.
  */
-static inline const char *rz_bin_dwarf_attr_value_get_string_content(const RzBinDwarfAttr *val) {
+static inline const char *rz_bin_dwarf_attr_get_string(const RzBinDwarfAttr *val) {
 	rz_return_val_if_fail(val, NULL);
 	return val->kind == DW_AT_KIND_STRING ? val->string.content : NULL;
 }
@@ -1481,18 +1481,20 @@ RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne);
 RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct);
 RZ_API const char *rz_bin_dwarf_op(enum DW_OP op);
 
-RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile);
-RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile);
-RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RzBinFile *binfile, RzBinDwarfDebugAbbrevs *abbrevs);
-RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set);
-RZ_API void rz_bin_dwarf_info_free(RzBinDwarfDebugInfo *info);
-RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs);
-RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da);
-RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx);
-RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl);
+RZ_API RZ_OWN RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile);
+RZ_API RZ_OWN RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile);
+RZ_API RZ_OWN RzBinDwarfDebugInfo *rz_bin_dwarf_info_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile, RZ_BORROW RZ_NONNULL RzBinDwarfDebugAbbrevs *abbrevs);
 
-RZ_API RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(const RzBinDwarfDie *die, enum DW_AT name);
-RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name);
+RZ_API void rz_bin_dwarf_arange_set_free(RZ_OWN RZ_NULLABLE RzBinDwarfARangeSet *set);
+RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugInfo *info);
+RZ_API void rz_bin_dwarf_abbrev_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugAbbrevs *abbrevs);
+
+RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfDebugAbbrevs *da);
+RZ_API RZ_BORROW RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx);
+RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *decl);
+
+RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, enum DW_AT name);
+RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name);
 
 /**
  * \brief Opaque cache for fully resolved filenames during Dwarf Line Info Generation
@@ -1502,16 +1504,9 @@ RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwa
  */
 typedef RzPVector /*<char *>*/ RzBinDwarfLineFileCache;
 
-RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask);
-RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *header, ut64 file_index);
-RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *header, ut8 opcode);
-RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode);
-RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode);
-RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs);
-RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
-	RZ_NULLABLE struct rz_bin_source_line_info_builder_t *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc);
-RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op);
-RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li);
+RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RZ_BORROW RZ_NONNULL RzBinFile *binfile, RZ_BORROW RZ_NONNULL RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask);
+RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op);
+RZ_API void rz_bin_dwarf_line_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfLineInfo *li);
 
 typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfEncoding encoding;
@@ -1543,7 +1538,7 @@ typedef struct {
 } RzBinDwarfParseOptions;
 
 RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt);
-RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw);
+RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDwarf *dw);
 
 // Assuming ValueType is an enum defined elsewhere
 typedef enum {
@@ -1724,33 +1719,34 @@ typedef struct rz_bin_dwarf_location_t {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} eval_waiting;
-		RzVector /*Piece*/ *compose;
+		RzVector /*RzBinDwarfPiece*/ *compose;
 		st64 cfa_offset;
 		st64 fb_offset;
 		const RzBinDwarfLocList *loclist;
 	};
 } RzBinDwarfLocation;
 
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RzBuffer *byte_code, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
-RZ_API RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
-RZ_API void rz_bin_dwarf_evaluation_free(RzBinDwarfEvaluation *self);
-RZ_API bool rz_bin_dwarf_evaluation_evaluate(RzBinDwarfEvaluation *self, RzBinDwarfEvaluationResult *out);
-RZ_API RzVector * /*Piece*/ rz_bin_dwarf_evaluation_result(RzBinDwarfEvaluation *self);
-RZ_API RzBinDwarfLocation *rz_bin_dwarf_location_from_block(const RzBinDwarfBlock *block, const RzBinDwarf *dw, const RzBinDwarfCompUnit *unit, const RzBinDwarfDie *die);
-RZ_API void rz_bin_dwarf_expression_dump(const RzBinDwarf *dw, const RzBinDwarfBlock *block, RzStrBuf *str_buf, const char *sep, const char *indent);
-RZ_API char *rz_bin_dwarf_expression_to_string(const RzBinDwarf *dw, const RzBinDwarfBlock *block);
+RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNULL RzBuffer *byte_code, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
+RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
+RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self);
+RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self, RZ_BORROW RZ_NONNULL RzBinDwarfEvaluationResult *out);
+RZ_API RZ_BORROW RzVector * /*RzBinDwarfPiece*/ rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self);
+RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block, RZ_BORROW RZ_NULLABLE const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
+RZ_API void
+rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL RzStrBuf *str_buf, RZ_BORROW RZ_NONNULL const char *sep, RZ_BORROW RZ_NONNULL const char *indent);
+RZ_API char *rz_bin_dwarf_expression_to_string(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block);
 /// loclists
-RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
-RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding);
-RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw);
-RZ_API void rz_bin_dwarf_loclists_free(RzBinDwarfLocListTable *self);
+RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset);
+RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding);
+RZ_API RZ_OWN RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinDwarf *dw);
+RZ_API void rz_bin_dwarf_loclists_free(RZ_OWN RZ_NULLABLE RzBinDwarfLocListTable *self);
 /// rnglists
-RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RzBinFile *bf, RzBinDwarf *dw);
-RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding, ut64 offset);
-RZ_API RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RzBinDwarfRngListTable *self, RzBinDwarfEncoding *encoding);
+RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinDwarf *dw);
+RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset);
+RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding);
 
-RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self);
-RZ_API RzBinDwarfLocation *RzBinDwarfLocation_clone(RzBinDwarfLocation *self);
+RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
+RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
 
 #ifdef __cplusplus
 }

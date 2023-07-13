@@ -22,7 +22,7 @@ bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *bas
 static bool struct_union_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type);
 
 static void variable_fini(RzAnalysisDwarfVariable *var) {
-	RzBinDwarfLocation_free(var->location);
+	rz_bin_dwarf_location_free(var->location);
 	var->location = NULL;
 	RZ_FREE(var->name);
 	RZ_FREE(var->link_name);
@@ -38,7 +38,7 @@ static const char *die_name_const(const RzBinDwarfDie *die) {
 	if (!attr) {
 		return NULL;
 	}
-	return rz_bin_dwarf_attr_value_get_string_content(attr);
+	return rz_bin_dwarf_attr_get_string(attr);
 }
 
 /**
@@ -137,7 +137,7 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 			break;
 		}
 		case DW_AT_name:
-			name = rz_bin_dwarf_attr_value_get_string_content(attr);
+			name = rz_bin_dwarf_attr_get_string(attr);
 			break;
 		case DW_AT_byte_size:
 			size = attr->uconstant * CHAR_BIT;
@@ -569,14 +569,14 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 			if (fn->name) {
 				break;
 			}
-			fn->name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			fn->name = rz_str_new(rz_bin_dwarf_attr_get_string(attr));
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
 			if (fn->link_name) {
 				break;
 			}
-			fn->link_name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(attr));
+			fn->link_name = rz_str_new(rz_bin_dwarf_attr_get_string(attr));
 			break;
 		case DW_AT_type: {
 			if (fn->ret_type) {
@@ -648,11 +648,11 @@ static RzType *parse_abstract_origin(Context *ctx, ut64 offset, char **name_out)
 	rz_vector_foreach(&die->attrs, val) {
 		switch (val->name) {
 		case DW_AT_name:
-			name = rz_bin_dwarf_attr_value_get_string_content(val);
+			name = rz_bin_dwarf_attr_get_string(val);
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			linkname = rz_bin_dwarf_attr_value_get_string_content(val);
+			linkname = rz_bin_dwarf_attr_get_string(val);
 			break;
 		case DW_AT_type:
 			type = parse_type_from_offset(ctx, val->reference, &size);
@@ -895,7 +895,7 @@ RzBinDwarfLocation *parse_dwarf_location_list(Context *ctx, RzBinDwarfLocList *l
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			char *expr_str = rz_bin_dwarf_expression_to_string(ctx->dw, entry->expression);
+			char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, entry->expression);
 			RZ_LOG_ERROR("Failed to parse fn: 0x%" PFMT64x " location list entry (0x%" PFMT64x ", 0x%" PFMT64x "):\t[%s]\n ",
 				fn->offset, entry->range->begin, entry->range->end, rz_str_get_null(expr_str))
 			free(expr_str);
@@ -946,7 +946,7 @@ static RzBinDwarfLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAt
 	}
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);
 	if (!loc) {
-		char *expr_str = rz_bin_dwarf_expression_to_string(ctx->dw, block);
+		char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
 		if (RZ_STR_ISNOTEMPTY(expr_str)) {
 			RZ_LOG_ERROR("Failed to parse location: [%s]\n", expr_str);
 		}
@@ -980,11 +980,11 @@ static bool parse_function_var(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 	rz_vector_foreach(&var_die->attrs, val) {
 		switch (val->name) {
 		case DW_AT_name:
-			v->name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(val));
+			v->name = rz_str_new(rz_bin_dwarf_attr_get_string(val));
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			v->link_name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(val));
+			v->link_name = rz_str_new(rz_bin_dwarf_attr_get_string(val));
 			break;
 		case DW_AT_type: {
 			RzType *type = parse_type_from_offset(ctx, val->reference, NULL);
@@ -1083,11 +1083,11 @@ static void parse_function(Context *ctx, RzBinDwarfDie *die) {
 	rz_vector_foreach(&die->attrs, val) {
 		switch (val->name) {
 		case DW_AT_name:
-			fcn->name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(val));
+			fcn->name = rz_str_new(rz_bin_dwarf_attr_get_string(val));
 			break;
 		case DW_AT_linkage_name:
 		case DW_AT_MIPS_linkage_name:
-			fcn->link_name = rz_str_new(rz_bin_dwarf_attr_value_get_string_content(val));
+			fcn->link_name = rz_str_new(rz_bin_dwarf_attr_get_string(val));
 			break;
 		case DW_AT_low_pc:
 		case DW_AT_entry_pc:

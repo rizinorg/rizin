@@ -25,7 +25,7 @@ void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self) {
 	}
 	free(self->range);
 	RzBinDwarfBlock_fini(self->expression);
-	RzBinDwarfLocation_free(self->location);
+	rz_bin_dwarf_location_free(self->location);
 }
 
 static inline bool parse_data(RzBuffer *buffer, RzBinDwarfBlock *block, RzBinDwarfEncoding *encoding) {
@@ -245,7 +245,7 @@ static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer,
 	return true;
 }
 
-RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding, ut64 offset) {
+RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset) {
 	RzBuffer *buffer = encoding->version == 5 ? self->debug_loclists : self->debug_loc;
 	RzBinDwarfLocListsFormat format = encoding->version <= 4 ? RzBinDwarfLocListsFormat_BARE : RzBinDwarfLocListsFormat_LLE;
 	buffer = rz_buf_new_with_buf(buffer);
@@ -254,7 +254,7 @@ RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RzBinDwarfLocListTable *self, Rz
 	return true;
 }
 
-RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RzBinDwarfLocListTable *self, RzBinDwarfEncoding *encoding) {
+RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding) {
 	RET_NULL_IF_FAIL(self);
 	RzBuffer *buffer = self->debug_loc;
 	RzBinDwarfLocListsFormat format = RzBinDwarfLocListsFormat_BARE;
@@ -293,7 +293,7 @@ void HTUP_RzBinDwarfLocList_free(HtUPKv *kv) {
 	loclist_free(kv->value);
 }
 
-RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwarf *dw) {
+RZ_API RZ_OWN RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinDwarf *dw) {
 	RET_NULL_IF_FAIL(bf && dw);
 	RzBinDwarfLocListTable *self = RZ_NEW0(RzBinDwarfLocListTable);
 	self->debug_addr = dw->addr;
@@ -308,7 +308,7 @@ RZ_API RzBinDwarfLocListTable *rz_bin_dwarf_loclists_new(RzBinFile *bf, RzBinDwa
 	return self;
 }
 
-RZ_API void rz_bin_dwarf_loclists_free(RzBinDwarfLocListTable *self) {
+RZ_API void rz_bin_dwarf_loclists_free(RZ_OWN RZ_NULLABLE RzBinDwarfLocListTable *self) {
 	if (!self) {
 		return;
 	}
@@ -318,7 +318,7 @@ RZ_API void rz_bin_dwarf_loclists_free(RzBinDwarfLocListTable *self) {
 	free(self);
 }
 
-RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self) {
+RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self) {
 	if (!self) {
 		return;
 	}
@@ -331,7 +331,7 @@ RZ_API void RzBinDwarfLocation_free(RzBinDwarfLocation *self) {
 	free(self);
 }
 
-RZ_API RzBinDwarfLocation *RzBinDwarfLocation_clone(RzBinDwarfLocation *self) {
+RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self) {
 	RzBinDwarfLocation *loc = RZ_NEWCOPY(RzBinDwarfLocation, self);
 	assert(loc->kind != RzBinDwarfLocationKind_EVALUATION_WAITING);
 	return loc;

@@ -1351,7 +1351,7 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name) {
 	return rz_buf_new_slice(binfile->buf, section->paddr, len);
 }
 
-RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt) {
+RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL const RzBinDwarfParseOptions *opt) {
 	rz_return_val_if_fail(bf && opt, NULL);
 	RzBinDwarf *dw = RZ_NEW0(RzBinDwarf);
 	if (!dw) {
@@ -1392,7 +1392,7 @@ RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BOR
 	return dw;
 }
 
-RZ_API void rz_bin_dwarf_free(RZ_OWN RzBinDwarf *dw) {
+RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDwarf *dw) {
 	if (!dw) {
 		return;
 	}

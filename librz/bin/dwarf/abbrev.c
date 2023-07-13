@@ -58,7 +58,7 @@ beach:
 	return false;
 }
 
-RZ_API void rz_bin_dwarf_abbrev_free(RzBinDwarfDebugAbbrevs *abbrevs) {
+RZ_API void rz_bin_dwarf_abbrev_free(RZ_OWN RZ_NULLABLE RzBinDwarfDebugAbbrevs *abbrevs) {
 	if (!abbrevs) {
 		return;
 	}
@@ -156,7 +156,7 @@ err:
 	return false;
 }
 
-RZ_API RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RzBinFile *binfile) {
+RZ_API RZ_OWN RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	RzBinDwarfDebugAbbrevs *abbrevs = NULL;
 	RzBuffer *buf = get_section_buf(binfile, "debug_abbrev");
@@ -175,7 +175,7 @@ err:
 	goto ok;
 }
 
-RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name) {
+RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name) {
 	rz_return_val_if_fail(abbrev, NULL);
 	RzBinDwarfAttrDef *attr = NULL;
 	rz_vector_foreach(&abbrev->defs, attr) {
@@ -186,17 +186,17 @@ RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_NONNULL const RzBinDwa
 	return NULL;
 }
 
-RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_NONNULL const RzBinDwarfDebugAbbrevs *da) {
+RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfDebugAbbrevs *da) {
 	rz_return_val_if_fail(da, 0);
 	return da->count;
 }
 
-RZ_API RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx) {
+RZ_API RZ_BORROW RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx) {
 	rz_return_val_if_fail(tbl, NULL);
 	return rz_vector_index_ptr(&tbl->abbrevs, idx - 1);
 }
 
-RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl) {
+RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *decl) {
 	rz_return_val_if_fail(decl, 0);
 	return rz_vector_len(&decl->defs);
 }

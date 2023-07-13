@@ -6,7 +6,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set) {
+RZ_API void rz_bin_dwarf_arange_set_free(RZ_OWN RZ_NULLABLE RzBinDwarfARangeSet *set) {
 	if (!set) {
 		return;
 	}
@@ -83,7 +83,7 @@ ok:
 	return aranges;
 }
 
-RZ_API RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RzBinFile *binfile) {
+RZ_API RZ_OWN RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	RzBuffer *buffer = get_section_buf(binfile, "debug_aranges");
 	RET_NULL_IF_FAIL(buffer);

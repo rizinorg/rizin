@@ -1045,7 +1045,7 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 		return;
 	}
 	if (self->type == RzBinDwarfValueType_LOCATION) {
-		RzBinDwarfLocation_free(self->location);
+		rz_bin_dwarf_location_free(self->location);
 	}
 	free(self);
 }
@@ -1055,7 +1055,7 @@ RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
 	RzBinDwarfValue *val = RZ_NEW0(RzBinDwarfValue);
 	memcpy(val, self, sizeof(RzBinDwarfValue));
 	if (val->type == RzBinDwarfValueType_LOCATION) {
-		val->location = RzBinDwarfLocation_clone(self->location);
+		val->location = rz_bin_dwarf_location_clone(self->location);
 	}
 	return val;
 }
