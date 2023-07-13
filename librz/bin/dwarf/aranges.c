@@ -62,8 +62,8 @@ static bool parse_aranges_raw(RzBuffer *buffer, bool big_endian, RzList /*<RzBin
 		size_t i = 0;
 		for (; i < set->aranges_count; i++) {
 			RzBinDwarfARange *range = set->aranges + i;
-			UX_OR_RET_FALSE(range->addr, set->address_size);
-			UX_OR_RET_FALSE(range->length, set->address_size);
+			UX_OR_GOTO(range->addr, set->address_size, err);
+			UX_OR_GOTO(range->length, set->address_size, err);
 			if (!range->addr && !range->length) {
 				// last entry has two 0s
 				i++; // so i will be the total count of read entries
