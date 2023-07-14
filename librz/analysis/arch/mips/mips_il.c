@@ -119,6 +119,41 @@ static const char *cpu_reg_enum_to_name_map[] = {
 	[MIPS_REG_30] = "fp",
 	[MIPS_REG_31] = "ra",
 
+
+	// AFPR128
+	[MIPS_REG_W0] = "w0",
+	[MIPS_REG_W1] = "w1",
+	[MIPS_REG_W2] = "w2",
+	[MIPS_REG_W3] = "w3",
+	[MIPS_REG_W4] = "w4",
+	[MIPS_REG_W5] = "w5",
+	[MIPS_REG_W6] = "w6",
+	[MIPS_REG_W7] = "w7",
+	[MIPS_REG_W8] = "w8",
+	[MIPS_REG_W9] = "w9",
+	[MIPS_REG_W10] = "w10",
+	[MIPS_REG_W11] = "w11",
+	[MIPS_REG_W12] = "w12",
+	[MIPS_REG_W13] = "w13",
+	[MIPS_REG_W14] = "w14",
+	[MIPS_REG_W15] = "w15",
+	[MIPS_REG_W16] = "w16",
+	[MIPS_REG_W17] = "w17",
+	[MIPS_REG_W18] = "w18",
+	[MIPS_REG_W19] = "w19",
+	[MIPS_REG_W20] = "w20",
+	[MIPS_REG_W21] = "w21",
+	[MIPS_REG_W22] = "w22",
+	[MIPS_REG_W23] = "w23",
+	[MIPS_REG_W24] = "w24",
+	[MIPS_REG_W25] = "w25",
+	[MIPS_REG_W26] = "w26",
+	[MIPS_REG_W27] = "w27",
+	[MIPS_REG_W28] = "w28",
+	[MIPS_REG_W29] = "w29",
+	[MIPS_REG_W30] = "w30",
+	[MIPS_REG_W31] = "w31",
+
 	[MIPS_REG_HI] = "hi",
 	[MIPS_REG_LO] = "lo",
 
@@ -177,6 +212,11 @@ static const char *cpu_reg_enum_to_name_map[] = {
 	[MIPS_REG_CC5] = "CC5",
 	[MIPS_REG_CC6] = "CC6",
 	[MIPS_REG_CC7] = "CC7",
+
+	[MIPS_REG_AC0] = "ac0",
+	[MIPS_REG_AC1] = "ac1",
+	[MIPS_REG_AC2] = "ac2",
+	[MIPS_REG_AC3] = "ac3",
 };
 
 // char*
@@ -495,8 +535,7 @@ IL_LIFTER(ANDI) {
 	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *and = LOGAND(rs, imm);
-	Effect *set_rd = SETG(rd, and);
-	return set_rd;
+	return SETG(rd, and);
 }
 
 IL_LIFTER(APPEND) {
@@ -2344,7 +2383,7 @@ IL_LIFTER(DMOD) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *remainder = SMOD(rs, rt);
-	return SETG(rd, remainder);
+	return SETG(rd, remainder); 
 }
 
 /**
@@ -2389,7 +2428,7 @@ IL_LIFTER(DMUH) {
 
 	BitVector *prod_hi = CAST(64, IL_FALSE, SHIFTR0(prod, U8(64)));
 
-	return SETG(rd, prod_hi);
+	return SETG(rd, prod_hi); 
 }
 
 /**
@@ -3441,7 +3480,6 @@ IL_LIFTER(LBU) {
 
 	return SETG(rt, zero_extended_byte);
 }
-
 // MISSING: LBUE
 
 /**
@@ -3456,9 +3494,9 @@ IL_LIFTER(LD) {
 	Pure *base = IL_MEM_OPND_BASE(1);
 
 	BitVector *memaddr = ADD(base, offset);
-	BitVector *byte = LOADW(64, memaddr);
+	BitVector *dword = LOADW(64, memaddr);
 
-	return SETG(rt, byte);
+	return SETG(rt, dword);
 }
 
 /**
@@ -3475,7 +3513,7 @@ IL_LIFTER(LDC1) {
 	BitVector *memaddr = ADD(base, offset);
 	BitVector *byte = LOADW(64, memaddr); // <-- LOAD 64 bits
 
-	return SETG(ft, byte); // <-- UNINTERPRETED STORE
+	return SETG(ft, byte);
 }
 
 /**
@@ -3576,6 +3614,7 @@ IL_LIFTER(LDPC) {
 
 	BitVector *memaddr = ADD(base, S64(offset));
 	BitVector *dword = LOADW(64, memaddr);
+
 
 	return SETG(rs, dword);
 }
@@ -3975,7 +4014,7 @@ IL_LIFTER(LWR) {
 		b3 = SETG(rt, LOGOR(LOGAND(word, UN(GPRLEN, 0x000000FF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFFFFFF00))));
 
 		Bool *b2cond = EQ(DUP(memaddr_low2bit), UN(2, 2));
-		b2 = BRANCH(b2cond, SETG(rt, LOGAND(LOGOR(DUP(word), UN(GPRLEN, 0x0000FFFF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFFFF0000)))), b3);
+		b2 = BRANCH(b2cond, SETG(rt, LOGAND(LOGOR(DUP(word), UN(GPRLEN, 0x0000FFFF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFFFF0000)))), b3); 
 
 		Bool *b1cond = EQ(DUP(memaddr_low2bit), UN(2, 1));
 		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(word), UN(GPRLEN, 0x00FFFFFF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFF000000)))), b2);
@@ -4263,7 +4302,7 @@ IL_LIFTER(MOD) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *remainder = SMOD(rs, rt);
-	return SETG(rd, remainder);
+	return SETG(rd, remainder); 
 }
 
 IL_LIFTER(MODSUB) {
@@ -4302,7 +4341,7 @@ IL_LIFTER(MOVE) {
 	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
-	return SETG(rd, rs);
+	return SETG(rd, rs); 
 }
 
 IL_LIFTER(MOVEP) {
@@ -6641,6 +6680,18 @@ static const char *mips_il_vm_reg_binding[] = {
 	"FCC0", "FCC1", "FCC2", "FCC3", "FCC4", "FCC5", "FCC6", "FCC7",
 	"CC0", "CC1", "CC2", "CC3", "CC4", "CC5", "CC6", "CC7",
 	"CAUSE_EXC", "LLbit",
+
+	"w0", "w1", "w2", "w3",
+	"w4", "w5", "w6", "w7",
+	"w8", "w9", "w10", "w11",
+	"w12", "w13", "w14", "w15",
+	"w16", "w17", "w18", "w19",
+	"w20", "w21", "w22", "w23",
+	"w24", "w25", "w26", "w27",
+	"w28", "w29", "w30", "w31",
+
+	"ac0", "ac1", "ac2", "ac3",
+
 	NULL
 };
 
