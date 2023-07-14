@@ -201,7 +201,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x] != 0) ? str[x] : arg(handle, insn, str[x], x)
 
-static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = { { 0 } };
 	int i;
 
@@ -1089,7 +1089,7 @@ beach:
 		opex(&op->opex, hndl, insn);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		if (analop_esil(analysis, op, addr, buf, len, &hndl, insn) != 0) {
+		if (analyze_op_esil(analysis, op, addr, buf, len, &hndl, insn) != 0) {
 			rz_strbuf_fini(&op->esil);
 		}
 	}
