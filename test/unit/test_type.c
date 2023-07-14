@@ -1713,17 +1713,17 @@ bool test_callable_unspecified_parameters(void) {
 	RzCallable *callable = NULL;
 
 	callable = rz_type_func_new(typedb, "test_fn", NULL);
-	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn()", "");
+	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn()", "callable as string");
 	callable->has_unspecified_parameters = true;
-	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn(...)", "");
+	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn(...)", "callable with unspecified_parameters as string");
 
 	callable->has_unspecified_parameters = false;
 	RzType *type = rz_type_identifier_of_base_type_str(typedb, "void *");
 	RzCallableArg *arg = rz_type_callable_arg_new(typedb, "a", type);
 	rz_type_callable_arg_add(callable, arg);
-	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn(void * a)", "");
+	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn(void * a)", "callable a arg as string");
 	callable->has_unspecified_parameters = true;
-	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn(void * a, ...)", "");
+	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable), "void test_fn(void * a, ...)", "callable with unspecified_parameters and arg as string");
 
 	rz_type_callable_free(callable);
 	rz_type_db_free(typedb);
