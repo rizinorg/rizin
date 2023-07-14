@@ -66,7 +66,8 @@ typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32, bool, boo
 
 // get instruction operand at given index
 #define OPND_IS_REG(idx) INSN_OPND_TYPE(insn, idx) == MIPS_OP_REG
-#define REG_OPND(idx)    REG_NAME((insn)->detail->mips.operands[(idx)].reg)
+#define REG_OPND(idx)    REG_NAME((insn)->detail->mips.operands[idx].reg)
+#define REG_OPND_ID(idx) (insn)->detail->mips.operands[idx].reg
 
 // get instruction operand at given index
 #define OPND_IS_MEM(insn, idx) INSN_OPND_TYPE(insn, idx) == MIPS_OP_MEM
@@ -442,6 +443,11 @@ IL_LIFTER(ADDI) {
  * Exceptions: None
  * */
 IL_LIFTER(ADDIU) {
+	// return NOP if target register is $zero
+	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+		return NOP();
+	}
+
 	const char *rt = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	ut64 imm_val = SIGN_EXTEND(IMM_OPND(2), 16, GPRLEN);
@@ -449,8 +455,7 @@ IL_LIFTER(ADDIU) {
 	BitVector *imm = SN(GPRLEN, imm_val);
 
 	BitVector *sum = ADD(rs, imm);
-	Effect *set_rt = SETG(rt, sum);
-	return set_rt;
+	return SETG(rt, sum);
 }
 
 /**
