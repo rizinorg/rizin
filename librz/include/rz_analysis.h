@@ -447,8 +447,8 @@ typedef struct rz_analysis_hint_cb_t {
 typedef struct rz_analysis_il_vm_t RzAnalysisILVM;
 
 typedef struct {
-	HtUP *function_by_addr;
-	HtUP *type_by_offset;
+	HtUP /*<RzAnalysisDwarfFunction*>*/ *function_by_addr;
+	HtUP /*<RzType*>*/ *type_by_offset;
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {

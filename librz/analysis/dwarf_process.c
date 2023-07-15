@@ -345,7 +345,6 @@ static ut64 die_bits_size(const RzBinDwarfDie *die) {
 
 static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die) {
 	RzBaseTypeKind kind = RZ_BASE_TYPE_KIND_ATOMIC;
-	bool requires_type = false;
 	switch (die->tag) {
 	case DW_TAG_union_type:
 		kind = RZ_BASE_TYPE_KIND_UNION;
@@ -359,18 +358,17 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 		break;
 	case DW_TAG_enumeration_type:
 		kind = RZ_BASE_TYPE_KIND_ENUM;
-		requires_type = true;
 		break;
 	case DW_TAG_typedef:
-		requires_type = true;
 		kind = RZ_BASE_TYPE_KIND_TYPEDEF;
 		break;
 	default:
 		return NULL;
 	}
 
-	const char *name = NULL;
 	RzType *type = NULL;
+	RzBaseType *btype = NULL;
+	const char *name = NULL;
 	ut64 size = 0;
 	RzBinDwarfAttr *attr = NULL;
 	rz_vector_foreach(&die->attrs, attr) {
@@ -394,17 +392,19 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 			break;
 		case DW_AT_type:
 			type = type_parse_from_offset(ctx, attr->reference, &size);
+			if (!type) {
+				return NULL;
+			}
 			break;
 		default: break;
 		}
 	}
-	if (!name || (requires_type && !type)) {
-		rz_type_free(type);
-		return NULL;
+	if (!name) {
+		goto err;
 	}
-	RzBaseType *btype = rz_type_base_type_new(kind);
+	btype = rz_type_base_type_new(kind);
 	if (!btype) {
-		return NULL;
+		goto err;
 	}
 	btype->name = strdup(name);
 	btype->size = size;
@@ -428,6 +428,10 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 
 	return btype;
 err:
+	rz_type_free(type);
+	if (btype) {
+		btype->type = NULL;
+	}
 	rz_type_base_type_free(btype);
 	return NULL;
 }
@@ -1189,7 +1193,9 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 				if (!base_type) {
 					continue;
 				}
-				rz_type_db_update_base_type(analysis->typedb, base_type);
+				if (!rz_type_db_update_base_type(analysis->typedb, base_type)) {
+					RZ_LOG_WARN("Failed to save base type %s\n", base_type->name);
+				};
 				break;
 			}
 			case DW_TAG_subprogram:
