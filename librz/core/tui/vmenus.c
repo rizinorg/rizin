@@ -234,27 +234,16 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 				rz_cons_printf("...\n");
 				break;
 			}
-			if (show) {
-				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-				switch (var->storage.type) {
-				case RZ_ANALYSIS_VAR_STORAGE_REG: {
-					rz_cons_printf("%sarg %s %s @ %s\n",
-						i == *vindex ? "* " : "  ",
-						vartype, var->name,
-						var->storage.reg);
-				} break;
-				case RZ_ANALYSIS_VAR_STORAGE_STACK:
-					rz_cons_printf("%s%s %s %s @ %s%s0x%" PFMT64x "\n",
-						i == *vindex ? "* " : "  ",
-						rz_analysis_var_is_arg(var) ? "arg" : "var",
-						vartype, var->name,
-						core->analysis->reg->name[RZ_REG_NAME_BP],
-						"+",
-						var->storage.stack_off);
-					break;
-				}
-				free(vartype);
+			if (!show) {
+				continue;
 			}
+			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+			rz_cons_printf("%s%s %s %s @ ", i == *vindex ? "* " : "  ", rz_analysis_var_is_arg(var) ? "arg" : "var", vartype, var->name);
+			free(vartype);
+
+			char *storage_str = rz_analysis_var_storage_to_string(&var->storage);
+			rz_cons_strcat(storage_str);
+			free(storage_str);
 		}
 		++i;
 	}

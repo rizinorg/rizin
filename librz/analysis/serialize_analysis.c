@@ -431,14 +431,11 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	// TODO: Save it properly instead of using the C representation
 	pj_ks(j, "type", vartype);
 	free(vartype);
-	switch (var->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_STACK:
-		pj_kN(j, "stack", var->storage.stack_off);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_REG:
-		pj_ks(j, "reg", var->storage.reg);
-		break;
-	}
+
+	char *storage = rz_analysis_var_storage_to_string(&var->storage);
+	pj_ks(j, rz_analysis_var_storage_type_to_string(var->storage.type), storage);
+	free(storage);
+
 	if (var->comment) {
 		pj_ks(j, "cmt", var->comment);
 	}

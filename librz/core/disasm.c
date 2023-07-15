@@ -1696,6 +1696,8 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				reg_args++;
 				break;
+			default:
+				break;
 			}
 		} else {
 			switch (var->storage.type) {
@@ -1704,6 +1706,8 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 				break;
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				reg_vars++;
+				break;
+			default:
 				break;
 			}
 		}

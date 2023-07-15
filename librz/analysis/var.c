@@ -48,6 +48,65 @@ RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const 
 	return rz_analysis_var_storage_cmp(a, b) == 0;
 }
 
+RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type) {
+	static const char *var_storage_strings[] = {
+		[RZ_ANALYSIS_VAR_STORAGE_EMPTY] = "empty",
+		[RZ_ANALYSIS_VAR_STORAGE_REG] = "reg",
+		[RZ_ANALYSIS_VAR_STORAGE_STACK] = "stack",
+		[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
+		[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA",
+		[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "frame base",
+		[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "compose",
+		[RZ_ANALYSIS_VAR_STORAGE_LOCLIST] = "loclist",
+		[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
+	};
+	if (type >= RZ_ANALYSIS_VAR_STORAGE_END) {
+		return NULL;
+	}
+	return var_storage_strings[type];
+}
+
+static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
+	const char sign = x >= 0 ? '+' : '-';
+	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
+}
+
+RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage) {
+	rz_strbuf_append(sb, rz_analysis_var_storage_type_to_string(storage->type));
+	switch (storage->type) {
+	case RZ_ANALYSIS_VAR_STORAGE_REG: {
+		rz_strbuf_appendf(sb, " %s", storage->reg);
+		break;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
+		strbuf_append_sign_hex(sb, storage->stack_off);
+		break;
+	}
+	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
+		rz_strbuf_appendf(sb, " %s", storage->reg_offset.reg);
+		strbuf_append_sign_hex(sb, storage->reg_offset.offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+		strbuf_append_sign_hex(sb, storage->cfa_offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		strbuf_append_sign_hex(sb, storage->fb_offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
+	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
+	case RZ_ANALYSIS_VAR_STORAGE_END:
+	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
+		break;
+	}
+}
+
+RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage) {
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_analysis_var_storage_dump(sb, storage);
+	return rz_strbuf_drain(sb);
+}
+
 /**
  * Ensure that the register name in \p stor comes from the const pool
  */

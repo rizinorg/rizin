@@ -5123,7 +5123,6 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 	if (!fmt) {
 		return rz_strbuf_drain(sb);
 	}
-	bool usePxr = rz_type_is_strictly_atomic(core->analysis->typedb, var->type) && rz_type_atomic_str_eq(core->analysis->typedb, var->type, "int");
 	if (add_name) {
 		rz_strbuf_appendf(sb, "%s %s = ", rz_analysis_var_is_arg(var) ? "arg" : "var", var->name);
 	}
@@ -5154,6 +5153,8 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 		rz_strbuf_append(sb, r);
 		free(r);
 	} break;
+	default:
+		rz_strbuf_append(sb, "unimplemented");
 	}
 	free(fmt);
 	return rz_strbuf_drain(sb);
@@ -6492,11 +6493,6 @@ finish:
 	RZ_FREE(debugger);
 }
 
-static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
-	const char sign = x >= 0 ? '+' : '-';
-	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
-}
-
 /**
  * \brief Get string representation of RzAnalysisVar.
  *
@@ -6527,42 +6523,6 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 		constr ? "} " : "");
 	free(vartype);
 	free(constr);
-
-	switch (var->storage.type) {
-	case RZ_ANALYSIS_VAR_STORAGE_REG: {
-		rz_strbuf_append(sb, var->storage.reg);
-		break;
-	}
-	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		rz_strbuf_append(sb, "stack");
-		strbuf_append_sign_hex(sb, var->storage.stack_off);
-		break;
-	}
-	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
-		rz_strbuf_append(sb, "empty");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
-		rz_strbuf_appendf(sb, "%s", var->storage.reg_offset.reg);
-		strbuf_append_sign_hex(sb, var->storage.reg_offset.offset);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-		rz_strbuf_appendf(sb, "CFA");
-		strbuf_append_sign_hex(sb, var->storage.cfa_offset);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
-		rz_strbuf_append(sb, "FB");
-		strbuf_append_sign_hex(sb, var->storage.fb_offset);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
-		rz_strbuf_append(sb, "Compose");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
-		rz_strbuf_append(sb, "loclist");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-		rz_strbuf_append(sb, "waiting");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_END: break;
-	}
+	rz_analysis_var_storage_dump(sb, &var->storage);
 	return rz_strbuf_drain(sb);
 }

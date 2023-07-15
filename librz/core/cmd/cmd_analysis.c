@@ -2573,18 +2573,6 @@ fail:
 	rz_list_free(list);
 }
 
-static const char *var_storage_strings[] = {
-	[RZ_ANALYSIS_VAR_STORAGE_EMPTY] = "empty",
-	[RZ_ANALYSIS_VAR_STORAGE_REG] = "reg",
-	[RZ_ANALYSIS_VAR_STORAGE_STACK] = "stack",
-	[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
-	[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA offset",
-	[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "Frame Base offset",
-	[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "Compose",
-	[RZ_ANALYSIS_VAR_STORAGE_LOCLIST] = "loclist",
-	[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
-};
-
 RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
@@ -2601,7 +2589,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		for (int i = RZ_ANALYSIS_VAR_STORAGE_EMPTY; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
-			pj_k(state->d.pj, var_storage_strings[i]);
+			pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(i));
 			core_analysis_var_list_show(core, fcn, i, state);
 		};
 		pj_end(state->d.pj);
@@ -2880,14 +2868,9 @@ static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, RzAnalysisVarS
 
 	RzAnalysisVar *var = rz_analysis_function_get_var_at(fcn, stor);
 	if (!var) {
-		switch (stor->type) {
-		case RZ_ANALYSIS_VAR_STORAGE_REG:
-			RZ_LOG_ERROR("core: Cannot find variable for reg %s\n", stor->reg);
-			break;
-		case RZ_ANALYSIS_VAR_STORAGE_STACK:
-			RZ_LOG_ERROR("core: Cannot find variable with stack offset %" PFMT64d "\n", stor->stack_off);
-			break;
-		}
+		char *stor_str = rz_analysis_var_storage_to_string(stor);
+		RZ_LOG_ERROR("core: Cannot find variable with %s\n", stor_str);
+		free(stor_str);
 		return RZ_CMD_STATUS_ERROR;
 	}
 

@@ -1780,6 +1780,10 @@ RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var);
 RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, RzStackAddr sp);
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count);
 
+RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type);
+RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage);
+RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage);
+
 // Get the variable that var is written to at one of its accesses
 // Useful for cases where a register-based argument is written away into a stack variable,
 // so if var is the reg arg then this will return the stack var.
