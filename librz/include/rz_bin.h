@@ -1092,6 +1092,7 @@ extern RzBinPlugin rz_bin_plugin_z64;
 extern RzBinPlugin rz_bin_plugin_prg;
 extern RzBinPlugin rz_bin_plugin_dmp64;
 extern RzBinPlugin rz_bin_plugin_pyc;
+extern RzBinPlugin rz_bin_plugin_pef;
 
 #ifdef __cplusplus
 }

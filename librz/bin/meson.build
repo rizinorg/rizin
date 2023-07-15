@@ -40,6 +40,7 @@ bin_plugins = {
     'pe',
     'pe64',
     'pebble',
+    'pef',
     'prg',
     'psxexe',
     'pyc',
