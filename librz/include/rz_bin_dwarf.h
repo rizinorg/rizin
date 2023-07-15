@@ -1706,7 +1706,7 @@ typedef struct rz_bin_dwarf_location_t {
 			ut64 register_number;
 			st64 offset;
 		} register_offset;
-		uint64_t address;
+		ut64 address;
 		RzBinDwarfValue value;
 		struct { // BYTES
 			RzBinDwarfBlock value;

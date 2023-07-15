@@ -4,9 +4,6 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
-
 static inline int leading_zeros(ut64 x) {
 #if HAS___BUILTIN_CLZLL
 	return __builtin_clzll(x);
@@ -1029,6 +1026,7 @@ RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_ma
 		case RzBinDwarfValueType_F64: \
 			result->generic = self->f64 op rhs->f64; \
 			break; \
+		default: rz_warn_if_reached(); break; \
 		} \
 		return result; \
 	}
@@ -1059,5 +1057,3 @@ RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
 	}
 	return val;
 }
-
-#pragma clang diagnostic pop

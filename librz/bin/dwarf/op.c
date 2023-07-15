@@ -619,7 +619,7 @@ RzBinDwarfValueType ValueType_from_name(const char *name, ut8 byte_size) {
 	return RzBinDwarfValueType_GENERIC;
 }
 
-RzBinDwarfValueType ValueType_from_die(RzBinDwarfEvaluation *eval, RzBinDwarf *dw, UnitOffset offset) {
+RzBinDwarfValueType ValueType_from_die(RzBinDwarfEvaluation *eval, const RzBinDwarf *dw, UnitOffset offset) {
 	RzBinDwarfDie *die = ht_up_find(dw->info->die_tbl, eval->unit->offset + offset, NULL);
 	if (!die) {
 		return RzBinDwarfValueType_GENERIC;

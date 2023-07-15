@@ -206,7 +206,7 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 		RzBinDwarfRange *range = NULL;
 		GOTO_IF_FAIL(RzBinDwarfRawRngListEntry_parse(&raw_entry, buffer, encoding, format), err1);
 		rz_vector_push(&rnglist->raw_entries, &raw_entry);
-		if (raw_entry.encoding == DW_LLE_end_of_list && !raw_entry.is_address_or_offset_pair) {
+		if (raw_entry.encoding == DW_RLE_end_of_list && !raw_entry.is_address_or_offset_pair) {
 			break;
 		}
 		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &range), err2);
