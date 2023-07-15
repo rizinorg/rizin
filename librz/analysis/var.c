@@ -48,18 +48,19 @@ RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const 
 	return rz_analysis_var_storage_cmp(a, b) == 0;
 }
 
+static const char *var_storage_strings[] = {
+	[RZ_ANALYSIS_VAR_STORAGE_EMPTY] = "empty",
+	[RZ_ANALYSIS_VAR_STORAGE_REG] = "reg",
+	[RZ_ANALYSIS_VAR_STORAGE_STACK] = "stack",
+	[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
+	[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA",
+	[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "frame base",
+	[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "compose",
+	[RZ_ANALYSIS_VAR_STORAGE_LOCLIST] = "loclist",
+	[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
+};
+
 RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type) {
-	static const char *var_storage_strings[] = {
-		[RZ_ANALYSIS_VAR_STORAGE_EMPTY] = "empty",
-		[RZ_ANALYSIS_VAR_STORAGE_REG] = "reg",
-		[RZ_ANALYSIS_VAR_STORAGE_STACK] = "stack",
-		[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
-		[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA",
-		[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "frame base",
-		[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "compose",
-		[RZ_ANALYSIS_VAR_STORAGE_LOCLIST] = "loclist",
-		[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
-	};
 	if (type >= RZ_ANALYSIS_VAR_STORAGE_END) {
 		return NULL;
 	}
@@ -72,31 +73,36 @@ static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 }
 
 RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage) {
-	rz_strbuf_append(sb, rz_analysis_var_storage_type_to_string(storage->type));
 	switch (storage->type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG: {
-		rz_strbuf_appendf(sb, " %s", storage->reg);
+		rz_strbuf_append(sb, storage->reg);
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
+		rz_strbuf_append(sb, var_storage_strings[storage->type]);
 		strbuf_append_sign_hex(sb, storage->stack_off);
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
-		rz_strbuf_appendf(sb, " %s", storage->reg_offset.reg);
+		rz_strbuf_append(sb, storage->reg_offset.reg);
 		strbuf_append_sign_hex(sb, storage->reg_offset.offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+		rz_strbuf_append(sb, var_storage_strings[storage->type]);
 		strbuf_append_sign_hex(sb, storage->cfa_offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		rz_strbuf_append(sb, var_storage_strings[storage->type]);
 		strbuf_append_sign_hex(sb, storage->fb_offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-	case RZ_ANALYSIS_VAR_STORAGE_END:
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
+		rz_strbuf_append(sb, var_storage_strings[storage->type]);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_END:
+		rz_warn_if_reached();
 		break;
 	}
 }
