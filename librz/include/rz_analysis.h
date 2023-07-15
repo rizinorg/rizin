@@ -1782,6 +1782,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 
 RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type);
 RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage);
+RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *storage);
 RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage);
 
 // Get the variable that var is written to at one of its accesses

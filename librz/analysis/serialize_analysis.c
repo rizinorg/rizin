@@ -432,9 +432,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	pj_ks(j, "type", vartype);
 	free(vartype);
 
-	char *storage = rz_analysis_var_storage_to_string(&var->storage);
-	pj_ks(j, rz_analysis_var_storage_type_to_string(var->storage.type), storage);
-	free(storage);
+	rz_analysis_var_storage_dump_pj(j, &var->storage);
 
 	if (var->comment) {
 		pj_ks(j, "cmt", var->comment);

@@ -107,6 +107,45 @@ RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *stora
 	return rz_strbuf_drain(sb);
 }
 
+RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *storage) {
+	pj_k(pj, rz_analysis_var_storage_type_to_string(storage->type));
+	switch (storage->type) {
+	case RZ_ANALYSIS_VAR_STORAGE_STACK:
+		pj_N(pj, storage->stack_off);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_REG:
+		pj_s(pj, storage->reg);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
+		pj_o(pj);
+		pj_ks(pj, "reg", storage->reg_offset.reg);
+		pj_kN(pj, "offset", storage->reg_offset.offset);
+		pj_end(pj);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
+		pj_s(pj, "empty");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+		pj_N(pj, storage->cfa_offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		pj_N(pj, storage->fb_offset);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+		pj_s(pj, "compose");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
+		pj_s(pj, "loclist");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
+		pj_s(pj, "waiting");
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_END:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
 /**
  * Ensure that the register name in \p stor comes from the const pool
  */
