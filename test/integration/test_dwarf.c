@@ -381,6 +381,26 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	mu_end;
 }
 
+#define CHECK_LINEOP_FILE_ENTRY(index, dir, time, sz, path) \
+	{ \
+		RzBinDwarfFileEntry *f = rz_vector_index_ptr(&hdr->file_names, (index)); \
+		mu_assert_eq(f->size, (sz), "file name table"); \
+		mu_assert_eq(f->timestamp, (time), "file name time"); \
+		mu_assert_eq(f->directory_index, (dir), "file name dir"); \
+		mu_assert_streq(f->path_name, (path), "invalid_parameter_handler.c"); \
+	}
+
+#define CHECK_LINEOP_OPCODE(index, opc) \
+	{ \
+		RzBinDwarfLineOp *op = rz_vector_index_ptr(&lunit->ops, (index)); \
+		mu_assert_eq(op->opcode, (opc), "lineop opcode"); \
+	}
+#define CHECK_LINEOP_TYPE(index, t) \
+	{ \
+		RzBinDwarfLineOp *op = rz_vector_index_ptr(&lunit->ops, (index)); \
+		mu_assert_eq(op->type, (t), "lineop opcode"); \
+	}
+
 bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswell
 	RzBin *bin = rz_bin_new();
 	RzIO *io = rz_io_new();
@@ -401,112 +421,55 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
-	char *dump = rz_core_bin_dwarf_line_unit_to_string(rz_list_tail(li->units)->data);
 	mu_assert_eq(rz_list_length(li->units), 25, "line units count");
-	mu_assert_streq_free(dump,
-		" Header information[0x3154]\n"
-		"  Length:                             704\n"
-		"  DWARF Version:                      2\n"
-		"  Header Length:                      633\n"
-		"  Minimum Instruction Length:         1\n"
-		"  Maximum Operations per Instruction: 1\n"
-		"  Initial value of 'is_stmt':         1\n"
-		"  Line Base:                          -5\n"
-		"  Line Range:                         14\n"
-		"  Opcode Base:                        13\n"
-		"\n"
-		" Opcodes:\n"
-		"  Opcode 1 has 0 arg\n"
-		"  Opcode 2 has 1 arg\n"
-		"  Opcode 3 has 1 arg\n"
-		"  Opcode 4 has 1 arg\n"
-		"  Opcode 5 has 1 arg\n"
-		"  Opcode 6 has 0 arg\n"
-		"  Opcode 7 has 0 arg\n"
-		"  Opcode 8 has 0 arg\n"
-		"  Opcode 9 has 1 arg\n"
-		"  Opcode 10 has 0 arg\n"
-		"  Opcode 11 has 0 arg\n"
-		"  Opcode 12 has 1 arg\n"
-		"\n"
-		" The Directory Table:\n"
-		"  1     ../misc\n"
-		"  2     /usr/local/Cellar/mingw-w64/5.0.4_1/toolchain-i686/i686-w64-mingw32/include\n"
-		"  3     /usr/local/Cellar/mingw-w64/5.0.4_1/toolchain-i686/i686-w64-mingw32/include/psdk_inc\n"
-		"\n"
-		" The File Name Table:\n"
-		"  Entry Dir     Time      Size       Name\n"
-		"  1     1       0         0          invalid_parameter_handler.c\n"
-		"  2     2       0         0          interlockedapi.h\n"
-		"  3     3       0         0          intrin-impl.h\n"
-		"  4     2       0         0          crtdefs.h\n"
-		"  5     2       0         0          excpt.h\n"
-		"  6     2       0         0          minwindef.h\n"
-		"  7     2       0         0          ctype.h\n"
-		"  8     2       0         0          basetsd.h\n"
-		"  9     2       0         0          winnt.h\n"
-		"  10     2       0         0          guiddef.h\n"
-		"  11     2       0         0          virtdisk.h\n"
-		"  12     2       0         0          rpcdce.h\n"
-		"  13     2       0         0          stdlib.h\n"
-		"  14     2       0         0          malloc.h\n"
-		"  15     2       0         0          wtypesbase.h\n"
-		"  16     2       0         0          unknwnbase.h\n"
-		"  17     2       0         0          objidlbase.h\n"
-		"  18     2       0         0          cguid.h\n"
-		"  19     2       0         0          wtypes.h\n"
-		"  20     2       0         0          combaseapi.h\n"
-		"  21     2       0         0          objidl.h\n"
-		"  22     2       0         0          oleidl.h\n"
-		"  23     2       0         0          servprov.h\n"
-		"  24     2       0         0          oaidl.h\n"
-		"  25     2       0         0          msxml.h\n"
-		"  26     2       0         0          urlmon.h\n"
-		"  27     2       0         0          propidl.h\n"
-		"  28     2       0         0          oleauto.h\n"
-		"  29     2       0         0          winioctl.h\n"
-		"  30     2       0         0          winsmcrd.h\n"
-		"  31     2       0         0          winscard.h\n"
-		"  32     2       0         0          commdlg.h\n"
-		"\n"
-		" Line Number Statements:\n"
-		"  Set column to 1\n"
-		"  Extended opcode 2: set Address to 0x402700\n"
-		"  Advance line by 15, to 16\n"
-		"  Copy\n"
-		"  Set column to 5\n"
-		"  Special opcode 6: advance Address by 0 to 0x402700 and Line by 1 to 17\n"
-		"  Set column to 1\n"
-		"  Set is_stmt to 0\n"
-		"  Special opcode 6: advance Address by 0 to 0x402700 and Line by 1 to 18\n"
-		"  Set is_stmt to 1\n"
-		"  Advance line by -10, to 8\n"
-		"  Special opcode 229: advance Address by 16 to 0x402710 and Line by 0 to 8\n"
-		"  Set column to 5\n"
-		"  Special opcode 6: advance Address by 0 to 0x402710 and Line by 1 to 9\n"
-		"  Set file to 2\n"
-		"  Set column to 37\n"
-		"  Advance line by 26, to 35\n"
-		"  Copy\n"
-		"  Set column to 5\n"
-		"  Special opcode 6: advance Address by 0 to 0x402710 and Line by 1 to 36\n"
-		"  Set file to 3\n"
-		"  Set column to 10\n"
-		"  Advance line by 1052, to 1088\n"
-		"  Copy\n"
-		"  Set column to 5\n"
-		"  Special opcode 6: advance Address by 0 to 0x402710 and Line by 1 to 1089\n"
-		"  Set column to 12\n"
-		"  Set is_stmt to 0\n"
-		"  Copy\n"
-		"  Special opcode 145: advance Address by 10 to 0x40271a and Line by 0 to 1089\n"
-		"  Set file to 1\n"
-		"  Set column to 1\n"
-		"  Advance line by -1079, to 10\n"
-		"  Copy\n"
-		"  Advance PC by 1 to 0x40271b\n"
-		"  Extended opcode 1: End of Sequence\n",
-		"line unit dump");
+	RzBinDwarfLineUnit *lunit = rz_list_tail(li->units)->data;
+	mu_assert_notnull(lunit, "line unit");
+
+	RzBinDwarfLineHeader *hdr = &lunit->header;
+	mu_assert_eq(hdr->unit_length, 704, "");
+	mu_assert_eq(hdr->version, 2, "");
+	mu_assert_eq(hdr->min_inst_len, 1, "");
+	mu_assert_eq(hdr->max_ops_per_inst, 1, "");
+	mu_assert_eq(hdr->default_is_stmt, 1, "");
+	mu_assert_eq(hdr->line_base, -5, "");
+	mu_assert_eq(hdr->line_range, 14, "");
+	mu_assert_eq(hdr->opcode_base, 13, "");
+
+	ut8 opc[] = { 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1 };
+	mu_assert_memeq(hdr->std_opcode_lengths, opc, hdr->opcode_base - 1, "opcodes");
+
+	char *dir = NULL;
+	dir = rz_pvector_at(&hdr->directories, 0);
+	mu_assert_streq(dir, "../misc", "Directory table");
+	dir = rz_pvector_at(&hdr->directories, 1);
+	mu_assert_streq(dir, "/usr/local/Cellar/mingw-w64/5.0.4_1/toolchain-i686/i686-w64-mingw32/include", "Directory table");
+	dir = rz_pvector_at(&hdr->directories, 2);
+	mu_assert_streq(dir, "/usr/local/Cellar/mingw-w64/5.0.4_1/toolchain-i686/i686-w64-mingw32/include/psdk_inc", "Directory table");
+
+	CHECK_LINEOP_FILE_ENTRY(0, 1, 0, 0, "invalid_parameter_handler.c");
+	CHECK_LINEOP_FILE_ENTRY(1, 2, 0, 0, "interlockedapi.h");
+	CHECK_LINEOP_FILE_ENTRY(2, 3, 0, 0, "intrin-impl.h");
+
+	CHECK_LINEOP_FILE_ENTRY(14, 2, 0, 0, "wtypesbase.h");
+	CHECK_LINEOP_FILE_ENTRY(15, 2, 0, 0, "unknwnbase.h");
+	CHECK_LINEOP_FILE_ENTRY(16, 2, 0, 0, "objidlbase.h");
+
+	CHECK_LINEOP_FILE_ENTRY(29, 2, 0, 0, "winsmcrd.h");
+	CHECK_LINEOP_FILE_ENTRY(30, 2, 0, 0, "winscard.h");
+	CHECK_LINEOP_FILE_ENTRY(31, 2, 0, 0, "commdlg.h");
+
+	CHECK_LINEOP_OPCODE(0, DW_LNS_set_column);
+	CHECK_LINEOP_OPCODE(1, DW_LNE_set_address);
+	CHECK_LINEOP_OPCODE(2, DW_LNS_advance_line);
+
+	CHECK_LINEOP_OPCODE(17, DW_LNS_copy);
+	CHECK_LINEOP_OPCODE(18, DW_LNS_set_column);
+	CHECK_LINEOP_TYPE(19, RZ_BIN_DWARF_LINE_OP_TYPE_SPEC);
+
+	CHECK_LINEOP_OPCODE(33, DW_LNS_copy);
+	CHECK_LINEOP_OPCODE(34, DW_LNS_advance_pc);
+	CHECK_LINEOP_OPCODE(35, DW_LNE_end_sequence);
+
 	mu_assert_notnull(li->lines, "line info");
 	const ut64 test_addresses[] = {
 		0x00401000,
