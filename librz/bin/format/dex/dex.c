@@ -909,7 +909,7 @@ static char *demangle_java_and_free(char *mangled) {
 	if (!mangled) {
 		return NULL;
 	}
-	char *demangled = rz_demangler_java(mangled);
+	char *demangled = rz_demangler_java(mangled, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 	free(mangled);
 	return demangled;
 }

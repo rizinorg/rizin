@@ -4,7 +4,12 @@
 #include <rz_bin.h>
 #include "i/private.h"
 
-static void process_handle_reloc(RzBinReloc *reloc, RzBinObject *o, const RzDemanglerPlugin *demangler, RzBinProcessLanguage imp_cb, RzBinProcessLanguage sym_cb) {
+static void process_handle_reloc(RzBinReloc *reloc,
+	RzBinObject *o,
+	const RzDemanglerPlugin *demangler,
+	RzDemanglerFlag flags,
+	RzBinProcessLanguage imp_cb,
+	RzBinProcessLanguage sym_cb) {
 	// rebase physical address
 	reloc->paddr += o->opts.loadaddr;
 
@@ -12,16 +17,16 @@ static void process_handle_reloc(RzBinReloc *reloc, RzBinObject *o, const RzDema
 		return;
 	}
 
-	if (reloc->import && rz_bin_demangle_import(reloc->import, demangler) && imp_cb) {
+	if (reloc->import && rz_bin_demangle_import(reloc->import, demangler, flags, false) && imp_cb) {
 		imp_cb(o, reloc->import);
 	}
 
-	if (reloc->symbol && rz_bin_demangle_symbol(reloc->symbol, demangler) && sym_cb) {
+	if (reloc->symbol && rz_bin_demangle_symbol(reloc->symbol, demangler, flags, false) && sym_cb) {
 		sym_cb(o, reloc->symbol);
 	}
 }
 
-RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler) {
+RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *plugin = o->plugin;
 	RzList *relocs = NULL;
@@ -38,8 +43,20 @@ RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const R
 	RzListIter *it;
 	RzBinReloc *element;
 	rz_list_foreach (relocs, it, element) {
-		process_handle_reloc(element, o, demangler, imp_cb, sym_cb);
+		process_handle_reloc(element, o, demangler, flags, imp_cb, sym_cb);
 	}
 
 	o->relocs = rz_bin_reloc_storage_new(relocs);
+}
+
+RZ_IPI void rz_bin_demangle_relocs_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
+	for (size_t i = 0; i < o->relocs->relocs_count; ++i) {
+		RzBinReloc *reloc = o->relocs->relocs[i];
+		if (reloc->import) {
+			rz_bin_demangle_import(reloc->import, demangler, flags, true);
+		}
+		if (reloc->symbol) {
+			rz_bin_demangle_symbol(reloc->symbol, demangler, flags, true);
+		}
+	}
 }

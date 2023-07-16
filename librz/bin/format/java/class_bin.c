@@ -741,7 +741,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 	}
 
 	tmp = rz_bin_java_class_name(bin);
-	dem = rz_demangler_java(tmp);
+	dem = rz_demangler_java(tmp, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 	if (dem) {
 		rz_strbuf_appendf(sb, " %s", dem);
 		RZ_FREE(dem);
@@ -773,7 +773,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 				break;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
-			if ((dem = rz_demangler_java(tmp))) {
+			if ((dem = rz_demangler_java(tmp, RZ_DEMANGLER_FLAG_ENABLE_ALL))) {
 				free(tmp);
 				tmp = dem;
 			}
@@ -823,7 +823,7 @@ RZ_API void rz_bin_java_class_as_source_code(RZ_NONNULL RzBinJavaClass *bin, RZ_
 			free(desc);
 			free(name);
 
-			dem = rz_demangler_java(tmp);
+			dem = rz_demangler_java(tmp, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 			if (!dem) {
 				rz_strbuf_append(sb, tmp);
 			} else {
@@ -1062,7 +1062,7 @@ static char *demangle_java_and_free(char *mangled) {
 	if (startswith(mangled, "unknown_")) {
 		return mangled;
 	}
-	char *demangled = rz_demangler_java(mangled);
+	char *demangled = rz_demangler_java(mangled, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 	free(mangled);
 	return demangled;
 }
@@ -1297,7 +1297,7 @@ RZ_API RZ_OWN RzList /*<RzBinSymbol *>*/ *rz_bin_java_class_fields_as_symbols(RZ
 
 			set_lib_and_class_name(rz_bin_java_class_name(bin), &symbol->classname, &symbol->libname);
 			symbol->name = add_class_name_to_name(field_name, symbol->classname);
-			symbol->dname = rz_demangler_java(symbol->name);
+			symbol->dname = rz_demangler_java(symbol->name, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 			symbol->size = 0;
 			symbol->bind = java_field_is_global(field) ? RZ_BIN_BIND_GLOBAL_STR : RZ_BIN_BIND_LOCAL_STR;
 			symbol->type = RZ_BIN_TYPE_OBJECT_STR;
@@ -1676,7 +1676,7 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RZ_NONNULL RzBinJavaClass *bin,
 				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
 			}
 			if (rtext) {
-				char *dem = rz_demangler_java(rtext);
+				char *dem = rz_demangler_java(rtext, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 				if (dem) {
 					free(rtext);
 					rtext = dem;

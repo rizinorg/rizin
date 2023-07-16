@@ -443,3 +443,53 @@ EXPECT=<<EOF
 0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
 EOF
 RUN
+
+NAME=demangle c++ but simplified in session.
+FILE=bins/mach0/hellocxx-osx-i386
+ARGS=-M
+CMDS=<<EOF
+isq~std:
+e bin.demangle.flags=simplify
+echo ====================
+isq~std:
+EOF
+EXPECT=<<EOF
+0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00002064 0 std::__ioinit
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+====================
+0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00002064 0 std::__ioinit
+0x00001dee 0 imp.std::string::size() const
+0x00001df4 0 imp.std::string::operator[](unsigned long) const
+0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+0x00001e00 0 imp.std::ios_base::Init::Init()
+0x00001e06 0 imp.std::ios_base::Init::~Init()
+0x00001e12 0 imp.std::ostream& std::operator<< <std::char_traits<char> >(std::ostream&, char const*)
+EOF
+RUN
+
+NAME=demangle c++ but simplified before the session.
+FILE=bins/mach0/hellocxx-osx-i386
+ARGS=-M -e bin.demangle.flags=simplify
+CMDS=<<EOF
+ic
+EOF
+EXPECT=<<EOF
+address    min        max        name                     super 
+----------------------------------------------------------------
+---------- 0x00001c4e 0x00001c4e std                      
+---------- 0x00001e00 0x00001e06 std::ios_base::Init      
+---------- 0x00001dfa 0x00001dfa std::ostream             
+---------- 0x00001e12 ---------- std::ostream& std        
+---------- 0x00001dee 0x00001df4 std::string              
+---------- 0x00001d9a 0x00001d9a unsigned long const& std 
+EOF
+RUN

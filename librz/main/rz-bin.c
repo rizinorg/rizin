@@ -621,7 +621,7 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) 
 	}
 }
 
-static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, void *user) {
 	(void)user;
 	printf("%-6s %-12s %s\n", plugin->language, plugin->license, plugin->author);
 	return true;
@@ -994,13 +994,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_core_fini(&core);
 			return 1;
 		}
+		RzDemanglerFlag dflags = rz_demangler_get_flags(bin->demangler);
 		if (!strcmp(file, "-")) {
 			for (;;) {
 				file = stdin_gets(false);
 				if (!file || !*file) {
 					break;
 				}
-				res = rz_demangler_plugin_demangle(plugin, file);
+				res = rz_demangler_plugin_demangle(plugin, file, dflags);
 				if (RZ_STR_ISNOTEMPTY(res)) {
 					printf("%s\n", res);
 					ret_num = 0;
@@ -1012,7 +1013,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			stdin_gets(true);
 		} else {
-			res = rz_demangler_plugin_demangle(plugin, file);
+			res = rz_demangler_plugin_demangle(plugin, file, dflags);
 			if (RZ_STR_ISNOTEMPTY(res)) {
 				printf("%s\n", res);
 				ret_num = 0;

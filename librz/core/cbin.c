@@ -3574,7 +3574,7 @@ static inline char *demangle_type(const char *any) {
 		return strdup("unknown");
 	}
 	switch (any[0]) {
-	case 'L': return rz_demangler_java(any);
+	case 'L': return rz_demangler_java(any, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 	case 'B': return strdup("byte");
 	case 'C': return strdup("char");
 	case 'D': return strdup("double");
@@ -3632,7 +3632,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_java_visibility(sym->visibility_str);
-		char *dem = rz_demangler_java(mn);
+		char *dem = rz_demangler_java(mn, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 		if (!dem) {
 			dem = strdup(mn);
 		} else if (simplify && dem && package && classname) {
