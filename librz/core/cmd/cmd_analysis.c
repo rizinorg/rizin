@@ -2498,12 +2498,13 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
 	RzAnalysisVar *var;
 	RzListIter *iter;
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_a(state->d.pj);
-	}
 	RzList *list = rz_analysis_var_list(fcn, kind);
-	if (!list) {
+	if (!(list && rz_list_length(list) > 0)) {
 		goto fail;
+	}
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(kind));
+		pj_a(state->d.pj);
 	}
 	rz_list_sort(list, (RzListComparator)var_comparator);
 	rz_list_foreach (list, iter, var) {
@@ -2532,29 +2533,16 @@ static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, R
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
-			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 			pj_o(state->d.pj);
 			pj_ks(state->d.pj, "name", var->name);
 			pj_kb(state->d.pj, "arg", rz_analysis_var_is_arg(var));
+
+			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 			pj_ks(state->d.pj, "type", vartype);
-			pj_k(state->d.pj, "storage");
-			pj_o(state->d.pj);
-			switch (var->storage.type) {
-			case RZ_ANALYSIS_VAR_STORAGE_REG:
-				pj_ks(state->d.pj, "type", "reg");
-				pj_ks(state->d.pj, "reg", var->storage.reg);
-				break;
-			case RZ_ANALYSIS_VAR_STORAGE_STACK:
-				pj_ks(state->d.pj, "type", "stack");
-				pj_kN(state->d.pj, "stack_off", var->storage.stack_off);
-				break;
-			default:
-				rz_warn_if_reached();
-				break;
-			}
-			pj_end(state->d.pj);
-			pj_end(state->d.pj);
 			free(vartype);
+
+			rz_analysis_var_storage_dump_pj(state->d.pj, &var->storage);
+			pj_end(state->d.pj);
 			break;
 		}
 		default: {
@@ -2566,10 +2554,10 @@ static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, R
 		}
 		}
 	}
-fail:
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
+fail:
 	rz_list_free(list);
 }
 
@@ -2589,7 +2577,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		for (int i = RZ_ANALYSIS_VAR_STORAGE_EMPTY; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
-			pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(i));
 			core_analysis_var_list_show(core, fcn, i, state);
 		};
 		pj_end(state->d.pj);

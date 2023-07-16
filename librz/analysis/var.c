@@ -24,22 +24,21 @@ RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAn
 	case RZ_ANALYSIS_VAR_STORAGE_STACK:
 		return a->stack_off - b->stack_off;
 	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET: {
-		int cmp1 = strcmp(a->reg_offset.reg, b->reg_offset.reg);
-		return cmp1 == 0 ? (int)a->reg_offset.offset - (int)b->reg_offset.offset : cmp1;
+		int cmp_reg = strcmp(a->reg_offset.reg, b->reg_offset.reg);
+		return cmp_reg == 0 ? (int)a->reg_offset.offset - (int)b->reg_offset.offset : cmp_reg;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
 		return a->cfa_offset - b->cfa_offset;
 	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
 		return a->fb_offset - b->fb_offset;
 	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
-		return a->loclist - b->loclist;
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-		return 1;
+		return -1;
 	default:
 		rz_warn_if_reached();
-		return false;
+		return -1;
 	}
 }
 
@@ -114,42 +113,50 @@ RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *stora
 }
 
 RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *storage) {
-	pj_k(pj, rz_analysis_var_storage_type_to_string(storage->type));
-	switch (storage->type) {
-	case RZ_ANALYSIS_VAR_STORAGE_STACK:
-		pj_N(pj, storage->stack_off);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_REG:
-		pj_s(pj, storage->reg);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
-		pj_o(pj);
-		pj_ks(pj, "reg", storage->reg_offset.reg);
-		pj_kN(pj, "offset", storage->reg_offset.offset);
-		pj_end(pj);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
-		pj_s(pj, "empty");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-		pj_N(pj, storage->cfa_offset);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
-		pj_N(pj, storage->fb_offset);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
-		pj_s(pj, "compose");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
-		pj_s(pj, "loclist");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-		pj_s(pj, "waiting");
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_END:
-		rz_warn_if_reached();
-		break;
+	rz_return_if_fail(pj && storage);
+	const char *type = rz_analysis_var_storage_type_to_string(storage->type);
+	pj_k(pj, "storage");
+	pj_o(pj);
+	pj_ks(pj, "type", rz_str_get_null(type));
+	if (type) {
+		pj_k(pj, type);
+		switch (storage->type) {
+		case RZ_ANALYSIS_VAR_STORAGE_STACK:
+			pj_N(pj, storage->stack_off);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_REG:
+			pj_s(pj, storage->reg);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
+			pj_o(pj);
+			pj_ks(pj, "reg", storage->reg_offset.reg);
+			pj_kN(pj, "offset", storage->reg_offset.offset);
+			pj_end(pj);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
+			pj_s(pj, "empty");
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+			pj_N(pj, storage->cfa_offset);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+			pj_N(pj, storage->fb_offset);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+			pj_s(pj, "compose");
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
+			pj_s(pj, "loclist");
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
+			pj_s(pj, "waiting");
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_END:
+			rz_warn_if_reached();
+			break;
+		}
 	}
+	pj_end(pj);
 }
 
 /**

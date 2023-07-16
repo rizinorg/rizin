@@ -37,7 +37,6 @@ static void RzBinDwarfLineHeader_fini(RzBinDwarfLineHeader *hdr) {
 
 static bool file_entry_format_parse(RzBuffer *buffer, RzVector /*<RzBinDwarfFileEntryFormat>*/ *out, RzBinDwarfLineHeader *hdr) {
 	ut8 count = 0;
-	ut64 offset = rz_buf_tell(buffer);
 	RET_FALSE_IF_FAIL(rz_buf_read8(buffer, &count));
 	rz_vector_reserve(out, count);
 	ut32 path_count = 0;
@@ -62,7 +61,7 @@ static bool file_entry_format_parse(RzBuffer *buffer, RzVector /*<RzBinDwarfFile
 		rz_vector_push(out, &format);
 	}
 	if (path_count != 1) {
-		RZ_LOG_DEBUG("Missing file entry format path <.debug_line+0x%" PFMT64x ">\n", offset);
+		RZ_LOG_DEBUG("Missing file entry format path <.debug_line+0x%" PFMT64x ">\n", hdr->offset);
 		return false;
 	}
 	return true;

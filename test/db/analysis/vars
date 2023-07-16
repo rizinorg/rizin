@@ -900,8 +900,8 @@ int printf(const char *fmt, ...);
 |           ; var va_list ap @ loclist
 |           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
 ---------
-arg const char *buf @ loclist
 arg void *str @ loclist
+arg const char *buf @ loclist
 arg size_t n @ loclist
 void * prout(void *str, const char *buf, size_t n);
             ;-- prout:
@@ -911,14 +911,14 @@ void * prout(void *str, const char *buf, size_t n);
 |           ; arg size_t n @ loclist
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 ---------
-var fractype a_fraction @ loclist
+arg fp_number_type *a @ loclist
+arg fp_number_type *b @ loclist
+arg fp_number_type *tmp @ loclist
 var intfrac tfraction @ loclist
 var int a_normal_exp @ loclist
-arg fp_number_type *a @ loclist
-var fractype b_fraction @ loclist
-arg fp_number_type *tmp @ loclist
 var int b_normal_exp @ loclist
-arg fp_number_type *b @ loclist
+var fractype a_fraction @ loclist
+var fractype b_fraction @ loclist
 fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
@@ -948,8 +948,8 @@ size_t strnlen_s(const char *s, size_t maxsize);
 ---------
 var _Statab *pmbstate @ empty
 var _Statab *pwcstate @ a13
-arg wchar_t wc @ loclist
 arg char *s @ loclist
+arg wchar_t wc @ loclist
 arg mbstate_t *pst @ loclist
 int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
@@ -962,10 +962,10 @@ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
 |           ; var _Statab *pwcstate @ a13
 |           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 ---------
-arg const char *s @ loclist
-arg mbstate_t *pst @ loclist
 arg wchar_t *pwc @ loclist
+arg const char *s @ loclist
 arg size_t nin @ loclist
+arg mbstate_t *pst @ loclist
 int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
             ;-- _Mbtowc:
@@ -1111,8 +1111,8 @@ int printf(const char *fmt, ...);
 |           ; var va_list ap @ loclist
 |           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
 
-arg const char *buf @ loclist
 arg void *str @ loclist
+arg const char *buf @ loclist
 arg size_t n @ loclist
 void * prout(void *str, const char *buf, size_t n);
             ;-- prout:
@@ -1122,14 +1122,14 @@ void * prout(void *str, const char *buf, size_t n);
 |           ; arg size_t n @ loclist
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 
-var fractype a_fraction @ loclist
+arg fp_number_type *a @ loclist
+arg fp_number_type *b @ loclist
+arg fp_number_type *tmp @ loclist
 var intfrac tfraction @ loclist
 var int a_normal_exp @ loclist
-arg fp_number_type *a @ loclist
-var fractype b_fraction @ loclist
-arg fp_number_type *tmp @ loclist
 var int b_normal_exp @ loclist
-arg fp_number_type *b @ loclist
+var fractype a_fraction @ loclist
+var fractype b_fraction @ loclist
 fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
@@ -1159,8 +1159,8 @@ size_t strnlen_s(const char *s, size_t maxsize);
 
 var _Statab *pmbstate @ empty
 var _Statab *pwcstate @ a13
-arg wchar_t wc @ loclist
 arg char *s @ loclist
+arg wchar_t wc @ loclist
 arg mbstate_t *pst @ loclist
 int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
@@ -1173,10 +1173,10 @@ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
 |           ; var _Statab *pwcstate @ a13
 |           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 
-arg const char *s @ loclist
-arg mbstate_t *pst @ loclist
 arg wchar_t *pwc @ loclist
+arg const char *s @ loclist
 arg size_t nin @ loclist
+arg mbstate_t *pst @ loclist
 int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
             ;-- _Mbtowc:
