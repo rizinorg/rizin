@@ -186,14 +186,18 @@ static RZ_OWN RzType *var_type_default(RzAnalysis *analysis, int size) {
 	if (!typestr) {
 		typestr = "int32_t";
 	}
-	char *error_msg = NULL;
-	RzType *result = rz_type_parse_string_single(analysis->typedb->parser, typestr, &error_msg);
-	if (!result || error_msg) {
-		RZ_LOG_ERROR("Invalid var type: %s\n%s", typestr, error_msg);
-		free(error_msg);
+	RzType *type = RZ_NEW0(RzType);
+	if (!type) {
 		return NULL;
 	}
-	return result;
+	type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	type->identifier.name = strdup(typestr);
+	if (!type->identifier.name) {
+		free(type);
+		return NULL;
+	}
+	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	return type;
 }
 
 /**

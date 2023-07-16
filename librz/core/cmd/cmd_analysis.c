@@ -2496,15 +2496,14 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 }
 
 static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(state->d.pj);
+	}
 	RzAnalysisVar *var;
 	RzListIter *iter;
 	RzList *list = rz_analysis_var_list(fcn, kind);
 	if (!(list && rz_list_length(list) > 0)) {
 		goto fail;
-	}
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(kind));
-		pj_a(state->d.pj);
 	}
 	rz_list_sort(list, (RzListComparator)var_comparator);
 	rz_list_foreach (list, iter, var) {
@@ -2554,10 +2553,10 @@ static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, R
 		}
 		}
 	}
+fail:
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
-fail:
 	rz_list_free(list);
 }
 
@@ -2577,6 +2576,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		for (int i = RZ_ANALYSIS_VAR_STORAGE_EMPTY; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
+			pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(i));
 			core_analysis_var_list_show(core, fcn, i, state);
 		};
 		pj_end(state->d.pj);
