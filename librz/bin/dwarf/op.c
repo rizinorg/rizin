@@ -1241,7 +1241,7 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 	return true;
 }
 
-RZ_API RZ_BORROW RzVector * /*RzBinDwarfPiece*/ rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self) {
+RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self) {
 	if (self->state.kind == EVALUATION_STATE_COMPLETE) {
 		return &self->result;
 	}
@@ -1407,7 +1407,7 @@ static void vec_Operation_free(void *e, void *u) {
 	Operation_fini(e);
 }
 
-static RzVector *rz_bin_dwarf_expression_parse(RzBuffer *expr, const RzBinDwarfEncoding *encoding) {
+static RzVector /*<Operation>*/ *rz_bin_dwarf_expression_parse(RzBuffer *expr, const RzBinDwarfEncoding *encoding) {
 	RzVector *exprs = rz_vector_new(sizeof(Operation), vec_Operation_free, NULL);
 	Operation op = { 0 };
 	while (Operation_parse(&op, expr, encoding)) {

@@ -696,7 +696,7 @@ typedef struct rz_analysis_var_storage_t {
 
 		st64 cfa_offset;
 		st64 fb_offset;
-		RzVector * /*RzBinDwarfPiece*/ compose;
+		RzVector * /*<RzBinDwarfPiece>*/ compose;
 		struct {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
@@ -731,7 +731,7 @@ static inline void rz_analysis_var_storage_init_fb_offset(RzAnalysisVarStorage *
 	stor->fb_offset = offset;
 }
 
-static inline void rz_analysis_var_storage_init_compose(RzAnalysisVarStorage *stor, RzVector *compose) {
+static inline void rz_analysis_var_storage_init_compose(RzAnalysisVarStorage *stor, RzVector /*<RzBinDwarfPiece>*/ *compose) {
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_COMPOSE;
 	stor->compose = compose;
 }
@@ -804,7 +804,7 @@ typedef struct dwarf_function_t {
 	ut64 vtable_addr; // location description
 	ut64 call_conv; // normal || program || nocall
 	RzType *ret_type;
-	RzVector /*<RzAnalysisDwarfVariable*>*/ variables;
+	RzVector /*<RzAnalysisDwarfVariable>*/ variables;
 	ut8 access; // public = 1, protected = 2, private = 3, if not set assume private
 
 	bool has_unspecified_parameters : 1;

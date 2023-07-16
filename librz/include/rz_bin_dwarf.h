@@ -1366,7 +1366,7 @@ typedef struct {
 typedef struct {
 	ut64 offset;
 	RzVector /*<RzBinDwarfRawRngListEntry>*/ raw_entries;
-	RzPVector /*<RzBinDwarfRange*>*/ entries;
+	RzPVector /*<RzBinDwarfRange *>*/ entries;
 } RzBinDwarfRngList;
 
 typedef struct {
@@ -1453,7 +1453,7 @@ typedef struct {
 typedef struct {
 	ut64 offset;
 	bool has_location;
-	RzPVector /*<RzBinDwarfLocationListEntry*>*/ entries;
+	RzPVector /*<RzBinDwarfLocationListEntry *>*/ entries;
 	RzVector /*<RzBinDwarfRawLocListEntry>*/ raw_entries;
 } RzBinDwarfLocList;
 
@@ -1646,9 +1646,9 @@ typedef struct {
 
 	// If we see a DW_OP_call* operation, the previous PC and bytecode
 	// is stored here while evaluating the subroutine.
-	RzVector expression_stack;
+	RzVector /*<RzBinDwarfExprStackItem>*/ expression_stack;
 
-	RzVector /*Piece*/ result;
+	RzVector /*<Piece>*/ result;
 } RzBinDwarfEvaluation;
 
 typedef struct {
@@ -1730,7 +1730,7 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNUL
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self);
 RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self, RZ_BORROW RZ_NONNULL RzBinDwarfEvaluationResult *out);
-RZ_API RZ_BORROW RzVector * /*RzBinDwarfPiece*/ rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self);
+RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self);
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block, RZ_BORROW RZ_NULLABLE const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 RZ_API void
 rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL RzStrBuf *str_buf, RZ_BORROW RZ_NONNULL const char *sep, RZ_BORROW RZ_NONNULL const char *indent);
