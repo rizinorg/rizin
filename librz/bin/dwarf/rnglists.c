@@ -89,7 +89,7 @@ RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBu
 			ULE128_OR_RET_FALSE(entry.start_length.length);
 			break;
 		default: {
-			rz_warn_if_reached();
+			RZ_LOG_DEBUG("Invalid address range list encoding: %u\n", entry.encoding);
 			return false;
 		}
 		}

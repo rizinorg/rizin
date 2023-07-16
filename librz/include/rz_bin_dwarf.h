@@ -1598,6 +1598,9 @@ typedef enum {
 	EvaluationStateWaiting_ENTRY_VALUE,
 	EvaluationStateWaiting_RelocatedAddress,
 	EvaluationStateWaiting_IndexedAddress,
+	EvaluationStateWaiting_TLS,
+	EvaluationStateWaiting_AtLocation,
+	EvaluationStateWaiting_ParameterRef,
 } RzBinDwarfEvaluationStateWaiting;
 
 typedef struct {
@@ -1616,12 +1619,6 @@ typedef struct {
 		RzBinDwarfEvaluationStateWaiting waiting;
 	};
 } RzBinDwarfEvaluationState;
-
-typedef enum {
-	RzBinDwarfEvaluationDefer_REGISTER = 0x1,
-	RzBinDwarfEvaluationDefer_FRAME_BASE = 0x1 << 1,
-	RzBinDwarfEvaluationDefer_CFA = 0x1 << 2,
-} RzBinDwarfEvaluationDefer;
 
 typedef struct {
 	const RzBinDwarf *dw;
@@ -1679,6 +1676,12 @@ typedef struct {
 			ut64 index;
 			bool relocate;
 		} requires_indexed_address;
+		struct {
+			ut64 offset;
+		} requires_at_location;
+		struct {
+			ut64 offset;
+		} requires_parameter_ref;
 	};
 } RzBinDwarfEvaluationResult;
 
@@ -1713,7 +1716,7 @@ typedef struct rz_bin_dwarf_location_t {
 		} bytes;
 		struct { // IMPLICIT_POINTER
 			DebugInfoOffset value;
-			int64_t byte_offset;
+			st64 byte_offset;
 		} implicit_pointer;
 		struct {
 			RzBinDwarfEvaluation *eval;

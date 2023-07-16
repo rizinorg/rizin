@@ -154,7 +154,7 @@ typedef struct {
 
 		struct { /// For IMPLICIT_POINTER
 			ut64 value;
-			ut64 byte_offset;
+			st64 byte_offset;
 		} implicit_pointer;
 
 		struct { /// For PARAMETER_REF

@@ -199,7 +199,7 @@ RZ_API char *rz_core_bin_dwarf_debug_info_to_string(const RzBinDwarfDebugInfo *i
 				} else {
 					my_printf("     AT_UNKWN [0x%-3" PFMT32x "]\t : ", attr->name);
 				}
-				my_print(rz_core_bin_dwarf_attr_to_string(attr));
+				my_print(rz_str_get_null(rz_core_bin_dwarf_attr_to_string(attr)));
 				my_printf("\n");
 			}
 		}
@@ -274,7 +274,7 @@ RZ_API char *rz_core_bin_dwarf_aranges_to_string(RzList /*<RzBinDwarfARangeSet *
 static void print_line_op(RzStrBuf *sb, RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr) {
 	switch (op->type) {
 	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
-		my_print(rz_bin_dwarf_lns(op->opcode));
+		my_print(rz_str_get_null(rz_bin_dwarf_lns(op->opcode)));
 		switch (op->opcode) {
 		case DW_LNS_advance_pc:
 			my_printf("\t%" PFMT64u, op->args.advance_pc);
@@ -305,7 +305,7 @@ static void print_line_op(RzStrBuf *sb, RzBinDwarfLineOp *op, RzBinDwarfLineHead
 		}
 		break;
 	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
-		my_print(rz_bin_dwarf_lne(op->ext_opcode));
+		my_print(rz_str_get_null(rz_bin_dwarf_lne(op->ext_opcode)));
 		switch (op->opcode) {
 		case DW_LNE_set_address:
 			my_printf("\t0x%" PFMT64x, op->args.set_address);

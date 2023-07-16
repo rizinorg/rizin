@@ -366,6 +366,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	}
 	case DW_OP_form_tls_address:
+	case DW_OP_GNU_push_tls_address:
 		self->kind = OPERATION_KIND_TLS;
 		break;
 	case DW_OP_call_frame_cfa:
@@ -397,9 +398,9 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		if (encoding->version == 2) {
 			UX_OR_RET_FALSE(value, encoding->address_size);
 		} else {
-			buf_read_offset(buffer, &value, encoding->address_size, encoding->big_endian);
+			buf_read_offset(buffer, &value, encoding->is_64bit, encoding->big_endian);
 		}
-		st64 byte_offset;
+		st64 byte_offset = 0;
 		SLE128_OR_RET_FALSE(byte_offset);
 		self->kind = OPERATION_KIND_IMPLICIT_POINTER;
 		self->implicit_pointer.value = value;
@@ -517,13 +518,16 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 			self->kind = OPERATION_KIND_WASM_GLOBAL;
 			self->wasm_global.index = index;
 			break;
+		default:
+			RZ_LOG_WARN("Unsupported wasm location index %d\n", byte);
+			return false;
 		}
 		}
 		break;
 	}
-	default:
-		RZ_LOG_WARN("Unsupported opcode %d\n", opcode);
-		break;
+	case DW_OP_hi_user:
+		RZ_LOG_WARN("Unsupported opcode %s\n", rz_bin_dwarf_op(opcode));
+		return false;
 	}
 	return true;
 }
@@ -1097,10 +1101,21 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 		RET_FALSE_IF_FAIL(Evaluation_push(self, val));
 		break;
 	}
-
-	case OPERATION_KIND_CALL: // TODO: call
-	case OPERATION_KIND_TLS: // TODO: tls
-	case OPERATION_KIND_PARAMETER_REF: // TODO: parameter ref
+	case OPERATION_KIND_TLS: {
+		out->kind = OperationEvaluationResult_WAITING;
+		out->waiting._1 = EvaluationStateWaiting_TLS;
+		return true;
+	}
+	case OPERATION_KIND_CALL:
+		out->kind = OperationEvaluationResult_WAITING;
+		out->waiting._1 = EvaluationStateWaiting_AtLocation;
+		out->waiting._2.requires_at_location.offset = operation.call.offset;
+		return true;
+	case OPERATION_KIND_PARAMETER_REF:
+		out->kind = OperationEvaluationResult_WAITING;
+		out->waiting._1 = EvaluationStateWaiting_ParameterRef;
+		out->waiting._2.requires_parameter_ref.offset = operation.call.offset;
+		return true;
 
 	case OPERATION_KIND_WASM_LOCAL:
 	case OPERATION_KIND_WASM_GLOBAL:
@@ -1290,7 +1305,7 @@ beach:
 }
 
 void Operation_dump(Operation *op, RzStrBuf *buf) {
-	rz_strbuf_append(buf, rz_bin_dwarf_op(op->opcode));
+	rz_strbuf_append(buf, rz_str_get_null(rz_bin_dwarf_op(op->opcode)));
 	switch (op->kind) {
 	case OPERATION_KIND_DEREF:
 		rz_strbuf_appendf(buf, " base_type: 0x%" PFMT64x ", size: %d, space: %d", op->deref.base_type, op->deref.size, op->deref.space);
