@@ -875,23 +875,23 @@ RZ_API const char *rz_bin_dwarf_op(enum DW_OP op) {
 }
 
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian) {
-	bool is_64bit;
-	ut64 length;
+	bool is_64bit = false;
+	ut64 length = 0;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
 
-	ut16 version;
+	ut16 version = 0;
 	U16_OR_RET_FALSE(version);
 	if (version != 5) {
 		RZ_LOG_ERROR("Invalid version: %d", version);
 	}
-	ut8 address_size;
+	ut8 address_size = 0;
 	U8_OR_RET_FALSE(address_size);
 	ut8 segment_selector_size;
 	U8_OR_RET_FALSE(segment_selector_size);
 	if (segment_selector_size != 0) {
 		RZ_LOG_ERROR("Segment selector size not supported: %d", segment_selector_size);
 	}
-	ut32 offset_entry_count;
+	ut32 offset_entry_count = 0;
 	U32_OR_RET_FALSE(offset_entry_count);
 
 	memset(hdr, 0, sizeof(RzBinDwarfListsHeader));
@@ -910,7 +910,7 @@ RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool
 			if (is_64bit) {
 				rz_buf_read_ble64(buffer, &hdr->location_offsets[i], big_endian);
 			} else {
-				ut32 out;
+				ut32 out = 0;
 				rz_buf_read_ble32(buffer, &out, big_endian);
 				hdr->location_offsets[i] = (ut64)out;
 			}

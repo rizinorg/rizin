@@ -399,7 +399,7 @@ RZ_IPI bool Value_convert(RzBinDwarfValue *self, RzBinDwarfValueType typ, ut64 a
 	case RzBinDwarfValueType_F64:
 		return Value_from_f64(typ, self->f64, result);
 	default: {
-		ut64 temp;
+		ut64 temp = 0;
 		Value_to_u64(self, addr_mask, &temp);
 		return Value_from_u64(typ, temp, result);
 	}
