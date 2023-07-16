@@ -1208,8 +1208,8 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 	}
 }
 
-static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwarfVariable *dw_var, RzAnalysisVar *var) {
-	if (dw_var->location->kind != RzBinDwarfLocationKind_REGISTER_OFFSET) {
+static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwarfVariable *dw_var, const char *reg_name, RzAnalysisVar *var) {
+	if (!(dw_var->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET)) {
 		return false;
 	}
 	ut16 reg = dw_var->location->register_offset.register_number;
@@ -1246,6 +1246,16 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAna
 			return true;
 		}
 	}
+	const char *SP = rz_reg_get_name(a->reg, RZ_REG_NAME_SP);
+	if (SP && strcmp(SP, reg_name) == 0) {
+		rz_analysis_var_storage_init_stack(&var->storage, off);
+		return true;
+	}
+	const char *BP = rz_reg_get_name(a->reg, RZ_REG_NAME_BP);
+	if (BP && strcmp(BP, reg_name) == 0) {
+		rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
+		return true;
+	}
 	return false;
 }
 
@@ -1272,10 +1282,10 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 	}
 	case RzBinDwarfLocationKind_REGISTER_OFFSET: {
 		// Convert some register offset to stack offset
-		if (fixup_regoff_to_stackoff(a, f, dw_var, var)) {
+		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_offset.register_number, a->bits);
+		if (fixup_regoff_to_stackoff(a, f, dw_var, reg_name, var)) {
 			break;
 		}
-		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_offset.register_number, a->bits);
 		rz_analysis_var_storage_init_reg_offset(storage, reg_name, loc->register_offset.offset);
 		break;
 	}
