@@ -423,8 +423,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		rz_core_file_set_by_file(core, file);
 		ofile = NULL;
 		odesc = NULL;
-		//	core->file = file;
-		RZ_LOG_ERROR("File %s reopened in %s mode\n", path,
+		RZ_LOG_WARN("File %s reopened in %s mode\n", path,
 			(perm & RZ_PERM_W) ? "read-write" : "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
