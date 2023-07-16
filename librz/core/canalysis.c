@@ -5123,6 +5123,7 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 	if (!fmt) {
 		return rz_strbuf_drain(sb);
 	}
+	bool usePxr = rz_type_is_strictly_atomic(core->analysis->typedb, var->type) && rz_type_atomic_str_eq(core->analysis->typedb, var->type, "int");
 	if (add_name) {
 		rz_strbuf_appendf(sb, "%s %s = ", rz_analysis_var_is_arg(var) ? "arg" : "var", var->name);
 	}
