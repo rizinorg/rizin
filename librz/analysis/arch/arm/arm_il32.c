@@ -463,6 +463,13 @@ static ut32 get_imm(cs_insn *insn, int n, RZ_NULLABLE RzILOpBool **carry_out) {
 	if (carry_out) {
 		*carry_out = NULL;
 	}
+	if (ISFPIMM(n)) {
+		float fpimm = FPIMM(n);
+		RzFloat *f = rz_float_new_from_f32(fpimm);
+		ut32 hex_imm = rz_bv_to_ut32(f->s);
+		rz_float_free(f);
+		return hex_imm;
+	}
 	cs_arm_op *op = &insn->detail->arm.operands[n];
 	ut32 imm = IMM(n);
 	if (op->shift.type == ARM_SFT_INVALID && ISIMM(n + 1)) {
@@ -2589,7 +2596,6 @@ static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILO
  */
 static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 	if (OPCOUNT() < 2 || !ISREG(0) || (!ISIMM(1) && !ISREG(1))) {
-		// for now, only support vmov rt, rn
 		return NULL;
 	}
 
@@ -2718,7 +2724,7 @@ static RzILOpEffect *vmrs(cs_insn *insn, bool is_thumb) {
 	}
 
 	// if <Rt> is APSR, transfer to flags
-	if (REGID(1) == ARM_REG_APSR_NZCV) {
+	if (REGID(0) == ARM_REG_APSR_NZCV) {
 		RzILOpBitVector *val = VARG("fpscr");
 		return SEQ4(
 			SETG("nf", INV(IS_ZERO(LOGAND(val, U32(1ul << 31))))),
@@ -2727,7 +2733,7 @@ static RzILOpEffect *vmrs(cs_insn *insn, bool is_thumb) {
 			SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 28))))));
 	}
 
-	if (REGID(0) >= ARM_REG_R0 && REGID(0) <= ARM_REG_R14) {
+	if (is_core_reg(REGID(0)) && REGID(0) != ARM_REG_PC) {
 		return write_reg(REGID(0), VARG("fpscr"));
 	}
 
@@ -2782,7 +2788,7 @@ static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
 
 	// pseudo-instruction VAND(imm) disassembly produces VBIC(imm)
 	// pseudo-instruction VORN(imm) disassembly produces VORR(imm)
-	if (insn->id == ARM_INS_VBIC || insn->id == ARM_INS_VORR) {
+	if ((insn->id == ARM_INS_VBIC || insn->id == ARM_INS_VORR) && ISIMM(OPCOUNT() - 1)) {
 		ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
 		src_b = repeated_imm(DT_WIDTH(insn), REG_WIDTH(0), imm);
 	} else {
@@ -2809,7 +2815,7 @@ static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_VEOR:
 		res = LOGXOR(src_a, src_b);
 		break;
-	case ARM_INS_BIC:
+	case ARM_INS_VBIC:
 		res = LOGAND(src_a, LOGNOT(src_b));
 		break;
 	default:
@@ -2847,15 +2853,15 @@ static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
 	switch (insn->id) {
 	case ARM_INS_VBIF:
 		// Rd = (d and m) or (n and not(m))
-		res = LOGOR(LOGAND(d, m), LOGAND(n, LOGNOT(m)));
+		res = LOGOR(LOGAND(d, m), LOGAND(n, LOGNOT(DUP(m))));
 		break;
 	case ARM_INS_VBIT:
 		// Rd = (n and m) or (d and not(m))
-		res = LOGOR(LOGAND(n, m), LOGAND(d, LOGNOT(m)));
+		res = LOGOR(LOGAND(n, m), LOGAND(d, LOGNOT(DUP(m))));
 		break;
 	case ARM_INS_VBSL:
 		// Rd = (n and d) or (m and not(d))
-		res = LOGOR(LOGAND(n, d), LOGAND(m, LOGNOT(d)));
+		res = LOGOR(LOGAND(n, d), LOGAND(m, LOGNOT(DUP(d))));
 		break;
 	default:
 		rz_il_op_pure_free(d);
@@ -3640,7 +3646,7 @@ static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 
 	// 1. vdup <Vd> <Vn>[x], duplicate scalar
 	// 2. vdup <Vd> <Rn>, duplicate Rn bits to Vd
-	bool is_dup_lane = NEON_LANE(1) == -1;
+	bool is_dup_lane = NEON_LANE(1) != -1;
 
 	for (int i = 0; i < reg_bits(REGID(0)) / elem_bits; ++i) {
 		RzILOpBitVector *scalar = is_dup_lane ? read_reg_lane(REGID(1), NEON_LANE(1), elem_bits) : UNSIGNED(elem_bits, REG(1));
@@ -3707,8 +3713,8 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 	// Vm: B7, A7, ... B4, A4
 	RzILOpBitVector *interleaved_val = UN(tmp_bits, 0);
 	for (ut32 i = 0; i < lanes; ++i) {
-		RzILOpBitVector *d = read_reg_lane(REGID(0), i, vec_bits);
-		RzILOpBitVector *m = read_reg_lane(REGID(1), i, vec_bits);
+		RzILOpBitVector *d = UNSIGNED(tmp_bits, read_reg_lane(REGID(0), i, vec_bits));
+		RzILOpBitVector *m = UNSIGNED(tmp_bits, read_reg_lane(REGID(1), i, vec_bits));
 		interleaved_val = LOGOR(interleaved_val,
 			SHIFTL0(LOGOR(SHIFTL0(m, UN(8, vec_bits)), d),
 				UN(32, vec_bits * 2)));
@@ -3746,8 +3752,8 @@ static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *deinterleave_d = UN(reg_sz, 0);
 	RzILOpBitVector *deinterleave_m = UN(reg_sz, 0);
 	for (ut32 i = 0; i < lanes; ++i) {
-		RzILOpBitVector *d_lane = read_reg_lane(REGID(0), i, vec_bits);
-		RzILOpBitVector *m_lane = read_reg_lane(REGID(1), i, vec_bits);
+		RzILOpBitVector *d_lane = UNSIGNED(reg_sz, read_reg_lane(REGID(0), i, vec_bits));
+		RzILOpBitVector *m_lane = UNSIGNED(reg_sz, read_reg_lane(REGID(1), i, vec_bits));
 
 		// construct (Bn, 0, 0, 0, An)
 		ut32 lane_shift_dist = i / 2 * vec_bits;
