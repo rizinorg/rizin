@@ -62,7 +62,7 @@ RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o) {
 	}
 }
 
-static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzDemanglerPlugin *demangler, RzBinProcessLanguage language_cb) {
+static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags, RzBinProcessLanguage language_cb) {
 	// rebase physical address
 	symbol->paddr += o->opts.loadaddr;
 
@@ -78,7 +78,7 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 	}
 
 	// demangle the symbol
-	if (!rz_bin_demangle_symbol(symbol, demangler) ||
+	if (!rz_bin_demangle_symbol(symbol, demangler, flags, false) ||
 		!language_cb) {
 		return;
 	}
@@ -89,7 +89,7 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 	language_cb(o, symbol);
 }
 
-RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler) {
+RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
 	if (rz_list_length(o->symbols) < 1) {
 		return;
 	}
@@ -102,7 +102,7 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 	RzListIter *it;
 	RzBinSymbol *element;
 	rz_list_foreach (o->symbols, it, element) {
-		process_handle_symbol(element, o, demangler, language_cb);
+		process_handle_symbol(element, o, demangler, flags, language_cb);
 	}
 }
 
@@ -112,5 +112,13 @@ RZ_IPI void rz_bin_set_symbols_from_plugin(RzBinFile *bf, RzBinObject *o) {
 	rz_list_free(o->symbols);
 	if (!plugin->symbols || !(o->symbols = plugin->symbols(bf))) {
 		o->symbols = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	}
+}
+
+RZ_IPI void rz_bin_demangle_symbols_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
+	RzListIter *it;
+	RzBinSymbol *element;
+	rz_list_foreach (o->symbols, it, element) {
+		rz_bin_demangle_symbol(element, demangler, flags, true);
 	}
 }

@@ -254,7 +254,8 @@ RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **arg
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	char *demangled = rz_demangler_java(resolved);
+	RzDemanglerFlag dflags = rz_demangler_get_flags(core->bin->demangler);
+	char *demangled = rz_demangler_java(resolved, dflags);
 	if (demangled) {
 		rz_cons_println(demangled);
 	} else {

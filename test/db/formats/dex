@@ -231,6 +231,7 @@ EOF
 RUN
 
 NAME=DEX HelloWorld.dex imports (ii command)
+ARGS=-e bin.demangle.flags=all
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
@@ -474,6 +475,7 @@ EOF
 RUN
 
 NAME=DEX radare2installer.dex classes (is getProper)
+ARGS=-e bin.demangle.flags=all
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=ii~getProper
 EXPECT=<<EOF

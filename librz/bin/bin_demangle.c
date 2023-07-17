@@ -32,8 +32,8 @@ static const char *get_mangled_name(const char *mangled) {
 #undef skip_prefix_s
 #undef skip_prefix_n
 
-RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin) {
-	if (!plugin || bsym->dname) {
+RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, bool force) {
+	if (!plugin || (bsym->dname && !force)) {
 		return false;
 	}
 
@@ -42,12 +42,13 @@ RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *p
 		return false;
 	}
 
-	bsym->dname = plugin->demangle(mangled);
+	free(bsym->dname);
+	bsym->dname = plugin->demangle(mangled, flags);
 	return bsym->dname != NULL;
 }
 
-RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin) {
-	if (!plugin) {
+RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, bool force) {
+	if (!plugin || (import->dname && !force)) {
 		return false;
 	}
 
@@ -56,11 +57,12 @@ RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin 
 		return false;
 	}
 
-	char *demangled = plugin->demangle(mangled);
+	char *demangled = plugin->demangle(mangled, flags);
 	if (!demangled) {
 		return false;
 	}
 
+	free(import->dname);
 	import->dname = demangled;
 	return true;
 }
@@ -83,6 +85,7 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const ch
 
 	RzBinLanguage type = language ? rz_bin_language_to_id(language) : RZ_BIN_LANGUAGE_UNKNOWN;
 	type = RZ_BIN_LANGUAGE_MASK(type);
+	RzDemanglerFlag flags = bin ? rz_demangler_get_flags(bin->demangler) : RZ_DEMANGLER_FLAG_ENABLE_ALL;
 
 	switch (type) {
 	case RZ_BIN_LANGUAGE_KOTLIN:
@@ -92,17 +95,17 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const ch
 	case RZ_BIN_LANGUAGE_DART:
 		/* fall-thru */
 	case RZ_BIN_LANGUAGE_JAVA:
-		return rz_demangler_java(mangled);
+		return rz_demangler_java(mangled, flags);
 	case RZ_BIN_LANGUAGE_OBJC:
-		return rz_demangler_objc(mangled);
+		return rz_demangler_objc(mangled, flags);
 	case RZ_BIN_LANGUAGE_MSVC:
-		return rz_demangler_msvc(mangled);
+		return rz_demangler_msvc(mangled, flags);
 	case RZ_BIN_LANGUAGE_PASCAL:
-		return rz_demangler_pascal(mangled);
+		return rz_demangler_pascal(mangled, flags);
 	case RZ_BIN_LANGUAGE_RUST:
-		return rz_demangler_rust(mangled);
+		return rz_demangler_rust(mangled, flags);
 	case RZ_BIN_LANGUAGE_CXX:
-		return rz_demangler_cxx(mangled);
+		return rz_demangler_cxx(mangled, flags);
 	default:
 		break;
 	}

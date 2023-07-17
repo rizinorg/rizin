@@ -532,7 +532,7 @@ RZ_IPI RzCmdStatus rz_cmd_pdb_extract_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool print_demangler_info(const RzDemanglerPlugin *plugin, void *user) {
+static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, void *user) {
 	if (!user) {
 		rz_cons_printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
 		return true;
