@@ -42,42 +42,42 @@ static RzDemanglerPlugin *demangler_static_plugins[] = { RZ_DEMANGLER_STATIC_PLU
 RZ_LIB_VERSION(rz_demangler);
 
 /**
- * \brief Demangles java symbols
+ * \brief Demangles Java symbols
  */
 RZ_API RZ_OWN char *rz_demangler_java(RZ_NULLABLE const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_java(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles c++ symbols
+ * \brief Demangles C++ symbols
  */
 RZ_API RZ_OWN char *rz_demangler_cxx(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_cxx(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles objc symbols
+ * \brief Demangles Objective C/C++ symbols
  */
 RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_objc(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles pascal symbols
+ * \brief Demangles Pascal symbols
  */
 RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_pascal(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles rust symbols
+ * \brief Demangles Rust symbols
  */
 RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_rust(symbol, (RzDemangleOpts)flags);
 }
 
 /**
- * \brief Demangles microsft vc symbols
+ * \brief Demangles Microsoft VC symbols
  */
 RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_msvc(symbol, (RzDemangleOpts)flags);
