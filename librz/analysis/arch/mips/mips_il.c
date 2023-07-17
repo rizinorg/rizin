@@ -6626,9 +6626,9 @@ MipsILLifterFunction mips_lifters[] = {
  **/
 RZ_IPI Effect *mips_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn, ut32 pc) {
 	rz_return_val_if_fail(analysis && insn, NULL);
-	if (INSN_ID(insn) >= MIPS_INS_ENDING) {
+	if (INSN_ID(insn) >= MIPS_INS_ENDING || INSN_ID(insn) == MIPS_INS_INVALID) {
 		RZ_LOG_ERROR("RzIL MIPS : Invalid MIPS instruction.")
-		return NULL;
+		return NOP();
 	}
 
 	// check if this is a FLOAT OP
@@ -6657,7 +6657,7 @@ RZ_IPI Effect *mips_il(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cs_insn *insn
 	}
 
 	rz_warn_if_reached();
-	return NULL;
+	return NOP();
 }
 
 // register names to  map from enum to strings

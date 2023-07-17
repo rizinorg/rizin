@@ -302,6 +302,7 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr, u
 	RzBitVector *next_pc = NULL;
 	if (vm->delayed_by) {
 		vm->delayed_by--;
+		rz_warn_if_fail(vm->delayed_by);
 		if (!vm->delayed_by) {
 			RZ_PTR_MOVE(next_pc, vm->delayed_pc);
 		}
@@ -309,6 +310,7 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr, u
 		next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
 	}
 
+	rz_warn_if_fail(next_pc);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_bv_free(vm->pc);
 	vm->pc = next_pc;
