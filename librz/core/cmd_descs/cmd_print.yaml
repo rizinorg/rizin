@@ -1447,6 +1447,25 @@ commands:
           - name: skip
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: p=r
+        summary: Print rising and falling entropy
+        cname: print_rising_and_falling_entropy
+        args:
+          - name: rising_threshold
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: false
+          - name: falling_threshold
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: false
+          - name: blocks
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: totalsize
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: skip
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: p=i
         summary: Show a vertical histogram of invalid instructions per each block
         cname: print_equal_invalid

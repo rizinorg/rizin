@@ -5926,6 +5926,89 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
+static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, const char **argv, bool vertical) {
+	if(argc < 3){
+		return RZ_CMD_STATUS_ERROR;
+	}
+	double risingthreshold = rz_num_get_float(core->num,argv[1]);
+	double fallingthreshold = rz_num_get_float(core->num,argv[2]);
+	if(fallingthreshold > risingthreshold){
+		RZ_LOG_ERROR("falling threshold is greater than rising threshold");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if(risingthreshold > 1){
+		RZ_LOG_ERROR("threshold can't be greater than 1");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	int nblocks = argc > 3 ? rz_num_math(core->num, argv[3]) : -1;
+	ut64 totalsize = argc > 4 ? rz_num_math(core->num, argv[4]) : UT64_MAX;
+	int skipblocks = argc > 5 ? rz_num_math(core->num, argv[5]) : -1;
+	CoreBlockRange *brange = calculate_blocks_range(core, 0, 0, totalsize, nblocks, skipblocks);
+	if (!brange) {
+		RZ_LOG_ERROR("Cannot calculate blocks range\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	double *data = calloc(1,8*brange->nblocks);
+	ut8 *tmp = malloc(brange->blocksize);
+	if (!tmp) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		free(data);
+		free(brange);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool resetFlag = 1;
+	st8 lastEdge = 0;
+	RzStrBuf *buf = rz_strbuf_new("");
+	if(!buf){
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		free(data);
+		free(tmp);
+		free(brange);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	for (int i = 0; i < brange->nblocks; i++) {
+		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
+		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		data[i] = rz_hash_entropy_fraction(tmp, brange->blocksize);
+		// reseting flag if goes above falling threshold and below rising threshold
+		if(resetFlag == 0 && lastEdge==0 && data[i] > fallingthreshold){
+			resetFlag = 1;
+		}
+		else if(resetFlag == 0 && lastEdge==1 && data[i] < risingthreshold){
+			resetFlag = 1;
+		}
+		
+		// if reset flag is true
+		// than if entopy goes above threshold printing rising entropy edge
+		// and if entropy goes below threshold printing falling entropy edge 
+		if(resetFlag == 1 && data[i] >= risingthreshold ){
+			// rising edge print
+			resetFlag = 0;
+			lastEdge = 1;
+			if(brange->blocksize > 0){
+				rz_strbuf_appendf(buf,"0x%08" PFMT64x " ", ((brange->from) + i*(brange->blocksize)));
+			}
+			rz_strbuf_appendf(buf,"%03x Rising entropy edge (%8lf)\n",i, data[i]);
+		}
+		else if(resetFlag == 1 && data[i] <= fallingthreshold){
+			// falling edge print
+			resetFlag = 0;
+			lastEdge = 0;
+			if(brange->blocksize > 0){
+				rz_strbuf_appendf(buf,"0x%08" PFMT64x " ", ((brange->from) + i*(brange->blocksize)));
+			}
+			rz_strbuf_appendf(buf,"%03x Falling entropy edge (%8lf)\n",i, data[i]);
+		}
+	}
+	free(tmp);
+	char *table = rz_strbuf_drain(buf);
+	rz_cons_print(table);
+	free(table);
+	free(data);
+	free(brange);
+	return RZ_CMD_STATUS_OK;
+}
 
 RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const char **argv) {
 	return print_histogram_entropy(core, argc, argv, true);
@@ -5933,6 +6016,10 @@ RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const 
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_handler(RzCore *core, int argc, const char **argv) {
 	return print_histogram_entropy(core, argc, argv, false);
+}
+
+RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv){
+	return print_rising_and_falling_entropy(core,argc,argv,true);
 }
 
 static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **argv, bool vertical) {

@@ -662,6 +662,7 @@ static const RzCmdDescArg print_equal_bbs_args[4];
 static const RzCmdDescArg print_equal_stats_args[4];
 static const RzCmdDescArg print_equal_call_args[4];
 static const RzCmdDescArg print_equal_entropy_args[4];
+static const RzCmdDescArg print_rising_and_falling_entropy_args[6];
 static const RzCmdDescArg print_equal_invalid_args[4];
 static const RzCmdDescArg print_equal_jump_args[4];
 static const RzCmdDescArg print_equal_m_args[2];
@@ -14768,6 +14769,45 @@ static const RzCmdDescHelp print_equal_entropy_help = {
 	.args = print_equal_entropy_args,
 };
 
+static const RzCmdDescArg print_rising_and_falling_entropy_args[] = {
+	{
+		.name = "rising_threshold",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = false,
+
+	},
+	{
+		.name = "falling_threshold",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = false,
+
+	},
+	{
+		.name = "blocks",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "totalsize",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "skip",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_rising_and_falling_entropy_help = {
+	.summary = "Print rising and falling entropy",
+	.args = print_rising_and_falling_entropy_args,
+};
+
 static const RzCmdDescArg print_equal_invalid_args[] = {
 	{
 		.name = "blocks",
@@ -21327,6 +21367,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_equal_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=e", rz_print_equal_entropy_handler, &print_equal_entropy_help);
 	rz_warn_if_fail(print_equal_entropy_cd);
+
+	RzCmdDesc *print_rising_and_falling_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=r", rz_print_rising_and_falling_entropy_handler, &print_rising_and_falling_entropy_help);
+	rz_warn_if_fail(print_rising_and_falling_entropy_cd);
 
 	RzCmdDesc *print_equal_invalid_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=i", rz_print_equal_invalid_handler, &print_equal_invalid_help);
 	rz_warn_if_fail(print_equal_invalid_cd);
