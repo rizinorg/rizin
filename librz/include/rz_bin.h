@@ -234,6 +234,7 @@ typedef struct rz_bin_info_t {
 	int has_sanitizers;
 	int has_crypto;
 	int has_nx;
+	bool has_nobtcfi; ///< OpenBSD, linked with -Wl,-z,nobtcfi to opt-out of IBT/BTI
 	int big_endian;
 	char *actual_checksum;
 	char *claimed_checksum;

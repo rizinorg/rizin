@@ -1765,6 +1765,18 @@ int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin) {
 }
 
 /**
+ * \brief Analyse if the elf binary was compiled with -Wl,-z,nobtcfi on OpenBSD
+ */
+bool Elf_(rz_bin_elf_has_nobtcfi)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, false);
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
+		return false;
+	}
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_OPENBSD_NOBTCFI);
+	return segment && segment->is_valid;
+}
+
+/**
  * \brief Check the binary endianness
  * \param elf type
  * \return is_big_endian ?

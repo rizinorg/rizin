@@ -3131,6 +3131,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		pj_kb(pj, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
 		pj_kb(pj, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
 		pj_kb(pj, "canary", info->has_canary);
+		if (info->has_nobtcfi) {
+			pj_kb(pj, "nobtcfi", true);
+		}
 		pj_kb(pj, "PIE", info->has_pi);
 		pj_kb(pj, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info);
 		pj_kb(pj, "NX", info->has_nx);
@@ -3235,6 +3238,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		table_add_row_bool(t, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
 		table_add_row_bool(t, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
 		table_add_row_bool(t, "canary", info->has_canary);
+		if (info->has_nobtcfi) {
+			table_add_row_bool(t, "nobtcfi", true);
+		}
 		table_add_row_bool(t, "PIE", info->has_pi);
 		table_add_row_bool(t, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info);
 		table_add_row_bool(t, "NX", info->has_nx);

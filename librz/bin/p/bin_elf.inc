@@ -1599,6 +1599,9 @@ static RzList /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		case PT_OPENBSD_BOOTDATA:
 			ptr->name = strdup("OPENBSD_BOOTDATA");
 			break;
+		case PT_OPENBSD_NOBTCFI:
+			ptr->name = strdup("OPENBSD_NOBTCFI");
+			break;
 		default:
 			if (ptr->size == 0 && ptr->vsize == 0) {
 				ptr->name = strdup("NONE");
@@ -1869,6 +1872,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = Elf_(rz_bin_elf_is_big_endian)(obj);
 	ret->has_va = Elf_(rz_bin_elf_has_va)(obj);
 	ret->has_nx = Elf_(rz_bin_elf_has_nx)(obj);
+	ret->has_nobtcfi = Elf_(rz_bin_elf_has_nobtcfi)(obj);
 	ret->intrp = Elf_(rz_bin_elf_get_intrp)(obj);
 	ret->compiler = Elf_(rz_bin_elf_get_compiler)(obj);
 	ret->dbg_info = 0;
