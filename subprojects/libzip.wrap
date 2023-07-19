@@ -1,7 +1,7 @@
 [wrap-file]
-directory = libzip-1.9.2
-source_url = https://libzip.org/download/libzip-1.9.2.tar.gz
-source_fallback_url = https://github.com/nih-at/libzip/releases/download/v1.9.2/libzip-1.9.2.tar.gz
-source_filename = libzip-1.9.2.tar.gz
-source_hash = fd6a7f745de3d69cf5603edc9cb33d2890f0198e415255d0987a0cf10d824c6f
-patch_directory = libzip-1.9.2
+directory = libzip-1.10.0
+source_url = https://libzip.org/download/libzip-1.10.0.tar.gz
+source_fallback_url = https://github.com/nih-at/libzip/releases/download/v1.10.0/libzip-1.10.0.tar.gz
+source_filename = libzip-1.10.0.tar.gz
+source_hash = 52a60b46182587e083b71e2b82fcaaba64dd5eb01c5b1f1bc71069a3858e40fe
+patch_directory = libzip-1.10.0
