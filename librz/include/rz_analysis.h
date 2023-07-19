@@ -658,6 +658,7 @@ typedef struct {
 } RzAnalysisVarStorageListEntry;
 
 typedef enum {
+	RZ_ANALYSIS_VAR_STORAGE_INVALID = 0,
 	RZ_ANALYSIS_VAR_STORAGE_EMPTY,
 	RZ_ANALYSIS_VAR_STORAGE_REG,
 	RZ_ANALYSIS_VAR_STORAGE_STACK,
@@ -675,6 +676,7 @@ typedef enum {
  */
 typedef struct rz_analysis_var_storage_t {
 	RzAnalysisVarStorageType type;
+	st64 offset;
 	union {
 		/**
 		 * Used iff type == RZ_ANALYSIS_VAR_STORAGE_STACK.
@@ -688,14 +690,6 @@ typedef struct rz_analysis_var_storage_t {
 		 * respective RzAnalysis.constpool.
 		 */
 		const char *reg;
-
-		struct {
-			const char *reg;
-			st64 offset;
-		} reg_offset;
-
-		st64 cfa_offset;
-		st64 fb_offset;
 		RzVector * /*<RzBinDwarfPiece>*/ compose;
 		struct {
 			RzBinDwarfEvaluation *eval;
@@ -717,18 +711,18 @@ static inline void rz_analysis_var_storage_init_stack(RzAnalysisVarStorage *stor
 
 static inline void rz_analysis_var_storage_init_reg_offset(RzAnalysisVarStorage *stor, RZ_NONNULL const char *reg, st64 offset) {
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET;
-	stor->reg_offset.reg = reg;
-	stor->reg_offset.offset = offset;
+	stor->reg = reg;
+	stor->offset = offset;
 }
 
 static inline void rz_analysis_var_storage_init_cfa_offset(RzAnalysisVarStorage *stor, st64 offset) {
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET;
-	stor->cfa_offset = offset;
+	stor->offset = offset;
 }
 
 static inline void rz_analysis_var_storage_init_fb_offset(RzAnalysisVarStorage *stor, st64 offset) {
 	stor->type = RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET;
-	stor->fb_offset = offset;
+	stor->offset = offset;
 }
 
 static inline void rz_analysis_var_storage_init_compose(RzAnalysisVarStorage *stor, RzVector /*<RzBinDwarfPiece>*/ *compose) {
@@ -1781,6 +1775,7 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count);
 
 RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type);
+RZ_API bool rz_analysis_var_storage_type_from_string(const char *type_str, RzAnalysisVarStorageType *type);
 RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage);
 RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *storage);
 RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage);
@@ -2271,7 +2266,10 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 typedef void *RzSerializeAnalVarParser;
 RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void);
 RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser);
-RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json);
+RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_storage_parser_new(void);
+
+RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RzAnalysisFunction *fcn, RzSerializeAnalVarParser parser, const RzJson *json, RzKeyParser *storage_parser);
+RZ_API bool rz_serialize_analysis_var_storage_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json, RZ_NONNULL RZ_BORROW RzAnalysisVarStorage *storage);
 
 /**
  * Save useful infomation when analyze and disassemble bytes

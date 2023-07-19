@@ -24,13 +24,11 @@ RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAn
 	case RZ_ANALYSIS_VAR_STORAGE_STACK:
 		return a->stack_off - b->stack_off;
 	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET: {
-		int cmp_reg = strcmp(a->reg_offset.reg, b->reg_offset.reg);
-		return cmp_reg == 0 ? (int)a->reg_offset.offset - (int)b->reg_offset.offset : cmp_reg;
+		int cmp_reg = strcmp(a->reg, b->reg);
+		return cmp_reg == 0 ? (int)a->offset - (int)b->offset : cmp_reg;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-		return a->cfa_offset - b->cfa_offset;
-	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
-		return a->fb_offset - b->fb_offset;
+		return a->offset - b->offset;
 	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
@@ -66,6 +64,16 @@ RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageTy
 	return var_storage_strings[type];
 }
 
+RZ_API bool rz_analysis_var_storage_type_from_string(const char *type_str, RzAnalysisVarStorageType *type) {
+	for (int i = 1; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
+		if (rz_str_cmp(type_str, var_storage_strings[i], -1) == 0) {
+			*type = i;
+			return true;
+		}
+	}
+	return false;
+}
+
 static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 	const char sign = x >= 0 ? '+' : '-';
 	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
@@ -83,16 +91,13 @@ RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorag
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
-		rz_strbuf_append(sb, storage->reg_offset.reg);
-		strbuf_append_sign_hex(sb, storage->reg_offset.offset);
-		break;
-	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-		rz_strbuf_append(sb, var_storage_strings[storage->type]);
-		strbuf_append_sign_hex(sb, storage->cfa_offset);
+		rz_strbuf_append(sb, storage->reg);
+		strbuf_append_sign_hex(sb, storage->offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+	case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
 		rz_strbuf_append(sb, var_storage_strings[storage->type]);
-		strbuf_append_sign_hex(sb, storage->fb_offset);
+		strbuf_append_sign_hex(sb, storage->offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
@@ -100,6 +105,7 @@ RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorag
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 		rz_strbuf_append(sb, var_storage_strings[storage->type]);
 		break;
+	case RZ_ANALYSIS_VAR_STORAGE_INVALID:
 	case RZ_ANALYSIS_VAR_STORAGE_END:
 		rz_warn_if_reached();
 		break;
@@ -129,18 +135,16 @@ RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *
 			break;
 		case RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET:
 			pj_o(pj);
-			pj_ks(pj, "reg", storage->reg_offset.reg);
-			pj_kN(pj, "offset", storage->reg_offset.offset);
+			pj_ks(pj, "reg", storage->reg);
+			pj_kN(pj, "offset", storage->offset);
 			pj_end(pj);
+			break;
+		case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
+		case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
+			pj_N(pj, storage->offset);
 			break;
 		case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 			pj_s(pj, "empty");
-			break;
-		case RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET:
-			pj_N(pj, storage->cfa_offset);
-			break;
-		case RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET:
-			pj_N(pj, storage->fb_offset);
 			break;
 		case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 			pj_s(pj, "compose");
@@ -151,6 +155,7 @@ RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *
 		case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
 			pj_s(pj, "waiting");
 			break;
+		case RZ_ANALYSIS_VAR_STORAGE_INVALID:
 		case RZ_ANALYSIS_VAR_STORAGE_END:
 			rz_warn_if_reached();
 			break;
@@ -163,7 +168,7 @@ RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *
  * Ensure that the register name in \p stor comes from the const pool
  */
 static void storage_poolify(RzAnalysis *analysis, RzAnalysisVarStorage *stor) {
-	if (stor->type == RZ_ANALYSIS_VAR_STORAGE_REG) {
+	if (stor->type == RZ_ANALYSIS_VAR_STORAGE_REG || stor->type == RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET) {
 		stor->reg = rz_str_constpool_get(&analysis->constpool, stor->reg);
 	}
 }
