@@ -175,7 +175,7 @@ RzList /*<char *>*/ *rz_io_zip_get_files(const char *archivename, ut32 perm, int
 		return NULL;
 	}
 
-	num_entries = zip_get_num_files(zipArch);
+	num_entries = zip_get_num_entries(zipArch, 0);
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init(&sb);
 		zip_stat_index(zipArch, i, 0, &sb);
@@ -205,11 +205,11 @@ int rz_io_zip_flush_file(RzIOZipFileObj *zfo) {
 	const ut8 *tmp = rz_buf_data(zfo->b, &tmpsz);
 	struct zip_source *s = zip_source_buffer(zipArch, tmp, tmpsz, 0);
 	if (s && zfo->entry != -1) {
-		if (zip_replace(zipArch, zfo->entry, s) == 0) {
+		if (zip_file_replace(zipArch, zfo->entry, s, 0) == 0) {
 			res = true;
 		}
 	} else if (s && zfo->name) {
-		if (zip_add(zipArch, zfo->name, s) == 0) {
+		if (zip_file_add(zipArch, zfo->name, s, 0) == 0) {
 			zfo->entry = zip_name_locate(zipArch, zfo->name, 0);
 			res = true;
 		}
@@ -259,7 +259,7 @@ RzIOZipFileObj *rz_io_zip_alloc_zipfileobj(const char *archivename, const char *
 	if (!zipArch) {
 		return NULL;
 	}
-	num_entries = zip_get_num_files(zipArch);
+	num_entries = zip_get_num_entries(zipArch, 0);
 
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init(&sb);
@@ -357,7 +357,7 @@ char *rz_io_zip_get_by_file_idx(const char *archivename, const char *idx, ut32 p
 		zip_close(zipArch);
 		return filename;
 	}
-	num_entries = zip_get_num_files(zipArch);
+	num_entries = zip_get_num_entries(zipArch, 0);
 	file_idx = atoi(idx);
 	if ((file_idx == 0 && idx[0] != '0') || (file_idx >= num_entries)) {
 		zip_close(zipArch);
