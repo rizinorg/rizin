@@ -2062,7 +2062,7 @@ RZ_IPI RzCmdStatus rz_print_equal_call_handler(RzCore *core, int argc, const cha
 // "p=e"
 RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const char **argv);
 // "p=r"
-RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "p=i"
 RZ_IPI RzCmdStatus rz_print_equal_invalid_handler(RzCore *core, int argc, const char **argv);
 // "p=j"

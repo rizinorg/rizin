@@ -1448,22 +1448,25 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: p=r
-        summary: Print rising and falling entropy by default rising threshold is 0.95 and falling threshold is 0.85
+        summary: Print rising and falling entropy.
         cname: print_rising_and_falling_entropy
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_LONG
+          - RZ_OUTPUT_MODE_TABLE
+        details:
+          - name: Default values
+            entries:
+              - text: ""
+                comment: "Default rising threshold is 0.95 and falling threshold is 0.85"
         args:
           - name: rising_threshold
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
           - name: falling_threshold
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-          - name: blocks
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-          - name: totalsize
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
-          - name: skip
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: p=i
