@@ -481,6 +481,8 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 enum {
 	VAR_FIELD_NAME,
 	VAR_FIELD_TYPE,
+	VAR_FIELD_STACK,
+	VAR_FIELD_REG,
 	VAR_FIELD_COMMENT,
 	VAR_FIELD_ACCS,
 	VAR_FIELD_CONSTRS,
@@ -494,6 +496,8 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
 	}
 	rz_key_parser_add(parser, "name", VAR_FIELD_NAME);
 	rz_key_parser_add(parser, "type", VAR_FIELD_TYPE);
+	rz_key_parser_add(parser, "stack", VAR_FIELD_STACK);
+	rz_key_parser_add(parser, "reg", VAR_FIELD_REG);
 	rz_key_parser_add(parser, "storage", VAR_FIELD_STORAGE);
 	rz_key_parser_add(parser, "cmt", VAR_FIELD_COMMENT);
 	rz_key_parser_add(parser, "accs", VAR_FIELD_ACCS);
@@ -533,6 +537,22 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RzAnalysisFunct
 				break;
 			}
 			type = child->str_value;
+			break;
+		case VAR_FIELD_STACK:
+			if (child->type != RZ_JSON_INTEGER) {
+				break;
+			}
+			storage.type = RZ_ANALYSIS_VAR_STORAGE_STACK;
+			storage.stack_off = child->num.s_value;
+			have_storage = true;
+			break;
+		case VAR_FIELD_REG:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			storage.type = RZ_ANALYSIS_VAR_STORAGE_REG;
+			storage.reg = child->str_value;
+			have_storage = true;
 			break;
 		case VAR_FIELD_STORAGE:
 			if (child->type != RZ_JSON_OBJECT) {
