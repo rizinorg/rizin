@@ -14804,7 +14804,7 @@ static const RzCmdDescArg print_rising_and_falling_entropy_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_rising_and_falling_entropy_help = {
-	.summary = "Print rising and falling entropy",
+	.summary = "Print rising and falling entropy by default rising threshold is 0.95 and falling threshold is 0.85",
 	.args = print_rising_and_falling_entropy_args,
 };
 
