@@ -2998,7 +2998,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 regs = 0;
 	bool wback = insn->detail->arm.writeback;
 	bool use_rm_as_wback_offset = false;
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
 
 	// vldn {list}, [Rn], Rm
 	if (!ISMEM(rm_idx)) {
@@ -3015,7 +3015,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 
 	// assert list_size % n == 0
 	// assert they were all Dn
-	ut32 n_groups = regs / n;
+	ut32 n_groups = regs / group_sz;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
 	ut32 lanes = 64 / elem_bits;
@@ -3028,8 +3028,8 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	for (int i = 0; i < n_groups; ++i) {
 		for (int j = 0; j < lanes; ++j) {
 			RzILOpBitVector *data0, *data1, *data2, *data3;
-			ut32 vreg_idx = i * n;
-			switch (n) {
+			ut32 vreg_idx = i * group_sz;
+			switch (group_sz) {
 			case 1:
 				data0 = LOADW(elem_bits, addr);
 				eff = SEQ2(eff,
@@ -3107,8 +3107,8 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	}
 	rn_idx = regs;
 
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
-	if (n != regs) {
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+	if (group_sz != regs) {
 		return NULL;
 	}
 
@@ -3121,12 +3121,12 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 addr_bits = REG_WIDTH(rn_idx);
 
 	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
-	if (n > 4 || elem_bytes > 4) {
+	if (group_sz > 4 || elem_bytes > 4) {
 		return NULL;
 	}
 
 	unsigned char lane = NEON_LANE(0);
-	switch (n) {
+	switch (group_sz) {
 	case 1:
 		data0 = LOADW(elem_bits, addr);
 		eff = write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0);
@@ -3169,7 +3169,7 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
 		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
@@ -3194,8 +3194,8 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	}
 	rn_idx = regs;
 
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
-	if (n != regs) {
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+	if (group_sz != regs) {
 		return NULL;
 	}
 
@@ -3207,12 +3207,12 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	ut32 addr_bits = REG_WIDTH(rn_idx);
 
 	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
-	if (n > 4 || elem_bytes > 4) {
+	if (group_sz > 4 || elem_bytes > 4) {
 		return NULL;
 	}
 
 	ut32 dreg_size = 64;
-	switch (n) {
+	switch (group_sz) {
 	case 1:
 		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = write_reg(REGID(0), DUP(data0));
@@ -3258,7 +3258,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
 		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
@@ -3292,7 +3292,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 regs = 0;
 	bool wback = insn->detail->arm.writeback;
 	bool use_rm_as_wback_offset = false;
-	ut32 n = insn->id - ARM_INS_VST1 + 1;
+	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
 
 	// vldn {list}, [Rn], Rm
 	if (!ISMEM(rm_idx)) {
@@ -3309,7 +3309,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 
 	// assert list_size % n == 0
 	// assert they were all Dn
-	ut32 n_groups = regs / n;
+	ut32 n_groups = regs / group_sz;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
 	ut32 lanes = 64 / elem_bits;
@@ -3322,8 +3322,8 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	for (int i = 0; i < n_groups; ++i) {
 		for (int j = 0; j < lanes; ++j) {
 			RzILOpBitVector *data0, *data1, *data2, *data3;
-			ut32 vreg_idx = i * n;
-			switch (n) {
+			ut32 vreg_idx = i * group_sz;
+			switch (group_sz) {
 			case 1:
 				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
 				eff = SEQ2(eff, STOREW(addr, data0));
@@ -3397,8 +3397,8 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	}
 	rn_idx = regs;
 
-	ut32 n = insn->id - ARM_INS_VST1 + 1;
-	if (n != regs) {
+	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
+	if (group_sz != regs) {
 		return NULL;
 	}
 
@@ -3410,12 +3410,12 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 elem_bytes = elem_bits / 8;
 	ut32 addr_bits = REG_WIDTH(rn_idx);
 
-	if (n > 4 || elem_bytes > 4) {
+	if (group_sz > 4 || elem_bytes > 4) {
 		return NULL;
 	}
 
 	unsigned char lane = NEON_LANE(0);
-	switch (n) {
+	switch (group_sz) {
 	case 1:
 		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
 		eff = STOREW(addr, data0);
@@ -3458,7 +3458,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
 		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
