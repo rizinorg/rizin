@@ -5926,7 +5926,8 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
-static void print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+
+static bool print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	bool resetFlag = 1;
 	st8 lastEdge = 0;
 	RzTable *t = state->d.t;
@@ -5938,7 +5939,8 @@ static void print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutpu
 	rz_table_add_column(t, n, "entropy_value", 0);
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))
+			return false;
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
 		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
@@ -5961,15 +5963,18 @@ static void print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutpu
 			rz_table_add_rowf(t, "xnsf", off, i, "falling entropy edge", data);
 		}
 	}
+	return true;
 }
-static void print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+
+static bool print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput *state, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
 	bool resetFlag = 1;
 	st8 lastEdge = 0;
 	PJ *pj = state->d.pj;
 	pj_a(pj);
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))
+			return false;
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
 		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
@@ -6003,13 +6008,23 @@ static void print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput
 		}
 	}
 	pj_end(pj);
+	return true;
 }
-static void print_rising_and_falling_entropy_quiet(RzCore *core, RzStrBuf *buf, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+
+static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		return false;
+	}
 	bool resetFlag = 1;
 	st8 lastEdge = 0;
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+			rz_strbuf_free(buf);
+			return false;
+		}
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
 		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
@@ -6032,13 +6047,26 @@ static void print_rising_and_falling_entropy_quiet(RzCore *core, RzStrBuf *buf, 
 			rz_strbuf_appendf(buf, "0x%08" PFMT64x "\n", off);
 		}
 	}
+	char *res = rz_strbuf_drain(buf);
+	rz_cons_print(res);
+	free(res);
+	return true;
 }
-static void print_rising_and_falling_entropy_standard(RzCore *core, RzStrBuf *buf, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+
+static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		return false;
+	}
 	bool resetFlag = 1;
 	st8 lastEdge = 0;
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+			rz_strbuf_free(buf);
+			return false;
+		}
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
 		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
@@ -6061,13 +6089,26 @@ static void print_rising_and_falling_entropy_standard(RzCore *core, RzStrBuf *bu
 			rz_strbuf_appendf(buf, "0x%08" PFMT64x " Falling entropy edge\n", off);
 		}
 	}
+	char *res = rz_strbuf_drain(buf);
+	rz_cons_print(res);
+	free(res);
+	return true;
 }
-static void print_rising_and_falling_entropy_long(RzCore *core, RzStrBuf *buf, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+
+static bool print_rising_and_falling_entropy_long(RzCore *core, CoreBlockRange *brange, ut8 *tmp, double fallingthreshold, double risingthreshold) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		RZ_LOG_ERROR("core: failed to malloc memory");
+		return false;
+	}
 	bool resetFlag = 1;
 	st8 lastEdge = 0;
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+			rz_strbuf_free(buf);
+			return false;
+		}
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
 		if (resetFlag == 0 && lastEdge == 0 && data > fallingthreshold) {
@@ -6092,7 +6133,12 @@ static void print_rising_and_falling_entropy_long(RzCore *core, RzStrBuf *buf, C
 			rz_strbuf_appendf(buf, "%03x Falling entropy edge (%8lf)\n", i, data);
 		}
 	}
+	char *res = rz_strbuf_drain(buf);
+	rz_cons_print(res);
+	free(res);
+	return true;
 }
+
 static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	double risingthreshold = 0.95;
 	double fallingthreshold = 0.85;
@@ -6116,58 +6162,55 @@ static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("Cannot calculate blocks range\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	double *data = calloc(1, 8 * brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp) {
 		RZ_LOG_ERROR("core: failed to malloc memory");
-		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	// bool resetFlag = 1;
-	// st8 lastEdge = 0;
-	RzStrBuf *buf = rz_strbuf_new("");
-	if (!buf) {
-		RZ_LOG_ERROR("core: failed to malloc memory");
-		free(data);
-		free(tmp);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzOutputMode mode = state->mode;
-	switch (mode) {
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_TABLE:
-		print_rising_and_falling_entropy_table(core, state, brange, tmp, fallingthreshold, risingthreshold);
+		if (!print_rising_and_falling_entropy_table(core, state, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_rising_and_falling_entropy_JSON(core, state, brange, tmp, fallingthreshold, risingthreshold);
+		if (!print_rising_and_falling_entropy_JSON(core, state, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		print_rising_and_falling_entropy_quiet(core, buf, brange, tmp, fallingthreshold, risingthreshold);
+		if (!print_rising_and_falling_entropy_quiet(core, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		print_rising_and_falling_entropy_standard(core, buf, brange, tmp, fallingthreshold, risingthreshold);
+		if (!print_rising_and_falling_entropy_standard(core, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		print_rising_and_falling_entropy_long(core, buf, brange, tmp, fallingthreshold, risingthreshold);
+		if (!print_rising_and_falling_entropy_long(core, brange, tmp, fallingthreshold, risingthreshold)) {
+			free(tmp);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		break;
 	default:
 		rz_warn_if_reached();
-		rz_strbuf_free(buf);
 		free(tmp);
-		free(data);
 		free(brange);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	free(tmp);
-	if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_QUIET || mode == RZ_OUTPUT_MODE_LONG) {
-		char *res = rz_strbuf_drain(buf);
-		rz_cons_print(res);
-		free(res);
-	} else {
-		rz_strbuf_free(buf);
-	}
-	free(data);
 	free(brange);
 	return RZ_CMD_STATUS_OK;
 }
