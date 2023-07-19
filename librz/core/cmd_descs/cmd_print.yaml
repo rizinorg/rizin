@@ -1453,10 +1453,10 @@ commands:
         args:
           - name: rising_threshold
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: false
+            optional: true
           - name: falling_threshold
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: false
+            optional: true
           - name: blocks
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true

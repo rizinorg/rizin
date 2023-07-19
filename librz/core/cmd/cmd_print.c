@@ -5927,11 +5927,12 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, const char **argv, bool vertical) {
-	if(argc < 3){
-		return RZ_CMD_STATUS_ERROR;
+	double risingthreshold = 0.95;
+	double fallingthreshold = 0.85;
+	if(argc >= 3){
+		risingthreshold = rz_num_get_float(core->num,argv[1]);
+		fallingthreshold = rz_num_get_float(core->num,argv[2]);
 	}
-	double risingthreshold = rz_num_get_float(core->num,argv[1]);
-	double fallingthreshold = rz_num_get_float(core->num,argv[2]);
 	if(fallingthreshold > risingthreshold){
 		RZ_LOG_ERROR("falling threshold is greater than rising threshold");
 		return RZ_CMD_STATUS_ERROR;

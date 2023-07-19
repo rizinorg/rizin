@@ -110,6 +110,38 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=p=r 0.73 0.06
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=r 0.73 0.06
+EOF
+EXPECT=<<EOF
+0x00010a00 10a Rising entropy edge (0.730819)
+0x00017200 172 Rising entropy edge (0.730736)
+0x00017f00 17f Rising entropy edge (0.733761)
+0x0004a800 4a8 Rising entropy edge (0.730632)
+0x0005f000 5f0 Rising entropy edge (0.757028)
+0x00063d00 63d Falling entropy edge (0.042506)
+0x00064000 640 Falling entropy edge (0.000000)
+0x0006cd00 6cd Falling entropy edge (0.058047)
+0x00070200 702 Rising entropy edge (0.760109)
+0x00073200 732 Falling entropy edge (0.000000)
+0x00074300 743 Falling entropy edge (0.024685)
+EOF
+RUN
+
+NAME=p=r
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=r
+EOF
+EXPECT=<<EOF
+0x00000000 000 Falling entropy edge (0.375579)
+EOF
+RUN
+
 NAME=p=p 5
 FILE=bins/elf/arm1.bin
 ARGS=-n
