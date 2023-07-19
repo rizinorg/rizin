@@ -14773,13 +14773,13 @@ static const RzCmdDescArg print_rising_and_falling_entropy_args[] = {
 	{
 		.name = "rising_threshold",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = false,
+		.optional = true,
 
 	},
 	{
 		.name = "falling_threshold",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = false,
+		.optional = true,
 
 	},
 	{
