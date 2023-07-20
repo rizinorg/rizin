@@ -61,6 +61,7 @@ static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
+static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
 static const RzCmdDescDetail write_bits_details[2];
 static const RzCmdDescDetail wv_details[2];
 static const RzCmdDescDetail w1_details[2];
@@ -662,6 +663,7 @@ static const RzCmdDescArg print_equal_bbs_args[4];
 static const RzCmdDescArg print_equal_stats_args[4];
 static const RzCmdDescArg print_equal_call_args[4];
 static const RzCmdDescArg print_equal_entropy_args[4];
+static const RzCmdDescArg print_rising_and_falling_entropy_args[3];
 static const RzCmdDescArg print_equal_invalid_args[4];
 static const RzCmdDescArg print_equal_jump_args[4];
 static const RzCmdDescArg print_equal_m_args[2];
@@ -14768,6 +14770,36 @@ static const RzCmdDescHelp print_equal_entropy_help = {
 	.args = print_equal_entropy_args,
 };
 
+static const RzCmdDescDetailEntry print_rising_and_falling_entropy_Default_space_values_detail_entries[] = {
+	{ .text = "", .arg_str = NULL, .comment = "Default rising threshold is 0.95 and falling threshold is 0.85" },
+	{ 0 },
+};
+static const RzCmdDescDetail print_rising_and_falling_entropy_details[] = {
+	{ .name = "Default values", .entries = print_rising_and_falling_entropy_Default_space_values_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg print_rising_and_falling_entropy_args[] = {
+	{
+		.name = "rising_threshold",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "falling_threshold",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_rising_and_falling_entropy_help = {
+	.summary = "Print rising and falling entropy.",
+	.details = print_rising_and_falling_entropy_details,
+	.args = print_rising_and_falling_entropy_args,
+};
+
 static const RzCmdDescArg print_equal_invalid_args[] = {
 	{
 		.name = "blocks",
@@ -21327,6 +21359,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_equal_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=e", rz_print_equal_entropy_handler, &print_equal_entropy_help);
 	rz_warn_if_fail(print_equal_entropy_cd);
+
+	RzCmdDesc *print_rising_and_falling_entropy_cd = rz_cmd_desc_argv_state_new(core->rcmd, p_equal__cd, "p=r", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_TABLE, rz_print_rising_and_falling_entropy_handler, &print_rising_and_falling_entropy_help);
+	rz_warn_if_fail(print_rising_and_falling_entropy_cd);
 
 	RzCmdDesc *print_equal_invalid_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__cd, "p=i", rz_print_equal_invalid_handler, &print_equal_invalid_help);
 	rz_warn_if_fail(print_equal_invalid_cd);
