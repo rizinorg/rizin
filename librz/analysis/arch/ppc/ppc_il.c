@@ -240,7 +240,7 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTRL:
 	case PPC_INS_BGECTRL:
@@ -258,11 +258,8 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELRL:
 	case PPC_INS_BGELA:
-#endif
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCTRL:
+	case PPC_INS_BDNZTL:
+	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZL:
 	case PPC_INS_BDNZLA:
 	case PPC_INS_BDNZLRL:
@@ -281,6 +278,15 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	case PPC_INS_BDZTLA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
+#endif
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCTRL:
+	case PPC_INS_BL:
+	case PPC_INS_BLA:
+	case PPC_INS_BLRL:
+	case PPC_INS_BCLA:
 		return true;
 	}
 }
@@ -295,7 +301,7 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -330,27 +336,6 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BGELRL:
 	case PPC_INS_BGECTR:
 	case PPC_INS_BGECTRL:
-#endif
-	case PPC_INS_BC:
-	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCA:
-	case PPC_INS_BCLA:
-	case PPC_INS_BDNZ:
-	case PPC_INS_BDNZA:
-	case PPC_INS_BDNZL:
-	case PPC_INS_BDNZLA:
-	case PPC_INS_BDNZLR:
-	case PPC_INS_BDNZLRL:
-	case PPC_INS_BDZ:
-	case PPC_INS_BDZA:
-	case PPC_INS_BDZL:
-	case PPC_INS_BDZLA:
-	case PPC_INS_BDZLR:
-	case PPC_INS_BDZLRL:
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
@@ -367,6 +352,24 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
+#endif
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
+	case PPC_INS_BDNZ:
+	case PPC_INS_BDNZA:
+	case PPC_INS_BDNZLR:
+	case PPC_INS_BDNZLRL:
+	case PPC_INS_BDZ:
+	case PPC_INS_BDZA:
+	case PPC_INS_BDZLA:
+	case PPC_INS_BDZLR:
+	case PPC_INS_BDZLRL:
 		return true;
 	}
 }
@@ -378,6 +381,10 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
  * \return bool True if the instructions moves a value to a SPR. False otherwise.
  */
 RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
+#if CS_API_MAJOR >= 6
+	return (insn_id > PPC_MTSPR_ALIAS_FIRST && insn_id < PPC_INS_ENDING) || insn_id == PPC_INS_MTSPR;
+#else
+
 	switch (insn_id) {
 	default:
 		return false;
@@ -395,7 +402,9 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
+#if CS_API_MAJOR < 6
 	case PPC_INS_MTCR:
+#endif
 	case PPC_INS_MTBR0:
 	case PPC_INS_MTBR1:
 	case PPC_INS_MTBR2:
@@ -417,10 +426,12 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTTBU:
 	case PPC_INS_MTTBLO:
 	case PPC_INS_MTTBHI:
+#if CS_API_MAJOR < 6
 	case PPC_INS_MTDBATU:
 	case PPC_INS_MTDBATL:
 	case PPC_INS_MTIBATU:
 	case PPC_INS_MTIBATL:
+#endif
 	case PPC_INS_MTDCCR:
 	case PPC_INS_MTICCR:
 	case PPC_INS_MTDEAR:
@@ -430,6 +441,7 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MFSRIN:
 		return true;
 	}
+#endif
 }
 
 /**
@@ -446,7 +458,7 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	switch (id) {
 	default:
 		return false;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELA:
 #endif
@@ -469,6 +481,7 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 		return !(0x4 & PPC_READ_BO_FIELD); // not BO_2
+#if CS_API_MAJOR < 6
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
@@ -486,6 +499,7 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
 		return true;
+#endif
 	}
 }
 
@@ -663,7 +677,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		return IL_FALSE;
 		// For learning how the conditions of BCxxx branch instructions are
 		// formed see the Power ISA
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -724,7 +738,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQCTR:
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTR:
@@ -868,7 +882,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDZFLA:
 		// EXTS(LI || 0b00)
 		// Branch to relative address
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -919,7 +933,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZLA:
 		// EXTS(BD || 0b00)
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BGEL:
 	case PPC_INS_BGELA:
 #endif
@@ -937,7 +951,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 			return UA(INSOP(0).imm);
 		}
 		// Branch to LR
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQLR:
 	case PPC_INS_BEQLRL:
 	case PPC_INS_BLELR:
@@ -958,7 +972,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		//  LR_0:61 || 0b00
 		return LOGAND(UA(-4), VARG("lr"));
 		// Branch to CTR
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_BEQCTR:
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTR:

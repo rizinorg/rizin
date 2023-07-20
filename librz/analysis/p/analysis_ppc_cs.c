@@ -982,7 +982,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case PPC_INS_CMPLWI:
 		case PPC_INS_CMPW:
 		case PPC_INS_CMPWI:
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 		case PPC_INS_CMP:
 		case PPC_INS_CMPI:
 #endif
@@ -1004,7 +1004,9 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "%s,lr,=", ARG(0));
 			break;
+#if CS_API_MAJOR < 6
 		case PPC_INS_MR:
+#endif
 		case PPC_INS_LI:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			op->val = IMM(1);
@@ -1051,9 +1053,11 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		case PPC_INS_SYNC:
 		case PPC_INS_ISYNC:
+#if CS_API_MAJOR < 6
 		case PPC_INS_LWSYNC:
 		case PPC_INS_MSYNC:
 		case PPC_INS_PTESYNC:
+#endif
 		case PPC_INS_TLBSYNC:
 		case PPC_INS_SLBIA:
 		case PPC_INS_SLBIE:
@@ -1250,12 +1254,14 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			esilprintf(op, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
 			break;
+#if CS_API_MAJOR < 6
 		case PPC_INS_CRCLR:
 		case PPC_INS_CRSET:
 		case PPC_INS_CRMOVE:
+		case PPC_INS_CRNOT:
+#endif
 		case PPC_INS_CRXOR:
 		case PPC_INS_CRNOR:
-		case PPC_INS_CRNOT:
 			// reset conditional bits
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			break;
@@ -1283,7 +1289,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			esilprintf(op, "pc,lr,=,ctr,pc,=");
 			break;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 		case PPC_INS_BEQ:
 		case PPC_INS_BEQA:
 		case PPC_INS_BFA:

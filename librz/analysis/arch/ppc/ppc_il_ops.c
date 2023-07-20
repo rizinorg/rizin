@@ -436,7 +436,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 	bool signed_cmp = false;
 
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	// weird bug on cmp/cmpl in capstone v5
 	if (id == PPC_INS_CMP) {
 		if (!strcmp(insn->mnemonic, "cmpw")) {
@@ -531,7 +531,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	return ret;
 }
 
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 // bug on xori in capstone v5
 static bool is_xnop(cs_insn *insn) {
 	return insn->id == PPC_INS_XNOP &&
@@ -543,7 +543,7 @@ static bool is_xnop(cs_insn *insn) {
 
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	if (is_xnop(insn)) {
 		return NOP();
 	}
@@ -582,7 +582,6 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		}
 		res = LOGAND(op0, op1);
 		break;
-	case PPC_INS_MR:
 	case PPC_INS_OR:
 	case PPC_INS_ORC:
 	case PPC_INS_ORI:
@@ -590,14 +589,12 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		op0 = VARG(rS);
 		if (id == PPC_INS_OR || id == PPC_INS_ORC) {
 			op1 = (id == PPC_INS_OR) ? VARG(rB) : LOGNOT(VARG(rB));
-		} else if (id == PPC_INS_MR) {
-			op1 = DUP(op0); // Extended Mnemonic for `or   RA, RS, RS`
 		} else {
 			op1 = (id == PPC_INS_ORI) ? EXTZ(U16(uI)) : EXTZ(APPEND(U16(uI), U16(0)));
 		}
 		res = LOGOR(op0, op1);
 		break;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 		// bug on xori in capstone v5
 	case PPC_INS_XNOP:
 		op0 = VARG(rS);
@@ -848,7 +845,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTMSR:
 	case PPC_INS_MTMSRD:
 		NOT_IMPLEMENTED;
-	case PPC_INS_MTCR:
 	case PPC_INS_MTCRF: {
 		ut32 mask = 0xffffffff;
 		if (id == PPC_INS_MTCRF) {
@@ -972,10 +968,29 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFPID:
 	case PPC_INS_MFTBLO:
 	case PPC_INS_MFTBHI:
+#if CS_API_MAJOR == 6
+	case PPC_INS_MFDBATU0:
+	case PPC_INS_MFDBATL0:
+	case PPC_INS_MFDBATU1:
+	case PPC_INS_MFDBATL1:
+	case PPC_INS_MFDBATU2:
+	case PPC_INS_MFDBATL2:
+	case PPC_INS_MFDBATU3:
+	case PPC_INS_MFDBATL3:
+	case PPC_INS_MFIBATU0:
+	case PPC_INS_MFIBATL0:
+	case PPC_INS_MFIBATU1:
+	case PPC_INS_MFIBATL1:
+	case PPC_INS_MFIBATU2:
+	case PPC_INS_MFIBATL2:
+	case PPC_INS_MFIBATU3:
+	case PPC_INS_MFIBATL3:
+#else
 	case PPC_INS_MFDBATU:
 	case PPC_INS_MFDBATL:
 	case PPC_INS_MFIBATU:
 	case PPC_INS_MFIBATL:
+#endif
 	case PPC_INS_MFDCCR:
 	case PPC_INS_MFICCR:
 	case PPC_INS_MFDEAR:
@@ -984,7 +999,9 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFTCR:
 	case PPC_INS_MFASR:
 	case PPC_INS_MFPVR:
+#if CS_API_MAJOR < 6
 	case PPC_INS_MFTBU:
+#endif
 	case PPC_INS_MTDSISR:
 	case PPC_INS_MTDAR:
 	case PPC_INS_MTSRR2:
@@ -996,10 +1013,29 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTTBU:
 	case PPC_INS_MTTBLO:
 	case PPC_INS_MTTBHI:
+#if CS_API_MAJOR == 6
+	case PPC_INS_MTDBATU0:
+	case PPC_INS_MTDBATL0:
+	case PPC_INS_MTDBATU1:
+	case PPC_INS_MTDBATL1:
+	case PPC_INS_MTDBATU2:
+	case PPC_INS_MTDBATL2:
+	case PPC_INS_MTDBATU3:
+	case PPC_INS_MTDBATL3:
+	case PPC_INS_MTIBATU0:
+	case PPC_INS_MTIBATL0:
+	case PPC_INS_MTIBATU1:
+	case PPC_INS_MTIBATL1:
+	case PPC_INS_MTIBATU2:
+	case PPC_INS_MTIBATL2:
+	case PPC_INS_MTIBATU3:
+	case PPC_INS_MTIBATL3:
+#else
 	case PPC_INS_MTDBATU:
 	case PPC_INS_MTDBATL:
 	case PPC_INS_MTIBATU:
 	case PPC_INS_MTIBATL:
+#endif
 	case PPC_INS_MTDCCR:
 	case PPC_INS_MTICCR:
 	case PPC_INS_MTDEAR:
@@ -1269,9 +1305,11 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	// Everything is executed linear => Sync instructions are NOP()s.
 	case PPC_INS_ISYNC:
 	case PPC_INS_SYNC:
+#if CS_API_MAJOR < 6
 	case PPC_INS_LWSYNC:
 	case PPC_INS_MSYNC:
 	case PPC_INS_PTESYNC:
+#endif
 	case PPC_INS_TLBSYNC:
 		lop = NOP();
 		break;
@@ -1395,7 +1433,9 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 #endif
 		lop = store_op(handle, insn, mode);
 		break;
+#if CS_API_MAJOR < 6
 	case PPC_INS_MR:
+#endif
 	case PPC_INS_AND:
 	case PPC_INS_ANDC:
 	case PPC_INS_ANDIS:
@@ -1406,7 +1446,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ORIS:
 	case PPC_INS_NAND:
 	case PPC_INS_NOR:
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 		// bug on xori in capstone v5
 	case PPC_INS_XNOP:
 #endif
@@ -1424,13 +1464,13 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 #if CS_API_MAJOR > 3
 	case PPC_INS_CMPB:
 #endif
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_CMPRB:
 	case PPC_INS_CMPEQB:
 #endif
 		lop = bitwise_op(handle, insn, mode);
 		break;
-#if CS_API_MAJOR > 4
+#if CS_API_MAJOR == 5
 	case PPC_INS_CMP:
 	case PPC_INS_CMPI:
 	case PPC_INS_CMPL:
@@ -1474,6 +1514,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BLRL:
 	case PPC_INS_BCA:
 	case PPC_INS_BCLA:
+#if CS_API_MAJOR < 6
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
@@ -1490,7 +1531,8 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
-#if CS_API_MAJOR > 4
+#endif
+#if CS_API_MAJOR == 5
 	case PPC_INS_BCDCFN:
 	case PPC_INS_BCDCFSQ:
 	case PPC_INS_BCDCFZ:
@@ -1678,10 +1720,18 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFPID:
 	case PPC_INS_MFTBLO:
 	case PPC_INS_MFTBHI:
+#if CS_API_MAJOR < 6
 	case PPC_INS_MFDBATU:
 	case PPC_INS_MFDBATL:
 	case PPC_INS_MFIBATU:
 	case PPC_INS_MFIBATL:
+	case PPC_INS_MFTBU:
+	case PPC_INS_MTCR:
+	case PPC_INS_MTDBATU:
+	case PPC_INS_MTDBATL:
+	case PPC_INS_MTIBATU:
+	case PPC_INS_MTIBATL:
+#endif
 	case PPC_INS_MFDCCR:
 	case PPC_INS_MFICCR:
 	case PPC_INS_MFDEAR:
@@ -1690,8 +1740,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFTCR:
 	case PPC_INS_MFASR:
 	case PPC_INS_MFPVR:
-	case PPC_INS_MFTBU:
-	case PPC_INS_MTCR:
 	case PPC_INS_MTBR0:
 	case PPC_INS_MTBR1:
 	case PPC_INS_MTBR2:
@@ -1713,10 +1761,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTTBU:
 	case PPC_INS_MTTBLO:
 	case PPC_INS_MTTBHI:
-	case PPC_INS_MTDBATU:
-	case PPC_INS_MTDBATL:
-	case PPC_INS_MTIBATU:
-	case PPC_INS_MTIBATL:
 	case PPC_INS_MTDCCR:
 	case PPC_INS_MTICCR:
 	case PPC_INS_MTDEAR:
@@ -1736,10 +1780,12 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_CRNOR:
 	case PPC_INS_CROR:
 	case PPC_INS_CRORC:
+#if CS_API_MAJOR < 6
 	case PPC_INS_CRSET:
 	case PPC_INS_CRNOT:
 	case PPC_INS_CRMOVE:
 	case PPC_INS_CRCLR:
+#endif
 		NOT_IMPLEMENTED;
 	case PPC_INS_MCRF:
 		lop = cr_logical(handle, insn, mode);
