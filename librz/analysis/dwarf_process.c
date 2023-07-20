@@ -568,20 +568,15 @@ static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 		break;
 	}
 	case DW_TAG_subroutine_type: {
-		const char *name = die_name_const(die);
-		if (!name) {
-			goto end;
-		}
-		RzCallable *callable = NULL;
-		if (!set_p_contains(ctx->analysis->debug_info->function_names, name)) {
+		RzCallable *callable = ht_up_find(ctx->analysis->debug_info->callable_by_offset, die->offset, NULL);
+		if (!callable) {
 			if (!function_parse(ctx, die)) {
 				goto end;
 			}
-		}
-
-		callable = rz_type_func_get(ctx->analysis->typedb, name);
-		if (!callable) {
-			goto end;
+			callable = ht_up_find(ctx->analysis->debug_info->callable_by_offset, die->offset, NULL);
+			if (!callable) {
+				goto end;
+			}
 		}
 		ret = rz_type_callable(callable);
 		break;
@@ -1085,14 +1080,18 @@ static void function_free(RzAnalysisDwarfFunction *f) {
  *        save the information into the Sdb
  */
 static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
+	if (ht_up_find(ctx->analysis->debug_info->function_by_offset, die->offset, NULL)) {
+		return true;
+	}
+
+	if (rz_bin_dwarf_die_get_attr(die, DW_AT_declaration)) {
+		return true; /* just declaration skip */
+	}
 	RzAnalysisDwarfFunction *fcn = RZ_NEW0(RzAnalysisDwarfFunction);
 	if (!fcn) {
 		goto cleanup;
 	}
-	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)variable_fini, NULL);
-	if (rz_bin_dwarf_die_get_attr(die, DW_AT_declaration)) {
-		goto cleanup; /* just declaration skip */
-	}
+	RZ_LOG_DEBUG("DWARF function parsing [0x%" PFMT64x "]\n", die->offset);
 	RzBinDwarfAttr *val;
 	rz_vector_foreach(&die->attrs, val) {
 		switch (val->name) {
@@ -1152,30 +1151,43 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 		fcn->demangle_name = ctx->analysis->binb.demangle(ctx->analysis->binb.bin, rz_bin_dwarf_lang_for_demangle(ctx->unit->language), fcn->link_name);
 	}
 	fcn->prefer_name = function_name(fcn, ctx->unit->language);
-	if (!fcn->prefer_name || !fcn->addr) { /* we need a name, faddr */
-		goto cleanup;
-	}
 
-	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type ? rz_type_clone(fcn->ret_type) : NULL);
+	RzCallable *callable = rz_type_callable_new(fcn->prefer_name);
+	callable->ret = fcn->ret_type ? rz_type_clone(fcn->ret_type) : NULL;
+	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)variable_fini, NULL);
 	function_children_parse(ctx, die, callable, fcn);
-	RZ_LOG_DEBUG("DWARF Saving function %s\n", fcn->prefer_name);
-	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
-		RZ_LOG_ERROR("DWARF Failed to save function %s\n", fcn->prefer_name);
-		goto cleanup;
-	}
-	if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
-		goto cleanup;
-	}
 
-	set_p_add(ctx->analysis->debug_info->function_names, fcn->prefer_name);
+	RZ_LOG_DEBUG("DWARF function saving %s 0x%" PFMT64x " [0x%" PFMT64x "]\n", fcn->prefer_name, fcn->addr, die->offset);
+	if (fcn->prefer_name) {
+		if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
+			RZ_LOG_ERROR("DWARF callable saving failed [typedb->callable] %s\n", fcn->prefer_name);
+			goto cleanup;
+		}
+		if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, rz_type_callable_clone(callable))) {
+			RZ_LOG_ERROR("DWARF callable saving failed [0x%" PFMT64x "]\n", die->offset);
+			goto cleanup;
+		}
+	} else {
+		if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, callable)) {
+			RZ_LOG_ERROR("DWARF callable saving failed [0x%" PFMT64x "]\n", die->offset);
+			goto cleanup;
+		}
+	}
+	if (!ht_up_update(ctx->analysis->debug_info->function_by_offset, die->offset, fcn)) {
+		RZ_LOG_ERROR("DWARF function saving failed [0x%" PFMT64x "]\n", fcn->addr);
+		goto cleanup;
+	}
+	if (fcn->addr > 0) {
+		if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
+			RZ_LOG_ERROR("DWARF function saving failed with addr: [0x%" PFMT64x "]\n", fcn->addr);
+			goto cleanup;
+		}
+	}
 	return true;
 cleanup:
+	RZ_LOG_ERROR("Failed to parse function %s at 0x%" PFMT64x "\n", fcn->prefer_name, die->offset);
 	function_free(fcn);
 	return false;
-}
-
-static void htup_type_free(HtUPKv *kv) {
-	rz_type_free(kv->value);
 }
 
 /**
@@ -1373,6 +1385,10 @@ rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
 	ht_up_foreach(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
 }
 
+static void htup_type_free(HtUPKv *kv) {
+	rz_type_free(kv->value);
+}
+
 static void htup_function_free(HtUPKv *kv) {
 	if (!kv) {
 		return;
@@ -1380,14 +1396,19 @@ static void htup_function_free(HtUPKv *kv) {
 	function_free(kv->value);
 }
 
+static void htup_callable_free(HtUPKv *kv) {
+	rz_type_callable_free(kv->value);
+}
+
 RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	RzAnalysisDebugInfo *debug_info = RZ_NEW0(RzAnalysisDebugInfo);
 	if (!debug_info) {
 		return NULL;
 	}
-	debug_info->function_by_addr = ht_up_new(NULL, htup_function_free, NULL);
-	debug_info->function_names = set_p_new();
+	debug_info->function_by_offset = ht_up_new(NULL, htup_function_free, NULL);
+	debug_info->function_by_addr = ht_up_new(NULL, NULL, NULL);
 	debug_info->type_by_offset = ht_up_new(NULL, htup_type_free, NULL);
+	debug_info->callable_by_offset = ht_up_new(NULL, htup_callable_free, NULL);
 	debug_info->base_type_names = set_p_new();
 	return debug_info;
 }
@@ -1396,9 +1417,10 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	if (!debuginfo) {
 		return;
 	}
+	ht_up_free(debuginfo->function_by_offset);
 	ht_up_free(debuginfo->function_by_addr);
-	set_p_free(debuginfo->function_names);
 	ht_up_free(debuginfo->type_by_offset);
+	ht_up_free(debuginfo->callable_by_offset);
 	set_p_free(debuginfo->base_type_names);
 	free(debuginfo);
 }

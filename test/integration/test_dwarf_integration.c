@@ -164,6 +164,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
 		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO,
 	};
+	rz_log_set_level(RZ_LOGLVL_DEBUG);
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 	mu_assert_notnull(dw->abbrevs, "Couldn't parse Abbreviations");
 	mu_assert_notnull(dw->info, "Couldn't parse debug_info section");
@@ -220,7 +221,7 @@ static bool test_dwarf_function_parsing_go(void) {
 
 	mu_assert_notnull(analysis->debug_info, "Couldn't get debug info");
 	check_fn(0x491980, "main.main", "void main.main()");
-	check_fn(0x491d90, "main.tree.iterInorder", "void main.tree.iterInorder(main.tree t, func(int) visit)");
+	check_fn(0x491d90, "main.tree.iterInorder", "void main.tree.iterInorder(struct main.tree t, func(int) visit)");
 
 	/* We do not parse variable information from .debug_frame that is this Go binary using, so
 	   don't check variable information and add it in the future */
