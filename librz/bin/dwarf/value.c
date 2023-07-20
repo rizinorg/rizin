@@ -1060,8 +1060,7 @@ RZ_IPI void Value_free(RzBinDwarfValue *self) {
 
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
 	rz_warn_if_fail(self);
-	RzBinDwarfValue *val = RZ_NEW0(RzBinDwarfValue);
-	memcpy(val, self, sizeof(RzBinDwarfValue));
+	RzBinDwarfValue *val = RZ_NEWCOPY(RzBinDwarfValue, self);
 	if (val->type == RzBinDwarfValueType_LOCATION) {
 		val->location = rz_bin_dwarf_location_clone(self->location);
 	}

@@ -25,6 +25,8 @@
 		} \
 	} while (0)
 
+#define ERR_IF_FAIL(x) GOTO_IF_FAIL(x, err)
+
 #define UX_WRAP(out, x, wrap) \
 	switch ((x)) { \
 	case 1: \

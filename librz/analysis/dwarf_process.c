@@ -19,6 +19,7 @@ static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 static RzType *type_parse_from_offset(Context *ctx, ut64 offset, ut64 *size);
 static bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type);
 static bool struct_union_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type);
+static bool function_parse(Context *ctx, RzBinDwarfDie *die);
 
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
@@ -393,6 +394,9 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 	if (!name) {
 		goto err;
 	}
+	if (set_p_contains(ctx->analysis->debug_info->base_type_names, name)) {
+		return NULL;
+	}
 	btype = rz_type_base_type_new(kind);
 	if (!btype) {
 		goto err;
@@ -417,6 +421,11 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 	case RZ_BASE_TYPE_KIND_ATOMIC: break;
 	}
 
+	if (!rz_type_db_update_base_type(ctx->analysis->typedb, btype)) {
+		RZ_LOG_WARN("Failed to save base type %s\n", btype->name);
+	} else {
+		set_p_add(ctx->analysis->debug_info->base_type_names, btype->name);
+	}
 	return btype;
 err:
 	rz_type_free(type);
@@ -487,22 +496,21 @@ static RzType *type_parse_from_die_internal(Context *ctx, RzBinDwarfDie *die, bo
  */
 static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 	RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited) {
+	RzType *ret = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
+	if (ret) {
+		return rz_type_clone(ret);
+	}
+
 	if (set_u_contains(visited, offset)) {
 		return NULL;
 	}
 	set_u_add(visited, offset);
-	RzType *type = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
-	if (type) {
-		type->ref++;
-		return type;
-	}
 
 	RzBinDwarfDie *die = ht_up_find(ctx->dw->info->die_tbl, offset, NULL);
 	if (!die) {
 		return NULL;
 	}
 
-	RzType *ret = NULL;
 	// get size of first type DIE that has size
 	if (size && *size == 0) {
 		*size = die_bits_size(die);
@@ -519,6 +527,7 @@ static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 		ret = rz_type_pointer_of_type(ctx->analysis->typedb, pointee, false);
 		if (!ret) {
 			rz_type_free(pointee);
+			goto end;
 		}
 		break;
 	}
@@ -541,9 +550,9 @@ static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 		}
 		ret->kind = RZ_TYPE_KIND_IDENTIFIER;
 		ret->identifier.name = name;
-		ret->ref = 1;
 		switch (die->tag) {
 		case DW_TAG_structure_type:
+		case DW_TAG_class_type:
 			ret->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 			break;
 		case DW_TAG_union_type:
@@ -552,28 +561,29 @@ static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 		case DW_TAG_enumeration_type:
 			ret->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 			break;
-		default: break;
+		default:
+			ret->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+			break;
 		}
 		break;
 	}
 	case DW_TAG_subroutine_type: {
-		RzType *return_type = type_parse_from_die_internal(ctx, die, true, size, visited);
-		if (!return_type) {
+		const char *name = die_name_const(die);
+		if (!name) {
 			goto end;
 		}
-		if (die->has_children) { // has parameters
-			// TODO
+		RzCallable *callable = NULL;
+		if (!set_p_contains(ctx->analysis->debug_info->function_names, name)) {
+			if (!function_parse(ctx, die)) {
+				goto end;
+			}
 		}
-		RzCallable *callable = rz_type_callable_new(NULL);
+
+		callable = rz_type_func_get(ctx->analysis->typedb, name);
 		if (!callable) {
-			rz_type_free(return_type);
 			goto end;
 		}
-		callable->ret = return_type;
 		ret = rz_type_callable(callable);
-		if (!ret) {
-			rz_type_callable_free(callable);
-		}
 		break;
 	}
 	case DW_TAG_array_type: {
@@ -612,6 +622,13 @@ static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 		break;
 	default:
 		break;
+	}
+
+	if (ret) {
+		RzType *copy = rz_type_clone(ret);
+		if (!ht_up_insert(ctx->analysis->debug_info->type_by_offset, offset, copy)) {
+			RZ_LOG_ERROR("Failed to insert type [%s] into debug_info->type_by_offset\n", rz_type_as_string(ctx->analysis->typedb, ret));
+		}
 	}
 end:
 	set_u_delete(visited, offset);
@@ -1067,10 +1084,10 @@ static void function_free(RzAnalysisDwarfFunction *f) {
  * \brief Parse function,it's arguments, variables and
  *        save the information into the Sdb
  */
-static void function_parse(Context *ctx, RzBinDwarfDie *die) {
+static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 	RzAnalysisDwarfFunction *fcn = RZ_NEW0(RzAnalysisDwarfFunction);
 	if (!fcn) {
-		return;
+		goto cleanup;
 	}
 	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)variable_fini, NULL);
 	if (rz_bin_dwarf_die_get_attr(die, DW_AT_declaration)) {
@@ -1139,21 +1156,22 @@ static void function_parse(Context *ctx, RzBinDwarfDie *die) {
 		goto cleanup;
 	}
 
-	if (fcn->ret_type) {
-		fcn->ret_type->ref++;
-	}
-	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type);
+	RzCallable *callable = rz_type_func_new(ctx->analysis->typedb, fcn->prefer_name, fcn->ret_type ? rz_type_clone(fcn->ret_type) : NULL);
 	function_children_parse(ctx, die, callable, fcn);
 	RZ_LOG_DEBUG("DWARF Saving function %s\n", fcn->prefer_name);
 	if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
 		RZ_LOG_ERROR("DWARF Failed to save function %s\n", fcn->prefer_name);
-	};
+		goto cleanup;
+	}
 	if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
 		goto cleanup;
 	}
-	return;
+
+	set_p_add(ctx->analysis->debug_info->function_names, fcn->prefer_name);
+	return true;
 cleanup:
 	function_free(fcn);
+	return false;
 }
 
 static void htup_type_free(HtUPKv *kv) {
@@ -1183,13 +1201,7 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 			case DW_TAG_enumeration_type:
 			case DW_TAG_typedef:
 			case DW_TAG_base_type: {
-				RzBaseType *base_type = base_type_new_from_die(&ctx, die);
-				if (!base_type) {
-					continue;
-				}
-				if (!rz_type_db_update_base_type(analysis->typedb, base_type)) {
-					RZ_LOG_WARN("Failed to save base type %s\n", base_type->name);
-				}
+				base_type_new_from_die(&ctx, die);
 				break;
 			}
 			case DW_TAG_subprogram:
@@ -1374,7 +1386,9 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 		return NULL;
 	}
 	debug_info->function_by_addr = ht_up_new(NULL, htup_function_free, NULL);
+	debug_info->function_names = set_p_new();
 	debug_info->type_by_offset = ht_up_new(NULL, htup_type_free, NULL);
+	debug_info->base_type_names = set_p_new();
 	return debug_info;
 }
 
@@ -1383,6 +1397,8 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 		return;
 	}
 	ht_up_free(debuginfo->function_by_addr);
+	set_p_free(debuginfo->function_names);
 	ht_up_free(debuginfo->type_by_offset);
+	set_p_free(debuginfo->base_type_names);
 	free(debuginfo);
 }

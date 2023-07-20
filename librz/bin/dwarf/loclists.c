@@ -255,8 +255,12 @@ RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfL
 	RzBinDwarfLocListsFormat format = encoding->version <= 4 ? RzBinDwarfLocListsFormat_BARE : RzBinDwarfLocListsFormat_LLE;
 	buffer = rz_buf_new_with_buf(buffer);
 	rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
-	RET_FALSE_IF_FAIL(loclist_parse(self, buffer, encoding, format));
+	GOTO_IF_FAIL(loclist_parse(self, buffer, encoding, format), err);
+	rz_buf_free(buffer);
 	return true;
+err:
+	rz_buf_free(buffer);
+	return false;
 }
 
 RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding) {
