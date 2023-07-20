@@ -58,7 +58,7 @@ static bool prefer_linkage_name(enum DW_LANG lang) {
 	case DW_LANG_ALTIUM_Assembler: break;
 	case DW_LANG_BORLAND_Delphi: break;
 	default:
-		return true;
+		break;
 	}
 	return true;
 }
@@ -74,10 +74,8 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num) {
 	case 3: return "rbx";
 	case 4: return "rsi";
 	case 5: return "rdi";
-	case 6:
-		return "rbp";
-	case 7:
-		return "rsp";
+	case 6: return "rbp";
+	case 7: return "rsp";
 	case 8: return "r8";
 	case 9: return "r9";
 	case 10: return "r10";
@@ -102,16 +100,13 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num) {
 /* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num) {
 	switch (reg_num) {
-	case 0:
-	case 8:
-		return "eax";
+	case 0: /* fall-thru */
+	case 8: return "eax";
 	case 1: return "edx";
 	case 2: return "ecx";
 	case 3: return "ebx";
-	case 4:
-		return "esp";
-	case 5:
-		return "ebp";
+	case 4: return "esp";
+	case 5: return "ebp";
 	case 6: return "esi";
 	case 7: return "edi";
 	case 9: return "EFLAGS";
@@ -155,8 +150,7 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num) {
 static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num) {
 	switch (reg_num) {
 	case 0: return "r0";
-	case 1:
-		return "r1";
+	case 1: return "r1";
 	case 2: return "r2";
 	case 3: return "r3";
 	case 4: return "r4";
@@ -226,8 +220,7 @@ static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num) {
 	case 27: return "a11";
 	case 28: return "a12";
 	case 29: return "a13";
-	case 30:
-		return "a14";
+	case 30: return "a14";
 	case 31: return "a15";
 	case 32: return "e0";
 	case 33: return "e2";
@@ -262,10 +255,8 @@ static const char *dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, int bits)
 		} else {
 			return map_dwarf_reg_to_x86_reg(reg_num);
 		}
-	} else if (!strcmp(arch, "ppc")) {
-		if (bits == 64) {
-			return map_dwarf_reg_to_ppc64_reg(reg_num);
-		}
+	} else if (!strcmp(arch, "ppc") && bits == 64) {
+		return map_dwarf_reg_to_ppc64_reg(reg_num);
 	} else if (!strcmp(arch, "tricore")) {
 		return map_dwarf_reg_to_tricore_reg(reg_num);
 	}
@@ -1195,7 +1186,7 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwar
 				}
 				if (!rz_type_db_update_base_type(analysis->typedb, base_type)) {
 					RZ_LOG_WARN("Failed to save base type %s\n", base_type->name);
-				};
+				}
 				break;
 			}
 			case DW_TAG_subprogram:

@@ -131,6 +131,7 @@ bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, R
 			OK_None;
 		}
 		range = RZ_NEW0(RzBinDwarfRange);
+		RET_FALSE_IF_FAIL(range);
 		range->begin = raw->address_or_offset_pair.begin;
 		range->end = raw->address_or_offset_pair.end;
 		Range_add_base_address(range, self->base_address, self->encoding.address_size);
@@ -148,11 +149,13 @@ bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, R
 			OK_None;
 		case DW_RLE_startx_endx:
 			range = RZ_NEW0(RzBinDwarfRange);
+			RET_FALSE_IF_FAIL(range);
 			range->begin = raw->startx_endx.begin;
 			range->end = raw->startx_endx.end;
 			break;
 		case DW_RLE_startx_length:
 			range = RZ_NEW0(RzBinDwarfRange);
+			RET_FALSE_IF_FAIL(range);
 			range->begin = raw->startx_length.begin;
 			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
 			break;
@@ -161,17 +164,20 @@ bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, R
 				OK_None;
 			}
 			range = RZ_NEW0(RzBinDwarfRange);
+			RET_FALSE_IF_FAIL(range);
 			range->begin = raw->address_or_offset_pair.begin;
 			range->end = raw->address_or_offset_pair.end;
 			Range_add_base_address(range, self->base_address, self->encoding.address_size);
 			break;
 		case DW_RLE_start_end:
 			range = RZ_NEW0(RzBinDwarfRange);
+			RET_FALSE_IF_FAIL(range);
 			range->begin = raw->startx_endx.begin;
 			range->end = raw->startx_endx.end;
 			break;
 		case DW_RLE_start_length:
 			range = RZ_NEW0(RzBinDwarfRange);
+			RET_FALSE_IF_FAIL(range);
 			range->begin = raw->startx_length.begin;
 			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
 			break;

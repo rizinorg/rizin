@@ -1238,7 +1238,7 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 
 	};
 	bool ret;
-	if (!ctx.parser || !ctx.var_parser) {
+	if (!(ctx.parser && ctx.var_parser && ctx.storage_parser)) {
 		RZ_SERIALIZE_ERR(res, "parser init failed");
 		ret = false;
 		goto beach;
