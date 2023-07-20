@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_util/rz_assert.h>
 #include <capstone/capstone.h>
 
 #include "arm_cs.h"
@@ -10,6 +11,27 @@
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 #include "arm_il_common.inc"
+
+/**
+ * \brief Tests if the instruction is part of the given group.
+ *
+ * \param insn The instruction to test.
+ * \param group The group to test for.
+ * \return true The instruction is part of the group.
+ * \return false The instruction is not part of the group.
+ */
+RZ_IPI bool rz_arm_cs_is_group_member(RZ_NONNULL const cs_insn *insn, arm_insn_group group) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	uint32_t i = 0;
+	arm_insn_group group_it = insn->detail->groups[i];
+	while (group_it) {
+		if (group_it == group) {
+			return true;
+		}
+		group_it = insn->detail->groups[++i];
+	}
+	return false;
+}
 
 /**
  * All regs available as global IL variables
@@ -3554,7 +3576,7 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 	bv_sz = cvt_isize(VVEC_DT(insn), &is_signed);
 	ut32 fl_sz = rz_float_get_format_info(is_f2i ? from_fmt : to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
 
-	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
 		// vfp
 		// VCVT.F64.S32/U32 <Dd>, <Sm>
 		// VCVT.F32.S32/U32 <Sd>, <Sm>
@@ -3789,7 +3811,7 @@ static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
 	RzFloatFormat fmt = dt2fmt(dt);
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
-	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
 		// VFP
 		return write_reg(REGID(0),
 			F2BV(FADD(RZ_FLOAT_RMODE_RNE,
@@ -3836,7 +3858,7 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 	RzFloatFormat fmt = dt2fmt(dt);
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
-	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
 		// VFP
 		return write_reg(REGID(0),
 			F2BV(FSUB(RZ_FLOAT_RMODE_RNE,
@@ -3881,7 +3903,7 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 	arm_vectordata_type dt = VVEC_DT(insn);
 	RzFloatFormat fmt = dt2fmt(dt);
 
-	if (insn->detail->groups[0] != ARM_GRP_NEON) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
 		// VFP fmul
 		return write_reg(REGID(0),
 			F2BV(FMUL(RZ_FLOAT_RMODE_RNE,
@@ -3978,7 +4000,7 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	if (insn->detail->groups[0] == ARM_GRP_NEON) {
+	if (rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
 		// not implement
 		return NULL;
 	}
