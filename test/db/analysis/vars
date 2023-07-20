@@ -886,6 +886,8 @@ s dbg._Atrealloc
 .(sig)
 s dbg.fn1
 .(sig)
+s dbg.__ltdf2
+.(sig)
 EOF
 EXPECT=<<EOF
 var int ans @ empty
@@ -1011,6 +1013,25 @@ void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
 |           ; arg some_t **out @ stack - 0x18
 |           0x8000041c      mov.aa a14, sp                             ; float_ex1.c:15 ; _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
 ---------
+var FLO_union_type au @ stack - 0x34
+var FLO_union_type bu @ stack - 0x2c
+var fp_number_type a @ stack - 0x24
+var fp_number_type b @ stack - 0x10
+arg FLO_type arg_a @ loclist
+arg FLO_type arg_b @ loclist
+CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b);
+            ; CALL XREFS from sym._Ldtob @ +0xf4, +0x2f8
+            ; CALL XREFS from dbg._LXp_sqrtx @ 0x80002e44, 0x80002e54
+            ;-- __ltdf2:
+/ CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b)
+|           ; arg FLO_type arg_a @ loclist
+|           ; arg FLO_type arg_b @ loclist
+|           ; var fp_number_type a @ stack - 0x24
+|           ; var fp_number_type b @ stack - 0x10
+|           ; var FLO_union_type au @ stack - 0x34
+|           ; var FLO_union_type bu @ stack - 0x2c
+|           0x80004238      sub.a sp, #0x38                            ; fp-bit.c:1277 ; CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b)
+---------
 EOF
 RUN
 
@@ -1073,138 +1094,5 @@ EXPECT=<<EOF
 |       |   0x8000054a      mov   d15, #1
 |       `-> 0x8000054c      mov   d2, d15
 \           0x8000054e      ret
-EOF
-RUN
-
-NAME=Function va_args arguments from DWARF
-FILE=bins/elf/float_ex1/float_ex1_hightec
-CMDS=<<EOF
-aaa
-(sig; afv; afs; pd 1; echo "")
-s dbg.printf
-.(sig)
-s dbg.prout
-.(sig)
-s dbg._fpadd_parts
-.(sig)
-s dbg.strnlen_s
-.(sig)
-s dbg._Wctomb
-.(sig)
-s dbg._Mbtowc
-.(sig)
-s dbg.feraiseexcept
-.(sig)
-s dbg._Atrealloc
-.(sig)
-EOF
-EXPECT=<<EOF
-var int ans @ empty
-arg const char *fmt @ loclist
-var va_list ap @ loclist
-int printf(const char *fmt, ...);
-            ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
-            ;-- printf:
-/ int printf(const char *fmt, ...)
-|           ; arg const char *fmt @ loclist
-|           ; var int ans @ empty
-|           ; var va_list ap @ loclist
-|           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
-
-arg void *str @ loclist
-arg const char *buf @ loclist
-arg size_t n @ loclist
-void * prout(void *str, const char *buf, size_t n);
-            ;-- prout:
-/ void * prout(void *str, const char *buf, size_t n)
-|           ; arg void *str @ loclist
-|           ; arg const char *buf @ loclist
-|           ; arg size_t n @ loclist
-|           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
-
-arg fp_number_type *a @ loclist
-arg fp_number_type *b @ loclist
-arg fp_number_type *tmp @ loclist
-var intfrac tfraction @ loclist
-var int a_normal_exp @ loclist
-var int b_normal_exp @ loclist
-var fractype a_fraction @ loclist
-var fractype b_fraction @ loclist
-fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
-            ; CALL XREF from dbg.__adddf3 @ 0x80003e32
-            ; CALL XREF from dbg.__subdf3 @ 0x80003e72
-            ;-- _fpadd_parts:
-/ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
-|           ; arg fp_number_type *a @ loclist
-|           ; arg fp_number_type *b @ loclist
-|           ; arg fp_number_type *tmp @ loclist
-|           ; var intfrac tfraction @ loclist
-|           ; var int a_normal_exp @ loclist
-|           ; var int b_normal_exp @ loclist
-|           ; var fractype a_fraction @ loclist
-|           ; var fractype b_fraction @ loclist
-|           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
-
-arg const char *s @ loclist
-arg size_t maxsize @ loclist
-var const char *sc @ loclist
-size_t strnlen_s(const char *s, size_t maxsize);
-            ; CALL XREF from dbg._Fail_s @ 0x8000191e
-            ;-- strnlen_s:
-/ size_t strnlen_s(const char *s, size_t maxsize)
-|           ; arg const char *s @ loclist
-|           ; arg size_t maxsize @ loclist
-|           ; var const char *sc @ loclist
-|           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize)
-
-var _Statab *pmbstate @ empty
-var _Statab *pwcstate @ a13
-arg char *s @ loclist
-arg wchar_t wc @ loclist
-arg mbstate_t *pst @ loclist
-int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
-            ; CALL XREF from dbg._Putstr @ 0x800014d2
-            ;-- _Wctomb:
-/ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
-|           ; arg char *s @ loclist
-|           ; arg wchar_t wc @ loclist
-|           ; arg mbstate_t *pst @ loclist
-|           ; var _Statab *pmbstate @ empty
-|           ; var _Statab *pwcstate @ a13
-|           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
-
-arg wchar_t *pwc @ loclist
-arg const char *s @ loclist
-arg size_t nin @ loclist
-arg mbstate_t *pst @ loclist
-int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
-            ; CALL XREF from dbg._Printf @ 0x80000d02
-            ;-- _Mbtowc:
-/ int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
-|           ; arg wchar_t *pwc @ loclist
-|           ; arg const char *s @ loclist
-|           ; arg size_t nin @ loclist
-|           ; arg mbstate_t *pst @ loclist
-|           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
-
-arg int except @ d4
-int feraiseexcept(int except);
-            ; CALL XREF from dbg._Feraise @ 0x8000343e
-            ;-- feraiseexcept:
-/ int feraiseexcept(int except)
-|           ; arg int except @ d4
-|           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except)
-
-var size_t inc @ loclist
-var Ppvoidfn newfuns @ loclist
-int _Atrealloc();
-            ; CALL XREF from sym.atexit @ +0x30
-            ; CALL XREF from dbg._Atexit @ 0x800033b8
-            ;-- _Atrealloc:
-/ int _Atrealloc()
-|           ; var size_t inc @ loclist
-|           ; var Ppvoidfn newfuns @ loclist
-|           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
-
 EOF
 RUN
