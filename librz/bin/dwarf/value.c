@@ -1041,13 +1041,20 @@ VALUE_IMPL_LOGICAL_OP(le, <=);
 VALUE_IMPL_LOGICAL_OP(lt, <);
 VALUE_IMPL_LOGICAL_OP(ne, !=);
 
-RZ_IPI void Value_free(RzBinDwarfValue *self) {
+RZ_IPI void Value_fini(RzBinDwarfValue *self) {
 	if (!self) {
 		return;
 	}
 	if (self->type == RzBinDwarfValueType_LOCATION) {
 		rz_bin_dwarf_location_free(self->location);
 	}
+}
+
+RZ_IPI void Value_free(RzBinDwarfValue *self) {
+	if (!self) {
+		return;
+	}
+	Value_fini(self);
 	free(self);
 }
 

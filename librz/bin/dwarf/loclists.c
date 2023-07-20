@@ -6,7 +6,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-void RzBinDwarfRawLocListEntry_free(RzBinDwarfRawLocListEntry *self) {
+static void RzBinDwarfRawLocListEntry_free(RzBinDwarfRawLocListEntry *self) {
 	if (!self) {
 		return;
 	}
@@ -14,7 +14,7 @@ void RzBinDwarfRawLocListEntry_free(RzBinDwarfRawLocListEntry *self) {
 	free(self);
 }
 
-void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self) {
+static void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self) {
 	if (!self) {
 		return;
 	}
@@ -107,7 +107,7 @@ static bool RawLocListEntry_parse(RzBinDwarfRawLocListEntry *out, RzBuffer *buff
 	return true;
 }
 
-void RzBinDwarfLocationListEntry_free(RzBinDwarfLocationListEntry *self) {
+static void RzBinDwarfLocationListEntry_free(RzBinDwarfLocationListEntry *self) {
 	if (!self) {
 		return;
 	}
@@ -186,24 +186,27 @@ static bool convert_raw(RzBinDwarfLocListTable *self, RzBinDwarfRawLocListEntry 
 	}
 
 	if (!range) {
-		return false;
+		goto err;
 	}
 	if (range->begin == tombstone) {
-		free(range);
+		Range_free(range);
 		RzBinDwarfBlock_free(data);
 		OK_None;
 	}
 	if (range->begin > range->end) {
 		RZ_LOG_ERROR("Invalid Address Range (0x%" PFMT64x ",0x%" PFMT64x ")\n", range->begin, range->end);
-		free(range);
-		RzBinDwarfBlock_free(data);
-		return false;
+		goto err;
 	}
 
 	*out = RZ_NEW0(RzBinDwarfLocationListEntry);
+	GOTO_IF_FAIL(*out, err);
 	(*out)->range = range;
 	(*out)->expression = data;
 	return true;
+err:
+	Range_free(range);
+	RzBinDwarfBlock_free(data);
+	return false;
 }
 
 void loclist_free(RzBinDwarfLocList *self) {
@@ -288,7 +291,7 @@ err:
 	return false;
 }
 
-void HTUP_RzBinDwarfLocList_free(HtUPKv *kv) {
+static void HTUP_RzBinDwarfLocList_free(HtUPKv *kv) {
 	if (!kv) {
 		return;
 	}
@@ -328,6 +331,11 @@ RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
 	case RzBinDwarfLocationKind_BYTES:
 		RzBinDwarfBlock_fini(&self->bytes.value);
 		break;
+	case RzBinDwarfLocationKind_EVALUATION_WAITING:
+		rz_bin_dwarf_evaluation_free(self->eval_waiting.eval);
+		rz_bin_dwarf_evaluation_result_free(self->eval_waiting.result);
+		break;
+	case RzBinDwarfLocationKind_LOCLIST: // fallthrough
 	default: break;
 	}
 	free(self);

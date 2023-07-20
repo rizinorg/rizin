@@ -532,7 +532,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	return true;
 }
 
-void Operation_fini(Operation *self) {
+static void Operation_fini(Operation *self) {
 	if (!self) {
 		return;
 	}
@@ -545,7 +545,7 @@ void Operation_fini(Operation *self) {
 	}
 }
 
-bool Evaluation_pop(RzBinDwarfEvaluation *self, RzBinDwarfValue **value) {
+static bool Evaluation_pop(RzBinDwarfEvaluation *self, RzBinDwarfValue **value) {
 	if (rz_vector_len(&self->stack) <= 0) {
 		*value = NULL;
 		return false;
@@ -559,16 +559,16 @@ bool Evaluation_pop(RzBinDwarfEvaluation *self, RzBinDwarfValue **value) {
 	return true;
 }
 
-bool Evaluation_push(RzBinDwarfEvaluation *self, RzBinDwarfValue *value) {
+static bool Evaluation_push(RzBinDwarfEvaluation *self, RzBinDwarfValue *value) {
 	rz_vector_push(&self->stack, value);
 	return true;
 }
 
-bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
+static bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
 	return rz_buf_seek(pc, offset, RZ_BUF_CUR) >= 0;
 }
 
-RzBinDwarfValueType ValueType_from_name(const char *name, ut8 byte_size) {
+static RzBinDwarfValueType ValueType_from_name(const char *name, ut8 byte_size) {
 	if (strcmp(name, "int") == 0) {
 		switch (byte_size) {
 		case 1: return RzBinDwarfValueType_I8;
@@ -623,7 +623,7 @@ RzBinDwarfValueType ValueType_from_name(const char *name, ut8 byte_size) {
 	return RzBinDwarfValueType_GENERIC;
 }
 
-RzBinDwarfValueType ValueType_from_die(RzBinDwarfEvaluation *eval, const RzBinDwarf *dw, UnitOffset offset) {
+static RzBinDwarfValueType ValueType_from_die(RzBinDwarfEvaluation *eval, const RzBinDwarf *dw, UnitOffset offset) {
 	RzBinDwarfDie *die = ht_up_find(dw->info->die_tbl, eval->unit->offset + offset, NULL);
 	if (!die) {
 		return RzBinDwarfValueType_GENERIC;
@@ -671,7 +671,7 @@ RzBinDwarfValueType ValueType_from_die(RzBinDwarfEvaluation *eval, const RzBinDw
 	return value_type;
 }
 
-void RzBinDwarfPiece_fini(RzBinDwarfPiece *x) {
+static void RzBinDwarfPiece_fini(RzBinDwarfPiece *x) {
 	if (!x) {
 		return;
 	}
@@ -683,6 +683,22 @@ addrmask_from_size(uint8_t size) {
 	return size == 0 ? 0xffffffffffffffffULL
 			 : (size == 8 ? 0xffffffffffffffffULL
 				      : (1ULL << (size * 8)) - 1);
+}
+
+static void vec_Value_fini(void *v, void *u) {
+	Value_fini(v);
+}
+
+static void RzBinDwarfExprStackItem_fini(RzBinDwarfExprStackItem *self) {
+	if (!self) {
+		return;
+	}
+	rz_buf_free(self->bytecode);
+	rz_buf_free(self->pc);
+}
+
+static void vec_RzBinDwarfExprStackItem_fini(void *v, void *u) {
+	RzBinDwarfExprStackItem_fini(v);
 }
 
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNULL RzBuffer *byte_code, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
@@ -698,9 +714,8 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNUL
 	self->dw = dw;
 	self->unit = unit;
 	self->die = die;
-	// TODO: add free fn
-	rz_vector_init(&self->stack, sizeof(RzBinDwarfValue), NULL, NULL);
-	rz_vector_init(&self->expression_stack, sizeof(RzBinDwarfExprStackItem), NULL, NULL);
+	rz_vector_init(&self->stack, sizeof(RzBinDwarfValue), vec_Value_fini, NULL);
+	rz_vector_init(&self->expression_stack, sizeof(RzBinDwarfExprStackItem), vec_RzBinDwarfExprStackItem_fini, NULL);
 	rz_vector_init(&self->result, sizeof(RzBinDwarfPiece), (RzVectorFree)RzBinDwarfPiece_fini, NULL);
 	return self;
 }
@@ -726,7 +741,17 @@ RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self) {
 	free(self);
 }
 
-bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEvaluationResult *out) {
+RZ_API void rz_bin_dwarf_evaluation_result_free(RZ_OWN RzBinDwarfEvaluationResult *self) {
+	if (!self) {
+		return;
+	}
+	if (self->kind == EvaluationResult_REQUIRES_ENTRY_VALUE) {
+		RzBinDwarfBlock_free(self->requires_entry_value.expression);
+	}
+	free(self);
+}
+
+static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEvaluationResult *out) {
 	Operation operation = { 0 };
 	ut64 offset = rz_buf_tell(self->pc);
 	RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
@@ -1128,7 +1153,7 @@ bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, OperationEval
 	return true;
 }
 
-bool Evaluation_end_of_expression(RzBinDwarfEvaluation *self) {
+static bool Evaluation_end_of_expression(RzBinDwarfEvaluation *self) {
 	if (rz_buf_tell(self->pc) >= rz_buf_size(self->pc)) {
 		if (rz_vector_empty(&self->expression_stack)) {
 			return true;
@@ -1264,7 +1289,7 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 	return NULL;
 }
 
-RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result) {
+static RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result) {
 	if (eval->state.kind == EVALUATION_STATE_COMPLETE && result->kind == EvaluationResult_COMPLETE) {
 		RzVector *pieces = rz_bin_dwarf_evaluation_result(eval);
 		if (!pieces || rz_vector_empty(pieces)) {
@@ -1293,18 +1318,17 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_
 	RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
 	RET_NULL_IF_FAIL(result);
 	RzBinDwarfEvaluation *eval = rz_bin_dwarf_evaluation_new_from_block(block, dw, unit, die);
-	RET_NULL_IF_FAIL(eval);
-	if (!rz_bin_dwarf_evaluation_evaluate(eval, result)) {
-		goto beach;
-	}
+	GOTO_IF_FAIL(eval, beach);
+	GOTO_IF_FAIL(rz_bin_dwarf_evaluation_evaluate(eval, result), beach);
 
 	return RzBinDwarfEvaluationResult_to_loc(eval, result);
 beach:
 	rz_bin_dwarf_evaluation_free(eval);
+	rz_bin_dwarf_evaluation_result_free(result);
 	return NULL;
 }
 
-void Operation_dump(Operation *op, RzStrBuf *buf) {
+static void Operation_dump(Operation *op, RzStrBuf *buf) {
 	rz_strbuf_append(buf, rz_str_get_null(rz_bin_dwarf_op(op->opcode)));
 	switch (op->kind) {
 	case OPERATION_KIND_DEREF:

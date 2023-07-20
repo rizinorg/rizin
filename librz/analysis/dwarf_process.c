@@ -16,8 +16,8 @@ typedef struct dwarf_parse_context_t {
 
 static RzType *type_parse_from_offset_internal(Context *ctx, ut64 offset,
 	RZ_NULLABLE ut64 *size, RZ_NONNULL SetU *visited);
-static RzType *type_parse_from_offset(Context *ctx, const unsigned long long int offset, ut64 *size);
-bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type);
+static RzType *type_parse_from_offset(Context *ctx, ut64 offset, ut64 *size);
+static bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type);
 static bool struct_union_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type);
 
 /* For some languages linkage name is more informative like C++,
@@ -618,7 +618,7 @@ end:
 	return ret;
 }
 
-static RzType *type_parse_from_offset(Context *ctx, const ut64 offset, ut64 *size) {
+static RzType *type_parse_from_offset(Context *ctx, ut64 offset, ut64 *size) {
 	SetU *visited = set_u_new();
 	if (!visited) {
 		return NULL;
@@ -805,7 +805,7 @@ static RzTypeEnumCase *enumerator_parse(Context *ctx, RzBinDwarfDie *die, RzType
 	return result;
 }
 
-bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type) {
+static bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type) {
 	if (!die->has_children) {
 		return false;
 	}
@@ -869,8 +869,11 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 	}
 }
 
-RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
+static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
+	if (!location) {
+		return NULL;
+	}
 	location->kind = RzBinDwarfLocationKind_LOCLIST;
 	if (loclist->has_location) {
 		location->loclist = loclist;
@@ -1048,7 +1051,7 @@ static inline const char *function_name(RzAnalysisDwarfFunction *f, enum DW_LANG
 	return prefer_linkage_name(lang) ? (f->demangle_name ? (const char *)(f->demangle_name) : (f->link_name ? f->link_name : f->name)) : f->name;
 }
 
-void function_free(RzAnalysisDwarfFunction *f) {
+static void function_free(RzAnalysisDwarfFunction *f) {
 	if (!f) {
 		return;
 	}
@@ -1358,7 +1361,7 @@ rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
 	ht_up_foreach(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
 }
 
-void htup_function_free(HtUPKv *kv) {
+static void htup_function_free(HtUPKv *kv) {
 	if (!kv) {
 		return;
 	}

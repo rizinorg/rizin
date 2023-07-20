@@ -1636,7 +1636,7 @@ typedef struct {
 	// appropriately when popping.
 	ut64 addr_mask;
 	// The stack.
-	RzVector /*<StackValue>*/ stack;
+	RzVector /*<RzBinDwarfValue>*/ stack;
 
 	// The next operation to decode and evaluate.
 	RzBuffer *pc;
@@ -1658,9 +1658,6 @@ typedef struct {
 		EvaluationResult_REQUIRES_RESOLVE,
 	} kind;
 	union {
-		RzBinDwarfValue stack_value;
-		RzBinDwarfPiece piece;
-		struct rz_bin_dwarf_location_t *location;
 		struct {
 			ut64 address;
 			ut8 size;
@@ -1732,6 +1729,7 @@ typedef struct rz_bin_dwarf_location_t {
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNULL RzBuffer *byte_code, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self);
+RZ_API void rz_bin_dwarf_evaluation_result_free(RZ_OWN RzBinDwarfEvaluationResult *self);
 RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self, RZ_BORROW RZ_NONNULL RzBinDwarfEvaluationResult *out);
 RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self);
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block, RZ_BORROW RZ_NULLABLE const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
