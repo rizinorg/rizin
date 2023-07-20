@@ -592,7 +592,7 @@ static const char *dwarf_op[] = {
 };
 
 #define DW_ENUM_TO_STRING(to_string_const, index) \
-	if ((index) > 0 && (index) < RZ_ARRAY_SIZE((to_string_const))) { \
+	if ((index) >= 0 && (index) < RZ_ARRAY_SIZE((to_string_const))) { \
 		return (to_string_const)[(index)]; \
 	}
 
