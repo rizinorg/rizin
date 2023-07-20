@@ -1207,32 +1207,31 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAna
 	st64 off = dw_var->location->register_offset.offset;
 	if (!strcmp(a->cpu, "x86")) {
 		if (a->bits == 64) {
-			if (reg == 6) {
+			if (reg == 6) { // 6 = rbp
 				rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
 				return true;
 			}
-			if (reg == 7) {
+			if (reg == 7) { // 7 = rsp
 				rz_analysis_var_storage_init_stack(&var->storage, off);
 				return true;
 			}
-
 		} else {
-			if (reg == 4) {
+			if (reg == 4) { // 4 = esp
 				rz_analysis_var_storage_init_stack(&var->storage, off);
 				return true;
 			}
-			if (reg == 5) {
+			if (reg == 5) { // 5 = ebp
 				rz_analysis_var_storage_init_stack(&var->storage, off - f->bp_off);
 				return true;
 			}
 		}
 	} else if (!strcmp(a->cpu, "ppc")) {
-		if (reg == 1) {
+		if (reg == 1) { // 1 = r1
 			rz_analysis_var_storage_init_stack(&var->storage, off);
 			return true;
 		}
 	} else if (!strcmp(a->cpu, "tricore")) {
-		if (reg == 30) {
+		if (reg == 30) { // 30 = a14
 			rz_analysis_var_storage_init_stack(&var->storage, off);
 			return true;
 		}

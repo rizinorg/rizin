@@ -377,265 +377,10 @@ static const char *dwarf_unit_types[] = {
 	[DW_UT_split_type] = "DW_UT_split_type",
 };
 
-RZ_API const char *rz_bin_dwarf_tag(enum DW_TAG tag) {
-	if (tag < RZ_ARRAY_SIZE(dwarf_tag_name_encodings)) {
-		return dwarf_tag_name_encodings[tag];
-	}
-
-	switch (tag) {
-		DW_(DW_TAG_MIPS_loop);
-		DW_(DW_TAG_HP_array_descriptor);
-		DW_(DW_TAG_HP_Bliss_field);
-		DW_(DW_TAG_HP_Bliss_field_set);
-		DW_(DW_TAG_format_label);
-		DW_(DW_TAG_function_template);
-		DW_(DW_TAG_class_template);
-		DW_(DW_TAG_GNU_BINCL);
-		DW_(DW_TAG_GNU_EINCL);
-		DW_(DW_TAG_GNU_template_template_param);
-		DW_(DW_TAG_GNU_template_parameter_pack);
-		DW_(DW_TAG_GNU_formal_parameter_pack);
-		DW_(DW_TAG_GNU_call_site);
-		DW_(DW_TAG_GNU_call_site_parameter);
-		DW_(DW_TAG_APPLE_property);
-		DW_(DW_TAG_SUN_function_template);
-		DW_(DW_TAG_SUN_class_template);
-		DW_(DW_TAG_SUN_struct_template);
-		DW_(DW_TAG_SUN_union_template);
-		DW_(DW_TAG_SUN_indirect_inheritance);
-		DW_(DW_TAG_SUN_codeflags);
-		DW_(DW_TAG_SUN_memop_info);
-		DW_(DW_TAG_SUN_omp_child_func);
-		DW_(DW_TAG_SUN_rtti_descriptor);
-		DW_(DW_TAG_SUN_dtor_info);
-		DW_(DW_TAG_SUN_dtor);
-		DW_(DW_TAG_SUN_f90_interface);
-		DW_(DW_TAG_SUN_fortran_vax_structure);
-		DW_(DW_TAG_ALTIUM_circ_type);
-		DW_(DW_TAG_ALTIUM_mwa_circ_type);
-		DW_(DW_TAG_ALTIUM_rev_carry_type);
-		DW_(DW_TAG_ALTIUM_rom);
-		DW_(DW_TAG_upc_shared_type);
-		DW_(DW_TAG_upc_strict_type);
-		DW_(DW_TAG_upc_relaxed_type);
-		DW_(DW_TAG_PGI_kanji_type);
-		DW_(DW_TAG_PGI_interface_block);
-		DW_(DW_TAG_BORLAND_property);
-		DW_(DW_TAG_BORLAND_Delphi_string);
-		DW_(DW_TAG_BORLAND_Delphi_dynamic_array);
-		DW_(DW_TAG_BORLAND_Delphi_set);
-		DW_(DW_TAG_BORLAND_Delphi_variant);
-	default:
-		return NULL;
-	};
-}
-
-RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code) {
-	if (attr_code < RZ_ARRAY_SIZE(dwarf_attr_encodings)) {
-		return dwarf_attr_encodings[attr_code];
-	}
-
-	// the below codes are much sparser, so putting them in an array would require a lot of
-	// unused memory
-	switch (attr_code) {
-		DW_(DW_AT_MIPS_fde);
-		DW_(DW_AT_MIPS_loop_begin);
-		DW_(DW_AT_MIPS_tail_loop_begin);
-		DW_(DW_AT_MIPS_epilog_begin);
-		DW_(DW_AT_MIPS_loop_unroll_factor);
-		DW_(DW_AT_MIPS_software_pipeline_depth);
-		DW_(DW_AT_MIPS_linkage_name);
-		DW_(DW_AT_MIPS_stride);
-		DW_(DW_AT_MIPS_abstract_name);
-		DW_(DW_AT_MIPS_clone_origin);
-		DW_(DW_AT_MIPS_has_inlines);
-		DW_(DW_AT_MIPS_stride_byte);
-		DW_(DW_AT_MIPS_stride_elem);
-		DW_(DW_AT_MIPS_ptr_dopetype);
-		DW_(DW_AT_MIPS_allocatable_dopetype);
-		DW_(DW_AT_MIPS_assumed_shape_dopetype);
-		DW_(DW_AT_MIPS_assumed_size);
-		DW_(DW_AT_sf_names);
-		DW_(DW_AT_src_info);
-		DW_(DW_AT_mac_info);
-		DW_(DW_AT_src_coords);
-		DW_(DW_AT_body_begin);
-		DW_(DW_AT_body_end);
-		DW_(DW_AT_GNU_vector);
-		DW_(DW_AT_GNU_guarded_by);
-		DW_(DW_AT_GNU_pt_guarded_by);
-		DW_(DW_AT_GNU_guarded);
-		DW_(DW_AT_GNU_pt_guarded);
-		DW_(DW_AT_GNU_locks_excluded);
-		DW_(DW_AT_GNU_exclusive_locks_required);
-		DW_(DW_AT_GNU_shared_locks_required);
-		DW_(DW_AT_GNU_odr_signature);
-		DW_(DW_AT_GNU_template_name);
-		DW_(DW_AT_GNU_call_site_value);
-		DW_(DW_AT_GNU_call_site_data_value);
-		DW_(DW_AT_GNU_call_site_target);
-		DW_(DW_AT_GNU_call_site_target_clobbered);
-		DW_(DW_AT_GNU_tail_call);
-		DW_(DW_AT_GNU_all_tail_call_sites);
-		DW_(DW_AT_GNU_all_call_sites);
-		DW_(DW_AT_GNU_all_source_call_sites);
-		DW_(DW_AT_GNU_macros);
-		DW_(DW_AT_GNU_deleted);
-		DW_(DW_AT_GNU_dwo_name);
-		DW_(DW_AT_GNU_dwo_id);
-		DW_(DW_AT_GNU_ranges_base);
-		DW_(DW_AT_GNU_addr_base);
-		DW_(DW_AT_GNU_pubnames);
-		DW_(DW_AT_GNU_pubtypes);
-		DW_(DW_AT_GNU_discriminator);
-		DW_(DW_AT_GNU_locviews);
-		DW_(DW_AT_GNU_entry_view);
-		DW_(DW_AT_SUN_template);
-		DW_(DW_AT_SUN_alignment);
-		DW_(DW_AT_SUN_vtable);
-		DW_(DW_AT_SUN_count_guarantee);
-		DW_(DW_AT_SUN_command_line);
-		DW_(DW_AT_SUN_vbase);
-		DW_(DW_AT_SUN_compile_options);
-		DW_(DW_AT_SUN_language);
-		DW_(DW_AT_SUN_browser_file);
-		DW_(DW_AT_SUN_vtable_abi);
-		DW_(DW_AT_SUN_func_offsets);
-		DW_(DW_AT_SUN_cf_kind);
-		DW_(DW_AT_SUN_vtable_index);
-		DW_(DW_AT_SUN_omp_tpriv_addr);
-		DW_(DW_AT_SUN_omp_child_func);
-		DW_(DW_AT_SUN_func_offset);
-		DW_(DW_AT_SUN_memop_type_ref);
-		DW_(DW_AT_SUN_profile_id);
-		DW_(DW_AT_SUN_memop_signature);
-		DW_(DW_AT_SUN_obj_dir);
-		DW_(DW_AT_SUN_obj_file);
-		DW_(DW_AT_SUN_original_name);
-		DW_(DW_AT_SUN_hwcprof_signature);
-		DW_(DW_AT_SUN_amd64_parmdump);
-		DW_(DW_AT_SUN_part_link_name);
-		DW_(DW_AT_SUN_link_name);
-		DW_(DW_AT_SUN_pass_with_const);
-		DW_(DW_AT_SUN_return_with_const);
-		DW_(DW_AT_SUN_import_by_name);
-		DW_(DW_AT_SUN_f90_pointer);
-		DW_(DW_AT_SUN_pass_by_ref);
-		DW_(DW_AT_SUN_f90_allocatable);
-		DW_(DW_AT_SUN_f90_assumed_shape_array);
-		DW_(DW_AT_SUN_c_vla);
-		DW_(DW_AT_SUN_return_value_ptr);
-		DW_(DW_AT_SUN_dtor_start);
-		DW_(DW_AT_SUN_dtor_length);
-		DW_(DW_AT_SUN_dtor_state_initial);
-		DW_(DW_AT_SUN_dtor_state_final);
-		DW_(DW_AT_SUN_dtor_state_deltas);
-		DW_(DW_AT_SUN_import_by_lname);
-		DW_(DW_AT_SUN_f90_use_only);
-		DW_(DW_AT_SUN_namelist_spec);
-		DW_(DW_AT_SUN_is_omp_child_func);
-		DW_(DW_AT_SUN_fortran_main_alias);
-		DW_(DW_AT_SUN_fortran_based);
-		DW_(DW_AT_ALTIUM_loclist);
-		DW_(DW_AT_use_GNAT_descriptive_type);
-		DW_(DW_AT_GNAT_descriptive_type);
-		DW_(DW_AT_GNU_numerator);
-		DW_(DW_AT_GNU_denominator);
-		DW_(DW_AT_GNU_bias);
-		DW_(DW_AT_upc_threads_scaled);
-		DW_(DW_AT_PGI_lbase);
-		DW_(DW_AT_PGI_soffset);
-		DW_(DW_AT_PGI_lstride);
-		DW_(DW_AT_BORLAND_property_read);
-		DW_(DW_AT_BORLAND_property_write);
-		DW_(DW_AT_BORLAND_property_implements);
-		DW_(DW_AT_BORLAND_property_index);
-		DW_(DW_AT_BORLAND_property_default);
-		DW_(DW_AT_BORLAND_Delphi_unit);
-		DW_(DW_AT_BORLAND_Delphi_class);
-		DW_(DW_AT_BORLAND_Delphi_record);
-		DW_(DW_AT_BORLAND_Delphi_metaclass);
-		DW_(DW_AT_BORLAND_Delphi_constructor);
-		DW_(DW_AT_BORLAND_Delphi_destructor);
-		DW_(DW_AT_BORLAND_Delphi_anonymous_method);
-		DW_(DW_AT_BORLAND_Delphi_interface);
-		DW_(DW_AT_BORLAND_Delphi_ABI);
-		DW_(DW_AT_BORLAND_Delphi_return);
-		DW_(DW_AT_BORLAND_Delphi_frameptr);
-		DW_(DW_AT_BORLAND_closure);
-		DW_(DW_AT_LLVM_include_path);
-		DW_(DW_AT_LLVM_config_macros);
-		DW_(DW_AT_LLVM_isysroot);
-		DW_(DW_AT_APPLE_optimized);
-		DW_(DW_AT_APPLE_flags);
-		DW_(DW_AT_APPLE_isa);
-		DW_(DW_AT_APPLE_block);
-		DW_(DW_AT_APPLE_major_runtime_vers);
-		DW_(DW_AT_APPLE_runtime_class);
-		DW_(DW_AT_APPLE_omit_frame_ptr);
-		DW_(DW_AT_APPLE_property_name);
-		DW_(DW_AT_APPLE_property_getter);
-		DW_(DW_AT_APPLE_property_setter);
-		DW_(DW_AT_APPLE_property_attribute);
-		DW_(DW_AT_APPLE_objc_complete_type);
-		DW_(DW_AT_APPLE_property);
-	default:
-		return NULL;
-	}
-}
-
-RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code) {
-	if (form_code < RZ_ARRAY_SIZE(dwarf_attr_form_encodings)) {
-		return dwarf_attr_form_encodings[form_code];
-	}
-	switch (form_code) {
-		DW_(DW_FORM_GNU_addr_index);
-		DW_(DW_FORM_GNU_str_index);
-		DW_(DW_FORM_GNU_ref_alt);
-		DW_(DW_FORM_GNU_strp_alt);
-	default: return NULL;
-	}
-}
-
-RZ_API const char *rz_bin_dwarf_unit_type(enum DW_UT unit_type) {
-	if (!unit_type || unit_type > DW_UT_split_type) {
-		return NULL;
-	}
-	return dwarf_unit_types[unit_type];
-}
-
-RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang) {
-	if (lang <= RZ_ARRAY_SIZE(dwarf_langs)) {
-		return dwarf_langs[lang];
-	}
-
-	switch (lang) {
-		DW_(DW_LANG_Mips_Assembler);
-		DW_(DW_LANG_GOOGLE_RenderScript);
-		DW_(DW_LANG_SUN_Assembler);
-		DW_(DW_LANG_ALTIUM_Assembler);
-		DW_(DW_LANG_BORLAND_Delphi);
-	default: return NULL;
-	}
-}
-
-RZ_API const char *rz_bin_dwarf_lang_for_demangle(enum DW_LANG lang) {
-	if (!(lang >= RZ_ARRAY_SIZE(dwarf_langs_for_demangle)))
-		return dwarf_langs_for_demangle[lang];
-	return NULL;
-}
-
 static const char *dwarf_children[] = {
 	[DW_CHILDREN_yes] = "DW_CHILDREN_yes",
 	[DW_CHILDREN_no] = "DW_CHILDREN_no",
 };
-
-RZ_API const char *rz_bin_dwarf_children(enum DW_CHILDREN children) {
-	if (children >= RZ_ARRAY_SIZE(dwarf_children)) {
-		return NULL;
-	}
-	return dwarf_children[children];
-}
 
 static const char *dwarf_lns[] = {
 	[DW_LNS_copy] = "DW_LNS_copy",
@@ -652,26 +397,12 @@ static const char *dwarf_lns[] = {
 	[DW_LNS_set_isa] = "DW_LNS_set_isa",
 };
 
-RZ_API const char *rz_bin_dwarf_lns(enum DW_LNS lns) {
-	if (lns >= RZ_ARRAY_SIZE(dwarf_lns)) {
-		return NULL;
-	}
-	return dwarf_lns[lns];
-}
-
 static const char *dwarf_lne[] = {
 	[DW_LNE_end_sequence] = "DW_LNE_end_sequence",
 	[DW_LNE_set_address] = "DW_LNE_set_address",
 	[DW_LNE_define_file] = "DW_LNE_define_file",
 	[DW_LNE_set_discriminator] = "DW_LNE_set_discriminator",
 };
-
-RZ_API const char *rz_bin_dwarf_lne(enum DW_LNE lne) {
-	if (lne >= RZ_ARRAY_SIZE(dwarf_lne)) {
-		return NULL;
-	}
-	return dwarf_lne[lne];
-}
 
 static const char *dwarf_lnct[] = {
 	[DW_LNCT_path] = "DW_LNCT_path",
@@ -680,13 +411,6 @@ static const char *dwarf_lnct[] = {
 	[DW_LNCT_size] = "DW_LNCT_size",
 	[DW_LNCT_MD5] = "DW_LNCT_MD5",
 };
-
-RZ_API const char *rz_bin_dwarf_lnct(enum DW_LNCT lnct) {
-	if (lnct >= RZ_ARRAY_SIZE(dwarf_lnct)) {
-		return NULL;
-	}
-	return dwarf_lnct[lnct];
-}
 
 static const char *dwarf_op[] = {
 	[DW_OP_addr] = "DW_OP_addr",
@@ -867,11 +591,247 @@ static const char *dwarf_op[] = {
 	[DW_OP_WASM_location] = "DW_OP_WASM_location",
 };
 
-RZ_API const char *rz_bin_dwarf_op(enum DW_OP op) {
-	if (op >= RZ_ARRAY_SIZE(dwarf_op)) {
+#define DW_ENUM_TO_STRING(to_string_const, index) \
+	if ((index) > 0 && (index) < RZ_ARRAY_SIZE((to_string_const))) { \
+		return (to_string_const)[(index)]; \
+	}
+
+#define DW_ENUM_TO_STRING_IMPL(name, dw_enum, to_string_const) \
+	RZ_API const char *rz_bin_dwarf_##name(dw_enum index) { \
+		DW_ENUM_TO_STRING(to_string_const, index) \
+		return NULL; \
+	}
+
+DW_ENUM_TO_STRING_IMPL(unit_type, enum DW_UT, dwarf_unit_types);
+DW_ENUM_TO_STRING_IMPL(lang_for_demangle, enum DW_LANG, dwarf_langs_for_demangle);
+DW_ENUM_TO_STRING_IMPL(children, enum DW_CHILDREN, dwarf_children);
+DW_ENUM_TO_STRING_IMPL(lns, enum DW_LNS, dwarf_lns);
+DW_ENUM_TO_STRING_IMPL(lne, enum DW_LNE, dwarf_lne);
+DW_ENUM_TO_STRING_IMPL(lnct, enum DW_LNCT, dwarf_lnct);
+DW_ENUM_TO_STRING_IMPL(op, enum DW_OP, dwarf_op);
+
+RZ_API const char *rz_bin_dwarf_tag(enum DW_TAG tag) {
+	DW_ENUM_TO_STRING(dwarf_tag_name_encodings, tag);
+	switch (tag) {
+		DW_(DW_TAG_MIPS_loop);
+		DW_(DW_TAG_HP_array_descriptor);
+		DW_(DW_TAG_HP_Bliss_field);
+		DW_(DW_TAG_HP_Bliss_field_set);
+		DW_(DW_TAG_format_label);
+		DW_(DW_TAG_function_template);
+		DW_(DW_TAG_class_template);
+		DW_(DW_TAG_GNU_BINCL);
+		DW_(DW_TAG_GNU_EINCL);
+		DW_(DW_TAG_GNU_template_template_param);
+		DW_(DW_TAG_GNU_template_parameter_pack);
+		DW_(DW_TAG_GNU_formal_parameter_pack);
+		DW_(DW_TAG_GNU_call_site);
+		DW_(DW_TAG_GNU_call_site_parameter);
+		DW_(DW_TAG_APPLE_property);
+		DW_(DW_TAG_SUN_function_template);
+		DW_(DW_TAG_SUN_class_template);
+		DW_(DW_TAG_SUN_struct_template);
+		DW_(DW_TAG_SUN_union_template);
+		DW_(DW_TAG_SUN_indirect_inheritance);
+		DW_(DW_TAG_SUN_codeflags);
+		DW_(DW_TAG_SUN_memop_info);
+		DW_(DW_TAG_SUN_omp_child_func);
+		DW_(DW_TAG_SUN_rtti_descriptor);
+		DW_(DW_TAG_SUN_dtor_info);
+		DW_(DW_TAG_SUN_dtor);
+		DW_(DW_TAG_SUN_f90_interface);
+		DW_(DW_TAG_SUN_fortran_vax_structure);
+		DW_(DW_TAG_ALTIUM_circ_type);
+		DW_(DW_TAG_ALTIUM_mwa_circ_type);
+		DW_(DW_TAG_ALTIUM_rev_carry_type);
+		DW_(DW_TAG_ALTIUM_rom);
+		DW_(DW_TAG_upc_shared_type);
+		DW_(DW_TAG_upc_strict_type);
+		DW_(DW_TAG_upc_relaxed_type);
+		DW_(DW_TAG_PGI_kanji_type);
+		DW_(DW_TAG_PGI_interface_block);
+		DW_(DW_TAG_BORLAND_property);
+		DW_(DW_TAG_BORLAND_Delphi_string);
+		DW_(DW_TAG_BORLAND_Delphi_dynamic_array);
+		DW_(DW_TAG_BORLAND_Delphi_set);
+		DW_(DW_TAG_BORLAND_Delphi_variant);
+	default:
+		return NULL;
+	};
+}
+
+RZ_API const char *rz_bin_dwarf_attr(enum DW_AT attr_code) {
+	DW_ENUM_TO_STRING(dwarf_attr_encodings, attr_code);
+	// the below codes are much sparser, so putting them in an array would require a lot of
+	// unused memory
+	switch (attr_code) {
+		DW_(DW_AT_MIPS_fde);
+		DW_(DW_AT_MIPS_loop_begin);
+		DW_(DW_AT_MIPS_tail_loop_begin);
+		DW_(DW_AT_MIPS_epilog_begin);
+		DW_(DW_AT_MIPS_loop_unroll_factor);
+		DW_(DW_AT_MIPS_software_pipeline_depth);
+		DW_(DW_AT_MIPS_linkage_name);
+		DW_(DW_AT_MIPS_stride);
+		DW_(DW_AT_MIPS_abstract_name);
+		DW_(DW_AT_MIPS_clone_origin);
+		DW_(DW_AT_MIPS_has_inlines);
+		DW_(DW_AT_MIPS_stride_byte);
+		DW_(DW_AT_MIPS_stride_elem);
+		DW_(DW_AT_MIPS_ptr_dopetype);
+		DW_(DW_AT_MIPS_allocatable_dopetype);
+		DW_(DW_AT_MIPS_assumed_shape_dopetype);
+		DW_(DW_AT_MIPS_assumed_size);
+		DW_(DW_AT_sf_names);
+		DW_(DW_AT_src_info);
+		DW_(DW_AT_mac_info);
+		DW_(DW_AT_src_coords);
+		DW_(DW_AT_body_begin);
+		DW_(DW_AT_body_end);
+		DW_(DW_AT_GNU_vector);
+		DW_(DW_AT_GNU_guarded_by);
+		DW_(DW_AT_GNU_pt_guarded_by);
+		DW_(DW_AT_GNU_guarded);
+		DW_(DW_AT_GNU_pt_guarded);
+		DW_(DW_AT_GNU_locks_excluded);
+		DW_(DW_AT_GNU_exclusive_locks_required);
+		DW_(DW_AT_GNU_shared_locks_required);
+		DW_(DW_AT_GNU_odr_signature);
+		DW_(DW_AT_GNU_template_name);
+		DW_(DW_AT_GNU_call_site_value);
+		DW_(DW_AT_GNU_call_site_data_value);
+		DW_(DW_AT_GNU_call_site_target);
+		DW_(DW_AT_GNU_call_site_target_clobbered);
+		DW_(DW_AT_GNU_tail_call);
+		DW_(DW_AT_GNU_all_tail_call_sites);
+		DW_(DW_AT_GNU_all_call_sites);
+		DW_(DW_AT_GNU_all_source_call_sites);
+		DW_(DW_AT_GNU_macros);
+		DW_(DW_AT_GNU_deleted);
+		DW_(DW_AT_GNU_dwo_name);
+		DW_(DW_AT_GNU_dwo_id);
+		DW_(DW_AT_GNU_ranges_base);
+		DW_(DW_AT_GNU_addr_base);
+		DW_(DW_AT_GNU_pubnames);
+		DW_(DW_AT_GNU_pubtypes);
+		DW_(DW_AT_GNU_discriminator);
+		DW_(DW_AT_GNU_locviews);
+		DW_(DW_AT_GNU_entry_view);
+		DW_(DW_AT_SUN_template);
+		DW_(DW_AT_SUN_alignment);
+		DW_(DW_AT_SUN_vtable);
+		DW_(DW_AT_SUN_count_guarantee);
+		DW_(DW_AT_SUN_command_line);
+		DW_(DW_AT_SUN_vbase);
+		DW_(DW_AT_SUN_compile_options);
+		DW_(DW_AT_SUN_language);
+		DW_(DW_AT_SUN_browser_file);
+		DW_(DW_AT_SUN_vtable_abi);
+		DW_(DW_AT_SUN_func_offsets);
+		DW_(DW_AT_SUN_cf_kind);
+		DW_(DW_AT_SUN_vtable_index);
+		DW_(DW_AT_SUN_omp_tpriv_addr);
+		DW_(DW_AT_SUN_omp_child_func);
+		DW_(DW_AT_SUN_func_offset);
+		DW_(DW_AT_SUN_memop_type_ref);
+		DW_(DW_AT_SUN_profile_id);
+		DW_(DW_AT_SUN_memop_signature);
+		DW_(DW_AT_SUN_obj_dir);
+		DW_(DW_AT_SUN_obj_file);
+		DW_(DW_AT_SUN_original_name);
+		DW_(DW_AT_SUN_hwcprof_signature);
+		DW_(DW_AT_SUN_amd64_parmdump);
+		DW_(DW_AT_SUN_part_link_name);
+		DW_(DW_AT_SUN_link_name);
+		DW_(DW_AT_SUN_pass_with_const);
+		DW_(DW_AT_SUN_return_with_const);
+		DW_(DW_AT_SUN_import_by_name);
+		DW_(DW_AT_SUN_f90_pointer);
+		DW_(DW_AT_SUN_pass_by_ref);
+		DW_(DW_AT_SUN_f90_allocatable);
+		DW_(DW_AT_SUN_f90_assumed_shape_array);
+		DW_(DW_AT_SUN_c_vla);
+		DW_(DW_AT_SUN_return_value_ptr);
+		DW_(DW_AT_SUN_dtor_start);
+		DW_(DW_AT_SUN_dtor_length);
+		DW_(DW_AT_SUN_dtor_state_initial);
+		DW_(DW_AT_SUN_dtor_state_final);
+		DW_(DW_AT_SUN_dtor_state_deltas);
+		DW_(DW_AT_SUN_import_by_lname);
+		DW_(DW_AT_SUN_f90_use_only);
+		DW_(DW_AT_SUN_namelist_spec);
+		DW_(DW_AT_SUN_is_omp_child_func);
+		DW_(DW_AT_SUN_fortran_main_alias);
+		DW_(DW_AT_SUN_fortran_based);
+		DW_(DW_AT_ALTIUM_loclist);
+		DW_(DW_AT_use_GNAT_descriptive_type);
+		DW_(DW_AT_GNAT_descriptive_type);
+		DW_(DW_AT_GNU_numerator);
+		DW_(DW_AT_GNU_denominator);
+		DW_(DW_AT_GNU_bias);
+		DW_(DW_AT_upc_threads_scaled);
+		DW_(DW_AT_PGI_lbase);
+		DW_(DW_AT_PGI_soffset);
+		DW_(DW_AT_PGI_lstride);
+		DW_(DW_AT_BORLAND_property_read);
+		DW_(DW_AT_BORLAND_property_write);
+		DW_(DW_AT_BORLAND_property_implements);
+		DW_(DW_AT_BORLAND_property_index);
+		DW_(DW_AT_BORLAND_property_default);
+		DW_(DW_AT_BORLAND_Delphi_unit);
+		DW_(DW_AT_BORLAND_Delphi_class);
+		DW_(DW_AT_BORLAND_Delphi_record);
+		DW_(DW_AT_BORLAND_Delphi_metaclass);
+		DW_(DW_AT_BORLAND_Delphi_constructor);
+		DW_(DW_AT_BORLAND_Delphi_destructor);
+		DW_(DW_AT_BORLAND_Delphi_anonymous_method);
+		DW_(DW_AT_BORLAND_Delphi_interface);
+		DW_(DW_AT_BORLAND_Delphi_ABI);
+		DW_(DW_AT_BORLAND_Delphi_return);
+		DW_(DW_AT_BORLAND_Delphi_frameptr);
+		DW_(DW_AT_BORLAND_closure);
+		DW_(DW_AT_LLVM_include_path);
+		DW_(DW_AT_LLVM_config_macros);
+		DW_(DW_AT_LLVM_isysroot);
+		DW_(DW_AT_APPLE_optimized);
+		DW_(DW_AT_APPLE_flags);
+		DW_(DW_AT_APPLE_isa);
+		DW_(DW_AT_APPLE_block);
+		DW_(DW_AT_APPLE_major_runtime_vers);
+		DW_(DW_AT_APPLE_runtime_class);
+		DW_(DW_AT_APPLE_omit_frame_ptr);
+		DW_(DW_AT_APPLE_property_name);
+		DW_(DW_AT_APPLE_property_getter);
+		DW_(DW_AT_APPLE_property_setter);
+		DW_(DW_AT_APPLE_property_attribute);
+		DW_(DW_AT_APPLE_objc_complete_type);
+		DW_(DW_AT_APPLE_property);
+	default:
 		return NULL;
 	}
-	return dwarf_op[op];
+}
+
+RZ_API const char *rz_bin_dwarf_form(enum DW_FORM form_code) {
+	DW_ENUM_TO_STRING(dwarf_attr_form_encodings, form_code);
+	switch (form_code) {
+		DW_(DW_FORM_GNU_addr_index);
+		DW_(DW_FORM_GNU_str_index);
+		DW_(DW_FORM_GNU_ref_alt);
+		DW_(DW_FORM_GNU_strp_alt);
+	default: return NULL;
+	}
+}
+
+RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang) {
+	DW_ENUM_TO_STRING(dwarf_langs, lang);
+	switch (lang) {
+		DW_(DW_LANG_Mips_Assembler);
+		DW_(DW_LANG_GOOGLE_RenderScript);
+		DW_(DW_LANG_SUN_Assembler);
+		DW_(DW_LANG_ALTIUM_Assembler);
+		DW_(DW_LANG_BORLAND_Delphi);
+	default: return NULL;
+	}
 }
 
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian) {
