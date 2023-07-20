@@ -2975,7 +2975,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 rm_idx = OPCOUNT() - 1;
 	ut32 rn_idx;
 	ut32 regs = 0;
-	bool wback = insn->detail->arm.writeback;
+	bool wback = insn->detail->writeback;
 	bool use_rm_as_wback_offset = false;
 	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
 
@@ -3145,7 +3145,7 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	bool wback = insn->detail->arm.writeback;
+	bool wback = insn->detail->writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
@@ -3234,7 +3234,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	bool wback = insn->detail->arm.writeback;
+	bool wback = insn->detail->writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
@@ -3269,7 +3269,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 rm_idx = OPCOUNT() - 1;
 	ut32 rn_idx;
 	ut32 regs = 0;
-	bool wback = insn->detail->arm.writeback;
+	bool wback = insn->detail->writeback;
 	bool use_rm_as_wback_offset = false;
 	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
 
@@ -3434,7 +3434,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 
-	bool wback = insn->detail->arm.writeback;
+	bool wback = insn->detail->writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
@@ -4018,7 +4018,6 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_PLD:
 	case ARM_INS_PLDW:
 	case ARM_INS_PLI:
-	case ARM_INS_YIELD:
 		// barriers/synchronization
 	case ARM_INS_DMB:
 	case ARM_INS_DSB:
