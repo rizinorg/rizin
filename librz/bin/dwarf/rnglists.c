@@ -32,10 +32,6 @@ RZ_IPI void Range_free(RzBinDwarfRange *self) {
 	free(self);
 }
 
-static void rz_vector_range_free(void *e) {
-	Range_free(e);
-}
-
 RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
 	RzBinDwarfRawRngListEntry entry = { 0 };
 	bool big_endian = encoding->big_endian;
@@ -99,10 +95,12 @@ RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBu
 	return true;
 }
 
-void RzBinDwarfRawRngListEntry_fini(RzBinDwarfRawRngListEntry *self) {}
+void RzBinDwarfRawRngListEntry_free(RzBinDwarfRawRngListEntry *self) {
+	free(self);
+}
 
 void RzBinDwarfRngList_free(RzBinDwarfRngList *self) {
-	rz_vector_fini(&self->raw_entries);
+	rz_pvector_fini(&self->raw_entries);
 	rz_pvector_fini(&self->entries);
 	free(self);
 }
@@ -204,25 +202,26 @@ bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, R
 static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
 	RzBinDwarfRngList *rnglist = RZ_NEW0(RzBinDwarfRngList);
 	rnglist->offset = rz_buf_tell(buffer);
-	rz_vector_init(&rnglist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawRngListEntry_fini, NULL);
-	rz_pvector_init(&rnglist->entries, rz_vector_range_free);
+	rz_pvector_init(&rnglist->raw_entries, (RzPVectorFree)RzBinDwarfRawRngListEntry_free);
+	rz_pvector_init(&rnglist->entries, (RzPVectorFree)Range_free);
 
 	while (true) {
-		RzBinDwarfRawRngListEntry raw_entry = { 0 };
+		RzBinDwarfRawRngListEntry *raw_entry = RZ_NEW0(RzBinDwarfRawRngListEntry);
+		GOTO_IF_FAIL(raw_entry, err1);
 		RzBinDwarfRange *range = NULL;
-		GOTO_IF_FAIL(RzBinDwarfRawRngListEntry_parse(&raw_entry, buffer, encoding, format), err1);
-		rz_vector_push(&rnglist->raw_entries, &raw_entry);
-		if (raw_entry.encoding == DW_RLE_end_of_list && !raw_entry.is_address_or_offset_pair) {
+		GOTO_IF_FAIL(RzBinDwarfRawRngListEntry_parse(raw_entry, buffer, encoding, format), err1);
+		rz_pvector_push(&rnglist->raw_entries, raw_entry);
+		if (raw_entry->encoding == DW_RLE_end_of_list && !raw_entry->is_address_or_offset_pair) {
 			break;
 		}
-		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &range), err2);
+		GOTO_IF_FAIL(convert_raw(self, raw_entry, &range), err2);
 		if (!range) {
 			continue;
 		}
 		rz_pvector_push(&rnglist->entries, range);
 		continue;
 	err1:
-		RzBinDwarfRawRngListEntry_fini(&raw_entry);
+		RzBinDwarfRawRngListEntry_free(raw_entry);
 		RzBinDwarfRngList_free(rnglist);
 		return false;
 	err2:

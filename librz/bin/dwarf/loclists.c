@@ -6,11 +6,12 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-void RzBinDwarfRawLocListEntry_fini(RzBinDwarfRawLocListEntry *self, void *user) {
+void RzBinDwarfRawLocListEntry_free(RzBinDwarfRawLocListEntry *self) {
 	if (!self) {
 		return;
 	}
 	RzBinDwarfBlock_fini(&self->address_or_offset_pair.data);
+	free(self);
 }
 
 void RzBinDwarfLocationListEntry_fini(RzBinDwarfLocationListEntry *self) {
@@ -209,7 +210,7 @@ void loclist_free(RzBinDwarfLocList *self) {
 	if (!self) {
 		return;
 	}
-	rz_vector_fini(&self->raw_entries);
+	rz_pvector_fini(&self->raw_entries);
 	rz_pvector_fini(&self->entries);
 	free(self);
 }
@@ -217,25 +218,26 @@ void loclist_free(RzBinDwarfLocList *self) {
 static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfLocListsFormat format) {
 	RzBinDwarfLocList *loclist = RZ_NEW0(RzBinDwarfLocList);
 	loclist->offset = rz_buf_tell(buffer);
-	rz_vector_init(&loclist->raw_entries, sizeof(RzBinDwarfRawLocListEntry), (RzVectorFree)RzBinDwarfRawLocListEntry_fini, NULL);
+	rz_pvector_init(&loclist->raw_entries, (RzPVectorFree)RzBinDwarfRawLocListEntry_free);
 	rz_pvector_init(&loclist->entries, (RzPVectorFree)RzBinDwarfLocationListEntry_fini);
 	while (true) {
-		RzBinDwarfRawLocListEntry raw_entry = { 0 };
+		RzBinDwarfRawLocListEntry *raw_entry = RZ_NEW0(RzBinDwarfRawLocListEntry);
+		GOTO_IF_FAIL(raw_entry, err1);
 		RzBinDwarfLocationListEntry *entry = NULL;
-		GOTO_IF_FAIL(RawLocListEntry_parse(&raw_entry, buffer, encoding, format), err1);
-		rz_vector_push(&loclist->raw_entries, &raw_entry);
-		if (raw_entry.encoding == DW_LLE_end_of_list && !raw_entry.is_address_or_offset_pair) {
+		GOTO_IF_FAIL(RawLocListEntry_parse(raw_entry, buffer, encoding, format), err1);
+		rz_pvector_push(&loclist->raw_entries, raw_entry);
+		if (raw_entry->encoding == DW_LLE_end_of_list && !raw_entry->is_address_or_offset_pair) {
 			break;
 		}
 
-		GOTO_IF_FAIL(convert_raw(self, &raw_entry, &entry), err2);
+		GOTO_IF_FAIL(convert_raw(self, raw_entry, &entry), err2);
 		if (!entry) {
 			continue;
 		}
 		rz_pvector_push(&loclist->entries, entry);
 		continue;
 	err1:
-		RzBinDwarfRawLocListEntry_fini(&raw_entry, NULL);
+		RzBinDwarfRawLocListEntry_free(raw_entry);
 		loclist_free(loclist);
 		return false;
 	err2:
