@@ -1737,7 +1737,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	int n, ret;
 	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (RZ_STR_ISNOTEMPTY(a->cpu)) {
-		if (strstr(a->cpu, "cortex")) {
+		if (strstr(a->cpu, "cortexm") || strstr(a->cpu, "cortex-m")) {
 			mode |= CS_MODE_MCLASS;
 		}
 		if (a->bits != 64 && strstr(a->cpu, "v8")) {

@@ -102,7 +102,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	if (a->cpu) {
-		if (strstr(a->cpu, "cortex")) {
+		if (strstr(a->cpu, "cortexm") || strstr(a->cpu, "cortex-m")) {
 			mode |= CS_MODE_MCLASS;
 		}
 		if (a->bits != 64) {
@@ -298,7 +298,7 @@ static char *mnemonics(RzAsm *a, int id, bool json) {
 RzAsmPlugin rz_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = "v8,cortex,arm1176,cortexA72,cortexA8",
+	.cpus = "v8,cortexm,arm1176,cortexA72,cortexA8",
 	.platforms = "bcm2835,omap3430",
 	.features = "v8",
 	.license = "BSD",
