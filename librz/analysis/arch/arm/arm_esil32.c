@@ -648,8 +648,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					int disp = MEMDISP(2);
 					char sign = disp >= 0 ? '+' : '-';
 					disp = disp >= 0 ? disp : -disp;
-					rz_strbuf_appendf(&op->esil, "%s,%d,%s,%c,0xffffffff,&,=[4],%s,4,%d,+,%s,%c,0xffffffff,&,=[4]",
-						REG(0), disp, MEMBASE(2), sign, REG(1), disp, MEMBASE(2), sign);
+					rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[4],%s,4,%s,+,0xffffffff,&,=[4]",
+						REG(0), MEMBASE(2), REG(1), MEMBASE(2));
 					if (insn->detail->writeback) {
 						rz_strbuf_appendf(&op->esil, ",%d,%s,%c,%s,=",
 							disp, MEMBASE(2), sign, MEMBASE(2));
