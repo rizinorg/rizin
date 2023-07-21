@@ -32,11 +32,10 @@ static bool print_flag_json(RzFlagItem *flag, void *user) {
 	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
 		return true;
 	}
+	const char *realname = RZ_STR_ISEMPTY(flag->realname) ? flag->name : flag->realname;
 	pj_o(u->pj);
 	pj_ks(u->pj, "name", flag->name);
-	if (flag->name != flag->realname) {
-		pj_ks(u->pj, "realname", flag->realname);
-	}
+	pj_ks(u->pj, "realname", realname);
 	pj_ki(u->pj, "size", flag->size);
 	if (flag->alias) {
 		pj_ks(u->pj, "alias", flag->alias);
@@ -107,7 +106,8 @@ static bool print_flag_table(RzFlagItem *flag, void *user) {
 	}
 	if (!RZ_STR_ISEMPTY(flag->name)) {
 		const char *spaceName = (flag->space && flag->space->name) ? flag->space->name : "";
-		rz_table_add_rowf(u->tbl, "Xdss", flag->offset, flag->size, spaceName, flag->name);
+		const char *realname = RZ_STR_ISEMPTY(flag->realname) ? flag->name : flag->realname;
+		rz_table_add_rowf(u->tbl, "Xdsss", flag->offset, flag->size, spaceName, flag->name, realname);
 	}
 	return true;
 }
@@ -140,7 +140,7 @@ static void flag_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		u.tbl = state->d.t;
-		rz_cmd_state_output_set_columnsf(state, "Xdss", "addr", "size", "space", "name");
+		rz_cmd_state_output_set_columnsf(state, "Xdsss", "addr", "size", "space", "name", "realname");
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_table, &u);
 		break;
 	default:
