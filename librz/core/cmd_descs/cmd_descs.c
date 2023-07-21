@@ -17799,7 +17799,8 @@ static const RzCmdDescDetailEntry grep_Columns_detail_entries[] = {
 static const RzCmdDescDetailEntry grep_Examples_detail_entries[] = {
 	{ .text = "i", .arg_str = "~:0", .comment = "Show first line of 'i' output" },
 	{ .text = "i", .arg_str = "~:-2..", .comment = "Show from the second-last line to the last line of 'i' output" },
-	{ .text = "i", .arg_str = "~:0..3", .comment = "Show first three lines of 'i' output" },
+	{ .text = "i", .arg_str = "~:..3", .comment = "Show first three lines of 'i' output" },
+	{ .text = "i", .arg_str = "~:2..5", .comment = "Show three lines of 'i' output starting from 2nd line" },
 	{ .text = "pd", .arg_str = "~mov", .comment = "Disasm and grep for mov" },
 	{ .text = "pi", .arg_str = "~[0]", .comment = "Show only opcode" },
 	{ .text = "i", .arg_str = "~0x400$", .comment = "Show lines ending with 0x400" },
