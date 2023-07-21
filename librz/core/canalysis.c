@@ -5123,7 +5123,10 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		ut64 addr = rz_analysis_var_addr(var);
+		// rz_analysis_var_addr does not work when debugging
+		const char *regname = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+		ut64 stack = rz_core_reg_getv_by_role_or_name(core, regname);
+		ut64 addr = stack + var->fcn->bp_off + var->storage.stack_off;
 		char *r;
 		if (usePxr) {
 			// TODO: convert to API
