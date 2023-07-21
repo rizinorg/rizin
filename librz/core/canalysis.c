@@ -5580,7 +5580,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 	sdb_free(db);
 }
 
-RZ_API void rz_core_analysis_cc_init(RzCore *core) {
+RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const char *path, RZ_NULLABLE const char *homepath) {
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	Sdb *cc = core->analysis->sdb_cc;
 	if (!strcmp(analysis_arch, "null")) {
@@ -5589,14 +5589,10 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		return;
 	}
 
-	int bits = core->analysis->bits;
-	char *types_dir = rz_path_system(RZ_SDB_TYPES);
-	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
 	char buf[40];
-	char *dbpath = rz_file_path_join(types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
-	char *dbhomepath = rz_file_path_join(home_types_dir, rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
-	free(types_dir);
-	free(home_types_dir);
+	int bits = core->analysis->bits;
+	char *dbpath = rz_file_path_join(path ? path : "", rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
+	char *dbhomepath = rz_file_path_join(homepath ? homepath : "", rz_strf(buf, "cc-%s-%d.sdb", analysis_arch, bits));
 
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {
@@ -5615,6 +5611,9 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		free(cc->path);
 		cc->path = strdup(dbhomepath);
 	}
+	free(dbpath);
+	free(dbhomepath);
+
 	// same as "tcc `arcc`"
 	char *s = rz_reg_profile_to_cc(core->analysis->reg);
 	if (s && !rz_analysis_cc_set(core->analysis, s)) {
@@ -5623,11 +5622,17 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		RZ_LOG_ERROR("core: cannot derive CC from reg profile.\n");
 	}
 	free(s);
-	if (sdb_isempty(core->analysis->sdb_cc)) {
+	if (sdb_isempty(cc)) {
 		RZ_LOG_WARN("core: missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
 	}
-	free(dbpath);
-	free(dbhomepath);
+}
+
+RZ_API void rz_core_analysis_cc_init(RzCore *core) {
+	char *types_dir = rz_path_system(RZ_SDB_TYPES);
+	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
+	rz_core_analysis_cc_init_by_path(core, types_dir, home_types_dir);
+	free(types_dir);
+	free(home_types_dir);
 }
 
 /**
