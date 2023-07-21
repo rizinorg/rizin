@@ -159,7 +159,11 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
 			}
 			pj_ki(pj, "scale", op->mem.scale);
+#if CS_API_MAJOR >= 6
+			pj_ki(pj, "disp", (op->subtracted ? -op->mem.disp : op->mem.disp));
+#else
 			pj_ki(pj, "disp", op->mem.disp);
+#endif
 			break;
 		case ARM_OP_FP:
 			pj_ks(pj, "type", "fp");
@@ -1585,7 +1589,11 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 #if CS_API_MAJOR > 3
 			val->mul = armop.mem.scale << armop.mem.lshift;
 #endif
+#if CS_API_MAJOR >= 6
+			val->delta = armop.subtracted ? -armop.mem.disp : armop.mem.disp;
+#else
 			val->delta = armop.mem.disp;
+#endif
 			break;
 		case ARM_OP_IMM:
 			val->type = RZ_ANALYSIS_VAL_IMM;
