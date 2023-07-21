@@ -32,15 +32,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd v8 and cortex
+NAME=pd V8 and Cortex-M profiles 
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
 echo
 pad fff7c0ea@e:asm.cpu=v8
-pad fff7c0ea@e:asm.cpu=cortex
+pad fff7c0ea@e:asm.cpu=cortexm
 pad fff7c0ea@e:asm.cpu=v8
-pad fff7c0ea@e:asm.cpu=cortex
+pad fff7c0ea@e:asm.cpu=cortexm
 pad fff7c0ea@e:asm.cpu=v8
 pad fff7c0ea@e:asm.cpu=
 pad fff7c0ea@e:asm.cpu=tetris
