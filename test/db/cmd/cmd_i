@@ -1288,12 +1288,12 @@ pthread_mutex_unlock
 0x000149a4 2 typeinfo name for unsigned long
 0x000149a8 3 typeinfo name for unsigned long*
 0x000149ac 4 typeinfo name for unsigned long const*
-0x000149b0 2 typeinfo name for long long
-0x000149b4 3 typeinfo name for long long*
-0x000149b8 4 typeinfo name for long long const*
-0x000149bc 2 typeinfo name for unsigned long long
-0x000149c0 3 typeinfo name for unsigned long long*
-0x000149c4 4 typeinfo name for unsigned long long const*
+0x000149b0 2 typeinfo name for int64_t
+0x000149b4 3 typeinfo name for int64_t*
+0x000149b8 4 typeinfo name for int64_t const*
+0x000149bc 2 typeinfo name for uint64_t
+0x000149c0 3 typeinfo name for uint64_t*
+0x000149c4 4 typeinfo name for uint64_t const*
 0x000149c8 2 typeinfo name for float
 0x000149cc 3 typeinfo name for float*
 0x000149d0 4 typeinfo name for float const*
@@ -1337,12 +1337,12 @@ pthread_mutex_unlock
 0x00016938 16 typeinfo for float const*
 0x00016958 8 typeinfo for float
 0x00016948 16 typeinfo for float*
-0x00016960 16 typeinfo for unsigned long long const*
-0x00016980 8 typeinfo for unsigned long long
-0x00016970 16 typeinfo for unsigned long long*
-0x00016988 16 typeinfo for long long const*
-0x000169a8 8 typeinfo for long long
-0x00016998 16 typeinfo for long long*
+0x00016960 16 typeinfo for uint64_t const*
+0x00016980 8 typeinfo for uint64_t
+0x00016970 16 typeinfo for uint64_t*
+0x00016988 16 typeinfo for int64_t const*
+0x000169a8 8 typeinfo for int64_t
+0x00016998 16 typeinfo for int64_t*
 0x000169b0 16 typeinfo for unsigned long const*
 0x000169d0 8 typeinfo for unsigned long
 0x000169c0 16 typeinfo for unsigned long*
