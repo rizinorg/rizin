@@ -990,22 +990,30 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		case ARM_INS_CMN:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=,31,$c,cf,:=,31,$o,vf,:=");
 			break;
-		case ARM_INS_MOV:
+		case ARM_INS_MOV: {
+			// Move has already set the dest register at this point.
+			// But mind that ARG() always includes the shift of the source register.
+			// If the source register is the same as the destination register it would shift the value twice.
+			// We need to prepend the move (already in op->esil) to the flag check.
+			char move_esil[64];
 			switch (SHIFTTYPE(1)) {
 			default:
 				break;
 			case ARM_SFT_LSL:
 			case ARM_SFT_LSL_REG:
-				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,32,-,%s,>>,cf,:=,}", ARG(1), ARG(1), ARG(0));
+				rz_strf(move_esil, "%s", rz_strbuf_drain_nofree(&op->esil));
+				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,32,-,%s,>>,cf,:=,},%s", ARG(1), ARG(1), ARG(0), move_esil);
 				break;
 			case ARM_SFT_LSR:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ASR:
 			case ARM_SFT_ASR_REG:
-				rz_strbuf_appendf(&op->esil, ",%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,}", ARG(1), ARG(0), ARG(1));
+				rz_strf(move_esil, "%s", rz_strbuf_drain_nofree(&op->esil));
+				rz_strbuf_appendf(&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<,&,!,!,cf,:=,},%s", ARG(1), ARG(0), ARG(1), move_esil);
 				break;
 			}
-			// fallthrough
+		}
+		// fallthrough
 		default:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=");
 		}
