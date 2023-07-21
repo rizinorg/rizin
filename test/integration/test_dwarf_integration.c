@@ -164,7 +164,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 		.line_mask = RZ_BIN_DWARF_LINE_INFO_MASK_LINES,
 		.flags = RZ_BIN_DWARF_PARSE_ABBREVS | RZ_BIN_DWARF_PARSE_INFO,
 	};
-	rz_log_set_level(RZ_LOGLVL_DEBUG);
+
 	RzBinDwarf *dw = rz_bin_dwarf_parse(bf, &dw_opt);
 	mu_assert_notnull(dw->abbrevs, "Couldn't parse Abbreviations");
 	mu_assert_notnull(dw->info, "Couldn't parse debug_info section");

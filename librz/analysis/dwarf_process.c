@@ -1046,7 +1046,7 @@ static bool function_children_parse(Context *ctx, RzBinDwarfDie *die, RzCallable
 			continue;
 		}
 		if (!(v.location && v.type)) {
-			RZ_LOG_ERROR("Failed to parse %s variable 0x%" PFMT64x "\n", fn->prefer_name, child_die->offset);
+			RZ_LOG_ERROR("DWARF function variable parse failed %s f.addr=0x%" PFMT64x " f.offset=0x%" PFMT64x " [0x%" PFMT64x "]\n", fn->prefer_name, fn->addr, die->offset, child_die->offset);
 			continue;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
