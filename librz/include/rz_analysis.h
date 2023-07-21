@@ -794,6 +794,7 @@ typedef struct dwarf_variable_t {
 
 typedef struct dwarf_function_t {
 	ut64 addr;
+	ut64 offset;
 	char *name;
 	char *link_name;
 	char *demangle_name;

@@ -1091,6 +1091,7 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 	if (!fcn) {
 		goto cleanup;
 	}
+	fcn->offset = die->offset;
 	RZ_LOG_DEBUG("DWARF function parsing [0x%" PFMT64x "]\n", die->offset);
 	RzBinDwarfAttr *val;
 	rz_vector_foreach(&die->attrs, val) {
@@ -1348,13 +1349,18 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	}
 
 	/* Apply signature as a comment at a function address */
-	RzCallable *callable = rz_type_func_get(analysis->typedb, fn->prefer_name);
-	char *sig = rz_type_callable_as_string(analysis->typedb, callable);
-	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
+	RzCallable *callable = fn->prefer_name ? rz_type_func_get(analysis->typedb, fn->prefer_name)
+					       : ht_up_find(analysis->debug_info->callable_by_offset, fn->offset, NULL);
+	if (callable) {
+		char *sig = rz_type_callable_as_string(analysis->typedb, callable);
+		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
+	}
 
-	char *dwf_name = rz_str_newf("dbg.%s", fn->prefer_name);
-	rz_analysis_function_rename((RzAnalysisFunction *)afn, dwf_name);
-	free(dwf_name);
+	if (fn->prefer_name) {
+		char *dwf_name = rz_str_newf("dbg.%s", fn->prefer_name);
+		rz_analysis_function_rename((RzAnalysisFunction *)afn, dwf_name);
+		free(dwf_name);
+	}
 
 	/* Apply variables */
 	if (rz_vector_len(&fn->variables) > 0) {
