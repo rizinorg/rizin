@@ -10,6 +10,6 @@ EXPECT=<<EOF
 ldr: load from memory to register
 4
 0x8150 2,2,8,$$,+,>>,<<,36,+,0xffffffff,&,[4],0xffffffff,&,ip,=
-[{"opcode":"ldr ip, [pc, 0x24]","disasm":"ldr ip, sym.__libc_csu_fini","pseudo":"ip = sym.__libc_csu_fini","description":"load from memory to register","mnemonic":"ldr","mask":"ffffffff","esil":"2,2,8,$$,+,>>,<<,36,+,0xffffffff,&,[4],0xffffffff,&,ip,=","rzil":{"opcode":"set","dst":"r12","src":{"opcode":"loadw","mem":0,"key":{"opcode":"bitv","bits":"0x817c","len":32},"bits":32}},"sign":false,"prefix":0,"id":83,"opex":{"operands":[{"type":"reg","value":"ip"},{"type":"mem","base":"pc","scale":1,"disp":36}]},"addr":33104,"bytes":"24c09fe5","disp":36,"ptr":33148,"size":4,"type":"load","esilcost":4,"ireg":"pc","scale":1,"refptr":4,"cycles":4,"failcycles":0,"delay":0,"stackptr":0,"family":"cpu"}]
+[{"opcode":"ldr ip, [pc, 0x24]","disasm":"ldr ip, sym.__libc_csu_fini","pseudo":"ip = sym.__libc_csu_fini","description":"load from memory to register","mnemonic":"ldr","mask":"ffffffff","esil":"2,2,8,$$,+,>>,<<,36,+,0xffffffff,&,[4],0xffffffff,&,ip,=","rzil":{"opcode":"set","dst":"r12","src":{"opcode":"loadw","mem":0,"key":{"opcode":"bitv","bits":"0x817c","len":32},"bits":32}},"sign":false,"prefix":0,"id":4,"opex":{"operands":[{"type":"reg","value":"ip"},{"type":"mem","base":"pc","scale":1,"disp":36}]},"addr":33104,"bytes":"24c09fe5","disp":36,"ptr":33148,"size":4,"type":"load","esilcost":4,"ireg":"pc","scale":1,"refptr":4,"cycles":4,"failcycles":0,"delay":0,"stackptr":0,"family":"cpu"}]
 EOF
 RUN
