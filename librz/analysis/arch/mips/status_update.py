@@ -1,5 +1,4 @@
 import sys
-from pwn import *
 
 insn_list = [
     "MIPS_INS_ABSQ_S",

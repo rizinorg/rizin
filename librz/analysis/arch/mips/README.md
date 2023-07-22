@@ -3,11 +3,11 @@
 |               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |
 |--------------------------------|------------|------------|------------|------------|
 |                MIPS_INS_ABSQ_S |        [ ] |        [ ] |        [ ] |        [ ] |
-|                   MIPS_INS_ADD |        [x] |        [x] |        [ ] |        [ ] |
-|               MIPS_INS_ADDIUPC |        [x] |        [x] |        [ ] |        [ ] |
-|             MIPS_INS_ADDIUR1SP |        [ ] |        [ ] |        [ ] |        [ ] |
-|               MIPS_INS_ADDIUR2 |        [ ] |        [ ] |        [ ] |        [ ] |
-|               MIPS_INS_ADDIUS5 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                   MIPS_INS_ADD |        [x] |        [x] |        [x] |        [ ] |
+|               MIPS_INS_ADDIUPC |        [x] |        [x] |        [x] |        [ ] |
+|             MIPS_INS_ADDIUR1SP |        [ ] |        [ ] |        [x] |        [x] |
+|               MIPS_INS_ADDIUR2 |        [ ] |        [ ] |        [x] |        [x] |
+|               MIPS_INS_ADDIUS5 |        [ ] |        [ ] |        [x] |        [x] |
 |               MIPS_INS_ADDIUSP |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_ADDQH |        [ ] |        [ ] |        [ ] |        [ ] |
 |               MIPS_INS_ADDQH_R |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -17,28 +17,28 @@
 |                MIPS_INS_ADDS_A |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_ADDS_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_ADDS_U |        [ ] |        [ ] |        [ ] |        [ ] |
-|                MIPS_INS_ADDU16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                MIPS_INS_ADDU16 |        [ ] |        [ ] |        [x] |        [x] |
 |                 MIPS_INS_ADDUH |        [ ] |        [ ] |        [ ] |        [ ] |
 |               MIPS_INS_ADDUH_R |        [ ] |        [ ] |        [ ] |        [ ] |
-|                  MIPS_INS_ADDU |        [x] |        [x] |        [ ] |        [ ] |
+|                  MIPS_INS_ADDU |        [x] |        [x] |        [x] |        [ ] |
 |                MIPS_INS_ADDU_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_ADDVI |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_ADDV |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_ADDWC |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_ADD_A |        [ ] |        [ ] |        [ ] |        [ ] |
-|                  MIPS_INS_ADDI |        [x] |        [x] |        [ ] |        [ ] |
+|                  MIPS_INS_ADDI |        [x] |        [x] |        [x] |        [ ] |
 |                 MIPS_INS_ADDIU |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_ALIGN |        [x] |        [x] |        [ ] |        [ ] |
-|                MIPS_INS_ALUIPC |        [x] |        [x] |        [ ] |        [ ] |
-|                   MIPS_INS_AND |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_AND16 |        [ ] |        [ ] |        [ ] |        [ ] |
-|                MIPS_INS_ANDI16 |        [ ] |        [ ] |        [ ] |        [ ] |
-|                  MIPS_INS_ANDI |        [x] |        [x] |        [ ] |        [ ] |
+|                 MIPS_INS_ALIGN |        [x] |        [x] |        [x] |        [ ] |
+|                MIPS_INS_ALUIPC |        [x] |        [x] |        [x] |        [ ] |
+|                   MIPS_INS_AND |        [x] |        [x] |        [x] |        [ ] |
+|                 MIPS_INS_AND16 |        [ ] |        [ ] |        [x] |        [x] |
+|                MIPS_INS_ANDI16 |        [ ] |        [ ] |        [x] |        [x] |
+|                  MIPS_INS_ANDI |        [x] |        [x] |        [x] |        [ ] |
 |                MIPS_INS_APPEND |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_ASUB_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_ASUB_U |        [ ] |        [ ] |        [ ] |        [ ] |
-|                   MIPS_INS_AUI |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_AUIPC |        [x] |        [x] |        [ ] |        [ ] |
+|                   MIPS_INS_AUI |        [x] |        [x] |        [x] |        [ ] |
+|                 MIPS_INS_AUIPC |        [x] |        [x] |        [x] |        [ ] |
 |                MIPS_INS_AVER_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_AVER_U |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_AVE_S |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -46,7 +46,7 @@
 |                   MIPS_INS_B16 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_BADDU |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_BAL |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_BALC |        [x] |        [x] |        [ ] |        [ ] |
+|                  MIPS_INS_BALC |        [x] |        [x] |        [x] |        [ ] |
 |                MIPS_INS_BALIGN |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_BBIT0 |        [ ] |        [ ] |        [ ] |        [ ] |
 |               MIPS_INS_BBIT032 |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -57,16 +57,16 @@
 |                 MIPS_INS_BC0FL |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_BC0T |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_BC0TL |        [ ] |        [ ] |        [ ] |        [ ] |
-|                MIPS_INS_BC1EQZ |        [x] |        [x] |        [ ] |        [ ] |
+|                MIPS_INS_BC1EQZ |        [x] |        [x] |        [x] |        [ ] |
 |                  MIPS_INS_BC1F |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_BC1FL |        [x] |        [x] |        [ ] |        [ ] |
-|                MIPS_INS_BC1NEZ |        [x] |        [x] |        [ ] |        [ ] |
+|                MIPS_INS_BC1NEZ |        [x] |        [x] |        [x] |        [ ] |
 |                  MIPS_INS_BC1T |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_BC1TL |        [x] |        [x] |        [ ] |        [ ] |
-|                MIPS_INS_BC2EQZ |        [x] |        [x] |        [ ] |        [ ] |
+|                MIPS_INS_BC2EQZ |        [x] |        [x] |        [x] |        [ ] |
 |                  MIPS_INS_BC2F |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_BC2FL |        [x] |        [x] |        [ ] |        [ ] |
-|                MIPS_INS_BC2NEZ |        [x] |        [x] |        [ ] |        [ ] |
+|                MIPS_INS_BC2NEZ |        [x] |        [x] |        [x] |        [ ] |
 |                  MIPS_INS_BC2T |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_BC2TL |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_BC3F |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -101,7 +101,7 @@
 |                MIPS_INS_BITREV |        [ ] |        [ ] |        [ ] |        [ ] |
 |               MIPS_INS_BITSWAP |        [x] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_BLEZ |        [x] |        [x] |        [ ] |        [ ] |
-|               MIPS_INS_BLEZALC |        [x] |        [x] |        [ ] |        [ ] |
+|               MIPS_INS_BLEZALC |        [x] |        [x] |        [x] |        [ ] |
 |                 MIPS_INS_BLEZC |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_BLEZL |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_BLTC |        [x] |        [x] |        [ ] |        [ ] |
@@ -266,7 +266,7 @@
 |                  MIPS_INS_EXTR |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_EXTS |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_EXTS32 |        [ ] |        [ ] |        [ ] |        [ ] |
-|                   MIPS_INS_ABS |        [x] |        [x] |        [ ] |        [ ] |
+|                   MIPS_INS_ABS |        [x] |        [x] |        [x] |        [ ] |
 |                  MIPS_INS_FADD |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_FCAF |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_FCEQ |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -352,7 +352,7 @@
 |                   MIPS_INS_JRC |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_JALRC |        [ ] |        [ ] |        [ ] |        [ ] |
 |                    MIPS_INS_LB |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_LBU16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_LBU16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_LBUX |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_LBU |        [x] |        [x] |        [ ] |        [ ] |
 |                    MIPS_INS_LD |        [ ] |        [x] |        [ ] |        [ ] |
@@ -365,17 +365,17 @@
 |                   MIPS_INS_LDR |        [ ] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_LDXC1 |        [x] |        [x] |        [ ] |        [ ] |
 |                    MIPS_INS_LH |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_LHU16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_LHU16 |        [ ] |        [ ] |        [x] |        [x] |
 |                   MIPS_INS_LHX |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_LHU |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_LI16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                  MIPS_INS_LI16 |        [ ] |        [ ] |        [x] |        [x] |
 |                    MIPS_INS_LL |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_LLD |        [ ] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_LSA |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_LUXC1 |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_LUI |        [x] |        [x] |        [ ] |        [ ] |
 |                    MIPS_INS_LW |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_LW16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                  MIPS_INS_LW16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_LWC1 |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_LWC2 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_LWC3 |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -383,7 +383,7 @@
 |                 MIPS_INS_LWM16 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_LWM32 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_LWPC |        [x] |        [x] |        [ ] |        [ ] |
-|                   MIPS_INS_LWP |        [ ] |        [ ] |        [ ] |        [ ] |
+|                   MIPS_INS_LWP |        [ ] |        [ ] |        [x] |        [x] |
 |                   MIPS_INS_LWR |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_LWUPC |        [ ] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_LWU |        [ ] |        [x] |        [ ] |        [ ] |
@@ -425,7 +425,7 @@
 |                 MIPS_INS_MOD_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_MOD_U |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_MOVE |        [ ] |        [ ] |        [ ] |        [ ] |
-|                 MIPS_INS_MOVEP |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_MOVEP |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_MOVF |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_MOVN |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_MOVT |        [x] |        [x] |        [ ] |        [ ] |
@@ -470,10 +470,10 @@
 |                 MIPS_INS_NMSUB |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_NOR |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_NORI |        [ ] |        [ ] |        [ ] |        [ ] |
-|                 MIPS_INS_NOT16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_NOT16 |        [ ] |        [ ] |        [x] |        [x] |
 |                   MIPS_INS_NOT |        [ ] |        [ ] |        [ ] |        [ ] |
 |                    MIPS_INS_OR |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_OR16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                  MIPS_INS_OR16 |        [ ] |        [ ] |        [x] |        [x] |
 |                   MIPS_INS_ORI |        [x] |        [x] |        [ ] |        [ ] |
 |                MIPS_INS_PACKRL |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_PAUSE |        [x] |        [x] |        [ ] |        [ ] |
@@ -505,12 +505,12 @@
 |                 MIPS_INS_SAT_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_SAT_U |        [ ] |        [ ] |        [ ] |        [ ] |
 |                    MIPS_INS_SB |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_SB16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                  MIPS_INS_SB16 |        [ ] |        [ ] |        [x] |        [x] |
 |                    MIPS_INS_SC |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_SCD |        [ ] |        [x] |        [ ] |        [ ] |
 |                    MIPS_INS_SD |        [ ] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_SDBBP |        [ ] |        [ ] |        [ ] |        [ ] |
-|               MIPS_INS_SDBBP16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|               MIPS_INS_SDBBP16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_SDC1 |        [ ] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_SDC2 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SDC3 |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -525,7 +525,7 @@
 |                   MIPS_INS_SEQ |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SEQI |        [ ] |        [ ] |        [ ] |        [ ] |
 |                    MIPS_INS_SH |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_SH16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                  MIPS_INS_SH16 |        [ ] |        [ ] |        [x] |        [x] |
 |                   MIPS_INS_SHF |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_SHILO |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_SHILOV |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -542,7 +542,7 @@
 |                  MIPS_INS_SLDI |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_SLD |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_SLL |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_SLL16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_SLL16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_SLLI |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SLLV |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_SLT |        [x] |        [x] |        [ ] |        [ ] |
@@ -559,7 +559,7 @@
 |                  MIPS_INS_SRAR |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SRAV |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_SRL |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_SRL16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_SRL16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_SRLI |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_SRLRI |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SRLR |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -574,7 +574,7 @@
 |              MIPS_INS_SUBSUU_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_SUBS_S |        [ ] |        [ ] |        [ ] |        [ ] |
 |                MIPS_INS_SUBS_U |        [ ] |        [ ] |        [ ] |        [ ] |
-|                MIPS_INS_SUBU16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                MIPS_INS_SUBU16 |        [ ] |        [ ] |        [x] |        [x] |
 |                 MIPS_INS_SUBUH |        [ ] |        [ ] |        [ ] |        [ ] |
 |               MIPS_INS_SUBUH_R |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SUBU |        [x] |        [x] |        [ ] |        [ ] |
@@ -583,14 +583,14 @@
 |                  MIPS_INS_SUBV |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_SUXC1 |        [x] |        [x] |        [ ] |        [ ] |
 |                    MIPS_INS_SW |        [x] |        [x] |        [ ] |        [ ] |
-|                  MIPS_INS_SW16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                  MIPS_INS_SW16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_SWC1 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SWC2 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_SWC3 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_SWL |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_SWM16 |        [ ] |        [ ] |        [ ] |        [ ] |
 |                 MIPS_INS_SWM32 |        [ ] |        [ ] |        [ ] |        [ ] |
-|                   MIPS_INS_SWP |        [ ] |        [ ] |        [ ] |        [ ] |
+|                   MIPS_INS_SWP |        [ ] |        [ ] |        [x] |        [x] |
 |                   MIPS_INS_SWR |        [x] |        [x] |        [ ] |        [ ] |
 |                 MIPS_INS_SWXC1 |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_SYNC |        [ ] |        [ ] |        [ ] |        [ ] |
@@ -621,7 +621,7 @@
 |                 MIPS_INS_WRDSP |        [ ] |        [ ] |        [ ] |        [ ] |
 |                  MIPS_INS_WSBH |        [ ] |        [ ] |        [ ] |        [ ] |
 |                   MIPS_INS_XOR |        [x] |        [x] |        [ ] |        [ ] |
-|                 MIPS_INS_XOR16 |        [ ] |        [ ] |        [ ] |        [ ] |
+|                 MIPS_INS_XOR16 |        [ ] |        [ ] |        [x] |        [x] |
 |                  MIPS_INS_XORI |        [x] |        [x] |        [ ] |        [ ] |
 |                   MIPS_INS_NOP |        [x] |        [x] |        [ ] |        [ ] |
 |                  MIPS_INS_NEGU |        [ ] |        [ ] |        [ ] |        [ ] |

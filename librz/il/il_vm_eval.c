@@ -299,17 +299,17 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr, u
 	rz_il_vm_clear_events(vm);
 
 	// Set the successor pc **before** evaluating. Any jmp/goto may then overwrite it again.
-	RzBitVector *next_pc = NULL;
-	if (vm->delayed_by) {
-		vm->delayed_by--;
-		rz_warn_if_fail(vm->delayed_by);
-		if (!vm->delayed_by) {
-			RZ_PTR_MOVE(next_pc, vm->delayed_pc);
-		}
-	} else {
-		next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
-	}
+	/* if (vm->delayed_by) { */
+	/* 	vm->delayed_by--; */
+	/* 	rz_warn_if_fail(vm->delayed_by); */
+	/* 	if (!vm->delayed_by) { */
+	/* 		RZ_PTR_MOVE(next_pc, vm->delayed_pc); */
+	/* 	} */
+	/* } else { */
+	/* } */
 
+	RzBitVector *next_pc = NULL;
+	next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
 	rz_warn_if_fail(next_pc);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_bv_free(vm->pc);
@@ -317,9 +317,9 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr, u
 
 	bool succ = rz_il_evaluate_effect(vm, op);
 
-	if (delayed_by) {
-		vm->delayed_by = delayed_by;
-	}
+	/* if (delayed_by) { */
+	/* 	vm->delayed_by = delayed_by; */
+	/* } */
 
 	// remove any local defined variable (local pure vars are unbound automatically)
 	rz_il_var_set_reset(&vm->local_vars);
