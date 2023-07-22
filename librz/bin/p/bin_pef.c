@@ -82,7 +82,7 @@ static RzList /*<char *>*/ *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	RzList *ret = ret = rz_list_newf(free); // TODO: right free function?
 	if (!ret) {
-			return NULL;
+		return NULL;
 	}
 	return ret;
 }

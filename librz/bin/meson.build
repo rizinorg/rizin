@@ -128,6 +128,7 @@ rz_bin_sources = [
   'p/bin_pe.c',
   'p/bin_pe64.c',
   'p/bin_pebble.c',
+  'p/bin_pef.c',
   'p/bin_prg.c',
   'p/bin_psxexe.c',
   'p/bin_pyc.c',
@@ -192,6 +193,7 @@ rz_bin_sources = [
   'format/java/class_bin.c',
   'format/java/class_field.c',
   'format/java/class_method.c',
+  'format/macbin/macbin.c',
   'format/mach0/mach0_common.c',
   'format/mach0/dyldcache.c',
   'format/mach0/dyldcache_rebase.c',
@@ -309,3 +311,14 @@ modules += { 'rz_bin': {
 }}
 
 subdir('d')
+
+executable('macbin', 'format/macbin/macbin.c',
+  c_args: ['-DMACBIN_TOOL=1'],
+  include_directories: [platform_inc],
+  dependencies: [
+    rz_util_dep,
+  ],
+  install: false,
+  implicit_include_directories: false,
+  build_by_default: false,
+)
