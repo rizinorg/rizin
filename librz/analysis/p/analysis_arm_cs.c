@@ -1590,7 +1590,7 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 			val->mul = armop.mem.scale << armop.mem.lshift;
 #endif
 #if CS_API_MAJOR >= 6
-			val->delta = armop.subtracted ? -armop.mem.disp : armop.mem.disp;
+			val->delta = MEMDISP(x);
 #else
 			val->delta = armop.mem.disp;
 #endif
