@@ -683,15 +683,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 					(ut64)MEMDISP(2), pc, pcdelta, REG(0), REG(1));
 			} else {
-				int disp = MEMDISP(2);
+				int disp = ISPOSTINDEX() ? 0 : MEMDISP(2);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
-				if (disp < 0) {
-					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						(ut64)-disp, MEMBASE(2), REG(0), REG(1));
-				} else {
-					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						(ut64)disp, MEMBASE(2), REG(0), REG(1));
-				}
+				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					(ut64)-disp, MEMBASE(2), REG(0), REG(1));
 			}
 		} else {
 			if (REGBASE(2) == ARM_REG_PC) {
@@ -712,8 +707,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					rz_strbuf_appendf(&op->esil, "%s,%s,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						MEMINDEX(2), MEMBASE(2), op_index, REG(0), REG(1));
 				} else {
+					int disp = ISPOSTINDEX() ? 0 : MEMDISP(2);
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						MEMDISP(2), MEMBASE(2), REG(0), REG(1));
+						disp, MEMBASE(2), REG(0), REG(1));
 				}
 				if (insn->detail->writeback) {
 					if (ISPOSTINDEX()) {
