@@ -702,10 +702,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						pcdelta, pc, MEMDISP(2), REG(0), REG(1));
 				}
 			} else {
-				if (HASMEMINDEX(2)) { // e.g. `ldrd r2, r3 [r4, r1]`
+				if (HASMEMINDEX(2)) { // e.g. `ldrd r2, r3 [r4, r1]` or `ldrd r2, r3 [r4], r1`
 					const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+					const char *mem_index = ISPOSTINDEX() ? "0" : MEMINDEX(2);
 					rz_strbuf_appendf(&op->esil, "%s,%s,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						MEMINDEX(2), MEMBASE(2), op_index, REG(0), REG(1));
+						mem_index, MEMBASE(2), op_index, REG(0), REG(1));
 				} else {
 					int disp = ISPOSTINDEX() ? 0 : MEMDISP(2);
 					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
@@ -717,9 +718,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 							rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
 								MEMBASE(2), MEMDISP(2), MEMBASE(2));
 						} else {
-							const char op_index = ISMEMINDEXSUB(3) ? '-' : '+';
+							const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
 							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
-								REG(3), MEMBASE(2), op_index, MEMBASE(2));
+								MEMINDEX(2), MEMBASE(2), op_index, MEMBASE(2));
 						}
 					} else if (ISPREINDEX32()) {
 						if (HASMEMINDEX(2)) {
