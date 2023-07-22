@@ -1171,6 +1171,11 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (*sign == '-') {
 			addend = -addend;
 		}
+		if (addend == 0 && op->direction != RZ_ANALYSIS_OP_DIR_READ && op->direction != RZ_ANALYSIS_OP_DIR_WRITE) {
+			// avoid creating variables for just `mov rbp, rsp`, which would otherwise detect a var at rsp+0
+			// so for addend == 0, we only consider actual memory operations for now
+			goto beach;
+		}
 	}
 
 	if (!op->src[0] || !op->dst) {
