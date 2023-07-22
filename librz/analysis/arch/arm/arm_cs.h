@@ -12,7 +12,8 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 
 RZ_IPI bool rz_arm_cs_is_group_member(const cs_insn *insn, arm_insn_group feature);
 
-RZ_IPI const char *rz_arm_cs_esil_prefix_cond(RzAnalysisOp *op, int cond_type);
+RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCodes cond_type);
+RZ_IPI const char *rz_arm64_cs_esil_prefix_cond(RzAnalysisOp *op, arm64_cc cond_type);
 
 RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb);
 RZ_IPI RzAnalysisILConfig *rz_arm_cs_32_il_config(bool big_endian);

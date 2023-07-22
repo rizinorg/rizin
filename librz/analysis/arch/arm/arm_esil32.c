@@ -60,7 +60,7 @@ static unsigned int regsize32(cs_insn *insn, int n) {
 #define REGSIZE32(x) regsize32(insn, x)
 
 // return postfix
-RZ_IPI const char *rz_arm_cs_esil_prefix_cond(RzAnalysisOp *op, int cond_type) {
+RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCodes cond_type) {
 	const char *close_cond[2];
 	close_cond[0] = "";
 	close_cond[1] = ",}";
@@ -256,7 +256,7 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 
 	rz_strbuf_init(&op->esil);
 	rz_strbuf_set(&op->esil, "");
-	postfix = rz_arm_cs_esil_prefix_cond(op, insn->detail->arm.cc);
+	postfix = rz_arm32_cs_esil_prefix_cond(op, insn->detail->arm.cc);
 
 	switch (insn->id) {
 	case ARM_INS_CLZ:
