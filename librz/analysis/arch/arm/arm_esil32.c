@@ -614,23 +614,23 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%d,%s,+=",
 					REG(0), MEMBASE(1), str_ldr_bytes, MEMDISP(1), MEMBASE(1));
 			} else if (str_ldr_bytes != 8) { // e.g. 'str r2, [r3], r1
-				if (ISSHIFTED(2)) { // e.g. 'str r2, [r3], r1, lsl 4'
-					switch (SHIFTTYPE(2)) {
+				if (ISSHIFTED(1)) { // e.g. 'str r2, [r3], r1, lsl 4'
+					switch (SHIFTTYPE(1)) {
 					case ARM_SFT_LSL:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,<<,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_LSR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_ASR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_ROR:
 						rz_strbuf_appendf(&op->esil, "%s,%s,0xffffffff,&,=[%d],%s,%d,%s,>>>,+,%s,=",
-							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(2), MEMINDEX(1), MEMBASE(1));
+							REG(0), MEMBASE(1), str_ldr_bytes, MEMBASE(1), SHIFTVALUE(1), MEMINDEX(1), MEMBASE(1));
 						break;
 					case ARM_SFT_RRX:
 						// TODO
