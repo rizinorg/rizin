@@ -79,6 +79,17 @@ static bool is_function_declarator(const char *declarator) {
 		!strcmp(declarator, "identifier");
 }
 
+static bool is_bitfield_clause(const char *name) {
+	return !strcmp(name, "bitfield_clause");
+}
+
+static bool is_type_declarator(const char *declarator) {
+	return !strcmp(declarator, "pointer_declarator") ||
+		!strcmp(declarator, "array_declarator") ||
+		!strcmp(declarator, "function_declarator") ||
+		!strcmp(declarator, "type_identifier");
+}
+
 // Parses primitive type - like "int", "char", "size_t"
 int parse_primitive_type(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const) {
 	rz_return_val_if_fail(state && text && tpair, -1);
@@ -311,7 +322,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	parser_debug(state, "parse_struct_node()\n");
 
 	int struct_node_child_count = ts_node_named_child_count(node);
-	if (struct_node_child_count < 1 || struct_node_child_count > 2) {
+	if (struct_node_child_count < 1 || struct_node_child_count > 3) {
 		node_malformed_error(state, node, text, "struct");
 		return -1;
 	}
@@ -423,11 +434,10 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			goto srnexit;
 		}
 
-		// Every field node should have at least type and declarator:
+		// Every field node should have type and at least one declarator:
 		TSNode field_type = ts_node_child_by_field_name(child, "type", 4);
-		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
-		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Struct field AST shoudl contain type and declarator items");
+		if (ts_node_is_null(field_type)) {
+			parser_error(state, "ERROR: Struct field AST should contain type");
 			node_malformed_error(state, child, text, "struct field");
 			result = -1;
 			goto srnexit;
@@ -437,6 +447,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		// - atomic: "int a;" or "char b[20]"
 		// - bitfield: int a:7;"
 		// - nested: "struct { ... } a;" or "union { ... } a;"
+		// - all these but with multiple declarators in one line
 		if (state->verbose) {
 			char *fieldtext = ts_node_sub_string(child, text);
 			char *nodeast = ts_node_string(child);
@@ -447,92 +458,37 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			free(fieldtext);
 			free(nodeast);
 		}
-		// 1st case, bitfield
-		// AST looks like
-		// type: (primitive_type) declarator: (field_identifier) (bitfield_clause (number_literal))
-		// Thus it has the additional node after the declarator
-		TSNode bitfield_clause = ts_node_next_named_sibling(field_declarator);
-		if (!ts_node_is_null(bitfield_clause)) {
-			const char *bfnode_type = ts_node_type(field_type);
-			// As per C standard bitfields are defined only for atomic types, particularly "int"
-			if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
-				parser_error(state, "ERROR: Struct bitfield cannot contain non-primitive bitfield!\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			free(real_type);
-			real_type = ts_node_sub_string(field_type, text);
-			if (!real_type) {
-				parser_error(state, "ERROR: Struct bitfield type should not be NULL!\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			free(real_identifier);
-			real_identifier = ts_node_sub_string(field_declarator, text);
-			if (!real_identifier) {
-				parser_error(state, "ERROR: Struct bitfield identifier should not be NULL!\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			if (ts_node_named_child_count(bitfield_clause) != 1) {
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			TSNode field_bits = ts_node_named_child(bitfield_clause, 0);
-			if (ts_node_is_null(field_bits)) {
-				parser_error(state, "ERROR: Struct bitfield bits AST node should not be NULL!\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			const char *bits_str = ts_node_sub_string(field_bits, text);
-			int bits = rz_num_get(NULL, bits_str);
-			parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
-			ParserTypePair *membtpair = NULL;
-			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
-				parser_error(state, "ERROR: parsing bitfield struct member identifier\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			// Then we augment resulting type field with the data from parsed declarator
-			char *membname = NULL;
-			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
-				parser_error(state, "ERROR: parsing bitfield struct member declarator\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			// Add a struct member
-			RzVector *members = &struct_pair->btype->struct_data.members;
-			RzTypeStructMember memb = {
-				.name = membname,
-				.type = membtpair->type,
-				.offset = 0, // FIXME
-				.size = 0, // FIXME
-			};
-			void *element = rz_vector_push(members, &memb); // returns null if no space available
-			if (!element) {
-				parser_error(state, "Error appending bitfield struct member to the base type\n");
-				result = -1;
-				goto srnexit;
-			}
-		} else {
-			// 2nd case, normal structure
-			// AST looks like
-			// type: (primitive_type) declarator: (field_identifier)
-			free(real_type);
-			real_type = ts_node_sub_string(field_type, text);
-			if (!real_type) {
-				parser_error(state, "ERROR: Struct field type should not be NULL!\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
+
+		// Parse types first
+		free(real_type);
+		real_type = ts_node_sub_string(field_type, text);
+		if (!real_type) {
+			parser_error(state, "ERROR: Struct member type should not be NULL!\n");
+			node_malformed_error(state, child, text, "struct field");
+			result = -1;
+			goto srnexit;
+		}
+
+		ParserTypePair *membtpair = NULL;
+		// At first, we parse the type field
+		if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
+			parser_error(state, "ERROR: parsing struct member type\n");
+			node_malformed_error(state, child, text, "struct field");
+			result = -1;
+			goto srnexit;
+		}
+
+		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
+		if (ts_node_is_null(field_declarator)) {
+			parser_error(state, "ERROR: Struct field AST should contain at least one declarator item");
+			node_malformed_error(state, child, text, "struct field");
+			result = -1;
+			goto srnexit;
+		}
+
+		// We could have multiple declarator members of the same type
+		do {
+			// First we extract the identifier
 			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
@@ -542,39 +498,93 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				goto srnexit;
 			}
 			parser_debug(state, "field type: %s field_declarator: %s\n", real_type, real_identifier);
-			ParserTypePair *membtpair = NULL;
-			// At first, we parse the type field
-			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
-				parser_error(state, "ERROR: parsing struct member type\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
+			// 1st case, bitfield
+			// AST looks like
+			// type: (primitive_type) declarator: (field_identifier) (bitfield_clause (number_literal))
+			// or type: (primitive_type) declarator: (...) declarator (...)
+
+			// If it has the additional node after the declarator - it's bitfield
+			TSNode next_sibling = ts_node_next_named_sibling(field_declarator);
+			if (!ts_node_is_null(next_sibling) && is_bitfield_clause(ts_node_type(next_sibling))) {
+				const char *bfnode_type = ts_node_type(field_type);
+				// As per C standard bitfields are defined only for atomic types, particularly "int"
+				if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
+					parser_error(state, "ERROR: Struct bitfield cannot contain non-primitive bitfield!\n");
+					node_malformed_error(state, child, text, "struct field");
+					result = -1;
+					goto srnexit;
+				}
+				if (ts_node_named_child_count(next_sibling) < 1) {
+					node_malformed_error(state, child, text, "struct field");
+					result = -1;
+					goto srnexit;
+				}
+				TSNode field_bits = ts_node_named_child(next_sibling, 0);
+				if (ts_node_is_null(field_bits)) {
+					parser_error(state, "ERROR: Struct bitfield bits AST node should not be NULL!\n");
+					node_malformed_error(state, child, text, "struct field");
+					result = -1;
+					goto srnexit;
+				}
+				const char *bits_str = ts_node_sub_string(field_bits, text);
+				int bits = rz_num_get(NULL, bits_str);
+				parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
+				// Then we augment resulting type field with the data from parsed declarator
+				char *membname = NULL;
+				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					parser_error(state, "ERROR: parsing bitfield struct member declarator\n");
+					node_malformed_error(state, child, text, "struct field");
+					result = -1;
+					goto srnexit;
+				}
+				// Add a struct member
+				RzVector *members = &struct_pair->btype->struct_data.members;
+				RzTypeStructMember memb = {
+					.name = membname,
+					.type = rz_type_clone(membtpair->type),
+					.offset = 0, // FIXME
+					.size = 0, // FIXME
+				};
+				void *element = rz_vector_push(members, &memb); // returns null if no space available
+				if (!element) {
+					parser_error(state, "Error appending bitfield struct member to the base type\n");
+					result = -1;
+					goto srnexit;
+				}
+			} else if (is_declarator(ts_node_type(field_declarator))) {
+				// 2nd case, normal structure
+				// AST looks like
+				// type: (primitive_type) declarator: (field_identifier)
+				// or type: (primitive_type) declarator: (...) declarator (...)
+				// Augment resulting type field with the data from parsed declarator
+				char *membname = NULL;
+				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					parser_error(state, "ERROR: parsing struct member declarator\n");
+					node_malformed_error(state, child, text, "struct field");
+					result = -1;
+					goto srnexit;
+				}
+				// Add a struct member
+				RzVector *members = &struct_pair->btype->struct_data.members;
+				RzTypeStructMember memb = {
+					.name = membname,
+					.type = rz_type_clone(membtpair->type),
+					.offset = 0, // FIXME
+					.size = 0, // FIXME
+				};
+				void *element = rz_vector_push(members, &memb); // returns null if no space available
+				if (!element) {
+					parser_error(state, "Error appending struct member to the base type\n");
+					result = -1;
+					goto srnexit;
+				}
+				parser_debug(state, "Appended member \"%s\" into struct \"%s\"\n", membname, name);
+			} else {
+				parser_debug(state, "Struct field wrong: \"%s\"\n", ts_node_sub_string(field_declarator, text));
 			}
-			// Then we augment resulting type field with the data from parsed declarator
-			char *membname = NULL;
-			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
-				parser_error(state, "ERROR: parsing struct member declarator\n");
-				node_malformed_error(state, child, text, "struct field");
-				result = -1;
-				goto srnexit;
-			}
-			// Add a struct member
-			RzVector *members = &struct_pair->btype->struct_data.members;
-			RzTypeStructMember memb = {
-				.name = membname,
-				.type = membtpair->type,
-				.offset = 0, // FIXME
-				.size = 0, // FIXME
-			};
-			free(membtpair);
-			void *element = rz_vector_push(members, &memb); // returns null if no space available
-			if (!element) {
-				parser_error(state, "Error appending struct member to the base type\n");
-				result = -1;
-				goto srnexit;
-			}
-			parser_debug(state, "Appended member \"%s\" into struct \"%s\"\n", membname, name);
-		}
+			field_declarator = ts_node_next_named_sibling(field_declarator);
+		} while (!ts_node_is_null(field_declarator));
+		free(membtpair);
 	}
 	// If parsing successfull completed - we store the state
 	if (struct_pair) {
@@ -717,13 +727,13 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 
 		// Every field node should have at least type and declarator:
 		TSNode field_type = ts_node_child_by_field_name(child, "type", 4);
-		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
-		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Union field AST shoudl contain type and declarator items");
+		if (ts_node_is_null(field_type)) {
+			parser_error(state, "ERROR: Union field AST shoudl contain type");
 			node_malformed_error(state, child, text, "union field");
 			result = -1;
 			goto urnexit;
 		}
+
 		// Every field can be:
 		// - atomic: "int a;" or "char b[20]"
 		// - bitfield: int a:7;"
@@ -738,92 +748,37 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			free(fieldtext);
 			free(nodeast);
 		}
-		// 1st case, bitfield
-		// AST looks like
-		// type: (primitive_type) declarator: (field_identifier) (bitfield_clause (number_literal))
-		// Thus it has the additional node after the declarator
-		TSNode bitfield_clause = ts_node_next_named_sibling(field_declarator);
-		if (!ts_node_is_null(bitfield_clause)) {
-			const char *bfnode_type = ts_node_type(field_type);
-			// As per C standard bitfields are defined only for atomic types, particularly "int"
-			if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
-				parser_error(state, "ERROR: Union bitfield cannot contain non-primitive bitfield!\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			free(real_type);
-			real_type = ts_node_sub_string(field_type, text);
-			if (!real_type) {
-				parser_error(state, "ERROR: Union bitfield type should not be NULL!\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			free(real_identifier);
-			real_identifier = ts_node_sub_string(field_declarator, text);
-			if (!real_identifier) {
-				parser_error(state, "ERROR: Union bitfield identifier should not be NULL!\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			if (ts_node_named_child_count(bitfield_clause) != 1) {
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			TSNode field_bits = ts_node_named_child(bitfield_clause, 0);
-			if (ts_node_is_null(field_bits)) {
-				parser_error(state, "ERROR: Union bitfield bits AST node should not be NULL!\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			const char *bits_str = ts_node_sub_string(field_bits, text);
-			int bits = rz_num_get(NULL, bits_str);
-			parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
-			ParserTypePair *membtpair = NULL;
-			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
-				parser_error(state, "ERROR: parsing union member identifier\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			// Then we augment resulting type field with the data from parsed declarator
-			char *membname = NULL;
-			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
-				parser_error(state, "ERROR: parsing union member declarator\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			// Add a union member
-			RzVector *members = &union_pair->btype->union_data.members;
-			RzTypeUnionMember memb = {
-				.name = membname,
-				.type = membtpair->type,
-				.offset = 0, // Always 0 for unions
-				.size = 0, // FIXME
-			};
-			void *element = rz_vector_push(members, &memb); // returns null if no space available
-			if (!element) {
-				parser_error(state, "Error appending union member to the base type\n");
-				result = -1;
-				goto urnexit;
-			}
-		} else {
-			// 2nd case, normal union
-			// AST looks like
-			// type: (primitive_type) declarator: (field_identifier)
-			free(real_type);
-			real_type = ts_node_sub_string(field_type, text);
-			if (!real_type) {
-				parser_error(state, "ERROR: Union field type should not be NULL!\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
+
+		// Parse types first
+		free(real_type);
+		real_type = ts_node_sub_string(field_type, text);
+		if (!real_type) {
+			parser_error(state, "ERROR: Union bitfield type should not be NULL!\n");
+			node_malformed_error(state, child, text, "union field");
+			result = -1;
+			goto urnexit;
+		}
+
+		ParserTypePair *membtpair = NULL;
+		// At first, we parse the type field
+		if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
+			parser_error(state, "ERROR: parsing union member type\n");
+			node_malformed_error(state, child, text, "union field");
+			result = -1;
+			goto urnexit;
+		}
+
+		TSNode field_declarator = ts_node_child_by_field_name(child, "declarator", 10);
+		if (ts_node_is_null(field_declarator)) {
+			parser_error(state, "ERROR: Union field AST should contain at least one declarator item");
+			node_malformed_error(state, child, text, "union field");
+			result = -1;
+			goto urnexit;
+		}
+
+		// We could have multiple declarator members of the same type
+		do {
+			// First we extract the identifier
 			free(real_identifier);
 			real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
@@ -833,38 +788,89 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				goto urnexit;
 			}
 			parser_debug(state, "field type: %s field_declarator: %s\n", real_type, real_identifier);
-			ParserTypePair *membtpair = NULL;
-			// At first, we parse the type field
-			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
-				parser_error(state, "ERROR: parsing union member type\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
+
+			// 1st case, bitfield
+			// AST looks like
+			// type: (primitive_type) declarator: (field_identifier) (bitfield_clause (number_literal))
+			// Thus it has the additional node after the declarator
+			TSNode next_sibling = ts_node_next_named_sibling(field_declarator);
+			if (!ts_node_is_null(next_sibling) && is_bitfield_clause(ts_node_type(next_sibling))) {
+				const char *bfnode_type = ts_node_type(field_type);
+				// As per C standard bitfields are defined only for atomic types, particularly "int"
+				if (strcmp(bfnode_type, "primitive_type") && strcmp(bfnode_type, "type_identifier")) {
+					parser_error(state, "ERROR: Union bitfield cannot contain non-primitive bitfield!\n");
+					node_malformed_error(state, child, text, "union field");
+					result = -1;
+					goto urnexit;
+				}
+				if (ts_node_named_child_count(next_sibling) != 1) {
+					node_malformed_error(state, child, text, "union field");
+					result = -1;
+					goto urnexit;
+				}
+				TSNode field_bits = ts_node_named_child(next_sibling, 0);
+				if (ts_node_is_null(field_bits)) {
+					parser_error(state, "ERROR: Union bitfield bits AST node should not be NULL!\n");
+					node_malformed_error(state, child, text, "union field");
+					result = -1;
+					goto urnexit;
+				}
+				const char *bits_str = ts_node_sub_string(field_bits, text);
+				int bits = rz_num_get(NULL, bits_str);
+				parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
+				// Then we augment resulting type field with the data from parsed declarator
+				char *membname = NULL;
+				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					parser_error(state, "ERROR: parsing union member declarator\n");
+					node_malformed_error(state, child, text, "union field");
+					result = -1;
+					goto urnexit;
+				}
+				// Add a union member
+				RzVector *members = &union_pair->btype->union_data.members;
+				RzTypeUnionMember memb = {
+					.name = membname,
+					.type = rz_type_clone(membtpair->type),
+					.offset = 0, // Always 0 for unions
+					.size = 0, // FIXME
+				};
+				void *element = rz_vector_push(members, &memb); // returns null if no space available
+				if (!element) {
+					parser_error(state, "Error appending union member to the base type\n");
+					result = -1;
+					goto urnexit;
+				}
+			} else if (is_declarator(ts_node_type(field_declarator))) {
+				// 2nd case, normal union
+				// AST looks like
+				// type: (primitive_type) declarator: (field_identifier)
+				// Then we augment resulting type field with the data from parsed declarator
+				char *membname = NULL;
+				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					parser_error(state, "ERROR: parsing union member declarator\n");
+					node_malformed_error(state, child, text, "union field");
+					result = -1;
+					goto urnexit;
+				}
+				// Add a union member
+				RzVector *members = &union_pair->btype->union_data.members;
+				RzTypeUnionMember memb = {
+					.name = membname,
+					.type = rz_type_clone(membtpair->type),
+					.offset = 0, // Always 0 for unions
+					.size = 0, // FIXME
+				};
+				void *element = rz_vector_push(members, &memb); // returns null if no space available
+				if (!element) {
+					parser_error(state, "Error appending union member to the base type\n");
+					result = -1;
+					goto urnexit;
+				}
+				parser_debug(state, "Appended member \"%s\" into union \"%s\"\n", membname, name);
 			}
-			// Then we augment resulting type field with the data from parsed declarator
-			char *membname = NULL;
-			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
-				parser_error(state, "ERROR: parsing union member declarator\n");
-				node_malformed_error(state, child, text, "union field");
-				result = -1;
-				goto urnexit;
-			}
-			// Add a union member
-			RzVector *members = &union_pair->btype->union_data.members;
-			RzTypeUnionMember memb = {
-				.name = membname,
-				.type = membtpair->type,
-				.offset = 0, // Always 0 for unions
-				.size = 0, // FIXME
-			};
-			free(membtpair);
-			void *element = rz_vector_push(members, &memb); // returns null if no space available
-			if (!element) {
-				parser_error(state, "Error appending union member to the base type\n");
-				result = -1;
-				goto urnexit;
-			}
-		}
+			field_declarator = ts_node_next_named_sibling(field_declarator);
+		} while (!ts_node_is_null(field_declarator));
+		free(membtpair);
 	}
 	// If parsing successfull completed - we store the state
 	if (union_pair) {
@@ -892,7 +898,8 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 	parser_debug(state, "parse_enum_node()\n");
 
 	int enum_node_child_count = ts_node_named_child_count(node);
-	if (enum_node_child_count < 1 || enum_node_child_count > 2) {
+	// Possible nodes are "name", "underlying_type", "body"
+	if (enum_node_child_count < 1 || enum_node_child_count > 3) {
 		node_malformed_error(state, node, text, "enum");
 		return -1;
 	}
@@ -1109,9 +1116,8 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	}
 
 	TSNode typedef_type = ts_node_child_by_field_name(node, "type", 4);
-	TSNode typedef_declarator = ts_node_child_by_field_name(node, "declarator", 10);
-	if (ts_node_is_null(typedef_type) || ts_node_is_null(typedef_declarator)) {
-		parser_error(state, "ERROR: Typedef type and declarator nodes should not be NULL!\n");
+	if (ts_node_is_null(typedef_type)) {
+		parser_error(state, "ERROR: Typedef type node should not be NULL!\n");
 		node_malformed_error(state, node, text, "typedef");
 		return -1;
 	}
@@ -1135,40 +1141,53 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		node_malformed_error(state, typedef_type, text, "typedef type");
 		return -1;
 	}
-	// Then we augment resulting type field with the data from parsed declarator
-	char *typedef_name = NULL;
-	if (parse_type_declarator_node(state, typedef_declarator, text, &type_pair, &typedef_name)) {
-		parser_error(state, "ERROR: parsing typedef declarator\n");
-		node_malformed_error(state, typedef_declarator, text, "typedef declarator");
+	// Every typedef node could have multiple declarators
+	TSNode typedef_declarator = ts_node_child_by_field_name(node, "declarator", 10);
+	if (ts_node_is_null(typedef_declarator)) {
+		parser_error(state, "ERROR: Typedef should have at least one declarator node!\n");
+		node_malformed_error(state, node, text, "typedef");
 		return -1;
 	}
 
-	// Now we form both RzType and RzBaseType to store in the Types database
-	// Note, that if base type is NULL then it's forward definition and we should
-	// use the RzType identifier instead;
-	const char *base_type_name = rz_type_identifier(type_pair->type);
-	parser_debug(state, "typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
-	ParserTypePair *typedef_pair = c_parser_new_typedef(state, typedef_name, base_type_name);
-	if (!typedef_pair) {
-		parser_error(state, "Error forming RzType and RzBaseType pair out of typedef: \"%s\"\n", typedef_name);
-		return -1;
-	}
-	// If parsing successfull completed - we store the state
-	if (typedef_pair) {
-		typedef_pair->btype->type = type_pair->type;
-		parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
-		c_parser_base_type_store(state, typedef_name, typedef_pair);
-		// If it was a forward definition previously - remove it
-		if (c_parser_base_type_is_forward_definition(state, typedef_name)) {
-			c_parser_forward_definition_remove(state, typedef_name);
+	do {
+		// Then we augment resulting type field with the data from parsed declarator
+		char *typedef_name = NULL;
+		if (parse_type_declarator_node(state, typedef_declarator, text, &type_pair, &typedef_name)) {
+			parser_error(state, "ERROR: parsing typedef declarator\n");
+			node_malformed_error(state, typedef_declarator, text, "typedef declarator");
+			return -1;
 		}
-	}
 
-	*tpair = typedef_pair;
+		// Now we form both RzType and RzBaseType to store in the Types database
+		// Note, that if base type is NULL then it's forward definition and we should
+		// use the RzType identifier instead;
+		const char *base_type_name = rz_type_identifier(type_pair->type);
+		parser_debug(state, "typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
+		ParserTypePair *typedef_pair = c_parser_new_typedef(state, typedef_name, base_type_name);
+		if (!typedef_pair) {
+			parser_error(state, "Error forming RzType and RzBaseType pair out of typedef: \"%s\"\n", typedef_name);
+			return -1;
+		}
+		// If parsing successfull completed - we store the state
+		if (typedef_pair) {
+			typedef_pair->btype->type = rz_type_clone(type_pair->type);
+			parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
+			c_parser_base_type_store(state, typedef_name, typedef_pair);
+			// If it was a forward definition previously - remove it
+			if (c_parser_base_type_is_forward_definition(state, typedef_name)) {
+				c_parser_forward_definition_remove(state, typedef_name);
+			}
+		}
+		// FIXME: We should return multiple types at once
+		*tpair = typedef_pair;
+		typedef_declarator = ts_node_next_named_sibling(typedef_declarator);
+	} while (!ts_node_is_null(typedef_declarator) && is_type_declarator(ts_node_type(typedef_declarator)));
+
 	return 0;
 }
 
 // Parses the node that represents just one type
+// Despite the name could parse multiple types at once, if the share the type definition
 int parse_type_node_single(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const) {
 	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
