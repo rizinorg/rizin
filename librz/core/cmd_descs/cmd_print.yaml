@@ -1557,6 +1557,10 @@ commands:
               - name: skip
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
+          - name: p==v
+            summary: Show a visual horizontal histogram of bytes in current block
+            cname: print_equal_equal_visual
+            args: []
           - name: p==0
             summary: Show a horizontal histogram of 0x00 bytes per each block
             cname: print_equal_equal_0x00

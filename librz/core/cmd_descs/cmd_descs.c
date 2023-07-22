@@ -14980,6 +14980,14 @@ static const RzCmdDescHelp print_equal_equal_help = {
 	.args = print_equal_equal_args,
 };
 
+static const RzCmdDescArg print_equal_equal_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_visual_help = {
+	.summary = "Show a visual horizontal histogram of bytes in current block",
+	.args = print_equal_equal_visual_args,
+};
+
 static const RzCmdDescArg print_equal_equal_0x00_args[] = {
 	{
 		.name = "blocks",
@@ -21384,6 +21392,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *p_equal__equal__cd = rz_cmd_desc_group_new(core->rcmd, p_equal__cd, "p==", rz_print_equal_equal_handler, &print_equal_equal_help, &p_equal__equal__help);
 	rz_warn_if_fail(p_equal__equal__cd);
+	RzCmdDesc *print_equal_equal_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==v", rz_print_equal_equal_visual_handler, &print_equal_equal_visual_help);
+	rz_warn_if_fail(print_equal_equal_visual_cd);
+
 	RzCmdDesc *print_equal_equal_0x00_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==0", rz_print_equal_equal_0x00_handler, &print_equal_equal_0x00_help);
 	rz_warn_if_fail(print_equal_equal_0x00_cd);
 

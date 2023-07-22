@@ -2077,6 +2077,8 @@ RZ_IPI RzCmdStatus rz_print_equal_priv_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_print_equal_z_handler(RzCore *core, int argc, const char **argv);
 // "p=="
 RZ_IPI RzCmdStatus rz_print_equal_equal_handler(RzCore *core, int argc, const char **argv);
+// "p==v"
+RZ_IPI RzCmdStatus rz_print_equal_equal_visual_handler(RzCore *core, int argc, const char **argv);
 // "p==0"
 RZ_IPI RzCmdStatus rz_print_equal_equal_0x00_handler(RzCore *core, int argc, const char **argv);
 // "p==F"
