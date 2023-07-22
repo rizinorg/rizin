@@ -159,11 +159,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
 			}
 			pj_ki(pj, "scale", op->mem.scale);
-#if CS_API_MAJOR >= 6
-			pj_ki(pj, "disp", (op->subtracted ? -op->mem.disp : op->mem.disp));
-#else
 			pj_ki(pj, "disp", op->mem.disp);
-#endif
 			break;
 		case ARM_OP_FP:
 			pj_ks(pj, "type", "fp");
