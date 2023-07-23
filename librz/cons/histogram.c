@@ -223,8 +223,8 @@ RZ_API void rz_histogram_options_free(RzHistogramOptions *histops) {
 	free(histops);
 }
 
-RZ_API RzIHistogram *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts) {
-	RzIHistogram *hist = RZ_NEW0(RzIHistogram);
+RZ_API RzHistogramInteractive *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts) {
+	RzHistogramInteractive *hist = RZ_NEW0(RzHistogramInteractive);
 	if (!hist) {
 		return NULL;
 	}
@@ -236,7 +236,7 @@ RZ_API RzIHistogram *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogram
 	return hist;
 }
 
-RZ_API void rz_histogram_interactive_free(RzIHistogram *hist) {
+RZ_API void rz_histogram_interactive_free(RzHistogramInteractive *hist) {
 	if (!hist) {
 		return;
 	}
@@ -245,18 +245,18 @@ RZ_API void rz_histogram_interactive_free(RzIHistogram *hist) {
 	free(hist);
 }
 
-RZ_API void rz_histogram_interactive_zoom_in(RzIHistogram *hist) {
+RZ_API void rz_histogram_interactive_zoom_in(RzHistogramInteractive *hist) {
 	hist->zoom += ZOOM_DEFAULT;
 }
 
-RZ_API void rz_histogram_interactive_zoom_out(RzIHistogram *hist) {
+RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist) {
 	hist->zoom -= ZOOM_DEFAULT;
 	if (hist->zoom == 0) {
 		hist->zoom = ZOOM_DEFAULT;
 	}
 }
 
-RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzIHistogram *hist, const unsigned char *data, unsigned int width, unsigned int height) {
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data, unsigned int width, unsigned int height) {
 	rz_return_val_if_fail(data, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {

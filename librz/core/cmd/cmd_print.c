@@ -5971,7 +5971,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 	opts->curpos = 0;
 	opts->color = rz_config_get_i(core->config, "scr.color");
 	opts->pal = &core->cons->context->pal;
-	RzIHistogram *hist = rz_histogram_interactive_new(can, opts);
+	RzHistogramInteractive *hist = rz_histogram_interactive_new(can, opts);
 	hist->size = brange->nblocks;
 	if (!hist) {
 		rz_histogram_options_free(hist->opts);
