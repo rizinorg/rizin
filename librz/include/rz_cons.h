@@ -846,7 +846,7 @@ typedef struct rz_bar_options_t {
 	bool color; //<< Use colors
 } RzBarOptions;
 
-typedef struct rz_i_histogram_t{
+typedef struct rz_i_histogram_t {
 	RzConsCanvas *can;
 
 	int barnumber;
@@ -856,7 +856,7 @@ typedef struct rz_i_histogram_t{
 
 	int x, y;
 	int w, h;
-	
+
 	RzHistogramOptions *opts;
 } RzIHistogram;
 
@@ -1047,9 +1047,9 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
 RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist, const unsigned char *data, unsigned int width, unsigned int height);
-RZ_API RzHistogramOptions* rz_cons_histogram_options_new();
+RZ_API RzHistogramOptions *rz_cons_histogram_options_new();
 RZ_API void rz_cons_histogram_options_free(RzHistogramOptions *histops);
-RZ_API RzIHistogram* rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *opts);
+RZ_API RzIHistogram *rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *opts);
 RZ_API void rz_i_histogram_free(RzIHistogram *hist);
 #endif
 

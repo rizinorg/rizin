@@ -5,7 +5,7 @@
 #include <rz_util/rz_assert.h>
 
 #define DEFAULT_SPEED 1
-#define ZOOM_DEFAULT 100
+#define ZOOM_DEFAULT  100
 
 /**
  * \brief Create the string buffer with the horisontal histogram
@@ -211,19 +211,19 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opt
 	return buf;
 }
 
-RZ_API RzHistogramOptions* rz_cons_histogram_options_new(){
+RZ_API RzHistogramOptions *rz_cons_histogram_options_new() {
 	RzHistogramOptions *histops = RZ_NEW0(RzHistogramOptions);
-	if(!histops){
+	if (!histops) {
 		return NULL;
 	}
 	return histops;
 }
-RZ_API void rz_cons_histogram_options_free(RzHistogramOptions *histops){
+RZ_API void rz_cons_histogram_options_free(RzHistogramOptions *histops) {
 	free(histops);
 }
-RZ_API RzIHistogram* rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *opts){
+RZ_API RzIHistogram *rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *opts) {
 	RzIHistogram *hist = RZ_NEW0(RzIHistogram);
-	if(!hist){
+	if (!hist) {
 		return NULL;
 	}
 	hist->opts = opts;
@@ -234,8 +234,8 @@ RZ_API RzIHistogram* rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *o
 	return hist;
 }
 
-RZ_API void rz_i_histogram_free(RzIHistogram *hist){
-	if(!hist){
+RZ_API void rz_i_histogram_free(RzIHistogram *hist) {
+	if (!hist) {
 		return;
 	}
 	rz_cons_canvas_free(hist->can);
@@ -250,7 +250,7 @@ RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist,
 		return NULL;
 	}
 
-	RzHistogramOptions* opts = hist->opts;
+	RzHistogramOptions *opts = hist->opts;
 	size_t i, j;
 	ut32 cols = width;
 	ut32 rows = height > 0 ? height : 10;
@@ -265,28 +265,28 @@ RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist,
 	kol[4] = opts->pal->nop;
 	if (opts->color) {
 		int adder = 0;
-		adder = ((hist->barnumber+1)/width) * width;
-		if(hist->barnumber - adder > width/2) adder += (hist->barnumber - adder - width/2);
-		else adder -= (width/2 - (hist->barnumber - adder));
+		adder = ((hist->barnumber + 1) / width) * width;
+		if (hist->barnumber - adder > width / 2)
+			adder += (hist->barnumber - adder - width / 2);
+		else
+			adder -= (width / 2 - (hist->barnumber - adder));
 		for (i = 0; i < rows; i++) {
 			size_t threshold = i * (0xff / rows);
 			size_t koli = i * 5 / rows;
-			for(j = 0;j<width;j++){
+			for (j = 0; j < width; j++) {
 				int realj = adder + j;
-				if(realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i+1 == rows))){
-					if(realj == hist->barnumber){
+				if (realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))) {
+					if (realj == hist->barnumber) {
 						rz_strbuf_appendf(buf, "%s%s%s", Color_RED, vline, Color_RESET);
-					}
-					else if (opts->thinline) {
+					} else if (opts->thinline) {
 						rz_strbuf_appendf(buf, "%s%s%s", kol[koli], vline, Color_RESET);
 					} else {
 						rz_strbuf_appendf(buf, "%s%s%s", kol[koli], block, Color_RESET);
 					}
-				}	
-				else{
+				} else {
 					rz_strbuf_append(buf, " ");
 				}
-			}	
+			}
 			rz_strbuf_append(buf, "\n");
 		}
 		rz_strbuf_appendf(buf, "Current Index %d data %d", hist->barnumber, data[hist->barnumber]);
@@ -294,18 +294,19 @@ RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist,
 	}
 
 	int adder = 0;
-	adder = ((hist->barnumber+1)/width) * width;
-	if(hist->barnumber - adder > width/2) adder += (hist->barnumber - adder - width/2);
-	else adder -= (width/2 - (hist->barnumber - adder));
+	adder = ((hist->barnumber + 1) / width) * width;
+	if (hist->barnumber - adder > width / 2)
+		adder += (hist->barnumber - adder - width / 2);
+	else
+		adder -= (width / 2 - (hist->barnumber - adder));
 	for (i = 0; i < rows; i++) {
 		size_t threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
 			// size_t realJ = j * width / cols;
 			int realJ = adder + j;
-			if(realJ < 0 && realJ>=hist->size){
+			if (realJ < 0 && realJ >= hist->size) {
 				rz_strbuf_append(buf, " ");
-			}
-			else if (255 - data[realJ] < threshold) {
+			} else if (255 - data[realJ] < threshold) {
 				if (opts->thinline) {
 					rz_strbuf_append(buf, vline);
 				} else {
