@@ -8,8 +8,8 @@
 #include <sys/types.h>
 #undef RZ_API
 #define RZ_API static inline
-#include "../debug/p/bfvm.h"
-#include "../debug/p/bfvm.c"
+#include "../debug/old/p/bfvm.h"
+#include "../debug/old/p/bfvm.c"
 
 typedef struct {
 	ut32 magic;
