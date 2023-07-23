@@ -21,6 +21,7 @@
 #define MEMDISP_BV(x)    (HASMEMINDEX(x) ? REG_VAL(insn->detail->arm.operands[x].mem.index) : U32(MEMDISP(x)))
 #define ISIMM(x)         (insn->detail->arm.operands[x].type == ARM_OP_IMM || insn->detail->arm.operands[x].type == ARM_OP_FP)
 #define ISREG(x)         (insn->detail->arm.operands[x].type == ARM_OP_REG)
+#define ISPSRFLAGS(x)    (insn->detail->arm.operands[x].type == ARM_OP_CPSR || insn->detail->arm.operands[x].type == ARM_OP_SPSR)
 #define ISMEM(x)         (insn->detail->arm.operands[x].type == ARM_OP_MEM)
 #define ISFPIMM(x)       (insn->detail->arm.operands[x].type == ARM_OP_FP)
 

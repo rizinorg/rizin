@@ -844,7 +844,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		// TODO: esil for MRS
 		break;
 	case ARM_INS_MSR:
-		msr_flags = insn->detail->arm.operands[0].reg >> 4;
+		msr_flags = insn->detail->arm.operands[0].sysop.msr_mask;
 		rz_strbuf_appendf(&op->esil, "0,");
 		if (msr_flags & 1) {
 			rz_strbuf_appendf(&op->esil, "0xFF,|,");
@@ -976,6 +976,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	// many errors
 	if (insn->detail->arm.update_flags) {
 		switch (insn->id) {
+		case ARM_INS_MSR:
+			// Updates flags manually
+			break;
 		case ARM_INS_CMP:
 			rz_strbuf_appendf(&op->esil, ",$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,:=,31,$o,vf,:=");
 			break;

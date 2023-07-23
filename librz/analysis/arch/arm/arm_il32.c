@@ -1477,10 +1477,10 @@ static RzILOpEffect *mla(cs_insn *insn, bool is_thumb) {
  * ARM: mrs
  */
 static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
-	if (!ISREG(0) || !ISREG(1)) {
+	if (!ISREG(0) || !(ISREG(1) || ISPSRFLAGS(1))) {
 		return NULL;
 	}
-	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_SPSR && REGID(1) != ARM_REG_APSR) {
+	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_SPSR && REGID(1) != ARM_REG_APSR && !ISPSRFLAGS(1)) {
 		// only these regs supported
 		return NULL;
 	}
@@ -1500,7 +1500,7 @@ static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
  */
 static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 	cs_arm_op *dst = &insn->detail->arm.operands[0];
-	if (dst->type != ARM_OP_SYSREG) {
+	if ((dst->type != ARM_OP_SYSREG) && (dst->type != ARM_OP_CPSR) && (dst->type != ARM_OP_SPSR)) {
 		return NULL;
 	}
 	// check if the reg+mask contains any of the flags we have:
@@ -1518,8 +1518,8 @@ static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 		update_s = true;
 		break;
 	default:
-		update_f = (dst->reg & ARM_SYSREG_CPSR_F) || (dst->reg & ARM_SYSREG_SPSR_F);
-		update_s = (dst->reg & ARM_SYSREG_CPSR_S) || (dst->reg & ARM_SYSREG_SPSR_S);
+		update_f = (dst->sysop.psr_bits & ARM_FIELD_CPSR_F) || (dst->sysop.psr_bits & ARM_FIELD_SPSR_F);
+		update_s = (dst->sysop.psr_bits & ARM_FIELD_CPSR_S) || (dst->sysop.psr_bits & ARM_FIELD_SPSR_S);
 		break;
 	}
 	if (!update_f && !update_s) {
