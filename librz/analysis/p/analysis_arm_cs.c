@@ -514,7 +514,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free(pj);
 }
 
-static int cond_cs2r2(int cc) {
+static int cond_cs2r2_32(int cc) {
 	if (cc == ARMCC_AL || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
@@ -533,6 +533,30 @@ static int cond_cs2r2(int cc) {
 		case ARMCC_LT: cc = RZ_TYPE_COND_LT; break;
 		case ARMCC_GT: cc = RZ_TYPE_COND_GT; break;
 		case ARMCC_LE: cc = RZ_TYPE_COND_LE; break;
+		}
+	}
+	return cc;
+}
+
+static int cond_cs2r2_64(int cc) {
+	if (cc == ARMCC_AL || cc < 0) {
+		cc = RZ_TYPE_COND_AL;
+	} else {
+		switch (cc) {
+		case ARM64_CC_EQ: cc = RZ_TYPE_COND_EQ; break;
+		case ARM64_CC_NE: cc = RZ_TYPE_COND_NE; break;
+		case ARM64_CC_HS: cc = RZ_TYPE_COND_HS; break;
+		case ARM64_CC_LO: cc = RZ_TYPE_COND_LO; break;
+		case ARM64_CC_MI: cc = RZ_TYPE_COND_MI; break;
+		case ARM64_CC_PL: cc = RZ_TYPE_COND_PL; break;
+		case ARM64_CC_VS: cc = RZ_TYPE_COND_VS; break;
+		case ARM64_CC_VC: cc = RZ_TYPE_COND_VC; break;
+		case ARM64_CC_HI: cc = RZ_TYPE_COND_HI; break;
+		case ARM64_CC_LS: cc = RZ_TYPE_COND_LS; break;
+		case ARM64_CC_GE: cc = RZ_TYPE_COND_GE; break;
+		case ARM64_CC_LT: cc = RZ_TYPE_COND_LT; break;
+		case ARM64_CC_GT: cc = RZ_TYPE_COND_GT; break;
+		case ARM64_CC_LE: cc = RZ_TYPE_COND_LE; break;
 		}
 	}
 	return cc;
@@ -559,7 +583,7 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	}
 
-	op->cond = cond_cs2r2(insn->detail->arm64.cc);
+	op->cond = cond_cs2r2_64(insn->detail->arm64.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
@@ -986,7 +1010,7 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	const int pcdelta = thumb ? 4 : 8;
 	int i;
 
-	op->cond = cond_cs2r2(insn->detail->arm.cc);
+	op->cond = cond_cs2r2_32(insn->detail->arm.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
