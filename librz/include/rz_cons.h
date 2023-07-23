@@ -1051,6 +1051,8 @@ RZ_API RzHistogramOptions *rz_cons_histogram_options_new();
 RZ_API void rz_cons_histogram_options_free(RzHistogramOptions *histops);
 RZ_API RzIHistogram *rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *opts);
 RZ_API void rz_i_histogram_free(RzIHistogram *hist);
+RZ_API void rz_i_histogram_zoom_in(RzIHistogram *hist);
+RZ_API void rz_i_histogram_zoom_out(RzIHistogram *hist);
 #endif
 
 /* Bars */

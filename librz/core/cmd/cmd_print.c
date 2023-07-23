@@ -5996,6 +5996,12 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 			if (hist->barnumber == brange->nblocks)
 				hist->barnumber = 0;
 			break;
+		case '+':
+			rz_i_histogram_zoom_in(hist);
+			break;
+		case '-':
+			rz_i_histogram_zoom_out(hist);
+			break;
 		case 'q':
 		case 'Q':
 		case ' ':
