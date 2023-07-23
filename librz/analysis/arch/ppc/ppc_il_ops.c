@@ -1050,7 +1050,8 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	// C/CL/CR			Clear, clear left/right
 	// M/NM/MI			Mask, AND with mask, mask insert
 
-#if CS_API_MAJOR == 5 && CS_API_MINOR == 0
+// FIXME: With update to auto-sync ppc arch
+#if CS_API_MAJOR >= 5 && CS_API_MINOR == 0
 	// weird bug on capstone v5.0
 	if (id == PPC_INS_CLRLDI && !strcmp(insn->mnemonic, "rldicl")) {
 		id = PPC_INS_RLDICL;
