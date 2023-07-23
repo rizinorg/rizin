@@ -5915,15 +5915,19 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
+	if (!data) {
+		free(brange);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_io_read_at(core->io, core->offset, data, brange->nblocks);
 
 	if (!rz_cons_is_interactive()) {
+		free(brange);
+		free(data);
 		RZ_LOG_ERROR("core: visual mode requires scr.interactive=true.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzConsCanvas *can;
-	// RzCoreVisual *visual = core->visual;
-	// int ch;
 	bool exit_histogram = false, is_error = false;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
@@ -5940,14 +5944,21 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		if (!can) {
 			RZ_LOG_ERROR("core: cannot create RzCons.canvas context. Invalid screen "
 				     "size? See scr.columns + scr.rows\n");
+			free(brange);
+			free(data);
+			rz_config_hold_restore(hc);
 			rz_config_hold_free(hc);
 			return false;
 		}
 	}
 	can->color = rz_config_get_i(core->config, "scr.color");
 
-	RzHistogramOptions *opts = rz_cons_histogram_options_new();
+	RzHistogramOptions *opts = rz_histogram_options_new();
 	if (!opts) {
+		free(brange);
+		free(data);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
 		rz_cons_canvas_free(can);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -5960,47 +5971,43 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 	opts->curpos = 0;
 	opts->color = rz_config_get_i(core->config, "scr.color");
 	opts->pal = &core->cons->context->pal;
-	RzIHistogram *hist = rz_i_histogram_new(can, opts);
+	RzIHistogram *hist = rz_histogram_interactive_new(can, opts);
 	hist->size = brange->nblocks;
 	if (!hist) {
+		rz_histogram_options_free(hist->opts);
+		free(brange);
+		free(data);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
 		rz_cons_canvas_free(can);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	printf("hi\n");
-	printf("%d %d\n", w, h);
 	int okey, key;
-	// is_error = true;
 	while (!exit_histogram && !is_error && !rz_cons_is_breaked()) {
 		showcursor(core, false);
 		w = rz_cons_get_size(&h);
 		rz_cons_canvas_resize(hist->can, w, h);
 		printf("%d %d\n", w, h);
-		// RzStrBuf* str = rz_histogram_horizontal(hist->opts,data,w,h);
-		RzStrBuf *str = rz_i_histogram_horizontal(hist, data, w, h);
+		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data, w, h);
 		rz_cons_canvas_write(hist->can, str->ptr);
 		rz_cons_canvas_print_region(hist->can);
 		rz_cons_newline();
 		rz_cons_visual_flush();
-		// rz_cons_flush();
 		okey = rz_cons_readchar();
 		key = rz_cons_arrow_to_hjkl(okey);
 		switch (key) {
 		case 'h':
-			hist->barnumber--;
-			if (hist->barnumber < 0)
-				hist->barnumber = brange->nblocks - 1;
+			hist->barnumber = (hist->barnumber > 0) ? (hist->barnumber - 1) : (brange->nblocks - 1);
 			break;
 		case 'l':
-			hist->barnumber++;
-			if (hist->barnumber == brange->nblocks)
-				hist->barnumber = 0;
+			hist->barnumber = (hist->barnumber == brange->nblocks) ? (0) : (hist->barnumber + 1);
 			break;
 		case '+':
-			rz_i_histogram_zoom_in(hist);
+			rz_histogram_interactive_zoom_in(hist);
 			break;
 		case '-':
-			rz_i_histogram_zoom_out(hist);
+			rz_histogram_interactive_zoom_out(hist);
 			break;
 		case 'q':
 		case 'Q':
@@ -6013,13 +6020,14 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		rz_cons_clear00();
 	}
 	rz_cons_break_pop();
-	// rz_config_set(core->config, "asm.comments", rz_str_bool(asm_comments));
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->keep_asmqjmps = false;
-	rz_i_histogram_free(hist);
+	free(brange);
+	free(data);
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
+	rz_histogram_interactive_free(hist);
 	rz_cons_show_cursor(true);
 	rz_cons_enable_mouse(false);
 

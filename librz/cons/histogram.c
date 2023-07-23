@@ -211,17 +211,19 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opt
 	return buf;
 }
 
-RZ_API RzHistogramOptions *rz_cons_histogram_options_new() {
+RZ_API RzHistogramOptions *rz_histogram_options_new() {
 	RzHistogramOptions *histops = RZ_NEW0(RzHistogramOptions);
 	if (!histops) {
 		return NULL;
 	}
 	return histops;
 }
-RZ_API void rz_cons_histogram_options_free(RzHistogramOptions *histops) {
+
+RZ_API void rz_histogram_options_free(RzHistogramOptions *histops) {
 	free(histops);
 }
-RZ_API RzIHistogram *rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *opts) {
+
+RZ_API RzIHistogram *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts) {
 	RzIHistogram *hist = RZ_NEW0(RzIHistogram);
 	if (!hist) {
 		return NULL;
@@ -234,27 +236,27 @@ RZ_API RzIHistogram *rz_i_histogram_new(RzConsCanvas *can, RzHistogramOptions *o
 	return hist;
 }
 
-RZ_API void rz_i_histogram_free(RzIHistogram *hist) {
+RZ_API void rz_histogram_interactive_free(RzIHistogram *hist) {
 	if (!hist) {
 		return;
 	}
 	rz_cons_canvas_free(hist->can);
-	rz_cons_histogram_options_free(hist->opts);
+	rz_histogram_options_free(hist->opts);
 	free(hist);
 }
 
-RZ_API void rz_i_histogram_zoom_in(RzIHistogram *hist) {
+RZ_API void rz_histogram_interactive_zoom_in(RzIHistogram *hist) {
 	hist->zoom += ZOOM_DEFAULT;
 }
 
-RZ_API void rz_i_histogram_zoom_out(RzIHistogram *hist) {
+RZ_API void rz_histogram_interactive_zoom_out(RzIHistogram *hist) {
 	hist->zoom -= ZOOM_DEFAULT;
 	if (hist->zoom == 0) {
 		hist->zoom = ZOOM_DEFAULT;
 	}
 }
 
-RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist, const unsigned char *data, unsigned int width, unsigned int height) {
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzIHistogram *hist, const unsigned char *data, unsigned int width, unsigned int height) {
 	rz_return_val_if_fail(data, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
@@ -279,10 +281,11 @@ RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist,
 	if (opts->color) {
 		int adder = 0;
 		adder = ((hist->barnumber + 1) / width) * width;
-		if (hist->barnumber - adder > width / 2)
+		if (hist->barnumber - adder > width / 2) {
 			adder += (hist->barnumber - adder - width / 2);
-		else
+		} else {
 			adder -= (width / 2 - (hist->barnumber - adder));
+		}
 		for (i = 0; i < rows; i++) {
 			size_t threshold = i * (0xff / rows);
 			size_t koli = i * 5 / rows;
@@ -291,18 +294,22 @@ RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist,
 				int realj = adder + j;
 				if (realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))) {
 					if (realj == hist->barnumber) {
-						for (k = 0; k < zoom; k++)
+						for (k = 0; k < zoom; k++) {
 							rz_strbuf_appendf(buf, "%s%s%s", Color_RED, block, Color_RESET);
+						}
 					} else if (opts->thinline) {
-						for (k = 0; k < zoom; k++)
+						for (k = 0; k < zoom; k++) {
 							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], vline, Color_RESET);
+						}
 					} else {
-						for (k = 0; k < zoom; k++)
+						for (k = 0; k < zoom; k++) {
 							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], block, Color_RESET);
+						}
 					}
 				} else {
-					for (k = 0; k < zoom; k++)
+					for (k = 0; k < zoom; k++) {
 						rz_strbuf_append(buf, " ");
+					}
 				}
 			}
 			rz_strbuf_append(buf, "\n");
@@ -310,29 +317,40 @@ RZ_API RZ_OWN RzStrBuf *rz_i_histogram_horizontal(RZ_NONNULL RzIHistogram *hist,
 		rz_strbuf_appendf(buf, "Current Index %d data %d", hist->barnumber, data[hist->barnumber]);
 		return buf;
 	}
-
+	int k = 0;
 	int adder = 0;
 	adder = ((hist->barnumber + 1) / width) * width;
-	if (hist->barnumber - adder > width / 2)
+	if (hist->barnumber - adder > width / 2) {
 		adder += (hist->barnumber - adder - width / 2);
-	else
+	} else {
 		adder -= (width / 2 - (hist->barnumber - adder));
+	}
 	for (i = 0; i < rows; i++) {
 		size_t threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
 			int realJ = adder + j;
 			if (realJ < 0 && realJ >= hist->size) {
-				rz_strbuf_append(buf, " ");
+				for (k = 0; k < zoom; k++) {
+					rz_strbuf_append(buf, " ");
+				}
 			} else if (255 - data[realJ] < threshold) {
 				if (opts->thinline) {
-					rz_strbuf_append(buf, block);
+					for (k = 0; k < zoom; k++) {
+						rz_strbuf_append(buf, block);
+					}
 				} else {
-					rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					for (k = 0; k < zoom; k++) {
+						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					}
 				}
 			} else if (i + 1 == rows) {
-				rz_strbuf_append(buf, "_");
+				for (k = 0; k < zoom; k++) {
+					rz_strbuf_append(buf, "_");
+				}
 			} else {
-				rz_strbuf_append(buf, " ");
+				for (k = 0; k < zoom; k++) {
+					rz_strbuf_append(buf, " ");
+				}
 			}
 		}
 		rz_strbuf_append(buf, "\n");
