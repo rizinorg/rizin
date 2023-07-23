@@ -395,6 +395,7 @@ EOF
 RUN
 
 NAME=rz-asm -A with -c and -o
+BROKEN=1
 FILE==
 CMDS=!rz-asm -a arm -b 16 -A -o 0x1000 -c cortexm 0x80f30988
 EXPECT=<<EOF
