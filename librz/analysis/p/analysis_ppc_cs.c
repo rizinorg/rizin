@@ -1018,10 +1018,12 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->val <<= 16;
 			esilprintf(op, "%s0000,%s,=", ARG(1), ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case PPC_INS_CLRLWI:
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask32(ARG(2), "0x1F"), ARG(0));
 			break;
+#endif
 		case PPC_INS_RLWINM:
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 			esilprintf(op, "%s,%s,<<<,%s,&,%s,=", ARG(2), ARG(1), cmask32(ARG(3), ARG(4)), ARG(0));
@@ -1235,8 +1237,10 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 			esilprintf(op, "%s,%s,*,%s,=", ARG(2), ARG(1), ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case PPC_INS_SUB:
 		case PPC_INS_SUBC:
+#endif
 		case PPC_INS_SUBF:
 		case PPC_INS_SUBFIC:
 		case PPC_INS_SUBFZE:
@@ -1649,6 +1653,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 			esilprintf(op, "%s,%s", ARG(0), ARG2(1, ",=[128]"));
 			break;
+#if CS_NEXT_VERSION < 6
 		case PPC_INS_CLRLDI:
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask64(ARG(2), "0x3F"), ARG(0));
@@ -1657,6 +1662,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 			esilprintf(op, "%s,%s,<<<,%s,=", ARG(2), ARG(1), ARG(0));
 			break;
+#endif
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
 			op->type = RZ_ANALYSIS_OP_TYPE_ROL;

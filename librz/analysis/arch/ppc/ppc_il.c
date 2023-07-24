@@ -789,6 +789,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 		return IS_ZERO(VARG("ctr"));
+#if CS_NEXT_VERSION < 6
 	// ctr != 0 && cr_bi == 1
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
@@ -837,6 +838,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		}
 		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
 	}
+#endif
 }
 
 /**

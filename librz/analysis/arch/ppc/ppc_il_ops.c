@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "opcode/ppc.h"
 #include "ppc_il.h"
 #include "ppc_analysis.h"
 #include "rz_types_base.h"
@@ -1087,7 +1086,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	// M/NM/MI			Mask, AND with mask, mask insert
 
 // FIXME: With update to auto-sync ppc arch
-#if CS_API_MAJOR >= 5 && CS_API_MINOR == 0
+#if CS_API_MAJOR == 5 && CS_API_MINOR == 0 && CS_NEXT_VERSION < 6
 	// weird bug on capstone v5.0
 	if (id == PPC_INS_CLRLDI && !strcmp(insn->mnemonic, "rldicl")) {
 		id = PPC_INS_RLDICL;
@@ -1099,17 +1098,27 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_ROTLW:
 	case PPC_INS_ROTLWI:
+#endif
 	case PPC_INS_RLWIMI:
 	case PPC_INS_RLWINM:
 	case PPC_INS_RLWNM:
+#if CS_NEXT_VERSION >= 6
+		if (id == PPC_INS_RLWNM) {
+#else
 		if (id == PPC_INS_RLWNM || id == PPC_INS_ROTLW) {
+#endif
 			n = CAST(6, IL_FALSE, LOGAND(VARG(rB), UA(0x1f)));
 		} else {
 			n = U8(sH);
 		}
 		r = ROTL32(UNSIGNED(32, VARG(rS)), n);
+#if CS_NEXT_VERSION >= 6
+		b = mB + 32;
+		e = mE + 32;
+#else
 		if (id == PPC_INS_ROTLW || id == PPC_INS_ROTLWI) {
 			b = 32; // mb: 0 + 32
 			e = 63; // me: 31 + 32
@@ -1117,6 +1126,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			b = mB + 32;
 			e = mE + 32;
 		}
+#endif
 		// Mask has all bits set.
 		all_bits_set = (((b - 1) & 0x3f) == e);
 		set_mask = all_bits_set ? NULL : SET_MASK(U8(b), U8(e));
@@ -1125,15 +1135,21 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			into_rA = LOGOR(into_rA, LOGAND(VARG(rA), LOGNOT(VARL("mask"))));
 		}
 		break;
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_ROTLD:
 	case PPC_INS_ROTLDI:
+#endif
 	case PPC_INS_RLDCL:
 	case PPC_INS_RLDCR:
 	case PPC_INS_RLDIC:
 	case PPC_INS_RLDICL:
 	case PPC_INS_RLDICR:
 	case PPC_INS_RLDIMI:
+#if CS_NEXT_VERSION >= 6
+		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL) {
+#else
 		if (id == PPC_INS_RLDCR || id == PPC_INS_RLDCL || id == PPC_INS_ROTLD) {
+#endif
 			// For these instruction ME is the third operand, not MB.
 			mE = INSOP(3).imm;
 			n = UNSIGNED(8, VARG(rB));
@@ -1145,6 +1161,21 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		}
 		n = LOGAND(U8(0x3f), n);
 		r = ROTL64(VARG(rS), n);
+#if CS_NEXT_VERSION >= 6
+		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR) {
+			b = 0;
+			e = mE;
+		} else {
+			b = mB;
+			if (id == PPC_INS_RLDCL || id == PPC_INS_RLDICL) {
+				e = 63;
+			} else if (id == PPC_INS_RLDIMI) {
+				e = (63 - sH) & 0x3f;
+			} else {
+				e = sH;
+			}
+		}
+#else
 		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR || id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
 			b = 0;
 			if (id == PPC_INS_ROTLDI || id == PPC_INS_ROTLD) {
@@ -1162,6 +1193,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 				e = sH;
 			}
 		}
+#endif
 
 		all_bits_set = (((b - 1) & 0x3f) == e);
 		set_mask = all_bits_set ? NULL : SET_MASK(U8(b), U8(e));
@@ -1229,6 +1261,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			IL_FALSE);
 		set_ca = SETG("ca", ca_val);
 		break;
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_CLRLDI:
 	case PPC_INS_CLRLWI:
 		r = VARG(rS);
@@ -1237,6 +1270,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		all_bits_set = (((b - 1) & 0x3f) == e);
 		set_mask = all_bits_set ? NULL : SET_MASK(U8(b), U8(e));
 		into_rA = all_bits_set ? r : LOGAND(r, VARL("mask"));
+#endif
 	}
 
 	RzILOpPure *zero = UA(0);
@@ -1800,12 +1834,14 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_RLWIMI:
 	case PPC_INS_RLWINM:
 	case PPC_INS_RLWNM:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_ROTLD:
 	case PPC_INS_ROTLDI:
 	case PPC_INS_CLRLDI:
 	case PPC_INS_ROTLWI:
 	case PPC_INS_CLRLWI:
 	case PPC_INS_ROTLW:
+#endif
 	case PPC_INS_SLD:
 	case PPC_INS_SLW:
 	case PPC_INS_SRAD:
