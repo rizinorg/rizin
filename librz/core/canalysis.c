@@ -5097,6 +5097,17 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 	return true;
 }
 
+RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(core && var, UT64_MAX);
+	if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+		// TODO: If bp is not available, we can also get the address from the sp
+		// through info available from rz_analysis_block_get_sp_at()
+		ut64 stack = rz_core_reg_getv_by_role_or_name(core, "BP");
+		return stack + var->fcn->bp_off + var->storage.stack_off;
+	}
+	return UT64_MAX;
+}
+
 RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
@@ -5123,10 +5134,7 @@ RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NON
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		// rz_analysis_var_addr does not work when debugging
-		const char *regname = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
-		ut64 stack = rz_core_reg_getv_by_role_or_name(core, regname);
-		ut64 addr = stack + var->fcn->bp_off + var->storage.stack_off;
+		ut64 addr = rz_core_analysis_var_addr(core, var);
 		char *r;
 		if (usePxr) {
 			// TODO: convert to API

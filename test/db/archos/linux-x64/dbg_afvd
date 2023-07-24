@@ -1,0 +1,12 @@
+NAME=dbg.afvd
+FILE=/bin/cat
+ARGS=-d -A
+CMDS=<<EOF
+dcu main
+ds 12
+afvd var_170h
+EOF
+EXPECT=<<EOF
+var var_170h = 0xffffffffffffff69 = (qword)-1
+EOF
+RUN
