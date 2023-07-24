@@ -381,7 +381,7 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
  * \return bool True if the instructions moves a value to a SPR. False otherwise.
  */
 RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
-#if CS_API_MAJOR >= 6
+#if CS_NEXT_VERSION >= 6
 	return (insn_id > PPC_MTSPR_ALIAS_FIRST && insn_id < PPC_INS_ENDING) || insn_id == PPC_INS_MTSPR;
 #else
 

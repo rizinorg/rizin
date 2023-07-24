@@ -968,7 +968,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFPID:
 	case PPC_INS_MFTBLO:
 	case PPC_INS_MFTBHI:
-#if CS_API_MAJOR == 6
+#if CS_NEXT_VERSION == 6
 	case PPC_INS_MFDBATU0:
 	case PPC_INS_MFDBATL0:
 	case PPC_INS_MFDBATU1:
@@ -999,7 +999,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFTCR:
 	case PPC_INS_MFASR:
 	case PPC_INS_MFPVR:
-#if CS_API_MAJOR < 6
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_MFTBU:
 #endif
 	case PPC_INS_MTDSISR:
