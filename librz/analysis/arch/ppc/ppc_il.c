@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
+#include "capstone.h"
 #include "ppc_analysis.h"
 #include <capstone/ppc.h>
 #include <rz_il/rz_il_opcodes.h>
@@ -619,8 +620,10 @@ static const char *get_crx_reg(const csh handle, cs_insn *insn, size_t n) {
 		rz_warn_if_reached();
 	}
 	return cs_reg_name(handle, reg);
-#else
+#elif CS_NEXT_VERSION < 6
 	return cs_reg_name(handle, INSOP(n).crx.reg);
+#else
+	return cs_reg_name(handle, PPC_DETAIL(insn).bc.crX);
 #endif
 }
 
@@ -639,8 +642,10 @@ static ut32 get_crx_cond(const csh handle, cs_insn *insn, size_t n) {
 	}
 	rz_warn_if_reached();
 	return PPC_BC_INVALID;
-#else
+#elif CS_NEXT_VERSION < 6
 	return INSOP(n).crx.cond;
+#else
+	return PPC_DETAIL(insn).bc.pred_cr;
 #endif
 }
 
@@ -649,7 +654,7 @@ static ut32 get_crx_cond(const csh handle, cs_insn *insn, size_t n) {
  * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
  * the chapter about branch instructions for an overview of possible conditions.
  *
- * NODE: This function *does not* decrement CTR, if required by the instruction.
+ * NOTE: This function *does not* decrement CTR, if required by the instruction.
  * This should have been done before.
  *
  * \param insn The capstone instructions.
@@ -660,16 +665,25 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	rz_return_val_if_fail(insn, NULL);
 	ut32 id = insn->id;
 
+#if CS_NEXT_VERSION >= 6
+	ut8 bo = PPC_DETAIL(insn).bc.bi;
+	ut8 bi = PPC_DETAIL(insn).bc.bo;
+	RzILOpBool *decr_ctr = cs_ppc_bc_decr_ctr(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *check_ctr_is_zero = cs_ppc_bc_tests_ctr_is_zero(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *check_cr_bit_is_set = cs_ppc_bc_tests_cr_bit_is_set(bo) ? IL_TRUE : IL_FALSE;
+#else
 	ut8 bo = PPC_READ_BO_FIELD;
 	ut8 bi = PPC_READ_BI_FIELD;
-	RzILOpPure *ctr_ok;
-	RzILOpPure *cond_ok;
 	RzILOpPure *bo_0;
 	RzILOpPure *bo_1;
 	RzILOpPure *bo_2;
 	RzILOpPure *bo_3;
 	RzILOpPure *cr;
 	RzILOpPure *cr_bit;
+#endif
+	RzILOpPure *ctr_cond_fullfilled;
+	RzILOpPure *cr_cond_fullfilled;
 
 	switch (id) {
 	default:
@@ -717,6 +731,11 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
+#if CS_NEXT_VERSION >= 6
+		ctr_cond_fullfilled = AND(decr_ctr, XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero));
+		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_set)));
+		return AND(ctr_cond_fullfilled, cr_cond_fullfilled);
+#else
 		// BO_2 == 0: Decrement CTR
 		// BO_2 == 1: Don't use CTR
 		bo_2 = NON_ZERO(LOGAND(UN(5, 0b00100), VARLP("bo")));
@@ -724,7 +743,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		// BO_3 == 0: Check CTR != 0
 		// BO_3 == 1: Check CTR == 0
 		bo_3 = NON_ZERO(LOGAND(UN(5, 0b00010), VARLP("bo")));
-		ctr_ok = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
+		ctr_cond_fullfilled = OR(bo_2, XOR(NON_ZERO(VARG("ctr")), bo_3)); // BO_2 | (CTR_M:63 ≠ 0) ⊕ BO_3
 
 		// BO_0 == 0: Check CR_bi
 		// BO_0 == 1: Don't check CR_bi
@@ -733,9 +752,9 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		// BO_1 == 0: Check CR_bi == 0
 		// BO_1 == 1: Check CR_bi == 1
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
-		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
-
-		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
+		cr_cond_fullfilled = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
+		return LET("bo", UN(5, bo), AND(cr_cond_fullfilled, ctr_cond_fullfilled));
+#endif
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
 #if CS_API_MAJOR == 5
@@ -768,11 +787,16 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BGECTR:
 	case PPC_INS_BGECTRL:
 #endif
+#if CS_NEXT_VERSION >= 6
+		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_set)));
+		return cr_cond_fullfilled;
+#else
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
-		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
+		cr_cond_fullfilled = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
-		return LET("bo", UN(5, bo), cond_ok);
+		return LET("bo", UN(5, bo), cr_cond_fullfilled);
+#endif
 	// CTR != 0
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
@@ -837,8 +861,8 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 			return AND(IS_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
 		}
 		return AND(NON_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
-	}
 #endif
+	}
 }
 
 /**
@@ -874,6 +898,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BLA:
 	case PPC_INS_BCA:
 	case PPC_INS_BCLA:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDNZTA:
 	case PPC_INS_BDNZTLA:
 	case PPC_INS_BDNZFA:
@@ -882,6 +907,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDZTLA:
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFLA:
+#endif
 		// EXTS(LI || 0b00)
 		// Branch to relative address
 #if CS_API_MAJOR == 5
@@ -916,6 +942,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 #endif
 	case PPC_INS_B:
 	case PPC_INS_BL:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDZF:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZT:
@@ -924,6 +951,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDNZFL:
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
+#endif
 		// CIA + EXTS(LI || 0b00)
 		if (insn->detail->ppc.op_count == 2) {
 			return UA(INSOP(1).imm);
