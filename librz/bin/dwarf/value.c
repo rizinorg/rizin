@@ -196,11 +196,9 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 		U64_OR_RET_NULL(value->u64);
 		break;
 	case RzBinDwarfValueType_I128:
-		U128_OR_RET_NULL(value->u128);
-		break;
 	case RzBinDwarfValueType_U128:
-		U128_OR_RET_NULL(value->u128);
-		break;
+		RZ_LOG_ERROR("I128/U128 not supported\n")
+		return NULL;
 	case RzBinDwarfValueType_F32:
 		U8_OR_RET_NULL(value->u32);
 		value->f32 = (float)value->u32;

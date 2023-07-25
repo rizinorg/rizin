@@ -1574,7 +1574,6 @@ typedef struct {
 		st64 i64;
 		float f32;
 		double f64;
-		ut128 u128;
 		struct rz_bin_dwarf_location_t *location;
 	};
 } RzBinDwarfValue;
