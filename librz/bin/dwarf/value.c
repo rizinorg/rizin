@@ -197,7 +197,6 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 		break;
 	case RzBinDwarfValueType_I128:
 		U128_OR_RET_NULL(value->u128);
-		value->i128 = (__int128_t)value->u128;
 		break;
 	case RzBinDwarfValueType_U128:
 		U128_OR_RET_NULL(value->u128);

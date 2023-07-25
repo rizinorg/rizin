@@ -829,10 +829,10 @@ static bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseTy
 	void **it;
 	rz_pvector_foreach (children, it) {
 		RzBinDwarfDie *child_die = *it;
-		if (!(child_die->tag == DW_TAG_enumerator)) {
+		if (child_die->tag != DW_TAG_enumerator) {
 			continue;
 		}
-		RzTypeEnumCase cas = {};
+		RzTypeEnumCase cas = { 0 };
 		RzTypeEnumCase *result = enumerator_parse(ctx, child_die, &cas);
 		if (!result) {
 			goto err;
