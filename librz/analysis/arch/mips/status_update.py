@@ -656,7 +656,7 @@ def load_status():
     """
     Reads current README.md file and loads current uplifting status
     @return status dictionary
-    {insn_name : [mips32_status, mips64_status, mmips32_status, mmips64_status]}
+    {insn_name : [mips32_status, mips64_status, mmips32_status, mmips64_status, test_status]}
     """
 
     f = open("README.md", mode="r")
@@ -684,6 +684,7 @@ def load_status():
         mips64_status = cols[2].strip() != "[ ]"
         mmips32_status = cols[3].strip() != "[ ]"
         mmips64_status = cols[4].strip() != "[ ]"
+        test_status = int(cols[5].strip())
 
         # fill status hash table
         status[insn_name] = [
@@ -691,6 +692,7 @@ def load_status():
             mips64_status,
             mmips32_status,
             mmips64_status,
+            test_status
         ]
 
     return status
@@ -702,8 +704,8 @@ def write_status(status):
 
     # generate columns
     f.write(
-        "|               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |\n"
-        "|--------------------------------|------------|------------|------------|------------|\n"
+        "|               Instruction Name |     MIPS32 |     MIPS64 |    mMIPS32 |    mMIPS64 |   HAS TEST |\n"
+        "|--------------------------------|------------|------------|------------|------------|------------|\n"
     )
 
     # print empty data
@@ -712,9 +714,10 @@ def write_status(status):
         mips64_status = "[x]" if status[insn_list[i]][1] == True else "[ ]"
         mmips32_status = "[x]" if status[insn_list[i]][2] == True else "[ ]"
         mmips64_status = "[x]" if status[insn_list[i]][3] == True else "[ ]"
+        test_status = str(status[insn_list[i]][4])
 
         f.write(
-            f"| {insn_list[i]:>30} | {mips32_status:>10} | {mips64_status:>10} | {mmips32_status:>10} | {mmips64_status:>10} |\n"
+            f"| {insn_list[i]:>30} | {mips32_status:>10} | {mips64_status:>10} | {mmips32_status:>10} | {mmips64_status:>10} | {test_status:>10} |\n"
         )
 
     f.close()
@@ -725,6 +728,8 @@ def update_status(args):
     Update current status
     Architecture names that are not present will be marked as false
     @param args Contains arguments for update command
+    First argument contains name of instruction
+    Second argument contains architectures list
     """
 
     status = load_status()
@@ -734,7 +739,7 @@ def update_status(args):
     arch_list = args[1:]
 
     # generate new status
-    new_insn_status = [False, False, False, False]
+    new_insn_status = [False, False, False, False, status[insn_name][-1]]
     for arch in arch_list:
         if arch == "mips32":
             new_insn_status[0] = True
@@ -744,6 +749,8 @@ def update_status(args):
             new_insn_status[2] = True
         if arch == "mmips64":
             new_insn_status[3] = True
+        if arch == "test":
+            new_insn_status[4] += 1
 
     # update instruction status
     status[insn_name] = new_insn_status
@@ -752,11 +759,12 @@ def update_status(args):
 def show_status():
     status = load_status()
 
-    # count total number of uplifted instructions
+    # count total number of uplifted instructions or have tests
     mips32 = 0
     mips64 = 0
     mmips32 = 0
     mmips64 = 0
+    test = 0
 
     for i in range(len(insn_list)):
         s = status[insn_list[i]]
@@ -769,8 +777,10 @@ def show_status():
             mmips32 += 1
         if s[3] == True:
             mmips64 += 1
+        if s[4] != 0:
+            test += 1
 
-    print(f"STATUS : MIPS32 = {mips32} | MIPS64 = {mips64} | mMIPS32 = {mmips32} | mMIPS64 = {mmips64}")
+    print(f"STATUS : MIPS32 = {mips32} | MIPS64 = {mips64} | mMIPS32 = {mmips32} | mMIPS64 = {mmips64} | HAS TEST = {test}")
 
 # process cmd line args
 def show_help():
@@ -778,11 +788,12 @@ def show_help():
     print(
         "COMMANDS : help                                        # display this help\n"
         "         : new                                         # generate new status file\n"
-        "         : update <insn_name> <arch1> <arch2> ...      # update status for current arch\n"
+        "         : update <insn_name> [<test>] <arch1> <arch2> ... # update status for current arch or test\n"
         "         : show                                        # display total number of \n"
         "                                                       # uplifted instructions per arch\n"
         "EXAMPLES :\n"
         "         : eg: update ADDI mips32 mmips64              # mips32 and mmps64 will be marked, others will be unmarked\n"
+        "         : eg: update ADDIUR1SP test                   # marks +1 for test of ADDIUR1SP everytime this is called\n"
         "         : eg: coverage mipsbins/bin/ls mips32 little  # Will load bin/ls elf file and calculate uplifting status"
     )
 

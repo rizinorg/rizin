@@ -1,0 +1,221 @@
+dE "lui gp, 0xa" 3c1c000a 0x400238 (set gp (bv 32 0xa0000))
+dE "addiu gp, gp, 0x2f68" 279c2f68 0x40023c (set gp (+ (var gp) (bv 32 0x2f68)))
+dE "addu gp, gp, t9" 0399e021 0x400240 (set gp (+ (var gp) (var t9)))
+dE "addiu sp, sp, -0x20" 27bdffe0 0x400244 (set sp (+ (var sp) (bv 32 0xffffffe0)))
+dE "sw gp, 0x10(sp)" afbc0010 0x400248 (storew 0 (+ (var sp) (bv 32 0x10)) (var gp))
+dE "sw ra, 0x1c(sp)" afbf001c 0x40024c (storew 0 (+ (var sp) (bv 32 0x1c)) (var ra))
+dE "lw v0, -0x75a8(gp)" 8f828a58 0x400250 (set v0 (cast 32 (msb (loadw 0 32 (+ (var gp) (bv 32 0xffff8a58)))) (loadw 0 32 (+ (var gp) (bv 32 0xffff8a58)))))
+dE "nop " 00000000 0x400254 nop
+dE "lw t9, -0x75a8(gp)" 8f998a58 0x400260 (set t9 (cast 32 (msb (loadw 0 32 (+ (var gp) (bv 32 0xffff8a58)))) (loadw 0 32 (+ (var gp) (bv 32 0xffff8a58)))))
+dE "jalr t9" 0320f809 0x400268 (seq (set ra (bv 32 0x400270)) (jmp (var t9)))
+dE "lw ra, 0x1c(sp)" 8fbf001c 0x400270 (set ra (cast 32 (msb (loadw 0 32 (+ (var sp) (bv 32 0x1c)))) (loadw 0 32 (+ (var sp) (bv 32 0x1c)))))
+dE "jr ra" 03e00008 0x400278 (jmp (var ra))
+dE "addiu sp, sp, 0x20" 27bd0020 0x40027c (set sp (+ (var sp) (bv 32 0x20)))
+dE "lui t9, 0x47" 3c190047 0x400280 (set t9 (bv 32 0x470000))
+dE "sw ra, 0xbc(sp)" afbf00bc 0x4002d8 (storew 0 (+ (var sp) (bv 32 0xbc)) (var ra))
+dEB "lwc0 3, -7100(s1)" c223e444 0x40030c nop
+dEB "lwc0 3, -7100(s1)" c223e444 0x40030c nop
+dEB "li at, 1" 24010001 0x400318 nop
+dEB "swc0 c0_random, -7100(s1)" e221e444 0x40031c nop
+dEB "li v0, 1" 24020001 0x400324 nop
+dEB "li v0, 1" 24020001 0x400324 nop
+dE "move a2, zero" 00003025 0x400388 (set a2 (var zero))
+dE "syscall " 0000000c 0x400394 nop
+dE "move a2, zero" 00003025 0x400388 (set a2 (var zero))
+dE "slti v0, v0, 2" 28420002 0x4003d8 (set v0 (ite (&& (sle (var v0) (bv 32 0x2)) (! (== (var v0) (bv 32 0x2)))) (bv 32 0x1) (bv 32 0x0)))
+dE "move a1, zero" 00002825 0x400490 (set a1 (var zero))
+dE "break 0xff" 00ff000d 0x40050c (set CAUSE_EXC (bv 8 0x9))
+dE "sltu v0, s1, v0" 0222102b 0x400598 (set v0 (ite (&& (ule (var s1) (var v0)) (! (== (var s1) (var v0)))) (bv 32 0x1) (bv 32 0x0)))
+dE "jr t9" 03200008 0x4005c4 (jmp (var t9))
+dEB "lwc0 c0_context, -5764(s0)" c204e97c 0x40060c nop
+dE "sc at, -0x1684(s0)" e201e97c 0x400614 (branch (! (is_zero (cast 2 false (+ (var s0) (bv 32 0xffffe97c))))) (seq (storew 0 (+ (var s0) (bv 32 0xffffe97c)) (cast 32 false (var at))) (set LLbit false) (set at (bv 32 0x1))) (set CAUSE_EXC (bv 8 0x5)))
+dE "sb v1, -0x1688(v0)" a043e978 0x400668 (storew 0 (+ (var v0) (bv 32 0xffffe978)) (cast 8 false (var v1)))
+dE "addu gp, gp, ra" 039fe021 0x4006a4 (set gp (+ (var gp) (var ra)))
+dE "and sp, sp, at" 03a1e824 0x4006bc (set sp (& (var sp) (var at)))
+dE "lui a0, 0x4a" 3c04004a 0x4006f0 (set a0 (bv 32 0x4a0000))
+dE "subu a1, a1, a0" 00a42823 0x400734 (set a1 (- (var a1) (var a0)))
+dE "sra v0, a1, 2" 00051083 0x400738 (set v0 (>> (var a1) (bv 5 0x2) (msb (var a1))))
+dE "srl a1, a1, 0x1f" 00052fc2 0x40073c (set a1 (>> (var a1) (bv 5 0x1f) false))
+dE "addu a1, a1, v0" 00a22821 0x400740 (set a1 (+ (var a1) (var v0)))
+dE "sra a1, a1, 1" 00052843 0x400744 (set a1 (>> (var a1) (bv 5 0x1) (msb (var a1))))
+dE "lbu v0, -0x4370(s0)" 9202bc90 0x400778 (set v0 (cast 32 false (loadw 0 8 (+ (var s0) (bv 32 0xffffbc90)))))
+dE "sb v0, -0x4370(s0)" a202bc90 0x4007b0 (storew 0 (+ (var s0) (bv 32 0xffffbc90)) (cast 8 false (var v0)))
+dE "lb v0, (v0)" 80420000 0x40082c (set v0 (cast 32 (msb (loadw 0 8 (+ (var v0) (bv 32 0x0)))) (loadw 0 8 (+ (var v0) (bv 32 0x0)))))
+dE "subu v0, v0, s0" 00501023 0x400970 (set v0 (- (var v0) (var s0)))
+dE "sra s1, v0, 2" 00028883 0x400978 (set s1 (>> (var v0) (bv 5 0x2) (msb (var v0))))
+dEB "swc0 c0_random, 0(v0)" e0410000 0x400a80 nop
+dE "sll v0, v0, 2" 00021080 0x400ad4 (set v0 (cast 32 (msb (<< (var v0) (bv 5 0x2) false)) (<< (var v0) (bv 5 0x2) false)))
+dE "lwl v0, (v1)" 88620000 0x400b80 (branch (== (cast 2 false (+ (var v1) (bv 32 0x0))) (bv 2 0x0)) (set v0 (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc))))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x0))) (bv 2 0x1)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (bv 32 0xffffff00)) (& (var v0) (bv 32 0xff)))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x0))) (bv 2 0x2)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (bv 32 0xffff0000)) (& (var v0) (bv 32 0xffff)))) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (bv 32 0xff000000)) (& (var v0) (bv 32 0xffffff)))))))
+dE "lwr v0, 3(v1)" 98620003 0x400b88 (branch (== (cast 2 false (+ (var v1) (bv 32 0x3))) (bv 2 0x0)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (bv 32 0xff)) (& (var v0) (bv 32 0xffffff00)))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x3))) (bv 2 0x1)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (bv 32 0xffff)) (& (var v0) (bv 32 0xffff0000)))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x3))) (bv 2 0x2)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (bv 32 0xffffff)) (& (var v0) (bv 32 0xff000000)))) (set v0 (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x3)) (bv 32 0xfffffffc))))))))
+dE "ori v1, v1, 0xffff" 3463ffff 0x400b90 (set v1 (| (var v1) (bv 32 0xffff)))
+dE "and v0, v0, v1" 00431024 0x400b94 (set v0 (& (var v0) (var v1)))
+dE "lwl v0, 4(v1)" 88620004 0x400bc0 (branch (== (cast 2 false (+ (var v1) (bv 32 0x4))) (bv 2 0x0)) (set v0 (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc))))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x4))) (bv 2 0x1)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (bv 32 0xffffff00)) (& (var v0) (bv 32 0xff)))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x4))) (bv 2 0x2)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (bv 32 0xffff0000)) (& (var v0) (bv 32 0xffff)))) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x4)) (bv 32 0xfffffffc)))) (bv 32 0xff000000)) (& (var v0) (bv 32 0xffffff)))))))
+dE "lwr v0, 7(v1)" 98620007 0x400bc8 (branch (== (cast 2 false (+ (var v1) (bv 32 0x7))) (bv 2 0x0)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (bv 32 0xff)) (& (var v0) (bv 32 0xffffff00)))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x7))) (bv 2 0x1)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (bv 32 0xffff)) (& (var v0) (bv 32 0xffff0000)))) (branch (== (cast 2 false (+ (var v1) (bv 32 0x7))) (bv 2 0x2)) (set v0 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (bv 32 0xffffff)) (& (var v0) (bv 32 0xff000000)))) (set v0 (cast 32 (msb (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var v1) (bv 32 0x7)) (bv 32 0xfffffffc))))))))
+dE "subu s6, v0, s0" 0050b023 0x400c68 (set s6 (- (var v0) (var s0)))
+dE "sltu v0, s3, s6" 0276102b 0x400c90 (set v0 (ite (&& (ule (var s3) (var s6)) (! (== (var s3) (var s6)))) (bv 32 0x1) (bv 32 0x0)))
+dE "andi v0, v0, 0xf000" 3042f000 0x400e2c (set v0 (& (var v0) (bv 32 0xf000)))
+dE "sll a0, a0, 5" 00042140 0x400f48 (set a0 (cast 32 (msb (<< (var a0) (bv 5 0x5) false)) (<< (var a0) (bv 5 0x5) false)))
+dE "sltu v1, v0, a0" 0044182b 0x400f58 (set v1 (ite (&& (ule (var v0) (var a0)) (! (== (var v0) (var a0)))) (bv 32 0x1) (bv 32 0x0)))
+dE "sltiu v1, s2, 0x20" 2e430020 0x400fa0 (set v1 (ite (&& (ule (var s2) (bv 32 0x20)) (! (== (var s2) (bv 32 0x20)))) (bv 32 0x1) (bv 32 0x0)))
+dE "negu v0, s5" 00151023 0x400fc8 nop
+dE "divu zero, s0, s2" 0212001b 0x400fec (seq (set lo (div (var s0) (var s2))) (set hi (mod (var s0) (var s2))))
+dE "break 7" 0007000d 0x400ff0 (set CAUSE_EXC (bv 8 0x9))
+dE "mflo v0" 00001012 0x400ff8 (set v0 (var lo))
+dE "mult v0, s3" 00530018 0x401004 (seq (set hi (cast 32 (msb (cast 32 false (>> (* (cast 64 (msb (var v0)) (var v0)) (cast 64 (msb (var s3)) (var s3))) (bv 8 0x20) false))) (cast 32 false (>> (* (cast 64 (msb (var v0)) (var v0)) (cast 64 (msb (var s3)) (var s3))) (bv 8 0x20) false)))) (set lo (cast 32 (msb (cast 32 false (* (cast 64 (msb (var v0)) (var v0)) (cast 64 (msb (var s3)) (var s3))))) (cast 32 false (* (cast 64 (msb (var v0)) (var v0)) (cast 64 (msb (var s3)) (var s3)))))))
+dE "mflo s4" 0000a012 0x401008 (set s4 (var lo))
+dE "and v1, v1, v0" 00621824 0x401054 (set v1 (& (var v1) (var v0)))
+dE "negu v0, v0" 00021023 0x4010b4 nop
+dE "sltiu v0, v0, -0xfff" 2c42f001 0x4010b8 (set v0 (ite (&& (ule (var v0) (bv 32 0xfffff001)) (! (== (var v0) (bv 32 0xfffff001)))) (bv 32 0x1) (bv 32 0x0)))
+dE "divu zero, s0, s3" 0213001b 0x4010d8 (seq (set lo (div (var s0) (var s3))) (set hi (mod (var s0) (var s3))))
+dE "mfhi s3" 00009810 0x40115c (set s3 (var hi))
+dE "lbu v0, (v0)" 90420000 0x4012d4 (set v0 (cast 32 false (loadw 0 8 (+ (var v0) (bv 32 0x0)))))
+dE "sll v1, a1, 4" 00051900 0x401310 (set v1 (cast 32 (msb (<< (var a1) (bv 5 0x4) false)) (<< (var a1) (bv 5 0x4) false)))
+dE "sb v1, (v0)" a0430000 0x4016d4 (storew 0 (+ (var v0) (bv 32 0x0)) (cast 8 false (var v1)))
+dE "sltiu v1, v0, -0xfff" 2c43f001 0x401a10 (set v1 (ite (&& (ule (var v0) (bv 32 0xfffff001)) (! (== (var v0) (bv 32 0xfffff001)))) (bv 32 0x1) (bv 32 0x0)))
+dE "xori a1, s0, 0x80" 3a050080 0x401aa4 (set a1 (^ (var s0) (bv 32 0x80)))
+dE "xori a1, a1, 0x81" 38a50081 0x401b20 (set a1 (^ (var a1) (bv 32 0x81)))
+dE "lbu v0, -0x72d8(v1)" 90628d28 0x401b50 (set v0 (cast 32 false (loadw 0 8 (+ (var v1) (bv 32 0xffff8d28)))))
+dE "srl v0, v0, 3" 000210c2 0x401e20 (set v0 (>> (var v0) (bv 5 0x3) false))
+dE "andi v0, v0, 0xf8" 304200f8 0x401ed0 (set v0 (& (var v0) (bv 32 0xf8)))
+dE "andi v1, v0, 7" 30430007 0x401f38 (set v1 (& (var v0) (bv 32 0x7)))
+dE "srl v1, v1, 0xc" 00031b02 0x401f4c (set v1 (>> (var v1) (bv 5 0xc) false))
+dE "xor v0, v1, a3" 00671026 0x401f60 (set v0 (^ (var v1) (var a3)))
+dE "xori a1, v0, 0xff" 384500ff 0x4020b0 (set a1 (^ (var v0) (bv 32 0xff)))
+dE "or v0, a0, a1" 00851025 0x402100 (set v0 (| (var a0) (var a1)))
+dE "or v0, v0, v1" 00431025 0x402110 (set v0 (| (var v0) (var v1)))
+dE "negu v1, a1" 00051823 0x402144 nop
+dE "mult v1, a2" 00660018 0x4023cc (seq (set hi (cast 32 (msb (cast 32 false (>> (* (cast 64 (msb (var v1)) (var v1)) (cast 64 (msb (var a2)) (var a2))) (bv 8 0x20) false))) (cast 32 false (>> (* (cast 64 (msb (var v1)) (var v1)) (cast 64 (msb (var a2)) (var a2))) (bv 8 0x20) false)))) (set lo (cast 32 (msb (cast 32 false (* (cast 64 (msb (var v1)) (var v1)) (cast 64 (msb (var a2)) (var a2))))) (cast 32 false (* (cast 64 (msb (var v1)) (var v1)) (cast 64 (msb (var a2)) (var a2)))))))
+dE "mflo v1" 00001812 0x4023d4 (set v1 (var lo))
+dE "xor a0, v1, a1" 00652026 0x40261c (set a0 (^ (var v1) (var a1)))
+dE "mult a2, v1" 00c30018 0x402650 (seq (set hi (cast 32 (msb (cast 32 false (>> (* (cast 64 (msb (var a2)) (var a2)) (cast 64 (msb (var v1)) (var v1))) (bv 8 0x20) false))) (cast 32 false (>> (* (cast 64 (msb (var a2)) (var a2)) (cast 64 (msb (var v1)) (var v1))) (bv 8 0x20) false)))) (set lo (cast 32 (msb (cast 32 false (* (cast 64 (msb (var a2)) (var a2)) (cast 64 (msb (var v1)) (var v1))))) (cast 32 false (* (cast 64 (msb (var a2)) (var a2)) (cast 64 (msb (var v1)) (var v1)))))))
+dE "ori a0, s1, 1" 36240001 0x402b00 (set a0 (| (var s1) (bv 32 0x1)))
+dE "xor t1, s4, t0" 02884826 0x402b64 (set t1 (^ (var s4) (var t0)))
+dE "ori s1, s1, 1" 36310001 0x402bcc (set s1 (| (var s1) (bv 32 0x1)))
+dE "or v1, v1, a0" 00641825 0x402cd0 (set v1 (| (var v1) (var a0)))
+dE "slti v1, v1, 2" 28630002 0x4032d8 (set v1 (ite (&& (sle (var v1) (bv 32 0x2)) (! (== (var v1) (bv 32 0x2)))) (bv 32 0x1) (bv 32 0x0)))
+dE "slti v1, a1, 2" 28a30002 0x4039f8 (set v1 (ite (&& (sle (var a1) (bv 32 0x2)) (! (== (var a1) (bv 32 0x2)))) (bv 32 0x1) (bv 32 0x0)))
+dE "slt a3, a1, a2" 00a6382a 0x403d54 (set a3 (ite (&& (sle (var a1) (var a2)) (! (== (var a1) (var a2)))) (bv 32 0x1) (bv 32 0x0)))
+dE "lhu a3, (a0)" 94870000 0x4040f0 (set a3 (cast 32 false (loadw 0 16 (+ (var a0) (bv 32 0x0)))))
+dE "sh a3, (a0)" a4870000 0x4045f8 (storew 0 (+ (var a0) (bv 32 0x0)) (cast 16 false (var a3)))
+dE "lb s5, 0x20(sp)" 83b50020 0x404b7c (set s5 (cast 32 (msb (loadw 0 8 (+ (var sp) (bv 32 0x20)))) (loadw 0 8 (+ (var sp) (bv 32 0x20)))))
+dE "slt v0, v0, v1" 0043102a 0x404e4c (set v0 (ite (&& (sle (var v0) (var v1)) (! (== (var v0) (var v1)))) (bv 32 0x1) (bv 32 0x0)))
+dE "lhu a0, (v1)" 94640000 0x40574c (set a0 (cast 32 false (loadw 0 16 (+ (var v1) (bv 32 0x0)))))
+dE "lhu v1, (a0)" 94830000 0x4057a4 (set v1 (cast 32 false (loadw 0 16 (+ (var a0) (bv 32 0x0)))))
+dE "sh v1, (a0)" a4830000 0x4057bc (storew 0 (+ (var a0) (bv 32 0x0)) (cast 16 false (var v1)))
+dE "sh a3, (v0)" a4470000 0x405d64 (storew 0 (+ (var v0) (bv 32 0x0)) (cast 16 false (var a3)))
+dE "sllv a3, t4, a3" 00ec3804 0x405d98 (set a3 (cast 32 (msb (<< (var t4) (& (var a3) (bv 32 0x1f)) false)) (<< (var t4) (& (var a3) (bv 32 0x1f)) false)))
+dE "sllv v1, a3, v1" 00671804 0x405e88 (set v1 (cast 32 (msb (<< (var a3) (& (var v1) (bv 32 0x1f)) false)) (<< (var a3) (& (var v1) (bv 32 0x1f)) false)))
+dE "nor t1, zero, v1" 00034827 0x405ed4 (set t1 (~ (| (var zero) (var v1))))
+dE "divu zero, v0, s1" 0051001b 0x406d80 (seq (set lo (div (var v0) (var s1))) (set hi (mod (var v0) (var s1))))
+dE "mfhi v1" 00001810 0x406d88 (set v1 (var hi))
+dE "mfhi s1" 00008810 0x406e4c (set s1 (var hi))
+dE "multu a0, a1" 00850019 0x40883c (seq (set hi (cast 32 (msb (cast 32 false (>> (* (cast 64 false (var a0)) (cast 64 false (var a1))) (bv 8 0x20) false))) (cast 32 false (>> (* (cast 64 false (var a0)) (cast 64 false (var a1))) (bv 8 0x20) false)))) (set lo (cast 32 (msb (cast 32 false (* (cast 64 false (var a0)) (cast 64 false (var a1))))) (cast 32 false (* (cast 64 false (var a0)) (cast 64 false (var a1)))))))
+dE "slt v0, s3, s1" 0271102a 0x408efc (set v0 (ite (&& (sle (var s3) (var s1)) (! (== (var s3) (var s1)))) (bv 32 0x1) (bv 32 0x0)))
+dE "jr v0" 00400008 0x409748 (jmp (var v0))
+dE "lwl t8, (a1)" 88b80000 0x409ac8 (branch (== (cast 2 false (+ (var a1) (bv 32 0x0))) (bv 2 0x0)) (set t8 (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc))))) (branch (== (cast 2 false (+ (var a1) (bv 32 0x0))) (bv 2 0x1)) (set t8 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (bv 32 0xffffff00)) (& (var t8) (bv 32 0xff)))) (branch (== (cast 2 false (+ (var a1) (bv 32 0x0))) (bv 2 0x2)) (set t8 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (bv 32 0xffff0000)) (& (var t8) (bv 32 0xffff)))) (set t8 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x0)) (bv 32 0xfffffffc)))) (bv 32 0xff000000)) (& (var t8) (bv 32 0xffffff)))))))
+dE "swl t8, (a0)" a8980000 0x409ad0 (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x0)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (var t8)) (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x1)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 24 false (>> (var t8) (bv 8 0x8) false))) (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x2)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 16 false (>> (var t8) (bv 8 0x10) false))) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 8 false (>> (var t8) (bv 8 0x18) false))))))
+dE "lb v1, (a1)" 80a30000 0x409bf8 (set v1 (cast 32 (msb (loadw 0 8 (+ (var a1) (bv 32 0x0)))) (loadw 0 8 (+ (var a1) (bv 32 0x0)))))
+dE "lwr v1, 3(a1)" 98a30003 0x409c60 (branch (== (cast 2 false (+ (var a1) (bv 32 0x3))) (bv 2 0x0)) (set v1 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (bv 32 0xff)) (& (var v1) (bv 32 0xffffff00)))) (branch (== (cast 2 false (+ (var a1) (bv 32 0x3))) (bv 2 0x1)) (set v1 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (bv 32 0xffff)) (& (var v1) (bv 32 0xffff0000)))) (branch (== (cast 2 false (+ (var a1) (bv 32 0x3))) (bv 2 0x2)) (set v1 (| (& (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (bv 32 0xffffff)) (& (var v1) (bv 32 0xff000000)))) (set v1 (cast 32 (msb (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)))) (loadw 0 32 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc))))))))
+dE "swl v1, (a0)" a8830000 0x409c68 (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x0)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (var v1)) (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x1)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 24 false (>> (var v1) (bv 8 0x8) false))) (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x2)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 16 false (>> (var v1) (bv 8 0x10) false))) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 8 false (>> (var v1) (bv 8 0x18) false))))))
+dE "swl a1, (a0)" a8850000 0x409e48 (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x0)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (var a1)) (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x1)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 24 false (>> (var a1) (bv 8 0x8) false))) (branch (== (& (+ (var a0) (bv 32 0x0)) (bv 32 0x3)) (bv 32 0x2)) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 16 false (>> (var a1) (bv 8 0x10) false))) (storew 0 (& (+ (var a0) (bv 32 0x0)) (bv 32 0xfffffffc)) (cast 8 false (>> (var a1) (bv 8 0x18) false))))))
+dE "swc1 f21, 0x38(a0)" e4950038 0x40e92c (storew 0 (+ (var a0) (bv 32 0x38)) (var f21))
+dE "swc1 f20, 0x3c(a0)" e494003c 0x40e930 (storew 0 (+ (var a0) (bv 32 0x3c)) (var f20))
+dE "swc1 f23, 0x40(a0)" e4970040 0x40e934 (storew 0 (+ (var a0) (bv 32 0x40)) (var f23))
+dE "multu v1, s3" 00730019 0x40fe6c (seq (set hi (cast 32 (msb (cast 32 false (>> (* (cast 64 false (var v1)) (cast 64 false (var s3))) (bv 8 0x20) false))) (cast 32 false (>> (* (cast 64 false (var v1)) (cast 64 false (var s3))) (bv 8 0x20) false)))) (set lo (cast 32 (msb (cast 32 false (* (cast 64 false (var v1)) (cast 64 false (var s3))))) (cast 32 false (* (cast 64 false (var v1)) (cast 64 false (var s3)))))))
+dE "srlv v1, a2, a3" 00e61806 0x40fe7c (set v1 (>> (var a2) (cast 5 false (var a3)) false))
+dE "sllv v1, v1, a2" 00c31804 0x40ffec (set v1 (cast 32 (msb (<< (var v1) (& (var a2) (bv 32 0x1f)) false)) (<< (var v1) (& (var a2) (bv 32 0x1f)) false)))
+dE "nor t2, zero, t7" 000f5027 0x410010 (set t2 (~ (| (var zero) (var t7))))
+dE "srlv a0, a0, t7" 01e42006 0x410014 (set a0 (>> (var a0) (cast 5 false (var t7)) false))
+dE "multu a3, t1" 00e90019 0x410018 (seq (set hi (cast 32 (msb (cast 32 false (>> (* (cast 64 false (var a3)) (cast 64 false (var t1))) (bv 8 0x20) false))) (cast 32 false (>> (* (cast 64 false (var a3)) (cast 64 false (var t1))) (bv 8 0x20) false)))) (set lo (cast 32 (msb (cast 32 false (* (cast 64 false (var a3)) (cast 64 false (var t1))))) (cast 32 false (* (cast 64 false (var a3)) (cast 64 false (var t1)))))))
+dE "srlv t3, t3, a2" 00cb5806 0x4100d4 (set t3 (>> (var t3) (cast 5 false (var a2)) false))
+dE "nor t2, zero, a2" 00065027 0x410288 (set t2 (~ (| (var zero) (var a2))))
+dE "lwc1 f0, 4(v0)" c4400004 0x410f84 (set f0 (loadw 0 32 (+ (var v0) (bv 32 0x4))))
+dE "lwc1 f1, -8(v0)" c441fff8 0x410f8c (set f1 (loadw 0 32 (+ (var v0) (bv 32 0xfffffff8))))
+dE "lwc1 f1, (v0)" c4410000 0x41104c (set f1 (loadw 0 32 (+ (var v0) (bv 32 0x0))))
+dE "lh v0, 2(v0)" 84420002 0x412720 (set v0 (cast 32 (msb (loadw 0 16 (+ (var v0) (bv 32 0x2)))) (loadw 0 16 (+ (var v0) (bv 32 0x2)))))
+dE "lh v1, 0xc(s0)" 8603000c 0x414f44 (set v1 (cast 32 (msb (loadw 0 16 (+ (var s0) (bv 32 0xc)))) (loadw 0 16 (+ (var s0) (bv 32 0xc)))))
+dE "lh v0, 0xc(s0)" 8602000c 0x414f7c (set v0 (cast 32 (msb (loadw 0 16 (+ (var s0) (bv 32 0xc)))) (loadw 0 16 (+ (var s0) (bv 32 0xc)))))
+dE "swr a2, 3(a1)" b8a60003 0x419fd4 (branch (== (& (+ (var a1) (bv 32 0x3)) (bv 32 0x3)) (bv 32 0x0)) (storew 0 (+ (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)) (bv 32 0x3)) (cast 8 false (var a2))) (branch (== (& (+ (var a1) (bv 32 0x3)) (bv 32 0x3)) (bv 32 0x1)) (storew 0 (+ (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)) (bv 32 0x2)) (cast 16 false (var a2))) (branch (== (& (+ (var a1) (bv 32 0x3)) (bv 32 0x3)) (bv 32 0x2)) (storew 0 (+ (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)) (bv 32 0x1)) (cast 24 false (var a2))) (storew 0 (& (+ (var a1) (bv 32 0x3)) (bv 32 0xfffffffc)) (var a2)))))
+dE "swr v1, 7(a1)" b8a30007 0x419fdc (branch (== (& (+ (var a1) (bv 32 0x7)) (bv 32 0x3)) (bv 32 0x0)) (storew 0 (+ (& (+ (var a1) (bv 32 0x7)) (bv 32 0xfffffffc)) (bv 32 0x3)) (cast 8 false (var v1))) (branch (== (& (+ (var a1) (bv 32 0x7)) (bv 32 0x3)) (bv 32 0x1)) (storew 0 (+ (& (+ (var a1) (bv 32 0x7)) (bv 32 0xfffffffc)) (bv 32 0x2)) (cast 16 false (var v1))) (branch (== (& (+ (var a1) (bv 32 0x7)) (bv 32 0x3)) (bv 32 0x2)) (storew 0 (+ (& (+ (var a1) (bv 32 0x7)) (bv 32 0xfffffffc)) (bv 32 0x1)) (cast 24 false (var v1))) (storew 0 (& (+ (var a1) (bv 32 0x7)) (bv 32 0xfffffffc)) (var v1)))))
+dE "srav a1, a2, a1" 00a62807 0x41ef84 (set a1 (>> (var a2) (cast 5 false (var a1)) (msb (var a2))))
+dE "srav v0, v0, v1" 00621007 0x421744 (set v0 (>> (var v0) (cast 5 false (var v1)) (msb (var v0))))
+dE "swr v0, 3(s5)" baa20003 0x425964 (branch (== (& (+ (var s5) (bv 32 0x3)) (bv 32 0x3)) (bv 32 0x0)) (storew 0 (+ (& (+ (var s5) (bv 32 0x3)) (bv 32 0xfffffffc)) (bv 32 0x3)) (cast 8 false (var v0))) (branch (== (& (+ (var s5) (bv 32 0x3)) (bv 32 0x3)) (bv 32 0x1)) (storew 0 (+ (& (+ (var s5) (bv 32 0x3)) (bv 32 0xfffffffc)) (bv 32 0x2)) (cast 16 false (var v0))) (branch (== (& (+ (var s5) (bv 32 0x3)) (bv 32 0x3)) (bv 32 0x2)) (storew 0 (+ (& (+ (var s5) (bv 32 0x3)) (bv 32 0xfffffffc)) (bv 32 0x1)) (cast 24 false (var v0))) (storew 0 (& (+ (var s5) (bv 32 0x3)) (bv 32 0xfffffffc)) (var v0)))))
+dE "srav a2, a2, a1" 00a63007 0x42ef54 (set a2 (>> (var a2) (cast 5 false (var a1)) (msb (var a2))))
+dE "mtc1 t3, f0" 448b0000 0x440278 nop
+dE "mtc1 t2, f1" 448a0800 0x44027c nop
+dE "c.un.d f0, f0" 46200031 0x440284 nop
+dE "mtc1 t3, f2" 448b1000 0x4402a4 nop
+dE "c.ule.d f2, f0" 46201037 0x4402b4 nop
+dEB "cfc1 v1, c1_fcsr" 4443f800 0x440878 nop
+dE "div zero, v0, a2" 0046001a 0x440a1c (seq (set lo (sdiv (var v0) (var a2))) (set hi (smod (var v0) (var a2))))
+dE "div zero, v1, v0" 0062001a 0x440a3c (seq (set lo (sdiv (var v1) (var v0))) (set hi (smod (var v1) (var v0))))
+dEB "cfc1 v0, c1_fcsr" 4442f800 0x442da8 nop
+dE "div zero, a0, v0" 0082001a 0x445acc (seq (set lo (sdiv (var a0) (var v0))) (set hi (smod (var a0) (var v0))))
+dE "break" 0000000d 0x4583cc (set CAUSE_EXC (bv 8 0x9))
+dEB "ctc1 at, c1_fcsr" 44c1f800 0x400d28 nop
+dE "cvt.w.d f0, f0" 46200024 0x400d30 nop
+dEB "ctc1 v0, c1_fcsr" 44c2f800 0x400d34 nop
+dE "mfc1 a0, f0" 44040000 0x400d3c nop
+dE "cvt.d.w f0, f0" 46800021 0x400e04 nop
+dE "sub.d f0, f2, f0" 46201001 0x400e18 (set f0 (fbits (+. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "mul.d f0, f2, f0" 46201002 0x400e4c (set f0 (fbits (*. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "mfc1 a3, f2" 44071000 0x4014e8 nop
+dE "mfc1 a2, f3" 44061800 0x4014ec nop
+dE "mul.s f0, f2, f0" 46001002 0x4006fc (set f0 (fbits (*. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "mul.s f4, f4, f0" 46002102 0x40071c (set f4 (fbits (*. rne (float 0 (var f4) ) (float 0 (var f0) ))))
+dE "mul.s f0, f4, f0" 46002002 0x400730 (set f0 (fbits (*. rne (float 0 (var f4) ) (float 0 (var f0) ))))
+dE "add.s f0, f2, f0" 46001000 0x400734 (set f0 (fbits (+. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "c.eq.s f0, f2" 46020032 0x400750 nop
+dE "sub.s f2, f2, f0" 46001081 0x400774 (set f2 (fbits (+. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "div.s f2, f2, f0" 46001083 0x400780 (set f2 (fbits (/. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "add.s f2, f2, f0" 46001080 0x4007d0 (set f2 (fbits (+. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "cvt.d.s f4, f0" 46000121 0x400870 nop
+dE "cvt.d.s f0, f0" 46000021 0x40087c nop
+dE "cvt.d.s f2, f2" 460010a1 0x400888 nop
+dE "cvt.s.w f0, f0" 46800020 0x4009fc nop
+dE "sub.s f0, f2, f0" 46001001 0x400aa0 (set f0 (fbits (+. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "mov.d f12, f0" 46200306 0x40141c (set f12 (var f0))
+dE "c.le.d f2, f0" 4620103e 0x40143c nop
+dEB "cfc1 a0, c1_fcsr" 4444f800 0x40144c nop
+dEB "ctc1 a0, c1_fcsr" 44c4f800 0x40146c nop
+dE "sub.d f0, f0, f2" 46220001 0x401480 (set f0 (fbits (+. rne (float 0 (var f0) ) (float 0 (var f2) ))))
+dE "cvt.d.w f2, f0" 468000a1 0x400748 nop
+dE "div.d f0, f2, f0" 46201003 0x400760 (set f0 (fbits (/. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "mov.s f12, f0" 46000306 0x400834 (set f12 (var f0))
+dE "add.s f6, f0, f0" 46000180 0x400b14 (set f6 (fbits (+. rne (float 0 (var f0) ) (float 0 (var f0) ))))
+dE "mov.s f14, f0" 46000386 0x400b70 (set f14 (var f0))
+dE "mov.s f12, f6" 46003306 0x400b74 (set f12 (var f6))
+dE "c.lt.d f2, f0" 4620103c 0x401128 nop
+dE "c.eq.s f2, f0" 46001032 0x400c18 nop
+dE "div.s f0, f2, f0" 46001003 0x400c3c (set f0 (fbits (/. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "div.s f0, f4, f0" 46002003 0x400e94 (set f0 (fbits (/. rne (float 0 (var f4) ) (float 0 (var f0) ))))
+dE "cvt.s.d f0, f0" 46200020 0x4012cc nop
+dE "add.d f2, f0, f0" 46200080 0x400880 (set f2 (fbits (+. rne (float 0 (var f0) ) (float 0 (var f0) ))))
+dE "mul.d f2, f2, f0" 46201082 0x400898 (set f2 (fbits (*. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "add.d f0, f0, f4" 46240000 0x4008d4 (set f0 (fbits (+. rne (float 0 (var f0) ) (float 0 (var f4) ))))
+dE "mov.d f2, f0" 46200086 0x400954 (set f2 (var f0))
+dE "mul.d f20, f2, f0" 46201502 0x400968 (set f20 (fbits (*. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "add.d f2, f20, f0" 4620a080 0x4009d0 (set f2 (fbits (+. rne (float 0 (var f20) ) (float 0 (var f0) ))))
+dE "sub.d f2, f20, f0" 4620a081 0x400a98 (set f2 (fbits (+. rne (float 0 (var f20) ) (float 0 (var f0) ))))
+dE "mov.d f20, f0" 46200506 0x400750 (set f20 (var f0))
+dE "cvt.d.w f2, f2" 468010a1 0x400bcc nop
+dE "div.d f2, f2, f0" 46201083 0x4006fc (set f2 (fbits (/. rne (float 0 (var f2) ) (float 0 (var f0) ))))
+dE "c.eq.d f2, f0" 46201032 0x4007f0 nop
+dE "c.lt.d f20, f0" 4620a03c 0x4007d0 nop
+dE "div.d f0, f0, f2" 46220003 0x400d10 (set f0 (fbits (/. rne (float 0 (var f0) ) (float 0 (var f2) ))))
+dE "c.lt.d f0, f2" 4622003c 0x4018dc nop
+dE "c.le.d f0, f2" 4622003e 0x40090c nop
+dE "cvt.s.w f2, f0" 468000a0 0x4016c8 nop
+dE "c.lt.s f0, f2" 4602003c 0x4008d0 nop
+dE "sub.s f4, f4, f0" 46002101 0x4007d8 (set f4 (fbits (+. rne (float 0 (var f4) ) (float 0 (var f0) ))))
+dE "c.eq.d f0, f2" 46220032 0x400f74 nop
+dE "c.un.d f2, f2" 46221031 0x401b9c nop
+dE "c.ule.d f6, f4" 46243037 0x401bdc nop
+dE "c.un.d f4, f4" 46242031 0x401d08 nop
+dE "c.eq.d f4, f6" 46262032 0x402524 nop
+dE "c.ule.d f8, f4" 46244037 0x4029d4 nop
+dE "c.ult.d f4, f8" 46282035 0x402a08 nop
+dE "cvt.s.w f20, f0" 46800520 0x400960 nop
+dE "mtlo v0" 00400013 0x400690 (set lo (var v0))
+dE "cvt.w.s f0, f0" 46000024 0x400834 nop
+dE "c.lt.s f2, f0" 4600103c 0x4008b0 nop

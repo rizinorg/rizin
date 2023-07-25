@@ -50,8 +50,7 @@ typedef Effect *(*MipsILLifterFunction)(RzAnalysis *, cs_insn *, ut32, bool, boo
 #define IL_LIFTER_NAME(name) MipsLifter_##name
 
 // size of Registers
-#define GPRLEN   (analysis->bits)
-#define FPRLEN() (fp64 ? 64 : 32)
+#define GPRLEN (analysis->bits)
 
 // v  : value to be sign extended
 // vn : bitsize of v
@@ -119,7 +118,6 @@ static const char *cpu_reg_enum_to_name_map[] = {
 	[MIPS_REG_29] = "sp",
 	[MIPS_REG_30] = "fp",
 	[MIPS_REG_31] = "ra",
-
 
 	// AFPR128
 	[MIPS_REG_W0] = "w0",
@@ -254,7 +252,10 @@ static const char *cpu_reg_enum_to_name_map[] = {
 #define IL_MEM_OPND_OFFSET(opndidx) SN(GPRLEN, SIGN_EXTEND(MEM_OPND_OFFSET(opndidx), 16, GPRLEN))
 
 // TODO: FIGURE OUT ROUNDING MODE
-#define RMODE RZ_FLOAT_RMODE_RNE
+#define RMODE        RZ_FLOAT_RMODE_RNE
+#define FMT32        RZ_FLOAT_IEEE754_BIN_32
+#define FMT64        RZ_FLOAT_IEEE754_BIN_64
+#define TO_FLOAT(bv) BV2F(fp64 ? FMT64 : FMT32, bv)
 
 // CAUSE REGISTER HANDLER MACROS
 // only the exception bits present here are used in whole code
@@ -290,22 +291,22 @@ static const char *cpu_reg_enum_to_name_map[] = {
  * \param offset Offset for base register in memory operand
  * \return Effect for loading multiple words to consecutive registers
  * */
-static inline Effect* load_multiple(int size, int beg, int end, char* base, st64 offset, int gprlen) {
-	const char* rt = REG_NAME(beg);
-	BitVector* addr = ADD(VARG(base), SN(gprlen, offset));
-	Effect *lm = SETG(rt, LOADW(size, addr));
+/* static inline Effect* load_multiple(int size, int beg, int end, char* base, st64 offset, int gprlen) { */
+/* 	const char* rt = REG_NAME(beg); */
+/* 	BitVector* addr = ADD(VARG(base), SN(gprlen, offset)); */
+/* 	Effect *lm = SETG(rt, LOADW(size, addr)); */
 
-	for(int i = beg + 1; i <= end; i++) {
-		rt = REG_NAME(i);
-		addr = ADD(VARG(base), SN(gprlen, offset + (i-beg)*4));
-		lm = SEQ2(lm, SETG(rt, LOADW(size, addr)));
-	}
+/* 	for(int i = beg + 1; i <= end; i++) { */
+/* 		rt = REG_NAME(i); */
+/* 		addr = ADD(VARG(base), SN(gprlen, offset + (i-beg)*4)); */
+/* 		lm = SEQ2(lm, SETG(rt, LOADW(size, addr))); */
+/* 	} */
 
-	return lm;
-}
+/* 	return lm; */
+/* } */
 
-/// idx is mem opnd index to use
-#define LOAD_MULTIPLE(size, beg, end, idx) load_multiple(size, beg, end, MEM_OPND_BASE(idx), MEM_OPND_OFFSET(idx), GPRLEN)
+/* /// idx is mem opnd index to use */
+/* #define LOAD_MULTIPLE(size, beg, end, idx) load_multiple(size, beg, end, MEM_OPND_BASE(idx), MEM_OPND_OFFSET(idx), GPRLEN) */
 
 IL_LIFTER(ABSQ_S) {
 	return NOP();
@@ -322,11 +323,10 @@ IL_LIFTER(ABSQ_S) {
  * */
 IL_LIFTER(ADD) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
-	// destination reg
 	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
@@ -335,7 +335,7 @@ IL_LIFTER(ADD) {
 	// TODO: Verify if 32 bits or 64 bits FPRLEN makes any difference
 	// do we need to explicitly cast floats to 32 bit?
 	if (float_op) {
-		return SETG(rd, FADD(RMODE, rs, rt));
+		return SETG(rd, F2BV(FADD(RMODE, TO_FLOAT(rs), TO_FLOAT(rt))));
 	} else {
 		BitVector *sum = SIGNED(GPRLEN, ADD(rs, rt));
 		Bool *overflow = IL_CHECK_OVERFLOW(DUP(sum), 32);
@@ -351,7 +351,7 @@ IL_LIFTER(ADD) {
  * */
 IL_LIFTER(ADDIUPC) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -383,7 +383,7 @@ IL_LIFTER(ADDIUR1SP) {
  * */
 IL_LIFTER(ADDIUR2) {
 	const char *rd = REG_OPND(0);
-	Pure* rs = IL_REG_OPND(1);
+	Pure *rs = IL_REG_OPND(1);
 	st64 imm = SIGN_EXTEND(IMM_OPND(2) << 2, 8, GPRLEN);
 	return SETG(rd, ADD(rs, SN(GPRLEN, imm)));
 }
@@ -466,7 +466,7 @@ IL_LIFTER(ADDUH_R) {
  * */
 IL_LIFTER(ADDU) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -501,7 +501,7 @@ IL_LIFTER(ADD_A) {
  * */
 IL_LIFTER(ADDI) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -530,7 +530,7 @@ IL_LIFTER(ADDI) {
  * */
 IL_LIFTER(ADDIU) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -555,7 +555,7 @@ IL_LIFTER(ADDIU) {
  * */
 IL_LIFTER(ALIGN) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -583,7 +583,7 @@ IL_LIFTER(ALIGN) {
  * */
 IL_LIFTER(ALUIPC) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -602,7 +602,7 @@ IL_LIFTER(ALUIPC) {
  * */
 IL_LIFTER(AND) {
 	// return NOP if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -620,8 +620,8 @@ IL_LIFTER(AND) {
  * Exceptions: None
  * */
 IL_LIFTER(AND16) {
-	const char* rt = REG_OPND(0);
-	Pure* rs = IL_REG_OPND(1);
+	const char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	return SETG(rt, LOGAND(VARG(rt), rs));
 }
@@ -633,8 +633,8 @@ IL_LIFTER(AND16) {
  * Exceptions: None
  * */
 IL_LIFTER(ANDI16) {
-	const char* rd = REG_OPND(0);
-	Pure* rs = IL_REG_OPND(1);
+	const char *rd = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 	ut64 imm = IMM_OPND(2);
 	return SETG(rd, LOGAND(rs, UN(GPRLEN, imm)));
 }
@@ -647,7 +647,7 @@ IL_LIFTER(ANDI16) {
  * */
 IL_LIFTER(ANDI) {
 	// return nop if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -679,7 +679,7 @@ IL_LIFTER(ASUB_U) {
  * */
 IL_LIFTER(AUI) {
 	// return nop if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -701,7 +701,7 @@ IL_LIFTER(AUI) {
  * */
 IL_LIFTER(AUIPC) {
 	// return nop if target register is $zero
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
@@ -1163,8 +1163,7 @@ IL_LIFTER(BGEZ) {
 
 	// signed-greater-than-equal-to
 	Bool *cond = SGE(rs, SN(GPRLEN, 0));
-	Effect *branch_op = BRANCH(cond, JMP(jump_target), NOP());
-	return branch_op;
+	return BRANCH(cond, JMP(jump_target), NOP());
 }
 
 /**
@@ -1652,7 +1651,7 @@ IL_LIFTER(BMZ) {
  * Exceptions: ReservedInstruction
  * */
 IL_LIFTER(BNE) {
-	if(REG_OPND(0) != REG_OPND(1)) {
+	if (REG_OPND(0) != REG_OPND(1)) {
 		Pure *rs = IL_REG_OPND(0);
 		Pure *rt = IL_REG_OPND(1);
 
@@ -1844,8 +1843,24 @@ IL_LIFTER(BSET) {
 IL_LIFTER(BZ) {
 	return NOP();
 }
+
+/**
+ * Branch on Equal to Zero
+ * Format: BEQZ rs, offset
+ * Description: if GPR[rs] >= 0 then branch
+ * Exceptions: ReservedInstruction
+ * TODO: Check for delay slot in BEQZ and BNEZ
+ * */
 IL_LIFTER(BEQZ) {
-	return NOP();
+	Pure *rs = IL_REG_OPND(0);
+
+	st64 offset = (st64)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
+
+	// signed-greater-than-equal-to
+	Bool *cond = EQ(rs, SN(GPRLEN, 0));
+	return BRANCH(cond, JMP(jump_target), NOP());
 }
 
 /**
@@ -1863,9 +1878,24 @@ IL_LIFTER(B) {
 	return jump_op;
 }
 
+/**
+ * Branch on Not Equal to Zero
+ * Format: BNEZ rs, offset
+ * Description: if GPR[rs] != 0 then branch
+ * Exceptions: ReservedInstruction
+ * */
 IL_LIFTER(BNEZ) {
-	return NOP();
+	Pure *rs = IL_REG_OPND(0);
+
+	st64 offset = (st64)IMM_OPND(1) << 2;
+	offset = SIGN_EXTEND(offset, 18, GPRLEN);
+	BitVector *jump_target = UN(GPRLEN, pc + offset);
+
+	// signed-greater-than-equal-to
+	Bool *cond = EQ(rs, SN(GPRLEN, 0));
+	return BRANCH(cond, JMP(jump_target), NOP());
 }
+
 IL_LIFTER(BTEQZ) {
 	return NOP();
 }
@@ -2243,6 +2273,10 @@ IL_LIFTER(DDIV) {
  * Exceptions: None
  * */
 IL_LIFTER(DDIVU) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
+		return NOP();
+	}
+
 	// NOTE: ISA divide operations are suspicuous
 	if (OPND_COUNT() == 2) {
 		Pure *rs = IL_REG_OPND(0);
@@ -2418,6 +2452,11 @@ IL_LIFTER(DINSU) {
  * Exceptions: None
  * */
 IL_LIFTER(DIV) {
+	// return NOP if target register is $zero
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
+		return NOP();
+	}
+
 	if (OPND_COUNT() == 2) {
 		Pure *rs = IL_REG_OPND(0);
 		Pure *rt = IL_REG_OPND(1);
@@ -2433,7 +2472,7 @@ IL_LIFTER(DIV) {
 		Pure *rs = IL_REG_OPND(1);
 		Pure *rt = IL_REG_OPND(2);
 		if (float_op) {
-			return SETG(rd, FDIV(RMODE, rs, rt));
+			return SETG(rd, F2BV(FDIV(RMODE, TO_FLOAT(rs), TO_FLOAT(rt))));
 		} else {
 			return SETG(rd, SDIV(rs, rt));
 		}
@@ -2449,6 +2488,10 @@ IL_LIFTER(DIV) {
  * Exceptions: None
  * */
 IL_LIFTER(DIVU) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
+		return NOP();
+	}
+
 	// NOTE: ISA divide operations are suspicuous
 	if (OPND_COUNT() == 2) {
 		Pure *rs = IL_REG_OPND(0);
@@ -2519,7 +2562,7 @@ IL_LIFTER(DMOD) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *remainder = SMOD(rs, rt);
-	return SETG(rd, remainder); 
+	return SETG(rd, remainder);
 }
 
 /**
@@ -2564,7 +2607,7 @@ IL_LIFTER(DMUH) {
 
 	BitVector *prod_hi = CAST(64, IL_FALSE, SHIFTR0(prod, U8(64)));
 
-	return SETG(rd, prod_hi); 
+	return SETG(rd, prod_hi);
 }
 
 /**
@@ -3235,12 +3278,16 @@ IL_LIFTER(FMUL) {
  * Exceptions: None
  * */
 IL_LIFTER(MUL) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
+		return NOP();
+	}
+
 	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
 	if (float_op) {
-		return SETG(rd, FMUL(RMODE, rs, rt));
+		return SETG(rd, F2BV(FMUL(RMODE, TO_FLOAT(rs), TO_FLOAT(rt))));
 	} else {
 		BitVector *rs64 = SIGNED(64, rs);
 		BitVector *rt64 = SIGNED(64, rt);
@@ -3309,15 +3356,25 @@ IL_LIFTER(FSUB) {
  * Exceptions: IntegerOverflow
  * */
 IL_LIFTER(SUB) {
+	// return NOP if target register is $zero
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
+		return NOP();
+	}
+
 	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 	Pure *rt = IL_REG_OPND(2);
 
-	BitVector *diff = SUB(rs, rt);
-	Effect *set_rd = SETG(rd, diff);
-	Bool *overflow = IL_CHECK_OVERFLOW(DUP(diff), 32);
-
-	return BRANCH(overflow, IL_CAUSE_OVERFLOW(), set_rd);
+	// add.fmt
+	// TODO: Verify if 32 bits or 64 bits FPRLEN makes any difference
+	// do we need to explicitly cast floats to 32 bit?
+	if (float_op) {
+		return SETG(rd, F2BV(FADD(RMODE, TO_FLOAT(rs), TO_FLOAT(rt))));
+	} else {
+		BitVector *sum = SIGNED(GPRLEN, SUB(rs, rt));
+		Bool *overflow = IL_CHECK_OVERFLOW(DUP(sum), 32); // TODO: Verify this, also in ADD
+		return BRANCH(overflow, IL_CAUSE_OVERFLOW(), SETG(rd, sum));
+	}
 }
 
 IL_LIFTER(FSUEQ) {
@@ -3605,9 +3662,9 @@ IL_LIFTER(LB) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LBU16) {
-	const char* rt = REG_OPND(0);
-	Pure* base = IL_MEM_OPND_BASE(1);
-	BitVector* offset = IL_MEM_OPND_OFFSET(1);
+	const char *rt = REG_OPND(0);
+	Pure *base = IL_MEM_OPND_BASE(1);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	return SETG(rt, LOADW(8, ADD(base, offset)));
 }
 
@@ -3767,7 +3824,6 @@ IL_LIFTER(LDPC) {
 	BitVector *memaddr = ADD(base, S64(offset));
 	BitVector *dword = LOADW(64, memaddr);
 
-
 	return SETG(rs, dword);
 }
 
@@ -3886,9 +3942,9 @@ IL_LIFTER(LH) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Watch
  * */
 IL_LIFTER(LHU16) {
-	const char* rt = REG_OPND(0);
-	Pure* base = IL_MEM_OPND_BASE(1);
-	BitVector* offset = IL_MEM_OPND_OFFSET(1);
+	const char *rt = REG_OPND(0);
+	Pure *base = IL_MEM_OPND_BASE(1);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 	return SETG(rt, LOADW(16, ADD(base, offset)));
 }
 
@@ -3923,7 +3979,7 @@ IL_LIFTER(LHU) {
  * Exceptions: None
  * */
 IL_LIFTER(LI16) {
-	const char* rd = REG_OPND(0);
+	const char *rd = REG_OPND(0);
 	st64 imm = SIGN_EXTEND(IMM_OPND(1), 8, GPRLEN);
 	return SETG(rd, SN(GPRLEN, imm));
 }
@@ -4060,7 +4116,7 @@ IL_LIFTER(LW) {
  * Exceptions: TLB Refill, TLB Invalid, Address Error, Reserved Instruction, Coprocessor Unusable, Watch
  * */
 IL_LIFTER(LW16) {
-	const char* rt = REG_OPND(0);
+	const char *rt = REG_OPND(0);
 	Pure *base = IL_MEM_OPND_BASE(1);
 	BitVector *offset = SN(GPRLEN, MEM_OPND_OFFSET(1) << 2);
 
@@ -4170,14 +4226,14 @@ IL_LIFTER(LWPC) {
  * Exceptions; TLB Refill, TLB Invalid, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(LWP) {
-	const char* rd = REG_OPND(0);
-	const char* rd_next = REG_NAME(REG_OPND_ID(0) + 1);
+	const char *rd = REG_OPND(0);
+	const char *rd_next = REG_NAME(REG_OPND_ID(0) + 1);
 
-	Pure* base = IL_MEM_OPND_BASE(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
 	st64 offset = SIGN_EXTEND(MEM_OPND_OFFSET(1), 12, GPRLEN);
 
-	Effect* load1 = SETG(rd, LOADW(32, ADD(base, SN(GPRLEN, offset))));
-	Effect* load2 = SETG(rd_next, LOADW(32, ADD(base, SN(GPRLEN, offset + 4))));
+	Effect *load1 = SETG(rd, LOADW(32, ADD(base, SN(GPRLEN, offset))));
+	Effect *load2 = SETG(rd_next, LOADW(32, ADD(base, SN(GPRLEN, offset + 4))));
 
 	return SEQ2(load1, load2);
 }
@@ -4214,7 +4270,7 @@ IL_LIFTER(LWR) {
 		b3 = SETG(rt, LOGOR(LOGAND(word, UN(GPRLEN, 0x000000FF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFFFFFF00))));
 
 		Bool *b2cond = EQ(DUP(memaddr_low2bit), UN(2, 2));
-		b2 = BRANCH(b2cond, SETG(rt, LOGAND(LOGOR(DUP(word), UN(GPRLEN, 0x0000FFFF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFFFF0000)))), b3); 
+		b2 = BRANCH(b2cond, SETG(rt, LOGAND(LOGOR(DUP(word), UN(GPRLEN, 0x0000FFFF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFFFF0000)))), b3);
 
 		Bool *b1cond = EQ(DUP(memaddr_low2bit), UN(2, 1));
 		b1 = BRANCH(b1cond, SETG(rt, LOGOR(LOGAND(DUP(word), UN(GPRLEN, 0x00FFFFFF)), LOGAND(VARG(rt), UN(GPRLEN, 0xFF000000)))), b2);
@@ -4502,7 +4558,7 @@ IL_LIFTER(MOD) {
 	Pure *rt = IL_REG_OPND(2);
 
 	BitVector *remainder = SMOD(rs, rt);
-	return SETG(rd, remainder); 
+	return SETG(rd, remainder);
 }
 
 IL_LIFTER(MODSUB) {
@@ -4538,14 +4594,14 @@ IL_LIFTER(MOD_U) {
  * Exceptions:
  * */
 IL_LIFTER(MOVE) {
-	if(REG_OPND_ID(0) == MIPS_REG_ZERO) {
+	if (REG_OPND_ID(0) == MIPS_REG_ZERO) {
 		return NOP();
 	}
 
 	const char *rd = REG_OPND(0);
 	Pure *rs = IL_REG_OPND(1);
 
-	return SETG(rd, rs); 
+	return SETG(rd, rs);
 }
 
 // MISSING: MOVE16
@@ -4558,17 +4614,19 @@ IL_LIFTER(MOVE) {
  * */
 IL_LIFTER(MOVEP) {
 	Effect *mov1 = NULL, *mov2 = NULL;
-	if(REG_OPND_ID(0) != MIPS_REG_ZERO) {
-		const char* rd = REG_OPND(0);
-		Pure* re = IL_REG_OPND(1);
+	if (REG_OPND_ID(0) != MIPS_REG_ZERO) {
+		const char *rd = REG_OPND(0);
+		Pure *re = IL_REG_OPND(1);
 		mov1 = SETG(rd, re);
-	} else mov1 = NOP();
+	} else
+		mov1 = NOP();
 
-	if(REG_OPND_ID(2) == MIPS_REG_ZERO) {
-		const char* rs = REG_OPND(2);
-		Pure* rt = IL_REG_OPND(3);
+	if (REG_OPND_ID(2) == MIPS_REG_ZERO) {
+		const char *rs = REG_OPND(2);
+		Pure *rt = IL_REG_OPND(3);
 		mov2 = SETG(rs, rt);
-	} else mov2 = NOP();
+	} else
+		mov2 = NOP();
 
 	return SEQ2(mov1, mov2);
 }
@@ -5042,8 +5100,8 @@ IL_LIFTER(NORI) {
  * Exceptions: None
  * */
 IL_LIFTER(NOT16) {
-	const char* rt = REG_OPND(0);
-	Pure* rs = IL_REG_OPND(1);
+	const char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	return SETG(rt, XOR(rs, UN(GPRLEN, -1)));
 }
@@ -5055,8 +5113,8 @@ IL_LIFTER(NOT16) {
  * Exceptions: None
  * */
 IL_LIFTER(NOT) {
-	const char* rt = REG_OPND(0);
-	Pure* rs = IL_REG_OPND(1);
+	const char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	return SETG(rt, XOR(rs, UN(GPRLEN, -1)));
 }
@@ -5082,8 +5140,8 @@ IL_LIFTER(OR) {
  * Exceptions: None
  * */
 IL_LIFTER(OR16) {
-	const char* rt = REG_OPND(0);
-	Pure* rs = IL_REG_OPND(1);
+	const char *rt = REG_OPND(0);
+	Pure *rs = IL_REG_OPND(1);
 
 	return SETG(rt, LOGOR(VARG(rt), rs));
 }
@@ -6054,11 +6112,11 @@ IL_LIFTER(SWM32) {
  * Exceptions: TLB Refill, TLB Invalid, TLB Modified, Bus Error, Address Error, Watch
  * */
 IL_LIFTER(SWP) {
-	Pure* rs = IL_REG_OPND(0);
-	Pure* rs_next = VARG(REG_NAME(REG_OPND_ID(0) + 1));
+	Pure *rs = IL_REG_OPND(0);
+	Pure *rs_next = VARG(REG_NAME(REG_OPND_ID(0) + 1));
 
-	Pure* base = IL_MEM_OPND_BASE(1);
-	BitVector* offset = IL_MEM_OPND_OFFSET(1);
+	Pure *base = IL_MEM_OPND_BASE(1);
+	BitVector *offset = IL_MEM_OPND_OFFSET(1);
 
 	return SEQ2(STOREW(ADD(base, offset), rs), STOREW(ADD(base, offset), rs_next));
 }
