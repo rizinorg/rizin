@@ -751,7 +751,7 @@ cleanup:
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 static bool struct_union_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type) {
 	if (!die->has_children) {
-		return false;
+		return true;
 	}
 	RzPVector *children = die_children(die, ctx->dw);
 	if (!children) {
@@ -823,7 +823,7 @@ static RzTypeEnumCase *enumerator_parse(Context *ctx, RzBinDwarfDie *die, RzType
 
 static bool enum_children_parse(Context *ctx, const RzBinDwarfDie *die, RzBaseType *base_type) {
 	if (!die->has_children) {
-		return false;
+		return true;
 	}
 	RzPVector *children = die_children(die, ctx->dw);
 	if (!children) {
