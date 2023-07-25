@@ -7,7 +7,7 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
-typedef enum : ut8 {
+typedef enum RL78Label {
         // 8-bit general-purpose registers
         RL78_GPR_X, RL78_GPR_A, RL78_GPR_C, RL78_GPR_B,
         RL78_GPR_E, RL78_GPR_D, RL78_GPR_L, RL78_GPR_H,
@@ -43,7 +43,7 @@ typedef enum : ut8 {
         _RL78_SYMBOL_COUNT
 } RL78Label;
 
-typedef enum : ut8 {
+typedef enum RL78OperandType {
         RL78_OP_TYPE_NONE, // used for instructions with less than 2 operands
         RL78_OP_TYPE_IMMEDIATE_8, // #byte
         RL78_OP_TYPE_IMMEDIATE_16, // #word
@@ -66,12 +66,12 @@ typedef enum : ut8 {
         _RL78_OP_TYPE_COUNT
 } RL78OperandType;
 
-typedef enum : ut8 {
+typedef enum RL78OperandFlags {
         RL78_OP_FLAG_BA = 1 << 0, // bit addressing (bit index stored in v1)
         RL78_OP_FLAG_ES = 1 << 1 // extension addressing
 } RL78OperandFlags;
 
-typedef struct {
+typedef struct RL78Operand {
         int v0; // contains label enum if applicable or immediate data
         int v1; // contains additional data like the offset for based addressing
         int flags;

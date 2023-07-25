@@ -127,7 +127,7 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
                 case RL78_OP_TYPE_RELATIVE_ADDR_8:
                 case RL78_OP_TYPE_BASED_ADDR_8:
                         // already has value
-                        if (operand->v1 != NULL) {
+                        if (operand->v1 != 0) {
                                 return true;
                         }
 

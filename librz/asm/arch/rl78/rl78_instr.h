@@ -9,7 +9,7 @@
 #include <rz_util.h>
 #include <rz_types.h>
 
-typedef enum : ut8 {
+typedef enum RL78Operation {
         RL78_OPERATION_NONE,
 
         RL78_OPERATION_ADD,
@@ -97,7 +97,7 @@ typedef enum : ut8 {
         _RL78_OPERATION_COUNT
 } RL78Operation;
 
-typedef struct {
+typedef struct RL78Instr {
         RL78Operand op0;
         RL78Operand op1;
 
