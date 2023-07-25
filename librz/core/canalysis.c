@@ -6524,6 +6524,6 @@ RZ_API RZ_OWN char *rz_core_analysis_var_to_string(RZ_NONNULL RzCore *core, RZ_N
 		constr ? "} " : "");
 	free(vartype);
 	free(constr);
-	rz_analysis_var_storage_dump(sb, &var->storage);
+	rz_analysis_var_storage_dump(sb, &var->storage, &core->analysis->debug_info->encoding);
 	return rz_strbuf_drain(sb);
 }

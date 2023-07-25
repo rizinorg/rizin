@@ -891,91 +891,299 @@ s dbg.__ltdf2
 EOF
 EXPECT=<<EOF
 var int ans @ empty
-arg const char *fmt @ loclist
-var va_list ap @ loclist
+arg const char *fmt @ loclist: [
+	(0x80000c22, 0x80000c2c) [DW_OP_reg20 20] reg20
+	(0x80000c2c, 0x80000c3b) [DW_OP_reg22 22] reg22
+	(0x80000c3b, 0x80000c3c) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	]
+var va_list ap @ loclist: [
+	(0x80000c22, 0x80000c36) [DW_OP_fbreg 0x0, DW_OP_stack_value] CFA+0
+	(0x80000c36, 0x80000c3b) [DW_OP_reg23 23] reg23
+	(0x80000c3b, 0x80000c3c) [DW_OP_fbreg 0x0, DW_OP_stack_value] CFA+0
+	]
 int printf(const char *fmt, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
             ;-- printf:
 / int printf(const char *fmt, ...)
-|           ; arg const char *fmt @ loclist
+|           ; arg const char *fmt @ loclist: [
+	(0x80000c22, 0x80000c2c) [DW_OP_reg20 20] reg20
+	(0x80000c2c, 0x80000c3b) [DW_OP_reg22 22] reg22
+	(0x80000c3b, 0x80000c3c) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	]
 |           ; var int ans @ empty
-|           ; var va_list ap @ loclist
+|           ; var va_list ap @ loclist: [
+	(0x80000c22, 0x80000c36) [DW_OP_fbreg 0x0, DW_OP_stack_value] CFA+0
+	(0x80000c36, 0x80000c3b) [DW_OP_reg23 23] reg23
+	(0x80000c3b, 0x80000c3c) [DW_OP_fbreg 0x0, DW_OP_stack_value] CFA+0
+	]
 |           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
 ---------
-arg void *str @ loclist
-arg const char *buf @ loclist
-arg size_t n @ loclist
+arg void *str @ loclist: [
+	(0x80000c04, 0x80000c0a) [DW_OP_reg20 20] reg20
+	(0x80000c0a, 0x80000c22) [DW_OP_reg31 31] reg31
+	]
+arg const char *buf @ loclist: [
+	(0x80000c04, 0x80000c10) [DW_OP_reg21 21] reg21
+	(0x80000c10, 0x80000c13) [DW_OP_reg20 20] reg20
+	(0x80000c13, 0x80000c22) [DW_OP_GNU_entry_value 0x65, DW_OP_stack_value] <evaluation waiting>
+	]
+arg size_t n @ loclist: [
+	(0x80000c04, 0x80000c0e) [DW_OP_reg4 4] reg4
+	(0x80000c0e, 0x80000c13) [DW_OP_reg5 5] reg5
+	(0x80000c13, 0x80000c1a) [DW_OP_reg15 15] reg15
+	(0x80000c1a, 0x80000c22) [DW_OP_GNU_entry_value 0x54, DW_OP_stack_value] <evaluation waiting>
+	]
 void * prout(void *str, const char *buf, size_t n);
             ;-- prout:
 / void * prout(void *str, const char *buf, size_t n)
-|           ; arg void *str @ loclist
-|           ; arg const char *buf @ loclist
-|           ; arg size_t n @ loclist
+|           ; arg void *str @ loclist: [
+	(0x80000c04, 0x80000c0a) [DW_OP_reg20 20] reg20
+	(0x80000c0a, 0x80000c22) [DW_OP_reg31 31] reg31
+	]
+|           ; arg const char *buf @ loclist: [
+	(0x80000c04, 0x80000c10) [DW_OP_reg21 21] reg21
+	(0x80000c10, 0x80000c13) [DW_OP_reg20 20] reg20
+	(0x80000c13, 0x80000c22) [DW_OP_GNU_entry_value 0x65, DW_OP_stack_value] <evaluation waiting>
+	]
+|           ; arg size_t n @ loclist: [
+	(0x80000c04, 0x80000c0e) [DW_OP_reg4 4] reg4
+	(0x80000c0e, 0x80000c13) [DW_OP_reg5 5] reg5
+	(0x80000c13, 0x80000c1a) [DW_OP_reg15 15] reg15
+	(0x80000c1a, 0x80000c22) [DW_OP_GNU_entry_value 0x54, DW_OP_stack_value] <evaluation waiting>
+	]
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 ---------
-arg fp_number_type *a @ loclist
-arg fp_number_type *b @ loclist
-arg fp_number_type *tmp @ loclist
-var intfrac tfraction @ loclist
-var int a_normal_exp @ loclist
-var int b_normal_exp @ loclist
-var fractype a_fraction @ loclist
-var fractype b_fraction @ loclist
+var intfrac tfraction @ <decoding error>
+arg fp_number_type *a @ loclist: [
+	(0x80003c60, 0x80003c9c) [DW_OP_reg20 20] reg20
+	(0x80003c9c, 0x80003cae) [DW_OP_reg18 18] reg18
+	(0x80003cae, 0x80003cb4) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	(0x80003cb4, 0x80003ce9) [DW_OP_reg20 20] reg20
+	(0x80003ce9, 0x80003d10) [DW_OP_reg29 29] reg29
+	(0x80003d10, 0x80003d1d) [DW_OP_reg20 20] reg20
+	(0x80003d1d, 0x80003d46) [DW_OP_reg29 29] reg29
+	(0x80003d46, 0x80003d56) [DW_OP_reg20 20] reg20
+	(0x80003d56, 0x80003e02) [DW_OP_reg29 29] reg29
+	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	]
+arg fp_number_type *b @ loclist: [
+	(0x80003c60, 0x80003c8c) [DW_OP_reg21 21] reg21
+	(0x80003c8c, 0x80003c8e) [DW_OP_reg18 18] reg18
+	(0x80003c8e, 0x80003c92) [DW_OP_reg21 21] reg21
+	(0x80003c92, 0x80003c98) [DW_OP_reg18 18] reg18
+	(0x80003c98, 0x80003cb4) [DW_OP_reg21 21] reg21
+	(0x80003cb4, 0x80003cb6) [DW_OP_reg18 18] reg18
+	(0x80003cb6, 0x80003cba) [DW_OP_reg21 21] reg21
+	(0x80003cba, 0x80003ce9) [DW_OP_reg18 18] reg18
+	(0x80003ce9, 0x80003d10) [DW_OP_reg28 28] reg28
+	(0x80003d10, 0x80003d1d) [DW_OP_reg18 18] reg18
+	(0x80003d1d, 0x80003d46) [DW_OP_reg28 28] reg28
+	(0x80003d46, 0x80003d56) [DW_OP_reg18 18] reg18
+	(0x80003d56, 0x80003e02) [DW_OP_reg28 28] reg28
+	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x65, DW_OP_stack_value] <evaluation waiting>
+	]
+arg fp_number_type *tmp @ loclist: [
+	(0x80003c60, 0x80003ce9) [DW_OP_reg22 22] reg22
+	(0x80003ce9, 0x80003d10) [DW_OP_reg31 31] reg31
+	(0x80003d10, 0x80003d1d) [DW_OP_reg22 22] reg22
+	(0x80003d1d, 0x80003d46) [DW_OP_reg31 31] reg31
+	(0x80003d46, 0x80003d56) [DW_OP_reg22 22] reg22
+	(0x80003d56, 0x80003dea) [DW_OP_reg31 31] reg31
+	(0x80003dea, 0x80003e02) [DW_OP_reg18 18] reg18
+	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x66, DW_OP_stack_value] <evaluation waiting>
+	]
+var int a_normal_exp @ loclist: [
+	(0x80003cbc, 0x80003d4c) [DW_OP_reg15 15] reg15
+	(0x80003d4c, 0x80003d52) [DW_OP_breg20 20 8 0x0] reg20+8
+	(0x80003d52, 0x80003d88) [DW_OP_reg15 15] reg15
+	(0x80003d88, 0x80003d98) [DW_OP_breg31 31 8 0x0] reg31+8
+	(0x80003dc6, 0x80003dd0) [DW_OP_reg15 15] reg15
+	(0x80003dd0, 0x80003dd6) [DW_OP_breg31 31 8 0x0] reg31+8
+	]
+var int b_normal_exp @ loclist: [
+	(0x80003cc0, 0x80003ce0) [DW_OP_reg2 2] reg2
+	(0x80003ce0, 0x80003ce9) [DW_OP_breg2 2 0 0x0, DW_OP_breg12 12 0 0x0, DW_OP_plus, DW_OP_stack_value] <evaluation waiting>
+	(0x80003d10, 0x80003d1d) [DW_OP_reg2 2] reg2
+	(0x80003d46, 0x80003d56) [DW_OP_reg2 2] reg2
+	]
+var fractype a_fraction @ loclist: [
+	(0x80003cd4, 0x80003d3c) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): reg10, (.0, 32): reg11]
+	(0x80003d44, 0x80003d50) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): reg10, (.0, 32): reg11]
+	(0x80003d50, 0x80003d52) [DW_OP_breg20 20 12 0x0] reg20+12
+	(0x80003d52, 0x80003e02) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): reg10, (.0, 32): reg11]
+	]
+var fractype b_fraction @ loclist: [
+	(0x80003cd8, 0x80003d08) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): reg8, (.0, 32): reg9]
+	(0x80003d0e, 0x80003e02) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): reg8, (.0, 32): reg9]
+	]
 fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
             ;-- _fpadd_parts:
 / fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
-|           ; arg fp_number_type *a @ loclist
-|           ; arg fp_number_type *b @ loclist
-|           ; arg fp_number_type *tmp @ loclist
-|           ; var intfrac tfraction @ loclist
-|           ; var int a_normal_exp @ loclist
-|           ; var int b_normal_exp @ loclist
-|           ; var fractype a_fraction @ loclist
-|           ; var fractype b_fraction @ loclist
+|           ; arg fp_number_type *a @ loclist: [
+	(0x80003c60, 0x80003c9c) [DW_OP_reg20 20] reg20
+	(0x80003c9c, 0x80003cae) [DW_OP_reg18 18] reg18
+	(0x80003cae, 0x80003cb4) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	(0x80003cb4, 0x80003ce9) [DW_OP_reg20 20] reg20
+	(0x80003ce9, 0x80003d10) [DW_OP_reg29 29] reg29
+	(0x80003d10, 0x80003d1d) [DW_OP_reg20 20] reg20
+	(0x80003d1d, 0x80003d46) [DW_OP_reg29 29] reg29
+	(0x80003d46, 0x80003d56) [DW_OP_reg20 20] reg20
+	(0x80003d56, 0x80003e02) [DW_OP_reg29 29] reg29
+	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	]
+|           ; arg fp_number_type *b @ loclist: [
+	(0x80003c60, 0x80003c8c) [DW_OP_reg21 21] reg21
+	(0x80003c8c, 0x80003c8e) [DW_OP_reg18 18] reg18
+	(0x80003c8e, 0x80003c92) [DW_OP_reg21 21] reg21
+	(0x80003c92, 0x80003c98) [DW_OP_reg18 18] reg18
+	(0x80003c98, 0x80003cb4) [DW_OP_reg21 21] reg21
+	(0x80003cb4, 0x80003cb6) [DW_OP_reg18 18] reg18
+	(0x80003cb6, 0x80003cba) [DW_OP_reg21 21] reg21
+	(0x80003cba, 0x80003ce9) [DW_OP_reg18 18] reg18
+	(0x80003ce9, 0x80003d10) [DW_OP_reg28 28] reg28
+	(0x80003d10, 0x80003d1d) [DW_OP_reg18 18] reg18
+	(0x80003d1d, 0x80003d46) [DW_OP_reg28 28] reg28
+	(0x80003d46, 0x80003d56) [DW_OP_reg18 18] reg18
+	(0x80003d56, 0x80003e02) [DW_OP_reg28 28] reg28
+	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x65, DW_OP_stack_value] <evaluation waiting>
+	]
+|           ; arg fp_number_type *tmp @ loclist: [
+	(0x80003c60, 0x80003ce9) [DW_OP_reg22 22] reg22
+	(0x80003ce9, 0x80003d10) [DW_OP_reg31 31] reg31
+	(0x80003d10, 0x80003d1d) [DW_OP_reg22 22] reg22
+	(0x80003d1d, 0x80003d46) [DW_OP_reg31 31] reg31
+	(0x80003d46, 0x80003d56) [DW_OP_reg22 22] reg22
+	(0x80003d56, 0x80003dea) [DW_OP_reg31 31] reg31
+	(0x80003dea, 0x80003e02) [DW_OP_reg18 18] reg18
+	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x66, DW_OP_stack_value] <evaluation waiting>
+	]
+|           ; var intfrac tfraction @ <decoding error>
+|           ; var int a_normal_exp @ loclist: [
+	(0x80003cbc, 0x80003d4c) [DW_OP_reg15 15] reg15
+	(0x80003d4c, 0x80003d52) [DW_OP_breg20 20 8 0x0] reg20+8
+	(0x80003d52, 0x80003d88) [DW_OP_reg15 15] reg15
+	(0x80003d88, 0x80003d98) [DW_OP_breg31 31 8 0x0] reg31+8
+	(0x80003dc6, 0x80003dd0) [DW_OP_reg15 15] reg15
+	(0x80003dd0, 0x80003dd6) [DW_OP_breg31 31 8 0x0] reg31+8
+	]
+|           ; var int b_normal_exp @ loclist: [
+	(0x80003cc0, 0x80003ce0) [DW_OP_reg2 2] reg2
+	(0x80003ce0, 0x80003ce9) [DW_OP_breg2 2 0 0x0, DW_OP_breg12 12 0 0x0, DW_OP_plus, DW_OP_stack_value] <evaluation waiting>
+	(0x80003d10, 0x80003d1d) [DW_OP_reg2 2] reg2
+	(0x80003d46, 0x80003d56) [DW_OP_reg2 2] reg2
+	]
+|           ; var fractype a_fraction @ loclist: [
+	(0x80003cd4, 0x80003d3c) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): reg10, (.0, 32): reg11]
+	(0x80003d44, 0x80003d50) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): reg10, (.0, 32): reg11]
+	(0x80003d50, 0x80003d52) [DW_OP_breg20 20 12 0x0] reg20+12
+	(0x80003d52, 0x80003e02) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): reg10, (.0, 32): reg11]
+	]
+|           ; var fractype b_fraction @ loclist: [
+	(0x80003cd8, 0x80003d08) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): reg8, (.0, 32): reg9]
+	(0x80003d0e, 0x80003e02) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): reg8, (.0, 32): reg9]
+	]
 |           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
 ---------
-arg const char *s @ loclist
-arg size_t maxsize @ loclist
-var const char *sc @ loclist
+var const char *sc @ <decoding error>
+arg const char *s @ loclist: [
+	(0x800030ca, 0x800030dc) [DW_OP_reg20 20] reg20
+	(0x800030dc, 0x800030e0) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	(0x800030e0, 0x800030ea) [DW_OP_reg20 20] reg20
+	(0x800030ea, 0x800030ec) [DW_OP_reg18 18] reg18
+	]
+arg size_t maxsize @ loclist: [
+	(0x800030ca, 0x800030d2) [DW_OP_reg4 4] reg4
+	(0x800030ea, 0x800030ec) [DW_OP_reg4 4] reg4
+	]
 size_t strnlen_s(const char *s, size_t maxsize);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
             ;-- strnlen_s:
 / size_t strnlen_s(const char *s, size_t maxsize)
-|           ; arg const char *s @ loclist
-|           ; arg size_t maxsize @ loclist
-|           ; var const char *sc @ loclist
+|           ; arg const char *s @ loclist: [
+	(0x800030ca, 0x800030dc) [DW_OP_reg20 20] reg20
+	(0x800030dc, 0x800030e0) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
+	(0x800030e0, 0x800030ea) [DW_OP_reg20 20] reg20
+	(0x800030ea, 0x800030ec) [DW_OP_reg18 18] reg18
+	]
+|           ; arg size_t maxsize @ loclist: [
+	(0x800030ca, 0x800030d2) [DW_OP_reg4 4] reg4
+	(0x800030ea, 0x800030ec) [DW_OP_reg4 4] reg4
+	]
+|           ; var const char *sc @ <decoding error>
 |           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize)
 ---------
 var _Statab *pmbstate @ empty
 var _Statab *pwcstate @ a13
-arg char *s @ loclist
-arg wchar_t wc @ loclist
-arg mbstate_t *pst @ loclist
+arg char *s @ loclist: [
+	(0x800018a6, 0x800018bb) [DW_OP_reg20 20] reg20
+	(0x800018bb, 0x800018ec) [DW_OP_reg31 31] reg31
+	]
+arg wchar_t wc @ loclist: [
+	(0x800018a6, 0x800018bb) [DW_OP_reg4 4] reg4
+	(0x800018bb, 0x800018ec) [DW_OP_reg15 15] reg15
+	]
+arg mbstate_t *pst @ loclist: [
+	(0x800018a6, 0x800018bb) [DW_OP_reg21 21] reg21
+	(0x800018bb, 0x800018ec) [DW_OP_reg28 28] reg28
+	]
 int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
             ;-- _Wctomb:
 / int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
-|           ; arg char *s @ loclist
-|           ; arg wchar_t wc @ loclist
-|           ; arg mbstate_t *pst @ loclist
+|           ; arg char *s @ loclist: [
+	(0x800018a6, 0x800018bb) [DW_OP_reg20 20] reg20
+	(0x800018bb, 0x800018ec) [DW_OP_reg31 31] reg31
+	]
+|           ; arg wchar_t wc @ loclist: [
+	(0x800018a6, 0x800018bb) [DW_OP_reg4 4] reg4
+	(0x800018bb, 0x800018ec) [DW_OP_reg15 15] reg15
+	]
+|           ; arg mbstate_t *pst @ loclist: [
+	(0x800018a6, 0x800018bb) [DW_OP_reg21 21] reg21
+	(0x800018bb, 0x800018ec) [DW_OP_reg28 28] reg28
+	]
 |           ; var _Statab *pmbstate @ empty
 |           ; var _Statab *pwcstate @ a13
 |           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 ---------
-arg wchar_t *pwc @ loclist
-arg const char *s @ loclist
-arg size_t nin @ loclist
-arg mbstate_t *pst @ loclist
+arg wchar_t *pwc @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg20 20] reg20
+	(0x8000309b, 0x800030b0) [DW_OP_reg30 30] reg30
+	]
+arg const char *s @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg21 21] reg21
+	(0x8000309b, 0x800030b0) [DW_OP_reg29 29] reg29
+	]
+arg size_t nin @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg4 4] reg4
+	(0x8000309b, 0x800030b0) [DW_OP_reg15 15] reg15
+	]
+arg mbstate_t *pst @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg22 22] reg22
+	(0x8000309b, 0x800030b0) [DW_OP_reg28 28] reg28
+	]
 int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
             ;-- _Mbtowc:
 / int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
-|           ; arg wchar_t *pwc @ loclist
-|           ; arg const char *s @ loclist
-|           ; arg size_t nin @ loclist
-|           ; arg mbstate_t *pst @ loclist
+|           ; arg wchar_t *pwc @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg20 20] reg20
+	(0x8000309b, 0x800030b0) [DW_OP_reg30 30] reg30
+	]
+|           ; arg const char *s @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg21 21] reg21
+	(0x8000309b, 0x800030b0) [DW_OP_reg29 29] reg29
+	]
+|           ; arg size_t nin @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg4 4] reg4
+	(0x8000309b, 0x800030b0) [DW_OP_reg15 15] reg15
+	]
+|           ; arg mbstate_t *pst @ loclist: [
+	(0x80003084, 0x8000309b) [DW_OP_reg22 22] reg22
+	(0x8000309b, 0x800030b0) [DW_OP_reg28 28] reg28
+	]
 |           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150 ; int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
 ---------
 arg int except @ d4
@@ -986,15 +1194,21 @@ int feraiseexcept(int except);
 |           ; arg int except @ d4
 |           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except)
 ---------
-var size_t inc @ loclist
-var Ppvoidfn newfuns @ loclist
+var size_t inc @ <decoding error>
+var Ppvoidfn newfuns @ loclist: [
+	(0x800019aa, 0x800019b8) [DW_OP_reg18 18] reg18
+	(0x800019b8, 0x80001a1c) [DW_OP_reg28 28] reg28
+	]
 int _Atrealloc();
             ; CALL XREF from sym.atexit @ +0x30
             ; CALL XREF from dbg._Atexit @ 0x800033b8
             ;-- _Atrealloc:
 / int _Atrealloc()
-|           ; var size_t inc @ loclist
-|           ; var Ppvoidfn newfuns @ loclist
+|           ; var size_t inc @ <decoding error>
+|           ; var Ppvoidfn newfuns @ loclist: [
+	(0x800019aa, 0x800019b8) [DW_OP_reg18 18] reg18
+	(0x800019b8, 0x80001a1c) [DW_OP_reg28 28] reg28
+	]
 |           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
 ---------
 arg some_t **out @ stack - 0x18
@@ -1017,15 +1231,27 @@ var FLO_union_type au @ stack - 0x34
 var FLO_union_type bu @ stack - 0x2c
 var fp_number_type a @ stack - 0x24
 var fp_number_type b @ stack - 0x10
-arg FLO_type arg_a @ loclist
-arg FLO_type arg_b @ loclist
+arg FLO_type arg_a @ loclist: [
+	(0x80004238, 0x8000424b) [DW_OP_reg4 4, DW_OP_piece 32, DW_OP_reg5 5, DW_OP_piece 32] [(.0, 32): reg4, (.0, 32): reg5]
+	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf504cf03, DW_OP_stack_value] <evaluation waiting>
+	]
+arg FLO_type arg_b @ loclist: [
+	(0x80004238, 0x8000424b) [DW_OP_reg6 6, DW_OP_piece 32, DW_OP_reg7 7, DW_OP_piece 32] [(.0, 32): reg6, (.0, 32): reg7]
+	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf506cf03, DW_OP_stack_value] <evaluation waiting>
+	]
 CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b);
             ; CALL XREFS from sym._Ldtob @ +0xf4, +0x2f8
             ; CALL XREFS from dbg._LXp_sqrtx @ 0x80002e44, 0x80002e54
             ;-- __ltdf2:
 / CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b)
-|           ; arg FLO_type arg_a @ loclist
-|           ; arg FLO_type arg_b @ loclist
+|           ; arg FLO_type arg_a @ loclist: [
+	(0x80004238, 0x8000424b) [DW_OP_reg4 4, DW_OP_piece 32, DW_OP_reg5 5, DW_OP_piece 32] [(.0, 32): reg4, (.0, 32): reg5]
+	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf504cf03, DW_OP_stack_value] <evaluation waiting>
+	]
+|           ; arg FLO_type arg_b @ loclist: [
+	(0x80004238, 0x8000424b) [DW_OP_reg6 6, DW_OP_piece 32, DW_OP_reg7 7, DW_OP_piece 32] [(.0, 32): reg6, (.0, 32): reg7]
+	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf506cf03, DW_OP_stack_value] <evaluation waiting>
+	]
 |           ; var fp_number_type a @ stack - 0x24
 |           ; var fp_number_type b @ stack - 0x10
 |           ; var FLO_union_type au @ stack - 0x34

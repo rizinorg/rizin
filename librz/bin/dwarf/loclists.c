@@ -333,11 +333,14 @@ RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
 	}
 	switch (self->kind) {
 	case RzBinDwarfLocationKind_BYTES:
-		RzBinDwarfBlock_fini(&self->bytes.value);
+		RzBinDwarfBlock_fini(&self->bytes);
 		break;
 	case RzBinDwarfLocationKind_EVALUATION_WAITING:
 		rz_bin_dwarf_evaluation_free(self->eval_waiting.eval);
 		rz_bin_dwarf_evaluation_result_free(self->eval_waiting.result);
+		break;
+	case RzBinDwarfLocationKind_COMPOSITE:
+		rz_vector_fini(self->compose);
 		break;
 	case RzBinDwarfLocationKind_LOCLIST: // fallthrough
 	default: break;

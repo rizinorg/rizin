@@ -30,7 +30,7 @@ typedef struct {
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian);
 
 RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self);
-RZ_IPI void RzBinDwarfBlock_dump(RzBinDwarfBlock *self, RzStrBuf *sb);
+RZ_IPI void RzBinDwarfBlock_dump(const RzBinDwarfBlock *self, RzStrBuf *sb);
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 
@@ -106,6 +106,8 @@ RZ_IPI bool Value_ne(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask
 RZ_IPI void Value_fini(RzBinDwarfValue *self);
 RZ_IPI void Value_free(RzBinDwarfValue *self);
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
+RZ_IPI void
+Value_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, const RzBinDwarfValue *self, RzStrBuf *sb, const char *sep, const char *indent);
 
 /// op
 

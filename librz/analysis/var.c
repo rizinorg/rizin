@@ -33,7 +33,8 @@ RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAn
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-		return -1;
+	case RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR:
+		return a->DIE_offset - b->DIE_offset;
 	default:
 		rz_warn_if_reached();
 		return -1;
@@ -46,7 +47,9 @@ RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const 
 }
 
 static const char *var_storage_strings[] = {
+	[RZ_ANALYSIS_VAR_STORAGE_INVALID] = "invalid",
 	[RZ_ANALYSIS_VAR_STORAGE_EMPTY] = "empty",
+	[RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR] = "<decode error>",
 	[RZ_ANALYSIS_VAR_STORAGE_REG] = "reg",
 	[RZ_ANALYSIS_VAR_STORAGE_STACK] = "stack",
 	[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
@@ -79,7 +82,7 @@ static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
 }
 
-RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage) {
+RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding) {
 	switch (storage->type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG: {
 		rz_strbuf_append(sb, storage->reg);
@@ -99,11 +102,19 @@ RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorag
 		rz_strbuf_append(sb, var_storage_strings[storage->type]);
 		strbuf_append_sign_hex(sb, storage->offset);
 		break;
+	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST: {
+		rz_strbuf_append(sb, "loclist: [\n");
+		rz_bin_dwarf_loclist_dump(encoding, storage->loclist, sb, "\n", "\t");
+		rz_strbuf_append(sb, "\t]");
+		break;
+	}
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
-	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 		rz_strbuf_append(sb, var_storage_strings[storage->type]);
+		break;
+	case RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR:
+		rz_strbuf_append(sb, "<decoding error>");
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_INVALID:
 	case RZ_ANALYSIS_VAR_STORAGE_END:
@@ -112,9 +123,9 @@ RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorag
 	}
 }
 
-RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage) {
+RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	rz_analysis_var_storage_dump(sb, storage);
+	rz_analysis_var_storage_dump(sb, storage, encoding);
 	return rz_strbuf_drain(sb);
 }
 
@@ -144,16 +155,11 @@ RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *
 			pj_N(pj, storage->offset);
 			break;
 		case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
-			pj_s(pj, "empty");
-			break;
 		case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
-			pj_s(pj, "compose");
-			break;
 		case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
-			pj_s(pj, "loclist");
-			break;
 		case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
-			pj_s(pj, "waiting");
+		case RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR:
+			pj_kn(pj, var_storage_strings[storage->type], storage->DIE_offset);
 			break;
 		case RZ_ANALYSIS_VAR_STORAGE_INVALID:
 		case RZ_ANALYSIS_VAR_STORAGE_END:

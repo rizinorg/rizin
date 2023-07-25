@@ -452,6 +452,7 @@ typedef struct {
 	HtUP /*<ut64, RzCallable *>*/ *callable_by_offset;
 	HtUP /*<ut64, RzType *>*/ *type_by_offset;
 	HtUP /*<ut64, const RzBaseType *>*/ *base_type_by_offset;
+	RzBinDwarfEncoding encoding;
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {
@@ -663,6 +664,7 @@ typedef struct {
 typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_INVALID = 0,
 	RZ_ANALYSIS_VAR_STORAGE_EMPTY,
+	RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR,
 	RZ_ANALYSIS_VAR_STORAGE_REG,
 	RZ_ANALYSIS_VAR_STORAGE_STACK,
 	RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET,
@@ -680,6 +682,7 @@ typedef enum {
 typedef struct rz_analysis_var_storage_t {
 	RzAnalysisVarStorageType type;
 	st64 offset;
+	ut64 DIE_offset;
 	union {
 		/**
 		 * Used iff type == RZ_ANALYSIS_VAR_STORAGE_STACK.
@@ -784,6 +787,7 @@ typedef struct rz_analysis_var_global_t {
 } RzAnalysisVarGlobal;
 
 typedef struct dwarf_variable_t {
+	ut64 offset;
 	RzBinDwarfLocation *location;
 	char *name;
 	char *link_name;
@@ -1780,9 +1784,9 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 
 RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type);
 RZ_API bool rz_analysis_var_storage_type_from_string(const char *type_str, RzAnalysisVarStorageType *type);
-RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage);
+RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding);
 RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *storage);
-RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage);
+RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding);
 
 // Get the variable that var is written to at one of its accesses
 // Useful for cases where a register-based argument is written away into a stack variable,

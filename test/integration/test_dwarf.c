@@ -1371,8 +1371,8 @@ bool test_dwarf5_loclists(void) {
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
-		mu_assert_eq(loc->register_offset.register_number, 2, "piece reg");
-		mu_assert_eq(loc->register_offset.offset, -4, "piece reg");
+		mu_assert_eq(loc->register_number, 2, "piece reg");
+		mu_assert_eq(loc->offset, -4, "piece reg");
 	}
 
 	{
@@ -1421,8 +1421,8 @@ bool test_dwarf4_loclists(void) {
 		RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(entry->expression, dw, NULL, NULL);
 		mu_assert_notnull(loc, "location");
 		mu_assert_eq(loc->kind, RzBinDwarfLocationKind_REGISTER_OFFSET, "piece kind");
-		mu_assert_eq(loc->register_offset.register_number, 4, "piece reg");
-		mu_assert_eq(loc->register_offset.offset, 4, "piece reg offset");
+		mu_assert_eq(loc->register_number, 4, "piece reg");
+		mu_assert_eq(loc->offset, 4, "piece reg offset");
 	}
 
 	{

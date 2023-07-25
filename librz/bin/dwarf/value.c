@@ -1063,3 +1063,61 @@ RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self) {
 	}
 	return val;
 }
+
+static const char *Value_strings[] = {
+	[RzBinDwarfValueType_GENERIC] = "GENERIC",
+	[RzBinDwarfValueType_I8] = "I8",
+	[RzBinDwarfValueType_U8] = "U8",
+	[RzBinDwarfValueType_I16] = "I16",
+	[RzBinDwarfValueType_U16] = "U16",
+	[RzBinDwarfValueType_I32] = "I32",
+	[RzBinDwarfValueType_U32] = "U32",
+	[RzBinDwarfValueType_F32] = "F32",
+	[RzBinDwarfValueType_I64] = "I64",
+	[RzBinDwarfValueType_U64] = "U64",
+	[RzBinDwarfValueType_F64] = "F64",
+	[RzBinDwarfValueType_I128] = "I128",
+	[RzBinDwarfValueType_U128] = "U128",
+	[RzBinDwarfValueType_LOCATION] = "LOCATION",
+};
+
+RZ_IPI void
+Value_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, const RzBinDwarfValue *self, RzStrBuf *sb, const char *sep, const char *indent) {
+	rz_warn_if_fail(self && sb);
+	if (self->type <= 0 || self->type >= RZ_ARRAY_SIZE(Value_strings)) {
+		return;
+	}
+	rz_strbuf_append(sb, Value_strings[self->type]);
+	rz_strbuf_append(sb, rz_str_get(sep));
+	switch (self->type) {
+	case RzBinDwarfValueType_GENERIC:
+		rz_strbuf_appendf(sb, "%" PFMT64x, self->generic);
+		break;
+	case RzBinDwarfValueType_I8:
+	case RzBinDwarfValueType_I16:
+	case RzBinDwarfValueType_I32:
+		rz_strbuf_appendf(sb, "%" PFMT32d, self->i32);
+		break;
+	case RzBinDwarfValueType_U8:
+	case RzBinDwarfValueType_U16:
+	case RzBinDwarfValueType_U32:
+		rz_strbuf_appendf(sb, "%" PFMT32u, self->u32);
+		break;
+	case RzBinDwarfValueType_I64:
+		rz_strbuf_appendf(sb, "%" PFMT64d, self->i64);
+		break;
+	case RzBinDwarfValueType_U64:
+		rz_strbuf_appendf(sb, "%" PFMT64u, self->u64);
+		break;
+	case RzBinDwarfValueType_F32:
+	case RzBinDwarfValueType_F64:
+		rz_strbuf_appendf(sb, "%f", self->f64);
+		break;
+	case RzBinDwarfValueType_LOCATION:
+		rz_bin_dwarf_location_dump(encoding, self->location, sb, sep, "");
+		break;
+	default:
+		rz_strbuf_append(sb, "unimplemented");
+		break;
+	}
+}

@@ -896,12 +896,17 @@ RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 	return clone;
 }
 
-RZ_IPI void RzBinDwarfBlock_dump(RzBinDwarfBlock *self, RzStrBuf *sb) {
-	rz_strbuf_appendf(sb, " %" PFMT64u, self->length);
+RZ_IPI void RzBinDwarfBlock_dump(const RzBinDwarfBlock *self, RzStrBuf *sb) {
+	if (self->length == 0) {
+		rz_strbuf_appendf(sb, " <null>");
+		return;
+	}
 	char *data = rz_hex_bin2strdup(self->data, (int)self->length);
 	if (data) {
-		rz_strbuf_appendf(sb, " %s", data);
+		rz_strbuf_appendf(sb, " 0x%s", data);
 		free(data);
+	} else {
+		rz_strbuf_append(sb, " <error>");
 	}
 }
 

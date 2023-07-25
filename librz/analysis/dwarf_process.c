@@ -885,6 +885,15 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 	}
 }
 
+#define LOG_BLOCK(block) \
+	do { \
+		char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block); \
+		if (RZ_STR_ISNOTEMPTY(expr_str)) { \
+			RZ_LOG_ERROR("Failed to parse location: [%s]\n", expr_str); \
+		} \
+		free(expr_str); \
+	} while (0)
+
 static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
 	if (!location) {
@@ -904,11 +913,7 @@ static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, entry->expression);
-			RZ_LOG_ERROR("Failed to parse fn: 0x%" PFMT64x " location list entry (0x%" PFMT64x ", 0x%" PFMT64x "):\t[%s]\n ",
-				fn->offset, entry->range->begin, entry->range->end, rz_str_get_null(expr_str))
-			free(expr_str);
-
+			LOG_BLOCK(entry->expression);
 			return NULL;
 		}
 	}
@@ -920,23 +925,28 @@ static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *
 static RzBinDwarfLocation *location_parse(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
 	const RzBinDwarfBlock *block = NULL;
+	ut64 offset = UT64_MAX;
 	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
-		ut64 offset = attr->reference;
+		offset = attr->reference;
 		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &ctx->unit->hdr.encoding, offset)) {
-			err:
-				RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
-					offset, rz_bin_dwarf_form(attr->form));
-				return NULL;
+				goto err_find;
 			}
 			loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
 			if (!loclist) {
-				goto err;
+				goto err_find;
 			}
 		}
-		if (rz_pvector_len(&loclist->entries) >= 1) {
+		if (rz_pvector_len(&loclist->entries) > 1) {
 			return location_list_parse(ctx, loclist, fn);
+		} else if (rz_pvector_len(&loclist->entries) == 1) {
+			RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 0);
+			if (!entry->location) {
+				block = entry->expression;
+				goto err;
+			}
+			return entry->location;
 		} else {
 			RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
 			loc->kind = RzBinDwarfLocationKind_EMPTY;
@@ -955,13 +965,15 @@ static RzBinDwarfLocation *location_parse(Context *ctx, const RzBinDwarfAttr *at
 	}
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);
 	if (!loc) {
-		char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
-		if (RZ_STR_ISNOTEMPTY(expr_str)) {
-			RZ_LOG_ERROR("Failed to parse location: [%s]\n", expr_str);
-		}
-		free(expr_str);
+		goto err;
 	}
 	return loc;
+err_find:
+	RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
+		offset, rz_bin_dwarf_form(attr->form));
+	return NULL;
+err:
+	return NULL;
 }
 
 static inline const char *var_name(RzAnalysisDwarfVariable *v, enum DW_LANG lang) {
@@ -969,6 +981,7 @@ static inline const char *var_name(RzAnalysisDwarfVariable *v, enum DW_LANG lang
 }
 
 static bool function_var_parse(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfDie *fn_die, RzAnalysisDwarfVariable *v) {
+	v->offset = var_die->offset;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
 		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
@@ -1011,7 +1024,7 @@ static bool function_var_parse(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 		} break;
 		case DW_AT_location:
 			v->location = location_parse(ctx, val, fn_die);
-			has_location = v->location != NULL;
+			has_location = true;
 			break;
 		default:
 			break;
@@ -1021,6 +1034,9 @@ static bool function_var_parse(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 	if (!has_location) {
 		v->location = RZ_NEW0(RzBinDwarfLocation);
 		v->location->kind = RzBinDwarfLocationKind_EMPTY;
+	} else if (!v->location) {
+		v->location = RZ_NEW0(RzBinDwarfLocation);
+		v->location->kind = RzBinDwarfLocationKind_DECODE_ERROR;
 	}
 	v->prefer_name = var_name(v, ctx->unit->language);
 	return true;
@@ -1201,6 +1217,7 @@ cleanup:
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw) {
 	rz_return_if_fail(analysis);
+	analysis->debug_info->encoding = dw->encoding;
 	Context ctx = {
 		.analysis = analysis,
 		.dw = dw,
@@ -1235,8 +1252,8 @@ static bool fixup_regoff_to_stackoff(RzAnalysis *a, RzAnalysisFunction *f, RzAna
 	if (!(dw_var->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET)) {
 		return false;
 	}
-	ut16 reg = dw_var->location->register_offset.register_number;
-	st64 off = dw_var->location->register_offset.offset;
+	ut16 reg = dw_var->location->register_number;
+	st64 off = dw_var->location->offset;
 	if (!strcmp(a->cpu, "x86")) {
 		if (a->bits == 64) {
 			if (reg == 6) { // 6 = rbp
@@ -1293,9 +1310,13 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 	}
 
 	RzAnalysisVarStorage *storage = &var->storage;
+	storage->DIE_offset = dw_var->offset;
 	switch (loc->kind) {
 	case RzBinDwarfLocationKind_EMPTY:
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
+		break;
+	case RzBinDwarfLocationKind_DECODE_ERROR:
+		storage->type = RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR;
 		break;
 	case RzBinDwarfLocationKind_REGISTER: {
 		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_number, a->bits);
@@ -1304,11 +1325,11 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 	}
 	case RzBinDwarfLocationKind_REGISTER_OFFSET: {
 		// Convert some register offset to stack offset
-		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_offset.register_number, a->bits);
+		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_number, a->bits);
 		if (fixup_regoff_to_stackoff(a, f, dw_var, reg_name, var)) {
 			break;
 		}
-		rz_analysis_var_storage_init_reg_offset(storage, reg_name, loc->register_offset.offset);
+		rz_analysis_var_storage_init_reg_offset(storage, reg_name, loc->offset);
 		break;
 	}
 	case RzBinDwarfLocationKind_ADDRESS: {
@@ -1331,10 +1352,10 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 	case RzBinDwarfLocationKind_CFA_OFFSET:
 		// TODO: The following is only an educated guess. There is actually more involved in calculating the
 		//       CFA correctly.
-		rz_analysis_var_storage_init_stack(storage, loc->cfa_offset + a->bits / 8);
+		rz_analysis_var_storage_init_stack(storage, loc->offset + a->bits / 8);
 		break;
 	case RzBinDwarfLocationKind_FB_OFFSET:
-		rz_analysis_var_storage_init_fb_offset(storage, loc->fb_offset);
+		rz_analysis_var_storage_init_fb_offset(storage, loc->offset);
 		break;
 	case RzBinDwarfLocationKind_LOCLIST: {
 		rz_analysis_var_storage_init_loclist(storage, loc->loclist);

@@ -1682,6 +1682,7 @@ typedef struct {
 
 typedef enum {
 	RzBinDwarfLocationKind_EMPTY,
+	RzBinDwarfLocationKind_DECODE_ERROR,
 	RzBinDwarfLocationKind_REGISTER,
 	RzBinDwarfLocationKind_REGISTER_OFFSET,
 	RzBinDwarfLocationKind_ADDRESS,
@@ -1697,29 +1698,18 @@ typedef enum {
 
 typedef struct rz_bin_dwarf_location_t {
 	RzBinDwarfLocationKind kind;
-
+	st64 offset;
 	union {
 		ut64 register_number;
-		struct {
-			ut64 register_number;
-			st64 offset;
-		} register_offset;
 		ut64 address;
 		RzBinDwarfValue value;
-		struct { // BYTES
-			RzBinDwarfBlock value;
-		} bytes;
-		struct { // IMPLICIT_POINTER
-			DebugInfoOffset value;
-			st64 byte_offset;
-		} implicit_pointer;
+		RzBinDwarfBlock bytes;
+		DebugInfoOffset implicit_pointer;
 		struct {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} eval_waiting;
 		RzVector /*RzBinDwarfPiece*/ *compose;
-		st64 cfa_offset;
-		st64 fb_offset;
 		const RzBinDwarfLocList *loclist;
 	};
 } RzBinDwarfLocation;
@@ -1734,6 +1724,11 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_
 RZ_API void
 rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL RzStrBuf *str_buf, RZ_BORROW RZ_NONNULL const char *sep, RZ_BORROW RZ_NONNULL const char *indent);
 RZ_API char *rz_bin_dwarf_expression_to_string(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block);
+RZ_API void
+rz_bin_dwarf_loclist_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfLocList *loclist, RZ_BORROW RZ_NONNULL RzStrBuf *sb, RZ_BORROW RZ_NONNULL const char *sep, RZ_BORROW RZ_NONNULL const char *indent);
+RZ_API void
+rz_bin_dwarf_location_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfLocation *loc, RZ_BORROW RZ_NONNULL RzStrBuf *sb, RZ_BORROW RZ_NONNULL const char *sep, RZ_BORROW RZ_NONNULL const char *indent);
+
 /// loclists
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset);
 RZ_API bool rz_bin_dwarf_loclist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding);
