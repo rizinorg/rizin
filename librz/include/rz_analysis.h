@@ -453,6 +453,7 @@ typedef struct {
 	HtUP /*<ut64, RzType *>*/ *type_by_offset;
 	HtUP /*<ut64, const RzBaseType *>*/ *base_type_by_offset;
 	RzBinDwarfEncoding encoding;
+	DWARF_RegisterMapping dwarf_register_mapping;
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {
@@ -1784,9 +1785,9 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 
 RZ_API const char *rz_analysis_var_storage_type_to_string(RzAnalysisVarStorageType type);
 RZ_API bool rz_analysis_var_storage_type_from_string(const char *type_str, RzAnalysisVarStorageType *type);
-RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding);
+RZ_API void rz_analysis_var_storage_dump(RzAnalysis *a, RzStrBuf *sb, const RzAnalysisVarStorage *storage);
 RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *storage);
-RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding);
+RZ_API char *rz_analysis_var_storage_to_string(RzAnalysis *a, const RzAnalysisVarStorage *storage);
 
 // Get the variable that var is written to at one of its accesses
 // Useful for cases where a register-based argument is written away into a stack variable,

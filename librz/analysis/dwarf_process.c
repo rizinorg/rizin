@@ -67,7 +67,7 @@ static bool prefer_linkage_name(enum DW_LANG lang) {
 /// DWARF Register Number Mapping
 
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
-static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num) {
+static const char *map_dwarf_reg_to_x86_64_reg(ut32 reg_num) {
 	switch (reg_num) {
 	case 0: return "rax";
 	case 1: return "rdx";
@@ -99,7 +99,7 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num) {
 }
 
 /* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
-static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num) {
+static const char *map_dwarf_reg_to_x86_reg(ut32 reg_num) {
 	switch (reg_num) {
 	case 0: /* fall-thru */
 	case 8: return "eax";
@@ -148,7 +148,7 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num) {
 }
 
 /* https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#DW-REG */
-static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num) {
+static const char *map_dwarf_reg_to_ppc64_reg(ut32 reg_num) {
 	switch (reg_num) {
 	case 0: return "r0";
 	case 1: return "r1";
@@ -189,7 +189,7 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num) {
 }
 
 /// 4.5.1 DWARF Register Numbers https://www.infineon.com/dgdl/Infineon-TC2xx_EABI-UM-v02_09-EN.pdf?fileId=5546d46269bda8df0169ca1bfc7d24ab
-static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num) {
+static const char *map_dwarf_reg_to_tricore_reg(ut32 reg_num) {
 	switch (reg_num) {
 	case 0: return "d0";
 	case 1: return "d1";
@@ -249,19 +249,20 @@ static const char *map_dwarf_reg_to_tricore_reg(ut64 reg_num) {
 
 /* returns string literal register name!
    TODO add more arches                 */
-static const char *dwarf_reg_name(RZ_NONNULL char *arch, ut64 reg_num, int bits) {
+static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch, int bits) {
 	if (!strcmp(arch, "x86")) {
 		if (bits == 64) {
-			return map_dwarf_reg_to_x86_64_reg(reg_num);
+			return map_dwarf_reg_to_x86_64_reg;
 		} else {
-			return map_dwarf_reg_to_x86_reg(reg_num);
+			return map_dwarf_reg_to_x86_reg;
 		}
 	} else if (!strcmp(arch, "ppc") && bits == 64) {
-		return map_dwarf_reg_to_ppc64_reg(reg_num);
+		return map_dwarf_reg_to_ppc64_reg;
 	} else if (!strcmp(arch, "tricore")) {
-		return map_dwarf_reg_to_tricore_reg(reg_num);
+		return map_dwarf_reg_to_tricore_reg;
 	}
-	return "unsupported_reg";
+	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
+	return NULL;
 }
 
 static void variable_fini(RzAnalysisDwarfVariable *var) {
@@ -1216,8 +1217,9 @@ cleanup:
  *        and stores them to the sdb for further use
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw) {
-	rz_return_if_fail(analysis);
+	rz_return_if_fail(analysis && dw);
 	analysis->debug_info->encoding = dw->encoding;
+	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cpu, analysis->bits);
 	Context ctx = {
 		.analysis = analysis,
 		.dw = dw,
@@ -1319,13 +1321,19 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR;
 		break;
 	case RzBinDwarfLocationKind_REGISTER: {
-		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_number, a->bits);
+		if (!a->debug_info->dwarf_register_mapping) {
+			return false;
+		}
+		const char *reg_name = a->debug_info->dwarf_register_mapping(loc->register_number);
 		rz_analysis_var_storage_init_reg(storage, reg_name);
 		break;
 	}
 	case RzBinDwarfLocationKind_REGISTER_OFFSET: {
+		if (!a->debug_info->dwarf_register_mapping) {
+			return false;
+		}
 		// Convert some register offset to stack offset
-		const char *reg_name = dwarf_reg_name(a->cpu, loc->register_number, a->bits);
+		const char *reg_name = a->debug_info->dwarf_register_mapping(loc->register_number);
 		if (fixup_regoff_to_stackoff(a, f, dw_var, reg_name, var)) {
 			break;
 		}

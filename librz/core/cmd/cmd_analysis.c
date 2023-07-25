@@ -2855,7 +2855,7 @@ static RzCmdStatus analysis_function_vars_getsetref(RzCore *core, RzAnalysisVarS
 
 	RzAnalysisVar *var = rz_analysis_function_get_var_at(fcn, stor);
 	if (!var) {
-		char *stor_str = rz_analysis_var_storage_to_string(stor, &core->analysis->debug_info->encoding);
+		char *stor_str = rz_analysis_var_storage_to_string(core->analysis, stor);
 		RZ_LOG_ERROR("core: Cannot find variable with %s\n", stor_str);
 		free(stor_str);
 		return RZ_CMD_STATUS_ERROR;

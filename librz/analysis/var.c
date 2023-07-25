@@ -82,7 +82,7 @@ static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
 }
 
-RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding) {
+RZ_API void rz_analysis_var_storage_dump(RzAnalysis *a, RzStrBuf *sb, const RzAnalysisVarStorage *storage) {
 	switch (storage->type) {
 	case RZ_ANALYSIS_VAR_STORAGE_REG: {
 		rz_strbuf_append(sb, storage->reg);
@@ -103,9 +103,7 @@ RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorag
 		strbuf_append_sign_hex(sb, storage->offset);
 		break;
 	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST: {
-		rz_strbuf_append(sb, "loclist: [\n");
-		rz_bin_dwarf_loclist_dump(encoding, storage->loclist, sb, "\n", "\t");
-		rz_strbuf_append(sb, "\t]");
+		rz_bin_dwarf_loclist_dump(&a->debug_info->encoding, a->debug_info->dwarf_register_mapping, storage->loclist, sb, "\n", "\t");
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
@@ -123,9 +121,9 @@ RZ_API void rz_analysis_var_storage_dump(RzStrBuf *sb, const RzAnalysisVarStorag
 	}
 }
 
-RZ_API char *rz_analysis_var_storage_to_string(const RzAnalysisVarStorage *storage, const RzBinDwarfEncoding *encoding) {
+RZ_API char *rz_analysis_var_storage_to_string(RzAnalysis *a, const RzAnalysisVarStorage *storage) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	rz_analysis_var_storage_dump(sb, storage, encoding);
+	rz_analysis_var_storage_dump(a, sb, storage);
 	return rz_strbuf_drain(sb);
 }
 

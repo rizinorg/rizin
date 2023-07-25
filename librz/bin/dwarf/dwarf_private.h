@@ -106,9 +106,13 @@ RZ_IPI bool Value_ne(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask
 RZ_IPI void Value_fini(RzBinDwarfValue *self);
 RZ_IPI void Value_free(RzBinDwarfValue *self);
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
-RZ_IPI void
-Value_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, const RzBinDwarfValue *self, RzStrBuf *sb, const char *sep, const char *indent);
-
+RZ_IPI void Value_dump(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
+	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
+	const RzBinDwarfValue *self,
+	RzStrBuf *sb,
+	const char *sep,
+	const char *indent);
 /// op
 
 #include "op.h"
