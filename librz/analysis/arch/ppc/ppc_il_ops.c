@@ -17,7 +17,9 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	const char *rA = cs_reg_name(handle, INSOP(1).mem.base);
 	const char *rB = cs_reg_name(handle, INSOP(2).reg);
 	st64 d = INSOP(1).mem.disp; // RA = base ; D = Disposition
+#if CS_NEXT_VERSION < 6
 	st64 sI = INSOP(1).imm; // liX instructions (alias for addX).
+#endif
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
 	RzILOpPure *base;
@@ -43,6 +45,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_LI: // RT = sI
 		into_rt = EXTEND(PPC_ARCH_BITS, SN(16, sI));
 		update_ra = false;
@@ -51,6 +54,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0)));
 		update_ra = false;
 		break;
+#endif
 	case PPC_INS_LA: // RT = EA
 		NOT_IMPLEMENTED;
 	case PPC_INS_LBZ:
@@ -473,6 +477,12 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 #endif
 
 	// READ
+#if CS_NEXT_VERSION >= 6
+	crX = cs_reg_name(handle, PPC_DETAIL(insn).bc.crX);
+	rA = cs_reg_name(handle, INSOP(0).reg);
+	rB = cs_reg_name(handle, INSOP(1).reg);
+	imm = INSOP(1).imm;
+#else
 	// cr0 reg is not explicitly stored in the operands list.
 	if (OP_CNT == 2) {
 		crX = "cr0";
@@ -485,6 +495,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		rB = cs_reg_name(handle, INSOP(2).reg);
 		imm = INSOP(2).imm;
 	}
+#endif
 
 	// How to read instruction ids:
 	// Letter			Meaning
@@ -1379,8 +1390,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MULLW:
 		lop = div_mul_op(handle, insn, mode);
 		break;
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
+#endif
 	case PPC_INS_LA:
 	case PPC_INS_LBZ:
 	case PPC_INS_LBZU:

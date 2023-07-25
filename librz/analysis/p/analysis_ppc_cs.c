@@ -1010,7 +1010,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 #if CS_API_MAJOR < 6
 		case PPC_INS_MR:
-#endif
 		case PPC_INS_LI:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			op->val = IMM(1);
@@ -1022,7 +1021,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->val <<= 16;
 			esilprintf(op, "%s0000,%s,=", ARG(1), ARG(0));
 			break;
-#if CS_NEXT_VERSION < 6
 		case PPC_INS_CLRLWI:
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			esilprintf(op, "%s,%s,&,%s,=", ARG(1), cmask32(ARG(2), "0x1F"), ARG(0));
