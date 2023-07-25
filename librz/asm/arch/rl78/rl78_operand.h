@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2023 Bastian Engel <bastian.engel00@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#ifndef RL78_OPERAND_H
-#define RL78_OPERAND_H
+#ifndef RL78_OP_H
+#define RL78_OP_H
 
 #include <rz_util.h>
 #include <rz_types.h>
@@ -41,29 +41,40 @@ typedef enum : ut8 {
         RL78_PSW_Z, // zero
 
         _RL78_SYMBOL_COUNT
-} RL78Symbol;
+} RL78Label;
 
 typedef enum : ut8 {
-        RL78_OPERAND_TYPE_NONE, // used for instructions with less than 2 operands
-        RL78_OPERAND_TYPE_IMMEDIATE_8, // #byte
-        RL78_OPERAND_TYPE_IMMEDIATE_16, // #word
-        RL78_OPERAND_TYPE_SYMBOL, // A, X, BC as well as saddr/saddrp
-        RL78_OPERAND_TYPE_ABSOLUTE_ADDR_16, // !...
-        RL78_OPERAND_TYPE_ABSOLUTE_ADDR_20, // !!...
-        RL78_OPERAND_TYPE_RELATIVE_ADDR_8, // $...
-        RL78_OPERAND_TYPE_RELATIVE_ADDR_16, // $!...
-        RL78_OPERAND_TYPE_INDIRECT_ADDR, // [HL]
-        RL78_OPERAND_TYPE_BASED_ADDR, // [HL+byte]
-        RL78_OPERAND_TYPE_BASED_INDEX_ADDR, // [HL+C]
+        RL78_OP_TYPE_NONE, // used for instructions with less than 2 operands
+        RL78_OP_TYPE_IMMEDIATE_8, // #byte
+        RL78_OP_TYPE_IMMEDIATE_16, // #word
 
-        _RL78_OPERAND_TYPE_COUNT
+        // operands of type SFR and SADDR will be parsed into
+        // RL78_OP_TYPE_SYMBOL if they point to a labeled address
+        RL78_OP_TYPE_SFR, // special function register
+        RL78_OP_TYPE_SADDR, // short addressing
+        RL78_OP_TYPE_SYMBOL, // A, X, BC
+
+        RL78_OP_TYPE_ABSOLUTE_ADDR_16, // !...
+        RL78_OP_TYPE_ABSOLUTE_ADDR_20, // !!...
+        RL78_OP_TYPE_RELATIVE_ADDR_8, // $...
+        RL78_OP_TYPE_RELATIVE_ADDR_16, // $!...
+        RL78_OP_TYPE_INDIRECT_ADDR, // [HL]
+        RL78_OP_TYPE_BASED_ADDR_8, // [HL+byte]
+        RL78_OP_TYPE_BASED_ADDR_16, // word[HL]
+        RL78_OP_TYPE_BASED_INDEX_ADDR, // [HL+C]
+
+        _RL78_OP_TYPE_COUNT
 } RL78OperandType;
 
+typedef enum : ut8 {
+        RL78_OP_FLAG_BA = 1 << 0, // bit addressing (bit index stored in v1)
+        RL78_OP_FLAG_ES = 1 << 1 // extension addressing
+} RL78OperandFlags;
+
 typedef struct {
-        ut16 v0; // contains label enum if applicable or immediate data
-        ut16 v1; // contains additional data like the offset for based addressing
-        bool extension_addressing; // whether ES is used as 4 bit address extension
-        bool is_bit; // whether the operand represents a single bit (index of bit stored in v1)
+        int v0; // contains label enum if applicable or immediate data
+        int v1; // contains additional data like the offset for based addressing
+        int flags;
         RL78OperandType type;
 } RL78Operand;
 
@@ -72,8 +83,15 @@ typedef struct {
  * \param dst A caller-supplied character buffer to print into
  * \param n Size of dst
  * \param operand RL78 operand to be printed
- * \return false If operand->type is out of range or equal to RL78_OPERAND_TYPE_NONE
+ * \return false If operand->type is out of range or equal to RL78_OP_TYPE_NONE
  */
 bool rl78_operand_to_string(RzStrBuf RZ_OUT *dst, const RL78Operand RZ_BORROW *operand);
+
+/**
+ * \brief Check whether a symbol is valid, i.e. is in enum bounds
+ * \param symbol A symbol
+ * \return false If symbol is out of range (i.e. < 0 or >= _RL78_SYMBOL_COUNT)
+ */
+bool rl78_symbol_valid(int symbol);
 
 #endif

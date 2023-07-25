@@ -97,8 +97,8 @@ bool rl78_instr_to_string(RzStrBuf RZ_OUT *dst, const RL78Instr RZ_BORROW *instr
 
         // 16 characters suffice for each operand
         RzStrBuf buf_op0, buf_op1;
-        bool has_op0 = instr->op0.type != RL78_OPERAND_TYPE_NONE;
-        bool has_op1 = instr->op1.type != RL78_OPERAND_TYPE_NONE;
+        bool has_op0 = instr->op0.type != RL78_OP_TYPE_NONE;
+        bool has_op1 = instr->op1.type != RL78_OP_TYPE_NONE;
 
         rz_return_val_if_fail(!has_op0 || rl78_operand_to_string(&buf_op0, &instr->op0),
                               false);

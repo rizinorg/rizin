@@ -39,59 +39,75 @@ static const char *RL78_STRINGS_SYMBOLS[] = {
         [RL78_PSW_Z]    = "z",
 };
 
-static bool symbol_valid(int symbol)
-{
-        return symbol >= 0 && symbol < _RL78_SYMBOL_COUNT;
-}
-
 bool rl78_operand_to_string(RzStrBuf RZ_OUT *dst, const RL78Operand RZ_BORROW *operand)
 {
-        if (operand->type <= RL78_OPERAND_TYPE_NONE ||
-            operand->type >= _RL78_OPERAND_TYPE_COUNT) {
+        if (operand->type <= RL78_OP_TYPE_NONE ||
+            operand->type >= _RL78_OP_TYPE_COUNT) {
                 return false;
         }
 
         RzStrBuf strbuf;
         switch (operand->type) {
-                case RL78_OPERAND_TYPE_IMMEDIATE_8:
-                case RL78_OPERAND_TYPE_IMMEDIATE_16:
+                case RL78_OP_TYPE_IMMEDIATE_8:
+                case RL78_OP_TYPE_IMMEDIATE_16:
                         rz_strf(strbuf.buf, "#0x%" PFMT32x, operand->v0);
                         break;
-                case RL78_OPERAND_TYPE_SYMBOL:
-                        if (symbol_valid(operand->v0)) {
+                case RL78_OP_TYPE_SYMBOL:
+                        rz_return_val_if_fail(rl78_symbol_valid(operand->v0), false);
+
+                        rz_strf(strbuf.buf, "%s", RL78_STRINGS_SYMBOLS[operand->v0]);
+                        break;
+                case RL78_OP_TYPE_SFR:
+                case RL78_OP_TYPE_SADDR:
+                        if (rl78_symbol_valid(operand->v0)) {
                                 rz_strf(strbuf.buf, "%s", RL78_STRINGS_SYMBOLS[operand->v0]);
                         } else {
                                 rz_strf(strbuf.buf, "0x%" PFMT32x, operand->v0);
                         }
                         break;
-                case RL78_OPERAND_TYPE_ABSOLUTE_ADDR_16:
-                        rz_strf(strbuf.buf, "!0x%" PFMT32x, operand->v0);
+                case RL78_OP_TYPE_ABSOLUTE_ADDR_16:
+                        if (rl78_symbol_valid(operand->v0)) {
+                                rz_strf(strbuf.buf, "%s", RL78_STRINGS_SYMBOLS[operand->v0]);
+                        } else {
+                                rz_strf(strbuf.buf, "!0x%" PFMT32x, operand->v0);
+                        }
                         break;
-                case RL78_OPERAND_TYPE_ABSOLUTE_ADDR_20:
-                        rz_strf(strbuf.buf, "!!0x%" PFMT32x, operand->v0);
+                case RL78_OP_TYPE_ABSOLUTE_ADDR_20:
+                        if (rl78_symbol_valid(operand->v0)) {
+                                rz_strf(strbuf.buf, "%s", RL78_STRINGS_SYMBOLS[operand->v0]);
+                        } else {
+                                rz_strf(strbuf.buf, "!!0x%" PFMT32x, operand->v0);
+                        }
                         break;
-                case RL78_OPERAND_TYPE_RELATIVE_ADDR_8:
+                case RL78_OP_TYPE_RELATIVE_ADDR_8:
                         rz_strf(strbuf.buf, "$0x%" PFMT32x, operand->v0);
                         break;
-                case RL78_OPERAND_TYPE_RELATIVE_ADDR_16:
+                case RL78_OP_TYPE_RELATIVE_ADDR_16:
                         rz_strf(strbuf.buf, "$!0x%" PFMT32x, operand->v0);
                         break;
-                case RL78_OPERAND_TYPE_INDIRECT_ADDR:
-                        if (symbol_valid(operand->v0)) {
+                case RL78_OP_TYPE_INDIRECT_ADDR:
+                        if (rl78_symbol_valid(operand->v0)) {
                                 rz_strf(strbuf.buf, "[%s]", RL78_STRINGS_SYMBOLS[operand->v0]);
                         } else {
                                 rz_strf(strbuf.buf, "[0x%" PFMT32x "]", operand->v0);
                         }
 
                         break;
-                case RL78_OPERAND_TYPE_BASED_ADDR:
-                        rz_return_val_if_fail(symbol_valid(operand->v0), false);
+                case RL78_OP_TYPE_BASED_ADDR_8:
+                        rz_return_val_if_fail(rl78_symbol_valid(operand->v0), false);
 
                         rz_strf(strbuf.buf, "[%s+0x%" PFMT32x "]",
                                  RL78_STRINGS_SYMBOLS[operand->v0], operand->v1);
                         break;
-                case RL78_OPERAND_TYPE_BASED_INDEX_ADDR:
-                        rz_return_val_if_fail(symbol_valid(operand->v0) && symbol_valid(operand->v1), false);
+                case RL78_OP_TYPE_BASED_ADDR_16:
+                        rz_return_val_if_fail(rl78_symbol_valid(operand->v0), false);
+
+                        rz_strf(strbuf.buf,"0x%" PFMT32x "[%s]",
+                                operand->v1, RL78_STRINGS_SYMBOLS[operand->v0]);
+                        break;
+                case RL78_OP_TYPE_BASED_INDEX_ADDR:
+                        rz_return_val_if_fail(rl78_symbol_valid(operand->v0) &&
+                                              rl78_symbol_valid(operand->v1), false);
 
                         rz_strf(strbuf.buf, "[%s+%s]",
                                  RL78_STRINGS_SYMBOLS[operand->v0],
@@ -102,12 +118,17 @@ bool rl78_operand_to_string(RzStrBuf RZ_OUT *dst, const RL78Operand RZ_BORROW *o
         }
 
         // prefix (extension addressing) and suffix (bit index)
-        const char *prefix = operand->extension_addressing ? "ES:" : "";
-        if (operand->is_bit) {
+        const char *prefix = operand->flags & RL78_OP_FLAG_ES ? "es:" : "";
+        if (operand->flags & RL78_OP_FLAG_BA) {
                 rz_strf(dst->buf, "%s%s.%d", prefix, strbuf.buf, operand->v1);
         } else {
                 rz_strf(dst->buf, "%s%s", prefix, strbuf.buf);
         }
 
         return true;
+}
+
+bool rl78_symbol_valid(int symbol)
+{
+        return symbol >= 0 && symbol < _RL78_SYMBOL_COUNT;
 }

@@ -13,23 +13,15 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-        ut8 instr_bytes[2];
+        RL78Instr instr = { 0 };
+        size_t bytes_read;
+        rl78_dis(&instr, &bytes_read, buf, len);
 
-        /* for (int opcode = 0; opcode <= 0xff; opcode++) { */
-                instr_bytes[0] = 0x71;
-                instr_bytes[1] = 0xd7;
+        RzStrBuf instr_strbuf;
+        rl78_instr_to_string(&instr_strbuf, &instr);
+        rz_strbuf_copy(&op->buf_asm, &instr_strbuf);
 
-                RL78Instr instr;
-                RzStrBuf instr_strbuf;
-                size_t bytes_read;
-
-                rl78_dis(&instr, &bytes_read, instr_bytes, sizeof(instr_bytes));
-                rl78_instr_to_string(&instr_strbuf, &instr);
-
-                printf("%s\n", instr_strbuf.buf);
-        /* } */
-
-        return 0;
+        return bytes_read;
 }
 
 RzAsmPlugin rz_asm_plugin_rl78 = {

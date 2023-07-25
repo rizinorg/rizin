@@ -8,7 +8,7 @@ d "mov l, #0x30" 5630
 d "mov h, #0x30" 5730
 d "mov 0xffe46, #0x30" cd2630
 d "mov pmc, #0x30" cefe30
-d "mov !0xfe1f, #0x30" cf201ffe
+d "mov !0x30a4, #0x70" cfa43070
 d "mov a, x" 60
 d "mov a, c" 62
 d "mov a, b" 63
@@ -71,7 +71,7 @@ d "mov c, 0xffe46" f826
 d "mov c, !0x30a4" f9a430
 d "mov x, 0xffe46" d826
 d "mov x, !0x30a4" d9a430
-d "mov es:!0x30a4, #0x30" 11cfa43017
+d "mov es:!0x30a4, #0x17" 11cfa43017
 d "mov a, es:!0x30a4" 118fa430
 d "mov es:!0x30a4, a" 119fa430
 d "mov a, es:[de]" 1189
@@ -117,12 +117,12 @@ d "xch a, [hl+0x30]" 61ad30
 d "xch a, [hl+b]" 61b9
 d "xch a, [hl+c]" 61a9
 d "xch a, es:!0x30a4" 1161aaa430
-d "xch a, es: [de]" 1161ae
-d "xch a, es: [de+0x30]" 1161af30
-d "xch a, es: [hl]" 1161ac
-d "xch a, es: [hl+0x30]" 1161ad30
-d "xch a, es: [hl+b]" 1161b9
-d "xch a, es: [hl+c]" 1161a9
+d "xch a, es:[de]" 1161ae
+d "xch a, es:[de+0x30]" 1161af30
+d "xch a, es:[hl]" 1161ac
+d "xch a, es:[hl+0x30]" 1161ad30
+d "xch a, es:[hl+b]" 1161b9
+d "xch a, es:[hl+c]" 1161a9
 d "oneb a" e1
 d "oneb x" e0
 d "oneb b" e3
@@ -138,13 +138,13 @@ d "clrb 0xffe46" f426
 d "clrb !0x30a4" f5a430
 d "clrb es:!0x30a4" 11f5a430
 d "movs [hl+0x30], x" 61ce30
-d "movs es: [hl+0x30], x" 1161ce30
-d "movw ax, 0x1337" 303713
-d "movw bc, 0x1337" 323713
-d "movw de, 0x1337" 343713
-d "movw hl, 0x1337" 363713
-d "movw 0xffe46, 0x1337" c9263713
-d "movw pmc, 0x1337" cbfe3713
+d "movs es:[hl+0x30], x" 1161ce30
+d "movw ax, #0x1337" 303713
+d "movw bc, #0x1337" 323713
+d "movw de, #0x1337" 343713
+d "movw hl, #0x1337" 363713
+d "movw 0xffe46, #0x1337" c9263713
+d "movw pmc, #0x1337" cbfe3713
 d "movw ax, 0xffe46" ad26
 d "movw 0xffe46, ax" bd26
 d "movw ax, pmc" aefe
@@ -424,13 +424,13 @@ d "cmp a, [hl]" 4d
 d "cmp a, [hl+0x30]" 4e30
 d "cmp a, [hl+b]" 61c0
 d "cmp a, [hl+c]" 61c2
-d "cmp !0x30a4, #0x30" 40a43017
+d "cmp !0x30a4, #0x17" 40a43017
 d "cmp a, es:!0x30a4" 114fa430
 d "cmp a, es:[hl]" 114d
 d "cmp a, es:[hl+0x30]" 114e30
 d "cmp a, es:[hl+b]" 1161c0
 d "cmp a, es:[hl+c]" 1161c2
-d "cmp es:!0x30a4, #0x30" 1140a43017
+d "cmp es:!0x30a4, #0x17" 1140a43017
 d "cmp0 a" d1
 d "cmp0 x" d0
 d "cmp0 b" d3
@@ -440,7 +440,7 @@ d "cmp0 !0x30a4" d5a430
 d "cmp0 es:!0x30a4" 11d5a430
 d "cmps x, [hl+0x30]" 61de30
 d "cmps x, es:[hl+0x30]" 1161de30
-d "addw ax, 0x1337" 043713
+d "addw ax, #0x1337" 043713
 d "addw ax, ax" 01
 d "addw ax, bc" 03
 d "addw ax, de" 05
@@ -450,7 +450,7 @@ d "addw ax, !0x30a4" 02a430
 d "addw ax, [hl+0x30]" 610930
 d "addw ax, es:!0x30a4" 1102a430
 d "addw ax, es:[hl+0x30]" 11610930
-d "subw ax, 0x1337" 243713
+d "subw ax, #0x1337" 243713
 d "subw ax, bc" 23
 d "subw ax, de" 25
 d "subw ax, hl" 27
@@ -459,7 +459,7 @@ d "subw ax, !0x30a4" 22a430
 d "subw ax, [hl+0x30]" 612930
 d "subw ax, es:!0x30a4" 1122a430
 d "subw ax, es:[hl+0x30]" 11612930
-d "cmpw ax, 0x1337" 443713
+d "cmpw ax, #0x1337" 443713
 d "cmpw ax, bc" 43
 d "cmpw ax, de" 45
 d "cmpw ax, hl" 47
@@ -469,12 +469,12 @@ d "cmpw ax, [hl+0x30]" 614930
 d "cmpw ax, es:!0x30a4" 1142a430
 d "cmpw ax, es:[hl+0x30]" 11614930
 d "mulu x" d6
-d "mulhu ceh" fbh 01h
-d "mulh ceh" fbh 02h
-d "divhu ceh" fbh 03h
-d "divwu ceh" fbh 0bh
-d "machu ceh" fbh 05h
-d "mach ceh" fbh 06h
+d "mulhu" cefb01
+d "mulh" cefb02
+d "divhu" cefb03
+d "divwu" cefb0b
+d "machu" cefb05
+d "mach" cefb06
 d "inc x" 80
 d "inc a" 81
 d "inc c" 82
@@ -614,108 +614,108 @@ d "sarw ax, 12" 31cf
 d "sarw ax, 13" 31df
 d "sarw ax, 14" 31ef
 d "sarw ax, 15" 31ff
-d "ror a, 1" 61db
-d "rol a, 1" 61eb
-d "rorc a, 1" 61fb
-d "rolc a, 1" 61dc
-d "rolwc ax, 1" 61ee
-d "rolwc bc, 1" 61fe
-d "movw cy, 0xffe46.0" 710426
-d "movw cy, 0xffe46.1" 711426
-d "movw cy, 0xffe46.2" 712426
-d "movw cy, 0xffe46.3" 713426
-d "movw cy, 0xffe46.4" 714426
-d "movw cy, 0xffe46.5" 715426
-d "movw cy, 0xffe46.6" 716426
-d "movw cy, 0xffe46.7" 717426
-d "movw cy, pmc.0" 710cfe
-d "movw cy, pmc.1" 711cfe
-d "movw cy, pmc.2" 712cfe
-d "movw cy, pmc.3" 713cfe
-d "movw cy, pmc.4" 714cfe
-d "movw cy, pmc.5" 715cfe
-d "movw cy, pmc.6" 716cfe
-d "movw cy, pmc.7" 717cfe
-d "movw cy, a.0" 718c
-d "movw cy, a.1" 719c
-d "movw cy, a.2" 71ac
-d "movw cy, a.3" 71bc
-d "movw cy, a.4" 71cc
-d "movw cy, a.5" 71dc
-d "movw cy, a.6" 71ec
-d "movw cy, a.7" 71fc
-d "movw cy, psw.0" 710cfa
-d "movw cy, psw.1" 711cfa
-d "movw cy, psw.2" 712cfa
-d "movw cy, psw.3" 713cfa
-d "movw cy, psw.4" 714cfa
-d "movw cy, psw.5" 715cfa
-d "movw cy, psw.6" 716cfa
-d "movw cy, psw.7" 717cfa
-d "movw cy, [hl].0" 7184
-d "movw cy, [hl].1" 7194
-d "movw cy, [hl].2" 71a4
-d "movw cy, [hl].3" 71b4
-d "movw cy, [hl].4" 71c4
-d "movw cy, [hl].5" 71d4
-d "movw cy, [hl].6" 71e4
-d "movw cy, [hl].7" 71f4
-d "movw 0xffe46.0, cy" 710126
-d "movw 0xffe46.1, cy" 711126
-d "movw 0xffe46.2, cy" 712126
-d "movw 0xffe46.3, cy" 713126
-d "movw 0xffe46.4, cy" 714126
-d "movw 0xffe46.5, cy" 715126
-d "movw 0xffe46.6, cy" 716126
-d "movw 0xffe46.7, cy" 717126
-d "movw pmc.0. cy" 7109fe
-d "movw pmc.1. cy" 7119fe
-d "movw pmc.2. cy" 7129fe
-d "movw pmc.3. cy" 7139fe
-d "movw pmc.4. cy" 7149fe
-d "movw pmc.5. cy" 7159fe
-d "movw pmc.6. cy" 7169fe
-d "movw pmc.7. cy" 7179fe
-d "movw a.0, cy" 7189
-d "movw a.1, cy" 7199
-d "movw a.2, cy" 71a9
-d "movw a.3, cy" 71b9
-d "movw a.4, cy" 71c9
-d "movw a.5, cy" 71d9
-d "movw a.6, cy" 71e9
-d "movw a.7, cy" 71f9
-d "movw psw.0, cy" 7109fa
-d "movw psw.1, cy" 7119fa
-d "movw psw.2, cy" 7129fa
-d "movw psw.3, cy" 7139fa
-d "movw psw.4, cy" 7149fa
-d "movw psw.5, cy" 7159fa
-d "movw psw.6, cy" 7169fa
-d "movw psw.7, cy" 7179fa
-d "movw [hl].0, cy" 7181
-d "movw [hl].1, cy" 7191
-d "movw [hl].2, cy" 71a1
-d "movw [hl].3, cy" 71b1
-d "movw [hl].4, cy" 71c1
-d "movw [hl].5, cy" 71d1
-d "movw [hl].6, cy" 71e1
-d "movw [hl].7, cy" 71f1
-d "movw cy, es:[hl].0" 117184
-d "movw cy, es:[hl].1" 117194
-d "movw cy, es:[hl].2" 1171a4
-d "movw cy, es:[hl].3" 1171b4
-d "movw cy, es:[hl].4" 1171c4
-d "movw cy, es:[hl].5" 1171d4
-d "movw cy, es:[hl].6" 1171e4
-d "movw cy, es:[hl].7" 1171f4
-d "movw es:[hl].0, cy" 117181
-d "movw es:[hl].1, cy" 117191
-d "movw es:[hl].2, cy" 1171a1
-d "movw es:[hl].3, cy" 1171b1
-d "movw es:[hl].4, cy" 1171c1
-d "movw es:[hl].5, cy" 1171d1
-d "movw es:[hl].6, cy" 1171e1
-d "movw es:[hl].7, cy" 1171f1
+d "ror a, #0x1" 61db
+d "rol a, #0x1" 61eb
+d "rorc a, #0x1" 61fb
+d "rolc a, #0x1" 61dc
+d "rolwc ax, #0x1" 61ee
+d "rolwc bc, #0x1" 61fe
+d "mov1 cy, 0xffe46.0" 710426
+d "mov1 cy, 0xffe46.1" 711426
+d "mov1 cy, 0xffe46.2" 712426
+d "mov1 cy, 0xffe46.3" 713426
+d "mov1 cy, 0xffe46.4" 714426
+d "mov1 cy, 0xffe46.5" 715426
+d "mov1 cy, 0xffe46.6" 716426
+d "mov1 cy, 0xffe46.7" 717426
+d "mov1 cy, pmc.0" 710cfe
+d "mov1 cy, pmc.1" 711cfe
+d "mov1 cy, pmc.2" 712cfe
+d "mov1 cy, pmc.3" 713cfe
+d "mov1 cy, pmc.4" 714cfe
+d "mov1 cy, pmc.5" 715cfe
+d "mov1 cy, pmc.6" 716cfe
+d "mov1 cy, pmc.7" 717cfe
+d "mov1 cy, a.0" 718c
+d "mov1 cy, a.1" 719c
+d "mov1 cy, a.2" 71ac
+d "mov1 cy, a.3" 71bc
+d "mov1 cy, a.4" 71cc
+d "mov1 cy, a.5" 71dc
+d "mov1 cy, a.6" 71ec
+d "mov1 cy, a.7" 71fc
+d "mov1 cy, psw.0" 710cfa
+d "mov1 cy, psw.1" 711cfa
+d "mov1 cy, psw.2" 712cfa
+d "mov1 cy, psw.3" 713cfa
+d "mov1 cy, psw.4" 714cfa
+d "mov1 cy, psw.5" 715cfa
+d "mov1 cy, psw.6" 716cfa
+d "mov1 cy, psw.7" 717cfa
+d "mov1 cy, [hl].0" 7184
+d "mov1 cy, [hl].1" 7194
+d "mov1 cy, [hl].2" 71a4
+d "mov1 cy, [hl].3" 71b4
+d "mov1 cy, [hl].4" 71c4
+d "mov1 cy, [hl].5" 71d4
+d "mov1 cy, [hl].6" 71e4
+d "mov1 cy, [hl].7" 71f4
+d "mov1 0xffe46.0, cy" 710126
+d "mov1 0xffe46.1, cy" 711126
+d "mov1 0xffe46.2, cy" 712126
+d "mov1 0xffe46.3, cy" 713126
+d "mov1 0xffe46.4, cy" 714126
+d "mov1 0xffe46.5, cy" 715126
+d "mov1 0xffe46.6, cy" 716126
+d "mov1 0xffe46.7, cy" 717126
+d "mov1 pmc.0, cy" 7109fe
+d "mov1 pmc.1, cy" 7119fe
+d "mov1 pmc.2, cy" 7129fe
+d "mov1 pmc.3, cy" 7139fe
+d "mov1 pmc.4, cy" 7149fe
+d "mov1 pmc.5, cy" 7159fe
+d "mov1 pmc.6, cy" 7169fe
+d "mov1 pmc.7, cy" 7179fe
+d "mov1 a.0, cy" 7189
+d "mov1 a.1, cy" 7199
+d "mov1 a.2, cy" 71a9
+d "mov1 a.3, cy" 71b9
+d "mov1 a.4, cy" 71c9
+d "mov1 a.5, cy" 71d9
+d "mov1 a.6, cy" 71e9
+d "mov1 a.7, cy" 71f9
+d "mov1 psw.0, cy" 7109fa
+d "mov1 psw.1, cy" 7119fa
+d "mov1 psw.2, cy" 7129fa
+d "mov1 psw.3, cy" 7139fa
+d "mov1 psw.4, cy" 7149fa
+d "mov1 psw.5, cy" 7159fa
+d "mov1 psw.6, cy" 7169fa
+d "mov1 psw.7, cy" 7179fa
+d "mov1 [hl].0, cy" 7181
+d "mov1 [hl].1, cy" 7191
+d "mov1 [hl].2, cy" 71a1
+d "mov1 [hl].3, cy" 71b1
+d "mov1 [hl].4, cy" 71c1
+d "mov1 [hl].5, cy" 71d1
+d "mov1 [hl].6, cy" 71e1
+d "mov1 [hl].7, cy" 71f1
+d "mov1 cy, es:[hl].0" 117184
+d "mov1 cy, es:[hl].1" 117194
+d "mov1 cy, es:[hl].2" 1171a4
+d "mov1 cy, es:[hl].3" 1171b4
+d "mov1 cy, es:[hl].4" 1171c4
+d "mov1 cy, es:[hl].5" 1171d4
+d "mov1 cy, es:[hl].6" 1171e4
+d "mov1 cy, es:[hl].7" 1171f4
+d "mov1 es:[hl].0, cy" 117181
+d "mov1 es:[hl].1, cy" 117191
+d "mov1 es:[hl].2, cy" 1171a1
+d "mov1 es:[hl].3, cy" 1171b1
+d "mov1 es:[hl].4, cy" 1171c1
+d "mov1 es:[hl].5, cy" 1171d1
+d "mov1 es:[hl].6, cy" 1171e1
+d "mov1 es:[hl].7, cy" 1171f1
 d "and1 cy, 0xffe46.0" 710526
 d "and1 cy, 0xffe46.1" 711526
 d "and1 cy, 0xffe46.2" 712526
@@ -886,7 +886,7 @@ d "set1 a.6" 71ea
 d "set1 a.7" 71fa
 d "set1 !0x30a4.0" 7100a430
 d "set1 !0x30a4.1" 7110a430
-d "set1 !0x30a4.2" 71a42030
+d "set1 !0x30a4.2" 7120a430
 d "set1 !0x30a4.3" 7130a430
 d "set1 !0x30a4.4" 7140a430
 d "set1 !0x30a4.5" 7150a430
@@ -910,7 +910,7 @@ d "set1 [hl].6" 71e2
 d "set1 [hl].7" 71f2
 d "set1 es:!0x30a4.0" 117100a430
 d "set1 es:!0x30a4.1" 117110a430
-d "set1 es:!0x30a4.2" 1171a42030
+d "set1 es:!0x30a4.2" 117120a430
 d "set1 es:!0x30a4.3" 117130a430
 d "set1 es:!0x30a4.4" 117140a430
 d "set1 es:!0x30a4.5" 117150a430
@@ -995,41 +995,41 @@ d "call ax" 61ca
 d "call bc" 61da
 d "call de" 61ea
 d "call hl" 61fa
-d "call $!0x30" fe20fa
+d "call $!0xfa20" fe20fa
 d "call !0x30a4" fda430
-d "call !!0x30" fc20faadrs
-d "callt [0080h]" 6184
-d "callt [0082h]" 6194
-d "callt [0084h]" 61a4
-d "callt [0086h]" 61b4
-d "callt [0088h]" 61c4
-d "callt [008ah]" 61d4
-d "callt [008ch]" 61e4
-d "callt [008eh]" 61f4
-d "callt [0090h]" 6185
-d "callt [0092h]" 6195
-d "callt [0094h]" 61a5
-d "callt [0096h]" 61b5
-d "callt [0098h]" 61c5
-d "callt [009ah]" 61d5
-d "callt [009ch]" 61e5
-d "callt [009eh]" 61f5
-d "callt [00a0h]" 6186
-d "callt [00a2h]" 6196
-d "callt [00a4h]" 61a6
-d "callt [00a6h]" 61b6
-d "callt [00a8h]" 61c6
-d "callt [00aah]" 61d6
-d "callt [00ach]" 61e6
-d "callt [00aeh]" 61f6
-d "callt [00b0h]" 6187
-d "callt [00b2h]" 6197
-d "callt [00b4h]" 61a7
-d "callt [00b6h]" 61b7
-d "callt [00b8h]" 61c7
-d "callt [00bah]" 61d7
-d "callt [00bch]" 61e7
-d "callt [00beh]" 61f7
+d "call !!0xffa20" fc20fa0f
+d "callt [0x80]" 6184
+d "callt [0x82]" 6194
+d "callt [0x84]" 61a4
+d "callt [0x86]" 61b4
+d "callt [0x88]" 61c4
+d "callt [0x8a]" 61d4
+d "callt [0x8c]" 61e4
+d "callt [0x8e]" 61f4
+d "callt [0x90]" 6185
+d "callt [0x92]" 6195
+d "callt [0x94]" 61a5
+d "callt [0x96]" 61b5
+d "callt [0x98]" 61c5
+d "callt [0x9a]" 61d5
+d "callt [0x9c]" 61e5
+d "callt [0x9e]" 61f5
+d "callt [0xa0]" 6186
+d "callt [0xa2]" 6196
+d "callt [0xa4]" 61a6
+d "callt [0xa6]" 61b6
+d "callt [0xa8]" 61c6
+d "callt [0xaa]" 61d6
+d "callt [0xac]" 61e6
+d "callt [0xae]" 61f6
+d "callt [0xb0]" 6187
+d "callt [0xb2]" 6197
+d "callt [0xb4]" 61a7
+d "callt [0xb6]" 61b7
+d "callt [0xb8]" 61c7
+d "callt [0xba]" 61d7
+d "callt [0xbc]" 61e7
+d "callt [0xbe]" 61f7
 d "brk" 61cc
 d "ret" d7
 d "reti" 61fc
@@ -1044,7 +1044,7 @@ d "pop ax" c0
 d "pop bc" c2
 d "pop de" c4
 d "pop hl" c6
-d "movw sp, 0x1337" cbf83713
+d "movw sp, #0x1337" cbf83713
 d "movw sp, ax" bef8
 d "movw ax, sp" aef8
 d "movw bc, sp" db20fa
@@ -1054,9 +1054,9 @@ d "addw sp, #0x30" 1030
 d "subw sp, #0x30" 2030
 d "br ax" 61cb
 d "br $0x30" ef30
-d "br $!0x30" ee20fa
+d "br $!0xfa20" ee20fa
 d "br !0x30a4" eda430
-d "br !!0x30" ec20faadrs
+d "br !!0xffa20" ec20fa0f
 d "bc $0x30" dc30
 d "bnc $0x30" de30
 d "bz $0x30" dd30
@@ -1221,4 +1221,4 @@ d "nop" 00
 d "ei" 717afa
 d "di" 717bfa
 d "halt" 61ed
-d "stop
+d "stop" 61fd
