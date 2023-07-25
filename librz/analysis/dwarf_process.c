@@ -336,6 +336,11 @@ static ut64 die_bits_size(const RzBinDwarfDie *die) {
 }
 
 static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die) {
+	RzBaseType *btype = ht_up_find(ctx->analysis->debug_info->base_type_by_offset, die->offset, NULL);
+	if (btype) {
+		return btype;
+	}
+
 	RzBaseTypeKind kind = RZ_BASE_TYPE_KIND_ATOMIC;
 	switch (die->tag) {
 	case DW_TAG_union_type:
@@ -359,7 +364,6 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 	}
 
 	RzType *type = NULL;
-	RzBaseType *btype = NULL;
 	const char *name = NULL;
 	ut64 size = 0;
 	RzBinDwarfAttr *attr = NULL;
@@ -394,9 +398,6 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 	if (!name) {
 		goto err;
 	}
-	if (set_p_contains(ctx->analysis->debug_info->base_type_names, name)) {
-		return NULL;
-	}
 	btype = rz_type_base_type_new(kind);
 	if (!btype) {
 		goto err;
@@ -424,8 +425,11 @@ static RzBaseType *base_type_new_from_die(Context *ctx, const RzBinDwarfDie *die
 	if (!rz_type_db_update_base_type(ctx->analysis->typedb, btype)) {
 		RZ_LOG_WARN("Failed to save base type %s\n", btype->name);
 	} else {
-		set_p_add(ctx->analysis->debug_info->base_type_names, btype->name);
+		if (!ht_up_insert(ctx->analysis->debug_info->base_type_by_offset, die->offset, btype)) {
+			RZ_LOG_WARN("Failed to save base type %s [0x%" PFMT64x "]\n", btype->name, die->offset);
+		}
 	}
+
 	return btype;
 err:
 	rz_type_free(type);
@@ -1415,7 +1419,7 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	debug_info->function_by_addr = ht_up_new(NULL, NULL, NULL);
 	debug_info->type_by_offset = ht_up_new(NULL, htup_type_free, NULL);
 	debug_info->callable_by_offset = ht_up_new(NULL, htup_callable_free, NULL);
-	debug_info->base_type_names = set_p_new();
+	debug_info->base_type_by_offset = ht_up_new(NULL, NULL, NULL);
 	return debug_info;
 }
 
@@ -1427,6 +1431,6 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->function_by_addr);
 	ht_up_free(debuginfo->type_by_offset);
 	ht_up_free(debuginfo->callable_by_offset);
-	set_p_free(debuginfo->base_type_names);
+	ht_up_free(debuginfo->base_type_by_offset);
 	free(debuginfo);
 }
