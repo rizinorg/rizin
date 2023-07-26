@@ -494,10 +494,11 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 	// READ
 #if CS_NEXT_VERSION >= 6
-	crX = cs_reg_name(handle, PPC_DETAIL(insn).bc.crX);
-	rA = cs_reg_name(handle, INSOP(0).reg);
-	rB = cs_reg_name(handle, INSOP(1).reg);
-	imm = INSOP(1).imm;
+	// Uses REAL instruction operand set.
+	crX = cs_reg_name(handle, INSOP(0).reg);
+	rA = cs_reg_name(handle, INSOP(1).reg);
+	rB = cs_reg_name(handle, INSOP(2).reg);
+	imm = INSOP(2).imm;
 #else
 	// cr0 reg is not explicitly stored in the operands list.
 	if (OP_CNT == 2) {
