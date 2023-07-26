@@ -31,7 +31,7 @@ RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAn
 		return a->offset - b->offset;
 	case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
-	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE:
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
 	case RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR:
 		return a->DIE_offset - b->DIE_offset;
@@ -55,7 +55,7 @@ static const char *var_storage_strings[] = {
 	[RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET] = "reg offset",
 	[RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET] = "CFA",
 	[RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET] = "frame base",
-	[RZ_ANALYSIS_VAR_STORAGE_COMPOSE] = "compose",
+	[RZ_ANALYSIS_VAR_STORAGE_COMPOSITE] = "composite",
 	[RZ_ANALYSIS_VAR_STORAGE_LOCLIST] = "loclist",
 	[RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING] = "waiting",
 };
@@ -106,7 +106,10 @@ RZ_API void rz_analysis_var_storage_dump(RzAnalysis *a, RzStrBuf *sb, const RzAn
 		rz_bin_dwarf_loclist_dump(&a->debug_info->encoding, a->debug_info->dwarf_register_mapping, storage->loclist, sb, "\n", "\t");
 		break;
 	}
-	case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+	case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE: {
+		rz_bin_dwarf_location_composite_dump(&a->debug_info->encoding, a->debug_info->dwarf_register_mapping, storage->composite, sb, "\t", "");
+		break;
+	}
 	case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
 	case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
 		rz_strbuf_append(sb, var_storage_strings[storage->type]);
@@ -153,7 +156,7 @@ RZ_API void rz_analysis_var_storage_dump_pj(PJ *pj, const RzAnalysisVarStorage *
 			pj_N(pj, storage->offset);
 			break;
 		case RZ_ANALYSIS_VAR_STORAGE_EMPTY:
-		case RZ_ANALYSIS_VAR_STORAGE_COMPOSE:
+		case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE:
 		case RZ_ANALYSIS_VAR_STORAGE_LOCLIST:
 		case RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING:
 		case RZ_ANALYSIS_VAR_STORAGE_DECODE_ERROR:

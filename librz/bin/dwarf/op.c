@@ -1315,7 +1315,7 @@ static RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluatio
 		} else {
 			loc = RZ_NEW0(RzBinDwarfLocation);
 			loc->kind = RzBinDwarfLocationKind_COMPOSITE;
-			loc->compose = rz_vector_clone(pieces);
+			loc->composite = rz_vector_clone(pieces);
 			RzBinDwarfPiece *piece = NULL;
 			rz_vector_foreach(pieces, piece) {
 				piece->location = NULL;
@@ -1547,17 +1547,19 @@ rz_bin_dwarf_loclist_dump(
 	rz_strbuf_appendf(sb, "\n%s]", rz_str_get(indent));
 }
 
-static void rz_bin_dwarf_location_dump_compose(
+RZ_API void rz_bin_dwarf_location_composite_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
-	RZ_BORROW RZ_NONNULL RzVector /*RzBinDwarfPiece*/ *compose,
+	RZ_BORROW RZ_NONNULL RzVector /*RzBinDwarfPiece*/ *composite,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
 	RZ_BORROW RZ_NONNULL const char *sep,
 	RZ_BORROW RZ_NONNULL const char *indent) {
+
+	rz_strbuf_append(sb, "composite: [");
 	ut32 i;
-	ut32 end = rz_vector_len(compose) - 1;
+	ut32 end = rz_vector_len(composite) - 1;
 	RzBinDwarfPiece *piece = NULL;
-	rz_vector_enumerate(compose, piece, i) {
+	rz_vector_enumerate(composite, piece, i) {
 		rz_strbuf_append(sb, rz_str_get(indent));
 		rz_strbuf_appendf(sb, "(.%" PFMT64u ", %" PFMT64u "): ", piece->bit_offset, piece->size_in_bits);
 
@@ -1566,6 +1568,7 @@ static void rz_bin_dwarf_location_dump_compose(
 			rz_strbuf_append(sb, rz_str_get(sep));
 		}
 	}
+	rz_strbuf_appendf(sb, "%s]", rz_str_get(indent));
 }
 
 RZ_API void rz_bin_dwarf_location_dump(
@@ -1611,9 +1614,7 @@ RZ_API void rz_bin_dwarf_location_dump(
 		rz_strbuf_appendf(sb, "implicit_pointer 0x%" PFMT64x, loc->implicit_pointer);
 		break;
 	case RzBinDwarfLocationKind_COMPOSITE:
-		rz_strbuf_append(sb, "[");
-		rz_bin_dwarf_location_dump_compose(encoding, dwarf_register_mapping, loc->compose, sb, ", ", "");
-		rz_strbuf_append(sb, "]");
+		rz_bin_dwarf_location_composite_dump(encoding, dwarf_register_mapping, loc->composite, sb, ", ", "");
 		break;
 	case RzBinDwarfLocationKind_EVALUATION_WAITING:
 		rz_strbuf_append(sb, "<evaluation waiting>");

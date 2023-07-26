@@ -1375,7 +1375,7 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 		storage->type = RZ_ANALYSIS_VAR_STORAGE_EMPTY;
 		break;
 	case RzBinDwarfLocationKind_COMPOSITE:
-		rz_analysis_var_storage_init_compose(storage, loc->compose);
+		rz_analysis_var_storage_init_compose(storage, loc->composite);
 		break;
 	case RzBinDwarfLocationKind_EVALUATION_WAITING:
 		rz_analysis_var_storage_init_dwarf_eval_waiting(storage, loc->eval_waiting.eval, loc->eval_waiting.result);

@@ -340,7 +340,7 @@ RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
 		rz_bin_dwarf_evaluation_result_free(self->eval_waiting.result);
 		break;
 	case RzBinDwarfLocationKind_COMPOSITE:
-		rz_vector_fini(self->compose);
+		rz_vector_fini(self->composite);
 		break;
 	case RzBinDwarfLocationKind_LOCLIST: // fallthrough
 	default: break;

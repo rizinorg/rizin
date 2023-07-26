@@ -961,7 +961,7 @@ void * prout(void *str, const char *buf, size_t n);
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 ---------
 var int32_t arg5 @ a4
-var intfrac tfraction @ compose
+var intfrac tfraction @ composite: [(.0, 32): d2	(.0, 32): d3]
 arg fp_number_type *a @ loclist: [
 	(0x80003c60, 0x80003c9c) [DW_OP_reg20 20] a4
 	(0x80003c9c, 0x80003cae) [DW_OP_reg18 18] a2
@@ -1015,14 +1015,14 @@ var int b_normal_exp @ loclist: [
 	(0x80003d46, 0x80003d56) [DW_OP_reg2 2] d2
 	]
 var fractype a_fraction @ loclist: [
-	(0x80003cd4, 0x80003d3c) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): d10, (.0, 32): d11]
-	(0x80003d44, 0x80003d50) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): d10, (.0, 32): d11]
+	(0x80003cd4, 0x80003d3c) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] composite: [(.0, 32): d10, (.0, 32): d11]
+	(0x80003d44, 0x80003d50) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] composite: [(.0, 32): d10, (.0, 32): d11]
 	(0x80003d50, 0x80003d52) [DW_OP_breg20 20 12 0x0] a4+12
-	(0x80003d52, 0x80003e02) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): d10, (.0, 32): d11]
+	(0x80003d52, 0x80003e02) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] composite: [(.0, 32): d10, (.0, 32): d11]
 	]
 var fractype b_fraction @ loclist: [
-	(0x80003cd8, 0x80003d08) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): d8, (.0, 32): d9]
-	(0x80003d0e, 0x80003e02) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): d8, (.0, 32): d9]
+	(0x80003cd8, 0x80003d08) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] composite: [(.0, 32): d8, (.0, 32): d9]
+	(0x80003d0e, 0x80003e02) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] composite: [(.0, 32): d8, (.0, 32): d9]
 	]
 fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
@@ -1068,7 +1068,7 @@ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_ty
 	(0x80003dea, 0x80003e02) [DW_OP_reg18 18] a2
 	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x66, DW_OP_stack_value] <evaluation waiting>
 	]
-|           ; var intfrac tfraction @ compose
+|           ; var intfrac tfraction @ composite: [(.0, 32): d2	(.0, 32): d3]
 |           ; var int a_normal_exp @ loclist: [
 	(0x80003cbc, 0x80003d4c) [DW_OP_reg15 15] d15
 	(0x80003d4c, 0x80003d52) [DW_OP_breg20 20 8 0x0] a4+8
@@ -1084,14 +1084,14 @@ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_ty
 	(0x80003d46, 0x80003d56) [DW_OP_reg2 2] d2
 	]
 |           ; var fractype a_fraction @ loclist: [
-	(0x80003cd4, 0x80003d3c) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): d10, (.0, 32): d11]
-	(0x80003d44, 0x80003d50) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): d10, (.0, 32): d11]
+	(0x80003cd4, 0x80003d3c) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] composite: [(.0, 32): d10, (.0, 32): d11]
+	(0x80003d44, 0x80003d50) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] composite: [(.0, 32): d10, (.0, 32): d11]
 	(0x80003d50, 0x80003d52) [DW_OP_breg20 20 12 0x0] a4+12
-	(0x80003d52, 0x80003e02) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] [(.0, 32): d10, (.0, 32): d11]
+	(0x80003d52, 0x80003e02) [DW_OP_reg10 10, DW_OP_piece 32, DW_OP_reg11 11, DW_OP_piece 32] composite: [(.0, 32): d10, (.0, 32): d11]
 	]
 |           ; var fractype b_fraction @ loclist: [
-	(0x80003cd8, 0x80003d08) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): d8, (.0, 32): d9]
-	(0x80003d0e, 0x80003e02) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] [(.0, 32): d8, (.0, 32): d9]
+	(0x80003cd8, 0x80003d08) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] composite: [(.0, 32): d8, (.0, 32): d9]
+	(0x80003d0e, 0x80003e02) [DW_OP_reg8 8, DW_OP_piece 32, DW_OP_reg9 9, DW_OP_piece 32] composite: [(.0, 32): d8, (.0, 32): d9]
 	]
 |           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
 ---------
@@ -1263,11 +1263,11 @@ var FLO_union_type bu @ stack - 0x2c
 var fp_number_type a @ stack - 0x24
 var fp_number_type b @ stack - 0x10
 arg FLO_type arg_a @ loclist: [
-	(0x80004238, 0x8000424b) [DW_OP_reg4 4, DW_OP_piece 32, DW_OP_reg5 5, DW_OP_piece 32] [(.0, 32): d4, (.0, 32): d5]
+	(0x80004238, 0x8000424b) [DW_OP_reg4 4, DW_OP_piece 32, DW_OP_reg5 5, DW_OP_piece 32] composite: [(.0, 32): d4, (.0, 32): d5]
 	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf504cf03, DW_OP_stack_value] <evaluation waiting>
 	]
 arg FLO_type arg_b @ loclist: [
-	(0x80004238, 0x8000424b) [DW_OP_reg6 6, DW_OP_piece 32, DW_OP_reg7 7, DW_OP_piece 32] [(.0, 32): d6, (.0, 32): d7]
+	(0x80004238, 0x8000424b) [DW_OP_reg6 6, DW_OP_piece 32, DW_OP_reg7 7, DW_OP_piece 32] composite: [(.0, 32): d6, (.0, 32): d7]
 	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf506cf03, DW_OP_stack_value] <evaluation waiting>
 	]
 CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b);
@@ -1276,11 +1276,11 @@ CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b);
             ;-- __ltdf2:
 / CMPtype __ltdf2(FLO_type arg_a, FLO_type arg_b)
 |           ; arg FLO_type arg_a @ loclist: [
-	(0x80004238, 0x8000424b) [DW_OP_reg4 4, DW_OP_piece 32, DW_OP_reg5 5, DW_OP_piece 32] [(.0, 32): d4, (.0, 32): d5]
+	(0x80004238, 0x8000424b) [DW_OP_reg4 4, DW_OP_piece 32, DW_OP_reg5 5, DW_OP_piece 32] composite: [(.0, 32): d4, (.0, 32): d5]
 	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf504cf03, DW_OP_stack_value] <evaluation waiting>
 	]
 |           ; arg FLO_type arg_b @ loclist: [
-	(0x80004238, 0x8000424b) [DW_OP_reg6 6, DW_OP_piece 32, DW_OP_reg7 7, DW_OP_piece 32] [(.0, 32): d6, (.0, 32): d7]
+	(0x80004238, 0x8000424b) [DW_OP_reg6 6, DW_OP_piece 32, DW_OP_reg7 7, DW_OP_piece 32] composite: [(.0, 32): d6, (.0, 32): d7]
 	(0x8000424b, 0x80004278) [DW_OP_GNU_entry_value 0xf506cf03, DW_OP_stack_value] <evaluation waiting>
 	]
 |           ; var fp_number_type a @ stack - 0x24

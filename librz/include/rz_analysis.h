@@ -671,7 +671,7 @@ typedef enum {
 	RZ_ANALYSIS_VAR_STORAGE_REG_OFFSET,
 	RZ_ANALYSIS_VAR_STORAGE_CFA_OFFSET,
 	RZ_ANALYSIS_VAR_STORAGE_FB_OFFSET,
-	RZ_ANALYSIS_VAR_STORAGE_COMPOSE,
+	RZ_ANALYSIS_VAR_STORAGE_COMPOSITE,
 	RZ_ANALYSIS_VAR_STORAGE_LOCLIST,
 	RZ_ANALYSIS_VAR_STORAGE_DWARF_EVAL_WAITING,
 	RZ_ANALYSIS_VAR_STORAGE_END
@@ -697,7 +697,7 @@ typedef struct rz_analysis_var_storage_t {
 		 * respective RzAnalysis.constpool.
 		 */
 		const char *reg;
-		RzVector * /*<RzBinDwarfPiece>*/ compose;
+		RzVector * /*<RzBinDwarfPiece>*/ composite;
 		struct {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
@@ -733,8 +733,8 @@ static inline void rz_analysis_var_storage_init_fb_offset(RzAnalysisVarStorage *
 }
 
 static inline void rz_analysis_var_storage_init_compose(RzAnalysisVarStorage *stor, RzVector /*<RzBinDwarfPiece>*/ *compose) {
-	stor->type = RZ_ANALYSIS_VAR_STORAGE_COMPOSE;
-	stor->compose = compose;
+	stor->type = RZ_ANALYSIS_VAR_STORAGE_COMPOSITE;
+	stor->composite = compose;
 }
 
 static inline void rz_analysis_var_storage_init_dwarf_eval_waiting(RzAnalysisVarStorage *stor, RzBinDwarfEvaluation *eval, RzBinDwarfEvaluationResult *result) {

@@ -1709,7 +1709,7 @@ typedef struct rz_bin_dwarf_location_t {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} eval_waiting;
-		RzVector /*RzBinDwarfPiece*/ *compose;
+		RzVector /*RzBinDwarfPiece*/ *composite;
 		const RzBinDwarfLocList *loclist;
 	};
 } RzBinDwarfLocation;
@@ -1726,16 +1726,21 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_
 RZ_API void
 rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL RzStrBuf *str_buf, RZ_BORROW RZ_NONNULL const char *sep, RZ_BORROW RZ_NONNULL const char *indent);
 RZ_API char *rz_bin_dwarf_expression_to_string(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block);
-RZ_API void
-rz_bin_dwarf_loclist_dump(
+RZ_API void rz_bin_dwarf_loclist_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
 	RZ_BORROW RZ_NONNULL const RzBinDwarfLocList *loclist,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
 	RZ_BORROW RZ_NONNULL const char *sep,
 	RZ_BORROW RZ_NONNULL const char *indent);
-RZ_API void
-rz_bin_dwarf_location_dump(
+RZ_API void rz_bin_dwarf_location_composite_dump(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
+	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
+	RZ_BORROW RZ_NONNULL RzVector /*RzBinDwarfPiece*/ *composite,
+	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
+	RZ_BORROW RZ_NONNULL const char *sep,
+	RZ_BORROW RZ_NONNULL const char *indent);
+RZ_API void rz_bin_dwarf_location_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
 	RZ_BORROW RZ_NONNULL const RzBinDwarfLocation *loc,
