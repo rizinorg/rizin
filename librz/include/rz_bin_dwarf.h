@@ -1709,7 +1709,7 @@ typedef struct rz_bin_dwarf_location_t {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} eval_waiting;
-		RzVector /*RzBinDwarfPiece*/ *composite;
+		RzVector /*<RzBinDwarfPiece>*/ *composite;
 		const RzBinDwarfLocList *loclist;
 	};
 } RzBinDwarfLocation;
@@ -1736,7 +1736,7 @@ RZ_API void rz_bin_dwarf_loclist_dump(
 RZ_API void rz_bin_dwarf_location_composite_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
-	RZ_BORROW RZ_NONNULL RzVector /*RzBinDwarfPiece*/ *composite,
+	RZ_BORROW RZ_NONNULL RzVector /*<RzBinDwarfPiece>*/ *composite,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
 	RZ_BORROW RZ_NONNULL const char *sep,
 	RZ_BORROW RZ_NONNULL const char *indent);
