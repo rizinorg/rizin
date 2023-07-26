@@ -1096,7 +1096,7 @@ static bool function_children_parse(Context *ctx, RzBinDwarfDie *die, RzCallable
 			continue;
 		}
 		if (!(v.location && v.type)) {
-			RZ_LOG_ERROR("DWARF function variable parse failed %s f.addr=0x%" PFMT64x " f.offset=0x%" PFMT64x " [0x%" PFMT64x "]\n", fn->prefer_name, fn->addr, die->offset, child_die->offset);
+			RZ_LOG_ERROR("DWARF function variable parse failed %s f.addr=0x%" PFMT64x " f.offset=0x%" PFMT64x " [0x%" PFMT64x "]\n", fn->prefer_name, fn->low_pc, die->offset, child_die->offset);
 			continue;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
@@ -1154,14 +1154,19 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 			fcn->link_name = rz_str_new(rz_bin_dwarf_attr_get_string(val));
 			break;
 		case DW_AT_low_pc:
+			fcn->low_pc = val->kind == DW_AT_KIND_ADDRESS ? val->address : fcn->low_pc;
+			break;
+		case DW_AT_high_pc:
+			fcn->high_pc = val->kind == DW_AT_KIND_ADDRESS ? val->address : fcn->high_pc;
+			break;
 		case DW_AT_entry_pc:
-			fcn->addr = val->kind == DW_AT_KIND_ADDRESS ? val->address : fcn->addr;
+			fcn->entry_pc = val->kind == DW_AT_KIND_ADDRESS ? val->address : fcn->entry_pc;
 			break;
 		case DW_AT_specification: /* reference to declaration DIE with more info */
 		{
 			RzBinDwarfDie *spec = ht_up_find(ctx->dw->info->die_tbl, val->reference, NULL);
 			if (!spec) {
-				RZ_LOG_ERROR("Cannot find specification DIE at 0x%" PFMT64x "\n", val->reference);
+				RZ_LOG_ERROR("DWARF cannot find specification DIE at 0x%" PFMT64x " f.offset=0x%" PFMT64x "\n", val->reference, die->offset);
 				break;
 			}
 			function_apply_specification(ctx, spec, fcn);
@@ -1193,7 +1198,6 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 			fcn->is_trampoline = true;
 			break;
 		case DW_AT_ranges:
-		case DW_AT_high_pc:
 		default:
 			break;
 		}
@@ -1208,7 +1212,7 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 	rz_vector_init(&fcn->variables, sizeof(RzAnalysisDwarfVariable), (RzVectorFree)variable_fini, NULL);
 	function_children_parse(ctx, die, callable, fcn);
 
-	RZ_LOG_DEBUG("DWARF function saving %s 0x%" PFMT64x " [0x%" PFMT64x "]\n", fcn->prefer_name, fcn->addr, die->offset);
+	RZ_LOG_DEBUG("DWARF function saving %s 0x%" PFMT64x " [0x%" PFMT64x "]\n", fcn->prefer_name, fcn->low_pc, die->offset);
 	if (fcn->prefer_name) {
 		if (!rz_type_func_update(ctx->analysis->typedb, callable)) {
 			RZ_LOG_ERROR("DWARF callable saving failed [typedb->callable] %s\n", fcn->prefer_name);
@@ -1225,12 +1229,12 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die) {
 		}
 	}
 	if (!ht_up_update(ctx->analysis->debug_info->function_by_offset, die->offset, fcn)) {
-		RZ_LOG_ERROR("DWARF function saving failed [0x%" PFMT64x "]\n", fcn->addr);
+		RZ_LOG_ERROR("DWARF function saving failed [0x%" PFMT64x "]\n", fcn->low_pc);
 		goto cleanup;
 	}
-	if (fcn->addr > 0) {
-		if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->addr, fcn)) {
-			RZ_LOG_ERROR("DWARF function saving failed with addr: [0x%" PFMT64x "]\n", fcn->addr);
+	if (fcn->low_pc > 0) {
+		if (!ht_up_update(ctx->analysis->debug_info->function_by_addr, fcn->low_pc, fcn)) {
+			RZ_LOG_ERROR("DWARF function saving failed with addr: [0x%" PFMT64x "]\n", fcn->low_pc);
 			goto cleanup;
 		}
 	}
@@ -1405,7 +1409,7 @@ static bool dw_var_to_rz_var(RzAnalysis *a, RzAnalysisFunction *f, RzAnalysisDwa
 static bool dwarf_integrate_function(void *user, const ut64 k, const void *value) {
 	RzAnalysis *analysis = user;
 	const RzAnalysisDwarfFunction *fn = value;
-	RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->addr);
+	RzAnalysisFunction *afn = rz_analysis_get_function_at(analysis, fn->low_pc);
 	if (!afn) {
 		return true;
 	}
@@ -1415,7 +1419,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 					       : ht_up_find(analysis->debug_info->callable_by_offset, fn->offset, NULL);
 	if (callable) {
 		char *sig = rz_type_callable_as_string(analysis->typedb, callable);
-		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->addr, sig);
+		rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fn->low_pc, sig);
 	}
 
 	if (fn->prefer_name) {
@@ -1434,6 +1438,10 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	};
 
 	afn->has_debuginfo = true;
+	if (fn->high_pc) {
+		afn->meta._max = fn->high_pc;
+	}
+
 	return true;
 }
 

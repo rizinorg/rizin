@@ -958,7 +958,7 @@ RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut6
  * \param is_64bit Format of the comp unit
  * \return ut64 Read value
  */
-RZ_IPI inline bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
+RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
 	if (is_64bit) {
 		ut64 result;
 		U64_OR_RET_FALSE(result);
@@ -966,7 +966,7 @@ RZ_IPI inline bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, b
 	} else {
 		ut32 result;
 		U32_OR_RET_FALSE(result);
-		*out = result;
+		*out = (ut64)result;
 	}
 	return true;
 }
@@ -992,7 +992,7 @@ RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
  *        and stores it into `value`
  */
 RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
-	rz_return_val_if_fail(in && value && buffer, NULL);
+	rz_return_val_if_fail(in && value && buffer, false);
 
 	enum DW_AT name = 0;
 	enum DW_FORM form = 0;

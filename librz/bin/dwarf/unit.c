@@ -71,9 +71,11 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 			continue;
 		}
 
+#ifdef RZ_BUILD_DEBUG
 		char *data = attr_to_string(&attr);
 		RZ_LOG_SILLY("0x%" PFMT64x ":\t%s\t%s [%s] (%s)\n", rz_buf_tell(buffer), indent_str(die->depth), rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form), rz_str_get(data));
 		free(data);
+#endif
 
 		switch (attr.name) {
 		case DW_AT_comp_dir:

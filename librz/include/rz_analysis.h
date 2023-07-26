@@ -798,8 +798,10 @@ typedef struct dwarf_variable_t {
 } RzAnalysisDwarfVariable;
 
 typedef struct dwarf_function_t {
-	ut64 addr;
 	ut64 offset;
+	ut64 low_pc;
+	ut64 high_pc;
+	ut64 entry_pc;
 	char *name;
 	char *link_name;
 	char *demangle_name;
