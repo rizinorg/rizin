@@ -53,6 +53,7 @@ typedef enum RL78OperandType {
         RL78_OP_TYPE_SFR, // special function register
         RL78_OP_TYPE_SADDR, // short addressing
         RL78_OP_TYPE_SYMBOL, // A, X, BC
+        RL78_OP_TYPE_DECIMAL, // only used for shifts
 
         RL78_OP_TYPE_ABSOLUTE_ADDR_16, // !...
         RL78_OP_TYPE_ABSOLUTE_ADDR_20, // !!...

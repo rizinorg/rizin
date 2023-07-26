@@ -614,12 +614,12 @@ d "sarw ax, 12" 31cf
 d "sarw ax, 13" 31df
 d "sarw ax, 14" 31ef
 d "sarw ax, 15" 31ff
-d "ror a, #0x1" 61db
-d "rol a, #0x1" 61eb
-d "rorc a, #0x1" 61fb
-d "rolc a, #0x1" 61dc
-d "rolwc ax, #0x1" 61ee
-d "rolwc bc, #0x1" 61fe
+d "ror a, 1" 61db
+d "rol a, 1" 61eb
+d "rorc a, 1" 61fb
+d "rolc a, 1" 61dc
+d "rolwc ax, 1" 61ee
+d "rolwc bc, 1" 61fe
 d "mov1 cy, 0xffe46.0" 710426
 d "mov1 cy, 0xffe46.1" 711426
 d "mov1 cy, 0xffe46.2" 712426
@@ -899,7 +899,7 @@ d "set1 psw.3" 713afa
 d "set1 psw.4" 714afa
 d "set1 psw.5" 715afa
 d "set1 psw.6" 716afa
-d "set1 psw.7" 717afa
+# d "set1 psw.7" 717afa enable interrupt (see end of file)
 d "set1 [hl].0" 7182
 d "set1 [hl].1" 7192
 d "set1 [hl].2" 71a2
@@ -963,7 +963,7 @@ d "clr1 psw.3" 713bfa
 d "clr1 psw.4" 714bfa
 d "clr1 psw.5" 715bfa
 d "clr1 psw.6" 716bfa
-d "clr1 psw.7" 717bfa
+# d "clr1 psw.7" 717bfa disable interrupt (see end of file)
 d "clr1 [hl].0" 7183
 d "clr1 [hl].1" 7193
 d "clr1 [hl].2" 71a3
@@ -1044,12 +1044,12 @@ d "pop ax" c0
 d "pop bc" c2
 d "pop de" c4
 d "pop hl" c6
-d "movw sp, #0x1337" cbf83713
-d "movw sp, ax" bef8
-d "movw ax, sp" aef8
-d "movw bc, sp" db20fa
-d "movw de, sp" eb20fa
-d "movw hl, sp" fb20fa
+d "movw spl, #0x1337" cbf83713
+d "movw spl, ax" bef8
+d "movw ax, spl" aef8
+d "movw bc, !0xfa20" db20fa
+d "movw de, !0xfa20" eb20fa
+d "movw hl, !0xfa20" fb20fa
 d "addw sp, #0x30" 1030
 d "subw sp, #0x30" 2030
 d "br ax" 61cb
@@ -1222,3 +1222,110 @@ d "ei" 717afa
 d "di" 717bfa
 d "halt" 61ed
 d "stop" 61fd
+
+# test 'holes'
+d "(invalid)" 21
+d "(invalid)" ff
+d "(invalid)" 6119
+d "(invalid)" 6139
+d "(invalid)" 6181
+d "(invalid)" 6183
+d "(invalid)" 6188
+d "(invalid)" 6191
+d "(invalid)" 6193
+d "(invalid)" 6198
+d "(invalid)" 6191
+d "(invalid)" 6193
+d "(invalid)" 6198
+d "(invalid)" 6199
+d "(invalid)" 619a
+d "(invalid)" 619b
+d "(invalid)" 619c
+d "(invalid)" 619d
+d "(invalid)" 619e
+d "(invalid)" 619f
+d "(invalid)" 61a1
+d "(invalid)" 61a3
+d "(invalid)" 61b1
+d "(invalid)" 61b3
+d "(invalid)" 61ba
+d "(invalid)" 61bb
+d "(invalid)" 61bc
+d "(invalid)" 61bd
+d "(invalid)" 61be
+d "(invalid)" 61bf
+d "(invalid)" 61c1
+d "(invalid)" 61d1
+d "(invalid)" 61e1
+d "(invalid)" 61f1
+d "(invalid)" 7190
+d "(invalid)" 7198
+d "(invalid)" 71a0
+d "(invalid)" 71a8
+d "(invalid)" 71b0
+d "(invalid)" 71b8
+d "(invalid)" 71c8
+d "(invalid)" 71d0
+d "(invalid)" 71d0
+d "(invalid)" 71e0
+d "(invalid)" 71e8
+d "(invalid)" 71f8
+d "(invalid)" 3106
+d "(invalid)" 3107
+d "(invalid)" 3108
+d "(invalid)" 3109
+d "(invalid)" 310a
+d "(invalid)" 310b
+d "(invalid)" 310c
+d "(invalid)" 310d
+d "(invalid)" 310e
+d "(invalid)" 310f
+d "(invalid)" 3116
+d "(invalid)" 3126
+d "(invalid)" 3136
+d "(invalid)" 3146
+d "(invalid)" 3156
+d "(invalid)" 3166
+d "(invalid)" 3176
+d "(invalid)" 3186
+d "(invalid)" 3186
+d "(invalid)" 3187
+d "(invalid)" 3188
+d "(invalid)" 3189
+d "(invalid)" 318a
+d "(invalid)" 318b
+d "(invalid)" 3197
+d "(invalid)" 3198
+d "(invalid)" 3199
+d "(invalid)" 319a
+d "(invalid)" 319b
+d "(invalid)" 31a7
+d "(invalid)" 31a8
+d "(invalid)" 31a9
+d "(invalid)" 31aa
+d "(invalid)" 31ab
+d "(invalid)" 31b7
+d "(invalid)" 31b8
+d "(invalid)" 31b9
+d "(invalid)" 31ba
+d "(invalid)" 31bb
+d "(invalid)" 31c7
+d "(invalid)" 31c8
+d "(invalid)" 31c9
+d "(invalid)" 31ca
+d "(invalid)" 31cb
+d "(invalid)" 31d7
+d "(invalid)" 31d8
+d "(invalid)" 31d9
+d "(invalid)" 31da
+d "(invalid)" 31db
+d "(invalid)" 31e7
+d "(invalid)" 31e8
+d "(invalid)" 31e9
+d "(invalid)" 31ea
+d "(invalid)" 31eb
+d "(invalid)" 31f7
+d "(invalid)" 31f8
+d "(invalid)" 31f9
+d "(invalid)" 31fa
+d "(invalid)" 31fb

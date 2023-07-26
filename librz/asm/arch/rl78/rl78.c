@@ -35,7 +35,38 @@ bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
                 byte = buf[next_byte_p++];
         }
 
-        int map;
+        // special cases
+        if (next_byte_p + 1 < buf_len) {
+                // MULHU, MULH...
+                if (byte == 0xCE && buf[next_byte_p] == 0xFB) {
+                        switch (buf[next_byte_p + 1]) {
+                                case 0x01: instr->operation = RL78_OPERATION_MULHU; break;
+                                case 0x02: instr->operation = RL78_OPERATION_MULH; break;
+                                case 0x03: instr->operation = RL78_OPERATION_DIVHU; break;
+                                case 0x0B: instr->operation = RL78_OPERATION_DIVWU; break;
+                                case 0x05: instr->operation = RL78_OPERATION_MACHU; break;
+                                case 0x06: instr->operation = RL78_OPERATION_MACH; break;
+                                default: break;
+                        }
+                }
+
+                // EI/DI aliases for set1 psw.7/clr1 psw.7
+                if (byte == 0x71 && buf[next_byte_p + 1] == 0xFA) {
+                        switch (buf[next_byte_p]) {
+                                case 0x7A: instr->operation = RL78_OPERATION_EI; break;
+                                case 0x7B: instr->operation = RL78_OPERATION_DI; break;
+                                default: break;
+                        }
+                }
+
+                if (instr->operation != RL78_OPERATION_NONE) {
+                        *bytes_read = next_byte_p + 2;
+                        return true;
+                }
+        }
+
+        // regular processing (get correct map, extract instruction and parse operands)
+        int map = 0;
         switch (byte) {
                 case 0x31:
                         // 4th map
@@ -49,37 +80,8 @@ bool rl78_dis(RL78Instr RZ_OUT *instr, size_t RZ_OUT *bytes_read,
                         // 3rd map
                         map = 2;
                         break;
-                case 0xCE:
-                        // somewhat special since MULHU, MULH... instructions
-                        // mounted on the S3 core are also mapped here here
-                        rz_return_val_if_fail(next_byte_p < buf_len, false);
-
-                        if (buf[next_byte_p] == 0xFB) {
-                                rz_return_val_if_fail(next_byte_p + 1 < buf_len, false);
-
-                                byte = buf[next_byte_p + 1];
-                                next_byte_p += 2;
-                                switch (byte) {
-                                        case 0x01: instr->operation = RL78_OPERATION_MULHU; break;
-                                        case 0x02: instr->operation = RL78_OPERATION_MULH; break;
-                                        case 0x03: instr->operation = RL78_OPERATION_DIVHU; break;
-                                        case 0x0B: instr->operation = RL78_OPERATION_DIVWU; break;
-                                        case 0x05: instr->operation = RL78_OPERATION_MACHU; break;
-                                        case 0x06: instr->operation = RL78_OPERATION_MACH; break;
-                                        default:
-                                                rz_warn_if_reached();
-                                                *bytes_read = next_byte_p;
-                                                return false;
-                                }
-
-                                *bytes_read = next_byte_p;
-                                return false;
-                        }
                 default:
-                        // default (first) map
-                        map = 0;
                         break;
-
         }
 
         // get next byte if other map was chosen
@@ -202,9 +204,7 @@ static bool parse_operand(RL78Operand RZ_INOUT *operand, size_t RZ_INOUT *next_b
 
                         operand->v0 = val;
 
-                case RL78_OP_TYPE_SYMBOL: // values are all constant
-                case RL78_OP_TYPE_NONE:
-                default:
+                default: // no need to get additional data (NONE, SYMBOL, ...)
                         break;
         }
 
@@ -239,6 +239,7 @@ static inline bool final_value_known(RL78OperandType type)
 static inline RL78Label addr_to_symbol(int addr)
 {
         switch (addr) {
+                // TODO add general-purpose registers
                 case 0xFFFF8: return RL78_SFR_SPL;
                 case 0xFFFF9: return RL78_SFR_SPH;
                 case 0xFFFFA: return RL78_SFR_PSW;
@@ -248,6 +249,7 @@ static inline RL78Label addr_to_symbol(int addr)
                 case 0xFFFFE: return RL78_SFR_PMC;
                 case 0xFFFFF: return RL78_SFR_MEM;
                 default:
+                              // invalid
                               return _RL78_SYMBOL_COUNT;
         }
 }

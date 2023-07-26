@@ -72,6 +72,9 @@ bool rl78_operand_to_string(RzStrBuf RZ_OUT *dst, const RL78Operand RZ_BORROW *o
                                 rz_strf(strbuf.buf, "!0x%" PFMT32x, operand->v0);
                         }
                         break;
+                case RL78_OP_TYPE_DECIMAL:
+                        rz_strf(strbuf.buf, "%d", operand->v0);
+                        break;
                 case RL78_OP_TYPE_ABSOLUTE_ADDR_20:
                         if (rl78_symbol_valid(operand->v0)) {
                                 rz_strf(strbuf.buf, "%s", RL78_STRINGS_SYMBOLS[operand->v0]);
