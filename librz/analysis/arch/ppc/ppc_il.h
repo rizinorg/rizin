@@ -165,6 +165,7 @@ RZ_IPI bool ppc_is_algebraic(ut32 insn_id);
 RZ_IPI bool ppc_sets_lr(ut32 insn_id);
 RZ_IPI bool ppc_insn_sets_lr(const cs_insn *insn);
 RZ_IPI bool ppc_is_conditional(ut32 insn_id);
+RZ_IPI bool ppc_insn_is_conditional(const cs_insn *insn);
 RZ_IPI bool ppc_moves_to_spr(ut32 insn_id);
 RZ_IPI bool ppc_is_mul_div_d(const ut32 id, const cs_mode mode);
 RZ_IPI bool ppc_is_mul_div_u(const ut32 id);

@@ -728,8 +728,12 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 static RzILOpEffect *branch_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
+#if CS_NEXT_VERSION >= 6
+	bool is_conditional = ppc_insn_is_conditional(insn);
+#else
 	ut32 id = insn->id;
 	bool is_conditional = ppc_is_conditional(id);
+#endif
 	RzILOpEffect *set_cia; // Current instruction address
 	RzILOpEffect *set_nia; // Next instruction address
 	RzILOpEffect *set_lr; // Set Link Register

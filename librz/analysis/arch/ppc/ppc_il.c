@@ -317,6 +317,17 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
  * \param insn_id The instruction id.
  * \return bool True if the branch instruction only branches if a condition is met. False otherwise.
  */
+RZ_IPI bool ppc_insn_is_conditional(const cs_insn *insn) {
+	rz_return_val_if_fail(insn, false);
+	return PPC_DETAIL(insn).bc.pred_cr != PPC_PRED_INVALID || PPC_DETAIL(insn).bc.pred_ctr != PPC_PRED_INVALID;
+}
+
+/**
+ * \brief Returns true if the given branch instruction is conditional.
+ *
+ * \param insn_id The instruction id.
+ * \return bool True if the branch instruction only branches if a condition is met. False otherwise.
+ */
 RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
@@ -473,6 +484,9 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
  */
 RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, false);
+#if CS_NEXT_VERSION >= 6
+	return cs_ppc_bc_decr_ctr(PPC_DETAIL(insn).bc.bo);
+#endif
 	ut32 id = insn->id;
 
 	switch (id) {
