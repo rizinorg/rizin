@@ -906,12 +906,20 @@ static void log_block(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, c
 #endif
 }
 
-static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
+static RzBinDwarfLocation *RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind k) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
 	if (!location) {
 		return NULL;
 	}
-	location->kind = RzBinDwarfLocationKind_LOCLIST;
+	location->kind = k;
+	return location;
+}
+
+static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
+	RzBinDwarfLocation *location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_LOCLIST);
+	if (!location) {
+		return NULL;
+	}
 	if (loclist->has_location) {
 		location->loclist = loclist;
 		return location;
@@ -921,12 +929,14 @@ static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocationListEntry *entry = *it;
 		if (!(entry->expression && entry->expression->data)) {
+			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
 			log_block(ctx, entry->expression, loclist->offset, entry->range);
-			return NULL;
+			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
+			continue;
 		}
 	}
 	loclist->has_location = true;
@@ -954,14 +964,12 @@ static RzBinDwarfLocation *location_from_block(Context *ctx, const RzBinDwarfDie
 	return loc;
 err_msg:
 	RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " %s\n", offset, msg);
-	return NULL;
+	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 err_eval:
 	log_block(ctx, block, offset, NULL);
-	return NULL;
+	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 empty_loc:
-	loc = RZ_NEW0(RzBinDwarfLocation);
-	loc->kind = RzBinDwarfLocationKind_EMPTY;
-	return loc;
+	return RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 }
 
 static RzBinDwarfLocation *location_parse(Context *ctx, const RzBinDwarfDie *die, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
@@ -1056,11 +1064,9 @@ static bool function_var_parse(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 	}
 
 	if (!has_location) {
-		v->location = RZ_NEW0(RzBinDwarfLocation);
-		v->location->kind = RzBinDwarfLocationKind_EMPTY;
+		v->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 	} else if (!v->location) {
-		v->location = RZ_NEW0(RzBinDwarfLocation);
-		v->location->kind = RzBinDwarfLocationKind_DECODE_ERROR;
+		v->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 	}
 	v->prefer_name = var_name(v, ctx->unit->language);
 	return true;
