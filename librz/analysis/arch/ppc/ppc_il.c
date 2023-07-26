@@ -431,7 +431,6 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTVSCR:
 #if CS_API_MAJOR < 6
 	case PPC_INS_MTCR:
-#endif
 	case PPC_INS_MTBR0:
 	case PPC_INS_MTBR1:
 	case PPC_INS_MTBR2:
@@ -453,18 +452,17 @@ RZ_IPI bool ppc_moves_to_spr(ut32 insn_id) {
 	case PPC_INS_MTTBU:
 	case PPC_INS_MTTBLO:
 	case PPC_INS_MTTBHI:
-#if CS_API_MAJOR < 6
 	case PPC_INS_MTDBATU:
 	case PPC_INS_MTDBATL:
 	case PPC_INS_MTIBATU:
 	case PPC_INS_MTIBATL:
-#endif
 	case PPC_INS_MTDCCR:
 	case PPC_INS_MTICCR:
 	case PPC_INS_MTDEAR:
 	case PPC_INS_MTESR:
 	case PPC_INS_MTSPEFSCR:
 	case PPC_INS_MTTCR:
+#endif
 	case PPC_INS_MFSRIN:
 		return true;
 	}

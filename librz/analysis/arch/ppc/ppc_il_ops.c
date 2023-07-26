@@ -855,8 +855,20 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
 
+#if CS_NEXT_VERSION >= 6
+	const char *rS;
+	const char *rT;
+	if (insn->id == PPC_INS_MFSPR || insn->id == PPC_INS_MTSPR) {
+		rT = cs_reg_name(handle, INSOP(0).reg);
+		rS = cs_reg_name(handle, INSOP(1).reg);
+	} else {
+		rS = cs_reg_name(handle, INSOP(0).reg);
+		rT = cs_reg_name(handle, INSOP(0).reg);
+	}
+#else
 	const char *rS = cs_reg_name(handle, INSOP(0).reg);
 	const char *rT = cs_reg_name(handle, INSOP(0).reg);
+#endif
 	const char *spr_name;
 	// Some registers need to assemble the value before it is read or written (e.g. XER with all its bits).
 	// Leave it NULL if the value of the SPR or RS should be used.
@@ -915,6 +927,12 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		break;
 	case PPC_INS_MFSPR:
 	case PPC_INS_MTSPR: {
+		if (insn->alias_id == PPC_INS_ALIAS_MTXER) {
+			return ppc_set_xer(VARG(rS), mode);
+		} else if (insn->alias_id == PPC_INS_ALIAS_MFXER) {
+			set_val = SETL("val", ppc_get_xer(mode));
+			break;
+		}
 		ut32 spr = INSOP(1).imm;
 		switch (spr) {
 		default:
@@ -962,6 +980,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTFSF:
 	case PPC_INS_MFFS:
 	case PPC_INS_MFTB:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_MFRTCU:
 	case PPC_INS_MFRTCL:
 		NOT_IMPLEMENTED;
@@ -983,14 +1002,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTBR6:
 	case PPC_INS_MTBR7:
 		NOT_IMPLEMENTED;
-	case PPC_INS_MFXER:
-	case PPC_INS_MTXER:
-		if (id == PPC_INS_MTXER) {
-			return ppc_set_xer(VARG(rS), mode);
-		}
-		spr_name = "xer";
-		set_val = SETL("val", ppc_get_xer(mode));
-		break;
 	case PPC_INS_MFDSCR:
 	case PPC_INS_MTDSCR:
 		NOT_IMPLEMENTED;
@@ -1003,7 +1014,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFPID:
 	case PPC_INS_MFTBLO:
 	case PPC_INS_MFTBHI:
-#if CS_NEXT_VERSION == 6
 	case PPC_INS_MFDBATU0:
 	case PPC_INS_MFDBATL0:
 	case PPC_INS_MFDBATU1:
@@ -1020,12 +1030,10 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFIBATL2:
 	case PPC_INS_MFIBATU3:
 	case PPC_INS_MFIBATL3:
-#else
 	case PPC_INS_MFDBATU:
 	case PPC_INS_MFDBATL:
 	case PPC_INS_MFIBATU:
 	case PPC_INS_MFIBATL:
-#endif
 	case PPC_INS_MFDCCR:
 	case PPC_INS_MFICCR:
 	case PPC_INS_MFDEAR:
@@ -1034,9 +1042,7 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFTCR:
 	case PPC_INS_MFASR:
 	case PPC_INS_MFPVR:
-#if CS_NEXT_VERSION < 6
 	case PPC_INS_MFTBU:
-#endif
 	case PPC_INS_MTDSISR:
 	case PPC_INS_MTDAR:
 	case PPC_INS_MTSRR2:
@@ -1048,7 +1054,6 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTTBU:
 	case PPC_INS_MTTBLO:
 	case PPC_INS_MTTBHI:
-#if CS_API_MAJOR == 6
 	case PPC_INS_MTDBATU0:
 	case PPC_INS_MTDBATL0:
 	case PPC_INS_MTDBATU1:
@@ -1065,18 +1070,17 @@ static RzILOpEffect *move_from_to_spr_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTIBATL2:
 	case PPC_INS_MTIBATU3:
 	case PPC_INS_MTIBATL3:
-#else
 	case PPC_INS_MTDBATU:
 	case PPC_INS_MTDBATL:
 	case PPC_INS_MTIBATU:
 	case PPC_INS_MTIBATL:
-#endif
 	case PPC_INS_MTDCCR:
 	case PPC_INS_MTICCR:
 	case PPC_INS_MTDEAR:
 	case PPC_INS_MTESR:
 	case PPC_INS_MTSPEFSCR:
 	case PPC_INS_MTTCR:
+#endif
 		NOT_IMPLEMENTED;
 	}
 	if (set_val) {
@@ -1775,6 +1779,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTSR:
 	case PPC_INS_MTSRIN:
 	case PPC_INS_MTVSCR:
+#if CS_API_MAJOR < 6
 	case PPC_INS_MFBR0:
 	case PPC_INS_MFBR1:
 	case PPC_INS_MFBR2:
@@ -1796,7 +1801,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MFPID:
 	case PPC_INS_MFTBLO:
 	case PPC_INS_MFTBHI:
-#if CS_API_MAJOR < 6
 	case PPC_INS_MFDBATU:
 	case PPC_INS_MFDBATL:
 	case PPC_INS_MFIBATU:
@@ -1807,7 +1811,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTDBATL:
 	case PPC_INS_MTIBATU:
 	case PPC_INS_MTIBATL:
-#endif
 	case PPC_INS_MFDCCR:
 	case PPC_INS_MFICCR:
 	case PPC_INS_MFDEAR:
@@ -1843,6 +1846,7 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MTESR:
 	case PPC_INS_MTSPEFSCR:
 	case PPC_INS_MTTCR:
+#endif
 		lop = move_from_to_spr_op(handle, insn, mode);
 		break;
 	case PPC_INS_ISEL:

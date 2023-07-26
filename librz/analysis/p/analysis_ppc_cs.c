@@ -1672,10 +1672,12 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_OR;
 			esilprintf(op, "16,%s,<<,%s,|,%s,=", ARG(2), ARG(1), ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case PPC_INS_MFPVR:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "pvr,%s,=", ARG(0));
 			break;
+#endif
 		case PPC_INS_MFSPR:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "%s,%s,=", PPCSPR(1), ARG(0));
@@ -1684,6 +1686,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "ctr,%s,=", ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case PPC_INS_MFDCCR:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "dccr,%s,=", ARG(0));
@@ -1696,6 +1699,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "dear,%s,=", ARG(0));
 			break;
+#endif
 		case PPC_INS_MFMSR:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "msr,%s,=", ARG(0));
@@ -1704,6 +1708,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "%s,ctr,=", ARG(0));
 			break;
+#if CS_NEXT_VERSION < 6
 		case PPC_INS_MTDCCR:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "%s,dccr,=", ARG(0));
@@ -1716,6 +1721,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			esilprintf(op, "%s,dear,=", ARG(0));
 			break;
+#endif
 		case PPC_INS_MTMSR:
 		case PPC_INS_MTMSRD:
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
