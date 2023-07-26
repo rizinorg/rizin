@@ -239,6 +239,23 @@ RZ_IPI bool ppc_is_algebraic(ut32 insn_id) {
  * \param insn_id The instruction id.
  * \return bool True if the branch instruction writes the LR register. False otherwise.
  */
+RZ_IPI bool ppc_insn_sets_lr(const cs_insn *insn) {
+	rz_return_val_if_fail(insn, false);
+	for (int i = 0; i < insn->detail->regs_write_count; ++i) {
+		ppc_reg reg = insn->detail->regs_write[i];
+		if (reg == PPC_REG_LR) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Returns true if the given branch instruction sets the LR register.
+ *
+ * \param insn_id The instruction id.
+ * \return bool True if the branch instruction writes the LR register. False otherwise.
+ */
 RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
