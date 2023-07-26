@@ -247,6 +247,11 @@ static const char *map_dwarf_reg_to_tricore_reg(ut32 reg_num) {
 	}
 }
 
+static const char *map_dwarf_register_dummy(ut32 reg_num) {
+	static char buf[32];
+	return rz_strf(buf, "reg%u", reg_num);
+}
+
 /* returns string literal register name!
    TODO add more arches                 */
 static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch, int bits) {
@@ -262,7 +267,7 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 		return map_dwarf_reg_to_tricore_reg;
 	}
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
-	return NULL;
+	return map_dwarf_register_dummy;
 }
 
 static void variable_fini(RzAnalysisDwarfVariable *var) {
@@ -886,14 +891,20 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 	}
 }
 
-#define LOG_BLOCK(block) \
-	do { \
-		char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block); \
-		if (RZ_STR_ISNOTEMPTY(expr_str)) { \
-			RZ_LOG_ERROR("Failed to parse location: [%s]\n", expr_str); \
-		} \
-		free(expr_str); \
-	} while (0)
+static void log_block(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
+#ifdef RZ_BUILD_DEBUG
+	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
+	if (RZ_STR_ISNOTEMPTY(expr_str)) {
+		if (!range) {
+			RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);
+		} else {
+			RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " (0x%" PFMT64x ", 0x%" PFMT64x ") [%s]\n",
+				offset, range->begin, range->end, expr_str);
+		}
+	}
+	free(expr_str);
+#endif
+}
 
 static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *loclist, const RzBinDwarfDie *fn) {
 	RzBinDwarfLocation *location = RZ_NEW0(RzBinDwarfLocation);
@@ -914,7 +925,7 @@ static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *
 		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			LOG_BLOCK(entry->expression);
+			log_block(ctx, entry->expression, loclist->offset, entry->range);
 			return NULL;
 		}
 	}
@@ -923,12 +934,44 @@ static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *
 	return location;
 }
 
-static RzBinDwarfLocation *location_parse(Context *ctx, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
+static RzBinDwarfLocation *location_from_block(Context *ctx, const RzBinDwarfDie *die, const RzBinDwarfBlock *block, const RzBinDwarfDie *fn) {
+	ut64 offset = die->offset;
+	const char *msg = "";
+	if (!block) {
+		goto empty_loc;
+	}
+	if (!block->data) {
+		if (block->length == 0) {
+			goto empty_loc;
+		}
+		msg = "<Invalid Block>";
+		goto err_msg;
+	}
+	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);
+	if (!loc) {
+		goto err_eval;
+	}
+	return loc;
+err_msg:
+	RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " %s\n", offset, msg);
+	return NULL;
+err_eval:
+	log_block(ctx, block, offset, NULL);
+	return NULL;
+empty_loc:
+	loc = RZ_NEW0(RzBinDwarfLocation);
+	loc->kind = RzBinDwarfLocationKind_EMPTY;
+	return loc;
+}
+
+static RzBinDwarfLocation *location_parse(Context *ctx, const RzBinDwarfDie *die, const RzBinDwarfAttr *attr, const RzBinDwarfDie *fn) {
 	/* Loclist offset is usually CONSTANT or REFERENCE at older DWARF versions, new one has LocListPtr for that */
-	const RzBinDwarfBlock *block = NULL;
-	ut64 offset = UT64_MAX;
+	if (attr->kind == DW_AT_KIND_BLOCK) {
+		return location_from_block(ctx, die, &attr->block, fn);
+	}
+
 	if (attr->kind == DW_AT_KIND_LOCLISTPTR || attr->kind == DW_AT_KIND_REFERENCE || attr->kind == DW_AT_KIND_UCONSTANT) {
-		offset = attr->reference;
+		ut64 offset = attr->reference;
 		RzBinDwarfLocList *loclist = ht_up_find(ctx->dw->loc->loclist_by_offset, offset, NULL);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			if (!rz_bin_dwarf_loclist_table_parse_at(ctx->dw->loc, &ctx->unit->hdr.encoding, offset)) {
@@ -943,37 +986,17 @@ static RzBinDwarfLocation *location_parse(Context *ctx, const RzBinDwarfAttr *at
 			return location_list_parse(ctx, loclist, fn);
 		} else if (rz_pvector_len(&loclist->entries) == 1) {
 			RzBinDwarfLocationListEntry *entry = rz_pvector_at(&loclist->entries, 0);
-			if (!entry->location) {
-				block = entry->expression;
-				goto err;
-			}
-			return entry->location;
+			return location_from_block(ctx, die, entry->expression, fn);
 		} else {
 			RzBinDwarfLocation *loc = RZ_NEW0(RzBinDwarfLocation);
 			loc->kind = RzBinDwarfLocationKind_EMPTY;
 			return loc;
 		}
-	} else if (attr->kind == DW_AT_KIND_BLOCK) {
-		block = &attr->block;
-	}
-	if (!block) {
-		RZ_LOG_ERROR("Failed to find location %s\n", rz_bin_dwarf_form(attr->form));
+	err_find:
+		RZ_LOG_ERROR("Location parse failed 0x%" PFMT64x " <Cannot find loclist>\n", offset);
 		return NULL;
 	}
-	if (!block->data) {
-		// EMPTY Location?
-		return NULL;
-	}
-	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);
-	if (!loc) {
-		goto err;
-	}
-	return loc;
-err_find:
-	RZ_LOG_ERROR("Failed to find location 0x%" PFMT64x " form: %s\n",
-		offset, rz_bin_dwarf_form(attr->form));
-	return NULL;
-err:
+	RZ_LOG_ERROR("Location parse failed 0x%" PFMT64x " <Unsupported form: %s>\n", die->offset, rz_bin_dwarf_form(attr->form))
 	return NULL;
 }
 
@@ -1024,7 +1047,7 @@ static bool function_var_parse(Context *ctx, RzBinDwarfDie *var_die, RzBinDwarfD
 			}
 		} break;
 		case DW_AT_location:
-			v->location = location_parse(ctx, val, fn_die);
+			v->location = location_parse(ctx, var_die, val, fn_die);
 			has_location = true;
 			break;
 		default:
@@ -1393,11 +1416,6 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 		char *dwf_name = rz_str_newf("dbg.%s", fn->prefer_name);
 		rz_analysis_function_rename((RzAnalysisFunction *)afn, dwf_name);
 		free(dwf_name);
-	}
-
-	/* Apply variables */
-	if (rz_vector_len(&fn->variables) > 0) {
-		rz_analysis_function_delete_all_vars(afn);
 	}
 
 	RzAnalysisDwarfVariable *v;

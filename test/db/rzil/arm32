@@ -303,5 +303,7 @@ r2 = 0xa0000000
 r3 = 0x40159999
 0x00040fd0  0x3ee0c6f7a0000000  0x401599a2e0000000   .......>.......@
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: No DWARF register mapping function defined for arm 32 bits
+EOF
 RUN

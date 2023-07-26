@@ -384,10 +384,10 @@ t const_reference
 tc const_reference
 EOF
 EXPECT=<<EOF
-const_reference = const_reference
-typedef const_reference const_reference;
-pf 
-const_reference;
+pf d a
+struct const_reference {
+	int a;
+};
 EOF
 RUN
 

@@ -620,6 +620,7 @@ EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x11c0
             ;-- foo:
 / int foo(int num)
+|           ; var int64_t arg1 @ rdi
 |           ; arg int num @ stack - 0x2c
 |           ; var int int_one @ stack - 0x20
 |           ; var long int long_twenty @ stack - 0x18
@@ -891,6 +892,7 @@ s dbg.__ltdf2
 EOF
 EXPECT=<<EOF
 var int ans @ empty
+var int32_t arg5 @ a4
 arg const char *fmt @ loclist: [
 	(0x80000c22, 0x80000c2c) [DW_OP_reg20 20] a4
 	(0x80000c2c, 0x80000c3b) [DW_OP_reg22 22] a6
@@ -905,6 +907,7 @@ int printf(const char *fmt, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
             ;-- printf:
 / int printf(const char *fmt, ...)
+|           ; var int32_t arg5 @ a4
 |           ; arg const char *fmt @ loclist: [
 	(0x80000c22, 0x80000c2c) [DW_OP_reg20 20] a4
 	(0x80000c2c, 0x80000c3b) [DW_OP_reg22 22] a6
@@ -918,6 +921,8 @@ int printf(const char *fmt, ...);
 	]
 |           0x80000c22      mov.aa a6, a4                              ; printf.c:10 ; arg5 ; int printf(const char *fmt, ...)
 ---------
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
 arg void *str @ loclist: [
 	(0x80000c04, 0x80000c0a) [DW_OP_reg20 20] a4
 	(0x80000c0a, 0x80000c22) [DW_OP_reg31 31] a15
@@ -936,6 +941,8 @@ arg size_t n @ loclist: [
 void * prout(void *str, const char *buf, size_t n);
             ;-- prout:
 / void * prout(void *str, const char *buf, size_t n)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
 |           ; arg void *str @ loclist: [
 	(0x80000c04, 0x80000c0a) [DW_OP_reg20 20] a4
 	(0x80000c0a, 0x80000c22) [DW_OP_reg31 31] a15
@@ -953,7 +960,8 @@ void * prout(void *str, const char *buf, size_t n);
 	]
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5 ; void * prout(void *str, const char *buf, size_t n)
 ---------
-var intfrac tfraction @ <decoding error>
+var int32_t arg5 @ a4
+var intfrac tfraction @ compose
 arg fp_number_type *a @ loclist: [
 	(0x80003c60, 0x80003c9c) [DW_OP_reg20 20] a4
 	(0x80003c9c, 0x80003cae) [DW_OP_reg18 18] a2
@@ -1021,6 +1029,7 @@ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_ty
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
             ;-- _fpadd_parts:
 / fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
+|           ; var int32_t arg5 @ a4
 |           ; arg fp_number_type *a @ loclist: [
 	(0x80003c60, 0x80003c9c) [DW_OP_reg20 20] a4
 	(0x80003c9c, 0x80003cae) [DW_OP_reg18 18] a2
@@ -1059,7 +1068,7 @@ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_ty
 	(0x80003dea, 0x80003e02) [DW_OP_reg18 18] a2
 	(0x80003e02, 0x80003e04) [DW_OP_GNU_entry_value 0x66, DW_OP_stack_value] <evaluation waiting>
 	]
-|           ; var intfrac tfraction @ <decoding error>
+|           ; var intfrac tfraction @ compose
 |           ; var int a_normal_exp @ loclist: [
 	(0x80003cbc, 0x80003d4c) [DW_OP_reg15 15] d15
 	(0x80003d4c, 0x80003d52) [DW_OP_breg20 20 8 0x0] a4+8
@@ -1086,7 +1095,8 @@ fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_ty
 	]
 |           0x80003c60      ld.bu d15, [a4]#0                          ; fp-bit.c:604 ; arg5 ; fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp)
 ---------
-var const char *sc @ <decoding error>
+var const char *sc @ a2
+var int32_t arg5 @ a4
 arg const char *s @ loclist: [
 	(0x800030ca, 0x800030dc) [DW_OP_reg20 20] a4
 	(0x800030dc, 0x800030e0) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
@@ -1101,6 +1111,7 @@ size_t strnlen_s(const char *s, size_t maxsize);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
             ;-- strnlen_s:
 / size_t strnlen_s(const char *s, size_t maxsize)
+|           ; var int32_t arg5 @ a4
 |           ; arg const char *s @ loclist: [
 	(0x800030ca, 0x800030dc) [DW_OP_reg20 20] a4
 	(0x800030dc, 0x800030e0) [DW_OP_GNU_entry_value 0x64, DW_OP_stack_value] <evaluation waiting>
@@ -1111,11 +1122,13 @@ size_t strnlen_s(const char *s, size_t maxsize);
 	(0x800030ca, 0x800030d2) [DW_OP_reg4 4] d4
 	(0x800030ea, 0x800030ec) [DW_OP_reg4 4] d4
 	]
-|           ; var const char *sc @ <decoding error>
+|           ; var const char *sc @ a2
 |           0x800030ca      mov   d2, #0                               ; strnlen_s.c:6 ; size_t strnlen_s(const char *s, size_t maxsize)
 ---------
 var _Statab *pmbstate @ empty
 var _Statab *pwcstate @ a13
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
 arg char *s @ loclist: [
 	(0x800018a6, 0x800018bb) [DW_OP_reg20 20] a4
 	(0x800018bb, 0x800018ec) [DW_OP_reg31 31] a15
@@ -1132,6 +1145,8 @@ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
             ;-- _Wctomb:
 / int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
 |           ; arg char *s @ loclist: [
 	(0x800018a6, 0x800018bb) [DW_OP_reg20 20] a4
 	(0x800018bb, 0x800018ec) [DW_OP_reg31 31] a15
@@ -1148,6 +1163,9 @@ int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
 |           ; var _Statab *pwcstate @ a13
 |           0x800018a6      movh.a a2, #0xd000                         ; xwctomb.c:123 ; int _Wctomb(char *s, wchar_t wc, mbstate_t *pst)
 ---------
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
 arg wchar_t *pwc @ loclist: [
 	(0x80003084, 0x8000309b) [DW_OP_reg20 20] a4
 	(0x8000309b, 0x800030b0) [DW_OP_reg30 30] a14
@@ -1168,6 +1186,9 @@ int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
             ; CALL XREF from dbg._Printf @ 0x80000d02
             ;-- _Mbtowc:
 / int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
 |           ; arg wchar_t *pwc @ loclist: [
 	(0x80003084, 0x8000309b) [DW_OP_reg20 20] a4
 	(0x8000309b, 0x800030b0) [DW_OP_reg30 30] a14
@@ -1194,7 +1215,8 @@ int feraiseexcept(int except);
 |           ; arg int except @ d4
 |           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173 ; int feraiseexcept(int except)
 ---------
-var size_t inc @ <decoding error>
+var size_t size_arg @ a0
+var size_t inc @ d15
 var Ppvoidfn newfuns @ loclist: [
 	(0x800019aa, 0x800019b8) [DW_OP_reg18 18] a2
 	(0x800019b8, 0x80001a1c) [DW_OP_reg28 28] a12
@@ -1204,13 +1226,18 @@ int _Atrealloc();
             ; CALL XREF from dbg._Atexit @ 0x800033b8
             ;-- _Atrealloc:
 / int _Atrealloc()
-|           ; var size_t inc @ <decoding error>
+|           ; var size_t size_arg @ a0
+|           ; var size_t inc @ d15
 |           ; var Ppvoidfn newfuns @ loclist: [
 	(0x800019aa, 0x800019b8) [DW_OP_reg18 18] a2
 	(0x800019b8, 0x80001a1c) [DW_OP_reg28 28] a12
 	]
 |           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
 ---------
+var size_t size_arg @ a0
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
 arg some_t **out @ stack - 0x18
 arg struct Some *gg @ stack - 0x14
 arg double q @ stack - 0x10
@@ -1220,6 +1247,10 @@ void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
             ; CALL XREF from dbg.main @ 0x8000059e
             ;-- fn1:
 / _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+|           ; var int32_t arg5 @ a4
+|           ; var int32_t arg6 @ a5
+|           ; var int32_t arg7 @ a6
+|           ; var size_t size_arg @ a0
 |           ; arg int a @ stack - 0x4
 |           ; arg char *g @ stack - 0x8
 |           ; arg double q @ stack - 0x10
