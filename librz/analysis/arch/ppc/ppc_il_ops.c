@@ -86,7 +86,11 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
 #endif
+#if CS_NEXT_VERSION >= 6
+		base = VARG(rA);
+#else
 		base = rA ? VARG(rA) : NULL;
+#endif
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
@@ -110,7 +114,11 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LHBRX:
 	case PPC_INS_LWBRX:
 	case PPC_INS_LDBRX:
+#if CS_NEXT_VERSION >= 6
+		base = VARG(rA);
+#else
 		base = rA ? VARG(rA) : NULL;
+#endif
 		disp = VARG(rB);
 		ea = base ? ADD(base, disp) : disp;
 
@@ -228,7 +236,11 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		ut32 r = ppc_log_2(DCACHE_LINE_SIZE);
 		rA = cs_reg_name(handle, INSOP(0).reg);
 		rB = cs_reg_name(handle, INSOP(1).reg);
+#if CS_NEXT_VERSION >= 6
+		base = VARG(rA);
+#else
 		base = rA ? VARG(rA) : NULL;
+#endif
 
 		ea = base ? ADD(base, VARG(rB)) : VARG(rB);
 		// Align EA
@@ -259,7 +271,11 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
 #endif
+#if CS_NEXT_VERSION >= 6
+		base = VARG(rA);
+#else
 		base = rA ? VARG(rA) : NULL;
+#endif
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
