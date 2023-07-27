@@ -1,12 +1,14 @@
 NAME=dbg.afvd
-FILE=/bin/cat
+FILE=bins/elf/struct64
 ARGS=-d -A
 CMDS=<<EOF
+aa
 dcu main
-ds 12
-afvd var_170h
+ds 8
+afvd var_ch
 EOF
+REGEXP_FILTER_OUT=(\(qword\)0x[0-9a-f]+\s*)
 EXPECT=<<EOF
-var var_170h = 0xffffffffffffff69 = (qword)-1
+(qword)0x0000000100005661
 EOF
 RUN
