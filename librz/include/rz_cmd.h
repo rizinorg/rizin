@@ -78,6 +78,21 @@ typedef enum rz_cmd_escape_t {
 } RzCmdEscape;
 
 /**
+ * \brief Enum to describe the way data are printed
+ */
+typedef enum {
+	RZ_OUTPUT_MODE_STANDARD = 1 << 0,
+	RZ_OUTPUT_MODE_JSON = 1 << 1,
+	RZ_OUTPUT_MODE_RIZIN = 1 << 2,
+	RZ_OUTPUT_MODE_QUIET = 1 << 3,
+	RZ_OUTPUT_MODE_SDB = 1 << 4,
+	RZ_OUTPUT_MODE_LONG = 1 << 5,
+	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
+	RZ_OUTPUT_MODE_TABLE = 1 << 7,
+	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
+} RzOutputMode;
+
+/**
  * \brief Represent the output state of a command handler.
  *
  * This structure is passed to commands of type \p RZ_CMD_DESC_TYPE_ARGV_STATE .
