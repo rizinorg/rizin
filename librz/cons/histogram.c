@@ -247,6 +247,7 @@ RZ_API void rz_histogram_interactive_free(RzHistogramInteractive *hist) {
 
 RZ_API void rz_histogram_interactive_zoom_in(RzHistogramInteractive *hist) {
 	hist->zoom += ZOOM_DEFAULT;
+	if(hist->zoom > ((hist->w < hist->h) ? hist->w : hist->h))hist->zoom -= ZOOM_DEFAULT;
 }
 
 RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist) {
@@ -256,7 +257,29 @@ RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist) {
 	}
 }
 
-RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data, unsigned int width, unsigned int height) {
+/**
+ * \brief Create the string buffer with the horisontal histogram
+ *
+ *		 █    ██      █             █                                        █
+ *		 █    ██      █             █                                       ██
+ *	 █   █    ██      █             █ █                                     ██
+ *	 ██  █    ██  █ ███             █ █              █                      ██   █
+ *	 ██  ██   ███ █ ███             █ █              █ █     █    █   █ █   ██   █
+ *	 ██  ██   ███ █ ███          █  █ █         █    █ █    ██    █   ███   ██   █
+ *	 ██  ██   ███ █ ███          █  █ █  █      █    █ █    ██    █   ███  ███ █ █
+ *	███  ██   ███ █ ███          █  █ █  █      █    █ █    ██    █   ███  █████ █
+ *	███████   ███ █ ███          █  █ █  █      █    ███    ██    █   ███  █████ █
+ *	███████   ███ █ ███   ██    ██  █ █  █  █   █    ███   ███   ██   ███  █████ █
+ *	███████  ████ █ ███   ██    ██  █ █  █  █   █    ███   ███   ██   ████ █████ █
+ * 	███████  ████ █ ███   ██    ██  █ █  ██ █   ██   ███   ███   ██   ████ █████ █
+ *	███████__████_█_███__███__█_██_████__████___██__████___███___██__█████_█████_█
+ *
+ * \param hist Information about the interactive histogram
+ * \param data A buffer with the numerical data in the format of one byte per value
+ * \param width Width of the histogram
+ * \param height Height of the histogram
+ */
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data, unsigned int width, unsigned int height, int histogramwidth) {
 	rz_return_val_if_fail(data, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
@@ -276,7 +299,10 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 	kol[2] = opts->pal->cjmp;
 	kol[3] = opts->pal->mov;
 	kol[4] = opts->pal->nop;
-	int zoom = hist->zoom;
+	int zoom;
+	if(width > hist->zoom){
+
+	}
 	width /= zoom;
 	if (opts->color) {
 		int adder = 0;
@@ -292,7 +318,16 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 			int k;
 			for (j = 0; j < width; j++) {
 				int realj = adder + j;
-				if (realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))) {
+				if(i!= 0 && i%((int)(rows/zoom)) == 0 && realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))){
+					for (k = 0; k < zoom; k++) {
+						if(realj == hist->barnumber){
+							rz_strbuf_appendf(buf,"%s%s%s", Color_RED, "\u2580", Color_RESET);
+						}else{
+							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], "\u2580", Color_RESET);
+						}
+					}
+				}
+				else if (realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))) {
 					if (realj == hist->barnumber) {
 						for (k = 0; k < zoom; k++) {
 							rz_strbuf_appendf(buf, "%s%s%s", Color_RED, block, Color_RESET);

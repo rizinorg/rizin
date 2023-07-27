@@ -5988,8 +5988,9 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		showcursor(core, false);
 		w = rz_cons_get_size(&h);
 		rz_cons_canvas_resize(hist->can, w, h);
+		hist->w = w; hist->h = h;
 		printf("%d %d\n", w, h);
-		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data, w, h);
+		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data, w, h, brange->nblocks);
 		rz_cons_canvas_write(hist->can, str->ptr);
 		rz_cons_canvas_print_region(hist->can);
 		rz_cons_newline();
@@ -5997,11 +5998,20 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		okey = rz_cons_readchar();
 		key = rz_cons_arrow_to_hjkl(okey);
 		switch (key) {
+		case '?':
+			rz_cons_clear00();
+			rz_cons_printf("Visual Ascii Art graph keybindings:\n"
+				       " +/-    - zoom in/out\n"
+				       " hl    	- move left and right\n"
+				       " q      - back to Visual mode\n");
+			rz_cons_less();
+			rz_cons_any_key(NULL);
+			break;
 		case 'h':
 			hist->barnumber = (hist->barnumber > 0) ? (hist->barnumber - 1) : (brange->nblocks - 1);
 			break;
 		case 'l':
-			hist->barnumber = (hist->barnumber == brange->nblocks) ? (0) : (hist->barnumber + 1);
+			hist->barnumber = (hist->barnumber == brange->nblocks - 1) ? (0) : (hist->barnumber + 1);
 			break;
 		case '+':
 			rz_histogram_interactive_zoom_in(hist);
