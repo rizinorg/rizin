@@ -404,19 +404,6 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_reg_var_at(RzAnalysisFu
 	return rz_analysis_function_get_var_at(fcn, &stor);
 }
 
-RZ_API ut64 rz_analysis_var_addr(RzAnalysisVar *var) {
-	rz_return_val_if_fail(var, UT64_MAX);
-	RzAnalysis *analysis = var->fcn->analysis;
-	const char *regname = NULL;
-	if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
-		// TODO: If bp is not available, we can also get the address from the sp
-		// through info available from rz_analysis_block_get_sp_at()
-		regname = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
-		return rz_reg_getv(analysis->reg, regname) + var->fcn->bp_off + var->storage.stack_off;
-	}
-	return UT64_MAX;
-}
-
 /**
  * Determine which stack variable the expression reg+reg_addend points to at the given address
  * using stored RzAnalysisVarAccess info.
