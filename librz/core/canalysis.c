@@ -5097,6 +5097,15 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 	return true;
 }
 
+/**
+ * \brief Get the address of a stack variable.
+ *
+ * The address for stack backed variables is computed from the
+ * current base pointer register. Register backed variables will always
+ * return UT64_MAX.
+ *
+ * \param var Pointer to a \ref RzAnalysisVar.
+ */
 RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
 	rz_return_val_if_fail(core && var, UT64_MAX);
 	if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
