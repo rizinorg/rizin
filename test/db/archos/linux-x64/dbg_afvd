@@ -5,10 +5,11 @@ CMDS=<<EOF
 aa
 dcu main
 ds 8
+afvt var_ch char
 afvd var_ch
 EOF
-REGEXP_FILTER_OUT=(\(qword\)0x[0-9a-f]+\s*)
+REGEXP_FILTER_OUT=('.'\s*)
 EXPECT=<<EOF
-(qword)0x0000000100005661
+'a'
 EOF
 RUN
