@@ -991,40 +991,35 @@ RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
  * \brief Parses attribute value based on its definition
  *        and stores it into `value`
  */
-RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
+RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
 	rz_return_val_if_fail(in && value && buffer, false);
-
-	enum DW_AT name = 0;
-	enum DW_FORM form = 0;
-	enum DW_LNCT lnct = 0;
 	ut8 address_size = 0;
 	bool is_64bit = false;
 	ut64 unit_offset = 0;
 	if (in->type == DW_ATTR_TYPE_DEF) {
-		name = in->def->name;
-		form = in->def->form;
+		value->name = in->def->name;
+		value->form = in->def->form;
 		address_size = in->comp_unit_hdr->encoding.address_size;
 		is_64bit = in->comp_unit_hdr->encoding.is_64bit;
 		unit_offset = in->comp_unit_hdr->unit_offset;
 	} else if (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT) {
-		lnct = in->format->content_type;
-		form = in->format->form;
+		value->form = in->format->form;
 		address_size = in->line_hdr->address_size;
 		is_64bit = in->line_hdr->is_64bit;
 		unit_offset = in->line_hdr->offset;
+	} else {
+		rz_warn_if_reached();
+		return false;
 	}
 
 	bool big_endian = in->encoding.big_endian;
 	RzBuffer *str_buffer = in->str_buffer;
-
-	value->form = form;
-	value->name = name;
 	value->block.data = NULL;
 	value->string.content = NULL;
 	value->string.offset = 0;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
-	switch (form) {
+	switch (value->form) {
 	case DW_FORM_addr:
 		value->kind = DW_AT_KIND_ADDRESS;
 		UX_OR_RET_FALSE(value->address, address_size);
@@ -1068,8 +1063,11 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		value->string.content = buf_get_string(buffer);
 #define CHECK_STRING \
 	if (!value->string.content) { \
-		const char *tag_str = in->type == DW_ATTR_TYPE_DEF ? rz_bin_dwarf_attr(name) : (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT ? rz_bin_dwarf_lnct(lnct) : "unknown"); \
-		RZ_LOG_ERROR("Failed to read string %s [%s]\n", tag_str, rz_bin_dwarf_form(form)); \
+		const char *tag_str = in->type == DW_ATTR_TYPE_DEF ? rz_bin_dwarf_attr(value->name) \
+								   : (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT \
+										     ? rz_bin_dwarf_lnct(in->format->content_type) \
+										     : "unknown"); \
+		RZ_LOG_ERROR("Failed to read string %s [%s]\n", tag_str, rz_bin_dwarf_form(value->form)); \
 		return false; \
 	}
 		CHECK_STRING;
@@ -1115,25 +1113,15 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		// This type of reference is an offset from the first byte of the compilation
 		// header for the compilation unit containing the reference
 	case DW_FORM_ref1:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U8_OR_RET_FALSE(value->reference);
-		value->reference += unit_offset;
-		break;
 	case DW_FORM_ref2:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U16_OR_RET_FALSE(value->reference);
-		value->reference += unit_offset;
-		break;
 	case DW_FORM_ref4:
+	case DW_FORM_ref8: {
+		static const int sizes[] = { 1, 2, 4, 8 };
+		UX_OR_RET_FALSE(value->reference, sizes[value->form - DW_FORM_ref1]);
 		value->kind = DW_AT_KIND_REFERENCE;
-		U32_OR_RET_FALSE(value->reference);
 		value->reference += unit_offset;
 		break;
-	case DW_FORM_ref8:
-		value->kind = DW_AT_KIND_REFERENCE;
-		U64_OR_RET_FALSE(value->reference);
-		value->reference += unit_offset;
-		break;
+	}
 	case DW_FORM_ref_udata:
 		value->kind = DW_AT_KIND_REFERENCE;
 		ULE128_OR_RET_FALSE(value->reference);
@@ -1187,9 +1175,9 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		value->kind = DW_AT_KIND_CONSTANT;
 		value->uconstant = in->type == DW_ATTR_TYPE_DEF ? in->def->special : 0;
 		break;
-		/*  addrx* forms : The index is relative to the value of the
-			DW_AT_addr_base attribute of the associated compilation unit.
-		    index into an array of addresses in the .debug_addr section.*/
+	/**  addrx* forms : The index is relative to the value of the
+		DW_AT_addr_base attribute of the associated compilation unit.
+	    index into an array of addresses in the .debug_addr section.*/
 	case DW_FORM_addrx:
 		value->kind = DW_AT_KIND_ADDRESS;
 		ULE128_OR_RET_FALSE(value->address);
@@ -1239,7 +1227,7 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		ULE128_OR_RET_FALSE(value->address);
 		break;
 	default:
-		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", form);
+		RZ_LOG_ERROR("Unknown DW_FORM 0x%02" PFMT32x "\n", value->form);
 		value->uconstant = 0;
 		return false;
 	}
