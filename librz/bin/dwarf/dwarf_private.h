@@ -37,6 +37,7 @@ RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut64 *out, bool big_endian);
 RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian);
 RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block);
+RZ_IPI char *buf_get_string(RzBuffer *buffer);
 RZ_IPI const char *indent_str(int indent);
 
 RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in);

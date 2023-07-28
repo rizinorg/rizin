@@ -30,14 +30,14 @@ static bool parse_aranges_raw(RzBuffer *buffer, bool big_endian, RzList /*<RzBin
 			break;
 		}
 		ut64 next_set_off = rz_buf_tell(buffer) + unit_length;
-		RzBinDwarfARangeSet *set = RZ_NEW(RzBinDwarfARangeSet);
+		RzBinDwarfARangeSet *set = RZ_NEW0(RzBinDwarfARangeSet);
 		if (!set) {
 			break;
 		}
 		set->unit_length = unit_length;
 		set->is_64bit = is_64bit;
 
-		U16_OR_GOTO(set->version, err);
+		U_OR_GOTO(16, set->version, err);
 		GOTO_IF_FAIL(buf_read_offset(buffer, &set->debug_info_offset, is_64bit, big_endian), err);
 		U8_OR_GOTO(set->address_size, err);
 		U8_OR_GOTO(set->segment_size, err);
@@ -62,8 +62,8 @@ static bool parse_aranges_raw(RzBuffer *buffer, bool big_endian, RzList /*<RzBin
 		size_t i = 0;
 		for (; i < set->aranges_count; i++) {
 			RzBinDwarfARange *range = set->aranges + i;
-			UX_OR_GOTO(range->addr, set->address_size, err);
-			UX_OR_GOTO(range->length, set->address_size, err);
+			UX_OR_GOTO(set->address_size, range->addr, err);
+			UX_OR_GOTO(set->address_size, range->length, err);
 			if (!range->addr && !range->length) {
 				// last entry has two 0s
 				i++; // so i will be the total count of read entries

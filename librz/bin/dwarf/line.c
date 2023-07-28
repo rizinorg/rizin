@@ -299,7 +299,7 @@ static bool RzBinDwarfLineHeader_parse(
 	hdr->is_64bit = false;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->is_64bit, &hdr->unit_length, big_endian));
 
-	U16_OR_RET_FALSE(hdr->version);
+	U_OR_RET_FALSE(16, hdr->version);
 	if (hdr->version < 2 || hdr->version > 5) {
 		RZ_LOG_VERBOSE("DWARF line hdr version %d is not supported\n", hdr->version);
 		return false;
@@ -384,7 +384,7 @@ static bool parse_ext_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBin
 
 	switch (op->ext_opcode) {
 	case DW_LNE_set_address: {
-		UX_OR_RET_FALSE(op->args.set_address, hdr->address_size);
+		UX_OR_RET_FALSE(hdr->address_size, op->args.set_address);
 		break;
 	}
 	case DW_LNE_define_file: {
@@ -393,7 +393,7 @@ static bool parse_ext_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBin
 			RET_FALSE_IF_FAIL(fn);
 			op->args.define_file.filename = fn;
 			ULE128_OR_RET_FALSE(op->args.define_file.dir_index);
-			ut64 x;
+			static ut64 __attribute__((used)) x;
 			ULE128_OR_GOTO(x, ok);
 			ULE128_OR_GOTO(x, ok);
 		} else {
@@ -441,7 +441,7 @@ static bool parse_std_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBin
 		ULE128_OR_RET_FALSE(op->args.set_column);
 		break;
 	case DW_LNS_fixed_advance_pc:
-		U16_OR_RET_FALSE(op->args.fixed_advance_pc);
+		U_OR_RET_FALSE(16, op->args.fixed_advance_pc);
 		break;
 	case DW_LNS_set_isa:
 		ULE128_OR_RET_FALSE(op->args.set_isa);

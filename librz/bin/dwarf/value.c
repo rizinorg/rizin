@@ -175,25 +175,25 @@ RZ_IPI RzBinDwarfValue *Value_parse(RzBinDwarfValueType value_type, RzBuffer *bu
 		U8_OR_RET_NULL(value->u8);
 		break;
 	case RzBinDwarfValueType_I16:
-		U16_OR_RET_NULL(value->u16);
+		U_OR_RET_NULL(16, value->u16);
 		value->i16 = (st16)value->u16;
 		break;
 	case RzBinDwarfValueType_U16:
-		U16_OR_RET_NULL(value->u16);
+		U_OR_RET_NULL(16, value->u16);
 		break;
 	case RzBinDwarfValueType_I32:
-		U32_OR_RET_NULL(value->u32);
+		U_OR_RET_NULL(32, value->u32);
 		value->i32 = (st32)value->u32;
 		break;
 	case RzBinDwarfValueType_U32:
-		U32_OR_RET_NULL(value->u32);
+		U_OR_RET_NULL(32, value->u32);
 		break;
 	case RzBinDwarfValueType_I64:
-		U64_OR_RET_NULL(value->u64);
+		U_OR_RET_NULL(64, value->u64);
 		value->i64 = (st64)value->u64;
 		break;
 	case RzBinDwarfValueType_U64:
-		U64_OR_RET_NULL(value->u64);
+		U_OR_RET_NULL(64, value->u64);
 		break;
 	case RzBinDwarfValueType_I128:
 	case RzBinDwarfValueType_U128:

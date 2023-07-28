@@ -28,7 +28,7 @@ static inline bool parse_data(RzBuffer *buffer, RzBinDwarfBlock *block, RzBinDwa
 	if (encoding->version >= 5) {
 		ULE128_OR_RET_FALSE(block->length);
 	} else {
-		U16_OR_RET_FALSE(block->length);
+		U_OR_RET_FALSE(16,block->length);
 	}
 	RET_FALSE_IF_FAIL(buf_read_block(buffer, block));
 	return true;
@@ -54,9 +54,7 @@ static bool RawLocListEntry_parse(RzBinDwarfRawLocListEntry *out, RzBuffer *buff
 		break;
 	}
 	case RzBinDwarfLocListsFormat_LLE: {
-		ut8 byte = 0;
-		U8_OR_RET_FALSE(byte);
-		out->encoding = byte;
+		U8_OR_RET_FALSE(out->encoding);
 		switch (out->encoding) {
 		case DW_LLE_end_of_list: return true;
 		case DW_LLE_base_addressx:
@@ -72,7 +70,7 @@ static bool RawLocListEntry_parse(RzBinDwarfRawLocListEntry *out, RzBuffer *buff
 			if (encoding->version >= 5) {
 				ULE128_OR_RET_FALSE(out->startx_length.length);
 			} else {
-				U32_OR_RET_FALSE(out->startx_length.length);
+				U_OR_RET_FALSE(32,out->startx_length.length);
 			}
 			RET_FALSE_IF_FAIL(parse_data(buffer, &out->startx_length.data, encoding));
 			break;
@@ -85,15 +83,15 @@ static bool RawLocListEntry_parse(RzBinDwarfRawLocListEntry *out, RzBuffer *buff
 			RET_FALSE_IF_FAIL(parse_data(buffer, &out->default_location.data, encoding));
 			break;
 		case DW_LLE_base_address:
-			UX_OR_RET_FALSE(out->base_address.addr, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE(out->base_address.addr);
 			break;
 		case DW_LLE_start_end:
-			UX_OR_RET_FALSE(out->start_end.begin, encoding->address_size);
-			UX_OR_RET_FALSE(out->start_end.end, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE(out->start_end.begin);
+			U_ADDR_SIZE_OR_RET_FALSE(out->start_end.end);
 			RET_FALSE_IF_FAIL(parse_data(buffer, &out->start_end.data, encoding));
 			break;
 		case DW_LLE_start_length:
-			UX_OR_RET_FALSE(out->start_length.begin, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE(out->start_length.begin);
 			ULE128_OR_RET_FALSE(out->start_length.length);
 			RET_FALSE_IF_FAIL(parse_data(buffer, &out->start_length.data, encoding));
 			break;

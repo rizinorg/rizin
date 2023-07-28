@@ -16,8 +16,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	bool big_endian = encoding->big_endian;
 	switch (self->opcode) {
 	case DW_OP_addr:
+		U_ADDR_SIZE_OR_RET_FALSE(self->address.address);
 		self->kind = OPERATION_KIND_ADDRESS;
-		UX_OR_RET_FALSE(self->address.address, encoding->address_size);
 		break;
 	case DW_OP_deref:
 		self->kind = OPERATION_KIND_DEREF;
@@ -26,8 +26,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		self->deref.space = false;
 		break;
 	case DW_OP_const1u:
-		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
 		U8_OR_RET_FALSE(self->unsigned_constant.value);
+		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
 		break;
 	case DW_OP_const1s: {
 		ut8 value;
@@ -37,47 +37,45 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	}
 	case DW_OP_const2u:
+		U_OR_RET_FALSE(16, self->unsigned_constant.value);
 		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
-		U16_OR_RET_FALSE(self->unsigned_constant.value);
 		break;
 	case DW_OP_const2s: {
 		ut16 value;
-		U16_OR_RET_FALSE(value);
+		U_OR_RET_FALSE(16, value);
 		self->kind = OPERATION_KIND_SIGNED_CONSTANT;
 		self->signed_constant.value = (st16)value;
 		break;
 	}
 	case DW_OP_const4u:
+		U_OR_RET_FALSE(32, self->unsigned_constant.value);
 		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
-		U32_OR_RET_FALSE(self->unsigned_constant.value);
 		break;
 	case DW_OP_const4s: {
 		ut32 value;
-		U32_OR_RET_FALSE(value);
+		U_OR_RET_FALSE(32, value);
 		self->kind = OPERATION_KIND_SIGNED_CONSTANT;
 		self->signed_constant.value = (st32)value;
 		break;
 	}
 	case DW_OP_const8u:
 		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
-		U64_OR_RET_FALSE(self->unsigned_constant.value);
+		U_OR_RET_FALSE(64, self->unsigned_constant.value);
 		break;
 	case DW_OP_const8s: {
 		ut64 value;
-		U64_OR_RET_FALSE(value);
+		U_OR_RET_FALSE(64, value);
 		self->kind = OPERATION_KIND_SIGNED_CONSTANT;
 		self->signed_constant.value = (st64)value;
 		break;
 	}
 	case DW_OP_constu:
-		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
 		ULE128_OR_RET_FALSE(self->unsigned_constant.value);
+		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
 		break;
 	case DW_OP_consts: {
-		ut64 value;
-		ULE128_OR_RET_FALSE(value);
+		ULE128_OR_RET_FALSE(self->signed_constant.value);
 		self->kind = OPERATION_KIND_SIGNED_CONSTANT;
-		self->signed_constant.value = (st64)value;
 		break;
 	}
 	case DW_OP_dup:
@@ -157,7 +155,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	case DW_OP_bra: {
 		ut16 value;
-		U16_OR_RET_FALSE(value);
+		U_OR_RET_FALSE(16, value);
 		self->kind = OPERATION_KIND_BRA;
 		self->bra.target = (st16)value;
 		break;
@@ -213,7 +211,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_lit30:
 	case DW_OP_lit31:
 		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
-		self->unsigned_constant.value = (ut64)opcode - DW_OP_lit0;
+		self->unsigned_constant.value = opcode - DW_OP_lit0;
 		break;
 	case DW_OP_reg0:
 	case DW_OP_reg1:
@@ -248,7 +246,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_reg30:
 	case DW_OP_reg31:
 		self->kind = OPERATION_KIND_REGISTER;
-		self->reg.register_number = (ut16)opcode - DW_OP_reg0;
+		self->reg.register_number = opcode - DW_OP_reg0;
 		break;
 	case DW_OP_breg0:
 	case DW_OP_breg1:
@@ -284,57 +282,44 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_breg31:
 		SLE128_OR_RET_FALSE(self->register_offset.offset);
 		self->kind = OPERATION_KIND_REGISTER_OFFSET;
-		self->register_offset.register_number = (ut16)opcode - DW_OP_breg0;
+		self->register_offset.register_number = opcode - DW_OP_breg0;
 		break;
 
 	case DW_OP_regx: {
-		ut64 value;
-		ULE128_OR_RET_FALSE(value);
+		ULE128_OR_RET_FALSE(self->reg.register_number);
 		self->kind = OPERATION_KIND_REGISTER;
-		self->reg.register_number = (ut16)value;
 		break;
 	}
 	case DW_OP_fbreg: {
-		st64 value;
-		SLE128_OR_RET_FALSE(value);
+		SLE128_OR_RET_FALSE(self->frame_offset.offset);
 		self->kind = OPERATION_KIND_FRAME_OFFSET;
-		self->frame_offset.offset = value;
 		break;
 	}
 	case DW_OP_bregx: {
-		ut64 register_number;
-		ULE128_OR_RET_FALSE(register_number);
-		st64 value;
-		SLE128_OR_RET_FALSE(value);
+		ULE128_OR_RET_FALSE(self->register_offset.register_number);
+		SLE128_OR_RET_FALSE(self->register_offset.offset);
 		self->kind = OPERATION_KIND_REGISTER_OFFSET;
-		self->register_offset.register_number = (ut16)register_number;
-		self->register_offset.offset = value;
 		break;
 	}
 	case DW_OP_piece: {
-		ut64 size;
-		ULE128_OR_RET_FALSE(size);
+		ULE128_OR_RET_FALSE(self->piece.size_in_bits);
+		self->piece.size_in_bits *= 8;
 		self->kind = OPERATION_KIND_PIECE;
-		self->piece.size_in_bits = size * 8;
 		self->piece.bit_offset = 0;
 		self->piece.has_bit_offset = false;
 		break;
 	}
 	case DW_OP_deref_size: {
-		ut64 size;
-		U8_OR_RET_FALSE(size);
+		U8_OR_RET_FALSE(self->deref.size);
 		self->kind = OPERATION_KIND_DEREF;
 		self->deref.base_type = 0;
-		self->deref.size = size;
 		self->deref.space = false;
 		break;
 	}
 	case DW_OP_xderef_size: {
-		ut64 size;
-		U8_OR_RET_FALSE(size);
+		U8_OR_RET_FALSE(self->deref.size);
 		self->kind = OPERATION_KIND_DEREF;
 		self->deref.base_type = 0;
-		self->deref.size = size;
 		self->deref.space = true;
 		break;
 	}
@@ -345,24 +330,18 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		self->kind = OPERATION_KIND_PUSH_OBJECT_ADDRESS;
 		break;
 	case DW_OP_call2: {
-		ut16 value;
-		U16_OR_RET_FALSE(value);
+		U_OR_RET_FALSE(16, self->call.offset);
 		self->kind = OPERATION_KIND_CALL;
-		self->call.offset = value;
 		break;
 	}
 	case DW_OP_call4: {
-		ut32 value;
-		U32_OR_RET_FALSE(value);
+		U_OR_RET_FALSE(32, self->call.offset);
 		self->kind = OPERATION_KIND_CALL;
-		self->call.offset = value;
 		break;
 	}
 	case DW_OP_call_ref: {
-		ut64 value;
-		UX_OR_RET_FALSE(value, encoding->address_size);
+		U_ADDR_SIZE_OR_RET_FALSE(self->call.offset);
 		self->kind = OPERATION_KIND_CALL;
-		self->call.offset = value;
 		break;
 	}
 	case DW_OP_form_tls_address:
@@ -373,19 +352,15 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		self->kind = OPERATION_KIND_CALL_FRAME_CFA;
 		break;
 	case DW_OP_bit_piece: {
-		ut64 size;
-		ULE128_OR_RET_FALSE(size);
-		ut64 offset;
-		ULE128_OR_RET_FALSE(offset);
+		ULE128_OR_RET_FALSE(self->piece.size_in_bits);
+		ULE128_OR_RET_FALSE(self->piece.bit_offset);
 		self->kind = OPERATION_KIND_PIECE;
-		self->piece.size_in_bits = size;
-		self->piece.bit_offset = offset;
 		self->piece.has_bit_offset = true;
 		break;
 	}
 	case DW_OP_implicit_value: {
 		ULE128_OR_RET_FALSE(self->implicit_value.data.length);
-		buf_read_block(buffer, &self->implicit_value.data);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->implicit_value.data));
 		self->kind = OPERATION_KIND_IMPLICIT_VALUE;
 		break;
 	}
@@ -394,17 +369,13 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	case DW_OP_implicit_pointer:
 	case DW_OP_GNU_implicit_pointer: {
-		ut64 value = 0;
 		if (encoding->version == 2) {
-			UX_OR_RET_FALSE(value, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE( self->implicit_pointer.value);
 		} else {
-			buf_read_offset(buffer, &value, encoding->is_64bit, encoding->big_endian);
+			RET_FALSE_IF_FAIL(buf_read_offset(buffer, &self->implicit_pointer.value, encoding->is_64bit, encoding->big_endian));
 		}
-		st64 byte_offset = 0;
-		SLE128_OR_RET_FALSE(byte_offset);
+		SLE128_OR_RET_FALSE(self->implicit_pointer.byte_offset);
 		self->kind = OPERATION_KIND_IMPLICIT_POINTER;
-		self->implicit_pointer.value = value;
-		self->implicit_pointer.byte_offset = byte_offset;
 		break;
 	}
 	case DW_OP_addrx:
@@ -426,48 +397,32 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	}
 	case DW_OP_const_type:
 	case DW_OP_GNU_const_type: {
-		ut64 base_type;
-		ULE128_OR_RET_FALSE(base_type);
-		ut8 len;
-		U8_OR_RET_FALSE(len);
-		self->kind = OPERATION_KIND_TYPED_LITERAL;
-		self->typed_literal.base_type = base_type;
-		self->typed_literal.value.length = len;
+		ULE128_OR_RET_FALSE(self->typed_literal.base_type);
+		U8_OR_RET_FALSE(self->typed_literal.value.length);
 		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->typed_literal.value));
+		self->kind = OPERATION_KIND_TYPED_LITERAL;
 		break;
 	}
 	case DW_OP_regval_type:
 	case DW_OP_GNU_regval_type: {
-		ut64 reg;
-		ULE128_OR_RET_FALSE(reg);
-		ut64 base_type;
-		ULE128_OR_RET_FALSE(base_type);
+		ULE128_OR_RET_FALSE(self->register_offset.register_number);
+		ULE128_OR_RET_FALSE(self->register_offset.base_type);
 		self->kind = OPERATION_KIND_REGISTER_OFFSET;
 		self->register_offset.offset = 0;
-		self->register_offset.base_type = base_type;
-		self->register_offset.register_number = reg;
 		break;
 	}
 	case DW_OP_deref_type:
 	case DW_OP_GNU_deref_type: {
-		ut8 size;
-		U8_OR_RET_FALSE(size);
-		ut64 base_type;
-		ULE128_OR_RET_FALSE(base_type);
+		U8_OR_RET_FALSE(self->deref.size);
+		ULE128_OR_RET_FALSE(self->deref.base_type);
 		self->kind = OPERATION_KIND_DEREF;
-		self->deref.base_type = base_type;
-		self->deref.size = size;
 		self->deref.space = false;
 		break;
 	}
 	case DW_OP_xderef_type: {
-		ut8 size;
-		U8_OR_RET_FALSE(size);
-		ut64 base_type;
-		ULE128_OR_RET_FALSE(base_type);
+		U8_OR_RET_FALSE(self->deref.size);
+		ULE128_OR_RET_FALSE(self->deref.base_type);
 		self->kind = OPERATION_KIND_DEREF;
-		self->deref.base_type = base_type;
-		self->deref.size = size;
 		self->deref.space = true;
 		break;
 	}
@@ -483,7 +438,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 
 	case DW_OP_GNU_parameter_ref:
-		U32_OR_RET_FALSE(self->parameter_ref.offset);
+		U_OR_RET_FALSE(32, self->parameter_ref.offset);
 		self->kind = OPERATION_KIND_PARAMETER_REF;
 		break;
 
@@ -492,31 +447,23 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		U8_OR_RET_FALSE(byte);
 		switch (byte) {
 		case 0: {
-			ut64 index;
-			ULE128_OR_RET_FALSE(index);
+			ULE128_OR_RET_FALSE(self->wasm_local.index);
 			self->kind = OPERATION_KIND_WASM_LOCAL;
-			self->wasm_local.index = index;
 			break;
 		}
 		case 1: {
-			ut64 index;
-			ULE128_OR_RET_FALSE(index);
+			ULE128_OR_RET_FALSE(self->wasm_global.index);
 			self->kind = OPERATION_KIND_WASM_GLOBAL;
-			self->wasm_global.index = index;
 			break;
 		}
 		case 2: {
-			ut64 index;
-			ULE128_OR_RET_FALSE(index);
+			ULE128_OR_RET_FALSE(self->wasm_stack.index);
 			self->kind = OPERATION_KIND_WASM_STACK;
-			self->wasm_stack.index = index;
 			break;
 		}
 		case 3: {
-			ut32 index;
-			U32_OR_RET_FALSE(index);
+			U_OR_RET_FALSE(32, self->wasm_global.index);
 			self->kind = OPERATION_KIND_WASM_GLOBAL;
-			self->wasm_global.index = index;
 			break;
 		default:
 			RZ_LOG_WARN("Unsupported wasm location index %d\n", byte);

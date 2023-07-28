@@ -6,8 +6,8 @@
 
 RZ_IPI bool Range_parse(RzBinDwarfRange *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding) {
 	bool big_endian = encoding->big_endian;
-	UX_OR_RET_FALSE(self->begin, encoding->address_size);
-	UX_OR_RET_FALSE(self->end, encoding->address_size);
+	U_ADDR_SIZE_OR_RET_FALSE(self->begin);
+	U_ADDR_SIZE_OR_RET_FALSE(self->end);
 	return true;
 }
 
@@ -74,14 +74,14 @@ RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBu
 			ULE128_OR_RET_FALSE(entry.offset_pair.end);
 			break;
 		case DW_RLE_base_address:
-			UX_OR_RET_FALSE(entry.base_address.addr, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE(entry.base_address.addr);
 			break;
 		case DW_RLE_start_end:
-			UX_OR_RET_FALSE(entry.start_end.begin, encoding->address_size);
-			UX_OR_RET_FALSE(entry.start_end.end, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE(entry.start_end.begin);
+			U_ADDR_SIZE_OR_RET_FALSE(entry.start_end.end);
 			break;
 		case DW_RLE_start_length:
-			UX_OR_RET_FALSE(entry.start_length.begin, encoding->address_size);
+			U_ADDR_SIZE_OR_RET_FALSE(entry.start_length.begin);
 			ULE128_OR_RET_FALSE(entry.start_length.length);
 			break;
 		default: {

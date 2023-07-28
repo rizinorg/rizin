@@ -47,12 +47,14 @@ beach:
 	return false;
 }
 
-static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebugInfo *info, RzBinDwarfAbbrevDecl *abbrev,
-	RzBinDwarfCompUnitHdr *hdr, RzBuffer *str_buffer, bool big_endian) {
+static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebugInfo *info,
+	RzBinDwarfAbbrevDecl *abbrev, RzBinDwarfCompUnitHdr *hdr, RzBuffer *str_buffer, bool big_endian) {
 	const char *comp_dir = NULL;
 	ut64 line_info_offset = UT64_MAX;
 
-	RZ_LOG_SILLY("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n", die->offset, indent_str(die->depth), rz_bin_dwarf_tag(die->tag), die->abbrev_code, rz_bin_dwarf_children(die->has_children));
+	RZ_LOG_SILLY("0x%" PFMT64x ":\t%s%s [%" PFMT64d "] %s\n",
+		die->offset, indent_str(die->depth), rz_bin_dwarf_tag(die->tag),
+		die->abbrev_code, rz_bin_dwarf_children(die->has_children));
 	RzBinDwarfAttrDef *def = NULL;
 	rz_vector_foreach(&abbrev->defs, def) {
 		RzBinDwarfAttr attr = { 0 };
@@ -67,13 +69,16 @@ static bool die_attr_parse(RzBuffer *buffer, RzBinDwarfDie *die, RzBinDwarfDebug
 			.str_buffer = str_buffer,
 		};
 		if (!attr_parse(buffer, &attr, &opt)) {
-			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die: 0x%" PFMT64x " %s [%s]\n ", rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
+			RZ_LOG_ERROR("0x%" PFMT64x ":\tfailed die: 0x%" PFMT64x " %s [%s]\n ",
+				rz_buf_tell(buffer), die->offset, rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form));
 			continue;
 		}
 
 #ifdef RZ_BUILD_DEBUG
 		char *data = attr_to_string(&attr);
-		RZ_LOG_SILLY("0x%" PFMT64x ":\t%s\t%s [%s] (%s)\n", rz_buf_tell(buffer), indent_str(die->depth), rz_bin_dwarf_attr(def->name), rz_bin_dwarf_form(def->form), rz_str_get(data));
+		RZ_LOG_SILLY("0x%" PFMT64x ":\t%s\t%s [%s] (%s)\n",
+			rz_buf_tell(buffer), indent_str(die->depth), rz_bin_dwarf_attr(def->name),
+			rz_bin_dwarf_form(def->form), rz_str_get(data));
 		free(data);
 #endif
 
@@ -184,7 +189,7 @@ static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bo
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &hdr->encoding.is_64bit, &hdr->length, big_endian));
 	RET_FALSE_IF_FAIL(hdr->length <= rz_buf_size(buffer) - rz_buf_tell(buffer));
 	ut64 offset_start = rz_buf_tell(buffer);
-	U16_OR_RET_FALSE(hdr->encoding.version);
+	U_OR_RET_FALSE(16, hdr->encoding.version);
 
 	if (hdr->encoding.version == 5) {
 		U8_OR_RET_FALSE(hdr->unit_type);
@@ -194,7 +199,7 @@ static bool comp_unit_hdr_parse(RzBuffer *buffer, RzBinDwarfCompUnitHdr *hdr, bo
 		if (hdr->unit_type == DW_UT_skeleton || hdr->unit_type == DW_UT_split_compile) {
 			U8_OR_RET_FALSE(hdr->dwo_id);
 		} else if (hdr->unit_type == DW_UT_type || hdr->unit_type == DW_UT_split_type) {
-			U64_OR_RET_FALSE(hdr->type_sig);
+			U_OR_RET_FALSE(64, hdr->type_sig);
 			RET_FALSE_IF_FAIL(buf_read_offset(buffer, &hdr->type_offset, hdr->encoding.is_64bit, big_endian));
 		}
 	} else {

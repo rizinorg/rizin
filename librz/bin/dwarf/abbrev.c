@@ -82,47 +82,42 @@ static bool RzBinDwarfDebugAbbrevs_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrev
 			tbl = RzBinDwarfAbbrevTable_new(offset);
 		}
 
-		ut64 code = 0;
-		ULE128_OR_GOTO(code, ok);
-		if (code == 0) {
+		RzBinDwarfAbbrevDecl decl = {
+			.offset = offset,
+			0,
+		};
+
+		ULE128_OR_GOTO(decl.code, ok);
+		if (decl.code == 0) {
 			ht_up_update(abbrevs->tbl_by_offset, tbl->offset, tbl);
 			tbl = NULL;
 			continue;
 		}
 
-		ut64 tag;
-		ULE128_OR_GOTO(tag, err);
-		ut8 has_children;
-		U8_OR_GOTO(has_children, err);
-		if (!(has_children == DW_CHILDREN_yes || has_children == DW_CHILDREN_no)) {
-			RZ_LOG_ERROR(".debug_abbrevs parse error: 0x%" PFMT64x "\t[%s] invalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), rz_bin_dwarf_tag(tag), has_children);
+		ULE128_OR_GOTO(decl.tag, err);
+		U8_OR_GOTO(decl.has_children, err);
+		if (!(decl.has_children == DW_CHILDREN_yes || decl.has_children == DW_CHILDREN_no)) {
+			RZ_LOG_ERROR(".debug_abbrevs parse error: 0x%" PFMT64x "\t[%s] invalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), rz_bin_dwarf_tag(decl.tag), decl.has_children);
 			goto err;
 		}
 
-		RzBinDwarfAbbrevDecl decl = {
-			.offset = offset,
-			.code = code,
-			.tag = tag,
-			.has_children = has_children,
-		};
 		RzBinDwarfAbbrevDecl_init(&decl);
-		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", offset, code, rz_bin_dwarf_tag(tag), has_children);
+		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", offset, decl.code, rz_bin_dwarf_tag(decl.tag), decl.has_children);
 
 		do {
-			ut64 name = 0;
-			ULE128_OR_GOTO(name, err);
-			if (name == 0) {
-				st64 form = 0;
-				ULE128_OR_GOTO(form, err);
-				if (form == 0) {
+			RzBinDwarfAttrDef def = { 0 };
+			ULE128_OR_GOTO(def.name, err);
+			if (def.name == 0) {
+				ULE128_OR_GOTO(def.form, err);
+				if (def.form == 0) {
 					goto abbrev_ok;
 				}
-				RZ_LOG_ERROR("invalid name and form %" PFMT64d " %" PFMT64d "\n", name, form);
+				RZ_LOG_ERROR("invalid name and form %" PFMT32d " %" PFMT32d "\n",
+					def.name, def.form);
 				goto err;
 			}
 
-			ut64 form = 0;
-			ULE128_OR_GOTO(form, err);
+			ULE128_OR_GOTO(def.form, err);
 
 			/**
 			 * http://www.dwarfstd.org/doc/DWARF5.pdf#page=225
@@ -132,16 +127,11 @@ static bool RzBinDwarfDebugAbbrevs_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrev
 			 * a signed LEB128 number. The value of this number is used as the value of the
 			 * attribute, and no value is stored in the .debug_info section.
 			 */
-			st64 special = 0;
-			if (form == DW_FORM_implicit_const) {
-				SLE128_OR_GOTO(special, err);
+			if (def.form == DW_FORM_implicit_const) {
+				SLE128_OR_GOTO(def.special, err);
 			}
-			RzBinDwarfAttrDef def = {
-				.name = name,
-				.form = form,
-				.special = special,
-			};
-			RZ_LOG_DEBUG("0x%" PFMT64x ":\t\t%s [%s] special = %" PFMT64d "\n", rz_buf_tell(buffer), rz_bin_dwarf_attr(name), rz_bin_dwarf_form(form), special);
+			RZ_LOG_DEBUG("0x%" PFMT64x ":\t\t%s [%s] special = %" PFMT64d "\n",
+				rz_buf_tell(buffer), rz_bin_dwarf_attr(def.name), rz_bin_dwarf_form(def.form), def.special);
 			rz_vector_push(&decl.defs, &def);
 		} while (true);
 	abbrev_ok:

@@ -835,45 +835,27 @@ RZ_API const char *rz_bin_dwarf_lang(enum DW_LANG lang) {
 }
 
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian) {
+	memset(hdr, 0, sizeof(RzBinDwarfListsHeader));
 	bool is_64bit = false;
 	ut64 length = 0;
 	RET_FALSE_IF_FAIL(buf_read_initial_length(buffer, &is_64bit, &length, big_endian));
-
-	ut16 version = 0;
-	U16_OR_RET_FALSE(version);
-	if (version != 5) {
-		RZ_LOG_ERROR("Invalid version: %d", version);
-	}
-	ut8 address_size = 0;
-	U8_OR_RET_FALSE(address_size);
-	ut8 segment_selector_size;
-	U8_OR_RET_FALSE(segment_selector_size);
-	if (segment_selector_size != 0) {
-		RZ_LOG_ERROR("Segment selector size not supported: %d", segment_selector_size);
-	}
-	ut32 offset_entry_count = 0;
-	U32_OR_RET_FALSE(offset_entry_count);
-
-	memset(hdr, 0, sizeof(RzBinDwarfListsHeader));
 	hdr->encoding.big_endian = big_endian;
 	hdr->encoding.is_64bit = is_64bit;
-	hdr->encoding.version = version;
-	hdr->encoding.address_size = address_size;
 	hdr->unit_length = length;
-	hdr->segment_selector_size = segment_selector_size;
-	hdr->offset_entry_count = offset_entry_count;
+
+	U_OR_RET_FALSE(16, hdr->encoding.version);
+	U8_OR_RET_FALSE(hdr->encoding.address_size);
+	U8_OR_RET_FALSE(hdr->segment_selector_size);
+	if (hdr->segment_selector_size != 0) {
+		RZ_LOG_ERROR("Segment selector size not supported: %d", hdr->segment_selector_size);
+	}
+	U_OR_RET_FALSE(32, hdr->offset_entry_count);
 
 	if (hdr->offset_entry_count > 0) {
 		ut64 byte_size = sizeof(ut64) * hdr->offset_entry_count;
 		hdr->location_offsets = malloc(byte_size);
 		for (ut32 i = 0; i < hdr->offset_entry_count; ++i) {
-			if (is_64bit) {
-				rz_buf_read_ble64(buffer, &hdr->location_offsets[i], big_endian);
-			} else {
-				ut32 out = 0;
-				rz_buf_read_ble32(buffer, &out, big_endian);
-				hdr->location_offsets[i] = (ut64)out;
-			}
+			RET_FALSE_IF_FAIL(buf_read_offset(buffer, hdr->location_offsets + i, is_64bit, big_endian));
 		}
 	}
 	return true;
@@ -960,13 +942,9 @@ RZ_IPI bool buf_read_initial_length(RzBuffer *buffer, RZ_OUT bool *is_64bit, ut6
  */
 RZ_IPI bool buf_read_offset(RzBuffer *buffer, ut64 *out, bool is_64bit, bool big_endian) {
 	if (is_64bit) {
-		ut64 result;
-		U64_OR_RET_FALSE(result);
-		*out = result;
+		U_OR_RET_FALSE(64, *out);
 	} else {
-		ut32 result;
-		U32_OR_RET_FALSE(result);
-		*out = (ut64)result;
+		U_OR_RET_FALSE(32, *out);
 	}
 	return true;
 }
@@ -985,13 +963,27 @@ RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	return true;
 }
 
+RZ_IPI char *buf_get_string(RzBuffer *buffer) {
+	st64 offset = (st64)rz_buf_tell(buffer);
+	RET_NULL_IF_FAIL(offset != -1);
+	char *x = rz_buf_get_string(buffer, offset);
+	RET_NULL_IF_FAIL(x);
+	ut64 len = strlen(x) + 1;
+	rz_buf_seek(buffer, (st64)len, SEEK_CUR);
+	if (len <= 1) {
+		free(x);
+		return NULL;
+	}
+	return x;
+}
+
 /**
  * This function is quite incomplete and requires lot of work
  * With parsing various new FORM values
  * \brief Parses attribute value based on its definition
  *        and stores it into `value`
  */
-RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
+RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in) {
 	rz_return_val_if_fail(in && value && buffer, false);
 	ut8 address_size = 0;
 	bool is_64bit = false;
@@ -1022,7 +1014,7 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 	switch (value->form) {
 	case DW_FORM_addr:
 		value->kind = DW_AT_KIND_ADDRESS;
-		UX_OR_RET_FALSE(value->address, address_size);
+		UX_OR_RET_FALSE(address_size, value->address);
 		break;
 	case DW_FORM_data1:
 		value->kind = DW_AT_KIND_UCONSTANT;
@@ -1030,24 +1022,24 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_data2:
 		value->kind = DW_AT_KIND_UCONSTANT;
-		U16_OR_RET_FALSE(value->uconstant);
+		U_OR_RET_FALSE(16, value->uconstant);
 		break;
 	case DW_FORM_data4:
 		value->kind = DW_AT_KIND_UCONSTANT;
-		U32_OR_RET_FALSE(value->uconstant);
+		U_OR_RET_FALSE(32, value->uconstant);
 		break;
 	case DW_FORM_data8:
 		value->kind = DW_AT_KIND_UCONSTANT;
-		U64_OR_RET_FALSE(value->uconstant);
+		U_OR_RET_FALSE(64, value->uconstant);
 		break;
 	case DW_FORM_data16:
 		value->kind = DW_AT_KIND_UCONSTANT;
 		if (big_endian) {
-			U64_OR_RET_FALSE(value->uconstant128.High);
-			U64_OR_RET_FALSE(value->uconstant128.Low);
+			U_OR_RET_FALSE(64, value->uconstant128.High);
+			U_OR_RET_FALSE(64, value->uconstant128.Low);
 		} else {
-			U64_OR_RET_FALSE(value->uconstant128.Low);
-			U64_OR_RET_FALSE(value->uconstant128.High);
+			U_OR_RET_FALSE(64, value->uconstant128.Low);
+			U_OR_RET_FALSE(64, value->uconstant128.High);
 		}
 		break;
 	case DW_FORM_sdata:
@@ -1079,12 +1071,12 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_block2:
 		value->kind = DW_AT_KIND_BLOCK;
-		U16_OR_RET_FALSE(value->block.length);
+		U_OR_RET_FALSE(16, value->block.length);
 		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
 		break;
 	case DW_FORM_block4:
 		value->kind = DW_AT_KIND_BLOCK;
-		U32_OR_RET_FALSE(value->block.length);
+		U_OR_RET_FALSE(32, value->block.length);
 		RET_FALSE_IF_FAIL(buf_read_block(buffer, &value->block));
 		break;
 	case DW_FORM_block: // variable length ULEB128
@@ -1116,8 +1108,8 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 	case DW_FORM_ref2:
 	case DW_FORM_ref4:
 	case DW_FORM_ref8: {
-		static const int sizes[] = { 1, 2, 4, 8 };
-		UX_OR_RET_FALSE(value->reference, sizes[value->form - DW_FORM_ref1]);
+		static const int index_sizes[] = { 1, 2, 4, 8 };
+		UX_OR_RET_FALSE(index_sizes[value->form - DW_FORM_ref1], value->reference);
 		value->kind = DW_AT_KIND_REFERENCE;
 		value->reference += unit_offset;
 		break;
@@ -1144,7 +1136,7 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_ref_sig8:
 		value->kind = DW_AT_KIND_REFERENCE;
-		U64_OR_RET_NULL(value->reference);
+		U_OR_RET_FALSE(64, value->reference);
 		break;
 		// offset into .debug_line_str section, can't parse the section now, so we just skip
 	case DW_FORM_strx:
@@ -1159,7 +1151,7 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_strx2:
 		value->kind = DW_AT_KIND_STRING;
-		U16_OR_RET_FALSE(value->string.offset);
+		U_OR_RET_FALSE(16, value->string.offset);
 		break;
 	case DW_FORM_strx3:
 		value->kind = DW_AT_KIND_STRING;
@@ -1169,7 +1161,7 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_strx4:
 		value->kind = DW_AT_KIND_STRING;
-		U32_OR_RET_FALSE(value->string.offset);
+		U_OR_RET_FALSE(32, value->string.offset);
 		break;
 	case DW_FORM_implicit_const:
 		value->kind = DW_AT_KIND_CONSTANT;
@@ -1188,7 +1180,7 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_addrx2:
 		value->kind = DW_AT_KIND_ADDRESS;
-		U16_OR_RET_FALSE(value->address);
+		U_OR_RET_FALSE(16, value->address);
 		break;
 	case DW_FORM_addrx3:
 		// TODO: .DW_FORM_addrx3
@@ -1198,7 +1190,7 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		break;
 	case DW_FORM_addrx4:
 		value->kind = DW_AT_KIND_ADDRESS;
-		U32_OR_RET_FALSE(value->address);
+		U_OR_RET_FALSE(32, value->address);
 		break;
 	case DW_FORM_line_ptr: // offset in a section .debug_line_str
 	case DW_FORM_strp_sup: // offset in a section .debug_line_str
@@ -1210,11 +1202,11 @@ RZ_IPI __attribute__((optimize("O0"))) bool attr_parse(RzBuffer *buffer, RzBinDw
 		// offset in the supplementary object file
 	case DW_FORM_ref_sup4:
 		value->kind = DW_AT_KIND_REFERENCE;
-		U32_OR_RET_FALSE(value->reference);
+		U_OR_RET_FALSE(32, value->reference);
 		break;
 	case DW_FORM_ref_sup8:
 		value->kind = DW_AT_KIND_REFERENCE;
-		U64_OR_RET_FALSE(value->reference);
+		U_OR_RET_FALSE(64, value->reference);
 		break;
 		// An index into the .debug_loc
 	case DW_FORM_loclistx:
@@ -1319,8 +1311,10 @@ RZ_API RZ_OWN RzBinDwarf *rz_bin_dwarf_parse(RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	if (opt->flags & RZ_BIN_DWARF_PARSE_INFO && dw->abbrevs) {
 		RZ_LOG_DEBUG(".debug_info\n");
 		dw->info = rz_bin_dwarf_info_parse(bf, dw->abbrevs);
-		RzBinDwarfCompUnit *unit = rz_vector_head(&dw->info->units);
-		dw->encoding = unit->hdr.encoding;
+		if (rz_vector_len(&dw->info->units) > 0) {
+			RzBinDwarfCompUnit *unit = rz_vector_head(&dw->info->units);
+			dw->encoding = unit->hdr.encoding;
+		}
 	}
 
 	dw->loc = rz_bin_dwarf_loclists_new(bf, dw);

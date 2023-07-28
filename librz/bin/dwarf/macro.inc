@@ -27,97 +27,63 @@
 
 #define ERR_IF_FAIL(x) GOTO_IF_FAIL(x, err)
 
-#define UX_WRAP(out, x, wrap) \
-	switch ((x)) { \
-	case 1: \
-		wrap(rz_buf_read8(buffer, (ut8 *)&(out))); \
-		break; \
-	case 2: \
-		wrap(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian)); \
-		break; \
-	case 4: \
-		wrap(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian)); \
-		break; \
-	case 8: \
-		wrap(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian)); \
-		break; \
-	default: \
-		RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(x)); \
-		return false; \
+#define WRAP_F(X, F, out, wrap) \
+	do { \
+		X temp; \
+		wrap(F); \
+		out = temp; \
+	} while (0)
+
+#define WRAP_VA_F(X, F, out, wrap, ...) \
+	do { \
+		X temp; \
+		wrap(F, __VA_ARGS__); \
+		out = temp; \
+	} while (0)
+
+#define WRAP_U(X, out, wrap)           WRAP_F(ut##X, rz_buf_read_ble##X(buffer, &temp, big_endian), out, wrap)
+#define WRAP_VA_U(X, out, wrap, ...)   WRAP_VA_F(ut##X, rz_buf_read_ble##X(buffer, &temp, big_endian), out, wrap, __VA_ARGS__)
+#define WRAP_U8(out, wrap)             WRAP_F(ut8, rz_buf_read8(buffer, &temp), out, wrap)
+#define WRAP_VA_U8(out, wrap, ...)     WRAP_VA_F(ut8, rz_buf_read8(buffer, &temp), out, wrap, __VA_ARGS__)
+#define WRAP_ULE128(out, wrap)         WRAP_F(ut64, rz_buf_uleb128(buffer, &temp) > 0, out, wrap)
+#define WRAP_VA_ULE128(out, wrap, ...) WRAP_VA_F(ut64, rz_buf_uleb128(buffer, &temp) > 0, out, wrap, __VA_ARGS__)
+#define WRAP_SLE128(out, wrap)         WRAP_F(st64, rz_buf_sleb128(buffer, &temp) > 0, out, wrap)
+#define WRAP_VA_SLE128(out, wrap, ...) WRAP_VA_F(st64, rz_buf_sleb128(buffer, &temp) > 0, out, wrap, __VA_ARGS__)
+
+#define WRAP_UX(X, out, wrap) \
+	switch ((X)) { \
+	case 1: WRAP_U8(out, wrap); break; \
+	case 2: WRAP_U(16, out, wrap); break; \
+	case 4: WRAP_U(32, out, wrap); break; \
+	case 8: WRAP_U(64, out, wrap); break; \
+	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(X)); return false; \
 	}
 
-#define UX_WRAP1(out, x, wrap, ...) \
-	switch ((x)) { \
-	case 1: \
-		wrap(rz_buf_read8(buffer, (ut8 *)&(out)), __VA_ARGS__); \
-		break; \
-	case 2: \
-		wrap(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian), __VA_ARGS__); \
-		break; \
-	case 4: \
-		wrap(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian), __VA_ARGS__); \
-		break; \
-	case 8: \
-		wrap(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian), __VA_ARGS__); \
-		break; \
-	default: \
-		RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(x)); \
-		return false; \
+#define WRAP_VA_UX(X, out, wrap, ...) \
+	switch ((X)) { \
+	case 1: WRAP_VA_U8(out, wrap, __VA_ARGS__); break; \
+	case 2: WRAP_VA_U(16, out, wrap, __VA_ARGS__); break; \
+	case 4: WRAP_VA_U(32, out, wrap, __VA_ARGS__); break; \
+	case 8: WRAP_VA_U(64, out, wrap, __VA_ARGS__); break; \
+	default: RZ_LOG_ERROR("DWARF: Unexpected pointer size: %u\n", (unsigned)(X)); return false; \
 	}
 
-static inline char *buf_get_string(RzBuffer *buffer) {
-	st64 offset = (st64)rz_buf_tell(buffer);
-	RET_NULL_IF_FAIL(offset != -1);
-	char *x = rz_buf_get_string(buffer, offset);
-	RET_NULL_IF_FAIL(x);
-	ut64 len = strlen(x) + 1;
-	rz_buf_seek(buffer, (st64)len, SEEK_CUR);
-	if (len <= 1) {
-		free(x);
-		return NULL;
-	}
-	return x;
-}
+#define U8_OR_RET_NULL(out)     WRAP_U8(out, RET_NULL_IF_FAIL)
+#define U_OR_RET_NULL(X, out)   WRAP_U(X, out, RET_NULL_IF_FAIL)
+#define UX_OR_RET_NULL(X, out)  WRAP_UX(X, out, RET_NULL_IF_FAIL)
+#define ULE128_OR_RET_NULL(out) WRAP_ULE128(out, RET_NULL_IF_FAIL)
+#define SLE128_OR_RET_NULL(out) WRAP_SLE128(out, RET_NULL_IF_FAIL)
 
-#define U8_WARP(out, warp)     warp(rz_buf_read8(buffer, (ut8 *)&(out)))
-#define U16_WARP(out, warp)    warp(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian))
-#define U32_WARP(out, warp)    warp(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian))
-#define U64_WARP(out, warp)    warp(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian))
-#define U128_WARP(out, warp)   warp(rz_buf_read_ble128(buffer, (ut128 *)&(out), big_endian))
-#define ULE128_WARP(out, warp) warp(rz_buf_uleb128(buffer, (ut64 *)&(out)) > 0)
-#define SLE128_WARP(out, warp) warp(rz_buf_sleb128(buffer, (st64 *)&(out)) > 0)
+#define U8_OR_RET_FALSE(out)     WRAP_U8(out, RET_FALSE_IF_FAIL)
+#define U_OR_RET_FALSE(X, out)   WRAP_U(X, out, RET_FALSE_IF_FAIL)
+#define UX_OR_RET_FALSE(X, out)  WRAP_UX(X, out, RET_FALSE_IF_FAIL)
+#define ULE128_OR_RET_FALSE(out) WRAP_ULE128(out, RET_FALSE_IF_FAIL)
+#define SLE128_OR_RET_FALSE(out) WRAP_SLE128(out, RET_FALSE_IF_FAIL)
 
-#define U8_WARP1(out, warp, ...)     warp(rz_buf_read8(buffer, (ut8 *)&(out)), __VA_ARGS__)
-#define U16_WARP1(out, warp, ...)    warp(rz_buf_read_ble16(buffer, (ut16 *)&(out), big_endian), __VA_ARGS__)
-#define U32_WARP1(out, warp, ...)    warp(rz_buf_read_ble32(buffer, (ut32 *)&(out), big_endian), __VA_ARGS__)
-#define U64_WARP1(out, warp, ...)    warp(rz_buf_read_ble64(buffer, (ut64 *)&(out), big_endian), __VA_ARGS__)
-#define U128_WARP1(out, warp, ...)   warp(rz_buf_read_ble128(buffer, (ut128 *)&(out), big_endian), __VA_ARGS__)
-#define ULE128_WARP1(out, warp, ...) warp(rz_buf_uleb128(buffer, (ut64 *)&(out)) > 0, __VA_ARGS__)
-#define SLE128_WARP1(out, warp, ...) warp(rz_buf_sleb128(buffer, (st64 *)&(out)) > 0, __VA_ARGS__)
+#define U8_OR_GOTO(out, label)     WRAP_VA_U8(out, GOTO_IF_FAIL, label)
+#define U_OR_GOTO(X, out, label)   WRAP_VA_U(X, out, GOTO_IF_FAIL, label)
+#define UX_OR_GOTO(X, out, label)  WRAP_VA_UX(X, out, GOTO_IF_FAIL, label)
+#define ULE128_OR_GOTO(out, label) WRAP_VA_ULE128(out, GOTO_IF_FAIL, label)
+#define SLE128_OR_GOTO(out, label) WRAP_VA_SLE128(out, GOTO_IF_FAIL, label)
 
-#define U8_OR_RET_NULL(out)     U8_WARP(out, RET_NULL_IF_FAIL)
-#define U16_OR_RET_NULL(out)    U16_WARP(out, RET_NULL_IF_FAIL)
-#define U32_OR_RET_NULL(out)    U32_WARP(out, RET_NULL_IF_FAIL)
-#define U64_OR_RET_NULL(out)    U64_WARP(out, RET_NULL_IF_FAIL)
-#define U128_OR_RET_NULL(out)   U128_WARP(out, RET_NULL_IF_FAIL)
-#define UX_OR_RET_NULL(out, x)  UX_WRAP(out, x, RET_NULL_IF_FAIL)
-#define ULE128_OR_RET_NULL(out) ULE128_WARP(out, RET_NULL_IF_FAIL)
-#define SLE128_OR_RET_NULL(out) SLE128_WARP(out, RET_NULL_IF_FAIL)
-
-#define U8_OR_RET_FALSE(out)     U8_WARP(out, RET_FALSE_IF_FAIL)
-#define U16_OR_RET_FALSE(out)    U16_WARP(out, RET_FALSE_IF_FAIL)
-#define U32_OR_RET_FALSE(out)    U32_WARP(out, RET_FALSE_IF_FAIL)
-#define U64_OR_RET_FALSE(out)    U64_WARP(out, RET_FALSE_IF_FAIL)
-#define U128_OR_RET_FALSE(out)   U128_WARP(out, RET_FALSE_IF_FAIL)
-#define UX_OR_RET_FALSE(out, x)  UX_WRAP(out, x, RET_FALSE_IF_FAIL)
-#define ULE128_OR_RET_FALSE(out) ULE128_WARP(out, RET_FALSE_IF_FAIL)
-#define SLE128_OR_RET_FALSE(out) SLE128_WARP(out, RET_FALSE_IF_FAIL)
-
-#define U8_OR_GOTO(out, label)     U8_WARP1(out, GOTO_IF_FAIL, label)
-#define U16_OR_GOTO(out, label)    U16_WARP1(out, GOTO_IF_FAIL, label)
-#define U32_OR_GOTO(out, label)    U32_WARP1(out, GOTO_IF_FAIL, label)
-#define U64_OR_GOTO(out, label)    U64_WARP1(out, GOTO_IF_FAIL, label)
-#define U128_OR_GOTO(out, label)   U128_WARP1(out, GOTO_IF_FAIL, label)
-#define UX_OR_GOTO(out, x, label)  UX_WRAP1(out, x, GOTO_IF_FAIL, label)
-#define ULE128_OR_GOTO(out, label) ULE128_WARP1(out, GOTO_IF_FAIL, label)
-#define SLE128_OR_GOTO(out, label) SLE128_WARP1(out, GOTO_IF_FAIL, label)
+#define U_ADDR_SIZE_OR_RET_FALSE(out) WRAP_UX(encoding->address_size, out, RET_FALSE_IF_FAIL)
