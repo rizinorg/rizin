@@ -322,16 +322,22 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 			int k;
 			for (j = 0; j < width; j++) {
 				int realj, realjnext = 0;
+				unsigned long long curdata = 0;
 				if (sizeofonebar > 1) {
 					realj = adder + j;
+					curdata = data[realj];
 				} else {
 					realj = adder + (j)*histogramwidth / (zoom * width);
 					realjnext = adder + (j + 1) * histogramwidth / (zoom * width);
+					for (int i = realj; i < realjnext; i++)
+						curdata += data[i];
+					curdata /= (realjnext - realj);
 				}
 				if (sizeofonebar == 1 && realj <= hist->barnumber && realjnext > hist->barnumber) {
 					realj = hist->barnumber;
+					curdata = data[realj];
 				}
-				if (realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))) {
+				if (realj < hist->size && realj >= 0 && (255 - curdata < threshold || (i + 1 == rows))) {
 					if (realj == hist->barnumber) {
 						for (k = 0; k < sizeofonebar; k++) {
 							rz_strbuf_appendf(buf, "%s%s%s", Color_RED, block, Color_RESET);
@@ -368,13 +374,19 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 		for (j = 0; j < width; j++) {
 			int realj = adder + (j)*histogramwidth / (zoom * width);
 			int realjnext = adder + (j + 1) * histogramwidth / (zoom * width);
+			unsigned char curdata = 0;
 			if (sizeofonebar > 1) {
 				realj = adder + j;
+				curdata = data[realj];
 			}
 			if (sizeofonebar == 1 && realj <= hist->barnumber && realjnext > hist->barnumber) {
 				realj = hist->barnumber;
+			} else if (sizeofonebar == 1) {
+				for (int i = realj; i < realjnext; i++)
+					curdata += data[i];
+				curdata /= (realjnext - realj);
 			}
-			if (realj < hist->size && realj >= 0 && (255 - data[realj] < threshold || (i + 1 == rows))) {
+			if (realj < hist->size && realj >= 0 && (255 - curdata < threshold || (i + 1 == rows))) {
 				if (realj == hist->barnumber) {
 					for (k = 0; k < sizeofonebar; k++) {
 						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
