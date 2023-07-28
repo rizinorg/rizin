@@ -312,8 +312,8 @@ static void print_line_op(RzStrBuf *sb, RzBinDwarfLineOp *op, RzBinDwarfLineHead
 			break;
 		case DW_LNE_define_file:
 			my_printf("\tfilename \"%s\", dir_index %" PFMT64u ", ",
-				op->args.define_file.filename,
-				op->args.define_file.dir_index);
+				op->args.define_file.path_name,
+				op->args.define_file.directory_index);
 			break;
 		case DW_LNE_set_discriminator:
 			my_printf("\t%" PFMT64u "\n", op->args.set_discriminator);

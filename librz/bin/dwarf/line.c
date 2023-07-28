@@ -37,29 +37,25 @@ static void RzBinDwarfLineHeader_fini(RzBinDwarfLineHeader *hdr) {
 
 static bool file_entry_format_parse(RzBuffer *buffer, RzVector /*<RzBinDwarfFileEntryFormat>*/ *out, RzBinDwarfLineHeader *hdr) {
 	ut8 count = 0;
-	RET_FALSE_IF_FAIL(rz_buf_read8(buffer, &count));
+	U8_OR_RET_FALSE(count);
 	rz_vector_reserve(out, count);
 	ut32 path_count = 0;
 	for (ut8 i = 0; i < count; ++i) {
-		ut64 content_type = 0;
-		ut64 form = 0;
-		RET_FALSE_IF_FAIL(rz_buf_uleb128(buffer, (unsigned long long int *)&content_type));
-		RET_FALSE_IF_FAIL(rz_buf_uleb128(buffer, &form));
-		if (form > UT16_MAX) {
-			RZ_LOG_ERROR("invalid file entry format form %" PFMT64x "\n", form);
+		RzBinDwarfFileEntryFormat format = { 0 };
+		ULE128_OR_RET_FALSE(format.content_type);
+		ULE128_OR_RET_FALSE(format.form);
+		if (format.form > UT16_MAX) {
+			RZ_LOG_ERROR("invalid file entry format form %" PFMT32x "\n", format.form);
 			return false;
 		}
 
-		if (content_type == DW_LNCT_path) {
+		if (format.content_type == DW_LNCT_path) {
 			path_count += 1;
 		}
 
-		RzBinDwarfFileEntryFormat format = {
-			.content_type = RZ_MIN(UT16_MAX, content_type),
-			.form = form,
-		};
 		rz_vector_push(out, &format);
 	}
+
 	if (path_count != 1) {
 		RZ_LOG_DEBUG("Missing file entry format path <.debug_line+0x%" PFMT64x ">\n", hdr->offset);
 		return false;
@@ -91,7 +87,7 @@ static char *parse_directory_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, boo
 
 static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
 	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
-
+	RET_FALSE_IF_FAIL(entry);
 	RzBinDwarfFileEntryFormat *format = NULL;
 	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
 		RzBinDwarfAttr attr = { 0 };
@@ -113,6 +109,7 @@ static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBin
 		case DW_LNCT_directory_index:
 			ERR_IF_FAIL(attr.kind == DW_AT_KIND_UCONSTANT);
 			entry->directory_index = attr.uconstant;
+			break;
 		case DW_LNCT_timestamp:
 			ERR_IF_FAIL(attr.kind == DW_AT_KIND_UCONSTANT);
 			entry->timestamp = attr.uconstant;
@@ -122,10 +119,10 @@ static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBin
 			entry->size = attr.uconstant;
 			break;
 		case DW_LNCT_MD5:
-			ERR_IF_FAIL(attr.kind == attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.data);
+			ERR_IF_FAIL(attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.data);
 			memcpy(entry->md5, attr.block.data, 16);
 			break;
-		default: break;
+		default: rz_warn_if_reached(); break;
 		}
 	}
 
@@ -392,7 +389,6 @@ static bool parse_ext_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBin
 		rz_buf_seek(buffer, (st64)(op_len - 1), RZ_IO_SEEK_CUR);
 		break;
 	}
-ok:
 	return true;
 }
 
@@ -609,11 +605,13 @@ static bool parse_opcodes(RzBuffer *buffer, const RzBinDwarfLineHeader *hdr, RzV
 			RET_FALSE_IF_FAIL(rz_bin_dwarf_line_op_run(hdr, regs, &op, bob, info, fnc));
 		}
 
+#if RZ_BUILD_DEBUG
 		char *str = line_op_str(&op, op.offset);
 		if (str) {
 			RZ_LOG_DEBUG("%s\n", str);
 			free(str);
 		}
+#endif
 
 		if (ops_out) {
 			rz_vector_push(ops_out, &op);

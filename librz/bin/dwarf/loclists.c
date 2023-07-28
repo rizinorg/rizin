@@ -28,7 +28,7 @@ static inline bool parse_data(RzBuffer *buffer, RzBinDwarfBlock *block, RzBinDwa
 	if (encoding->version >= 5) {
 		ULE128_OR_RET_FALSE(block->length);
 	} else {
-		U_OR_RET_FALSE(16,block->length);
+		U_OR_RET_FALSE(16, block->length);
 	}
 	RET_FALSE_IF_FAIL(buf_read_block(buffer, block));
 	return true;
@@ -70,7 +70,7 @@ static bool RawLocListEntry_parse(RzBinDwarfRawLocListEntry *out, RzBuffer *buff
 			if (encoding->version >= 5) {
 				ULE128_OR_RET_FALSE(out->startx_length.length);
 			} else {
-				U_OR_RET_FALSE(32,out->startx_length.length);
+				U_OR_RET_FALSE(32, out->startx_length.length);
 			}
 			RET_FALSE_IF_FAIL(parse_data(buffer, &out->startx_length.data, encoding));
 			break;
@@ -251,13 +251,13 @@ static inline bool loclist_parse(RzBinDwarfLocListTable *self, RzBuffer *buffer,
 RZ_API bool rz_bin_dwarf_loclist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfLocListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset) {
 	RzBuffer *buffer = encoding->version == 5 ? self->debug_loclists : self->debug_loc;
 	RzBinDwarfLocListsFormat format = encoding->version <= 4 ? RzBinDwarfLocListsFormat_BARE : RzBinDwarfLocListsFormat_LLE;
-	buffer = rz_buf_new_with_buf(buffer);
+	ut64 offset_old = rz_buf_tell(buffer);
 	rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
 	GOTO_IF_FAIL(loclist_parse(self, buffer, encoding, format), err);
-	rz_buf_free(buffer);
+	rz_buf_seek(buffer, (st64)offset_old, RZ_BUF_SET);
 	return true;
 err:
-	rz_buf_free(buffer);
+	rz_buf_seek(buffer, (st64)offset_old, RZ_BUF_SET);
 	return false;
 }
 

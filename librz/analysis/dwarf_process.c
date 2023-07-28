@@ -892,7 +892,7 @@ static void function_apply_specification(Context *ctx, const RzBinDwarfDie *die,
 }
 
 static void log_block(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, const RzBinDwarfRange *range) {
-#ifdef RZ_BUILD_DEBUG
+#if RZ_BUILD_DEBUG
 	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
 	if (RZ_STR_ISNOTEMPTY(expr_str)) {
 		if (!range) {
