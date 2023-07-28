@@ -6,7 +6,7 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfFileEntry *x, void *user) {
+static void rz_bin_dwarf_line_file_entry_fini(RzBinDwarfFileEntry *x, void *user) {
 	if (!x) {
 		return;
 	}
@@ -89,12 +89,8 @@ static char *parse_directory_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, boo
 	return path_name;
 }
 
-static RzBinDwarfFileEntry *parse_file_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
-	char *path_name = NULL;
-	ut64 directory_index = 0;
-	ut64 timestamp = 0;
-	ut64 size = 0;
-	ut8 md5[16] = { 0 };
+static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBinDwarfLineHeader *hdr, bool big_endian) {
+	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
 
 	RzBinDwarfFileEntryFormat *format = NULL;
 	rz_vector_foreach(&hdr->file_name_entry_formats, format) {
@@ -108,43 +104,49 @@ static RzBinDwarfFileEntry *parse_file_v5(RzBuffer *buffer, RzBinDwarfLineHeader
 				.address_size = hdr->address_size,
 			},
 		};
-		RET_NULL_IF_FAIL(attr_parse(buffer, &attr, &in));
+		ERR_IF_FAIL(attr_parse(buffer, &attr, &in));
 		switch (format->content_type) {
 		case DW_LNCT_path:
-			assert(attr.kind == DW_AT_KIND_STRING);
-			path_name = attr.string.content;
+			ERR_IF_FAIL(attr.kind == DW_AT_KIND_STRING);
+			entry->path_name = attr.string.content;
 			break;
 		case DW_LNCT_directory_index:
-			if (attr.kind == DW_AT_KIND_UCONSTANT) {
-				directory_index = attr.uconstant;
-			}
-			break;
+			ERR_IF_FAIL(attr.kind == DW_AT_KIND_UCONSTANT);
+			entry->directory_index = attr.uconstant;
 		case DW_LNCT_timestamp:
-			if (attr.kind == DW_AT_KIND_UCONSTANT) {
-				timestamp = attr.uconstant;
-			}
+			ERR_IF_FAIL(attr.kind == DW_AT_KIND_UCONSTANT);
+			entry->timestamp = attr.uconstant;
 			break;
 		case DW_LNCT_size:
-			if (attr.kind == DW_AT_KIND_UCONSTANT) {
-				size = attr.uconstant;
-			}
+			ERR_IF_FAIL(attr.kind == DW_AT_KIND_UCONSTANT);
+			entry->size = attr.uconstant;
 			break;
 		case DW_LNCT_MD5:
-			if (attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.data) {
-				memcpy(md5, attr.block.data, 16);
-			}
+			ERR_IF_FAIL(attr.kind == attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.data);
+			memcpy(entry->md5, attr.block.data, 16);
 			break;
 		default: break;
 		}
 	}
 
-	RzBinDwarfFileEntry *entry = RZ_NEW0(RzBinDwarfFileEntry);
-	entry->path_name = path_name;
-	entry->directory_index = directory_index;
-	entry->timestamp = timestamp;
-	entry->size = size;
-	memcpy(entry->md5, md5, 16);
 	return entry;
+err:
+	rz_bin_dwarf_line_file_entry_fini(entry, NULL);
+	free(entry);
+	return NULL;
+}
+
+static bool RzBinDwarfFileEntry_parse_v4(RzBuffer *buffer, RzBinDwarfFileEntry *entry) {
+	entry->path_name = buf_get_string(buffer);
+	ERR_IF_FAIL(entry->path_name);
+	ULE128_OR_GOTO(entry->directory_index, err);
+	ULE128_OR_GOTO(entry->timestamp, err);
+	ULE128_OR_GOTO(entry->size, err);
+	memset(entry->md5, 0, sizeof(entry->md5));
+	return true;
+err:
+	RZ_FREE(entry->path_name);
+	return false;
 }
 
 /**
@@ -155,13 +157,21 @@ static bool parse_line_header_source_v5(RzBuffer *buffer, RzBinDwarfLineHeader *
 	ut64 count = 0;
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		rz_pvector_push(&hdr->directories, parse_directory_v5(buffer, hdr, big_endian));
+		char *dir = parse_directory_v5(buffer, hdr, big_endian);
+		if (!dir) {
+			break;
+		}
+		rz_pvector_push(&hdr->directories, dir);
 	}
 
 	RET_FALSE_IF_FAIL(file_entry_format_parse(buffer, &hdr->file_name_entry_formats, hdr));
 	ULE128_OR_RET_FALSE(count);
 	for (ut64 i = 0; i < count; ++i) {
-		rz_vector_push(&hdr->file_names, parse_file_v5(buffer, hdr, big_endian));
+		RzBinDwarfFileEntry *entry = RzBinDwarfFileEntry_parse_v5(buffer, hdr, big_endian);
+		if (!entry) {
+			break;
+		}
+		rz_vector_push(&hdr->file_names, entry);
 	}
 	return true;
 }
@@ -175,30 +185,11 @@ static bool parse_line_header_source_v4(RzBuffer *buffer, RzBinDwarfLineHeader *
 		rz_pvector_push(&hdr->directories, str);
 	}
 	while (true) {
-		char *filename = buf_get_string(buffer);
-		GOTO_IF_FAIL(filename, err);
-
-		ut64 directory_index;
-		ULE128_OR_GOTO(directory_index, err);
-
-		ut64 timestamp;
-		ULE128_OR_GOTO(timestamp, err);
-
-		ut64 size;
-		ULE128_OR_GOTO(size, err);
-
-		RzBinDwarfFileEntry entry = {
-			.path_name = filename,
-			.directory_index = directory_index,
-			.timestamp = timestamp,
-			.size = size,
-			.md5 = { 0 }
-		};
+		RzBinDwarfFileEntry entry = { 0 };
+		if (!RzBinDwarfFileEntry_parse_v4(buffer, &entry)) {
+			break;
+		}
 		rz_vector_push(&hdr->file_names, &entry);
-		continue;
-	err:
-		free(filename);
-		break;
 	}
 	return true;
 }
@@ -354,7 +345,7 @@ static bool RzBinDwarfLineHeader_parse(
 		hdr->std_opcode_lengths = NULL;
 	}
 
-	if (hdr->version < 5) {
+	if (hdr->version <= 4) {
 		return parse_line_header_source_v4(buffer, hdr, big_endian);
 	} else if (hdr->version == 5) {
 		return parse_line_header_source_v5(buffer, hdr, big_endian);
@@ -366,7 +357,7 @@ static bool RzBinDwarfLineHeader_parse(
 RZ_API void rz_bin_dwarf_line_op_fini(RZ_OWN RZ_NULLABLE RzBinDwarfLineOp *op) {
 	rz_return_if_fail(op);
 	if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->ext_opcode == DW_LNE_define_file) {
-		free(op->args.define_file.filename);
+		rz_bin_dwarf_line_file_entry_fini(&op->args.define_file, NULL);
 	}
 }
 
@@ -377,9 +368,7 @@ static bool parse_ext_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBin
 	// op_len must fit and be at least 1 (for the opcode byte)
 	RET_FALSE_IF_FAIL(op_len > 0);
 
-	ut8 code;
-	U8_OR_RET_FALSE(code);
-	op->ext_opcode = code;
+	U8_OR_RET_FALSE(op->ext_opcode);
 	op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT;
 
 	switch (op->ext_opcode) {
@@ -389,13 +378,7 @@ static bool parse_ext_opcode(RzBuffer *buffer, RzBinDwarfLineOp *op, const RzBin
 	}
 	case DW_LNE_define_file: {
 		if (hdr->version <= 4) {
-			char *fn = buf_get_string(buffer);
-			RET_FALSE_IF_FAIL(fn);
-			op->args.define_file.filename = fn;
-			ULE128_OR_RET_FALSE(op->args.define_file.dir_index);
-			static ut64 __attribute__((used)) x;
-			ULE128_OR_GOTO(x, ok);
-			ULE128_OR_GOTO(x, ok);
+			RET_FALSE_IF_FAIL(RzBinDwarfFileEntry_parse_v4(buffer, &op->args.define_file));
 		} else {
 			op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT_UNKNOWN;
 		}

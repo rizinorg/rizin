@@ -1238,10 +1238,7 @@ typedef struct {
 			ut64 fixed_advance_pc; //< DW_LNS_fixed_advance_pc
 			ut64 set_isa; //< DW_LNS_set_isa
 			ut64 set_address; //< DW_LNE_set_address
-			struct {
-				char *filename;
-				ut64 dir_index;
-			} define_file; //< DW_LNE_define_file
+			RzBinDwarfFileEntry define_file; //< DW_LNE_define_file
 			ut64 set_discriminator; //< DW_LNE_set_discriminator
 		};
 	} args;
