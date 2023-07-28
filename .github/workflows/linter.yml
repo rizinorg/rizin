@@ -112,6 +112,9 @@ jobs:
     - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
       run: sudo apt --assume-yes install wget software-properties-common lsb-release
 
+    - name: Uninstall old conflicting packages
+      run: sudo apt --assume-yes remove python3-lldb
+
     - name: Install automatic LLVM 16
       run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 16
 
