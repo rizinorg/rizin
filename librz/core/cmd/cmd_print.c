@@ -5988,9 +5988,9 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		showcursor(core, false);
 		w = rz_cons_get_size(&h);
 		rz_cons_canvas_resize(hist->can, w, h);
-		hist->w = w; hist->h = h;
-		printf("%d %d\n", w, h);
-		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data, w, h, brange->nblocks);
+		hist->w = w;
+		hist->h = h;
+		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data);
 		rz_cons_canvas_write(hist->can, str->ptr);
 		rz_cons_canvas_print_region(hist->can);
 		rz_cons_newline();
