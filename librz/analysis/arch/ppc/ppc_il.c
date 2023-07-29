@@ -689,8 +689,8 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	ut32 id = insn->id;
 
 #if CS_NEXT_VERSION >= 6
-	ut8 bo = PPC_DETAIL(insn).bc.bi;
-	ut8 bi = PPC_DETAIL(insn).bc.bo;
+	ut8 bi = PPC_DETAIL(insn).bc.bi;
+	ut8 bo = PPC_DETAIL(insn).bc.bo;
 	RzILOpBool *decr_ctr = cs_ppc_bc_decr_ctr(bo) ? IL_TRUE : IL_FALSE;
 	RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
 	RzILOpBool *check_ctr_is_zero = cs_ppc_bc_tests_ctr_is_zero(bo) ? IL_TRUE : IL_FALSE;
