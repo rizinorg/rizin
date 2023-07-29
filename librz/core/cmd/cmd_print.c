@@ -5862,41 +5862,6 @@ static bool print_histogram(RzCore *core, RZ_NULLABLE RzHistogramOptions *opts, 
 	return true;
 }
 
-static CoreBlockRange *parse_args_calculate_range(RzCore *core, int argc, const char **argv) {
-	int nblocks = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	ut64 totalsize = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
-	int skipblocks = argc > 3 ? rz_num_math(core->num, argv[3]) : -1;
-	CoreBlockRange *brange = calculate_blocks_range(core, 0, 0, totalsize, nblocks, skipblocks);
-	if (!brange) {
-		RZ_LOG_ERROR("Cannot calculate blocks range\n");
-	}
-	return brange;
-}
-
-static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **argv, bool vertical) {
-	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
-	if (!brange) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	ut8 *data = calloc(1, brange->nblocks);
-	rz_io_read_at(core->io, core->offset, data, brange->nblocks);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	free(brange);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_print_equal_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_bytes(core, argc, argv, true);
-}
-
-RZ_IPI RzCmdStatus rz_print_equal_equal_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_bytes(core, argc, argv, false);
-}
-
 static void showcursor(RzCore *core, int x) {
 	if (!x) {
 		int wheel = rz_config_get_i(core->config, "scr.wheel");
@@ -5909,21 +5874,8 @@ static void showcursor(RzCore *core, int x) {
 	rz_cons_show_cursor(x);
 }
 
-static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv) {
-	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
-	if (!brange) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	ut8 *data = calloc(1, brange->nblocks);
-	if (!data) {
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_io_read_at(core->io, core->offset, data, brange->nblocks);
-
+static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned char *data, RZ_NONNULL CoreBlockRange *brange) {
 	if (!rz_cons_is_interactive()) {
-		free(brange);
-		free(data);
 		RZ_LOG_ERROR("core: visual mode requires scr.interactive=true.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -5944,8 +5896,6 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 		if (!can) {
 			RZ_LOG_ERROR("core: cannot create RzCons.canvas context. Invalid screen "
 				     "size? See scr.columns + scr.rows\n");
-			free(brange);
-			free(data);
 			rz_config_hold_restore(hc);
 			rz_config_hold_free(hc);
 			return false;
@@ -5955,8 +5905,6 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	if (!opts) {
-		free(brange);
-		free(data);
 		rz_config_hold_restore(hc);
 		rz_config_hold_free(hc);
 		rz_cons_canvas_free(can);
@@ -5975,8 +5923,6 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 	hist->size = brange->nblocks;
 	if (!hist) {
 		rz_histogram_options_free(hist->opts);
-		free(brange);
-		free(data);
 		rz_config_hold_restore(hc);
 		rz_config_hold_free(hc);
 		rz_cons_canvas_free(can);
@@ -6033,8 +5979,6 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->keep_asmqjmps = false;
-	free(brange);
-	free(data);
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	rz_histogram_interactive_free(hist);
@@ -6044,11 +5988,57 @@ static RzCmdStatus print_visual_bytes(RzCore *core, int argc, const char **argv)
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_equal_equal_visual_handler(RzCore *core, int argc, const char **argv) {
-	return print_visual_bytes(core, argc, argv);
+static CoreBlockRange *parse_args_calculate_range(RzCore *core, int argc, const char **argv) {
+	int nblocks = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
+	ut64 totalsize = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	int skipblocks = argc > 3 ? rz_num_math(core->num, argv[3]) : -1;
+	CoreBlockRange *brange = calculate_blocks_range(core, 0, 0, totalsize, nblocks, skipblocks);
+	if (!brange) {
+		RZ_LOG_ERROR("Cannot calculate blocks range\n");
+	}
+	return brange;
 }
 
-static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **argv, bool vertical) {
+static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
+	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
+	if (!brange) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut8 *data = calloc(1, brange->nblocks);
+	rz_io_read_at(core->io, core->offset, data, brange->nblocks);
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+	free(brange);
+	free(data);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_bytes(core, argc, argv, true, false);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_bytes(core, argc, argv, false, false);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_bytes(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6067,11 +6057,20 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 		data[i] = (ut8)(255 * rz_hash_entropy_fraction(tmp, brange->blocksize));
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6367,18 +6366,22 @@ static RzCmdStatus print_rising_and_falling_entropy(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_entropy_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_entropy(core, argc, argv, true);
+	return print_histogram_entropy(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_entropy(core, argc, argv, false);
+	return print_histogram_entropy(core, argc, argv, false, false);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_entropy_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_entropy(core, argc, argv, false, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_rising_and_falling_entropy_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return print_rising_and_falling_entropy(core, argc, argv, state);
 }
 
-static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **argv, bool vertical) {
+static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6400,11 +6403,20 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 		}
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6412,14 +6424,18 @@ static RzCmdStatus print_histogram_marks(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_m_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_marks(core, argc, argv, true);
+	return print_histogram_marks(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_m_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_marks(core, argc, argv, false);
+	return print_histogram_marks(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_m_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_marks(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6444,11 +6460,20 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6456,14 +6481,18 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_0x00_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0x00(core, argc, argv, true);
+	return print_histogram_0x00(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_0x00_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0x00(core, argc, argv, false);
+	return print_histogram_0x00(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_0x00_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_0x00(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6488,11 +6517,20 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6500,14 +6538,18 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_0xff_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0xff(core, argc, argv, true);
+	return print_histogram_0xff(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_0xff_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_0xff(core, argc, argv, false);
+	return print_histogram_0xff(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_0xff_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_0xff(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6532,11 +6574,20 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6544,14 +6595,18 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_printable_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_printable(core, argc, argv, true);
+	return print_histogram_printable(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_printable_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_printable(core, argc, argv, false);
+	return print_histogram_printable(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_printable_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_printable(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6585,11 +6640,20 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 		data[i] = 256 * k / brange->blocksize;
 	}
 	free(tmp);
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		free(data);
-		free(brange);
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			free(data);
+			free(brange);
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6597,14 +6661,18 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_z_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_z(core, argc, argv, true);
+	return print_histogram_z(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_z_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_z(core, argc, argv, false);
+	return print_histogram_z(core, argc, argv, false, false);
 }
 
-static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **argv, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_z_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_z(core, argc, argv, false, true);
+}
+
+static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **argv, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6615,11 +6683,20 @@ static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: failed to access analysis stats");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6627,14 +6704,18 @@ static RzCmdStatus print_histogram_stats(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_stats_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_stats(core, argc, argv, true);
+	return print_histogram_stats(core, argc, argv, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_stats_handler(RzCore *core, int argc, const char **argv) {
-	return print_histogram_stats(core, argc, argv, false);
+	return print_histogram_stats(core, argc, argv, false, false);
 }
 
-static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **argv, CoreAnalysisHistogramType hist_type, bool vertical) {
+RZ_IPI RzCmdStatus rz_print_equal_equal_stats_visual_handler(RzCore *core, int argc, const char **argv) {
+	return print_histogram_stats(core, argc, argv, false, true);
+}
+
+static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **argv, CoreAnalysisHistogramType hist_type, bool vertical, bool isinteractive) {
 	CoreBlockRange *brange = parse_args_calculate_range(core, argc, argv);
 	if (!brange) {
 		return RZ_CMD_STATUS_ERROR;
@@ -6645,11 +6726,20 @@ static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: failed to access analyzed instructions for specified range");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
-		RZ_LOG_ERROR("Cannot generate vertical histogram\n");
-		free(data);
-		free(brange);
-		return RZ_CMD_STATUS_ERROR;
+	if (isinteractive) {
+		if (!print_visual_bytes(core, data, brange)) {
+			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
+			free(brange);
+			free(data);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		if (!print_histogram(core, NULL, data, brange->from, brange->nblocks, brange->blocksize, vertical)) {
+			RZ_LOG_ERROR("Cannot generate %s histogram\n", vertical ? "vertical" : "horizontal");
+			free(data);
+			free(brange);
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	free(data);
 	free(brange);
@@ -6657,43 +6747,63 @@ static RzCmdStatus analysis_hist_handler(RzCore *core, int argc, const char **ar
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_bbs_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_call_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_jump_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_priv_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_invalid_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, true);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, true, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_bbs_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_call_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_jump_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_priv_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, false, false);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_equal_invalid_handler(RzCore *core, int argc, const char **argv) {
-	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, false);
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, false, false);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_bbs_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_BASIC_BLOCKS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_call_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_CALL_INSTRUCTIONS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_jump_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_JUMP_INSTRUCTIONS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_priv_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_PRIV_INSTRUCTIONS, false, true);
+}
+
+RZ_IPI RzCmdStatus rz_print_equal_equal_invalid_visual_handler(RzCore *core, int argc, const char **argv) {
+	return analysis_hist_handler(core, argc, argv, HISTOGRAM_ANALYSIS_INVALID_INSTRUCTIONS, false, true);
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_two_handler(RzCore *core, int argc, const char **argv) {

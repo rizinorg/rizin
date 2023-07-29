@@ -14988,6 +14988,9 @@ static const RzCmdDescHelp print_equal_equal_visual_help = {
 	.args = print_equal_equal_visual_args,
 };
 
+static const RzCmdDescHelp p_equal__equal_0_help = {
+	.summary = "Show a horizontal histogram of 0x00 bytes per each block",
+};
 static const RzCmdDescArg print_equal_equal_0x00_args[] = {
 	{
 		.name = "blocks",
@@ -15015,6 +15018,17 @@ static const RzCmdDescHelp print_equal_equal_0x00_help = {
 	.args = print_equal_equal_0x00_args,
 };
 
+static const RzCmdDescArg print_equal_equal_0x00_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_0x00_visual_help = {
+	.summary = "Show a interactive horizontal histogram of 0x00 bytes per each block",
+	.args = print_equal_equal_0x00_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_F_help = {
+	.summary = "Show a horizontal histogram of 0xFF bytes per each block",
+};
 static const RzCmdDescArg print_equal_equal_0xff_args[] = {
 	{
 		.name = "blocks",
@@ -15042,6 +15056,17 @@ static const RzCmdDescHelp print_equal_equal_0xff_help = {
 	.args = print_equal_equal_0xff_args,
 };
 
+static const RzCmdDescArg print_equal_equal_0xff_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_0xff_visual_help = {
+	.summary = "Show a interactive horizontal histogram of 0xFF bytes per each block",
+	.args = print_equal_equal_0xff_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_a_help = {
+	.summary = "Show a horizontal histogram of basic blocks per each block",
+};
 static const RzCmdDescArg print_equal_equal_bbs_args[] = {
 	{
 		.name = "blocks",
@@ -15069,6 +15094,17 @@ static const RzCmdDescHelp print_equal_equal_bbs_help = {
 	.args = print_equal_equal_bbs_args,
 };
 
+static const RzCmdDescArg print_equal_equal_bbs_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_bbs_visual_help = {
+	.summary = "Show a interactive horizontal histogram of basic blocks per each block",
+	.args = print_equal_equal_bbs_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_A_help = {
+	.summary = "Show a horizontal histogram of statistical maps per each block",
+};
 static const RzCmdDescArg print_equal_equal_stats_args[] = {
 	{
 		.name = "blocks",
@@ -15096,6 +15132,17 @@ static const RzCmdDescHelp print_equal_equal_stats_help = {
 	.args = print_equal_equal_stats_args,
 };
 
+static const RzCmdDescArg print_equal_equal_stats_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_stats_visual_help = {
+	.summary = "Show a interactive horizontal histogram of statistical maps per each block",
+	.args = print_equal_equal_stats_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_c_help = {
+	.summary = "Show a horizontal histogram of calls per each block",
+};
 static const RzCmdDescArg print_equal_equal_call_args[] = {
 	{
 		.name = "blocks",
@@ -15123,6 +15170,17 @@ static const RzCmdDescHelp print_equal_equal_call_help = {
 	.args = print_equal_equal_call_args,
 };
 
+static const RzCmdDescArg print_equal_equal_call_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_call_visual_help = {
+	.summary = "Show a interactive horizontal histogram of calls per each block",
+	.args = print_equal_equal_call_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_e_help = {
+	.summary = "Show a horizontal histogram of entropy per each block",
+};
 static const RzCmdDescArg print_equal_equal_entropy_args[] = {
 	{
 		.name = "blocks",
@@ -15150,6 +15208,17 @@ static const RzCmdDescHelp print_equal_equal_entropy_help = {
 	.args = print_equal_equal_entropy_args,
 };
 
+static const RzCmdDescArg print_equal_equal_entropy_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_entropy_visual_help = {
+	.summary = "Show a interactive horizontal histogram of entropy per each block",
+	.args = print_equal_equal_entropy_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_i_help = {
+	.summary = "Show a horizontal histogram of invalid instructions per each block",
+};
 static const RzCmdDescArg print_equal_equal_invalid_args[] = {
 	{
 		.name = "blocks",
@@ -15173,10 +15242,21 @@ static const RzCmdDescArg print_equal_equal_invalid_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_equal_equal_invalid_help = {
-	.summary = "Show a vertical histogram of invalid instructions per each block",
+	.summary = "Show a horizontal histogram of invalid instructions per each block",
 	.args = print_equal_equal_invalid_args,
 };
 
+static const RzCmdDescArg print_equal_equal_invalid_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_invalid_visual_help = {
+	.summary = "Show a interactive horizontal histogram of invalid instructions per each block",
+	.args = print_equal_equal_invalid_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_j_help = {
+	.summary = "Show a horizontal histogram of jumps and conditional jumps per each block",
+};
 static const RzCmdDescArg print_equal_equal_jump_args[] = {
 	{
 		.name = "blocks",
@@ -15204,6 +15284,17 @@ static const RzCmdDescHelp print_equal_equal_jump_help = {
 	.args = print_equal_equal_jump_args,
 };
 
+static const RzCmdDescArg print_equal_equal_jump_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_jump_visual_help = {
+	.summary = "Show a interactive horizontal histogram of jumps and conditional jumps per each block",
+	.args = print_equal_equal_jump_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_m_help = {
+	.summary = "Show a horizontal histogram of number of flags and marks per each block",
+};
 static const RzCmdDescArg print_equal_equal_m_args[] = {
 	{
 		.name = "blocks",
@@ -15231,6 +15322,17 @@ static const RzCmdDescHelp print_equal_equal_m_help = {
 	.args = print_equal_equal_m_args,
 };
 
+static const RzCmdDescArg print_equal_equal_m_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_m_visual_help = {
+	.summary = "Show a interactive horizontal histogram of number of flags and marks per each block",
+	.args = print_equal_equal_m_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_p_help = {
+	.summary = "Show a horizontal histogram of printable bytes per each block",
+};
 static const RzCmdDescArg print_equal_equal_printable_args[] = {
 	{
 		.name = "blocks",
@@ -15258,6 +15360,17 @@ static const RzCmdDescHelp print_equal_equal_printable_help = {
 	.args = print_equal_equal_printable_args,
 };
 
+static const RzCmdDescArg print_equal_equal_printable_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_printable_visual_help = {
+	.summary = "Show a interactive horizontal histogram of printable bytes per each block",
+	.args = print_equal_equal_printable_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_s_help = {
+	.summary = "Show a horizontal histogram of syscalls and privileged instructions per each block",
+};
 static const RzCmdDescArg print_equal_equal_priv_args[] = {
 	{
 		.name = "blocks",
@@ -15281,10 +15394,21 @@ static const RzCmdDescArg print_equal_equal_priv_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_equal_equal_priv_help = {
-	.summary = "Show a vertical histogram of syscalls and privileged instructions per each block",
+	.summary = "Show a horizontal histogram of syscalls and privileged instructions per each block",
 	.args = print_equal_equal_priv_args,
 };
 
+static const RzCmdDescArg print_equal_equal_priv_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_priv_visual_help = {
+	.summary = "Show a interactive horizontal histogram of syscalls and privileged instructions per each block",
+	.args = print_equal_equal_priv_visual_args,
+};
+
+static const RzCmdDescHelp p_equal__equal_z_help = {
+	.summary = "Show a horizontal histogram of number of chars in strings per each block",
+};
 static const RzCmdDescArg print_equal_equal_z_args[] = {
 	{
 		.name = "blocks",
@@ -15308,8 +15432,16 @@ static const RzCmdDescArg print_equal_equal_z_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_equal_equal_z_help = {
-	.summary = "Show a vertical histogram of number of chars in strings per each block",
+	.summary = "Show a horizontal histogram of number of chars in strings per each block",
 	.args = print_equal_equal_z_args,
+};
+
+static const RzCmdDescArg print_equal_equal_z_visual_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_equal_equal_z_visual_help = {
+	.summary = "Show a interactive horizontal histogram of number of chars in strings per each block",
+	.args = print_equal_equal_z_visual_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -21395,41 +21527,65 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_equal_equal_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==v", rz_print_equal_equal_visual_handler, &print_equal_equal_visual_help);
 	rz_warn_if_fail(print_equal_equal_visual_cd);
 
-	RzCmdDesc *print_equal_equal_0x00_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==0", rz_print_equal_equal_0x00_handler, &print_equal_equal_0x00_help);
-	rz_warn_if_fail(print_equal_equal_0x00_cd);
+	RzCmdDesc *p_equal__equal_0_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==0", rz_print_equal_equal_0x00_handler, &print_equal_equal_0x00_help, &p_equal__equal_0_help);
+	rz_warn_if_fail(p_equal__equal_0_cd);
+	RzCmdDesc *print_equal_equal_0x00_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_0_cd, "p==0v", rz_print_equal_equal_0x00_visual_handler, &print_equal_equal_0x00_visual_help);
+	rz_warn_if_fail(print_equal_equal_0x00_visual_cd);
 
-	RzCmdDesc *print_equal_equal_0xff_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==F", rz_print_equal_equal_0xff_handler, &print_equal_equal_0xff_help);
-	rz_warn_if_fail(print_equal_equal_0xff_cd);
+	RzCmdDesc *p_equal__equal_F_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==F", rz_print_equal_equal_0xff_handler, &print_equal_equal_0xff_help, &p_equal__equal_F_help);
+	rz_warn_if_fail(p_equal__equal_F_cd);
+	RzCmdDesc *print_equal_equal_0xff_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_F_cd, "p==Fv", rz_print_equal_equal_0xff_visual_handler, &print_equal_equal_0xff_visual_help);
+	rz_warn_if_fail(print_equal_equal_0xff_visual_cd);
 
-	RzCmdDesc *print_equal_equal_bbs_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==a", rz_print_equal_equal_bbs_handler, &print_equal_equal_bbs_help);
-	rz_warn_if_fail(print_equal_equal_bbs_cd);
+	RzCmdDesc *p_equal__equal_a_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==a", rz_print_equal_equal_bbs_handler, &print_equal_equal_bbs_help, &p_equal__equal_a_help);
+	rz_warn_if_fail(p_equal__equal_a_cd);
+	RzCmdDesc *print_equal_equal_bbs_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_a_cd, "p==av", rz_print_equal_equal_bbs_visual_handler, &print_equal_equal_bbs_visual_help);
+	rz_warn_if_fail(print_equal_equal_bbs_visual_cd);
 
-	RzCmdDesc *print_equal_equal_stats_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==A", rz_print_equal_equal_stats_handler, &print_equal_equal_stats_help);
-	rz_warn_if_fail(print_equal_equal_stats_cd);
+	RzCmdDesc *p_equal__equal_A_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==A", rz_print_equal_equal_stats_handler, &print_equal_equal_stats_help, &p_equal__equal_A_help);
+	rz_warn_if_fail(p_equal__equal_A_cd);
+	RzCmdDesc *print_equal_equal_stats_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_A_cd, "p==Av", rz_print_equal_equal_stats_visual_handler, &print_equal_equal_stats_visual_help);
+	rz_warn_if_fail(print_equal_equal_stats_visual_cd);
 
-	RzCmdDesc *print_equal_equal_call_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==c", rz_print_equal_equal_call_handler, &print_equal_equal_call_help);
-	rz_warn_if_fail(print_equal_equal_call_cd);
+	RzCmdDesc *p_equal__equal_c_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==c", rz_print_equal_equal_call_handler, &print_equal_equal_call_help, &p_equal__equal_c_help);
+	rz_warn_if_fail(p_equal__equal_c_cd);
+	RzCmdDesc *print_equal_equal_call_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_c_cd, "p==cv", rz_print_equal_equal_call_visual_handler, &print_equal_equal_call_visual_help);
+	rz_warn_if_fail(print_equal_equal_call_visual_cd);
 
-	RzCmdDesc *print_equal_equal_entropy_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==e", rz_print_equal_equal_entropy_handler, &print_equal_equal_entropy_help);
-	rz_warn_if_fail(print_equal_equal_entropy_cd);
+	RzCmdDesc *p_equal__equal_e_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==e", rz_print_equal_equal_entropy_handler, &print_equal_equal_entropy_help, &p_equal__equal_e_help);
+	rz_warn_if_fail(p_equal__equal_e_cd);
+	RzCmdDesc *print_equal_equal_entropy_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_e_cd, "p==ev", rz_print_equal_equal_entropy_visual_handler, &print_equal_equal_entropy_visual_help);
+	rz_warn_if_fail(print_equal_equal_entropy_visual_cd);
 
-	RzCmdDesc *print_equal_equal_invalid_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==i", rz_print_equal_equal_invalid_handler, &print_equal_equal_invalid_help);
-	rz_warn_if_fail(print_equal_equal_invalid_cd);
+	RzCmdDesc *p_equal__equal_i_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==i", rz_print_equal_equal_invalid_handler, &print_equal_equal_invalid_help, &p_equal__equal_i_help);
+	rz_warn_if_fail(p_equal__equal_i_cd);
+	RzCmdDesc *print_equal_equal_invalid_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_i_cd, "p==iv", rz_print_equal_equal_invalid_visual_handler, &print_equal_equal_invalid_visual_help);
+	rz_warn_if_fail(print_equal_equal_invalid_visual_cd);
 
-	RzCmdDesc *print_equal_equal_jump_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==j", rz_print_equal_equal_jump_handler, &print_equal_equal_jump_help);
-	rz_warn_if_fail(print_equal_equal_jump_cd);
+	RzCmdDesc *p_equal__equal_j_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==j", rz_print_equal_equal_jump_handler, &print_equal_equal_jump_help, &p_equal__equal_j_help);
+	rz_warn_if_fail(p_equal__equal_j_cd);
+	RzCmdDesc *print_equal_equal_jump_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_j_cd, "p==jv", rz_print_equal_equal_jump_visual_handler, &print_equal_equal_jump_visual_help);
+	rz_warn_if_fail(print_equal_equal_jump_visual_cd);
 
-	RzCmdDesc *print_equal_equal_m_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==m", rz_print_equal_equal_m_handler, &print_equal_equal_m_help);
-	rz_warn_if_fail(print_equal_equal_m_cd);
+	RzCmdDesc *p_equal__equal_m_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==m", rz_print_equal_equal_m_handler, &print_equal_equal_m_help, &p_equal__equal_m_help);
+	rz_warn_if_fail(p_equal__equal_m_cd);
+	RzCmdDesc *print_equal_equal_m_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_m_cd, "p==mv", rz_print_equal_equal_m_visual_handler, &print_equal_equal_m_visual_help);
+	rz_warn_if_fail(print_equal_equal_m_visual_cd);
 
-	RzCmdDesc *print_equal_equal_printable_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==p", rz_print_equal_equal_printable_handler, &print_equal_equal_printable_help);
-	rz_warn_if_fail(print_equal_equal_printable_cd);
+	RzCmdDesc *p_equal__equal_p_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==p", rz_print_equal_equal_printable_handler, &print_equal_equal_printable_help, &p_equal__equal_p_help);
+	rz_warn_if_fail(p_equal__equal_p_cd);
+	RzCmdDesc *print_equal_equal_printable_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_p_cd, "p==pv", rz_print_equal_equal_printable_visual_handler, &print_equal_equal_printable_visual_help);
+	rz_warn_if_fail(print_equal_equal_printable_visual_cd);
 
-	RzCmdDesc *print_equal_equal_priv_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==s", rz_print_equal_equal_priv_handler, &print_equal_equal_priv_help);
-	rz_warn_if_fail(print_equal_equal_priv_cd);
+	RzCmdDesc *p_equal__equal_s_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==s", rz_print_equal_equal_priv_handler, &print_equal_equal_priv_help, &p_equal__equal_s_help);
+	rz_warn_if_fail(p_equal__equal_s_cd);
+	RzCmdDesc *print_equal_equal_priv_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_s_cd, "p==sv", rz_print_equal_equal_priv_visual_handler, &print_equal_equal_priv_visual_help);
+	rz_warn_if_fail(print_equal_equal_priv_visual_cd);
 
-	RzCmdDesc *print_equal_equal_z_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal__cd, "p==z", rz_print_equal_equal_z_handler, &print_equal_equal_z_help);
-	rz_warn_if_fail(print_equal_equal_z_cd);
+	RzCmdDesc *p_equal__equal_z_cd = rz_cmd_desc_group_new(core->rcmd, p_equal__equal__cd, "p==z", rz_print_equal_equal_z_handler, &print_equal_equal_z_help, &p_equal__equal_z_help);
+	rz_warn_if_fail(p_equal__equal_z_cd);
+	RzCmdDesc *print_equal_equal_z_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_z_cd, "p==zv", rz_print_equal_equal_z_visual_handler, &print_equal_equal_z_visual_help);
+	rz_warn_if_fail(print_equal_equal_z_visual_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);

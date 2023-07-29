@@ -326,6 +326,9 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 		colofcurbar = Color_BGGRAY;
 	}
 	int adder = 0;
+	// adder is for movement of graphs
+	// like if graph has width more than the screen width
+	// then we need some index from which it to start to maintain the current index in the middle
 	if (sizeofonebar > 1) {
 		adder = hist->barnumber + 1 - width / 2;
 	} else {
@@ -336,14 +339,18 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 		size_t koli = i * 5 / rows;
 		int k;
 		for (j = 0; j < width; j++) {
-			int realj, realjnext = 0;
+			int realj, realjnext = 0; // realj is the starting index for a bar
+						  // realjnext is the starting index for the next bar
 			unsigned long long curdata = 0;
 			if (sizeofonebar > 1) {
+				// if size of a single bar is greater than 1 means only one index corresponds to a single bar
+				// so no need to take the average of bars from realj to realjnext
 				realj = adder + j;
 				curdata = data[realj];
 			} else {
 				realj = adder + (j)*histogramwidth / (zoom * width);
 				realjnext = adder + (j + 1) * histogramwidth / (zoom * width);
+				// take average of the size of the data from realj to realjnext to get a average bar size
 				for (int i = realj; i < realjnext; i++) {
 					curdata += data[i];
 				}
