@@ -643,6 +643,8 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
+	rz_bin_dwarf_free(core->analysis->debug_info->dw);
+	core->analysis->debug_info->dw = dw;
 	if (dw->info) {
 		rz_analysis_dwarf_process_info(core->analysis, dw);
 	}
@@ -653,7 +655,6 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		li = binfile->o->lines = dw->lines->lines;
 		dw->lines->lines = NULL;
 	}
-	rz_bin_dwarf_free(dw);
 	if (!li) {
 		return false;
 	}

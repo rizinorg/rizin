@@ -1359,13 +1359,7 @@ err:
 static void Operation_dump(Operation *op, RzStrBuf *buf) {
 	rz_strbuf_append(buf, rz_str_get_null(rz_bin_dwarf_op(op->opcode)));
 	switch (op->kind) {
-	case OPERATION_KIND_DEREF:
-		rz_strbuf_appendf(buf, " base_type: 0x%" PFMT64x ", size: %d, space: %d", op->deref.base_type, op->deref.size, op->deref.space);
-		break;
 	case OPERATION_KIND_DROP:
-	case OPERATION_KIND_PICK:
-		rz_strbuf_appendf(buf, " 0x%x", op->pick.index);
-		break;
 	case OPERATION_KIND_SWAP:
 	case OPERATION_KIND_ROT:
 	case OPERATION_KIND_ABS:
@@ -1378,22 +1372,33 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 	case OPERATION_KIND_NOT:
 	case OPERATION_KIND_OR:
 	case OPERATION_KIND_PLUS:
-	case OPERATION_KIND_PLUS_CONSTANT:
-		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->plus_constant.value);
-		break;
 	case OPERATION_KIND_SHL:
 	case OPERATION_KIND_SHR:
 	case OPERATION_KIND_SHRA:
 	case OPERATION_KIND_XOR:
-	case OPERATION_KIND_BRA:
-		rz_strbuf_appendf(buf, " %d", op->bra.target);
-		break;
 	case OPERATION_KIND_EQ:
 	case OPERATION_KIND_GE:
 	case OPERATION_KIND_GT:
 	case OPERATION_KIND_LE:
 	case OPERATION_KIND_LT:
 	case OPERATION_KIND_NE:
+	case OPERATION_KIND_TLS:
+	case OPERATION_KIND_CALL_FRAME_CFA:
+	case OPERATION_KIND_NOP:
+	case OPERATION_KIND_PUSH_OBJECT_ADDRESS:
+	case OPERATION_KIND_STACK_VALUE: break;
+	case OPERATION_KIND_DEREF:
+		rz_strbuf_appendf(buf, " base_type: 0x%" PFMT64x ", size: %d, space: %d", op->deref.base_type, op->deref.size, op->deref.space);
+		break;
+	case OPERATION_KIND_PICK:
+		rz_strbuf_appendf(buf, " 0x%x", op->pick.index);
+		break;
+	case OPERATION_KIND_PLUS_CONSTANT:
+		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->plus_constant.value);
+		break;
+	case OPERATION_KIND_BRA:
+		rz_strbuf_appendf(buf, " %d", op->bra.target);
+		break;
 	case OPERATION_KIND_SKIP:
 		rz_strbuf_appendf(buf, " %d", op->skip.target);
 		break;
@@ -1404,10 +1409,10 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->signed_constant.value);
 		break;
 	case OPERATION_KIND_REGISTER:
-		rz_strbuf_appendf(buf, " reg%u", op->reg.register_number);
+		rz_strbuf_appendf(buf, " %u", op->reg.register_number);
 		break;
 	case OPERATION_KIND_REGISTER_OFFSET:
-		rz_strbuf_appendf(buf, " reg%u%+" PFMT64d " base_type=0x%" PFMT64x,
+		rz_strbuf_appendf(buf, " %u %" PFMT64d " 0x%" PFMT64x,
 			op->register_offset.register_number,
 			op->register_offset.offset,
 			op->register_offset.base_type);
@@ -1415,24 +1420,18 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 	case OPERATION_KIND_FRAME_OFFSET:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->frame_offset.offset);
 		break;
-	case OPERATION_KIND_NOP:
-	case OPERATION_KIND_PUSH_OBJECT_ADDRESS:
 	case OPERATION_KIND_CALL:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->call.offset);
 		break;
-	case OPERATION_KIND_TLS:
-	case OPERATION_KIND_CALL_FRAME_CFA:
 	case OPERATION_KIND_PIECE:
 		rz_strbuf_appendf(buf, " %" PFMT64u, op->piece.size_in_bits);
 		if (op->piece.has_bit_offset) {
 			rz_strbuf_appendf(buf, " %" PFMT64u, op->piece.bit_offset);
 		}
 		break;
-	case OPERATION_KIND_IMPLICIT_VALUE: {
+	case OPERATION_KIND_IMPLICIT_VALUE:
 		rz_bin_dwarf_block_dump(&op->implicit_value, buf);
 		break;
-	}
-	case OPERATION_KIND_STACK_VALUE:
 	case OPERATION_KIND_IMPLICIT_POINTER:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x " %" PFMT64d, op->implicit_pointer.value, op->implicit_pointer.byte_offset);
 		break;

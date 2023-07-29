@@ -486,7 +486,7 @@ EXPECT=<<EOF
      DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x64): _ZN6Mammal4walkEv
      DW_AT_type                : <0x5c>
      DW_AT_virtuality          : 1
-     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_vtable_elem_location : 2 byte block: 0x1002
      DW_AT_containing_type     : <0x73>
      DW_AT_declaration         : 1
      DW_AT_object_pointer      : <0xf2>
@@ -531,7 +531,7 @@ EXPECT=<<EOF
      DW_AT_decl_line           : 11
      DW_AT_decl_column         : 13
      DW_AT_type                : <0x31>
-     DW_AT_location            : 2 byte block: 0x91 0x67
+     DW_AT_location            : 2 byte block: 0x9167
 <0x157>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x158>: Abbrev Number: 18   (DW_TAG_subprogram)
      DW_AT_specification       : <0x3e>
@@ -545,7 +545,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0x11b): this
      DW_AT_type                : <0x6e>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x185>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x186>: Abbrev Number: 18   (DW_TAG_subprogram)
      DW_AT_specification       : <0xd4>
@@ -559,7 +559,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0x11b): this
      DW_AT_type                : <0x11b>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x1b3>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x1b4>: Abbrev Number: 20   (DW_TAG_subprogram)
      DW_AT_specification       : <0xac>
@@ -586,7 +586,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x204>
 <0x1fb>: Abbrev Number: 23   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x1c2>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x203>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x204>: Abbrev Number: 24   (DW_TAG_subprogram)
      DW_AT_abstract_origin     : <0x1b4>
@@ -598,7 +598,7 @@ EXPECT=<<EOF
      DW_AT_GNU_all_call_sites  : 1
 <0x224>: Abbrev Number: 23   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x1c2>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x22c>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x22d>: Abbrev Number: 0    (DW_TAG_null_entry)
 
@@ -686,7 +686,7 @@ EXPECT=<<EOF
      DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x245): _ZN4Bird3flyEv
      DW_AT_type                : <0x327>
      DW_AT_virtuality          : 1
-     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_vtable_elem_location : 2 byte block: 0x1002
      DW_AT_containing_type     : <0x25f>
      DW_AT_declaration         : 1
      DW_AT_object_pointer      : <0x2fe>
@@ -790,7 +790,7 @@ EXPECT=<<EOF
      DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x20f): _ZN3Dog4walkEv
      DW_AT_type                : <0x327>
      DW_AT_virtuality          : 1
-     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_vtable_elem_location : 2 byte block: 0x1002
      DW_AT_containing_type     : <0x343>
      DW_AT_declaration         : 1
      DW_AT_object_pointer      : <0x3dd>
@@ -845,21 +845,21 @@ EXPECT=<<EOF
      DW_AT_decl_line           : 16
      DW_AT_decl_column         : 9
      DW_AT_type                : <0x30b>
-     DW_AT_location            : 2 byte block: 0x91 0x50
+     DW_AT_location            : 2 byte block: 0x9150
 <0x450>: Abbrev Number: 25   (DW_TAG_variable)
      DW_AT_name                : m
      DW_AT_decl_file           : 2
      DW_AT_decl_line           : 17
      DW_AT_decl_column         : 11
      DW_AT_type                : <0x46d>
-     DW_AT_location            : 2 byte block: 0x91 0x58
+     DW_AT_location            : 2 byte block: 0x9158
 <0x45d>: Abbrev Number: 26   (DW_TAG_variable)
      DW_AT_name                : (indirect string, offset: 0x1e2): output
      DW_AT_decl_file           : 2
      DW_AT_decl_line           : 20
      DW_AT_decl_column         : 7
      DW_AT_type                : <0x327>
-     DW_AT_location            : 2 byte block: 0x91 0x4c
+     DW_AT_location            : 2 byte block: 0x914c
 <0x46c>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x46d>: Abbrev Number: 11   (DW_TAG_pointer_type)
      DW_AT_byte_size           : 8
@@ -878,7 +878,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0x11b): this
      DW_AT_type                : <0x311>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x4a5>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x4a6>: Abbrev Number: 29   (DW_TAG_subprogram)
      DW_AT_specification       : <0x2b8>
@@ -905,7 +905,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x4f6>
 <0x4ed>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x4b4>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x4f5>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x4f6>: Abbrev Number: 33   (DW_TAG_subprogram)
      DW_AT_abstract_origin     : <0x4a6>
@@ -918,7 +918,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x523>
 <0x51a>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x4b4>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x522>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x523>: Abbrev Number: 29   (DW_TAG_subprogram)
      DW_AT_specification       : <0x29b>
@@ -941,7 +941,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x569>
 <0x560>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x531>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x568>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x569>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x3bf>
@@ -955,7 +955,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0x11b): this
      DW_AT_type                : <0x414>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x596>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x597>: Abbrev Number: 29   (DW_TAG_subprogram)
      DW_AT_specification       : <0x397>
@@ -982,7 +982,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x5e7>
 <0x5de>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x5a5>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x5e6>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x5e7>: Abbrev Number: 31   (DW_TAG_subprogram)
      DW_AT_abstract_origin     : <0x597>
@@ -995,7 +995,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x614>
 <0x60b>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x5a5>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x613>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x614>: Abbrev Number: 29   (DW_TAG_subprogram)
      DW_AT_specification       : <0x37a>
@@ -1018,7 +1018,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x65a>
 <0x651>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x622>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x659>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x65a>: Abbrev Number: 29   (DW_TAG_subprogram)
      DW_AT_specification       : <0x3f4>
@@ -1040,7 +1040,7 @@ EXPECT=<<EOF
      DW_AT_GNU_all_call_sites  : 1
 <0x693>: Abbrev Number: 32   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x668>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x69b>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x69c>: Abbrev Number: 0    (DW_TAG_null_entry)
 
@@ -1889,7 +1889,7 @@ EXPECT=<<EOF
      DW_AT_decl_column         : 5
      DW_AT_type                : <0x42>
      DW_AT_external            : 1
-     DW_AT_location            : 9 byte block: 0x03 0x14 0x40 0x00 0x00 0x00 0x00 0x00 0x00
+     DW_AT_location            : 9 byte block: 0x031440000000000000
 <0x42>: Abbrev Number: 3    (DW_TAG_base_type)
      DW_AT_byte_size           : 4
      DW_AT_encoding            : 5
@@ -1912,7 +1912,7 @@ EXPECT=<<EOF
      DW_AT_decl_line           : 9
      DW_AT_decl_column         : 6
      DW_AT_type                : <0x42>
-     DW_AT_location            : 2 byte block: 0x91 0x6c
+     DW_AT_location            : 2 byte block: 0x916c
 <0x7a>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x7b>: Abbrev Number: 6    (DW_TAG_subprogram)
      DW_AT_external            : 1
@@ -2314,7 +2314,7 @@ EXPECT=<<EOF
      DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x134): _ZN4Bird3flyEv
      DW_AT_type                : <0xf9>
      DW_AT_virtuality          : 1
-     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_vtable_elem_location : 2 byte block: 0x1002
      DW_AT_containing_type     : <0x31>
      DW_AT_declaration         : 1
      DW_AT_object_pointer      : <0xd0>
@@ -2418,7 +2418,7 @@ EXPECT=<<EOF
      DW_AT_MIPS_linkage_name   : (indirect string, offset: 0xd5): _ZN3Dog4walkEv
      DW_AT_type                : <0xf9>
      DW_AT_virtuality          : 1
-     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_vtable_elem_location : 2 byte block: 0x1002
      DW_AT_containing_type     : <0x115>
      DW_AT_declaration         : 1
      DW_AT_object_pointer      : <0x1af>
@@ -2498,7 +2498,7 @@ EXPECT=<<EOF
      DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x90): _ZN6Mammal4walkEv
      DW_AT_type                : <0xf9>
      DW_AT_virtuality          : 1
-     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_vtable_elem_location : 2 byte block: 0x1002
      DW_AT_containing_type     : <0x1bc>
      DW_AT_declaration         : 1
      DW_AT_object_pointer      : <0x25b>
@@ -2543,21 +2543,21 @@ EXPECT=<<EOF
      DW_AT_decl_line           : 20
      DW_AT_decl_column         : 9
      DW_AT_type                : <0xdd>
-     DW_AT_location            : 2 byte block: 0x91 0x50
+     DW_AT_location            : 2 byte block: 0x9150
 <0x2bb>: Abbrev Number: 23   (DW_TAG_variable)
      DW_AT_name                : m
      DW_AT_decl_file           : 1
      DW_AT_decl_line           : 21
      DW_AT_decl_column         : 11
      DW_AT_type                : <0x279>
-     DW_AT_location            : 2 byte block: 0x91 0x58
+     DW_AT_location            : 2 byte block: 0x9158
 <0x2c8>: Abbrev Number: 24   (DW_TAG_variable)
      DW_AT_name                : (indirect string, offset: 0x1b): output
      DW_AT_decl_file           : 1
      DW_AT_decl_line           : 24
      DW_AT_decl_column         : 7
      DW_AT_type                : <0xf9>
-     DW_AT_location            : 2 byte block: 0x91 0x4c
+     DW_AT_location            : 2 byte block: 0x914c
 <0x2d7>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x2d8>: Abbrev Number: 25   (DW_TAG_subprogram)
      DW_AT_specification       : <0xb2>
@@ -2571,7 +2571,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0xf1): this
      DW_AT_type                : <0xe3>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x305>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x306>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x8a>
@@ -2598,7 +2598,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x356>
 <0x34d>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x314>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x355>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x356>: Abbrev Number: 31   (DW_TAG_subprogram)
      DW_AT_abstract_origin     : <0x306>
@@ -2611,7 +2611,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x383>
 <0x37a>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x314>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x382>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x383>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x6d>
@@ -2634,7 +2634,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x3c9>
 <0x3c0>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x391>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x3c8>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x3c9>: Abbrev Number: 25   (DW_TAG_subprogram)
      DW_AT_specification       : <0x191>
@@ -2648,7 +2648,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0xf1): this
      DW_AT_type                : <0x26e>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x3f6>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x3f7>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x169>
@@ -2675,7 +2675,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x447>
 <0x43e>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x405>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x446>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x447>: Abbrev Number: 29   (DW_TAG_subprogram)
      DW_AT_abstract_origin     : <0x3f7>
@@ -2688,7 +2688,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x474>
 <0x46b>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x405>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x473>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x474>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x14c>
@@ -2711,7 +2711,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x4ba>
 <0x4b1>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x482>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x4b9>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x4ba>: Abbrev Number: 25   (DW_TAG_subprogram)
      DW_AT_specification       : <0x23d>
@@ -2725,7 +2725,7 @@ EXPECT=<<EOF
      DW_AT_name                : (indirect string, offset: 0xf1): this
      DW_AT_type                : <0x27f>
      DW_AT_artificial          : 1
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x4e7>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x4e8>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x215>
@@ -2752,7 +2752,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x538>
 <0x52f>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x4f6>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x537>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x538>: Abbrev Number: 31   (DW_TAG_subprogram)
      DW_AT_abstract_origin     : <0x4e8>
@@ -2765,7 +2765,7 @@ EXPECT=<<EOF
      DW_AT_siblings            : <0x565>
 <0x55c>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x4f6>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x564>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x565>: Abbrev Number: 27   (DW_TAG_subprogram)
      DW_AT_specification       : <0x1f8>
@@ -2787,7 +2787,7 @@ EXPECT=<<EOF
      DW_AT_GNU_all_call_sites  : 1
 <0x59e>: Abbrev Number: 30   (DW_TAG_formal_parameter)
      DW_AT_abstract_origin     : <0x573>
-     DW_AT_location            : 2 byte block: 0x91 0x68
+     DW_AT_location            : 2 byte block: 0x9168
 <0x5a6>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x5a7>: Abbrev Number: 0    (DW_TAG_null_entry)
 

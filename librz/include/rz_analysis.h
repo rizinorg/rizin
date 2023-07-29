@@ -454,6 +454,7 @@ typedef struct {
 	HtUP /*<ut64, const RzBaseType *>*/ *base_type_by_offset;
 	RzBinDwarfEncoding encoding;
 	DWARF_RegisterMapping dwarf_register_mapping;
+	RzBinDwarf *dw;
 } RzAnalysisDebugInfo;
 
 typedef struct rz_analysis_t {

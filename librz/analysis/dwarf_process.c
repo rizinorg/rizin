@@ -1475,5 +1475,6 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->type_by_offset);
 	ht_up_free(debuginfo->callable_by_offset);
 	ht_up_free(debuginfo->base_type_by_offset);
+	rz_bin_dwarf_free(debuginfo->dw);
 	free(debuginfo);
 }
