@@ -309,58 +309,21 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 		sizeofonebar = zoom - (histogramwidth / width);
 	}
 	width /= sizeofonebar;
+	const char *colofcurbar;
 	if (opts->color) {
-		int adder = 0;
-		if (sizeofonebar > 1) {
-			adder = hist->barnumber + 1 - width / 2;
-		} else {
-			adder = hist->barnumber + 1 - histogramwidth / (zoom * 2);
-		}
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			size_t koli = i * 5 / rows;
-			int k;
-			for (j = 0; j < width; j++) {
-				int realj, realjnext = 0;
-				unsigned long long curdata = 0;
-				if (sizeofonebar > 1) {
-					realj = adder + j;
-					curdata = data[realj];
-				} else {
-					realj = adder + (j)*histogramwidth / (zoom * width);
-					realjnext = adder + (j + 1) * histogramwidth / (zoom * width);
-					for (int i = realj; i < realjnext; i++)
-						curdata += data[i];
-					curdata /= (realjnext - realj);
-				}
-				if (sizeofonebar == 1 && realj <= hist->barnumber && realjnext > hist->barnumber) {
-					realj = hist->barnumber;
-					curdata = data[realj];
-				}
-				if (realj < hist->size && realj >= 0 && (255 - curdata < threshold || (i + 1 == rows))) {
-					if (realj == hist->barnumber) {
-						for (k = 0; k < sizeofonebar; k++) {
-							rz_strbuf_appendf(buf, "%s%s%s", Color_RED, block, Color_RESET);
-						}
-					} else if (opts->thinline) {
-						for (k = 0; k < sizeofonebar; k++) {
-							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], vline, Color_RESET);
-						}
-					} else {
-						for (k = 0; k < sizeofonebar; k++) {
-							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], block, Color_RESET);
-						}
-					}
-				} else {
-					for (k = 0; k < sizeofonebar; k++) {
-						rz_strbuf_append(buf, " ");
-					}
-				}
-			}
-			rz_strbuf_append(buf, "\n");
-		}
-		rz_strbuf_appendf(buf, "Current Index %d data %d", hist->barnumber, data[hist->barnumber]);
-		return buf;
+		kol[0] = opts->pal->call;
+		kol[1] = opts->pal->jmp;
+		kol[2] = opts->pal->cjmp;
+		kol[3] = opts->pal->mov;
+		kol[4] = opts->pal->nop;
+		colofcurbar = Color_RED;
+	} else {
+		kol[0] = Color_BGGRAY;
+		kol[1] = Color_BGGRAY;
+		kol[2] = Color_BGGRAY;
+		kol[3] = Color_BGGRAY;
+		kol[4] = Color_BGGRAY;
+		colofcurbar = Color_BGGRAY;
 	}
 	int adder = 0;
 	if (sizeofonebar > 1) {
@@ -370,38 +333,42 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 	}
 	for (i = 0; i < rows; i++) {
 		size_t threshold = i * (0xff / rows);
+		size_t koli = i * 5 / rows;
 		int k;
 		for (j = 0; j < width; j++) {
-			int realj = adder + (j)*histogramwidth / (zoom * width);
-			int realjnext = adder + (j + 1) * histogramwidth / (zoom * width);
-			unsigned char curdata = 0;
+			int realj, realjnext = 0;
+			unsigned long long curdata = 0;
 			if (sizeofonebar > 1) {
 				realj = adder + j;
 				curdata = data[realj];
+			} else {
+				realj = adder + (j)*histogramwidth / (zoom * width);
+				realjnext = adder + (j + 1) * histogramwidth / (zoom * width);
+				for (int i = realj; i < realjnext; i++) {
+					curdata += data[i];
+				}
+				curdata /= (realjnext - realj);
 			}
 			if (sizeofonebar == 1 && realj <= hist->barnumber && realjnext > hist->barnumber) {
 				realj = hist->barnumber;
-			} else if (sizeofonebar == 1) {
-				for (int i = realj; i < realjnext; i++)
-					curdata += data[i];
-				curdata /= (realjnext - realj);
+				curdata = data[realj];
 			}
-			if (realj < hist->size && realj >= 0 && (255 - curdata < threshold || (i + 1 == rows))) {
-				if (realj == hist->barnumber) {
-					for (k = 0; k < sizeofonebar; k++) {
-						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
-					}
-				} else if (opts->thinline) {
-					for (k = 0; k < sizeofonebar; k++) {
-						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, vline, Color_RESET);
+			for (k = 0; k < sizeofonebar; k++) {
+				if (realj < hist->size && realj >= 0 && (255 - curdata < threshold || (i + 1 == rows))) {
+					if (realj == hist->barnumber) {
+						if (opts->thinline) {
+							rz_strbuf_appendf(buf, "%s%s%s", colofcurbar, vline, Color_RESET);
+						} else {
+							rz_strbuf_appendf(buf, "%s%s%s", colofcurbar, block, Color_RESET);
+						}
+					} else {
+						if (opts->thinline) {
+							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], vline, Color_RESET);
+						} else {
+							rz_strbuf_appendf(buf, "%s%s%s", kol[koli], block, Color_RESET);
+						}
 					}
 				} else {
-					for (k = 0; k < sizeofonebar; k++) {
-						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
-					}
-				}
-			} else {
-				for (k = 0; k < sizeofonebar; k++) {
 					rz_strbuf_append(buf, " ");
 				}
 			}
