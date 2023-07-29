@@ -1451,7 +1451,6 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				break;
 			}
 			break;
-#endif
 		case PPC_INS_BDNZ:
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->jump = IMM(0);
@@ -1512,6 +1511,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
 			break;
+#endif
 		case PPC_INS_BLR:
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:

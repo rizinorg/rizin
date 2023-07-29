@@ -260,7 +260,7 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTRL:
 	case PPC_INS_BGECTRL:
@@ -332,7 +332,15 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
-#if CS_API_MAJOR == 5
+	case PPC_INS_BC:
+	case PPC_INS_BCCTR:
+	case PPC_INS_BCCTRL:
+	case PPC_INS_BCL:
+	case PPC_INS_BCLR:
+	case PPC_INS_BCLRL:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQ:
 	case PPC_INS_BEQA:
 	case PPC_INS_BF:
@@ -383,15 +391,6 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
-#endif
-	case PPC_INS_BC:
-	case PPC_INS_BCCTR:
-	case PPC_INS_BCCTRL:
-	case PPC_INS_BCL:
-	case PPC_INS_BCLR:
-	case PPC_INS_BCLRL:
-	case PPC_INS_BCA:
-	case PPC_INS_BCLA:
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZLR:
@@ -401,6 +400,7 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
+#endif
 		return true;
 	}
 }
@@ -479,22 +479,22 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(insn, false);
 #if CS_NEXT_VERSION >= 6
 	return cs_ppc_bc_decr_ctr(PPC_DETAIL(insn).bc.bo);
-#endif
+#else
 	ut32 id = insn->id;
 
 	switch (id) {
 	default:
 		return false;
-#if CS_API_MAJOR == 5
-	case PPC_INS_BGEL:
-	case PPC_INS_BGELA:
-#endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCA:
 	case PPC_INS_BCLA:
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
+#if CS_API_MAJOR == 5
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+#endif
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZL:
@@ -508,7 +508,6 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 		return !(0x4 & PPC_READ_BO_FIELD); // not BO_2
-#if CS_API_MAJOR < 6
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
@@ -526,8 +525,8 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
 		return true;
-#endif
 	}
+#endif
 }
 
 //
@@ -783,7 +782,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 #endif
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
-#if CS_API_MAJOR == 5
+#if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
 	case PPC_INS_BEQCTR:
 	case PPC_INS_BEQCTRL:
 	case PPC_INS_BFCTR:
@@ -822,7 +821,6 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		cr_cond_fullfilled = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
 
 		return LET("bo", UN(5, bo), cr_cond_fullfilled);
-#endif
 	// CTR != 0
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
@@ -839,7 +837,6 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 		return IS_ZERO(VARG("ctr"));
-#if CS_NEXT_VERSION < 6
 	// ctr != 0 && cr_bi == 1
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
@@ -984,10 +981,12 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		} else {
 			return UA(INSOP(0).imm);
 		}
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDZA:
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZLA:
+#endif
 		// EXTS(BD || 0b00)
 #if CS_API_MAJOR == 5
 	case PPC_INS_BGEL:
@@ -995,6 +994,9 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 #endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
+#if CS_NEXT_VERSION >= 6
+		return UA(INSOP(2).imm);
+#else
 	case PPC_INS_BDZ:
 	case PPC_INS_BDZL:
 	case PPC_INS_BDNZ:
@@ -1006,6 +1008,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		} else {
 			return UA(INSOP(0).imm);
 		}
+#endif
 		// Branch to LR
 #if CS_API_MAJOR == 5
 	case PPC_INS_BEQLR:
@@ -1020,11 +1023,13 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BLR:
 	case PPC_INS_BLRL:
 	case PPC_INS_BCLR:
-	case PPC_INS_BDZLR:
 	case PPC_INS_BCLRL:
+#if CS_NEXT_VERSION < 6
+	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
 	case PPC_INS_BDNZLR:
 	case PPC_INS_BDNZLRL:
+#endif
 		//  LR_0:61 || 0b00
 		return LOGAND(UA(-4), VARG("lr"));
 		// Branch to CTR

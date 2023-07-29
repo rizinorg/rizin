@@ -1576,6 +1576,13 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BCLRL:
 	case PPC_INS_BCTR:
 	case PPC_INS_BCTRL:
+	case PPC_INS_BL:
+	case PPC_INS_BLA:
+	case PPC_INS_BLR:
+	case PPC_INS_BLRL:
+	case PPC_INS_BCA:
+	case PPC_INS_BCLA:
+#if CS_NEXT_VERSION < 6
 	case PPC_INS_BDNZ:
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZL:
@@ -1588,13 +1595,6 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BDZLA:
 	case PPC_INS_BDZLR:
 	case PPC_INS_BDZLRL:
-	case PPC_INS_BL:
-	case PPC_INS_BLA:
-	case PPC_INS_BLR:
-	case PPC_INS_BLRL:
-	case PPC_INS_BCA:
-	case PPC_INS_BCLA:
-#if CS_API_MAJOR < 6
 	case PPC_INS_BDNZT:
 	case PPC_INS_BDNZTL:
 	case PPC_INS_BDNZTA:
