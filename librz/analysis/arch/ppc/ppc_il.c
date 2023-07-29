@@ -12,7 +12,6 @@
 #include <rz_analysis.h>
 #include <rz_il.h>
 #include <rz_types.h>
-#include <errno.h>
 
 RZ_IPI RzAnalysisILConfig *rz_ppc_cs_64_il_config(bool big_endian) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(64, big_endian, 64);
@@ -694,7 +693,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	RzILOpBool *decr_ctr = cs_ppc_bc_decr_ctr(bo) ? IL_TRUE : IL_FALSE;
 	RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
 	RzILOpBool *check_ctr_is_zero = cs_ppc_bc_tests_ctr_is_zero(bo) ? IL_TRUE : IL_FALSE;
-	RzILOpBool *check_cr_bit_is_set = cs_ppc_bc_tests_cr_bit_is_set(bo) ? IL_TRUE : IL_FALSE;
+	RzILOpBool *check_cr_bit_is_one = cs_ppc_bc_cr_bit_is_one(bo) ? IL_TRUE : IL_FALSE;
 #else
 	ut8 bo = PPC_READ_BO_FIELD;
 	ut8 bi = PPC_READ_BI_FIELD;
@@ -755,8 +754,8 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
 #if CS_NEXT_VERSION >= 6
-		ctr_cond_fullfilled = AND(decr_ctr, XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero));
-		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_set)));
+		ctr_cond_fullfilled = OR(INV(decr_ctr), XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero));
+		cr_cond_fullfilled = OR(INV(test_cr_bit), XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)));
 		return AND(ctr_cond_fullfilled, cr_cond_fullfilled);
 #else
 		// BO_2 == 0: Decrement CTR
@@ -811,7 +810,7 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BGECTRL:
 #endif
 #if CS_NEXT_VERSION >= 6
-		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_set)));
+		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)));
 		return cr_cond_fullfilled;
 #else
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
