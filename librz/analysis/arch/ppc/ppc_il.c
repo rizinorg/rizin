@@ -629,6 +629,7 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 		(fmx & 0x01 ? x : 0));
 }
 
+#if CS_NEXT_VERSION < 6
 static const char *get_crx_reg(const csh handle, cs_insn *insn, size_t n) {
 #if CS_API_MAJOR == 5 && CS_API_MINOR == 0
 	// bug on crx not being populated in capstone v5.0
@@ -645,10 +646,8 @@ static const char *get_crx_reg(const csh handle, cs_insn *insn, size_t n) {
 		rz_warn_if_reached();
 	}
 	return cs_reg_name(handle, reg);
-#elif CS_NEXT_VERSION < 6
-	return cs_reg_name(handle, INSOP(n).crx.reg);
 #else
-	return cs_reg_name(handle, PPC_DETAIL(insn).bc.crX);
+	return cs_reg_name(handle, INSOP(n).crx.reg);
 #endif
 }
 
@@ -667,12 +666,11 @@ static ut32 get_crx_cond(const csh handle, cs_insn *insn, size_t n) {
 	}
 	rz_warn_if_reached();
 	return PPC_BC_INVALID;
-#elif CS_NEXT_VERSION < 6
-	return INSOP(n).crx.cond;
 #else
-	return PPC_DETAIL(insn).bc.pred_cr;
+	return INSOP(n).crx.cond;
 #endif
 }
+#endif
 
 /**
  * \brief Get the branch condition for a given instruction.
