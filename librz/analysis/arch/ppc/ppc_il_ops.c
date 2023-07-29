@@ -505,7 +505,6 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	// Right operand differs between instructions.
 	switch (id) {
 	default:
-		rz_il_op_pure_free(left);
 		NOT_IMPLEMENTED;
 	case PPC_INS_CMPW:
 	case PPC_INS_CMPLW:

@@ -27,9 +27,7 @@ static void rz_il_set(RzILVM *vm, const char *var_name, bool is_local, RZ_OWN Rz
 
 bool rz_il_handler_empty(RzILVM *vm, RzILOpEffect *op) {
 	rz_return_val_if_fail(vm && op, false);
-	char* bv_str = rz_bv_as_string(vm->pc);
-	RZ_LOG_INFO("Encountered an empty instruction at %s\n", bv_str);
-	free(bv_str);
+	RZ_LOG_INFO("Encountered an empty instruction at %s\n", rz_bv_as_string(vm->pc))
 	return true;
 }
 
