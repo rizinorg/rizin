@@ -156,7 +156,7 @@ RZ_IPI RzAnalysisILConfig *rz_ppc_cs_32_il_config(bool big_endian);
 RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode);
 
 RZ_IPI RZ_OWN RzILOpEffect *ppc_set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_OWN RzILOpBitVector *b, RZ_OWN RZ_NULLABLE RzILOpBitVector *c, cs_mode mode);
-RZ_IPI RZ_OWN RzILOpEffect *ppc_cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode);
+RZ_IPI RZ_OWN RzILOpEffect *ppc_cmp_set_cr(RZ_OWN RzILOpPure *left, RZ_OWN RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode);
 
 RZ_IPI bool ppc_is_x_form(ut32 insn_id);
 RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id);

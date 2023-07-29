@@ -1198,7 +1198,7 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 		break;
 	case RZ_TYPE_KIND_CALLABLE:
 		newtype->kind = RZ_TYPE_KIND_CALLABLE;
-		newtype->callable = rz_type_callable_clone(type->callable);
+		newtype->callable = type->callable;
 		break;
 	}
 	return newtype;

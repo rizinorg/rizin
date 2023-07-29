@@ -42,12 +42,12 @@ RZ_IPI RZ_OWN RzILOpEffect *ppc_set_carry_add_sub(RZ_OWN RzILOpBitVector *a, RZ_
  * \param mode Capstone mode.
  * \return RzILOpEffect* Sequence of effects which set the cr field accordingly.
  */
-RZ_IPI RZ_OWN RzILOpEffect *ppc_cmp_set_cr(RZ_BORROW RzILOpPure *left, RZ_BORROW RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode) {
+RZ_IPI RZ_OWN RzILOpEffect *ppc_cmp_set_cr(RZ_OWN RzILOpPure *left, RZ_OWN RzILOpPure *right, const bool signed_cmp, const char *crX, const cs_mode mode) {
 	rz_return_val_if_fail(left && right && crX, NULL);
 
 	RzILOpEffect *set_so = SETL("so_flag", BOOL_TO_BV(VARG("so"), 1));
-	RzILOpEffect *set_left = SETL("l", DUP(left));
-	RzILOpEffect *set_right = SETL("r", DUP(right));
+	RzILOpEffect *set_left = SETL("l", left);
+	RzILOpEffect *set_right = SETL("r", right);
 	RzILOpPure *cmp_gt = signed_cmp ? SGT(VARL("l"), VARL("r")) : UGT(VARL("l"), VARL("r"));
 	RzILOpPure *cmp_lt = signed_cmp ? SLT(VARL("l"), VARL("r")) : ULT(VARL("l"), VARL("r"));
 
