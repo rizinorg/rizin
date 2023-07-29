@@ -36,7 +36,7 @@
 
 #define check_attr_block_data(attr_idx, data_idx, expect_data) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \
-	mu_assert_eq(attr->block.data[data_idx], expect_data, "Wrong attribute block data")
+	mu_assert_eq(rz_bin_dwarf_block_data(&attr->block)[data_idx], expect_data, "Wrong attribute block data")
 
 #define check_attr_reference(attr_idx, expect_ref) \
 	attr = rz_vector_index_ptr(&die->attrs, attr_idx); \

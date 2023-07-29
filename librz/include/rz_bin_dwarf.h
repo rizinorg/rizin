@@ -1023,8 +1023,11 @@ typedef struct {
 } RzBinDwarfAttrDef;
 
 typedef struct {
-	ut8 *data;
 	ut64 length;
+	union {
+		ut8 *ptr;
+		ut8 data[sizeof(ut8 *)];
+	};
 } RzBinDwarfBlock;
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
@@ -1491,7 +1494,7 @@ RZ_API RZ_BORROW RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_BORROW RZ_NONN
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *decl);
 
 RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, enum DW_AT name);
-RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name);
+RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_name(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name);
 
 /**
  * \brief Opaque cache for fully resolved filenames during Dwarf Line Info Generation
@@ -1661,7 +1664,7 @@ typedef struct {
 			UnitOffset base_type;
 		} requires_memory;
 		struct {
-			RzBinDwarfBlock *expression;
+			RzBinDwarfBlock expression;
 		} requires_entry_value;
 		ut64 requires_relocated_address;
 		struct {
@@ -1716,7 +1719,7 @@ typedef const char *(*DWARF_RegisterMapping)(ut32 register_number);
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNULL RzBuffer *byte_code, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
 RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self);
-RZ_API void rz_bin_dwarf_evaluation_result_free(RZ_OWN RzBinDwarfEvaluationResult *self);
+RZ_API void RzBinDwarfEvaluationResult_free(RZ_OWN RzBinDwarfEvaluationResult *self);
 RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self, RZ_BORROW RZ_NONNULL RzBinDwarfEvaluationResult *out);
 RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(RZ_BORROW RZ_NONNULL RzBinDwarfEvaluation *self);
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block, RZ_BORROW RZ_NULLABLE const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die);
@@ -1755,8 +1758,16 @@ RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RZ_BORROW RZ_NON
 RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset);
 RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding);
 
+RZ_API void rz_bin_dwarf_location_fini(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
 RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
+
+
+/// Block
+RZ_API bool rz_bin_dwarf_block_valid(const RzBinDwarfBlock *self);
+RZ_API bool rz_bin_dwarf_block_empty(const RzBinDwarfBlock *self);
+RZ_API void rz_bin_dwarf_block_dump(const RzBinDwarfBlock *self, RzStrBuf *sb);
+RZ_API const ut8 *rz_bin_dwarf_block_data(const RzBinDwarfBlock *self);
 
 #ifdef __cplusplus
 }

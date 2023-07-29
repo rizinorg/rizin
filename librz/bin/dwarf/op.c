@@ -4,15 +4,47 @@
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
 
-static RzBuffer *buf_from_block(RzBinDwarfBlock *block) {
-	return rz_buf_new_with_bytes(block->data, block->length);
+static bool RzBinDwarfLocation_move(RzBinDwarfLocation *self, RzBinDwarfLocation *out) {
+	rz_return_val_if_fail(self && out, false);
+	memcpy(out, self, sizeof(RzBinDwarfLocation));
+	switch (self->kind) {
+	case RzBinDwarfLocationKind_EMPTY:
+	case RzBinDwarfLocationKind_DECODE_ERROR:
+	case RzBinDwarfLocationKind_REGISTER:
+	case RzBinDwarfLocationKind_REGISTER_OFFSET:
+	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
+	case RzBinDwarfLocationKind_CFA_OFFSET:
+	case RzBinDwarfLocationKind_FB_OFFSET:
+	case RzBinDwarfLocationKind_ADDRESS: break;
+	case RzBinDwarfLocationKind_VALUE:
+		self->value.location = NULL;
+		break;
+	case RzBinDwarfLocationKind_BYTES:
+		RzBinDwarfBlock_move(&self->bytes, &out->bytes);
+		break;
+	case RzBinDwarfLocationKind_COMPOSITE:
+		self->composite = NULL;
+		break;
+	case RzBinDwarfLocationKind_EVALUATION_WAITING:
+		self->eval_waiting.result = NULL;
+		self->eval_waiting.eval = NULL;
+		break;
+	case RzBinDwarfLocationKind_LOCLIST:
+		self->loclist = NULL;
+		break;
+	}
+	return true;
+}
+
+static void OperationEvaluationResult_fini(OperationEvaluationResult *self) {
+	rz_bin_dwarf_location_fini(&self->complete);
+	RzBinDwarfEvaluationResult_fini(&self->waiting._2);
 }
 
 RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfEncoding *encoding) {
 	rz_return_val_if_fail(self && buffer && encoding, false);
-	ut8 opcode;
-	U8_OR_RET_FALSE(opcode);
-	self->opcode = opcode;
+	memset(self, 0, sizeof(Operation));
+	U8_OR_RET_FALSE(self->opcode);
 	bool big_endian = encoding->big_endian;
 	switch (self->opcode) {
 	case DW_OP_addr:
@@ -211,7 +243,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_lit30:
 	case DW_OP_lit31:
 		self->kind = OPERATION_KIND_UNSIGNED_CONSTANT;
-		self->unsigned_constant.value = opcode - DW_OP_lit0;
+		self->unsigned_constant.value = self->opcode - DW_OP_lit0;
 		break;
 	case DW_OP_reg0:
 	case DW_OP_reg1:
@@ -246,7 +278,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_reg30:
 	case DW_OP_reg31:
 		self->kind = OPERATION_KIND_REGISTER;
-		self->reg.register_number = opcode - DW_OP_reg0;
+		self->reg.register_number = self->opcode - DW_OP_reg0;
 		break;
 	case DW_OP_breg0:
 	case DW_OP_breg1:
@@ -282,7 +314,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_breg31:
 		SLE128_OR_RET_FALSE(self->register_offset.offset);
 		self->kind = OPERATION_KIND_REGISTER_OFFSET;
-		self->register_offset.register_number = opcode - DW_OP_breg0;
+		self->register_offset.register_number = self->opcode - DW_OP_breg0;
 		break;
 
 	case DW_OP_regx: {
@@ -359,8 +391,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	}
 	case DW_OP_implicit_value: {
-		ULE128_OR_RET_FALSE(self->implicit_value.data.length);
-		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->implicit_value.data));
+		ULE128_OR_RET_FALSE(self->implicit_value.length);
+		RET_FALSE_IF_FAIL(buf_read_block(buffer, &self->implicit_value));
 		self->kind = OPERATION_KIND_IMPLICIT_VALUE;
 		break;
 	}
@@ -370,7 +402,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 	case DW_OP_implicit_pointer:
 	case DW_OP_GNU_implicit_pointer: {
 		if (encoding->version == 2) {
-			U_ADDR_SIZE_OR_RET_FALSE( self->implicit_pointer.value);
+			U_ADDR_SIZE_OR_RET_FALSE(self->implicit_pointer.value);
 		} else {
 			RET_FALSE_IF_FAIL(buf_read_offset(buffer, &self->implicit_pointer.value, encoding->is_64bit, encoding->big_endian));
 		}
@@ -473,7 +505,7 @@ RZ_IPI bool Operation_parse(Operation *self, RzBuffer *buffer, const RzBinDwarfE
 		break;
 	}
 	case DW_OP_hi_user:
-		RZ_LOG_WARN("Unsupported opcode %s\n", rz_bin_dwarf_op(opcode));
+		RZ_LOG_WARN("Unsupported opcode %s\n", rz_bin_dwarf_op(self->opcode));
 		return false;
 	}
 	return true;
@@ -484,7 +516,7 @@ static void Operation_fini(Operation *self) {
 		return;
 	}
 	if (self->kind == OPERATION_KIND_IMPLICIT_VALUE) {
-		RzBinDwarfBlock_fini(&self->implicit_value.data);
+		RzBinDwarfBlock_fini(&self->implicit_value);
 	} else if (self->kind == OPERATION_KIND_ENTRY_VALUE) {
 		RzBinDwarfBlock_fini(&self->entry_value.expression);
 	} else if (self->kind == OPERATION_KIND_TYPED_LITERAL) {
@@ -507,8 +539,7 @@ static bool Evaluation_pop(RzBinDwarfEvaluation *self, RzBinDwarfValue **value) 
 }
 
 static bool Evaluation_push(RzBinDwarfEvaluation *self, RzBinDwarfValue *value) {
-	rz_vector_push(&self->stack, value);
-	return true;
+	return rz_vector_push(&self->stack, value) != NULL;
 }
 
 static bool compute_pc(RzBuffer *pc, const RzBuffer *bytecode, st16 offset) {
@@ -625,8 +656,7 @@ static void RzBinDwarfPiece_fini(RzBinDwarfPiece *x) {
 	rz_bin_dwarf_location_free(x->location);
 }
 
-static inline ut64
-addrmask_from_size(uint8_t size) {
+static inline ut64 addrmask_from_size(uint8_t size) {
 	return size == 0 ? 0xffffffffffffffffULL
 			 : (size == 8 ? 0xffffffffffffffffULL
 				      : (1ULL << (size * 8)) - 1);
@@ -669,7 +699,7 @@ RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new(RZ_OWN RZ_NONNUL
 
 RZ_API RZ_OWN RzBinDwarfEvaluation *rz_bin_dwarf_evaluation_new_from_block(RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block, RZ_BORROW RZ_NONNULL const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
 	rz_return_val_if_fail(block && dw, NULL);
-	RzBuffer *expr = rz_buf_new_with_bytes(block->data, block->length);
+	RzBuffer *expr = RzBinDwarfBlock_as_buf(block);
 	RET_NULL_IF_FAIL(expr);
 	RzBinDwarfEvaluation *self = rz_bin_dwarf_evaluation_new(expr, dw, unit, die);
 	RET_NULL_IF_FAIL(self);
@@ -688,13 +718,17 @@ RZ_API void rz_bin_dwarf_evaluation_free(RZ_OWN RzBinDwarfEvaluation *self) {
 	free(self);
 }
 
-RZ_API void rz_bin_dwarf_evaluation_result_free(RZ_OWN RzBinDwarfEvaluationResult *self) {
+RZ_IPI void RzBinDwarfEvaluationResult_fini(RzBinDwarfEvaluationResult *self) {
+	if (self->kind == EvaluationResult_REQUIRES_ENTRY_VALUE) {
+		RzBinDwarfBlock_fini(&self->requires_entry_value.expression);
+	}
+}
+
+RZ_API void RzBinDwarfEvaluationResult_free(RZ_OWN RzBinDwarfEvaluationResult *self) {
 	if (!self) {
 		return;
 	}
-	if (self->kind == EvaluationResult_REQUIRES_ENTRY_VALUE) {
-		RzBinDwarfBlock_free(self->requires_entry_value.expression);
-	}
+	RzBinDwarfEvaluationResult_fini(self);
 	free(self);
 }
 
@@ -763,7 +797,11 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		}
 		RzBinDwarfValue *value = rz_vector_index_ptr(&self->stack, len - operation.pick.index - 1);
 		ERR_IF_FAIL(value);
-		ERR_IF_FAIL(Evaluation_push(self, Value_clone(value)));
+		RzBinDwarfValue *clone = Value_clone(value);
+		if (!Evaluation_push(self, clone)) {
+			Value_free(clone);
+		}
+		free(clone);
 		break;
 	}
 	case OPERATION_KIND_SWAP: {
@@ -875,18 +913,20 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		return true;
 	}
 	case OPERATION_KIND_REGISTER_OFFSET: {
-		RzBinDwarfLocation location = {
-			.kind = RzBinDwarfLocationKind_REGISTER_OFFSET,
-			.register_number = operation.register_offset.register_number,
-			.offset = operation.register_offset.offset,
-		};
 		RzBinDwarfValue value = {
 			.type = RzBinDwarfValueType_LOCATION,
-			.location = NULL,
+			.location = RZ_NEW0(RzBinDwarfLocation),
 		};
-		value.location = RZ_NEW0(RzBinDwarfLocation);
-		memcpy(value.location, &location, sizeof(RzBinDwarfLocation));
-		ERR_IF_FAIL(Evaluation_push(self, &value));
+		ERR_IF_FAIL(value.location);
+		value.location->kind = RzBinDwarfLocationKind_REGISTER_OFFSET;
+		value.location->register_number = operation.register_offset.register_number;
+		value.location->offset = operation.register_offset.offset;
+		// TODO: Location base_type
+		// value.location->base_type = operation.register_offset.base_type;
+		if (!Evaluation_push(self, &value)) {
+			rz_bin_dwarf_location_free(value.location);
+			goto err;
+		}
 		break;
 	}
 	case OPERATION_KIND_FRAME_OFFSET: {
@@ -1000,9 +1040,8 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 	}
 	case OPERATION_KIND_IMPLICIT_VALUE: {
 		out->kind = OperationEvaluationResult_COMPLETE;
-		out->complete.kind = RzBinDwarfLocationKind_IMPLICIT_POINTER;
-		out->complete.implicit_pointer = operation.implicit_pointer.value;
-		out->complete.offset = operation.implicit_pointer.byte_offset;
+		out->complete.kind = RzBinDwarfLocationKind_BYTES;
+		ERR_IF_FAIL(RzBinDwarfBlock_move(&operation.implicit_value, &out->complete.bytes));
 		goto ok;
 	}
 	case OPERATION_KIND_STACK_VALUE: {
@@ -1011,7 +1050,7 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 		out->kind = OperationEvaluationResult_COMPLETE;
 		if (v->type == RzBinDwarfValueType_LOCATION) {
 			memcpy(&out->complete, v->location, sizeof(RzBinDwarfLocation));
-			return true;
+			v->location = NULL;
 		} else {
 			out->complete.kind = RzBinDwarfLocationKind_VALUE;
 			out->complete.value = *v;
@@ -1029,7 +1068,8 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 	case OPERATION_KIND_ENTRY_VALUE: {
 		out->kind = OperationEvaluationResult_WAITING;
 		out->waiting._1 = EvaluationStateWaiting_ENTRY_VALUE;
-		out->waiting._2.requires_entry_value.expression = RzBinDwarfBlock_clone(&operation.entry_value.expression);
+		ERR_IF_FAIL(RzBinDwarfBlock_move(&operation.entry_value.expression,
+			&out->waiting._2.requires_entry_value.expression));
 		goto ok;
 	}
 	case OPERATION_KIND_ADDRESS: {
@@ -1055,11 +1095,16 @@ static bool Evaluation_evaluate_one_operation(RzBinDwarfEvaluation *self, Operat
 
 	case OPERATION_KIND_TYPED_LITERAL: {
 		RzBinDwarfValueType typ = ValueType_from_die(self, self->dw, operation.typed_literal.base_type);
-		RzBuffer *buf = buf_from_block(&operation.typed_literal.value);
+		RzBuffer *buf = RzBinDwarfBlock_as_buf(&operation.typed_literal.value);
+		ERR_IF_FAIL(buf);
 		RzBinDwarfValue *val = Value_parse(typ, buf, self->encoding->big_endian);
 		rz_buf_free(buf);
 		ERR_IF_FAIL(val);
-		ERR_IF_FAIL(Evaluation_push(self, val));
+		if (Evaluation_push(self, val)) {
+			Value_free(val);
+			goto err;
+		}
+		Value_free(val);
 		break;
 	}
 	case OPERATION_KIND_CONVERT: {
@@ -1143,11 +1188,11 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 		if (self->max_iterations != UT32_MAX && self->max_iterations) {
 			if (self->iteration > self->max_iterations) {
 				self->state.kind = EVALUATION_STATE_ERROR;
-				return false;
+				goto err;
 			}
 		}
 		OperationEvaluationResult op_result = { 0 };
-		RET_FALSE_IF_FAIL(Evaluation_evaluate_one_operation(self, &op_result));
+		ERR_IF_FAIL(Evaluation_evaluate_one_operation(self, &op_result));
 
 		switch (op_result.kind) {
 		case OperationEvaluationResult_PIECE:
@@ -1155,13 +1200,14 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 		case OperationEvaluationResult_INCOMPLETE:
 			if (Evaluation_end_of_expression(self) && !rz_vector_empty(&self->result)) {
 				self->state.kind = EVALUATION_STATE_ERROR;
-				return false;
+				goto err;
 			}
 			break;
 		case OperationEvaluationResult_WAITING: {
 			self->state.kind = EVALUATION_STATE_WAITING;
 			self->state.waiting = op_result.waiting._1;
 			memcpy(out, &op_result.waiting._2, sizeof(RzBinDwarfEvaluationResult));
+			memset(&op_result.waiting._2, 0, sizeof(RzBinDwarfEvaluationResult));
 			return true;
 		}
 		case OperationEvaluationResult_WAITING_RESOLVE: {
@@ -1173,7 +1219,7 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 			if (Evaluation_end_of_expression(self)) {
 				if (!rz_vector_empty(&self->result)) {
 					self->state.kind = EVALUATION_STATE_ERROR;
-					return false;
+					goto err;
 				}
 				RzBinDwarfPiece piece = {
 					.location = NULL,
@@ -1181,30 +1227,35 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 					.has_bit_offset = false,
 				};
 				piece.location = RZ_NEW0(RzBinDwarfLocation);
-				memcpy(piece.location, &op_result.complete, sizeof(RzBinDwarfLocation));
-				RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
+				ERR_IF_FAIL(piece.location);
+				ERR_IF_FAIL(RzBinDwarfLocation_move(&op_result.complete, piece.location));
+				ERR_IF_FAIL(rz_vector_push(&self->result, &piece));
 			} else {
 				Operation operation = { 0 };
 				RET_FALSE_IF_FAIL(Operation_parse(&operation, self->pc, self->encoding));
-				if (operation.kind == OPERATION_KIND_PIECE) {
-					RzBinDwarfPiece piece = {
-						.location = NULL,
-						.has_size_in_bits = true,
-						.size_in_bits = operation.piece.size_in_bits,
-						.has_bit_offset = operation.piece.has_bit_offset,
-						.bit_offset = operation.piece.bit_offset,
-					};
-					piece.location = RZ_NEW0(RzBinDwarfLocation);
-					memcpy(piece.location, &op_result.complete, sizeof(RzBinDwarfLocation));
-					RET_FALSE_IF_FAIL(rz_vector_push(&self->result, &piece));
-				} else {
+				if (operation.kind != OPERATION_KIND_PIECE) {
 					self->state.kind = EVALUATION_STATE_ERROR;
-					return false;
+					goto err;
 				}
+				RzBinDwarfPiece piece = {
+					.location = NULL,
+					.has_size_in_bits = true,
+					.size_in_bits = operation.piece.size_in_bits,
+					.has_bit_offset = operation.piece.has_bit_offset,
+					.bit_offset = operation.piece.bit_offset,
+				};
+				piece.location = RZ_NEW0(RzBinDwarfLocation);
+				ERR_IF_FAIL(piece.location);
+				ERR_IF_FAIL(RzBinDwarfLocation_move(&op_result.complete, piece.location));
+				ERR_IF_FAIL(rz_vector_push(&self->result, &piece));
 			}
 			break;
 		}
 		};
+		continue;
+	err:
+		OperationEvaluationResult_fini(&op_result);
+		return false;
 	}
 
 	if (rz_vector_empty(&self->result)) {
@@ -1215,17 +1266,22 @@ RZ_API bool rz_bin_dwarf_evaluation_evaluate(RZ_BORROW RZ_NONNULL RzBinDwarfEval
 		case RzBinDwarfValueType_LOCATION:
 			location = entry->location;
 			entry->location = NULL;
+			Value_free(entry);
 			break;
 		default: {
 			ut64 addr;
-			RET_FALSE_IF_FAIL(Value_to_u64(entry, self->addr_mask, &addr));
+			if (!Value_to_u64(entry, self->addr_mask, &addr)) {
+				Value_free(entry);
+				return false;
+			}
+			Value_free(entry);
 			location = RZ_NEW0(RzBinDwarfLocation);
+			RET_FALSE_IF_FAIL(location);
 			location->kind = RzBinDwarfLocationKind_ADDRESS;
 			location->address = addr;
 			break;
 		}
 		}
-		Value_free(entry);
 		RET_FALSE_IF_FAIL(location);
 		RzBinDwarfPiece piece = {
 			.has_size_in_bits = false,
@@ -1269,10 +1325,16 @@ static RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluatio
 			}
 		}
 		rz_bin_dwarf_evaluation_free(eval);
+		RzBinDwarfEvaluationResult_free(result);
 		return loc;
 	}
 
 	loc = RZ_NEW0(RzBinDwarfLocation);
+	if (!loc) {
+		rz_bin_dwarf_evaluation_free(eval);
+		RzBinDwarfEvaluationResult_free(result);
+		return NULL;
+	}
 	loc->kind = RzBinDwarfLocationKind_EVALUATION_WAITING;
 	loc->eval_waiting.eval = eval;
 	loc->eval_waiting.result = result;
@@ -1284,13 +1346,13 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_
 	RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
 	RET_NULL_IF_FAIL(result);
 	RzBinDwarfEvaluation *eval = rz_bin_dwarf_evaluation_new_from_block(block, dw, unit, die);
-	GOTO_IF_FAIL(eval, beach);
-	GOTO_IF_FAIL(rz_bin_dwarf_evaluation_evaluate(eval, result), beach);
+	ERR_IF_FAIL(eval);
+	ERR_IF_FAIL(rz_bin_dwarf_evaluation_evaluate(eval, result));
 
 	return RzBinDwarfEvaluationResult_to_loc(eval, result);
-beach:
+err:
 	rz_bin_dwarf_evaluation_free(eval);
-	rz_bin_dwarf_evaluation_result_free(result);
+	RzBinDwarfEvaluationResult_free(result);
 	return NULL;
 }
 
@@ -1300,38 +1362,38 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 	case OPERATION_KIND_DEREF:
 		rz_strbuf_appendf(buf, " base_type: 0x%" PFMT64x ", size: %d, space: %d", op->deref.base_type, op->deref.size, op->deref.space);
 		break;
-	case OPERATION_KIND_DROP: break;
+	case OPERATION_KIND_DROP:
 	case OPERATION_KIND_PICK:
 		rz_strbuf_appendf(buf, " 0x%x", op->pick.index);
 		break;
-	case OPERATION_KIND_SWAP: break;
-	case OPERATION_KIND_ROT: break;
-	case OPERATION_KIND_ABS: break;
-	case OPERATION_KIND_AND: break;
-	case OPERATION_KIND_DIV: break;
-	case OPERATION_KIND_MINUS: break;
-	case OPERATION_KIND_MOD: break;
-	case OPERATION_KIND_MUL: break;
-	case OPERATION_KIND_NEG: break;
-	case OPERATION_KIND_NOT: break;
-	case OPERATION_KIND_OR: break;
-	case OPERATION_KIND_PLUS: break;
+	case OPERATION_KIND_SWAP:
+	case OPERATION_KIND_ROT:
+	case OPERATION_KIND_ABS:
+	case OPERATION_KIND_AND:
+	case OPERATION_KIND_DIV:
+	case OPERATION_KIND_MINUS:
+	case OPERATION_KIND_MOD:
+	case OPERATION_KIND_MUL:
+	case OPERATION_KIND_NEG:
+	case OPERATION_KIND_NOT:
+	case OPERATION_KIND_OR:
+	case OPERATION_KIND_PLUS:
 	case OPERATION_KIND_PLUS_CONSTANT:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->plus_constant.value);
 		break;
-	case OPERATION_KIND_SHL: break;
-	case OPERATION_KIND_SHR: break;
-	case OPERATION_KIND_SHRA: break;
-	case OPERATION_KIND_XOR: break;
+	case OPERATION_KIND_SHL:
+	case OPERATION_KIND_SHR:
+	case OPERATION_KIND_SHRA:
+	case OPERATION_KIND_XOR:
 	case OPERATION_KIND_BRA:
 		rz_strbuf_appendf(buf, " %d", op->bra.target);
 		break;
-	case OPERATION_KIND_EQ: break;
-	case OPERATION_KIND_GE: break;
-	case OPERATION_KIND_GT: break;
-	case OPERATION_KIND_LE: break;
-	case OPERATION_KIND_LT: break;
-	case OPERATION_KIND_NE: break;
+	case OPERATION_KIND_EQ:
+	case OPERATION_KIND_GE:
+	case OPERATION_KIND_GT:
+	case OPERATION_KIND_LE:
+	case OPERATION_KIND_LT:
+	case OPERATION_KIND_NE:
 	case OPERATION_KIND_SKIP:
 		rz_strbuf_appendf(buf, " %d", op->skip.target);
 		break;
@@ -1342,21 +1404,24 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->signed_constant.value);
 		break;
 	case OPERATION_KIND_REGISTER:
-		rz_strbuf_appendf(buf, " %u", op->reg.register_number);
+		rz_strbuf_appendf(buf, " reg%u", op->reg.register_number);
 		break;
 	case OPERATION_KIND_REGISTER_OFFSET:
-		rz_strbuf_appendf(buf, " %u %" PFMT64d " 0x%" PFMT64x, op->register_offset.register_number, op->register_offset.offset, op->register_offset.base_type);
+		rz_strbuf_appendf(buf, " reg%u%+" PFMT64d " base_type=0x%" PFMT64x,
+			op->register_offset.register_number,
+			op->register_offset.offset,
+			op->register_offset.base_type);
 		break;
 	case OPERATION_KIND_FRAME_OFFSET:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->frame_offset.offset);
 		break;
-	case OPERATION_KIND_NOP: break;
-	case OPERATION_KIND_PUSH_OBJECT_ADDRESS: break;
+	case OPERATION_KIND_NOP:
+	case OPERATION_KIND_PUSH_OBJECT_ADDRESS:
 	case OPERATION_KIND_CALL:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->call.offset);
 		break;
-	case OPERATION_KIND_TLS: break;
-	case OPERATION_KIND_CALL_FRAME_CFA: break;
+	case OPERATION_KIND_TLS:
+	case OPERATION_KIND_CALL_FRAME_CFA:
 	case OPERATION_KIND_PIECE:
 		rz_strbuf_appendf(buf, " %" PFMT64u, op->piece.size_in_bits);
 		if (op->piece.has_bit_offset) {
@@ -1364,15 +1429,15 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 		}
 		break;
 	case OPERATION_KIND_IMPLICIT_VALUE: {
-		RzBinDwarfBlock_dump(&op->implicit_value.data, buf);
+		rz_bin_dwarf_block_dump(&op->implicit_value, buf);
 		break;
 	}
-	case OPERATION_KIND_STACK_VALUE: break;
+	case OPERATION_KIND_STACK_VALUE:
 	case OPERATION_KIND_IMPLICIT_POINTER:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x " %" PFMT64d, op->implicit_pointer.value, op->implicit_pointer.byte_offset);
 		break;
 	case OPERATION_KIND_ENTRY_VALUE:
-		RzBinDwarfBlock_dump(&op->entry_value.expression, buf);
+		rz_bin_dwarf_block_dump(&op->entry_value.expression, buf);
 		break;
 	case OPERATION_KIND_PARAMETER_REF:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->parameter_ref.offset);
@@ -1388,7 +1453,7 @@ static void Operation_dump(Operation *op, RzStrBuf *buf) {
 		break;
 	case OPERATION_KIND_TYPED_LITERAL:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->typed_literal.base_type);
-		RzBinDwarfBlock_dump(&op->typed_literal.value, buf);
+		rz_bin_dwarf_block_dump(&op->typed_literal.value, buf);
 		break;
 	case OPERATION_KIND_CONVERT:
 		rz_strbuf_appendf(buf, " 0x%" PFMT64x, op->convert.base_type);
@@ -1426,8 +1491,9 @@ rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *enco
 	RZ_BORROW RZ_NONNULL RzStrBuf *str_buf,
 	RZ_BORROW RZ_NONNULL const char *sep,
 	RZ_BORROW RZ_NONNULL const char *indent) {
-	RzBuffer *buffer = rz_buf_new_with_bytes(block->data, block->length);
+	RzBuffer *buffer = RzBinDwarfBlock_as_buf(block);
 	RzVector *exprs = rz_bin_dwarf_expression_parse(buffer, encoding);
+	rz_buf_free(buffer);
 
 	Operation *op = NULL;
 	ut32 i;
@@ -1477,7 +1543,7 @@ rz_bin_dwarf_loclist_dump(
 			rz_bin_dwarf_expression_dump(encoding, entry->expression, sb, ", ", "");
 			rz_strbuf_append(sb, "]");
 		} else {
-			RzBinDwarfBlock_dump(entry->expression, sb);
+			rz_bin_dwarf_block_dump(entry->expression, sb);
 		}
 
 		if (entry->location) {
@@ -1555,7 +1621,7 @@ RZ_API void rz_bin_dwarf_location_dump(
 		Value_dump(encoding, dwarf_register_mapping, &loc->value, sb, sep, indent);
 		break;
 	case RzBinDwarfLocationKind_BYTES:
-		RzBinDwarfBlock_dump(&loc->bytes, sb);
+		rz_bin_dwarf_block_dump(&loc->bytes, sb);
 		break;
 	case RzBinDwarfLocationKind_IMPLICIT_POINTER:
 		rz_strbuf_appendf(sb, "implicit_pointer 0x%" PFMT64x, loc->implicit_pointer);

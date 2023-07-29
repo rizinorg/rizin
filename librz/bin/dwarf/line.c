@@ -119,8 +119,8 @@ static RzBinDwarfFileEntry *RzBinDwarfFileEntry_parse_v5(RzBuffer *buffer, RzBin
 			entry->size = attr.uconstant;
 			break;
 		case DW_LNCT_MD5:
-			ERR_IF_FAIL(attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.data);
-			memcpy(entry->md5, attr.block.data, 16);
+			ERR_IF_FAIL(attr.kind == DW_AT_KIND_BLOCK && attr.block.length == 16 && attr.block.ptr);
+			memcpy(entry->md5, attr.block.ptr, 16);
 			break;
 		default: rz_warn_if_reached(); break;
 		}
@@ -562,7 +562,7 @@ RZ_IPI bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarf
 	return true;
 }
 
-static char *line_op_str(RzBinDwarfLineOp *op, ut64 offset) {
+__attribute__((used)) static char *line_op_str(RzBinDwarfLineOp *op, ut64 offset) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	rz_strbuf_appendf(sb, "0x%" PFMT64x ":\t", offset);
 	switch (op->type) {

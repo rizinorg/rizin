@@ -148,9 +148,8 @@ typedef struct {
 			bool has_bit_offset;
 			ut64 bit_offset;
 		} piece;
-		struct { /// For IMPLICIT_VALUE
-			RzBinDwarfBlock data;
-		} implicit_value;
+		/// For IMPLICIT_VALUE
+		RzBinDwarfBlock implicit_value;
 
 		struct { /// For IMPLICIT_POINTER
 			ut64 value;
@@ -231,5 +230,7 @@ typedef struct {
 	RzBuffer *pc;
 	RzBuffer *bytecode;
 } RzBinDwarfExprStackItem;
+
+RZ_IPI void RzBinDwarfEvaluationResult_fini(RzBinDwarfEvaluationResult *self);
 
 #endif // RIZIN_OP_H

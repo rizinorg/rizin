@@ -861,49 +861,95 @@ RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool
 	return true;
 }
 
+RZ_API const ut8 *rz_bin_dwarf_block_data(const RzBinDwarfBlock *self) {
+	return self->length < RZ_ARRAY_SIZE(self->data) ? self->data : self->ptr;
+}
+
 RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self) {
 	RzBinDwarfBlock *clone = rz_new_copy(sizeof(RzBinDwarfBlock), self);
 	if (!clone) {
 		return NULL;
 	}
-	if (self->data == NULL) {
-		return clone;
-	}
-	clone->data = RZ_NEWS0(ut8, self->length);
-	if (!clone->data) {
-		free(clone);
-		return NULL;
-	}
-	memcpy(clone->data, self->data, self->length);
+	RzBinDwarfBlock_cpy(self, clone);
 	return clone;
 }
 
-RZ_IPI void RzBinDwarfBlock_dump(const RzBinDwarfBlock *self, RzStrBuf *sb) {
+RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_cpy(RzBinDwarfBlock *self, RzBinDwarfBlock *out) {
+	rz_return_val_if_fail(self && out, NULL);
+	if (self->length == 0) {
+		return out;
+	}
+	if (self->length >= RZ_ARRAY_SIZE(self->data)) {
+		out->ptr = RZ_NEWS0(ut8, self->length);
+		if (!out->ptr) {
+			return NULL;
+		}
+	}
+	out->length = self->length;
+	memcpy((ut8 *)rz_bin_dwarf_block_data(out), rz_bin_dwarf_block_data(self), self->length);
+	return out;
+}
+
+RZ_API bool rz_bin_dwarf_block_valid(const RzBinDwarfBlock *self) {
+	rz_return_val_if_fail(self, NULL);
+	if (self->length == 0) {
+		return true;
+	}
+	if (self->length >= RZ_ARRAY_SIZE(self->data)) {
+		return self->ptr != NULL;
+	}
+	return true;
+}
+
+RZ_API bool rz_bin_dwarf_block_empty(const RzBinDwarfBlock *self) {
+	rz_return_val_if_fail(self, NULL);
+	return self->length == 0;
+}
+
+RZ_IPI RzBuffer *RzBinDwarfBlock_as_buf(const RzBinDwarfBlock *self) {
+	return rz_buf_new_with_bytes(rz_bin_dwarf_block_data(self), self->length);
+}
+
+RZ_IPI bool RzBinDwarfBlock_move(RzBinDwarfBlock *self, RzBinDwarfBlock *out) {
+	rz_return_val_if_fail(self && out, false);
+	if (self->length == 0) {
+		return out;
+	}
+	RzBinDwarfBlock_cpy(self, out);
+	self->ptr = NULL;
+	self->length = 0;
+	return true;
+}
+
+RZ_API void rz_bin_dwarf_block_dump(const RzBinDwarfBlock *self, RzStrBuf *sb) {
 	if (self->length == 0) {
 		rz_strbuf_appendf(sb, " <null>");
 		return;
 	}
-	char *data = rz_hex_bin2strdup(self->data, (int)self->length);
-	if (data) {
-		rz_strbuf_appendf(sb, " 0x%s", data);
-		free(data);
-	} else {
+	char *str = rz_hex_bin2strdup(rz_bin_dwarf_block_data(self), (int)self->length);
+	if (!str) {
 		rz_strbuf_append(sb, " <error>");
+		return;
 	}
+	rz_strbuf_appendf(sb, " 0x%s", str);
+	free(str);
 }
 
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self) {
 	if (!self) {
 		return;
 	}
-	free(self->data);
+	if (self->length >= RZ_ARRAY_SIZE(self->data)) {
+		RZ_FREE(self->ptr);
+	}
+	self->length = 0;
 }
 
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self) {
 	if (!self) {
 		return;
 	}
-	free(self->data);
+	RzBinDwarfBlock_fini(self);
 	free(self);
 }
 
@@ -953,14 +999,17 @@ RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block) {
 	if (block->length == 0) {
 		return true;
 	}
-	block->data = calloc(sizeof(ut8), block->length);
-	RET_FALSE_IF_FAIL(block->data);
-	ut16 len = rz_buf_read(buffer, block->data, block->length);
-	if (len != block->length) {
-		RZ_FREE(block->data);
-		return false;
+	if (block->length >= RZ_ARRAY_SIZE(block->data)) {
+		block->ptr = RZ_NEWS0(ut8, block->length);
+		RET_FALSE_IF_FAIL(block->ptr);
+		ut16 len = rz_buf_read(buffer, block->ptr, block->length);
+		if (len != block->length) {
+			RZ_FREE(block->ptr);
+			return false;
+		}
+		return true;
 	}
-	return true;
+	return rz_buf_read(buffer, block->data, block->length) == block->length;
 }
 
 RZ_IPI char *buf_get_string(RzBuffer *buffer) {
@@ -1006,9 +1055,6 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 
 	bool big_endian = in->encoding.big_endian;
 	RzBuffer *str_buffer = in->str_buffer;
-	value->block.data = NULL;
-	value->string.content = NULL;
-	value->string.offset = 0;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (value->form) {
@@ -1055,10 +1101,11 @@ RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in
 		value->string.content = buf_get_string(buffer);
 #define CHECK_STRING \
 	if (!value->string.content) { \
-		const char *tag_str = in->type == DW_ATTR_TYPE_DEF ? rz_bin_dwarf_attr(value->name) \
-								   : (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT \
-										     ? rz_bin_dwarf_lnct(in->format->content_type) \
-										     : "unknown"); \
+		const char *tag_str = in->type == DW_ATTR_TYPE_DEF \
+			? rz_bin_dwarf_attr(value->name) \
+			: (in->type == DW_ATTR_TYPE_FILE_ENTRY_FORMAT \
+					  ? rz_bin_dwarf_lnct(in->format->content_type) \
+					  : "unknown"); \
 		RZ_LOG_ERROR("Failed to read string %s [%s]\n", tag_str, rz_bin_dwarf_form(value->form)); \
 		return false; \
 	}
@@ -1235,7 +1282,7 @@ RZ_IPI void attr_fini(RzBinDwarfAttr *val) {
 		RZ_FREE(val->string.content);
 		break;
 	case DW_AT_KIND_BLOCK:
-		RZ_FREE(val->block.data);
+		RzBinDwarfBlock_fini(&val->block);
 		break;
 	default:
 		break;
@@ -1345,8 +1392,10 @@ RZ_API void rz_bin_dwarf_free(RZ_OWN RZ_NULLABLE RzBinDwarf *dw) {
 	}
 	rz_bin_dwarf_abbrev_free(dw->abbrevs);
 	rz_bin_dwarf_info_free(dw->info);
-
 	rz_bin_dwarf_line_info_free(dw->lines);
+	rz_bin_dwarf_loclists_free(dw->loc);
+	RzBinDwarfRngListTable_free(dw->rnglists);
 	rz_list_free(dw->aranges);
+	DebugAddr_free(dw->addr);
 	free(dw);
 }

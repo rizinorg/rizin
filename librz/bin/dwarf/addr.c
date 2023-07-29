@@ -16,6 +16,14 @@ RZ_IPI bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address
 	return true;
 }
 
+RZ_IPI void DebugAddr_free(RzBinDwarfDebugAddr *self) {
+	if (!self) {
+		return;
+	}
+	rz_buf_free(self->buffer);
+	free(self);
+}
+
 RZ_API RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;

@@ -109,7 +109,7 @@ void HTUP_RzBinDwarfRngList_free(HtUPKv *kv) {
 	RzBinDwarfRngList_free(kv->value);
 }
 
-void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self) {
+RZ_IPI void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self) {
 	if (!self) {
 		return;
 	}

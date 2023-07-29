@@ -38,9 +38,6 @@ static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
 }
 
 static void RzBinDwarfDebugAbbrevs_fini(RzBinDwarfDebugAbbrevs *abbrevs) {
-	if (!abbrevs) {
-		return;
-	}
 	ht_up_free(abbrevs->tbl_by_offset);
 }
 
@@ -97,12 +94,14 @@ static bool RzBinDwarfDebugAbbrevs_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrev
 		ULE128_OR_GOTO(decl.tag, err);
 		U8_OR_GOTO(decl.has_children, err);
 		if (!(decl.has_children == DW_CHILDREN_yes || decl.has_children == DW_CHILDREN_no)) {
-			RZ_LOG_ERROR(".debug_abbrevs parse error: 0x%" PFMT64x "\t[%s] invalid DW_CHILDREN value: %d\n", rz_buf_tell(buffer), rz_bin_dwarf_tag(decl.tag), decl.has_children);
+			RZ_LOG_ERROR(".debug_abbrevs parse error: 0x%" PFMT64x "\t[%s] invalid DW_CHILDREN value: %d\n",
+				rz_buf_tell(buffer), rz_bin_dwarf_tag(decl.tag), decl.has_children);
 			goto err;
 		}
 
 		RzBinDwarfAbbrevDecl_init(&decl);
-		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", offset, decl.code, rz_bin_dwarf_tag(decl.tag), decl.has_children);
+		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", \
+			offset, decl.code, rz_bin_dwarf_tag(decl.tag), decl.has_children);
 
 		do {
 			RzBinDwarfAttrDef def = { 0 };
@@ -165,7 +164,7 @@ err:
 	goto ok;
 }
 
-RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_get_attr(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name) {
+RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_name(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name) {
 	rz_return_val_if_fail(abbrev, NULL);
 	RzBinDwarfAttrDef *attr = NULL;
 	rz_vector_foreach(&abbrev->defs, attr) {
@@ -191,7 +190,7 @@ RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwa
 	return rz_vector_len(&decl->defs);
 }
 
-RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_get(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx) {
+RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_index(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx) {
 	rz_return_val_if_fail(decl, NULL);
 	return rz_vector_index_ptr(&decl->defs, idx);
 }

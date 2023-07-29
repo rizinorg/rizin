@@ -29,14 +29,14 @@
 
 #define WRAP_F(X, F, out, wrap) \
 	do { \
-		X temp; \
+		X temp = { 0 }; \
 		wrap(F); \
 		out = temp; \
 	} while (0)
 
 #define WRAP_VA_F(X, F, out, wrap, ...) \
 	do { \
-		X temp; \
+		X temp = { 0 }; \
 		wrap(F, __VA_ARGS__); \
 		out = temp; \
 	} while (0)

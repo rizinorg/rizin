@@ -67,7 +67,6 @@ RZ_API char *rz_core_bin_dwarf_abbrevs_to_string(const RzBinDwarfDebugAbbrevs *a
 }
 
 RZ_API char *rz_core_bin_dwarf_attr_to_string(const RzBinDwarfAttr *val) {
-	size_t i;
 	rz_return_val_if_fail(val, NULL);
 	my_print_init;
 	switch (val->form) {
@@ -77,9 +76,7 @@ RZ_API char *rz_core_bin_dwarf_attr_to_string(const RzBinDwarfAttr *val) {
 	case DW_FORM_block4:
 	case DW_FORM_exprloc:
 		my_printf("%" PFMT64u " byte block:", val->block.length);
-		for (i = 0; i < val->block.length; i++) {
-			my_printf(" 0x%02x", val->block.data[i]);
-		}
+		rz_bin_dwarf_block_dump(&val->block, sb);
 		break;
 	case DW_FORM_data1:
 	case DW_FORM_data2:

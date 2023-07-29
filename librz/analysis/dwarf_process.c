@@ -24,42 +24,13 @@ static bool function_parse(Context *ctx, RzBinDwarfDie *die);
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
 static bool prefer_linkage_name(enum DW_LANG lang) {
-	switch (lang) {
-	case DW_LANG_C89: break;
-	case DW_LANG_C: break;
-	case DW_LANG_Ada83: return false;
-	case DW_LANG_C_plus_plus: break;
-	case DW_LANG_Cobol74: break;
-	case DW_LANG_Cobol85: break;
-	case DW_LANG_Fortran77: break;
-	case DW_LANG_Fortran90: break;
-	case DW_LANG_Pascal83: break;
-	case DW_LANG_Modula2: break;
-	case DW_LANG_Java: break;
-	case DW_LANG_C99: break;
-	case DW_LANG_Ada95: break;
-	case DW_LANG_Fortran95: break;
-	case DW_LANG_PLI: break;
-	case DW_LANG_ObjC: break;
-	case DW_LANG_ObjC_plus_plus: break;
-	case DW_LANG_UPC: break;
-	case DW_LANG_D: break;
-	case DW_LANG_Python: break;
-	case DW_LANG_Rust: return false;
-	case DW_LANG_C11: break;
-	case DW_LANG_Swift: break;
-	case DW_LANG_Julia: break;
-	case DW_LANG_Dylan: break;
-	case DW_LANG_C_plus_plus_14: break;
-	case DW_LANG_Fortran03: break;
-	case DW_LANG_Fortran08: break;
-	case DW_LANG_Mips_Assembler: break;
-	case DW_LANG_GOOGLE_RenderScript: break;
-	case DW_LANG_SUN_Assembler: break;
-	case DW_LANG_ALTIUM_Assembler: break;
-	case DW_LANG_BORLAND_Delphi: break;
-	default:
-		break;
+	const char *name = rz_bin_dwarf_lang_for_demangle(lang);
+	if (!name) {
+		return true;
+	}
+	if (strcmp(name, "rust") == 0 ||
+		strcmp(name, "ada") == 0) {
+		return false;
 	}
 	return true;
 }
@@ -928,7 +899,14 @@ static RzBinDwarfLocation *location_list_parse(Context *ctx, RzBinDwarfLocList *
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocationListEntry *entry = *it;
-		if (!(entry->expression && entry->expression->data)) {
+		if (entry->location) {
+			continue;
+		}
+		if (rz_bin_dwarf_block_empty(entry->expression)) {
+			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
+			continue;
+		}
+		if (!rz_bin_dwarf_block_valid(entry->expression)) {
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
@@ -950,13 +928,14 @@ static RzBinDwarfLocation *location_from_block(Context *ctx, const RzBinDwarfDie
 	if (!block) {
 		goto empty_loc;
 	}
-	if (!block->data) {
-		if (block->length == 0) {
-			goto empty_loc;
-		}
+	if (rz_bin_dwarf_block_empty(block)) {
+		goto empty_loc;
+	}
+	if (!rz_bin_dwarf_block_valid(block)) {
 		msg = "<Invalid Block>";
 		goto err_msg;
 	}
+
 	RzBinDwarfLocation *loc = rz_bin_dwarf_location_from_block(block, ctx->dw, ctx->unit, fn);
 	if (!loc) {
 		goto err_eval;
@@ -1088,22 +1067,25 @@ static bool function_children_parse(Context *ctx, RzBinDwarfDie *die, RzCallable
 		}
 		RzAnalysisDwarfVariable v = { 0 };
 		if (!function_var_parse(ctx, child_die, die, &v)) {
-			continue;
+			goto err;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_UNSPECIFIED_PARAMETERS) {
 			callable->has_unspecified_parameters = true;
 			fn->has_unspecified_parameters = true;
-			continue;
+			goto err;
 		}
 		if (!(v.location && v.type)) {
 			RZ_LOG_ERROR("DWARF function variable parse failed %s f.addr=0x%" PFMT64x " f.offset=0x%" PFMT64x " [0x%" PFMT64x "]\n", fn->prefer_name, fn->low_pc, die->offset, child_die->offset);
-			continue;
+			goto err;
 		}
 		if (v.kind == RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER) {
 			RzCallableArg *arg = rz_type_callable_arg_new(ctx->analysis->typedb, v.prefer_name ? v.prefer_name : "", rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
 		rz_vector_push(&fn->variables, &v);
+		continue;
+	err:
+		variable_fini(&v);
 	}
 	rz_pvector_free(children);
 	return true;

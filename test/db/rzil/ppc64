@@ -833,12 +833,12 @@ Hello from RzIL!
 EOF
 EXPECT_ERR=<<EOF
 ERROR: I128/U128 not supported
-ERROR: Location parse failed: 0x1492a7 (0x90, 0x9c) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg9 9 0 0x10,	DW_OP_minus,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus,	DW_OP_stack_value]
+ERROR: Location parse failed: 0x1492a7 (0x90, 0x9c) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg9 reg9+0 base_type=0x0,	DW_OP_minus 0x0,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus 0x0,	DW_OP_stack_value 0x0 0]
 ERROR: I128/U128 not supported
-ERROR: Location parse failed: 0x1492a7 (0x9c, 0xbc) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg11 11 0 0x10,	DW_OP_const1u 0x3f,	DW_OP_shr,	DW_OP_minus,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus,	DW_OP_stack_value]
+ERROR: Location parse failed: 0x1492a7 (0x9c, 0xbc) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg11 reg11+0 base_type=0x0,	DW_OP_const1u 0x3f,	DW_OP_shr 0,	DW_OP_minus 0x0,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus 0x0,	DW_OP_stack_value 0x0 0]
 ERROR: I128/U128 not supported
-ERROR: Location parse failed: 0x1492a7 (0x164, 0x180) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg11 11 0 0x10,	DW_OP_const1u 0x3f,	DW_OP_shr,	DW_OP_minus,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus,	DW_OP_stack_value]
+ERROR: Location parse failed: 0x1492a7 (0x164, 0x180) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg11 reg11+0 base_type=0x0,	DW_OP_const1u 0x3f,	DW_OP_shr 0,	DW_OP_minus 0x0,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus 0x0,	DW_OP_stack_value 0x0 0]
 ERROR: I128/U128 not supported
-ERROR: Location parse failed: 0x1492a7 (0x1fc, 0x218) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg11 11 0 0x10,	DW_OP_const1u 0x3f,	DW_OP_shr,	DW_OP_minus,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus,	DW_OP_stack_value]
+ERROR: Location parse failed: 0x1492a7 (0x1fc, 0x218) [DW_OP_GNU_const_type 0x2d 0x00000000000000000000000000000080,	DW_OP_lit1 0x1,	DW_OP_breg11 reg11+0 base_type=0x0,	DW_OP_const1u 0x3f,	DW_OP_shr 0,	DW_OP_minus 0x0,	DW_OP_GNU_convert 0x34,	DW_OP_GNU_convert 0x2d,	DW_OP_minus 0x0,	DW_OP_stack_value 0x0 0]
 EOF
 RUN

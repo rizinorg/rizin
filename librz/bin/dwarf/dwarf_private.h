@@ -29,8 +29,10 @@ typedef struct {
 
 RZ_IPI bool ListsHeader_parse(RzBinDwarfListsHeader *hdr, RzBuffer *buffer, bool big_endian);
 
+RZ_IPI bool RzBinDwarfBlock_move(RzBinDwarfBlock *self, RzBinDwarfBlock *out);
+RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_cpy(RzBinDwarfBlock *self, RzBinDwarfBlock *out);
 RZ_IPI RzBinDwarfBlock *RzBinDwarfBlock_clone(RzBinDwarfBlock *self);
-RZ_IPI void RzBinDwarfBlock_dump(const RzBinDwarfBlock *self, RzStrBuf *sb);
+RZ_IPI RzBuffer *RzBinDwarfBlock_as_buf(const RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_fini(RzBinDwarfBlock *self);
 RZ_IPI void RzBinDwarfBlock_free(RzBinDwarfBlock *self);
 
@@ -51,6 +53,7 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name);
 
 RZ_IPI bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address,
 	ut8 address_size, bool big_endian, ut64 base, ut64 index);
+RZ_IPI void DebugAddr_free(RzBinDwarfDebugAddr *self);
 RZ_API RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf);
 
 /// range
@@ -62,6 +65,7 @@ RZ_IPI void Range_add_base_address(RzBinDwarfRange *self, ut64 base_address, ut8
 RZ_IPI void Range_free(RzBinDwarfRange *self);
 
 RZ_IPI bool RzBinDwarfRawRngListEntry_parse(RzBinDwarfRawRngListEntry *out, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format);
+RZ_IPI void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self);
 
 /// value
 
@@ -109,7 +113,7 @@ RZ_IPI void Value_free(RzBinDwarfValue *self);
 RZ_IPI RzBinDwarfValue *Value_clone(RzBinDwarfValue *self);
 RZ_IPI void Value_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
+	RZ_BORROW RZ_NULLABLE DWARF_RegisterMapping dwarf_register_mapping,
 	const RzBinDwarfValue *self,
 	RzStrBuf *sb,
 	const char *sep,
