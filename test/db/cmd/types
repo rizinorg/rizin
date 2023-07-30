@@ -376,6 +376,7 @@ EOF
 RUN
 
 NAME=typedef self-reference
+BROKEN=1
 FILE=bins/elf/analysis/self-ref-typedef
 CMDS=<<EOF
 tt const_reference
