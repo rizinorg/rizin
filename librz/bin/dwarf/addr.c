@@ -24,7 +24,7 @@ RZ_IPI void DebugAddr_free(RzBinDwarfDebugAddr *self) {
 	free(self);
 }
 
-RZ_API RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf) {
+RZ_IPI RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}

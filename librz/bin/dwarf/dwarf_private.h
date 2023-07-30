@@ -54,7 +54,7 @@ RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name);
 RZ_IPI bool DebugAddr_get_address(const RzBinDwarfDebugAddr *self, ut64 *address,
 	ut8 address_size, bool big_endian, ut64 base, ut64 index);
 RZ_IPI void DebugAddr_free(RzBinDwarfDebugAddr *self);
-RZ_API RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf);
+RZ_IPI RzBinDwarfDebugAddr *DebugAddr_parse(RzBinFile *bf);
 
 /// range
 
