@@ -10,15 +10,17 @@ agI
 EOF
 EXPECT=<<EOF
 -- oneline
-0x100508 (seq (set r2 (let v (append (bv 16 0x1e) (bv 16 0x0)) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty)
+0x100508 (seq (set a (var 0)) (set b (let v (append (bv 16 0x1e) (bv 16 0x0)) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty (set r2 (+ (var a) (var b))) empty empty empty)
 0x10050c (seq (set a (var r2)) (set b (let v (bv 16 0x7c00) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty (set r2 (+ (var a) (var b))) empty empty empty)
 0x100510 (seq (set res (| (var r1) (var r1))) (set r9 (var res)) empty)
 0x100514 (seq (set mstart (bv 8 0x0)) (set mstop (bv 8 0x3b)) (set m (bv 64 0x0)) (repeat (! (== (var mstart) (var mstop))) (seq (set m (| (var m) (>> (>> (bv 64 0x0) (bv 8 0x1) true) (var mstart) false))) (set mstart (mod (+ (var mstart) (bv 8 0x1)) (bv 8 0x40))))) (set m (| (var m) (>> (>> (bv 64 0x0) (bv 8 0x1) true) (var mstop) false))) (set mask (cast 64 false (var m))) empty (set result (& (let rotl64_x (var r1) (let rotl64_y (& (bv 8 0x3f) (bv 8 0x0)) (| (<< (var rotl64_x) (var rotl64_y) false) (>> (var rotl64_x) (- (bv 8 0x40) (cast 8 false (var rotl64_y))) false)))) (var mask))) (set r1 (var result)) empty)
-0x100518 (seq (set r0 (let v (bv 16 0x0) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty)
+0x100518 (seq (set a (var 0)) (set b (let v (bv 16 0x0) (ite (msb (var v)) (cast 64 (msb (var v)) (var v)) (cast 64 false (var v))))) empty (set r0 (+ (var a) (var b))) empty empty empty)
 -- pretty
 0x100508
 (seq
-  (set r2
+  (set a
+    (var 0))
+  (set b
     (let v
       (append
         (bv 16 0x1e)
@@ -33,6 +35,13 @@ EXPECT=<<EOF
         (cast 64
           false
           (var v)))))
+  empty
+  (set r2
+    (+
+      (var a)
+      (var b)))
+  empty
+  empty
   empty)
 0x10050c
 (seq
@@ -140,7 +149,9 @@ EXPECT=<<EOF
   empty)
 0x100518
 (seq
-  (set r0
+  (set a
+    (var 0))
+  (set b
     (let v
       (bv 16 0x0)
       (ite
@@ -153,38 +164,52 @@ EXPECT=<<EOF
         (cast 64
           false
           (var v)))))
+  empty
+  (set r0
+    (+
+      (var a)
+      (var b)))
+  empty
+  empty
   empty)
 -- graph
-                                                 .-----------.
-                                                 |  lis      |
-                                                 `-----------'
-                                                       v v
-                                                       | |
-                                       .---------------' |
-                                       |                 '----------.
-                                       |                            |
-                                   .-----------.                .----------.
-                                   |  set: r2  |                |  empty   |
-                                   `-----------'                `----------'
-                                       v
-                                       |
-                                       |
-                                   .-----------.
-                                   |  let: v   |
-                                   `-----------'
-                                         v v
-                                         | |
-                .------------------------' |
-                |                          '-----------------.
-                |                                            |
-            .-----------.                                .-------------.
-            |  append   |                                |  ite        |
-            `-----------'                                `-------------'
-                  v v                                       v v v
-                  | |                                       | | |
-    .-------------' |                                       | | '-----------------.
-    |               '---.                   .---------------' |                   |
-    |                   |                   |               .-'                   |
+                                                                             .---------------------.
+                                                                             |  lis                |
+                                                                             `---------------------'
+                                                                                v v v v v v v
+                                                                                | | | | | | |
+                                                                                | | | | | | '-------------------------------------------.
+                                    .-------------------------------------------' | | | | '-----------------------------.               |
+                                    |               .-----------------------------' | | '---------------.               |               |
+                                    |               |               .---------------' '-.               |               |               |
+                                    |               |               |                   |               |               |               |
+                                    |               |               |                   |               |               |               |
+                                    |               |               |                   |               |               |               |
+                                    |               |               |                   |               |               |               |
+                                .----------.    .----------.    .----------.        .-----------.   .----------.    .----------.    .----------.
+                                |  set: a  |    |  set: b  |    |  empty   |        |  set: r2  |   |  empty   |    |  empty   |    |  empty   |
+                                `----------'    `----------'    `----------'        `-----------'   `----------'    `----------'    `----------'
+                                    v               v                                   v
+                                    |               |                                   |
+                                    |               |                                   |
+                                .----------.    .-----------.                       .-----------.
+                                |  var: 0  |    |  let: v   |                       |  add      |
+                                `----------'    `-----------'                       `-----------'
+                                                      v v                                 v v
+                                                      | |                                 | |
+                .-------------------------------------' |                                 | |
+                |                                       '-----.                           | |
+                |                                             |                 .---------' |
+                |                                             |                 |           '---.
+                |                                             |                 |               |
+            .-----------.                                 .-------------.   .----------.    .----------.
+            |  append   |                                 |  ite        |   |  var: a  |    |  var: b  |
+            `-----------'                                 `-------------'   `----------'    `----------'
+                  v v                                        v v v
+                  | |                                        | | |
+    .-------------' |                                        | | '----------------.
+    |               '---.                   .----------------' |                  |
+    |                   |                   |               .--'                  |
     |                   |                   |               |                     |
     |                   |                   |               |                     |
     |                   |                   |               |                     |
