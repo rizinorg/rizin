@@ -11,6 +11,12 @@
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
+/**
+ * \brief Compare two RzAnalysisVarAccess objects.
+ * \param a RzAnalysisVarAccess object.
+ * \param b RzAnalysisVarAccess object.
+ * \return 0 if equal, negative if a < b, positive if a > b.
+ */
 RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b) {
 	rz_return_val_if_fail(a && b, 0);
 	if (a->type != b->type) {
@@ -41,6 +47,13 @@ RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAn
 	}
 }
 
+/**
+ * \brief Check if two RzAnalysisVarAccess objects are equal.
+ * \see rz_analysis_var_storage_cmp
+ * \param a RzAnalysisVarAccess object.
+ * \param b RzAnalysisVarAccess object.
+ * \return true if equal, false otherwise.
+ */
 RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b) {
 	rz_return_val_if_fail(a && b, 0);
 	return rz_analysis_var_storage_cmp(a, b) == 0;
