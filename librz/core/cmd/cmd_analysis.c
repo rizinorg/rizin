@@ -2495,26 +2495,25 @@ static int var_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	return rz_analysis_var_storage_cmp(&a->storage, &b->storage);
 }
 
-static void core_analysis_var_list_show(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, RzCmdStateOutput *state) {
+static void var_list_show(RzCore *core,
+	RzAnalysisFunction *fcn,
+	RzCmdStateOutput *state,
+	RzList /*<RzAnalysisVar *>*/ *list) {
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(state->d.pj);
 	}
 	RzAnalysisVar *var;
 	RzListIter *iter;
-	RzList *list = rz_analysis_var_list(fcn, kind);
 	if (!(list && rz_list_length(list) > 0)) {
 		goto fail;
 	}
 	rz_list_sort(list, (RzListComparator)var_comparator);
 	rz_list_foreach (list, iter, var) {
-		if (var->storage.type != kind) {
-			continue;
-		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_RIZIN: {
 			// we can't express all type info here :(
 			char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-			switch (kind) {
+			switch (var->storage.type) {
 			case RZ_ANALYSIS_VAR_STORAGE_REG:
 				rz_cons_printf("afvr %s %s %s @ 0x%" PFMT64x "\n",
 					var->storage.reg, var->name, vartype, fcn->addr);
@@ -2557,6 +2556,18 @@ fail:
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
+}
+
+static void core_analysis_var_list_show(
+	RzCore *core,
+	RzAnalysisFunction *fcn,
+	RzAnalysisVarStorageType kind,
+	RzCmdStateOutput *state) {
+	RzList *list = rz_analysis_var_list(fcn, kind);
+	if (!list) {
+		return;
+	}
+	var_list_show(core, fcn, state, list);
 	rz_list_free(list);
 }
 
@@ -2576,8 +2587,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
 		for (int i = RZ_ANALYSIS_VAR_STORAGE_EMPTY; i < RZ_ANALYSIS_VAR_STORAGE_END; ++i) {
+			RzList *list = rz_analysis_var_list(fcn, i);
+			if (!(list && !rz_list_empty(list))) {
+				continue;
+			}
 			pj_k(state->d.pj, rz_analysis_var_storage_type_to_string(i));
-			core_analysis_var_list_show(core, fcn, i, state);
+			var_list_show(core, fcn, state, list);
 		};
 		pj_end(state->d.pj);
 		break;
