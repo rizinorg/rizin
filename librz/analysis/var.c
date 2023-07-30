@@ -13,8 +13,8 @@
 
 /**
  * \brief Compare two RzAnalysisVarAccess objects.
- * \param a RzAnalysisVarAccess object.
- * \param b RzAnalysisVarAccess object.
+ * \param a RzAnalysisVarStorage object.
+ * \param b RzAnalysisVarStorage object.
  * \return 0 if equal, negative if a < b, positive if a > b.
  */
 RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b) {
@@ -48,10 +48,10 @@ RZ_API int rz_analysis_var_storage_cmp(const RzAnalysisVarStorage *a, const RzAn
 }
 
 /**
- * \brief Check if two RzAnalysisVarAccess objects are equal.
+ * \brief Check if two RzAnalysisVarStorage objects are equal.
  * \see rz_analysis_var_storage_cmp
- * \param a RzAnalysisVarAccess object.
- * \param b RzAnalysisVarAccess object.
+ * \param a RzAnalysisVarStorage object.
+ * \param b RzAnalysisVarStorage object.
  * \return true if equal, false otherwise.
  */
 RZ_API bool rz_analysis_var_storage_equals(const RzAnalysisVarStorage *a, const RzAnalysisVarStorage *b) {
