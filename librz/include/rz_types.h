@@ -270,7 +270,7 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #define RZ_NEW(x)        (x *)malloc(sizeof(x))
 #define RZ_NEWCOPY(x, y) (x *)rz_new_copy(sizeof(x), y)
 
-static inline void *rz_new_copy(int size, void *data) {
+static inline void *rz_new_copy(int size, const void *data) {
 	void *a = malloc(size);
 	if (a) {
 		memcpy(a, data, size);
