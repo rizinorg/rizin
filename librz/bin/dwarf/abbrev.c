@@ -100,7 +100,7 @@ static bool RzBinDwarfDebugAbbrevs_parse(RzBuffer *buffer, RzBinDwarfDebugAbbrev
 		}
 
 		RzBinDwarfAbbrevDecl_init(&decl);
-		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n", \
+		RZ_LOG_DEBUG("0x%" PFMT64x ":\t[%" PFMT64u "] %s, has_children: %d\n",
 			offset, decl.code, rz_bin_dwarf_tag(decl.tag), decl.has_children);
 
 		do {

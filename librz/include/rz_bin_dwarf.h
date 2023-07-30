@@ -1762,7 +1762,6 @@ RZ_API void rz_bin_dwarf_location_fini(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *
 RZ_API void rz_bin_dwarf_location_free(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
 RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_clone(RZ_BORROW RZ_NONNULL RzBinDwarfLocation *self);
 
-
 /// Block
 RZ_API bool rz_bin_dwarf_block_valid(const RzBinDwarfBlock *self);
 RZ_API bool rz_bin_dwarf_block_empty(const RzBinDwarfBlock *self);
