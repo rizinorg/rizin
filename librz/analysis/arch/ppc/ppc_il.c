@@ -754,8 +754,8 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
 #if CS_NEXT_VERSION >= 6
-		ctr_cond_fullfilled = OR(INV(decr_ctr), XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero));
-		cr_cond_fullfilled = OR(INV(test_cr_bit), XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)));
+		ctr_cond_fullfilled = ITE(decr_ctr, XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero), IL_TRUE);
+		cr_cond_fullfilled = ITE(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)), IL_TRUE);
 		return AND(ctr_cond_fullfilled, cr_cond_fullfilled);
 #else
 		// BO_2 == 0: Decrement CTR
