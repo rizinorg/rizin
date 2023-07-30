@@ -1234,15 +1234,15 @@ int _Atrealloc();
 	]
 |           0x80001994      movh.a a15, #0xd000                        ; exit.c:22 ; int _Atrealloc()
 ---------
-var size_t size_arg @ a0
-var int32_t arg5 @ a4
-var int32_t arg6 @ a5
-var int32_t arg7 @ a6
 arg some_t **out @ stack - 0x18
 arg struct Some *gg @ stack - 0x14
 arg double q @ stack - 0x10
 arg char *g @ stack - 0x8
 arg int a @ stack - 0x4
+var size_t size_arg @ a0
+var int32_t arg5 @ a4
+var int32_t arg6 @ a5
+var int32_t arg7 @ a6
 void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
             ; CALL XREF from dbg.main @ 0x8000059e
             ;-- fn1:
