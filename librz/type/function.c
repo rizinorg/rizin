@@ -169,21 +169,6 @@ RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callabl
 }
 
 /**
- * \brief Update RzCallable type in the types database
- *
- * \param typedb Type Database instance
- * \param callable RzCallable type to save
- */
-RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
-	rz_return_val_if_fail(typedb && callable && callable->name, false);
-	if (!ht_pp_update(typedb->callables, callable->name, (void *)callable)) {
-		rz_type_callable_free(callable);
-		return false;
-	}
-	return true;
-}
-
-/**
  * \brief Returns the RzCallable from the database by name
  *
  * \param typedb Type Database instance
