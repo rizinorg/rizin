@@ -866,9 +866,9 @@ static void log_block(Context *ctx, const RzBinDwarfBlock *block, ut64 offset, c
 	char *expr_str = rz_bin_dwarf_expression_to_string(&ctx->dw->encoding, block);
 	if (RZ_STR_ISNOTEMPTY(expr_str)) {
 		if (!range) {
-			RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);
+			RZ_LOG_VERBOSE("Location parse failed: 0x%" PFMT64x " [%s]\n", offset, expr_str);
 		} else {
-			RZ_LOG_ERROR("Location parse failed: 0x%" PFMT64x " (0x%" PFMT64x ", 0x%" PFMT64x ") [%s]\n",
+			RZ_LOG_VERBOSE("Location parse failed: 0x%" PFMT64x " (0x%" PFMT64x ", 0x%" PFMT64x ") [%s]\n",
 				offset, range->begin, range->end, expr_str);
 		}
 	}
