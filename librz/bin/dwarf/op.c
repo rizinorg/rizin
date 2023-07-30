@@ -1341,7 +1341,19 @@ static RzBinDwarfLocation *RzBinDwarfEvaluationResult_to_loc(RzBinDwarfEvaluatio
 	return loc;
 }
 
-RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block, RZ_BORROW RZ_NULLABLE const RzBinDwarf *dw, RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit, RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
+/**
+ * \brief Evaluates a DWARF expression in the context of a DIE
+ * \param block The block containing the expression
+ * \param dw RzBinDwarf instance
+ * \param unit RzBinDwarfCompUnit instance
+ * \param die RzBinDwarfDie instance
+ * \return RzBinDwarfLocation instance or NULL on error
+ */
+RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
+	RZ_BORROW RZ_NULLABLE const RzBinDwarfBlock *block,
+	RZ_BORROW RZ_NULLABLE const RzBinDwarf *dw,
+	RZ_BORROW RZ_NULLABLE const RzBinDwarfCompUnit *unit,
+	RZ_BORROW RZ_NULLABLE const RzBinDwarfDie *die) {
 	rz_return_val_if_fail(block && dw, NULL);
 	RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
 	RET_NULL_IF_FAIL(result);
@@ -1486,7 +1498,9 @@ static RzVector /*<Operation>*/ *rz_bin_dwarf_expression_parse(RzBuffer *expr, c
 }
 
 RZ_API void
-rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
+rz_bin_dwarf_expression_dump(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
+	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
 	RZ_BORROW RZ_NONNULL RzStrBuf *str_buf,
 	RZ_BORROW RZ_NONNULL const char *sep,
 	RZ_BORROW RZ_NONNULL const char *indent) {
@@ -1507,7 +1521,9 @@ rz_bin_dwarf_expression_dump(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *enco
 	rz_vector_free(exprs);
 }
 
-RZ_API char *rz_bin_dwarf_expression_to_string(RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding, RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block) {
+RZ_API char *rz_bin_dwarf_expression_to_string(
+	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
+	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block) {
 	RzStrBuf sb = { 0 };
 	rz_strbuf_init(&sb);
 	rz_bin_dwarf_expression_dump(encoding, block, &sb, ",\t", "");

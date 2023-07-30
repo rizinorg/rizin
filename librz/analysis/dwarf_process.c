@@ -1227,7 +1227,9 @@ cleanup:
 
 /**
  * \brief Parses type and function information out of DWARF entries
- *        and stores them to the sdb for further use
+ *        and stores them to analysis->debug_info
+ * \param analysis RzAnalysis pointer
+ * \param dw RzBinDwarf pointer
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzBinDwarf *dw) {
 	rz_return_if_fail(analysis && dw);
@@ -1427,8 +1429,8 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 
 /**
  * \brief Use parsed DWARF function info in the function analysis
- * \param analysis
- * \param flags
+ * \param analysis The analysis
+ * \param flags The flags
  */
 RZ_API void
 rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags) {
@@ -1451,6 +1453,10 @@ static void htup_callable_free(HtUPKv *kv) {
 	rz_type_callable_free(kv->value);
 }
 
+/**
+ * \brief Create a new debug info
+ * \return RzAnalysisDebugInfo pointer
+ */
 RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	RzAnalysisDebugInfo *debug_info = RZ_NEW0(RzAnalysisDebugInfo);
 	if (!debug_info) {
@@ -1464,6 +1470,10 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	return debug_info;
 }
 
+/**
+ * \brief Free a debug info
+ * \param debuginfo RzAnalysisDebugInfo pointer
+ */
 RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	if (!debuginfo) {
 		return;

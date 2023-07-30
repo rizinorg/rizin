@@ -145,6 +145,11 @@ err:
 	return false;
 }
 
+/**
+ * \brief Parse .debug_abbrev section
+ * \param binfile  Binfile to parse
+ * \return RzBinDwarfDebugAbbrevs object
+ */
 RZ_API RZ_OWN RzBinDwarfDebugAbbrevs *rz_bin_dwarf_abbrev_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	RzBinDwarfDebugAbbrevs *abbrevs = NULL;
@@ -164,6 +169,13 @@ err:
 	goto ok;
 }
 
+/**
+ * \brief Get the RzBinDwarfAttrDef object by attribute's name
+ *
+ * \param abbrev RzBinDwarfDebugAbbrevDecl object
+ * \param name DW_AT name
+ * \return RzBinDwarfAttrDef object or NULL if not found
+ */
 RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_name(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *abbrev, enum DW_AT name) {
 	rz_return_val_if_fail(abbrev, NULL);
 	RzBinDwarfAttrDef *attr = NULL;
@@ -175,22 +187,48 @@ RZ_API RZ_BORROW RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_name(RZ_BORROW R
 	return NULL;
 }
 
+/**
+ * \brief Get the RzBinDwarfAttrDef object by index
+ *
+ * \param decl RzBinDwarfAbbrevDecl object
+ * \param idx Index
+ * \return RzBinDwarfAttrDef object or NULL if not found
+ */
+RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_index(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx) {
+	rz_return_val_if_fail(decl, NULL);
+	return rz_vector_index_ptr(&decl->defs, idx);
+}
+
+/**
+ * \brief Get the abbrev's decl count
+ *
+ * \param da RzBinDwarfDebugAbbrevs object
+ * \return Abbrev count
+ */
 RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfDebugAbbrevs *da) {
 	rz_return_val_if_fail(da, 0);
 	return da->count;
 }
 
+/**
+ * \brief Get the abbrev's decl by index
+ *
+ * \param da RzBinDwarfDebugAbbrevs object
+ * \param idx Index
+ * \return Abbrev decl or NULL if not found
+ */
 RZ_API RZ_BORROW RzBinDwarfAbbrevDecl *rz_bin_dwarf_abbrev_get(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevTable *tbl, size_t idx) {
 	rz_return_val_if_fail(tbl, NULL);
 	return rz_vector_index_ptr(&tbl->abbrevs, idx - 1);
 }
 
+/**
+ * \brief Get the RzBinDwarfAttrDef count of the abbrev decl
+ *
+ * \param decl RzBinDwarfAbbrevDecl object
+ * \return RzBinDwarfAttrDef count
+ */
 RZ_API size_t rz_bin_dwarf_abbrev_decl_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrevDecl *decl) {
 	rz_return_val_if_fail(decl, 0);
 	return rz_vector_len(&decl->defs);
-}
-
-RZ_API RzBinDwarfAttrDef *rz_bin_dwarf_abbrev_attr_by_index(RZ_NONNULL const RzBinDwarfAbbrevDecl *decl, size_t idx) {
-	rz_return_val_if_fail(decl, NULL);
-	return rz_vector_index_ptr(&decl->defs, idx);
 }

@@ -14,7 +14,7 @@ RZ_API void rz_bin_dwarf_arange_set_free(RZ_OWN RZ_NULLABLE RzBinDwarfARangeSet 
 	free(set);
 }
 
-static bool parse_aranges_raw(RzBuffer *buffer, bool big_endian, RzList /*<RzBinDwarfARangeSet *>*/ *aranges) {
+static bool RzBinDwarfARangeSet_list_parse(RzBuffer *buffer, bool big_endian, RzList /*<RzBinDwarfARangeSet *>*/ *aranges) {
 	rz_return_val_if_fail(buffer && aranges, NULL);
 	// DWARF 3 Standard Section 6.1.2 Lookup by Address
 	// also useful to grep for display_debug_aranges in binutils
@@ -83,6 +83,12 @@ ok:
 	return aranges;
 }
 
+/**
+ * \brief Parse .debug_aranges section
+ *
+ * \param binfile Binfile to parse
+ * \return List of RzBinDwarfARangeSet
+ */
 RZ_API RZ_OWN RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RZ_BORROW RZ_NONNULL RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
 	RzBuffer *buffer = get_section_buf(binfile, "debug_aranges");
@@ -90,7 +96,7 @@ RZ_API RZ_OWN RzList /*<RzBinDwarfARangeSet *>*/ *rz_bin_dwarf_aranges_parse(RZ_
 	bool big_endian = binfile->o && binfile->o->info && binfile->o->info->big_endian;
 	RzList *aranges = rz_list_newf((RzListFree)rz_bin_dwarf_arange_set_free);
 	RET_NULL_IF_FAIL(aranges);
-	RET_NULL_IF_FAIL(parse_aranges_raw(buffer, big_endian, aranges));
+	RET_NULL_IF_FAIL(RzBinDwarfARangeSet_list_parse(buffer, big_endian, aranges));
 	rz_buf_free(buffer);
 	return aranges;
 }

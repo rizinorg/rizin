@@ -119,7 +119,7 @@ RZ_IPI void RzBinDwarfRngListTable_free(RzBinDwarfRngListTable *self) {
 	free(self);
 }
 
-bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, RzBinDwarfRange **out) {
+bool RzBinDwarfRngListTable_convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, RzBinDwarfRange **out) {
 	ut64 mask = self->encoding.address_size == 0 ? ~0ULL : (~0ULL >> (64 - self->encoding.address_size * 8));
 	ut64 tombstone = self->encoding.version <= 4 ? mask - 1
 						     : mask;
@@ -199,7 +199,7 @@ bool convert_raw(RzBinDwarfRngListTable *self, RzBinDwarfRawRngListEntry *raw, R
 	return true;
 }
 
-static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
+static inline bool RzBinDwarfRngListTable_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer, RzBinDwarfEncoding *encoding, RzBinDwarfRngListsFormat format) {
 	RzBinDwarfRngList *rnglist = RZ_NEW0(RzBinDwarfRngList);
 	rnglist->offset = rz_buf_tell(buffer);
 	rz_pvector_init(&rnglist->raw_entries, (RzPVectorFree)RzBinDwarfRawRngListEntry_free);
@@ -214,7 +214,7 @@ static inline bool rnglist_parse(RzBinDwarfRngListTable *self, RzBuffer *buffer,
 		if (raw_entry->encoding == DW_RLE_end_of_list && !raw_entry->is_address_or_offset_pair) {
 			break;
 		}
-		GOTO_IF_FAIL(convert_raw(self, raw_entry, &range), err2);
+		GOTO_IF_FAIL(RzBinDwarfRngListTable_convert_raw(self, raw_entry, &range), err2);
 		if (!range) {
 			continue;
 		}
@@ -246,25 +246,43 @@ RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglists_new(RZ_BORROW RZ_NON
 	return self;
 }
 
+/**
+ * \brief Parse the RzBinDwarfRngList at the given offset
+ * \param self  The RzBinDwarfRngListTable
+ * \param encoding The RzBinDwarfEncoding
+ * \param offset The offset to parse at
+ * \return true on success, false otherwise
+ */
 RZ_API bool rz_bin_dwarf_rnglist_table_parse_at(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding, ut64 offset) {
 	RET_NULL_IF_FAIL(self);
 	RzBuffer *buffer = self->debug_ranges;
 	RzBinDwarfRngListsFormat format = RzBinDwarfRngListsFormat_Bare;
+	ut64 old_offset = UT64_MAX;
 	if (encoding->version == 5) {
 		buffer = self->debug_rnglists;
 		format = RzBinDwarfRngListsFormat_Rle;
-		buffer = rz_buf_new_with_buf(buffer);
-		RET_FALSE_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, encoding->big_endian));
+		old_offset = rz_buf_tell(buffer);
+		ERR_IF_FAIL(ListsHeader_parse(&self->hdr, buffer, encoding->big_endian));
 	} else {
-		buffer = rz_buf_new_with_buf(buffer);
+		old_offset = rz_buf_tell(buffer);
 	}
 
 	rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
-	RET_FALSE_IF_FAIL(rnglist_parse(self, buffer, encoding, format));
+	ERR_IF_FAIL(RzBinDwarfRngListTable_parse(self, buffer, encoding, format));
+	rz_buf_seek(buffer, (st64)old_offset, RZ_BUF_SET);
 	return true;
+err:
+	rz_buf_seek(buffer, (st64)old_offset, RZ_BUF_SET);
+	return false;
 }
 
-RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding) {
+/**
+ * \brief Similar to rz_bin_dwarf_rnglist_table_parse_at but parses all the RzBinDwarfRngList sequentially
+ * \param self The RzBinDwarfRngListTable instance
+ * \param encoding The RzBinDwarfEncoding instance
+ * \return true on success, false otherwise
+ */
+RZ_API bool rz_bin_dwarf_rnglist_table_parse_all(RZ_BORROW RZ_NONNULL RzBinDwarfRngListTable *self, RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding) {
 	RET_NULL_IF_FAIL(self);
 	RzBuffer *buffer = self->debug_ranges;
 	RzBinDwarfRngListsFormat format = RzBinDwarfRngListsFormat_Bare;
@@ -281,11 +299,11 @@ RZ_API RZ_OWN RzBinDwarfRngListTable *rz_bin_dwarf_rnglist_table_parse_all(RZ_BO
 		for (ut32 i = 0; i < self->hdr.offset_entry_count; ++i) {
 			ut64 offset = self->hdr.location_offsets[i];
 			rz_buf_seek(buffer, (st64)offset, RZ_BUF_SET);
-			rnglist_parse(self, buffer, encoding, format);
+			RzBinDwarfRngListTable_parse(self, buffer, encoding, format);
 		}
 	} else {
 		while (rz_buf_tell(buffer) < rz_buf_size(buffer)) {
-			rnglist_parse(self, buffer, encoding, format);
+			RzBinDwarfRngListTable_parse(self, buffer, encoding, format);
 		}
 	}
 

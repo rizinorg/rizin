@@ -42,9 +42,9 @@ RZ_IPI bool buf_read_block(RzBuffer *buffer, RzBinDwarfBlock *block);
 RZ_IPI char *buf_get_string(RzBuffer *buffer);
 RZ_IPI const char *indent_str(int indent);
 
-RZ_IPI bool attr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in);
-RZ_IPI void attr_fini(RzBinDwarfAttr *val);
-RZ_IPI char *attr_to_string(RzBinDwarfAttr *attr);
+RZ_IPI bool RzBinDwarfAttr_parse(RzBuffer *buffer, RzBinDwarfAttr *value, DwAttrOption *in);
+RZ_IPI void RzBinDwarfAttr_fini(RzBinDwarfAttr *val);
+RZ_IPI char *RzBinDwarfAttr_to_string(RzBinDwarfAttr *attr);
 
 RZ_IPI RzBinSection *get_section(RzBinFile *binfile, const char *sn);
 RZ_IPI RzBuffer *get_section_buf(RzBinFile *binfile, const char *sect_name);
@@ -96,7 +96,7 @@ RZ_IPI bool Value_and(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask
 RZ_IPI bool Value_or(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result);
 RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result);
 
-RZ_IPI bool shift_length(RzBinDwarfValue *self, ut64 *result);
+RZ_IPI bool Value_shift_length(RzBinDwarfValue *self, ut64 *result);
 RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result);
 RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result);
 RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result);
@@ -123,11 +123,11 @@ RZ_IPI void Value_dump(
 #include "op.h"
 
 /// debug_lines
-RZ_IPI char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *header, ut64 file_index);
-RZ_IPI ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *header, ut8 opcode);
-RZ_IPI ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode);
-RZ_IPI st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode);
-RZ_IPI void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs);
-RZ_IPI bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op, RZ_NULLABLE struct rz_bin_source_line_info_builder_t *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc);
+RZ_IPI char *RzBinDwarfLineHeader_full_file_path(RZ_NULLABLE const RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *hdr, ut64 file_index);
+RZ_IPI ut64 RzBinDwarfLineHeader_adj_opcode(const RzBinDwarfLineHeader *hdr, ut8 opcode);
+RZ_IPI ut64 RzBinDwarfLineHeader_spec_op_advance_pc(const RzBinDwarfLineHeader *hdr, ut8 opcode);
+RZ_IPI st64 RzBinDwarfLineHeader_spec_op_advance_line(const RzBinDwarfLineHeader *hdr, ut8 opcode);
+RZ_IPI void RzBinDwarfSMRegisters_reset(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs);
+RZ_IPI bool RzBinDwarfLineOp_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op, RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache *fnc);
 
 #endif

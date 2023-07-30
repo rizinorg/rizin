@@ -406,7 +406,8 @@ RZ_IPI bool Value_convert(RzBinDwarfValue *self, RzBinDwarfValueType typ, ut64 a
 	}
 }
 
-RZ_IPI bool Value_reinterpret(RzBinDwarfValue *self, RzBinDwarfValueType value_type, ut64 addr_mask, RzBinDwarfValue *result) {
+RZ_IPI bool Value_reinterpret(
+	RzBinDwarfValue *self, RzBinDwarfValueType value_type, ut64 addr_mask, RzBinDwarfValue *result) {
 	if (bit_size(self->type, addr_mask) != bit_size(value_type, addr_mask)) {
 		return false;
 	}
@@ -816,7 +817,7 @@ RZ_IPI bool Value_xor(RzBinDwarfValue *lhs, RzBinDwarfValue *rhs, ut64 addr_mask
 	return true;
 }
 
-RZ_IPI bool shift_length(RzBinDwarfValue *self, ut64 *result) {
+RZ_IPI bool Value_shift_length(RzBinDwarfValue *self, ut64 *result) {
 	ut64 value = 0;
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
@@ -871,7 +872,7 @@ RZ_IPI bool shift_length(RzBinDwarfValue *self, ut64 *result) {
 
 RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	ut64 v2;
-	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
+	RET_FALSE_IF_FAIL(Value_shift_length(rhs, &v2));
 
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
@@ -923,7 +924,7 @@ RZ_IPI bool Value_shl(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mas
 
 RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	ut64 v2;
-	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
+	RET_FALSE_IF_FAIL(Value_shift_length(rhs, &v2));
 
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC:
@@ -954,7 +955,7 @@ RZ_IPI bool Value_shr(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mas
 
 RZ_IPI bool Value_shra(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask, RzBinDwarfValue *result) {
 	ut64 v2;
-	RET_FALSE_IF_FAIL(shift_length(rhs, &v2));
+	RET_FALSE_IF_FAIL(Value_shift_length(rhs, &v2));
 
 	switch (self->type) {
 	case RzBinDwarfValueType_GENERIC: {
