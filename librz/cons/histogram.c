@@ -247,7 +247,12 @@ RZ_API void rz_histogram_interactive_free(RzHistogramInteractive *hist) {
 
 RZ_API void rz_histogram_interactive_zoom_in(RzHistogramInteractive *hist) {
 	hist->zoom += ZOOM_DEFAULT;
-	if (hist->zoom > hist->size / hist->w + 31 - __builtin_clz(hist->w)) {
+	int logofwidth = 0;
+	while ((1 << logofwidth) <= hist->w) {
+		logofwidth++;
+	}
+	logofwidth--;
+	if (hist->zoom > hist->size / hist->w + logofwidth) {
 		hist->zoom -= ZOOM_DEFAULT;
 	}
 }
