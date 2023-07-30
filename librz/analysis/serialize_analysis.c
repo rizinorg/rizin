@@ -489,7 +489,7 @@ enum {
 	VAR_FIELD_STORAGE
 };
 
-RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
+RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_parser_new(void) {
 	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
@@ -505,11 +505,11 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
 	return parser;
 }
 
-RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser) {
+RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalysisVarParser parser) {
 	rz_key_parser_free(parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RzAnalysisFunction *fcn, RzSerializeAnalVarParser parser, const RzJson *json, RzKeyParser *storage_parser) {
+RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RzAnalysisFunction *fcn, RzSerializeAnalysisVarParser parser, const RzJson *json, RzKeyParser *storage_parser) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
@@ -695,7 +695,7 @@ enum {
 	VAR_STORAGE_FIELD_WAITING,
 };
 
-RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_storage_parser_new(void) {
+RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_storage_parser_new(void) {
 	RzKeyParser *parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
@@ -711,7 +711,7 @@ RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_storage_parser_new(voi
 	return parser;
 }
 
-RZ_API bool rz_serialize_analysis_var_storage_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json, RZ_NONNULL RZ_BORROW RzAnalysisVarStorage *storage) {
+RZ_API bool rz_serialize_analysis_var_storage_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalysisVarParser parser, RZ_NONNULL const RzJson *json, RZ_NONNULL RZ_BORROW RzAnalysisVarStorage *storage) {
 	RZ_KEY_PARSER_JSON(parser, json, child, {
 		case VAR_STORAGE_FIELD_TYPE: {
 			if (child->type != RZ_JSON_STRING) {
@@ -1048,7 +1048,7 @@ enum {
 typedef struct {
 	RzAnalysis *analysis;
 	RzKeyParser *parser;
-	RzSerializeAnalVarParser var_parser;
+	RzSerializeAnalysisVarParser var_parser;
 	RzKeyParser *storage_parser;
 } FunctionLoadCtx;
 

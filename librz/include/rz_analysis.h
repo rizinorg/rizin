@@ -2275,13 +2275,13 @@ RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL
  */
 RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
-typedef void *RzSerializeAnalVarParser;
-RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void);
-RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser);
-RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_storage_parser_new(void);
+typedef void *RzSerializeAnalysisVarParser;
+RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_parser_new(void);
+RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalysisVarParser parser);
+RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_storage_parser_new(void);
 
-RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RzAnalysisFunction *fcn, RzSerializeAnalVarParser parser, const RzJson *json, RzKeyParser *storage_parser);
-RZ_API bool rz_serialize_analysis_var_storage_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json, RZ_NONNULL RZ_BORROW RzAnalysisVarStorage *storage);
+RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RzAnalysisFunction *fcn, RzSerializeAnalysisVarParser parser, const RzJson *json, RzKeyParser *storage_parser);
+RZ_API bool rz_serialize_analysis_var_storage_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalysisVarParser parser, RZ_NONNULL const RzJson *json, RZ_NONNULL RZ_BORROW RzAnalysisVarStorage *storage);
 
 /**
  * Save useful infomation when analyze and disassemble bytes
