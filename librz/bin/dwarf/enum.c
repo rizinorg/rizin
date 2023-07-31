@@ -102,7 +102,7 @@ static const char *dwarf_tag_name_encodings[] = {
 };
 
 static const char *dwarf_attr_encodings[] = {
-	[DW_AT_sibling] = "DW_AT_siblings",
+	[DW_AT_sibling] = "DW_AT_sibling",
 	[DW_AT_location] = "DW_AT_location",
 	[DW_AT_name] = "DW_AT_name",
 	[DW_AT_ordering] = "DW_AT_ordering",

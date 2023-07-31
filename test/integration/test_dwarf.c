@@ -55,6 +55,24 @@ static void print_line_samples(size_t samples_count, const RzBinSourceLineSample
 		} \
 	} while (0);
 
+#define TEST_ABBREV_DECL(_index, _offset, _tag, _has_children, _attr_count) \
+	do { \
+		abbrev = rz_vector_index_ptr(&tbl->abbrevs, _index); \
+		mu_assert_notnull(abbrev, "abbrev"); \
+		mu_assert_eq(abbrev->offset, _offset, "abbrev offset"); \
+		mu_assert_eq(abbrev->tag, _tag, "abbrev tag"); \
+		mu_assert_eq(abbrev->has_children, _has_children, "abbrev has children"); \
+		mu_assert_eq(rz_vector_len(&abbrev->defs), _attr_count, "abbrev has children"); \
+	} while (0)
+
+#define TEST_ABBREV_ATTR(_index, _name, _form) \
+	do { \
+		def = rz_vector_index_ptr(&abbrev->defs, _index); \
+		mu_assert_notnull(def, "abbrev attr"); \
+		mu_assert_eq(def->name, _name, "abbrev attr name"); \
+		mu_assert_eq(def->form, _form, "abbrev attr form"); \
+	} while (0)
+
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
@@ -76,32 +94,29 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 7, "Incorrect number of abbreviation");
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
-	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
-				   "    DW_AT_producer                 DW_FORM_strp\n"
-				   "    DW_AT_language                 DW_FORM_data1\n"
-				   "    DW_AT_name                     DW_FORM_strp\n"
-				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
-				   "    DW_AT_low_pc                   DW_FORM_addr\n"
-				   "    DW_AT_high_pc                  DW_FORM_addr\n"
-				   "    DW_AT_stmt_list                DW_FORM_data4\n",
-		"abbrev decl");
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
 
-	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 3));
-	mu_assert_streq_free(dump, "    3      DW_TAG_base_type          [no children] (0x26)\n"
-				   "    DW_AT_byte_size                DW_FORM_data1\n"
-				   "    DW_AT_encoding                 DW_FORM_data1\n"
-				   "    DW_AT_name                     DW_FORM_string\n",
-		"abbrev decl");
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 7);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(5, DW_AT_high_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_stmt_list, DW_FORM_data4);
 
-	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 7));
-	mu_assert_streq_free(dump, "    7      DW_TAG_variable           [no children] (0x76)\n"
-				   "    DW_AT_name                     DW_FORM_string\n"
-				   "    DW_AT_decl_file                DW_FORM_data1\n"
-				   "    DW_AT_decl_line                DW_FORM_data1\n"
-				   "    DW_AT_decl_column              DW_FORM_data1\n"
-				   "    DW_AT_type                     DW_FORM_ref4\n",
-		"abbrev decl");
+	TEST_ABBREV_DECL(2, 0x26, DW_TAG_base_type, false, 3);
+	TEST_ABBREV_ATTR(0, DW_AT_byte_size, DW_FORM_data1);
+	TEST_ABBREV_ATTR(1, DW_AT_encoding, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_string);
+
+	TEST_ABBREV_DECL(6, 0x76, DW_TAG_variable, false, 5);
+	TEST_ABBREV_ATTR(0, DW_AT_name, DW_FORM_string);
+	TEST_ABBREV_ATTR(1, DW_AT_decl_file, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_decl_line, DW_FORM_data1);
+	TEST_ABBREV_ATTR(3, DW_AT_decl_column, DW_FORM_data1);
+	TEST_ABBREV_ATTR(4, DW_AT_type, DW_FORM_ref4);
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
@@ -154,33 +169,35 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	mu_assert("Incorrect number of abbreviation", rz_bin_dwarf_abbrev_count(da) == 32);
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
-	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
-				   "    DW_AT_producer                 DW_FORM_strp\n"
-				   "    DW_AT_language                 DW_FORM_data1\n"
-				   "    DW_AT_name                     DW_FORM_strp\n"
-				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
-				   "    DW_AT_ranges                   DW_FORM_data4\n"
-				   "    DW_AT_low_pc                   DW_FORM_addr\n"
-				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
-				   "    DW_AT_stmt_list                DW_FORM_data4\n",
-		"abbrev decl");
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
+	mu_assert_notnull(tbl, "abbrev table");
+	mu_assert_eq(rz_vector_len(&tbl->abbrevs), 32, "abbrev decls count");
+	mu_assert_eq(tbl->offset, 0x0, "abbrev table offset");
 
-	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 9));
-	mu_assert_streq_free(dump, "    9      DW_TAG_subprogram         [has children] (0x8d)\n"
-				   "    DW_AT_external                 DW_FORM_flag\n"
-				   "    DW_AT_name                     DW_FORM_string\n"
-				   "    DW_AT_decl_file                DW_FORM_data1\n"
-				   "    DW_AT_decl_line                DW_FORM_data1\n"
-				   "    DW_AT_decl_column              DW_FORM_data1\n"
-				   "    DW_AT_MIPS_linkage_name        DW_FORM_strp\n"
-				   "    DW_AT_type                     DW_FORM_ref4\n"
-				   "    DW_AT_virtuality               DW_FORM_data1\n"
-				   "    DW_AT_vtable_elem_location     DW_FORM_block1\n"
-				   "    DW_AT_containing_type          DW_FORM_ref4\n"
-				   "    DW_AT_declaration              DW_FORM_flag\n"
-				   "    DW_AT_object_pointer           DW_FORM_ref4\n",
-		"abbrev decl");
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 8);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_ranges, DW_FORM_data4);
+	TEST_ABBREV_ATTR(5, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_entry_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(7, DW_AT_stmt_list, DW_FORM_data4);
+
+	TEST_ABBREV_DECL(8, 0x8d, DW_TAG_subprogram, true, 12);
+	TEST_ABBREV_ATTR(0, DW_AT_external, DW_FORM_flag);
+	TEST_ABBREV_ATTR(1, DW_AT_name, DW_FORM_string);
+	TEST_ABBREV_ATTR(2, DW_AT_decl_file, DW_FORM_data1);
+	TEST_ABBREV_ATTR(3, DW_AT_decl_line, DW_FORM_data1);
+	TEST_ABBREV_ATTR(4, DW_AT_decl_column, DW_FORM_data1);
+	TEST_ABBREV_ATTR(5, DW_AT_MIPS_linkage_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(6, DW_AT_type, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(7, DW_AT_virtuality, DW_FORM_data1);
+	TEST_ABBREV_ATTR(8, DW_AT_vtable_elem_location, DW_FORM_block1);
+	TEST_ABBREV_ATTR(9, DW_AT_containing_type, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(10, DW_AT_declaration, DW_FORM_flag);
+	TEST_ABBREV_ATTR(11, DW_AT_object_pointer, DW_FORM_ref4);
 
 	// rz_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
 
@@ -279,28 +296,27 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
-	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
-				   "    DW_AT_producer                 DW_FORM_strp\n"
-				   "    DW_AT_language                 DW_FORM_data1\n"
-				   "    DW_AT_name                     DW_FORM_strp\n"
-				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
-				   "    DW_AT_ranges                   DW_FORM_data4\n"
-				   "    DW_AT_low_pc                   DW_FORM_addr\n"
-				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
-				   "    DW_AT_stmt_list                DW_FORM_data4\n",
-		"abbrev decl");
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
 
-	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 18));
-	mu_assert_streq_free(dump, "    18     DW_TAG_subprogram         [has children] (0x11d)\n"
-				   "    DW_AT_specification            DW_FORM_ref4\n"
-				   "    DW_AT_object_pointer           DW_FORM_ref4\n"
-				   "    DW_AT_low_pc                   DW_FORM_addr\n"
-				   "    DW_AT_high_pc                  DW_FORM_addr\n"
-				   "    DW_AT_frame_base               DW_FORM_block1\n"
-				   "    DW_AT_GNU_all_call_sites       DW_FORM_flag\n"
-				   "    DW_AT_siblings                 DW_FORM_ref4\n",
-		"abbrev decl");
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 8);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_ranges, DW_FORM_data4);
+	TEST_ABBREV_ATTR(5, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_entry_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(7, DW_AT_stmt_list, DW_FORM_data4);
+
+	TEST_ABBREV_DECL(17, 0x11d, DW_TAG_subprogram, true, 7);
+	TEST_ABBREV_ATTR(0, DW_AT_specification, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(1, DW_AT_object_pointer, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(2, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(3, DW_AT_high_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(4, DW_AT_frame_base, DW_FORM_block1);
+	TEST_ABBREV_ATTR(5, DW_AT_GNU_all_call_sites, DW_FORM_flag);
+	TEST_ABBREV_ATTR(6, DW_AT_sibling, DW_FORM_ref4);
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
@@ -527,24 +543,24 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	mu_assert_eq(rz_bin_dwarf_abbrev_count(da), 58, "Incorrect number of abbreviation");
 
 	RzBinDwarfAbbrevTable *tbl = ht_up_find(da->tbl_by_offset, 0x0, NULL);
-	char *dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 1));
-	mu_assert_streq_free(dump, "    1      DW_TAG_compile_unit       [has children] (0x0)\n"
-				   "    DW_AT_producer                 DW_FORM_strp\n"
-				   "    DW_AT_language                 DW_FORM_data1\n"
-				   "    DW_AT_name                     DW_FORM_strp\n"
-				   "    DW_AT_comp_dir                 DW_FORM_strp\n"
-				   "    DW_AT_ranges                   DW_FORM_data4\n"
-				   "    DW_AT_low_pc                   DW_FORM_addr\n"
-				   "    DW_AT_entry_pc                 DW_FORM_addr\n"
-				   "    DW_AT_stmt_list                DW_FORM_data4\n",
-		"abbrev decl");
-	dump = rz_core_bin_dwarf_abbrev_decl_to_string(rz_bin_dwarf_abbrev_get(tbl, 19));
-	mu_assert_streq_free(dump, "    19     DW_TAG_formal_parameter   [no children] (0x131)\n"
-				   "    DW_AT_name                     DW_FORM_strp\n"
-				   "    DW_AT_type                     DW_FORM_ref4\n"
-				   "    DW_AT_artificial               DW_FORM_flag\n"
-				   "    DW_AT_location                 DW_FORM_block1\n",
-		"abbrev decl");
+	RzBinDwarfAbbrevDecl *abbrev = NULL;
+	RzBinDwarfAttrDef *def = NULL;
+
+	TEST_ABBREV_DECL(0, 0x0, DW_TAG_compile_unit, true, 8);
+	TEST_ABBREV_ATTR(0, DW_AT_producer, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_language, DW_FORM_data1);
+	TEST_ABBREV_ATTR(2, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(3, DW_AT_comp_dir, DW_FORM_strp);
+	TEST_ABBREV_ATTR(4, DW_AT_ranges, DW_FORM_data4);
+	TEST_ABBREV_ATTR(5, DW_AT_low_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(6, DW_AT_entry_pc, DW_FORM_addr);
+	TEST_ABBREV_ATTR(7, DW_AT_stmt_list, DW_FORM_data4);
+
+	TEST_ABBREV_DECL(18, 0x131, DW_TAG_formal_parameter, false, 4);
+	TEST_ABBREV_ATTR(0, DW_AT_name, DW_FORM_strp);
+	TEST_ABBREV_ATTR(1, DW_AT_type, DW_FORM_ref4);
+	TEST_ABBREV_ATTR(2, DW_AT_artificial, DW_FORM_flag);
+	TEST_ABBREV_ATTR(3, DW_AT_location, DW_FORM_block1);
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
