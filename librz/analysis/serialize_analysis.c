@@ -711,6 +711,14 @@ RZ_API RzSerializeAnalysisVarParser rz_serialize_analysis_var_storage_parser_new
 	return parser;
 }
 
+/**
+ * \brief Load variable storage from a JSON object
+ * \param fcn Function to which the variable belongs
+ * \param parser RzKeyParser to parse the storage JSON object
+ * \param json JSON object to parse
+ * \param storage Output variable storage
+ * \return true if the storage was successfully loaded, false otherwise
+ */
 RZ_API bool rz_serialize_analysis_var_storage_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalysisVarParser parser, RZ_NONNULL const RzJson *json, RZ_NONNULL RZ_BORROW RzAnalysisVarStorage *storage) {
 	RZ_KEY_PARSER_JSON(parser, json, child, {
 		case VAR_STORAGE_FIELD_TYPE: {
