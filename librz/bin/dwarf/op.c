@@ -1502,8 +1502,8 @@ rz_bin_dwarf_expression_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NONNULL const RzBinDwarfBlock *block,
 	RZ_BORROW RZ_NONNULL RzStrBuf *str_buf,
-	RZ_BORROW RZ_NONNULL const char *sep,
-	RZ_BORROW RZ_NONNULL const char *indent) {
+	RZ_BORROW RZ_NULLABLE const char *sep,
+	RZ_BORROW RZ_NULLABLE const char *indent) {
 	RzBuffer *buffer = RzBinDwarfBlock_as_buf(block);
 	RzVector *exprs = rz_bin_dwarf_expression_parse(buffer, encoding);
 	rz_buf_free(buffer);
@@ -1530,15 +1530,14 @@ RZ_API char *rz_bin_dwarf_expression_to_string(
 	return rz_strbuf_drain_nofree(&sb);
 }
 
-RZ_API void
-rz_bin_dwarf_loclist_dump(
+RZ_API void rz_bin_dwarf_loclist_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
+	RZ_BORROW RZ_NONNULL const DWARF_RegisterMapping dwarf_register_mapping,
 	RZ_BORROW RZ_NONNULL const RzBinDwarfLocList *loclist,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
-	RZ_BORROW RZ_NONNULL const char *sep,
-	RZ_BORROW RZ_NONNULL const char *indent) {
-	rz_return_if_fail(loclist && sb);
+	RZ_BORROW RZ_NULLABLE const char *sep,
+	RZ_BORROW RZ_NULLABLE const char *indent) {
+	rz_return_if_fail(encoding && dwarf_register_mapping && loclist && sb);
 	if (rz_pvector_empty(&loclist->entries)) {
 		rz_strbuf_append(sb, "loclist: [ ]");
 		return;
@@ -1577,12 +1576,12 @@ rz_bin_dwarf_loclist_dump(
 
 RZ_API void rz_bin_dwarf_location_composite_dump(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfEncoding *encoding,
-	RZ_BORROW RZ_NULLABLE const DWARF_RegisterMapping dwarf_register_mapping,
+	RZ_BORROW RZ_NONNULL const DWARF_RegisterMapping dwarf_register_mapping,
 	RZ_BORROW RZ_NONNULL RzVector /*<RzBinDwarfPiece>*/ *composite,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
-	RZ_BORROW RZ_NONNULL const char *sep,
-	RZ_BORROW RZ_NONNULL const char *indent) {
-
+	RZ_BORROW RZ_NULLABLE const char *sep,
+	RZ_BORROW RZ_NULLABLE const char *indent) {
+	rz_return_if_fail(encoding && dwarf_register_mapping && composite && sb);
 	rz_strbuf_append(sb, "composite: [");
 	ut32 i;
 	ut32 end = rz_vector_len(composite) - 1;
@@ -1604,9 +1603,9 @@ RZ_API void rz_bin_dwarf_location_dump(
 	RZ_BORROW RZ_NONNULL const DWARF_RegisterMapping dwarf_register_mapping,
 	RZ_BORROW RZ_NONNULL const RzBinDwarfLocation *loc,
 	RZ_BORROW RZ_NONNULL RzStrBuf *sb,
-	RZ_BORROW RZ_NONNULL const char *sep,
-	RZ_BORROW RZ_NONNULL const char *indent) {
-	rz_return_if_fail(loc && sb);
+	RZ_BORROW RZ_NULLABLE const char *sep,
+	RZ_BORROW RZ_NULLABLE const char *indent) {
+	rz_return_if_fail(loc && sb && encoding && dwarf_register_mapping);
 	rz_strbuf_append(sb, rz_str_get(indent));
 	switch (loc->kind) {
 	case RzBinDwarfLocationKind_EMPTY:
@@ -1616,18 +1615,10 @@ RZ_API void rz_bin_dwarf_location_dump(
 		rz_strbuf_append(sb, "<decoding error>");
 		break;
 	case RzBinDwarfLocationKind_REGISTER:
-		if (dwarf_register_mapping) {
-			rz_strbuf_append(sb, dwarf_register_mapping(loc->register_number));
-		} else {
-			rz_strbuf_appendf(sb, "reg0x%" PFMT64x, loc->register_number);
-		}
+		rz_strbuf_append(sb, dwarf_register_mapping(loc->register_number));
 		break;
 	case RzBinDwarfLocationKind_REGISTER_OFFSET:
-		if (dwarf_register_mapping) {
-			rz_strbuf_appendf(sb, "%s%+" PFMT64d, dwarf_register_mapping(loc->register_number), loc->offset);
-		} else {
-			rz_strbuf_appendf(sb, "reg0x%" PFMT64x "%+" PFMT64d, loc->register_number, loc->offset);
-		}
+		rz_strbuf_appendf(sb, "%s%+" PFMT64d, dwarf_register_mapping(loc->register_number), loc->offset);
 		break;
 	case RzBinDwarfLocationKind_ADDRESS:
 		rz_strbuf_appendf(sb, "address 0x%" PFMT64x, loc->address);

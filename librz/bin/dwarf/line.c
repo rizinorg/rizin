@@ -323,7 +323,7 @@ static bool RzBinDwarfLineHeader_parse(
 	}
 	if (hdr->max_ops_per_inst == 0) {
 		RZ_LOG_VERBOSE("DWARF line hdr max ops per inst %d is not supported\n", hdr->max_ops_per_inst);
-		return NULL;
+		return false;
 	}
 
 	U8_OR_RET_FALSE(hdr->default_is_stmt);
@@ -333,7 +333,7 @@ static bool RzBinDwarfLineHeader_parse(
 	U8_OR_RET_FALSE(hdr->line_range);
 	if (hdr->line_range == 0) {
 		RZ_LOG_ERROR("DWARF line hdr line range %d is not supported\n", hdr->line_range);
-		return NULL;
+		return false;
 	}
 
 	U8_OR_RET_FALSE(hdr->opcode_base);
@@ -367,7 +367,7 @@ static bool RzBinDwarfLineOp_parse_ext(
 	RzBinDwarfLineOp *op,
 	const RzBinDwarfLineHeader *hdr,
 	bool big_endian) {
-	rz_return_val_if_fail(op && hdr && buffer, NULL);
+	rz_return_val_if_fail(op && hdr && buffer, false);
 	ut64 op_len;
 	ULE128_OR_RET_FALSE(op_len);
 	// op_len must fit and be at least 1 (for the opcode byte)
@@ -587,7 +587,7 @@ RZ_IPI bool RzBinDwarfLineOp_run(
 	return true;
 }
 
-__attribute__((used)) static char *RzBinDwarfLineOp_to_string(RzBinDwarfLineOp *op, ut64 offset) {
+static char *RzBinDwarfLineOp_to_string(RzBinDwarfLineOp *op, ut64 offset) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	rz_strbuf_appendf(sb, "0x%" PFMT64x ":\t", offset);
 	switch (op->type) {
@@ -636,13 +636,11 @@ static bool RzBinDwarfLineOp_parse_all(
 			RET_FALSE_IF_FAIL(RzBinDwarfLineOp_run(hdr, regs, &op, bob, info, fnc));
 		}
 
-#if RZ_BUILD_DEBUG
 		char *str = RzBinDwarfLineOp_to_string(&op, op.offset);
 		if (str) {
 			RZ_LOG_DEBUG("%s\n", str);
 			free(str);
 		}
-#endif
 
 		if (ops_out) {
 			rz_vector_push(ops_out, &op);
