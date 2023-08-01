@@ -172,6 +172,8 @@ endforeach
 
 cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx', check: true).stdout().strip()
 
+subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
+
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: get_option('use_sys_capstone'), static: is_static_build)
 if not capstone_dep.found()
@@ -179,7 +181,7 @@ if not capstone_dep.found()
   if fs.is_file('subprojects/capstone-' + capstone_version + '.wrap')
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-' + capstone_version, check: false)
     if r.returncode() == 1 and get_option('subprojects_check')
-      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+      error(subproject_clean_error_msg)
     endif
     capstone_proj = subproject('capstone-' + capstone_version, default_options: ['default_library=static'])
   else
@@ -215,7 +217,7 @@ endif
 # handle xxhash library
 r = run_command(py3_exe, check_meson_subproject_py, 'xxhash', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 sys_xxhash_opt = get_option('use_sys_xxhash')
@@ -233,7 +235,7 @@ endif
 # handle libdemangle
 r = run_command(py3_exe, check_meson_subproject_py, 'libdemangle', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 libdemangle_options = ['default_library=static']
@@ -261,7 +263,7 @@ sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), sta
 # handle tree-sitter
 r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
@@ -519,7 +521,7 @@ zlib_dep = disabler()
 if get_option('use_zlib')
   r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
   if r.returncode() == 1 and get_option('subprojects_check')
-    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    error(subproject_clean_error_msg)
   endif
 
   zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
@@ -533,7 +535,7 @@ endif
 # handle lz4 dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'lz4', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_static_build)
@@ -547,7 +549,7 @@ liblzma_dep = disabler()
 if get_option('use_lzma')
   r = run_command(py3_exe, check_meson_subproject_py, 'lzma', check: false)
   if r.returncode() == 1 and get_option('subprojects_check')
-    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    error(subproject_clean_error_msg)
   endif
 
   liblzma_dep = dependency('liblzma', required: get_option('use_sys_lzma'), static: is_static_build)
@@ -561,7 +563,7 @@ endif
 # handle zip dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build)
@@ -577,7 +579,7 @@ endif
 # handle mpc dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 mpc_proj = subproject('mpc', default_options: ['default_library=static'])
@@ -586,7 +588,7 @@ mpc_dep = mpc_proj.get_variable('mpc_dep')
 # handle yxml dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error(subproject_clean_error_msg)
 endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
@@ -668,7 +670,7 @@ subdir('librz')
 if get_option('install_sigdb')
   r = run_command(py3_exe, check_meson_subproject_py, 'sigdb', check: false)
   if r.returncode() == 1 and get_option('subprojects_check')
-    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+    error(subproject_clean_error_msg)
   endif
   subproject('sigdb', default_options: ['sigdb_path=@0@'.format(get_option('prefix') / rizin_sigdb)])
 endif
