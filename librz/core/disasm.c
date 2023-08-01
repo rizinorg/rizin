@@ -4841,9 +4841,10 @@ static void ds_print_as_string(RzDisasmState *ds) {
 }
 
 static char *_find_next_number(char *op) {
-	char *p = op;
-	if (!p)
+	if (!op) {
 		return NULL;
+	}
+	char *p = op;
 	while (*p) {
 		// look for start of next separator or ANSI sequence
 		while (*p && !IS_SEPARATOR(*p) && *p != 0x1b) {
