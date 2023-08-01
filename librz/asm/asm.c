@@ -1525,43 +1525,48 @@ RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPatter
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
  * \return RzAsmTokenString* The tokens.
  */
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
-	rz_return_val_if_fail(asm_str && patterns, NULL);
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_string, RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
+	rz_return_val_if_fail(asm_string && patterns, NULL);
 
-	const char *str = rz_strbuf_get(asm_str);
-	RzRegexMatch m[1];
-	size_t j = 0; // Offset into str. Regex patterns are only searched in substring str[j:].
-	st64 i = 0; // Start of token in str.
-	st64 s = 0; // Start of matched token in substring str[j:]
-	st64 l = 0; // Length of token.
-	RzAsmTokenString *toks = rz_asm_token_string_new(str);
+	const char *asm_str = rz_strbuf_get(asm_string);
+	RzAsmTokenString *toks = rz_asm_token_string_new(asm_str);
 	void **it;
+	// Iterate over each pattern and search for it in str
 	rz_pvector_foreach (patterns, it) {
-		RzAsmTokenPattern *pat = *it;
-		if (!pat || !pat->regex) {
+		RzAsmTokenPattern *pattern = *it;
+		if (!pattern || !pattern->regex) {
 			rz_asm_token_string_free(toks);
 			return NULL;
 		}
-		j = 0;
-		if (!pat->regex) {
+
+		/// Start pattern search from the beginning
+		size_t asm_str_off = 0;
+		if (!pattern->regex) {
 			continue;
 		}
-		while (rz_regex_exec(pat->regex, str + j, 1, m, 0) == 0) {
-			s = m[0].rm_so; // Token start in substring str[j:]
-			l = m[0].rm_eo - s; // (End in substring str[j:]) - (start in substring str[j:]) = Length of token.
-			i = j + s; // Start of token in str.
-			if (overlaps_with_token(toks->tokens, i, i + l - 1)) {
+
+		// Search for token pattern.
+		RzRegexMatch match[1];
+		while (rz_regex_exec(pattern->regex, asm_str + asm_str_off, 1, match, 0) == 0) {
+			st64 match_start = match[0].rm_so; // Token start
+			st64 match_end = match[0].rm_eo; // Token end
+			st64 len = match_end - match_start; // Length of token
+			st64 tok_offset = asm_str_off + match_start; // Token offset in str
+			if (overlaps_with_token(toks->tokens, tok_offset, tok_offset + len - 1)) {
 				// If this is true a token with higher priority was matched before.
-				j = i + l;
+				asm_str_off = tok_offset + len;
 				continue;
 			}
-			if (!is_num(str + i)) {
-				add_token(toks, i, l, pat->type, 0);
-				j = i + l;
+
+			// New token found, add it.
+			if (!is_num(asm_str + tok_offset)) {
+				add_token(toks, tok_offset, len, pattern->type, 0);
+				asm_str_off = tok_offset + len;
 				continue;
 			}
-			add_token(toks, i, l, pat->type, strtoull(str + i, NULL, 0));
-			j = i + l;
+			ut64 number = strtoull(asm_str + tok_offset, NULL, 0);
+			add_token(toks, tok_offset, len, pattern->type, number);
+			asm_str_off = tok_offset + len;
 		}
 	}
 
