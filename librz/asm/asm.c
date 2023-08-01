@@ -1481,6 +1481,28 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 }
 
 /**
+ * \brief Compiles the regex patterns of a vector of RzAsmTokenPatterns.
+ *
+ * \param patterns The token patterns to compile the regex for.
+ */
+RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
+	rz_return_if_fail(patterns);
+
+	void **it;
+	rz_pvector_foreach (patterns, it) {
+		RzAsmTokenPattern *pat = *it;
+		if (!pat->regex) {
+			pat->regex = rz_regex_new(pat->pattern, "e");
+			if (!pat->regex) {
+				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
+				rz_warn_if_reached();
+			}
+		}
+	}
+}
+
+
+/**
  * \brief Splits an asm string into tokens by using the given regex patterns.
  *
  * \param str The asm string.
