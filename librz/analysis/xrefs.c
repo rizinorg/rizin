@@ -7,19 +7,18 @@
 #include <rz_analysis.h>
 #include <rz_cons.h>
 
-#if 0
+/*
 DICT
 ====
 
 refs 10->20 C 16->10 J 20->10 C
 
-	xrefs 20->[10 C] 10 -> [16 J, 20 C]
+xrefs 20->[10 C] 10 -> [16 J, 20 C]
 
-	10 : call 20 16 : jmp 10 20 : call 10
-#endif
-
-// XXX: is it possible to have multiple type for the same (from, to) pair?
-//      if it is, things need to be adjusted
+10 : call 20 16 : jmp 10 20 : call 10
+*/
+// TODO: is it possible to have multiple type for the same (from, to) pair?
+//       if it is, things need to be adjusted
 
 static RzAnalysisXRef *rz_analysis_xref_new(ut64 from, ut64 to, ut64 type) {
 	RzAnalysisXRef *xref = RZ_NEW(RzAnalysisXRef);

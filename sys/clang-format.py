@@ -70,8 +70,8 @@ def get_edited_files(args):
             yield filename
 
 
-def build_command(check, filenames, verbose):
-    cmd = ["clang-format", "--style=file"]
+def build_command(clangformat, check, filenames, verbose):
+    cmd = [clangformat, "--style=file"]
     if verbose:
         cmd += ["--verbose"]
     if check:
@@ -85,7 +85,7 @@ def format_files(args, files):
     if len(files) == 0:
         print("No C files to format.")
         sys.exit(0)
-    cmd = build_command(args.check, files, args.verbose)
+    cmd = build_command(args.clang_format, args.check, files, args.verbose)
     r = subprocess.run(cmd, check=False)
     sys.exit(r.returncode)
 
@@ -115,6 +115,10 @@ def process(args):
 
 def parse():
     parser = argparse.ArgumentParser(description="Clang format the rizin project")
+
+    parser.add_argument(
+        "-C", "--clang-format", default="clang-format", help="path of clang-format"
+    )
     parser.add_argument(
         "-c", "--check", action="store_true", help="enable the check mode"
     )
