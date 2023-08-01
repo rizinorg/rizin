@@ -1,5 +1,5 @@
 project('nettle', 'c',
-  license: [ 'LGPL'],
+  license: 'LGPL',
   version: '3.7.3'
 )
 # https://git.lysator.liu.se/nettle/nettle
