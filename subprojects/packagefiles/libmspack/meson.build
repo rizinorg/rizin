@@ -1,4 +1,11 @@
-project('libmspack', 'c', version: '0.10.1alpha', license : ['LGPL2'], meson_version: '>=0.55.0')
+project('libmspack', 'c',
+  version: '0.10.1alpha',
+  license : 'LGPL2',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 cc = meson.get_compiler('c')
 

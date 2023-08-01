@@ -1,7 +1,11 @@
 project('lz4', ['c'],
-  license: ['BSD', 'GPLv2'],
+  license: 'BSD-2-Clause-Patent AND GPL-2.0-or-later',
   version: '1.9.4',
-  meson_version: '>=0.47.0')
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 lz4_files = [
   'lib/lz4.c',
