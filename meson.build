@@ -1,6 +1,6 @@
 project('rizin', 'c',
   version: 'v0.6.0',
-  license: 'LGPL3',
+  license: 'LGPL-3.0-only',
   meson_version: '>=0.55.0',
   default_options: [
     'buildtype=debugoptimized',

@@ -1,5 +1,9 @@
 project('rzwinkd', 'c',
-  license : [ 'LGPL']
+  license: 'LGPL-3.0-only',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
 )
 
 cc = meson.get_compiler('c')
