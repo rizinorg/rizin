@@ -846,6 +846,20 @@ typedef struct rz_bar_options_t {
 	bool color; //<< Use colors
 } RzBarOptions;
 
+typedef struct rz_histogram_interactive_t {
+	RzConsCanvas *can;
+
+	int barnumber;
+	int size;
+	int zoom;
+	int movspeed;
+
+	int x, y;
+	int w, h;
+
+	RzHistogramOptions *opts;
+} RzHistogramInteractive;
+
 #ifdef RZ_API
 RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
@@ -1032,6 +1046,13 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch);
 /* Histograms */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, ut32 width, ut32 height);
 RZ_API RZ_OWN RzStrBuf *rz_histogram_vertical(RZ_NONNULL RzHistogramOptions *opts, RZ_NONNULL const ut8 *data, int width, int step);
+RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, const unsigned char *data);
+RZ_API RzHistogramOptions *rz_histogram_options_new();
+RZ_API void rz_histogram_options_free(RzHistogramOptions *histops);
+RZ_API RzHistogramInteractive *rz_histogram_interactive_new(RzConsCanvas *can, RzHistogramOptions *opts);
+RZ_API void rz_histogram_interactive_free(RzHistogramInteractive *hist);
+RZ_API void rz_histogram_interactive_zoom_in(RzHistogramInteractive *hist);
+RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist);
 #endif
 
 /* Bars */
