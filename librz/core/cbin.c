@@ -1050,7 +1050,7 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 }
 
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
-static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name) {
+static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name, bool demangle) {
 	RzStrBuf *buf = rz_strbuf_new("");
 
 	// (optional) libname_
@@ -1063,11 +1063,11 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
 	// actual name
 	if (name) {
 		rz_strbuf_append(buf, name);
-	} else if (reloc->import && RZ_STR_ISNOTEMPTY(reloc->import->dname)) {
+	} else if (demangle && reloc->import && RZ_STR_ISNOTEMPTY(reloc->import->dname)) {
 		rz_strbuf_append(buf, reloc->import->dname);
 	} else if (reloc->import && RZ_STR_ISNOTEMPTY(reloc->import->name)) {
 		rz_strbuf_append(buf, reloc->import->name);
-	} else if (reloc->symbol && RZ_STR_ISNOTEMPTY(reloc->symbol->dname)) {
+	} else if (demangle && reloc->symbol && RZ_STR_ISNOTEMPTY(reloc->symbol->dname)) {
 		rz_strbuf_appendf(buf, "%s", reloc->symbol->dname);
 	} else if (reloc->symbol && RZ_STR_ISNOTEMPTY(reloc->symbol->name)) {
 		rz_strbuf_appendf(buf, "%s", reloc->symbol->name);
@@ -1081,20 +1081,21 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
 	return rz_strbuf_drain(buf);
 }
 
-static void reloc_set_flag(RzCore *r, RzBinReloc *reloc, const char *prefix, ut64 flag_addr) {
-	char *reloc_name = construct_reloc_name(reloc, NULL);
+static void reloc_set_flag(RzCore *core, RzBinReloc *reloc, const char *prefix, ut64 flag_addr) {
+	bool demangle = rz_config_get_b(core->config, "bin.demangle");
+	char *reloc_name = construct_reloc_name(reloc, NULL, demangle);
 	if (RZ_STR_ISEMPTY(reloc_name)) {
 		free(reloc_name);
 		return;
 	}
 	char *flag_name = NULL;
-	if (r->bin->prefix) {
-		flag_name = rz_str_newf("%s.%s.%s", r->bin->prefix, prefix, reloc_name);
+	if (core->bin->prefix) {
+		flag_name = rz_str_newf("%s.%s.%s", core->bin->prefix, prefix, reloc_name);
 	} else {
 		flag_name = rz_str_newf("%s.%s", prefix, reloc_name);
 	}
 	rz_name_filter(flag_name, 0, true);
-	RzFlagItem *existing = rz_flag_get(r->flags, flag_name);
+	RzFlagItem *existing = rz_flag_get(core->flags, flag_name);
 	if (existing && existing->offset == flag_addr) {
 		// Mostly important for target flags.
 		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
@@ -1102,7 +1103,7 @@ static void reloc_set_flag(RzCore *r, RzBinReloc *reloc, const char *prefix, ut6
 		free(flag_name);
 		return;
 	}
-	RzFlagItem *fi = rz_flag_set_next(r->flags, flag_name, flag_addr, bin_reloc_size(reloc));
+	RzFlagItem *fi = rz_flag_set_next(core->flags, flag_name, flag_addr, bin_reloc_size(reloc));
 	rz_flag_item_set_realname(fi, reloc_name);
 
 	free(reloc_name);
@@ -1288,14 +1289,15 @@ static char *construct_symbol_flagname(const RzBinSymbol *sym, const char *name)
 /**
  * \brief      Initialize a RzBinSymNames from a RzBinSymbol
  *
- * \param[in]  RzBinSymNames  The structure to initialize
- * \param[in]  RzBinSymbol    The symbol to use to initialize the RzBinSymNames
+ * \param[in]  names     The structure to initialize
+ * \param[in]  symbol    The symbol to use to initialize the RzBinSymNames
+ * \param[in]  demangle  When true, returns the demangled name instead of the original symbol.
  */
-RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol) {
+RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol, bool demangle) {
 	rz_return_if_fail(names && symbol && symbol->name);
 	memset(names, 0, sizeof(RzBinSymNames));
 
-	const char *name = symbol->dname ? symbol->dname : symbol->name;
+	const char *name = demangle && symbol->dname ? symbol->dname : symbol->name;
 	names->name = rz_str_newf("%s%s", symbol->is_imported ? "imp." : "", name);
 	names->libname = rz_str_new(symbol->libname);
 	names->nameflag = construct_symbol_flagname(symbol, symbol->name);
@@ -1316,7 +1318,7 @@ RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NON
 		.esc_double_quotes = false,
 		.dot_nl = false,
 	};
-	names->symbolname = rz_str_escape_utf8(names->demname ? names->demname : names->name, &opt);
+	names->symbolname = rz_str_escape_utf8(demangle && names->demname ? names->demname : names->name, &opt);
 }
 
 /**
@@ -1407,7 +1409,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		return false;
 	}
 	RzBinInfo *info = o->info;
-
+	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
 
 	rz_spaces_push(&core->analysis->meta_spaces, "bin");
@@ -1425,7 +1427,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		}
 		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
 		RzBinSymNames sn = { 0 };
-		rz_core_sym_name_init(&sn, symbol);
+		rz_core_sym_name_init(&sn, symbol, demangle);
 
 		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {
 			/*
@@ -1902,6 +1904,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinSymbol *symbol;
 	RzListIter *iter;
+	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "dXXssnss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
@@ -1926,7 +1929,7 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 		}
 
 		RzBinSymNames sn = { 0 };
-		rz_core_sym_name_init(&sn, symbol);
+		rz_core_sym_name_init(&sn, symbol, demangle);
 		ut64 size = symbol->size;
 
 		char addr_value[20];
@@ -2018,8 +2021,8 @@ RZ_API bool rz_core_bin_cur_export_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 	return symbols_print(core, bf, state, &filter, true);
 }
 
-static char *dup_import_name(RzBinImport *import) {
-	if (import->dname) {
+static char *dup_import_name(RzBinImport *import, bool demangle) {
+	if (demangle && import->dname) {
 		return strdup(import->dname);
 	} else if (import->name) {
 		return strdup(import->name);
@@ -2035,6 +2038,7 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 	RzBinObject *o = bf->o;
 	RzBinImport *import;
 	RzListIter *iter;
+	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
@@ -2044,7 +2048,7 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 			continue;
 		}
 
-		char *symname = dup_import_name(import);
+		char *symname = dup_import_name(import, demangle);
 		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
 		ut64 addr = sym ? rva(o, sym->paddr, sym->vaddr, va) : UT64_MAX;
 
@@ -2183,6 +2187,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 
 	int va = VA_TRUE; // XXX relocs always vaddr?
 	char *relname = NULL;
+	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
 	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, o);
 	if (!relocs) {
@@ -2200,7 +2205,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 	for (size_t i = 0; i < relocs->relocs_count; i++) {
 		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
-		relname = construct_reloc_name(reloc, NULL);
+		relname = construct_reloc_name(reloc, NULL, demangle);
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
@@ -3421,7 +3426,7 @@ static char *objc_name_toc(const char *objc_name) {
 	return s;
 }
 
-static void classdump_c(RzCore *r, RzBinClass *c) {
+static void classdump_c(RzBinClass *c) {
 	rz_cons_printf("typedef struct class_%s {\n", c->name);
 	RzListIter *iter2;
 	RzBinClassField *f;
@@ -3437,7 +3442,7 @@ static void classdump_c(RzCore *r, RzBinClass *c) {
 	rz_cons_printf("} %s;\n", c->name);
 }
 
-static void classdump_objc(RzCore *r, RzBinClass *c) {
+static void classdump_objc(RzBinClass *c) {
 	if (c->super) {
 		rz_cons_printf("@interface %s : %s\n{\n", c->name, c->super);
 	} else {
@@ -3476,7 +3481,7 @@ static inline bool is_known_namespace(const char *string) {
 }
 
 #define CXX_BIN_VISIBILITY_FLAGS (RZ_BIN_METH_PUBLIC | RZ_BIN_METH_PRIVATE | RZ_BIN_METH_PROTECTED)
-static void classdump_cpp(RzCore *r, RzBinClass *c) {
+static void classdump_cpp(RzBinClass *c) {
 	RzListIter *iter;
 	RzBinClassField *f;
 	RzBinSymbol *sym;
@@ -3598,7 +3603,7 @@ static inline const char *resolve_java_visibility(const char *v) {
 	return v ? v : "public";
 }
 
-static void classdump_java(RzCore *r, RzBinClass *c) {
+static void classdump_java(RzBinClass *c) {
 	RzBinClassField *f;
 	RzListIter *iter2, *iter3;
 	RzBinSymbol *sym;
@@ -3729,17 +3734,17 @@ RZ_API bool rz_core_bin_class_as_source_print(RZ_NONNULL RzCore *core, RZ_NONNUL
 		case RZ_BIN_LANGUAGE_GROOVY:
 		case RZ_BIN_LANGUAGE_DART:
 		case RZ_BIN_LANGUAGE_JAVA:
-			classdump_java(core, c);
+			classdump_java(c);
 			break;
 		case RZ_BIN_LANGUAGE_SWIFT:
 		case RZ_BIN_LANGUAGE_OBJC:
-			classdump_objc(core, c);
+			classdump_objc(c);
 			break;
 		case RZ_BIN_LANGUAGE_CXX:
-			classdump_cpp(core, c);
+			classdump_cpp(c);
 			break;
 		case RZ_BIN_LANGUAGE_C:
-			classdump_c(core, c);
+			classdump_c(c);
 			break;
 		default:
 			return false;

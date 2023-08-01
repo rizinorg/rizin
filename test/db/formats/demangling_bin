@@ -35,25 +35,25 @@ CMDS=isq
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv
-0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
+0x00001d9a 0 __ZSt3minImERKT_S2_S2_
 0x00002060 0 ___progname
 0x00001000 0 __mh_execute_header
 0x0000205c 0 _environ
 0x00001d52 0 _main
 0x00001c10 0 start
-0x00001ba0 0 __static_initialization_and_destruction_0(int, int)
-0x00001bf2 0 global constructors keyed to main
-0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
+0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
+0x00001bf2 0 __GLOBAL__I_main
+0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
 0x00001dc1 0 ___tcf_0
 0x00001e24 0  stub helpers
 0x00002000 0 _pvars
-0x00002064 0 std::__ioinit
-0x00001dee 0 imp.std::string::size() const
-0x00001df4 0 imp.std::string::operator[](unsigned long) const
-0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
-0x00001e00 0 imp.std::ios_base::Init::Init()
-0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+0x00002064 0 __ZStL8__ioinit
+0x00001dee 0 imp._ZNKSs4sizeEv
+0x00001df4 0 imp._ZNKSsixEm
+0x00001dfa 0 imp._ZNSolsEPFRSoS_E
+0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
+0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
+0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
@@ -65,6 +65,42 @@ ARGS=-e bin.demangle=true
 CMDS=pi 1 @ 0x08048230
 EXPECT=<<EOF
 call sym.imp.puts
+EOF
+RUN
+
+NAME=bin.demangle=false and symbol
+FILE=bins/elf/demangle-test-cpp
+ARGS=-e bin.demangle=false
+CMDS=is~vector
+EXPECT=<<EOF
+46  0x000012fc 0x000012fc WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD2Ev
+47  0x00001a48 0x00001a48 WEAK   FUNC   51       _ZNSt12_Vector_baseIiSaIiEE11_M_allocateEm
+52  0x00001462 0x00001462 WEAK   FUNC   62       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC2Ev
+60  0x00001286 0x00001286 WEAK   FUNC   68       _ZNSt6vectorIiSaIiEED1Ev
+62  0x000012ca 0x000012ca WEAK   FUNC   49       _ZNSt6vectorIiSaIiEE9push_backEOi
+67  0x00001a08 0x00001a08 WEAK   FUNC   64       _ZN9__gnu_cxxmiIPiSt6vectorIiSaIiEEEENS_17__normal_iteratorIT_T0_E15difference_typeERKS8_SB_
+69  0x00001318 0x00001318 WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEEC1Ev
+70  0x000019c0 0x000019c0 WEAK   FUNC   72       _ZNSt6vectorIiSaIiEE5beginEv
+76  0x000013c8 0x000013c8 WEAK   FUNC   154      _ZNSt6vectorIiSaIiEE12emplace_backIJiEEEvDpOT_
+78  0x00001334 0x00001334 WEAK   FUNC   77       _ZNSt12_Vector_baseIiSaIiEED1Ev
+79  0x00001462 0x00001462 WEAK   FUNC   62       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC1Ev
+81  0x000018b6 0x000018b6 WEAK   FUNC   29       _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC2ERKS1_
+83  0x000012fc 0x000012fc WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD1Ev
+85  0x0000155e 0x0000155e WEAK   FUNC   76       _ZNSt6vectorIiSaIiEE3endEv
+86  0x000014bc 0x000014bc WEAK   FUNC   53       _ZNSt12_Vector_baseIiSaIiEE13_M_deallocateEPim
+87  0x00001286 0x00001286 WEAK   FUNC   68       _ZNSt6vectorIiSaIiEED2Ev
+99  0x00001334 0x00001334 WEAK   FUNC   77       _ZNSt12_Vector_baseIiSaIiEED2Ev
+100 0x00001c72 0x00001c72 WEAK   FUNC   14       _ZNKSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
+103 0x00001b34 0x00001b34 WEAK   FUNC   34       _ZNKSt6vectorIiSaIiEE8max_sizeEv
+107 0x00001382 0x00001382 WEAK   FUNC   14       _ZNSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv
+113 0x00001a7c 0x00001a7c WEAK   FUNC   14       _ZNK9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEE4baseEv
+116 0x000018b6 0x000018b6 WEAK   FUNC   29       _ZN9__gnu_cxx17__normal_iteratorIPiSt6vectorIiSaIiEEEC1ERKS1_
+117 0x0000126a 0x0000126a WEAK   FUNC   27       _ZNSt6vectorIiSaIiEEC2Ev
+118 0x00001318 0x00001318 WEAK   FUNC   27       _ZNSt12_Vector_baseIiSaIiEEC2Ev
+122 0x000015aa 0x000015aa WEAK   FUNC   617      _ZNSt6vectorIiSaIiEE17_M_realloc_insertIJiEEEvN9__gnu_cxx17__normal_iteratorIPiS1_EEDpOT_
+128 0x000018d4 0x000018d4 WEAK   FUNC   236      _ZNKSt6vectorIiSaIiEE12_M_check_lenEmPKc
+129 0x0000126a 0x0000126a WEAK   FUNC   27       _ZNSt6vectorIiSaIiEEC1Ev
+144 0x00001b56 0x00001b56 WEAK   FUNC   35       _ZNKSt6vectorIiSaIiEE4sizeEv
 EOF
 RUN
 
@@ -446,12 +482,14 @@ RUN
 
 NAME=demangle c++ but simplified in session.
 FILE=bins/mach0/hellocxx-osx-i386
-ARGS=-M
 CMDS=<<EOF
 isq~std:
 e bin.demangle.flags=simplify
 echo ====================
 isq~std:
+e bin.demangle=false
+echo ====================
+isq~_Z
 EOF
 EXPECT=<<EOF
 0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
@@ -473,12 +511,23 @@ EXPECT=<<EOF
 0x00001e00 0 imp.std::ios_base::Init::Init()
 0x00001e06 0 imp.std::ios_base::Init::~Init()
 0x00001e12 0 imp.std::ostream& std::operator<< <std::char_traits<char> >(std::ostream&, char const*)
+====================
+0x00001d9a 0 __ZSt3minImERKT_S2_S2_
+0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
+0x00001c4e 0 __ZStL17__verify_groupingPKcmRKSs
+0x00002064 0 __ZStL8__ioinit
+0x00001dee 0 imp._ZNKSs4sizeEv
+0x00001df4 0 imp._ZNKSsixEm
+0x00001dfa 0 imp._ZNSolsEPFRSoS_E
+0x00001e00 0 imp._ZNSt8ios_base4InitC1Ev
+0x00001e06 0 imp._ZNSt8ios_base4InitD1Ev
+0x00001e12 0 imp._ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
 EOF
 RUN
 
 NAME=demangle c++ but simplified before the session.
 FILE=bins/mach0/hellocxx-osx-i386
-ARGS=-M -e bin.demangle.flags=simplify
+ARGS=-e bin.demangle.flags=simplify
 CMDS=<<EOF
 ic
 EOF
