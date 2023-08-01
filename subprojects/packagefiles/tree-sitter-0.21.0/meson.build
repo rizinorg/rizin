@@ -1,4 +1,10 @@
-project('tree-sitter', 'c')
+project('tree-sitter', 'c',
+  license: 'MIT',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 cc = meson.get_compiler('c')
 
