@@ -25,6 +25,7 @@
 #include <rz_il.h>
 #include <rz_platform.h>
 #include <rz_cmd.h>
+#include <rz_util/rz_queue.h>
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 
@@ -1135,8 +1136,13 @@ typedef struct rz_analysis_il_config_t {
  * This builds upon the low-level `RzILVM`, which by itself does not know about
  * IO and lifting, and enables emulation of instructions obtained by disassembling
  * and lifting with analysis plugins.
+ *
+ * Reordering of IL is also possible using il_queue.
+ * Reordering is required in cases like, when architecture needs handling of
+ * delay slots.
  */
 struct rz_analysis_il_vm_t {
+	RZ_NONNULL RzPQueue /*<RzAnalysisOp *>*/ *il_queue; ///< Queue<RzAnalysisOp*>;
 	RZ_NONNULL RzILVM *vm; ///< low-level vm to execute IL code
 	RZ_NONNULL RzBuffer *io_buf; ///< buffer to use for memory 0 (io)
 	RZ_NONNULL RzILRegBinding *reg_binding; ///< specifies which (global) variables are bound to registers

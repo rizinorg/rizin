@@ -229,6 +229,50 @@ RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *
 }
 
 /**
+ * Predict whether a branch will be taken or not
+ * Returns false if given Effect* is not a branch instruction.
+ * */
+static inline bool analysis_il_vm_predict_branch(RzILVM *vm, RzILOpEffect *b) {
+	rz_return_val_if_fail(vm && b, false);
+
+	// instruction without branch has no delay slots
+	if(b->code == RZ_IL_OP_BRANCH) {
+		return false;
+	}
+
+	RzILBool *condition = rz_il_evaluate_bool(vm, b->op.branch.condition);
+	if (!condition) {
+		return false;
+	}
+
+	bool ret;
+	if (condition->b) {
+		ret = rz_il_evaluate_effect(vm, b->op.branch.true_eff);
+	} else {
+		ret = rz_il_evaluate_effect(vm, b->op.branch.false_eff);
+	}
+
+	return ret;
+}
+
+/**
+ * Reorder branch instructions based on their delay slot.
+ * Instructions will be reordered if branch is taken, otherwise that many (op->delay) instructions
+ * will be skipped and execution will begin after delay number of instructions (RzILOpEffect).
+ * */
+static inline void analysis_il_vm_reorder_branch(RzAnalysisILVM *vm) {
+	rz_return_if_fail(vm && vm->vm);
+	for (size_t i = 0; i < vm->il_queue->v.len; i++) {
+		RzAnalysisOp *op = (RzAnalysisOp *)rz_pqueue_at(vm->il_queue, i);
+		rz_return_if_fail(op && op->il_op);
+
+		if (analysis_il_vm_predict_branch(vm->vm, op->il_op)) {
+
+		}
+	}
+}
+
+/**
  * Repeatedly perform steps in the VM until the condition callback returns false
  *
  * If given, this syncs the contents of \p reg into the vm.
@@ -250,29 +294,64 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(RZ_NONNULL RzAnalysis
 		rz_analysis_il_vm_sync_from_reg(vm, reg);
 	}
 
+	if (!vm->il_queue) {
+		vm->il_queue = rz_pqueue_new(rz_analysis_op_free);
+	}
+
+	// keep stepping through IL while condition predicate is true
+	// or while
 	RzAnalysisILStepResult res = RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS;
-	while (cond(vm, user)) {
+	int delay = 1;
+	while (cond(vm, user) || delay--) {
+		// get opcodes for mapping to IL
 		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
 		analysis->read_at(analysis, addr, code, sizeof(code));
-		RzAnalysisOp op = { 0 };
-		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT);
-		RzILOpEffect *ilop = r < 0 ? NULL : op.il_op;
 
+		// map retrieved opcodes and get uplifted IL instruction tree
+		RzAnalysisOp *op = rz_analysis_op_new();
+		int r = rz_analysis_op(analysis, op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT);
+		RzILOpEffect *ilop = r < 0 ? NULL : op->il_op;
+
+		// get number of delay slots this instruction has
+		if (!delay) {
+			delay = op->delay;
+		}
+
+		// if we got a nonnull IL, then execute
 		if (ilop) {
-			bool succ = rz_il_vm_step(vm->vm, ilop, addr + (op.size > 0 ? op.size : 1));
-			if (!succ) {
-				res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
-			}
+			// set op address and enqueue
+			op->addr = addr + (op->size > 0 ? op->size : 1);
+			rz_pqueue_enqueue(vm->il_queue, op);
 		} else {
 			res = RZ_ANALYSIS_IL_STEP_INVALID_OP;
 		}
 
-		rz_analysis_op_fini(&op);
+		rz_analysis_op_fini(op);
 		if (res != RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS) {
 			break;
 		}
 	}
+
+	// reorder pass
+	analysis_il_vm_reorder_branch(vm);
+
+	// execute instructions in queue
+	while (rz_pqueue_len(vm->il_queue)) {
+		RzAnalysisOp *op = (RzAnalysisOp *)rz_pqueue_dequeue(vm->il_queue);
+		bool succ = rz_il_vm_step(vm->vm, op->il_op, op->addr);
+		if (op) {
+			rz_analysis_op_free(op);
+		} else {
+			rz_warn_if_reached();
+		}
+
+		if (!succ) {
+			res = RZ_ANALYSIS_IL_STEP_IL_RUNTIME_ERROR;
+			break;
+		}
+	}
+
 	if (reg) {
 		rz_analysis_il_vm_sync_to_reg(vm, reg);
 	}
