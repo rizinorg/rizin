@@ -213,23 +213,27 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		case SPARC_INS_FB:
 			switch (INSOP(0).type) {
 			case SPARC_OP_REG:
-				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP(1).imm;
 				}
 				if (INSCC != SPARC_CC_ICC_A) { // always
 					op->fail = addr + 8;
+					op->delay = 1;
+					op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+				} else {
+					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				}
 				break;
 			case SPARC_OP_IMM:
-				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP(0).imm;
 				}
 				if (INSCC != SPARC_CC_ICC_A) { // always
 					op->fail = addr + 8;
+					op->delay = 1;
+					op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+				} else {
+					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				}
 				break;
 			default:

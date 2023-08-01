@@ -152,7 +152,7 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(RZ_NONNULL const RzPdb *pdb, const 
 	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
 		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
-			name = rz_demangler_msvc(gdata->name);
+			name = rz_demangler_msvc(gdata->name, RZ_DEMANGLER_FLAG_BASE);
 			name = (name) ? name : strdup(gdata->name);
 			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON: // JSON
@@ -212,12 +212,13 @@ static void pdb_set_symbols(const RzCore *core, const RzPdb *pdb, const ut64 img
 	if (!pe_stream) {
 		return;
 	}
+	RzDemanglerFlag dflags = rz_demangler_get_flags(core->bin->demangler);
 	char *file = rz_str_replace(strdup(pdbfile), ".pdb", "", 0);
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_list_foreach (gsym_data_stream->global_list, it, gdata) {
 		sctn_header = rz_list_get_n(pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
-			name = rz_demangler_msvc(gdata->name);
+			name = rz_demangler_msvc(gdata->name, dflags);
 			name = (name) ? name : strdup(gdata->name);
 			filtered_name = rz_name_filter2(name, true);
 			char *fname = rz_str_newf("pdb.%s.%s", file, filtered_name);

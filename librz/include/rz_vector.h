@@ -84,13 +84,13 @@ static inline size_t rz_vector_len(const RzVector *vec) {
 }
 
 // returns a pointer to the offset inside the array where the element of the index lies.
-static inline void *rz_vector_index_ptr(RzVector *vec, size_t index) {
+static inline void *rz_vector_index_ptr(const RzVector *vec, size_t index) {
 	rz_return_val_if_fail(vec && index < vec->capacity, NULL);
 	return (char *)vec->a + vec->elem_size * index;
 }
 
 // returns a pointer to the first element of the vector
-static inline void *rz_vector_head(RzVector *vec) {
+static inline void *rz_vector_head(const RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	return (void *)vec->a;
 }
@@ -247,7 +247,7 @@ static inline void rz_pvector_set(RzPVector *vec, size_t index, void *e) {
 	((void **)vec->v.a)[index] = e;
 }
 
-static inline bool rz_pvector_empty(RzPVector *vec) {
+static inline bool rz_pvector_empty(const RzPVector *vec) {
 	return rz_pvector_len(vec) == 0;
 }
 

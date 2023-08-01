@@ -531,7 +531,7 @@ EXPECT=<<EOF
 | 0x0048737f      f605d2542300.  test  byte [0x006bc858], 0x40
 | 0x00487386      7525           jne   0x4873ad
 | ----------- true: 0x004873ad  false: 0x00487388
-| 0x00487388      f3c3           ret
+| 0x00487388      f3c3           repz  ret
 
 | 0x00487390      8b05ea4d2300   mov   eax, dword [0x006bc180]
 | 0x00487396      85c0           test  eax, eax
@@ -1392,10 +1392,9 @@ RUN
 
 NAME=Function definition indirect calls
 FILE=bins/pe/msvcfindmain.exe
-BROKEN=1
 CMDS=<<EOF
 aaa
-pd 1 @ 0x004012c0 ~?DWORD
+pd 1 @ 0x004012c0 ~?dword
 EOF
 EXPECT=<<EOF
 1
@@ -2459,7 +2458,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 591,
+    "id": 612,
     "opex": {
       "operands": [
         {
@@ -2653,7 +2652,7 @@ EOF
 EXPECT=<<EOF
 ; DATA XREF from entry0 @ +0xf
 ;-- __libc_csu_fini:
-0x00400730      f3c3           ret
+0x00400730      f3c3           repz  ret
 ; CODE XREF from sym.__do_global_ctors_aux @ +0x2d
 0x004007f0      4883eb08       sub   rbx, 8
 ; CALL XREF from section..fini @ +0x4
@@ -2678,7 +2677,7 @@ EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x4005cf
 sym.__libc_csu_fini();
-0x00400730      f3c3           ret
+0x00400730      f3c3           repz  ret
 ; CODE XREF from sym.__do_global_ctors_aux @ 0x4007fd
 0x004007f0      4883eb08       sub   rbx, 8
   ; CALL XREF from sym._fini @ 0x40080c
@@ -3378,7 +3377,7 @@ mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
 prefix: 0
-id: 588
+id: 609
 bytes: 55
 refptr: 0
 size: 1

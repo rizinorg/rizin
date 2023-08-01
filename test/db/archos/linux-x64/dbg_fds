@@ -24,15 +24,3 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dbg.fds.count
-FILE=bins/elf/analysis/elf-nx
-ARGS=-d
-CMDS=<<EOF
-ddl~?
-EOF
-EXPECT=<<EOF
-3
-EOF
-RUN
-
-

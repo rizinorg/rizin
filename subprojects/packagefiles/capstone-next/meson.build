@@ -1,4 +1,4 @@
-project('capstone', 'c', version: '5.0', meson_version: '>=0.55.0')
+project('capstone', 'c', version: 'next', meson_version: '>=0.55.0')
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
@@ -48,11 +48,16 @@ cs_files = [
   'arch/XCore/XCoreInstPrinter.c',
   'arch/XCore/XCoreMapping.c',
   'arch/XCore/XCoreModule.c',
+  'arch/TriCore/TriCoreDisassembler.c',
+  'arch/TriCore/TriCoreInstPrinter.c',
+  'arch/TriCore/TriCoreMapping.c',
+  'arch/TriCore/TriCoreModule.c',
   'cs.c',
   'MCInst.c',
   'MCInstrDesc.c',
   'MCRegisterInfo.c',
   'SStream.c',
+  'Mapping.c',
   'utils.c',
 ]
 
@@ -74,6 +79,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
+  '-DCAPSTONE_HAS_TRICORE',
 ]
 
 libcapstone = library('capstone', cs_files,

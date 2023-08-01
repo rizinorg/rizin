@@ -43,8 +43,9 @@ analysis_plugins_list = [
   'xap',
   'xcore_cs',
 ]
-if capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   analysis_plugins_list += 'riscv_cs'
+  analysis_plugins_list += 'tricore_cs'
 endif
 
 if get_option('use_gpl')
@@ -56,7 +57,6 @@ if get_option('use_gpl')
     'riscv',
     'sh',
     'sparc_gnu',
-    'tricore',
     'vax',
     'xtensa',
     'z80',
@@ -232,8 +232,9 @@ rz_analysis_sources = [
   '../asm/arch/luac/v53/opcode_53.c'
 ]
 
-if capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   rz_analysis_sources += 'p/analysis_riscv_cs.c'
+  rz_analysis_sources += 'p/analysis_tricore_cs.c'
 endif
 
 if get_option('use_gpl')
@@ -245,7 +246,6 @@ if get_option('use_gpl')
     'p/analysis_riscv.c',
     'p/analysis_sh.c',
     'p/analysis_sparc_gnu.c',
-    'p/analysis_tricore.c',
     'p/analysis_vax.c',
     'p/analysis_xtensa.c',
     'p/analysis_z80.c',

@@ -1736,8 +1736,13 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	int mode = (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
-	if (a->cpu && strstr(a->cpu, "cortex")) {
-		mode |= CS_MODE_MCLASS;
+	if (RZ_STR_ISNOTEMPTY(a->cpu)) {
+		if (strstr(a->cpu, "cortexm") || strstr(a->cpu, "cortex-m")) {
+			mode |= CS_MODE_MCLASS;
+		}
+		if (a->bits != 64 && strstr(a->cpu, "v8")) {
+			mode |= CS_MODE_V8;
+		}
 	}
 
 	if (mode != ctx->omode || a->bits != ctx->obits) {
@@ -1761,7 +1766,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		return haa;
 	}
 
-	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(ctx->handle, (ut8 *)buf, RZ_MIN(4, len), addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {

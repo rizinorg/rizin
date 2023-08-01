@@ -498,6 +498,19 @@ struct test_struct { int x; int y; };
 EOF
 RUN
 
+NAME=td struct with attribute
+FILE==
+CMDS=<<EOF
+td "struct test_struct {int x;int y;} __attribute__((__packed__));"
+ts test_struct
+tsd test_struct
+EOF
+EXPECT=<<EOF
+pf dd x y
+struct test_struct { int x; int y; };
+EOF
+RUN
+
 NAME=enum32
 FILE==
 CMDS=<<EOF
@@ -549,6 +562,54 @@ enum v {
 };
 t = 0x8000000000000001
 p = 0x8000000000000008
+t
+p
+EOF
+RUN
+
+NAME=enhanced enum
+FILE==
+CMDS=<<EOF
+td "enum v : int { t=0x123, p=0x321 };"
+tcd v
+tc v
+tec v
+te v
+te v 0x123
+te v 0x321
+td "enum w : long long { t=0x123, p=0x321 };"
+tcd w
+tc w
+tec w
+te w
+te w 0x123
+te w 0x321
+EOF
+EXPECT=<<EOF
+enum v { t = 0x123, p = 0x321 };
+enum v {
+	t = 0x123,
+	p = 0x321
+};
+enum v {
+	t = 0x123,
+	p = 0x321
+};
+t = 0x123
+p = 0x321
+t
+p
+enum w { t = 0x123, p = 0x321 };
+enum w {
+	t = 0x123,
+	p = 0x321
+};
+enum w {
+	t = 0x123,
+	p = 0x321
+};
+t = 0x123
+p = 0x321
 t
 p
 EOF
@@ -1192,6 +1253,34 @@ var union Books books @ stack - 0x78
 EOF
 RUN
 
+NAME=ts and tu with multiple declarators
+FILE==
+CMDS=<<EOF
+td "struct bla {int foo,bar; void *b};"
+td "union foo {float a,b; int c,d;};"
+td "typedef struct {char *a; void *b;} ts, *pts;"
+tsc bla
+tuc foo
+ttc ts
+tsc "anonymous struct 0"
+ttc pts
+EOF
+EXPECT=<<EOF
+union foo {
+	float a;
+	float b;
+	int c;
+	int d;
+};
+typedef struct anonymous struct 0 ts;
+struct anonymous struct 0 {
+	char *a;
+	void *b;
+};
+typedef struct anonymous struct 0 * pts;
+EOF
+RUN
+
 NAME=ts function pointer test
 FILE==
 CMDS=<<EOF
@@ -1207,6 +1296,11 @@ ts boo
 tcd boo
 tsc boo
 .ts boo
+# See https://github.com/rizinorg/rizin/issues/2190
+#td "struct moo {wchar_t (*(*dunk)[])(int, const char*)} goo;"
+#ts moo
+#tcd moo
+#tsc moo
 EOF
 EXPECT=<<EOF
 pf dpz x (fp)fp b
@@ -2039,13 +2133,14 @@ NAME=td crash
 FILE==
 CMDS=<<EOF
 td "struct;"
-td "stract;"
+td "stract"
 td "struct crash __attribute__((packed)) { };"
 EOF
 EXPECT_ERR=<<EOF
-ERROR: core: Unsupported type definition: struct
+ERROR: core: Unsupported type definition: struct;;
 ERROR: core: Unsupported type definition: stract;
-ERROR: core: Unsupported type definition: struct crash __attribute__((packed)) { }
+ERROR: core: Unsupported type definition: { }
+Unsupported type definition: ;;
 EOF
 RUN
 

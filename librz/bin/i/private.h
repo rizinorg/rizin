@@ -34,8 +34,8 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
 
 RZ_IPI void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr);
 
-RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin);
-RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin);
+RZ_IPI bool rz_bin_demangle_symbol(RzBinSymbol *bsym, const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, bool force);
+RZ_IPI bool rz_bin_demangle_import(RzBinImport *import, const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, bool force);
 
 RZ_IPI int rz_bin_compare_class(RzBinClass *a, RzBinClass *b);
 RZ_IPI int rz_bin_compare_method(RzBinSymbol *a, RzBinSymbol *b);
@@ -48,6 +48,8 @@ RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64
 RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr);
 #endif /* WITH_SWIFT_DEMANGLER */
 
+RZ_IPI const RzDemanglerPlugin *rz_bin_process_get_demangler_plugin_from_lang(RzBin *bin, RzBinLanguage language);
+
 RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o);
 RZ_IPI void rz_bin_set_and_process_entries(RzBinFile *bf, RzBinObject *o);
 RZ_IPI void rz_bin_set_and_process_fields(RzBinFile *bf, RzBinObject *o);
@@ -57,9 +59,13 @@ RZ_IPI void rz_bin_set_and_process_sections(RzBinFile *bf, RzBinObject *o);
 RZ_IPI void rz_bin_set_and_process_strings(RzBinFile *bf, RzBinObject *o);
 RZ_IPI void rz_bin_set_imports_from_plugin(RzBinFile *bf, RzBinObject *o);
 RZ_IPI void rz_bin_set_symbols_from_plugin(RzBinFile *bf, RzBinObject *o);
-RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler);
-RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler);
-RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler);
+RZ_IPI void rz_bin_set_and_process_relocs(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags);
+RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags);
+RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags);
+
+RZ_IPI void rz_bin_demangle_relocs_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags);
+RZ_IPI void rz_bin_demangle_imports_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags);
+RZ_IPI void rz_bin_demangle_symbols_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags);
 
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o);
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_import(RzBinObject *o);

@@ -5,13 +5,13 @@
 #include <rz_bin.h>
 #include "i/private.h"
 
-static const RzDemanglerPlugin *process_get_demangler_plugin_from_lang(RzBinFile *bf, RzBinLanguage language) {
+RZ_IPI const RzDemanglerPlugin *rz_bin_process_get_demangler_plugin_from_lang(RzBin *bin, RzBinLanguage language) {
 	language = RZ_BIN_LANGUAGE_MASK(language);
 	const char *lang_s = rz_bin_language_to_string(language);
 	if (!lang_s) {
 		return NULL;
 	}
-	return rz_demangler_plugin_get(bf->rbin->demangler, lang_s);
+	return rz_demangler_plugin_get(bin->demangler, lang_s);
 }
 
 RZ_IPI void rz_bin_process_rust(RzBinObject *o, char *demangled, ut64 paddr, ut64 vaddr, bool is_method) {
@@ -173,10 +173,11 @@ RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	}
 
 	// now we can process the data.
-	const RzDemanglerPlugin *demangler = process_get_demangler_plugin_from_lang(bf, o->lang);
-	rz_bin_process_symbols(bf, o, demangler);
-	rz_bin_process_imports(bf, o, demangler);
-	rz_bin_set_and_process_relocs(bf, o, demangler);
+	RzDemanglerFlag flags = rz_demangler_get_flags(bf->rbin->demangler);
+	const RzDemanglerPlugin *demangler = rz_bin_process_get_demangler_plugin_from_lang(bf->rbin, o->lang);
+	rz_bin_process_symbols(bf, o, demangler, flags);
+	rz_bin_process_imports(bf, o, demangler, flags);
+	rz_bin_set_and_process_relocs(bf, o, demangler, flags);
 
 	return true;
 }
@@ -188,4 +189,34 @@ RZ_API bool rz_bin_object_reset_strings(RZ_NONNULL RzBin *bin, RZ_NONNULL RzBinF
 	rz_return_val_if_fail(bin && bf && obj, false);
 	rz_bin_set_and_process_strings(bf, obj);
 	return obj->strings != NULL;
+}
+
+/**
+ * \brief      If the given flags differs from the one already set, then re-demangles all the symbols.
+ *
+ * \param      bin    The RzBin context to used for demangling
+ * \param[in]  flags  The demangler flags to apply
+ */
+RZ_API void rz_bin_demangle_with_flags(RZ_NONNULL RzBin *bin, RzDemanglerFlag flags) {
+	rz_return_if_fail(bin && bin->binfiles);
+
+	RzDemanglerFlag f = rz_demangler_get_flags(bin->demangler);
+	if ((f & flags) == flags) {
+		return;
+	}
+	rz_demangler_set_flags(bin->demangler, flags);
+
+	RzBinFile *bf = NULL;
+	RzListIter *it = NULL;
+	// reload each bins and demangle properly
+	rz_list_foreach (bin->binfiles, it, bf) {
+		if (!bf || !bf->o) {
+			continue;
+		}
+		RzBinObject *o = bf->o;
+		const RzDemanglerPlugin *demangler = rz_bin_process_get_demangler_plugin_from_lang(bin, o->lang);
+		rz_bin_demangle_relocs_with_flags(o, demangler, flags);
+		rz_bin_demangle_imports_with_flags(o, demangler, flags);
+		rz_bin_demangle_symbols_with_flags(o, demangler, flags);
+	}
 }

@@ -234,6 +234,7 @@ typedef struct rz_bin_info_t {
 	int has_sanitizers;
 	int has_crypto;
 	int has_nx;
+	bool has_nobtcfi; ///< OpenBSD, linked with -Wl,-z,nobtcfi to opt-out of IBT/BTI
 	int big_endian;
 	char *actual_checksum;
 	char *claimed_checksum;
@@ -1011,6 +1012,7 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data);
 
 // demangle functions
+RZ_API void rz_bin_demangle_with_flags(RZ_NONNULL RzBin *bin, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const char *language, RZ_NULLABLE const char *mangled);
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 

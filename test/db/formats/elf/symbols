@@ -171,7 +171,11 @@ RUN
 
 NAME=special ARM symbols with dot
 FILE=bins/elf/special-sym-with-dot.bin
-CMDS=e asm.bytes=true; pd 5 @ 0x464;
+CMDS=<<EOF
+e asm.bytes=true
+e asm.cpu=thumb2
+pd 5 @ 0x464
+EOF
 EXPECT=<<EOF
             ;-- main:
             0x00000464      80b5           push  {r7, lr}

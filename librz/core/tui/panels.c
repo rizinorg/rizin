@@ -28,8 +28,8 @@
 
 #define PANEL_CMD_SYMBOLS       "isq"
 #define PANEL_CMD_XREFS         "axl"
-#define PANEL_CMD_STACK         "px"
-#define PANEL_CMD_REGISTERS     "?== true `e cfg.debug`; ?! dr; ?? ar" // select dr or ar depending on cfg.debug
+#define PANEL_CMD_STACK         "xc"
+#define PANEL_CMD_REGISTERS     "%== true `e cfg.debug`; %! dr; %% ar"
 #define PANEL_CMD_DISASSEMBLY   "pd"
 #define PANEL_CMD_DISASMSUMMARY "pdsf"
 #define PANEL_CMD_FUNCTION      "afl"

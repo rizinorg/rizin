@@ -62,7 +62,7 @@ static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 #define INST_HANDLER(OPCODE_NAME) static void _inst__##OPCODE_NAME(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T) \
 	{ \
-#OP, (M), (SL), _inst__##OP, (C), (SZ), RZ_ANALYSIS_OP_TYPE_##T \
+		#OP, (M), (SL), _inst__##OP, (C), (SZ), RZ_ANALYSIS_OP_TYPE_##T \
 	}
 #define INST_LAST \
 	{ "unknown", 0, 0, (void *)0, 2, 1, RZ_ANALYSIS_OP_TYPE_UNK }

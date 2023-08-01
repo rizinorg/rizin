@@ -112,18 +112,21 @@ jobs:
     - name: Install wget, software-properties-common, lsb-release (dependencies of LLVM install script)
       run: sudo apt --assume-yes install wget software-properties-common lsb-release
 
-    - name: Install automatic LLVM 15
-      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 15
+    - name: Uninstall old conflicting packages
+      run: sudo apt purge --assume-yes --auto-remove llvm python3-lldb-14 llvm-14
 
-    - name: Install clang-format-15
-      run: sudo apt --assume-yes install clang-format-15
+    - name: Install automatic LLVM 16
+      run: wget https://apt.llvm.org/llvm.sh -O /tmp/llvm-install.sh; chmod +x /tmp/llvm-install.sh; sudo /tmp/llvm-install.sh 16
+
+    - name: Install clang-format-16
+      run: sudo apt --assume-yes install clang-format-16
 
     - name: Install gitpython
       run: sudo pip install gitpython
 
     - name: Run clang-format
       run: |
-        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-15 150
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-16 160
         clang-format --version
         python sys/clang-format.py --check --verbose
 
@@ -141,7 +144,7 @@ jobs:
         npm install prettier
 
     - name: Run prettier
-      run: find . -name "*.js" | grep -v "subprojects/tree-sitter-0" | grep -v "bindings/node/index.js" | xargs npx prettier  --print-width 120 --check
+      run: find . -name "*.js" | grep -v "bindings/node/index.js\|subprojects/tree-sitter" | xargs npx prettier  --print-width 120 --check
 
   python:
     needs: changes

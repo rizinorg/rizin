@@ -1672,7 +1672,7 @@ NAME=Resolve java constant pool index
 FILE=bins/java/Pig.class
 CMDS=javar 15
 EXPECT=<<EOF
-void java.io.PrintStream.println(String)
+void java.io.PrintStream.println(java.lang.String)
 EOF
 RUN
 

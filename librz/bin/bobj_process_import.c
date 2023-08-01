@@ -39,7 +39,7 @@ RZ_IPI void rz_bin_set_imports_from_plugin(RzBinFile *bf, RzBinObject *o) {
 	rz_warn_if_fail(o->imports->free);
 }
 
-RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler) {
+RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
 	if (!demangler || rz_list_length(o->imports) < 1) {
 		return;
 	}
@@ -54,7 +54,7 @@ RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemang
 		}
 
 		// demangle the import
-		if (!rz_bin_demangle_import(element, demangler) ||
+		if (!rz_bin_demangle_import(element, demangler, flags, false) ||
 			!language_cb) {
 			continue;
 		}
@@ -63,5 +63,17 @@ RZ_IPI void rz_bin_process_imports(RzBinFile *bf, RzBinObject *o, const RzDemang
 		// level; this can allow to add also classes
 		// methods and fields.
 		language_cb(o, element);
+	}
+}
+
+RZ_IPI void rz_bin_demangle_imports_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
+	RzListIter *it;
+	RzBinImport *element;
+	rz_list_foreach (o->imports, it, element) {
+		if (!element->name) {
+			continue;
+		}
+
+		rz_bin_demangle_import(element, demangler, flags, true);
 	}
 }

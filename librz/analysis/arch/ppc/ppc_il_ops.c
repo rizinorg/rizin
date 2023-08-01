@@ -83,7 +83,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LWZCIX:
 	case PPC_INS_LDCIX:
 #endif
-		base = VARG(rA);
+		base = rA ? VARG(rA) : NULL;
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
@@ -91,7 +91,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 			RzILOpPure *imm = SN(16, d);
 			disp = EXTEND(PPC_ARCH_BITS, imm);
 		}
-		ea = ADD(base, disp);
+		ea = base ? ADD(base, disp) : disp;
 		RzILOpPure *loadw = LOADW(mem_acc_size, VARLP("ea"));
 		if (ppc_is_algebraic(id)) {
 			into_rt = EXTEND(PPC_ARCH_BITS, VARLP("loadw"));
@@ -107,9 +107,9 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	case PPC_INS_LHBRX:
 	case PPC_INS_LWBRX:
 	case PPC_INS_LDBRX:
-		base = VARG(rA);
+		base = rA ? VARG(rA) : NULL;
 		disp = VARG(rB);
-		ea = ADD(base, disp);
+		ea = base ? ADD(base, disp) : disp;
 
 #define LB(i) LOADW(8, ADD(VARLP("ea"), UA(i)))
 		if (IN_BE_MODE) {
@@ -225,8 +225,9 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 		ut32 r = ppc_log_2(DCACHE_LINE_SIZE);
 		rA = cs_reg_name(handle, INSOP(0).reg);
 		rB = cs_reg_name(handle, INSOP(1).reg);
+		base = rA ? VARG(rA) : NULL;
 
-		ea = ADD(VARG(rA), VARG(rB));
+		ea = base ? ADD(base, VARG(rB)) : VARG(rB);
 		// Align EA
 		ea = LOGAND(ea, SHIFTL0(UA(-1), U8(r)));
 		//! DCACHE_LINE_SIZE is currently hard coded. Should be replaced by config option.
@@ -255,13 +256,13 @@ static RzILOpEffect *store_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, con
 	case PPC_INS_STWCIX:
 	case PPC_INS_STDCIX:
 #endif
-		base = VARG(rA);
+		base = rA ? VARG(rA) : NULL;
 		if (ppc_is_x_form(id)) {
 			disp = VARG(rB);
 		} else {
 			disp = EXTEND(PPC_ARCH_BITS, S16(d));
 		}
-		ea = ADD(base, disp);
+		ea = base ? ADD(base, disp) : disp;
 		store = STOREW(ea, CAST(mem_acc_size, IL_FALSE, VARG(rS)));
 		break;
 	case PPC_INS_STDCX:
@@ -408,18 +409,67 @@ static RzILOpEffect *add_sub_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, b
 	return SEQ5(set_ops, set, set_carry, overflow, update_cr0);
 }
 
+static bool is_logical_compare(ut32 id) {
+	switch (id) {
+	case PPC_INS_CMPW:
+	case PPC_INS_CMPD:
+	case PPC_INS_CMPWI:
+	case PPC_INS_CMPDI:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
 	ut32 id = insn->id;
-	const char *crX;
-	const char *rA;
-	const char *rB;
-	st64 imm;
+	const char *crX = NULL;
+	const char *rA = NULL;
+	const char *rB = NULL;
+	st64 imm = 0;
 
-	RzILOpPure *left;
-	RzILOpPure *right;
+	RzILOpPure *left = NULL;
+	RzILOpPure *right = NULL;
 
 	bool signed_cmp = false;
+
+#if CS_API_MAJOR > 4
+	// weird bug on cmp/cmpl in capstone v5
+	if (id == PPC_INS_CMP) {
+		if (!strcmp(insn->mnemonic, "cmpw")) {
+			id = PPC_INS_CMPW;
+		} else if (!strcmp(insn->mnemonic, "cmpd")) {
+			id = PPC_INS_CMPD;
+		} else {
+			rz_warn_if_reached();
+		}
+	} else if (id == PPC_INS_CMPL) {
+		if (!strcmp(insn->mnemonic, "cmplw")) {
+			id = PPC_INS_CMPLW;
+		} else if (!strcmp(insn->mnemonic, "cmpld")) {
+			id = PPC_INS_CMPLD;
+		} else {
+			rz_warn_if_reached();
+		}
+	} else if (id == PPC_INS_CMPI) {
+		if (!strcmp(insn->mnemonic, "cmpwi")) {
+			id = PPC_INS_CMPWI;
+		} else if (!strcmp(insn->mnemonic, "cmpdi")) {
+			id = PPC_INS_CMPDI;
+		} else {
+			rz_warn_if_reached();
+		}
+	} else if (id == PPC_INS_CMPLI) {
+		if (!strcmp(insn->mnemonic, "cmplwi")) {
+			id = PPC_INS_CMPLWI;
+		} else if (!strcmp(insn->mnemonic, "cmpldi")) {
+			id = PPC_INS_CMPLDI;
+		} else {
+			rz_warn_if_reached();
+		}
+	}
+#endif
 
 	// READ
 	// cr0 reg is not explicitly stored in the operands list.
@@ -443,7 +493,7 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 
 	// EXEC
 	// Logical <=> unsigned comparisons ; Not logical <=> signed comparison.
-	signed_cmp = (id == PPC_INS_CMPW || id == PPC_INS_CMPD || id == PPC_INS_CMPWI || id == PPC_INS_CMPDI);
+	signed_cmp = is_logical_compare(id);
 
 	// Left operand is always RA
 	if (id == PPC_INS_CMPW || id == PPC_INS_CMPWI || id == PPC_INS_CMPLW || id == PPC_INS_CMPLWI) {
@@ -476,8 +526,24 @@ static RzILOpEffect *compare_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 	return ppc_cmp_set_cr(left, right, signed_cmp, crX, mode);
 }
 
+#if CS_API_MAJOR > 4
+// bug on xori in capstone v5
+static bool is_xnop(cs_insn *insn) {
+	return insn->id == PPC_INS_XNOP &&
+		INSOP(0).reg == 0 &&
+		INSOP(1).reg == 0 &&
+		INSOP(2).imm == 0;
+}
+#endif
+
 static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	rz_return_val_if_fail(handle && insn, EMPTY());
+#if CS_API_MAJOR > 4
+	if (is_xnop(insn)) {
+		return NOP();
+	}
+#endif
+
 	ut32 id = insn->id;
 	// READ
 	const char *rA = cs_reg_name(handle, INSOP(0).reg);
@@ -526,6 +592,14 @@ static RzILOpEffect *bitwise_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		}
 		res = LOGOR(op0, op1);
 		break;
+#if CS_API_MAJOR > 4
+		// bug on xori in capstone v5
+	case PPC_INS_XNOP:
+		op0 = VARG(rS);
+		op1 = EXTZ(U16(uI));
+		res = LOGXOR(op0, op1);
+		break;
+#endif
 	case PPC_INS_XOR:
 	case PPC_INS_XORI:
 	case PPC_INS_XORIS:
@@ -968,6 +1042,15 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 	// C/CL/CR			Clear, clear left/right
 	// M/NM/MI			Mask, AND with mask, mask insert
 
+#if CS_API_MAJOR == 5 && CS_API_MINOR == 0
+	// weird bug on capstone v5.0
+	if (id == PPC_INS_CLRLDI && !strcmp(insn->mnemonic, "rldicl")) {
+		id = PPC_INS_RLDICL;
+	} else if (id == PPC_INS_CLRLWI && !strcmp(insn->mnemonic, "rlwinm")) {
+		id = PPC_INS_RLWINM;
+	}
+#endif
+
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
@@ -1165,7 +1248,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 		// TODO Exception
 		NOT_IMPLEMENTED;
 	case PPC_INS_NOP:
+#if CS_API_MAJOR < 5
+		// bug on xori in capstone v5
 	case PPC_INS_XNOP:
+#endif
 	case PPC_INS_DCBT:
 	case PPC_INS_DCBTST:
 	// Everything is executed linear => Sync instructions are NOP()s.
@@ -1308,6 +1394,10 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_ORIS:
 	case PPC_INS_NAND:
 	case PPC_INS_NOR:
+#if CS_API_MAJOR > 4
+		// bug on xori in capstone v5
+	case PPC_INS_XNOP:
+#endif
 	case PPC_INS_XOR:
 	case PPC_INS_XORI:
 	case PPC_INS_XORIS:
@@ -1322,8 +1412,18 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 #if CS_API_MAJOR > 3
 	case PPC_INS_CMPB:
 #endif
+#if CS_API_MAJOR > 4
+	case PPC_INS_CMPRB:
+	case PPC_INS_CMPEQB:
+#endif
 		lop = bitwise_op(handle, insn, mode);
 		break;
+#if CS_API_MAJOR > 4
+	case PPC_INS_CMP:
+	case PPC_INS_CMPI:
+	case PPC_INS_CMPL:
+	case PPC_INS_CMPLI:
+#endif
 	case PPC_INS_CMPD:
 	case PPC_INS_CMPDI:
 	case PPC_INS_CMPLD:
@@ -1378,6 +1478,142 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFL:
 	case PPC_INS_BDZFLA:
+#if CS_API_MAJOR > 4
+	case PPC_INS_BCDCFN:
+	case PPC_INS_BCDCFSQ:
+	case PPC_INS_BCDCFZ:
+	case PPC_INS_BCDCPSGN:
+	case PPC_INS_BCDCTN:
+	case PPC_INS_BCDCTSQ:
+	case PPC_INS_BCDCTZ:
+	case PPC_INS_BCDS:
+	case PPC_INS_BCDSETSGN:
+	case PPC_INS_BCDSR:
+	case PPC_INS_BCDTRUNC:
+	case PPC_INS_BCDUS:
+	case PPC_INS_BCDUTRUNC:
+	case PPC_INS_BDNZFLR:
+	case PPC_INS_BDNZFLRL:
+	case PPC_INS_BDNZTLR:
+	case PPC_INS_BDNZTLRL:
+	case PPC_INS_BDZFLR:
+	case PPC_INS_BDZFLRL:
+	case PPC_INS_BDZTLR:
+	case PPC_INS_BDZTLRL:
+	case PPC_INS_BEQ:
+	case PPC_INS_BEQA:
+	case PPC_INS_BEQCTR:
+	case PPC_INS_BEQCTRL:
+	case PPC_INS_BEQL:
+	case PPC_INS_BEQLA:
+	case PPC_INS_BEQLR:
+	case PPC_INS_BEQLRL:
+	case PPC_INS_BF:
+	case PPC_INS_BFA:
+	case PPC_INS_BFCTR:
+	case PPC_INS_BFCTRL:
+	case PPC_INS_BFL:
+	case PPC_INS_BFLA:
+	case PPC_INS_BFLR:
+	case PPC_INS_BFLRL:
+	case PPC_INS_BGE:
+	case PPC_INS_BGEA:
+	case PPC_INS_BGECTR:
+	case PPC_INS_BGECTRL:
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+	case PPC_INS_BGELR:
+	case PPC_INS_BGELRL:
+	case PPC_INS_BGT:
+	case PPC_INS_BGTA:
+	case PPC_INS_BGTCTR:
+	case PPC_INS_BGTCTRL:
+	case PPC_INS_BGTL:
+	case PPC_INS_BGTLA:
+	case PPC_INS_BGTLR:
+	case PPC_INS_BGTLRL:
+	case PPC_INS_BLE:
+	case PPC_INS_BLEA:
+	case PPC_INS_BLECTR:
+	case PPC_INS_BLECTRL:
+	case PPC_INS_BLEL:
+	case PPC_INS_BLELA:
+	case PPC_INS_BLELR:
+	case PPC_INS_BLELRL:
+	case PPC_INS_BLT:
+	case PPC_INS_BLTA:
+	case PPC_INS_BLTCTR:
+	case PPC_INS_BLTCTRL:
+	case PPC_INS_BLTL:
+	case PPC_INS_BLTLA:
+	case PPC_INS_BLTLR:
+	case PPC_INS_BLTLRL:
+	case PPC_INS_BNE:
+	case PPC_INS_BNEA:
+	case PPC_INS_BNECTR:
+	case PPC_INS_BNECTRL:
+	case PPC_INS_BNEL:
+	case PPC_INS_BNELA:
+	case PPC_INS_BNELR:
+	case PPC_INS_BNELRL:
+	case PPC_INS_BNG:
+	case PPC_INS_BNGA:
+	case PPC_INS_BNGCTR:
+	case PPC_INS_BNGCTRL:
+	case PPC_INS_BNGL:
+	case PPC_INS_BNGLA:
+	case PPC_INS_BNGLR:
+	case PPC_INS_BNGLRL:
+	case PPC_INS_BNL:
+	case PPC_INS_BNLA:
+	case PPC_INS_BNLCTR:
+	case PPC_INS_BNLCTRL:
+	case PPC_INS_BNLL:
+	case PPC_INS_BNLLA:
+	case PPC_INS_BNLLR:
+	case PPC_INS_BNLLRL:
+	case PPC_INS_BNS:
+	case PPC_INS_BNSA:
+	case PPC_INS_BNSCTR:
+	case PPC_INS_BNSCTRL:
+	case PPC_INS_BNSL:
+	case PPC_INS_BNSLA:
+	case PPC_INS_BNSLR:
+	case PPC_INS_BNSLRL:
+	case PPC_INS_BNU:
+	case PPC_INS_BNUA:
+	case PPC_INS_BNUCTR:
+	case PPC_INS_BNUCTRL:
+	case PPC_INS_BNUL:
+	case PPC_INS_BNULA:
+	case PPC_INS_BNULR:
+	case PPC_INS_BNULRL:
+	case PPC_INS_BPERMD:
+	case PPC_INS_BSO:
+	case PPC_INS_BSOA:
+	case PPC_INS_BSOCTR:
+	case PPC_INS_BSOCTRL:
+	case PPC_INS_BSOL:
+	case PPC_INS_BSOLA:
+	case PPC_INS_BSOLR:
+	case PPC_INS_BSOLRL:
+	case PPC_INS_BT:
+	case PPC_INS_BTA:
+	case PPC_INS_BTCTR:
+	case PPC_INS_BTCTRL:
+	case PPC_INS_BTL:
+	case PPC_INS_BTLA:
+	case PPC_INS_BTLR:
+	case PPC_INS_BTLRL:
+	case PPC_INS_BUN:
+	case PPC_INS_BUNA:
+	case PPC_INS_BUNCTR:
+	case PPC_INS_BUNCTRL:
+	case PPC_INS_BUNL:
+	case PPC_INS_BUNLA:
+	case PPC_INS_BUNLR:
+	case PPC_INS_BUNLRL:
+#endif
 		lop = branch_op(handle, insn, mode);
 		break;
 	// These instruction are not in the ISA manual v3.1B.

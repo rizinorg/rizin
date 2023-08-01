@@ -891,33 +891,35 @@ static RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RzILOpPure *val, int bits, 
  * \param op
  * \param analysis_bits bitness
  */
-static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc) {
-	RzILOpPure *ret = NULL;
+static RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size) {
 	switch (op.type) {
 	case X86_OP_INVALID:
+		if (implicit_size) {
+			return SN(implicit_size * BITS_PER_BYTE, 1);
+		}
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
-		break;
+		return NULL;
 	case X86_OP_REG:
-		ret = x86_il_get_reg_bits(op.reg, analysis_bits, pc);
-		break;
+		return x86_il_get_reg_bits(op.reg, analysis_bits, pc);
 	case X86_OP_IMM:
 		/* Immediate values are always sign extended */
-		ret = SN(op.size * BITS_PER_BYTE, op.imm);
-		break;
+		return SN(op.size * BITS_PER_BYTE, op.imm);
 	case X86_OP_MEM:
-		ret = LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
-		break;
+		return LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
 #if CS_API_MAJOR <= 3
 	case X86_OP_FP:
 		RZ_LOG_WARN("RzIL: x86: Floating point instructions not implemented yet\n");
-		break;
+		return NULL;
 #endif
+	default:
+		return NULL;
 	}
-	return ret;
 }
 
-#define x86_il_get_operand(op) x86_il_get_operand_bits(op, analysis->bits, pc)
-#define x86_il_get_op(opnum)   x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits, pc)
+#define x86_il_get_op(opnum) \
+	x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits, pc, 0)
+#define x86_il_get_op_implicit(opnum, mem_sz) \
+	x86_il_get_operand_bits(ins->structure->operands[opnum], analysis->bits, pc, mem_sz)
 
 /**
  * \brief Get the value of the operand \p op
@@ -3006,23 +3008,23 @@ IL_LIFTER(pushal) {
 	ut8 tmp_count_size = 0; \
 	switch (size) { \
 	case 1: \
-		temp_count = SETL("_tmp_cnt", MOD(UNSIGNED(5, x86_il_get_op(1)), UN(5, 9))); \
-		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op(1))); \
+		temp_count = SETL("_tmp_cnt", MOD(UNSIGNED(5, x86_il_get_op_implicit(1, size)), UN(5, 9))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op_implicit(1, size))); \
 		tmp_count_size = 5; \
 		break; \
 	case 2: \
-		temp_count = SETL("_tmp_cnt", MOD(UNSIGNED(5, x86_il_get_op(1)), UN(5, 17))); \
-		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op(1))); \
+		temp_count = SETL("_tmp_cnt", MOD(UNSIGNED(5, x86_il_get_op_implicit(1, size)), UN(5, 17))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op_implicit(1, size))); \
 		tmp_count_size = 5; \
 		break; \
 	case 4: \
-		temp_count = SETL("_tmp_cnt", UNSIGNED(5, x86_il_get_op(1))); \
-		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op(1))); \
+		temp_count = SETL("_tmp_cnt", UNSIGNED(5, x86_il_get_op_implicit(1, size))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(5, x86_il_get_op_implicit(1, size))); \
 		tmp_count_size = 5; \
 		break; \
 	case 8: \
-		temp_count = SETL("_tmp_cnt", UNSIGNED(6, x86_il_get_op(1))); \
-		cnt_masked = SETL("_cnt_mask", UNSIGNED(6, x86_il_get_op(1))); \
+		temp_count = SETL("_tmp_cnt", UNSIGNED(6, x86_il_get_op_implicit(1, size))); \
+		cnt_masked = SETL("_cnt_mask", UNSIGNED(6, x86_il_get_op_implicit(1, size))); \
 		tmp_count_size = 6; \
 		break; \
 	default: \

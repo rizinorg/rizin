@@ -42,8 +42,6 @@ EXPECT=<<EOF
 0x0066dc76 str.
 0x0066e68d str.Addr
 ;-- str.flag:
-;-- str.sort:
-;-- str.sync:
 13495
 EOF
 RUN
@@ -129,7 +127,7 @@ EXPECT=<<EOF
 0x0027401c str.btcctl.conf
 0x00274090 str.rpc.cert
 0x00274104 str.rpc.cert
-14104
+14056
 EOF
 RUN
 
@@ -233,7 +231,7 @@ EXPECT=<<EOF
 0x100006e64 str.pointer
 0x100006eac str.panicwrap:_no___in
 0x1000076d0 str.internal_error___misuse_of_itab
-1709
+1710
 0x10008bada 31 31 slice bounds out of range [:%x]
 0x10008babb 31 31 slice bounds out of range [%x:]
 0x10008be19 32 32 slice bounds out of range [::%x]

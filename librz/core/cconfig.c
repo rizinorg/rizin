@@ -1043,6 +1043,26 @@ static bool cb_bindemangle(void *user, void *data) {
 	return true;
 }
 
+static bool cb_bindemangle_flags(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		print_node_options(node);
+		return false;
+	}
+	if (!strcmp(node->value, "all")) {
+		rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_ENABLE_ALL);
+	} else if (!strcmp(node->value, "base")) {
+		rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_BASE);
+	} else if (!strcmp(node->value, "simplify")) {
+		rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_SIMPLIFY);
+	} else {
+		RZ_LOG_ERROR("config: invalid option for bin.demangle.flags\n");
+		return false;
+	}
+	return true;
+}
+
 static bool cb_asmsyntax(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3186,8 +3206,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
-	SETCB("bin.demangle", "true", &cb_bindemangle, "Import demangled symbols from RzBin");
+	SETCB("bin.demangle", "true", &cb_bindemangle, "Demangles all symbols parsed via RzBin");
 	SETBPREF("bin.demangle.libs", "false", "Show library name on demangled symbols names");
+	n = NODECB("bin.demangle.flags", "base", &cb_bindemangle_flags);
+	SETDESC(n, "Sets the flags of the parsed symbols via RzBin");
+	SETOPTIONS(n, "base", "simplify", "all", NULL);
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
 	SETCB("bin.dbginfo", "true", &cb_bindbginfo, "Load debug information at startup if available");

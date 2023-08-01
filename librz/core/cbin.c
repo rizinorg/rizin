@@ -3131,6 +3131,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		pj_kb(pj, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
 		pj_kb(pj, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
 		pj_kb(pj, "canary", info->has_canary);
+		if (info->has_nobtcfi) {
+			pj_kb(pj, "nobtcfi", true);
+		}
 		pj_kb(pj, "PIE", info->has_pi);
 		pj_kb(pj, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info);
 		pj_kb(pj, "NX", info->has_nx);
@@ -3235,6 +3238,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		table_add_row_bool(t, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
 		table_add_row_bool(t, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
 		table_add_row_bool(t, "canary", info->has_canary);
+		if (info->has_nobtcfi) {
+			table_add_row_bool(t, "nobtcfi", true);
+		}
 		table_add_row_bool(t, "PIE", info->has_pi);
 		table_add_row_bool(t, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info);
 		table_add_row_bool(t, "NX", info->has_nx);
@@ -3574,7 +3580,7 @@ static inline char *demangle_type(const char *any) {
 		return strdup("unknown");
 	}
 	switch (any[0]) {
-	case 'L': return rz_demangler_java(any);
+	case 'L': return rz_demangler_java(any, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 	case 'B': return strdup("byte");
 	case 'C': return strdup("char");
 	case 'D': return strdup("double");
@@ -3632,7 +3638,7 @@ static void classdump_java(RzCore *r, RzBinClass *c) {
 	rz_list_foreach (c->methods, iter3, sym) {
 		const char *mn = sym->dname ? sym->dname : sym->name;
 		visibility = resolve_java_visibility(sym->visibility_str);
-		char *dem = rz_demangler_java(mn);
+		char *dem = rz_demangler_java(mn, RZ_DEMANGLER_FLAG_ENABLE_ALL);
 		if (!dem) {
 			dem = strdup(mn);
 		} else if (simplify && dem && package && classname) {

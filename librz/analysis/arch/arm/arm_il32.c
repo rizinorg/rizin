@@ -198,6 +198,10 @@ static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 
 static inline RzFloatFormat dt2fmt(arm_vectordata_type type) {
 	switch (type) {
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+		return RZ_FLOAT_IEEE754_BIN_16;
+#endif
 	case ARM_VECTORDATA_F32:
 		return RZ_FLOAT_IEEE754_BIN_32;
 	case ARM_VECTORDATA_F64:
@@ -458,6 +462,13 @@ static RzILOpBitVector *repeated_imm(ut32 imm_width, ut32 dreg_width, ut32 imm) 
 static ut32 get_imm(cs_insn *insn, int n, RZ_NULLABLE RzILOpBool **carry_out) {
 	if (carry_out) {
 		*carry_out = NULL;
+	}
+	if (ISFPIMM(n)) {
+		float fpimm = FPIMM(n);
+		RzFloat *f = rz_float_new_from_f32(fpimm);
+		ut32 hex_imm = rz_bv_to_ut32(f->s);
+		rz_float_free(f);
+		return hex_imm;
 	}
 	cs_arm_op *op = &insn->detail->arm.operands[n];
 	ut32 imm = IMM(n);
@@ -1697,7 +1708,7 @@ static RzILOpEffect *qadd16(cs_insn *insn, bool is_thumb) {
 	}
 	bool is_signed = insn->id == ARM_INS_QADD16 || insn->id == ARM_INS_QSUB16 || insn->id == ARM_INS_QASX ||
 		insn->id == ARM_INS_QSAX;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	RzILOpBitVector *al = cast(17, UNSIGNED(16, a));
 	RzILOpBitVector *ah = cast(17, UNSIGNED(16, SHIFTR0(DUP(a), UN(5, 16))));
 	RzILOpBitVector *bl = cast(17, UNSIGNED(16, b));
@@ -1758,7 +1769,7 @@ static RzILOpEffect *qadd8(cs_insn *insn, bool is_thumb) {
 	}
 	bool is_signed = insn->id == ARM_INS_QADD8 || insn->id == ARM_INS_QSUB8;
 	bool is_sub = insn->id == ARM_INS_QSUB8 || insn->id == ARM_INS_UQSUB8;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	return SEQ5(
 		saturate(is_signed, is_sub, "rb0", 8,
 			is_sub
@@ -1914,7 +1925,7 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	bool is_signed = insn->id == ARM_INS_SADD16 || insn->id == ARM_INS_SHADD16 || insn->id == ARM_INS_SASX ||
 		insn->id == ARM_INS_SSAX || insn->id == ARM_INS_SHASX || insn->id == ARM_INS_SHSAX ||
 		insn->id == ARM_INS_SSUB16 || insn->id == ARM_INS_SHSUB16;
-	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 	al = cast(17, al);
 	ah = cast(17, ah);
 	bl = cast(17, bl);
@@ -2041,7 +2052,7 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 	if (set_ge) {
 		// Retroactively patch the ops to extend to 8 before the calculation because this is needed for ge
 		// Note: add/sub members here use the same structure, so using just `.add` is fine.
-		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector * val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
 		r0->op.add.x = cast(9, r0->op.add.x);
 		r0->op.add.y = cast(9, r0->op.add.y);
 		r1->op.add.x = cast(9, r1->op.add.x);
@@ -2585,7 +2596,6 @@ static RzILOpEffect *write_reg_lane(arm_reg reg, ut32 lane, ut32 vec_size, RzILO
  */
 static RzILOpEffect *vmov(cs_insn *insn, bool is_thumb) {
 	if (OPCOUNT() < 2 || !ISREG(0) || (!ISIMM(1) && !ISREG(1))) {
-		// for now, only support vmov rt, rn
 		return NULL;
 	}
 
@@ -2714,7 +2724,7 @@ static RzILOpEffect *vmrs(cs_insn *insn, bool is_thumb) {
 	}
 
 	// if <Rt> is APSR, transfer to flags
-	if (REGID(1) == ARM_REG_APSR_NZCV) {
+	if (REGID(0) == ARM_REG_APSR_NZCV) {
 		RzILOpBitVector *val = VARG("fpscr");
 		return SEQ4(
 			SETG("nf", INV(IS_ZERO(LOGAND(val, U32(1ul << 31))))),
@@ -2723,7 +2733,7 @@ static RzILOpEffect *vmrs(cs_insn *insn, bool is_thumb) {
 			SETG("vf", INV(IS_ZERO(LOGAND(DUP(val), U32(1ul << 28))))));
 	}
 
-	if (REGID(0) >= ARM_REG_R0 && REGID(0) <= ARM_REG_R14) {
+	if (is_core_reg(REGID(0)) && REGID(0) != ARM_REG_PC) {
 		return write_reg(REGID(0), VARG("fpscr"));
 	}
 
@@ -2778,7 +2788,7 @@ static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
 
 	// pseudo-instruction VAND(imm) disassembly produces VBIC(imm)
 	// pseudo-instruction VORN(imm) disassembly produces VORR(imm)
-	if (insn->id == ARM_INS_VBIC || insn->id == ARM_INS_VORR) {
+	if ((insn->id == ARM_INS_VBIC || insn->id == ARM_INS_VORR) && ISIMM(OPCOUNT() - 1)) {
 		ut32 imm = get_imm(insn, OPCOUNT() - 1, NULL);
 		src_b = repeated_imm(DT_WIDTH(insn), REG_WIDTH(0), imm);
 	} else {
@@ -2805,7 +2815,7 @@ static RzILOpEffect *vbitwise(cs_insn *insn, bool is_thumb) {
 	case ARM_INS_VEOR:
 		res = LOGXOR(src_a, src_b);
 		break;
-	case ARM_INS_BIC:
+	case ARM_INS_VBIC:
 		res = LOGAND(src_a, LOGNOT(src_b));
 		break;
 	default:
@@ -2843,15 +2853,15 @@ static RzILOpEffect *vbit_insert(cs_insn *insn, bool is_thumb) {
 	switch (insn->id) {
 	case ARM_INS_VBIF:
 		// Rd = (d and m) or (n and not(m))
-		res = LOGOR(LOGAND(d, m), LOGAND(n, LOGNOT(m)));
+		res = LOGOR(LOGAND(d, m), LOGAND(n, LOGNOT(DUP(m))));
 		break;
 	case ARM_INS_VBIT:
 		// Rd = (n and m) or (d and not(m))
-		res = LOGOR(LOGAND(n, m), LOGAND(d, LOGNOT(m)));
+		res = LOGOR(LOGAND(n, m), LOGAND(d, LOGNOT(DUP(m))));
 		break;
 	case ARM_INS_VBSL:
 		// Rd = (n and d) or (m and not(d))
-		res = LOGOR(LOGAND(n, d), LOGAND(m, LOGNOT(d)));
+		res = LOGOR(LOGAND(n, d), LOGAND(m, LOGNOT(DUP(d))));
 		break;
 	default:
 		rz_il_op_pure_free(d);
@@ -2988,7 +2998,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 regs = 0;
 	bool wback = insn->detail->arm.writeback;
 	bool use_rm_as_wback_offset = false;
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
 
 	// vldn {list}, [Rn], Rm
 	if (!ISMEM(rm_idx)) {
@@ -3005,10 +3015,11 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 
 	// assert list_size % n == 0
 	// assert they were all Dn
-	ut32 n_groups = regs / n;
+	ut32 n_groups = regs / group_sz;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
 	ut32 lanes = 64 / elem_bits;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
 
 	RzILOpEffect *wback_eff = NULL;
 	RzILOpEffect *eff = EMPTY();
@@ -3017,8 +3028,8 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	for (int i = 0; i < n_groups; ++i) {
 		for (int j = 0; j < lanes; ++j) {
 			RzILOpBitVector *data0, *data1, *data2, *data3;
-			ut32 vreg_idx = i * regs;
-			switch (n) {
+			ut32 vreg_idx = i * group_sz;
+			switch (group_sz) {
 			case 1:
 				data0 = LOADW(elem_bits, addr);
 				eff = SEQ2(eff,
@@ -3026,7 +3037,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				break;
 			case 2:
 				data0 = LOADW(elem_bits, addr);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				data1 = LOADW(elem_bits, addr);
 				eff = SEQ3(eff,
 					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
@@ -3034,9 +3045,9 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				break;
 			case 3:
 				data0 = LOADW(elem_bits, addr);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				data1 = LOADW(elem_bits, addr);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				data2 = LOADW(elem_bits, addr);
 				eff = SEQ4(eff,
 					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
@@ -3045,11 +3056,11 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				break;
 			case 4:
 				data0 = LOADW(elem_bits, addr);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				data1 = LOADW(elem_bits, addr);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				data2 = LOADW(elem_bits, addr);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				data3 = LOADW(elem_bits, addr);
 				eff = SEQ5(eff,
 					write_reg_lane(REGID(vreg_idx), j, elem_bits, data0),
@@ -3061,7 +3072,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				rz_warn_if_reached();
 				return NULL;
 			}
-			addr = ADD(DUP(addr), UN(8, elem_bytes));
+			addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		}
 	}
 
@@ -3072,7 +3083,7 @@ static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
-		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3096,8 +3107,8 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	}
 	rn_idx = regs;
 
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
-	if (n != regs) {
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+	if (group_sz != regs) {
 		return NULL;
 	}
 
@@ -3107,30 +3118,31 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 vreg_idx = 0;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
 
 	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
-	if (n > 4 || elem_bytes > 4) {
+	if (group_sz > 4 || elem_bytes > 4) {
 		return NULL;
 	}
 
 	unsigned char lane = NEON_LANE(0);
-	switch (n) {
+	switch (group_sz) {
 	case 1:
 		data0 = LOADW(elem_bits, addr);
 		eff = write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0);
 		break;
 	case 2:
 		data0 = LOADW(elem_bits, addr);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data1 = LOADW(elem_bits, addr);
 		eff = SEQ2(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
 			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1));
 		break;
 	case 3:
 		data0 = LOADW(elem_bits, addr);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data1 = LOADW(elem_bits, addr);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data2 = LOADW(elem_bits, addr);
 		eff = SEQ3(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
 			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1),
@@ -3138,11 +3150,11 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 		break;
 	case 4:
 		data0 = LOADW(elem_bits, addr);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data1 = LOADW(elem_bits, addr);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data2 = LOADW(elem_bits, addr);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data3 = LOADW(elem_bits, addr);
 		eff = SEQ4(write_reg_lane(REGID(vreg_idx), lane, elem_bits, data0),
 			write_reg_lane(REGID(vreg_idx + 1), lane, elem_bits, data1),
@@ -3157,8 +3169,8 @@ static RzILOpEffect *vldn_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
-		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3182,8 +3194,8 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	}
 	rn_idx = regs;
 
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
-	if (n != regs) {
+	ut32 group_sz = insn->id - ARM_INS_VLD1 + 1;
+	if (group_sz != regs) {
 		return NULL;
 	}
 
@@ -3192,13 +3204,15 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *addr = ARG(rn_idx);
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
 	// vld1/vld2/vld3/vld4, max(lane_size) == 4 Bytes
-	if (n > 4 || elem_bytes > 4) {
+	if (group_sz > 4 || elem_bytes > 4) {
 		return NULL;
 	}
 
 	ut32 dreg_size = 64;
-	switch (n) {
+	switch (group_sz) {
 	case 1:
 		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = write_reg(REGID(0), DUP(data0));
@@ -3208,16 +3222,16 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 		break;
 	case 2:
 		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = SEQ2(write_reg(REGID(0), data0),
 			write_reg(REGID(1), data1));
 		break;
 	case 3:
 		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data2 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = SEQ3(write_reg(REGID(0), data0),
 			write_reg(REGID(1), data1),
@@ -3225,11 +3239,11 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 		break;
 	case 4:
 		data0 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data1 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data2 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		data3 = replicated_val(elem_bits, dreg_size, LOADW(elem_bits, addr));
 		eff = SEQ4(write_reg(REGID(0), data0),
 			write_reg(REGID(1), data1),
@@ -3244,8 +3258,8 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
-		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3278,7 +3292,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 regs = 0;
 	bool wback = insn->detail->arm.writeback;
 	bool use_rm_as_wback_offset = false;
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
+	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
 
 	// vldn {list}, [Rn], Rm
 	if (!ISMEM(rm_idx)) {
@@ -3295,10 +3309,11 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 
 	// assert list_size % n == 0
 	// assert they were all Dn
-	ut32 n_groups = regs / n;
+	ut32 n_groups = regs / group_sz;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
 	ut32 lanes = 64 / elem_bits;
+	ut32 addr_bits = REG_WIDTH(rn_idx);
 
 	RzILOpEffect *wback_eff = NULL;
 	RzILOpEffect *eff = EMPTY(), *eff_ = NULL, *eff__ = NULL;
@@ -3307,8 +3322,8 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	for (int i = 0; i < n_groups; ++i) {
 		for (int j = 0; j < lanes; ++j) {
 			RzILOpBitVector *data0, *data1, *data2, *data3;
-			ut32 vreg_idx = i * regs;
-			switch (n) {
+			ut32 vreg_idx = i * group_sz;
+			switch (group_sz) {
 			case 1:
 				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
 				eff = SEQ2(eff, STOREW(addr, data0));
@@ -3317,7 +3332,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				data0 = read_reg_lane(REGID(vreg_idx), j, elem_bits);
 				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
 				eff = SEQ2(eff, STOREW(addr, data0));
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				eff = SEQ2(eff, STOREW(addr, data1));
 				break;
 			case 3:
@@ -3325,9 +3340,9 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				data1 = read_reg_lane(REGID(vreg_idx + 1), j, elem_bits);
 				data2 = read_reg_lane(REGID(vreg_idx + 2), j, elem_bits);
 				eff = SEQ2(eff, STOREW(addr, data0));
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				eff_ = STOREW(addr, data1);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				eff = SEQ3(eff, eff_, STOREW(addr, data2));
 				break;
 			case 4:
@@ -3336,18 +3351,18 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 				data2 = read_reg_lane(REGID(vreg_idx + 2), j, elem_bits);
 				data3 = read_reg_lane(REGID(vreg_idx + 3), j, elem_bits);
 				eff = SEQ2(eff, STOREW(addr, data0));
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				eff_ = STOREW(addr, data1);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				eff__ = STOREW(addr, data2);
-				addr = ADD(DUP(addr), UN(8, elem_bytes));
+				addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 				eff = SEQ4(eff, eff_, eff__, STOREW(addr, data3));
 				break;
 			default:
 				rz_warn_if_reached();
 				return NULL;
 			}
-			addr = ADD(DUP(addr), UN(8, elem_bytes));
+			addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		}
 	}
 
@@ -3358,7 +3373,7 @@ static RzILOpEffect *vstn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	// if write_back then Rn = Rn + (if use_rm then Rm else 8 * regs)
 	if (wback) {
 		RzILOpBitVector *new_offset = use_rm_as_wback_offset ? ARG(rm_idx) : UN(32, 8 * regs);
-		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3382,8 +3397,8 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	}
 	rn_idx = regs;
 
-	ut32 n = insn->id - ARM_INS_VLD1 + 1;
-	if (n != regs) {
+	ut32 group_sz = insn->id - ARM_INS_VST1 + 1;
+	if (group_sz != regs) {
 		return NULL;
 	}
 
@@ -3393,12 +3408,14 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	ut32 vreg_idx = 0;
 	ut32 elem_bits = VVEC_SIZE(insn);
 	ut32 elem_bytes = elem_bits / 8;
-	if (n > 4 || elem_bytes > 4) {
+	ut32 addr_bits = REG_WIDTH(rn_idx);
+
+	if (group_sz > 4 || elem_bytes > 4) {
 		return NULL;
 	}
 
 	unsigned char lane = NEON_LANE(0);
-	switch (n) {
+	switch (group_sz) {
 	case 1:
 		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
 		eff = STOREW(addr, data0);
@@ -3407,7 +3424,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 		data0 = read_reg_lane(REGID(vreg_idx), lane, elem_bits);
 		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
 		eff = STOREW(addr, data0);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		eff = SEQ2(eff, STOREW(addr, data1));
 		break;
 	case 3:
@@ -3415,9 +3432,9 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 		data1 = read_reg_lane(REGID(vreg_idx + 1), lane, elem_bits);
 		data2 = read_reg_lane(REGID(vreg_idx + 2), lane, elem_bits);
 		eff = STOREW(addr, data0);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		eff_ = STOREW(addr, data1);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		eff = SEQ3(eff, eff_, STOREW(addr, data2));
 		break;
 	case 4:
@@ -3426,11 +3443,11 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 		data2 = read_reg_lane(REGID(vreg_idx + 2), lane, elem_bits);
 		data3 = read_reg_lane(REGID(vreg_idx + 3), lane, elem_bits);
 		eff = STOREW(addr, data0);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		eff_ = STOREW(addr, data1);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		eff__ = STOREW(addr, data2);
-		addr = ADD(DUP(addr), UN(8, elem_bytes));
+		addr = ADD(DUP(addr), UN(addr_bits, elem_bytes));
 		eff = SEQ4(eff, eff_, eff__, STOREW(addr, data3));
 		break;
 	default:
@@ -3441,8 +3458,8 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 	bool wback = insn->detail->arm.writeback;
 	RzILOpEffect *wback_eff;
 	if (wback) {
-		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * n);
-		wback_eff = write_reg(rn_idx, ADD(REG(rn_idx), new_offset));
+		RzILOpBitVector *new_offset = use_rm ? ARG(rm_idx) : UN(32, elem_bytes * group_sz);
+		wback_eff = write_reg(REGID(rn_idx), ADD(REG(rn_idx), new_offset));
 	} else {
 		wback_eff = EMPTY();
 	}
@@ -3501,28 +3518,40 @@ static RzILOpEffect *try_as_float_cvt(cs_insn *insn, bool is_thumb, bool *succes
 
 static inline ut32 cvt_isize(arm_vectordata_type type, bool *is_signed) {
 	switch (type) {
-	case ARM_VECTORDATA_S32F32:
 	case ARM_VECTORDATA_F32S32:
 	case ARM_VECTORDATA_F64S32:
+	case ARM_VECTORDATA_S32F32:
 	case ARM_VECTORDATA_S32F64:
 		*is_signed = true;
 		return 32;
-	case ARM_VECTORDATA_U32F32:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16U32:
+#endif
 	case ARM_VECTORDATA_F32U32:
-	case ARM_VECTORDATA_U32F64:
 	case ARM_VECTORDATA_F64U32:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_U32F16:
+#endif
+	case ARM_VECTORDATA_U32F32:
+	case ARM_VECTORDATA_U32F64:
 		*is_signed = false;
 		return 32;
-	case ARM_VECTORDATA_F64S16:
 	case ARM_VECTORDATA_F32S16:
-	case ARM_VECTORDATA_S16F64:
+	case ARM_VECTORDATA_F64S16:
 	case ARM_VECTORDATA_S16F32:
+	case ARM_VECTORDATA_S16F64:
 		*is_signed = true;
 		return 16;
-	case ARM_VECTORDATA_U16F64:
-	case ARM_VECTORDATA_U16F32:
-	case ARM_VECTORDATA_F64U16:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_F16U16:
+#endif
 	case ARM_VECTORDATA_F32U16:
+	case ARM_VECTORDATA_F64U16:
+#if CS_API_MAJOR > 4
+	case ARM_VECTORDATA_U16F16:
+#endif
+	case ARM_VECTORDATA_U16F32:
+	case ARM_VECTORDATA_U16F64:
 		*is_signed = false;
 		return 16;
 	default:
@@ -3624,7 +3653,7 @@ static RzILOpEffect *vdup(cs_insn *insn, bool is_thumb) {
 
 	// 1. vdup <Vd> <Vn>[x], duplicate scalar
 	// 2. vdup <Vd> <Rn>, duplicate Rn bits to Vd
-	bool is_dup_lane = NEON_LANE(1) == -1;
+	bool is_dup_lane = NEON_LANE(1) != -1;
 
 	for (int i = 0; i < reg_bits(REGID(0)) / elem_bits; ++i) {
 		RzILOpBitVector *scalar = is_dup_lane ? read_reg_lane(REGID(1), NEON_LANE(1), elem_bits) : UNSIGNED(elem_bits, REG(1));
@@ -3691,8 +3720,8 @@ static RzILOpEffect *vzip(cs_insn *insn, bool is_thumb) {
 	// Vm: B7, A7, ... B4, A4
 	RzILOpBitVector *interleaved_val = UN(tmp_bits, 0);
 	for (ut32 i = 0; i < lanes; ++i) {
-		RzILOpBitVector *d = read_reg_lane(REGID(0), i, vec_bits);
-		RzILOpBitVector *m = read_reg_lane(REGID(1), i, vec_bits);
+		RzILOpBitVector *d = UNSIGNED(tmp_bits, read_reg_lane(REGID(0), i, vec_bits));
+		RzILOpBitVector *m = UNSIGNED(tmp_bits, read_reg_lane(REGID(1), i, vec_bits));
 		interleaved_val = LOGOR(interleaved_val,
 			SHIFTL0(LOGOR(SHIFTL0(m, UN(8, vec_bits)), d),
 				UN(32, vec_bits * 2)));
@@ -3730,8 +3759,8 @@ static RzILOpEffect *vunzip(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *deinterleave_d = UN(reg_sz, 0);
 	RzILOpBitVector *deinterleave_m = UN(reg_sz, 0);
 	for (ut32 i = 0; i < lanes; ++i) {
-		RzILOpBitVector *d_lane = read_reg_lane(REGID(0), i, vec_bits);
-		RzILOpBitVector *m_lane = read_reg_lane(REGID(1), i, vec_bits);
+		RzILOpBitVector *d_lane = UNSIGNED(reg_sz, read_reg_lane(REGID(0), i, vec_bits));
+		RzILOpBitVector *m_lane = UNSIGNED(reg_sz, read_reg_lane(REGID(1), i, vec_bits));
 
 		// construct (Bn, 0, 0, 0, An)
 		ut32 lane_shift_dist = i / 2 * vec_bits;
@@ -4026,6 +4055,9 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_BLX:
 		return bl(insn, is_thumb);
 	case ARM_INS_MOV:
+#if CS_API_MAJOR > 4
+	case ARM_INS_MOVS:
+#endif
 	case ARM_INS_MOVW:
 	case ARM_INS_LSL:
 	case ARM_INS_LSR:
@@ -4286,6 +4318,11 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VLDMDB:
 	case ARM_INS_VPOP:
 		return ldm(insn, is_thumb);
+#if CS_API_MAJOR > 4
+	case ARM_INS_VMOVL:
+	case ARM_INS_VMOVN:
+	case ARM_INS_VMOVX:
+#endif
 #if CS_API_MAJOR > 3
 	case ARM_INS_VMOV:
 	case ARM_INS_VMVN:
@@ -4327,6 +4364,15 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_VST4:
 		return vstn(insn, is_thumb);
 	case ARM_INS_VCVT:
+#if CS_API_MAJOR > 4
+	case ARM_INS_VCVTA:
+	case ARM_INS_VCVTB:
+	case ARM_INS_VCVTM:
+	case ARM_INS_VCVTN:
+	case ARM_INS_VCVTP:
+	case ARM_INS_VCVTR:
+	case ARM_INS_VCVTT:
+#endif
 		return vcvt(insn, is_thumb);
 #if CS_API_MAJOR > 3
 	case ARM_INS_VDUP:

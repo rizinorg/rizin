@@ -240,6 +240,25 @@ RZ_IPI bool ppc_sets_lr(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQCTRL:
+	case PPC_INS_BFCTRL:
+	case PPC_INS_BGECTRL:
+	case PPC_INS_BGTCTRL:
+	case PPC_INS_BLECTRL:
+	case PPC_INS_BLTCTRL:
+	case PPC_INS_BNECTRL:
+	case PPC_INS_BNGCTRL:
+	case PPC_INS_BNLCTRL:
+	case PPC_INS_BNSCTRL:
+	case PPC_INS_BNUCTRL:
+	case PPC_INS_BSOCTRL:
+	case PPC_INS_BTCTRL:
+	case PPC_INS_BUNCTRL:
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELRL:
+	case PPC_INS_BGELA:
+#endif
 	case PPC_INS_BCCTRL:
 	case PPC_INS_BCL:
 	case PPC_INS_BCLRL:
@@ -276,6 +295,42 @@ RZ_IPI bool ppc_is_conditional(ut32 insn_id) {
 	switch (insn_id) {
 	default:
 		return false;
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQ:
+	case PPC_INS_BEQA:
+	case PPC_INS_BF:
+	case PPC_INS_BFA:
+	case PPC_INS_BGE:
+	case PPC_INS_BGEA:
+	case PPC_INS_BGT:
+	case PPC_INS_BGTA:
+	case PPC_INS_BLE:
+	case PPC_INS_BLEA:
+	case PPC_INS_BLT:
+	case PPC_INS_BLTA:
+	case PPC_INS_BNE:
+	case PPC_INS_BNEA:
+	case PPC_INS_BNG:
+	case PPC_INS_BNGA:
+	case PPC_INS_BNL:
+	case PPC_INS_BNLA:
+	case PPC_INS_BNS:
+	case PPC_INS_BNSA:
+	case PPC_INS_BNU:
+	case PPC_INS_BNUA:
+	case PPC_INS_BSO:
+	case PPC_INS_BSOA:
+	case PPC_INS_BT:
+	case PPC_INS_BTA:
+	case PPC_INS_BUN:
+	case PPC_INS_BUNA:
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+	case PPC_INS_BGELR:
+	case PPC_INS_BGELRL:
+	case PPC_INS_BGECTR:
+	case PPC_INS_BGECTRL:
+#endif
 	case PPC_INS_BC:
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
@@ -391,6 +446,10 @@ RZ_IPI bool ppc_decrements_ctr(RZ_BORROW cs_insn *insn, const cs_mode mode) {
 	switch (id) {
 	default:
 		return false;
+#if CS_API_MAJOR > 4
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+#endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCA:
@@ -530,6 +589,47 @@ RZ_IPI ut32 ppc_fmx_to_mask(const ut8 fmx) {
 		(fmx & 0x01 ? x : 0));
 }
 
+static const char *get_crx_reg(const csh handle, cs_insn *insn, size_t n) {
+#if CS_API_MAJOR == 5 && CS_API_MINOR == 0
+	// bug on crx not being populated in capstone v5.0
+	ppc_reg reg = INSOP(n).reg;
+	if (reg >= PPC_REG_CR0EQ && reg <= PPC_REG_CR7EQ) {
+		reg = (reg - PPC_REG_CR0EQ) + PPC_REG_CR0;
+	} else if (reg >= PPC_REG_CR0GT && reg <= PPC_REG_CR7GT) {
+		reg = (reg - PPC_REG_CR0GT) + PPC_REG_CR0;
+	} else if (reg >= PPC_REG_CR0LT && reg <= PPC_REG_CR7LT) {
+		reg = (reg - PPC_REG_CR0LT) + PPC_REG_CR0;
+	} else if (reg >= PPC_REG_CR0UN && reg <= PPC_REG_CR7UN) {
+		reg = (reg - PPC_REG_CR0UN) + PPC_REG_CR0;
+	} else {
+		rz_warn_if_reached();
+	}
+	return cs_reg_name(handle, reg);
+#else
+	return cs_reg_name(handle, INSOP(n).crx.reg);
+#endif
+}
+
+static ut32 get_crx_cond(const csh handle, cs_insn *insn, size_t n) {
+#if CS_API_MAJOR == 5 && CS_API_MINOR == 0
+	// bug on crx not being populated in capstone v5.0
+	ppc_reg reg = INSOP(n).reg;
+	if (reg >= PPC_REG_CR0EQ && reg <= PPC_REG_CR7EQ) {
+		return PPC_BC_EQ;
+	} else if (reg >= PPC_REG_CR0GT && reg <= PPC_REG_CR7GT) {
+		return PPC_BC_GT;
+	} else if (reg >= PPC_REG_CR0LT && reg <= PPC_REG_CR7LT) {
+		return PPC_BC_LT;
+	} else if (reg >= PPC_REG_CR0UN && reg <= PPC_REG_CR7UN) {
+		return PPC_BC_UN;
+	}
+	rz_warn_if_reached();
+	return PPC_BC_INVALID;
+#else
+	return INSOP(n).crx.cond;
+#endif
+}
+
 /**
  * \brief Get the branch condition for a given instruction.
  * Checkout the "Simple Branch Mnemonics" in Appendix C in PowerISA v3.1B and
@@ -561,8 +661,42 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	default:
 		RZ_LOG_WARN("Instruction %d has no condition implemented.\n", id);
 		return IL_FALSE;
-	// For learning how the conditions of BCxxx branch instructions are
-	// formed see the Power ISA
+		// For learning how the conditions of BCxxx branch instructions are
+		// formed see the Power ISA
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQ:
+	case PPC_INS_BEQA:
+	case PPC_INS_BF:
+	case PPC_INS_BFA:
+	case PPC_INS_BGE:
+	case PPC_INS_BGEA:
+	case PPC_INS_BGT:
+	case PPC_INS_BGTA:
+	case PPC_INS_BLE:
+	case PPC_INS_BLEA:
+	case PPC_INS_BLT:
+	case PPC_INS_BLTA:
+	case PPC_INS_BNE:
+	case PPC_INS_BNEA:
+	case PPC_INS_BNG:
+	case PPC_INS_BNGA:
+	case PPC_INS_BNL:
+	case PPC_INS_BNLA:
+	case PPC_INS_BNS:
+	case PPC_INS_BNSA:
+	case PPC_INS_BNU:
+	case PPC_INS_BNUA:
+	case PPC_INS_BSO:
+	case PPC_INS_BSOA:
+	case PPC_INS_BT:
+	case PPC_INS_BTA:
+	case PPC_INS_BUN:
+	case PPC_INS_BUNA:
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+	case PPC_INS_BGELR:
+	case PPC_INS_BGELRL:
+#endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BCA:
@@ -590,6 +724,36 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 		return LET("bo", UN(5, bo), AND(cond_ok, ctr_ok));
 	case PPC_INS_BCCTR:
 	case PPC_INS_BCCTRL:
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQCTR:
+	case PPC_INS_BEQCTRL:
+	case PPC_INS_BFCTR:
+	case PPC_INS_BFCTRL:
+	case PPC_INS_BGTCTR:
+	case PPC_INS_BGTCTRL:
+	case PPC_INS_BLECTR:
+	case PPC_INS_BLECTRL:
+	case PPC_INS_BLTCTR:
+	case PPC_INS_BLTCTRL:
+	case PPC_INS_BNECTR:
+	case PPC_INS_BNECTRL:
+	case PPC_INS_BNGCTR:
+	case PPC_INS_BNGCTRL:
+	case PPC_INS_BNLCTR:
+	case PPC_INS_BNLCTRL:
+	case PPC_INS_BNSCTR:
+	case PPC_INS_BNSCTRL:
+	case PPC_INS_BNUCTR:
+	case PPC_INS_BNUCTRL:
+	case PPC_INS_BSOCTR:
+	case PPC_INS_BSOCTRL:
+	case PPC_INS_BTCTR:
+	case PPC_INS_BTCTRL:
+	case PPC_INS_BUNCTR:
+	case PPC_INS_BUNCTRL:
+	case PPC_INS_BGECTR:
+	case PPC_INS_BGECTRL:
+#endif
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));
 		cond_ok = OR(bo_0, XOR(get_cr_bit(bi + 32), INV(bo_1))); //  BO_0 | (CR_BI+32 ≡ BO_1)
@@ -627,8 +791,8 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 			// LT bit
 			cr_bit = UN(4, 8);
 		} else {
-			cr = VARG(cs_reg_name(handle, INSOP(0).crx.reg));
-			ut32 cond = INSOP(0).crx.cond;
+			cr = VARG(get_crx_reg(handle, insn, 0));
+			ut32 cond = get_crx_cond(handle, insn, 0);
 			cr_bit = UN(4, ((cond & PPC_BC_SO) ? 1 : ((cond & PPC_BC_EQ) ? 2 : ((cond & PPC_BC_GT) ? 4 : 8))));
 		}
 		if (id == PPC_INS_BDZT || id == PPC_INS_BDZTL || id == PPC_INS_BDZTA || id == PPC_INS_BDZTLA) {
@@ -649,11 +813,11 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 			cr = VARG("cr0");
 			cr_bit = UN(4, 8);
 		} else {
-			cr = VARG(cs_reg_name(handle, INSOP(0).crx.reg));
-			ut32 cond = INSOP(0).crx.cond;
+			cr = VARG(get_crx_reg(handle, insn, 0));
+			ut32 cond = get_crx_cond(handle, insn, 0);
 			cr_bit = UN(4, ((cond & PPC_BC_SO) ? 1 : ((cond & PPC_BC_EQ) ? 2 : ((cond & PPC_BC_GT) ? 4 : 8))));
 		}
-		cr = insn->detail->ppc.op_count == 1 ? VARG("cr0") : VARG(cs_reg_name(handle, INSOP(0).crx.reg));
+		cr = insn->detail->ppc.op_count == 1 ? VARG("cr0") : VARG(get_crx_reg(handle, insn, 0));
 		if (id == PPC_INS_BDZF || id == PPC_INS_BDZFL || id == PPC_INS_BDZFA || id == PPC_INS_BDZFLA) {
 			return AND(IS_ZERO(VARG("ctr")), IS_ZERO(LOGAND(cr, cr_bit)));
 		}
@@ -703,7 +867,37 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDZFA:
 	case PPC_INS_BDZFLA:
 		// EXTS(LI || 0b00)
-	// Branch to relative address
+		// Branch to relative address
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQ:
+	case PPC_INS_BEQA:
+	case PPC_INS_BF:
+	case PPC_INS_BFA:
+	case PPC_INS_BGE:
+	case PPC_INS_BGEA:
+	case PPC_INS_BGT:
+	case PPC_INS_BGTA:
+	case PPC_INS_BLE:
+	case PPC_INS_BLEA:
+	case PPC_INS_BLT:
+	case PPC_INS_BLTA:
+	case PPC_INS_BNE:
+	case PPC_INS_BNEA:
+	case PPC_INS_BNG:
+	case PPC_INS_BNGA:
+	case PPC_INS_BNL:
+	case PPC_INS_BNLA:
+	case PPC_INS_BNS:
+	case PPC_INS_BNSA:
+	case PPC_INS_BNU:
+	case PPC_INS_BNUA:
+	case PPC_INS_BSO:
+	case PPC_INS_BSOA:
+	case PPC_INS_BT:
+	case PPC_INS_BTA:
+	case PPC_INS_BUN:
+	case PPC_INS_BUNA:
+#endif
 	case PPC_INS_B:
 	case PPC_INS_BL:
 	case PPC_INS_BDZF:
@@ -725,6 +919,10 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDNZA:
 	case PPC_INS_BDNZLA:
 		// EXTS(BD || 0b00)
+#if CS_API_MAJOR > 4
+	case PPC_INS_BGEL:
+	case PPC_INS_BGELA:
+#endif
 	case PPC_INS_BC:
 	case PPC_INS_BCL:
 	case PPC_INS_BDZ:
@@ -738,7 +936,17 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 		} else {
 			return UA(INSOP(0).imm);
 		}
-	// Branch to LR
+		// Branch to LR
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQLR:
+	case PPC_INS_BEQLRL:
+	case PPC_INS_BLELR:
+	case PPC_INS_BLELRL:
+	case PPC_INS_BLTLR:
+	case PPC_INS_BLTLRL:
+	case PPC_INS_BGELR:
+	case PPC_INS_BGELRL:
+#endif
 	case PPC_INS_BLR:
 	case PPC_INS_BLRL:
 	case PPC_INS_BCLR:
@@ -749,7 +957,37 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_ta(RZ_BORROW cs_insn *insn, const cs_mo
 	case PPC_INS_BDNZLRL:
 		//  LR_0:61 || 0b00
 		return LOGAND(UA(-4), VARG("lr"));
-	// Branch to CTR
+		// Branch to CTR
+#if CS_API_MAJOR > 4
+	case PPC_INS_BEQCTR:
+	case PPC_INS_BEQCTRL:
+	case PPC_INS_BFCTR:
+	case PPC_INS_BFCTRL:
+	case PPC_INS_BGECTR:
+	case PPC_INS_BGECTRL:
+	case PPC_INS_BGTCTR:
+	case PPC_INS_BGTCTRL:
+	case PPC_INS_BLECTR:
+	case PPC_INS_BLECTRL:
+	case PPC_INS_BLTCTR:
+	case PPC_INS_BLTCTRL:
+	case PPC_INS_BNECTR:
+	case PPC_INS_BNECTRL:
+	case PPC_INS_BNGCTR:
+	case PPC_INS_BNGCTRL:
+	case PPC_INS_BNLCTR:
+	case PPC_INS_BNLCTRL:
+	case PPC_INS_BNSCTR:
+	case PPC_INS_BNSCTRL:
+	case PPC_INS_BNUCTR:
+	case PPC_INS_BNUCTRL:
+	case PPC_INS_BSOCTR:
+	case PPC_INS_BSOCTRL:
+	case PPC_INS_BTCTR:
+	case PPC_INS_BTCTRL:
+	case PPC_INS_BUNCTR:
+	case PPC_INS_BUNCTRL:
+#endif
 	case PPC_INS_BCTR:
 	case PPC_INS_BCTRL:
 	case PPC_INS_BCCTR:

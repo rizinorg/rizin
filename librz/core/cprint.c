@@ -346,32 +346,39 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 	RzPrint *print = core->print;
 	bool old_use_comments = print->use_comments;
 	print->use_comments = use_comment ? print->flags & RZ_PRINT_FLAGS_COMMENT : false;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_STANDARD: {
-		ut64 from = rz_config_get_i(core->config, "diff.from");
-		ut64 to = rz_config_get_i(core->config, "diff.to");
-		if (from == to && !from) {
-			len_fixup(core, &addr, &len);
-			ut8 *buffer = malloc(len);
-			if (!buffer) {
-				return NULL;
-			}
-			rz_io_read_at(core->io, addr, buffer, len);
-			string = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
-			free(buffer);
-		} else {
-			string = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
+	ut64 from = rz_config_get_i(core->config, "diff.from");
+	ut64 to = rz_config_get_i(core->config, "diff.to");
+	if (from == to && !from) {
+		len_fixup(core, &addr, &len);
+		ut8 *buffer = malloc(len);
+		if (!buffer) {
+			return NULL;
 		}
-		core->num->value = len;
-		break;
+		rz_io_read_at(core->io, addr, buffer, len);
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			string = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			string = rz_print_jsondump_str(core->print, buffer, len, 8);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
+		free(buffer);
+	} else {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			string = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
+			break;
+		default:
+			RZ_LOG_ERROR("Hexdiff not supported in JSON");
+			return NULL;
+		}
 	}
-	case RZ_OUTPUT_MODE_JSON:
-		string = rz_print_jsondump_str(core->print, core->block, len, 8);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
+
+	core->num->value = len;
 	print->use_comments = old_use_comments;
 	return string;
 }

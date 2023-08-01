@@ -10,6 +10,7 @@
 struct print_flag_t {
 	RzFlag *f;
 	PJ *pj;
+	RzTable *tbl;
 	bool in_range;
 	ut64 range_from;
 	ut64 range_to;
@@ -17,8 +18,12 @@ struct print_flag_t {
 	bool real;
 };
 
-static bool print_flag_name(RzFlagItem *fi, void *user) {
-	rz_cons_printf("%s\n", fi->name);
+static bool print_flag_name(RzFlagItem *flag, void *user) {
+	struct print_flag_t *u = (struct print_flag_t *)user;
+	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+		return true;
+	}
+	rz_cons_printf("%s\n", flag->name);
 	return true;
 }
 
@@ -27,11 +32,10 @@ static bool print_flag_json(RzFlagItem *flag, void *user) {
 	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
 		return true;
 	}
+	const char *realname = RZ_STR_ISEMPTY(flag->realname) ? flag->name : flag->realname;
 	pj_o(u->pj);
 	pj_ks(u->pj, "name", flag->name);
-	if (flag->name != flag->realname) {
-		pj_ks(u->pj, "realname", flag->realname);
-	}
+	pj_ks(u->pj, "realname", realname);
 	pj_ki(u->pj, "size", flag->size);
 	if (flag->alias) {
 		pj_ks(u->pj, "alias", flag->alias);
@@ -95,71 +99,50 @@ static bool print_flag_orig_name(RzFlagItem *flag, void *user) {
 	return true;
 }
 
-typedef struct {
-	RzTable *t;
-} FlagTableData;
-
-static bool __tableItemCallback(RzFlagItem *flag, void *user) {
-	FlagTableData *ftd = user;
+static bool print_flag_table(RzFlagItem *flag, void *user) {
+	struct print_flag_t *u = (struct print_flag_t *)user;
+	if (u->in_range && (flag->offset < u->range_from || flag->offset >= u->range_to)) {
+		return true;
+	}
 	if (!RZ_STR_ISEMPTY(flag->name)) {
-		RzTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name) ? flag->space->name : "";
-		rz_table_add_rowf(t, "Xdss", flag->offset, flag->size, spaceName, flag->name);
+		const char *realname = RZ_STR_ISEMPTY(flag->realname) ? flag->name : flag->realname;
+		rz_table_add_rowf(u->tbl, "Xdsss", flag->offset, flag->size, spaceName, flag->name, realname);
 	}
 	return true;
 }
 
 static void flag_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to, bool in_range) {
 	rz_return_if_fail(f);
+	struct print_flag_t u = {
+		.f = f,
+		.in_range = in_range,
+		.range_from = range_from,
+		.range_to = range_to,
+		.real = false
+	};
+
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_name, f);
+		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_name, &u);
 		break;
-	case RZ_OUTPUT_MODE_STANDARD: {
-		struct print_flag_t u = {
-			.f = f,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.real = false
-		};
+	case RZ_OUTPUT_MODE_STANDARD:
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_orig_name, &u);
 		break;
-	}
-	case RZ_OUTPUT_MODE_JSON: {
-		struct print_flag_t u = {
-			.f = f,
-			.pj = state->d.pj,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.real = false
-		};
+	case RZ_OUTPUT_MODE_JSON:
+		u.pj = state->d.pj;
 		pj_a(state->d.pj);
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_json, &u);
 		pj_end(state->d.pj);
 		break;
-	}
-	case RZ_OUTPUT_MODE_RIZIN: {
-		struct print_flag_t u = {
-			.f = f,
-			.in_range = in_range,
-			.range_from = range_from,
-			.range_to = range_to,
-			.fs = NULL,
-		};
+	case RZ_OUTPUT_MODE_RIZIN:
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_rizin, &u);
 		break;
-	}
-	case RZ_OUTPUT_MODE_TABLE: {
-		FlagTableData ftd = { 0 };
-		ftd.t = state->d.t;
-		rz_cmd_state_output_set_columnsf(state, "Xdss", "addr", "size", "space", "name");
-
-		RzSpace *curSpace = rz_flag_space_cur(f);
-		rz_flag_foreach_space(f, curSpace, __tableItemCallback, &ftd);
+	case RZ_OUTPUT_MODE_TABLE:
+		u.tbl = state->d.t;
+		rz_cmd_state_output_set_columnsf(state, "Xdsss", "addr", "size", "space", "name", "realname");
+		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_table, &u);
 		break;
-	}
 	default:
 		rz_warn_if_reached();
 		break;

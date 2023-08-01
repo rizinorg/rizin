@@ -5097,7 +5097,27 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 	return true;
 }
 
-RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
+/**
+ * \brief Get the address of a stack variable.
+ *
+ * The address for stack backed variables is computed from the
+ * current base pointer register. Register backed variables will always
+ * return UT64_MAX.
+ *
+ * \param var Pointer to a \ref RzAnalysisVar.
+ */
+RZ_API ut64 rz_core_analysis_var_addr(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_val_if_fail(core && var, UT64_MAX);
+	if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+		// TODO: If bp is not available, we can also get the address from the sp
+		// through info available from rz_analysis_block_get_sp_at()
+		ut64 stack = rz_core_reg_getv_by_role_or_name(core, "BP");
+		return stack + var->fcn->bp_off + var->storage.stack_off;
+	}
+	return UT64_MAX;
+}
+
+RZ_API RZ_OWN char *rz_core_analysis_var_display(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	char *fmt = rz_type_as_format(analysis->typedb, var->type);
@@ -5123,7 +5143,7 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		break;
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_STACK: {
-		ut64 addr = rz_analysis_var_addr(var);
+		ut64 addr = rz_core_analysis_var_addr(core, var);
 		char *r;
 		if (usePxr) {
 			// TODO: convert to API
