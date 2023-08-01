@@ -442,7 +442,7 @@ EXPECT=<<EOF
 |    || |   0x80084462      mov.a a5, d2
 |    || |   0x80084464      mov   d4, d15
 |    || |   0x80084466      mov   e6, #0
-|    || |   0x80084468      call  #0x800858fe                          ; fcn.800858fe
+|    || |   0x80084468      call  fcn.800858fe
 |    || |   0x8008446c      ld.w  d15, [a14]#-0x64
 |    || |   0x80084470      mov.a a15, d15
 |    || |   0x80084472      ld.w  d3, [a15]#0
@@ -452,7 +452,7 @@ EXPECT=<<EOF
 |    || |   0x8008447e      mov.a a4, d3
 |    || |   0x80084480      mov.a a5, d2
 |    || |   0x80084482      mov   d4, d15
-|    || |   0x80084484      call  #0x80084d08                          ; fcn.80084d08
+|    || |   0x80084484      call  fcn.80084d08
 |    ||,==< 0x80084488      j     #0x800844c8
 |    |`---> 0x8008448a      ld.w  d15, [a14]#-0x64
 |    | ||   0x8008448e      mov.a a15, d15
@@ -463,7 +463,7 @@ EXPECT=<<EOF
 |    | ||   0x8008449a      mov.a a5, d15
 |    | ||   0x8008449c      mov   d4, #0xc
 |    | ||   0x800844a0      mov   e6, #0
-|    | ||   0x800844a2      call  #0x800858fe                          ; fcn.800858fe
+|    | ||   0x800844a2      call  fcn.800858fe
 |    | ||   0x800844a6      ld.bu d15, [a14]#-0x50
 |    | ||   0x800844aa      st.b  [a14]#-0x59, d15
 |    | ||   0x800844ae      ld.w  d15, [a14]#-0x64
@@ -474,7 +474,7 @@ EXPECT=<<EOF
 |    | ||   0x800844bc      mov.a a4, d2
 |    | ||   0x800844be      mov.a a5, d15
 |    | ||   0x800844c0      mov   d4, #1
-|    | ||   0x800844c2      call  #0x80084d08                          ; fcn.80084d08
+|    | ||   0x800844c2      call  fcn.80084d08
 |    | ||   0x800844c6      nop
 |    | ||   ; CODE XREF from fcn.800842f0 @ 0x80084488
 |    |,`--> 0x800844c8      j     #0x800844d4
@@ -592,11 +592,11 @@ EXPECT=<<EOF
             ;-- section..text.Bsp.waitTime:
             ;-- segment.LOAD13:
 |- (loc) fcn.80000200();
-|           0x80000200      fcall #0x8000008c                          ; fcn.8000008c ; [77] -r-x section size 134 named .text.Bsp.waitTime
+|           0x80000200      fcall fcn.8000008c                         ; [77] -r-x section size 134 named .text.Bsp.waitTime
 |           0x80000204      ne    d15, d4, d0
 |           0x80000208      or.ne d15, d5, d1
 |       ,=< 0x8000020c      jnz   d15, #0x80000218
-|       |   0x8000020e      fcall #0x80000096                          ; fcn.80000096
+|       |   0x8000020e      fcall fcn.80000096
 |       |   0x80000212      ld.d  e2, [a15]#0
 |      ,==< 0x80000216      j     #0x80000244
 |      |`-> 0x80000218      mfcr  d15, #0xfe2c
@@ -604,7 +604,7 @@ EXPECT=<<EOF
 |      |    0x80000220      ne    d15, d15, #0
 |      |    0x80000224      disable
 |      |    0x80000228      nop
-|      |    0x8000022a      fcall #0x8000007e                          ; fcn.8000007e
+|      |    0x8000022a      fcall fcn.8000007e
 |      |    0x8000022e      ld.d  e2, [a15]#0
 |      |    0x80000232      and   d0, d2
 |      |    0x80000234      and   d1, d3
@@ -613,7 +613,7 @@ EXPECT=<<EOF
 |      |`-> 0x8000023c      addx  d2, d0, d4
 |      |    0x80000240      addc  d3, d1, d5
 |      |    ; CODE XREF from fcn.80000200 @ 0x80000216
-|      `.-> 0x80000244      fcall #0x8000008c                          ; fcn.8000008c
+|      `.-> 0x80000244      fcall fcn.8000008c
 |       :   0x80000248      ne    d15, d2, d0
 |       :   0x8000024c      or.ne d15, d3, d1
 |      ,==< 0x80000250      jz    d15, #0x80000282
@@ -622,7 +622,7 @@ EXPECT=<<EOF
 |      |:   0x8000025a      ne    d15, d15, #0
 |      |:   0x8000025e      disable
 |      |:   0x80000262      nop
-|      |:   0x80000264      fcall #0x8000007e                          ; fcn.8000007e
+|      |:   0x80000264      fcall fcn.8000007e
 |      |:   0x80000268      ld.d  e4, [a15]#0
 |      |:   0x8000026c      and   d0, d4
 |      |:   0x8000026e      and   d1, d5
@@ -706,10 +706,9 @@ EXPECT=<<EOF
 .---------------------------------------------------------.   .---------------.
 |  0x800004f6                                             |   |  0x800004f2   |
 | mov d4, #0x14                                           |   | mov d15, #0   |
-| ; dbg.malloc                                            |   | j #0x8000054c |
-| ; void *malloc(size_t size)                             |   `---------------'
-| call #0x80000afc                                        |       v
-| mov.aa a15, a2                                          |       |
+| ; void *malloc(size_t size)                             |   | j #0x8000054c |
+| call dbg.malloc                                         |   `---------------'
+| mov.aa a15, a2                                          |       v
 | mov.d d15, a15                                          |       |
 | ld.a a15, [a14]#-0x18                                   |       |
 | st.w [a15]#0, d15                                       |       |
@@ -725,14 +724,12 @@ EXPECT=<<EOF
 | mov d4, #5                                              |       |
 | ld.a a5, [a14]#-8                                       |       |
 | mov.aa a4, a15                                          |       |
-| ; dbg.strncpy                                           |       |
 | ; char *strncpy(char *dest, const char *src, size_t  n) |       |
-| call #0x800011e0                                        |       |
+| call dbg.strncpy                                        |       |
 | ld.a a15, [a14]#-0x18                                   |       |
 | ld.a a15, [a15]#0                                       |       |
 | ld.d e4, [a14]#-0x10                                    |       |
-| ; dbg.__truncdfsf2                                      |       |
-| call #0x80000728                                        |       |
+| call dbg.__truncdfsf2                                   |       |
 | mov d15, d2                                             |       |
 | ; 12                                                    |       |
 | st.w [a15]#0xc, d15                                     |       |
@@ -792,7 +789,7 @@ EXPECT=<<EOF
 | 0x800004f4      j     #0x8000054c
 | ----------- true: 0x8000054c
 | 0x800004f6      mov   d4, #0x14
-| 0x800004fa      call  #0x80000afc                                    ; dbg.malloc ; void *malloc(size_t size)
+| 0x800004fa      call  dbg.malloc                                     ; void *malloc(size_t size)
 | 0x800004fe      mov.aa a15, a2
 | 0x80000500      mov.d d15, a15
 | 0x80000502      ld.a  a15, [a14]#-0x18
@@ -809,11 +806,11 @@ EXPECT=<<EOF
 | 0x80000520      mov   d4, #5
 | 0x80000522      ld.a  a5, [a14]#-8
 | 0x80000526      mov.aa a4, a15
-| 0x80000528      call  #0x800011e0                                    ; dbg.strncpy ; char *strncpy(char *dest, const char *src, size_t  n)
+| 0x80000528      call  dbg.strncpy                                    ; char *strncpy(char *dest, const char *src, size_t  n)
 | 0x8000052c      ld.a  a15, [a14]#-0x18
 | 0x80000530      ld.a  a15, [a15]#0
 | 0x80000532      ld.d  e4, [a14]#-0x10
-| 0x80000536      call  #0x80000728                                    ; dbg.__truncdfsf2
+| 0x80000536      call  dbg.__truncdfsf2
 | 0x8000053a      mov   d15, d2
 | 0x8000053c      st.w  [a15]#0xc, d15                                 ; 12
 | 0x8000053e      ld.a  a15, [a14]#-0x18

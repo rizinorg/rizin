@@ -885,9 +885,29 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
+static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
+	bool colorize_asm = print_color && ds->show_color && ds->colorop;
+	if (!colorize_asm)
+		return;
+
+	RzCore *core = ds->core;
+	core->print->colorize_opts.reset_bg = line_highlighted(ds);
+	char *source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
+	RzStrBuf *bw_asm = rz_strbuf_new(source);
+	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
+	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
+	free(param);
+	rz_strbuf_free(bw_asm);
+	if (!colored_asm) {
+		return;
+	}
+	source = rz_strbuf_drain(colored_asm);
+	free(ds->opstr);
+	ds->opstr = source;
+}
+
 static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	RzCore *core = ds->core;
-	bool colorize_asm = print_color && ds->show_color && ds->colorop;
 
 	if (ds->use_esil) {
 		free(ds->opstr);
@@ -1015,25 +1035,10 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				core->parser->subrel_addr = sub_address;
 			}
 		}
-		char *source = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
-		if (colorize_asm) {
-			core->print->colorize_opts.reset_bg = line_highlighted(ds);
-			RzStrBuf *bw_asm = rz_strbuf_new(source);
-			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
-			free(param);
-			rz_strbuf_free(bw_asm);
-			if (!colored_asm) {
-				return;
-			}
-			source = rz_strbuf_drain(colored_asm);
-		} else {
-			source = strdup(source);
-		}
 
-		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, source,
+		ds_opstr_try_colorize(ds, print_color);
+		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, ds->opstr,
 			ds->str, sizeof(ds->str), core->print->big_endian);
-		RZ_FREE(source);
 		// subvar depends on filter
 		if (ds->subvar) {
 			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
@@ -1058,24 +1063,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		free(ds->opstr);
 		ds->opstr = strdup(ds->str);
 	} else {
-		char *source;
-		if (colorize_asm) {
-			core->print->colorize_opts.reset_bg = line_highlighted(ds);
-			RzStrBuf *bw_asm = rz_strbuf_new(ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
-			RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
-			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_asm, core->print, param, ds->asmop.asm_toks);
-			free(param);
-			rz_strbuf_free(bw_asm);
-			if (!colored_asm) {
-				return;
-			}
-			source = rz_strbuf_drain(colored_asm);
-		} else {
-			source = ds->opstr ? strdup(ds->opstr) : strdup(rz_asm_op_get_asm(&ds->asmop));
-		}
-
-		free(ds->opstr);
-		ds->opstr = source;
+		ds_opstr_try_colorize(ds, print_color);
 	}
 	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr
@@ -4854,31 +4842,36 @@ static void ds_print_as_string(RzDisasmState *ds) {
 
 static char *_find_next_number(char *op) {
 	char *p = op;
-	if (p) {
-		while (*p) {
-			// look for start of next separator or ANSI sequence
-			while (*p && !IS_SEPARATOR(*p) && *p != 0x1b) {
+	if (!p)
+		return NULL;
+	while (*p) {
+		// look for start of next separator or ANSI sequence
+		while (*p && !IS_SEPARATOR(*p) && *p != 0x1b) {
+			p++;
+		}
+		if (*p == 0x1b) {
+			// skip to end of ANSI sequence (lower or uppercase char)
+			while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
 				p++;
 			}
-			if (*p == 0x1b) {
-				// skip to end of ANSI sequence (lower or uppercase char)
-				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
-					p++;
-				}
-				if (*p) {
-					p++;
-				}
+			if (*p) {
+				p++;
 			}
-			if (IS_SEPARATOR(*p)) {
-				// skip to end of separator
-				while (*p && IS_SEPARATOR(*p)) {
-					p++;
-				}
+		}
+		if (IS_SEPARATOR(*p)) {
+			// skip to end of separator
+			while (*p && IS_SEPARATOR(*p)) {
+				p++;
 			}
-			if (IS_DIGIT(*p)) {
-				// we found the start of the next number
-				return p;
-			}
+		}
+
+		if (*p && *p == '#') {
+			p++;
+		}
+
+		if (IS_DIGIT(*p)) {
+			// we found the start of the next number
+			return p;
 		}
 	}
 	return NULL;
@@ -4978,6 +4971,9 @@ static char *ds_sub_jumps(RzDisasmState *ds, char *str) {
 			ptr = nptr;
 			numval = rz_num_get(NULL, ptr);
 			if (numval == addr) {
+				if (ptr - 1 > str && *(ptr - 1) == '#') {
+					ptr--;
+				}
 				while (*nptr && !IS_SEPARATOR(*nptr) && *nptr != 0x1b) {
 					nptr++;
 				}
