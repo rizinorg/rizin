@@ -1517,7 +1517,6 @@ RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPatter
 	}
 }
 
-
 /**
  * \brief Splits an asm string into tokens by using the given regex patterns.
  *
