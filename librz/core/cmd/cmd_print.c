@@ -5414,46 +5414,51 @@ RZ_IPI RzCmdStatus rz_print_columns_disassembly_handler(RzCore *core, int argc, 
 		colwidth = 16;
 	}
 	int i, columns = w / colwidth;
-	int rows = h - 2;
-	int obsz = core->blocksize;
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	if (user_rows > 0) {
-		rows = user_rows;
+	int rows = user_rows > 0 ? user_rows : h - 2;
+
+	RzConfigHold *ch = rz_config_hold_new(core->config);
+	rz_config_hold_i(ch, "asm.offset", "asm.bytes", NULL);
+	if (rz_config_get_i(core->config, "asm.minicols")) {
+		rz_config_set_b(core->config, "asm.offset", false);
 	}
-	bool asm_minicols = rz_config_get_i(core->config, "asm.minicols");
-	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
-	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", "false");
-		// rz_config_set (core->config, "asm.bytes", "false");
-	}
-	rz_config_set(core->config, "asm.bytes", "false");
+	rz_config_set_b(core->config, "asm.bytes", false);
+
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
+	int pos_i = 0;
 	c->color = rz_config_get_i(core->config, "scr.color");
-	rz_core_block_size(core, rows * 32);
 	for (i = 0; i < columns; i++) {
 		(void)rz_cons_canvas_gotoxy(c, i * (w / columns), 0);
 		// TODO: Use the API directly
-		char *cmd = rz_str_newf("pdq %d @i:%d", rows, rows * i);
+		char *cmd = rz_str_newf("pdq %d @i:%d", rows, pos_i);
 		char *dis = rz_core_cmd_str(core, cmd);
-		rz_cons_canvas_write(c, dis);
+		if (dis) {
+			RzList *dis_lines = rz_str_split_duplist_n(dis, "\n", 0, false);
+			ut32 n_lines = rz_list_length(dis_lines);
+			rz_list_free(dis_lines);
+
+			// If the output contains more lines than expected, do not move
+			// forward the whole chunk as some data will be hidden.
+			if (n_lines > rows) {
+				pos_i -= (n_lines - rows - 1);
+			}
+
+			rz_cons_canvas_write(c, dis);
+		}
 		free(cmd);
 		free(dis);
+
+		pos_i += rows;
 	}
-	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
-	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", o_ao);
-		rz_config_set(core->config, "asm.bytes", o_ab);
-	}
-	rz_config_set(core->config, "asm.bytes", o_ab);
-	free(o_ao);
-	free(o_ab);
 	rz_cons_printf("\n");
+
+	rz_config_hold_restore(ch);
+	rz_config_hold_free(ch);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5474,10 +5479,11 @@ RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const 
 	char *o_ao = strdup(rz_config_get(core->config, "asm.offset"));
 	char *o_ab = strdup(rz_config_get(core->config, "asm.bytes"));
 	if (asm_minicols) {
-		rz_config_set(core->config, "asm.offset", "false");
-		rz_config_set(core->config, "asm.bytes", "false");
+		// Set asm.offset and asm.bytes configs to false to avoid printing them
+		rz_config_set_b(core->config, "asm.offset", false);
+		rz_config_set_b(core->config, "asm.bytes", false);
 	}
-	rz_config_set(core->config, "asm.bytes", "false");
+	rz_config_set_b(core->config, "asm.bytes", false);
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -5519,18 +5525,20 @@ RZ_IPI RzCmdStatus rz_print_columns_debug_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool print_hexdump_columns(RzCore *core, int user_rows, const char *xcmd) {
+static bool print_hexdump_columns(RzCore *core, int user_rows, bool has_header, const char *xcmd) {
 	int h, w = rz_cons_get_size(&h);
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int colwidth = hex_cols * 5;
 	int i, columns = w / (colwidth * 0.9);
-	int rows = h - 2;
+	int rows = user_rows > 0 ? user_rows : h - 2;
+
+	RzConfigHold *ch = rz_config_hold_new(core->config);
+	rz_config_hold_i(ch, "hex.cols", NULL);
 	rz_config_set_i(core->config, "hex.cols", colwidth / 5);
-	if (user_rows > 0) {
-		// Add one more line for the hexdump header
-		rows = user_rows + 1;
-	}
-	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
+
+	// Add one more line for the hexdump header
+	int canvas_rows = rows + (has_header ? 1 : 0);
+	RzConsCanvas *c = rz_cons_canvas_new(w, canvas_rows);
 	if (!c) {
 		RZ_LOG_ERROR("core: Couldn't allocate a canvas with %d rows\n", rows);
 		rz_config_set_i(core->config, "hex.cols", hex_cols);
@@ -5548,38 +5556,57 @@ static bool print_hexdump_columns(RzCore *core, int user_rows, const char *xcmd)
 		char *cmd = rz_str_newf("%s %d @ %" PFMT64u, xcmd, bsize, tsek);
 		char *dis = rz_core_cmd_str(core, cmd);
 		if (dis) {
+			RzList *dis_lines = rz_str_split_duplist_n(dis, "\n", 0, false);
+			// Count the lines do not contain actual data and handle them for
+			// the next column
+			RzListIter *it;
+			char *line;
+			int i = 0, diff_lines = 0;
+			rz_list_foreach (dis_lines, it, line) {
+				if (line[0] == ' ' && i < canvas_rows) {
+					diff_lines++;
+				}
+				i++;
+			}
+			rz_list_free(dis_lines);
+			if (!UT64_MUL_OVFCHK(diff_lines, hex_cols)) {
+				tsek -= diff_lines * hex_cols;
+			}
+
 			rz_cons_canvas_write(c, dis);
 			free(dis);
 		}
 		free(cmd);
-		tsek += bsize - 32;
+		tsek += bsize;
 	}
 
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
-	rz_config_set_i(core->config, "hex.cols", hex_cols);
 	rz_cons_printf("\n");
+
+	rz_config_hold_restore(ch);
+	rz_config_hold_free(ch);
 	return true;
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_annotated_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "pxa"));
+	return bool2status(print_hexdump_columns(core, user_rows, true, "pxa"));
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_op_colored_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "pxAl"));
+	return bool2status(print_hexdump_columns(core, user_rows, false, "pxAl"));
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "px"));
+	return bool2status(print_hexdump_columns(core, user_rows, true, "px"));
 }
 
 RZ_IPI RzCmdStatus rz_print_columns_hex_words_handler(RzCore *core, int argc, const char **argv) {
 	int user_rows = argc > 1 ? rz_num_math(core->num, argv[1]) : -1;
-	return bool2status(print_hexdump_columns(core, user_rows, "pxw"));
+	return bool2status(print_hexdump_columns(core, user_rows, false, "pxw"));
 }
 
 RZ_IPI RzCmdStatus rz_print_equal_d_handler(RzCore *core, int argc, const char **argv) {
