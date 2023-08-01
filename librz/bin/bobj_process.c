@@ -145,6 +145,7 @@ RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangle
  */
 RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
 	rz_return_val_if_fail(bf && bf->rbin && o && o->plugin, false);
+	const RzDemanglerPlugin *demangler = NULL;
 
 	rz_bin_set_and_process_file(bf, o);
 	rz_bin_set_and_process_entries(bf, o);
@@ -174,7 +175,9 @@ RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 
 	// now we can process the data.
 	RzDemanglerFlag flags = rz_demangler_get_flags(bf->rbin->demangler);
-	const RzDemanglerPlugin *demangler = rz_bin_process_get_demangler_plugin_from_lang(bf->rbin, o->lang);
+	if (bf->rbin->demangle) {
+		demangler = rz_bin_process_get_demangler_plugin_from_lang(bf->rbin, o->lang);
+	}
 	rz_bin_process_symbols(bf, o, demangler, flags);
 	rz_bin_process_imports(bf, o, demangler, flags);
 	rz_bin_set_and_process_relocs(bf, o, demangler, flags);
@@ -205,6 +208,10 @@ RZ_API void rz_bin_demangle_with_flags(RZ_NONNULL RzBin *bin, RzDemanglerFlag fl
 		return;
 	}
 	rz_demangler_set_flags(bin->demangler, flags);
+
+	if (!bin->demangle) {
+		return;
+	}
 
 	RzBinFile *bf = NULL;
 	RzListIter *it = NULL;
