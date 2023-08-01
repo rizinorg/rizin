@@ -1,4 +1,11 @@
-project('tree-sitter-c', 'c', default_options: ['werror=false'])
+project('tree-sitter-c', 'c',
+  license: 'MIT',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+    'werror=false'
+    ]
+)
 
 ts_c_files = [
   'src/parser.c'

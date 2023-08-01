@@ -1,5 +1,9 @@
 project('rzqnx', 'c',
-  license : [ 'GPL']
+  license: 'GPL-2.0-only',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
 )
 
 qnx_files = [

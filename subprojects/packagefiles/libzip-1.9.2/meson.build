@@ -1,5 +1,11 @@
 project('libzip', 'c',
-  version: '1.9.2')
+  version: '1.9.2',
+  license: 'BSD-3-clause',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'c_std=c99',
+  ]
+)
 
 py3_exe = import('python').find_installation()
 cc = meson.get_compiler('c')
