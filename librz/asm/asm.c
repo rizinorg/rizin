@@ -1530,13 +1530,22 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 
 	const char *asm_str = rz_strbuf_get(asm_string);
 	RzAsmTokenString *toks = rz_asm_token_string_new(asm_str);
+
 	void **it;
 	// Iterate over each pattern and search for it in str
 	rz_pvector_foreach (patterns, it) {
 		RzAsmTokenPattern *pattern = *it;
-		if (!pattern || !pattern->regex) {
+		if (!pattern) {
 			rz_asm_token_string_free(toks);
 			return NULL;
+		}
+		if (!pattern->regex) {
+			// Pattern was not compiled.
+			pattern->regex = rz_regex_new(pattern->pattern, "e");
+			if (!pattern->regex) {
+				rz_warn_if_reached();
+				return NULL;
+			}
 		}
 
 		/// Start pattern search from the beginning
