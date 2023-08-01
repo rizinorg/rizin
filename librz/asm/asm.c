@@ -1452,7 +1452,7 @@ static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 }
 
 /**
- * \brief Checks a token string if any token in it overlaps with another.
+ * \brief Checks a token string if any token in it overlaps with another or a part of the asm string is not covered.
  * It prints a warning if this is the case.
  *
  * \param toks The token string to check.
