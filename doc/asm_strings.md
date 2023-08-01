@@ -216,11 +216,11 @@ Here is an example from Hexagon.
 
 The general method:
 
-![img/hexagon-asm-syntax-general.png]
+![hexagon-syntax-general](img/hexagon-asm-syntax-general.png)
 
 The custom method:
 
-![img/hexagon-asm-syntax-regex.png]
+![hexagon-syntax-regex](img/hexagon-asm-syntax-regex.png)
 
 As you see, the custom method is way more beautiful.
 
