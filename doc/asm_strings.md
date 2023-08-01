@@ -209,10 +209,16 @@ So ensure that `RzAsmTokenString.op_type` is set correctly.
 
 ### What for?
 
-For simple syntax the general method might seem overengineered.
-But for complex syntax it will produce beautiful results.
+For simple syntax the custom method might seem overengineered.
 
-Here is an example from Hexagon.
+But defining properly which part of an asm string means what, has additional advantages.
+
+- Numbers can be extracted from the string and used later.
+- If some syntax needs to be manipulated, it is way easier to do this.
+  Selecting the token with the right type and change it. No raw string operations anymore.
+- For complex syntax it will produce beautiful results.
+
+Here is an example for the last point.
 
 The general method:
 
@@ -224,4 +230,4 @@ The custom method:
 
 As you see, the custom method is way more beautiful.
 
-Check out `asm_hexagon.c` for an example of more complex patterns.
+Check out `asm_hexagon.c` for an example of the complex patterns used for it.
