@@ -28,6 +28,28 @@ static void update_context(JavaAsmContext *ctx) {
 	}
 }
 
+static ut64 find_method(RzAsm *a) {
+	ut64 addr = a->pc;
+	if (!a->binb.bin) {
+		return addr;
+	}
+
+	RzBinSection *sec;
+	RzListIter *it;
+	RzList *list = a->binb.get_sections(a->binb.bin);
+
+	rz_list_foreach (list, it, sec) {
+		ut64 from = sec->vaddr;
+		ut64 to = from + sec->vsize;
+		if (!(sec->perm & RZ_PERM_X) || addr < from || addr > to) {
+			continue;
+		}
+		return sec->paddr;
+	}
+
+	return addr;
+}
+
 static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	JavaAsmContext *ctx = (JavaAsmContext *)a->plugin_data;
 	rz_strbuf_set(&op->buf_asm, "invalid");
@@ -69,14 +91,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	rz_strbuf_set(&op->buf_asm, "invalid");
 
-	ut64 section = a->pc;
-	if (a->binb.bin) {
-		const RzBinSection *sec = a->binb.get_vsect_at(a->binb.bin, a->pc);
-		if (sec) {
-			section = sec->paddr;
-		}
-	}
-
+	ut64 section = find_method(a);
 	if (!jvm_init(&vm, buf, len, a->pc, section)) {
 		RZ_LOG_ERROR("[!] java_disassemble: bad or invalid data.\n");
 		return -1;

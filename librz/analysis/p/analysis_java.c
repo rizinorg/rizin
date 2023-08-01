@@ -24,6 +24,27 @@ static void update_context(JavaAnalysisContext *ctx) {
 	}
 }
 
+static ut64 find_method(RzAnalysis *a, ut64 addr) {
+	if (!a->binb.bin) {
+		return addr;
+	}
+
+	RzBinSection *sec;
+	RzListIter *it;
+	RzList *list = a->binb.get_sections(a->binb.bin);
+
+	rz_list_foreach (list, it, sec) {
+		ut64 from = sec->vaddr;
+		ut64 to = from + sec->vsize;
+		if (!(sec->perm & RZ_PERM_X) || addr < from || addr > to) {
+			continue;
+		}
+		return sec->paddr;
+	}
+
+	return addr;
+}
+
 static int java_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	JavaAnalysisContext *ctx = (JavaAnalysisContext *)analysis->plugin_data;
 
@@ -57,14 +78,7 @@ static int java_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	JavaVM vm = { 0 };
 	Bytecode bc = { 0 };
 
-	ut64 section = addr;
-	if (analysis->binb.bin) {
-		const RzBinSection *sec = analysis->binb.get_vsect_at(analysis->binb.bin, addr);
-		if (sec) {
-			section = sec->paddr;
-		}
-	}
-
+	ut64 section = find_method(analysis, addr);
 	if (!jvm_init(&vm, buf, len, addr, section)) {
 		RZ_LOG_ERROR("[!] java_analysis: bad or invalid data.\n");
 		return -1;
