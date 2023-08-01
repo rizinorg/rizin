@@ -567,19 +567,6 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		op->reg = tricore_get_op_regname(h, insn, 0);
 		break;
 	}
-	case TRICORE_INS_JGEZ:
-	case TRICORE_INS_JGTZ:
-	case TRICORE_INS_JLEZ:
-	case TRICORE_INS_JLTZ:
-	case TRICORE_INS_JNZ:
-	case TRICORE_INS_JZ_A:
-	case TRICORE_INS_JZ: {
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = (ut32)tricore_get_op_imm(insn, 0);
-		op->fail = insn->address + insn->size;
-		op->cond = insn2cond(insn->id);
-		break;
-	}
 
 	case TRICORE_INS_JEQ:
 	case TRICORE_INS_JEQ_A:
@@ -598,9 +585,17 @@ static void tricore_op_set_type(RzAnalysisOp *op, csh h, cs_insn *insn) {
 		op->sign = true;
 		// fallthrough
 	case TRICORE_INS_JLT_U:
-	case TRICORE_INS_JGE_U: {
+	case TRICORE_INS_JGE_U:
+
+	case TRICORE_INS_JGEZ:
+	case TRICORE_INS_JGTZ:
+	case TRICORE_INS_JLEZ:
+	case TRICORE_INS_JLTZ:
+	case TRICORE_INS_JNZ:
+	case TRICORE_INS_JZ_A:
+	case TRICORE_INS_JZ: {
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = tricore_get_op_imm(insn, tricore_op_count(insn) - 1);
+		op->jump = (ut32)tricore_get_op_imm(insn, tricore_op_count(insn) - 1);
 		op->fail = insn->address + insn->size;
 		op->cond = insn2cond(insn->id);
 		break;

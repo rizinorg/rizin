@@ -26,6 +26,7 @@ static inline cs_mode tricore_cpu_to_cs_mode(const char *cpu_type) {
 
 static inline cs_tricore_op *tricore_get_op(cs_insn *insn, int idx) {
 	if (idx >= insn->detail->tricore.op_count) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 	return &insn->detail->tricore.operands[idx];
@@ -34,6 +35,7 @@ static inline cs_tricore_op *tricore_get_op(cs_insn *insn, int idx) {
 static inline const char *tricore_get_op_regname(csh h, cs_insn *insn, int idx) {
 	cs_tricore_op *op = tricore_get_op(insn, idx);
 	if (op->type != TRICORE_OP_REG) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 	return cs_reg_name(h, op->reg);
@@ -42,11 +44,12 @@ static inline const char *tricore_get_op_regname(csh h, cs_insn *insn, int idx) 
 static inline st32 tricore_get_op_imm(cs_insn *insn, int idx) {
 	cs_tricore_op *op = tricore_get_op(insn, idx);
 	if (op->type != TRICORE_OP_IMM) {
+		rz_warn_if_reached();
 		return 0;
 	}
 	return op->imm;
 }
 
-static inline st32 tricore_op_count(cs_insn *insn) {
+static inline ut8 tricore_op_count(cs_insn *insn) {
 	return insn->detail->tricore.op_count;
 }
