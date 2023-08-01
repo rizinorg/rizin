@@ -1431,6 +1431,16 @@ static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks,
 	return false;
 }
 
+/**
+ * \brief Compare two RzAsmTokens.
+ *
+ * \param a Token a to compare.
+ * \param b Token b to compare.
+ *
+ * \return -1 If a.start < b.start
+ * \return 1 If a.start > b.start
+ * \return 0 If a.start == b.start
+ */
 static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 	rz_return_val_if_fail(a && b, 0);
 	if (a->start < b->start) {
@@ -1441,6 +1451,12 @@ static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 	return 0;
 }
 
+/**
+ * \brief Checks a token string if any token in it overlaps with another.
+ * It prints a warning if this is the case.
+ *
+ * \param toks The token string to check.
+ */
 static void check_token_coverage(RzAsmTokenString *toks) {
 	rz_return_if_fail(toks);
 	if (rz_vector_len(toks->tokens) == 0) {
@@ -1556,7 +1572,8 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 }
 
 /**
- * \brief Seeks to the end of the token at \p str + \p i and returns the length of it.
+ * \brief Seeks from \p str + \p i for a token of the given \p type.
+ * If any was found it returns the length of it. Or 0 if non was found.
  *
  * \param str The asm string.
  * \param i Index into \p str where the token starts.
@@ -1600,6 +1617,7 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 		do {
 			++j;
 		} while (!isascii(*(str + j)) && !is_operator(str + j) && !is_separator(str + j) && !is_alpha_num(str + j));
+		break;
 	}
 	return j - i;
 }
