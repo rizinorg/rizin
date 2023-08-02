@@ -37,7 +37,7 @@ typedef struct _ut96 {
 } ut96;
 typedef struct _ut128 {
 	ut64 Low;
-	st64 High;
+	ut64 High;
 } ut128;
 typedef struct _ut256 {
 	ut128 Low;
