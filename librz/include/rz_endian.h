@@ -128,7 +128,7 @@ static inline void rz_write_at_be64(void *dest, ut64 val, size_t offset) {
 }
 
 static inline ut128 rz_read_be128(const void *src) {
-	ut128 val = { 0 };
+	ut128 val;
 	val.High = rz_read_be64(src);
 	val.Low = rz_read_at_be64(src, sizeof(ut64));
 	return val;
@@ -308,7 +308,7 @@ static inline void rz_write_at_le64(void *dest, ut64 val, size_t offset) {
 }
 
 static inline ut128 rz_read_le128(const void *src) {
-	ut128 val = { 0 };
+	ut128 val;
 	val.High = rz_read_at_le64(src, sizeof(ut64));
 	val.Low = rz_read_le64(src);
 	return val;
