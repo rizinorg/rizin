@@ -1679,8 +1679,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		case 6: // ^f // emacs right
 			__move_cursor_right();
 			break;
-		case 12: // ^L -- right
-			__move_cursor_right();
+		case 12: // ^L -- clear screen
 			if (I.echo) {
 				eprintf("\x1b[2J\x1b[0;0H");
 			}
