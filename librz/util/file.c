@@ -1314,6 +1314,9 @@ RZ_API RzList /*<char *>*/ *rz_file_globsearch(const char *_globbed_path, int ma
 RZ_API RZ_OWN char *rz_file_path_join(RZ_NONNULL const char *s1, RZ_NULLABLE const char *s2) {
 	rz_return_val_if_fail(s1, NULL);
 
+	if (s1[0] == 0) {
+		return strdup(s2);
+	}
 	if (!s2) {
 		return strdup(s1);
 	}
