@@ -1431,6 +1431,16 @@ static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks,
 	return false;
 }
 
+/**
+ * \brief Compare two RzAsmTokens.
+ *
+ * \param a Token a to compare.
+ * \param b Token b to compare.
+ *
+ * \return -1 If a.start < b.start
+ * \return 1 If a.start > b.start
+ * \return 0 If a.start == b.start
+ */
 static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 	rz_return_val_if_fail(a && b, 0);
 	if (a->start < b->start) {
@@ -1441,6 +1451,12 @@ static int cmp_tokens(const RzAsmToken *a, const RzAsmToken *b) {
 	return 0;
 }
 
+/**
+ * \brief Checks a token string if any token in it overlaps with another or a part of the asm string is not covered.
+ * It prints a warning if this is the case.
+ *
+ * \param toks The token string to check.
+ */
 static void check_token_coverage(RzAsmTokenString *toks) {
 	rz_return_if_fail(toks);
 	if (rz_vector_len(toks->tokens) == 0) {
@@ -1481,49 +1497,84 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 }
 
 /**
+ * \brief Compiles the regex patterns of a vector of RzAsmTokenPatterns.
+ *
+ * \param patterns The token patterns to compile the regex for.
+ */
+RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
+	rz_return_if_fail(patterns);
+
+	void **it;
+	rz_pvector_foreach (patterns, it) {
+		RzAsmTokenPattern *pat = *it;
+		if (!pat->regex) {
+			pat->regex = rz_regex_new(pat->pattern, "e");
+			if (!pat->regex) {
+				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
+				rz_warn_if_reached();
+			}
+		}
+	}
+}
+
+/**
  * \brief Splits an asm string into tokens by using the given regex patterns.
  *
  * \param str The asm string.
  * \param patterns RzList<RzAsmTokenPattern> with the regex patterns describing each token type.
  * \return RzAsmTokenString* The tokens.
  */
-RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_str, RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
-	rz_return_val_if_fail(asm_str && patterns, NULL);
+RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *asm_string, RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
+	rz_return_val_if_fail(asm_string && patterns, NULL);
 
-	const char *str = rz_strbuf_get(asm_str);
-	RzRegexMatch m[1];
-	size_t j = 0; // Offset into str. Regex patterns are only searched in substring str[j:].
-	st64 i = 0; // Start of token in str.
-	st64 s = 0; // Start of matched token in substring str[j:]
-	st64 l = 0; // Length of token.
-	RzAsmTokenString *toks = rz_asm_token_string_new(str);
+	const char *asm_str = rz_strbuf_get(asm_string);
+	RzAsmTokenString *toks = rz_asm_token_string_new(asm_str);
+
 	void **it;
+	// Iterate over each pattern and search for it in str
 	rz_pvector_foreach (patterns, it) {
-		RzAsmTokenPattern *pat = *it;
-		if (!pat || !pat->regex) {
+		RzAsmTokenPattern *pattern = *it;
+		if (!pattern) {
 			rz_asm_token_string_free(toks);
 			return NULL;
 		}
-		j = 0;
-		if (!pat->regex) {
+		if (!pattern->regex) {
+			// Pattern was not compiled.
+			pattern->regex = rz_regex_new(pattern->pattern, "e");
+			if (!pattern->regex) {
+				rz_warn_if_reached();
+				return NULL;
+			}
+		}
+
+		/// Start pattern search from the beginning
+		size_t asm_str_off = 0;
+		if (!pattern->regex) {
 			continue;
 		}
-		while (rz_regex_exec(pat->regex, str + j, 1, m, 0) == 0) {
-			s = m[0].rm_so; // Token start in substring str[j:]
-			l = m[0].rm_eo - s; // (End in substring str[j:]) - (start in substring str[j:]) = Length of token.
-			i = j + s; // Start of token in str.
-			if (overlaps_with_token(toks->tokens, i, i + l - 1)) {
+
+		// Search for token pattern.
+		RzRegexMatch match[1];
+		while (rz_regex_exec(pattern->regex, asm_str + asm_str_off, 1, match, 0) == 0) {
+			st64 match_start = match[0].rm_so; // Token start
+			st64 match_end = match[0].rm_eo; // Token end
+			st64 len = match_end - match_start; // Length of token
+			st64 tok_offset = asm_str_off + match_start; // Token offset in str
+			if (overlaps_with_token(toks->tokens, tok_offset, tok_offset + len - 1)) {
 				// If this is true a token with higher priority was matched before.
-				j = i + l;
+				asm_str_off = tok_offset + len;
 				continue;
 			}
-			if (!is_num(str + i)) {
-				add_token(toks, i, l, pat->type, 0);
-				j = i + l;
+
+			// New token found, add it.
+			if (!is_num(asm_str + tok_offset)) {
+				add_token(toks, tok_offset, len, pattern->type, 0);
+				asm_str_off = tok_offset + len;
 				continue;
 			}
-			add_token(toks, i, l, pat->type, strtoull(str + i, NULL, 0));
-			j = i + l;
+			ut64 number = strtoull(asm_str + tok_offset, NULL, 0);
+			add_token(toks, tok_offset, len, pattern->type, number);
+			asm_str_off = tok_offset + len;
 		}
 	}
 
@@ -1534,7 +1585,8 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 }
 
 /**
- * \brief Seeks to the end of the token at \p str + \p i and returns the length of it.
+ * \brief Seeks from \p str + \p i for a token of the given \p type.
+ * If any was found it returns the length of it. Or 0 if non was found.
  *
  * \param str The asm string.
  * \param i Index into \p str where the token starts.
@@ -1578,6 +1630,7 @@ static size_t seek_to_end_of_token(const char *str, size_t i, RzAsmTokenType typ
 		do {
 			++j;
 		} while (!isascii(*(str + j)) && !is_operator(str + j) && !is_separator(str + j) && !is_alpha_num(str + j));
+		break;
 	}
 	return j - i;
 }
