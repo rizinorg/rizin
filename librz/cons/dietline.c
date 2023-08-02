@@ -1875,6 +1875,9 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					__print_prompt();
 					continue;
 				}
+				if (buf[0] == 'O' && strchr("ABCDFH", buf[1]) != NULL) { // O
+					buf[0] = '['; // 0x5b
+				}
 				if (buf[0] == 0x5b) { // [
 					switch (buf[1]) {
 					case '3': // supr
