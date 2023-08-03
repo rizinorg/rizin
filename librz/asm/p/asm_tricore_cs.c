@@ -46,6 +46,81 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+#define TOKEN(_type, _pat) \
+	do { \
+		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+		pat->type = RZ_ASM_TOKEN_##_type; \
+		pat->pattern = strdup(_pat); \
+		rz_pvector_push(pvec, pat); \
+	} while (0)
+
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
+	static RzPVector *pvec = NULL;
+	if (pvec) {
+		return pvec;
+	}
+
+	pvec = rz_pvector_new(rz_asm_token_pattern_free);
+
+	TOKEN(META, "([\\[\\]])|(\\+[rc]?))");
+
+	TOKEN(REGISTER, "([adep][[:digit:]]{1,2})");
+	TOKEN(REGISTER, "(psw|pcxi|pc|fcx|lcx|isp|icr|pipn|biv|btv)");
+
+	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
+	TOKEN(NUMBER, "([[:digit:]]+)");
+
+	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\.]*[[:alnum:]]+)");
+
+	TOKEN(SEPARATOR, "([[:blank:]]+)|([,;\\(\\)\\{\\}:])");
+
+	return pvec;
+}
+
+static void compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
+	rz_return_if_fail(patterns);
+
+	void **it;
+	rz_pvector_foreach (patterns, it) {
+		RzAsmTokenPattern *pat = *it;
+		if (!pat->regex) {
+			pat->regex = rz_regex_new(pat->pattern, "e");
+			if (!pat->regex) {
+				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
+				rz_warn_if_reached();
+			}
+		}
+	}
+}
+
+typedef struct {
+	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
+} State;
+
+static State *get_state() {
+	static State *state = NULL;
+	if (state) {
+		return state;
+	}
+
+	state = RZ_NEW0(State);
+	if (!state) {
+		RZ_LOG_FATAL("Could not allocate memory for HexState!");
+	}
+	return state;
+}
+
+static bool init(void **user) {
+	State *state = get_state();
+	rz_return_val_if_fail(state, false);
+
+	*user = state; // user = RzAsm.plugin_data
+
+	state->token_patterns = get_token_patterns();
+	compile_token_patterns(state->token_patterns);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_tricore = {
 	.name = "tricore",
 	.arch = "tricore",
@@ -55,6 +130,7 @@ RzAsmPlugin rz_asm_plugin_tricore = {
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "Siemens TriCore CPU",
 	.disassemble = &disassemble,
+	.init = &init,
 };
 
 #ifndef RZ_PLUGIN_INCORE
