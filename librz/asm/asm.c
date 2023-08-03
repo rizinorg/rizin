@@ -1540,7 +1540,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 		}
 		if (!pattern->regex) {
 			// Pattern was not compiled.
-			pattern->regex = rz_regex_new(pattern->pattern, "e");
+			rz_asm_compile_token_patterns(patterns);
 			if (!pattern->regex) {
 				rz_warn_if_reached();
 				return NULL;
@@ -1549,9 +1549,6 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 
 		/// Start pattern search from the beginning
 		size_t asm_str_off = 0;
-		if (!pattern->regex) {
-			continue;
-		}
 
 		// Search for token pattern.
 		RzRegexMatch match[1];
