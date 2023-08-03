@@ -78,7 +78,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	}
 
 	pvec = rz_pvector_new(rz_asm_token_pattern_free);
-	
+
 	TOKEN(META, "(\\[|\\]|-)");
 	TOKEN(META, "(\\+[rc]?)");
 

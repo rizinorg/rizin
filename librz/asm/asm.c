@@ -1460,6 +1460,9 @@ static const char *token_str(RzAsmToken *t) {
 		[RZ_ASM_TOKEN_SEPARATOR] = "SEPARATOR", ///< Brackets, comma etc.
 		[RZ_ASM_TOKEN_META] = "META", ///< Meta information (e.g Hexagon packet prefix, ARM & Hexagon number prefix).
 	};
+	if (!t) {
+		return NULL;
+	}
 	if (t->type < RZ_ASM_TOKEN_MNEMONIC || t->type > RZ_ASM_TOKEN_META) {
 		return "UNKNOWN";
 	}
