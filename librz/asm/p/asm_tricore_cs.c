@@ -77,22 +77,6 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	return pvec;
 }
 
-static void compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPattern *>*/ *patterns) {
-	rz_return_if_fail(patterns);
-
-	void **it;
-	rz_pvector_foreach (patterns, it) {
-		RzAsmTokenPattern *pat = *it;
-		if (!pat->regex) {
-			pat->regex = rz_regex_new(pat->pattern, "e");
-			if (!pat->regex) {
-				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
-				rz_warn_if_reached();
-			}
-		}
-	}
-}
-
 typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
 } State;
@@ -117,7 +101,7 @@ static bool init(void **user) {
 	*user = state; // user = RzAsm.plugin_data
 
 	state->token_patterns = get_token_patterns();
-	compile_token_patterns(state->token_patterns);
+	rz_asm_compile_token_patterns(state->token_patterns);
 	return true;
 }
 
