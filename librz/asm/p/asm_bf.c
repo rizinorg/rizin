@@ -18,7 +18,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
 	pat->pattern = strdup(
-		"^((while)|(inc)|(dec)|(trap)|(nop)|(invalid)|(loop))");
+		"^(while|inc|dec|out|in|trap|nop|invalid|loop)");
 	rz_pvector_push(pvec, pat);
 
 	// ptr pattern
