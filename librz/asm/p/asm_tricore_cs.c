@@ -10,9 +10,23 @@
 #include <capstone/capstone.h>
 
 #include "../arch/tricore/tricore.inc"
+#include <librz/asm/arch/tricore/tricore.h>
 
 #define TRICORE_LONGEST_INSTRUCTION  4
 #define TRICORE_SHORTEST_INSTRUCTION 2
+
+static RzAsmTriCoreState *get_state() {
+	static RzAsmTriCoreState *state = NULL;
+	if (state) {
+		return state;
+	}
+
+	state = RZ_NEW0(RzAsmTriCoreState);
+	if (!state) {
+		RZ_LOG_FATAL("Could not allocate memory for HexState!");
+	}
+	return state;
+}
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf || len < TRICORE_SHORTEST_INSTRUCTION) {
@@ -40,6 +54,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_asm_op_set_asm(op, asmstr);
 	op->size = insn->size;
 
+	RzAsmTriCoreState *state = get_state();
+	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, state->token_patterns);
+
 	free(asmstr);
 	cs_close(&handle);
 	cs_free(insn, count);
@@ -61,41 +78,25 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	}
 
 	pvec = rz_pvector_new(rz_asm_token_pattern_free);
-
-	TOKEN(META, "([\\[\\]])|(\\+[rc]?))");
-
-	TOKEN(REGISTER, "([adep][[:digit:]]{1,2})");
-	TOKEN(REGISTER, "(psw|pcxi|pc|fcx|lcx|isp|icr|pipn|biv|btv)");
+	
+	TOKEN(META, "(\\[|\\]|-)");
+	TOKEN(META, "(\\+[rc]?)");
 
 	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
+
+	TOKEN(REGISTER, "([adep][[:digit:]]{1,2})|(sp|psw|pcxi|pc|fcx|lcx|isp|icr|pipn|biv|btv)");
+
+	TOKEN(SEPARATOR, "([[:blank:]]+)|([,;#\\(\\)\\{\\}:])");
+
+	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\.]*[[:alnum:]]+)|([[:alpha:]]+)");
+
 	TOKEN(NUMBER, "([[:digit:]]+)");
-
-	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\.]*[[:alnum:]]+)");
-
-	TOKEN(SEPARATOR, "([[:blank:]]+)|([,;\\(\\)\\{\\}:])");
 
 	return pvec;
 }
 
-typedef struct {
-	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
-} State;
-
-static State *get_state() {
-	static State *state = NULL;
-	if (state) {
-		return state;
-	}
-
-	state = RZ_NEW0(State);
-	if (!state) {
-		RZ_LOG_FATAL("Could not allocate memory for HexState!");
-	}
-	return state;
-}
-
 static bool init(void **user) {
-	State *state = get_state();
+	RzAsmTriCoreState *state = get_state();
 	rz_return_val_if_fail(state, false);
 
 	*user = state; // user = RzAsm.plugin_data
