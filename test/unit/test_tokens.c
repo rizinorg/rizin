@@ -24,6 +24,12 @@ static RzPrint *setup_print() {
 	return p;
 }
 
+static RzAsm *setup_bf_asm() {
+	RzAsm *a = rz_asm_new();
+	rz_asm_setup(a, "bf", 32, false);
+	return a;
+}
+
 static RzAsm *setup_arm_asm(ut32 bits) {
 	RzAsm *a = rz_asm_new();
 	rz_asm_setup(a, "arm", bits, false);
@@ -567,6 +573,48 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	mu_end;
 }
 
+static bool test_rz_tokenize_custom_bf_0(void) {
+	RzAsm *a = setup_bf_asm();
+
+	// nop
+	// while [ptr]
+	// inc [ptr]
+	// dec [ptr]
+	// in [ptr]
+	// dec ptr
+	// inc ptr
+	// out [ptr]
+	// loop
+	// trap
+	const ut8 buf[] = "\x07[+-,<>.]\xff";
+	const char *expected_str[] = {
+		"\x1b[34mnop\x1b[0m",
+		"\x1b[32mwhile\x1b[0m\x1b[37m \x1b[0m\x1b[37m[\x1b[0m\x1b[36mptr\x1b[0m\x1b[37m]\x1b[0m",
+		"\x1b[33minc\x1b[0m\x1b[37m \x1b[0m\x1b[37m[\x1b[0m\x1b[36mptr\x1b[0m\x1b[37m]\x1b[0m",
+		"\x1b[33mdec\x1b[0m\x1b[37m \x1b[0m\x1b[37m[\x1b[0m\x1b[36mptr\x1b[0m\x1b[37m]\x1b[0m",
+		"\x1b[1;95min\x1b[0m\x1b[37m \x1b[0m\x1b[37m[\x1b[0m\x1b[36mptr\x1b[0m\x1b[37m]\x1b[0m",
+		"\x1b[33mdec\x1b[0m\x1b[37m \x1b[0m\x1b[36mptr\x1b[0m",
+		"\x1b[33minc\x1b[0m\x1b[37m \x1b[0m\x1b[36mptr\x1b[0m",
+		"\x1b[35mout\x1b[0m\x1b[37m \x1b[0m\x1b[37m[\x1b[0m\x1b[36mptr\x1b[0m\x1b[37m]\x1b[0m",
+		"\x1b[32mloop\x1b[0m",
+		"\x1b[1;91mtrap\x1b[0m",
+
+	};
+
+	RzPrint *p = setup_print();
+	char err_msg[2048];
+	for (int i = 0; i < sizeof(buf) - 1; i++) {
+		RzAsmOp *asmop = rz_asm_op_new();
+		rz_asm_disassemble(a, asmop, buf + i, 1);
+		RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
+		RzStrBuf *expected = rz_strbuf_new(expected_str[i]);
+		snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
+		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
+	}
+
+	mu_end;
+}
+
 static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_0_no_reg_profile);
 	mu_run_test(test_rz_tokenize_generic_0);
@@ -584,6 +632,7 @@ static int all_tests() {
 	mu_run_test(test_rz_colorize_custom_hexagon_0);
 	mu_run_test(test_rz_colorize_custom_hexagon_1);
 	mu_run_test(test_rz_colorize_custom_hexagon_2);
+	mu_run_test(test_rz_tokenize_custom_bf_0);
 
 	return tests_passed != tests_run;
 }
