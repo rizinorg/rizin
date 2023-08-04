@@ -5544,7 +5544,19 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 	rz_cons_newline();
 }
 
-RZ_API void rz_core_analysis_bytes_il(RzCore *core, const ut8 *buf, int len, int nops, bool pretty) {
+/**
+ * \brief Parse and print \p len bytes and \p nops
+ *      instructions RzIL of data in \p buf, restricted by
+ *      \p len and \p nops at the same time
+ *
+ * \param core RzCore
+ * \param buf Store the source to be parsed and printed
+ * \param len Maximum length read from \p buf
+ * \param nops Maximum number of instruction, set 0 to disable this
+ * \param pretty Pretty-printing
+ */
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8 *buf, int len, int nops, bool pretty) {
+	rz_return_if_fail(core && buf);
 	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
 	const char *il_stmt = NULL;
 	const char delim = pretty ? '\n' : ' ';

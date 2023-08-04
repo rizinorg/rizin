@@ -3968,35 +3968,32 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv) {
-	ut64 start, end, size, oldoff;
-	RzAnalysisFunction *fcn;
-	RzList *list;
 
-	oldoff = core->offset;
-	list = rz_analysis_get_functions_in(core->analysis, core->offset);
+	ut64 oldoff = core->offset;
+	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x ".\n", core->offset);
 		goto exit;
 	}
 	if (rz_list_length(list) > 1) {
-		RZ_LOG_ERROR("Multiple overlapping functions found at 0x%08" PFMT64x ". "
+		RZ_LOG_ERROR("Multiple overlapping functions found at 0x%" PFMT64x ". "
 			     "Re-run this command at the entrypoint of one of them to disambiguate.\n",
 			core->offset);
 		goto exit;
 	}
-	fcn = rz_list_first(list);
+	RzAnalysisFunction *fcn = rz_list_first(list);
 	if (!fcn) {
 		rz_warn_if_reached();
 	}
 
-	start = fcn->addr;
-	end = rz_analysis_function_max_addr(fcn);
+	ut64 start = fcn->addr;
+	ut64 end = rz_analysis_function_max_addr(fcn);
 	if (end <= start) {
 		RZ_LOG_ERROR("Cannot print function because the end offset is less or equal to the start offset\n");
 		goto exit;
 	}
 
-	size = end - start;
+	ut64 size = end - start;
 	rz_core_seek(core, start, true);
 	rz_core_analysis_bytes_il(core, core->block, size, 0, false);
 	rz_core_seek(core, oldoff, true);
